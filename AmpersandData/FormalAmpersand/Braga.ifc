@@ -15,9 +15,9 @@ TABS[ rules : V[SESSION*Rule]
              BOX<SCOLS>
                   [ "type-term" : I[TypeTerm]
                   , "sub"       : sub     
-                  , "sub*"      : subs    
+                  , "sub*"      : subStar    
                   , "sub~"      : sub~    
-                  , "sub*~"     : subs~   
+                  , "sub*~"     : subStar~   
                   ]
            ]
     , terms : V[SESSION*Term]

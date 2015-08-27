@@ -157,10 +157,11 @@ data FEObject = FEObject { objName :: String
                          , objSource :: A_Concept
                          , objTarget :: A_Concept
                          , objIsEditable :: Bool
-                         , _exprIsUni :: Bool
-                         , _exprIsTot :: Bool
-                         , _exprIsProp :: Bool
-                         , _objNavInterfaces :: [NavInterface]
+                         , exprIsUni :: Bool
+                         , exprIsTot :: Bool
+                         , exprIsProp :: Bool
+                         , exprIsIdent :: Bool
+                         , objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox
                          } deriving Show
 
@@ -269,10 +270,11 @@ buildInterface fSpec allIfcs ifc =
                            , objSource = src
                            , objTarget = tgt
                            , objIsEditable = isEditable
-                           , _exprIsUni = isUni iExp'
-                           , _exprIsTot = isTot iExp'
-                           , _exprIsProp = isProp iExp'
-                           , _objNavInterfaces = navIfcs
+                           , exprIsUni = isUni iExp'
+                           , exprIsTot = isTot iExp'
+                           , exprIsProp = isProp iExp'
+                           , exprIsIdent = isIdent iExp'
+                           , objNavInterfaces = navIfcs
                            , atomicOrBox = aOrB
                            }
         }
@@ -336,9 +338,8 @@ genView_Object :: FSpec -> Int -> FEObject -> IO [String]
 genView_Object fSpec depth obj =
   let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
       atomicAndBoxAttrs = setAttribute "isEditable" (objIsEditable obj)
-                        . setAttribute "exprIsUni"  (_exprIsUni obj)
-                        . setAttribute "exprIsTot"  (_exprIsTot obj)
-                        . setAttribute "exprIsProp" (_exprIsProp obj)
+                        . setAttribute "exprIsUni"  (exprIsUni obj)
+                        . setAttribute "exprIsTot"  (exprIsTot obj)
                         . setAttribute "name"       (escapeIdentifier . objName $ obj)
                         . setAttribute "label"      (objName $ obj) -- no escaping for labels in templates needed
                         . setAttribute "expAdl"     (showADL . objExp $ obj) 
@@ -354,13 +355,13 @@ genView_Object fSpec depth obj =
             -- For now, we choose specific template based on target concept. This will probably be too weak. 
             -- (we might want a single concept to could have multiple presentations, e.g. BOOL as checkbox or as string)
             --; putStrLn $ nm ++ ":" ++ show mPrimTemplate
-            ; conceptTemplate <- getTemplateForConcept (objTarget obj)
+            ; conceptTemplate <- getTemplateForObject
             ; let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
             ; template <- readTemplate fSpec templateFilename
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
             --                                      | NavInterface n rs <- navInterfaces ]
-            ; let mNavInterface = listToMaybe (_objNavInterfaces obj) -- TODO: can also be deleted, not used anymore?
+            ; let mNavInterface = listToMaybe (objNavInterfaces obj) -- TODO: can also be deleted, not used anymore?
                                                                                   
             ; return $ lines $ renderTemplate template $ 
                                  atomicAndBoxAttrs
@@ -389,20 +390,25 @@ genView_Object fSpec depth obj =
             ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                                , subObjLabel = objName subObj -- no escaping for labels in templates needed
                                , subObjContents = intercalate "\n" $ indent 8 lns
-                                                           , subObjExprIsUni = _exprIsUni subObj
+                                                           , subObjExprIsUni = exprIsUni subObj
                                -- Indentation is not context sensitive, so some templates will
                                -- be indented a bit too much (we take the maximum necessary value now)
                                } 
             }
+        getTemplateForObject :: IO(FilePath)
+        getTemplateForObject 
+           | exprIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
+                       = return $  templatePath </> "Relation-PROP"++".html"
+           | otherwise = getTemplateForConcept (objTarget obj)
         getTemplateForConcept :: A_Concept -> IO(FilePath)
         getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
                                        verboseLn (getOpts fSpec) $ "Looking for: " ++cptfn ++ "("++(if exists then "" else " not")++ " found.)" 
                                        return $ if exists
                                                 then cptfn
-                                                else "views" </> "Atomic-"++show ttp++".html" 
+                                                else templatePath </> "Atomic-"++show ttp++".html" 
            where ttp = cptTType fSpec $ cpt
-                 cptfn = "views" </> "Concept-"++name cpt++".html" 
-            
+                 cptfn = templatePath </> "Concept-"++name cpt++".html" 
+        templatePath = "views"     
 ------ Generate controller JavaScript code
 
 genController_Interfaces :: FSpec -> [FEInterface] -> IO ()
@@ -475,6 +481,7 @@ renderTemplate (Template template absPath) setAttrs =
              ([],  [],    []) -> render appliedTemplate
              (parseErrs@(_:_), _, _)        -> templateError $ concat [ "Parse error in " ++ tmplt ++ " " ++ err ++ "\n" 
                                                                       | (tmplt,err) <- parseErrs]
-             ([], attrs@(_:_), _)        -> templateError $ "Uninitialized template attributes: " ++ show attrs
+             ([], attrs@(_:_), _)        -> templateError $ "Uninitialized template attributes: " ++ show attrs++
+                                                           "\n   Maybe you have an old version of that template. "
              ([], [], ts@(_:_)) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
   where templateError msg = error $ "\n\n*** TEMPLATE ERROR in:\n" ++ absPath ++ "\n\n" ++ msg
