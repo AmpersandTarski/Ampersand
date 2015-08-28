@@ -33,11 +33,11 @@ checkArgs = Args
   }
 
 -- TODO: Improve the messages given here, remove all trace's
-test :: Testable prop => prop -> IO Bool
+test :: Testable prop => prop -> IO (Bool, String)
 test p = do res <- quickCheckWithResult checkArgs p
             case res of
-                Success {} -> return True
-                _          -> return False
+                Success {} -> return (True, "")
+                _          -> return (False, show res )
 
-parserQuickChecks :: IO Bool
+parserQuickChecks :: IO (Bool,String)
 parserQuickChecks = test prop_pretty
