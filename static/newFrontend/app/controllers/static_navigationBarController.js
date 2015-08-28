@@ -2,7 +2,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.$storage = $localStorage;
 	
-	$scope.selectRole = function(roleId){
+	$rootScope.selectRole = function(roleId){
 		$localStorage.roleId = roleId;
 		
 		// refresh navbar + notifications
