@@ -14,34 +14,48 @@ TABS[concepts :V[SESSION*Concept]
            , "type-term"  : popset
            , term         : id~;repr
            ]
-    , types : V[SESSION*Signature]
+    , signatures : V[SESSION*Signature]
       BOX<SCOLS>
            [ signature  : I[Signature]
            , src   : src
            , tgt   : tgt
            ]
     , terms : V[SESSION*Term]
+      BOX<SCOLS>
+           [ ""         : repr
+           ]
     , "pretypes" : V[SESSION*Concept]
       BOX<SCOLS>
            [ Concept      : I
            , "type-terms" : pretype~
-             BOX<SCOLS>
-                  [ "type-term" : I[TypeTerm]
-                  , "sub"       : sub     
-                  , "sub*"      : subStar    
-                  , "sub~"      : sub~    
-                  , "sub*~"     : subStar~   
-                  ]
+           , "star-terms"  : pretype~;subStar~
+           , "dom-terms"  : pretype~;subStar~;dom~
+           , "cod-terms"  : pretype~;subStar~;cod~
+           ]
+    , "dom-terms" : V[SESSION*TypeTerm];dom~
+      BOX<SCOLS>
+           [ dom  : dom
+           , term : repr
+           ]
+    , "cod-terms" : V[SESSION*TypeTerm];cod~
+      BOX<SCOLS>
+           [ cod  : cod
+           , term : repr
            ]
     , "type-terms" : V[SESSION*TypeTerm]
       BOX<SCOLS>
-           [ "type-term" : I[TypeTerm]
-           , "sub"       : sub     
-           , "sub*"      : subStar    
-           , "sub~"      : sub~    
-           , "sub*~"     : subStar~   
+           [ "type-term" : I
+           , pretype : pretype
+           , "sub"   : sub
+           , "sub*"  : subStar
+           , "sub~"  : sub~
+           , "sub*~" : subStar~
            ]
-    ,  atoms : V[SESSION*Atom]
+    , "id-terms" : V[SESSION*Concept];id~
+      BOX<SCOLS>
+           [ id   : id
+           ]
+    , atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
            , type : pop - pop;isaPlus

@@ -1,15 +1,22 @@
 ﻿CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in DomainAnalysis.docadl
-INCLUDE "Terms.adl"
 
-PROCESS "Domain Analysis"
+PROCESS "Compositions"
+RELATION repr[Term*Representation] [UNI, TOT, INJ]
+--The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
+CLASSIFY Composition ISA Term
+RELATION lhs[Rule*Term] [UNI]
+RELATION rhs[Rule*Term] [UNI]
+REPRESENT Representation TYPE ALPHANUMERIC
+REPRESENT Identifier TYPE ALPHANUMERIC
+-- REPRESENT TypeTerm TYPE ALPHANUMERIC
 
 CLASSIFY Composition ISA Term
 CONCEPT Rule ""
 CONCEPT Operator ""
 
-RELATION lhs[Term*Term] [UNI]
-RELATION rhs[Term*Term] [UNI]
+RELATION lhs[Composition*Term] [UNI]
+RELATION rhs[Composition*Term] [UNI]
 RELATION operator[Term*Operator] [UNI]
 
 ROLE ExecEngine MAINTAINS domainDomComposition
@@ -19,7 +26,26 @@ VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I
 ROLE ExecEngine MAINTAINS domainCodComposition
 RULE domainCodComposition : cod~;I[Composition];rhs;cod |- sub
 VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
 
+PROCESS "Relations"
+RELATION repr[Term*Representation] [UNI, TOT, INJ]
+--The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
+CLASSIFY Relation ISA Term
+
+RELATION popset[Concept*TypeTerm] [UNI] -- TOT is computed by the exec-engine
+
+ROLE ExecEngine MAINTAINS insDomRelation, delDomRelation
+RULE insDomRelation : source;popset |- I[Relation];dom
+VIOLATION (TXT "{EX} InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+RULE delDomRelation : I[Relation];dom |- source;popset
+VIOLATION (TXT "{EX} DelPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+ROLE ExecEngine MAINTAINS insCodRelation, delCodRelation
+RULE insCodRelation : target;popset |- I[Relation];cod
+VIOLATION (TXT "{EX} InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+RULE delCodRelation : I[Relation];cod |- target;popset
+VIOLATION (TXT "{EX} DelPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
 ENDCONTEXT

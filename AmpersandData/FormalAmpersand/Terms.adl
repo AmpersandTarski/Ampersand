@@ -1,6 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Atoms.adl"
+INCLUDE "DomainAnalysis.adl"
 
 PROCESS "Declaring Relations"
 RELATION id[Term*Concept] [UNI,INJ]          -- SUR is maintained in RULE "id is surjective"
@@ -30,20 +31,6 @@ VIOLATION (TXT "{EX} DelPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I
 ROLE ExecEngine MAINTAINS "id is surjective"
 RULE "id is surjective" : I[Concept] |- id~;id
 VIOLATION (TXT "{EX} InsPair_;id_;Term_;I[", SRC I, TXT "]_;Concept_;", SRC I)
-ENDPROCESS
-
-PROCESS "Terms"
-RELATION repr[Term*Representation] [UNI, TOT, INJ]
---The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
-CLASSIFY Composition ISA Term
-RELATION lhs[Composition*Term] [UNI]
-RELATION rhs[Composition*Term] [UNI]
-RELATION operator[Term*Operator] [UNI]
-RELATION lhs[Rule*Term] [UNI]
-RELATION rhs[Rule*Term] [UNI]
-REPRESENT Representation TYPE ALPHANUMERIC
-REPRESENT Identifier TYPE ALPHANUMERIC
-REPRESENT TypeTerm TYPE ALPHANUMERIC
 ENDPROCESS
 
 PROCESS "Defining type-terms"
