@@ -547,7 +547,7 @@ pPurpose = rebuild <$> currPos
 -- | Parses a population
 pPopulation :: AmpParser P_Population -- ^ The population parser
 pPopulation = pKey "POPULATION" *> (
-                  P_RelPopu <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
+                  (P_RelPopu Nothing Nothing) <$> currPos <*> pNamedRel    <* pKey "CONTAINS" <*> pContent <|>
                   P_CptPopu <$> currPos <*> pConceptName <* pKey "CONTAINS" <*> pBrackets (pAtomValue `sepBy` pComma))
 
 --- RoleRelation ::= 'ROLE' RoleList 'EDITS' NamedRelList

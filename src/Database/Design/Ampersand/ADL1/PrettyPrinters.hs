@@ -254,7 +254,7 @@ instance Pretty ConceptDef where
 
 instance Pretty P_Population where
     pretty p = case p of
-                P_RelPopu _ nrel  cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
+                P_RelPopu _ _ _ nrel  cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
                 P_CptPopu _ nm    ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> pretty ps
                where contents = list . map pretty
 

@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE LambdaCase #-}
 module Database.Design.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
@@ -267,7 +267,23 @@ pCtx2aCtx' _
     declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
       where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
     findDecls x = Map.findWithDefault Map.empty x declMap  -- get all declarations with the same name as x
-    findDecl o x = (getOneExactly o . Map.elems . findDecls) x
+    findDecl o x = (getOneExactly o . findDecls') x
+    findDecls' x = Map.elems (findDecls x)
+    findDeclsLooselyTyped x (Just src) (Just tgt)
+     = findDeclsTyped x (Sign src tgt)
+       `orWhenEmpty` (findDeclsLooselyTyped x (Just src) Nothing `isct` findDeclsLooselyTyped x Nothing (Just tgt))
+       `orWhenEmpty` (findDeclsLooselyTyped x (Just src) Nothing `unin`  findDeclsLooselyTyped x Nothing (Just tgt))
+       `orWhenEmpty` findDecls' x
+     where isct lsta lstb = [a | a<-lsta, a `elem` lstb]
+           unin lsta lstb = nub (lsta ++ lstb)
+    findDeclsLooselyTyped x Nothing Nothing = findDecls' x
+    findDeclsLooselyTyped x (Just src) Nothing
+     = [dcl | dcl <- findDecls' x, name (source dcl) == name src ]
+       `orWhenEmpty` findDecls' x
+    findDeclsLooselyTyped x Nothing (Just tgt)
+     = [dcl | dcl <- findDecls' x, name (target dcl) == name tgt ]
+       `orWhenEmpty` findDecls' x
+    findDeclLooselyTyped o x src tgt = getOneExactly o (findDeclsLooselyTyped x src tgt)
     findDeclsTyped x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls x))
     findDeclTyped o x tp = getOneExactly o (findDeclsTyped x tp)
     -- accumDecl is the function that combines two relations into one
@@ -299,6 +315,8 @@ pCtx2aCtx' _
                      }
        in (\aps -> (dcl,ARelPopu { popdcl = dcl
                                  , popps = aps
+                                 , popsrc = source dcl
+                                 , poptgt = target dcl
                                  })
           ) <$> traverse (pAtomPair2aAtomPair dcl) (dec_popu pd)
 
@@ -334,15 +352,22 @@ pCtx2aCtx' _
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop pop = 
      case pop of
-       P_RelPopu{}
+       P_RelPopu{p_nmdr = nmdr, p_popps=aps, p_src = src, p_tgt = tgt}
          -> unguard $
              (\dcl
-               -> (\aps
+               -> (\aps' src' tgt'
                     -> ARelPopu { popdcl = dcl
-                                , popps = aps
+                                , popps = aps'
+                                , popsrc = maybe (source dcl) castConcept src'
+                                , poptgt = maybe (target dcl) castConcept tgt'
                                 }
-                  ) <$> traverse (pAtomPair2aAtomPair dcl) (p_popps pop)
-             ) <$> namedRel2Decl (p_nmdr pop)
+                  ) <$> traverse (pAtomPair2aAtomPair dcl) aps
+                    <*> maybeOverGuarded (isMoreGeneric pop dcl Src) src
+                    <*> maybeOverGuarded (isMoreGeneric pop dcl Tgt) tgt
+             ) <$> (case p_mbSign nmdr of
+                      Nothing -> findDeclLooselyTyped pop (name nmdr) (castConcept <$> src) (castConcept <$> tgt)
+                      Just s -> findDeclTyped nmdr (p_nrnm nmdr) (pSign2aSign s)
+                   ) -- disambiguate
        P_CptPopu{}
          -> let cpt = castConcept (p_cnme pop) in  
             (\vals
@@ -350,7 +375,12 @@ pCtx2aCtx' _
                           , popas  = vals
                           }
               ) <$> traverse (pAtomValue2aAtomValue cpt) (p_popas pop)
-
+    isMoreGeneric o dcl sourceOrTarget givenType
+     = if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
+       then pure givenType
+       else mkTypeMismatchError o dcl sourceOrTarget (castConcept givenType)
+         
+    
     pAtomPair2aAtomPair :: Declaration -> PAtomPair -> Guarded AAtomPair
     pAtomPair2aAtomPair dcl pp = 
      (\l r ->
@@ -814,7 +844,7 @@ resolve es (p,f)
   (Src,(e,(b,_))) -> (Src,(e,b))
   (Tgt,(e,(_,b))) -> (Tgt,(e,b))
 
-maybeOverGuarded :: Applicative f => (t -> f a) -> Maybe t -> f (Maybe a)
+maybeOverGuarded :: (t -> Guarded a) -> Maybe t -> Guarded (Maybe a)
 maybeOverGuarded _ Nothing = pure Nothing
 maybeOverGuarded f (Just x) = Just <$> f x
 
@@ -848,8 +878,6 @@ instance Functor TT where
   fmap f (MBG a b) = MBG (f a) (f b)
   
 -- TODO: would probably be better to return an A_Concept
-getConcept :: SrcOrTgt -> Expression -> String
+getConcept :: Association a => SrcOrTgt -> a -> String
 getConcept Src = name . source
 getConcept Tgt = name . target
-
-

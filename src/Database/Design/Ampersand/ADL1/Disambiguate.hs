@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, DisambPrim(..),pCpt2aCpt) where
+{-# OPTIONS_GHC -Wall -Werror #-}
+module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import Database.Design.Ampersand.Basics (fatalMsg)
@@ -252,12 +252,14 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    mustBe xs = Set.fromList [x | (MustBe x) <- xs]
    mayBe  xs = Set.fromList [x | (MayBe x) <- xs]
    orWhenEmptyS a b = if (Set.null a) then b else a
-   orWhenEmpty a b = if (null a) then b else a
    determineBySize _   [a] = impure (t,Known a)
    determineBySize err lst = fmap ((,) t) (err lst)
    impure x = Change x False
    isc = Set.intersection
    uni = Set.union
+
+orWhenEmpty :: [a] -> [a] -> [a]
+orWhenEmpty a b = if (null a) then b else a
 
 pCpt2aCpt :: P_Concept -> A_Concept
 pCpt2aCpt pc

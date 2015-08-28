@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
@@ -5,13 +6,15 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
+  , GetOneGuarded(..), uniqueNames
+  , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
   , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
+  , mkTypeMismatchError
   , Guarded(..)
-  , whenCheckedIO, whenChecked
+  , whenCheckedIO, whenChecked, whenError
   , unguard
   )
 -- SJC: I consider it ill practice to export CTXE
@@ -19,7 +22,8 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
 -- By not exporting anything that takes a string, we prevent other modules from containing error message
 -- If you build a function that must generate an error, put it in CtxError and call it instead
 -- see `getOneExactly' / `GetOneGuarded' as a nice example
--- Although I also consider it ill practice to export PE, I did this as a quick fix for the parse errors
+-- Although I also consider it ill practice to export PE
+-- for the same reasons, I did this as a quick fix for the parse errors
 where
 import Control.Applicative
 import Database.Design.Ampersand.ADL1
@@ -37,8 +41,8 @@ fatal = fatalMsg "Input.ADL1.CtxError"
 _notUsed = fatal
 
 -- unguard is like an applicative join, which can be used to elegantly express monadic effects for Guarded.
--- The function is a bit more compositional than the previous ly used <?> as you don't have to tuple all the arguments.
--- Similar to join and bind we have: unguard g = id <?> g, and f <?> g = unguard $ f <$> g
+-- The function is a bit more compositional than the previously used <?> as you don't have to tuple all the arguments.
+-- Similar to join and bind we have: unguard g = id <?> g, and f g = unguard $ f <$> pure g
 unguard :: Guarded (Guarded a) -> Guarded a
 unguard (Errors errs) = Errors errs
 unguard (Checked g)   = g  
@@ -80,6 +84,14 @@ instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d
   getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showADL o]
   getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++showFullOrig (origin l) | l<-lst]]
+
+mkTypeMismatchError :: (ShowADL t, Association t, Traced a2, Named a) => a2 -> t -> SrcOrTgt -> a -> Guarded a1
+mkTypeMismatchError o decl sot conc
+ = Errors [CTXE (origin o) message]
+ where
+  message = "The "++show sot++" concept for the population pairs, namely "++name conc
+            ++"\n  must be more specific or equal to that of the relation you wish to populate, namely: "++showEC (sot,decl)
+
 
 cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
 cannotDisambRel o exprs
@@ -289,6 +301,11 @@ whenChecked ga fgb =
       case ga of
          Checked a  -> fgb a
          Errors err -> Errors err
+
+whenError :: Guarded a -> Guarded a -> Guarded a
+whenError (Errors _) a = a
+whenError a@(Checked _) _ = a
+
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o

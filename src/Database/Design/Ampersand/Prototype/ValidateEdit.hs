@@ -35,7 +35,7 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; _ <- executePHP (Just phpDir) phpScript [editScript] -- TODO: escape
             
             ; let expectedConceptTables  = [ (c,map showValSQL atoms) | ACptPopu c atoms <- afterPops ]
-            ; let expectedRelationTables = [ (d,map showValsSQL pairs) | ARelPopu d pairs <- afterPops ]
+            ; let expectedRelationTables = [ (d,map showValsSQL pairs) | ARelPopu{popdcl=d,popps=pairs} <- afterPops ]
             ; let actualConcepts = [ c | c<- allConcepts fSpec, c /= ONE, name c /= "SESSION" ] -- TODO: are these the right concepts and decls?
             ; let actualRelations = allDecls fSpec            --
             ; actualConceptTables <- mapM (getSqlConceptTable fSpec) actualConcepts

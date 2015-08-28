@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric  #-}
 module Database.Design.Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts, mkContextOfPopsOnly
    , Meta(..)
@@ -353,7 +353,7 @@ data TermPrim
    | PNamedR P_NamedRel
    deriving (Show) --For QuickCheck error messages only!
 
-data P_NamedRel = PNamedRel Origin String (Maybe P_Sign)
+data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
    deriving Show
 
 {- For whenever it may turn out to be useful
@@ -554,7 +554,9 @@ data P_Markup =
               } deriving Show -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_orig  :: Origin  -- the origin
+  = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+              , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+              , p_orig  :: Origin  -- the origin
               , p_nmdr  :: P_NamedRel  -- the named relation
               , p_popps :: [PAtomPair]   -- the contents
               }
