@@ -213,8 +213,8 @@ instance Pretty TermPrim where
     pretty p = case p of
         PI _ -> text "I"
         Pid _ concept -> text "I[" <> pretty concept <> text "]"
-        Patm _ val (Just concept) -> text "'" <> pretty val <> text "'" <> text "[" <> pretty concept <> text "]"
-        Patm _ val Nothing        -> text "'" <> pretty val <> text "'" 
+        Patm _ val (Just concept) -> text (show val) <> text "[" <> pretty concept <> text "]"
+        Patm _ val Nothing        -> text (show val) 
         PVee _ -> text "V"
         Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
         PNamedR rel -> pretty rel
