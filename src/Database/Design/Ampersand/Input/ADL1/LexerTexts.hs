@@ -111,8 +111,8 @@ lexerStillOpenAtEOF xs = select language
 -- | Gives string examples in the chosen language
 lexerCorrectStrings :: String -- ^ The translated string
 lexerCorrectStrings = select language
-    [ English :-> "Correct examples of Strings: \"Helium is cool\" \"abc\\ndef\" \"\""
-    , Dutch   :-> "Correcte voorbeelden van teksten: \"Helium is geweldig\" \"abc\\ndef\" \"\""
+    [ English :-> "Correct examples of Strings: \"Ampersand (&) is cool\" \"Helium is cool too!\" \"abc\\ndef\" \"\""
+    , Dutch   :-> "Correcte voorbeelden van teksten: \"Ampersand (&) is geweldig\" \"Helium is ook geweldig!\" \"abc\\ndef\" \"\""
     ]
 
 -- | Translates 'Tab character encountered' into the chosen language
