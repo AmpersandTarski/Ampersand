@@ -248,7 +248,7 @@ instance Arbitrary PAtomValue where
        [ScriptString <$> arbitrary <*> safeStr,
         XlsxString <$> arbitrary <*> safeStr,
         ScriptInt <$> arbitrary <*> arbitrary,
-        XlsxDouble <$> arbitrary <*> arbitrary,
+   --     XlsxDouble <$> arbitrary <*> arbitrary, Note: when using this, it will cause Quickcheck to fail. Arbitrary must produce valid input from an ADL-file.
         ComnBool <$> arbitrary <*> arbitrary
        ]
 
