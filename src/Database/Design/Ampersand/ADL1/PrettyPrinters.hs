@@ -3,14 +3,14 @@ module Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
---import Database.Design.Ampersand.Basics        (fatalMsg)
+import Database.Design.Ampersand.Basics        (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
 
---fatal :: Int -> String -> a
---fatal = fatalMsg "PrettyPrinters"
+fatal :: Int -> String -> a
+fatal = fatalMsg "PrettyPrinters"
 
 prettyPrint :: Pretty a => a -> String
 prettyPrint x = displayS (renderPretty rfrac col_width doc) ""
@@ -398,5 +398,18 @@ instance Pretty PAtomPair where
                        <~> text ")"
 
 instance Pretty PAtomValue where
-    pretty val = text (show val)
+    pretty pav = text $ 
+      case pav of 
+       PSingleton   _ s _ -> show s
+       ScriptString   _ s -> show s
+       XlsxString     _ s -> show s
+       ScriptInt      _ i -> show i
+       ScriptFloat    _ d -> show d
+       XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+       ComnBool       _ b -> show b
+       ScriptDate     _ x -> show x
+       ScriptDateTime _ x -> show x
+
+
+
 
