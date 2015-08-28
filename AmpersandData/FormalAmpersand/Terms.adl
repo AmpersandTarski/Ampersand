@@ -34,12 +34,12 @@ VIOLATION (TXT "{EX} InsPair_;id_;Term_;I[", SRC I, TXT "]_;Concept_;", SRC I)
 ENDPROCESS
 
 PROCESS "Defining type-terms"
-RELATION dom[Term*TypeTerm] [UNI,INJ]    -- TOT is maintained in RULE "dom is total"
+RELATION dom[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "dom is total"
 ROLE ExecEngine MAINTAINS "dom is total"
 RULE "dom is total" : I |- dom;dom~
 VIOLATION (TXT "{EX} InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC I, TXT ")")
 
-RELATION cod[Term*TypeTerm] [UNI,INJ]    -- TOT is maintained in RULE "cod is total"
+RELATION cod[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "cod is total"
 ROLE ExecEngine MAINTAINS "cod is total"
 RULE "cod is total" : I |- cod;cod~
 VIOLATION (TXT "{EX} InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC I, TXT ")")
