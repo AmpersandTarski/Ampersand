@@ -34,11 +34,11 @@ ENDPROCESS
 PROCESS "Intersections"
     CLASSIFY Intersection ISA BinaryTerm
 
-    --ROLE ExecEngine MAINTAINS domainDomIntersection
+    ROLE ExecEngine MAINTAINS domainDomIntersection
     RULE domainDomIntersection : dom~;I[Intersection];lhs[BinaryTerm*Term];dom |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
-    --ROLE ExecEngine MAINTAINS domainCodIntersection
+    ROLE ExecEngine MAINTAINS domainCodIntersection
     RULE domainCodIntersection : cod~;I[Intersection];rhs[BinaryTerm*Term];cod |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
