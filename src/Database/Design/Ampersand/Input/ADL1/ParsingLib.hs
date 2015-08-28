@@ -183,10 +183,24 @@ pNumber :: Int -> AmpParser String
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
 
 pFloat :: AmpParser Double
-pFloat = check (\lx -> case lx of { LexFloat d -> Just d; _ -> Nothing }) <?> "float"
+pFloat = plusOrMin pUnsignedFloat
+
+pUnsignedFloat :: AmpParser Double
+pUnsignedFloat = check (\lx -> case lx of { LexFloat d -> Just d; _ -> Nothing }) <?> "float"
 
 pInteger :: AmpParser Int
-pInteger = check isNr
+pInteger = plusOrMin pUnsignedInteger
+plusOrMin :: Num a => AmpParser a -> AmpParser a
+plusOrMin p =  calc DF.<$> pFun CA.<*> p
+ where
+   calc f i = f i
+                
+pFun :: Num a => AmpParser (a -> a)
+pFun = (    id DF.<$ pOperator "+"
+       <|> (0-) DF.<$ pOperator "-"
+       ) `opt` id
+pUnsignedInteger :: AmpParser Int
+pUnsignedInteger = check isNr
     where isNr (LexDecimal i) = Just i
           isNr (LexHex i)     = Just i
           isNr (LexOctal i)   = Just i
