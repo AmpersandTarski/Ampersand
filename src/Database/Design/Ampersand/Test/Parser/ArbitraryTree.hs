@@ -244,11 +244,14 @@ instance Arbitrary P_NamedRel where
     arbitrary = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
 
 instance Arbitrary PAtomValue where
+  -- Arbitrary must produce valid input from an ADL-file, so no Xlsx stuff allowed here,
+  -- otherwise it is likely that Quickcheck will fail because of it.
     arbitrary = oneof
        [ScriptString <$> arbitrary <*> safeStr,
-        XlsxString <$> arbitrary <*> safeStr,
         ScriptInt <$> arbitrary <*> arbitrary,
-   --     XlsxDouble <$> arbitrary <*> arbitrary, Note: when using this, it will cause Quickcheck to fail. Arbitrary must produce valid input from an ADL-file.
+        ScriptFloat <$> arbitrary <*> arbitrary,
+--        ScriptDate <$> arbitrary <*> arbitrary,
+--        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
        ]
 
