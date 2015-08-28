@@ -2,32 +2,7 @@
 
 use Luracast\Restler\Data\Object;
 use Luracast\Restler\RestException;
-class Api{
-	
-	
-	/*
-	 * @url GET login
-	 * @param string @sessionId
-	 * @param string @accessToken
-	 */
-	public function login($sessionId, $accessToken){
-		
-		// Stap 4 & 5, get validated email from Oauth provider
-		
-		// If response valid,
-		// Autenticate user and create session user relation in db (stap 6)
-		try{
-			$session = Session::singleton($sessionId);
-			
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-		// Return true (stap 7)
-		
-		// If response false,
-		// Return error (stap 8)
-	}
-	
+class Api{	
 	
 	/****************************** INSTALLER & SESSION RESET ******************************/
 	/**
@@ -333,43 +308,13 @@ class Api{
     }
     	
 	/**************************** UI stuff ****************************/
-	/**
-     * @url GET roles
-     * @param string $sessionId
-     */
-    public function getAllRoles($sessionId){
-    	try{
-    		$roles = array();
-    		$allRoles = LOGIN_ENABLED ? Role::getAllSessionRoles($sessionId) : Role::getAllRoles();
-			foreach((array)$allRoles as $role){
-				$roles[] = array('id' => $role->id, 'label' => $role->label);
-			}
-			return $roles;
-		
-    	}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-    }
     
     /**
-     * @url GET role
-     * @url GET role/{roleId}
-     * @param int $roleId
-     */
-    public function getRole($roleId = 0){
-    	try{
-    		return new Role($roleId); // Return role with properties as defined in class Role
-    	}catch(Exception $e){
-    		throw new RestException($e->getCode(), $e->getMessage());
-   		}
-    }
-    
-    /**
-     * @url GET interfaces/all
+     * @url GET navBar
      * @param string $sessionId
      * @param int $roleId
      */
-    public function getAllInterfaces($sessionId = null, $roleId = 0){
+    public function getNavBar($sessionId = null, $roleId = 0){
     	try{
     		$session = Session::singleton($sessionId);
     		$session->setRole($roleId);
@@ -385,11 +330,23 @@ class Api{
     		foreach ($session->role->getInterfacesToCreateAtom() as $ifc){
     			$new[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
     		}
+    		
+    		// roles
+    		$roles = array();
+    		$allRoles = LOGIN_ENABLED ? Role::getAllSessionRoles($sessionId) : Role::getAllRoleObjects();
+    		foreach((array)$allRoles as $role){
+    			$roles[] = array('id' => $role->id, 'label' => $role->label);
+    		}
+    		
     		return array ('top' => $top
-    					 ,'new' => $new);
+    					 ,'new' => $new
+    					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
+    					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
+    					 ,'roles' => $roles
+    		);
     		
     	}catch(Exception $e){
-    		throw new RestException(404, $e->getMessage());
+    		throw new RestException($e->getCode(), $e->getMessage());
     	}
     }
     
@@ -409,18 +366,6 @@ class Api{
     
     		return Notifications::getAll();
     			
-    	}catch(Exception $e){
-    		throw new RestException($e->getCode(), $e->getMessage());
-    	}
-    }
-    
-    /**
-     * @url GET extensions/all
-     */
-    public function getAllExtensions(){
-    	try{
-    		return (array) $GLOBALS['apps'];
-    
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());
     	}

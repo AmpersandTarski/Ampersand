@@ -70,7 +70,7 @@ class Session {
 	}
 	
 	public function setRole($roleId = null){
-		$roles = LOGIN_ENABLED ? Role::getAllSessionRoles(session_id()) : Role::getAllRoles();
+		$roles = LOGIN_ENABLED ? Role::getAllSessionRoles(session_id()) : Role::getAllRoleObjects();
 		if(empty($roles) || $roleId == 0) $this->role = new Role(0); // select role 0, no role
 		elseif(is_null($roleId)) $this->role = current($roles); // select first of $roles
 		elseif(isset($roleId)){

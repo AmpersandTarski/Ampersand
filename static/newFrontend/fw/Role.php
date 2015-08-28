@@ -29,26 +29,28 @@ class Role {
 		}
 	}
 	
-	public static function getRoleInfo($roleId){
-		global $allRoles;
-		$allRoles[] = Role::getRoleZero();
-		
-		foreach($allRoles as $arr){
+	public static function getRoleInfo($roleId){		
+		foreach(Role::getAllRoles() as $arr){
 			if($arr['id'] == $roleId) return $arr;
 		}
 		throw new Exception ("Role with roleId \'$roleId\' does not exists", 404);
 	}
-		
+	
 	public static function getAllRoles(){
 		global $allRoles; // from Generics.php
-		$allRoles[] = Role::getRoleZero();
 		
-		$roles = array();
-		foreach((array)$allRoles as $arr){
-			$roles[] = new Role($arr['id']);
+		$roles = $allRoles;
+		$roles[] = Role::getRoleZero();
+		return (array)$roles;
+	}
+		
+	public static function getAllRoleObjects(){		
+		$roleObjects = array();
+		foreach(Role::getAllRoles() as $role){
+			$roleObjects[] = new Role($role['id']);
 		}
 		
-		return $roles;
+		return $roleObjects;
 	}
 	
 	public static function getRoleZero(){
@@ -58,9 +60,7 @@ class Role {
             		, 'interfaces' => array ());
 	}
 	
-	public static function getAllSessionRoles($sessionId){
-		$roles = Role::getAllRoles();
-		
+	public static function getAllSessionRoles($sessionId){		
 		$sessionRoleLabels = array();
 		$sessionRoles = array();
 		
@@ -68,18 +68,15 @@ class Role {
 		$session = new Atom($sessionId, 'SESSION');
 		$sessionRoleLabels = array_keys((array)$session->getContent($interface, true));
 		
-		foreach($roles as $role){
+		foreach(Role::getAllRoleObjects() as $role){
 			if(in_array($role->label, $sessionRoleLabels) || $role->id == 0) $sessionRoles[] = $role;
 		}
 		
 		return $sessionRoles;
 	}
 	
-	public static function getRoleByName($roleName){
-		global $allRoles; // from Generics.php
-		$allRoles[] = Role::getRoleZero();
-		
-		foreach((array)$allRoles as $arr){
+	public static function getRoleByName($roleName){		
+		foreach(Role::getAllRoles() as $arr){
 			if($arr['name'] == $roleName) return new Role($arr['id']);
 		}
 		return false; // when $roleName is not found in $allRoles

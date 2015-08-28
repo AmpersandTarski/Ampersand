@@ -40,6 +40,18 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		});
 	}
 	
+	$rootScope.addError = function(message){
+		alreadyExists = false;
+		arr = $rootScope.notifications.errors;
+		for (var i = 0; i < arr.length; i++) {
+			if (arr[i].message == message) {
+				arr[i].count += 1;
+				alreadyExists = true;
+			}
+		}
+		if(!alreadyExists) $rootScope.notifications.errors.push( {'message' : message, 'count' : 1} );
+	}
+	
 	// Function to get notifications again
 	$rootScope.getNotifications = function(){
 		Restangular.one('notifications/all').get().then(function(data){

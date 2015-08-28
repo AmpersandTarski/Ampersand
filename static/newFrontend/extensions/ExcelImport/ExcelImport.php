@@ -3,7 +3,7 @@ date_default_timezone_set('Europe/London');
 require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
 
 // Zet extension in applications menu
-$apps[] = array ( 'url' =>	'extensions/ExcelImport/ui/views/MenuItem.html');
+$GLOBALS['navBar']['appMenu'][] = array ( 'url' => 'extensions/ExcelImport/ui/views/MenuItem.html');
 
 // UI
 $GLOBALS['hooks']['after_Viewer_load_cssFiles'][] = 'extensions/ExcelImport/ui/css/style.css';

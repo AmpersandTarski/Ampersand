@@ -5,6 +5,7 @@ error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", false);
 
 /************ CONFIG ********************/
+define ('HOME', 'http://localhost/' . $contextName);
 define ('API_PATH', 'http://localhost/' . $contextName . '/api/v1/'); // $contextName is defined in the (generated!) file __DIR__ . '/generics/Generics.php'
 
 define ('JSONLD_TYPE_PATH', API_PATH . 'concept/');
@@ -49,6 +50,13 @@ define ('COMMIT_INV_VIOLATIONS', false); // For debugging: TRUE: always commit c
 -}
 */
 define ('LOGIN_ENABLED', false);
+require_once(__DIR__ . '/extensions/Login/Login.php');
+$GLOBALS['ext']['Login']['google']['redirectUrl'] = '';
+$GLOBALS['ext']['Login']['google']['clientId'] = '';
+$GLOBALS['ext']['Login']['google']['clientSecret'] = '';
+$GLOBALS['ext']['Login']['google']['tokenUrl'] = '';
+$GLOBALS['ext']['Login']['google']['apiUrl'] = '';
+$GLOBALS['ext']['Login']['google']['scope'] = '';
 
 
 /************ EXTENSIONS ***************

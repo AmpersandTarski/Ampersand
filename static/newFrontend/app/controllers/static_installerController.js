@@ -11,8 +11,8 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
 			// refresh session
 			$rootScope.session = Restangular.one('session').get().$object;
 			
-			// refresh interfaces list
-			$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
+			// refresh navbar
+			$rootScope.refreshNavBar();
 			
 			$scope.installing = false;
 		}, function(){

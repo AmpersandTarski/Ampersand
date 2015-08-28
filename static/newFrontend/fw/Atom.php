@@ -95,7 +95,7 @@ Class Atom {
 					
 					// Define interface(s) to navigate to for this tgtAtom
 					$atomInterfaces = array();
-					if($interface->isLinkTo) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
+					if($interface->isLinkTo && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
 					elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
 					
 					// Add meta data elements

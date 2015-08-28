@@ -6,7 +6,7 @@ $GLOBALS['hooks']['before_API_getAllNotifications_getViolations'][] = 'ExecEngin
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
 
 // Zet extension in applications menu
-$apps[] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
+$GLOBALS['navBar']['appMenu'][] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
 
 class ExecEngine {
 	
@@ -81,7 +81,7 @@ class ExecEngine {
 					if(empty($functionToBeCalled)) continue; // skips to the next iteration if $functionToBeCalled is empty. This is the case when violation text starts with delimiter {EX}
 					
 					// Determine delimiter
-					$delimiter = (strpos($functionToBeCalled, '_;') === false) ? ';' : '_;';
+					$delimiter = (substr($functionToBeCalled, 0, 2) == '_;') ? '_;' : ';';
 					
 					$params = explode($delimiter, $functionToBeCalled); // Split off variables
 					$params = array_map('trim', $params); // Trim all params

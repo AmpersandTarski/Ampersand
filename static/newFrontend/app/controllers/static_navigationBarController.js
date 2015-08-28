@@ -2,34 +2,30 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.$storage = $localStorage;
 	
-	$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
-		
-	$scope.roles = Restangular.all('roles').getList().$object;
-	
-	$scope.extensions = Restangular.all('extensions/all').getList().$object;
-	
 	$scope.selectRole = function(roleId){
 		$localStorage.roleId = roleId;
 		
-		// refresh interfaces list + notifications
-		$rootScope.interfaces = Restangular.one('interfaces/all').get().$object;
-		$rootScope.notifications = Restangular.one('notifications/all').get().$object;
-		$route.reload();
+		// refresh navbar + notifications
+		$rootScope.refreshNavBar();
+		$rootScope.getNotifications();
+		$scope.reload();
 	};
 	
 	$scope.selectRoleByLabel = function (roleLabel){
-		
-		angular.forEach($scope.roles, function(role) {
+		angular.forEach($scope.navbar.roles, function(role) {
 			if(role.label == roleLabel){
 				$scope.selectRole(role.id);
 				return;
 			}
 			
-			console.log('Unknown role: ' + roleLabel);
+			$rootScope.addError('Unknown role: ' + roleLabel);
 			return;
 		});
-		
-	}
+	};
+	
+	$rootScope.refreshNavBar = function(){
+		$rootScope.navbar = Restangular.one('navbar').get().$object;	
+	};
 	
 	$scope.destroySession = function(){
 		$rootScope.session.remove().then(function(data){
@@ -41,10 +37,11 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 			
 			$rootScope.session = Restangular.one('session').get().$object;
 		});
-	}
+	};
 	
 	$scope.reload = function(){
 		$route.reload();
-	}
+	};
 	
+	$rootScope.refreshNavBar(); // initialize navbar
 });

@@ -309,10 +309,9 @@ class RuleEngine {
 	 * TODO: 
 	 */
 	public static function getAllInvariantRulesNames(){
-		// from Generics.php
-		global $allRoles;
-		global $allRules;
-		
+		global $allRules; // from Generics.php
+		$allRoles = Role::getAllRoles();
+				
 		// list of all process rules
 		$processRuleNames = array();
 		foreach($allRoles as $role){
@@ -327,9 +326,8 @@ class RuleEngine {
 	}
 	
 	public static function getAllProcessRuleNames(){
-		// from Generics.php
-		global $allRoles;
-		global $allRules;
+		global $allRules; // from Generics.php
+		$allRoles = Role::getAllRoles();
 		
 		// list of all process rules
 		$processRuleNames = array();
