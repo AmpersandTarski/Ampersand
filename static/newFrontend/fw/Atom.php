@@ -82,7 +82,7 @@ Class Atom {
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
 
 			// determine value atom 
-			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+			if($interface->isProperty && empty($interface->subInterfaces) && !$interface->isIdent){
 				$content = !is_null($tgtAtom->id);
 				
 			}elseif($interface->tgtConceptIsObject){
@@ -148,7 +148,7 @@ Class Atom {
 			}
 			
 			// determine whether value of atom must be inserted as list or as single value
-			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+			if($interface->isProperty && empty($interface->subInterfaces) && !$interface->isIdent){ // $interface->relation <> '' because I is also a property and this is not the one we want
 				$arr = $content;
 			}elseif($interface->tgtConceptIsObject){
 				switch($arrayType){
@@ -302,7 +302,7 @@ Class Atom {
 		/******* Perform edit *********/
 		
 		// Interface is property
-		if ($tgtInterface->isProperty){
+		if ($tgtInterface->isProperty && !$tgtInterface->isIdent){
 			// Throw error when patch value is something else then true, false or null 
 			if(!(is_bool($patch['value']) || is_null($patch['value']))) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
 			
