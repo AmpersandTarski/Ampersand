@@ -8,6 +8,7 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "PrettyPrinters"
@@ -398,17 +399,19 @@ instance Pretty PAtomPair where
                        <~> text ")"
 
 instance Pretty PAtomValue where
-    pretty pav = text $ 
+    pretty pav =  
       case pav of 
-       PSingleton   _ s _ -> show s
-       ScriptString   _ s -> show s
-       XlsxString     _ s -> show s
-       ScriptInt      _ i -> show i
-       ScriptFloat    _ d -> show d
+       PSingleton   _ _ mav -> case mav of
+                                Nothing  -> fatal 405 $ "The singleton "++show pav++" has no type, so it cannot be accuratly prettyprinted in a population statement."
+                                Just val -> pretty val
+       ScriptString   _ s -> text $ show s
+       XlsxString     _ s -> text $ show s
+       ScriptInt      _ i -> text $ show i
+       ScriptFloat    _ d -> text $ show d
        XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
-       ComnBool       _ b -> show b
-       ScriptDate     _ x -> show x
-       ScriptDateTime _ x -> show x
+       ComnBool       _ b -> text $ show b
+       ScriptDate     _ x -> text $ show x
+       ScriptDateTime _ x -> text $ show x
 
 
 
