@@ -13,7 +13,6 @@ TABS[concepts :V[SESSION*Concept]
            , "isa+~"      : isaPlus~
            , atoms        : pop~
            , "type-term"  : popset
-           , term         : id;repr
            ]
     , types : V[SESSION*Signature]
       BOX<SCOLS>

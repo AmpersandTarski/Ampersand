@@ -10,27 +10,22 @@ PROCESS "Binary Terms"
     RELATION operator[BinaryTerm*Operator] [UNI,TOT]
 ENDPROCESS
 
-RELATION lhs[Rule*Term] [UNI]
-RELATION rhs[Rule*Term] [UNI]
 REPRESENT Representation TYPE ALPHANUMERIC
 REPRESENT Identifier TYPE ALPHANUMERIC
 
-CONCEPT Rule ""
-
 PROCESS "Rules"
-    CLASSIFY Rule ISA BinaryTerm
+    CONCEPT Rule ""
+    RELATION repr[Rule*Representation] [UNI, TOT, INJ]
+    RELATION leftTerm[Rule*Term] [UNI]
+    RELATION riteTerm[Rule*Term] [UNI]
 
-    ROLE ExecEngine MAINTAINS domainDomRule, domainDomRuleFlip
-    RULE domainDomRule : dom~;lhs[Rule*Term];dom |- sub
+    ROLE ExecEngine MAINTAINS domainDomRule
+    RULE domainDomRule : dom~;leftTerm~;riteTerm;dom \/ dom~;riteTerm~;leftTerm;dom |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-    RULE domainDomRuleFlip : dom~;lhs[Rule*Term];dom |- sub~
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
 
-    ROLE ExecEngine MAINTAINS domainCodRule, domainCodRuleFlip
-    RULE domainCodRule : cod~;rhs[Rule*Term];cod |- sub
+    ROLE ExecEngine MAINTAINS domainCodRule
+    RULE domainCodRule : cod~;leftTerm~;riteTerm;cod \/ cod~;riteTerm~;leftTerm;cod |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-    RULE domainCodRuleFlip : cod~;rhs[Rule*Term];cod |- sub~
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
 ENDPROCESS
 
 PROCESS "Intersections"
@@ -55,6 +50,10 @@ PROCESS "Compositions"
     ROLE ExecEngine MAINTAINS domainCodComposition
     RULE domainCodComposition : cod~;I[Composition];rhs[BinaryTerm*Term];cod |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE User MAINTAINS compositionCheck
+    RULE compositionCheck : I[Composition] |- lhs;cod;(subStar/\subStar~);dom~;rhs~
+    VIOLATION (TXT "The target of term ", SRC lhs;repr, TXT " does not match the source of term ", TGT rhs;repr, TXT ".")
 ENDPROCESS
 
 PROCESS "Relations"
@@ -76,17 +75,9 @@ ENDPROCESS
 PROCESS "Binding Terms to Relations"
     RELATION bind[Term*Relation] [UNI]
 
-    ROLE ExecEngine MAINTAINS insDomBind, insDomBindFlip
-    RULE insDomBind : dom~;bind;dom |- sub
+    ROLE ExecEngine MAINTAINS insSubBind
+    RULE insSubBind : dom~;(bind\/bind~);dom \/ cod~;(bind\/bind~);cod |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-    RULE insDomBindFlip : dom~;bind;dom |- sub~
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
-
-    ROLE ExecEngine MAINTAINS insCodBind, insCodBindFlip
-    RULE insCodBind : cod~;bind;cod |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-    RULE insCodBindFlip : cod~;bind;cod |- sub~
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
 ENDPROCESS
 
 ENDCONTEXT
