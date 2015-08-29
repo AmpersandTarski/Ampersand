@@ -343,6 +343,7 @@ class Api{
     					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
     					 ,'roles' => $roles
+    					 ,'notifications' => Notifications::getAll()
     		);
     		
     	}catch(Exception $e){

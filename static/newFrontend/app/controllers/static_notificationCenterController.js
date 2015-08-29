@@ -59,9 +59,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		});
 	}
 	
-	// Get notification upon application (controller) initialization
-	$rootScope.getNotifications();
-	
 	// Hide success-, error-, info- and invariant violation messages (not process rule violations) upon route change
 	$scope.$on("$routeChangeSuccess", function(){
 		$rootScope.notifications.successes = [];
