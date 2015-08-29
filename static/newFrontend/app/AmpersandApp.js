@@ -55,8 +55,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	});
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-    	
-    	$rootScope.addError( response.status + ' ' + response.data.error.message);	
+    	var message = ((response.data || {}).error || {}).message || response.statusText;
+    	$rootScope.addError( response.status + ' ' + message);	
     	
     	return true; // proceed with success or error hooks of promise
     });
