@@ -404,6 +404,8 @@ getchar isAtomScan echrs s =
    []          -> (Nothing,0,[])
    ('\n':_ )   -> (Nothing,0,s)
    ('\t':_ )   -> (Nothing,0,s)
+   ('\\':'&':xs) -> let (str,w,r) = getchar isAtomScan echrs xs -- Special case is required because an escaped & is equal to empty string in Haskell
+                    in (str,w+2,r)
    ('\\':xs)   -> let (c,l,r) = getEscChar xs
                   in (c,l+1,r)
    (x:xs)      
