@@ -40,8 +40,21 @@ PROCESS "Intersections"
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
+PROCESS "Unions"
+    CLASSIFY Union ISA BinaryTerm
+
+    ROLE ExecEngine MAINTAINS domainDomUnion
+    RULE domainDomUnion : dom~;lhs[BinaryTerm*Term];I[Union];dom |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS domainCodUnion
+    RULE domainCodUnion : cod~;rhs[BinaryTerm*Term];I[Union];cod |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
 PROCESS "Compositions"
     CLASSIFY Composition ISA BinaryTerm
+    RELATION inter[Composition*TypeTerm]
 
     ROLE ExecEngine MAINTAINS domainDomComposition
     RULE domainDomComposition : dom~;I[Composition];lhs[BinaryTerm*Term];dom |- sub
@@ -52,8 +65,15 @@ PROCESS "Compositions"
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE User MAINTAINS compositionCheck
-    RULE compositionCheck : I[Composition] |- lhs;cod;(subStar/\subStar~);dom~;rhs~
+    RULE compositionCheck : I[Composition] |- lhs;cod;(subStar\/subStar~);dom~;rhs~
     VIOLATION (TXT "The target of term ", SRC lhs;repr, TXT " does not match the source of term ", TGT rhs;repr, TXT ".")
+
+    ROLE ExecEngine MAINTAINS compositionNewTypeTerm
+    RULE compositionNewTypeTerm : I[Composition] {-/\ lhs;cod;(subStar\/subStar~);dom~;rhs~-} |- inter;inter~
+    VIOLATION (TXT "{EX} InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")"
+              ,TXT "{EX} InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC lhs;cod
+              ,TXT "{EX} InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC rhs;dom
+              )
 ENDPROCESS
 
 PROCESS "Relations"
