@@ -36,13 +36,13 @@ ENDPROCESS
 PROCESS "Defining type-terms"
 RELATION dom[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "dom is total"
 ROLE ExecEngine MAINTAINS "dom is total"
-RULE "dom is total" : I |- dom;dom~
-VIOLATION (TXT "{EX} InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC I, TXT ")")
+RULE "dom is total" : I[Term]/\repr;repr~ |- dom;dom~
+VIOLATION (TXT "{EX} InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC repr, TXT ")")
 
 RELATION cod[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "cod is total"
 ROLE ExecEngine MAINTAINS "cod is total"
-RULE "cod is total" : I |- cod;cod~
-VIOLATION (TXT "{EX} InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC I, TXT ")")
+RULE "cod is total" : I[Term]/\repr;repr~ |- cod;cod~
+VIOLATION (TXT "{EX} InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC repr, TXT ")")
 
 RELATION popset[Concept*TypeTerm] [UNI] -- TOT is maintained in RULE "popset is total"
 ROLE ExecEngine MAINTAINS "popset is total"
@@ -78,14 +78,20 @@ VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SR
 -}
 
 RELATION sub[TypeTerm*TypeTerm]
-MEANING "s sub g  means that each element of type-term  s  is defined to be an element of type-term  g  as well."
-RELATION subStar[TypeTerm*TypeTerm]
+MEANING "s sub g  means that each element of concept  s  is defined to be an element of concept  g  as well."
+RELATION subStar[TypeTerm*TypeTerm] -- Transitive, reflexive closure of sub, aka sub*
 MEANING "s subStar g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
-ROLE ExecEngine MAINTAINS subsIns
-RULE subsIns : sub;subStar\/subStar;sub\/I |- subStar
+RELATION subPlus[TypeTerm*TypeTerm] -- Transitive closure of sub, aka sub+
+
+RELATION subCopy[TypeTerm*TypeTerm] -- necessary only for calling the Transitive closure function.
+ROLE ExecEngine MAINTAINS "Compute transitive closure of sub"
+RULE "Compute transitive closure of sub" : sub = subCopy
+VIOLATION (TXT "{EX} TransitiveClosure;sub;TypeTerm;subCopy;subPlus")
+
+ROLE ExecEngine MAINTAINS "Compute transitive closure of sub by Ins", "Compute transitive closure of sub by Del"
+RULE "Compute transitive closure of sub by Ins" : subPlus\/I |- subStar
 VIOLATION (TXT "{EX} InsPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-ROLE ExecEngine MAINTAINS subsDel
-RULE subsDel : subStar |- sub;subStar\/subStar;sub\/I
+RULE "Compute transitive closure of sub by Del" : subStar |- subPlus\/I
 VIOLATION (TXT "{EX} DelPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "INS isa INTO sub"
@@ -93,7 +99,7 @@ RULE "INS isa INTO sub" : popset~;isa;popset |- sub
 VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE User MAINTAINS "Unambiguous pretype"
-RULE "Unambiguous pretype" : pretype~;pretype |- I[Concept] - isaStar;isaStar~
+RULE "Unambiguous pretype" : pretype~;pretype |- I[Concept]
 MEANING "For every type-term, there is at most one concept that is the pretype of that type-term."
 ROLE User MAINTAINS "Complete pretype"
 RULE "Complete pretype" : I[TypeTerm] |- pretype;pretype~

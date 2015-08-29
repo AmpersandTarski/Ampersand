@@ -3,7 +3,7 @@ INCLUDE "Terms.adl"
 INCLUDE "Braga.xlsx"
 
 INTERFACE Overview : '_SESSION'
-TABS[concepts :V[SESSION*Concept]
+TABS[ concepts :V[SESSION*Concept]
       BOX<SCOLS>
            [ name         : I[Concept]
            , "isa"        : isa
@@ -28,7 +28,7 @@ TABS[concepts :V[SESSION*Concept]
       BOX<SCOLS>
            [ Concept      : I
            , "type-terms" : pretype~
-           , "star-terms"  : pretype~;subStar~
+           , "star-terms" : pretype~;subStar~
            , "dom-terms"  : pretype~;subStar~;dom~
            , "cod-terms"  : pretype~;subStar~;cod~
            ]

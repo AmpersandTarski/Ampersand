@@ -10,8 +10,6 @@ PROCESS "Binary Terms"
     RELATION operator[BinaryTerm*Operator] [UNI,TOT]
 ENDPROCESS
 
-RELATION repr[Term*Representation] [UNI, TOT, INJ]
---The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
 RELATION lhs[Rule*Term] [UNI]
 RELATION rhs[Rule*Term] [UNI]
 REPRESENT Representation TYPE ALPHANUMERIC
@@ -47,16 +45,32 @@ PROCESS "Relations"
     RELATION repr[Term*Representation] [UNI, TOT, INJ]
     --The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
     CLASSIFY Relation ISA Term
-    
+
     RELATION popset[Concept*TypeTerm] [UNI] -- TOT is computed by the exec-engine
-    
+
     ROLE ExecEngine MAINTAINS insDomRelation
     RULE insDomRelation : dom~;source;popset |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-    
+
     ROLE ExecEngine MAINTAINS insCodRelation
     RULE insCodRelation : cod~;target;popset |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Binding Terms to Relations"
+    RELATION bind[Term*Relation] [UNI]
+
+    ROLE ExecEngine MAINTAINS insDomBind, insDomBindFlip
+    RULE insDomBind : dom~;bind;dom |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE insDomBindFlip : dom~;bind;dom |- sub~
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+
+    ROLE ExecEngine MAINTAINS insCodBind, insCodBindFlip
+    RULE insCodBind : cod~;bind;cod |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE insCodBindFlip : cod~;bind;cod |- sub~
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
 ENDPROCESS
 
 ENDCONTEXT
