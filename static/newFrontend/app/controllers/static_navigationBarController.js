@@ -2,6 +2,8 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.$storage = $localStorage;
 	
+	$rootScope.myPromises = new Array(); // initialize an array for promises, used by angular-busy module (loading indicator)
+	
 	$rootScope.selectRole = function(roleId){
 		$localStorage.roleId = roleId;
 		
@@ -24,7 +26,15 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	};
 	
 	$rootScope.refreshNavBar = function(){
-		$rootScope.navbar = Restangular.one('navbar').get().$object;	
+		$rootScope.myPromises.push(
+			Restangular.one('navbar')
+				.get()
+				.then(function(data){
+					$rootScope.navbar = data;
+				}, function(error){
+					// on error
+				})
+		);
 	};
 	
 	$scope.destroySession = function(){
