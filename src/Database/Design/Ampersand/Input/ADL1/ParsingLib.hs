@@ -19,7 +19,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     -- Operators
     pOperator, pDash, pSemi, pColon,
     -- Integers
-    pZero, pOne, pInteger
+    pZero, pOne
 ) where
 
 import Control.Monad.Identity (Identity)
@@ -34,6 +34,7 @@ import Text.Parsec.Pos (newPos)
 import Data.Time.Calendar
 import Data.Time.Clock
 import Database.Design.Ampersand.Basics (fatalMsg)
+import Data.Maybe
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ParsingLib"
@@ -162,9 +163,11 @@ pAtomValInPopulation =
           <|> VRealString DF.<$> pString 
           <|> VDateTime DF.<$> pUTCTime
           <|> VDate DF.<$> pDay
-          <|> VInt DF.<$> pInteger
-          <|> VFloat DF.<$> pFloat
-
+          <|> fromNumeric DF.<$> pNumeric
+   where fromNumeric :: Either Int Double -> Value
+         fromNumeric num = case num of
+             Left i -> VInt i
+             Right d -> VFloat d
 -----------------------------------------------------------
 -- Date / DateTime (ISO 8601 format)
 -----------------------------------------------------------
@@ -182,28 +185,26 @@ pUTCTime  = check (\lx -> case lx of { LexDateTime s -> Just s; _ -> Nothing }) 
 pNumber :: Int -> AmpParser String
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
 
-pFloat :: AmpParser Double
-pFloat = plusOrMin pUnsignedFloat
+pNumeric :: AmpParser (Either Int Double)
+pNumeric = (f DF.<$> pIsNeg CA.<*> pUnsignedNumeric) <?> "numerical value"  
+  where
+     f :: Bool -> Either Int Double -> Either Int Double
+     f isNeg b = 
+        case b of
+          Left i  -> Left . (if isNeg then (0-) else id) $ i 
+          Right d -> Right. (if isNeg then (0-) else id) $ d
 
-pUnsignedFloat :: AmpParser Double
-pUnsignedFloat = check (\lx -> case lx of { LexFloat d -> Just d; _ -> Nothing }) <?> "float"
-
-pInteger :: AmpParser Int
-pInteger = plusOrMin pUnsignedInteger
-plusOrMin :: Num a => AmpParser a -> AmpParser a
-plusOrMin p =  calc DF.<$> pFun CA.<*> p
- where
-   calc f i = f i
-                
-pFun :: Num a => AmpParser (a -> a)
-pFun = (    id DF.<$ pOperator "+"
-       <|> (0-) DF.<$ pOperator "-"
-       ) `opt` id
-pUnsignedInteger :: AmpParser Int
-pUnsignedInteger = check isNr
-    where isNr (LexDecimal i) = Just i
-          isNr (LexHex i)     = Just i
-          isNr (LexOctal i)   = Just i
+pIsNeg :: AmpParser Bool
+pIsNeg = fromMaybe False
+            DF.<$> pMaybe ( True  <$ pOperator "-" <|>
+                            False <$ pOperator "+"
+                          )
+pUnsignedNumeric :: AmpParser (Either Int Double)
+pUnsignedNumeric = check isNr
+    where isNr (LexDecimal i) = Just (Left i)
+          isNr (LexHex i)     = Just (Left i)
+          isNr (LexOctal i)   = Just (Left i)
+          isNr (LexFloat d)   = Just (Right d)
           isNr _              = Nothing
 
 pZero :: AmpParser String
