@@ -47,8 +47,10 @@ TABS[ concepts :V[SESSION*Concept]
            [ "type-term" : I
            , pretype : pretype
            , "sub"   : sub
+           , "sub+"  : subPlus
            , "sub*"  : subStar
            , "sub~"  : sub~
+           , "sub+~" : subPlus~
            , "sub*~" : subStar~
            ]
     , "id-terms" : V[SESSION*Concept];id~

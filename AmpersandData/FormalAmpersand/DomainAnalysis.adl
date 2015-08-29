@@ -17,16 +17,20 @@ REPRESENT Identifier TYPE ALPHANUMERIC
 
 CONCEPT Rule ""
 
-PROCESS "Compositions"
-    CLASSIFY Composition ISA BinaryTerm
+PROCESS "Rules"
+    CLASSIFY Rule ISA BinaryTerm
 
-    ROLE ExecEngine MAINTAINS domainDomComposition
-    RULE domainDomComposition : dom~;I[Composition];lhs[BinaryTerm*Term];dom |- sub
+    ROLE ExecEngine MAINTAINS domainDomRule, domainDomRuleFlip
+    RULE domainDomRule : dom~;lhs[Rule*Term];dom |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE domainDomRuleFlip : dom~;lhs[Rule*Term];dom |- sub~
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
 
-    ROLE ExecEngine MAINTAINS domainCodComposition
-    RULE domainCodComposition : cod~;I[Composition];rhs[BinaryTerm*Term];cod |- sub
+    ROLE ExecEngine MAINTAINS domainCodRule, domainCodRuleFlip
+    RULE domainCodRule : cod~;rhs[Rule*Term];cod |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE domainCodRuleFlip : cod~;rhs[Rule*Term];cod |- sub~
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
 ENDPROCESS
 
 PROCESS "Intersections"
@@ -38,6 +42,18 @@ PROCESS "Intersections"
 
     ROLE ExecEngine MAINTAINS domainCodIntersection
     RULE domainCodIntersection : cod~;I[Intersection];rhs[BinaryTerm*Term];cod |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Compositions"
+    CLASSIFY Composition ISA BinaryTerm
+
+    ROLE ExecEngine MAINTAINS domainDomComposition
+    RULE domainDomComposition : dom~;I[Composition];lhs[BinaryTerm*Term];dom |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS domainCodComposition
+    RULE domainCodComposition : cod~;I[Composition];rhs[BinaryTerm*Term];cod |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
