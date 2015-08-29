@@ -497,8 +497,8 @@ pObjDef = obj <$> currPos
               <*> pTerm            -- the context expression (for example: I[c])
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj pos (nm, strs) ctx mView msub =
-                 P_Obj nm pos ctx mView msub strs
+         where obj pos (nm, args) ctx mView msub =
+                 P_Obj nm pos ctx mView msub args
 
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
