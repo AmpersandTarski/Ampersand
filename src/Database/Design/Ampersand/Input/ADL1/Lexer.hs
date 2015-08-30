@@ -334,46 +334,45 @@ getDate cs =
 -----------------------------------------------------------
 -- Returns tuple with the parsed lexeme, the integer, the amount of read characters and the rest of the text
 getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
-getNumber [] = fatal 294 "getNumber"
-getNumber cs@(c:s)
-  | c /= '0'         = num10
-  | null s           = const0
-  | hs `elem` "xX"   = num16
-  | hs `elem` "oO"   = num8
-  | otherwise        = num10
-  where (hs:ts) = s
-        const0 = (LexDecimal 0, Left 0, 1, s)
-        num10 :: (Lexeme, (Either Int Double), Int, String)
-        num10  = let (n, rs) = span isDigit cs
-                     (isWhole,readed,rest) = 
-                        case rs of
-                          '.':cs' -> let (n',rs') = span isDigit cs'
-                                         wholeNumberString = n++"."++n'
-                                     in (all (=='0') n',wholeNumberString,rs')
-                          _       -> (True,n, rs)
-                     nrInt = read n
-                 in if isWhole
-                    then (LexDecimal nrInt , Left nrInt, length readed,rest)
-                    else let x = fst.head.readFloat $ readed
-                         in (LexFloat x, Right x, length readed,rest)
-        num16   = readIntNum isHexaDigit  16 LexHex
-        num8    = readIntNum isOctDigit 8  LexOctal
-        readIntNum :: (Char -> Bool) -> Int -> (Int -> Lexeme) -> (Lexeme, Either Int a , Int, String)
-        readIntNum p base lx
-          = let (n, rs) = span p ts
-            in  if null n
-                then const0
-                else let nr = readn base n
-                     in (lx nr, Left nr, 2 + length n, rs)
-
-isHexaDigit :: Char -> Bool
-isHexaDigit  d = isDigit d || (d >= 'A' && d <= 'F') || (d >= 'a' && d <= 'f')
-
-value :: Char -> Int
-value c | isDigit c = ord c - ord '0'
-        | isUpper c = ord c - ord 'A' + 10
-        | isLower c = ord c - ord 'a' + 10
-        | otherwise = fatal 321 ("value undefined for '"++ show c++"'")
+getNumber str =
+  case readDec str of
+    [(_,('.':_))] -> case readFloat str of
+                           [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
+                           _            -> fatal 342 "Unexpected: can read decimal, but not float???"
+    [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
+    _  -> fatal 343 $ "No number to read!\n  " ++ take 40 str                    
+--getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
+--getNumber [] = fatal 294 "getNumber"
+--getNumber cs@(c:s)
+--  | c /= '0'         = num10
+--  | null s           = const0
+--  | hs `elem` "xX"   = num16
+--  | hs `elem` "oO"   = num8
+--  | otherwise        = num10
+--  where (hs:ts) = s
+--        const0 = (LexDecimal 0, Left 0, 1, s)
+--        num10 :: (Lexeme, (Either Int Double), Int, String)
+--        num10  = let (n, rs) = span isDigit cs
+--                     (isWhole,readed,rest) = 
+--                        case rs of
+--                          '.':cs' -> let (n',rs') = span isDigit cs'
+--                                         wholeNumberString = n++"."++n'
+--                                     in (all (=='0') n',wholeNumberString,rs')
+--                          _       -> (True,n, rs)
+--                     nrInt = read n
+--                 in if isWhole
+--                    then (LexDecimal nrInt , Left nrInt, length readed,rest)
+--                    else let x = fst.head.readFloat $ readed
+--                         in (LexFloat x, Right x, length readed,rest)
+--        num16   = readIntNum isHexaDigit  16 LexHex
+--        num8    = readIntNum isOctDigit 8  LexOctal
+--        readIntNum :: (Char -> Bool) -> Int -> (Int -> Lexeme) -> (Lexeme, Either Int a , Int, String)
+--        readIntNum p base lx
+--          = let (n, rs) = span p ts
+--            in  if null n
+--                then const0
+--                else let nr = readn base n
+--                     in (lx nr, Left nr, 2 + length n, rs)
 
 -----------------------------------------------------------
 -- characters / strings
@@ -417,19 +416,17 @@ getchar isAtomScan echrs s =
     (doubleQuote,singleQuote) = ('\"','\'')
 getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
-getEscChar s@(x:xs) | isDigit x = let (_, Left val, len, rest) = getNumber s
-                                  in  if val >= 0 && val <= 255
-                                         then (Just (chr val),len, rest)
-                                         else (Nothing, 1, rest)
+getEscChar s@(x:xs) | isDigit x = case readDec s of
+                                    [(val,rest)]
+                                      | val >= 0 && val <= 255 -> (Just (chr val),length s - length rest, rest)
+                                      | otherwise -> (Nothing, 1, rest)
+                                    _  -> fatal 432 $ "Impossible! first char is a digit.. "++take 40 s
                     | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)
                                  Just c  -> (Just c,1,xs)
   where cntrChars = [('a','\a'),('b','\b'),('f','\f'),('n','\n'),('r','\r'),('t','\t')
                     ,('v','\v'),('\\','\\')]
-
-readn :: Int -> String -> Int
-readn base = foldl (\r x  -> value x + base * r) 0
 
 -----------------------------------------------------------
 -- Token creation function
