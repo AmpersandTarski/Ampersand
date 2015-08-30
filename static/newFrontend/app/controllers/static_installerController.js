@@ -2,6 +2,7 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
 	$scope.installing = false;
 	$scope.install = function(){
 		$scope.installing = true;
+		$scope.installed = false;
 		Restangular.one('installer').get().then(function(data) {
 			$rootScope.updateNotifications(data);
 			
@@ -15,8 +16,10 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
 			$rootScope.refreshNavBar();
 			
 			$scope.installing = false;
+			$scope.installed = true;
 		}, function(){
 			$scope.installing = false;
+			$scope.installed = false;
 		});
 	}
 	

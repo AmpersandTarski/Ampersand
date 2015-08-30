@@ -36,9 +36,7 @@ class Database
 			$this->selectDB();
 		}catch (Exception $e){
 			Notifications::addLog($e->getMessage(), 'DATABASE');
-			$this->createDB();
-			$this->selectDB();
-			$this->installDB();
+			throw $e;
 		}
 	}
 	
@@ -52,30 +50,31 @@ class Database
 		return self::$_instance;
 	}
 	
-	public function resetDatabase(){
-		$this->dropDB();
-		$this->createDB();
-		$this->selectDB();
-		$this->installDB();	
-	}
-	
-	private function createDB(){
-		$this->Exe("CREATE DATABASE $this->db_name DEFAULT CHARACTER SET UTF8");
+	public static function createDB(){
+		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
 		
-	}
-	private function dropDB(){
-		$this->Exe("DROP DATABASE $this->db_name");
+		// Connect to MYSQL database
+		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
+		if ($db_link->connect_error) throw new Exception($db_link->connect_error, 500);
 		
+		// Set sql_mode to ANSI
+		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+		
+		$db_link->query("DROP DATABASE $DB_name");
+		
+		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
+		if ($db_link->error) throw new Exception($db_link->error, 500);
+			
 	}
 	
 	private function selectDB(){
 		$this->db_link->select_db($this->db_name);
 		
-		if ($this->db_link->error) throw new Exception($this->db_link->error, 500);
+		if ($this->db_link->error) throw new Exception($this->db_link->error . '. Please <a href="#/installer" class="alert-link">Reinstall database</a>', 500);
 		
 	}
 	
-	private function installDB(){
+	public function reinstallDB(){
 		global $allDBstructQueries; // from Generics.php
 		global $allDefPopQueries; // from Generics.php
 		
@@ -95,7 +94,7 @@ class Database
 		}
 		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
 		
-		$this->closeTransaction('Database reset to initial state', true, true, false);
+		$this->closeTransaction('Database successfully reinstalled', true, true, false);
 	}
 	
 	/*

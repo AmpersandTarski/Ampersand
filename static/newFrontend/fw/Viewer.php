@@ -44,6 +44,7 @@ class Viewer {
 		$this->addHtmlLine('<script src="app/lib/angular/angular.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-resource.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-route.min.js"></script>');
+		$this->addHtmlLine('<script src="app/lib/angular/angular-sanitize.min.js"></script>');
 		// Third party directives for angular
 			// angular-ui-switch
 			$this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch-adapted.js"></script>');	

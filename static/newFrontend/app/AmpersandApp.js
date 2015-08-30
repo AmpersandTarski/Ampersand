@@ -1,5 +1,5 @@
 // when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -55,8 +55,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	});
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-    	
-    	$rootScope.addError( response.status + ' ' + response.data.error.message);	
+    	var message = ((response.data || {}).error || {}).message || response.statusText;
+    	$rootScope.addError( response.status + ' ' + message);	
     	
     	return true; // proceed with success or error hooks of promise
     });
@@ -137,4 +137,6 @@ AmpersandApp.directive('myShowonhoverRow', function (){
 		, scope 		: {ifcs : '=', resource : '=', label : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
 		, templateUrl	: 'app/views/partials/my_nav_to_other_interfaces.html'
 	};
+}).filter('unsafe', function($sce){
+	return $sce.trustAsHtml;
 });
