@@ -3,13 +3,16 @@
 		<h1>Installer</h1>
 		<p>This action will reinstall the database and delete all content.</p>
 		<p>If provided, the initial database population will be installed.</p>
-    <div ng-if="!installing">
-      <a class="btn btn-danger btn-lg" ng-click="install()" role="button">Reinstall database</a>
-    </div>
-    <div ng-if="installing">
-      <span class="btn btn-warning btn-lg" role="button">Installing database</span>
-      &nbsp;&nbsp;
-      <img ng-src="app/images/loading.gif" alt="Installing..." style="height:2.5em">
-    </div>
+	    <div ng-if="!installing && !installed">
+	      <a class="btn btn-danger btn-lg" ng-click="install()" role="button">Reinstall database</a>
+	    </div>
+	    <div ng-if="installing && !installed">
+	      <span class="btn btn-warning btn-lg" role="button">Installing database</span>
+	      &nbsp;&nbsp;
+	      <img ng-src="app/images/loading.gif" alt="Installing..." style="height:2.5em">
+	    </div>
+	    <div ng-if="installed">
+	      <a class="btn btn-success btn-lg" ng-click="install()" role="button">Database reinstalled</a>
+	    </div>
 	</div>
 </div>
