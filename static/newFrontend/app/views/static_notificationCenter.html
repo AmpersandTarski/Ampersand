@@ -16,7 +16,7 @@
 		
 		<div id="errors" ng-show="$storage.notificationPrefs.switchShowErrors">
 			<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
-				<strong>Error!</strong> {{error.message}}
+				<strong>Error!</strong> <span ng-bind-html="error.message | unsafe"></span>
 				<span class="badge pull-right">{{error.count}}</span>
 			</alert>
 		</div>

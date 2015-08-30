@@ -12,11 +12,13 @@ class Api{
 	 */
 	public function installer($sessionId, $roleId = 0){
 		try{			
-			$session = Session::singleton($sessionId);
-			$session->setRole($roleId);
+			Database::createDB();
 			
 			$db = Database::singleton();
-			$db->resetDatabase();
+			$db->reinstallDB();
+			
+			$session = Session::singleton($sessionId);
+			$session->setRole($roleId);
 			
 			return Notifications::getAll(); // Return all notifications
 		
