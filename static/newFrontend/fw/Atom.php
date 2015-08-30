@@ -74,83 +74,109 @@ Class Atom {
 			$tgtAtoms[] = $tgtAtom;
 		}
 		
-		// defaults 
-		if(!$interface->univalent && !$interface->tgtConceptIsObject) $arr = array(); // define $arr as array if $interface is not univalent and representation of tgtconcept not an object
-		else $arr = null;
-		
 		foreach ($tgtAtoms as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
-
-			// determine value atom 
-			if($interface->isProperty && empty($interface->subInterfaces) && !$interface->isIdent){
-				$content = !is_null($tgtAtom->id);
+			
+			// Add @context for JSON-LD to rootElement
+			if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
+			
+			// Leaf
+			if(empty($interface->subInterfaces) && empty($interface->refInterfaceId)){
 				
-			}elseif($interface->tgtConceptIsObject){
+				// Property
+				if($interface->isProperty && !$interface->isIdent){
+					$content = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
+				
+				// Object
+				}elseif($interface->tgtConceptIsObject){
+					$content = array();
+					
+					// Add meta data
+					if($metaData){
+						
+						// Define interface(s) to navigate to for this tgtAtom
+						$atomInterfaces = array();
+						if($interface->isLinkTo && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
+						elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
+							
+						// Add meta data elements
+						$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
+								, '@label' => $tgtAtom->label
+								, '@view' => $tgtAtom->view
+								, '@type' => $tgtAtom->jsonld_type
+								, '@interfaces' => $atomInterfaces
+								, '_sortValues_' => array())
+						);
+					}
+					
+					// Add id TODO:can be removed when angular templates use @id instead of id
+					$content = array_merge($content, array (  'id' => $tgtAtom->id));
+					
+				// Scalar
+				}else{
+					$content = $this->typeConversion($tgtAtom->id, $interface->tgtConcept); // TODO: now same conversion as to database is used, maybe this must be changed to JSON types (or the json_encode/decode does this automaticaly?)
+				}
+				
+			// Tree
+			}else{
 				$content = array();
-				
+					
 				// Add meta data
 				if($metaData){
-					// Add @context for JSON-LD to rootElement
-					if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
 					
 					// Define interface(s) to navigate to for this tgtAtom
 					$atomInterfaces = array();
 					if($interface->isLinkTo && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
 					elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
-					
+						
 					// Add meta data elements
 					$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
-															, '@label' => $tgtAtom->label
-					                    					, '@view' => $tgtAtom->view
-														 	, '@type' => $tgtAtom->jsonld_type
-															, '@interfaces' => $atomInterfaces
-															, '_sortValues_' => array())
-															);
+							, '@label' => $tgtAtom->label
+							, '@view' => $tgtAtom->view
+							, '@type' => $tgtAtom->jsonld_type
+							, '@interfaces' => $atomInterfaces
+							, '_sortValues_' => array())
+					);
 				}
 				
 				// Add id TODO:can be removed when angular templates use @id instead of id
 				$content = array_merge($content, array (  'id' => $tgtAtom->id));
 				
-			}else{ // Representation of tgtconcept of interface is scalar (i.e. not object)
+				// Subinterfaces
+				if(!empty($interface->subInterfaces)){
+					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have subinterfaces", 501);
 				
-				$content = $this->typeConversion($tgtAtom->id, $interface->tgtConcept); // TODO: now same conversion as to database is used, maybe this must be changed to JSON types (or the json_encode/decode does this automaticaly?)
-			}
-			
-			// subinterfaces
-			if(!empty($interface->subInterfaces)){
-				if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have subinterfaces", 501);
-				
-				foreach($interface->subInterfaces as $subinterface){
-					$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
-					$content[$subinterface->id] = $otherAtom;
-					
-					// _sortValues_ (if subInterface is uni)
-					if($subinterface->univalent && $metaData){
-						$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+					foreach($interface->subInterfaces as $subinterface){
+						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
+						$content[$subinterface->id] = $otherAtom;
+							
+						// _sortValues_ (if subInterface is uni)
+						if($subinterface->univalent && $metaData){
+							$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+						}
 					}
 				}
-			}
-			
-			// ref subinterfaces
-			if(!empty($interface->refInterfaceId) && $inclLinktoData){
-				if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have a ref interface defined", 501);
+
+				// Ref subinterfaces (for LINKTO interfaces only when $inclLinktoData = true)
+				if(!empty($interface->refInterfaceId) && (!$interface->isLinkTo || $inclLinktoData)){
+					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have a ref interface defined", 501);
 				
-				$refInterface = new InterfaceObject($interface->refInterfaceId, null);
-				foreach($refInterface->subInterfaces as $subinterface){
-					$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
-					$content[$subinterface->id] = $otherAtom;
-					
-					// _sortValues_ (if subInterface is uni)
-					if($subinterface->univalent && $metaData){
-						$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+					$refInterface = new InterfaceObject($interface->refInterfaceId, null);
+					foreach($refInterface->subInterfaces as $subinterface){
+						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
+						$content[$subinterface->id] = $otherAtom;
+							
+						// _sortValues_ (if subInterface is uni)
+						if($subinterface->univalent && $metaData){
+							$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+						}
 					}
-				}
+				}				
 			}
 			
-			// determine whether value of atom must be inserted as list or as single value
-			if($interface->isProperty && empty($interface->subInterfaces) && !$interface->isIdent){ // $interface->relation <> '' because I is also a property and this is not the one we want
-				$arr = $content;
-			}elseif($interface->tgtConceptIsObject){
+			// Determine whether value of atom must be inserted as list or as single value
+			// Object are always inserted as array
+			if($interface->tgtConceptIsObject){
 				switch($arrayType){
 					case "num" :
 						$arr[] = $content;
@@ -160,18 +186,17 @@ Class Atom {
 						$arr[$content['id']] = $content;
 						break;
 				}
+			// Non-object UNI results are inserted as single value
 			}elseif($interface->univalent){
 				$arr = $content;
+			// Non-object Non-UNI results are inserted as array 
 			}else{
 				$arr[] = $content;
-			}			
-				
-			unset($content);			
-		
+			}
+			unset($content);
 		}
 		
 		return $arr;
-
 	}
 	
 	public function put(&$interface, $request_data, $requestType){		
