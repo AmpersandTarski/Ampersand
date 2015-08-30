@@ -247,14 +247,24 @@ instance Arbitrary PAtomValue where
   -- Arbitrary must produce valid input from an ADL-file, so no Xlsx stuff allowed here,
   -- otherwise it is likely that Quickcheck will fail because of it.
     arbitrary = oneof
-       [ScriptString <$> arbitrary <*> safeStr,
+       [ScriptString <$> arbitrary <*> safeStr `suchThat`  stringConstraints,
         ScriptInt <$> arbitrary <*> arbitrary,
         ScriptFloat <$> arbitrary <*> arbitrary,
 --        ScriptDate <$> arbitrary <*> arbitrary,
 --        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
        ]
-
+     where stringConstraints :: String -> Bool
+           stringConstraints str =
+             case str of 
+              [] -> True
+              ('\\':_) -> False -- om van het geneuzel af te zijn. 
+              ('\'':_) -> False -- This string would cause problems as a Singleton in an Expresson
+              ('\\':'\'':cs) -> stringConstraints cs
+              ('\\':'"':cs) -> stringConstraints cs
+              ('"':_) -> False -- This string would cause problems as a Singleton in an Expresson
+              ['\\']  -> False -- If the last character is an escape, the double quote ending the string would not be seen as such. 
+              (_:cs)  -> stringConstraints cs
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
                       <*> listOf relationRef <*> args <*> listOf arbitrary
