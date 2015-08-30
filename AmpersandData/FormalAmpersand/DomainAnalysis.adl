@@ -13,7 +13,7 @@ ENDPROCESS
 REPRESENT Representation TYPE ALPHANUMERIC
 REPRESENT Identifier TYPE ALPHANUMERIC
 
-PROCESS "Rules"
+PROCESS "Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
     CONCEPT Rule ""
     RELATION repr[Rule*Representation] [UNI, TOT, INJ]
     RELATION leftTerm[Rule*Term] [UNI]
@@ -32,11 +32,11 @@ PROCESS "Intersections"
     CLASSIFY Intersection ISA BinaryTerm
 
     ROLE ExecEngine MAINTAINS domainDomIntersection
-    RULE domainDomIntersection : dom~;I[Intersection];lhs[BinaryTerm*Term];dom |- sub
+    RULE domainDomIntersection : dom~;I[Intersection];lhs[BinaryTerm*Term];dom \/ dom~;I[Intersection];rhs[BinaryTerm*Term];dom |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodIntersection
-    RULE domainCodIntersection : cod~;I[Intersection];rhs[BinaryTerm*Term];cod |- sub
+    RULE domainCodIntersection : cod~;I[Intersection];lhs[BinaryTerm*Term];cod \/ cod~;I[Intersection];rhs[BinaryTerm*Term];cod |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
@@ -44,11 +44,23 @@ PROCESS "Unions"
     CLASSIFY Union ISA BinaryTerm
 
     ROLE ExecEngine MAINTAINS domainDomUnion
-    RULE domainDomUnion : dom~;lhs[BinaryTerm*Term];I[Union];dom |- sub
+    RULE domainDomUnion : dom~;I[Union];lhs[BinaryTerm*Term];dom \/ dom~;I[Union];rhs[BinaryTerm*Term];dom |- sub~
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodUnion
-    RULE domainCodUnion : cod~;rhs[BinaryTerm*Term];I[Union];cod |- sub
+    RULE domainCodUnion : cod~;I[Union];lhs[BinaryTerm*Term];cod \/ cod~;I[Union];rhs[BinaryTerm*Term];cod |- sub~
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Minuses"
+    CLASSIFY Minus ISA BinaryTerm
+
+    ROLE ExecEngine MAINTAINS domainDomMinus
+    RULE domainDomMinus : dom~;I[Minus];lhs[BinaryTerm*Term];dom |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS domainCodMinus
+    RULE domainCodMinus : cod~;I[Minus];rhs[BinaryTerm*Term];cod |- sub
     VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
@@ -76,7 +88,22 @@ PROCESS "Compositions"
               )
 ENDPROCESS
 
-PROCESS "Relations"
+PROCESS "Converses"
+    CLASSIFY Converse ISA Term
+    RELATION flp[Converse*Term] [UNI,TOT]
+
+    ROLE ExecEngine MAINTAINS insDomRelation
+    RULE converseDom :    dom~;I[Converse];flp;cod |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE converseDomFlp : dom~;I[Converse];flp;cod |- sub~
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+    RULE converseCod :    cod~;I[Converse];flp;dom |- sub
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE converseCodFlp : cod~;I[Converse];flp;dom |- sub~
+    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+ENDPROCESS
+
+PROCESS "Relations" -- This includes Vee-terms (e.g. V[A*B]) and I-terms (e.g. I[A])
     RELATION repr[Term*Representation] [UNI, TOT, INJ]
     --The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
     CLASSIFY Relation ISA Term

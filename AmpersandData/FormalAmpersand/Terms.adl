@@ -3,33 +3,6 @@
 INCLUDE "Atoms.adl"
 INCLUDE "DomainAnalysis.adl"
 
-{-
-PROCESS "Declaring Relations"
-    RELATION src[Signature*Concept] [UNI]        -- TOT is maintained in RULE signatureSrc
-    RELATION tgt[Signature*Concept] [UNI]        -- TOT is maintained in RULE signatureTgt
-    RELATION signature[Relation*Signature] [UNI] -- TOT is maintained in RULE totSign
-
-    ROLE ExecEngine MAINTAINS totSign
-    RULE totSign : I[Relation] |- signature;signature~
-    VIOLATION (TXT "{EX} NewStruct;Signature" -- maak een nieuw atoom in concept Signature
-                    ,TXT ";signature;Relation;", SRC I, TXT ";Signature;_NEW"
-              )
-    ROLE ExecEngine MAINTAINS signatureSrcIns
-    RULE signatureSrcIns : signature~;source |- src
-    VIOLATION (TXT "{EX} InsPair_;src_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
-    ROLE ExecEngine MAINTAINS signatureSrcDel
-    RULE signatureSrcDel : src |- signature~;source
-    VIOLATION (TXT "{EX} DelPair_;src_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
-
-    ROLE ExecEngine MAINTAINS signatureTgtIns
-    RULE signatureTgtIns : signature~;target |- tgt
-    VIOLATION (TXT "{EX} InsPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
-    ROLE ExecEngine MAINTAINS signatureTgtDel
-    RULE signatureTgtDel : tgt |- signature~;target
-    VIOLATION (TXT "{EX} DelPair_;tgt_;Signature_;", SRC I, TXT "_;Concept_;", TGT I)
-ENDPROCESS
--}
-
 PROCESS "Defining type-terms"
     RELATION dom[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "dom is total"
     ROLE ExecEngine MAINTAINS "dom is total"
