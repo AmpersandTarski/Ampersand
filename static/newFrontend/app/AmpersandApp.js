@@ -1,5 +1,5 @@
 // when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -137,4 +137,6 @@ AmpersandApp.directive('myShowonhoverRow', function (){
 		, scope 		: {ifcs : '=', resource : '=', label : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
 		, templateUrl	: 'app/views/partials/my_nav_to_other_interfaces.html'
 	};
+}).filter('unsafe', function($sce){
+	return $sce.trustAsHtml;
 });
