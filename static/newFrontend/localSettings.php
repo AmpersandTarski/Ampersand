@@ -50,7 +50,7 @@ define ('COMMIT_INV_VIOLATIONS', false); // For debugging: TRUE: always commit c
 -}
 */
 define ('LOGIN_ENABLED', false);
-require_once(__DIR__ . '/extensions/Login/Login.php');
+//require_once(__DIR__ . '/extensions/Login/Login.php');
 $GLOBALS['ext']['Login']['google']['redirectUrl'] = '';
 $GLOBALS['ext']['Login']['google']['clientId'] = '';
 $GLOBALS['ext']['Login']['google']['clientSecret'] = '';
