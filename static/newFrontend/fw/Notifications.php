@@ -51,13 +51,15 @@ class Notifications {
 		
 		// Make links to interfaces
 		$links = array();
-		foreach ($session->role->getInterfacesForConcept($rule['srcConcept']) as $interface){
-			$links[] = '#/' . $interface->id . '/' . $srcAtom;
+		if(isset($session->role)){
+			foreach ($session->role->getInterfacesForConcept($rule['srcConcept']) as $interface){
+				$links[] = '#/' . $interface->id . '/' . $srcAtom;
+			}
+			foreach ($session->role->getInterfacesForConcept($rule['tgtConcept']) as $interface){
+				$links[] = '#/' . $interface->id . '/' . $tgtAtom;
+			}
+			$links = array_unique($links);
 		}
-		foreach ($session->role->getInterfacesForConcept($rule['tgtConcept']) as $interface){
-			$links[] = '#/' . $interface->id . '/' . $tgtAtom;
-		}
-		$links = array_unique($links);
 		
 		self::$violations[$ruleHash]['tuples'][] = array('violationMessage' => $violationMessage
 														,'links' => $links);
