@@ -67,36 +67,33 @@ class ImportExcel
 				$values = array(); // values is a buffer containing the cells in a single excel row 
 				for ($columnnr = 0; $columnnr < $highestcolumnnr; $columnnr++){ 
 					$columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
-					$values[] = (string)$worksheet->getCell($columnletter . $row)->getCalculatedValue();
+					$cell = $worksheet->getCell($columnletter . $row);
+					
+					if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cell->getCalculatedValue())) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cell->getCalculatedValue()); // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
+					else $cellvalue = (string)$cell->getCalculatedValue();
+					
+					$values[] = $cellvalue;
 				}
-				// var_dump($values);
 				$line[] = $values; // add line (array of values) to the line buffer
 	
 				$row++;
 				// Is this relation table done? Then we parse the current values into function calls and reset it
 				$firstCellInRow = (string)$worksheet->getCell('A' . $row)->getCalculatedValue();
-				// emitLog("First cell in row $row is: $firstCellInRow");
 				if (substr($firstCellInRow, 0, 1) === '['){ 
 					// Relation table is complete, so it can be processed.
-					// emitLog( "<<< BLOK\n");
-					// print_r($line);
-					// emitLog( "\n/BLOK >>>\n\n");
 					$this->ParseLines($line);
 					$line = array();
 				}
 			}
 			
 			// Last relation table remains to be processed.
-			// emitLog( "<<< BLOK\n");
-			// print_r($line);
-			// emitLog( "\n/BLOK >>>\n\n");
 			$this->ParseLines($line);
 			$line = array();
 		}
 	}
 
 	// Format is as follows:
-	// (gray bg)    [ <description of data> ], <relation1>,    <relationN>  
+	//		      [ <description of data> ], <relation1>,    <relationN>  
 	//              <srcConcept>,              <tgtConcept1>,  <tgtConceptN>
 	//              <srcAtomA>,                <tgtAtom1A>,    <tgtAtomNA>
 	//              <srcAtomB>,                <tgtAtom1B>,    <tgtAtomNB>
@@ -107,7 +104,6 @@ class ImportExcel
 	private function ParseLines($data){
 		$relation = $concept = $atom = array();
 		
-		// echo "hello earth!\n";
 		foreach ($data as $linenr => $values){ 
 			$totalcolumns = count($values);
 			
@@ -130,9 +126,6 @@ class ImportExcel
 				$this->addAtomToConcept($atom[0], $concept[0]);
 								
 				for ($col = 1; $col < $totalcolumns; $col++){ // Now we transform the data info function calls:
-					// $bla = "\n" . 'InsPair( RELATION:"'. $relation[$col] . '", SRCCONCEPT:"' . $concept[0];
-					// $bla .= '", SRCATOM:"' . $atom[0] . '", TGTCONCEPT:"' . $concept[$col] . '", TGTATOM:"' . $atom[$col] . '" );';
-					// echo $bla . "\n";
 					if ($atom[$col] == '') continue; // Empty cells are allowed but shouldn't do anything
 					if ($concept[$col] == '' OR empty($concept[$col])) continue; // if no concept is specified, the contents of the cell should be ignored.
 					if ($relation[$col] == '' OR empty($relation[$col])) continue; // if no relation is specified, the contents of the cell should be ignored.
@@ -146,7 +139,6 @@ class ImportExcel
 				}
 				$atom = array();
 			}
-			// var_dump ($values);
 		}
 	}
 	
