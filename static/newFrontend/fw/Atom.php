@@ -175,8 +175,12 @@ Class Atom {
 			}
 			
 			// Determine whether value of atom must be inserted as list or as single value
+			
+			// Properties are represented as single value
+			if($interface->isProperty && !$interface->isIdent){
+				$arr = $content;
 			// Object are always inserted as array
-			if($interface->tgtConceptIsObject){
+			}elseif($interface->tgtConceptIsObject){
 				switch($arrayType){
 					case "num" :
 						$arr[] = $content;
