@@ -20,6 +20,17 @@ PROCESS "Defining type-terms"
     VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")
 ENDPROCESS
 
+PROCESS Contexts
+    ROLE ExecEngine MAINTAINS garbageTerm
+    RULE garbageTerm :
+      I[Term] |- leftTerm~;leftTerm \/ riteTerm~;riteTerm \/
+                 lhs~;lhs \/ rhs~;rhs \/ bind~;bind
+    VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
+    ROLE ExecEngine MAINTAINS SURrules
+    RULE SURrules : I[Rule] |- rules~;rules
+    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+ENDPROCESS
+
 PROCESS "Subsets of type-terms"
     RELATION sub[TypeTerm*TypeTerm]
     MEANING "s sub g  means that each element of concept  s  is defined to be an element of concept  g  as well."
