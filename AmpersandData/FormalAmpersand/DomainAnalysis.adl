@@ -21,11 +21,11 @@ PROCESS "Rules" -- This includes both equalities (e.g. r = s) and inequalities (
 
     ROLE ExecEngine MAINTAINS domainDomRule
     RULE domainDomRule : dom~;leftTerm~;riteTerm;dom \/ dom~;riteTerm~;leftTerm;dom |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodRule
     RULE domainCodRule : cod~;leftTerm~;riteTerm;cod \/ cod~;riteTerm~;leftTerm;cod |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
 PROCESS "Intersections"
@@ -33,11 +33,11 @@ PROCESS "Intersections"
 
     ROLE ExecEngine MAINTAINS domainDomIntersection
     RULE domainDomIntersection : dom~;I[Intersection];lhs[BinaryTerm*Term];dom \/ dom~;I[Intersection];rhs[BinaryTerm*Term];dom |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodIntersection
     RULE domainCodIntersection : cod~;I[Intersection];lhs[BinaryTerm*Term];cod \/ cod~;I[Intersection];rhs[BinaryTerm*Term];cod |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
 PROCESS "Unions"
@@ -45,11 +45,11 @@ PROCESS "Unions"
 
     ROLE ExecEngine MAINTAINS domainDomUnion
     RULE domainDomUnion : dom~;I[Union];lhs[BinaryTerm*Term];dom \/ dom~;I[Union];rhs[BinaryTerm*Term];dom |- sub~
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodUnion
     RULE domainCodUnion : cod~;I[Union];lhs[BinaryTerm*Term];cod \/ cod~;I[Union];rhs[BinaryTerm*Term];cod |- sub~
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
 PROCESS "Minuses"
@@ -57,11 +57,11 @@ PROCESS "Minuses"
 
     ROLE ExecEngine MAINTAINS domainDomMinus
     RULE domainDomMinus : dom~;I[Minus];lhs[BinaryTerm*Term];dom |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodMinus
     RULE domainCodMinus : cod~;I[Minus];rhs[BinaryTerm*Term];cod |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
 PROCESS "Compositions"
@@ -70,11 +70,11 @@ PROCESS "Compositions"
 
     ROLE ExecEngine MAINTAINS domainDomComposition
     RULE domainDomComposition : dom~;I[Composition];lhs[BinaryTerm*Term];dom |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodComposition
     RULE domainCodComposition : cod~;I[Composition];rhs[BinaryTerm*Term];cod |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE User MAINTAINS compositionCheck
     RULE compositionCheck : I[Composition] |- lhs;cod;(subStar\/subStar~);dom~;rhs~
@@ -82,9 +82,9 @@ PROCESS "Compositions"
 
     ROLE ExecEngine MAINTAINS compositionNewTypeTerm
     RULE compositionNewTypeTerm : I[Composition] {-/\ lhs;cod;(subStar\/subStar~);dom~;rhs~-} |- inter;inter~
-    VIOLATION (TXT "{EX} InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")"
-              ,TXT "{EX} InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC lhs;cod
-              ,TXT "{EX} InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC rhs;dom
+    VIOLATION (TXT "{EX}_; InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")"
+              ,TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC lhs;cod
+              ,TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC rhs;dom
               )
 ENDPROCESS
 
@@ -94,13 +94,13 @@ PROCESS "Converses"
 
     ROLE ExecEngine MAINTAINS insDomRelation
     RULE converseDom :    dom~;I[Converse];flp;cod |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
     RULE converseDomFlp : dom~;I[Converse];flp;cod |- sub~
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
     RULE converseCod :    cod~;I[Converse];flp;dom |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
     RULE converseCodFlp : cod~;I[Converse];flp;dom |- sub~
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
 ENDPROCESS
 
 PROCESS "Relations" -- This includes Vee-terms (e.g. V[A*B]) and I-terms (e.g. I[A])
@@ -112,11 +112,11 @@ PROCESS "Relations" -- This includes Vee-terms (e.g. V[A*B]) and I-terms (e.g. I
 
     ROLE ExecEngine MAINTAINS insDomRelation
     RULE insDomRelation : dom~;source;popset |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS insCodRelation
     RULE insCodRelation : cod~;target;popset |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
 PROCESS "Binding Terms to Relations"
@@ -124,7 +124,7 @@ PROCESS "Binding Terms to Relations"
 
     ROLE ExecEngine MAINTAINS insSubBind
     RULE insSubBind : dom~;(bind\/bind~);dom \/ cod~;(bind\/bind~);cod |- sub
-    VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
 ENDCONTEXT

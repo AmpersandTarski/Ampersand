@@ -2,6 +2,21 @@
 INCLUDE "Terms.adl"
 INCLUDE "Braga.xlsx"
 
+RELATION context[Term*Context] [UNI,TOT]
+
+INTERFACE Contexts (context) : '_SESSION'
+TABS[ "" : V[SESSION*Context]
+      ROWS [ terms   : context~
+             BOX<SCOLS>
+                  [ ""          : repr
+                  , "dom-terms" : dom
+                  , "cod-terms" : cod
+                  , src         : src
+                  , tgt         : tgt
+                  ]
+           ]
+    ]
+
 INTERFACE Atoms : '_SESSION'
 TABS[ concepts :V[SESSION*Concept]
       BOX<SCOLS>

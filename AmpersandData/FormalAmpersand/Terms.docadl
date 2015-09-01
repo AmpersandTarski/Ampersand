@@ -91,14 +91,14 @@ PURPOSE RULE "dom pretype id"
 {+
 -}
 : id;dom |- pretype~
-VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
+VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 ROLE ExecEngine MAINTAINS "cod pretype id"
 PURPOSE RULE "cod pretype id"
 {+
 -}
 : id;cod |- pretype~
-VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
+VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 PURPOSE RELATION popset[Concept*TypeTerm]
 {+
@@ -106,28 +106,28 @@ PURPOSE RELATION popset[Concept*TypeTerm]
 [UNI] -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "popset is total"
 PURPOSE RULE "popset is total" : I[Concept] |- popset;popset~
-VIOLATION (TXT "{EX} InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")
+VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")
 
 ROLE ExecEngine MAINTAINS "Insert into pretype"
 PURPOSE RULE "Insert into pretype"
 {+
 -}
 : subs;popset~ |- pretype
-VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
+VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "dom pretype vee"
 PURPOSE RULE "dom pretype vee"
 {+
 -}
 : src~;vee;dom |- pretype~
-VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
+VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 ROLE ExecEngine MAINTAINS "cod pretype vee"
 PURPOSE RULE "cod pretype vee"
 {+
 -}
 : tgt~;vee;cod |- pretype~
-VIOLATION (TXT "{EX} InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
+VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", TGT I, TXT "_;Concept_;", SRC I)
 
 PURPOSE RELATION sub[TypeTerm*TypeTerm]
 {+
@@ -144,20 +144,20 @@ PURPOSE RULE subsIns
 {+
 -}
 : sub;subs\/subs;sub\/I |- subs
-VIOLATION (TXT "{EX} InsPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+VIOLATION (TXT "{EX}_; InsPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ROLE ExecEngine MAINTAINS subsDel
 PURPOSE RULE subsDel
 {+
 -}
 : subs |- sub;subs\/subs;sub\/I
-VIOLATION (TXT "{EX} DelPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+VIOLATION (TXT "{EX}_; DelPair_;subs_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE ExecEngine MAINTAINS "INS isa INTO sub"
 PURPOSE RULE "INS isa INTO sub"
 {+
 -}
 : popset~;isa;popset |- sub
-VIOLATION (TXT "{EX} InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
 ROLE User MAINTAINS "Unambiguous pretype"
 PURPOSE RULE "Unambiguous pretype"
@@ -177,7 +177,7 @@ PURPOSE RULE "Every V-term has a representation"
 {+
 -}
 : vee |- vee;repr;repr~
-VIOLATION (TXT "{EX} InsPair_;repr_;Term_;", SRC vee, TXT "_;Representation_;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
+VIOLATION (TXT "{EX}_; InsPair_;repr_;Term_;", SRC vee, TXT "_;Representation_;V[", SRC src;name, TXT "*", SRC tgt;name, TXT "]")
 
 {-
 PURPOSE RELATION partOf[Concept*Typology]
