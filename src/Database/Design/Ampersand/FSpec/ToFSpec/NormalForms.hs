@@ -981,7 +981,9 @@ tceDerivRules = concatMap (dRule.parseRule)
  , "-r[A*B]\\/-s[A*B] = -(r[A*B]/\\s[A*B])"                    --  De Morgan
  , "-r[B*A];-s[A*C] = -(r[B*A]!s[A*C])"                        --  De Morgan
  , "-r[B*A]!-s[A*C] = -(r[B*A];s[A*C])"                        --  De Morgan
+ , "r[A*B]/\\-s[C*D] = r[A*B]-s[C*D]"                          --  Avoid complement
  , "r[A*B]~/\\s[A*B]~ = (r[A*B]/\\s[A*B])~"                    --  Distribute flip
+ , "r[A*B]~/\\-s[C*D]~ = (r[A*B]-s[C*D])~"                     --  Avoid complement
  , "r[A*B]~\\/s[A*B]~ = (r[A*B]\\/s[A*B])~"                    --  Distribute flip
  , "(r[A*A]\\r[A*A]);(r[A*A]\\r[A*A]) = r[A*A]\\r[A*A]"        --  Jipsen&Tsinakis
  , "(r[A*A]/r[A*A]);(r[A*A]/r[A*A]) = r[A*A]/r[A*A]"           --  Jipsen&Tsinakis
@@ -1007,11 +1009,11 @@ tceDerivRules = concatMap (dRule.parseRule)
  , "r[A*B]/\\-r[A*B] = -V[A*B]"                                --  Contradiction
  , "r[A*B]\\/-r[A*B] =  V[A*B]"                                --  Tautology
  , "-r[A*B]\\/r[A*B] = V[A*B]"                                 --  Tautology
- , "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]"                      --  Absorption
- , "(r[A*B]\\/-s[A*B])/\\ s[A*B] = s[A*B]-r[A*B]"               --  Absorption
- , "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]"                      --  Absorption
- , "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]"             --  Absorption
- , "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]"            --  Absorption
+ , "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]"                     --  Absorption
+ , "(r[A*B]\\/-s[A*B])/\\ s[A*B] = r[A*B]/\\s[A*B]"            --  Absorption
+ , "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]"                     --  Absorption
+ , "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]"            --  Absorption
+ , "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]"           --  Absorption
  , "r[A*A]* = r[A*A];r[A*A]*"
  , "r[A*A]* = r[A*A]*;r[A*A]"
  , "r[A*A]+ = r[A*A];r[A*A]+"
@@ -1369,19 +1371,19 @@ Until the new normalizer works, we will have to work with this one. So I have in
            = let t'=head absor0  in (r, ["absorb "++shw l++" because of "++shw t'++", using law  (x\\/y)/\\y = y"], "<=>")
       | isEUni r && not (null absor0')
            = let t'=head absor0' in (r, ["absorb "++shw r++" because of "++shw t'++", using law  (x\\/y)/\\x = x"], "<=>")
--- Absorb:    (x\\/-y)/\\y  =  y-x
+-- Absorb:    (x\\/-y)/\\y  =  x/\\y
       | isEUni l && not (null absor1)
            = ( case head absor1 of
                  (_,[]) -> r
-                 (_,ts) -> r .-. foldr1 (.\/.) ts
-             , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  y-x" | (t',_)<-absor1] -- this take 1 is necessary. See Ticket #398
+                 (_,ts) -> foldr1 (.\/.) ts ./\. r
+             , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',conj)<-absor1] -- this take 1 is necessary. See Ticket #398
              , "<=>"
              )
       | isEUni r && not (null absor1')
            = ( case head absor1' of
                  (_,[]) -> l
-                 (_,ts) -> l .-. foldr1 (.\/.) ts
-             , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x-y" | (t',_)<-absor1'] -- this take 1 is necessary. See Ticket #398
+                 (_,ts) -> l ./\. foldr1 (.\/.) ts
+             , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',conj)<-absor1'] -- this take 1 is necessary. See Ticket #398
              , "<=>"
              )
       | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
