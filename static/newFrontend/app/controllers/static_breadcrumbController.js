@@ -4,7 +4,7 @@ AmpersandApp.controller('static_breadcrumbController', function ($scope, $route,
 	$scope.$on("$routeChangeSuccess", function(event, current, previous){
 		
 		indexInHistory = linkInArray($scope.history, $location.path())
-		indexInTopLevel = linkInArray($rootScope.navbar.top, $location.path())
+		indexInTopLevel = linkInArray(($rootScope.navbar || {}).top, $location.path())
 		if(indexInHistory !== false) $scope.history.splice(indexInHistory, $scope.history.length - indexInHistory); 
 		
 		// Clear history
