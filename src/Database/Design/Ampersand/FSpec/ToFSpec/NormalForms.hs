@@ -854,8 +854,8 @@ matchSets rCombinator es es'
    if or [ not (isValid e) | e<-Set.toList es'] then fatal 860 ("Invalid subexpr(s): "++intercalate ", " [ showADL e | e<-Set.toList es', not (isValid e) ]) else
    [ unif
    | let n = Set.size cdes                      -- the length of the template, which contains variables
-   , partition <- parts n cdes'                 -- determine segments from the expression with the same length. partition :: Set (Set RTerm)
-   , let subTerms = Set.map (combSet rCombinator) partition      -- make an RTerm from each subset in ms. subTerms :: Set RTerm
+   , partition' <- parts n cdes'                 -- determine segments from the expression with the same length. partition' :: Set (Set RTerm)
+   , let subTerms = Set.map (combSet rCombinator) partition'      -- make an RTerm from each subset in ms. subTerms :: Set RTerm
    , template <- permutations (Set.toList cdes)
    , unif <- mix [ matches l r | (l,r) <- safezip template (Set.toList subTerms) ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
