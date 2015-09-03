@@ -19,6 +19,7 @@ module Database.Design.Ampersand.Output.PandocAux
       , newGlossaryEntry
       )
 where
+import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec
 import Data.Char hiding    (Space)
@@ -169,11 +170,8 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                  Ftextile      -> ".textile"
                                        )
          makeOutput
-            =  do template <- readDefaultTemplate fSpecFormatString
-                  verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
-                  --verboseLn (getOpts fSpec) "Variables to set in the template:"
-                  --verboseLn (getOpts fSpec) (intercalate "\n   " (map show (writerVariables (writerOptions template))))
-                  writeFile outputFile (pandocWriter (writerOptions template) thePandoc)
+            =  do verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
+                  writeFile outputFile (pandocWriter (writerOptions (readDefaultTemplate fSpecFormatString)) $ thePandoc)
                   verboseLn (getOpts fSpec) "... done."
            where
               pandocWriter :: WriterOptions -> Pandoc -> String
@@ -214,24 +212,15 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Frtf -> "rtf"
                   Ftexinfo -> "texinfo"
                   Ftextile -> "textile"
-              readDefaultTemplate :: String -> IO(Maybe String)
-              readDefaultTemplate  s =
-                do { let fp = ampersandDataDir (getOpts fSpec) </> ".." </> "outputTemplates" </> "default."++s
-                   ; exists <- doesFileExist fp
-                   ; (if exists
-                      then do verboseLn (getOpts fSpec) $ "Using Template: "++fp
-                              contents <- readFile fp
-                              return $ Just contents
-                      else do putStrLn ""
-                              putStrLn  "***WARNING: ***"
-                              putStrLn ("Template file does not exist: "++fp)
-                              putStrLn  "It was part of the installation of Ampersand."
-                              putStrLn  "...trying without template, but that isn't likely going to work..."
-                              putStrLn  "    (reinstalling Ampersand should fix this problem...)"
-                              putStrLn  "***************"
-                              return Nothing
-                     )
-                   }
+              readDefaultTemplate :: String -> Maybe String
+              readDefaultTemplate s = 
+                 case filter isRightFile allStaticFiles of
+                   [x] -> Just (contentString x)
+                   _   -> fatal 222 $ "Cannot find the right template for `"++s++"`."
+                where
+                  isRightFile :: StaticFile -> Bool
+                  isRightFile (SF PandocTemplates path _ _ ) = path == ".\\default."++s
+                  isRightFile _ = False
               writerOptions :: Maybe String -> WriterOptions
               writerOptions template = case theme (getOpts fSpec) of
                           ProofTheme -> ampersandDefaultWriterOptions
