@@ -50,10 +50,11 @@ writeStaticFiles :: Options -> IO()
 writeStaticFiles opts =
   if genStaticFiles opts
   then sequence_ [ writeStaticFile opts sf 
-                 | sf@SF{isNewFrontend=isNew} <- allStaticFiles, isNew == newFrontend opts
+                 | sf <- filter isRequired allStaticFiles
                  ]
   else verboseLn opts "Skipping static files (because of command line argument)"
-
+ where isRequired :: StaticFile -> Bool
+       isRequired sf = fileKind sf `elem` [if newFrontend opts then ZwolleFrontEnd else OldFrontend]
 writeStaticFile :: Options -> StaticFile -> IO()
 writeStaticFile opts sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))
