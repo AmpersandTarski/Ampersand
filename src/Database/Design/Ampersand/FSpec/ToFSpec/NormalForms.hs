@@ -1371,19 +1371,19 @@ Until the new normalizer works, we will have to work with this one. So I have in
            = let t'=head absor0  in (r, ["absorb "++shw l++" because of "++shw t'++", using law  (x\\/y)/\\y = y"], "<=>")
       | isEUni r && not (null absor0')
            = let t'=head absor0' in (r, ["absorb "++shw r++" because of "++shw t'++", using law  (x\\/y)/\\x = x"], "<=>")
--- Absorb:    (x\\/-y)/\\y  =  y-x
+-- Absorb:    (x\\/-y)/\\y  =  x/\\y
       | isEUni l && not (null absor1)
            = ( case head absor1 of
                  (_,[]) -> r
-                 (_,ts) -> r .-. foldr1 (.\/.) ts
-             , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  y-x" | (t',_)<-absor1] -- this take 1 is necessary. See Ticket #398
+                 (_,ts) -> foldr1 (.\/.) ts ./\. r
+             , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1]
              , "<=>"
              )
       | isEUni r && not (null absor1')
            = ( case head absor1' of
                  (_,[]) -> l
-                 (_,ts) -> l .-. foldr1 (.\/.) ts
-             , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x-y" | (t',_)<-absor1'] -- this take 1 is necessary. See Ticket #398
+                 (_,ts) -> l ./\. foldr1 (.\/.) ts
+             , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1']
              , "<=>"
              )
 -- Avoid complements: x/\\-y = x-y
