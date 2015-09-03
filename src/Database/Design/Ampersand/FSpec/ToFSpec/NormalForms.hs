@@ -1388,9 +1388,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
              )
 -- Avoid complements: x/\\-y = x-y
       | (not.null) negList && (not.null) posList
-           = ( let f' a b = a .-. notCpl b
-               in foldr f' (foldr1 (./\.) posList) negList
-              --was:  foldr1 (./\.) posList .-. foldr1 (.\/.) negList
+           = ( foldl (.-.) (foldr1 (./\.) posList) (map notCpl negList)
              , [ "Avoid complements, using law x/\\-y = x-y" ]
              , "<=>"
              )
