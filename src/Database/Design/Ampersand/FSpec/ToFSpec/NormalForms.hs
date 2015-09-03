@@ -7,7 +7,7 @@ module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
   
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.List (nub, intercalate, permutations,partition)
+import Data.List (nub, intercalate, permutations)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.ADL1.ECArule
 import Database.Design.Ampersand.ADL1.Expression
@@ -1405,7 +1405,8 @@ Until the new normalizer works, we will have to work with this one. So I have in
                       [(disjunct, exprUni2list r>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
             absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
             absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
-            (negList,posList) = partition isNeg (exprIsc2list l++exprIsc2list r)
+            negList = [ neg | neg@(ECpl _)<-eList ]
+            posList = [ pos | pos<-eList, pos `notElem` negList]
             eList  = rs++exprIsc2list l++exprIsc2list r
   nM posCpl (EUni (EIsc (l,k),r)) _  | posCpl==dnf    = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
   nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl==dnf    = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
