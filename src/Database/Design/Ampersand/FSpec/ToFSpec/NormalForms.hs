@@ -1376,20 +1376,14 @@ Until the new normalizer works, we will have to work with this one. So I have in
            = ( case head absor1 of
                  (_,[]) -> r
                  (_,ts) -> foldr1 (.\/.) ts ./\. r
-             , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1]
+             , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',conj)<-absor1] -- this take 1 is necessary. See Ticket #398
              , "<=>"
              )
       | isEUni r && not (null absor1')
            = ( case head absor1' of
                  (_,[]) -> l
                  (_,ts) -> l ./\. foldr1 (.\/.) ts
-             , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1']
-             , "<=>"
-             )
--- Avoid complements: x/\\-y = x-y
-      | (not.null) negList && (not.null) posList
-           = ( foldr1 (./\.) posList .-. foldr1 (.\/.) negList
-             , [ "Avoid complements, using law x/\\-y = x-y" ]
+             , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',conj)<-absor1'] -- this take 1 is necessary. See Ticket #398
              , "<=>"
              )
       | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
@@ -1405,8 +1399,6 @@ Until the new normalizer works, we will have to work with this one. So I have in
                       [(disjunct, exprUni2list r>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
             absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
             absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
-            negList = [ neg | neg@(ECpl _)<-eList ]
-            posList = [ pos | pos<-eList, pos `notElem` negList]
             eList  = rs++exprIsc2list l++exprIsc2list r
   nM posCpl (EUni (EIsc (l,k),r)) _  | posCpl==dnf    = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
   nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl==dnf    = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
