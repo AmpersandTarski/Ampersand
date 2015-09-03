@@ -520,13 +520,13 @@ nonSpecialSelectExpr fSpec expr=
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
 -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
     EEqu (l,r)
-      -> BQEComment [BlockComment $ "case: EEqu (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
+      -> BQEComment [BlockComment $ "case: EEqu (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
     EImp (l,r)
-      -> BQEComment [BlockComment $ "case: EImp (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
+      -> BQEComment [BlockComment $ "case: EImp (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec (ECpl l .\/. r)
     EDif (l,r)
-      -> BQEComment [BlockComment $ "case: EDif (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
+      -> BQEComment [BlockComment $ "case: EDif (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec (l ./\. ECpl r)
     ERrs (l,r) -- The right residual l\r is defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
 {- In order to obtain an SQL-query, we make a Haskell derivation of the right residual:
