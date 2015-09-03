@@ -130,10 +130,9 @@ isCpl (ECpl{}) = True
 isCpl _ = False
 
 isPos :: Expression -> Bool
-isPos (ECpl{}) = False
-isPos _ = True
+isPos  = not . isNeg
 isNeg :: Expression -> Bool
-isNeg = not . isPos
+isNeg = isCpl
 
 isMp1 :: Expression -> Bool
 isMp1 EMp1{} = True
