@@ -9,7 +9,6 @@ import Control.Exception
 import Data.List
 import Data.Either
 import Data.Char
-import qualified Data.ByteString.Char8 as BS
 import Data.Time.Clock
 import Data.Time.Format
 import Data.Time.LocalTime
@@ -17,6 +16,8 @@ import System.Directory
 import System.FilePath
 import System.IO
 import System.Locale
+import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Codec.Compression.GZip as GZip
 
 
 main :: IO ()
@@ -171,7 +172,7 @@ readStaticFiles fkind base fileOrDirPth =
         do { timeStamp <- getModificationTime path
            ; fileContents <- BS.readFile path 
            ; return [ "SF "++show fkind++" "++show fileOrDirPth++" "++utcToEpochTime timeStamp ++
-                             " {-"++show timeStamp++" -} "++show (BS.unpack fileContents)
+                             " {-"++show timeStamp++" -} (BS.unpack$ GZip.decompress "++show (GZip.compress fileContents)++")"
                     ]
            }
      }
@@ -188,7 +189,10 @@ mkStaticFileModule sfDeclStrs =
            
 staticFileModuleHeader :: [String]
 staticFileModuleHeader =
-  [ "module "++staticFileModuleName++" where"
+  [ "{-# LANGUAGE OverloadedStrings #-}"
+  , "module "++staticFileModuleName++" where"
+  , "import qualified Data.ByteString.Lazy.Char8 as BS"
+  , "import qualified Codec.Compression.GZip as GZip"
   , ""
   , "data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)" 
   , "data StaticFile = SF { fileKind      :: FileKind"
@@ -210,8 +214,6 @@ staticFileModuleHeader =
   , "allStaticFiles :: [StaticFile]"
   , "allStaticFiles ="
   ]
-
-          
           
 getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth
