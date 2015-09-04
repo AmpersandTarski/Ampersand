@@ -26,7 +26,6 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "ShowMeatGrinder"
 
-data MetaType = Generics | AST deriving (Show)
 
 makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
 makeMetaPopulationFile mType fSpec
