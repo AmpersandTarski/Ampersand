@@ -15,18 +15,27 @@ import qualified Data.Text as T
 import qualified Data.Map as M 
 import Data.Maybe
 import Data.Char
+import Data.String
+import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "XLSX"
 
-parseXlsxFile :: Options -> FilePath -> IO (Guarded [P_Population])
-parseXlsxFile _ filePath = 
-  do bytestr <- L.readFile filePath
+parseXlsxFile :: Options 
+              -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
+              -> FilePath -> IO (Guarded [P_Population])
+parseXlsxFile _ useAllStaticFiles file =
+  do bytestr <- if useAllStaticFiles
+                then case getStaticFileContent FormalAmpersand file of
+                      Just cont -> do return $ fromString cont
+                      Nothing -> fatalMsg ("Statically included "++ show FormalAmpersand++ " files. ") 0 $
+                                  "Cannot find `"++file++"`."
+                else L.readFile file
      return . xlsx2pContext . toXlsx $ bytestr
  where
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
   xlsx2pContext xlsx 
-    = Checked $ concatMap (toPops filePath) $
+    = Checked $ concatMap (toPops file) $
          Prelude.concatMap theSheetCellsForTable (xlsx ^. xlSheets . to M.toList)
       
 data SheetCellsForTable 
