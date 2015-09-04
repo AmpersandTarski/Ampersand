@@ -24,59 +24,74 @@ import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseEr
 import Text.Parsec.Prim (runP)
 import Database.Design.Ampersand.Input.Xslx.XLSX
 import Control.Exception
+import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL ::  Options                -- ^ The options given through the command line
-         -> FilePath                -- ^ The path of the file to be parsed
+         -> Either FilePath MetaType   -- ^ The path of the file to be parsed OR the MetaType. In the latter case, the files will be taken from `allStaticFiles`
          -> IO (Guarded P_Context)  -- ^ The resulting context
-parseADL opts filePath =
-  whenCheckedIO (parseSingleADL opts filePath) $ \(ctxt, filePaths) ->
-    whenCheckedIO (parseADLs opts [filePath] filePaths) $ \ctxts ->
+parseADL opts thingToParse =
+  whenCheckedIO (parseSingleADL opts useAllStaticFiles filePath) $ \(ctxt, filePaths) ->
+    whenCheckedIO (parseADLs opts useAllStaticFiles [filePath] filePaths) $ \ctxts ->
       return $ Checked $ foldl mergeContexts ctxt ctxts
-
+ where (filePath, useAllStaticFiles) = case thingToParse of
+                                         Left fp        -> (fp               ,False)
+                                         Right Generics -> ("Generics.adl",True )
+                                         Right AST      -> ("AST.adl"     ,True )
 -- | Parses several ADL files
 parseADLs :: Options                    -- ^ The options given through the command line
+          -> Bool                       -- ^ True iff the file is from FormalAmpersand files in `allStaticFiles` 
           -> [FilePath]                 -- ^ The list of files that have already been parsed
           -> [FilePath]                 -- ^ The list of files to parse
           -> IO (Guarded [P_Context])   -- ^ The resulting contexts
-parseADLs _    _               []        = return $ Checked []
-parseADLs opts parsedFilePaths filePaths =
+parseADLs _    _                 _               []        = return $ Checked []
+parseADLs opts useAllStaticFiles parsedFilePaths filePaths =
  do { let filePathsToParse = nub filePaths \\ parsedFilePaths
-    ; whenCheckedIO (sequenceA <$> mapM (parseSingleADL opts) filePathsToParse) $ \ctxtNewFilePathss ->
+    ; whenCheckedIO (sequenceA <$> mapM (parseSingleADL opts useAllStaticFiles) filePathsToParse) $ \ctxtNewFilePathss ->
        do { let (ctxts, newFilesToParse) = unzip ctxtNewFilePathss
-          ; whenCheckedIO (parseADLs opts (parsedFilePaths ++ filePaths) $ concat newFilesToParse) $ \ctxts' ->
+          ; whenCheckedIO (parseADLs opts useAllStaticFiles (parsedFilePaths ++ filePaths) $ concat newFilesToParse) $ \ctxts' ->
               return $ Checked $ ctxts ++ ctxts'
           }
     }
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
-parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
-parseSingleADL opts filePath
- = do verboseLn opts $ "Reading file " ++ filePath
+parseSingleADL :: 
+    Options 
+ -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
+ -> FilePath -> IO (Guarded (P_Context, [FilePath]))
+parseSingleADL opts useAllStaticFiles filePath
+ = do verboseLn opts $ "Reading file " ++ filePath ++ if useAllStaticFiles then " (from within ampersand.exe)" else ""
       exists <- doesFileExist filePath
-      if exists 
+      if useAllStaticFiles || exists 
       then parseSingleADL'
       else return . makeError $ "Could not find `"++filePath++"`."
     where
      parseSingleADL' :: IO(Guarded (P_Context, [FilePath]))
      parseSingleADL'
          | extension == ".xlsx" = 
-             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts filePath
+             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts useAllStaticFiles filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
          | otherwise =   
-             do { mFileContents <- readUTF8File filePath
+             do { mFileContents 
+                    <- if useAllStaticFiles
+                       then case getStaticFileContent FormalAmpersand filePath of
+                             Just cont -> do return (Right $ stripBom cont)
+                             Nothing -> fatalMsg ("Statically included "++ show FormalAmpersand++ " files. ") 0 $
+                                         "Cannot find `"++filePath++"`."
+                       else readUTF8File filePath
                 ; case mFileContents of
                     Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
                     Right fileContents ->
                          whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
-                               do filePaths <- mapM normalizePath relativePaths
-                                  return (Checked (ctxts, filePaths))
+                               do return (Checked (ctxts, relativePaths))
             }
-         where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
+         where stripBom :: String -> String
+               stripBom ('\239':'\187':'\191': s) = s
+               stripBom s = s 
                extension = map toLower $ takeExtension filePath
                catchInvalidXlsx :: IO a -> IO a 
                catchInvalidXlsx m = catch m f 

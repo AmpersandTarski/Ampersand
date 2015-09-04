@@ -16,7 +16,7 @@ import System.IO (hPutStrLn, stderr)
 parseScripts :: Options -> [FilePath] -> IO Bool
 parseScripts _ [] = return True
 parseScripts opts (f:fs) =
-     do parsed <- parseADL opts f
+     do parsed <- parseADL opts (Left f)
         case parsed of
             Checked _ -> do { putStrLn ("Parsed: " ++ f); parseScripts opts fs }
             Errors  e -> do { putStrLn ("Cannot parse: " ++ f); showErrors e; return False }

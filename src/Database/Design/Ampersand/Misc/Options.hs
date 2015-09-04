@@ -2,7 +2,9 @@
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FSpecFormat(..)
-        ,DocTheme(..),helpNVersionTexts)
+        ,DocTheme(..),helpNVersionTexts
+        ,MetaType(..)
+        )
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
 import Database.Design.Ampersand.Misc.Languages (Lang(..))
@@ -187,6 +189,7 @@ getOptions =
       return opts
 
 data DisplayMode = Public | Hidden deriving Eq
+data MetaType = Generics | AST deriving (Show)
 
 data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
 allFSpecFormats :: String

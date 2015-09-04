@@ -27,7 +27,7 @@ fatal = fatalMsg "CreateFspec"
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
-  do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
+  do userP_Ctx <- parseADL opts (Left (fileName opts)) -- the P_Context of the user's sourceFile
      genFiles userP_Ctx >> genTables userP_Ctx
    where
     genFiles :: Guarded P_Context -> IO(Guarded ())
@@ -65,12 +65,7 @@ createFSpec opts =
                            Generics -> "Generics.adl"
                            AST -> "FormalAmpersand.adl")
           exists <- doesFileExist file
-          if exists then parseADL opts file
-          else fatal 98 $ unlines
-                 [ "Ampersand isn't installed properly. Couldn't read:"
-                 , "  "++show file
-                 , "  (Make sure you have the latest content of Ampersand data. You might need to re-install ampersand...)"
-                 ]
+          parseADL opts (Right mType) 
     
     
     toFspec :: A_Context -> Guarded FSpec
@@ -92,15 +87,6 @@ createFSpec opts =
                _  -> fatal 83 "Meatgrinder returns included file. That isn't anticipated."
             
      
---getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
---getPopulationsFrom opts filePath =
--- do gpCtx <- parseADL opts filePath
---    return (unguard $ f <$> gpCtx) 
---   where
---     f :: P_Context -> Guarded [Population]
---     f pCtx = unguard $ 
---                pure . initialPops . makeFSpec opts
---                 <$> pCtx2aCtx opts pCtx
 
 doGenMetaFile :: MetaType -> FSpec -> IO()
 doGenMetaFile mType fSpec =
