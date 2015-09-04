@@ -213,14 +213,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Ftexinfo -> "texinfo"
                   Ftextile -> "textile"
               readDefaultTemplate :: String -> Maybe String
-              readDefaultTemplate s = 
-                 case filter isRightFile allStaticFiles of
-                   [x] -> Just (contentString x)
-                   _   -> fatal 222 $ "Cannot find the right template for `"++s++"`."
-                where
-                  isRightFile :: StaticFile -> Bool
-                  isRightFile (SF PandocTemplates path _ _ ) = path == ".\\default."++s
-                  isRightFile _ = False
+              readDefaultTemplate s = getStaticFileContent PandocTemplates ("default."++s)
               writerOptions :: Maybe String -> WriterOptions
               writerOptions template = case theme (getOpts fSpec) of
                           ProofTheme -> ampersandDefaultWriterOptions
