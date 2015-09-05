@@ -384,14 +384,14 @@ pIndex  = P_Id <$> currPos
 pViewDef :: AmpParser P_ViewDef
 pViewDef = try pFancyViewDef <|> try pViewDefLegacy -- introduces backtracking, but is more elegant than rewriting pViewDefLegacy to disallow "KEY ... ENDVIEW".
 
---- FancyViewDef ::= 'VIEW' Label ConceptOneRef 'DEFAULT'? '{' ViewObjList '}' HtmlView? 'ENDVIEW'
+--- FancyViewDef ::= 'VIEW' Label ConceptOneRef 'DEFAULT'? ('{' ViewObjList? '}')?  HtmlView? 'ENDVIEW'
 pFancyViewDef :: AmpParser P_ViewDef
 pFancyViewDef  = mkViewDef <$> currPos
                       <*  pKey "VIEW"
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> pBraces ((P_ViewExp fatl <$> pViewObj) `sepBy1` pComma)
+                      <*> (pBraces ((P_ViewExp fatl <$> pViewObj) `sepBy` pComma)) `opt` []
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos nm cpt isDef ats html =
