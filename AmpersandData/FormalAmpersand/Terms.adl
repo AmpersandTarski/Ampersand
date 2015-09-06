@@ -70,8 +70,8 @@ PROCESS "Analysing terms"
 ENDPROCESS
 
 PROCESS Signatures
-    RELATION src[Term*Concept] [UNI]
-    RELATION tgt[Term*Concept] [UNI]
+    RELATION src[Term*Concept] -- Do not define this as [UNI]. That would inhibit exposing type errors.
+    RELATION tgt[Term*Concept] -- Do not define this as [UNI]. That would inhibit exposing type errors.
 
     ROLE ExecEngine MAINTAINS signatureInsDom, signatureDelDom, signatureInsCod, signatureDelCod
     RULE signatureInsDom : dom;pretype |- src

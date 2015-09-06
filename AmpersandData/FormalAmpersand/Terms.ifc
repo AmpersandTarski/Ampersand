@@ -14,10 +14,10 @@ INTERFACE Atoms : '_SESSION'
 TABS[ concepts :V[SESSION*Concept]
       BOX<SCOLS>
            [ name         : I[Concept]
-           , "isa"        : isa
-           , "isa+"       : isaPlus
-           , "isa~"       : isa~
-           , "isa+~"      : isaPlus~
+--            , "isa"        : isa
+--            , "isa+"       : isaPlus
+--            , "isa~"       : isa~
+--            , "isa+~"      : isaPlus~
            , atoms        : pop~
            , "type-term"  : popset
            ]
