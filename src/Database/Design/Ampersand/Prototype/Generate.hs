@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.Prototype.Generate (generateGenerics, generateCustomCss) where
 
 import Database.Design.Ampersand
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
@@ -116,12 +116,12 @@ generateDBstructQueries fSpec =
       [ [ "CREATE TABLE "++ show "__SessionTimeout__"
         , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
         , "   , "++show "lastAccess"++" BIGINT NOT NULL"
-        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
         ]
       , [ "CREATE TABLE "++ show "__History__"
         , "   ( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
         , "   , "++show "Date"++" VARCHAR(255) DEFAULT NULL"
-        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
         ]
       , [ "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++")"
         , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
@@ -130,7 +130,7 @@ generateDBstructQueries fSpec =
         , "   ( "++show "conjId"++" VARCHAR(255) NOT NULL"
         , "   , "++show "src"++" VARCHAR(255) NOT NULL"
         , "   , "++show "tgt"++" VARCHAR(255) NOT NULL"
-        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8"
+        , "   ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
         ]
       ] ++ 
       ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])
@@ -149,7 +149,7 @@ generateDBstructQueries fSpec =
                                  )
                             )
                         )
-                     ++ [" )"]
+                     ++ [" ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"]
                    )
           ]
         fld2sql :: SqlField -> String
@@ -194,7 +194,7 @@ plug2TableSpec plug
                                         ]
                          ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                          PlainAttr     -> []
-     , tsEngn = "InnoDB DEFAULT CHARACTER SET UTF8"
+     , tsEngn = "InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
      }
 
 commentBlockSQL :: [String] -> [String]
@@ -215,7 +215,7 @@ generateAllDefPopQueries fSpec =
         populateTablesWithPops
         
 
-    fillSignalTable :: [(Conjunct, [Paire])] -> [String]
+    fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
      = [intercalate "\n           " $ 
@@ -223,7 +223,7 @@ generateAllDefPopQueries fSpec =
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
               ( "VALUES " ++ intercalate "\n     , " 
-                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, srcPaire p, trgPaire p])++ ")" 
+                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, showValPHP (apLeft p), showValPHP (apRight p)])++ ")" 
                   | (conj, viols) <- conjSignals
                   , p <- viols
                   ]
@@ -235,7 +235,7 @@ generateAllDefPopQueries fSpec =
       where
         populatePlug :: PlugSQL -> [String]
         populatePlug plug 
-          = case tblcontents (vgens fSpec) (initialPops fSpec) plug of
+          = case tableContents fSpec plug of
              []  -> []
              tblRecords 
                  -> [intercalate "\n           " $ 
@@ -251,9 +251,8 @@ generateAllDefPopQueries fSpec =
              = intercalate ", " 
                  [case fld of 
                     Nothing -> "NULL"
-                    Just str -> showAsValue str
+                    Just val -> showValPHP val
                  | fld <- record ]
-
 
 generateSpecializations :: FSpec -> [String]
 generateSpecializations fSpec =
@@ -308,15 +307,18 @@ generateTableInfos fSpec =
                   -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
                   | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
                   ])) ++
+              [ ", 'type' => '"++(show . cptTType fSpec) c++"'" ]++
+              [ ", 'specializations' => array ("++intercalate ", " (map (showPhpStr . name)(smallerConcepts (vgens fSpec) c))++")"]++
               [ ")" ]
            )
          | c <- concs fSpec
-         , let affConjs = case lookup c $ allConjsPerConcept fSpec of
-                 Nothing    -> []
-                 Just conjs -> conjs
+         , let 
+               affConjs = nub [ conj  
+                              | Just conjs<-[lookup c (allConjsPerConcept fSpec)]
+                              , conj<-conjs
+                              ]
                affInvConjs = filterFrontEndInvConjuncts affConjs
-               affSigConjs = filterFrontEndSigConjuncts affConjs 
-
+               affSigConjs = filterFrontEndSigConjuncts affConjs
          ]
     ) ++
   [ ""
@@ -383,10 +385,10 @@ generateRules fSpec =
          , let rExpr=rrexp rule
          ]
     ) )
- where showMeaning rule = maybe "" aMarkup2String (meaning (fsLang fSpec) rule)
+ where showMeaning rule = maybe "" (aMarkup2String ReST) (meaning (fsLang fSpec) rule)
        showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
                             []    -> ""
-                            markup:_ -> aMarkup2String markup
+                            markup:_ -> aMarkup2String ReST markup
 
        genMPairView Nothing                  = []
        genMPairView (Just (PairView pvsegs)) = map genPairViewSeg pvsegs
@@ -455,18 +457,28 @@ filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRu
   
 generateRoles :: FSpec -> [String]
 generateRoles fSpec =
-  [ "$allRoles ="
-  , "  array"
-  ] ++
-  addToLastLine ";"
-    (indent 4
-      (blockParenthesize  "(" ")" ","
-         [ [ "array ( 'name' => "++showPhpStr (name role)
-           , "      , 'ruleNames' => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
-           , "      )" ]
-         | role <- fRoles fSpec ]
-    ) )
-  where maintainedByRole role (role',_) = role == role'
+  concatMap showRoles [False,True]
+  where showRoles isService =
+          [ if isService then "$allServices =" else "$allRoles ="
+          , "  array"
+          ] ++
+          addToLastLine ";"
+            (indent 4
+              (blockParenthesize  "(" ")" ","
+                 [ [ "array ( 'id' => "++show i 
+                   , "      , 'name' => "++showPhpStr (name role)
+                   , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
+                   , "      , 'interfaces' => array ("++ intercalate ", " ((map (showPhpStr . name) . filter (forThisRole role) . interfaceS) fSpec) ++")"
+                   , "      )" ]
+                 | (i,role) <- zip [1::Int ..] (filter serviceOrRole $ fRoles fSpec) ]
+            ) )
+            where
+             serviceOrRole Role{} = not isService
+             serviceOrRole Service{} = isService 
+        maintainedByRole role (role',_) = role == role'
+        forThisRole role interf = case ifcRoles interf of
+                                     []   -> True -- interface is for all roles
+                                     rs  -> role `elem` rs
 
 generateViews :: FSpec -> [String]
 generateViews fSpec =
@@ -570,6 +582,7 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
      , "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
      , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
      , "      , 'exprIsProp'    => " ++ showPhpBool (isProp normalizedInterfaceExp) 
+     , "      , 'exprIsIdent'   => " ++ showPhpBool (isIdent normalizedInterfaceExp) 
      , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery fSpec (22+14*depth) normalizedInterfaceExp)
      ] 
   ++ generateMSubInterface fSpec editableRels depth (objmsub object)

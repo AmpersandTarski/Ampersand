@@ -1,0 +1,12 @@
+<!-- Only when ifcs has more than 1 interface, otherwise, the user is already there -->
+<!-- This menu includes the interface where the user currently is -->
+<div ng-if="ifcs.length > 1" style="position:relative;">
+	<button type="button" class="btn btn-sm dropdown-toggle" data-toggle="dropdown">
+		<span class="glyphicon glyphicon-menu-hamburger"></span>
+	</button>
+	<ul class="dropdown-menu" role="menu">
+		<li ng-repeat="ifc in ifcs">
+			<a ng-href="#/{{ifc.id}}/{{resource}}">{{ifc.label}}</a>
+		</li>
+	</ul>
+</div>

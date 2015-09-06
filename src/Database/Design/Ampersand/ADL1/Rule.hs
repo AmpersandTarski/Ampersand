@@ -1,11 +1,9 @@
 module Database.Design.Ampersand.ADL1.Rule 
-  (consequent, antecedent, rulefromProp, ruleviolations, conjunctViolations, hasantecedent) where
+  (consequent, antecedent, rulefromProp, hasantecedent) where
 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes.Populated ( fullContents)
 import Database.Design.Ampersand.Misc
-import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.Rule"
@@ -29,20 +27,6 @@ consequent r
      EEqu (_,re) -> re
      EImp (_,re) -> re
      x           -> x
-
-conjunctViolations :: [A_Gen] -> [Population] -> Conjunct -> Pairs
-conjunctViolations gens pop conj =
-  let vConts    = Set.fromList $ fullContents gens pop (EDcV (sign (rc_conjunct conj)))
-      conjConts = Set.fromList $ fullContents gens pop (rc_conjunct conj)
-  in  Set.toList $ vConts `Set.difference` conjConts 
-     
-ruleviolations :: [A_Gen] -> [Population] -> Rule -> Pairs
-ruleviolations gens pop r = case rrexp r of
-     EEqu{} -> (cra >- crc) ++ (crc >- cra)
-     EImp{} -> cra >- crc
-     _      -> fullContents gens pop (EDcV (sign (consequent r))) >- crc  --everything not in con
-     where cra = fullContents gens pop (antecedent r)
-           crc = fullContents gens pop (consequent r)
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all relations is provided, in order to generate shorter names if possible.
@@ -81,7 +65,7 @@ rulefromProp prp d@Sgn{} =
                      Irf-> r .|-. ECpl (EDcI (source r))
                      Aut -> fatal 78 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                      Prop -> fatal 78 "Prop should have been converted by the parser"
-        explain isPositive prop = [ A_Markup English ReST (string2Blocks ReST (
+        explain isPositive prop = [ A_Markup English (string2Blocks ReST (
                               case prop of
                                 Sym-> state isPositive English (name d++"["++s++"]") "symmetric"
                                 Asy-> state isPositive English (name d++"["++s++"]") "antisymmetric"
@@ -95,7 +79,7 @@ rulefromProp prp d@Sgn{} =
                                 Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                                 Prop -> fatal 90 "Prop should have been converted by the parser"
                                 ))
-                       ,   A_Markup Dutch ReST (string2Blocks ReST (
+                       ,   A_Markup Dutch (string2Blocks ReST (
                               case prop of
                                 Sym-> state isPositive Dutch (name d++"["++s++"]") "symmetrisch."
                                 Asy-> state isPositive Dutch (name d++"["++s++"]") "antisymmetrisch."

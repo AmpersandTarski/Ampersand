@@ -7,7 +7,7 @@ module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
   
 import Data.Set (Set)
 import qualified Data.Set as Set
-import Data.List (nub, intercalate, permutations)
+import Data.List (nub, intercalate, permutations,partition)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.ADL1.ECArule
 import Database.Design.Ampersand.ADL1.Expression
@@ -78,7 +78,7 @@ data RTerm = RIsc {rTermSet :: Set RTerm}  -- intersection is associative and co
            | RFlp {rTermUny :: RTerm}
            | RId  A_Concept
            | RVee A_Concept A_Concept
-           | RAtm String A_Concept
+           | RAtm PSingleton A_Concept
            | RVar String String String  -- relation name, source name, target name.
            | RConst Expression
            deriving (Eq,Ord,Show)
@@ -595,7 +595,6 @@ rTerm2expr term
             , decprR  = fatal 484 "Illegal RTerm in rTerm2expr"
             , decMean = fatal 485 "Illegal RTerm in rTerm2expr"
             , decfpos = fatal 486 "Illegal RTerm in rTerm2expr"
-            , deciss  = fatal 487 "Illegal RTerm in rTerm2expr"
             , decusr  = fatal 488 "Illegal RTerm in rTerm2expr"
             , decpat  = fatal 489 "Illegal RTerm in rTerm2expr"
             , decplug = fatal 490 "Illegal RTerm in rTerm2expr"
@@ -630,7 +629,7 @@ instance ShowADL RTerm where
           RConst e   -> wrap i i (showADL e)
           RId c      -> "I"++lbr++name c++rbr
           RVee s t   -> "V"++lbr++name s++star++name t++rbr
-          RAtm a c   -> "'"++a++"'"++lbr++name c++rbr
+          RAtm val c -> showADL val++lbr++name c++rbr
      wrap :: Int -> Int -> String -> String
      wrap i j e' = if i<=j then e' else lpar++e'++rpar
 
@@ -686,7 +685,7 @@ data DerivStep = DStep { lhs :: RTerm
 dRule :: Term TermPrim -> [DerivRule]
 dRule (PEqu _ l r) = [DEquR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule (PImp _ l r) = [DImpR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
-dRule term         = fatal 279 ("Illegal use of dRule with term "++show term)
+dRule term         = fatal 279 ("Illegal use of dRule with term "++showADL term)
 
 slideDown :: (RTerm -> Integer) -> RTerm -> [(Integer,DerivStep)]
 slideDown weight term
@@ -855,8 +854,8 @@ matchSets rCombinator es es'
    if or [ not (isValid e) | e<-Set.toList es'] then fatal 860 ("Invalid subexpr(s): "++intercalate ", " [ showADL e | e<-Set.toList es', not (isValid e) ]) else
    [ unif
    | let n = Set.size cdes                      -- the length of the template, which contains variables
-   , partition <- parts n cdes'                 -- determine segments from the expression with the same length. partition :: Set (Set RTerm)
-   , let subTerms = Set.map (combSet rCombinator) partition      -- make an RTerm from each subset in ms. subTerms :: Set RTerm
+   , partition' <- parts n cdes'                 -- determine segments from the expression with the same length. partition' :: Set (Set RTerm)
+   , let subTerms = Set.map (combSet rCombinator) partition'      -- make an RTerm from each subset in ms. subTerms :: Set RTerm
    , template <- permutations (Set.toList cdes)
    , unif <- mix [ matches l r | (l,r) <- safezip template (Set.toList subTerms) ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
@@ -982,7 +981,9 @@ tceDerivRules = concatMap (dRule.parseRule)
  , "-r[A*B]\\/-s[A*B] = -(r[A*B]/\\s[A*B])"                    --  De Morgan
  , "-r[B*A];-s[A*C] = -(r[B*A]!s[A*C])"                        --  De Morgan
  , "-r[B*A]!-s[A*C] = -(r[B*A];s[A*C])"                        --  De Morgan
+ , "r[A*B]/\\-s[C*D] = r[A*B]-s[C*D]"                          --  Avoid complement
  , "r[A*B]~/\\s[A*B]~ = (r[A*B]/\\s[A*B])~"                    --  Distribute flip
+ , "r[A*B]~/\\-s[C*D]~ = (r[A*B]-s[C*D])~"                     --  Avoid complement
  , "r[A*B]~\\/s[A*B]~ = (r[A*B]\\/s[A*B])~"                    --  Distribute flip
  , "(r[A*A]\\r[A*A]);(r[A*A]\\r[A*A]) = r[A*A]\\r[A*A]"        --  Jipsen&Tsinakis
  , "(r[A*A]/r[A*A]);(r[A*A]/r[A*A]) = r[A*A]/r[A*A]"           --  Jipsen&Tsinakis
@@ -1008,11 +1009,11 @@ tceDerivRules = concatMap (dRule.parseRule)
  , "r[A*B]/\\-r[A*B] = -V[A*B]"                                --  Contradiction
  , "r[A*B]\\/-r[A*B] =  V[A*B]"                                --  Tautology
  , "-r[A*B]\\/r[A*B] = V[A*B]"                                 --  Tautology
- , "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]"                      --  Absorption
+ , "(r[A*B]\\/ s[A*B])/\\ s[A*B] = s[A*B]"                     --  Absorption
  , "(r[A*B]\\/-s[A*B])/\\ s[A*B] = s[A*B]-r[A*B]"               --  Absorption
- , "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]"                      --  Absorption
- , "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]"             --  Absorption
- , "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]"            --  Absorption
+ , "(r[A*B]/\\ s[A*B])\\/ s[A*B] = s[A*B]"                     --  Absorption
+ , "(r[A*B]/\\-s[A*B])\\/ s[A*B] = r[A*B]\\/s[A*B]"            --  Absorption
+ , "(r[A*B]/\\ s[A*B])\\/-s[A*B] = r[A*B]\\/-s[A*B]"           --  Absorption
  , "r[A*A]* = r[A*A];r[A*A]*"
  , "r[A*A]* = r[A*A]*;r[A*A]"
  , "r[A*A]+ = r[A*A];r[A*A]+"
@@ -1054,7 +1055,7 @@ head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a
 
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
-delta :: Sign -> Expression
+delta :: Signature -> Expression
 delta sgn
  = EDcD   Sgn { decnm   = "Delta"
               , decsgn  = sgn
@@ -1063,11 +1064,10 @@ delta sgn
               , decprL  = ""
               , decprM  = ""
               , decprR  = ""
-              , decMean = AMeaning [ --   A_Markup Dutch   ReST (string2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd.")
-                                     -- , A_Markup English ReST (string2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions.")
+              , decMean = AMeaning [ --   A_Markup Dutch   (string2Blocks ReST "Delta is bedoeld als variabele, die de plaats in een expressie vasthoudt waar paren worden ingevoegd of verwijderd.")
+                                     -- , A_Markup English (string2Blocks ReST "Delta is meant as a variable, to be used as a placeholder for inserting or removing links from expressions.")
                                    ]
               , decfpos = Origin ("generated relation (Delta "++show sgn++")")
-              , deciss  = True
               , decusr  = False
               , decpat  = ""
               , decplug = True
@@ -1156,12 +1156,12 @@ normstepPA opts pac = (res,ss,"<=>")
                                 Blk{} -> p'{paMotiv = ms}
                                 _     -> New c (\x->let (p'', _) = norm (p x) in p'') ms
                              , msgs)
-                             where (p', msgs) = norm (p "x")
+                             where (p', msgs) = norm (p (makePSingleton "x"))
   norm (Rmv c p ms)        = ( case p' of
                                 Blk{} -> p'{paMotiv = ms}
                                 _     -> Rmv c (\x->let (p'', _) = norm (p x) in p'') ms
                              , msgs)
-                             where (p', msgs) = norm (p "x")
+                             where (p', msgs) = norm (p (makePSingleton "x"))
   norm p                   = (p, [])
 
 {- Normalization of expressions -}
@@ -1371,19 +1371,25 @@ Until the new normalizer works, we will have to work with this one. So I have in
            = let t'=head absor0  in (r, ["absorb "++shw l++" because of "++shw t'++", using law  (x\\/y)/\\y = y"], "<=>")
       | isEUni r && not (null absor0')
            = let t'=head absor0' in (r, ["absorb "++shw r++" because of "++shw t'++", using law  (x\\/y)/\\x = x"], "<=>")
--- Absorb:    (x\\/-y)/\\y  =  y-x
+-- Absorb:    (x\\/-y)/\\y  =  x/\\y
       | isEUni l && not (null absor1)
            = ( case head absor1 of
                  (_,[]) -> r
-                 (_,ts) -> r .-. foldr1 (.\/.) ts
-             , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  y-x" | (t',_)<-absor1] -- this take 1 is necessary. See Ticket #398
+                 (_,ts) -> foldr1 (.\/.) ts ./\. r
+             , ["absorb "++shw t'++", using law (x\\/-y)/\\y  =  x/\\y" | (t',_)<-absor1]
              , "<=>"
              )
       | isEUni r && not (null absor1')
            = ( case head absor1' of
                  (_,[]) -> l
-                 (_,ts) -> l .-. foldr1 (.\/.) ts
-             , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x-y" | (t',_)<-absor1'] -- this take 1 is necessary. See Ticket #398
+                 (_,ts) -> l ./\. foldr1 (.\/.) ts
+             , ["absorb "++shw t'++", using law x/\\(y\\/-x)  =  x/\\y" | (t',_)<-absor1']
+             , "<=>"
+             )
+-- Avoid complements: x/\\-y = x-y
+      | (not.null) negList && (not.null) posList
+           = ( foldl (.-.) (foldr1 (./\.) posList) (map notCpl negList)
+             , [ "Avoid complements, using law x/\\-y = x-y" ]
              , "<=>"
              )
       | otherwise = (t ./\. f, steps++steps', fEqu [equ',equ''])
@@ -1399,6 +1405,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
                       [(disjunct, exprUni2list r>-[disjunct]) | disjunct@(ECpl t')<-exprUni2list r, f'<-rs++exprIsc2list l, t'==f']
             absorbAsy = eqClass same eList where e `same` e' = isAsy e && isAsy e' && e == flp e'
             absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
+            (negList,posList) = partition isNeg (exprIsc2list l++exprIsc2list r)
             eList  = rs++exprIsc2list l++exprIsc2list r
   nM posCpl (EUni (EIsc (l,k),r)) _  | posCpl==dnf    = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
   nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl==dnf    = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")

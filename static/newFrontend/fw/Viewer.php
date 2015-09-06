@@ -37,13 +37,14 @@ class Viewer {
 		$this->addHtmlLine('<script src="app/lib/jquery/jquery-ui-1.10.4.custom.js"></script>');		
 		
 		// Bootstrap (requires Jquery, loaded above)
-		$this->addHtmlLine('<link href="app/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" media="screen">'); // load boostrap.css before app specific css files that overwrite bootstrap.css
-		$this->addHtmlLine('<script src="app/lib/bootstrap/js/bootstrap.min.js"></script>');
+		$this->addHtmlLine('<link href="app/lib/bootstrap-3.3.5-dist/css/bootstrap.min.css" rel="stylesheet" media="screen">'); // load boostrap.css before app specific css files that overwrite bootstrap.css
+		$this->addHtmlLine('<script src="app/lib/bootstrap-3.3.5-dist/js/bootstrap.min.js"></script>');
 		
 		// Angular
 		$this->addHtmlLine('<script src="app/lib/angular/angular.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-resource.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/angular/angular-route.min.js"></script>');
+		$this->addHtmlLine('<script src="app/lib/angular/angular-sanitize.min.js"></script>');
 		// Third party directives for angular
 			// angular-ui-switch
 			$this->addHtmlLine('<script src="app/lib/angular/angular-ui-switch/angular-ui-switch-adapted.js"></script>');	
@@ -56,8 +57,15 @@ class Viewer {
 			// si-table
 			$this->addHtmlLine('<script src="app/lib/angular/si-table/si-table.js"></script>');
 			
-			// angular-highlightjs
-			// $this->addHtmlLine('<script src="app/lib/angular/angular-highlightjs/angular-highlightjs.js"></script>');
+			// angular-code-mirror
+			$this->addHtmlLine('<script src="app/lib/angular/angular-code-mirror/angular-code-mirror.min.js"></script>');
+			$this->addHtmlLine('<link href="app/lib/angular/angular-code-mirror/angular-code-mirror.css" rel="stylesheet" media="screen" type="text/css">');
+			
+			// ng-storage
+			$this->addHtmlLine('<script src="app/lib/angular/angular-ng-storage/ngStorage.min.js"></script>');
+			
+			// angular-file-upload
+			$this->addHtmlLine('<script src="app/lib/angular/angular-file-upload/angular-file-upload.min.js"></script>');
 			
 		// Restangular (with depency for lodash)
 		$this->addHtmlLine('<script src="app/lib/restangular/restangular.min.js"></script>');

@@ -1,1 +1,0 @@
-https://github.com/pc035860/angular-highlightjs

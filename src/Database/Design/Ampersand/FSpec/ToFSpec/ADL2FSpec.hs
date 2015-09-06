@@ -7,7 +7,6 @@ import Data.List
 import Data.Maybe
 import Text.Pandoc
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.ADL1.Rule
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -19,6 +18,7 @@ import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
 import Database.Design.Ampersand.FSpec.ShowADL
+import qualified Data.Set as Set
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
@@ -83,6 +83,7 @@ makeFSpec opts context
               , allDecls     = fSpecAllDecls
               , allConcepts  = fSpecAllConcepts
               , kernels      = constructKernels
+              , cptTType     = (\cpt -> representationOf contextinfo cpt)
               , fsisa        = concatMap genericAndSpecifics (gens context)
               , vpatterns    = patterns context
               , vgens        = gens context
@@ -92,60 +93,50 @@ makeFSpec opts context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
-              , initialPops  = initialpops
-              , allAtoms     = allatoms
-              , allLinks     = alllinks
+              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript
+              , tableContents = tblcontents contextinfo initialpopsDefinedInScript
+              , pairsInExpr  = pairsinexpr
               , allViolations  = [ (r,vs)
-                                 | r <- allrules, not (isSignal r)
-                                 , let vs = ruleviolations (gens context) initialpops r, not (null vs) ]
+                                 | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
+                                 , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context
               , allSigns     = nub $ map sign fSpecAllDecls ++ map sign (expressionsIn context)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
-                                         , let viols = conjunctViolations (gens context) initialpops conj
+                                         , let viols = conjunctViolations conj
                                          , not $ null viols
                                          ]
+              , contextInfo = contextinfo
+              , specializationsOf = smallerConcepts (gens context)
+              , generalizationsOf = largerConcepts  (gens context)
               }
    where           
-     allatoms :: [Atom]
-     allatoms = nub (concatMap atoms initialpops)
-       where
-         atoms :: Population -> [Atom]
-         atoms udp = case udp of
-           PRelPopu{} ->  map (mkAtom ((source.popdcl) udp).srcPaire) (popps udp)
-                       ++ map (mkAtom ((target.popdcl) udp).trgPaire) (popps udp)
-           PCptPopu{} ->  map (mkAtom (        popcpt  udp)         ) (popas udp)
-     mkAtom :: A_Concept -> String -> Atom
-     mkAtom cpt value = 
-        Atom { atmRoots = rootConcepts gs [cpt]
-               , atmIn   = largerConcepts gs cpt `uni` [cpt]
-               , atmVal  = value
-               }
-       where
-         gs = gens context
-     dclLinks :: Declaration -> [A_Pair]
-     dclLinks dcl
-       = [Pair   { lnkDcl   = dcl
-                 , lnkLeft  = mkAtom (source dcl) (srcPaire p) 
-                 , lnkRight = mkAtom (target dcl) (trgPaire p)
-                 }
-         | p <- pairsOf dcl]
-     alllinks ::  [A_Pair]
-     alllinks = concatMap dclLinks fSpecAllDecls
-     pairsOf :: Declaration -> Pairs
-     pairsOf d = case filter theDecl initialpops of
-                    []    -> []
-                    [pop] -> popps pop
-                    _     -> fatal 273 "Multiple entries found in populationTable"
-        where
-          theDecl :: Population -> Bool
-          theDecl p = case p of
-                        PRelPopu{} -> popdcl p == d
-                        PCptPopu{} -> False
+     pairsinexpr  :: Expression -> [AAtomPair]
+     pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
+     ruleviolations :: Rule -> [AAtomPair]
+     ruleviolations r = case rrexp r of
+          EEqu{} -> (cra >- crc) ++ (crc >- cra)
+          EImp{} -> cra >- crc
+          _      -> pairsinexpr (EDcV (sign (consequent r))) >- crc  --everything not in con
+          where cra = pairsinexpr (antecedent r)
+                crc = pairsinexpr (consequent r)
+     conjunctViolations :: Conjunct -> [AAtomPair]
+     conjunctViolations conj =
+       let vConts    = Set.fromList $ pairsinexpr (EDcV (sign (rc_conjunct conj)))
+           conjConts = Set.fromList $ pairsinexpr (rc_conjunct conj)
+       in  Set.toList $ vConts `Set.difference` conjConts 
 
+     contextinfo = contextInfoOf context
 
      fSpecAllConcepts = concs context
      fSpecAllDecls = relsDefdIn context
-     fSpecAllInterfaces = map enrichIfc (ctxifcs context) 
+     fSpecAllInterfaces :: [Interface]
+     fSpecAllInterfaces = map enrichIfc (ctxifcs context)
+       where
+          enrichIfc :: Interface -> Interface
+          enrichIfc ifc
+           = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
+                , ifcControls = makeIfcControls (ifcParams ifc) allConjs
+                }
      
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      then map name (patterns context)
@@ -157,35 +148,36 @@ makeFSpec opts context
      concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
      gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
 
-     enrichIfc :: Interface -> Interface
-     enrichIfc ifc
-      = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
-           , ifcControls = makeIfcControls (ifcParams ifc) allConjs
-           }
-     initialpops = [ PRelPopu{ popdcl = popdcl (head eqclass)
-                             , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
-                             }
-                   | eqclass<-eqCl popdcl [ pop | pop@PRelPopu{}<-populations ] ] ++
-                   [ PCptPopu{ popcpt = popcpt (head eqclass)
+     initialpopsDefinedInScript = 
+                   [ let dcl = popdcl (head eqclass)
+                     in ARelPopu{ popsrc = source dcl
+                                , poptgt = target dcl
+                                , popdcl = dcl
+                                , popps  = (nub.concat) [ popps pop | pop<-eqclass ]
+                                }
+                   | eqclass<-eqCl popdcl [ pop | pop@ARelPopu{}<-populations ] ] ++
+                   [ ACptPopu{ popcpt = popcpt (head eqclass)
                              , popas  = (nub.concat) [ popas pop | pop<-eqclass ]
                              }
-                   | eqclass<-eqCl popcpt [ pop | pop@PCptPopu{}<-populations ] ]
+                   | eqclass<-eqCl popcpt [ pop | pop@ACptPopu{}<-populations ] ]
        where populations = ctxpopus context++concatMap ptups (patterns context)       
-
      allConjs = makeAllConjs opts allrules
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
-     fSpecAllConjsPerConcept = converse [ (conj, [source r, target r]) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ] 
+     fSpecAllConjsPerConcept = converse [ (conj, smaller (source r) `uni` smaller (target r)) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ]
+                               where smaller :: A_Concept -> [A_Concept]
+                                     smaller cpt = [cpt] `uni` smallerConcepts (gens context) cpt
      allQuads = quadsOfRules opts allrules 
      
      allrules = map setIsSignal (allRules context)
         where setIsSignal r = r{isSignal = (not.null) (maintainersOf r)}
      maintainersOf :: Rule -> [Role]
      maintainersOf r 
-       = [role 
-         | role <- concatMap arRoles . filter (\x -> name r `elem` arRules x) . ctxrrules $ context
-         ]
+       = concatMap arRoles . filter forThisRule . ctxrrules $ context
+         where
+          forThisRule :: A_RoleRule -> Bool
+          forThisRule x = name r `elem` arRules x
      isUserDefined rul =
        case r_usr rul of
          UserDefined  -> True
@@ -285,15 +277,15 @@ makeFSpec opts context
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-     cRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, not(deciss d), isTot d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not(deciss d), not (isTot d) && isSur d, not$decplug d]
+     cRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isTot d, not$decplug d]++
+             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-     dRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, not(deciss d), isInj d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not(deciss d), not (isInj d) && isUni d, not$decplug d]
+     dRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isInj d, not$decplug d]++
+             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
-     maxTotPaths = clos1 cRels   -- maxTotPaths = cRels+, i.e. the transitive closure of cRels
-     maxInjPaths = clos1 dRels   -- maxInjPaths = dRels+, i.e. the transitive closure of dRels
+     maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
+     maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      --    Warshall's transitive closure algorithm, adapted for this purpose:
      clos1 :: [Expression] -> [[Expression]]
      clos1 xs
@@ -440,7 +432,6 @@ makeFSpec opts context
                       , actPurp   = [Expl { explPos = OriginUnknown
                                           , explObj = ExplRule (name rul)
                                           , explMarkup = A_Markup { amLang   = Dutch
-                                                                  , amFormat = ReST
                                                                   , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
                                                                   }
                                           , explUserdefd = False
@@ -449,7 +440,6 @@ makeFSpec opts context
                                     ,Expl { explPos = OriginUnknown
                                           , explObj = ExplRule (name rul)
                                           , explMarkup = A_Markup { amLang   = English
-                                                                  , amFormat = ReST
                                                                   , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
                                                                   }
                                           , explUserdefd = False
@@ -486,13 +476,14 @@ makeFSpec opts context
                       [(a',qs',b')        | (a',b') `notElem` [(a,b) |(a,_,b)<-ts]]) `un` ts'
         
 makeIfcControls :: [Declaration] -> [Conjunct] -> [Conjunct]
-makeIfcControls params allConjs = [ conj 
-                                | conj<-allConjs
-                                , (not.null) (map EDcD params `isc` primsMentionedIn (rc_conjunct conj))
-                                -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
-                                -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
-                                -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
-                                ]
+makeIfcControls params allConjs
+ = [ conj 
+   | conj<-allConjs
+   , (not.null) (map EDcD params `isc` primsMentionedIn (rc_conjunct conj))
+   -- Filtering for uni/inj invariants is pointless here, as we can only filter out those conjuncts for which all
+   -- originating rules are uni/inj invariants. Conjuncts that also have other originating rules need to be included
+   -- and the uni/inj invariant rules need to be filtered out at a later stage (in Generate.hs).
+   ]
   
 
 class Named a => Rename a where
@@ -508,3 +499,37 @@ class Named a => Rename a where
 
 instance Rename PlugSQL where
  rename p x = p{sqlname=x}
+     
+
+tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
+tblcontents ci ps plug
+   = case plug of
+     ScalarSQL{} -> [[Just x] | x<-atomValuesOf ci ps (cLkp plug)]
+     BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
+     TblSQL{}    -> 
+ --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
+ --fields are assumed to be in the order kernel+other,
+ --where NULL in a kernel field implies NULL in the following kernel fields
+ --and the first field is unique and not null
+ --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold r or (flp r), s and t are assumed to be different
+       case fields plug of 
+         []   -> fatal 593 "no fields in plug."
+         f:fs -> transpose
+                 ( map Just cAtoms
+                 : [case fExp of
+                       EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
+                       _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
+                   | fld<-fs, let fExp=fldexpr fld
+                   ]
+                 )
+                 where
+                   cAtoms = (atomValuesOf ci ps. source . fldexpr) f
+                   lkp a pairs
+                    = case [ p | p<-pairs, a==apLeft p ] of
+                       [] -> Nothing
+                       [p] -> Just (apRight p)
+                       _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                               "Looking for: '"++showValADL a++"'.\n"++
+                               "Multiple values in one field. \n"
+                               )
+                        

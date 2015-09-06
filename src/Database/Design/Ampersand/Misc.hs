@@ -8,6 +8,6 @@ import Database.Design.Ampersand.Misc.Languages
 import Database.Design.Ampersand.Misc.Options
        (getOptions, Options(..),
         verboseLn, verbose, DocTheme(..), FSpecFormat(..),
-        FileFormat(..), helpNVersionTexts)
+        helpNVersionTexts,MetaType(..))
 import Database.Design.Ampersand.Misc.Explain
        (string2Blocks, blocks2String, PandocFormat(..))

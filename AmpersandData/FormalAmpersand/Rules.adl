@@ -3,10 +3,10 @@ CONTEXT AST IN ENGLISH LATEX
 
 PATTERN Rules
 IDENT Rule: Rule(name)
---CLASSIFY RuleName ISA ADLid
+REPRESENT RuleName TYPE ALPHANUMERIC
 RELATION name[Rule*RuleName] [UNI,TOT,INJ]
 MEANING "The name of a rule."
-RELATION sign[Rule*Sign] [UNI,TOT]
+RELATION sign[Rule*Signature] [UNI,TOT]
 RELATION rrexp[Rule*ExpressionID] [UNI,TOT]
 MEANING "The rule expressed in relation algebra."
 RELATION rrmean[Rule * Meaning]

@@ -1,3 +1,4 @@
+{-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
@@ -5,12 +6,15 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , cannotDisamb, cannotDisambRel
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
-  , GetOneGuarded(..), uniqueNames, mkDanglingPurposeError
+  , GetOneGuarded(..), uniqueNames
+  , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
+  , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
+  , mkTypeMismatchError
   , Guarded(..)
-  , whenCheckedIO, whenChecked
+  , whenCheckedIO, whenChecked, whenError
   , unguard
   )
 -- SJC: I consider it ill practice to export CTXE
@@ -18,14 +22,15 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
 -- By not exporting anything that takes a string, we prevent other modules from containing error message
 -- If you build a function that must generate an error, put it in CtxError and call it instead
 -- see `getOneExactly' / `GetOneGuarded' as a nice example
--- Although I also consider it ill practice to export PE, I did this as a quick fix for the parse errors
+-- Although I also consider it ill practice to export PE
+-- for the same reasons, I did this as a quick fix for the parse errors
 where
 import Control.Applicative
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
 -- import Data.Traversable
-import Data.List  (intercalate)
+import Data.List  (intercalate,nub)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
@@ -36,8 +41,8 @@ fatal = fatalMsg "Input.ADL1.CtxError"
 _notUsed = fatal
 
 -- unguard is like an applicative join, which can be used to elegantly express monadic effects for Guarded.
--- The function is a bit more compositional than the previous ly used <?> as you don't have to tuple all the arguments.
--- Similar to join and bind we have: unguard g = id <?> g, and f <?> g = unguard $ f <$> g
+-- The function is a bit more compositional than the previously used <?> as you don't have to tuple all the arguments.
+-- Similar to join and bind we have: unguard g = id <?> g, and f g = unguard $ f <$> pure g
 unguard :: Guarded (Guarded a) -> Guarded a
 unguard (Errors errs) = Errors errs
 unguard (Checked g)   = g  
@@ -79,6 +84,14 @@ instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d
   getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showADL o]
   getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showADL o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showADL l++" at "++showFullOrig (origin l) | l<-lst]]
+
+mkTypeMismatchError :: (ShowADL t, Association t, Traced a2, Named a) => a2 -> t -> SrcOrTgt -> a -> Guarded a1
+mkTypeMismatchError o decl sot conc
+ = Errors [CTXE (origin o) message]
+ where
+  message = "The "++show sot++" concept for the population pairs, namely "++name conc
+            ++"\n  must be more specific or equal to that of the relation you wish to populate, namely: "++showEC (sot,decl)
+
 
 cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
 cannotDisambRel o exprs
@@ -140,6 +153,19 @@ mkMultipleInterfaceError role ifc duplicateIfcs =
   CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++ 
                       concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)       
 
+mkMultipleRepresentationsForConceptError :: String -> [Representation] -> CtxError
+mkMultipleRepresentationsForConceptError cpt rs =
+  case rs of 
+    _:r:_  
+      -> CTXE (origin r)
+          $ "Multiple representations for concept "++show cpt++". ("
+               ++(intercalate ", " . map show . nub . map reprdom) rs ++
+                  concatMap (("\n    "++ ) . show . origin ) rs
+    _ -> fatal 142 "There are no multiple representations."
+
+mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
+mkIncompatibleAtomValueError pav msg= CTXE (origin pav) msg
+    
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
 mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error
@@ -164,9 +190,9 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
   CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
                          ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
 
-mkOtherAtomInSessionError :: String -> CtxError
+mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
-  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++atomValue++"`."
+  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++showADL atomValue++"`."
     
 class ErrorConcept a where
   showEC :: a -> String
@@ -275,6 +301,11 @@ whenChecked ga fgb =
       case ga of
          Checked a  -> fgb a
          Errors err -> Errors err
+
+whenError :: Guarded a -> Guarded a -> Guarded a
+whenError (Errors _) a = a
+whenError a@(Checked _) _ = a
+
 
 showErr :: CtxError -> String
 showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o

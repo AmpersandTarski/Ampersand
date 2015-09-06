@@ -20,19 +20,17 @@ module Database.Design.Ampersand.Input.ADL1.Lexer
     , FilePos(..)
 ) where
 
---TODO! Haddock comments to the lexer
-
 import Database.Design.Ampersand.Input.ADL1.FilePos(updatePos)
 import Database.Design.Ampersand.Input.ADL1.LexerToken
---TODO! I don't think that LexerMonad is being used! Also LexerMessage is maybe not being used.
 import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
-import Database.Design.Ampersand.Input.ADL1.LexerBinaryTrees
 import Data.Char hiding(isSymbol)
-import Data.Maybe
-import Data.List (sort)
+import Data.Set (member, fromList)
 import Database.Design.Ampersand.Basics (fatalMsg)
 import Database.Design.Ampersand.Misc
+import Data.Time.Calendar
+import Data.Time.Clock
+import Numeric
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Lexer"
@@ -44,20 +42,26 @@ keywords      = [ "INCLUDE"
                 , "META"
                 , "PATTERN", "ENDPATTERN"
                 , "PROCESS", "ENDPROCESS"
-                , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG", "TYPE", "LINKTO"
+                , "INTERFACE", "CLASS", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG"
+                , "REPRESENT", "TYPE", "LINKTO"
                 , "POPULATION", "CONTAINS"
                 , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "AUT", "PROP", "ALWAYS"
                 , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
                 , "RELATION", "MEANING", "CONCEPT", "IDENT"
                 , "VIEW", "ENDVIEW", "DEFAULT", "TXT", "PRIMHTML", "TEMPLATE"
-                , "KEY" -- HJO, 20130605: Obsolete. Only useful as long as the old prototype generator is still in use.
                 , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
                 , "CLASSIFY"
                 , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                 , "REST", "HTML", "LATEX", "MARKDOWN"
                 , "ONE"
                 , "BYPLUG"
-                , "ROLE", "EDITS", "MAINTAINS"
+                , "ROLE", "SERVICE", "EDITS", "MAINTAINS"
+                -- Keywords for TType:
+                , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
+                , "BINARY", "BIGBINARY", "HUGEBINARY"
+                , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
+                -- Keywords for values of atoms:
+                , "TRUE", "FALSE" --for booleans
                 ]
 
 -- | Retrieves a list of operators accepted by the ampersand language
@@ -69,7 +73,6 @@ operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
 symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 
---TODO: The init pos gets calculated here and again in the runLexerMonad method
 --TODO: Options should be one item, not a list
 -- | Runs the lexer
 lexer :: [Options]  -- ^ The command line options
@@ -124,10 +127,10 @@ mainLexer p ('"':ss) =
 {- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
    single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
 mainLexer p ('\'':ss)
-     = let (s,swidth,rest) = scanAtom ss
+     = let (s,swidth,rest) = scanSingletonInExpression ss
        in if null rest || head rest /= '\''
              then lexerError UnterminatedAtom p
-             else returnToken (LexAtom s) p mainLexer (addPos (swidth+2) p) (tail rest)
+             else returnToken (LexSingleton s) p mainLexer (addPos (swidth+2) p) (tail rest)
 
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
@@ -152,8 +155,14 @@ mainLexer p cs@(c:s)
            in returnToken (LexOperator name) p mainLexer (foldl updatePos p name) s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
-         = let (tk,_,width,s') = getNumber cs
-           in  returnToken tk p mainLexer (addPos width p) s'
+         = case  getDateTime cs of
+            Just (Right (tk,_,width,s')) -> returnToken tk p mainLexer (addPos width p) s'
+            Just (Left msg) -> lexerError msg p
+            Nothing 
+              -> case getDate cs of
+                  Just (tk,_,width,s') -> returnToken tk p mainLexer (addPos width p) s'
+                  Nothing -> let (tk,_,width,s') = getNumber cs
+                             in  returnToken tk p mainLexer (addPos width p) s'
        -- Ignore unexpected characters in the beginning of the file because of the UTF-8 BOM marker.
        -- TODO: Find out the right way of handling the BOM marker.
      | beginFile p = do { lexerWarning UtfChar p; mainLexer p s }
@@ -172,7 +181,7 @@ mainLexer p cs@(c:s)
 -----------------------------------------------------------
 
 locatein :: Ord a => [a] -> a -> Bool
-locatein es = isJust . btLocateIn compare (tab2tree (sort es))
+locatein es e = member e (fromList es)
 
 iskw :: String -> Bool
 iskw = locatein keywords
@@ -209,16 +218,6 @@ scanIdent p s = let (name,rest) = span isIdChar s
                 in (name,addPos (length name) p,rest)
 
 
-scanAtom :: String -> (String,Int,String)
-scanAtom []              = ("",0,[])
-scanAtom ('\\':'&':xs)   = let (str,w,r) = scanAtom xs
-                           in (str,w+2,r)
-scanAtom ('"':xs)        = let (str,w,r) = scanAtom xs
-                           in ('"': str,w+1,r)
-scanAtom xs   = let (ch,cw,cr) = getchar xs
-                    (str,w,r)  = scanAtom cr
-                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
-
 -----------------------------------------------------------
 -- String clean-up functions / comments
 -----------------------------------------------------------
@@ -239,82 +238,195 @@ lexExpl = lexExpl' ""
        lexExpl' _   _ p []          = lexerError UnterminatedPurpose p
 
 -----------------------------------------------------------
+-- iso 8601 date / time
+-----------------------------------------------------------
+-- Returns tuple with the parsed lexeme, the UTCTime, the amount of read characters and the rest of the text
+getDateTime :: String -> Maybe (Either LexerErrorInfo (Lexeme, UTCTime, Int, String) )
+getDateTime cs = 
+  case getDate cs of
+   Nothing -> Nothing
+   Just (_,day,ld,rd) -> 
+      case getTime rd of
+        Nothing -> case rd of
+                    'T':_ -> Just . Left $ ProblematicISO8601DateTime
+                    _     -> Nothing
+        Just (timeOfDay, tzoneOffset,lt,rt) -> 
+            let ucttime = addUTCTime tzoneOffset (UTCTime day timeOfDay)
+            in Just . Right $ 
+                    ( LexDateTime ucttime
+                    , ucttime
+                    , ld + lt
+                    , rt
+                    )
+getTime :: String -> Maybe (DiffTime, NominalDiffTime, Int, String)
+getTime cs =
+  case cs of
+   'T':h1:h2:':':m1:m2:rest 
+    -> if (all isDigit [h1,h2,m1,m2])
+       then let (_,Left hours,_,_) = getNumber [h1,h2]
+                (_,Left minutes,_,_) = getNumber [m1,m2]
+                (seconds,ls,rs) = getSeconds rest
+            in case getTZD rs of
+                 Nothing -> Nothing
+                 Just (offset,lo,ro)
+                   -> if hours < 24 && minutes < 60 && seconds < 60
+                      then Just (fromRational . toRational $
+                                   ( fromIntegral hours*60
+                                    +fromIntegral minutes
+                                   )*60+ seconds
+                                ,offset
+                                ,1+5+ls+lo
+                                ,ro)
+                      else Nothing
+       else Nothing
+   _ -> Nothing
+   
+getSeconds :: String -> (Float,Int,String)
+getSeconds cs =
+ case cs of
+  (':':s1:s2:rest) ->  
+     if all isDigit [s1,s2]
+     then let (fraction,lf,rf) = getFraction (s1:s2:rest)
+          in (fraction,1+lf,rf)
+     else (0,0,cs)
+  _ -> (0,0,cs)
+getFraction :: String -> (Float,Int,String)
+getFraction cs = 
+  case readFloat cs of
+   [(a,str)] -> (a, length cs - length str, str) --TODO: Make more efficient.
+   _ -> (0,0,cs)
+   
+
+
+getTZD :: String -> Maybe (NominalDiffTime, Int,String)
+getTZD cs = 
+ case cs of
+  'Z':rest -> Just (0,1,rest)
+  '+':h1:h2:':':m1:m2:rest -> mkOffset [h1,h2] [m1,m2] rest (+)
+  '-':h1:h2:':':m1:m2:rest -> mkOffset [h1,h2] [m1,m2] rest (-)
+  _ -> Nothing
+  where
+   mkOffset :: String -> String -> String -> (Int -> Int -> Int) -> Maybe (NominalDiffTime, Int,String)
+   mkOffset hs ms rest op = 
+    let (_,Left hours  ,_,_) = getNumber hs
+        (_,Left minutes,_,_) = getNumber ms
+        total = hours*60+minutes
+    in if hours <= 24 && minutes < 60
+       then Just (fromRational . toRational $ 0 `op` total
+                 ,6,rest) 
+       else Nothing 
+getDate :: String -> Maybe (Lexeme, Day, Int, String)
+getDate cs =
+  case cs of
+   y1:y2:y3:y4:'-':m1:m2:'-':d1:d2:rest ->
+      if all isDigit [y1,y2,y3,y4,m1,m2,d1,d2] 
+      then case fromGregorianValid (toInteger year) month day of
+             Nothing -> Nothing 
+             Just d -> Just (LexDate d, d, 10, rest)
+      else Nothing
+     where (_,Left year ,_,_) = getNumber [y1,y2,y3,y4]
+           (_,Left month,_,_) = getNumber [m1,m2]
+           (_,Left day  ,_,_) = getNumber [d1,d2]
+   _  -> Nothing
+     
+-----------------------------------------------------------
 -- Numbers
 -----------------------------------------------------------
-
 -- Returns tuple with the parsed lexeme, the integer, the amount of read characters and the rest of the text
-getNumber :: String -> (Lexeme, Int, Int, String)
-getNumber [] = fatal 294 "getNumber"
-getNumber cs@(c:s)
-  | c /= '0'         = num10
-  | null s           = const0
-  | hs `elem` "xX"   = num16
-  | hs `elem` "oO"   = num8
-  | otherwise        = num10
-  where (hs:ts) = s
-        const0 = (LexDecimal 0, 0, 1, s)
-        num10  = let (n, rs) = span isDigit cs
-                     nr = read n
-                 in (LexDecimal nr, nr, length n, rs)
-        num16   = readNum isHexaDigit  16 LexHex
-        num8    = readNum isOctDigit 8  LexOctal
-        readNum :: (Char -> Bool) -> Int -> (Int -> Lexeme) -> (Lexeme, Int, Int, String)
-        readNum p base lx
-          = let (n, rs) = span p ts
-            in  if null n
-                then const0
-                else let nr = readn base n
-                     in (lx nr, nr, 2 + length n, rs)
-
-isHexaDigit :: Char -> Bool
-isHexaDigit  d = isDigit d || (d >= 'A' && d <= 'F') || (d >= 'a' && d <= 'f')
-
-value :: Char -> Int
-value c | isDigit c = ord c - ord '0'
-        | isUpper c = ord c - ord 'A' + 10
-        | isLower c = ord c - ord 'a' + 10
-        | otherwise = fatal 321 ("value undefined for '"++ show c++"'")
+getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
+getNumber str =
+  case readDec str of
+    [(_,('.':_))] -> case readFloat str of
+                           [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
+                           _            -> fatal 342 "Unexpected: can read decimal, but not float???"
+    [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
+    _  -> fatal 343 $ "No number to read!\n  " ++ take 40 str                    
+--getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
+--getNumber [] = fatal 294 "getNumber"
+--getNumber cs@(c:s)
+--  | c /= '0'         = num10
+--  | null s           = const0
+--  | hs `elem` "xX"   = num16
+--  | hs `elem` "oO"   = num8
+--  | otherwise        = num10
+--  where (hs:ts) = s
+--        const0 = (LexDecimal 0, Left 0, 1, s)
+--        num10 :: (Lexeme, (Either Int Double), Int, String)
+--        num10  = let (n, rs) = span isDigit cs
+--                     (isWhole,readed,rest) = 
+--                        case rs of
+--                          '.':cs' -> let (n',rs') = span isDigit cs'
+--                                         wholeNumberString = n++"."++n'
+--                                     in (all (=='0') n',wholeNumberString,rs')
+--                          _       -> (True,n, rs)
+--                     nrInt = read n
+--                 in if isWhole
+--                    then (LexDecimal nrInt , Left nrInt, length readed,rest)
+--                    else let x = fst.head.readFloat $ readed
+--                         in (LexFloat x, Right x, length readed,rest)
+--        num16   = readIntNum isHexaDigit  16 LexHex
+--        num8    = readIntNum isOctDigit 8  LexOctal
+--        readIntNum :: (Char -> Bool) -> Int -> (Int -> Lexeme) -> (Lexeme, Either Int a , Int, String)
+--        readIntNum p base lx
+--          = let (n, rs) = span p ts
+--            in  if null n
+--                then const0
+--                else let nr = readn base n
+--                     in (lx nr, Left nr, 2 + length n, rs)
 
 -----------------------------------------------------------
 -- characters / strings
 -----------------------------------------------------------
-
 scanString :: String -> (String, Int, String)
-scanString []            = ("",0,[])
-scanString ('\\':'&':xs) = let (str,w,r) = scanString xs  -- TODO: why do we ignore \& ?
-                           in (str,w+2,r)
-scanString ('\\':'\'':xs) = let (str,w,r) = scanString xs -- escaped single quote: \'  (redundant, but allowed in most languages, and it makes escaping generated code a lot easier.)
-                           in ('\'': str,w+2,r)
-scanString ('\'':xs)     = let (str,w,r) = scanString xs  -- single quote: '
-                           in ('\'': str,w+1,r)
-scanString xs = let (ch,cw,cr) = getchar xs
-                    (str,w,r)  = scanString cr
-                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
+scanString = scanUpto False ['"']
 
-getchar :: String -> (Maybe Char, Int, String)
-getchar []          = (Nothing,0,[])
-getchar s@('\n':_ ) = (Nothing,0,s)
-getchar s@('\t':_ ) = (Nothing,0,s)
-getchar s@('\'':_ ) = (Nothing,0,s)
-getchar s@('"' :_ ) = (Nothing,0,s)
-getchar   ('\\':xs) = let (c,l,r) = getEscChar xs
-                      in (c,l+1,r)
-getchar (x:xs)      = (Just x,1,xs)
+scanSingletonInExpression :: String -> (String, Int, String)
+scanSingletonInExpression = scanUpto True ['\'']
 
+-- | scan to some given character. The end char is scanned away too
+scanUpto :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
+         -> [Char]  -- non-empty list of ending characters
+         -> String 
+         -> (String, Int, String)
+scanUpto isAtomScan echrs s = 
+ case s of
+   xs       -> let (ch,cw,cr) = getchar isAtomScan echrs xs
+                   (str,w,r)  = scanUpto isAtomScan echrs cr
+               in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
+
+getchar :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
+        -> [Char]  -- non-empty list of ending characters
+        -> String  -- string to get the character from
+        -> (Maybe Char, Int, String)
+getchar isAtomScan echrs s =
+  case s of
+   []          -> (Nothing,0,[])
+   ('\n':_ )   -> (Nothing,0,s)
+   ('\t':_ )   -> (Nothing,0,s)
+   ('\\':'&':xs) -> let (str,w,r) = getchar isAtomScan echrs xs -- Special case is required because an escaped & is equal to empty string in Haskell
+                    in (str,w+2,r)
+   ('\\':xs)   -> let (c,l,r) = getEscChar xs
+                  in (c,l+1,r)
+   (x:xs)      
+    | x `elem` echrs   -> (Nothing,0,s)
+    | isAtomScan && x `elem`[doubleQuote, singleQuote]  -> (Nothing,0,s) 
+   -- | isAtomScan && ec == singleQuote && x == doubleQuote -> (Nothing,0,s) 
+    | otherwise -> (Just x,1,xs)
+  where
+    (doubleQuote,singleQuote) = ('\"','\'')
 getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
-getEscChar s@(x:xs) | isDigit x = let (_, val, len, rest) = getNumber s
-                                  in  if val >= 0 && val <= 255
-                                         then (Just (chr val),len, rest)
-                                         else (Nothing, 1, rest)
+getEscChar s@(x:xs) | isDigit x = case readDec s of
+                                    [(val,rest)]
+                                      | val >= 0 && val <= 255 -> (Just (chr val),length s - length rest, rest)
+                                      | otherwise -> (Nothing, 1, rest)
+                                    _  -> fatal 432 $ "Impossible! first char is a digit.. "++take 40 s
+                    | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)
                                  Just c  -> (Just c,1,xs)
   where cntrChars = [('a','\a'),('b','\b'),('f','\f'),('n','\n'),('r','\r'),('t','\t')
-                    ,('v','\v'),('\\','\\'),('"','\"')]
-
-readn :: Int -> String -> Int
-readn base = foldl (\r x  -> value x + base * r) 0
+                    ,('v','\v'),('\\','\\')]
 
 -----------------------------------------------------------
 -- Token creation function

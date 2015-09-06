@@ -9,6 +9,7 @@ class Session {
 	public $interface;
 	public $viewer;
 	public $atom;
+	public $accessibleInterfaces = array();
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
@@ -69,19 +70,31 @@ class Session {
 	}
 	
 	public function setRole($roleId = null){
-		try{
-			if(isset($roleId)){
-				$this->role = new Role($roleId);	
-			}else{
-				$this->role = new Role();
+		$roles = LOGIN_ENABLED ? Role::getAllSessionRoles(session_id()) : Role::getAllRoleObjects();
+		if(empty($roles) || $roleId == 0) $this->role = new Role(0); // select role 0, no role
+		elseif(is_null($roleId)) $this->role = current($roles); // select first of $roles
+		elseif(isset($roleId)){
+			if(!is_int($roleId)) throw new Exception ("roleId must be an integer", 400);
+			foreach($roles as $role){
+				if($role->id == $roleId) $this->role = $role;
 			}
-			
-			Notifications::addLog("Role " . $this->role->name . " selected");
-
-			return $this->role->id;
-		}catch(Exception $e){
-			throw $e;
+			if(!isset($this->role)) throw new Exception("You do not have access to the selected role", 401);
+		}else{
+			throw new Exception("No role could be selected", 500);
 		}
+		
+		if(LOGIN_ENABLED){
+			$arr = array();
+			foreach($roles as $role){
+				$arr = array_merge($arr, $role->interfaces);
+			}
+			$this->accessibleInterfaces = array_unique($arr);
+			
+		}
+		
+		Notifications::addLog("Role " . $this->role->name . " selected", 'SESSION');
+
+		return $this->role->id;
 	}
 	
 	public function setInterface($interfaceId){
@@ -90,7 +103,7 @@ class Session {
 			if(!$this->role->isInterfaceForRole($interfaceId)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 403); // 403: Forbidden
 			
 			$this->interface = new InterfaceObject($interfaceId);
-			Notifications::addLog("Interface '". $this->interface->label . "' selected");
+			Notifications::addLog("Interface '". $this->interface->label . "' selected", 'SESSION');
 				
 		}else{
 			throw new Exception('No interface specified', 404);

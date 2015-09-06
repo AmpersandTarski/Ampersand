@@ -7,6 +7,7 @@ AmpersandApp.config( function (\$routeProvider) {
     .when( '/$interfaceName$/:resourceId?' 
          , { controller:  '$interfaceName$Controller'
            , templateUrl: 'generics/app/views/$interfaceName$.html'
+           , interfaceLabel: '$interfaceName$' // Todo: change to interfaceLabel
            \}
          )}$
 });

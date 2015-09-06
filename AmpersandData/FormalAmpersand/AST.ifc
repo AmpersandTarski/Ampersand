@@ -1,0 +1,86 @@
+CONTEXT "AST Interface" IN ENGLISH
+
+INTERFACE Ampersand FOR Ampersand : I[SESSION];'_SESSION'
+TABS[ Context : V[SESSION*Context]
+    COLS ["name" : name[Context*ContextIdentifier]
+         ]
+    , "Patterns" : V[SESSION*Pattern]
+    COLS [ Pattern : name[Pattern*PatternIdentifier]
+         , Purpose : purpose
+         , Rules : rules
+         , Declarations : declarations
+         ]
+    , "Specializations" : V[SESSION*Gen]
+    COLS [ Generic  : gengen
+         , Specific : genspc
+         ]
+    , "Concepts" : V[SESSION*PlainConcept]
+    COLS [ Id: I
+       --  , Definition : cptdf
+       --  , Purpose : cptpurpose
+       --  , "Technical Type" : cpttp
+         ]
+    , "Declarations" : V[SESSION*Declaration]
+    COLS [ name : name
+         , signature : sign
+         , properties : decprps;declaredthrough
+         , pragmaL  : decprL
+         , pragmaM  : decprM
+         , pragmaR  : decprR
+         , Meaning  : decmean
+         , population : in~
+         ]
+    , "Rules" : V[SESSION*Rule]
+    COLS [ name : name
+         , signature : sign
+         , Expression : rrexp
+         , Meaning : rrmean
+         , Purpose : rrpurpose
+         , Property : declaredthrough
+         ]
+--    , "All plugs" : V[ONE*Context];
+    ]
+INTERFACE Atoms FOR Ampersand : I[SESSION];'_SESSION'
+TABS[ Atoms : V[SESSION*Atom]
+    COLS [ "Atom" : I
+         ]
+    , Pairs  : V[SESSION*Pair]
+    COLS [ "Pair" : I
+         , l : l
+         , r : r
+         , in : in
+         ]
+    , Relations : V[SESSION*Relation]
+    COLS [ "Relation" : I 
+         , source : source
+         , target : target
+         ]
+    , Concepts : V[SESSION*Concept]
+    COLS [ "Concept" : I 
+         , name : name -- [Concept*Identifier]
+         ]
+    ]
+    
+
+          
+INTERFACE Pattern FOR Ampersand : I[Pattern]
+BOX [ Pattern : name[Pattern*PatternIdentifier]
+    ]
+
+
+INTERFACE Gen FOR Ampersand : I[Gen]
+BOX [ gengen : gengen
+    , genspc : genspc
+    ]
+
+INTERFACE Declaration FOR Ampersand : I[Declaration]
+BOX [ name    : name
+    , sign    : sign
+    , decprL  : decprL
+    , decprM  : decprM
+    , decprR  : decprR
+    , meaning : decmean
+    , purpose : decpurpose
+    , population: in~
+    ]
+ENDCONTEXT

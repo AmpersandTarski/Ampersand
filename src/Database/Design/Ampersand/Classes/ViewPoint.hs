@@ -49,8 +49,8 @@ rulesFromIdentity identity
             , rrexp  = expression
             , rrfps  = origin identity     -- position in source file
             , rrmean = AMeaning
-                         [ A_Markup English ReST (string2Blocks ReST meaningEN)
-                         , A_Markup Dutch ReST (string2Blocks ReST meaningNL)
+                         [ A_Markup English (string2Blocks ReST meaningEN)
+                         , A_Markup Dutch (string2Blocks ReST meaningNL)
                          ]
             , rrmsg  = []
             , rrviol = Nothing

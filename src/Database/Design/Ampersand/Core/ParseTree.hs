@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DeriveGeneric  #-}
 module Database.Design.Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts, mkContextOfPopsOnly
    , Meta(..)
@@ -14,8 +14,9 @@ module Database.Design.Ampersand.Core.ParseTree (
    , SrcOrTgt(..), isSrc
    , P_Rule(..)
    , ConceptDef(..)
+   , Representation(..), TType(..)
    , P_Population(..)
-
+   , PAtomPair(..), PAtomValue(..), mkPair, PSingleton, makePSingleton
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
 
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
@@ -36,12 +37,10 @@ module Database.Design.Ampersand.Core.ParseTree (
    , Prop(..), Props, normalizeProps
    -- Inherited stuff:
    , module Database.Design.Ampersand.Input.ADL1.FilePos
-   , module Database.Design.Ampersand.ADL1.Pair
    , gen_concs
   ) where
 import Database.Design.Ampersand.Input.ADL1.FilePos
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.ADL1.Pair (Pairs,Paire,mkPair ,srcPaire, trgPaire)
 import Data.Traversable
 import Data.Foldable hiding (concat)
 import Data.List (nub)
@@ -50,6 +49,9 @@ import Control.Applicative
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
+import Data.Time.Calendar
+import Data.Time.Clock
+import Data.Time.LocalTime() -- for instance Show UTCTime
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.ParseTree"
@@ -67,6 +69,7 @@ data P_Context
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
          , ctx_rrels ::  [P_RoleRelation] -- ^ The assignment of roles to Relations. (EDITS statements)
+         , ctx_reprs ::  [Representation]
          , ctx_vs ::     [P_ViewDef]      -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctx_gs ::     [P_Gen]          -- ^ The gen definitions defined in this context, outside the scope of patterns
          , ctx_ifcs ::   [P_Interface]    -- ^ The interfaces defined in this context
@@ -75,7 +78,7 @@ data P_Context
          , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
-         } deriving Show
+         } deriving (Show) --For QuickCheck error messages only!
 
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
@@ -109,9 +112,14 @@ data P_RoleRule
      , mRules :: [String]  -- ^ name of a Rule
      } deriving (Eq, Show) -- deriving (Eq, Show) is just for debugging
 
-data Role = Role String deriving (Eq, Show, Typeable )   -- deriving (Eq, Show) is just for debugging
+data Role = Role String 
+          | Service String
+           deriving (Show, Typeable )   -- deriving (Eq, Show) is just for debugging
+instance Eq Role where
+ r == r' = name r == name r' 
 instance Named Role where
  name (Role nm) = nm
+ name (Service nm) = nm
 instance Unique Role where
  showUnique = name
 instance Traced P_RoleRule where
@@ -126,12 +134,13 @@ data P_Pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
+           , pt_Reprs :: [Representation] -- ^ The type into which concepts is represented
            , pt_ids :: [P_IdentDef]     -- ^ The identity definitions defined in this pattern
            , pt_vds :: [P_ViewDef]      -- ^ The view definitions defined in this pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-           }   deriving (Show)       -- for debugging purposes
+           } deriving (Show) --For QuickCheck error messages only!
 
 instance Named P_Pattern where
  name = pt_nm
@@ -144,7 +153,6 @@ data ConceptDef
          , cdcpt :: String   -- ^ The name of the concept for which this is the definition. If there is no such concept, the conceptdefinition is ignored.
          , cdplug:: Bool     -- ^ Whether the user specifically told Ampersand not to store this concept in the database
          , cddef :: String   -- ^ The textual definition of this concept.
-         , cdtyp :: String   -- ^ The (SQL) type of this concept.
          , cdref :: String   -- ^ A label meant to identify the source of the definition. (useful as LaTeX' symbolic reference)
          , cdfrom:: String   -- ^ The name of the pattern or context in which this concept definition was made
          }   deriving (Show,Eq,Typeable)
@@ -156,6 +164,37 @@ instance Traced ConceptDef where
 instance Named ConceptDef where
  name = cdcpt
 
+data Representation
+  = Repr { reprpos  :: Origin
+         , reprcpts  :: [String]  -- ^ the concepts 
+         , reprdom :: TType     -- the type of the concept the atom is in
+         } deriving (Show)
+instance Traced Representation where
+ origin = reprpos
+         
+data TType 
+  = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
+  | Binary | BigBinary | HugeBinary 
+  | Date | DateTime 
+  | Boolean | Integer | Float | Object  
+  | TypeOfOne --special type for the special concept ONE.
+     deriving (Eq, Ord)
+instance Show TType where
+  show tt = case tt of
+    Alphanumeric      ->   "ALPHANUMERIC"
+    BigAlphanumeric   ->   "BIGALPHANUMERIC"
+    HugeAlphanumeric  ->   "HUGEALPHANUMERIC"   
+    Password          ->   "PASSWORD"           
+    Binary            ->   "BINARY"             
+    BigBinary         ->   "BIGBINARY"          
+    HugeBinary        ->   "HUGEBINARY"         
+    Date              ->   "DATE"               
+    DateTime          ->   "DATETIME"           
+    Boolean           ->   "BOOLEAN"            
+    Integer           ->   "INTEGER"            
+    Float             ->   "FLOAT"              
+    Object            ->   "OBJECT"             
+    TypeOfOne         ->   "TYPEOFONE"   
 data P_Declaration =
       P_Sgn { dec_nm :: String    -- ^ the name of the declaration
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
@@ -163,10 +202,10 @@ data P_Declaration =
             , dec_pragma :: [String]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                                       -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
             , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
-            , dec_popu :: Pairs     -- ^ the list of tuples, of which the relation consists.
+            , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
             , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file.
             , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
-            } deriving Show -- for debugging and testing only
+            } deriving (Show) --For QuickCheck error messages only!
 instance Eq P_Declaration where
  decl==decl' = origin decl==origin decl'
 instance Prelude.Ord P_Declaration where
@@ -176,6 +215,125 @@ instance Named P_Declaration where
 instance Traced P_Declaration where
  origin = dec_fpos
 
+data PAtomPair 
+  = PPair { pppos :: Origin
+          , ppLeft  :: PAtomValue
+          , ppRight :: PAtomValue
+          } deriving (Show) --For QuickCheck error messages only!
+instance Traced PAtomPair where
+  origin = pppos
+instance Flippable PAtomPair where
+  flp pr = pr{ppLeft = ppRight pr
+             ,ppRight = ppLeft pr}
+--data PSingleton
+--  = PSingleton { psOrig :: Origin
+--               , psRaw  :: String 
+--               , psInterprets :: [PAtomValue]
+--               }
+--instance Show PSingleton where
+-- show = psRaw
+--instance Eq PSingleton where
+-- a == b = psRaw a == psRaw b 
+--instance Ord PSingleton where
+-- compare a b = compare (psRaw a) (psRaw b)
+--instance Traced PSingleton where
+-- origin = psOrig
+type PSingleton = PAtomValue
+makePSingleton :: String -> PSingleton
+makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
+--   PSingleton { psOrig =Origin "ParseTree.hs"
+--              , psRaw = s
+--              , psInterprets = fatal 241 "Probably no need to make something up..." 
+--              }
+data PAtomValue
+  = PSingleton Origin String (Maybe PAtomValue)
+  | ScriptString Origin String -- string from script char to enquote with when printed
+  | XlsxString Origin String
+  | ScriptInt Origin Integer
+  | ScriptFloat Origin Double
+  | XlsxDouble Origin Double
+  | ComnBool Origin Bool
+  | ScriptDate Origin Day
+  | ScriptDateTime Origin UTCTime
+  -- deriving Show
+instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
+ show pav =
+  case pav of 
+    PSingleton   _ s _ -> singleQuote s
+    ScriptString   _ s -> singleQuote s
+    XlsxString     _ s -> singleQuote s
+    ScriptInt      _ i -> singleQuote (show i)
+    ScriptFloat    _ d -> singleQuote (show d)
+    XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+    ComnBool       _ b -> singleQuote (show b)
+    ScriptDate     _ x -> singleQuote (show x)
+    ScriptDateTime _ x -> singleQuote (show x)
+   where 
+     singleQuote :: String -> String
+     singleQuote str = "\'" ++concatMap f str++"\'"
+     f :: Char -> String
+     f '\'' = "\\'"
+     f c    = [c] 
+instance Eq PAtomValue where
+  PSingleton _ s _ == PSingleton _ s' _ = s == s'
+  PSingleton _ _ _ == _                 = False
+  ScriptString _ s == ScriptString _ s' = s == s'
+  ScriptString _ _ == _                 = False
+  XlsxString   _ s == XlsxString   _ s' = s == s'
+  XlsxString   _ _ == _                 = False
+  ScriptInt    _ i == ScriptInt    _ i' = i == i'
+  ScriptInt    _ _ == _                 = False
+  ScriptFloat  _ x == ScriptFloat  _ x' = x == x'
+  ScriptFloat  _ _ == _                 = False
+  XlsxDouble   _ d == XlsxDouble   _ d' = d == d'
+  XlsxDouble   _ _ == _                 = False
+  ScriptDate   _ d == ScriptDate   _ d' = d == d'
+  ScriptDate   _ _ == _                 = False
+  ScriptDateTime _ d == ScriptDateTime _ d' = d == d'
+  ScriptDateTime _ _ == _               = False
+  ComnBool     _ b == ComnBool     _ b' = b == b'
+  ComnBool     _ _ == _                 = False
+
+instance Ord PAtomValue where
+  compare a b = 
+   case (a,b) of
+    (PSingleton  _ x _ , PSingleton   _ x' _) -> compare x x'
+    (PSingleton  _ _ _ , _                  ) -> GT
+    (ScriptString   _ x, ScriptString   _ x') -> compare x x'
+    (ScriptString   _ _, _                  ) -> GT
+    (XlsxString     _ x, XlsxString     _ x') -> compare x x'
+    (XlsxString     _ _, _                  ) -> GT
+    (ScriptInt      _ x, ScriptInt      _ x') -> compare x x'
+    (ScriptInt      _ _, _                  ) -> GT
+    (ScriptFloat    _ x, ScriptFloat    _ x') -> compare x x'
+    (ScriptFloat    _ _, _                  ) -> GT
+    (XlsxDouble     _ x, XlsxDouble     _ x') -> compare x x'
+    (XlsxDouble     _ _, _                  ) -> GT
+    (ScriptDate     _ x, ScriptDate     _ x') -> compare x x'
+    (ScriptDate     _ _, _                  ) -> GT
+    (ScriptDateTime _ x, ScriptDateTime _ x') -> compare x x'
+    (ScriptDateTime _ _, _                  ) -> GT
+    (ComnBool       _ x, ComnBool       _ x') -> compare x x'
+    (ComnBool       _ _, _                  ) -> GT
+instance Traced PAtomValue where
+  origin pav =
+   case pav of 
+    PSingleton   o _ _ -> o
+    ScriptString   o _ -> o
+    XlsxString     o _ -> o
+    ScriptInt      o _ -> o
+    ScriptFloat    o _ -> o
+    XlsxDouble     o _ -> o
+    ComnBool       o _ -> o
+    ScriptDate     o _ -> o
+    ScriptDateTime o _ -> o
+
+mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
+mkPair o l r 
+   = PPair { pppos   = o
+           , ppLeft  = l
+           , ppRight = r}
+
 data TermPrim
    = PI Origin                              -- ^ identity element without a type
                                             --   At parse time, there may be zero or one element in the list of concepts.
@@ -183,15 +341,20 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin String (Maybe P_Concept)   -- ^ an atom, possibly with a type
+   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values 
+                                                  --   eg, when `123` is found by the parser, the list will contain both interpretations as 
+                                                  --   the String "123" or as Integer 123.  
+                                                  --   Since everything between the single quotes can allways be interpretated as a String, 
+                                                  --   it is quaranteed that the list contains the interpretation as String, and thus cannot
+                                                  --   be empty.    
    | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
    | PNamedR P_NamedRel
-   deriving (Show, Eq, Ord) -- Eq and Ord are needed solely because type graphs use efficient sets, which require Eq and Ord.
+   deriving (Show) --For QuickCheck error messages only!
 
-data P_NamedRel = PNamedRel Origin String (Maybe P_Sign)
-   deriving (Show, Eq, Ord) -- Eq and Ord are needed solely because type graphs use efficient sets, which require Eq and Ord.
+data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
+   deriving Show
 
 {- For whenever it may turn out to be useful
 instance Eq TermPrim where
@@ -218,14 +381,13 @@ data Term a
    | PDia Origin (Term a) (Term a)  -- ^ diamond                 <>
    | PCps Origin (Term a) (Term a)  -- ^ composition             ;
    | PRad Origin (Term a) (Term a)  -- ^ relative addition       !
-   | PPrd Origin (Term a) (Term a)  -- ^ cartesian product       *
+   | PPrd Origin (Term a) (Term a)  -- ^ cartesian product       #
    | PKl0 Origin (Term a)           -- ^ Rfx.Trn closure         *  (Kleene star)
    | PKl1 Origin (Term a)           -- ^ Transitive closure      +  (Kleene plus)
    | PFlp Origin (Term a)           -- ^ conversion (flip, wok)  ~
    | PCpl Origin (Term a)           -- ^ Complement
    | PBrk Origin (Term a)           -- ^ bracketed expression ( ... )
-   deriving (Show, Eq, Ord) -- deriving Show for debugging purposes
-    -- deriving Eq and Ord are needed solely because type graphs use efficient sets, which require Eq and Ord.
+   deriving (Show) -- deriving Show for debugging purposes
 instance Functor Term where fmap = fmapDefault
 instance Foldable Term where foldMap = foldMapDefault
 instance Traversable Term where
@@ -275,15 +437,15 @@ instance Traced TermPrim where
    Pfull orig _ _ -> orig
    PNamedR r      -> origin r
    
-instance Named TermPrim where
- name e = case e of
-   PI _        -> "I"
-   Pid _ _     -> "I"
-   Patm _ s _  -> s
-   PVee _      -> "V"
-   Pfull _ _ _ -> "V"
-   PNamedR r   -> name r
-   
+--instance Named TermPrim where
+-- name e = case e of
+--   PI _        -> "I"
+--   Pid _ _     -> "I"
+--   Patm _ s _  -> s
+--   PVee _      -> "V"
+--   Pfull _ _ _ -> "V"
+--   PNamedR r   -> name r
+--   
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
 
@@ -386,30 +548,27 @@ newtype PMeaning = PMeaning P_Markup
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
-    P_Markup  { mLang ::   Maybe Lang
+    P_Markup  { mLang   ::   Maybe Lang
               , mFormat :: Maybe PandocFormat
               , mString :: String
               } deriving Show -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_orig ::  Origin  -- the origin
-              , p_rnme ::  String  -- the name of a relation
-              , p_popps :: Pairs   -- the contents
+  = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+              , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+              , p_orig  :: Origin  -- the origin
+              , p_nmdr  :: P_NamedRel  -- the named relation
+              , p_popps :: [PAtomPair]   -- the contents
               }
-  | P_TRelPop { p_orig ::  Origin  -- the origin
-              , p_rnme ::  String  -- the name of a relation
-              , p_type ::  P_Sign  -- the signature of the relation
-              , p_popps :: Pairs   -- the contents
-              }
-  | P_CptPopu { p_orig ::  Origin  -- the origin
-              , p_cnme ::  String  -- the name of a concept
-              , p_popas :: [String]   -- atoms in the initial population of that concept
-              }
-    deriving Show
+  | P_CptPopu { p_orig  :: Origin  -- the origin
+              , p_cnme  :: String  -- the name of a concept
+              , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
+              } 
+   deriving (Show) --For QuickCheck error messages only!
+  
 
 instance Named P_Population where
- name P_RelPopu{p_rnme = nm} = nm
- name P_TRelPop{p_rnme = nm} = nm
+ name P_RelPopu{p_nmdr = nr} = name nr
  name P_CptPopu{p_cnme = nm} = nm
 
 instance Traced P_Population where
@@ -424,7 +583,7 @@ data P_Interface =
            , ifc_Obj :: P_ObjectDef       -- ^ the context expression (mostly: I[c])
            , ifc_Pos :: Origin
            , ifc_Prp :: String
-           } deriving Show
+           } deriving (Show) --For QuickCheck error messages only!
 
 instance Named P_Interface where
  name = ifc_Name
@@ -541,7 +700,6 @@ data PRef2Obj = PRef2ConceptDef String
               | PRef2Pattern String
               | PRef2Interface String
               | PRef2Context String
-              | PRef2Fspc String
               deriving Show -- only for fatal error messages
 
 instance Named PRef2Obj where
@@ -554,7 +712,6 @@ instance Named PRef2Obj where
      PRef2Pattern str -> str
      PRef2Interface str -> str
      PRef2Context str -> str
-     PRef2Fspc str -> str
 
 data PPurpose = PRef2 { pexPos :: Origin      -- the position in the Ampersand script of this purpose definition
                       , pexObj :: PRef2Obj    -- the reference to the object whose purpose is explained
@@ -571,10 +728,9 @@ instance Traced PPurpose where
 data P_Concept
    = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
    | P_Singleton
-      deriving (Eq, Ord)
+--      deriving (Eq, Ord)
 -- (Sebastiaan 12 feb 2012) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 -- (Sebastiaan 11 okt 2013) Removed this again, I thought it would be more clean to use newtype for this instead
--- (Stef June 27th, 2015) Reinstate this solely for the purpose of generating type graphs
 
 instance Named P_Concept where
  name (PCpt {p_cptnm = nm}) = nm
@@ -584,7 +740,6 @@ instance Show P_Concept where
  showsPrec _ c = showString (name c)
 
 data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept }
-              deriving (Eq, Ord) -- Eq and Ord are needed solely because type graphs use efficient sets, which require Eq and Ord.
 
 instance Show P_Sign where
   showsPrec _ sgn =
@@ -676,6 +831,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_ks     = concatMap ctx_ks contexts
       , ctx_rrules = concatMap ctx_rrules contexts
       , ctx_rrels  = concatMap ctx_rrels contexts
+      , ctx_reprs  = concatMap ctx_reprs contexts
       , ctx_vs     = concatMap ctx_vs contexts
       , ctx_gs     = concatMap ctx_gs contexts
       , ctx_ifcs   = concatMap ctx_ifcs contexts
@@ -701,6 +857,7 @@ mkContextOfPopsOnly pops =
       , ctx_ks     = []
       , ctx_rrules = []
       , ctx_rrels  = []
+      , ctx_reprs  = []
       , ctx_vs     = []
       , ctx_gs     = []
       , ctx_ifcs   = []

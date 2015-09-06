@@ -7,6 +7,7 @@ import Database.Design.Ampersand.Misc
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.ADL1
+import Database.Design.Ampersand.Core.ParseTree
 import Codec.Xlsx
 import qualified Data.ByteString.Lazy as L
 import Control.Lens
@@ -14,18 +15,27 @@ import qualified Data.Text as T
 import qualified Data.Map as M 
 import Data.Maybe
 import Data.Char
+import Data.String
+import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "XLSX"
 
-parseXlsxFile :: Options -> FilePath -> IO (Guarded [P_Population])
-parseXlsxFile _ filePath = 
-  do bytestr <- L.readFile filePath
+parseXlsxFile :: Options 
+              -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
+              -> FilePath -> IO (Guarded [P_Population])
+parseXlsxFile _ useAllStaticFiles file =
+  do bytestr <- if useAllStaticFiles
+                then case getStaticFileContent FormalAmpersand file of
+                      Just cont -> do return $ fromString cont
+                      Nothing -> fatalMsg ("Statically included "++ show FormalAmpersand++ " files. ") 0 $
+                                  "Cannot find `"++file++"`."
+                else L.readFile file
      return . xlsx2pContext . toXlsx $ bytestr
  where
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
   xlsx2pContext xlsx 
-    = Checked $ concatMap (toPops filePath) $
+    = Checked $ concatMap (toPops file) $
          Prelude.concatMap theSheetCellsForTable (xlsx ^. xlSheets . to M.toList)
       
 data SheetCellsForTable 
@@ -50,36 +60,29 @@ toPops file x = map popForColumn' (colNrs x)
     popForColumn' i = -- trace (show x ++"(Now column: "++show i++")") $
                     popForColumn i
     popForColumn :: Int -> P_Population
-    popForColumn i 
-      | i  == sourceCol  
-        =  P_CptPopu { p_orig = popOrigin
-                     , p_cnme = sourceConceptName 
-                     , p_popas = [fromMaybe (fatal 49 $ 
-                                                "this value should be present. (sheet,row,col) = "++show (theSheetName x,row,i)
-                                            )
-                                            (case value(row,i) of
-                                               Just (CellText t)   -> Just (T.unpack t) -- don't use show, for you get quotes!
-                                               Just (CellDouble d) -> Just (show d)
-                                               Just (CellBool b)   -> Just (show b)
-                                               Nothing -> Nothing)
-                                 | row <- popRowNrs x] 
-                     }
-      | otherwise
-        =  (case mTargetConceptName of
-             Just tCptName 
-                -> P_TRelPop { p_orig = popOrigin
-                             , p_rnme = relName
-                             , p_type = (if isFlipped then flp else id)
-                                        P_Sign {pSrc = PCpt sourceConceptName
-                                               ,pTgt = PCpt tCptName
-                                               }
-                             , p_popps = thePairs}
-             Nothing
-                -> P_RelPopu { p_orig = popOrigin
-                             , p_rnme = relName
-                             , p_popps = thePairs}
-           )
+    popForColumn i =
+      if i  == sourceCol  
+      then  P_CptPopu { p_orig = popOrigin
+                      , p_cnme = sourceConceptName 
+                      , p_popas = concat [ case value(row,i) of
+                                             Nothing -> []
+                                             Just cv -> cellToAtomValue mSourceConceptDelimiter cv popOrigin
+                                         | row <- popRowNrs x
+                                         ] 
+                      }
+      else  P_RelPopu { p_orig = popOrigin
+                      , p_src = src
+                      , p_tgt = trg
+                      , p_nmdr 
+                         = PNamedRel popOrigin relName Nothing
+                      , p_popps = thePairs
+                      }
      where                             
+       src, trg :: Maybe String
+       (src,trg) = case mTargetConceptName of
+                  Just tCptName -> (if isFlipped then swap else id) (Just sourceConceptName, Just tCptName)
+                  Nothing -> (Nothing,Nothing)
+          where swap (a,b) = (b,a)
        popOrigin :: Origin
        popOrigin = originOfCell (relNamesRow, targetCol)
        conceptNamesRow = headerRowNrs x !! 1
@@ -113,25 +116,27 @@ toPops file x = map popForColumn' (colNrs x)
                        then (init str, True )
                        else (     str, False)
                 _ -> fatal 87 $ "No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol)
-       thePairs :: [Paire]
+       thePairs :: [PAtomPair]
        thePairs =  concat . catMaybes . map pairsAtRow . popRowNrs $ x
-       pairsAtRow :: Int -> Maybe [Paire]
+       pairsAtRow :: Int -> Maybe [PAtomPair]
        pairsAtRow r = case (value (r,sourceCol)
                           ,value (r,targetCol)
                           ) of
                        (Just s,Just t) -> Just $ 
                                             (if isFlipped then map flp else id) $
-                                                [mkPair a b
-                                                | a <- cellToStrings mSourceConceptDelimiter s
-                                                , b <- cellToStrings mTargetConceptDelimiter t
+                                                [mkPair origTrg a b
+                                                | a <- cellToAtomValue mSourceConceptDelimiter s origSrc
+                                                , b <- cellToAtomValue mTargetConceptDelimiter t origTrg
                                                 ]
-                       _ -> Nothing
-       cellToStrings :: Maybe Char -> CellValue -> [String]  -- The value in a cell can contain the delimeter of the row
-       cellToStrings mDelimiter cv 
+                       _               -> Nothing
+            where origSrc = XLSXLoc file (theSheetName x) (r,sourceCol)
+                  origTrg = XLSXLoc file (theSheetName x) (r,targetCol)
+       cellToAtomValue :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
+       cellToAtomValue mDelimiter cv orig
          = case cv of
-             CellText t -> unDelimit mDelimiter (T.unpack t)
-             CellDouble d -> [show d]
-             CellBool b -> [show b] 
+             CellText t   -> map (XlsxString orig) (unDelimit mDelimiter (T.unpack t))
+             CellDouble d -> [XlsxDouble orig d]
+             CellBool b -> [ComnBool orig b] 
        unDelimit :: Eq a => Maybe a -> [a] -> [[a]]
        unDelimit mDelimiter xs =
          case mDelimiter of
@@ -145,7 +150,7 @@ toPops file x = map popForColumn' (colNrs x)
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 
-      = Origin $ file ++",\n  Sheet: "++theSheetName x++", Cell ("++show r++","++show c++")" --TODO: Make separate Origin constructor for this 
+      = XLSXLoc file (theSheetName x) (r,c) 
 
     value :: (Int,Int) -> Maybe CellValue
     value k = (theCellMap x) ^? ix k . cellValue . _Just
@@ -181,7 +186,8 @@ theSheetCellsForTable (sheetName,ws)
                      , headerRowNrs = okHeaderRows
                      , popRowNrs    = populationRows
                      , colNrs       = theCols
-                     , debugInfo = [ "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
+                     , debugInfo = [ "indexInTableStarters"++": "++show indexInTableStarters
+                                   , "maxRowOfWorksheet"++": "++show maxRowOfWorksheet
                                    , "maxColOfWorksheet"++": "++show maxColOfWorksheet
                                    , "startOfTable     "++": "++show startOfTable
                                    , "firstPopRowNr    "++": "++show firstPopRowNr
@@ -200,7 +206,7 @@ theSheetCellsForTable (sheetName,ws)
        maxRowOfWorksheet = Prelude.maximum (Prelude.map fst (M.keys (ws  ^. wsCells)))
        maxColOfWorksheet = Prelude.maximum (Prelude.map snd (M.keys (ws  ^. wsCells)))
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
-       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet])!!(indexInTableStarters+1))-1
+       lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1])!!(indexInTableStarters+1))-1
        okHeaderRows = filter isProperRow [firstHeaderRowNr,firstHeaderRowNr+nrOfHeaderRows-1]
        populationRows = filter isProperRow [firstPopRowNr..lastPopRowNr]
        isProperRow :: Int -> Bool

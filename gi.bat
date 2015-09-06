@@ -5,7 +5,7 @@ if "%~1" == "" (
 ) else if "%~1" == "main" (
 	ghci -Wall -isrc/exec:src/lib:dist/build/autogen:src Main
 ) else if "%~1" == "test" (
-	ghci -Wall -isrc/exec:src/lib:dist/build/autogen:src:src/Database/Design/Ampersand/Test src\Database\Design\Ampersand\Test\Main
+	ghci -Wall -isrc/exec:src/lib:dist/build/autogen:src:src/Database/Design/Ampersand/Test src\Main
 ) else (
 	echo "Module '%1' not configured in %0"
 )

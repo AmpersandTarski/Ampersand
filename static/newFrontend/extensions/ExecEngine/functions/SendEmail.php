@@ -17,7 +17,7 @@ function SendEmail($to,$subject,$message){
 	$username = $GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['username'];
 	$password = $GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['password'];
 
-	Notifications::addLog('Username = '.$username);
+	Notifications::addLog('Username = '.$username, 'ExecEngine');
 	
 	$mail = new PHPMailer;
 

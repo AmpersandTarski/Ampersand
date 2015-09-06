@@ -61,14 +61,13 @@ chpConceptualAnalysis lev fSpec = (
         -- The section starts with the reason why this pattern exists
      <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat))
         -- followed by a conceptual model for this pattern
-     <> ( case (genGraphics (getOpts fSpec), fsLang fSpec) of
-               (True,Dutch  ) -> -- announce the conceptual diagram
-                                 para ("Figuur " <> xRefReference (getOpts fSpec) (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
-                                 -- draw the conceptual diagram
-                               <>((plain . showImage (getOpts fSpec) . pictOfPat) pat)
-               (True,English) -> para ("Figure " <> xRefReference (getOpts fSpec) (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
-                               <>((plain . showImage (getOpts fSpec) . pictOfPat) pat)
-               _              -> mempty
+     <> ( case (fsLang fSpec) of
+               (Dutch  ) -> -- announce the conceptual diagram
+                            para ("Figuur " <> xRefReference (getOpts fSpec) (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
+                            -- draw the conceptual diagram
+                          <>((plain . showImage (getOpts fSpec) . pictOfPat) pat)
+               (English) -> para ("Figure " <> xRefReference (getOpts fSpec) (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
+                          <>((plain . showImage (getOpts fSpec) . pictOfPat) pat)
         ) <>
     (
         -- now provide the text of this pattern.
@@ -147,7 +146,8 @@ chpConceptualAnalysis lev fSpec = (
     nladj Trn = "transitieve"
     nladj Rfx = "reflexieve"
     nladj Irf = "irreflexieve"
-    nladj Aut = "automatisch berekende"  
+    nladj Aut = "automatisch berekende"
+    nladj Prop  = "symmetrische en antisymmetrische" 
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
         = let purp = (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))
@@ -180,14 +180,12 @@ chpConceptualAnalysis lev fSpec = (
                    else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
                   )
                -- followed by a conceptual model for this rule
-               <> if genGraphics (getOpts fSpec)
-                  then para
-                         (   str (l (NL "Figuur ", EN "Figure "))
-                          <> xRefReference (getOpts fSpec) (pictOfRule r)
-                          <> str (l (NL " geeft een conceptueel diagram van deze regel."
-                                    ,EN " shows a conceptual diagram of this rule."))
-                         )
-                     <>plain (showImage (getOpts fSpec) (pictOfRule r))
-                  else mempty
+               <> para
+                     (   str (l (NL "Figuur ", EN "Figure "))
+                      <> xRefReference (getOpts fSpec) (pictOfRule r)
+                      <> str (l (NL " geeft een conceptueel diagram van deze regel."
+                                ,EN " shows a conceptual diagram of this rule."))
+                     )
+               <>plain (showImage (getOpts fSpec) (pictOfRule r))
                ]
              )

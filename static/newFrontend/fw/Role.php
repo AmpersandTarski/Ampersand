@@ -3,68 +3,92 @@
 class Role {
 
 	public $id;
-	public $name; // TODO: kan weg?
 	public $label;
 	public $maintains = array();
 	public $interfaces = array();
-
-	public function __construct($id = null){
-		global $allRoles; // from Generics.php
+	
+	/*
+	 * param int $id
+	 */
+	public function __construct($roleId = 0){
+				
+		if(!is_int($roleId)) throw new Exception("No valid role id provided. Role id must be an integer", 500);
 		
-		if(is_null($id)){ 
-			$id = DEFAULT_ROLEID; // localSettings.php
-			Notifications::addLog("Default role selected");
-		}
-		
-		// Check if role exists
-		if(!key_exists($id, $allRoles)) throw new Exception ("Role with roleId \'$id\' does not exists", 404);
-		
-		// Name of role
-		$this->id = $id;
-		$this->name = $allRoles[$id]['name'];
-		$this->label = $allRoles[$id]['name'];
+		// Role information
+		$roleInfo = Role::getRoleInfo($roleId);
+		$this->id = $roleId;
+		$this->label = $roleInfo['name'];
 		
 		// Rules that are maintained by this role
-		$this->maintains = (array)$allRoles[$id]['ruleNames'];
+		$this->maintains = (array)$roleInfo['ruleNames'];
 		
 		// Interfaces that are accessible by this role
 		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
-			if (InterfaceObject::isInterfaceForRole($this->name, $interfaceId)) $this->interfaces[] = new InterfaceObject($interfaceId);
-		}		
+			$ifc = new InterfaceObject($interfaceId);
+			if (in_array($this->label, $ifc->interfaceRoles) || empty($ifc->interfaceRoles)) $this->interfaces[] = $ifc;
+		}
 	}
-		
+	
+	public static function getRoleInfo($roleId){		
+		foreach(Role::getAllRoles() as $arr){
+			if($arr['id'] == $roleId) return $arr;
+		}
+		throw new Exception ("Role with roleId \'$roleId\' does not exists", 404);
+	}
+	
 	public static function getAllRoles(){
 		global $allRoles; // from Generics.php
 		
-		$roles = array();
-		foreach((array)$allRoles as $key => $arr){
-			$roles[$key] = new Role($key);
+		$roles = $allRoles;
+		$roles[] = Role::getRoleZero();
+		return (array)$roles;
+	}
+		
+	public static function getAllRoleObjects(){		
+		$roleObjects = array();
+		foreach(Role::getAllRoles() as $role){
+			$roleObjects[] = new Role($role['id']);
 		}
 		
-		return $roles;
+		return $roleObjects;
 	}
 	
-	public static function getRole($roleName){
-		global $allRoles; // from Generics.php
+	public static function getRoleZero(){
+		return array( 'id' => 0
+            		, 'name' => 'No role'
+            		, 'ruleNames'  => array ()
+            		, 'interfaces' => array ());
+	}
+	
+	public static function getAllSessionRoles($sessionId){		
+		$sessionRoleLabels = array();
+		$sessionRoles = array();
 		
-		foreach((array)$allRoles as $key => $arr){
-			if($arr['name'] == $roleName) return new Role($key);
+		$interface = new InterfaceObject('SessionRoles');
+		$session = new Atom($sessionId, 'SESSION');
+		$sessionRoleLabels = array_keys((array)$session->getContent($interface, true));
+		
+		foreach(Role::getAllRoleObjects() as $role){
+			if(in_array($role->label, $sessionRoleLabels) || $role->id == 0) $sessionRoles[] = $role;
+		}
+		
+		return $sessionRoles;
+	}
+	
+	public static function getRoleByName($roleName){		
+		foreach(Role::getAllRoles() as $arr){
+			if($arr['name'] == $roleName) return new Role($arr['id']);
 		}
 		return false; // when $roleName is not found in $allRoles
 	}
 	
-	public function getInterfaces($srcConcept = null){ // $srcConcept: <concept> or null (=all)
+	public function getInterfacesForConcept($concept){
 		$interfaces = array();
-		foreach($this->interfaces as $interface){
-			if(isset($srcConcept)){
-				if($interface->srcConcept == $srcConcept 
-					|| in_array($srcConcept, Concept::getSpecializations($interface->srcConcept)) ) {
-					
-					$interfaces[] = $interface;
-				}
-			}else{
-				$interfaces[] = $interface;
-			}
+		
+		foreach($this->getSessionInterfaces() as $interface){
+			if($interface->srcConcept == $concept || 
+					in_array($concept, Concept::getSpecializations($interface->srcConcept)) 
+				) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
@@ -85,8 +109,8 @@ class Role {
 		return $interfaces;
 	}
 	
-	public function isInterfaceForRole($interfaceId){
-		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->interfaces));
+	public function isInterfaceForRole($interfaceId){		
+		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->getSessionInterfaces()));
 	}
 	
 	public function getViolations(){
@@ -110,8 +134,14 @@ class Role {
 		}
 		
 	}
-
+	
+	private function getSessionInterfaces(){
+		if(LOGIN_ENABLED){
+			$session = Session::singleton();
+			return (array)$session->accessibleInterfaces;
+		}else{
+			return (array)$this->interfaces;
+		}
+	}
 }
-
-
 ?>

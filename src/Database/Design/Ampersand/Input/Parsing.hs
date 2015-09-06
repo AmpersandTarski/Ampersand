@@ -23,61 +23,87 @@ import System.FilePath
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
 import Database.Design.Ampersand.Input.Xslx.XLSX
+import Control.Exception
+import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Parsing"
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL ::  Options                -- ^ The options given through the command line
-         -> FilePath                -- ^ The path of the file to be parsed
+         -> Either FilePath MetaType   -- ^ The path of the file to be parsed OR the MetaType. In the latter case, the files will be taken from `allStaticFiles`
          -> IO (Guarded P_Context)  -- ^ The resulting context
-parseADL opts filePath =
-  whenCheckedIO (parseSingleADL opts filePath) $ \(ctxt, filePaths) ->
-    whenCheckedIO (parseADLs opts [filePath] filePaths) $ \ctxts ->
+parseADL opts thingToParse =
+  whenCheckedIO (parseSingleADL opts useAllStaticFiles filePath) $ \(ctxt, filePaths) ->
+    whenCheckedIO (parseADLs opts useAllStaticFiles [filePath] filePaths) $ \ctxts ->
       return $ Checked $ foldl mergeContexts ctxt ctxts
-
+ where (filePath, useAllStaticFiles) = case thingToParse of
+                                         Left fp        -> (fp               ,False)
+                                         Right Generics -> ("Generics.adl",True )
+                                         Right AST      -> ("AST.adl"     ,True )
 -- | Parses several ADL files
 parseADLs :: Options                    -- ^ The options given through the command line
+          -> Bool                       -- ^ True iff the file is from FormalAmpersand files in `allStaticFiles` 
           -> [FilePath]                 -- ^ The list of files that have already been parsed
           -> [FilePath]                 -- ^ The list of files to parse
           -> IO (Guarded [P_Context])   -- ^ The resulting contexts
-parseADLs _    _               []        = return $ Checked []
-parseADLs opts parsedFilePaths filePaths =
+parseADLs _    _                 _               []        = return $ Checked []
+parseADLs opts useAllStaticFiles parsedFilePaths filePaths =
  do { let filePathsToParse = nub filePaths \\ parsedFilePaths
-    ; whenCheckedIO (sequenceA <$> mapM (parseSingleADL opts) filePathsToParse) $ \ctxtNewFilePathss ->
-       do { let (ctxts, newFilessToParse) = unzip ctxtNewFilePathss
-          ; whenCheckedIO (parseADLs opts (parsedFilePaths ++ filePaths) $ concat newFilessToParse) $ \ctxts' ->
+    ; whenCheckedIO (sequenceA <$> mapM (parseSingleADL opts useAllStaticFiles) filePathsToParse) $ \ctxtNewFilePathss ->
+       do { let (ctxts, newFilesToParse) = unzip ctxtNewFilePathss
+          ; whenCheckedIO (parseADLs opts useAllStaticFiles (parsedFilePaths ++ filePaths) $ concat newFilesToParse) $ \ctxts' ->
               return $ Checked $ ctxts ++ ctxts'
           }
     }
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
-parseSingleADL :: Options -> FilePath -> IO (Guarded (P_Context, [FilePath]))
-parseSingleADL opts filePath
- | extension == ".xlsx" = 
-     do { verboseLn opts $ "Reading Excel populations from " ++ filePath
-        ; popFromExcel <- parseXlsxFile opts filePath
-        ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
-        }
- | otherwise =   
-     do { verboseLn opts $ "Reading file " ++ filePath
-        ; mFileContents <- readUTF8File filePath
-        ; case mFileContents of
-            Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
-            Right fileContents ->
-                 whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
-                       do filePaths <- mapM normalizePath relativePaths
-                          return (Checked (ctxts, filePaths))
-    }
- where normalizePath relativePath = canonicalizePath $ takeDirectory filePath </> relativePath 
-       extension = map toLower $ takeExtension filePath
-
+parseSingleADL :: 
+    Options 
+ -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
+ -> FilePath -> IO (Guarded (P_Context, [FilePath]))
+parseSingleADL opts useAllStaticFiles filePath
+ = do verboseLn opts $ "Reading file " ++ filePath ++ if useAllStaticFiles then " (from within ampersand.exe)" else ""
+      exists <- doesFileExist filePath
+      if useAllStaticFiles || exists 
+      then parseSingleADL'
+      else return . makeError $ "Could not find `"++filePath++"`."
+    where
+     parseSingleADL' :: IO(Guarded (P_Context, [FilePath]))
+     parseSingleADL'
+         | extension == ".xlsx" = 
+             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts useAllStaticFiles filePath
+                ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+                }
+         | otherwise =   
+             do { mFileContents 
+                    <- if useAllStaticFiles
+                       then case getStaticFileContent FormalAmpersand filePath of
+                             Just cont -> do return (Right $ stripBom cont)
+                             Nothing -> fatalMsg ("Statically included "++ show FormalAmpersand++ " files. ") 0 $
+                                         "Cannot find `"++filePath++"`."
+                       else readUTF8File filePath
+                ; case mFileContents of
+                    Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
+                    Right fileContents ->
+                         whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
+                               do return (Checked (ctxts, relativePaths))
+            }
+         where stripBom :: String -> String
+               stripBom ('\239':'\187':'\191': s) = s
+               stripBom s = s 
+               extension = map toLower $ takeExtension filePath
+               catchInvalidXlsx :: IO a -> IO a 
+               catchInvalidXlsx m = catch m f 
+                 where f :: SomeException -> IO a
+                       f exception = fatal 34 $ "The file does not seem to have a valid .xlsx structure:\n  "++show exception
+             
 parseErrors :: Lang -> ParseError -> [CtxError]
 parseErrors lang err = [PE (Message msg)]
                 where msg :: String
-                      msg = show (errorPos err) ++ ":" ++ showLang lang (errorMessages err)
+                      msg = "In file " ++ show (errorPos err) ++ ":" ++ showLang lang (errorMessages err)
                       showLang :: Lang -> [Message] -> String
-                      showLang English = showErrorMessages "or" "unknown parse error"   "expecting" "unexpected" "end of input"
+                      showLang English = showErrorMessages "or" "unknown parse error"   "at that point expecting" "Parsing stumbled upon" "end of input"
                       showLang Dutch   = showErrorMessages "of" "onbekende parsingfout" "verwacht"  "onverwacht" "einde van de invoer"
 
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
@@ -91,8 +117,12 @@ parse p fn ts =
               | otherwise = tokPos (head ts)
 
 --TODO: Give the errors in a better way
-lexerErrors :: LexerError -> [CtxError]
-lexerErrors err = [PE (Message ("Lexer error "++show err))]
+lexerError2CtxError :: LexerError -> CtxError
+lexerError2CtxError (LexerError pos err) = 
+   PE (Message ("Lexer error at "++show pos++"\n  "
+                ++ intercalate "\n    " (showLexerErrorInfo err)
+               )
+      )
 
 -- | Runs the given parser
 runParser :: AmpParser a -- ^ The parser to run
@@ -104,7 +134,7 @@ runParser parser filename input =
   --TODO: Give options to the lexer
   let lexed = lexer [] filename input
   in case lexed of
-    Left err -> Errors $ lexerErrors err
+    Left err -> Errors [lexerError2CtxError err]
     --TODO: Do something with the warnings. The warnings cannot be shown with the current Guarded data type
     Right (tokens, _)  -> whenChecked (parse parser filename tokens) Checked
 

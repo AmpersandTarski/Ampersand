@@ -1,20 +1,17 @@
 module Main where
 
 import Control.Monad
-import Control.Applicative
 import Data.List
 import Data.Function (on)
-import System.FilePath        (combine)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
-import Database.Design.Ampersand.Prototype.ObjBinGen   (generatePhp, doGenAtlas, writeStaticFiles)
-import Database.Design.Ampersand.Prototype.Apps.RAP    (atlas2context, atlas2populations)
+import Database.Design.Ampersand.Prototype.ObjBinGen   (generatePhp, writeStaticFiles)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
 import Database.Design.Ampersand.Prototype.Generate    (generateGenerics, generateCustomCss)
 import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import Database.Design.Ampersand.Prototype.ValidateEdit
 
 main :: IO ()
 main =
@@ -31,35 +28,28 @@ main =
 
 generateProtoStuff :: FSpec -> IO ()
 generateProtoStuff fSpec
-  | Just nm <- validateEdit (getOpts fSpec) =
-      do { verboseLn (getOpts fSpec) "Validating edit operations:"
-         ; gBeforePops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".before.pop"
-         ; gAfterPops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".after.pop"
-         ; case (,) <$> gBeforePops <*> gAfterPops of
-              Errors err -> do putStrLn "Error(s) found in before/after populations:"
-                               mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
-                               exitWith $ ExitFailure 10
-              Checked (beforePops, afterPops) ->
-               do { isValid <- validateEditScript fSpec beforePops afterPops (nm++".edit.json")
-                  ; unless isValid (exitWith (ExitFailure 30))
-                  }
-         }
+-- HJO: The following has been commented out, because:
+-- 1) it does not seem to be used
+-- 2) It's purpose is unclear
+-- 3) underlying code has been modified. It is unclear what that would mean for this functionality
+--     ==> Hence, we have bitrot.
+--  | Just nm <- validateEdit (getOpts fSpec) =
+--      do { verboseLn (getOpts fSpec) "Validating edit operations:"
+--         ; gBeforePops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".before.pop"
+--         ; gAfterPops <- getPopulationsFrom (getOpts fSpec) $ nm ++ ".after.pop"
+--         ; case (,) <$> gBeforePops <*> gAfterPops of
+--              Errors err -> do putStrLn "Error(s) found in before/after populations:"
+--                               mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
+--                               exitWith $ ExitFailure 10
+--              Checked (beforePops, afterPops) ->
+--               do { isValid <- validateEditScript fSpec beforePops afterPops (nm++".edit.json")
+--                  ; unless isValid (exitWith (ExitFailure 30))
+--                  }
+--         }
   | validateSQL (getOpts fSpec) =
       do { verboseLn (getOpts fSpec) "Validating SQL expressions..."
          ; isValid <- validateRulesSQL fSpec
          ; unless isValid (exitWith (ExitFailure 30))
-         }
-  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1Format =
-      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .adl-file..."
-         ; cx<-atlas2context (getOpts fSpec) fSpec
-         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) (showADL cx)
-         ; verboseLn (getOpts fSpec) $ "Context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
-         }
-  | export2adl (getOpts fSpec) && fileformat (getOpts fSpec)==Just Adl1PopFormat =
-      do { verboseLn (getOpts fSpec) "Exporting Atlas DB content to .pop-file..."
-         ; cxstr<-atlas2populations fSpec
-         ; writeFile (combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec))) cxstr
-         ; verboseLn (getOpts fSpec) $ "Population of context written to " ++ combine (dirOutput (getOpts fSpec)) (outputfile (getOpts fSpec)) ++ "."
          }
   | otherwise =
       do { when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
@@ -75,9 +65,9 @@ generateProtoStuff fSpec
 doGenProto :: FSpec -> IO ()
 doGenProto fSpec =
  do { verboseLn (getOpts fSpec) "Checking on rule violations..."
-    ; reportViolations (allViolations fSpec)
+    ; reportViolations violationsOfInvariants
     ; reportSignals (initialConjunctSignals fSpec)
-    ; if (not . null) (allViolations fSpec) && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
+    ; if (not . null) violationsOfInvariants && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
       then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
               }
@@ -95,27 +85,35 @@ doGenProto fSpec =
                 else
                   generateCustomCss fSpec
               
-              ; when (genAtlas (getOpts fSpec)) $ doGenAtlas fSpec
               ; verboseLn (getOpts fSpec) "\n"
               
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
               }
     }
- where reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
-       reportViolations viols =
-         let ruleNamesAndViolStrings = [ (name r, showADL p) | (r,p) <- viols ]
+ where violationsOfInvariants :: [(Rule,[AAtomPair])]
+       violationsOfInvariants 
+         = [(r,vs) |(r,vs) <- allViolations fSpec
+                   , not (isSignal r)
+           ]
+       reportViolations :: [(Rule,[AAtomPair])] -> IO()
+       reportViolations []    = verboseLn (getOpts fSpec) "No violations found."
+       reportViolations viols = 
+         let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
          in  putStrLn $ intercalate "\n"
                           [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                           | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
                           ]
                           
+       showprs :: [AAtomPair] -> String
+       showprs aprs = "["++intercalate ", " (map showADL aprs)++"]"
+--       showpr :: AAtomPair -> String
+--       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )" 
        reportSignals []        = verboseLn (getOpts fSpec) "No signals for the initial population."
        reportSignals conjViols = verboseLn (getOpts fSpec) $ "Signals for initial population:\n" ++ intercalate "\n"
          [ "Conjunct: " ++ showADL (rc_conjunct conj) ++ "\n- " ++
-             showADL viols
+             showprs viols
          | (conj, viols) <- conjViols
          ]
-
 ruleTest :: FSpec -> String -> IO ()
 ruleTest fSpec ruleName =
  case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
@@ -127,6 +125,6 @@ ruleTest fSpec ruleName =
                   ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
                   ; putStrLn $ showContents ruleComplement
                   }
- where showContents rule = let pairs = [ "("++srcPaire v++"," ++trgPaire v++")" | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
+ where showContents rule = let pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
                            in  "[" ++ intercalate ", " pairs ++ "]"
               

@@ -156,9 +156,9 @@ nonSpecialSelectExpr fSpec expr=
                    else f (Just val) nonMp1Terms
             []  -> f Nothing nonMp1Terms
            where 
-                  posVals :: [String]
+                  posVals :: [PSingleton]
                   posVals = nub (map atmValue posMp1Terms)
-                  negVals :: [String]
+                  negVals :: [PSingleton]
                   negVals = nub (map (atmValue . notCpl) negMp1Terms)
                   atmValue (EMp1 a _) = a
                   atmValue _          = fatal 31 "atm error"
@@ -166,7 +166,7 @@ nonSpecialSelectExpr fSpec expr=
                   (mp1Terms,nonMp1Terms) = partition isMp1 (exprIsc2list expr)
                   posMp1Terms, negMp1Terms :: [Expression]
                   (posMp1Terms,negMp1Terms) = partition isPos mp1Terms
-                  f :: Maybe String   -- Optional the single atomvalue that might be found as the only possible value 
+                  f :: Maybe PSingleton   -- Optional the singleton value that might be found as the only possible value 
                       -> [Expression] -- subexpressions of the intersection.  Mp1{} nor ECpl(Mp1{}) are allowed elements of this list.  
                       -> BinQueryExpr
                   f specificValue subTerms 
@@ -181,9 +181,9 @@ nonSpecialSelectExpr fSpec expr=
                         case subTerms of
                           [] -> case specificValue of 
                                  Nothing  -> emptySet -- case might occur with only negMp1Terms??
-                                 Just str ->
-                                    BSE { bseSrc = StringLit str
-                                        , bseTrg = StringLit str
+                                 Just singleton ->
+                                    BSE { bseSrc = singleton2SQL (source expr) singleton
+                                        , bseTrg = singleton2SQL (source expr) singleton
                                         , bseTbl = []
                                         , bseWhr = Nothing
                                         }
@@ -201,10 +201,10 @@ nonSpecialSelectExpr fSpec expr=
                                             Nothing  -> Nothing
                                             Just val -> Just $ equalToValueClause val
                                           where
-                                            equalToValueClause :: String -> ValueExpr
-                                            equalToValueClause str = conjunctSQL 
-                                                               [ BinOp theSrc [Name "="] (StringLit str)
-                                                               , BinOp theTrg [Name "="] (StringLit str)
+                                            equalToValueClause :: PSingleton -> ValueExpr
+                                            equalToValueClause singleton = conjunctSQL 
+                                                               [ BinOp theSrc [Name "="] (singleton2SQL (source expr) singleton)
+                                                               , BinOp theTrg [Name "="] (singleton2SQL (source expr) singleton)
                                                                ]
 
                                        forbiddenTuples :: Maybe ValueExpr
@@ -214,10 +214,10 @@ nonSpecialSelectExpr fSpec expr=
                                             _   -> Just . conjunctSQL $
                                                      map notEqualToValueClause negVals
                                           where
-                                            notEqualToValueClause :: String -> ValueExpr
-                                            notEqualToValueClause str = conjunctSQL 
-                                                               [ BinOp theSrc [Name "<>"] (StringLit str)
-                                                               , BinOp theTrg [Name "<>"] (StringLit str)
+                                            notEqualToValueClause :: PSingleton -> ValueExpr
+                                            notEqualToValueClause singleton = conjunctSQL 
+                                                               [ BinOp theSrc [Name "<>"] (singleton2SQL (source expr) singleton)
+                                                               , BinOp theTrg [Name "<>"] (singleton2SQL (source expr) singleton)
                                                                ]
 
                                        theSrc = bseSrc (makeSelectable sResult)
@@ -340,22 +340,22 @@ nonSpecialSelectExpr fSpec expr=
                              (Just _ , Nothing) -> 
                                   case fenceExpr (i+1) of 
                                     EDcV _    -> noConstraint  "..;EDcV"
-                                    EMp1 a _  -> Just (BinOp (Iden [fenceName i,targetAlias])
+                                    EMp1 a c  -> Just (BinOp (Iden [fenceName i,targetAlias])
                                                              [Name "="]
-                                                             (StringLit a))
-                                    (ECpl (EMp1 a _)) 
+                                                             (singleton2SQL c a))
+                                    (ECpl (EMp1 a c)) 
                                               -> Just (BinOp (Iden [fenceName i,targetAlias])
                                                              [Name "<>"]
-                                                             (StringLit a))
+                                                             (singleton2SQL c a))
                                     _         -> fatal 251 "there is no reason for having no fenceTable!"
                              (Nothing, Just _ ) ->
                                   case fenceExpr i of 
                                     EDcV _    -> noConstraint  "EDcV;.."
-                                    EMp1 a _  -> Just (BinOp (StringLit a)
+                                    EMp1 a c  -> Just (BinOp (singleton2SQL c a)
                                                              [Name "="]
                                                              (Iden [fenceName (i+1) ,sourceAlias]))
-                                    (ECpl (EMp1 a _)) 
-                                              -> Just (BinOp (StringLit a)
+                                    (ECpl (EMp1 a c)) 
+                                              -> Just (BinOp (singleton2SQL c a)
                                                              [Name "<>"]
                                                              (Iden [fenceName (i+1) ,sourceAlias]))
                                     _         -> fatal 258 "there is no reason for having no fenceTable!"
@@ -403,9 +403,9 @@ nonSpecialSelectExpr fSpec expr=
                                 -> case flipped e of
                                     BQEComment (_:c') fe -> BQEComment (c++c') fe
                                     _ -> fatal 309 "A flipped expression will always start with the comment `Flipped: ..."
-    (EMp1 atom _) -> BQEComment [BlockComment "case: EMp1 atom."] $
-                     BSE { bseSrc = sqlAtomQuote atom
-                         , bseTrg = sqlAtomQuote atom
+    (EMp1 val c) -> BQEComment [BlockComment "case: EMp1 val c"] $
+                     BSE { bseSrc = singleton2SQL c val
+                         , bseTrg = singleton2SQL c val
                          , bseTbl = []
                          , bseWhr = Nothing
                          }
@@ -520,13 +520,13 @@ nonSpecialSelectExpr fSpec expr=
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
 -- As a result of this way of working, code generated for =, |-, -, !, *, \, and / may not be efficient, but at least it is correct.
     EEqu (l,r)
-      -> BQEComment [BlockComment $ "case: EEqu (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
+      -> BQEComment [BlockComment $ "case: EEqu (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
     EImp (l,r)
-      -> BQEComment [BlockComment $ "case: EImp (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
+      -> BQEComment [BlockComment $ "case: EImp (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec (ECpl l .\/. r)
     EDif (l,r)
-      -> BQEComment [BlockComment $ "case: EDif (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
+      -> BQEComment [BlockComment $ "case: EDif (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec (l ./\. ECpl r)
     ERrs (l,r) -- The right residual l\r is defined by: for all x,y:   x(l\r)y  <=>  for all z in X, z l x implies z r y.
 {- In order to obtain an SQL-query, we make a Haskell derivation of the right residual:
@@ -606,9 +606,20 @@ Based on this derivation:
         in BQEComment [BlockComment $ "case: EPrd (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
            selectExpr fSpec (foldr1 (.:.) [l,v,r])
 
+  where
+   singleton2SQL :: A_Concept -> PSingleton -> ValueExpr
+   singleton2SQL cpt singleton = 
+     atomVal2InSQL (safePSingleton2AAtomVal (contextInfo fSpec) cpt singleton)
 
-
-
+atomVal2InSQL :: AAtomValue -> ValueExpr
+atomVal2InSQL val =
+ case val of 
+   AAVString _ str     -> StringLit str
+   AAVInteger _ int    -> NumLit (show int)
+   AAVFloat _ d        -> NumLit (show d)
+   AAVBoolean _ b      -> NumLit $ if b then "1" else "0"
+   _                   -> fatal 621 $ "Building a query with a literal `"
+                                    ++show (aavtyp val)++"` is not implemented (jet?)."
 toTableRef :: BinQueryExpr -> TableRef
 toTableRef = TRQueryExpr . toSQL
      
@@ -753,9 +764,6 @@ stringOfName (QName s)  =  s
 stringOfName (UQName s) =  s
 stringOfName _          = fatal 659 "This kind of a Name wasn't used before in Ampersand. "
 
-sqlAtomQuote :: String -> ValueExpr
-sqlAtomQuote s = StringLit s
-
 conjunctSQL :: [ValueExpr] -> ValueExpr
 conjunctSQL [] = fatal 57 "nothing to `AND`."
 conjunctSQL [ve] = ve
@@ -821,3 +829,4 @@ one = BQEComment [BlockComment "Just ONE"] $
 
 theDialect :: Dialect 
 theDialect = MySQL  -- maybe in the future other dialects will be supported. This depends on package `simple-sql-parser`
+

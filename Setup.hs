@@ -9,7 +9,6 @@ import Control.Exception
 import Data.List
 import Data.Either
 import Data.Char
-import qualified Data.ByteString.Char8 as BS
 import Data.Time.Clock
 import Data.Time.Format
 import Data.Time.LocalTime
@@ -17,6 +16,8 @@ import System.Directory
 import System.FilePath
 import System.IO
 import System.Locale
+import qualified Data.ByteString.Lazy.Char8 as BS
+import qualified Codec.Compression.GZip as GZip
 
 
 main :: IO ()
@@ -152,29 +153,33 @@ getPreviousStaticFileModuleContents sfModulePath =
 -- Scan static file directory and collect all files from oldFrontend and newFrontend
 readAllStaticFiles :: IO String
 readAllStaticFiles = 
-  do { oldStaticFiles <- readStaticFiles False "static/oldFrontend" "."
-     ; newStaticFiles <- readStaticFiles True  "static/newFrontend" "."
-     ; return $ mkStaticFileModule $ oldStaticFiles ++ newStaticFiles
+  do { oldFrontendFiles     <- readStaticFiles OldFrontend      "static/oldFrontend" "."
+     ; zwolleFrontEndFiles  <- readStaticFiles ZwolleFrontEnd   "static/newFrontend" "."
+     ; pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "."
+     ; formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand" "."
+     ; return $ mkStaticFileModule $ oldFrontendFiles ++ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles
      }
   
-readStaticFiles :: Bool -> FilePath -> FilePath -> IO [String]
-readStaticFiles isNewFrontend base fileOrDirPth = 
+readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [String]
+readStaticFiles fkind base fileOrDirPth = 
   do { let path = combine base fileOrDirPth
      ; isDir <- doesDirectoryExist path
      ; if isDir then 
         do { fOrDs <- getProperDirectoryContents path
-           ; fmap concat $ mapM (\fOrD -> readStaticFiles isNewFrontend base (combine fileOrDirPth fOrD)) fOrDs
+           ; fmap concat $ mapM (\fOrD -> readStaticFiles fkind base (combine fileOrDirPth fOrD)) fOrDs
            }
        else
         do { timeStamp <- getModificationTime path
            ; fileContents <- BS.readFile path 
-           ; return [ "SF "++show isNewFrontend++" "++show fileOrDirPth++" "++utcToEpochTime timeStamp ++
-                             " {-"++show timeStamp++" -} "++show (BS.unpack fileContents)
+           ; return [ "SF "++show fkind++" "++show fileOrDirPth++" "++utcToEpochTime timeStamp ++
+                             " {-"++show timeStamp++" -} (BS.unpack$ GZip.decompress "++show (GZip.compress fileContents)++")"
                     ]
            }
      }
   where utcToEpochTime :: UTCTime -> String
         utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
+
+data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)
 
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
@@ -184,20 +189,31 @@ mkStaticFileModule sfDeclStrs =
            
 staticFileModuleHeader :: [String]
 staticFileModuleHeader =
-  [ "module "++staticFileModuleName++" where"
+  [ "{-# LANGUAGE OverloadedStrings #-}"
+  , "module "++staticFileModuleName++" where"
+  , "import qualified Data.ByteString.Lazy.Char8 as BS"
+  , "import qualified Codec.Compression.GZip as GZip"
   , ""
-  , "data StaticFile = SF { isNewFrontend :: Bool"
-  , "                     , filePath ::      FilePath -- relative path, including extension"
-  , "                     , timeStamp ::     Integer  -- unix epoch time"
+  , "data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)" 
+  , "data StaticFile = SF { fileKind      :: FileKind"
+  , "                     , filePath      :: FilePath -- relative path, including extension"
+  , "                     , timeStamp     :: Integer  -- unix epoch time"
   , "                     , contentString :: String"
   , "                     }"
+  , ""
+  , "getStaticFileContent :: FileKind -> FilePath -> Maybe String"
+  , "getStaticFileContent fk fp ="
+  , "     case filter isRightFile allStaticFiles of"
+  , "        [x] -> Just (contentString x)"
+  , "        _   -> Nothing"
+  , "  where"
+  , "    isRightFile :: StaticFile -> Bool"
+  , "    isRightFile (SF fKind path _ _ ) = fKind == fk && path == \".\\\\\"++fp"
   , ""
   , "{-"++"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-( 
   , "allStaticFiles :: [StaticFile]"
   , "allStaticFiles ="
   ]
-
-          
           
 getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $ getDirectoryContents pth

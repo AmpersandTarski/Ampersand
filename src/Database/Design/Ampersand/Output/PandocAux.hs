@@ -19,6 +19,7 @@ module Database.Design.Ampersand.Output.PandocAux
       , newGlossaryEntry
       )
 where
+import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec
 import Data.Char hiding    (Space)
@@ -169,11 +170,8 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                  Ftextile      -> ".textile"
                                        )
          makeOutput
-            =  do template <- readDefaultTemplate fSpecFormatString
-                  verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
-                  --verboseLn (getOpts fSpec) "Variables to set in the template:"
-                  --verboseLn (getOpts fSpec) (intercalate "\n   " (map show (writerVariables (writerOptions template))))
-                  writeFile outputFile (pandocWriter (writerOptions template) thePandoc)
+            =  do verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
+                  writeFile outputFile (pandocWriter (writerOptions (readDefaultTemplate fSpecFormatString)) $ thePandoc)
                   verboseLn (getOpts fSpec) "... done."
            where
               pandocWriter :: WriterOptions -> Pandoc -> String
@@ -214,24 +212,8 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                   Frtf -> "rtf"
                   Ftexinfo -> "texinfo"
                   Ftextile -> "textile"
-              readDefaultTemplate :: String -> IO(Maybe String)
-              readDefaultTemplate  s =
-                do { let fp = ampersandDataDir (getOpts fSpec) </> ".." </> "outputTemplates" </> "default."++s
-                   ; exists <- doesFileExist fp
-                   ; (if exists
-                      then do verboseLn (getOpts fSpec) $ "Using Template: "++fp
-                              contents <- readFile fp
-                              return $ Just contents
-                      else do putStrLn ""
-                              putStrLn  "***WARNING: ***"
-                              putStrLn ("Template file does not exist: "++fp)
-                              putStrLn  "It was part of the installation of Ampersand."
-                              putStrLn  "...trying without template, but that isn't likely going to work..."
-                              putStrLn  "    (reinstalling Ampersand should fix this problem...)"
-                              putStrLn  "***************"
-                              return Nothing
-                     )
-                   }
+              readDefaultTemplate :: String -> Maybe String
+              readDefaultTemplate s = getStaticFileContent PandocTemplates ("default."++s)
               writerOptions :: Maybe String -> WriterOptions
               writerOptions template = case theme (getOpts fSpec) of
                           ProofTheme -> ampersandDefaultWriterOptions
@@ -454,7 +436,7 @@ instance ShowMath A_Gen where
 instance ShowMath Rule where
  showMath r = showMath (rrexp r)
 
-instance ShowMath Sign where
+instance ShowMath Signature where
  showMath (Sign s t) = showMath s++"\\rel"++showMath t
 
 instance ShowMath Expression where
@@ -479,11 +461,12 @@ instance ShowMath Expression where
           showExpr (EFlp e)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
           showExpr (ECpl e)     = "\\cmpl{"++showExpr e++"}"
           showExpr (EBrk e)     = "("++showExpr e++")"
-          showExpr (EDcD d)     = "\\id{"++name d++"}"
-          showExpr (EDcI c)     = "I_{\\id{"++name c++"}}"
+          showExpr (EDcD d)     = "\\text{"++latexEscShw (name d)++"}"
+          showExpr (EDcI c)     = "I_{[\\text{"++latexEscShw (name c)++"}]}"
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-          showExpr (EDcV sgn)   = "V_{\\id{"++show (source sgn)++"}\\times\\id{"++show (target sgn)++"}}"
-          showExpr (EMp1 a _)   = "'{\\tt "++a++"}'"
+          showExpr (EDcV sgn)   = "V_{[\\text{"++latexEscShw (name (source sgn))++"}"++"*"
+                                   ++"\\text{"++latexEscShw (name (target sgn))++"}]}"
+          showExpr (EMp1 val _) = "`\\text{"++(latexEscShw . showADL $ val)++"}`"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -648,6 +631,9 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 ---------------------------
 --- LaTeX related stuff ---
 ---------------------------
+-- safe function to have plain text in a piece of Math  
+mathText :: String -> String
+mathText s = "\\text{"++latexEscShw s++"} "
 
 texOnly_Id :: String -> String
 texOnly_Id s = "\\id{"++latexEscShw s++"} "

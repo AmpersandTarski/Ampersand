@@ -108,9 +108,24 @@ require_once (__DIR__ . '/../../fw/includes.php');
 
 require_once '../vendor/restler.php';
 use Luracast\Restler\Restler;
+use Luracast\Restler\Format\UploadFormat;
+use Luracast\Restler\RestException;
+
+register_shutdown_function('shutdown');
+function shutdown(){
+	$error = error_get_last();
+	if ($error['type'] === E_ERROR) {
+		$protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+		http_response_code(500);
+		header($protocol . ' 500 ' . $error['message']);
+		exit;
+	}
+}
 
 $r = new Restler();
-$r->setSupportedFormats('JsonFormat', 'XmlFormat', 'HtmlFormat');
+$r->setSupportedFormats('JsonFormat', 'XmlFormat', 'HtmlFormat', 'UploadFormat');
+UploadFormat::$allowedMimeTypes = $GLOBALS['api']['allowedMimeTypes'];
+UploadFormat::$maximumFileSize = 10485760; // 1048576 bytes = 10 MB
 // $r->setOverridingFormats('HtmlFormat');
 $r->addAPIClass('Api','');
 $r->handle();

@@ -1,0 +1,135 @@
+﻿CONTEXT AST IN ENGLISH LATEX
+-- The comments for this script can be found in DomainAnalysis.docadl
+
+REPRESENT Representation TYPE ALPHANUMERIC
+REPRESENT Identifier TYPE ALPHANUMERIC
+
+PROCESS "Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
+    CONCEPT Rule ""
+    RELATION repr[Rule*Representation] [UNI, TOT, INJ]
+    RELATION leftTerm[Rule*Term] [UNI,TOT]
+    RELATION riteTerm[Rule*Term] [UNI,TOT]
+    RELATION rules[Context*Rule] [INJ] -- SUR is maintained by RULE SURrules
+
+    ROLE ExecEngine MAINTAINS domainDomRule
+    RULE domainDomRule : dom~;leftTerm~;riteTerm;dom \/ dom~;riteTerm~;leftTerm;dom |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS domainCodRule
+    RULE domainCodRule : cod~;leftTerm~;riteTerm;cod \/ cod~;riteTerm~;leftTerm;cod |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Intersections"
+    CLASSIFY Intersection ISA BinaryTerm
+
+    ROLE ExecEngine MAINTAINS domainDomIntersection
+    RULE domainDomIntersection : dom~;I[Intersection];lhs[BinaryTerm*Term];dom \/ dom~;I[Intersection];rhs[BinaryTerm*Term];dom |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS domainCodIntersection
+    RULE domainCodIntersection : cod~;I[Intersection];lhs[BinaryTerm*Term];cod \/ cod~;I[Intersection];rhs[BinaryTerm*Term];cod |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Unions"
+    CLASSIFY Union ISA BinaryTerm
+
+    ROLE ExecEngine MAINTAINS domainDomUnion
+    RULE domainDomUnion : dom~;I[Union];lhs[BinaryTerm*Term];dom \/ dom~;I[Union];rhs[BinaryTerm*Term];dom |- sub~
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS domainCodUnion
+    RULE domainCodUnion : cod~;I[Union];lhs[BinaryTerm*Term];cod \/ cod~;I[Union];rhs[BinaryTerm*Term];cod |- sub~
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Minuses"
+    CLASSIFY Minus ISA BinaryTerm
+
+    ROLE ExecEngine MAINTAINS domainDomMinus
+    RULE domainDomMinus : dom~;I[Minus];lhs[BinaryTerm*Term];dom |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS domainCodMinus
+    RULE domainCodMinus : cod~;I[Minus];rhs[BinaryTerm*Term];cod |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Compositions"
+    CLASSIFY Composition ISA BinaryTerm
+    RELATION inter[Composition*TypeTerm]
+
+    ROLE ExecEngine MAINTAINS domainDomComposition
+    RULE domainDomComposition : dom~;I[Composition];lhs[BinaryTerm*Term];dom |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS domainCodComposition
+    RULE domainCodComposition : cod~;I[Composition];rhs[BinaryTerm*Term];cod |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE User MAINTAINS compositionCheck
+    RULE compositionCheck : I[Composition] |- lhs;cod;(subStar\/subStar~);dom~;rhs~
+    VIOLATION (TXT "The target of term ", SRC lhs;repr, TXT " does not match the source of term ", TGT rhs;repr, TXT ".")
+
+    ROLE ExecEngine MAINTAINS compositionNewTypeTerm
+    RULE compositionNewTypeTerm : I[Composition] {-/\ lhs;cod;(subStar\/subStar~);dom~;rhs~-} |- inter;inter~
+    VIOLATION (TXT "{EX}_; InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")"
+              ,TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC lhs;cod
+              ,TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC rhs;dom
+              )
+ENDPROCESS
+
+PROCESS "Converses"
+    CLASSIFY Converse ISA Term
+    RELATION flp[Converse*Term] [UNI,TOT]
+
+    ROLE ExecEngine MAINTAINS insDomRelation
+    RULE converseDom :    dom~;I[Converse];flp;cod |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE converseDomFlp : dom~;I[Converse];flp;cod |- sub~
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+    RULE converseCod :    cod~;I[Converse];flp;dom |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE converseCodFlp : cod~;I[Converse];flp;dom |- sub~
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+ENDPROCESS
+
+PROCESS "Relations" -- This includes Vee-terms (e.g. V[A*B]) and I-terms (e.g. I[A])
+    RELATION repr[Term*Representation] [UNI, TOT, INJ]
+    --The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
+    CLASSIFY Relation ISA Term
+    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
+    ROLE ExecEngine MAINTAINS SURrelations
+    RULE SURrelations : I[Relation] |- relations~;relations
+    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+
+    RELATION popset[Concept*TypeTerm] [UNI] -- TOT is computed by the exec-engine
+
+    ROLE ExecEngine MAINTAINS insDomRelation
+    RULE insDomRelation : dom~;source;popset |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS insCodRelation
+    RULE insCodRelation : cod~;target;popset |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Binary Terms"
+    CONCEPT Operator ""
+    CONCEPT BinaryTerm ""
+    CLASSIFY BinaryTerm ISA Term
+    RELATION lhs[BinaryTerm*Term] [UNI]
+    RELATION rhs[BinaryTerm*Term] [UNI]
+    RELATION operator[BinaryTerm*Operator] [UNI]
+ENDPROCESS
+
+PROCESS "Binding Terms to Relations"
+    ROLE ExecEngine MAINTAINS insSubBind
+    RULE insSubBind : dom~;(bind\/bind~);dom \/ cod~;(bind\/bind~);cod |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    RELATION bind[Term*Relation] [UNI]
+ENDPROCESS
+
+ENDCONTEXT

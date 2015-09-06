@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.Prototype.PHP 
          ( executePHPStr, executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP, setSqlModePHP
          , evaluateExpSQL, performQuery
-         , createTablesPHP, populateTablesPHP, populateTablesWithPopsPHP, plug2TableSpec
+         , createTablesPHP, populateTablesPHP, populateTablesWithInitialPopsPHP, plug2TableSpec
          , dropplug, historyTableSpec, sessionTableSpec, signalTableSpec, TableSpec, getTableName) where
 
 import Prelude hiding (exp)
@@ -83,7 +83,7 @@ plug2TableSpec plug
                                         ]
                    ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                    PlainAttr     -> []
-   , "InnoDB DEFAULT CHARACTER SET UTF8")
+   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN")
 
 signalTableSpec :: TableSpec
 signalTableSpec =
@@ -92,7 +92,7 @@ signalTableSpec =
   , [ "`conjId` VARCHAR(255) NOT NULL"
     , "`src` VARCHAR(255) NOT NULL"
     , "`tgt` VARCHAR(255) NOT NULL" ]
-  , "InnoDB DEFAULT CHARACTER SET UTF8"
+  , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN"
   )
 
 sessionTableSpec :: TableSpec
@@ -101,7 +101,7 @@ sessionTableSpec
    , "__SessionTimeout__"
    , [ "`SESSION` VARCHAR(255) UNIQUE NOT NULL"
      , "`lastAccess` BIGINT NOT NULL" ]
-   , "InnoDB DEFAULT CHARACTER SET UTF8" )
+   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
 
 historyTableSpec :: TableSpec
 historyTableSpec
@@ -109,12 +109,12 @@ historyTableSpec
    , "__History__"
    , [ "`Seconds` VARCHAR(255) DEFAULT NULL"
      , "`Date` VARCHAR(255) DEFAULT NULL" ]
-   , "InnoDB DEFAULT CHARACTER SET UTF8" )
+   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
 
 populateTablesPHP :: FSpec -> [String]
 populateTablesPHP fSpec =
   fillSignalTable (initialConjunctSignals fSpec) ++
-  populateTablesWithPopsPHP fSpec (initialPops fSpec)
+  populateTablesWithInitialPopsPHP fSpec
   where
     fillSignalTable []          = []
     fillSignalTable conjSignals =
@@ -122,7 +122,7 @@ populateTablesPHP fSpec =
                                                                     ++" (`conjId`, `src`, `tgt`)"
                                               ++phpIndent 24++"VALUES " ++ 
                                               intercalate (phpIndent 29++", ") 
-                                                [ "(" ++sqlConjId++", "++sqlAtomQuote (srcPaire p)++", "++sqlAtomQuote (trgPaire p)++")" 
+                                                [ "(" ++sqlConjId++", "++showValPHP (apLeft p)++", "++showValPHP (apRight p)++")" 
                                                 | (conj, viols) <- conjSignals
                                                 , let sqlConjId = "'" ++ rc_id conj ++ "'" -- conjunct id's do not need escaping
                                                 , p <- viols
@@ -131,12 +131,12 @@ populateTablesPHP fSpec =
       , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
       ]
 
-populateTablesWithPopsPHP :: FSpec -> [Population] -> [String]
-populateTablesWithPopsPHP fSpec pops =
+populateTablesWithInitialPopsPHP :: FSpec -> [String]
+populateTablesWithInitialPopsPHP fSpec =
   concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
     populatePlugPHP plug
-         = case tblcontents (vgens fSpec) pops plug of
+         = case tableContents fSpec plug of
                [] -> []
                tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++quote (name plug)
                                                            ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
@@ -146,7 +146,7 @@ populateTablesWithPopsPHP fSpec pops =
                              ):
                              ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
      where
-        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just str -> sqlAtomQuote str | fld<-record]
+        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just val -> showValPHP val | fld<-record]
 
 
 dropplug :: PlugSQL -> String
@@ -177,7 +177,7 @@ createTempDbPHP dbNm =
       , "// Don't bother about the error if the database didn't exist..."
       , ""
       , "// Create the database"
-      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8\";"
+      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin\";"
       , "if (!mysqli_query($DB_link,$sql)) {"
       , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
       , "  }"
@@ -306,3 +306,4 @@ setSqlModePHP =
        , "  }"
        , ""
        ]
+

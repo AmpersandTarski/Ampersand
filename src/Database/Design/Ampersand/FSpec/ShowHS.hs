@@ -10,7 +10,6 @@ import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
 --import Database.Design.Ampersand.FSpec.FPA   (fpa)
 import Data.List
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Misc
 import Data.Hashable
 import Data.Ord
@@ -137,10 +136,10 @@ instance ShowHS PAclause where
                          indent++"       ("++showHS opts (indent++"        ") (paDelta p)++indent++"       )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         New{} -> "New ("++showHS opts "" (paCpt p)++")"++
-                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p "x")++indent++"    )"++
+                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p (makePSingleton "x"))++indent++"    )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         Rmv{} -> "Rmv ("++showHS opts "" (paCpt p)++")"++
-                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p "x")++indent++"    )"++
+                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p (makePSingleton "x"))++indent++"    )"++
                  wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
         Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
         Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
@@ -172,18 +171,8 @@ instance ShowHS SqlFieldUsage where
  showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
  showHS _ _ PlainAttr                 = "PlainAttr "
 
-instance ShowHS SqlType where
- showHS _ indent (SQLChar i)    = indent++"SQLChar   "++show i
- showHS _ indent SQLBlob        = indent++"SQLBlob   "
- showHS _ indent SQLPass        = indent++"SQLPass   "
- showHS _ indent SQLSingle      = indent++"SQLSingle "
- showHS _ indent SQLDouble      = indent++"SQLDouble "
- showHS _ indent SQLText        = indent++"SQLText   "
- showHS _ indent (SQLuInt i)    = indent++"SQLuInt   "++show i
- showHS _ indent (SQLsInt i)    = indent++"SQLsInt   "++show i
- showHS _ indent SQLId          = indent++"SQLId     "
- showHS _ indent (SQLVarchar i) = indent++"SQLVarchar "++show i
- showHS _ indent SQLBool        = indent++"SQLBool   "
+instance ShowHS SqlTType where
+ showHS _ indent sqltype = indent ++ show sqltype
 
 instance ShowHSName Quad where
  showHSName q
@@ -286,7 +275,6 @@ instance ShowHS FSpec where
         ,wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
         ,wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
         ,     ", metas         = allMetas"
-        ,wrap ", initialPops   = " indentA (showHS opts)   (initialPops fSpec)
         ,wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
         ,wrap ", allExprs      = " indentA (showHS opts)    (allExprs fSpec)
         ,"}"
@@ -374,15 +362,16 @@ instance ShowHS FSpec where
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
-                    strs = map show (sort (atomsOf (vgens fSpec)(initialPops fSpec) c))
+                    strs = map showVal (sort (atomsInCptIncludingSmaller fSpec c))
+                      where showVal val= "`"++showValADL val++"`" 
                     indentC = if sum (map length strs) > 300
                               then indent ++ "    --        , "
                               else ", "
-              showViolatedRule :: String -> (Rule,Pairs) -> String
+              showViolatedRule :: String -> (Rule,[AAtomPair]) -> String
               showViolatedRule indent' (r,ps)
                  = intercalate indent'
                      [        " ( "++showHSName r++" -- This is "++(if isSignal r then "a process rule." else "an invariant")++
-                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = show p --"( "++ (show.fst) p++", "++(show.snd) p++")"
+                      indent'++" , "++ wrap "" (indent'++"   ") (let showPair _ p = "( "++ (show.showValADL.apLeft) p++", "++(show.showValADL.apRight) p++")"
                                                                    in showPair) ps++
                       indent'++" )"
                      ]
@@ -405,7 +394,12 @@ instance ShowHS A_RoleRelation where
  showHS opts ind rr
   = "RR "++show (rrRoles rr)++" "++showHS opts (ind++"    ") (rrRels rr)++" "++showHS opts (ind++"    ") (rrPos rr)
 instance ShowHS Role where
- showHS _ ind (Role str) = ind++"Role "++show str
+ showHS _ ind r = ind++
+                  (case r of
+                     Role str -> "Role "++show str
+                     Service str -> "Service "++show str
+                  ) 
+ 
 instance ShowHS P_RoleRule where
  showHS opts ind rs
   = "Maintain "++show (mRoles rs)++" "++show (mRules rs)++" "++showHS opts (ind++"    ") (mPos rs)
@@ -471,7 +465,6 @@ instance ShowHS PRef2Obj where
          PRef2Pattern str                       -> "PRef2Pattern "    ++show str
          PRef2Interface str                     -> "PRef2Interface "  ++show str
          PRef2Context str                       -> "PRef2Context "    ++show str
-         PRef2Fspc str                          -> "PRef2Fspc "       ++show str
 
 instance ShowHS Purpose where
  showHS opts _ expla =
@@ -505,7 +498,6 @@ instance ShowHS A_Markup where
  showHS _ indent m
    = intercalate indent
      ["A_Markup{ amLang   = "++ show (amLang m)
-     ,"        , amFormat = "++ show (amFormat m)
      ,"        , amPandoc = "++ show (amPandoc m)
      ,"        }"
      ]
@@ -577,14 +569,16 @@ instance ShowHS ViewSegment where
 instance ShowHS Population where
  showHS _ indent pop
   = case pop of
-      PRelPopu{} -> "PRelPopu { popdcl = "++showHSName (popdcl pop)
-          ++indent++"         , popps  = [ "++intercalate
-           (indent++"                    , ") (map show (popps pop))
+      ARelPopu{} -> "ARelPopu { popdcl = "++showHSName (popdcl pop)
+--TODOFIX
+--          ++indent++"         , popps  = [ "++intercalate
+--           (indent++"                    , ") (map show (popps pop))
           ++indent++"                    ]"
           ++indent++"         }"
-      PCptPopu{} -> "PCptPopu { popcpt = "++showHSName (popcpt pop)
-          ++indent++"         , popas  = [ "++intercalate
-           (indent++"                    , ") (map show (popas pop))
+      ACptPopu{} -> "ACptPopu { popcpt = "++showHSName (popcpt pop)
+--TODOFIX
+--          ++indent++"         , popas  = [ "++intercalate
+--           (indent++"                    , ") (map show (popas pop))
           ++indent++"                    ]"
           ++indent++"         }"
 
@@ -645,7 +639,7 @@ instance ShowHS Expression where
  showHS opts _      (EDcV sgn  ) = "EDcV ("++showHS opts "" sgn++")"
  showHS _    _      (EMp1 a c  ) = "EMp1 " ++show a++" "++showHSName c
 
-instance ShowHS Sign where
+instance ShowHS Signature where
  showHS _ _ sgn = "Sign "++showHSName (source sgn)++" "++showHSName (target sgn)
 
 instance ShowHS A_Gen where
@@ -658,7 +652,6 @@ instance ShowHSName Declaration where
  showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation
  showHSName d@Vs{}        = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- full relation
  showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- user defined relations
-              | deciss d  = haskellIdentifier ("sgn_"++name d++"_"++name (source d)++"_"++name (target d)) -- relations generated for signalling
               | otherwise = haskellIdentifier ("vio_"++name d++"_"++name (source d)++"_"++name (target d)) -- relations generated per rule
 
 instance ShowHS Declaration where
@@ -676,7 +669,6 @@ instance ShowHS Declaration where
                      ,"   , decprR  = " ++ show (decprR d)
                      ,"   , decMean = " ++ show (decMean d)
                      ,"   , decfpos = " ++ showHS opts "" (decfpos d)
-                     ,"   , deciss  = " ++ show (deciss d)
                      ,"   , decusr  = " ++ show (decusr d)
                      ,"   , decpat  = " ++ show (decpat d)
                      ,"   , decplug = " ++ show (decplug d)
@@ -689,7 +681,7 @@ instance ShowHS Declaration where
 
 instance ShowHS ConceptDef where
  showHS opts _ cd
-  = " Cd ("++showHS opts "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdtyp cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
+  = " Cd ("++showHS opts "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
 instance ShowHSName Char where
  showHSName c = show c
 instance ShowHS Char where
@@ -729,12 +721,13 @@ instance ShowHSName Origin where
               DBLoc l       -> "DBLoc " ++ show l
               Origin s      -> "Origin " ++ show s
               OriginUnknown -> "OriginUnknown"
-
+              XLSXLoc fPath sheet (a,b) -> "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)
 instance ShowHS Origin where
  showHS opts indent (FileLoc l s) = "FileLoc (" ++ showHS opts indent l ++ " " ++ s ++ ")"
  showHS _     _      (DBLoc l)    = "DBLoc "  ++ show l
  showHS _     _      (Origin s)   = "Origin " ++ show s
  showHS _     _    OriginUnknown  = "OriginUnknown"
+ showHS _     _    (XLSXLoc fPath sheet (a,b)) = "XLSXLoc "++fPath++" "++sheet++" "++show(a,b)  
 
 instance ShowHS Block where
  showHS _ _   = show

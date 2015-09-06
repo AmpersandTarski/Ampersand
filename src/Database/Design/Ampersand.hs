@@ -4,7 +4,7 @@ module Database.Design.Ampersand
    , P_Context(..), P_Population(..), PairView(..), PairViewSegment(..), SrcOrTgt(..), P_Rule(..), Term(..), TermPrim(..), P_NamedRel(..), P_Sign(..), P_Concept(..), P_Declaration(..), P_Pattern(..), P_Gen(..)
    , P_Markup(..), PRef2Obj(..), PPurpose(..), PMeaning(..), Meta(..), MetaObj(..)
    , A_Concept(..), A_Gen(..)
-   , Sign(..), ConceptDef(..), ConceptStructure(..)
+   , Signature(..), ConceptDef(..), ConceptStructure(..)
    , Activity(..)
    , AMeaning(..)
    , Quad(..), Conjunct(..)
@@ -18,7 +18,7 @@ module Database.Design.Ampersand
    , Expression(..)
    , Population(..)
    , FSpec(..), concDefs
-   , PlugSQL(..), SqlField(..), SqlType(..), PlugInfo(..)
+   , PlugSQL(..), SqlField(..), SqlTType(..), PlugInfo(..)
    , PAclause(..)
    , Rule(..)
    , Prop(..), RuleOrigin(..)
@@ -26,7 +26,6 @@ module Database.Design.Ampersand
    , SqlFieldUsage(..)
    , DnfClause(..)
    , Options(..), DocTheme(..)
-   , Picture(..), writePicture , PictureReq(..), makePicture
    , FilePos(..), Origin(..)
    , mkPair
    -- * Classes:
@@ -45,7 +44,7 @@ module Database.Design.Ampersand
    , Language(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
-   , (<==>),meet,join,sortWith,atomsOf
+   , (<==>),meet,join,sortWith,atomValuesOf
    , smallerConcepts, largerConcepts, rootConcepts
    -- * Functions on relations
    -- * Functions on rules
@@ -59,15 +58,13 @@ module Database.Design.Ampersand
    , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
    , exprUni2list, exprIsc2list, exprCps2list, exprRad2list, exprPrd2list
    -- * Functions with plugs:
---   , showPlug, plugFields, tblcontents, plugpath, fldauto, requires, requiredFields, isPlugIndex
-   , showPlug, plugFields, tblcontents, fldauto
+   , showPlug, plugFields, fldauto
    -- * Parser related stuff
    , parseADL1pExpr, CtxError
    , createFSpec
-   , getGeneralizations, getSpecializations
     -- * Type checking and calculus
    , Guarded(..), pCtx2aCtx
-   , makeFSpec, getPopulationsFrom
+   , makeFSpec
     -- * Generators of output
    , generateAmpersandOutput
    -- * Prettyprinters
@@ -75,7 +72,7 @@ module Database.Design.Ampersand
    -- * Functions with Options
    , getOptions
    , verboseLn, verbose
-   , FileFormat(..),helpNVersionTexts
+   ,helpNVersionTexts
    -- * Other functions
    , eqCl, showErr, unCap,upCap,escapeNonAlphaNum, fatalMsg
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr
@@ -91,8 +88,9 @@ module Database.Design.Ampersand
    -- * Stuff that should probably not be in the prototype
    , A_Markup(..), blocks2String, aMarkup2String, PandocFormat(..), Meaning(..)
    , rulefromProp
-   , fullContents, Paire, srcPaire,trgPaire
+   , fullContents, AAtomPair, apLeft,apRight
    , Purpose(..), ExplObj(..)
+   , ContextInfo,AAtomValue
    )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree

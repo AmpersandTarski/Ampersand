@@ -51,13 +51,15 @@ class Notifications {
 		
 		// Make links to interfaces
 		$links = array();
-		foreach ($session->role->getInterfaces($rule['srcConcept']) as $interface){
-			$links[] = '#/' . $interface->id . '/' . $srcAtom;
+		if(isset($session->role)){
+			foreach ($session->role->getInterfacesForConcept($rule['srcConcept']) as $interface){
+				$links[] = '#/' . $interface->id . '/' . $srcAtom;
+			}
+			foreach ($session->role->getInterfacesForConcept($rule['tgtConcept']) as $interface){
+				$links[] = '#/' . $interface->id . '/' . $tgtAtom;
+			}
+			$links = array_unique($links);
 		}
-		foreach ($session->role->getInterfaces($rule['tgtConcept']) as $interface){
-			$links[] = '#/' . $interface->id . '/' . $tgtAtom;
-		}
-		$links = array_unique($links);
 		
 		self::$violations[$ruleHash]['tuples'][] = array('violationMessage' => $violationMessage
 														,'links' => $links);
@@ -102,7 +104,7 @@ class Notifications {
 	}
 	
 	public static function addLog($message, $type = 'LOG'){
-		self::$logs[] = array('type' => $type, 'message' => $message);
+		self::$logs[] = array('timestamp' => microtime(true), 'type' => $type, 'message' => $message);
 	}
 	
 	public static function getErrors(){
@@ -130,7 +132,7 @@ class Notifications {
 		$all['violations'] = self::getViolations();
 		$all['infos'] = self::getInfos();
 		$all['successes'] = self::getSuccesses();
-		$all['logs'] = self::getLogs();
+		$all['logs'] = LOG_ENABLED ? self::getLogs() : array(array('type' => 'LOG', 'message' => 'Logging is disabled'));
 		
 		return $all;
 	}

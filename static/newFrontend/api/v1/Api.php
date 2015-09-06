@@ -2,7 +2,7 @@
 
 use Luracast\Restler\Data\Object;
 use Luracast\Restler\RestException;
-class Api{
+class Api{	
 	
 	/****************************** INSTALLER & SESSION RESET ******************************/
 	/**
@@ -10,13 +10,15 @@ class Api{
 	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function installer($sessionId, $roleId = null){
+	public function installer($sessionId, $roleId = 0){
 		try{			
-			$session = Session::singleton($sessionId);
-			$session->setRole($roleId);
+			Database::createDB();
 			
 			$db = Database::singleton();
-			$db->resetDatabase();
+			$db->reinstallDB();
+			
+			$session = Session::singleton($sessionId);
+			$session->setRole($roleId);
 			
 			return Notifications::getAll(); // Return all notifications
 		
@@ -54,42 +56,41 @@ class Api{
 			throw new RestException($e->getCode(), $e->getMessage());
 		}
 	}
-
-	/**************************** NOTIFICATIONS ****************************/	
+	
+	/**************************** FILE ****************************/
 	/**
-	 * @url GET notifications/all
+	 * @url POST file
+	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function getAllNotifications($roleId = null){
+	public function fileUpload($sessionId, $roleId = 0){
 		try{
-			$session = Session::singleton();
+			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			
-			foreach ((array)$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'] as $hook) call_user_func($hook);
-		
-			$session->role->getViolations();
-			// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
-		
-			return Notifications::getAll();
+			// TODO: Check if upload is allowed in interface
 			
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-	}
+			if (is_uploaded_file($_FILES['file']['tmp_name'])){
+				$tmp_name = $_FILES['file']['tmp_name'];
+				$new_name = $_FILES['file']['name'];
+				$target = UPLOAD_DIR . $new_name;
+				$result = move_uploaded_file($tmp_name, $target);
+				
+				if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
+				else Notifications::addError("Error in file upload");
+			}else{
+			    Notifications::addError('No file uploaded');
+			}
+			
+			$result = array('notifications' => Notifications::getAll(), 'files' => $_FILES, 'filename' => $new_name);
+			return $result;
 	
-	/**
-	 * @url GET extensions/all
-	 */
-	public function getAllExtensions(){
-		try{
-			return (array) $GLOBALS['apps'];
-		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
 		}
 	}
 
-	/**************************** OBJECTINTERFACES ****************************/
+	/**************************** INTERFACES ****************************/
 	/**
 	 * @url GET resource/{concept}/{srcAtomId}/{interfaceId}
 	 * @url GET resource/{concept}/{srcAtomId}/{interfaceId}/{tgtAtomId}
@@ -99,8 +100,11 @@ class Api{
 	 * @param string $tgtAtomId
 	 * @param string $sessionId
 	 * @param int $roleId
+	 * @param boolean $inclLinktoData
+	 * @param string $arrayType
+	 * @param boolean $metaData
 	 */
-	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = null){
+	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = 0, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -113,7 +117,7 @@ class Api{
 			$atom = new Atom($srcAtomId, $concept);
 			if(!$atom->atomExists()) throw new Exception("Resource '$srcAtomId' not found", 404);
 			
-			$result = (array)$atom->getContent($session->interface, true, $tgtAtomId);
+			$result = (array)$atom->getContent($session->interface, true, $tgtAtomId, $inclLinktoData, $arrayType, $metaData);
 			
 			if(empty($result)) Notifications::addInfo("No results found");			
 	
@@ -142,7 +146,7 @@ class Api{
 	 *
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -172,7 +176,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -206,7 +210,10 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = null, $requestType = 'feedback'){
+	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback'){
+		
+		throw new RestException(501); // 501: disabled until CRUD rights can be specified in interfaces
+		
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
@@ -235,7 +242,7 @@ class Api{
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = null, $requestType = 'feedback', $request_data = null){
+	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton($sessionId);			
 			$session->setRole($roleId);
@@ -275,9 +282,6 @@ class Api{
        		throw new RestException($e->getCode(), $e->getMessage());
        	}
     }
-    
-    
-    /**************************** ATOMS ********************************/
 	
 	/**
      * @url GET resource/{concept}
@@ -303,123 +307,71 @@ class Api{
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());
    		}
-    }    
-    
-	/**
-     * @url POST resource/{concept}
-	 * @status 201
-     */
-	function postConceptAtom($concept){ 
-		try{
-			$database = Database::singleton();
-			return $database->addAtomToConcept(Concept::createNewAtom($concept), $concept); // insert new atom in database
-			
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-	}
-
-	/**
-	 * @url DELETE resource/{concept}/{atomId}
-	 * @status 204
-	 */
-	function deleteConceptAtom($concept, $atomId){ 
-		try{
-			$database = Database::singleton();
-			$atom = new Atom($atomId, $concept);
-			if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
-			$atom->delete();
-		
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-	}
+    }
     	
-	/**************************** ROLES ****************************/
-	/**
-     * @url GET roles
-     */
-    public function getAllRoles(){
-    	try{
-			return Role::getAllRoles(); // "Return list of all roles with properties as defined in class Role"
-		
-    	}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-    }
+	/**************************** UI stuff ****************************/
     
     /**
-     * @url GET role
-     * @url GET role/{roleId}
-     */
-    public function getRole($roleId = NULL){
-    	try{
-    		if($roleId !== NULL){	// do not use isset(), because roleNr can be 0.
-    			return new Role($roleId); // Return role with properties as defined in class Role
-    		}else{
-    			return new Role(); // Return default role	
-    		}
-    		
-    	}catch(Exception $e){
-    		throw new RestException($e->getCode(), $e->getMessage());
-   		}
-    }
-    
-    /**
-     * @url GET role/name/{roleName}
-     */
-    public function getRoleByName($roleName){
-    	try{
-    		return Role::getRole($roleName);
-    		
-    	}catch(Exception $e){
-    		throw new RestException($e->getCode(), $e->getMessage());
-   		}
-    }
-    
-    
-	/**************************** INTERFACES ****************************/
-    /**
-     * @url GET interfaces/all
+     * @url GET navBar
+     * @param string $sessionId
      * @param int $roleId
      */
-    public function getAllInterfaces($roleId = null){
+    public function getNavBar($sessionId = null, $roleId = 0){
     	try{
-    		$session = Session::singleton();
+    		$session = Session::singleton($sessionId);
     		$session->setRole($roleId);
     		
-    		return array ('top' => $session->role->getInterfacesForNavBar()
-    					 ,'new' => $session->role->getInterfacesToCreateAtom());
+    		// top level interfaces
+    		$top = array();
+    		foreach ($session->role->getInterfacesForNavBar() as $ifc){
+    			$top[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
+    		}
+    		
+    		// new interfaces
+    		$new = array();
+    		foreach ($session->role->getInterfacesToCreateAtom() as $ifc){
+    			$new[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
+    		}
+    		
+    		// roles
+    		$roles = array();
+    		$allRoles = LOGIN_ENABLED ? Role::getAllSessionRoles($sessionId) : Role::getAllRoleObjects();
+    		foreach((array)$allRoles as $role){
+    			$roles[] = array('id' => $role->id, 'label' => $role->label);
+    		}
+    		
+    		return array ('top' => $top
+    					 ,'new' => $new
+    					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
+    					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
+    					 ,'roles' => $roles
+    					 ,'notifications' => Notifications::getAll()
+    		);
     		
     	}catch(Exception $e){
-    		throw new RestException(404, $e->getMessage());
+    		throw new RestException($e->getCode(), $e->getMessage());
     	}
     }
     
-	/**
-     * @url GET interfaces
-	 * @url GET interface/{interfaceId}
-	 * @param string $interfaceId
-	 * @param int $roleId
+    /**
+     * @url GET notifications/all
+     * @param int $roleId
      */
-    public function getInterfaces($interfaceId = null, $roleId = null){
+    public function getAllNotifications($roleId = 0){
     	try{
     		$session = Session::singleton();
     		$session->setRole($roleId);
-    	
-	    	if(!is_null($interfaceId)){
-		    	$session->setInterface($interfaceId);
-	    		
-		    	return $session->interface->getInterface(); // Return specific interface
-	    		
-	        }else{
-	        	
-	        	return $session->role->getInterfaces();  // Return list of all interfaces for the given/default role
-			}
-		
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
+    			
+    		foreach ((array)$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'] as $hook) call_user_func($hook);
+    
+    		$session->role->getViolations();
+    		// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
+    
+    		return Notifications::getAll();
+    			
+    	}catch(Exception $e){
+    		throw new RestException($e->getCode(), $e->getMessage());
+    	}
     }
 }
 ?>

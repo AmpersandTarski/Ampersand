@@ -1,30 +1,5 @@
 CONTEXT FormalAmpersand IN ENGLISH LATEX
-META "authors" "Stef Joosten"
-PURPOSE CONTEXT FormalAmpersand
-{+This file documents the Conjuncts pattern as of september 2014.
-It is meant to be included in FormalAmpersand.adl
--}
-
--- Context
 PATTERN Conjuncts
-PURPOSE CONCEPT Conjunct
-{+In order to maintain invariants, Ampersand breaks down all rules into conjuncts.
-Each rule $r$ can be written as a conjunction of $n$ expressions:
-\[r\ =\ c_0\cap c_1\cap ... c_{n-1}\]
-Conjuncts are produced by a normalizer, which produces conjunctive forms.
--}
-CONCEPT Conjunct "A conjunct is an expression that represents an invariant in an information system."
-PURPOSE CONCEPT Quad
-{+The Ampersand compiler stores intermediate results of analysing a rule in a Haskell data structure called ``Quad'',
-As a result, the analysis is done only once and is reused when needed.
--}
-CONCEPT Quad "A quad is a Haskell data structure that corresponds to one rule in an Ampersand script."
-PURPOSE CONCEPT DnfClause
-{+Each conjunct is stored in disjunctive normal form, for the purpose of formula manipulation.
--}
-CONCEPT DnfClause "A DnfClause is a Haskell data structure that stores an expression in disjunctive normal form."
-
-
 RELATION qRule[Quad*Rule] [UNI,TOT]
 RELATION qConjuncts[Quad*Conjunct]
 RELATION rc_rulename[Conjunct*Identifier] [UNI,TOT]
@@ -36,33 +11,17 @@ RELATION allShifts[DnfClause*DnfClause]
 RELATION rrexp[Rule*Expression] [UNI,TOT]
 RELATION conjNF[Expression*Expression] [UNI,TOT]
 RELATION exprIsc2list[Expression*Expression] [TOT]
-RELATION name[Rule*Identifier] [UNI,TOT]
+RELATION name[Rule*RuleName] [UNI,TOT]
 
--- Rules
-PURPOSE RULE Conjuncts1
-{+In order to split a rule in one or more conjuncts, we use 
--}
 RULE Conjuncts1 : qConjuncts;rc_conjunct |- qRule;conjuncts
 MEANING "All conjuncts in a quad are derived by means of the relation ``conjuncts''."
 
-PURPOSE RULE Conjuncts2
-{+In order to manipulate with expressions, they are stored in disjunctive normal form.
-As multiple variations of this form can be derived, all of them are stored in the conjunct.
--}
 RULE Conjuncts2 : rc_conjunct~;rc_dnfClauses = expr2dnfClause;allShifts
 MEANING "A conjunct in a quad stores all dnf-clauses that are derived from the expression in that conjunct."
 
-PURPOSE RULE defconjuncts
-{+In order to compute the conjuncts from a rule, we need a computable relation, conjuncts.
-The conjuncts are derived from the conjunctive normal form.
--}
 RULE defconjuncts : conjuncts = rrexp;conjNF;exprIsc2list
 MEANING "The conjuncts in a rule are defined as the top-level subexpressions in the conjunctive normal form of the expression related to that rule."
 
-PURPOSE RULE Conjuncts4
-{+For the purpose of keeping track of things, every conjunct gets a name.
-That is the same name as the name of the rule from which the conjunct is derived.
--}
 RULE Conjuncts4 : qConjuncts~;qRule |- rc_rulename;name~
 MEANING "The name of every conjunct in a quad is the name of the rule from which it has been derived."
 ENDPATTERN

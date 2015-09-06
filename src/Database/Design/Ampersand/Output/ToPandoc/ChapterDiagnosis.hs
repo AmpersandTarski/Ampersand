@@ -502,17 +502,13 @@ chpDiagnosis fSpec
 
   wipReport :: [Block]
   wipReport
-   = [ Para (case (fsLang fSpec, concat popwork,popwork) of
-              (Dutch,  [],_)       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "
-                                      | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is dit correct? Waarom?
-              (English,[],_)       -> [ Str "The population in this script does not specify any work in progress. "
-                                      | (not.null.initialPops) fSpec ]  -- SJ 20131212 Is this correct? Why
-              (Dutch,  [(r,ps)],_) -> [ Str "Regel ", quoterule r, Str (" laat "++count Dutch   (length ps) "taak"++" zien.") ]
-              (English,[(r,ps)],_) -> [ Str "Rule ", quoterule r, Str (" shows "++count English (length ps) "task"++".") ]
-              (Dutch,  _,[_])      -> [ Str "Dit script bevat onderhanden werk. De volgende tabel bevat details met regelnummers in het oorspronkelijk script-bestand." ]
-              (English,_,[_])      -> [ Str "This script contains work in progress. The following table provides details with line numbers from the original script file." ]
-              (Dutch,  _,_)        -> [ Str "Dit script bevat onderhanden werk. De volgende tabellen geven details met regelnummers in de oorspronkelijk script-bestanden." ]
-              (English,_,_)        -> [ Str "This script contains work in progress. The following tables provide details with line numbers from the original script files." ]
+   = [ Para (case (fsLang fSpec,popwork) of
+              (Dutch,  [])       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "]
+              (English,[])       -> [ Str "The population in this script does not specify any work in progress. "]
+              (Dutch,  [(r,ps)]) -> [ Str "Regel ", quoterule r, Str (" laat "++count Dutch   (length ps) "taak"++" zien.") ]
+              (English,[(r,ps)]) -> [ Str "Rule ", quoterule r, Str (" shows "++count English (length ps) "task"++".") ]
+              (Dutch,  _)        -> [ Str "Dit script bevat onderhanden werk. De volgende tabellen geven details met regelnummers in de oorspronkelijk script-bestanden." ]
+              (English,_)        -> [ Str "This script contains work in progress. The following tables provide details with line numbers from the original script files." ]
             )
      ]        ++
 -- the following table actually belongs to the intro
@@ -521,14 +517,14 @@ chpDiagnosis fSpec
        [0.0,0.0,0.0]
        ( case fsLang fSpec of
           Dutch   ->
-              [[Plain [Str "regel"]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length popwork>1]++[Str "script",LineBreak,Str "regel#"]], [Plain [Str "#signalen"] ]]
+              [[Plain [Str "regel"]], [Plain [Str "locatie"] ], [Plain [Str "#taken"]] ]
           English ->
-              [[Plain [Str "rule" ]], [Plain $[Str ((locnm . origin . fst . head) cl++" ") |length popwork>1]++[Str "line#"]], [Plain [Str "#signals"] ]]
+              [[Plain [Str "rule" ]], [Plain [Str "location"]], [Plain [Str "#tasks"] ] ]
        )
        [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
-       | (r,ps)<-cl, length ps>0
+       | (r,ps)<-popwork
        ]
-     | (length.concat) popwork>1, cl<-popwork ]        ++
+     | (not . null) popwork ]        ++
 -- the tables containing the actual work in progress population
      concat
      [ [ Para ( (case fsLang fSpec of
@@ -556,7 +552,7 @@ chpDiagnosis fSpec
 
               ) ]++
        [ violtable r ps | length ps>1]
-     | (r,ps)<-concat popwork ]
+     | (r,ps)<- popwork ]
      where
 --      text r
 --       = if null expls
@@ -569,14 +565,14 @@ chpDiagnosis fSpec
                English -> Str ("on "++show (origin r))
                Dutch   -> Str ("op "++show (origin r))
          else Quoted SingleQuote [Str (name r)]
-      oneviol :: Rule -> Pairs -> [Inline]
+      oneviol :: Rule -> [AAtomPair] -> [Inline]
       oneviol r [p]
-       = if source r==target r && srcPaire p==trgPaire p
-         then [Quoted  SingleQuote [Str (name (source r)),Space,Str (srcPaire p)]]
-         else [Str "(",Str (name (source r)),Space,Str (srcPaire p),Str ", ",Str (name (target r)),Space,Str (trgPaire p),Str ")"]
+       = if source r==target r && apLeft p==apRight p
+         then [Quoted  SingleQuote [Str (name (source r)),Space,Str ((showValADL.apLeft) p)]]
+         else [Str "(",Str (name (source r)),Space,Str ((showValADL.apLeft) p),Str ", ",Str (name (target r)),Space,Str ((showValADL.apRight) p),Str ")"]
       oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
-      popwork :: [[(Rule,Pairs)]];
-      popwork = eqCl (locnm.origin.fst) [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
+      popwork :: [(Rule,[AAtomPair])]
+      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
   partofThemes r =
         or [ null (themes fSpec)
            , r `elem` concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]
@@ -585,7 +581,7 @@ chpDiagnosis fSpec
   violationReport :: Blocks
   violationReport
    = let (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
-         showViolatedRule :: (Rule,Pairs) -> Blocks
+         showViolatedRule :: (Rule,[AAtomPair]) -> Blocks
          showViolatedRule (r,ps)
              = let capt = case (fsLang fSpec,isSignal r) of
                                (Dutch  , False) -> text "Overtredingen van regel "<>  text (name r)
@@ -593,8 +589,8 @@ chpDiagnosis fSpec
                                (Dutch  , True ) -> text "Openstaande taken voor "        <> text (commaNL  "of" (map name (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
                                (English, True ) -> text "Tasks yet to be performed by "  <> text (commaEng "or" (map name (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
 
-                   showRow :: Paire -> [Blocks]
-                   showRow p = [(para.text.srcPaire) p,(para.text.trgPaire) p]
+                   showRow :: AAtomPair -> [Blocks]
+                   showRow p = [(para.text.showValADL.apLeft) p,(para.text.showValADL.apRight) p]
                in para ( case fsLang fSpec of
                             Dutch   -> text "Regel "
                             English -> text "Rule "
@@ -631,21 +627,21 @@ chpDiagnosis fSpec
      <> bulletList  [showViolatedRule vs | vs<- processViolations]
 
 
-  violtable :: Rule -> Pairs -> Block
+  violtable :: Rule -> [AAtomPair] -> Block
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
         then Table []
              [AlignLeft]
              [0.0]
              [[Plain [(Str . name . source) r]]]
-             [ [[Plain [Str (srcPaire p)]]]
+             [ [[Plain [Str (showValADL(apLeft p))]]]
              | p <-take 10 ps
              ]
         else Table []
              [AlignLeft,AlignLeft]
              [0.0,0.0]
              [[Plain [(Str . name . source) r]], [Plain [(Str . name . target) r] ]]
-             [ [[Plain [Str (srcPaire p)]], [Plain [Str (trgPaire p)]]]
+             [ [[Plain [Str (showValADL (apLeft p))]], [Plain [Str (showValADL(apRight p))]]]
              | p <-take 10 ps
              ]
 

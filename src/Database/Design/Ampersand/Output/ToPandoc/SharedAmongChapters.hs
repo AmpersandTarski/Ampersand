@@ -12,6 +12,7 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Database.Design.Ampersand.Core.AbstractSyntaxTree
     , module Database.Design.Ampersand.ADL1
     , module Database.Design.Ampersand.Output.PandocAux
+    , module Database.Design.Ampersand.Graphic.Graphics
     , Chapter(..)
     , chaptersInDoc
     , chptHeader
@@ -54,7 +55,7 @@ import Data.Ord
 import System.Locale
 import System.FilePath
 import GHC.Exts(sortWith)
-
+import Database.Design.Ampersand.Graphic.Graphics
 fatal :: Int -> String -> a
 fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters"
 
@@ -186,7 +187,7 @@ data RuleCont = CRul { cRul ::  Rule
 data DeclCont = CDcl { cDcl ::  Declaration
                      , cDclPurps :: [Purpose] 
                      , cDclMeaning :: Maybe A_Markup
-                     , cDclPairs :: [Paire]
+                     , cDclPairs :: [AAtomPair]
                      } 
 data CptCont  = CCpt { cCpt ::  A_Concept
                      , cCptDefs :: [ConceptDef]
@@ -260,17 +261,8 @@ orderingByTheme fSpec
     = CDcl { cDcl      = dcl
            , cDclPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) dcl
            , cDclMeaning = meaning (fsLang fSpec) dcl
-           , cDclPairs =
-                  case filter theDecl (initialPops fSpec) of
-                    []    -> []
-                    [pop] -> popps pop
-                    _     -> fatal 273 "Multiple entries found in populationTable"
-           } 
-   where
-     theDecl :: Population -> Bool
-     theDecl p = case p of
-                   PRelPopu{} -> popdcl p == dcl
-                   PCptPopu{} -> False
+           , cDclPairs = pairsInExpr fSpec (EDcD dcl)
+           }
 
   cpt2cptCont :: A_Concept -> CptCont
   cpt2cptCont cpt 
@@ -327,7 +319,7 @@ dpRule' fSpec = dpR
    l lstr = text $ localize (fsLang fSpec) lstr
    dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
    dpR (r:rs) n seenConcs seenDeclarations
-     = ( ( str (name r)
+     = ( ( l (NL "Regel: ",EN "Rule: ") <> (text.latexEscShw.name) r
          , [theBlocks]
           ): dpNext
        , n'
@@ -438,15 +430,13 @@ purposes2Blocks opts ps
                     _                                  -> []
 concatMarkup :: [A_Markup] -> Maybe A_Markup
 concatMarkup es
- = case eqCl f es of
+ = case eqCl amLang es of
     []   -> Nothing
     [cl] -> Just A_Markup { amLang   = amLang (head cl)
-                          , amFormat = amFormat (head cl)
                           , amPandoc = concatMap amPandoc es
                           }
     cls  -> fatal 136 ("don't call concatMarkup with different languages and formats\n   "++
-                      intercalate "\n   " [(show.f.head) cl | cl<-cls])
-   where f e = (amLang e, amFormat e)
+                      intercalate "\n   " [(show.amLang.head) cl | cl<-cls])
 
 -- Insert an inline after the first inline in the list of blocks, if possible.
 insertAfterFirstInline :: [Inline] -> [Block] -> [Block]

@@ -8,7 +8,6 @@ import Control.Applicative
 
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer (keywords)
-import Database.Design.Ampersand.ADL1.Pair (Paire(..))
 
 -- Useful functions to build on the quick check functions
 
@@ -62,7 +61,7 @@ genObj = makeObj arbitrary genIfc (return Nothing)
 makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
 makeObj genPrim ifcGen genView n =
         P_Obj <$> lowerId  <*> arbitrary <*> term <*> genView <*> ifc <*> args
-              where args = listOf $ listOf1 safeStr1
+              where args = listOf $ listOf1 identifier
                     term = Prim <$> genPrim
                     ifc  = if n == 0 then return Nothing
                            else Just <$> ifcGen (n`div`2)
@@ -76,11 +75,6 @@ subIfc objGen n =
     else P_Box          <$> arbitrary <*> boxKey   <*> vectorOf n (objGen$ n`div`2)
     where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
 
-genPairs :: Gen Pairs
-genPairs = listOf genPaire
-
-genPaire :: Gen Paire
-genPaire = Paire <$> safeStr <*> safeStr
 
 --- Now the arbitrary instances
 instance Arbitrary Origin where
@@ -98,8 +92,9 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary -- relations
        <*> listOf arbitrary -- concepts
        <*> listOf arbitrary -- identities
-       <*> return []        -- role rules
-       <*> return []        -- role relations
+       <*> listOf arbitrary -- role rules
+       <*> listOf arbitrary -- role relations
+       <*> listOf arbitrary -- representation
        <*> listOf arbitrary -- views
        <*> listOf arbitrary -- gen definitions
        <*> listOf arbitrary -- interfaces
@@ -121,21 +116,34 @@ instance Arbitrary P_RoleRelation where
 instance Arbitrary P_RoleRule where
     arbitrary = Maintain <$> arbitrary <*> listOf1 arbitrary <*> listOf1 safeStr
 
+instance Arbitrary Representation where
+    arbitrary = Repr <$> arbitrary <*> listOf1 upperId <*> arbitrary
+
+instance Arbitrary TType where -- Not allowed are:  [ Object , TypeOfOne] 
+    arbitrary = elements [Alphanumeric, BigAlphanumeric, HugeAlphanumeric, Password
+                         , Binary, BigBinary, HugeBinary 
+                         , Date, DateTime 
+                         , Boolean, Integer, Float
+                         ]
+
 instance Arbitrary Role where
-    arbitrary = Role <$> safeStr
+    arbitrary = 
+      oneof [ Role    <$> safeStr
+            , Service <$> safeStr
+            ]
 
 instance Arbitrary P_Pattern where
     arbitrary = P_Pat <$> arbitrary <*> safeStr1  <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
-                      <*> arbitrary <*> arbitrary <*> arbitrary
+                      <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Declaration where
     arbitrary = P_Sgn <$> lowerId         -- name
                       <*> arbitrary       -- sign
                       <*> arbitrary       -- props
-                      <*> listOf safeStr1 -- pragma. Should be tree, but the grammar allows more.
+                      <*> listOf safeStr1 -- pragma. Should be three, but the grammar allows more.
                       <*> arbitrary       -- meaning
-                      <*> genPairs        -- pairs
+                      <*> arbitrary       -- pairs
                       <*> arbitrary       -- origin
                       <*> arbitrary       -- plug
 
@@ -185,7 +193,7 @@ instance Arbitrary TermPrim where
         oneof [
            PI <$> arbitrary,
            Pid <$> arbitrary <*> genConceptOne,
-           Patm <$> arbitrary <*> identifier <*> maybeConceptOne,
+           Patm <$> arbitrary <*> arbitrary <*> maybeConceptOne,
            PVee <$> arbitrary,
            Pfull <$> arbitrary <*> genConceptOne <*> genConceptOne,
            PNamedR <$> relationRef
@@ -219,20 +227,44 @@ instance Arbitrary a => Arbitrary (P_Rule a) where
               where ruleTerm = sized $ genTerm 0 -- rule is a term level 0
 
 instance Arbitrary ConceptDef where
-    arbitrary = Cd <$> arbitrary <*> safeStr <*> arbitrary <*> safeStr <*> safeStr
+    arbitrary = Cd <$> arbitrary <*> safeStr <*> arbitrary <*> safeStr
                    <*>  safeStr  <*> safeStr
 
-instance Arbitrary Paire where
-    arbitrary = Paire <$> arbitrary <*> arbitrary
+instance Arbitrary PAtomPair where
+    arbitrary = PPair <$> arbitrary <*> arbitrary <*> arbitrary
 
 instance Arbitrary P_Population where
     arbitrary =
         oneof [
-          P_RelPopu <$> arbitrary <*> lowerId <*> genPairs,
-          P_TRelPop <$> arbitrary <*> lowerId <*> arbitrary <*> genPairs,
-          P_CptPopu <$> arbitrary <*> lowerId <*> listOf safeStr
+          (P_RelPopu Nothing Nothing) <$> arbitrary <*> arbitrary <*> arbitrary,
+          P_CptPopu <$> arbitrary <*> lowerId <*> arbitrary
         ]
 
+instance Arbitrary P_NamedRel where
+    arbitrary = PNamedRel <$> arbitrary <*> lowerId <*> arbitrary
+
+instance Arbitrary PAtomValue where
+  -- Arbitrary must produce valid input from an ADL-file, so no Xlsx stuff allowed here,
+  -- otherwise it is likely that Quickcheck will fail because of it.
+    arbitrary = oneof
+       [ScriptString <$> arbitrary <*> safeStr `suchThat`  stringConstraints,
+        ScriptInt <$> arbitrary <*> arbitrary,
+        ScriptFloat <$> arbitrary <*> arbitrary,
+--        ScriptDate <$> arbitrary <*> arbitrary,
+--        ScriptDateTime <$> arbitrary <*> arbitrary,
+        ComnBool <$> arbitrary <*> arbitrary
+       ]
+     where stringConstraints :: String -> Bool
+           stringConstraints str =
+             case str of 
+              [] -> True
+              ('\\':_) -> False -- om van het geneuzel af te zijn. 
+              ('\'':_) -> False -- This string would cause problems as a Singleton in an Expresson
+              ('\\':'\'':cs) -> stringConstraints cs
+              ('\\':'"':cs) -> stringConstraints cs
+              ('"':_) -> False -- This string would cause problems as a Singleton in an Expresson
+              ['\\']  -> False -- If the last character is an escape, the double quote ending the string would not be seen as such. 
+              (_:cs)  -> stringConstraints cs
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
                       <*> listOf relationRef <*> args <*> listOf arbitrary
@@ -284,8 +316,6 @@ instance Arbitrary PRef2Obj where
             PRef2Pattern <$> upperId,
             PRef2Interface <$> upperId,
             PRef2Context <$> upperId
-            -- The PRef2Fspc is not used in the parser.
-            -- PRef2Fspc <$> upperId
         ]
 
 instance Arbitrary PMeaning where

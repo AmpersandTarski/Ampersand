@@ -40,7 +40,7 @@ Class Atom {
 	}
 	
 	public function getAtom($interface = null){
-		foreach(Concept::getAllInterfaces($this->concept) as $interfaceId) $interfaces[] = $this->jsonld_id . '/' . $interfaceId;
+		foreach(InterfaceObject::getAllInterfacesForConcept($this->concept) as $interfaceId) $interfaces[] = $this->jsonld_id . '/' . $interfaceId;
 		
 		$result =  array('@id' => $this->jsonld_id
 						,'@label' => $this->label
@@ -56,8 +56,11 @@ Class Atom {
 	/*
 	 * var $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
 	 * var $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
+	 * var $inclLinktoData specifies if data from LINKTO (ref) subinterfaces must be included or not.
+	 * var $arrayType specifies if the arrays in the result are 'assoc' (associative, key index) or 'num' (numeric index).
+	 * var $metaData specifies if meta data about objects must be included or not
 	 */
-	public function getContent($interface, $rootElement = true, $tgtAtom = null){
+	public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
 		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
@@ -71,71 +74,133 @@ Class Atom {
 			$tgtAtoms[] = $tgtAtom;
 		}
 		
-		// defaults 
-		if(!$interface->univalent && !($interface->tgtDataType == "concept")) $arr = array(); // define $arr as array if $interface is not univalent and tgtDataType not an concept
-		else $arr = null;
-		
 		foreach ($tgtAtoms as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
-
-			// determine value atom 
-			if($interface->isProperty && empty($interface->subInterfaces) && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
-				$content = !is_null($tgtAtom->id);
-				
-			}elseif($interface->tgtDataType == "concept"){ // // TgtConcept of interface is a concept (i.e. not primitive datatype).
-				$content = array();
-				
-				// Add @context for JSON-LD to rootElement
-				if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
-				
-				// Add other elements
-				$atomInterfaces = $interface->isLinkTo ? array($interface->refInterfaceId) : array_map(function($o) { return $o->id; }, $session->role->getInterfaces($interface->tgtConcept));
-				$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
-														, '@label' => $tgtAtom->label
-				                    					, '@view' => $tgtAtom->view
-													 	, '@type' => $tgtAtom->jsonld_type
-														, '@interfaces' => $atomInterfaces
-														, '_sortValues_' => array()
-													 	, 'id' => $tgtAtom->id));
-				
-			}else{ // TgtConcept of interface is primitive datatype
-				if(strtolower($tgtAtom->id) == "true") $tgtAtom->id = true; // convert string "true" to boolval true
-				if(strtolower($tgtAtom->id) == "false") $tgtAtom->id = false; // convert string "false" to boolval false
-				if($interface->label == "#") $tgtAtom->id = (int) $tgtAtom->id; // convert # value to int TODO: remove when Types are implemented
-				
-				$content = $tgtAtom->id;
-			}
 			
-			// subinterfaces
-			if(!empty($interface->subInterfaces) && $interface->tgtDataType != "concept") throw new Exception("TgtConcept of interface: '" . $interface->label . "' is primitive datatype and can not have subinterfaces", 501);
-			foreach($interface->subInterfaces as $subinterface){
-				$otherAtom = $tgtAtom->getContent($subinterface, false);
-				$content[$subinterface->id] = $otherAtom;
+			// Add @context for JSON-LD to rootElement
+			if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
+			
+			// Leaf
+			if(empty($interface->subInterfaces) && empty($interface->refInterfaceId)){
 				
-				// _sortValues_ (if subInterface is uni)
-				if($subinterface->univalent){
-					$content['_sortValues_'][$subinterface->id] = ($subinterface->tgtDataType == "concept") ? current((array)$otherAtom)['@label'] : $otherAtom;
+				// Property
+				if($interface->isProperty && !$interface->isIdent){
+					$content = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
+				
+				// Object
+				}elseif($interface->tgtConceptIsObject){
+					$content = array();
+					
+					// Add meta data
+					if($metaData){
+						
+						// Define interface(s) to navigate to for this tgtAtom
+						$atomInterfaces = array();
+						if($interface->isLinkTo && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
+						elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
+							
+						// Add meta data elements
+						$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
+								, '@label' => $tgtAtom->label
+								, '@view' => $tgtAtom->view
+								, '@type' => $tgtAtom->jsonld_type
+								, '@interfaces' => $atomInterfaces
+								, '_sortValues_' => array())
+						);
+					}
+					
+					// Add id TODO:can be removed when angular templates use @id instead of id
+					$content = array_merge($content, array (  'id' => $tgtAtom->id));
+					
+				// Scalar
+				}else{
+					$content = $this->typeConversion($tgtAtom->id, $interface->tgtConcept); // TODO: now same conversion as to database is used, maybe this must be changed to JSON types (or the json_encode/decode does this automaticaly?)
 				}
 				
+			// Tree
+			}else{
+				$content = array();
+					
+				// Add meta data
+				if($metaData){
+					
+					// Define interface(s) to navigate to for this tgtAtom
+					$atomInterfaces = array();
+					if($interface->isLinkTo && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
+					elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
+						
+					// Add meta data elements
+					$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
+							, '@label' => $tgtAtom->label
+							, '@view' => $tgtAtom->view
+							, '@type' => $tgtAtom->jsonld_type
+							, '@interfaces' => $atomInterfaces
+							, '_sortValues_' => array())
+					);
+				}
+				
+				// Add id TODO:can be removed when angular templates use @id instead of id
+				$content = array_merge($content, array (  'id' => $tgtAtom->id));
+				
+				// Subinterfaces
+				if(!empty($interface->subInterfaces)){
+					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have subinterfaces", 501);
+				
+					foreach($interface->subInterfaces as $subinterface){
+						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
+						$content[$subinterface->id] = $otherAtom;
+							
+						// _sortValues_ (if subInterface is uni)
+						if($subinterface->univalent && $metaData){
+							$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+						}
+					}
+				}
+
+				// Ref subinterfaces (for LINKTO interfaces only when $inclLinktoData = true)
+				if(!empty($interface->refInterfaceId) && (!$interface->isLinkTo || $inclLinktoData)){
+					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have a ref interface defined", 501);
+				
+					$refInterface = new InterfaceObject($interface->refInterfaceId, null);
+					foreach($refInterface->subInterfaces as $subinterface){
+						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
+						$content[$subinterface->id] = $otherAtom;
+							
+						// _sortValues_ (if subInterface is uni)
+						if($subinterface->univalent && $metaData){
+							$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+						}
+					}
+				}				
 			}
 			
-			// determine whether value of atom must be inserted as list or as single value
-			if($interface->isProperty && $interface->relation <> ''){ // $interface->relation <> '' because I is also a property and this is not the one we want
+			// Determine whether value of atom must be inserted as list or as single value
+			
+			// Properties are represented as single value
+			if($interface->isProperty && !$interface->isIdent && empty($interface->subInterfaces) && empty($interface->refInterfaceId)){
 				$arr = $content;
-			}elseif($interface->tgtDataType == "concept"){
-				$arr[$content['id']] = $content;
+			// Object are always inserted as array
+			}elseif($interface->tgtConceptIsObject){
+				switch($arrayType){
+					case "num" :
+						$arr[] = $content;
+						break;
+					case "assoc" :
+					default :
+						$arr[$content['id']] = $content;
+						break;
+				}
+			// Non-object UNI results are inserted as single value
 			}elseif($interface->univalent){
 				$arr = $content;
+			// Non-object Non-UNI results are inserted as array 
 			}else{
 				$arr[] = $content;
-			}			
-				
-			unset($content);			
-		
+			}
+			unset($content);
 		}
 		
 		return $arr;
-
 	}
 	
 	public function put(&$interface, $request_data, $requestType){		
@@ -266,7 +331,7 @@ Class Atom {
 		/******* Perform edit *********/
 		
 		// Interface is property
-		if ($tgtInterface->isProperty){
+		if ($tgtInterface->isProperty && !$tgtInterface->isIdent){
 			// Throw error when patch value is something else then true, false or null 
 			if(!(is_bool($patch['value']) || is_null($patch['value']))) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
 			
@@ -278,8 +343,8 @@ Class Atom {
 				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
 			}
 			
-		// Interface is a relation to a concept
-		}elseif($tgtInterface->tgtDataType == "concept"){
+		// Interface is a relation to an object
+		}elseif($tgtInterface->tgtConceptIsObject){
 			// Replace by nothing => editDelete
 			if(empty($patch['value'])){
 				// The $tgtAtom(s) is/are not provided, so we have to get this value to perform the editDelete function
@@ -299,8 +364,8 @@ Class Atom {
 				}
 			}
 		
-		// Interface is a relation to a scalar
-		}elseif($tgtInterface->tgtDataType != "concept"){
+		// Interface is a relation to a scalar (i.e. not an object)
+		}elseif(!$tgtInterface->tgtConceptIsObject){
 			if(is_bool($patch['value'])) $patch['value'] = var_export($patch['value'], true);
 			
 			// Replace by nothing => editDelete
@@ -364,9 +429,9 @@ Class Atom {
 		 * Properties are always a 'replace', so no dealing with them here
 		 */
 		
-		/* Interface is a relation to a concept
+		/* Interface is a relation to an object
 		 */
-		if($tgtInterface->tgtDataType == "concept"){
+		if($tgtInterface->tgtConceptIsObject){
 			$tgtAtom = $patch['value']['id'];
 			
 			// In case $tgtAtom is null provide error.
@@ -374,8 +439,8 @@ Class Atom {
 			
 			$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 		
-		// Interface is a relation to a scalar
-		}elseif($tgtInterface->tgtDataType != "concept"){
+		// Interface is a relation to a scalar (i.e. not an object)
+		}elseif(!$tgtInterface->tgtConceptIsObject){
 			$tgtAtom = $patch['value'];
 			
 			// In case $tgtAtom is null provide error.
@@ -420,18 +485,18 @@ Class Atom {
 		 * Properties are always a 'replace', so no dealing with them here
 		 */
 		
-		/* Interface is a relation to a concept
+		/* Interface is a relation to an object
 		 */
-		if($tgtInterface->tgtDataType == "concept"){
+		if($tgtInterface->tgtConceptIsObject){
 		
 			$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 		
-		/* Interface is a relation to a scalar
+		/* Interface is a relation to a scalar (i.e. not an object)
 		 * Two situations:
 		 * 1) Interface is UNI -> not handled here, this is detected as a replace to ''
 		 * 2) Interface is not UNI -> $tgtAtom is index of array, so we have to get the corresponding value
 		 */
-		}elseif($tgtInterface->tgtDataType != "concept"){
+		}elseif(!$tgtInterface->tgtConceptIsObject){
 			try{
 				$tgtAtom = JsonPatch::get($before, $patch['path']);
 			}catch(Exception $e){
@@ -533,24 +598,57 @@ Class Atom {
 			$viewStrs = array ();
 			
 			foreach ($view['segments'] as $viewSegment){
-				
+				// text segment
 				if ($viewSegment['segmentType'] == 'Text'){ 
-					$viewStrs[$viewSegment['label']] = htmlSpecialChars($viewSegment['Text']);
+					$viewStrs[$viewSegment['label']] = $viewSegment['Text'];
 				
-				}elseif($viewSegment['segmentType'] == 'Html'){
-					$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
-				
-				}else{
+				// expressie segment
+				}elseif($viewSegment['segmentType'] == 'Exp'){
 					$idEsc = $this->database->escape($this->id);
 					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
 					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
 					
-					$txt = count($tgtAtoms) ? htmlSpecialChars($tgtAtoms[0]) : null;
+					$txt = count($tgtAtoms) ? $tgtAtoms[0] : null;
 					$viewStrs[$viewSegment['label']] = $txt;
+				
+				// html segment
+				}elseif($viewSegment['segmentType'] == 'Html'){
+					$errorMessage = "Unsupported segmentType 'Html' in view '" . $view['label'] . "'";
+					throw new Exception($errorMessage, 501); // 501: Not implemented
+					
+					//$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
+				
+				// unknown segment
+				}else{
+					$errorMessage = "Unknown segmentType '" . $viewSegment['segmentType'] . "' in view '" . $view['label'] . "'";
+					throw new Exception($errorMessage, 501); // 501: Not implemented
 				}
 			}
 			return $viewStrs;
 		}
+	}
+	
+	/*
+	 * Conversion to PHP/JSON types
+	 */
+	public function typeConversion($value, $concept){
+		switch(Concept::getTypeRepresentation($concept)){
+			case "DATE" :
+				$date = new DateTime($value);
+				return $date->format('Y-m-d');
+			case "DATETIME" :
+				$datetime = new DateTime($value);
+				return $data->format('Y-m-d H:i:s');
+			case "INTEGER" :
+				return (int) $value;
+			case "BOOLEAN" :
+				return (bool) $value;
+			case "DECIMAL" :
+				return (float) $value;
+			default :
+				return $value;
+		}
+	
 	}
 }
 

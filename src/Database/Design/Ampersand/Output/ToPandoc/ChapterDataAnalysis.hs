@@ -4,7 +4,8 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAna
 import Database.Design.Ampersand.ADL1 hiding (Association)
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
 import Database.Design.Ampersand.FSpec.Crud
-import Database.Design.Ampersand.FSpec.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Database.Design.Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
 import Database.Design.Ampersand.Output.PredLogic
 import Data.Char
 import Data.List
@@ -114,15 +115,16 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                 0 -> text "Er zijn geen gegevensverzamelingen."
                                 1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
                                 _ -> text ("Er zijn "++count Dutch nrOfClasses "gegevensverzameling"++". ")
-                                  <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de nu volgende paragrafen beschreven:"
+                                  <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de twee nu volgende tabellen beschreven:"
                              )
              English -> para (case nrOfClasses of
                                 0 -> text "There are no entity types."
                                 1 -> text "There is only one entity type:"
                                 _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
-                                  <> text "The details of each entity type are described (in alphabetical order) in the following paragraphs:"
+                                  <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
                              )
-     <> conceptTable
+     <> conceptTable True
+     <> conceptTable False
      <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
 
 
@@ -136,27 +138,46 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
   oocd :: ClassDiag
   oocd = cdAnalysis fSpec
 
-  conceptTable :: Blocks
-  conceptTable = table mempty
-                 [(AlignLeft,1/6),(AlignCenter,4/6),(AlignLeft,1/6)]
-                 [ (plain.text.l) (NL "Type"          , EN "Type")
-                 , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
-                 , (plain.text.l) (NL "Technisch type", EN "Technical type") 
-                 ] 
-                 [ [ (plain.text.name) c
-                   , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c
-                   , if c `elem` ooCpts oocd then plainText $ l (NL "Sleutel", EN "Primary Key") else mempty
-                   ]
-                 | c <- allConcepts fSpec
-                 ]
-
+  conceptTable :: Bool    -- this bool is introduced to split the table into two separate tables. The first table contains
+                          -- the concepts that have their own table in the logical data model. The second table contains
+                          -- all other concepts.  
+               -> Blocks
+  conceptTable keys = 
+    table (if keys
+           then text.l $ (NL "Logische gegevensverzamelingen"
+                         ,EN "Logical entity types")
+           else text.l $ (NL "Overige attributen"
+                         ,EN "Other attributes"
+                         )
+          )
+         [(AlignLeft,1/6),(AlignLeft,4/6),(AlignLeft,1/6)]
+         [ (plain.text.l) (NL "Concept"       , EN "Concept")
+         , (plain.text.l) (NL "Betekenis"     , EN "Meaning")
+         , (plain.text.l) (NL "Type"          , EN "Type") 
+         ] 
+         [ [ (plain.text.name) c
+           ,   meaningOf c
+            <> fromList (maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c)
+           , mempty
+           ]
+         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE $ allConcepts fSpec
+         ]
+     where
+       keyFilter :: A_Concept -> Bool
+       keyFilter cpt = (    keys &&      isKey  cpt)
+                     ||(not keys && (not.isKey) cpt)
+       isKey :: A_Concept -> Bool
+       isKey cpt = cpt `elem` ooCpts oocd
+       meaningOf :: A_Concept -> Blocks
+       meaningOf = mconcat . map (fromList . string2Blocks ReST . cddef) . concDefs fSpec 
+       
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
        (   header (lev+1) 
                   (((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl))
         <> case clcpt cl of
              Nothing -> mempty
-             Just (_, purposes)  -> purposes2Blocks (getOpts fSpec) purposes
+             Just cpt -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) cpt)
         <> (para . text . l) ( NL "Deze gegevensverzameling bevat de volgende attributen: "
                              , EN "This entity type has the following attributes: "
                              )
@@ -176,26 +197,24 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
                                             else (NL "Verplicht", EN "Mandatory")
                                            )] | attr <- clAtts cl]
                        )
-        <> let attrNames = map name (clAtts cl)
-               asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
-                       , not $ assrhr assoc `elem` attrNames ] 
+        <> let asscs = [ assoc | assoc <- assocs oocd, assSrc assoc == clName cl || assTgt assoc == clName cl
+                       ] 
            in  case asscs of
                  [] -> para ( text (name cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
-                 [assoc] -> purposeAndMeaningOfAssoc assoc
-                 _       ->
-                   para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
-                   <> orderedList (map assocToRow asscs) 
+                 _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
+                         <> orderedList (map assocToRow asscs) 
        )
     where
-     purposeAndMeaningOfAssoc :: Association -> Blocks
-     purposeAndMeaningOfAssoc assoc =
-        purposes2Blocks (getOpts fSpec) (asspurp assoc) <>
-        (case assmean assoc of Just markup -> fromList (amPandoc markup); Nothing -> mempty )
         
-     assocToRow :: Database.Design.Ampersand.FSpec.Graphic.ClassDiagram.Association -> Blocks
+     assocToRow :: Database.Design.Ampersand.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
-        (para.text.assrhr) assoc <>
-        purposeAndMeaningOfAssoc assoc
+         plain (  (text.assrhr) assoc
+                <>(text.l) (NL " (vanaf ",EN " (from ")
+                <>(text.assSrc) assoc
+                <>(text.l) (NL " naar ", EN " to ")
+                <>(text.assTgt) assoc
+                <>text ")."
+               ) 
      {- <>
         if (null.assrhr) assoc
         then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
@@ -408,7 +427,15 @@ daRulesSection lev fSpec = theBlocks
             else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>
                  (plain . code $ showADL (rrexp rule))
      , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
-     ]
+     , if isSignal rule
+       then mempty
+       else (para.text.l)
+              (NL $ "Overtredingen van deze regel leiden tot een foutmelding aan de gebruiker: "
+                        ++"\"TODO\"."
+              ,EN $ "Violations of this rule will result in an error message for the user: "
+                        ++"\"TODO\"."
+              )   
+     ]   
     where format = fspecFormat (getOpts fSpec) -- todo: bit hacky to use the output format here, but otherwise we need a major refactoring
   
   -- shorthand for easy localizing    

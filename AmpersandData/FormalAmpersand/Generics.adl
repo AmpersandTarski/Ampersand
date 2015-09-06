@@ -1,8 +1,8 @@
-CONTEXT Generics IN ENGLISH LATEX
+﻿CONTEXT Generics IN ENGLISH LATEX
 PURPOSE CONTEXT Generics
 {+This context specifies the administration that currrently is, and in future will have been, the contents of GENERICS.PHP-}
 
-CONCEPT MySQLQuery "" TYPE "Text"
+REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
 
 
 RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
@@ -39,8 +39,8 @@ MEANING "When a pair in a relation is edited (created, updated or deleted), a (s
 
 --[Concepts]--
 RELATION allConcepts[Context*Concept] [SUR,INJ]
--- Aanname: De smerige id van een Concept is gelijk aan de naam van dat Concept.
-RELATION name[Concept*ConceptName][TOT,UNI] 
+-- Aanname: De key (de lelijke identifier) van een Concept is gelijk aan de naam van dat Concept.
+RELATION name[Concept*Identifier][TOT,UNI] 
 RELATION affectedInvConjunctIds[Concept*ConjunctID]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (invariant) conjunct may be affected"
 RELATION affectedSigConjunctIds[Concept*ConjunctID]
@@ -57,8 +57,9 @@ MEANING "the database-table column of the concept"
 RELATION tableInfo[Context*DBTable] [SUR,INJ]  
 RELATION columninfo[DBTable*TableColumn] [SUR,INJ]
 RELATION concept[TableColumn*Concept] [UNI,TOT] -- name of concept in a column of a (broad) table
-RELATION unique[TableColumn*BOOLEAN] [UNI,TOT] -- is this column unique? ('true' or 'false')
-RELATION null[TableColumn*BOOLEAN] [UNI,TOT] -- can this column be 'NULL'? ('true' or 'false')
+RELATION unique[TableColumn*Boolean] [UNI,TOT] -- is this column unique? ('true' or 'false')
+REPRESENT Boolean TYPE BOOLEAN
+RELATION null[TableColumn*Boolean] [UNI,TOT] -- can this column be 'NULL'? ('true' or 'false')
 
 
 --[Rules]--

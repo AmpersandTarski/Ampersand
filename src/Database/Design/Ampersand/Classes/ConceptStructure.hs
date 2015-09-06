@@ -31,15 +31,15 @@ class ConceptStructure a where
   expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a
   
   -- | mp1Pops draws the population from singleton expressions.
-  mp1Pops :: a -> [Population]
-  mp1Pops struc
-   = [ PCptPopu{ popcpt = cpt (head cl)
+  mp1Pops :: ContextInfo -> a -> [Population]
+  mp1Pops ci struc
+   = [ ACptPopu{ popcpt = cpt (head cl)
                , popas = map atm cl } 
      | cl<-eqCl cpt ((filter isMp1.primsMentionedIn) struc)]
-     where cpt (EMp1 _ c) = c
-           cpt _          = fatal 31 "cpt error"
-           atm (EMp1 a _) = a
-           atm _          = fatal 31 "atm error"
+     where cpt (EMp1 _ c)   = c
+           cpt _            = fatal 31 "cpt error"
+           atm (EMp1 val c) = safePSingleton2AAtomVal ci c val
+           atm _            = fatal 31 "atm error"
            
 prim2rel :: Expression -> Declaration
 prim2rel e
@@ -64,7 +64,7 @@ instance ConceptStructure a => ConceptStructure [a] where
   expressionsIn = foldr ((uni) . expressionsIn) []
 
 instance ConceptStructure A_Context where
-  concs ctx = foldr uni [ONE]  -- ONE is allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
+  concs ctx = foldr uni [ONE, PlainConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ (concs.ctxpats) ctx
               , (concs.ctxrs) ctx
               , (concs.ctxds) ctx
@@ -116,7 +116,7 @@ instance ConceptStructure ConceptDef where
                     ]
   expressionsIn _ = []
 
-instance ConceptStructure Sign where
+instance ConceptStructure Signature where
   concs (Sign s t) = nub [s,t]
   expressionsIn _  = []
 
@@ -172,8 +172,8 @@ instance ConceptStructure (PairView Expression) where
   expressionsIn (PairView ps) = expressionsIn ps
 
 instance ConceptStructure Population where
-  concs pop@PRelPopu{} = concs (popdcl pop)
-  concs pop@PCptPopu{} = concs (popcpt pop)
+  concs pop@ARelPopu{} = concs (popdcl pop)
+  concs pop@ACptPopu{} = concs (popcpt pop)
   expressionsIn _    = []
 
 instance ConceptStructure Purpose where

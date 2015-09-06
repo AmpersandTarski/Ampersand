@@ -11,6 +11,7 @@ are merely different ways to show FSpec.
 module Database.Design.Ampersand.FSpec.FSpec
           ( FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Fswitchboard(..), Quad(..)
+          , A_Concept, Declaration, A_Gen
           , FSid(..)
 --        , InsDel(..)
           , ECArule(..)
@@ -23,17 +24,19 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlField(..)
           , Object(..)
           , PlugInfo(..)
-          , SqlType(..)
+          , SqlTType(..)
           , SqlFieldUsage(..)
-          , getGeneralizations, getSpecializations
           , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..)
+          , Language(..),AAtomValue
+          , showValADL,showValPHP,showValSQL
+          , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
           ) where
-          
+-- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
+--       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
+--       hyrarchie to reflect the Architecture. 
 import Data.List
 import Data.Typeable
-import Database.Design.Ampersand.ADL1.Pair
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
@@ -41,6 +44,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.Crud
 import Database.Design.Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
+import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.FSpec"
@@ -78,13 +82,14 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                                                               --   one declaration for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                    , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
+                   , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
                    , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
                    , allConjsPerDecl :: [(Declaration, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
-                   , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or targent of a constituent relation)
+                   , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
                    , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
@@ -93,13 +98,19 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fSexpls ::      [Purpose]                -- ^ All purposes that have been declared at the top level of the current specification, but not in the processes, patterns and interfaces.
                    , metas ::        [Meta]                   -- ^ All meta relations from the entire context
                    , crudInfo ::     CrudInfo                 -- ^ Information for CRUD matrices 
-                   , initialPops ::  [Population]             -- ^ All user defined populations of relations and concepts
-                   , allAtoms ::     [Atom]
-                   , allLinks ::     [A_Pair]
-                   , initialConjunctSignals :: [(Conjunct,[Paire])] -- ^ All conjuncts that have process-rule violations.
-                   , allViolations :: [(Rule,[Paire])]        -- ^ All invariant rules with violations.
+               --    , popsOfCptWithoutSmaller :: A_Concept -> [Population]  -- ^ All user defined populations of an A_concept, WITHOUT the populations of smaller A_Concepts
+                   , atomsInCptIncludingSmaller :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
+                   , tableContents :: PlugSQL -> [[Maybe AAtomValue]] -- ^ tableContents is meant to compute the contents of an entity table.
+                                                                      --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
+                   
+                   , pairsInExpr :: Expression -> [AAtomPair]   
+                   , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
+                   , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
                    , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
-                   , allSigns ::     [Sign]                   -- ^ All Signs in the fSpec
+                   , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
+                   , contextInfo   :: ContextInfo 
+                   , specializationsOf :: A_Concept -> [A_Concept]    
+                   , generalizationsOf :: A_Concept -> [A_Concept]
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'
@@ -110,10 +121,10 @@ metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmIn ::    [A_Concept] -- all concepts the atom is in. (Based on generalizations)
-                 , atmVal ::   String
+                 , atmVal   :: AAtomValue
                  } deriving (Typeable,Eq)
 instance Unique Atom where
-  showUnique a = atmVal a++" in "
+  showUnique a = showValADL (atmVal a)++" in "
          ++case atmRoots a of
              []  -> fatal 110 "an atom must have at least one root concept"
              [x] -> uniqueShow True x
@@ -192,6 +203,11 @@ instance Named Activity where
 instance ConceptStructure Activity where
  concs         act = concs (actRule act) `uni` concs (actAffect act)
  expressionsIn act = expressionsIn (actRule act)
+
+data Typology = Typology {tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty)
+                         }
+                         
+
 
 data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
@@ -305,7 +321,7 @@ data SqlFieldUsage = TableKey Bool A_Concept  -- The field is the (primary) key 
 
 data SqlField = Fld { fldname :: String
                     , fldexpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-                    , fldtype :: SqlType
+                    , fldtype :: SqlTType
                     , flduse ::  SqlFieldUsage
                     , fldnull :: Bool           -- ^ True if there can be empty field-values (intended for data dictionary of DB-implementation)
                     , flduniq :: Bool           -- ^ True if all field-values are unique? (intended for data dictionary of DB-implementation)
@@ -320,24 +336,21 @@ instance ConceptStructure SqlField where
   concs     f = [target e' |let e'=fldexpr f,isSur e']
   expressionsIn   f = expressionsIn   (fldexpr f)
 
-data SqlType = SQLChar    Int
-             | SQLBlob              -- cannot compare, but can show (as a file)
-             | SQLPass              -- password, encrypted: cannot show, but can compare
-             | SQLSingle
-             | SQLDouble
-             | SQLText              -- cannot compare, but can show (as a text)
-             | SQLuInt    Int
-             | SQLsInt    Int
-             | SQLId                -- autoincrement integer
+data SqlTType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-types.html
              | SQLVarchar Int
-             | SQLBool              -- exists y/n
+             | SQLText
+             | SQLMediumText
+             | SQLBlob
+             | SQLMediumBlob
+             | SQLLongBlob
+             | SQLDate     -- MySQL retrieves and displays DATE values in 'YYYY-MM-DD' format
+             | SQLDateTime -- MySQL retrieves and displays DATETIME values in 'YYYY-MM-DD HH:MM:SS' format
+             | SQLBool
+             | SQLBigInt
+             | SQLSerial   -- SERIAL is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
+             
              deriving (Eq,Show)
 
-getGeneralizations :: FSpec -> A_Concept -> [A_Concept]
-getGeneralizations fSpec = largerConcepts (vgens fSpec)
-
-getSpecializations :: FSpec -> A_Concept -> [A_Concept]
-getSpecializations fSpec = smallerConcepts (vgens fSpec)
 
 -- Lookup view by id in fSpec.
 lookupView :: FSpec -> String -> ViewDef

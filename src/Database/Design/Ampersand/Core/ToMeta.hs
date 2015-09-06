@@ -47,6 +47,7 @@ instance MakeMeta P_Context where
          , ctx_ks    = makeMeta f (ctx_ks ctx)
          , ctx_rrules= makeMeta f (ctx_rrules ctx)
          , ctx_rrels = makeMeta f (ctx_rrels ctx)
+         , ctx_reprs = makeMeta f (ctx_reprs ctx)
          , ctx_vs    = makeMeta f (ctx_vs ctx)
          , ctx_gs    = makeMeta f (ctx_gs ctx)
          , ctx_ifcs  = makeMeta f (ctx_ifcs ctx)
@@ -66,6 +67,7 @@ instance MakeMeta P_Pattern where
            , pt_dcs = makeMeta f (pt_dcs p)
            , pt_RRuls = makeMeta f (pt_RRuls p)
            , pt_RRels = makeMeta f (pt_RRels p)
+           , pt_Reprs = makeMeta f (pt_Reprs p)
            , pt_cds = makeMeta f (pt_cds p)
            , pt_ids = makeMeta f (pt_ids p)
            , pt_vds = makeMeta f (pt_vds p)
@@ -74,13 +76,18 @@ instance MakeMeta P_Pattern where
            , pt_end = makeMeta f (pt_end p)
            }
 
+instance MakeMeta Representation where
+  makeMeta f rep
+   = Repr { reprpos  = makeMeta f (reprpos rep)
+          , reprcpts =      map f (reprcpts rep)
+          , reprdom  =            (reprdom rep)
+          } 
 instance MakeMeta ConceptDef where
   makeMeta f cd
    = Cd  { cdpos  = makeMeta f (cdpos cd)
          , cdcpt  =          f (cdcpt cd)
          , cdplug =            (cdplug cd)
          , cddef  =            (cddef cd)
-         , cdtyp  =            (cdtyp cd)
          , cdref  =            (cdref cd)
          , cdfrom =            (cdfrom cd)
          }
@@ -212,7 +219,6 @@ instance MakeMeta PRef2Obj where
       PRef2Pattern _     -> ref 
       PRef2Interface _   -> ref 
       PRef2Context _     -> ref 
-      PRef2Fspc _        -> ref
 
 instance MakeMeta PMeaning where
   makeMeta f (PMeaning m) = PMeaning (makeMeta f m)
@@ -221,17 +227,14 @@ instance MakeMeta PMessage where
 instance MakeMeta P_Population where
   makeMeta f pop 
    = case pop of
-      P_RelPopu{} -> P_RelPopu { p_orig  = makeMeta f (p_orig pop)
-                               , p_rnme  =          f (p_rnme pop)
+      P_RelPopu{} -> P_RelPopu { p_src   =            (p_src pop)
+                               , p_tgt   =            (p_tgt pop)
+                               , p_nmdr  = makeMeta f (p_nmdr pop)
+                               , p_orig  = makeMeta f (p_orig pop)
                                , p_popps = makeMeta f (p_popps pop)
                                }
-      P_TRelPop{} -> P_TRelPop { p_orig  = makeMeta f (p_orig pop)
-                               , p_rnme  =          f (p_rnme pop)
-                               , p_type  = makeMeta f (p_type pop)
-                               , p_popps = makeMeta f (p_popps pop)
-                               }
-      P_CptPopu{} -> P_CptPopu { p_orig  = makeMeta f (p_orig pop)
-                               , p_cnme  =          f (p_rnme pop)
+      P_CptPopu{} -> P_CptPopu { p_cnme  =          f (p_cnme pop)
+                               , p_orig  = makeMeta f (p_orig pop)
                                , p_popas =            (p_popas pop)
                                }
 
@@ -309,7 +312,7 @@ instance MakeMeta P_NamedRel where
   makeMeta f (PNamedRel o nm      sgn)
             = PNamedRel o (f nm) (makeMeta f sgn)
    
-instance MakeMeta Paire where
+instance MakeMeta PAtomPair where
   makeMeta _ = id
 instance MakeMeta Origin where
   makeMeta _ = id

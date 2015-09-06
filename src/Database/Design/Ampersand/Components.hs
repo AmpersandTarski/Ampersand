@@ -5,14 +5,6 @@ module Database.Design.Ampersand.Components
      makeFSpec
     -- * Generators of output
    , generateAmpersandOutput
---   , doGenADL
---   , doGenProofs
---   , doGenHaskell
---   , doGenXML
---   , doGenUML
---   , doGenDocument
---   , doGenFPAExcel
-    -- * etc...
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
@@ -22,7 +14,7 @@ import Text.Pandoc.Builder
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.FSpec.GenerateUML
-import Database.Design.Ampersand.FSpec.ShowXMLtiny (showXML)
+import Database.Design.Ampersand.Graphic.Graphics (writePicture)
 import Database.Design.Ampersand.Output
 import Control.Monad
 import System.FilePath
@@ -36,8 +28,7 @@ fatal = fatalMsg "Components"
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: FSpec -> IO ()
 generateAmpersandOutput fSpec =
- do { when (genXML (getOpts fSpec))      $ doGenXML      fSpec
-    ; when (genUML (getOpts fSpec))      $ doGenUML      fSpec
+ do { when (genUML (getOpts fSpec))      $ doGenUML      fSpec
     ; when (haskell (getOpts fSpec))     $ doGenHaskell  fSpec
     ; when (export2adl (getOpts fSpec))  $ doGenADL      fSpec
     ; when (genFSpec (getOpts fSpec))    $ doGenDocument fSpec
@@ -84,14 +75,6 @@ doGenHaskell fSpec =
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".hs"
 
-doGenXML :: FSpec -> IO()
-doGenXML fSpec =
- do { verboseLn (getOpts fSpec) "Generating XML..."
-    ; writeFile outputFile $ showXML fSpec (genTime (getOpts fSpec))
-    ; verboseLn (getOpts fSpec) $ "XML written into " ++ outputFile ++ "."
-    }
-   where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".xml"
-
 doGenUML :: FSpec -> IO()
 doGenUML fSpec =
  do { verboseLn (getOpts fSpec) "Generating UML..."
@@ -109,7 +92,7 @@ doGenDocument fSpec =
  do { verboseLn (getOpts fSpec) ("Processing "++name fSpec)
     ; makeOutput
     ; verboseLn (getOpts fSpec) $ "Document has been written to " ++ outputFile ++ "."
-    ; when (genGraphics (getOpts fSpec) && not(null thePictures) && fspecFormat (getOpts fSpec)/=FPandoc) $
+    ; when (not(null thePictures) && fspecFormat (getOpts fSpec)/=FPandoc) $
         mapM_ (writePicture (getOpts fSpec)) thePictures
      -- postProcessing of the generated output file depends on the format:
     ; postProcessor

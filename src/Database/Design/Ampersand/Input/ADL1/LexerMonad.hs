@@ -8,11 +8,9 @@
 
 module Database.Design.Ampersand.Input.ADL1.LexerMonad
     ( LexerMonad
-    , getPos, incPos, nextPos, addPos
-    , openBracket, closeBracket, checkBracketsAtEOF
+    , addPos
     , lexerError, lexerWarning
     , runLexerMonad
-    , getOpts
     ) where
 
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
@@ -74,24 +72,6 @@ runLexerMonad opts file (LM f) =
         Left err -> Left err
         Right (a, warnings, _, _) -> Right (a, keepOneTabWarning warnings)
 
--- TODO: These methods are not being used anywhere
--- | Retrieves the command line options
-getOpts :: LexerMonad [Options] -- ^ The lexer monad with the options
-getOpts = LM (\opts pos brackets -> Right (opts, [], pos, brackets))
-
--- | Retrieves the position of a lexer monad
-getPos :: LexerMonad FilePos
-getPos = LM (\_ pos brackets -> Right (pos, [], pos, brackets))
-
--- | Increases the position of a lexer monad with a given number of columns
-incPos :: Int -- ^ The amount of columns read
-       -> LexerMonad () -- ^ The resulting monad
-incPos i = LM (\_ pos brackets -> Right ((), [], addPos i pos, brackets))
-
--- | Increases the position of a lexer monad with a given character
-nextPos :: Char -> LexerMonad ()
-nextPos c = LM (\_ pos brackets -> Right ( (), [], updatePos pos c, brackets ))
-
 -- | Generates a monad with an error message
 lexerError :: LexerErrorInfo -- ^ The generated error
            -> FilePos        -- ^ The location where the error is originated
@@ -107,35 +87,3 @@ lexerWarning warning warningPos =
     LM (\_ pos brackets ->
         Right ((), [LexerWarning warningPos warning], pos, brackets))
 
--- | Adds a new opening bracket to the lexer monad
-openBracket :: Char  -- ^ The found bracket
-            -> LexerMonad () -- ^ The resulting monad
-openBracket c = LM (\_ pos brackets ->
-    Right ( (), [], pos, (pos, c) : brackets ))
-
--- | Adds a new closing bracket to the lexer monad, trying to match an opening one
-closeBracket :: Char -- ^ The found bracket
-             -> LexerMonad () -- ^ The resulting monad
-closeBracket c = LM (\_ pos brackets ->
-    case brackets of
-        [] -> Left (LexerError pos (TooManyClose c))
-        (pos2, c2):rest
-            | matchBracket c2 c ->
-                Right ((), [], pos, rest)
-            | otherwise ->
-                Left (LexerError pos (UnexpectedClose c pos2 c2))
-    )
-
--- | Asserts that the bracket list is empty at the end of the file
-checkBracketsAtEOF :: LexerMonad () -- ^ The resulting monad
-checkBracketsAtEOF = LM (\_ pos brackets ->
-    case brackets of
-        [] -> Right ((), [], pos, [])
-        _  -> Left (LexerError pos (StillOpenAtEOF brackets))
-    )
-
-matchBracket :: Char -> Char -> Bool
-matchBracket '(' ')' = True
-matchBracket '[' ']' = True
-matchBracket '{' '}' = True
-matchBracket _ _ = False

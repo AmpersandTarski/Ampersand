@@ -1,15 +1,17 @@
-CONTEXT AST IN ENGLISH LATEX
--- The comments for this script can be found in Atoms.doc
+﻿CONTEXT AST IN ENGLISH LATEX
+--INCLUDE "Atoms.docadl" TODO: Fix documentation, so it compiles again and hence can be included here
 
 PROCESS Atoms
-RELATION repr[Atom*TEXT] [UNI,TOT]
+RELATION repr[Atom*Representation] [UNI,TOT]
 MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Representation TYPE ALPHANUMERIC
 
-RELATION pop[Atom*Concept] [TOT] 
+RELATION pop[Atom*Concept]
 MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
-RELATION name[Concept*TEXT] [UNI,TOT]
+RELATION name[Concept*Identifier] [UNI,TOT]
 MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Identifier TYPE ALPHANUMERIC
 
 RULE "Identifiability of concepts": name;name~ |- I[Concept]
 MEANING "The name of a concept identifies that concept."
@@ -19,140 +21,48 @@ RULE "Identifiability of atoms": repr;repr~ /\ pop;pop~ |- I[Atom]
 MEANING "An Atom is identifiable by its representation and its concept."
 VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
-RELATION isa[Concept*Concept]
+RELATION isa[Concept*Concept] [IRF,ASY]
 MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
-RELATION isas[Concept*Concept]
-MEANING "s isas g  means that each element of concept  s  is defined or inferred to be an element of concept  g."
-ROLE ExecEngine MAINTAINS isasIns
-RULE isasIns : isa;isas\/isas;isa\/I |- isas
-VIOLATION (TXT "{EX} InsPair;isas;Concept;", SRC I, TXT ";Concept;", TGT I)
-ROLE ExecEngine MAINTAINS isasDel
-RULE isasDel : isas |- isa;isas\/isas;isa\/I
-VIOLATION (TXT "{EX} DelPair;isas;Concept;", SRC I, TXT ";Concept;", TGT I)
+RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
+RELATION isaPlus[Concept*Concept] -- Transitive closure of isa, aka isa+
 
-ROLE ExecEngine MAINTAINS "Add atoms in generalization concepts"
-RULE "Add atoms in generalization concepts" : pop;isas |- pop
-MEANING "An atom that is an instance of a specialization of c is an instance of c as well."
-VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
+RULE "Compute transitive closure of isa" : isa = isaCopy
+VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
 
-RELATION name[Relation*TEXT] [UNI,TOT] 
-RELATION source[Relation*Concept] [UNI,TOT] 
-RELATION target[Relation*Concept] [UNI,TOT] 
+ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
+RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
+VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
+VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 
+RELATION name[Relation*Identifier] [UNI,TOT]
+RELATION source[Relation*Concept] [UNI,TOT]
+RELATION target[Relation*Concept] [UNI,TOT]
+
+RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
+RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
+
+ROLE ExecEngine MAINTAINS isaRelInsSrc, isaRelInsTgt, isaRelDelSrc, isaRelDelTgt
+RULE isaRelInsSrc: source;isaStar~ |- sources
+VIOLATION (TXT "{EX} InsPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelInsTgt: target;isaStar~ |- targets
+VIOLATION (TXT "{EX} InsPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelDelSrc: sources |- source;isaStar~
+VIOLATION (TXT "{EX} DelPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelDelTgt: targets |- target;isaStar~
+VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
 RELATION in[Pair*Relation] [UNI,TOT]
 RELATION l[Pair*Atom] [UNI,TOT]
 RELATION r[Pair*Atom] [UNI,TOT]
 
-RULE "source type" : in |- l;pop;source~
-MEANING "Every atom at the left of a pair is in the population of the source concept of that relation."
-VIOLATION (TXT "Atom ", SRC l;repr, TXT " has concept ", SRC (l;pop - in;source;isas);name, TXT ", which is not ", TGT source;name)
+ROLE ExecEngine MAINTAINS insPop, delPop
+RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
+VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
-RULE "target type" : in |- r;pop;target~
-MEANING "Every atom at the right of a pair is in the population of the target concept of that relation."
-VIOLATION (TXT "Atom ", SRC r;repr, TXT " has concept ", SRC (r;pop - in;target;isas);name, TXT ", which is not ", TGT target;name)
 ENDPROCESS
-
-{-
-RELATION partOf[Concept*Typology] [UNI,TOT]
-MEANING "Every concept is part of exactly one typology"
-
-RULE "typologies" : isa;partOf |- partOf
-MEANING "A specialisation of a concept and the concept itself are both part of the same typology."
-
-RULE "Integrity of Atoms and populations": partOf~;pop~;pop;partOf |- I
-MEANING "Atoms can be in the population of different Concepts only if such Concepts belong to the same Typology"
--}
-
-INTERFACE Overview: '_SESSION'
-TABS[ atoms : V[SESSION*Atom]
-      BOX<SCOLS>
-           [ repr : I
-           , pop  : pop
-           ]
-    , concepts :V[SESSION*Concept]
-      BOX<SCOLS>
-           [ name             : I
-           , spec             : isa~
-           , specializations  : isas~
-           , gener            : isa
-           , generalizations  : isas
-           , atoms            : pop~
-           ]
-    , pairs : V[SESSION*Pair]
-      BOX<SCOLS>
-           [ pair           : I
-           , "relation(s)"  : in
-           ]
-    , relations : V[SESSION*Relation]
-      BOX<SCOLS>
-           [ name    : name
-           , source  : source
-           , target  : target
-           ]
-    , garbage : V[SESSION*Atom];((I - l~;in;source;pop~) - r~;in;target;pop~)
-      COLS [ repr : repr
-           , pop  : pop
-           ]
-    ]
-
-VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
-
-INTERFACE Atom(repr,pop) : I[Atom]
-ROWS [ repr : repr
-     , pop  : pop
-     ]
-
-VIEW Concept : Concept(name)
-
-INTERFACE Concept(name[Concept*TEXT],isa) : I[Concept]
-ROWS [ name             : name
-     , generalizations  : isa
-     , specializations  : isa~
-     ]
-
-VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
-
-INTERFACE Pair(l,r,in) : I[Pair]
-ROWS [ pair           : I
-     , l              : l
-     , r              : r
-     , "relation(s)"  : in
-     ]
-
-VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
-
-INTERFACE Relation(name[Relation*TEXT],source,target) : I[Relation]
-ROWS [ name    : name
-     , source  : source
-     , target  : target
-     ]
-
-
-{-
-POPULATION isa CONTAINS [ ( "Asub_", "Agen_") ]
-POPULATION isa CONTAINS [ ( "Bsub_", "Bgen_") ]
-
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Asub_", "Asub") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Agen_", "Agen") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Bsub_", "Bsub") ]
-POPULATION name[Concept*TEXT] CONTAINS [ ( "Bgen_", "Bgen") ]
-
-POPULATION partOf CONTAINS [ ( "Asub_", "Atypo_") ]
-POPULATION partOf CONTAINS [ ( "Agen_", "Atypo_") ]
-POPULATION partOf CONTAINS [ ( "Bsub_", "Btypo_") ]
-POPULATION partOf CONTAINS [ ( "Bgen_", "Btypo_") ]
-
-POPULATION pop CONTAINS [ ( "A1_", "Agen_" ) ]
-POPULATION pop CONTAINS [ ( "B1_", "Bgen_" ) ]
-POPULATION pop CONTAINS [ ( "A1sub_", "Asub_" ) ]
-POPULATION pop CONTAINS [ ( "B1sub_", "Bsub_" ) ]
-POPULATION pop CONTAINS [ ( "A1sub_", "Agen_" ) ]
-POPULATION pop CONTAINS [ ( "B1sub_", "Bgen_" ) ]
-
-POPULATION repr CONTAINS [ ( "A1_", "A1" ) ]
-POPULATION repr CONTAINS [ ( "B1_", "B1" ) ]
-POPULATION repr CONTAINS [ ( "A1sub_", "A1sub" ) ]
-POPULATION repr CONTAINS [ ( "B1sub_", "B1sub" ) ]
--}
 
 ENDCONTEXT

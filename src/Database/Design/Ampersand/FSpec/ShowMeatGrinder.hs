@@ -26,7 +26,6 @@ import Data.Maybe
 fatal :: Int -> String -> a
 fatal = fatalMsg "ShowMeatGrinder"
 
-data MetaType = Generics | AST deriving (Show)
 
 makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
 makeMetaPopulationFile mType fSpec
@@ -89,7 +88,7 @@ instance MetaPopulations FSpec where
    filter (not.nullContent)
     (
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
-  ++[ Pop "name"   "Context" "ContextName"
+  ++[ Pop "name"   "Context" "TEXT"
            [(uri fSpec,name fSpec)]]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
@@ -97,9 +96,9 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.allConcepts) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
-  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
---  ++[ Comment " ", Comment $ "PATTERN Sign: (count="++(show.length.allSigns) fSpec++")"]
+--  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
+--  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
+--  ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
 --  ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Declaration: (count="++(show.length.allDecls) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allDecls  fSpec)
@@ -109,8 +108,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).fallRules)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
-  ++[ Comment " ", Comment $ "[InitialPopulation]--: (count="++(show.length.initialPops) fSpec++")"]
-  ++   concatMap (metaPops fSpec) (allLinks fSpec)
+--  ++[ Comment " ", Comment $ "[Initial pairs]--: (count="++(show.length.allLinks) fSpec++")"]
+--  ++   concatMap (metaPops fSpec) (allLinks fSpec)
   )
    where
 
@@ -120,7 +119,7 @@ instance MetaPopulations Pattern where
    , Comment $ " Pattern `"++name pat++"` "
    , Pop "patterns" "Context" "Pattern"
           [(uri fSpec,uri pat)]
-   , Pop "name"    "Pattern" "PatternName"
+   , Pop "name"    "Pattern" "TEXT"
           [(uri pat, name pat)]
    , Pop "rules"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
@@ -133,9 +132,9 @@ instance MetaPopulations A_Gen where
  metaPops fSpec gen =
   [ Pop "gens" "Context" "Gen"
           [(uri fSpec,uri gen)]
-  , Pop "genspc"  "Gen" "PlainConcept"
+  , Pop "genspc"  "Gen" "Concept"
           [(uri gen,uri(genspc gen))]
-  , Pop "gengen"  "Gen" "PlainConcept"
+  , Pop "gengen"  "Gen" "Concept"
           [(uri gen,uri c) | c<- case gen of
                                    Isa{} -> [gengen gen]
                                    IsE{} -> genrhs gen
@@ -150,7 +149,7 @@ instance GenericPopulations A_Concept where
       , Comment $ " Concept `"++name cpt++"` "
       , Pop "allConcepts" "Context" "Concept"
              [(uri fSpec,uri cpt)]
-      , Pop "name" "Concept" "ConceptName"
+      , Pop "name" "Concept" "TEXT"
              [(uri cpt, name cpt)]
       , Pop "affectedInvConjunctIds" "Concept" "ConjunctID"
              [(uri cpt, uri conj) | conj <- filterFrontEndInvConjuncts affConjs]
@@ -159,25 +158,38 @@ instance GenericPopulations A_Concept where
       , Pop "conceptTableFields" "Concept" "TableColumn"
              [(uri cpt, uri fld) | fld <- tablesAndFields]
       ]
-     ONE -> [
-            ]
+     ONE -> 
+      [ Comment " "
+      , Comment $ " Concept ONE "
+      , Pop "allConcepts" "Context" "Concept"
+             [(uri fSpec,uri cpt)]
+      , Pop "name" "Concept" "TEXT"
+             [(uri cpt, name cpt)]
+      , Pop "conceptTableFields" "Concept" "TableColumn"
+             [(uri cpt, uri fld) | fld <- tablesAndFields]
+      ]
   where
-   affConjs = fromMaybe [] (lookup cpt $ allConjsPerConcept fSpec)
-   tablesAndFields = nub . concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
+    affConjs = nub [ conj  
+                   | Just conjs<-[lookup cpt (allConjsPerConcept fSpec)]
+                   , conj<-conjs
+                   ]
+    largerConcs = largerConcepts (vgens fSpec) cpt++[cpt]
+    tablesAndFields = nub . concatMap (lookupCpt fSpec) $ largerConcs
+
 instance MetaPopulations A_Concept where
  metaPops fSpec cpt =
    case cpt of
      PlainConcept{} ->
       [ Comment " "
       , Comment $ " Concept `"++name cpt++"` "
-      , Pop "concs" "Context" "PlainConcept"
+      , Pop "concs" "Context" "Concept"
            [(uri fSpec,uri cpt)]
-      , Pop "name" "PlainConcept" "ConceptName"
+      , Pop "name" "Concept" "TEXT"
              [(uri cpt, name cpt)]
-      , Pop "cptdf" "PlainConcept" "ConceptDefinition"
-             [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
-      , Pop "cptpurpose" "PlainConcept" "Purpose"
-             [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
+--      , Pop "cptdf" "Concept" "ConceptDefinition"
+--             [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
+--      , Pop "cptpurpose" "Concept" "Purpose"
+--             [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
      ONE -> [
             ]
@@ -206,7 +218,7 @@ instance GenericPopulations Role where
       [ Comment $ "Role: '"++name rol++"'"
       , Pop "allRoles" "Context" "Role"
                  [(uri fSpec, uri rol) ]
-      , Pop "name" "Role" "RoleName"
+      , Pop "name" "Role" "TEXT"
                  [(uri rol, name rol) ]
       , Pop "maintains" "Role" "Rule"
                  [(uri rol, uri rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
@@ -214,16 +226,17 @@ instance GenericPopulations Role where
 
 instance MetaPopulations Atom where
  metaPops _ atm =
-   [ Pop "key" "Atom" "AtomID" 
-          [(uri atm, uri atm)]
-   , Pop "atomvalue"  "Atom" "AtomValue"
-          [(uri atm,(show.atmVal) atm)]
+   [ Pop "pop" "Atom" "Concept" 
+          [(uri atm, uri cpt)
+          |cpt <- atmRoots atm]
+   , Pop "repr"  "Atom" "TEXT"
+          [(uri atm, (showValADL.atmVal) atm)]
    ]
---instance MetaPopulations Sign where
+--instance MetaPopulations Signature where
 -- metaPops _ sgn =
---      [ Pop "src" "Sign" "Concept"
+--      [ Pop "src" "Signature" "Concept"
 --             [(uri sgn, uri (source sgn))]
---      , Pop "trg" "Sign" "Concept"
+--      , Pop "trg" "Signature" "Concept"
 --             [(uri sgn, uri (target sgn))]
 --      ]
 
@@ -263,31 +276,31 @@ instance MetaPopulations Declaration where
      Sgn{} ->
       [ Comment " "
       , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
-      , Pop "allDeclarations" "Context" "Declaration"
+      , Pop "allDeclarations" "Context" "Relation"
              [(uri fSpec,uri dcl)] 
-      , Pop "name" "Declaration" "DeclarationName"
+      , Pop "name" "Relation" "TEXT"
              [(uri dcl, name dcl)]
---      , Pop "sign" "Declaration" "Sign"
+--      , Pop "sign" "Declaration" "Signature"
 --             [(uri dcl,uri (sign dcl))]
       , Pop "source" "Relation" "Concept"
              [(uri dcl,uri (source dcl))]
       , Pop "target" "Relation" "Concept"
              [(uri dcl,uri (target dcl))]
-      , Pop "decprL" "Declaration" "String"
-             [(uri dcl,decprL dcl)]
-      , Pop "decprM" "Declaration" "String"
-             [(uri dcl,decprM dcl)]
-      , Pop "decprR" "Declaration" "String"
-             [(uri dcl,decprR dcl)]
-      , Pop "decmean" "Declaration" "Meaning"
-             [(uri dcl, show(decMean dcl))]
-      , Pop "decpurpose" "Declaration" "Purpose"
-             [(uri dcl, showADL x) | x <- explanations dcl]
+--      , Pop "decprL" "Declaration" "String"
+--             [(uri dcl,decprL dcl)]
+--      , Pop "decprM" "Declaration" "String"
+--             [(uri dcl,decprM dcl)]
+--      , Pop "decprR" "Declaration" "String"
+--             [(uri dcl,decprR dcl)]
+--      , Pop "decmean" "Declaration" "Meaning"
+--             [(uri dcl, show(decMean dcl))]
+--      , Pop "decpurpose" "Declaration" "Purpose"
+--             [(uri dcl, showADL x) | x <- explanations dcl]
       ]
      Isn{} -> 
       [ Comment " "
       , Comment $ " Declaration `I["++name (source dcl)++"]`"
---      , Pop "sign" "Declaration" "Sign"
+--      , Pop "sign" "Declaration" "Signature"
 --             [(uri dcl,uri (sign dcl))]
       , Pop "source" "Relation" "Concept"
              [(uri dcl,uri (source dcl))]
@@ -325,9 +338,9 @@ instance GenericPopulations Rule where
       , Pop "origin"  "Rule" "Origin"
              [(uri rul,(show.origin) rul)]
       , Pop "meaning"  "Rule" "Meaning"
-             [(uri rul,aMarkup2String m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
+             [(uri rul,aMarkup2String ReST m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , Pop "message"  "Rule" "Message"
-             [(uri rul,aMarkup2String m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
+             [(uri rul,aMarkup2String ReST m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
       , Pop "srcConcept"  "Rule" "Concept"
              [(uri rul,(uri.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept"
@@ -381,7 +394,7 @@ instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "name"  "Rule" "RuleName"
+      , Pop "name"  "Rule" "TEXT"
              [(uri rul,name rul)]
       , Pop "rrexp"  "Rule" "ExpressionID"
              [(uri rul,uri (rrexp rul))]
@@ -390,7 +403,7 @@ instance MetaPopulations Rule where
       , Pop "rrpurpose"  "Rule" "Purpose"
              [(uri rul,showADL x) | x <- explanations rul]
       , -- The next population is from the adl pattern 'Plugs':
-        Pop "sign" "Rule" "Sign"
+        Pop "sign" "Rule" "Signature"
              [(uri rul,uri (sign rul))]
       , Pop "declaredthrough" "PropertyRule" "Property"
              [(uri rul,show prp) | Just(prp,_) <- [rrdcl rul]]
@@ -404,7 +417,7 @@ instance MetaPopulations PlugInfo where
  metaPops _ plug = 
       [ Comment $ " Plug `"++name plug++"` "
       , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
-      , Pop "in" "PlainConcept" "Plug"                 
+      , Pop "in" "Concept" "Plug"                 
              [(uri cpt,uri plug)| cpt <- concs plug]  
       , Pop "in" "Declaration" "Plug"
              [(uri dcl,uri plug)| dcl <- relsMentionedIn plug]
@@ -471,7 +484,7 @@ instance AdlId (PlugSQL,SqlField)
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Role
-instance AdlId Sign
+instance AdlId Signature
 instance AdlId Conjunct
 instance AdlId (PairView Expression)
   where uri x = show (typeOf x)++show (hash x)

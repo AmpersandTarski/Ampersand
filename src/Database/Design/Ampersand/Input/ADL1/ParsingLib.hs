@@ -3,13 +3,15 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     AmpParser, pIsThere, optList,
     -- Operators
     --TODO: Maybe we shouldn't export these here, but import in the parser directly
-    (DF.<$>), (P.<|>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
+    (DF.<$>), (P.<|>), (P.<?>), (<$), (CA.<*>), (CA.<*), (CA.*>), (<??>),
     -- Combinators
     sepBy, sepBy1, many, many1, opt, try, choice, pMaybe,
     -- Positions
     currPos, posOf, valPosOf,
     -- Basic parsers
-    pAtom, pConid, pString, pExpl, pVarid,
+    pConid, pString, pExpl, pVarid,
+    -- special parsers
+    pAtomInExpression, pAtomValInPopulation, Value(..),
     -- Special symbols
     pComma, pParens, pBraces, pBrackets, pChevrons,
     -- Keywords
@@ -17,19 +19,25 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     -- Operators
     pOperator, pDash, pSemi, pColon,
     -- Integers
-    pZero, pOne, pInteger
+    pZero, pOne
 ) where
-
---TODO! Haddock comments to the parsing lib
 
 import Control.Monad.Identity (Identity)
 import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..))
 import Database.Design.Ampersand.Input.ADL1.LexerToken
+import Database.Design.Ampersand.Input.ADL1.Lexer (lexer)
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
 import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
+import Data.Time.Calendar
+import Data.Time.Clock
+import Database.Design.Ampersand.Basics (fatalMsg)
+import Data.Maybe
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "ParsingLib"
 
 -- | The Ampersand parser type
 type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
@@ -38,7 +46,6 @@ type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser f
 -- Useful functions
 -----------------------------------------------------------
 
--- TODO! Use Parsec operators
 infixl 4 <$
 
 -- | Applies the given parser and returns the given constructor
@@ -65,10 +72,10 @@ pMaybe :: AmpParser a           -- ^ The parser to apply
        -> AmpParser (Maybe a)   -- ^ The result
 pMaybe p = Just CA.<$> p <|> P.parserReturn Nothing
 
---TODO! Remove `opt` and use Parsec's option instead.
-opt ::  AmpParser a
-    -> a
-    -> AmpParser a
+-- | Tries to apply the given parser and returns the second argument if it doesn't succeed
+opt ::  AmpParser a  -- ^ The parser to try
+    -> a             -- ^ The item to return if the parser doesn't succeed
+    -> AmpParser a   -- ^ The resulting parser
 a `opt` b = P.option b a
 
 -----------------------------------------------------------
@@ -110,37 +117,94 @@ match lx = check (\lx' -> if lx == lx' then Just (lexemeText lx) else Nothing) <
 
 --- Conid ::= UpperChar (Char | '_')*
 pConid :: AmpParser String
-pConid = check (\lx -> case lx of { LexConId s -> Just s; _ -> Nothing })
+pConid = check (\lx -> case lx of { LexConId s -> Just s; _ -> Nothing }) <?> "upper case identifier"
 
 --- String ::= '"' Any* '"'
 --- StringListSemi ::= String (';' String)*
 pString :: AmpParser String
-pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing })
+pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing }) <?> "string"
 
 --- Expl ::= '{+' Any* '-}'
 pExpl :: AmpParser String
-pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing })
+pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing }) <?> "explanation"
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
-pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing })
+pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
 
 --- Atom ::= "'" Any* "'"
-pAtom :: AmpParser String
-pAtom = check (\lx -> case lx of { LexAtom s -> Just s; _ -> Nothing })
+pAtomInExpression :: AmpParser Value
+pAtomInExpression = check (\lx -> case lx of 
+                                   LexSingleton s -> Just (VSingleton s (mval s))
+                                   _              -> Nothing 
+                          ) <?> "Singleton value"
+   where 
+    mval s = 
+      case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
+        Left _  -> Nothing
+        Right (toks,_) 
+           -> case runParser pAtomValInPopulation 
+                               (FilePos ("Reparse `"++s++"` ") 0 0) -- Todo: Fix buggy position
+                                "" toks of
+                Left _ -> Nothing
+                Right a -> Just a
 
+data Value = VRealString String
+           | VSingleton String (Maybe Value)
+           | VInt Int
+           | VFloat Double
+           | VBoolean Bool
+           | VDateTime UTCTime
+           | VDate Day
+pAtomValInPopulation :: AmpParser Value
+pAtomValInPopulation = 
+              VBoolean True  <$ pKey "TRUE"
+          <|> VBoolean False <$ pKey "FALSE"
+          <|> VRealString DF.<$> pString 
+          <|> VDateTime DF.<$> pUTCTime
+          <|> VDate DF.<$> pDay
+          <|> fromNumeric DF.<$> pNumeric
+   where fromNumeric :: Either Int Double -> Value
+         fromNumeric num = case num of
+             Left i -> VInt i
+             Right d -> VFloat d
 -----------------------------------------------------------
--- Integers
+-- Date / DateTime (ISO 8601 format)
+-----------------------------------------------------------
+
+pDay :: AmpParser Day
+pDay = check (\lx -> case lx of { LexDate s -> Just s; _ -> Nothing }) <?> "iso 8601 Date"
+
+pUTCTime :: AmpParser UTCTime
+pUTCTime  = check (\lx -> case lx of { LexDateTime s -> Just s; _ -> Nothing }) <?> "iso 8601 DateTime"
+    
+-----------------------------------------------------------
+-- Integers /float(Double)
 -----------------------------------------------------------
 
 pNumber :: Int -> AmpParser String
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
 
-pInteger :: AmpParser Int
-pInteger = check isNr
-    where isNr (LexDecimal i) = Just i
-          isNr (LexHex i)     = Just i
-          isNr (LexOctal i)   = Just i
+pNumeric :: AmpParser (Either Int Double)
+pNumeric = (f DF.<$> pIsNeg CA.<*> pUnsignedNumeric) <?> "numerical value"  
+  where
+     f :: Bool -> Either Int Double -> Either Int Double
+     f isNeg b = 
+        case b of
+          Left i  -> Left . (if isNeg then (0-) else id) $ i 
+          Right d -> Right. (if isNeg then (0-) else id) $ d
+
+pIsNeg :: AmpParser Bool
+pIsNeg = fromMaybe False
+            DF.<$> pMaybe ( True  <$ pOperator "-" <|>
+                            False <$ pOperator "+"
+                          )
+pUnsignedNumeric :: AmpParser (Either Int Double)
+pUnsignedNumeric = check isNr
+    where isNr (LexDecimal i) = Just (Left i)
+          isNr (LexHex i)     = Just (Left i)
+          isNr (LexOctal i)   = Just (Left i)
+          isNr (LexFloat d)   = Just (Right d)
           isNr _              = Nothing
 
 pZero :: AmpParser String

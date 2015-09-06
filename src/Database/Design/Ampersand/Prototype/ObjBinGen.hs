@@ -1,9 +1,8 @@
 {-# LANGUAGE CPP #-}
-module Database.Design.Ampersand.Prototype.ObjBinGen (generatePhp, doGenAtlas, writeStaticFiles) where
+module Database.Design.Ampersand.Prototype.ObjBinGen (generatePhp, writeStaticFiles) where
 
 import Database.Design.Ampersand.Prototype.Installer           (installerDBstruct,installerDefPop)
 import Database.Design.Ampersand.Prototype.ProtoUtil
-import Database.Design.Ampersand.Prototype.Apps
 import Control.Monad
 import System.FilePath
 import System.Directory
@@ -47,22 +46,15 @@ generatePhp fSpec =
        [ "?>"
        ]
 
-doGenAtlas :: FSpec -> IO()
-doGenAtlas fSpec =
- do { verboseLn (getOpts fSpec) "Installing the Atlas application:"
-    ; verboseLn (getOpts fSpec) ("Importing "++show (importfile (getOpts fSpec))++" into namespace "++ show (namespace (getOpts fSpec)) ++" of the Atlas ...")
-    ; verboseLn (getOpts fSpec) ("The atlas application should have been installed in " ++ show (dirPrototype (getOpts fSpec)) ++ ".")
-    ; fillAtlas fSpec
-    }
-
 writeStaticFiles :: Options -> IO()
 writeStaticFiles opts =
   if genStaticFiles opts
   then sequence_ [ writeStaticFile opts sf 
-                 | sf@SF{isNewFrontend=isNew} <- allStaticFiles, isNew == newFrontend opts
+                 | sf <- filter isRequired allStaticFiles
                  ]
   else verboseLn opts "Skipping static files (because of command line argument)"
-
+ where isRequired :: StaticFile -> Bool
+       isRequired sf = fileKind sf `elem` [if newFrontend opts then ZwolleFrontEnd else OldFrontend]
 writeStaticFile :: Options -> StaticFile -> IO()
 writeStaticFile opts sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))

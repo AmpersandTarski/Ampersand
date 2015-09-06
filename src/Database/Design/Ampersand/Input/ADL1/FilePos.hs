@@ -9,7 +9,8 @@ import Database.Design.Ampersand.Basics
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
-
+import Codec.Xlsx.Types
+import qualified Data.Text as T
 --fatal :: Int -> String -> a
 --fatal = fatalMsg "Input.ADL1.FilePos"
 
@@ -53,7 +54,11 @@ data FilePos = FilePos FilePath Line Column deriving (Eq, Ord, Generic)
 instance Hashable FilePos where
   hashWithSalt s (FilePos fn l c) = s `hashWithSalt` fn `hashWithSalt` l `hashWithSalt` c
 
-data Origin = OriginUnknown | Origin String | FileLoc FilePos SymbolName | DBLoc String
+data Origin = OriginUnknown
+            | Origin String 
+            | FileLoc FilePos SymbolName 
+            | XLSXLoc FilePath String (Int,Int) 
+            | DBLoc String
     deriving (Eq, Ord, Typeable, Generic)
 
 instance Unique Origin where
@@ -65,6 +70,9 @@ instance Show FilePos where
 
 instance Show Origin where
   show (FileLoc pos _) = show pos
+  show (XLSXLoc filePath sheet (row,col)) 
+                       = show filePath++":"++
+                         "\n   Sheet: "++sheet++", "++T.unpack (int2col col)++show row
   show (DBLoc str)     = "Database location: "++str
   show (Origin str)    = str
   show OriginUnknown   = "Unknown origin"

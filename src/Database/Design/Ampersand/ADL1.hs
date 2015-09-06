@@ -8,7 +8,7 @@ module Database.Design.Ampersand.ADL1
 where
 import Database.Design.Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
-         , Paire, Pairs, mkPair , srcPaire, trgPaire
+         , mkPair
          , FilePos(..), Origin(..), Traced(..)
          , Prop(..)
          , P_Concept(..)
@@ -36,7 +36,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          )
 import Database.Design.Ampersand.Core.AbstractSyntaxTree (
           A_Concept(..)
-         ,Sign(..),showSign
+         ,Signature(..),showSign
          , (<==>),meet,join
          ,A_Context(..)
          ,Association(..)
@@ -57,6 +57,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
          ,A_RoleRelation(..)
          ,Population(..)
          ,Purpose(..), ExplObj(..)
+         , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
 import Database.Design.Ampersand.ADL1.Expression
@@ -66,6 +67,6 @@ import Database.Design.Ampersand.ADL1.Expression
 import Database.Design.Ampersand.ADL1.ECArule (
          isAll, isCHC, isBlk, isNop, isDo, eventsFrom)
 import Database.Design.Ampersand.ADL1.Rule (
-          rulefromProp, ruleviolations
+          rulefromProp
          ,consequent,antecedent,hasantecedent)
 

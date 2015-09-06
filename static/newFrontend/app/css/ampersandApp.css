@@ -1,27 +1,139 @@
-/********* WRAPPERS **************/
 html {
 	position			: relative;
 	min-height			: 100%;
 }
 
-#wrapper {
-	
-}
-
-#main {
-	display				: block;
-	margin				: 0 auto 60px; /* Margin bottom by footer height */
-  	padding				: 100px 15px 0px 15px;
-	min-height			: 100%;
-}
+/********* HEADER *****************/
 
 #header {
-	
+	position			: fixed;
+	left				: 0;
+	right				: 0;
+	z-index				: 1030;
+	height				: 45px;
+	background-color	: white;
 }
 
 #header .glyphicon {
 	color				: #428bca;
 }
+
+/********* NAVBAR *****************/
+
+#navbar {
+	position			: fixed;
+	top					: 45px;
+	left				: 0;
+	right				: 0;
+	z-index				: 1030;
+	background-color	: white;
+}
+
+.navbar {
+	min-height			: initial;
+	margin-bottom		: 0px;
+}
+
+.navbar-header > .navbar-brand {
+	height				: 40px;
+	margin-left			: 0px;
+	padding				: 10px;
+	font-size			: 14px;
+}
+
+.navbar-toggle {
+	padding				: 0px;
+}
+
+.navbar-collapse {
+	padding-left		: 0px;
+}
+
+.navbar-nav > li > a {
+	padding-top			: 10px;
+	padding-bottom		: 10px;
+}
+
+/********* NAVBAR STYLE *****************/
+/* navbar */
+.navbar-default {
+    background-color: #F8F8F8;
+    border-color: #E7E7E7;
+}
+/* title */
+.navbar-default .navbar-brand {
+    color: #428bca;
+}
+.navbar-default .navbar-brand:hover,
+.navbar-default .navbar-brand:focus {
+    color: #5E5E5E;
+}
+/* link */
+.navbar-default .navbar-nav > li > a {
+    color: #428bca;
+}
+.navbar-default .navbar-nav > li > a:hover,
+.navbar-default .navbar-nav > li > a:focus {
+    color: #333;
+}
+.navbar-default .navbar-nav > .active > a, 
+.navbar-default .navbar-nav > .active > a:hover, 
+.navbar-default .navbar-nav > .active > a:focus {
+    color: #555;
+    background-color: #E7E7E7;
+}
+.navbar-default .navbar-nav > .open > a, 
+.navbar-default .navbar-nav > .open > a:hover, 
+.navbar-default .navbar-nav > .open > a:focus {
+    color: #555;
+    background-color: #D5D5D5;
+}
+/* caret */
+.navbar-default .navbar-nav > .dropdown > a .caret {
+    border-top-color: #428bca;
+    border-bottom-color: #428bca;
+}
+.navbar-default .navbar-nav > .dropdown > a:hover .caret,
+.navbar-default .navbar-nav > .dropdown > a:focus .caret {
+    border-top-color: #333;
+    border-bottom-color: #333;
+}
+.navbar-default .navbar-nav > .open > a .caret, 
+.navbar-default .navbar-nav > .open > a:hover .caret, 
+.navbar-default .navbar-nav > .open > a:focus .caret {
+    border-top-color: #555;
+    border-bottom-color: #555;
+}
+/* mobile version */
+.navbar-default .navbar-toggle {
+    border-color: #DDD;
+}
+.navbar-default .navbar-toggle:hover,
+.navbar-default .navbar-toggle:focus {
+    background-color: #DDD;
+}
+.navbar-default .navbar-toggle .icon-bar {
+    background-color: #CCC;
+}
+@media (max-width: 767px) {
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a {
+        color: #428bca;
+    }
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a:hover,
+    .navbar-default .navbar-nav .open .dropdown-menu > li > a:focus {
+        color: #333;
+    }
+}
+
+/********* MAIN *****************/
+#main {
+	display				: block;
+	margin				: 0 auto 60px; /* Margin bottom by footer height */
+  	padding				: 95px 15px 0px 15px;
+	min-height			: 100%;
+}
+
+/********* FOOTER *****************/
 
 #footer {
 	position			: absolute;
@@ -30,13 +142,6 @@ html {
 	height				: 60px;	/* Set the fixed height of the footer here */
 	padding				: 20px 0;
 	background-color	: #f8f8f8;
-}
-
-/********* LOG WINDOW *****************/
-#logWindow {
-	height				: 400px;
-	width				: 100%;
-	overflow-y			: scroll;
 }
 
 
@@ -69,6 +174,16 @@ fieldset {
 .interface .panel-heading {
 	padding-top			: 1px;
 	padding-bottom		: 1px;
+}
+
+.interface .panel-heading-options {
+	height				: 38px;
+	display				: flex;
+	align-items			: center;
+}
+
+.interface .panel-heading-options .btn {
+	margin				: 3px;
 }
 
 .wordwrap {
@@ -110,10 +225,15 @@ input .ng-invalid .ng-dirty {
 	color				: #428bca;
 }
 
+/*********** BREADCRUMB ****************/
+#breadcrumb ol {
+	margin-bottom		: 10px;
+}
+
 /********* NOTIFICATION CENTRE **************/
 #notificationCenter {
 	position			: relative; // fixed;
-	margin-bottom		: 15px;
+	margin-bottom		: 10px;
 	// right			: 0px;
 	// z-index			: 999;
 }
@@ -142,4 +262,11 @@ input .ng-invalid .ng-dirty {
 #notificationCenter .panel .list-group-item {
 	padding-top			: 5px;
 	padding-bottom		: 5px;
+}
+
+/********* LOG WINDOW *****************/
+#logWindow {
+	height				: 400px;
+	width				: 100%;
+	overflow-y			: scroll;
 }

@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec 
-  (createFSpec,getPopulationsFrom)
+  (createFSpec)
   
 where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
@@ -7,7 +7,6 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.P2A_Converters
-import Database.Design.Ampersand.ADL1.TypeGraphs
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
@@ -18,7 +17,6 @@ import Data.Traversable (sequenceA)
 import Control.Applicative
 import Database.Design.Ampersand.Core.ToMeta
 import Control.Monad
-import Data.GraphViz
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "CreateFspec"
@@ -29,29 +27,9 @@ fatal = fatalMsg "CreateFspec"
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
-  do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     genFiles userP_Ctx
-     genTypeGraphs userP_Ctx   -- Type graphs must be generated from the P-Structure, in order to visualize type errors.
-     genTables userP_Ctx
+  do userP_Ctx <- parseADL opts (Left (fileName opts)) -- the P_Context of the user's sourceFile
+     genFiles userP_Ctx >> genTables userP_Ctx
    where
--- For educational purposes, the switch "--typeGraphs" can be used. It executes genTypeGraphs (below), which prints two graphs.
--- For an explanation of those graphs, consult the corresponding paper (Joosten&Joosten, Ramics 2015).
--- Use only for very small scripts to obtain informative results.
--- For the large scripts that are used in projects, the program may abort due to insufficient resources.
-    genTypeGraphs :: Guarded P_Context -> IO(Guarded ())
-    genTypeGraphs userP_Ctx
-      = case (typeGraphs opts, userP_Ctx) of
-         (_, Errors es) -> return(Errors es)
-         (False, _)     -> return (Checked ())
-         (_, Checked userCtx)
-               -> do { let (stTypeGraph, condensedGraph) = computeTypeGraphs userCtx
-                     ; condensedGraphPath<-runGraphvizCommand Dot condensedGraph Png (replaceExtension ("Condensed_Graph_of_"++baseName opts) ".png")
-                     ; verboseLn opts (condensedGraphPath++" written.")
-                     ; stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Png (replaceExtension ("stGraph_of_"++baseName opts) ".png")
-                     ; verboseLn opts (stDotGraphPath++" written.")
-                     ; return (Checked ())
-                     }
-
     genFiles :: Guarded P_Context -> IO(Guarded ())
     genFiles uCtx 
       = case pCtx2Fspec uCtx of
@@ -87,12 +65,7 @@ createFSpec opts =
                            Generics -> "Generics.adl"
                            AST -> "FormalAmpersand.adl")
           exists <- doesFileExist file
-          if exists then parseADL opts file
-          else fatal 98 $ unlines
-                 [ "Ampersand isn't installed properly. Couldn't read:"
-                 , "  "++show file
-                 , "  (Make sure you have the latest content of Ampersand data. You might need to re-install ampersand...)"
-                 ]
+          parseADL opts (Right mType) 
     
     
     toFspec :: A_Context -> Guarded FSpec
@@ -114,15 +87,6 @@ createFSpec opts =
                _  -> fatal 83 "Meatgrinder returns included file. That isn't anticipated."
             
      
-getPopulationsFrom :: Options -> FilePath -> IO (Guarded [Population])
-getPopulationsFrom opts filePath =
- do gpCtx <- parseADL opts filePath
-    return (unguard $ f <$> gpCtx) 
-   where
-     f :: P_Context -> Guarded [Population]
-     f pCtx = unguard $ 
-                pure . initialPops . makeFSpec opts
-                 <$> pCtx2aCtx opts pCtx
 
 doGenMetaFile :: MetaType -> FSpec -> IO()
 doGenMetaFile mType fSpec =

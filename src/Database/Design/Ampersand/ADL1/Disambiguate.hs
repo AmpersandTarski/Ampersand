@@ -1,5 +1,5 @@
-{-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, DisambPrim(..),pCpt2aCpt) where
+{-# OPTIONS_GHC -Wall -Werror #-}
+module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
 import Database.Design.Ampersand.Basics (fatalMsg)
@@ -213,7 +213,7 @@ data DisambPrim
  = Rel [Expression] -- It is an expression, we don't know which, but it's going to be one of these (usually this is a list of relations)
  | Ident -- identity, and we know nothing about its type
  | Vee -- vee, type unknown
- | Mp1 String -- an atom, type unknown
+ | Mp1 PSingleton -- a singleton atomvalue, type unknown
  | Known Expression -- It is an expression, and we know exactly which. That is: disambiguation was succesful here
  deriving Show  -- Here, deriving Show serves debugging purposes only.
 
@@ -227,7 +227,7 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
                 ((findMatch' (mustBeSrc,mustBeTgt) xs `orWhenEmpty` findMatch' (mayBeSrc,mayBeTgt) xs)
                  `orWhenEmpty` xs)
      Ident   -> determineBySize suggest (map EDcI     (Set.toList possibleConcs))
-     Mp1 s   -> determineBySize suggest (map (EMp1 s) (Set.toList possibleConcs))
+     Mp1 x   -> determineBySize suggest (map (EMp1 x) (Set.toList possibleConcs))
      Vee     -> determineBySize (const (pure unkn))
                   [EDcV (Sign a b) | a<-Set.toList mustBeSrc, b<-Set.toList mustBeTgt]
  where
@@ -252,12 +252,14 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    mustBe xs = Set.fromList [x | (MustBe x) <- xs]
    mayBe  xs = Set.fromList [x | (MayBe x) <- xs]
    orWhenEmptyS a b = if (Set.null a) then b else a
-   orWhenEmpty a b = if (null a) then b else a
    determineBySize _   [a] = impure (t,Known a)
    determineBySize err lst = fmap ((,) t) (err lst)
    impure x = Change x False
    isc = Set.intersection
    uni = Set.union
+
+orWhenEmpty :: [a] -> [a] -> [a]
+orWhenEmpty a b = if (null a) then b else a
 
 pCpt2aCpt :: P_Concept -> A_Concept
 pCpt2aCpt pc

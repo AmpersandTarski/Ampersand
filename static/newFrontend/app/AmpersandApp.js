@@ -1,30 +1,24 @@
 // when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable']);//, 'hljs']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
 		// default start page
 		.when('/',
-			{
-				controller: '',
-				templateUrl: 'app/views/static_home.html'
+			{	controller: ''
+			,	templateUrl: 'app/views/static_home.html'
+			,	interfaceLabel: 'Home'
 			})
 		// installer page
 		.when('/installer',
-			{
-				controller: 'static_installerController',
-				templateUrl: 'app/views/static_installer.html'
+			{	controller: 'static_installerController'
+			,	templateUrl: 'app/views/static_installer.html'
+			,	interfaceLabel: 'Installer'
 			})
 		.when('/404',
-			{
-				templateUrl: 'app/views/static_404.html'
+			{	templateUrl: 'app/views/static_404.html'
+			,	interfaceLabel: '404'
 			})
-		// here, you can add other stuff (e.g. DndTree)
-		//.when('/<interfaceId>/:resourceId?',
- 		//	{
-		//		controller: 'DndTreeController',
-		//		templateUrl: 'extensions/DndTree/ui/views/DndTreeViewer.html'
-		//	})
 		.otherwise({redirectTo: '/404'});
 });
 
@@ -36,30 +30,33 @@ AmpersandApp.config(function(RestangularProvider) {
     
 });
 
-AmpersandApp.run(function(Restangular, $rootScope){
+AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	
 	// Declare $rootScope objects
 	$rootScope.session = {};
 	$rootScope.notifications = {'errors' : []};
-	
-	
 	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
 	
 	Restangular.restangularizeElement('', $rootScope.session, 'session');
 	
-	Restangular.one('role').get().then(function(data) {
-		$rootScope.roleId = data.id; // TODO: do all initiation in one call (i.e. role, navigationbar, etc)
-	});
+	if($localStorage.roleId === undefined){
+		$localStorage.roleId = 0; // set roleId to zero
+	}
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
-		params['roleId'] = $rootScope.roleId;
+		params['roleId'] = $localStorage.roleId;
 		params['sessionId'] = $rootScope.session.id;
 		return params;
 	});
 	
+	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
+		
+		return data;
+	});
+	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-    	
-    	$rootScope.notifications.errors.push( {'message' : response.status + ' ' + response.data.error.message} );	
+    	var message = ((response.data || {}).error || {}).message || response.statusText;
+    	$rootScope.addError( response.status + ' ' + message);	
     	
     	return true; // proceed with success or error hooks of promise
     });
@@ -129,29 +126,17 @@ AmpersandApp.directive('myShowonhoverRow', function (){
 }).directive('myNavToInterfaces', function(){
 	
 	return {
-		  restrict: 'AE'
-		, scope : {ifcs : "=", resource : "=", label : "="} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-		, replace: true
-		, transclude: true
-		, link: function(scope, element, attrs) {
-			if(scope.ifcs != null){
-				if(scope.ifcs.length > 1){
-					var html = '<div style="position:relative;">';
-					html += '<a class="dropdown-toggle" data-toggle="dropdown">' + scope.label + '</a>';
-					html += '<ul class="dropdown-menu" role="menu">';
-					for (ifc in scope.ifcs){
-						html += '<li><a href="#/' + scope.ifcs[ifc] + '/' + scope.resource + '">' + scope.ifcs[ifc] + '</a>';
-					}
-					html += '</div>';
-					element.html(html);
-				}else if(scope.ifcs.length == 1){
-					element.html('<a href="#/' + scope.ifcs[0] + '/' + scope.resource + '">' + scope.label + '</a>');
-				}else{
-					element.html('<span>' + scope.label + '</span>');
-				}
-			}else{
-				element.html('<span>' + scope.label + '</span>');
-			}
-		}
+		  restrict		: 'E'
+		, scope 		: {ifcs : '=', resource : '=', label : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+		, templateUrl	: 'app/views/partials/my_nav_to_interfaces.html'
 	};
+}).directive('myNavToOtherInterfaces', function(){
+	
+	return {
+		  restrict		: 'E'
+		, scope 		: {ifcs : '=', resource : '=', label : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+		, templateUrl	: 'app/views/partials/my_nav_to_other_interfaces.html'
+	};
+}).filter('unsafe', function($sce){
+	return $sce.trustAsHtml;
 });

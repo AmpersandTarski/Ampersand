@@ -1,18 +1,52 @@
 <?php
 
 class Concept {
-
+	
+	public static function getConcept($concept){
+		global $allConcepts;
+		
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept not defined in \$allConcepts (Generics.php)", 500);
+		return $allConcepts[$concept];
+	}
+	
 	public static function getAllConcepts(){
 		global $allConcepts; // from Generics.php
-		
+	
 		return array_keys($allConcepts);
+	}
+	
+	public static function getTypeRepresentation($concept){
+		$conceptInfo = Concept::getConcept($concept);
+		
+		if(!array_key_exists('type', $conceptInfo)) throw new Exception("Type not defined for concept $concept in \$allConcepts (Generics.php)", 500);
+		return $conceptInfo['type'];
 	}
 
 	public static function getSpecializations($concept) {
 		global $allSpecializations; // from Generics.php
 		
+		$conceptInfo = Concept::getConcept($concept); // only to check if concept is defined
 		return isset($allSpecializations[$concept]) ? $allSpecializations[$concept] : array ();
+	}
+	
+	public static function getGeneralizations($concept){
+		global $allSpecializations; // from Generics.php
 		
+		$conceptInfo = Concept::getConcept($concept); // only to check if concept is defined
+		
+		$generalizations = array();
+		foreach ($allSpecializations as $key => $specializations){
+			if(in_array($concept, $specializations)) $generalizations[] = $key;
+		}
+		return $generalizations;
+	}
+	
+	public static function inSameClassificationTree($conceptA, $conceptB){
+		if(in_array($conceptA, Concept::getSpecializations($conceptB))) return true;
+		if(in_array($conceptB, Concept::getSpecializations($conceptA))) return true;
+		
+		// else
+		return false;
 	}
 	
 	public static function getAllAtomObjects($concept){
@@ -86,43 +120,28 @@ class Concept {
 	}
 	
 	public static function getConceptTableInfo($concept){
-		global $allConcepts; // from Generics.php
+		$conceptInfo = Concept::getConcept($concept);
 		
 		// $allConcepts[$concept]['conceptTables] is an array of tables with arrays of columns maintaining $concept.
 		// (we have an array rather than a single column because of generalizations) 
 		// TODO: still the right solution?, because generalizations/specializations are in one table
 		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept not defined in \$allConcepts (Generics.php)", 500);
-		if(empty($allConcepts[$concept]['conceptTables'][0]['table'])) throw new Exception("No database table defined for concept $concept in \$allConcepts (Generics.php)", 500);
-		if(empty($allConcepts[$concept]['conceptTables'][0]['cols'])) throw new Exception("No columns defined for concept $concept in \$allConcepts (Generics.php)", 500);
+		if(empty($conceptInfo['conceptTables'][0]['table'])) throw new Exception("No database table defined for concept $concept in \$allConcepts (Generics.php)", 500);
+		if(empty($conceptInfo['conceptTables'][0]['cols'])) throw new Exception("No columns defined for concept $concept in \$allConcepts (Generics.php)", 500);
 		
-		return $allConcepts[$concept]['conceptTables'][0]; // return only first item in array, because there are never more than one.
+		return $conceptInfo['conceptTables'][0]; // return only first item in array, because there are never more than one.
 	}
 	
 	public static function getAffectedSigConjuncts($concept){
-		global $allConcepts; // from Generics.php
+		$conceptInfo = Concept::getConcept($concept);
 		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
-		
-		return (array)$allConcepts[$concept]['affectedSigConjunctIds'];
+		return (array)$conceptInfo['affectedSigConjunctIds'];
 	}
 	
 	public static function getAffectedInvConjuncts($concept){
-		global $allConcepts; // from Generics.php
+		$conceptInfo = Concept::getConcept($concept);
 	
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept does not exists in allConcepts", 500);
-	
-		return (array)$allConcepts[$concept]['affectedInvConjunctIds'];
-	}
-	
-	public static function getAllInterfaces($concept){		
-		$interfaces = array();
-		
-		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
-			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceId;
-		}
-		
-		return $interfaces;
+		return (array)$conceptInfo['affectedInvConjunctIds'];
 	}
 
 }

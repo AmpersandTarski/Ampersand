@@ -1,0 +1,306 @@
+﻿CONTEXT AST IN ENGLISH LATEX
+INCLUDE "Braga.xlsx"
+
+RELATION repr[Rule*Representation] [UNI, TOT, INJ]
+RELATION repr[Term*Representation] [UNI, TOT, INJ]
+
+
+
+
+
+
+
+
+
+-- Type Checking by
+-- Domain Analysis in Ampersand
+-- 
+-- RAMICS 2015
+-- 
+-- Stef Joosten
+-- Sebastiaan Joosten
+--
+
+
+
+
+-- This presentation:
+--   Rules in Ampersand
+--   Domain analysis
+--   
+--   This demonstration is in Ampersand
+--   For a Haskell implementation
+--    see the links in our paper
+
+
+
+
+PATTERN "Terms and Rules"
+    -- A Rule is something like "r = s;t"
+    -- For "r = s;t",
+    --   leftTerm is the Term "r"
+    --   and its rightTerm is "s;t"
+
+    RELATION leftTerm[Rule*Term] [UNI,TOT]
+    RELATION rightTerm[Rule*Term] [UNI,TOT]
+    
+
+    -- s;t is a BinaryTerm
+    CLASSIFY BinaryTerm ISA Term
+    RELATION lhs[BinaryTerm*Term] [UNI]
+    RELATION rhs[BinaryTerm*Term] [UNI]
+    CLASSIFY Composition ISA BinaryTerm
+    CLASSIFY Intersection ISA BinaryTerm
+    CLASSIFY Minus ISA BinaryTerm
+    CLASSIFY Identity ISA Term
+    CLASSIFY Full ISA Term
+    CLASSIFY Converse ISA Term
+    RELATION flp[Converse*Term] [UNI,TOT]
+    CLASSIFY Relation ISA Term
+ENDPATTERN
+
+PATTERN "Types and concepts"
+    RELATION name[Relation*Identifier] [UNI,TOT]
+    RELATION source[Relation*Concept] [UNI,TOT]
+    RELATION target[Relation*Concept] [UNI,TOT]
+    
+    RELATION src[Term*Concept]                               -- Is only [UNI] in type-correct scripts. We want to expose type-errors!
+    RELATION tgt[Term*Concept]
+ENDPATTERN
+-- (Show demo: src and tgt remain empty,
+--   but source and target are filled)
+
+
+PROCESS "Defining type-terms"
+    RELATION dom[Term*TypeTerm] [UNI]               -- TOT is maintained in RULE "dom is total"
+    RELATION pop[Concept*TypeTerm] [UNI]            -- TOT is maintained in RULE "pop is total"
+    RELATION cod[Term*TypeTerm] [UNI]               -- TOT is maintained in RULE "cod is total"
+--    RULE "dom is total" :                           -- SJC: I removed the "/\repr;repr~" on the lhs. Should be equivalent since repr is TOT, INJ
+--      I[Term] |- dom;dom~                           VIOLATION (TXT "{EX}_; InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC repr, TXT ")")   ROLE ExecEngine MAINTAINS "dom is total"
+--    RULE "cod is total" :                           -- SJC: I removed the "/\repr;repr~" on the lhs. Should be equivalent since repr is TOT, INJ
+--      I[Term] |- cod;cod~                           VIOLATION (TXT "{EX}_; InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC repr, TXT ")")    ROLE ExecEngine MAINTAINS "cod is total"
+--    RULE "pop is total" : 
+--      I[Concept] |- pop;pop~                        VIOLATION (TXT "{EX}_; InsPair_;pop_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")    ROLE ExecEngine MAINTAINS "pop is total"
+
+--    RULE domainDomComposition :
+--     dom~;I[Composition];lhs;dom |- sub             VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)    ROLE ExecEngine MAINTAINS domainDomComposition
+--    RULE domainCodComposition :
+--     cod~;I[Composition];rhs;cod |- sub             VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)    ROLE ExecEngine MAINTAINS domainCodComposition
+
+    RELATION inter[Composition*TypeTerm]
+--    RULE compositionNewTypeTerm : 
+--     I[Composition] |- inter;inter~                 VIOLATION (TXT "{EX}_; InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")" ,TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC lhs;cod,TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC repr[Term*Representation], TXT ")_;TypeTerm_;", SRC rhs;dom              )    ROLE ExecEngine MAINTAINS compositionNewTypeTerm
+--
+--    RULE domainCodIntersection :
+--        cod~;I[Intersection];lhs;cod 
+--     \/ cod~;I[Intersection];rhs;cod |- sub         VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)  ROLE ExecEngine MAINTAINS domainCodIntersection
+--    RULE domainDomIntersection :
+--        dom~;I[Intersection];lhs;dom
+--     \/ dom~;I[Intersection];rhs;dom |- sub         VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I) ROLE ExecEngine MAINTAINS domainDomIntersection
+    
+    RELATION sub[TypeTerm*TypeTerm]
+    RELATION subStar[TypeTerm*TypeTerm]
+    RELATION subPlus[TypeTerm*TypeTerm]             RELATION subCopy[TypeTerm*TypeTerm]    RULE "Compute transitive closure of sub" : sub = subCopy      VIOLATION (TXT "{EX} TransitiveClosure;sub;TypeTerm;subCopy;subPlus") ROLE ExecEngine MAINTAINS "Compute transitive closure of sub"
+    -- "subPlus = sub+" (implicitly)
+--    RULE "Compute subStar from subPlus" :
+--     subStar = subPlus\/I                           VIOLATION (TXT "{EX}_; InsPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)   ROLE ExecEngine MAINTAINS "Compute subStar from subPlus"
+--
+--    RELATION pretype[TypeTerm*Concept]
+--    RULE "Insert into pretype" :
+--     subStar;pop~ |- pretype                        VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)   ROLE ExecEngine MAINTAINS "Insert into pretype"
+
+ENDPROCESS
+
+--PROCESS "Relations"                                 ROLE ExecEngine MAINTAINS insDomRelation, insCodRelation
+--    RELATION pop[Concept*TypeTerm] [UNI] -- TOT is computed by the exec-engine
+--
+--    RULE insDomRelation : dom~;source;pop |- sub    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+--    RULE insCodRelation : cod~;target;pop |- sub    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+--ENDPROCESS
+
+--PROCESS Signatures                                  ROLE ExecEngine MAINTAINS signatureInsDom, signatureInsCod
+--    RULE signatureInsDom : dom;pretype |- src       VIOLATION (TXT "{EX} InsPair;src;Term;", SRC I, TXT ";Concept;", TGT I)
+--    RULE signatureInsCod : cod;pretype |- tgt       VIOLATION (TXT "{EX} InsPair;tgt;Term;", SRC I, TXT ";Concept;", TGT I)
+--ENDPROCESS
+
+--PROCESS "Domain inference from rules"
+--    RULE domainDomRule :
+--       dom~;leftTerm~;rightTerm;dom
+--    \/ dom~;rightTerm~;leftTerm;dom |- sub          VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I) ROLE ExecEngine MAINTAINS domainDomRule
+--    
+--    RULE domainCodRule :
+--       cod~;leftTerm~;rightTerm;cod
+--    \/ cod~;rightTerm~;leftTerm;cod |- sub          VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I) ROLE ExecEngine MAINTAINS domainCodRule
+--ENDPROCESS
+
+--PROCESS "Type checking"
+--    RULE "Unambiguous pretype"
+--     : pretype~;pretype |- I[Concept]
+--    ROLE User MAINTAINS "Unambiguous pretype"
+--
+--    RULE "Complete pretype"
+--     : I[TypeTerm] |- pretype;pretype~
+--    ROLE User MAINTAINS "Complete pretype"
+--
+--    RULE compositionCheck :
+--     I[Composition]
+--     |- lhs;cod;(subStar\/subStar~);dom~;rhs~
+--    VIOLATION (TXT "The target of term ", SRC lhs;repr, TXT " does not match the source of term ", TGT rhs;repr, TXT ".")
+--    ROLE User MAINTAINS compositionCheck
+--ENDPROCESS
+
+
+--PROCESS "Minuses"                                   ROLE ExecEngine MAINTAINS domainDomMinus, domainCodMinus
+--    RULE domainDomMinus :
+--     dom~;I[Minus];lhs[BinaryTerm*Term];dom |- sub  VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+--    RULE domainCodMinus :
+--     cod~;I[Minus];rhs[BinaryTerm*Term];cod |- sub  VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+--ENDPROCESS
+
+
+
+--PROCESS "Converses"                                 ROLE ExecEngine MAINTAINS converseDom, converseDomFlp, converseCod, converseCodFlp
+--    RULE converseDom :
+--     dom~;I[Converse];flp;cod |- sub                VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+--    RULE converseDomFlp :
+--     dom~;I[Converse];flp;cod |- sub~               VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+--    RULE converseCod :
+--     cod~;I[Converse];flp;dom |- sub                VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+--    RULE converseCodFlp :
+--     cod~;I[Converse];flp;dom |- sub~               VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+--ENDPROCESS
+
+
+PROCESS Atoms
+REPRESENT Representation TYPE ALPHANUMERIC
+REPRESENT Identifier TYPE ALPHANUMERIC
+
+RELATION repr[Atom*Representation] [UNI,TOT]
+MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Representation TYPE ALPHANUMERIC
+
+RELATION pop[Atom*Concept]
+MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
+
+RELATION name[Concept*Identifier] [UNI,TOT]
+MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Identifier TYPE ALPHANUMERIC
+
+RULE "Identifiability of concepts": name;name~ |- I[Concept]
+MEANING "The name of a concept identifies that concept."
+VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
+
+RULE "Identifiability of atoms": repr;repr~ /\ pop;pop~ |- I[Atom]
+MEANING "An Atom is identifiable by its representation and its concept."
+VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
+
+RELATION isa[Concept*Concept] [IRF,ASY]
+MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
+RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
+RELATION isaPlus[Concept*Concept] -- Transitive closure of isa, aka isa+
+
+RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
+RULE "Compute transitive closure of isa" : isa = isaCopy
+VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
+
+ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
+RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
+VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
+VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+
+RELATION in[Pair*Relation] [UNI,TOT]
+RELATION l[Pair*Atom] [UNI,TOT]
+RELATION r[Pair*Atom] [UNI,TOT]
+
+ROLE ExecEngine MAINTAINS insPop, delPop
+RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
+VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+ENDPROCESS
+
+INTERFACE "Domain Anaylsis" : '_SESSION'
+TABS[ relations : V[SESSION*Relation]
+      BOX<SCOLS>
+           [ relation   : name
+           , source     : source
+           , target     : target
+           ]
+    , terms : V[SESSION*Term]
+      BOX<SCOLS>
+           [ ""          : repr
+--            , "dom-terms" : dom
+--            , "cod-terms" : cod
+           , src         : src
+           , tgt         : tgt
+           ]
+    , "type-terms" : V[SESSION*TypeTerm]
+      BOX<SCOLS>
+           [ "type-term" : I
+           , "sub+"      : subPlus
+           , pretype     : pretype
+           ]
+    ]
+
+INTERFACE Atoms : '_SESSION'
+TABS[ concepts :V[SESSION*Concept]
+      BOX<SCOLS>
+           [ name         : I[Concept]
+           , atoms        : pop~
+           , "type-term"  : pop
+           ]
+    , atoms : V[SESSION*Atom]
+      BOX<SCOLS>
+           [ repr : I
+           , type : pop - pop;isaPlus
+           , pop  : pop
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX<SCOLS>
+           [ pair           : I[Pair]
+           , "relation(s)"  : in
+           ]
+    , relations : V[SESSION*Relation]
+      BOX<SCOLS>
+           [ relation   : I[Relation]
+           , "pair(s)"  : in~
+           ]
+    , garbage : V[SESSION*Atom];(I - pop;pop~)
+      COLS [ repr : repr
+           ]
+    ]
+
+VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+
+INTERFACE Atom(repr[Atom*Representation]) FOR Ampersand : I[Atom]
+ROWS [ repr : repr
+     ]
+
+VIEW Concept : Concept(name)
+
+INTERFACE Concept(name[Concept*Identifier],isa) FOR Ampersand : I[Concept]
+ROWS [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
+
+INTERFACE Pair(l,r,in[Pair*Relation]) FOR Ampersand: I[Pair]
+ROWS [ pair           : I
+     , l              : l
+     , r              : r
+     , "relation(s)"  : in
+     ]
+
+VIEW Relation : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
+
+INTERFACE Relation(name[Relation*Identifier], source, target) FOR Ampersand: I[Relation]
+ROWS [ name    : name
+     , source  : source
+     , target  : target
+     ]
+
+ENDCONTEXT

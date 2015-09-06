@@ -1,0 +1,100 @@
+﻿CONTEXT AST IN ENGLISH LATEX
+-- The comments for this script can be found in Atoms.doc
+INCLUDE "Atoms.adl"
+INCLUDE "DomainAnalysis.adl"
+
+PROCESS "Defining type-terms"
+    RELATION dom[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "dom is total"
+    ROLE ExecEngine MAINTAINS "dom is total"
+    RULE "dom is total" : I[Term]/\repr;repr~ |- dom;dom~
+    VIOLATION (TXT "{EX}_; InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC repr, TXT ")")
+
+    RELATION cod[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "cod is total"
+    ROLE ExecEngine MAINTAINS "cod is total"
+    RULE "cod is total" : I[Term]/\repr;repr~ |- cod;cod~
+    VIOLATION (TXT "{EX}_; InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC repr, TXT ")")
+
+    RELATION popset[Concept*TypeTerm] [UNI] -- TOT is maintained in RULE "popset is total"
+    ROLE ExecEngine MAINTAINS "popset is total"
+    RULE "popset is total" : I[Concept] |- popset;popset~
+    VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")
+ENDPROCESS
+
+PROCESS Contexts
+    ROLE ExecEngine MAINTAINS garbageTerm
+    RULE garbageTerm :
+      I[Term] |- leftTerm~;leftTerm \/ riteTerm~;riteTerm \/
+                 lhs~;lhs \/ rhs~;rhs \/ bind~;bind
+    VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
+    ROLE ExecEngine MAINTAINS SURrules
+    RULE SURrules : I[Rule] |- rules~;rules
+    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+ENDPROCESS
+
+PROCESS "Subsets of type-terms"
+    RELATION sub[TypeTerm*TypeTerm]
+    MEANING "s sub g  means that each element of concept  s  is defined to be an element of concept  g  as well."
+    RELATION subStar[TypeTerm*TypeTerm] -- Transitive, reflexive closure of sub, aka sub*
+    MEANING "s subStar g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
+    RELATION subPlus[TypeTerm*TypeTerm] -- Transitive closure of sub, aka sub+
+
+    RELATION subCopy[TypeTerm*TypeTerm] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of sub"
+    RULE "Compute transitive closure of sub" : sub = subCopy
+    VIOLATION (TXT "{EX} TransitiveClosure;sub;TypeTerm;subCopy;subPlus")
+
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of sub by Ins", "Compute transitive closure of sub by Del"
+    RULE "Compute transitive closure of sub by Ins" : subPlus\/I |- subStar
+    VIOLATION (TXT "{EX}_; InsPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+    RULE "Compute transitive closure of sub by Del" : subStar |- subPlus\/I
+    VIOLATION (TXT "{EX}_; DelPair_;subStar_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+ENDPROCESS
+
+PROCESS "Analysing terms"
+    RELATION pretype[TypeTerm*Concept]
+
+    ROLE ExecEngine MAINTAINS "Insert into pretype"
+    RULE "Insert into pretype" : subStar;popset~ |- pretype
+    VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
+
+    ROLE ExecEngine MAINTAINS "INS isa INTO sub"
+    RULE "INS isa INTO sub" : popset~;isa;popset |- sub
+    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+
+    ROLE User MAINTAINS "Unambiguous pretype"
+    RULE "Unambiguous pretype" : pretype~;pretype |- I[Concept]
+    MEANING "For every type-term, there is at most one concept that is the pretype of that type-term."
+    ROLE User MAINTAINS "Complete pretype"
+    RULE "Complete pretype" : I[TypeTerm] |- pretype;pretype~
+    MEANING "Every type-term must have a concept as its pretype."
+ENDPROCESS
+
+PROCESS Signatures
+    RELATION src[Term*Concept] -- Do not define this as [UNI]. That would inhibit exposing type errors.
+    RELATION tgt[Term*Concept] -- Do not define this as [UNI]. That would inhibit exposing type errors.
+
+    ROLE ExecEngine MAINTAINS signatureInsDom, signatureDelDom, signatureInsCod, signatureDelCod
+    RULE signatureInsDom : dom;pretype |- src
+    VIOLATION (TXT "{EX} InsPair;src;Term;", SRC I, TXT ";Concept;", TGT I)
+    RULE signatureDelDom : src |- dom;pretype
+    VIOLATION (TXT "{EX} DelPair;src;Term;", SRC I, TXT ";Concept;", TGT I)
+    RULE signatureInsCod : cod;pretype |- tgt
+    VIOLATION (TXT "{EX} InsPair;tgt;Term;", SRC I, TXT ";Concept;", TGT I)
+    RULE signatureDelCod : tgt |- cod;pretype
+    VIOLATION (TXT "{EX} DelPair;tgt;Term;", SRC I, TXT ";Concept;", TGT I)
+ENDPROCESS
+
+{- I can't get the following to work...  Grrr!
+PROCESS "Type graph"
+    RELATION elem[TypeTerm*Node] [UNI]
+
+    ROLE ExecEngine MAINTAINS elemFill, elemNew
+    RULE elemNew : I[TypeTerm] |- elem;elem~
+    VIOLATION (TXT "{EX}_; NewStruct_;Node" -- maak een nieuw atoom in concept Node
+                    ,TXT "_;elem_;TypeTerm_;", SRC I, TXT "_;Node_;_NEW"
+              )
+    RULE elemFill : (subStar/\subStar~);elem |- elem
+    VIOLATION (TXT "{EX} InsPair;elem;TypeTerm;", SRC I, TXT ";Node;", TGT I)
+ENDPROCESS -}
+
+ENDCONTEXT
