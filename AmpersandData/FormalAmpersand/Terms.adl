@@ -6,13 +6,13 @@ INCLUDE "DomainAnalysis.adl"
 PROCESS "Defining type-terms"
     RELATION dom[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "dom is total"
     ROLE ExecEngine MAINTAINS "dom is total"
-    RULE "dom is total" : I[Term]/\repr;repr~ |- dom;dom~
-    VIOLATION (TXT "{EX}_; InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC repr, TXT ")")
+    RULE "dom is total" : I[Term]{-/\repr;repr~-} |- dom;dom~
+    VIOLATION (TXT "{EX}_; InsPair_;dom_;Term_;", SRC I, TXT "_;TypeTerm_;dom(", SRC I, TXT ")")
 
     RELATION cod[Term*TypeTerm] [UNI]    -- TOT is maintained in RULE "cod is total"
     ROLE ExecEngine MAINTAINS "cod is total"
-    RULE "cod is total" : I[Term]/\repr;repr~ |- cod;cod~
-    VIOLATION (TXT "{EX}_; InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC repr, TXT ")")
+    RULE "cod is total" : I[Term]{-/\repr;repr~-} |- cod;cod~
+    VIOLATION (TXT "{EX}_; InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC I, TXT ")")
 
     RELATION popset[Concept*TypeTerm] [UNI] -- TOT is maintained in RULE "popset is total"
     ROLE ExecEngine MAINTAINS "popset is total"
@@ -23,7 +23,7 @@ ENDPROCESS
 PROCESS Contexts
     ROLE ExecEngine MAINTAINS garbageTerm
     RULE garbageTerm :
-      I[Term] |- leftTerm~;leftTerm \/ riteTerm~;riteTerm \/
+      I[Term] |- lhTerm~;lhTerm \/ rhTerm~;rhTerm \/
                  lhs~;lhs \/ rhs~;rhs \/ bind~;bind
     VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
     ROLE ExecEngine MAINTAINS SURrules

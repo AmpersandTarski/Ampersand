@@ -26,16 +26,16 @@ MEANING "s isa g  means that each element of concept  s  is defined to be an ele
 RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
 RELATION isaPlus[Concept*Concept] -- Transitive closure of isa, aka isa+
 
-RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
-RULE "Compute transitive closure of isa" : isa = isaCopy
-VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
+    RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
+    RULE "Compute transitive closure of isa" : isa = isaCopy
+    VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
 
-ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
-RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
-VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
-VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
+    RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
+    VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
+    VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 
 RELATION name[Relation*Identifier] [UNI,TOT]
 RELATION source[Relation*Concept] [UNI,TOT]

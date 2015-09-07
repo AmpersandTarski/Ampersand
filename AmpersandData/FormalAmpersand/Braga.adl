@@ -220,7 +220,7 @@ RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
 VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 ENDPROCESS
 
-INTERFACE "Domain Anaylsis" : '_SESSION'
+INTERFACE "Domain Anaylsis" (source,target) FOR User : '_SESSION'
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : name

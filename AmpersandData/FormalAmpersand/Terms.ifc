@@ -1,12 +1,37 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
-INCLUDE "Braga.xlsx"
+INCLUDE "Terms.xlsx"
 
-INTERFACE Contexts (rules, relations) : '_SESSION'
+INTERFACE Contexts (rules, relations) FOR User : '_SESSION'
 TABS[ "" : V[SESSION*Context]
       ROWS [ context : I
            , rules   : rules
            , relations : relations
+           ]
+    ]
+
+INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) FOR User : '_SESSION'
+TABS[ relations : V[SESSION*Relation]
+      BOX<SCOLS>
+           [ relation   : name
+           , source     : source
+           , target     : target
+           ]
+    , rules : V[SESSION*Rule]
+      BOX<SCOLS>
+           [ rule       : I
+           ]
+    , terms : V[SESSION*Term]
+      BOX<SCOLS>
+           [ ""          : I
+           , src         : src
+           , tgt         : tgt
+           ]
+    , "type-terms" : V[SESSION*TypeTerm]
+      BOX<SCOLS>
+           [ "type-term" : I
+           , "sub+"      : subPlus
+           , pretype     : pretype
            ]
     ]
 
@@ -44,30 +69,6 @@ TABS[ concepts :V[SESSION*Concept]
            ]
     ]
 
-INTERFACE "Domain Anaylsis" : '_SESSION'
-TABS[ relations : V[SESSION*Relation]
-      BOX<SCOLS>
-           [ relation   : I[Relation]
-           , "pair(s)"  : in~
-           , sources    : sources
-           , targets    : targets
-           ]
-    , terms : V[SESSION*Term]
-      BOX<SCOLS>
-           [ ""          : repr
-           , "dom-terms" : dom
-           , "cod-terms" : cod
-           , src         : src
-           , tgt         : tgt
-           ]
-    , "type-terms" : V[SESSION*TypeTerm]
-      BOX<SCOLS>
-           [ "type-term" : I
-           , "sub+"      : subPlus
-           , pretype     : pretype
-           ]
-    ]
-
 VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 
 INTERFACE Atom(repr[Atom*Representation]) FOR Ampersand : I[Atom]
@@ -98,5 +99,7 @@ ROWS [ name    : name
      , source  : source
      , target  : target
      ]
+
+VIEW Rule : Rule(TXT "RULE ", lhTerm, TXT " = ", rhTerm)
 
 ENDCONTEXT
