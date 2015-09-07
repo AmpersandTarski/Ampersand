@@ -1,6 +1,19 @@
 <?php
 
 class Concept {
+	public $name;
+	
+	public function __construct($conceptName){
+		$this->name = $conceptName;
+	}
+	
+	public function hasSpecialization($conceptName){
+		return in_array($conceptName, Concept::getSpecializations($this->name));
+	}
+	
+	public function hasGeneralization($conceptName){
+		return in_array($conceptName, Concept::getGeneralizations($this->name));
+	}
 	
 	public static function getConcept($concept){
 		global $allConcepts;

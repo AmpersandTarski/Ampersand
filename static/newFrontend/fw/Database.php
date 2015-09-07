@@ -424,13 +424,14 @@ class Database
 	 * In tables where the atom may not be null, the entire row is removed.
 	 * TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
 	 */    
-	function deleteAtom($atom, $concept){
+	function deleteAtom($atom, $conceptName){
 		Notifications::addLog("deleteAtom($atom, $concept)", 'DATABASE');
 		try{
+			$concept = new Concept($conceptName);
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
-			$atom = $this->typeConversion($atom, $concept);
+			$atom = $this->typeConversion($atom, $concept->name);
 			
 			global $tableColumnInfo;
 			
@@ -438,7 +439,7 @@ class Database
 			foreach ($tableColumnInfo as $table => $tableInfo){
 				foreach ($tableInfo as $column => $fieldInfo) {
 					// TODO: could be optimized by doing one query per table. But deleting per column yields the same result (unlike adding)
-					if ($fieldInfo['concept'] == $concept) {
+					if ($fieldInfo['concept'] == $concept->name || $concept->hasGeneralization($fieldInfo['concept'])) {
 						
 						// If the field can be null, we set all occurrences to null
 						if ($fieldInfo['null']) $this->Exe("UPDATE `$table` SET `$column` = NULL WHERE `$column` = '$atomEsc'");
@@ -450,9 +451,9 @@ class Database
 				}
 			}
 			
-			if(!in_array($concept, $this->affectedConcepts)){
-				Notifications::addLog("Mark concept $concept as affected concept", 'CONJUNCTS');
-				$this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
+			if(!in_array($concept->name, $this->affectedConcepts)){
+				Notifications::addLog("Mark concept $concept->name as affected concept", 'CONJUNCTS');
+				$this->affectedConcepts[] = $concept->name; // add $concept to affected concepts. Needed for conjunct evaluation.
 			}
 			
 			Notifications::addLog("Atom $atom (and all related links) deleted in database", 'DATABASE');
