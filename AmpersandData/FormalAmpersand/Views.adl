@@ -1,8 +1,11 @@
 CONTEXT AST IN ENGLISH
-INCLUDE "Views.xlsx"
+INCLUDE "Atoms.adl"
 
 PATTERN Views
-    RELATION concept[View*Concept] [UNI,TOT]
+    RELATION concept[View*Concept] [UNI] -- TOT is maintained by RULE TOTconcept, by deleting all views without a concept
+    RULE "TOTconcept" : I[View] |- concept;concept~
+    VIOLATION (TXT "{EX} DelAtom;View;", SRC I) -- all links in other relations in which the atom occurs are deleted as well.
+    ROLE ExecEngine MAINTAINS "TOTconcept"
 
     RELATION hasView[Concept*Concept] -- hasView = concept~;concept/\I
     ROLE ExecEngine MAINTAINS "ins hasView", "del hasView"
@@ -11,46 +14,16 @@ PATTERN Views
     RULE "del hasView" : hasView |- concept~;concept/\I
     VIOLATION (TXT "{EX}_; DelPair_;hasView_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
 
-    RELATION vIsaStar[Concept*Concept] -- vIsaStar = hasView;isaStar;hasView
-    ROLE ExecEngine MAINTAINS "ins vIsaStar", "del vIsaStar"
-    RULE "ins vIsaStar" : hasView;isaStar;hasView |- vIsaStar
-    VIOLATION (TXT "{EX}_; InsPair_;vIsaStar_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
-    RULE "del vIsaStar" : vIsaStar |- hasView;isaStar;hasView
-    VIOLATION (TXT "{EX}_; DelPair_;vIsaStar_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
+    RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaStar;hasView;isaPlus
+    ROLE ExecEngine MAINTAINS "ins viewBy", "del viewBy"
+    RULE "ins viewBy" : isaStar;hasView - isaStar;hasView;isaPlus |- viewBy
+    VIOLATION (TXT "{EX} InsPair;viewBy;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "del viewBy" : viewBy |- isaStar;hasView - isaStar;hasView;isaPlus
+    VIOLATION (TXT "{EX} DelPair;viewBy;Concept;", SRC I, TXT ";Concept;", TGT I)
 
-    RELATION view[Concept*View] -- view = isaStar;-(vIsaStar~;vIsaStar);concept~
-    ROLE ExecEngine MAINTAINS "ins view", "del view"
-    RULE "ins view" : isaStar;-(vIsaStar~;vIsaStar);concept~ |- view
-    VIOLATION (TXT "{EX}_; InsPair_;view_;Concept_;", SRC I, TXT "_;View_;", TGT I)
-    RULE "del view" : view |- isaStar;-(vIsaStar~;vIsaStar);concept~
-    VIOLATION (TXT "{EX}_; DelPair_;view_;Concept_;", SRC I, TXT "_;View_;", TGT I)
-
-    ROLE User MAINTAINS UNIview
-    RULE UNIview : view~;view |- I
-    VIOLATION (SRC view~, TXT " has both ", SRC I, TXT " and ", TGT I, TXT " as view.")
+    ROLE User MAINTAINS "deterministic choice of View"
+    RULE "deterministic choice of View" : viewBy~;viewBy |- I
+    VIOLATION (SRC viewBy~, TXT " has both ", SRC concept~, TXT " and ", TGT concept~, TXT " as view.")
 ENDPATTERN
 
-PATTERN "copied from Atoms.adl"
-    RELATION pop[Atom*Concept]
-    RELATION isa[Concept*Concept] [IRF,ASY]
-    RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
-    RELATION isaPlus[Concept*Concept] -- Transitive closure of isa, aka isa+
-
-    RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
-    RULE "Compute transitive closure of isa" : isa = isaCopy
-    VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
-
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
-    RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
-    VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
-    VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-ENDPATTERN
-
-INTERFACE Overview FOR User : '_SESSION'
-TABS [ Atoms    : V[SESSION*Atom]
-     , Concepts : V[SESSION*Concept]
-     , Views    : V[SESSION*View]
-     ]
 ENDCONTEXT

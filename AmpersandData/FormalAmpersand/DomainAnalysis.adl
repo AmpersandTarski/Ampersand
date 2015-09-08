@@ -4,7 +4,7 @@
 REPRESENT Representation TYPE ALPHANUMERIC
 REPRESENT Identifier TYPE ALPHANUMERIC
 
-PROCESS "Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
+PROCESS "Domain Analysis for Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
     CONCEPT Rule ""
     RELATION lhTerm[Rule*Term] [UNI,TOT]
     RELATION rhTerm[Rule*Term] [UNI,TOT]
@@ -19,7 +19,7 @@ PROCESS "Rules" -- This includes both equalities (e.g. r = s) and inequalities (
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
-PROCESS "Intersections"
+PROCESS "Domain Analysis for Intersections"
     VIEW Intersection : Intersection(TXT "(", lhs, TXT "/\\", rhs, TXT ")")
     CLASSIFY Intersection ISA BinaryTerm
 
@@ -32,7 +32,7 @@ PROCESS "Intersections"
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
-PROCESS "Unions"
+PROCESS "Domain Analysis for Unions"
     VIEW Union : Union(TXT "(", lhs, TXT "\\/", rhs, TXT ")")
     CLASSIFY Union ISA BinaryTerm
 
@@ -45,7 +45,7 @@ PROCESS "Unions"
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
-PROCESS "Minuses"
+PROCESS "Domain Analysis for Minuses"
     VIEW Minus : Minus(TXT "(", lhs, TXT "-", rhs, TXT ")")
     CLASSIFY Minus ISA BinaryTerm
 
@@ -59,7 +59,7 @@ PROCESS "Minuses"
 ENDPROCESS
 
 
-PROCESS "Compositions"
+PROCESS "Domain Analysis for Compositions"
     VIEW Composition : Composition(TXT "(", lhs, TXT ";", rhs, TXT ")")
     CLASSIFY Composition ISA BinaryTerm
     RELATION inter[Composition*TypeTerm]
@@ -84,7 +84,7 @@ PROCESS "Compositions"
               )
 ENDPROCESS
 
-PROCESS "Converses"
+PROCESS "Domain Analysis for Converses"
     VIEW Converse : Converse(flp, TXT "~")
     CLASSIFY Converse ISA Term
     RELATION flp[Converse*Term] [UNI,TOT]
@@ -100,7 +100,7 @@ PROCESS "Converses"
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
 ENDPROCESS
 
-PROCESS "Relations" -- This includes Vee-terms (e.g. V[A*B]) and I-terms (e.g. I[A])
+PROCESS "Domain Analysis for Relations" -- This includes Vee-terms (e.g. V[A*B]) and I-terms (e.g. I[A])
     --RELATION repr[Term*Representation] [UNI, TOT, INJ]
     --The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
     CLASSIFY Relation ISA Term

@@ -169,8 +169,8 @@ BOX ["PURPOSEs" :cptpurpose
     BOX ["more specific concept":I[Concept], "POPULATION":cptos;atomvalue]
     ,"more generic concepts" : genspc~;gengen \/ genspc~;gengen;genspc~;gengen \/ genspc~;gengen;genspc~;gengen;genspc~;gengen   --TODO closure
 --    ,"comparable atoms":order;order~;cptos BOX ["atom":atomvalue, "of concept":cptos~]
-    ,"used in relations": (decsgn;(src \/ trg))~
-    ,"used in RULEs": (relsgn;(src \/ trg))~;(rrexp;relsMentionedIn)~;(I[Rule] /\ -I[PropertyRule])
+    ,"used in relations": (decsgn;(src \/ tgt))~
+    ,"used in RULEs": (relsgn;(src \/ tgt))~;(rrexp;relsMentionedIn)~;(I[Rule] /\ -I[PropertyRule])
     ,"diagram" : cptpic
     ]
 INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
@@ -180,7 +180,7 @@ BOX ["PURPOSEs" :decpurpose
     ,"MEANING" :decmean
     ,"example of basic sentence" :decexample
     ,"name" :decnm
-    ,"type" :decsgn BOX ["source":src , "target":trg]
+    ,"type" :decsgn BOX ["source":src , "target":tgt]
     ,"properties" :decprps;declaredthrough
     ,"from PATTERN" :ptdcs~
     ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
@@ -191,7 +191,7 @@ BOX ["PURPOSEs" :rrpurpose
     ,"MEANING" :rrmean
     ,"name" :rrnm
     ,"assertion" :rrexp
-    ,"uses":rrexp;relsMentionedIn BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;trg]
+    ,"uses":rrexp;relsMentionedIn BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;tgt]
     ,"in PATTERN":ptrls~
     ,"diagram" : rrpic
     ]

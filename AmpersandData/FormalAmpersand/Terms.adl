@@ -27,7 +27,7 @@ PROCESS Contexts
                  lhs~;lhs \/ rhs~;rhs \/ bind~;bind
     VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
     ROLE ExecEngine MAINTAINS SURrules
-    RULE SURrules : I[Rule] |- rules~;rules
+    RULE SURrules : I[Rule] |- rules~;I[Context];rules
     VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 ENDPROCESS
 

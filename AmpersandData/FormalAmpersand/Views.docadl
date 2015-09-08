@@ -1,0 +1,34 @@
+CONTEXT AST IN ENGLISH
+INCLUDE "Atoms.adl"
+
+PATTERN Views
+PURPOSE PATTERN Views
+{+Views are meant to display atoms of a particular concept.
+Views are designed to be both static and deterministic.
+They are static, because the view is determined solely by the concept(s) of which an atom is an instance.
+The choice of views is deterministic, because there is at most one View by which an atom can be displayed.
+Assisted by error messages of the compiler, the user must ensure that the choice of views is deterministic.
+-}
+
+PURPOSE RELATION concept[View*Concept]
+{+In Ampersand, the user defines each View for one particular concept.
+This concept is associated to the view in relation concept[View*Concept].
+The Ampersand parser ensures that this relation is UNI and TOT.
+-}
+
+PURPOSE RELATION hasView[Concept*Concept] -- hasView = concept~;concept/\I
+{+The property that a concept has a view is registered in the relation hasView.
+This property is computed by the system.
+-}
+
+PURPOSE RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaStar;hasView;isaPlus
+{+To define which concept must be viewed by which View, the relation viewBy is used.
+This relation is computed by the system.
+-}
+
+PURPOSE RULE "deterministic choice of View"  -- viewBy~;viewBy |- I
+{+In order to signal a possible ambiguity in the choice of views,
+a process rule is in place to assist the user in maintaining a unique assignment of views.
+-}
+ENDPATTERN
+ENDCONTEXT

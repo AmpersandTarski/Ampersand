@@ -1,0 +1,27 @@
+CONTEXT Experiment IN ENGLISH
+INCLUDE "Views.adl"
+INCLUDE "Views.xlsx"
+
+INTERFACE Overview (concept) FOR User : '_SESSION'
+TABS [ Concepts : V[SESSION*Concept]
+       BOX<SCOLS>
+         [ Concept        : I
+         , isa            : isa
+         , "defined View" : concept~
+         , "Viewable by"  : viewBy;concept~
+         ]
+     , Atoms    : V[SESSION*Atom]
+       BOX<SCOLS>
+         [ atom           : I
+         , pop            : pop
+         , "Viewable by"  : pop;viewBy;concept~
+         ]
+     , Views    : V[SESSION*View]
+       BOX<SCOLS>
+         [ View       : I
+         , concept    : concept
+         , Concepts   : concept;viewBy~
+         ]
+     ]
+
+ENDCONTEXT

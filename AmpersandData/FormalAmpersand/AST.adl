@@ -3,6 +3,7 @@
 INCLUDE "AST.ifc"
 INCLUDE "Rules.adl"
 INCLUDE "Terms.adl"
+INCLUDE "Views.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
 1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als name, ptnm). Deze nieuwe beperking lijkt me onwenselijk.
@@ -69,46 +70,11 @@ MEANING "A generalization rule refers to one more specific concept."
 
 ENDPATTERN
 
-
-PATTERN Signatures
-VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , trg;name[Concept*Identifier] , TXT "]" )
-
-
-RELATION src[Signature*Concept] [UNI,TOT]
-MEANING "The source of a sign."
-ROLE Ampersand MAINTAINS "TOT src::Signature*Concept", "TOT trg::Signature*Concept"
-RELATION trg[Signature*Concept] [UNI,TOT]
-MEANING "The target of a sign."
-
---IEW PairID: PairID( TXT "<" , left;atomvalue , TXT "*" , right;atomvalue , TXT ">" )
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RELATION sign[PairID*Signature] [UNI,TOT]
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "The sign of a relationship"
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RELATION left[PairID*AtomID] [UNI,TOT]
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "The source of a relationship."
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RELATION right[PairID*AtomID] [UNI,TOT]
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "The target of a relationship."
-
-
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: PURPOSE RULE "type consistency"
-{-In Ampersand, every pair has a signature.
-For example, the pair $\langle\id{Pete},5\rangle$ may have the signature $[\id{Person},\id{Rank}]$.
-Ampersand is called a type consistent language, because every pair in a relation has the same signature as the relation itself.
-For instance, as long as $\id{Person}$ and $\id{Rank}$ are different concepts,
-the pairs $\langle\id{Pete},5\rangle$ and $\langle5,\id{Pete}\rangle$ cannot be in the same relation.
-
-In a compiler, type consistency is ensured by a type system.
-In a repository, the type of any expression does not depend on the contents of the relations in it.
-As a consequence, the type of an expression can be computed based on the types of its constituent relations only.
--}
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE "type consistency" : sign=in[PairID*Declaration];sign
---HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "Type consistency means that all pairs in a relation have the same signature."
-ENDPATTERN
-
 PATTERN Declaration
---VIEW Declaration: Declaration( name , TXT "::", sign;src;name[Concept*Identifier] ,TXT " * ", sign;trg;name[Concept*Identifier] )
---IDENT Declaration: Declaration( name, sign;src;name, sign;trg;name )
+--VIEW Declaration: Declaration( name , TXT "::", sign;src;name[Concept*Identifier] ,TXT " * ", sign;tgt;name[Concept*Identifier] )
+--IDENT Declaration: Declaration( name, sign;src;name, sign;tgt;name )
 --CLASSIFY Declaration ISA Relation
-RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;trg;(sign;trg)~ |- I[Declaration]
+RULE "eq declaration": name;name~ /\ sign;src;(sign;src)~ /\ sign;tgt;(sign;tgt)~ |- I[Declaration]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
 RELATION name[Declaration*Identifier] [UNI] --TODO: Should be TOT, but this is only true for user-defined declarations. TODO: I[<Concept>] is a declaration? And what about V?? In Haskell, it currently is.
@@ -117,6 +83,14 @@ RELATION sign[Declaration*Signature] [UNI] --TODO: Should be TOT, but this is on
 MEANING "The sign of a declaration."
 RELATION decprps[Declaration*PropertyRule] [INJ]
 MEANING "The properties of a relation."
+
+VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , tgt;name[Concept*Identifier] , TXT "]" )
+
+RELATION src[Signature*Concept] [UNI,TOT]
+MEANING "The source of a signature."
+ROLE Ampersand MAINTAINS "TOT src::Signature*Concept", "TOT tgt::Signature*Concept"
+RELATION tgt[Signature*Concept] [UNI,TOT]
+MEANING "The target of a signature."
 
 CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
 CLASSIFY PropertyRule ISA Rule
@@ -146,10 +120,10 @@ MEANING "The population of a relation."
 --MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
 --VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC sign;src)
 
---RULE "typed codomain": decpopu;right;cptos~;order |- sign;trg;order
+--RULE "typed codomain": decpopu;right;cptos~;order |- sign;tgt;order
 --MEANING "The atoms in the codomain of a relation belong to the same class as the target of that relation."
 --MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
---VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC sign;trg)
+--VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC sign;tgt)
 ENDPATTERN
 
 PATTERN Expression
@@ -159,24 +133,6 @@ RELATION exprvalue[ExpressionID*Expression] --[UNI,TOT]
 MEANING "The value of an expression."
 RELATION relsMentionedIn[ExpressionID*Declaration]
 MEANING "The user-declared relations in an expression."
-
--- TODO: HJO: @Stef: 20150407: Is onderstaand deel van dit PATTERN nog relevant? ik denk het niet. Zo ja, hoe dan? Zo nee: verwijderen.
-{-CLASSIFY RelationRef ISA Expression
-
-CONCEPT RelationRef "A relation reference (aka relation token) is an expression that refers to a user-declared relation"  
-VIEW RelationRef: RelationRef( name , TXT "[" , relsgn;src;name[Concept*Identifier] , TXT "*" , relsgn;trg;name[Concept*Identifier] , TXT "]")
-
-RELATION name[RelationRef*Identifier] [UNI,TOT]
-MEANING "A relation reference has the name of the relation that is being referred to."
-RELATION relsgn[RelationRef*Signature] [UNI,TOT]
-MEANING "A relation reference has the sign of the relation that is being referred to."
-RELATION reldcl[RelationRef*Declaration] [UNI,TOT]
-MEANING "A relation reference has the relation that is being referred to."
-RULE "rel name is decl name": name = reldcl;name[Declaration*Identifier]
-MEANING "A relation reference has the same name as the relation to which it refers."
-RULE "rel sign sub of decl sign": reldcl = name;name[Declaration*Identifier]~ /\ relsgn;subsgn;sign~
-MEANING "A relation reference refers to the relation with the same name, the signature of which is larger or equal to the signature of the relation reference."
--}
 
 ENDPATTERN
 
