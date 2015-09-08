@@ -1,5 +1,9 @@
 <?php
 
+if (version_compare(PHP_VERSION, '5.5.0', '<')) {
+	throw new Exception("PHP version >= 5.5 required. You are on " . PHP_VERSION, 500);
+}
+
 /* FUNCTIONS OF NEWER VERSIONS OF PHP */
 require_once (__DIR__ . '/functions/array_column.php'); //TODO: can be removed after PHP update >= 5.5
 
