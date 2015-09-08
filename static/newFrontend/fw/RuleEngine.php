@@ -152,7 +152,7 @@ class RuleEngine {
 				
 				// Evaluate conjunct
 				$conjunct = RuleEngine::getConjunct($conjunctId);
-				$violations = $db->Exe($conjunct['violationsSQL']);
+				$violations = (array)$db->Exe($conjunct['violationsSQL']);
 				
 				// Cache violations
 				if($cacheConjuncts) self::$conjunctViolations[$conjunctId] = $violations;
