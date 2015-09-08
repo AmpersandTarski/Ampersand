@@ -176,7 +176,7 @@ getOptions =
                       , sqlLogin      = "ampersand"
                       , sqlPwd        = "ampersand"
                       , oldNormalizer = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
-                      , newFrontend   = False
+                      , newFrontend   = True
                       }
       -- Here we thread startOptions through all supplied option actions
       opts <- foldl (>>=) (return startOptions) actions
@@ -443,7 +443,8 @@ options = [ (Option ['v']   ["version"]
                "use the new normalizer at your own risk." -- :-)
             , Hidden)
           , (Option []        ["newFrontend"]
-               (NoArg (\opts -> return opts{newFrontend = True}))
+               (NoArg (\opts -> do putStrLn "WARNING: Option '--newFrontend' is obsolete, and will soon be removed. The only supported interface currently is the Zwolle interface."
+                                   return opts{newFrontend = True}))
                "Use the new frontend."
             , Hidden)
           ]
