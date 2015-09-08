@@ -125,7 +125,10 @@ ENDPROCESS
 
 --PROCESS "Type checking"
 --    RULE "Unambiguous pretype"
---     : pretype~;pretype |- I[Concept]
+--     : pretype |- pretype~\I[Concept]
+--    MEANING "For every type-term, there is at most one concept that is the pretype of that type-term."
+--    MESSAGE "Every type-term must be subset of one concept only."
+--    VIOLATION (SRC I, TXT " is a subset of ", TGT I, TXT ".")
 --    ROLE User MAINTAINS "Unambiguous pretype"
 --
 --    RULE "Complete pretype"
