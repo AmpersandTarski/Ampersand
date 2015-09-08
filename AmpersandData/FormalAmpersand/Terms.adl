@@ -64,6 +64,8 @@ PROCESS "Analysing terms"
     ROLE User MAINTAINS "Unambiguous pretype"
     RULE "Unambiguous pretype" : pretype~;pretype |- I[Concept]
     MEANING "For every type-term, there is at most one concept that is the pretype of that type-term."
+    MESSAGE "Every type-term must be subset of one concept only."
+    VIOLATION (SRC pretype~, TXT " contains instances of both ", SRC pretype~, TXT " and ", TGT pretype~, TXT ".")
     ROLE User MAINTAINS "Complete pretype"
     RULE "Complete pretype" : I[TypeTerm] |- pretype;pretype~
     MEANING "Every type-term must have a concept as its pretype."
