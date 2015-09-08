@@ -1,4 +1,4 @@
-<!-- BOX<SHCOLS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
+<!-- BOX<SPHCOLS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
 <table si-table class="table table-striped table-hover table-condensed" ng-show="val['$name$']">
   <thead>
     <tr>
@@ -13,7 +13,7 @@
       $if(isEditable)$<td>
         <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span>
       </td>$endif$
-      $subObjects:{subObj|<!-- BOX<SHCOLS> CHILD: "$subObj.subObjLabel$" -->
+      $subObjects:{subObj|<!-- BOX<SPHCOLS> CHILD: "$subObj.subObjLabel$" -->
       <td class="row-content">
 $subObj.subObjContents$
       </td>
@@ -27,5 +27,12 @@ $subObj.subObjContents$
       </td>$endif$
     </tr>
   </tbody>
+  <tfoot>
+    <tr>
+        <td colspan="100%">
+            <si-table-pagination limit="10" />
+        </td>
+    </tr>
+  </tfoot>
 </table>
 <div ng-hide="val['$name$']">--</div>
