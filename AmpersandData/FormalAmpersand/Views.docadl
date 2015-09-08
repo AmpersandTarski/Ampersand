@@ -1,7 +1,7 @@
 CONTEXT AST IN ENGLISH
-INCLUDE "Atoms.adl"
+INCLUDE "Atoms.docadl"
+INCLUDE "Views.adl"
 
-PATTERN Views
 PURPOSE PATTERN Views
 {+Views are meant to display atoms of a particular concept.
 Views are designed to be both static and deterministic.
@@ -30,5 +30,4 @@ PURPOSE RULE "deterministic choice of View"  -- viewBy~;viewBy |- I
 {+In order to signal a possible ambiguity in the choice of views,
 a process rule is in place to assist the user in maintaining a unique assignment of views.
 -}
-ENDPATTERN
 ENDCONTEXT
