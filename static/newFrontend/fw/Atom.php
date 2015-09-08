@@ -152,7 +152,12 @@ Class Atom {
 							
 						// _sortValues_ (if subInterface is uni)
 						if($subinterface->univalent && $metaData){
-							$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+							// property
+							if(is_bool($otherAtom)) $content['_sortValues_'][$subinterface->id] = $otherAtom;
+							// object
+							elseif($subinterface->tgtConceptIsObject) $content['_sortValues_'][$subinterface->id] = current((array)$otherAtom)['@label'];
+							// scalar
+							else $content['_sortValues_'][$subinterface->id] = $otherAtom;
 						}
 					}
 				}
@@ -168,7 +173,12 @@ Class Atom {
 							
 						// _sortValues_ (if subInterface is uni)
 						if($subinterface->univalent && $metaData){
-							$content['_sortValues_'][$subinterface->id] = $subinterface->tgtConceptIsObject ? current((array)$otherAtom)['@label'] : $otherAtom;
+							// property
+							if(is_bool($otherAtom)) $content['_sortValues_'][$subinterface->id] = $otherAtom;
+							// object
+							elseif($subinterface->tgtConceptIsObject) $content['_sortValues_'][$subinterface->id] = current((array)$otherAtom)['@label'];
+							// scalar
+							else $content['_sortValues_'][$subinterface->id] = $otherAtom;
 						}
 					}
 				}				
