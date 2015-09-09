@@ -47,6 +47,7 @@ import Data.List (nub)
 import Prelude hiding (foldr, sequence, foldl, concatMap)
 import Control.Applicative
 import Data.Typeable
+import Data.Data
 import GHC.Generics (Generic)
 import Data.Hashable
 import Data.Time.Calendar
@@ -114,7 +115,7 @@ data P_RoleRule
 
 data Role = Role String 
           | Service String
-           deriving (Show, Typeable )   -- deriving (Eq, Show) is just for debugging
+           deriving (Show, Typeable, Data )   -- deriving (Eq, Show) is just for debugging
 instance Eq Role where
  r == r' = name r == name r' 
 instance Named Role where
@@ -255,7 +256,7 @@ data PAtomValue
   | ComnBool Origin Bool
   | ScriptDate Origin Day
   | ScriptDateTime Origin UTCTime
-  -- deriving Show
+   deriving (Typeable, Data)
 instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
  show pav =
   case pav of 
@@ -768,7 +769,7 @@ instance Show P_Gen where
 instance Traced P_Gen where
  origin = gen_fp
 
-data Lang = Dutch | English deriving (Show, Eq, Ord)
+data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
 
@@ -785,7 +786,7 @@ data Prop      = Uni          -- ^ univalent
                | Irf          -- ^ irreflexive
                | Aut          -- ^ automatically computed (NOTE: this is a hacky way to denote these until we have appropriate syntax)
                | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
-                 deriving (Eq, Ord, Enum, Bounded)
+                 deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
 instance Show Prop where
  showsPrec _ Uni = showString "UNI"
  showsPrec _ Inj = showString "INJ"

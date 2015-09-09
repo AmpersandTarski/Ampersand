@@ -9,6 +9,7 @@ import Database.Design.Ampersand.Basics
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable
+import Data.Data
 import Codec.Xlsx.Types
 import qualified Data.Text as T
 --fatal :: Int -> String -> a
@@ -49,7 +50,7 @@ addLn :: Int -> FilePos -> FilePos
 addLn n (FilePos fn line _) = FilePos fn (line+n) 1
 
 -- | Represents a position within a file, including the file path, line and column numbers
-data FilePos = FilePos FilePath Line Column deriving (Eq, Ord, Generic)
+data FilePos = FilePos FilePath Line Column deriving (Eq, Ord, Generic,Typeable, Data)
 
 instance Hashable FilePos where
   hashWithSalt s (FilePos fn l c) = s `hashWithSalt` fn `hashWithSalt` l `hashWithSalt` c
@@ -59,7 +60,7 @@ data Origin = OriginUnknown
             | FileLoc FilePos SymbolName 
             | XLSXLoc FilePath String (Int,Int) 
             | DBLoc String
-    deriving (Eq, Ord, Typeable, Generic)
+    deriving (Eq, Ord, Typeable, Generic, Data)
 
 instance Unique Origin where
   showUnique = show
