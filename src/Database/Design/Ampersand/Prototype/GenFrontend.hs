@@ -198,7 +198,7 @@ buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
     ; obj <- buildObject editableRels (ifcObj ifc)
     ; return 
-        FEInterface { ifcName = name ifc
+        FEInterface { ifcName = escapeIdentifier $ name ifc
                     , ifcLabel = name ifc
                     , _ifcMClass = ifcClass ifc
                     , _ifcExp = objExp obj
@@ -297,11 +297,8 @@ genRouteProvider fSpec ifcs =
     ; template <- readTemplate fSpec "RouteProvider.js"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
-               --      . setAttribute "
-               --      . setAttribute "interfaceIds"        (map ifcId ifcs)
-                     . setAttribute "ifcs"                ifcs -- (map genView_InterfaceAttr ifcs)
-               --      . setAttribute "interfaceLabels"     (map ifcLabel ifcs)
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
+                     . setAttribute "ifcs"                ifcs
 
     ; writePrototypeFile fSpec ("app/RouteProvider.js") $ contents 
     }
