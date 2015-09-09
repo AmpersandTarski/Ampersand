@@ -66,10 +66,10 @@ data FileOrDir = File | Dir deriving Show
 allowedIncludeSubDirs :: [Include]
 allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
                         , Include Dir  "views"             "app/views"
-						, Include Dir  "controllers"       "app/controllers"
+                        , Include Dir  "controllers"       "app/controllers"
                         , Include Dir  "css"               "app/css"
                         , Include Dir  "js"                "app/js"
-						, Include Dir  "lib"               "app/lib"
+                        , Include Dir  "lib"               "app/lib"
                         , Include Dir  "images"            "app/images"
                         , Include Dir  "extensions"        "extensions"
                         , Include File "localSettings.php" "localSettings.php"
@@ -150,6 +150,7 @@ copyIncludes fSpec =
 
 -- NOTE: _ disables 'not used' warning for fields
 data FEInterface = FEInterface { ifcName :: String
+                               , ifcLabel :: String
                                , _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
                                , _ifcRoles :: [Role], _ifcEditableRels :: [Declaration], _ifcObj :: FEObject
@@ -198,6 +199,7 @@ buildInterface fSpec allIfcs ifc =
     ; obj <- buildObject editableRels (ifcObj ifc)
     ; return 
         FEInterface { ifcName = name ifc
+                    , ifcLabel = name ifc
                     , _ifcMClass = ifcClass ifc
                     , _ifcExp = objExp obj
                     , _ifcSource = objSource obj
