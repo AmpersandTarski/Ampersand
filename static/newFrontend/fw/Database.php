@@ -229,7 +229,8 @@ class Database
 		Notifications::addLog("atomSetConcept($conceptA, $atom, $conceptB)", 'DATABASE');
 		try{
 			// Check if concept is a specialization of another concept
-			if(empty(Concept::getGeneralizations($concept))) throw new Exception("Concept $concept has no generalizations, atom can therefore not be removed as member from this set", 500);
+			$conceptGeneralizations = Concept::getGeneralizations($concept);
+			if(empty($conceptGeneralizations)) throw new Exception("Concept $concept has no generalizations, atom can therefore not be removed as member from this set", 500);
 				
 			// Check if atom is part of conceptA
 			if(!$this->atomExists($atom, $concept)) throw new Exception("Atom $atom is not a member of $concept", 500);
