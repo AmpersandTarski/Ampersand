@@ -113,7 +113,7 @@ copyIncludes fSpec =
           protoDir = Opts.dirPrototype (getOpts fSpec)
     ; includeDirExists <- doesDirectoryExist $ includeDir
     ; if includeDirExists then
-       do { putStrLn $ "Copying user includes from " ++ includeDir 
+       do { verboseLn (getOpts fSpec) $ "Copying user includes from " ++ includeDir 
           ; includeDirContents <- fmap (map (includeDir </>)) $ getProperDirectoryContents includeDir
           
           ; let absIncludes = [ Include { fileOrDir = fileOrDir incl
@@ -134,11 +134,12 @@ copyIncludes fSpec =
                 }
           }
       else
-        putStrLn $ "No user includes (there is no directory " ++ includeDir ++ ")"
+        verboseLn (getOpts fSpec) $ "No user includes (there is no directory " ++ includeDir ++ ")"
     } 
   where copyInclude :: Include -> IO()
         copyInclude incl =
-          do { putStrLn $ "  Copying " ++ (case fileOrDir incl of 
+          do { verboseLn (getOpts fSpec) $ 
+                          "  Copying " ++ (case fileOrDir incl of 
                                              File -> "file"
                                              Dir  -> "directory"
                                           )++ " " ++ includeSrc incl ++ "\n    -> " ++ includeTgt incl
