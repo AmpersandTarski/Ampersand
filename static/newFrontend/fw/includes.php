@@ -1,7 +1,7 @@
 <?php
 
-if (version_compare(PHP_VERSION, '5.5.0', '<')) {
-	throw new Exception("PHP version >= 5.5 required. You are on " . PHP_VERSION, 500);
+if (version_compare(PHP_VERSION, '5.4.0', '<')) {
+	throw new Exception("PHP version >= 5.4 required. You are on " . PHP_VERSION, 500);
 }
 
 /* FUNCTIONS OF NEWER VERSIONS OF PHP */

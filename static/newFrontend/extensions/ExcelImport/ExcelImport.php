@@ -69,8 +69,10 @@ class ImportExcel
 					$columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
 					$cell = $worksheet->getCell($columnletter . $row);
 					
-					if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cell->getCalculatedValue())) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cell->getCalculatedValue()); // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
-					else $cellvalue = (string)$cell->getCalculatedValue();
+					$cellvalue = (string)$cell->getCalculatedValue();
+					
+					// overwrite $cellvalue in case of datetime
+					if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cell->getCalculatedValue()); // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
 					
 					$values[] = $cellvalue;
 				}
