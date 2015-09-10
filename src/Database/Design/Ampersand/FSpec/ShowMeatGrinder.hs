@@ -88,7 +88,7 @@ instance MetaPopulations FSpec where
    filter (not.nullContent)
     (
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
-  ++[ Pop "name"   "Context" "TEXT"
+  ++[ Pop "name"   "Context" "ContextIdentifier"
            [(uri fSpec,name fSpec)]]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
@@ -119,7 +119,7 @@ instance MetaPopulations Pattern where
    , Comment $ " Pattern `"++name pat++"` "
    , Pop "patterns" "Context" "Pattern"
           [(uri fSpec,uri pat)]
-   , Pop "name"    "Pattern" "TEXT"
+   , Pop "name"    "Pattern" "PatternIdentifier"
           [(uri pat, name pat)]
    , Pop "rules"   "Pattern" "Rule"
           [(uri pat,uri x) | x <- ptrls pat]
@@ -149,7 +149,7 @@ instance GenericPopulations A_Concept where
       , Comment $ " Concept `"++name cpt++"` "
       , Pop "allConcepts" "Context" "Concept"
              [(uri fSpec,uri cpt)]
-      , Pop "name" "Concept" "TEXT"
+      , Pop "name" "Concept" "Identifier"
              [(uri cpt, name cpt)]
       , Pop "affectedInvConjunctIds" "Concept" "ConjunctID"
              [(uri cpt, uri conj) | conj <- filterFrontEndInvConjuncts affConjs]
@@ -163,7 +163,7 @@ instance GenericPopulations A_Concept where
       , Comment $ " Concept ONE "
       , Pop "allConcepts" "Context" "Concept"
              [(uri fSpec,uri cpt)]
-      , Pop "name" "Concept" "TEXT"
+      , Pop "name" "Concept" "Identifier"
              [(uri cpt, name cpt)]
       , Pop "conceptTableFields" "Concept" "TableColumn"
              [(uri cpt, uri fld) | fld <- tablesAndFields]
@@ -184,7 +184,7 @@ instance MetaPopulations A_Concept where
       , Comment $ " Concept `"++name cpt++"` "
       , Pop "concs" "Context" "Concept"
            [(uri fSpec,uri cpt)]
-      , Pop "name" "Concept" "TEXT"
+      , Pop "name" "Concept" "Identifier"
              [(uri cpt, name cpt)]
 --      , Pop "cptdf" "Concept" "ConceptDefinition"
 --             [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
@@ -229,7 +229,7 @@ instance MetaPopulations Atom where
    [ Pop "pop" "Atom" "Concept" 
           [(uri atm, uri cpt)
           |cpt <- atmRoots atm]
-   , Pop "repr"  "Atom" "TEXT"
+   , Pop "repr"  "Atom" "Representation"
           [(uri atm, (showValADL.atmVal) atm)]
    ]
 --instance MetaPopulations Signature where
@@ -278,7 +278,7 @@ instance MetaPopulations Declaration where
       , Comment $ " Declaration `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
       , Pop "allDeclarations" "Context" "Relation"
              [(uri fSpec,uri dcl)] 
-      , Pop "name" "Relation" "TEXT"
+      , Pop "name" "Relation" "Identifier"
              [(uri dcl, name dcl)]
 --      , Pop "sign" "Declaration" "Signature"
 --             [(uri dcl,uri (sign dcl))]
@@ -394,7 +394,7 @@ instance MetaPopulations Rule where
  metaPops _ rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "name"  "Rule" "TEXT"
+      , Pop "name"  "Rule" "RuleName"
              [(uri rul,name rul)]
       , Pop "rrexp"  "Rule" "ExpressionID"
              [(uri rul,uri (rrexp rul))]
