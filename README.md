@@ -7,6 +7,8 @@
 Build of master branch | [![Build Status](https://travis-ci.org/AmpersandTarski/ampersand.svg?branch=master)](https://travis-ci.org/AmpersandTarski/ampersand)
 User stories in Ready | [![Stories in Ready](https://badge.waffle.io/AmpersandTarski/ampersand.png?label=ready&title=Ready)](https://waffle.io/AmpersandTarski/ampersand)
 
+[![Throughput Graph](https://graphs.waffle.io/AmpersandTarski/ampersand/throughput.svg)](https://waffle.io/AmpersandTarski/ampersand/metrics)
+
 ## Documentation
 
 There is an [old wiki](wiki.tarski.nl), where information can be found. We are working on [documentation](http://ampersandtarski.gitbooks.io/documentation/), but it is currently in a VERY preliminary state. 
