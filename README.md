@@ -1,12 +1,6 @@
-# Ampersand
+# Ampersand [![Build Status](https://travis-ci.org/AmpersandTarski/ampersand.svg?branch=master)](https://travis-ci.org/AmpersandTarski/ampersand)
 
-## Status
-
- | Status
----------|-----------
-Build of master branch | [![Build Status](https://travis-ci.org/AmpersandTarski/ampersand.svg?branch=master)](https://travis-ci.org/AmpersandTarski/ampersand)
-User stories in Ready | [![Stories in Ready](https://badge.waffle.io/AmpersandTarski/ampersand.png?label=ready&title=Ready)](https://waffle.io/AmpersandTarski/ampersand)
-
+## Recent activity 
 [![Throughput Graph](https://graphs.waffle.io/AmpersandTarski/ampersand/throughput.svg)](https://waffle.io/AmpersandTarski/ampersand/metrics)
 
 ## Documentation
