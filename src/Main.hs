@@ -110,8 +110,9 @@ doGenProto fSpec =
 --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )" 
        reportSignals []        = verboseLn (getOpts fSpec) "No signals for the initial population."
        reportSignals conjViols = verboseLn (getOpts fSpec) $ "Signals for initial population:\n" ++ intercalate "\n"
-         [ "Conjunct: " ++ showADL (rc_conjunct conj) ++ "\n- " ++
-             showprs viols
+         [   "Rule(s): "++(show . map name . rc_orgRules) conj 
+         ++"\n  Conjunct   : " ++ showADL (rc_conjunct conj)
+         ++"\n  Violations : " ++ showprs viols
          | (conj, viols) <- conjViols
          ]
 ruleTest :: FSpec -> String -> IO ()
