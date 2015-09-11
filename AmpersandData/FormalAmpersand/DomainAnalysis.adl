@@ -6,10 +6,11 @@ REPRESENT Identifier TYPE ALPHANUMERIC
 
 PROCESS "Domain Analysis for Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
     CONCEPT Rule ""
-    RELATION lhTerm[Rule*Term] [UNI,TOT]
-    RELATION rhTerm[Rule*Term] [UNI,TOT]
+    RELATION lhTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
+    RELATION rhTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
+    RELATION term[Rule*Term] [UNI,TOT]
     RELATION rules[Context*Rule] [INJ] -- SUR is maintained by RULE SURrules
-
+ 
     ROLE ExecEngine MAINTAINS domainDomRule
     RULE domainDomRule : dom~;lhTerm~;rhTerm;dom \/ dom~;rhTerm~;lhTerm;dom |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
