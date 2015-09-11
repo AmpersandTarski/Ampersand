@@ -21,7 +21,7 @@ chpDiagnosis fSpec
    <> fromList missingConceptDefs     -- tells which concept definitions have been declared without a purpose
    <>  missingRels                      -- tells which relations have been declared without a purpose and/or without a meaning
    <> fromList unusedConceptDefs      -- tells which concept definitions are not used in any relation
-   <> fromList relsNotUsed            -- tells which relations are not used in any rule
+   <> relsNotUsed            -- tells which relations are not used in any rule
    <> fromList missingRules           -- tells which rule definitions are missing
    <> fromList ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
    <> fromList invariantsInProcesses  --
@@ -229,60 +229,54 @@ chpDiagnosis fSpec
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning = isJust . meaning (fsLang fSpec)
 
-  relsNotUsed :: [Block]
+  relsNotUsed :: Blocks
   pics :: [Picture]
   (relsNotUsed,pics)
-   = ( ( case (fsLang fSpec, notUsed) of
-          (Dutch,[])  -> [Para
-                           [Str "Alle relaties in dit document worden in één of meer regels gebruikt."]
-                         | (not.null.relsMentionedIn.vrules) fSpec]
-          (Dutch,[r]) -> [Para
-                           [ Str "De relatie ", r
-                           , Str " wordt in geen enkele regel gebruikt. "
-                         ] ]
-          (Dutch,rs)  -> [Para $
-                           [ Str "Relaties "]++commaNLPandoc (Str "en") rs++
-                           [ Str " worden niet gebruikt in regels. "
-                         ] ]
-          (English,[])  -> [Para
-                             [Str "All relations in this document are being used in one or more rules."]
-                           | (not.null.relsMentionedIn.vrules) fSpec]
-          (English,[r]) -> [Para
-                             [ Str "Relation ", r
-                             , Str " is not being used in any rule. "
-                           ] ]
-          (English,rs)  -> [Para $
-                             [ Str "Relations "]++commaEngPandoc (Str "and") rs++
-                             [ Str " are not used in any rule. "
-                           ] ] ) ++
-       toList
-       ( case (fsLang fSpec, pictsWithUnusedRels) of
-          (Dutch,[pict])   -> para ("Figuur " <> xRefReference (getOpts fSpec) pict <> " geeft een conceptueel diagram met alle relaties.") <>
-                              plain((showImage (getOpts fSpec)) pict)
-          (English,[pict]) -> para ("Figure " <> xRefReference (getOpts fSpec) pict <> " shows a conceptual diagram with all relations.") <>
-                              plain((showImage (getOpts fSpec)) pict)
-          (Dutch,picts)    -> mconcat
-                                  [ para (  "Figuur " <> xRefReference (getOpts fSpec) pict
-                                         <> " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
-                                         <> (singleQuoted.str.name) pat <> "."
-                                         ) <>
-                                    (plain . showImage (getOpts fSpec)) pict
-                                  | (pict,pat)<-zip picts pats ]
-          (English,picts) -> mconcat
-                                  [ para (  "Figure " <> xRefReference (getOpts fSpec) pict
-                                         <> " shows a conceptual diagram with all relations declared in "
-                                         <> (singleQuoted.str.name) pat <> "."
-                                         )<>
-                                    (plain . showImage (getOpts fSpec)) pict
-                                  | (pict,pat)<-zip picts pats ]
+   = (  
+       (case notUsed of
+          []  -> ( if (null.relsMentionedIn.vrules) fSpec
+                   then mempty
+                   else (para .str.l)
+                            (NL "Alle relaties in dit document worden in één of meer regels gebruikt."
+                            ,EN "All relations in this document are being used in one or more rules.")
+                 )
+          [r] -> para (   (str.l) (NL "De relatie ",EN  "Relation ")
+                       <> r 
+                       <> (str.l) (NL " wordt in geen enkele regel gebruikt. "
+                                  ,EN " is not being used in any rule. ")
+                      )
+          rs  -> para (   (str.l) (NL "Relaties ", EN "Relations ")
+                       <> commaPandocAnd (fsLang fSpec) rs
+                       <> (str.l) (NL " worden niet gebruikt in regels. "
+                                  ,EN " are not used in any rule. ")
+                      ) 
+       ) <>
+       ( case pictsWithUnusedRels of
+          [pict] -> para (    (str.l) (NL "Figuur ", EN "Figure ")
+                           <> xRefReference (getOpts fSpec) pict 
+                           <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
+                                      ,EN " shows a conceptual diagram with all relations.")
+                         ) <>
+                    plain((showImage (getOpts fSpec)) pict)
+          picts  -> mconcat
+                       [ para (   (str.l) (NL "Figuur ", EN "Figure ")
+                               <> xRefReference (getOpts fSpec) pict
+                               <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
+                                          ,EN " shows a conceptual diagram with all relations declared in ")
+                               <> (singleQuoted.str.name) pat <> "."
+                              )
+                       <>(plain . showImage (getOpts fSpec)) pict
+                       | (pict,pat)<-zip picts pats
+                       ]
        )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
-     where notUsed = nub [(Math InlineMath . showMath) (EDcD d)
-                         | d@Sgn{} <- relsInThemes fSpec -- only signal relations that are used or defined in the selected themes
-                         , decusr d
-                         , d `notElem` (relsMentionedIn . vrules) fSpec
-                         ]
+     where notUsed :: [Inlines]
+           notUsed = [(math . showMath) (EDcD d)
+                     | d@Sgn{} <- nub (relsInThemes fSpec) -- only signal relations that are used or defined in the selected themes
+                     , decusr d
+                     , d `notElem` (relsMentionedIn . vrules) fSpec
+                     ]
            pats  = [ pat | pat<-vpatterns fSpec
                          , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
                          , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
