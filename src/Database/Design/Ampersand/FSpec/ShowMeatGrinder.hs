@@ -358,9 +358,9 @@ instance MetaPopulations Expression where
   where
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
     makeBinaryTerm bop lhs rhs = 
-      [ Pop "lhs"  "Term" "BinaryTerm"
+      [ Pop "lhs"  "BinaryTerm" "Term"
              [(uri expr,uri lhs)]
-      , Pop "rhs"  "Term" "BinaryTerm"
+      , Pop "rhs"  "BinaryTerm" "Term"
              [(uri expr,uri rhs)]
       , Pop "operator"  "BinaryTerm" "Operator"
              [(uri expr,uri bop)]
@@ -452,6 +452,8 @@ instance MetaPopulations Rule where
       , Pop "name"  "Rule" "RuleName"
              [(uri rul,name rul)]
       , Pop "term"  "Rule" "Term"
+             [(uri rul,uri (rrexp rul))]
+      , Pop "rrexp"  "Rule" "ExpressionID"
              [(uri rul,uri (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
              [(uri rul,show(rrmean rul))]
