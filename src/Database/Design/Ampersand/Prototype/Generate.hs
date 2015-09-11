@@ -309,6 +309,9 @@ generateTableInfos fSpec =
                   ])) ++
               [ ", 'type' => '"++(show . cptTType fSpec) c++"'" ]++
               [ ", 'specializations' => array ("++intercalate ", " (map (showPhpStr . name)(smallerConcepts (vgens fSpec) c))++")"]++
+              [ ", 'defaultViewId'   => "++(showPhpStr . vdlbl $ dfltV)
+              | Just dfltV <- [getDefaultViewForConcept fSpec c]
+              ]++
               [ ")" ]
            )
          | c <- concs fSpec

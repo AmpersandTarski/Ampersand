@@ -89,6 +89,8 @@ makeFSpec opts context
               , vgens        = gens context
               , vIndices     = identities context
               , vviews       = viewDefs context
+              , lookupView   = lookupView'
+              , getDefaultViewForConcept = getDefaultViewForConcept'
               , conceptDefs  = ctxcds context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
@@ -210,6 +212,24 @@ makeFSpec opts context
             -- let I |- r;s;t be an invariant rule, then r and s and t~ and s~ are all total.
                  , rel<-init cons++[flp r | r<-tail cons]
                  ]
+  -- Lookup view by id in fSpec.
+     lookupView' :: String -> ViewDef
+     lookupView'  viewId =
+       case filter (\v -> vdlbl v == viewId) $ viewDefs context of
+         []   -> fatal 174 $ "Undeclared view " ++ show viewId ++ "." -- Will be caught by static analysis
+         [vd] -> vd
+         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
+     
+     -- Return the default view for concpt, which is either the view for concpt itself (if it has one) or the view for
+     -- concpt's smallest superconcept that has a view. Return Nothing if there is no default view.
+     getDefaultViewForConcept' :: A_Concept -> Maybe ViewDef
+     getDefaultViewForConcept' concpt =
+       case [ vd 
+            | vd@Vd{vdcpt = c, vdIsDefault = True} <- viewDefs context
+            ,  c `elem` (concpt : largerConcepts (gens context) concpt) 
+            ] of
+         []     -> Nothing
+         (vd:_) -> Just vd
 
      --------------
      --making plugs
@@ -287,13 +307,13 @@ makeFSpec opts context
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      --    Warshall's transitive closure algorithm, adapted for this purpose:
-     clos1 :: [Expression] -> [[Expression]]
-     clos1 xs
-      = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
-        where
-          f :: [[Expression]] -> A_Concept -> [[Expression]]
-          f q x = q ++ [l ++ r | l <- q, x == target (last l),
-                                 r <- q, x == source (head r), null (l `isc` r)]
+--     clos1 :: [Expression] -> [[Expression]]
+--     clos1 xs
+--      = foldl f [ [ x ] | x<-xs] (nub (map source xs) `isc` nub (map target xs))
+--        where
+--          f :: [[Expression]] -> A_Concept -> [[Expression]]
+--          f q x = q ++ [l ++ r | l <- q, x == target (last l),
+--                                 r <- q, x == source (head r), null (l `isc` r)]
 
 --  Step 4: i) generate interfaces starting with INTERFACE concept: I[Concept]
 --          ii) generate interfaces starting with INTERFACE concepts: V[ONE*Concept]
@@ -532,4 +552,5 @@ tblcontents ci ps plug
                                "Looking for: '"++showValADL a++"'.\n"++
                                "Multiple values in one field. \n"
                                )
+                        
                         

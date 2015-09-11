@@ -26,7 +26,6 @@ module Database.Design.Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlTType(..)
           , SqlFieldUsage(..)
-          , lookupView, getDefaultViewForConcept
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..),AAtomValue
           , showValADL,showValPHP,showValSQL
@@ -85,6 +84,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
+                   , getDefaultViewForConcept :: A_Concept -> Maybe ViewDef
+                   , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
                    , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
@@ -352,21 +353,3 @@ data SqlTType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-ty
              deriving (Eq,Show)
 
 
--- Lookup view by id in fSpec.
-lookupView :: FSpec -> String -> ViewDef
-lookupView fSpec viewId =
-  case filter (\v -> vdlbl v == viewId) $ vviews fSpec of
-    []   -> fatal 174 $ "Undeclared view " ++ show viewId ++ "." -- Will be caught by static analysis
-    [vd] -> vd
-    vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
-
--- Return the default view for concpt, which is either the view for concpt itself (if it has one) or the view for
--- concpt's smallest superconcept that has a view. Return Nothing if there is no default view.
-getDefaultViewForConcept :: FSpec -> A_Concept -> Maybe ViewDef
-getDefaultViewForConcept fSpec concpt =
-  case [ vd 
-       | vd@Vd{vdcpt = c, vdIsDefault = True} <- vviews fSpec
-       ,  c `elem` (concpt : largerConcepts (vgens fSpec) concpt) 
-       ] of
-    []     -> Nothing
-    (vd:_) -> Just vd
