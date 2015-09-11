@@ -60,6 +60,10 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
     	
     	return true; // proceed with success or error hooks of promise
     });
+    
+    $rootScope.getCurrentDateTime = function (){
+		return (new Date);
+	}
 	
 });
 
