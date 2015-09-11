@@ -151,9 +151,11 @@ copyIncludes fSpec =
 
 -- NOTE: _ disables 'not used' warning for fields
 data FEInterface = FEInterface { ifcName :: String
+                               , ifcLabel :: String
                                , _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
-                               , _ifcRoles :: [Role], _ifcEditableRels :: [Declaration], _ifcObj :: FEObject }
+                               , _ifcRoles :: [Role], _ifcEditableRels :: [Declaration], _ifcObj :: FEObject
+                               } deriving (Typeable, Data)
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression
@@ -166,7 +168,7 @@ data FEObject = FEObject { objName :: String
                          , exprIsIdent :: Bool
                          , objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox
-                         } deriving Show
+                         } deriving (Show, Data, Typeable )
 
 -- Once we have mClass also for Atomic, we can get rid of FEAtomicOrBox and pattern match on _ifcSubIfcs to determine atomicity.
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
@@ -174,11 +176,11 @@ data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the abso
                                                           ) }
                    | FEBox    { objMClass :: Maybe String
                               , ifcSubObjs :: [FEObject] 
-                              } deriving Show
+                              } deriving (Show, Data,Typeable)
 
 data NavInterface = NavInterface { navIfcName :: String
                                  , navIfcRoles :: [Role]
-                                 } deriving Show
+                                 } deriving (Show, Data, Typeable)
 
 flatten :: FEObject -> [FEObject]
 flatten obj = obj : concatMap flatten subObjs
@@ -197,7 +199,8 @@ buildInterface fSpec allIfcs ifc =
  do { let editableRels = ifcParams ifc
     ; obj <- buildObject editableRels (ifcObj ifc)
     ; return 
-        FEInterface { ifcName = name ifc
+        FEInterface { ifcName = escapeIdentifier $ name ifc
+                    , ifcLabel = name ifc
                     , _ifcMClass = ifcClass ifc
                     , _ifcExp = objExp obj
                     , _ifcSource = objSource obj
@@ -295,12 +298,12 @@ genRouteProvider fSpec ifcs =
     ; template <- readTemplate fSpec "RouteProvider.js"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
-                     . setAttribute "interfaceNames"      (map (escapeIdentifier . ifcName) ifcs)
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
+                     . setAttribute "ifcs"                ifcs
 
     ; writePrototypeFile fSpec ("app/RouteProvider.js") $ contents 
     }
-    
+
     
 ------ Generate view html code
 
@@ -332,10 +335,10 @@ genView_Interface fSpec interf =
 
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr = SubObjAttr { subObjName :: String
-                                                                , subObjLabel :: String
+                                , subObjLabel :: String
                                 , subObjContents :: String 
-                                                                , subObjExprIsUni :: Bool
-                                                                } deriving (Show, Data, Typeable)
+                                , subObjExprIsUni :: Bool
+                                } deriving (Show, Data, Typeable)
  
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
 genView_Object fSpec depth obj =
@@ -393,7 +396,7 @@ genView_Object fSpec depth obj =
             ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                                , subObjLabel = objName subObj -- no escaping for labels in templates needed
                                , subObjContents = intercalate "\n" $ indent 8 lns
-                                                           , subObjExprIsUni = exprIsUni subObj
+                               , subObjExprIsUni = exprIsUni subObj
                                -- Indentation is not context sensitive, so some templates will
                                -- be indented a bit too much (we take the maximum necessary value now)
                                } 
@@ -405,7 +408,7 @@ genView_Object fSpec depth obj =
            | otherwise = getTemplateForConcept (objTarget obj)
         getTemplateForConcept :: A_Concept -> IO(FilePath)
         getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
-                                       verboseLn (getOpts fSpec) $ "Looking for: " ++cptfn ++ "("++(if exists then "" else " not")++ " found.)" 
+                                   --    verboseLn (getOpts fSpec) $ "Looking for: " ++cptfn ++ "("++(if exists then "" else " not")++ " found.)" 
                                        return $ if exists
                                                 then cptfn
                                                 else templatePath </> "Atomic-"++show ttp++".html" 
@@ -484,7 +487,6 @@ renderTemplate (Template template absPath) setAttrs =
              ([],  [],    []) -> render appliedTemplate
              (parseErrs@(_:_), _, _)        -> templateError $ concat [ "Parse error in " ++ tmplt ++ " " ++ err ++ "\n" 
                                                                       | (tmplt,err) <- parseErrs]
-             ([], attrs@(_:_), _)        -> templateError $ "Uninitialized template attributes: " ++ show attrs++
-                                                           "\n   Maybe you have an old version of that template. "
+             ([], attrs@(_:_), _)        -> templateError $ "The following attributes are expected by the template, but not supplied: " ++ show attrs
              ([], [], ts@(_:_)) -> templateError $ "Missing invoked templates: " ++ show ts -- should not happen as we don't invoke templates
   where templateError msg = error $ "\n\n*** TEMPLATE ERROR in:\n" ++ absPath ++ "\n\n" ++ msg
