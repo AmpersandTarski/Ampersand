@@ -99,8 +99,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).allConcepts)    fSpec)
 --  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
 --  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
---  ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
---  ++   concatMap (metaPops fSpec) (allSigns fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
+  ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Declaration: (count="++(show.length.allDecls) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allDecls  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
@@ -233,13 +233,13 @@ instance MetaPopulations Atom where
    , Pop "repr"  "Atom" "Representation"
           [(uri atm, (showValADL.atmVal) atm)]
    ]
---instance MetaPopulations Signature where
--- metaPops _ sgn =
---      [ Pop "src" "Signature" "Concept"
---             [(uri sgn, uri (source sgn))]
---      , Pop "trg" "Signature" "Concept"
---             [(uri sgn, uri (target sgn))]
---      ]
+instance MetaPopulations Signature where
+ metaPops _ sgn =
+      [ Pop "src" "Signature" "Concept"
+             [(uri sgn, uri (source sgn))]
+      , Pop "tgt" "Signature" "Concept"
+             [(uri sgn, uri (target sgn))]
+      ]
 
 instance GenericPopulations Declaration where
  generics fSpec dcl =
@@ -342,16 +342,17 @@ instance MetaPopulations Expression where
             (ECps (l,r)) -> makeBinaryTerm Composition l r
             (ERad (l,r)) -> makeBinaryTerm RelativeAddition l r
             (EPrd (l,r)) -> makeBinaryTerm CartesionProduct l r
---            (EKl0 e)     -> primitives e
---            (EKl1 e)     -> primitives e
---            (EFlp e)     -> primitives e
---            (ECpl e)     -> primitives e
+--            (EKl0 e)     -> 
+--            (EKl1 e)     -> 
+--            (EFlp e)     -> 
+--            (ECpl e)     -> 
             (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
---            EDcD{}       -> [expr]
---            EDcI{}       -> [expr]
---            EEps{}       -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
---            EDcV{}       -> [expr]
---            EMp1{}       -> [expr]
+            (EDcD dcl)   -> [Pop "bind" "Term" "Relation" [(uri expr,uri dcl)]
+                            ]
+--            EDcI{}       -> 
+--            EEps{}       -> 
+--            EDcV{}       -> 
+--            EMp1{}       -> 
             _            -> [Comment $ "TODO: "++showADL expr]
 -- TODO: Work on the rest of the expressions (get rid of the statement above) 
        ) 
@@ -364,7 +365,9 @@ instance MetaPopulations Expression where
              [(uri expr,uri rhs)]
       , Pop "operator"  "BinaryTerm" "Operator"
              [(uri expr,uri bop)]
-      ]
+      ]++metaPops fSpec lhs
+       ++metaPops fSpec rhs
+       
 data BinOp = CartesionProduct
            | Composition
            | Diamond
