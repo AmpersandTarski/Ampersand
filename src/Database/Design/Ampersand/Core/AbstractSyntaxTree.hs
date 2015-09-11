@@ -610,7 +610,6 @@ data Expression
       deriving (Eq, Prelude.Ord, Show, Typeable, Generic)
 instance Unique Expression where
   showUnique = show
-(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 instance Hashable Expression where
    hashWithSalt s expr = 
      s `hashWithSalt` 
@@ -641,6 +640,9 @@ instance Unique (PairView Expression) where
   showUnique = show
 instance Unique (PairViewSegment Expression) where
   showUnique = show
+
+
+(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 infixl 1 .==.   -- equivalence
 infixl 1 .|-.   -- implication
 infixl 2 ./\.   -- intersection
