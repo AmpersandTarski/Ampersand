@@ -72,7 +72,8 @@ class ImportExcel
 					$cellvalue = (string)$cell->getCalculatedValue();
 					
 					// overwrite $cellvalue in case of datetime
-					if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cell->getCalculatedValue()); // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
+					// the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
+					if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue); 
 					
 					$values[] = $cellvalue;
 				}
