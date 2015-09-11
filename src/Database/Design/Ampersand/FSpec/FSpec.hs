@@ -205,9 +205,6 @@ instance ConceptStructure Activity where
  concs         act = concs (actRule act) `uni` concs (actAffect act)
  expressionsIn act = expressionsIn (actRule act)
 
-data Typology = Typology {tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty)
-                         }
-                         
 
 
 data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affected, triggers a restore action.

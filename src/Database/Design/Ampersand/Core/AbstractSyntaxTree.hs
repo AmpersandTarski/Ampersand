@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
+ , Typology(..)
  , Meta(..)
  , Pattern(..)
  , PairView(..)
@@ -1048,3 +1049,9 @@ iso8601DateFormat mTimeFmt =
     "%Y-%m-%d" ++ case mTimeFmt of
              Nothing  -> ""
              Just fmt -> 'T' : fmt
+
+data Typology = Typology { tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty, mostly one concept)
+                         , tyCpts :: [A_Concept]
+                         } deriving Show
+
+             

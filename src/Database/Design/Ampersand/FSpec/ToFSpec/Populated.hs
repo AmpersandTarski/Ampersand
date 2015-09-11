@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
-    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics, safePSingleton2AAtomVal
+    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics, safePSingleton2AAtomVal, typologies
     ) 
 where
 {- This file contains all functions to compute populations.
@@ -14,7 +14,9 @@ import Database.Design.Ampersand.Basics hiding (empty)
 import Data.Map hiding (null, unions,delete)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)
-import Data.List (nub,delete)
+import Data.List (nub,delete,partition)
+import Database.Design.Ampersand.Classes.ConceptStructure
+import Database.Design.Ampersand.Classes.ViewPoint
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.Populated"
 
@@ -30,19 +32,19 @@ genericAndSpecifics gen =
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more specific than the given concept.
 --   If there are no cycles in the generalization graph,  cpt  cannot be an element of  smallerConcepts gens cpt.
 smallerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
-smallerConcepts gens cpt
-  = nub$ oneSmaller ++ concatMap (smallerConcepts gens) oneSmaller
-  where oneSmaller = delete cpt. nub $ [ genspc g | g@Isa{}<-gens, gengen g==cpt ]++[ genspc g | g@IsE{}<-gens, cpt `elem` genrhs g ]
+smallerConcepts gs cpt
+  = nub$ oneSmaller ++ concatMap (smallerConcepts gs) oneSmaller
+  where oneSmaller = delete cpt. nub $ [ genspc g | g@Isa{}<-gs, gengen g==cpt ]++[ genspc g | g@IsE{}<-gs, cpt `elem` genrhs g ]
 -- | this function takes all generalisation relations from the context and a concept and delivers a list of all concepts that are more generic than the given concept.
 largerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
-largerConcepts gens cpt
- = nub$ oneLarger ++ concatMap (largerConcepts gens) oneLarger
-  where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gens, genspc g==cpt ]++[ c | g@IsE{}<-gens, genspc g==cpt, c<-genrhs g ]
+largerConcepts gs cpt
+ = nub$ oneLarger ++ concatMap (largerConcepts gs) oneLarger
+  where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-genrhs g ]
 
 -- | this function returns the most generic concepts in the class of a given concept
 rootConcepts :: [A_Gen]  -> [A_Concept] -> [A_Concept]
-rootConcepts gens cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts gens cpt ] `uni` cpts
-                                , root `notElem` [ genspc g | g@Isa{}<-gens]++[c | g@IsE{}<-gens, c<-genrhs g ]
+rootConcepts gs cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts gs cpt ] `uni` cpts
+                                , root `notElem` [ genspc g | g@Isa{}<-gs]++[c | g@IsE{}<-gs, c<-genrhs g ]
                                 ]
 
 
@@ -132,5 +134,34 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
                                   else [(av,[av])]
                          where 
                            av = safePSingleton2AAtomVal ci c val
+
+typologies :: A_Context -> [Typology]
+typologies context = Prelude.map mkTypology (conceptSets (concs context))
+  where
+    allGens = gens context
+    mkTypology :: [A_Concept] -> Typology
+    mkTypology cs = Typology { tyroot = rootConcepts allGens cs
+                             , tyCpts = cs
+                             } 
+    conceptSets :: [A_Concept] -> [[A_Concept]]
+    conceptSets []     = []
+    conceptSets (c:cs) = let theSet = [c] `uni` largerConcepts allGens c `uni` smallerConcepts allGens c 
+                         in theSet : conceptSets (Prelude.filter (\x -> x `notElem` theSet) cs)
+    
+    conceptSets' :: [[A_Concept]]
+    conceptSets' = f cohesiveGenSets (concs context)
+     where
+      f :: [[A_Gen]] -> [A_Concept] -> [[A_Concept]]
+      f [] cs = Prelude.map (\e -> [e]) cs
+      f (g:gs) cs = (concs g) : f gs (Prelude.filter (\c -> c `notElem` concs g) cs)
+    cohesiveGenSets :: [[A_Gen]]
+    cohesiveGenSets = f [] [] (gens context)
+     where
+      f :: [A_Concept]  ->[A_Gen] -> [A_Gen] -> [[A_Gen]]
+      f []     [] []     = []
+      f []     [] (g:gs) = f (concs g) [g] gs
+      f (c:cs) xs gs     = let (gensWithC,gensWithoutC) = Data.List.partition (elem c . concs ) gs
+                           in  f (cs++concs gensWithC) (xs ++ gensWithC)  gensWithoutC 
+      f []    xs gs      = xs : f [] [] gs                    
 
 
