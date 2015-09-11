@@ -148,20 +148,3 @@ typologies context = Prelude.map mkTypology (conceptSets (concs context))
     conceptSets (c:cs) = let theSet = [c] `uni` largerConcepts allGens c `uni` smallerConcepts allGens c 
                          in theSet : conceptSets (Prelude.filter (\x -> x `notElem` theSet) cs)
     
-    conceptSets' :: [[A_Concept]]
-    conceptSets' = f cohesiveGenSets (concs context)
-     where
-      f :: [[A_Gen]] -> [A_Concept] -> [[A_Concept]]
-      f [] cs = Prelude.map (\e -> [e]) cs
-      f (g:gs) cs = (concs g) : f gs (Prelude.filter (\c -> c `notElem` concs g) cs)
-    cohesiveGenSets :: [[A_Gen]]
-    cohesiveGenSets = f [] [] (gens context)
-     where
-      f :: [A_Concept]  ->[A_Gen] -> [A_Gen] -> [[A_Gen]]
-      f []     [] []     = []
-      f []     [] (g:gs) = f (concs g) [g] gs
-      f (c:cs) xs gs     = let (gensWithC,gensWithoutC) = Data.List.partition (elem c . concs ) gs
-                           in  f (cs++concs gensWithC) (xs ++ gensWithC)  gensWithoutC 
-      f []    xs gs      = xs : f [] [] gs                    
-
-
