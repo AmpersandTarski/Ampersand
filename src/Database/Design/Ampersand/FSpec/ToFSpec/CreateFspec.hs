@@ -11,7 +11,6 @@ import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
-import System.Directory
 import System.FilePath
 import Data.Traversable (sequenceA)
 import Control.Applicative
@@ -59,13 +58,7 @@ createFSpec opts =
 
     getFormalFile :: MetaType -> IO(Guarded P_Context)
     getFormalFile mType
-     = do let file = ampersandDataDir opts 
-                    </> "FormalAmpersand" 
-                    </> (case mType of
-                           Generics -> "Generics.adl"
-                           AST -> "FormalAmpersand.adl")
-          exists <- doesFileExist file
-          parseADL opts (Right mType) 
+     = do parseADL opts (Right mType) 
     
     
     toFspec :: A_Context -> Guarded FSpec

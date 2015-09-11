@@ -14,7 +14,7 @@ import Database.Design.Ampersand.Basics hiding (empty)
 import Data.Map hiding (null, unions,delete)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)
-import Data.List (nub,delete,partition)
+import Data.List (nub,delete)
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Classes.ViewPoint
 fatal :: Int -> String -> a
