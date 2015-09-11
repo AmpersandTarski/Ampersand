@@ -1,5 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.FSpec.ShowMeatGrinder
   (makeMetaPopulationFile,MetaType(..))
 where
@@ -17,7 +18,7 @@ import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (RuleType(..))
 import Database.Design.Ampersand.Classes.ConceptStructure
 
 --import Data.Hashable
@@ -320,10 +321,64 @@ instance MetaPopulations A_Pair where
       ]
 
 instance MetaPopulations Expression where
- metaPops _ e =
-      [ Pop "exprvalue" "ExpressionID" "Expression"
-             [(uri e, showADL e)]
+ metaPops fSpec expr =
+  case expr of 
+    EBrk e -> metaPops fSpec e
+    _      ->
+      [ Pop "src" "Term" "Concept"
+             [(uri expr, uri (source expr))]
+      , Pop "tgt" "Term" "Concept"
+             [(uri expr, uri (target expr))]
+      ]++
+      ( case expr of
+            (EEqu (l,r)) -> makeBinaryTerm Equivalence l r
+            (EImp (l,r)) -> makeBinaryTerm Implication l r
+            (EIsc (l,r)) -> makeBinaryTerm Intersection l r
+            (EUni (l,r)) -> makeBinaryTerm Union l r
+            (EDif (l,r)) -> makeBinaryTerm Difference l r
+            (ELrs (l,r)) -> makeBinaryTerm LeftResidu l r   
+            (ERrs (l,r)) -> makeBinaryTerm RightResidu l r
+            (EDia (l,r)) -> makeBinaryTerm Diamond l r
+            (ECps (l,r)) -> makeBinaryTerm Composition l r
+            (ERad (l,r)) -> makeBinaryTerm RelativeAddition l r
+            (EPrd (l,r)) -> makeBinaryTerm CartesionProduct l r
+--            (EKl0 e)     -> primitives e
+--            (EKl1 e)     -> primitives e
+--            (EFlp e)     -> primitives e
+--            (ECpl e)     -> primitives e
+            (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
+--            EDcD{}       -> [expr]
+--            EDcI{}       -> [expr]
+--            EEps{}       -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
+--            EDcV{}       -> [expr]
+--            EMp1{}       -> [expr]
+            _            -> [Comment $ "TODO: "++showADL expr]
+-- TODO: Work on the rest of the expressions (get rid of the statement above) 
+       ) 
+  where
+    makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
+    makeBinaryTerm bop lhs rhs = 
+      [ Pop "lhs"  "Term" "BinaryTerm"
+             [(uri expr,uri lhs)]
+      , Pop "rhs"  "Term" "BinaryTerm"
+             [(uri expr,uri rhs)]
+      , Pop "operator"  "BinaryTerm" "Operator"
+             [(uri expr,uri bop)]
       ]
+data BinOp = CartesionProduct
+           | Composition
+           | Diamond
+           | Difference
+           | Equivalence 
+           | Implication 
+           | Intersection 
+           | LeftResidu
+           | RightResidu
+           | RelativeAddition 
+           | Union deriving (Eq, Show, Typeable)
+instance Unique BinOp where
+  showUnique = show
+
 
 instance GenericPopulations Rule where
  generics fSpec rul =
@@ -396,7 +451,7 @@ instance MetaPopulations Rule where
       , Comment $ " Rule `"++name rul++"` "
       , Pop "name"  "Rule" "RuleName"
              [(uri rul,name rul)]
-      , Pop "rrexp"  "Rule" "ExpressionID"
+      , Pop "term"  "Rule" "Term"
              [(uri rul,uri (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
              [(uri rul,show(rrmean rul))]
@@ -475,6 +530,7 @@ instance AdlId Atom
 instance AdlId ConceptDef
 instance AdlId Declaration
 instance AdlId Expression
+instance AdlId BinOp
 instance AdlId FSpec
 instance AdlId A_Pair
 instance AdlId Pattern
