@@ -5,7 +5,6 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Classes
 import Data.List
-import System.FilePath
 import Data.Maybe
 
 
@@ -19,10 +18,10 @@ chpDiagnosis fSpec
    <> fromList roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
    <> fromList roleRuleTable          -- gives an overview of rule-rule assignments
    <> fromList missingConceptDefs     -- tells which concept definitions have been declared without a purpose
-   <>  missingRels                      -- tells which relations have been declared without a purpose and/or without a meaning
-   <> fromList unusedConceptDefs      -- tells which concept definitions are not used in any relation
+   <> missingRels                      -- tells which relations have been declared without a purpose and/or without a meaning
+   <> unusedConceptDefs      -- tells which concept definitions are not used in any relation
    <> relsNotUsed            -- tells which relations are not used in any rule
-   <> fromList missingRules           -- tells which rule definitions are missing
+   <> missingRules           -- tells which rule definitions are missing
    <> fromList ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
    <> fromList invariantsInProcesses  --
    <> fromList processrulesInPatterns --
@@ -150,28 +149,24 @@ chpDiagnosis fSpec
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
          ccs = concs [ d | d<-vrels fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
-  unusedConceptDefs :: [Block]
+  unusedConceptDefs :: Blocks
   unusedConceptDefs
-   = case (fsLang fSpec, unused) of
-      (Dutch,[])  -> [Para
-                       [Str "Alle concepten, die in dit document zijn voorzien van een definitie, worden gebruikt in relaties."]
-                     | (not.null.cDefsInScope) fSpec]
-      (Dutch,[c]) -> [Para
-                       [Str "Het concept ", Quoted SingleQuote [Str (name c)], Str " is gedefinieerd, maar wordt niet gebruikt."]
-                     ]
-      (Dutch,xs)  -> [Para $
-                       [Str "De concepten: "]++commaNLPandoc (Str "en") (map (Str . name) xs)++[Str " zijn gedefinieerd, maar worden niet gebruikt."]
-                     ]
-      (English,[])  -> [Para
-                        [Str "All concepts defined in this document are used in relations."]
-                     | (not.null.cDefsInScope) fSpec]
-      (English,[c]) -> [Para
-                         [Str "The concept ", Quoted SingleQuote [Str (name c)], Str " is defined, but isn't used."]
-                     ]
-      (English,xs)  -> [Para $
-                       [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " are defined, but not used."]
-                     ]
-   where unused = [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (allConcepts fSpec)]
+   = case [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (allConcepts fSpec)] of
+      []  -> if (null.cDefsInScope) fSpec
+             then mempty
+             else para.str.l $
+                     (NL "Alle concepten, die in dit document zijn voorzien van een definitie, worden gebruikt in relaties."
+                     ,EN "All concepts defined in this document are used in relations.")
+      [c] -> para (   (str.l) (NL "Het concept ",EN "The concept ") 
+                   <> singleQuoted (str (name c))
+                   <> (str.l) (NL " is gedefinieerd, maar wordt niet gebruikt."
+                              ,EN " is defined, but isn't used.")
+                  )
+      xs  -> para (   (str.l) (NL "De concepten: ", EN "Concepts ")
+                   <> commaPandocAnd (fsLang fSpec) (map (str . name) xs)
+                   <> (str.l) (NL " zijn gedefinieerd, maar worden niet gebruikt."
+                              ,EN " are defined, but not used.")
+                  )
 
   missingRels :: Blocks
   missingRels
@@ -227,6 +222,7 @@ chpDiagnosis fSpec
            showDcl = math . showMath . EDcD
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
+  hasMeaning :: Meaning a => a -> Bool
   hasMeaning = isJust . meaning (fsLang fSpec)
 
   relsNotUsed :: Blocks
@@ -282,123 +278,33 @@ chpDiagnosis fSpec
                          , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
            pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
-  missingRules :: [Block]
+  missingRules :: Blocks
   missingRules
-   = case (fsLang fSpec, missingPurp, missingMeaning) of
-      (Dutch,[],[])    -> [ Para [Str "Alle regels in dit document zijn voorzien van een uitleg."]
-                          | (length.vrules) fSpec>1]
-      (Dutch,rs,rs')   -> [Para
-                           (case rs>-rs' of
-                              []  -> []
-                              [r] -> [ Str "De bestaansreden van regel ", Emph [Str (name r)]
-                                     , Str (" op regelnummer "++getLineNr r++" van bestand "++getFileName r)
-                                     , Str " wordt niet uitgelegd. "
-                                     ]
-                              rls -> (upC . commaNLPandoc (Str "en")  )
-                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
-                                         strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
-                                                    commaNLPandoc (Str "en") nrs++
-                                                    [Str " van bestand "]++[(Str . takeFileName . locnm . head) cl])
-                                        | cl<-eqCl locnm (map origin rls)] ++
-                                       [ Str " worden regels gedefinieerd, waarvan de bestaansreden niet wordt uitgelegd. " ]
-                            ++
-                            case rs'>-rs of
-                              []  -> []
-                              [r] -> [ Str "De betekenis van regel ", Emph [Str (name r)]
-                                     , Str (" op regelnummer "++getLineNr r++" van bestand "++getFileName r)
-                                     , Str " wordt uitgelegd in taal die door de computer is gegenereerd. "
-                                     ]
-                              rls -> (upC . commaNLPandoc (Str "en")  )
-                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
-                                         strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
-                                                    commaNLPandoc (Str "en") nrs++
-                                                    [Str " van bestand "]++[(Str . takeFileName . locnm . head) cl])
-                                        | cl<-eqCl locnm (map origin rls)] ++
-                                       [ Str " staan regels, waarvan de betekenis wordt uitgelegd in taal die door de computer is gegenereerd. " ]
-                            ++
-                            case rs `isc` rs' of
-                              []  -> []
-                              [r] -> [ Str "Regel ", Emph [Str (name r)]
-                                     , Str (" op regelnummer "++getLineNr r++" van bestand "++getFileName r++" wordt niet uitgelegd. ")
-                                     ]
-                              rls -> (upC . commaNLPandoc (Str "en")  )
-                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
-                                         strconcat ([Str ("op regelnummer"++(if length nrs>1 then "s" else "")++" ")]++
-                                                    commaNLPandoc (Str "en") nrs++
-                                                    [Str " van bestand "]++[(Str . takeFileName . locnm . head) cl])
-                                        | cl<-eqCl locnm (map origin rls)] ++
-                                       [ Str " worden regels gedefinieerd, zonder verdere uitleg. " ]
-                           )
-                          ]
-      (English,[],[])  -> [ Para [Str "All rules in this document have been provided with a meaning and a purpose."]
-                          | (length.vrules) fSpec>1]
-      (English,rs,rs') -> [Para $
-                           ( case rs>-rs' of
-                              []  -> []
-                              [r] -> [ Str "The purpose of rule ", Emph [Str (name r)]
-                                     , Str (" on line "++getLineNr r++" of file "++getFileName r)
-                                     , Str " is not documented. "
-                                     ]
-                              rls -> (upC . commaEngPandoc (Str "and") )
-                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
-                                         strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
-                                                    commaEngPandoc (Str "and") nrs ++
-                                                    [Str " of file "]++[(Str . takeFileName . locnm . head) cl])
-                                        | cl<-eqCl locnm (map origin rls)] ++
-                                       [ Str " rules are defined without documenting their purpose. " ]
-                           ) ++
-                           ( case rs'>-rs of
-                              []  -> []
-                              [r] -> [ Str "The meaning of rule ", Emph [Str (name r)]
-                                     , Str (" on line "++getLineNr r++" of file "++getFileName r)
-                                     , Str " is documented by means of computer generated language. "
-                                     ]
-                              rls -> (upC . commaEngPandoc (Str "and") )
-                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
-                                         strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
-                                                    commaEngPandoc (Str "and") nrs ++
-                                                    [Str " of file "]++[(Str . takeFileName . locnm . head) cl])
-                                        | cl<-eqCl locnm (map origin rls)] ++
-                                       [ Str " rules are defined, the meaning of which is documented by means of computer generated language. " ]
-                           ) ++
-                           ( case rs `isc` rs' of
-                              []  -> []
-                              [r] -> [ Str "Rule ", Emph [Str (name r)]
-                                     , Str (" on line "++getLineNr r++" of file "++getFileName r++" is not documented. ")
-                                     ]
-                              rls -> (upC . commaEngPandoc (Str "and") )
-                                        [let nrs = [(Str . show . linenr) l | l<-cl] in
-                                         strconcat ([ Str ("on line number"++(if length nrs>1 then "s" else "")++" ")]++
-                                                    commaEngPandoc (Str "and") nrs ++
-                                                    [Str " of file "]++[(Str . takeFileName . locnm . head) cl])
-                                        | cl<-eqCl locnm (map origin rls)] ++
-                                       [ Str " rules are defined without any explanation. " ]
-                           )
-                          ]
-     where missingPurp
-            = nub [ r
-                  | r<-ruls
-                  , null (purposesDefinedIn fSpec (fsLang fSpec) r)
-                  ]
-           missingMeaning
-            = nub [ r
-                  | r<-ruls
-                  , null [m | m <- ameaMrk (rrmean r), amLang m == fsLang fSpec]
-                  ]
-           ruls = if null (themes fSpec)
-                  then vrules fSpec
-                  else concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]
-           upC (Str str':strs) = Str (upCap str'):strs
-           upC str' = str'
-
-           getFileName :: Traced a => a -> String
-           getFileName x = takeFileName . locnm . origin $ x 
-           
-           getLineNr :: Traced a => a -> String
-           getLineNr x = locln . origin $ x
-
-           strconcat :: [Inline] -> Inline
-           strconcat strs = (Str . concat) [ str' | Str str'<-strs]
+   = case if null (themes fSpec)
+          then vrules fSpec
+          else concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec] of
+      []   -> mempty
+      ruls ->
+       ( if all hasMeaning ruls && all hasPurpose ruls
+         then (para.str.l) (NL "Alle regels in dit document zijn voorzien van een uitleg."
+                           ,EN "All rules in this document have been provided with a meaning and a purpose.")
+         else ( case filter (not.hasPurpose) ruls of
+                  []  -> mempty
+                  rls -> (para.str.l) (NL "Van de volgende regels is de bestaansreden niet uitgelegd:"
+                                      ,EN "Rules are defined without documenting their purpose:")
+                       <> bulletList [    (para.emph.str.name) r 
+                                       <> (plain.str.show.origin) r 
+                                     | r <- rls]
+              ) <>
+              ( case filter (not.hasMeaning) ruls of
+                  []  -> mempty
+                  rls -> (para.str.l) (NL "Van de volgende regels is de betekenis uitgelegd in taal die door de computer is gegenereerd:"
+                                      ,EN "Rules are defined, the meaning of which is documented by means of computer generated language:")
+                       <> bulletList [    (para.emph.str.name) r 
+                                       <> (plain.str.show.origin) r 
+                                     | r <- rls]
+              )
+       ) 
 
   ruleRelationRefTable =
     [ Para [ Str descriptionStr ]
@@ -435,9 +341,6 @@ chpDiagnosis fSpec
                                             " times."
                                           , "Theme", "Relations", "With reference", "Rules", "Entire context")
 
-  locnm (FileLoc(FilePos filename _ _) _) = filename
-  locnm (DBLoc str') = str'
-  locnm _ = "NO FILENAME"
   locln (FileLoc(FilePos _ line _) _) = show line
   locln (DBLoc str') = str'
   locln p = fatal 875 ("funny position "++show p++" in function 'locln'")
