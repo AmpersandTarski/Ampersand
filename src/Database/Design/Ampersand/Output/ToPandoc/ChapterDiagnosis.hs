@@ -23,7 +23,6 @@ chpDiagnosis fSpec
    <> relsNotUsed            -- tells which relations are not used in any rule
    <> missingRules           -- tells which rule definitions are missing
    <> ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
-   <> fromList invariantsInProcesses  --
    <> fromList processrulesInPatterns --
 -- TODO: Needs rework.     populationReport++       -- says which relations are populated.
    <> fromList wipReport              -- sums up the work items (i.e. the violations of process rules)
@@ -362,36 +361,6 @@ chpDiagnosis fSpec
   locln (FileLoc(FilePos _ line _) _) = show line
   locln (DBLoc str') = str'
   locln p = fatal 875 ("funny position "++show p++" in function 'locln'")
-
--- TODO: give richer feedback...
-  invariantsInProcesses :: [Block]
-  invariantsInProcesses
-   = (case (fsLang fSpec, prs, procs) of
-      (_,      [],[] )  -> []
-      (Dutch,  [],[p])  -> [ Para [ Str $ "Alle regels in proces "++name p++" zijn gekoppeld aan rollen." ]]
-      (English,[],[p])  -> [ Para [ Str $ "All rules in process "++name p++" are linked to roles." ]]
-      (Dutch,  [], _ )  -> [ Para [ Str "Alle regels in alle processen zijn gekoppeld aan rollen." ]]
-      (English,[], _ )  -> [ Para [ Str "All rules in all processes are linked to roles." ]]
-      (Dutch,  _ , _ )  -> [ Para [ Str "De volgende tabel toont welke regels in welke processen niet aan een rol gekoppeld zijn. "
-                                  , Str "Dit heeft als consequentie dat de computer de betreffende regel(s) zal handhaven."
-                                  ]]
-      (English,_ , _ )  -> [ Para [ Str "The following table shows which rules are not linked to a role within a particular process. "
-                                  , Str "This has as consequence that these rule(s) will be maintained by the computer."
-                                  ]]
-     )++
--- the table containing the role-rule assignments
-     [ Table [] [AlignLeft,AlignLeft] [0.0,0.0]
-       ( case fsLang fSpec of
-          Dutch   -> [ [Plain [Str "proces" ]] , [Plain [Str "regel"]] ]
-          English -> [ [Plain [Str "process"]] , [Plain [Str "rule" ]] ]
-       )
-       [ [[Plain [Str (name p)]], [Plain (intercalate [Str ", "] [[Str (name r)] | r<-rs])]]
-       | (p,rs)<-prs
-       ]
-     | not (null prs)]
-     where prs = [(p,rs) | p<-procs
-                          , let rs=[r | r<-invariants fSpec, name p == r_env r], not (null rs) ]
-           procs = if null (themes fSpec) then vpatterns fSpec else [prc | prc<-vpatterns fSpec, name prc `elem` themes fSpec ]
 
   processrulesInPatterns :: [Block]
   processrulesInPatterns = (toList $ para ("TODO: Inleiding bij de rol-regel tabel"))++
