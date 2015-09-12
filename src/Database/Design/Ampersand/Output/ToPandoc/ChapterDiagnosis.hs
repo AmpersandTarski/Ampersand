@@ -18,11 +18,11 @@ chpDiagnosis fSpec
    <> roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
    <> roleRuleTable          -- gives an overview of rule-rule assignments
    <> missingConceptDefs     -- tells which concept definitions have been declared without a purpose
-   <> missingRels                      -- tells which relations have been declared without a purpose and/or without a meaning
+   <> missingRels            -- tells which relations have been declared without a purpose and/or without a meaning
    <> unusedConceptDefs      -- tells which concept definitions are not used in any relation
    <> relsNotUsed            -- tells which relations are not used in any rule
    <> missingRules           -- tells which rule definitions are missing
-   <> fromList ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
+   <> ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
    <> fromList invariantsInProcesses  --
    <> fromList processrulesInPatterns --
 -- TODO: Needs rework.     populationReport++       -- says which relations are populated.
@@ -311,40 +311,53 @@ chpDiagnosis fSpec
               )
        ) 
 
+  ruleRelationRefTable :: Blocks
   ruleRelationRefTable =
-    [ Para [ Str descriptionStr ]
-    , Table [] (AlignLeft : replicate 6 AlignCenter) [0.0,0.0,0.0,0.0,0.0,0.0,0.0]
-            (map strCell [ themeStr, relationsStr, withRefStr, "%", rulesStr, withRefStr, "%"])
-            (map mkTableRowPat (vpatterns fSpec) ++
-            [[]] ++ -- empty row
-            [mkTableRow contextStr (filter decusr $ vrels fSpec) (vrules fSpec)])
-    ]
-    where mkTableRowPat p            = mkTableRow (name p) (ptdcs p) (ptrls p)
-          mkTableRow nm decls ruls =
-            let nrOfRels = length decls
-                nrOfRefRels = length $ filter hasRef decls
-                nrOfRules = length ruls
-                nrOfRefRules = length $ filter hasRef ruls
-            in  map strCell [ nm
-                            , show nrOfRels, show nrOfRefRels, showPercentage nrOfRels nrOfRefRels
-                            , show nrOfRules, show nrOfRefRules, showPercentage nrOfRules nrOfRefRules
+      (para.str.l) (NL $ "Onderstaande tabel bevat per thema (dwz. proces of patroon) tellingen van het aantal relaties en regels, " ++
+                         "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
+                         "gedeclareerd worden, worden ook meerdere keren geteld."
+                   ,EN $ "The table below shows for each theme (i.e. process or pattern) the number of relations and rules, followed " ++
+                         " by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
+                         " times."
+                   )
+    <>(table -- No caption:
+             mempty
+             -- Alignment:
+             ((AlignLeft,0.4) : replicate 6 (AlignCenter,0.1))
+             -- Headers
+             (map (plain.str.l) [ (NL "Thema"         , EN "Theme")
+                                , (NL "Relaties"      , EN "Relations")
+                                , (NL "Met referentie", EN "With reference")
+                                , (NL "%"             , EN "%")
+                                , (NL "Regels"        , EN "Rules")
+                                , (NL "Gehele context", EN "Entire context")
+                                , (NL "%"             , EN "%")
+                                ]
+             )
+             -- Content rows
+             (   map mkTableRowPat (vpatterns fSpec)
+              ++ [mempty] -- empty row
+              ++ [mkTableRow (l (NL "Gehele context", EN "Entire context")) (filter decusr $ vrels fSpec) (vrules fSpec)]
+             )
+      )
+    where mkTableRow :: String  -- The name of the pattern / fSpec 
+                     -> [Declaration] --The user-defined relations of the pattern / fSpec
+                     -> [Rule]  -- The user-defined rules of the pattern / fSpec
+                     -> [Blocks]
+          mkTableRowPat p = mkTableRow (name p) (relsDefdIn p) (udefrules p)
+          mkTableRow nm rels ruls =
+            map (plain.str) [ nm
+                            , (show.length) rels 
+                            , (show.length) (filter hasRef rels)
+                            , showPercentage (length rels) (length.filter hasRef $ rels)
+                            , (show.length) ruls
+                            , (show.length) (filter hasRef ruls)
+                            , showPercentage (length ruls) (length.filter hasRef $ ruls)
                             ]
 
           hasRef x = maybe False (any  ((/=[]).explRefIds)) (purposeOf fSpec (fsLang fSpec) x)
 
           showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%"
-
-          strCell strng = [Plain [Str strng]]
-
-          (descriptionStr, themeStr, relationsStr, withRefStr, rulesStr, contextStr) =
-            case fsLang fSpec of Dutch -> ( "Onderstaande tabel bevat per thema (dwz. proces of patroon) tellingen van het aantal relaties en regels, " ++
-                                            "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
-                                            "gedeclareerd worden, worden ook meerdere keren geteld."
-                                          , "Thema", "Relaties",  "Met referentie", "Regels", "Gehele context")
-                                 _     -> ( "The table below shows for each theme (i.e. process or pattern) the number of relations and rules, followed " ++
-                                            " by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
-                                            " times."
-                                          , "Theme", "Relations", "With reference", "Rules", "Entire context")
 
   locln (FileLoc(FilePos _ line _) _) = show line
   locln (DBLoc str') = str'
