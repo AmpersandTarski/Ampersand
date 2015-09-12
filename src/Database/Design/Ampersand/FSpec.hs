@@ -24,7 +24,7 @@ import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..), LanguageDependent(.
 import Database.Design.Ampersand.FSpec.ShowECA (showECA)
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile,MetaType(..))
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
-       (showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd)
+       (showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd,commaPandocOr)
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
        (makeFSpec)
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms

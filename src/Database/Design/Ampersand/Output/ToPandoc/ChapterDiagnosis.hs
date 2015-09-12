@@ -14,7 +14,21 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
  = (  chptHeader (fsLang fSpec) Diagnosis
-   <> diagIntro                       -- an introductory text
+   <> case fsLang fSpec of
+        Dutch   -> 
+          para (   "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
+                 <> (singleQuoted.str.name) fSpec 
+                 <> ". "
+                 <> "Deze analyse is bedoeld voor de auteur(s) van dit script. "
+                 <> "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren."
+               )
+        English -> 
+          para (   "This chapter provides an analysis of the Ampersand script of "
+                <> (singleQuoted.str.name) fSpec 
+                <> ". "
+                <> "This analysis is intended for the author(s) of this script. "
+                <> "It can be used to complete the script or to improve possible flaws."
+               )
    <> roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
    <> roleRuleTable          -- gives an overview of rule-rule assignments
    <> missingConceptDefs     -- tells which concept definitions have been declared without a purpose
@@ -23,8 +37,7 @@ chpDiagnosis fSpec
    <> relsNotUsed            -- tells which relations are not used in any rule
    <> missingRules           -- tells which rule definitions are missing
    <> ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
-   <> fromList processrulesInPatterns --
--- TODO: Needs rework.     populationReport++       -- says which relations are populated.
+   <> processrulesInPatterns --
    <> fromList wipReport              -- sums up the work items (i.e. the violations of process rules)
    <> violationReport          -- sums up the violations caused by the population of this script.
      
@@ -33,19 +46,6 @@ chpDiagnosis fSpec
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
   l lstr = localize (fsLang fSpec) lstr
-  diagIntro :: Blocks
-  diagIntro =
-    case fsLang fSpec of
-      Dutch   -> para (
-                   str "Dit hoofdstuk geeft een analyse van het Ampersand-script van " <> (singleQuoted.str.name) fSpec <> ". "<>
-                   str "Deze analyse is bedoeld voor de auteur(s) van dit script. " <>
-                   str "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren."
-                  )
-      English -> para (
-                   str "This chapter provides an analysis of the Ampersand script of " <> (singleQuoted.str.name) fSpec <> ". "<>
-                   str "This analysis is intended for the author(s) of this script. " <>
-                   str "It can be used to complete the script or to improve possible flaws."
-                  )
 
   roleRuleTable :: Blocks
   roleRuleTable
@@ -86,9 +86,7 @@ chpDiagnosis fSpec
                   )
      where
                   
-      ruls = if null (themes fSpec)
-             then [r | r<-vrules fSpec, isSignal r ]
-             else [r | pat<-vpatterns   fSpec, name pat `elem` themes fSpec, r<-udefrules pat,         isSignal r ]                  
+      ruls = filter inScopeRule . filter isSignal . vrules $ fSpec                  
       f :: Role -> Rule -> Blocks
       f rol rul | (rol,rul) `elem` maintained      = (plain.emph.str.l) (NL "ja",EN "yes")
                 | (rol,rul) `elem` dead            = (plain.emph.str.l) (NL "nee",EN "no")
@@ -109,9 +107,9 @@ chpDiagnosis fSpec
 
   roleomissions :: Blocks
   roleomissions
-   = if      null  (themes fSpec) && (not.null) (vpatterns fSpec) ||
-        (not.null) (themes fSpec) && (not.null) (themes fSpec `isc` map name (vpatterns fSpec))
-     then (if (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
+   = if (null . filter inScopePat . vpatterns) fSpec
+     then mempty
+     else (if (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
            then plain (   (emph.str.upCap.name) fSpec
                        <> (str.l) (NL " kent geen regels aan rollen toe. "
                                   ,EN " does not assign rules to roles. ")
@@ -127,7 +125,7 @@ chpDiagnosis fSpec
                       )
            else mempty
           )
-     else mempty
+
   missingConceptDefs :: Blocks
   missingConceptDefs =
    case missing of
@@ -362,27 +360,34 @@ chpDiagnosis fSpec
   locln (DBLoc str') = str'
   locln p = fatal 875 ("funny position "++show p++" in function 'locln'")
 
-  processrulesInPatterns :: [Block]
-  processrulesInPatterns = (toList $ para ("TODO: Inleiding bij de rol-regel tabel"))++
-     [ Table []
-       ([AlignLeft]++[AlignLeft | multProcs]++[AlignLeft,AlignLeft])
-       ([0.0]++[0.0 | multProcs]++[0.0,0.0])
-       ( case fsLang fSpec of
-          Dutch   ->
-              [[Plain [Str "rol"]] ]++[[Plain [Str "in proces" ]] | multProcs]++[[Plain [Str "regel"]], [Plain [Str "uit"  ]] ]
-          English ->
-              [[Plain [Str "role"]]]++[[Plain [Str "in process"]] | multProcs]++[[Plain [Str "rule" ]], [Plain [Str "from" ]] ]
-       )
-       [ [[Plain [Str (name rol)]]]++[[Plain [Str (r_env rul)]] | multProcs]++[[Plain [Str (name rul)]], [Plain [Str (r_env rul)]]]
-       | (rol,rul)<-prs
-       ]
-     | length prs>1]
-     where prs :: [( Role, Rule )]
-           prs = fRoleRuls fSpec
-           multProcs = length procs>1
-           procs = [ p | p<-vpatterns fSpec
-                   , null (themes fSpec) || name p `elem` themes fSpec]  -- restrict if this is partial documentation.
-
+  processrulesInPatterns :: Blocks
+  processrulesInPatterns = 
+       para ("TODO: Inleiding bij de rol-regel tabel")
+    <> if null (fRoleRuls fSpec)
+       then mempty
+       else table -- No caption:
+                  mempty
+                  -- Alignment:
+                  ( if multProcs
+                    then replicate 4 (AlignLeft,1/4)
+                    else replicate 3 (AlignLeft,1/3)
+                  )
+                  -- Headers:
+                  (  [ (plain.str.l) (NL "rol"      , EN "role")]
+                   ++[ (plain.str.l) (NL "in proces", EN "in process") | multProcs]
+                   ++[ (plain.str.l) (NL "regel"    , EN "rule")
+                     , (plain.str.l) (NL "uit"      , EN "from")
+                     ]
+                  )
+                  -- Rows:
+                  [  [ (plain.str.name) rol]
+                   ++[ (plain.str.r_env) rul | multProcs]
+                   ++[ (plain.str.name) rul
+                     , (plain.str.r_env) rul
+                     ]
+                  | (rol,rul)<-fRoleRuls fSpec]
+     where multProcs = length procsInScope>1
+           procsInScope = filter inScopePat (vpatterns fSpec)
 
   wipReport :: [Block]
   wipReport
@@ -456,24 +461,14 @@ chpDiagnosis fSpec
          else [Str "(",Str (name (source r)),Space,Str ((showValADL.apLeft) p),Str ", ",Str (name (target r)),Space,Str ((showValADL.apRight) p),Str ")"]
       oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
       popwork :: [(Rule,[AAtomPair])]
-      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, partofThemes r]
-  partofThemes r =
-        or [ null (themes fSpec)
-           , r `elem` concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]
-           ]
+      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, inScopeRule r]
 
   violationReport :: Blocks
   violationReport
    = let (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
          showViolatedRule :: (Rule,[AAtomPair]) -> Blocks
          showViolatedRule (r,ps)
-             = let capt = case (fsLang fSpec,isSignal r) of
-                               (Dutch  , False) -> text "Overtredingen van regel "<>  text (name r)
-                               (English, False) -> text "Violations of rule "<>  text (name r)
-                               (Dutch  , True ) -> text "Openstaande taken voor "        <> text (commaNL  "of" (map name (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
-                               (English, True ) -> text "Tasks yet to be performed by "  <> text (commaEng "or" (map name (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
-
-                   showRow :: AAtomPair -> [Blocks]
+             = let showRow :: AAtomPair -> [Blocks]
                    showRow p = [(para.text.showValADL.apLeft) p,(para.text.showValADL.apRight) p]
                in para ( case fsLang fSpec of
                             Dutch   -> text "Regel "
@@ -487,7 +482,17 @@ chpDiagnosis fSpec
                                (English, True ) -> "Total number of work items: " ++show (length ps)
                              )
                        )
-               <> table capt
+               <> table -- Caption
+                        (if isSignal r
+                         then ( (str.l) (NL "Openstaande taken voor "
+                                        ,EN "Tasks yet to be performed by ")
+                              <>(commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
+                              )
+                         else ( (str.l) (NL "Overtredingen van invariant "
+                                        ,EN "Violations of invariant ")
+                              <>(str.name) r
+                              )
+                        )  
                    [(AlignLeft,0)                          ,(AlignLeft,0)          ]
                    [(para.strong.text.name.source.rrexp) r,(para.strong.text.name.target.rrexp) r]
                    (map showRow ps)
@@ -529,3 +534,11 @@ chpDiagnosis fSpec
              | p <-take 10 ps
              ]
 
+  inScopePat :: Pattern -> Bool
+  inScopePat x = null (themes fSpec) || name x `elem` themes fSpec  -- restrict if this is partial documentation.
+
+  inScopeRule :: Rule -> Bool
+  inScopeRule r =
+        or [ null (themes fSpec)
+           , r `elem` concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec]
+           ]

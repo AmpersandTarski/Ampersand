@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Calc
             ( deriveProofs
             , showProof, showPrf, assembleECAs, conjuncts, genPAclause
-            , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd --TODO: this shouldt be here!
+            , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd ,commaPandocOr--TODO: this shouldt be here!
             , quadsOfRules
           --  , testInterface
             ) where
@@ -774,8 +774,11 @@ commaNLPandoc s (a:as) = [a, Str ", "]++commaNLPandoc s as
 commaNLPandoc  _  []   = []
    
 commaPandocAnd :: Lang -> [Inlines] -> Inlines
-commaPandocAnd Dutch = commaEngPandoc' "en"
-commaPandocAnd English = commaNLPandoc' "and"
+commaPandocAnd Dutch = commaNLPandoc' "en"
+commaPandocAnd English = commaEngPandoc' "and"
+commaPandocOr :: Lang -> [Inlines] -> Inlines
+commaPandocOr Dutch = commaNLPandoc' "of"
+commaPandocOr English = commaEngPandoc' "or"
 
 quadsOfRules :: Options -> [Rule] -> [Quad]
 quadsOfRules opts rules 
