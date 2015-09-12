@@ -15,7 +15,7 @@ chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
  = (  chptHeader (fsLang fSpec) Diagnosis
    <> diagIntro                       -- an introductory text
-   <> fromList roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
+   <> roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
    <> fromList roleRuleTable          -- gives an overview of rule-rule assignments
    <> fromList missingConceptDefs     -- tells which concept definitions have been declared without a purpose
    <> missingRels                      -- tells which relations have been declared without a purpose and/or without a meaning
@@ -97,31 +97,26 @@ chpDiagnosis fSpec
          , (not.or) (map (mayedit role) (relsUsedIn rul))
          ]
 
-  roleomissions :: [Block]
+  roleomissions :: Blocks
   roleomissions
    = if      null  (themes fSpec) && (not.null) (vpatterns fSpec) ||
         (not.null) (themes fSpec) && (not.null) (themes fSpec `isc` map name (vpatterns fSpec))
-     then [ case fsLang fSpec of
-              Dutch   ->
-                Plain [ Str $ upCap (name fSpec)++" kent geen regels aan rollen toe. "
-                       , Str "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
-                       ]
-              English ->
-                Plain [ Str $ upCap (name fSpec)++" does not assign rules to roles. "
-                       , Str "A generic role, User, will be defined to do all the work that is necessary in the business process."
-                       ]
-          | (null.fRoleRuls) fSpec && (not.null.vrules) fSpec] ++
-          [ case fsLang fSpec of
-              Dutch   ->
-                Plain [ Str $ upCap (name fSpec)++" specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
-                       , Str ""
-                       ]
-              English ->
-                Plain [ Str $ upCap (name fSpec)++" does not specify which roles may change the contents of which relations. "
-                       , Str ""
-                       ]
-          | null (fRoleRels fSpec), (not.null.fRoleRuls) fSpec ||(not.null.fRoleRels) fSpec]
-     else []
+     then (if (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
+           then plain (   (str.l) (NL $ upCap (name fSpec)++" kent geen regels aan rollen toe. "
+                                  ,EN $ upCap (name fSpec)++" does not assign rules to roles. ")
+                       <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
+                                  ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
+                      )
+           else mempty
+          )<>
+          (if null (fRoleRels fSpec) && (not.null.fRoleRuls) fSpec ||(not.null.fRoleRels) fSpec
+           then plain (   (emph.str.upCap.name) fSpec
+                       <> (str.l) (NL " specificeert niet welke rollen de inhoud van welke relaties mogen wijzigen. "
+                                  ,EN " does not specify which roles may change the contents of which relations. ")
+                      )
+           else mempty
+          )
+     else mempty
   missingConceptDefs :: [Block]
   missingConceptDefs
    = case (fsLang fSpec, missing) of
