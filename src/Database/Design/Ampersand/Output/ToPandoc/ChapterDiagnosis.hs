@@ -16,8 +16,8 @@ chpDiagnosis fSpec
  = (  chptHeader (fsLang fSpec) Diagnosis
    <> diagIntro                       -- an introductory text
    <> roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
-   <> fromList roleRuleTable          -- gives an overview of rule-rule assignments
-   <> fromList missingConceptDefs     -- tells which concept definitions have been declared without a purpose
+   <> roleRuleTable          -- gives an overview of rule-rule assignments
+   <> missingConceptDefs     -- tells which concept definitions have been declared without a purpose
    <> missingRels                      -- tells which relations have been declared without a purpose and/or without a meaning
    <> unusedConceptDefs      -- tells which concept definitions are not used in any relation
    <> relsNotUsed            -- tells which relations are not used in any rule
@@ -48,42 +48,53 @@ chpDiagnosis fSpec
                    str "It can be used to complete the script or to improve possible flaws."
                   )
 
-  roleRuleTable :: [Block]
+  roleRuleTable :: Blocks
   roleRuleTable
-    | null ruls = []
+    | null ruls = mempty
     | null (fRoles fSpec) =
-        case fsLang fSpec of
-          Dutch    -> [Para [ Str $ upCap (name fSpec)++" specificeert geen rollen. " ]]
-          English  -> [Para [ Str $ upCap (name fSpec)++" does not define any roles. " ]]
-    | null [r | r<-vrules fSpec, isSignal r ] =
-        case fsLang fSpec of
-          Dutch    -> [Para [ Str $ upCap (name fSpec)++" kent geen procesregels. " ]]
-          English  -> [Para [ Str $ upCap (name fSpec)++" does not define any process rules. " ]]
+         para (   (emph.str.upCap.name) fSpec
+               <> (str.l) (NL " specificeert geen rollen. "
+                          ,EN " does not define any roles. ")
+              )
     | otherwise =
-        (case fsLang fSpec of
-          Dutch    -> Para [ Str $ upCap (name fSpec)++" kent regels aan rollen toe. "
-                            , Str "De volgende tabel toont welke regels door een bepaalde rol kunnen worden gehandhaafd."]
-          English  -> Para [ Str $ upCap (name fSpec)++" assigns rules to roles. "
-                            , Str "The following table shows the rules that are being maintained by a given role."]
-        ) :
-        [Table []  -- the table containing the role-rule assignments
-        (AlignLeft:[AlignCenter |_<-fRoles fSpec])
-        (0.0:[0.0 |_<-fRoles fSpec])
-        (( case fsLang fSpec of
-          Dutch   -> [Plain [Str "regel"]]
-          English -> [Plain [Str "rule" ]]
-        ) :    [ [Plain [Str (name r)]] | r <- fRoles fSpec ]
-        )
-        [ [Plain [Str (name rul)]]:[f r rul | r<-fRoles fSpec] | rul<-ruls ]
-        ]
+        case (filter isSignal) ruls of
+          []   -> para (   (emph.str.upCap.name) fSpec
+                        <> (str.l) (NL " kent geen procesregels. "
+                                   ,EN " does not define any process rules. ")
+                       )
+          sigs -> (para (   (emph.str.upCap.name) fSpec
+                         <> (str.l) (NL " kent regels aan rollen toe. "
+                                    ,EN " assigns rules to roles. ")
+                         <> (str.l) (NL "De volgende tabel toont welke regels door een bepaalde rol kunnen worden gehandhaafd."
+                                    ,EN "The following table shows the rules that are being maintained by a given role.")
+                        )
+                  ) <> 
+                  ( table -- No caption:
+                          mempty
+                          -- Alignment:
+                          (  (AlignLeft,0.4) 
+                           : replicate (length.fRoles $ fSpec) (AlignLeft, 0.6/(fromIntegral.length.fRoles $ fSpec))
+                          )  
+                          -- Header row:
+                          (  (plain.str.l) (NL "Regel", EN "Rule")
+                           : map (plain.str.name) (fRoles fSpec)
+                          )
+                          -- Content rows:
+                          [  (plain.str.name) rul
+                            :[f rol rul | rol<-fRoles fSpec] 
+                          | rul<-sigs 
+                          ]
+                  )
      where
+                  
       ruls = if null (themes fSpec)
              then [r | r<-vrules fSpec, isSignal r ]
              else [r | pat<-vpatterns   fSpec, name pat `elem` themes fSpec, r<-udefrules pat,         isSignal r ]                  
-      f r rul | (r,rul) `elem` maintained      = [Plain [Math InlineMath "\\surd"]]
-              | (r,rul) `elem` dead            = [Plain [Math InlineMath "\\times"]]
-              | (r,rul) `elem` fRoleRuls fSpec = [Plain [Math InlineMath "\\odot"]]
-              | otherwise                      = []
+      f :: Role -> Rule -> Blocks
+      f rol rul | (rol,rul) `elem` maintained      = (plain.emph.str.l) (NL "ja",EN "yes")
+                | (rol,rul) `elem` dead            = (plain.emph.str.l) (NL "nee",EN "no")
+                | (rol,rul) `elem` fRoleRuls fSpec = (plain.emph.str.l) (NL "part",EN "part")
+                | otherwise                      = mempty
       maintained  -- (r,rul) `elem` maintained means that r can maintain rul without restrictions.
         = [ (role,rul)
           | (role,rul)<-fRoleRuls fSpec
@@ -102,8 +113,9 @@ chpDiagnosis fSpec
    = if      null  (themes fSpec) && (not.null) (vpatterns fSpec) ||
         (not.null) (themes fSpec) && (not.null) (themes fSpec `isc` map name (vpatterns fSpec))
      then (if (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
-           then plain (   (str.l) (NL $ upCap (name fSpec)++" kent geen regels aan rollen toe. "
-                                  ,EN $ upCap (name fSpec)++" does not assign rules to roles. ")
+           then plain (   (emph.str.upCap.name) fSpec
+                       <> (str.l) (NL " kent geen regels aan rollen toe. "
+                                  ,EN " does not assign rules to roles. ")
                        <> (str.l) (NL "Een generieke rol, User, zal worden gedefinieerd om al het werk te doen wat in het bedrijfsproces moet worden uitgevoerd."
                                   ,EN "A generic role, User, will be defined to do all the work that is necessary in the business process.")
                       )
@@ -117,27 +129,25 @@ chpDiagnosis fSpec
            else mempty
           )
      else mempty
-  missingConceptDefs :: [Block]
-  missingConceptDefs
-   = case (fsLang fSpec, missing) of
-      (Dutch,[])  -> [Para
-                       [Str "Alle concepten in dit document zijn voorzien van een bestaansreden."]
-                     | (not.null.concs) fSpec]
-      (Dutch,[c]) -> [Para
-                       [Str "De bestaansreden van concept ", Quoted SingleQuote [Str (name c)], Str " is niet gedocumenteerd."]
-                     ]
-      (Dutch,xs)  -> [Para $
-                       [Str "De bestaansreden van de concepten: "]++commaNLPandoc (Str "en") (map (Str . name) xs)++[Str " is niet gedocumenteerd."]
-                     ]
-      (English,[])  -> [Para
-                        [Str "All concepts in this document have been provided with a purpose."]
-                     | (not.null.concs) fSpec]
-      (English,[c]) -> [Para
-                         [Str "The concept ", Quoted SingleQuote [Str (name c)], Str " remains without a purpose."]
-                     ]
-      (English,xs)  -> [Para $
-                       [Str "Concepts "]++commaEngPandoc (Str "and") (map (Str . name) xs)++[Str " remain without a purpose."]
-                     ]
+  missingConceptDefs :: Blocks
+  missingConceptDefs =
+   case missing of
+      []  -> if (null.concs) fSpec
+             then mempty
+             else (para.str.l) (NL "Alle concepten in dit document zijn voorzien van een bestaansreden."
+                               ,EN "All concepts in this document have been provided with a purpose.")
+      [c] -> para (   (str.l) (NL "De bestaansreden van concept "
+                              ,EN "The concept ")
+                   <> (singleQuoted.str.name) c
+                   <> (str.l) (NL " is niet gedocumenteerd."
+                              ,EN " remains without a purpose.")
+                  )
+      xs  -> para (   (str.l) (NL "De bestaansreden van de concepten: "
+                              ,EN "Concepts ")
+                   <> commaPandocAnd (fsLang fSpec) (map (str.name) xs)
+                   <> (str.l) (NL " is niet gedocumenteerd."
+                              ,EN " remain without a purpose.")
+                  )
    where missing = [c | c <-ccs
                       , cd <- concDefs fSpec c
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
