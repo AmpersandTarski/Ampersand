@@ -101,6 +101,6 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
     fspec2Blocks SoftwareMetrics       = (fpAnalysis                fSpec, [])
     fspec2Blocks EcaRules              = (chpECArules               fSpec, [])
     fspec2Blocks Interfaces            = (chpInterfacesBlocks     0 fSpec, [])
-    fspec2Blocks FunctionPointAnalysis = chpFunctionPointAnalysis   fSpec
+    fspec2Blocks FunctionPointAnalysis = (chpFunctionPointAnalysis  fSpec, [])
     fspec2Blocks Glossary              = (chpGlossary             0 fSpec, [])
 
