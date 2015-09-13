@@ -38,7 +38,7 @@ chpDiagnosis fSpec
    <> missingRules           -- tells which rule definitions are missing
    <> ruleRelationRefTable   -- table that shows percentages of relations and rules that have references
    <> processrulesInPatterns --
-   <> fromList wipReport              -- sums up the work items (i.e. the violations of process rules)
+   <> wipReport              -- sums up the work items (i.e. the violations of process rules)
    <> violationReport          -- sums up the violations caused by the population of this script.
      
    , pics )
@@ -356,10 +356,6 @@ chpDiagnosis fSpec
 
           showPercentage x y = if x == 0 then "-" else show (y*100 `div` x)++"%"
 
-  locln (FileLoc(FilePos _ line _) _) = show line
-  locln (DBLoc str') = str'
-  locln p = fatal 875 ("funny position "++show p++" in function 'locln'")
-
   processrulesInPatterns :: Blocks
   processrulesInPatterns = 
        para ("TODO: Inleiding bij de rol-regel tabel")
@@ -389,58 +385,62 @@ chpDiagnosis fSpec
      where multProcs = length procsInScope>1
            procsInScope = filter inScopePat (vpatterns fSpec)
 
-  wipReport :: [Block]
+  wipReport :: Blocks
   wipReport
-   = [ Para (case (fsLang fSpec,popwork) of
-              (Dutch,  [])       -> [ Str "De populatie in dit script beschrijft geen onderhanden werk. "]
-              (English,[])       -> [ Str "The population in this script does not specify any work in progress. "]
-              (Dutch,  [(r,ps)]) -> [ Str "Regel ", quoterule r, Str (" laat "++count Dutch   (length ps) "taak"++" zien.") ]
-              (English,[(r,ps)]) -> [ Str "Rule ", quoterule r, Str (" shows "++count English (length ps) "task"++".") ]
-              (Dutch,  _)        -> [ Str "Dit script bevat onderhanden werk. De volgende tabellen geven details met regelnummers in de oorspronkelijk script-bestanden." ]
-              (English,_)        -> [ Str "This script contains work in progress. The following tables provide details with line numbers from the original script files." ]
-            )
-     ]        ++
--- the following table actually belongs to the intro
-     [ Table []
-       [AlignLeft,AlignRight,AlignRight]
-       [0.0,0.0,0.0]
-       ( case fsLang fSpec of
-          Dutch   ->
-              [[Plain [Str "regel"]], [Plain [Str "locatie"] ], [Plain [Str "#taken"]] ]
-          English ->
-              [[Plain [Str "rule" ]], [Plain [Str "location"]], [Plain [Str "#tasks"] ] ]
-       )
-       [ [[Plain [Str (name r)]], [Plain [(Str . locln . origin) r]], [Plain [(Str . show . length) ps]]]
-       | (r,ps)<-popwork
-       ]
-     | (not . null) popwork ]        ++
+   =   case popwork of
+         []       -> (para.str.l) (NL "De populatie in dit script beschrijft geen onderhanden werk. "
+                                  ,EN "The population in this script does not specify any work in progress. ")
+         [(r,ps)] -> para (   (str.l) (NL"Regel ",EN "Rule")
+                            <> quoterule r
+                            <>(str.l) (NL $ " laat " ++count Dutch   (length ps) "taak"++" zien."
+                                      ,EN $ " shows "++count English (length ps) "task"++".")
+                          )
+         _        -> (para.str.l) (NL "Dit script bevat onderhanden werk. De volgende tabellen geven details met regelnummers in de oorspronkelijk script-bestanden."
+                                  ,EN "This script contains work in progress. The following tables provide details with line numbers from the original script files.")
+            
+     <> if null popwork
+        then mempty
+        else table -- No caption:
+                    mempty
+                    -- Alignment:
+                    ((AlignLeft,1/3): replicate 2 (AlignRight,1/3))
+                    --Header:
+                    (map (plain.str.l) 
+                           [ (NL "regel"  ,EN "rule" )
+                           , (NL "locatie",EN "location" )
+                           , (NL "#taken" ,EN "#tasks" )
+                           ])
+                    -- Rows:
+                    [ map (plain.str)
+                           [ name r
+                           , (show.origin) r
+                           , (show.length) ps
+                           ]
+                    | (r,ps)<-popwork
+                    ]
+     <>
 -- the tables containing the actual work in progress population
-     concat
-     [ [ Para ( (case fsLang fSpec of
-                  Dutch   -> Str "Regel"
-                  English -> Str "Rule"):
-                [Space,quoterule r,Space]++
-                toList(xRefTo (XRefNaturalLanguageRule r) )++
-                (case fsLang fSpec of
-                  Dutch   -> [ Str " luidt: " ]
-                  English -> [ Str " says: "  ]
-                )
-              )]  ++meaning2Blocks (fsLang fSpec) r++
-       [Plain ( case fsLang fSpec of
-                  Dutch  ->
-                     [ Str "Deze regel bevat nog werk (voor "]++
-                     commaNLPandoc (Str "of") (nub [Str (name rol) | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
-                     (if length ps == 1 then [Str ", te weten "]++oneviol r ps++[Str ". "] else
-                      [ Str (". De volgende tabel laat de "++(if length ps>10 then "eerste tien " else "")++"items zien die aandacht vragen.")]
-                     )
-                  English ->
-                     [ Str "This rule contains work"]++
-                     commaEngPandoc (Str "or") (nub [Str (name rol) | (rol, rul)<-fRoleRuls fSpec, r==rul])++[Str ")"]++
-                     if length ps == 1 then [Str " by "]++oneviol r ps++[Str ". "] else
-                      [ Str ("The following table shows the "++(if length ps>10 then "first ten " else "")++"items that require attention.")]
-
-              ) ]++
-       [ violtable r ps | length ps>1]
+     mconcat
+     [    para (  (str.l) (NL "Regel", EN "Rule")
+               <> quoterule r
+               <> xRefTo (XRefNaturalLanguageRule r)
+               <> (str.l) (NL " luidt: ", EN "says: ")
+               )
+       <> fromList (meaning2Blocks (fsLang fSpec) r)
+       <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "
+                          ,EN "This rule contains work (for ")
+                <>commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul]))
+                <>")"
+                <> if length ps == 1
+                   then   (str.l) (NL ", te weten ", EN " by ")
+                       <> oneviol r (head ps)
+                       <> "."
+                   else   (str.l) (NL $ ". De volgende tabel laat de "++(if length ps>10 then "eerste tien " else "")++"items zien die aandacht vragen."
+                                  ,EN $ "The following table shows the "++(if length ps>10 then "first ten " else "")++"items that require attention.")
+               )
+       <> if length ps <= 1
+          then mempty -- iff there is a single violation, it is already shown in the previous paragraph
+          else violtable r ps 
      | (r,ps)<- popwork ]
      where
 --      text r
@@ -449,90 +449,100 @@ chpDiagnosis fSpec
 --         else expls
 --         where expls = [Plain (block++[Space]) | Means l econt<-rrxpl r, l==Just (fsLang fSpec) || l==Nothing, Para block<-econt]
       quoterule r
-       = if name r==""
-         then case fsLang fSpec of
-               English -> Str ("on "++show (origin r))
-               Dutch   -> Str ("op "++show (origin r))
-         else Quoted SingleQuote [Str (name r)]
-      oneviol :: Rule -> [AAtomPair] -> [Inline]
-      oneviol r [p]
+       = if null (name r)
+         then (str.l) (NL $ "op "++show (origin r)
+                      ,EN $ "at "++show (origin r))
+         else (singleQuoted.str.name) r
+      oneviol :: Rule -> AAtomPair -> Inlines
+      oneviol r p
        = if source r==target r && apLeft p==apRight p
-         then [Quoted  SingleQuote [Str (name (source r)),Space,Str ((showValADL.apLeft) p)]]
-         else [Str "(",Str (name (source r)),Space,Str ((showValADL.apLeft) p),Str ", ",Str (name (target r)),Space,Str ((showValADL.apRight) p),Str ")"]
-      oneviol _ _ = fatal 810 "oneviol must have a singleton list as argument."
+         then singleQuoted (  (str.name.source) r 
+                            <>(str.showValADL.apLeft) p
+                           )
+         else    "("  <> (str.name.source) r <> (str.showValADL.apLeft) p 
+              <> ", " <> (str.name.target) r <> (str.showValADL.apRight) p
+              <> ")"
       popwork :: [(Rule,[AAtomPair])]
       popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, inScopeRule r]
 
   violationReport :: Blocks
-  violationReport
-   = let (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
-         showViolatedRule :: (Rule,[AAtomPair]) -> Blocks
-         showViolatedRule (r,ps)
-             = let showRow :: AAtomPair -> [Blocks]
-                   showRow p = [(para.text.showValADL.apLeft) p,(para.text.showValADL.apRight) p]
-               in para ( case fsLang fSpec of
-                            Dutch   -> text "Regel "
-                            English -> text "Rule "
-                         <>  text (name r)
-                       )
-               <> para (text (case (fsLang fSpec,isSignal r) of
-                               (Dutch  , False) -> "Totaal aantal overtredingen: "++show (length ps)
-                               (English, False) -> "Total number of violations: " ++show (length ps)
-                               (Dutch  , True ) -> "Totaal aantal taken: "        ++show (length ps)
-                               (English, True ) -> "Total number of work items: " ++show (length ps)
-                             )
-                       )
-               <> table -- Caption
-                        (if isSignal r
-                         then ( (str.l) (NL "Openstaande taken voor "
-                                        ,EN "Tasks yet to be performed by ")
-                              <>(commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
-                              )
-                         else ( (str.l) (NL "Overtredingen van invariant "
-                                        ,EN "Violations of invariant ")
-                              <>(str.name) r
-                              )
-                        )  
-                   [(AlignLeft,0)                          ,(AlignLeft,0)          ]
-                   [(para.strong.text.name.source.rrexp) r,(para.strong.text.name.target.rrexp) r]
-                   (map showRow ps)
-
-     in (para (case (fsLang fSpec, invariantViolations, processViolations) of
-                (Dutch  ,[] , [] ) -> text "De populatie in dit script overtreedt geen regels. "
-                (English,[] , [] ) -> text "The population in this script violates no rule. "
-                (Dutch  ,iVs, pVs)
-                   -> text ("De populatie in dit script overtreedt "
-                             ++show(length iVs)++" invariant"++(if length iVs == 1 then "" else "en")++" en "
-                             ++show(length pVs)++" procesregel"++if length pVs == 1 then "" else "s"++"."
-                           )
-                (English,iVs, pVs)
-                   -> text ("The population in this script violates "
-                             ++show(length iVs)++" invariant"++(if length iVs == 1 then "" else "s")++" and "
-                             ++show(length pVs)++" process rule"++if length pVs == 1 then "" else "s"++"."
+  violationReport =
+        (para (case (invariantViolations, processViolations) of
+                ([] , [] ) ->  (str.l) (NL "De populatie in dit script overtreedt geen regels. "
+                                       ,EN "The population in this script violates no rule. ")
+                (iVs, pVs) ->  (str.l) (NL "De populatie in dit script overtreedt "
+                                       ,EN "The population in this script violates ")
+                             <>(str.show.length) iVs
+                             <>(str.l) (NL $ " invariant"++(if length iVs == 1 then "" else "en")++" en "
+                                       ,EN $ " invariant"++(if length iVs == 1 then "" else "s")++" and ")
+                             <>(str.show.length) pVs
+                             <>(str.l) (NL $ " procesregel" ++if length pVs == 1 then "" else "s"++"."
+                                       ,EN $ " process rule"++if length pVs == 1 then "" else "s"++"."
                            )
               )
         )
-     <> bulletList  [showViolatedRule vs | vs<- invariantViolations]
-     <> bulletList  [showViolatedRule vs | vs<- processViolations]
+     <> bulletList (map showViolatedRule invariantViolations)
+     <> bulletList (map showViolatedRule processViolations)
+    where
+         (processViolations,invariantViolations) = partition (isSignal.fst) (allViolations fSpec)
+         showViolatedRule :: (Rule,[AAtomPair]) -> Blocks
+         showViolatedRule (r,ps)
+             =    (para.emph)
+                      (  (str.l) (NL "Regel ", EN "Rule ")
+                       <>(str.name) r
+                      )
+               <> para(  (if isSignal r 
+                          then (str.l) (NL "Totaal aantal taken: "        ,EN "Total number of work items: ")
+                          else (str.l) (NL "Totaal aantal overtredingen: ",EN "Total number of violations: ")
+                         )
+                       <>(str.show.length) ps
+                      )
+               <> table -- Caption
+                        (if isSignal r
+                         then ( (str.l) (NL "Openstaande taken voor "     ,EN "Tasks yet to be performed by ")
+                              <>(commaPandocOr (fsLang fSpec) (map (str.name) (nub [rol | (rol, rul)<-fRoleRuls fSpec, r==rul])))
+                              )
+                         else ( (str.l) (NL "Overtredingen van invariant ",EN "Violations of invariant ")
+                              <>(str.name) r
+                              )
+                        )  
+                        -- Alignment:
+                        (replicate 2 (AlignLeft,1/2))
+                        -- Headers:
+                        [(para.strong.text.name.source.rrexp) r
+                        ,(para.strong.text.name.target.rrexp) r
+                        ]
+                        -- Rows:
+                        [ [(para.text.showValADL.apLeft) p
+                          ,(para.text.showValADL.apRight) p
+                          ]
+                        | p<- ps]
 
 
-  violtable :: Rule -> [AAtomPair] -> Block
+
+  violtable :: Rule -> [AAtomPair] -> Blocks
   violtable r ps
       = if hasantecedent r && isIdent (antecedent r)  -- note: treat 'isIdent (consequent r) as binary table.
-        then Table []
-             [AlignLeft]
-             [0.0]
-             [[Plain [(Str . name . source) r]]]
-             [ [[Plain [Str (showValADL(apLeft p))]]]
-             | p <-take 10 ps
-             ]
-        else Table []
-             [AlignLeft,AlignLeft]
-             [0.0,0.0]
-             [[Plain [(Str . name . source) r]], [Plain [(Str . name . target) r] ]]
-             [ [[Plain [Str (showValADL (apLeft p))]], [Plain [Str (showValADL(apRight p))]]]
-             | p <-take 10 ps
-             ]
+        then table -- No caption:
+                   mempty
+                   -- Alignment:
+                   [(AlignLeft,1.0)]
+                   -- Header:
+                   [(plain.str.name.source) r]
+                   -- Data rows:
+                   [ [(plain.str.showValADL.apLeft) p]
+                   | p <-take 10 ps --max 10 rows
+                   ]
+        else table -- No caption:
+                   mempty
+                   -- Alignment:
+                   (replicate 2 (AlignLeft,1/2))
+                   -- Header:
+                   [(plain.str.name.source) r , (plain.str.name.target) r ]
+                   -- Data rows:
+                   [ [(plain.str.showValADL.apLeft) p,(plain.str.showValADL.apRight) p]
+                   | p <-take 10 ps --max 10 rows
+                   ]
 
   inScopePat :: Pattern -> Bool
   inScopePat x = null (themes fSpec) || name x `elem` themes fSpec  -- restrict if this is partial documentation.
