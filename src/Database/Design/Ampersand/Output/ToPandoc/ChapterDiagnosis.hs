@@ -3,9 +3,8 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Classes
-import Data.List
-import Data.Maybe
+import Data.List(nub,partition)
+import Data.Maybe(isJust)
 
 
 fatal :: Int -> String -> a
