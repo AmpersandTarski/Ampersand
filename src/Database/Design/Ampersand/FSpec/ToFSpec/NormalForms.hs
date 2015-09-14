@@ -1081,6 +1081,15 @@ normPA opts pac = pac'
 
 type Proof a = [(a, [String], String)]
 
+{- A proof is a list of triples (e, ss, rel), where |e| is an expression in the chain;
+   |rel| is the relation (equality, inclusion, ...) relating the |e| with the next
+   expression, and |ss| is a documentation of the hint, stating the rule that has been applied.
+   2015-09-12 Stef thinks that the end of the chain is the only triple with empty hint,
+   being supported by the base case of |proofPA| below.
+
+   WK: I typically do |(a, [(rel, hint, a)])|.
+-}
+
 proofPA :: Options -> PAclause -> Proof PAclause
 proofPA opts = {-reverse.take 3.reverse.-}pPA
  where pPA pac' = case normstepPA opts pac' of

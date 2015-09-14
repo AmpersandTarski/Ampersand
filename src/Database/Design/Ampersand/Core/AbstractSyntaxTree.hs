@@ -200,6 +200,10 @@ data DnfClause = Dnf { antcs :: [Expression]
                      , conss :: [Expression]
                      }  deriving (Show, Eq) -- Show is for debugging purposes only.
 
+{- The intended semantics of |Dnf ns ps| is the disjunction |foldr1 ( .\/. ) (map notCpl ns ++ ps)|. 
+   The list |ns| and |ps| are not guaranteed to be sorted or duplicate-free.
+-}
+ 
 instance Eq Conjunct where
   rc==rc' = rc_id rc==rc_id rc'
 instance Unique Conjunct where
