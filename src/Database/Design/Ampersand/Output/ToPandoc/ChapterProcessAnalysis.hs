@@ -3,7 +3,6 @@
 module Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 where
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Classes
 import Data.List
 
 --DESCR -> the process analysis contains a section for each process in the fSpec
@@ -13,14 +12,13 @@ import Data.List
 noProcesses :: FSpec -> Bool
 noProcesses fSpec = null (fRoles fSpec)
 
-chpProcessAnalysis :: Int -> FSpec -> (Blocks,[Picture])
+chpProcessAnalysis :: Int -> FSpec -> Blocks
 chpProcessAnalysis lev fSpec
- = ( if null procs
-     then mempty
-     else headerBlocks <> roleRuleBlocks <> fromList roleRelationBlocks <> processSections
-   , pictures)
+ = if null procs
+   then mempty
+   else headerBlocks <> roleRuleBlocks <> fromList roleRelationBlocks <> processSections
+   
  where
-  pictures = [] -- Disabled the pictures, because they are not helpful. (They look like a big ball of Mud)  (map picProcessModel procs)
   procs = if null (themes fSpec)
           then vpatterns fSpec
           else [ p | p<-vpatterns fSpec, name p `elem` themes fSpec ]

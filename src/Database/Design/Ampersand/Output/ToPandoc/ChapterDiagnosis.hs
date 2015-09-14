@@ -13,21 +13,15 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
  = (  chptHeader (fsLang fSpec) Diagnosis
-   <> case fsLang fSpec of
-        Dutch   -> 
-          para (   "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
-                 <> (singleQuoted.str.name) fSpec 
-                 <> ". "
-                 <> "Deze analyse is bedoeld voor de auteur(s) van dit script. "
-                 <> "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren."
-               )
-        English -> 
-          para (   "This chapter provides an analysis of the Ampersand script of "
-                <> (singleQuoted.str.name) fSpec 
-                <> ". "
-                <> "This analysis is intended for the author(s) of this script. "
-                <> "It can be used to complete the script or to improve possible flaws."
-               )
+   <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
+                       ,EN "This chapter provides an analysis of the Ampersand script of ")
+            <> (emph.singleQuoted.str.name) fSpec 
+            <>  str ". "
+            <> (str.l) (NL $ "Deze analyse is bedoeld voor de auteur(s) van dit script. "
+                          ++ "Op basis hiervan kunnen zij het script completeren en mogelijke tekortkomingen verbeteren."
+                       ,EN $ "This analysis is intended for the author(s) of this script. "
+                          ++ "It can be used to complete the script or to improve possible flaws.")
+           )   
    <> roleomissions          -- tells which role-rule, role-interface, and role-relation assignments are missing
    <> roleRuleTable          -- gives an overview of rule-rule assignments
    <> missingConceptDefs     -- tells which concept definitions have been declared without a purpose
