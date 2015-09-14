@@ -25,10 +25,7 @@ PROCESS Contexts
     RULE garbageTerm :
       I[Term] |- leftTerm~;leftTerm \/ riteTerm~;riteTerm \/
                  lhs~;lhs \/ rhs~;rhs \/ bind~;bind
-    VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
-    ROLE ExecEngine MAINTAINS SURrules
-    RULE SURrules : I[Rule] |- rules~;rules
-    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+--  VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
 ENDPROCESS
 
 PROCESS "Subsets of type-terms"

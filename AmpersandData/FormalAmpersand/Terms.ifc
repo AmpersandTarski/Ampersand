@@ -1,11 +1,10 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
-INCLUDE "Braga.xlsx"
 
-INTERFACE Contexts (rules, relations) : '_SESSION'
+INTERFACE Contexts (valid, relations) : '_SESSION'
 TABS[ "" : V[SESSION*Context]
       ROWS [ context : I
-           , rules   : rules
+           , "valid rules"  : valid~
            , relations : relations
            ]
     ]
@@ -24,7 +23,7 @@ TABS[ concepts :V[SESSION*Concept]
     , atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
-           , type : pop - pop;isaPlus
+           , "smallest concept(s)" : pop - pop;isaPlus
            , pop  : pop
            ]
     , pairs : V[SESSION*Pair]

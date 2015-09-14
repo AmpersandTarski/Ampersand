@@ -9,7 +9,7 @@ PROCESS "Rules" -- This includes both equalities (e.g. r = s) and inequalities (
     RELATION repr[Rule*Representation] [UNI, TOT, INJ]
     RELATION leftTerm[Rule*Term] [UNI,TOT]
     RELATION riteTerm[Rule*Term] [UNI,TOT]
-    RELATION rules[Context*Rule] [INJ] -- SUR is maintained by RULE SURrules
+    RELATION valid[Rule*Context] [UNI]
 
     ROLE ExecEngine MAINTAINS domainDomRule
     RULE domainDomRule : dom~;leftTerm~;riteTerm;dom \/ dom~;riteTerm~;leftTerm;dom |- sub
