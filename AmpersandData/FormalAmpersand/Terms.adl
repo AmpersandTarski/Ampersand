@@ -5,7 +5,7 @@ INCLUDE "DomainAnalysis.adl"
     RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
     ROLE ExecEngine MAINTAINS SURrelations
     RULE SURrelations : I[Relation] |- relations~;relations
-    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+--  VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
 
 {- I can't get the following to work...  Grrr!
 PROCESS "Type graph"
