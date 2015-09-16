@@ -89,7 +89,7 @@ mkTypeMismatchError :: (ShowADL t, Association t, Traced a2, Named a) => a2 -> t
 mkTypeMismatchError o decl sot conc
  = Errors [CTXE (origin o) message]
  where
-  message = "The "++show sot++" concept for the population pairs, namely "++name conc
+  message = "The "++show sot++" concept for the population pairs, namely "++show (name conc)
             ++"\n  must be more specific or equal to that of the relation you wish to populate, namely: "++showEC (sot,decl)
 
 
