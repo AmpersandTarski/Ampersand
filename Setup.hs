@@ -10,12 +10,12 @@ import Data.List
 import Data.Either
 import Data.Char
 import Data.Time.Clock
-import Data.Time.Format
+import qualified Data.Time.Format as DTF
 import Data.Time.LocalTime
 import System.Directory
 import System.FilePath
 import System.IO
-import System.Locale
+import qualified System.Locale as SL
 import qualified Data.ByteString.Lazy.Char8 as BS
 import qualified Codec.Compression.GZip as GZip
 
@@ -34,7 +34,7 @@ generateBuildInfoHook pd  lbi uh bf =
 
     ; gitInfoStr <- getGitInfoStr
     ; clockTime <- getCurrentTime >>= utcToLocalZonedTime 
-    ; let buildTimeStr = formatTime defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
+    ; let buildTimeStr = DTF.formatTime SL.defaultTimeLocale "%d-%b-%y %H:%M:%S %Z" clockTime
     ; writeFile (pathFromModuleName buildInfoModuleName) $
         buildInfoModule cabalVersionStr gitInfoStr buildTimeStr
     
@@ -177,7 +177,7 @@ readStaticFiles fkind base fileOrDirPth =
            }
      }
   where utcToEpochTime :: UTCTime -> String
-        utcToEpochTime utcTime = formatTime defaultTimeLocale "%s" utcTime
+        utcToEpochTime utcTime = DTF.formatTime SL.defaultTimeLocale "%s" utcTime
 
 data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)
 

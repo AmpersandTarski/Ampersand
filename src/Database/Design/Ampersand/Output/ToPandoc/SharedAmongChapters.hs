@@ -53,7 +53,7 @@ import Data.List      --       (intercalate,partition)
 import Data.Monoid
 import Data.Maybe
 import Data.Ord
-import System.Locale
+import qualified System.Locale as SL
 import System.FilePath
 import GHC.Exts(sortWith)
 import Database.Design.Ampersand.Graphic.Graphics
@@ -453,8 +453,8 @@ isMissing mp =
     Nothing -> True
     Just p  -> (not . explUserdefd) p
 
-lclForLang :: Lang -> TimeLocale
-lclForLang lang = defaultTimeLocale { months =
+lclForLang :: Lang -> SL.TimeLocale
+lclForLang lang = SL.defaultTimeLocale { SL.months =
          case lang of
            Dutch   -> [ ("januari","jan"),("februari","feb"),("maart","mrt"),("april","apr")
                       , ("mei","mei"),("juni","jun"),("juli","jul"),("augustus","aug")

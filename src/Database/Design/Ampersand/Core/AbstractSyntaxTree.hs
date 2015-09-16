@@ -67,8 +67,8 @@ import Data.Char (toUpper,toLower)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
-import System.Locale (defaultTimeLocale)
-import Data.Time.Format (formatTime,readTime)
+import qualified System.Locale as SL (defaultTimeLocale)
+import qualified Data.Time.Format as DTF (formatTime,readTime)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -544,8 +544,8 @@ showValPHP val =
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> "'"++showGregorian (aadateDay val)++"'"
-   AAVDateTime {} -> "'"++formatTime defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
-     --formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVDateTime {} -> "'"++DTF.formatTime SL.defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+     --formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
 showValSQL :: AAtomValue -> String
@@ -555,8 +555,8 @@ showValSQL val =
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)
-   AAVDateTime {} -> "'"++formatTime defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
-     --formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVDateTime {} -> "'"++DTF.formatTime SL.defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+     --formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
 showValADL :: AAtomValue -> String
@@ -566,7 +566,7 @@ showValADL val =
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)
-   AAVDateTime {} -> formatTime defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVDateTime {} -> DTF.formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
  
@@ -879,10 +879,10 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                                  AAVDateTime t (truncateByFormat x)
                                   where
                                     truncateByFormat :: UTCTime  -> UTCTime
-                                    truncateByFormat = f readTime . f formatTime
+                                    truncateByFormat = f DTF.readTime . f DTF.formatTime
                                       where
                                         format = iso8601DateFormat (Just "%H:%M:%S")
-                                        f fun = fun defaultTimeLocale format
+                                        f fun = fun SL.defaultTimeLocale format
               _          -> rawVal
              
 unsafePAtomVal2AtomValue' :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
