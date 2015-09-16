@@ -16,7 +16,7 @@ copyright:      Stef Joosten
 bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 -- Recursive patterns such as static/* are not allowed in data-files. Hence we cannot use them for static files, as
 -- we would need to specify a pattern for each extension in each subdirectory.
-data-files:     
+data-files:
                 LICENSE
 
 source-repository head
@@ -29,8 +29,9 @@ executable ampersand
   hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall
-  build-depends:     
-                     HStringTemplate == 0.7.*,
+  build-depends:
+  if impl(ghc < 7.10)
+      build-depends: HStringTemplate == 0.7.*,
                      SpreadsheetML == 0.1.*,
                      base >= 4.7 && < 5.0,
                      bytestring == 0.10.*,
@@ -57,7 +58,12 @@ executable ampersand
                      lens,
                      MissingH,
                      wl-pprint
-  other-modules:     
+  else
+   build-depends:    base >= 4.7 && < 5.0,
+                     filepath == 1.4.*,
+                     time == 1.5.*
+
+  other-modules:
                      Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
@@ -164,7 +170,7 @@ Test-Suite ampersand-test
   hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -fhpc -with-rtsopts=-M1536m -Wall
-  build-depends:     
+  build-depends:
                      base,
                      bytestring >=0.10 && <0.11,
                      containers >=0.5 && <0.6,
@@ -188,7 +194,7 @@ Test-Suite ampersand-test
                      xlsx == 0.1.*,
                      zlib,
                      lens
-  other-modules:     
+  other-modules:
                      Database.Design.Ampersand.Misc.Options,
                      Database.Design.Ampersand.Test.Parser.ArbitraryPandoc,
                      Database.Design.Ampersand.Test.Parser.ArbitraryTree,
