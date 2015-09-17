@@ -12,10 +12,9 @@ import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Prelude hiding (sequence, mapM)
-import Control.Applicative
-import Data.Traversable
 import qualified Data.Set as Set
 import qualified Data.Map as Map
+import Data.Foldable (toList)
 import Data.Function
 import Data.Maybe
 import Data.List(nub)
@@ -430,7 +429,7 @@ pCtx2aCtx' _
      = case vs of 
         P_ViewExp{} -> 
           unguard $
-            (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
+            (\(obj,b) -> case toList$ findExact genLattice (mIsc c (name (source (objctx obj)))) of
                            [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
                            r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
                                  else mustBeBound (origin obj) [(Tgt,objctx obj)])
@@ -514,7 +513,7 @@ pCtx2aCtx' _
                 l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (unguard . fmap (matchWith (target objExpr)) . typecheckObjDef) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
-              ( case findExact genLattice (mIsc (name$ target objExpr) (name . source . objctx $ ojd)) of
+              ( case toList$ findExact genLattice (mIsc (name$ target objExpr) (name . source . objctx $ ojd)) of
                     [] -> mustBeOrderedLst x [(source (objctx ojd),Src, ojd)]
                     (r:_) -> pure (ojd{objctx=addEpsilonLeft' r (objctx ojd)})
               )
@@ -618,11 +617,11 @@ pCtx2aCtx' _
              (\x -> (x,b1 || b2)) <$> getAndCheckType mIsc  (p1, b1, e1) (p2, b2, e2)
      where
       getExactType flf (p1,e1) (p2,e2)
-       = case findExact genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of
+       = case toList$ findExact genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
           r  -> pure$ head r
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case findSubsets genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
+       = case toList$ findSubsets genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
           [r] -> case (b1 || Set.member (getConcept p1 e1) r,b2 || Set.member (getConcept p2 e2) r ) of
                    (True,True) -> pure (head (Set.toList r))
@@ -749,7 +748,7 @@ pCtx2aCtx' _
            pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
               unguard $
-                (\o -> case findExact genLattice $ name (source $ objctx o) `mjoin` name conc of
+                (\o -> case toList$ findExact genLattice $ name (source $ objctx o) `mjoin` name conc of
                          [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (name conc) (objctx o)}
                 ) <$> pObjDefDisamb2aObjDef ojd
@@ -761,7 +760,7 @@ pCtx2aCtx' _
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
      = unguard $
-         (\(e,(b,_)) -> case (findSubsets genLattice (mjoin (name (source e)) (getConcept s t))) of
+         (\(e,(b,_)) -> case toList$ (findSubsets genLattice (mjoin (name (source e)) (getConcept s t))) of
                           [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
                           lst -> if b || and (map (name (source e) `elem`) lst)
                                  then pure (PairViewExp orig s e)
