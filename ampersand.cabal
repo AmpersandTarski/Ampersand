@@ -182,7 +182,7 @@ Test-Suite ampersand-test
                      containers == 0.5.*,
                      directory == 1.2.*,
                      hashable == 1.2.*,
-                     lens == 4.12.*
+                     lens == 4.12.*,
                      old-locale == 1.0.*,
                      pandoc,
                      pandoc-types,
