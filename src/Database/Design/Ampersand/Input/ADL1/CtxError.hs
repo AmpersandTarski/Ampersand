@@ -25,7 +25,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
 -- Although I also consider it ill practice to export PE
 -- for the same reasons, I did this as a quick fix for the parse errors
 where
-import Control.Applicative
+--import Control.Applicative
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
@@ -45,7 +45,7 @@ _notUsed = fatal
 -- Similar to join and bind we have: unguard g = id <?> g, and f g = unguard $ f <$> pure g
 unguard :: Guarded (Guarded a) -> Guarded a
 unguard (Errors errs) = Errors errs
-unguard (Checked g)   = g  
+unguard (Checked g)   = g
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
@@ -96,12 +96,12 @@ mkTypeMismatchError o decl sot conc
 cannotDisambRel :: TermPrim -> [Expression] -> Guarded Expression
 cannotDisambRel o exprs
  = Errors [CTXE (origin o) message]
-  where 
+  where
    message =
     case exprs of
      [] -> "No declarations match the relation: "++showADL o
      _  -> case o of
-             (PNamedR(PNamedRel _ _ Nothing)) 
+             (PNamedR(PNamedRel _ _ Nothing))
                 -> intercalate "\n" $
                        ["Cannot disambiguate the relation: "++showADL o
                        ,"  Please add a signature (e.g. [A*B]) to the relation."
@@ -136,27 +136,27 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
      messageFor _ = fatal 90 "messageFor must only be used on lists with more that one element!"
 
 mkDanglingPurposeError :: Purpose -> CtxError
-mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p) 
+mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showADL (explObj p)
 -- Unfortunately, we cannot use position of the explanation object itself because it is not an instance of Trace.
 mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> String -- the reference itself. eg. "Rule 42"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
 mkDanglingRefError entity ref orig =
-  CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref   
+  CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
-mkUndeclaredError entity objDef ref = 
+mkUndeclaredError entity objDef ref =
   CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
-mkMultipleInterfaceError role ifc duplicateIfcs = 
-  CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++ 
-                      concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)       
+mkMultipleInterfaceError role ifc duplicateIfcs =
+  CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++
+                      concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)
 
 mkMultipleRepresentationsForConceptError :: String -> [Representation] -> CtxError
 mkMultipleRepresentationsForConceptError cpt rs =
-  case rs of 
-    _:r:_  
+  case rs of
+    _:r:_
       -> CTXE (origin r)
           $ "Multiple representations for concept "++show cpt++". ("
                ++(intercalate ", " . map show . nub . map reprdom) rs ++
@@ -165,25 +165,25 @@ mkMultipleRepresentationsForConceptError cpt rs =
 
 mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
 mkIncompatibleAtomValueError pav msg= CTXE (origin pav) msg
-    
+
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
 mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
-                      unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ] 
-                              
-mkIncompatibleInterfaceError :: P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError 
-mkIncompatibleInterfaceError objDef expTgt refSrc ref = 
-  CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++ " at field " ++ show (name objDef) ++ 
-                         ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++ 
+                      unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ]
+
+mkIncompatibleInterfaceError :: P_ObjDef a -> A_Concept -> A_Concept -> String -> CtxError
+mkIncompatibleInterfaceError objDef expTgt refSrc ref =
+  CTXE (origin objDef) $ "Incompatible interface reference "++ show ref ++ " at field " ++ show (name objDef) ++
+                         ":\nReferenced interface "++show ref++" has type " ++ show (name refSrc) ++
                          ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
 
 mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
 mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
 mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
-  CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++ 
+  CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++
                       concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
-                             | vd <- viewDefs ]       
+                             | vd <- viewDefs ]
 
 mkIncompatibleViewError :: P_ObjDef a -> String -> String -> String -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
@@ -193,11 +193,11 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
 mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
   CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++showADL atomValue++"`."
-    
+
 class ErrorConcept a where
   showEC :: a -> String
   showMini :: a -> String
-  
+
 instance ErrorConcept (P_ViewD a) where
   showEC x = showADL (vd_cpt x) ++" given in VIEW "++vd_lbl x
   showMini x = showADL (vd_cpt x)
@@ -208,10 +208,10 @@ instance ErrorConcept (P_IdentDef) where
 instance (ShowADL a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1,c1,e1) = showEC' (p1,c1,showADL e1)
   showMini (_,c1,_) = showADL c1
-  
+
 showEC' :: (SrcOrTgt, A_Concept, String) -> String
 showEC' (p1,c1,e1) = showADL c1++" ("++show p1++" of "++e1++")"
-  
+
 instance (ShowADL a2, Association a2) => ErrorConcept (SrcOrTgt, a2) where
   showEC (p1,e1)
    = case p1 of
@@ -221,7 +221,7 @@ instance (ShowADL a2, Association a2) => ErrorConcept (SrcOrTgt, a2) where
    = case p1 of
       Src -> showADL (source e1)
       Tgt -> showADL (target e1)
-      
+
 instance (ShowADL a2, Association a2) => ErrorConcept (SrcOrTgt, Origin, a2) where
   showEC (p1,o,e1)
    = case p1 of
@@ -291,7 +291,7 @@ instance Applicative Guarded where
 -- Shorthand for working with Guarded in IO
 whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)
 whenCheckedIO ioGA fIOGB =
-   do gA <- ioGA 
+   do gA <- ioGA
       case gA of
          Errors err -> return (Errors err)
          Checked a  -> fIOGB a
