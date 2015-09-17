@@ -24,7 +24,13 @@ VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 RELATION isa[Concept*Concept] [IRF,ASY]
 MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
 RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
+MEANING "s isa g  means that  s  is  g  or  each element of concept s  is an element of concept  g  as well."
 RELATION isaPlus[Concept*Concept] -- Transitive closure of isa, aka isa+
+MEANING "s isa g  means that each element of concept  s  is an element of concept  g  as well."
+    RELATION subRfx[TypeTerm*TypeTerm] -- Transitive, reflexive closure of sub, aka sub*
+    MEANING "s subRfx g  means that each element of type-term  s  is defined to be an element of type-term  g  or vice-versa."
+    RELATION subRfxPlus[TypeTerm*TypeTerm] -- Transitive closure of sub, aka sub+
+    MEANING "s subRfxPlus g  means that each element of type-term  s  is defined or inferred to be an element of type-term  g."
 
     RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
     ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"

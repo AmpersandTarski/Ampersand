@@ -1054,6 +1054,7 @@ iso8601DateFormat mTimeFmt =
              Nothing  -> ""
              Just fmt -> 'T' : fmt
 
+-- | The typology of a context is the partioning of the concepts in that context into sets such that (isa\/isa~)*;typology |- typology
 data Typology = Typology { tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty, mostly one concept)
                          , tyCpts :: [A_Concept]
                          } deriving Show
