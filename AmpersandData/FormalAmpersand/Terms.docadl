@@ -31,13 +31,6 @@ PURPOSE RULE signatureSrcDel
 PURPOSE RULE signatureTgtDel
 {+The relation tgt[Signature*Concept] must be cleared automatically as soon as a signature is deleted.-}
 
-PURPOSE PROCESS "Defining type-terms"
-{+The type system is built on a reasoning with the sets of atoms (domains) that constitute the set-theoretic semantics of the relation algebra on which Ampersand is built.
-For reasoning with sets of atoms, we introduce type-terms to represent such sets.
-By this means, set-theoretic proofs are constructed from which the type of every term is derived.
-This pattern is restricted to defining type-terms from terms.
--}
-
 CONCEPT TypeTerm "A type-term represents a set of atoms."
 PURPOSE CONCEPT TypeTerm
 {+
