@@ -67,7 +67,6 @@ import Data.Char (toUpper,toLower)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
-import qualified System.Locale as SL (defaultTimeLocale)
 import qualified Data.Time.Format as DTF (formatTime,readTime,defaultTimeLocale)
 
 fatal :: Int -> String -> a

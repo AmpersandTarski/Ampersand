@@ -1,6 +1,6 @@
-module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec 
+module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec
   (createFSpec)
-  
+
 where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Database.Design.Ampersand.Basics
@@ -12,8 +12,6 @@ import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
-import Data.Traversable (sequenceA)
-import Control.Applicative
 import Database.Design.Ampersand.Core.ToMeta
 import Control.Monad
 
@@ -30,7 +28,7 @@ createFSpec opts =
      genFiles userP_Ctx >> genTables userP_Ctx
    where
     genFiles :: Guarded P_Context -> IO(Guarded ())
-    genFiles uCtx 
+    genFiles uCtx
       = case pCtx2Fspec uCtx of
           Errors es -> return(Errors es)
           Checked uFspec
@@ -40,10 +38,10 @@ createFSpec opts =
 
     genTables :: Guarded P_Context -> IO(Guarded FSpec)
     genTables uCtx= case whatTablesToCreateExtra of
-       Nothing 
+       Nothing
          -> return (pCtx2Fspec uCtx)
        Just mType
-         -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the 
+         -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the
                let populationPctx       = unguard ( grind mType <$> pCtx2Fspec uCtx)
                    populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
                    metaPopulatedRapPctx = toMeta opts <$> populatedRapPctx
@@ -51,16 +49,16 @@ createFSpec opts =
                return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
 
     whatTablesToCreateExtra :: Maybe MetaType
-    whatTablesToCreateExtra 
+    whatTablesToCreateExtra
        | genASTTables opts     = Just AST
        | genGenericTables opts = Just Generics
        | otherwise             = Nothing
 
     getFormalFile :: MetaType -> IO(Guarded P_Context)
     getFormalFile mType
-     = do parseADL opts (Right mType) 
-    
-    
+     = do parseADL opts (Right mType)
+
+
     toFspec :: A_Context -> Guarded FSpec
     toFspec = pure . makeFSpec opts
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
@@ -75,11 +73,11 @@ createFSpec opts =
       = fmap fstIfNoIncludes $ parseCtx f c
       where (f,c) = makeMetaPopulationFile mType fSpec
             fstIfNoIncludes (a,includes)
-             = case includes of 
+             = case includes of
                [] -> a
                _  -> fatal 83 "Meatgrinder returns included file. That isn't anticipated."
-            
-     
+
+
 
 doGenMetaFile :: MetaType -> FSpec -> IO()
 doGenMetaFile mType fSpec =
@@ -89,4 +87,3 @@ doGenMetaFile mType fSpec =
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) $ fpath
        (fpath,contents) = makeMetaPopulationFile mType fSpec
- 

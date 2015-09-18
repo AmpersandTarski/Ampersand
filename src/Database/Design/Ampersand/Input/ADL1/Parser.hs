@@ -13,7 +13,6 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
-import Control.Applicative(pure)
 import Prelude hiding ((<$))
 
 fatal :: Int -> String -> a

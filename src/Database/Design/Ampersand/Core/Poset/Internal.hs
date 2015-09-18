@@ -12,7 +12,6 @@ module Database.Design.Ampersand.Core.Poset.Internal where
 
 import qualified Prelude
 import Prelude hiding (Ordering(..), Ord(..))
-import Data.Monoid
 import Database.Design.Ampersand.Basics (fatalMsg)
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.Poset.Internal"
@@ -110,4 +109,3 @@ class Poset a => Sortable a where
 -- | Class for totally ordered data types.  Instances should satisfy
 -- @isOrdered a = True@ for all @a@.
 class Poset a => Ord a
-
