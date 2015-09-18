@@ -187,6 +187,7 @@ Test-Suite ampersand-test
                      old-locale == 1.0.*,
                      pandoc,
                      pandoc-types,
+                     simple-sql-parser >= 0.4.1 && == 0.4.*,
                      parsec == 3.1.*,
                      QuickCheck == 2.8.*,
                      xlsx == 0.1.*,
