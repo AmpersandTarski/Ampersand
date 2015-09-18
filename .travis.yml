@@ -11,7 +11,7 @@ matrix:
     - env: CABALVER=1.18 GHCVER=7.8.4
       addons: {apt: {sources: [hvr-ghc], packages: [cabal-install-1.18,ghc-7.8.4,happy-1.19.5,alex-3.1.4]}}
     - env: CABALVER=1.22 GHCVER=7.10.1
-      addons: {apt: {sources: [hvr-ghc], packages: [cabal-install-1.22,ghc-7.10.1,happy-1.19.5,alex-3.1.4]}}
+      addons: {apt: {sources: [hvr-ghc], packages: [cabal-install-1.22.4,ghc-7.10.1,happy-1.19.5,alex-3.1.4]}}
     - env: CABALVER=1.22 GHCVER=7.10.2
       addons: {apt: {sources: [hvr-ghc], packages: [cabal-install-1.22,ghc-7.10.2,happy-1.19.5,alex-3.1.4]}}
     - env: CABALVER=head GHCVER=head
@@ -19,8 +19,8 @@ matrix:
 
   allow_failures:
     - env: CABALVER=1.18 GHCVER=7.8.4
-#    - env: CABALVER=1.22 GHCVER=7.10.1
-#    - env: CABALVER=head GHCVER=head
+    - env: CABALVER=1.22 GHCVER=7.10.1
+    - env: CABALVER=head GHCVER=head
 
 before_install:
   - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH
