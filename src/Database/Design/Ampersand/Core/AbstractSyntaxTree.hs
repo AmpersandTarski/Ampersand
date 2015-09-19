@@ -67,7 +67,7 @@ import Data.Char (toUpper,toLower)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
-import qualified Data.Time.Format as DTF (formatTime,readTime,defaultTimeLocale)
+import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Core.AbstractSyntaxTree"
@@ -878,9 +878,10 @@ unsafePAtomVal2AtomValue typ mCpt pav =
                                  AAVDateTime t (truncateByFormat x)
                                   where
                                     truncateByFormat :: UTCTime  -> UTCTime
-                                    truncateByFormat = f DTF.readTime . f DTF.formatTime
+                                    truncateByFormat = f (DTF.parseTimeOrError True) . f DTF.formatTime
                                       where
-                                        format = iso8601DateFormat (Just "%H:%M:%S")
+                                        format = DTF.iso8601DateFormat (Just "%H:%M:%S")
+                                    --    f:: DTF.TimeLocale -> String -> typ
                                         f fun = fun DTF.defaultTimeLocale format
               _          -> rawVal
 
@@ -1028,30 +1029,13 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                  , "defined as "++show expected++". The found value does not match that type."
                  ]
         where
-          c = fromMaybe (fatal 1004 $ "Representation mismatch without concept known should not happen.") mCpt
+          c = fromMaybe (fatal 1004 "Representation mismatch without concept known should not happen.") mCpt
           expected = if typ == Object then Alphanumeric else typ
           implicitly = if typ == Object then "(implicitly) " else ""
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      maybeRead :: Read a => String -> Maybe a
      maybeRead = fmap fst . listToMaybe . reads
 
--- Awaiting use of time package 1.5, we copy from there:
-
-{- | Construct format string according to <http://en.wikipedia.org/wiki/ISO_8601 ISO-8601>.
-
-The @Maybe String@ argument allows to supply an optional time specification. E.g.:
-
-@
-'iso8601DateFormat' Nothing            == "%Y-%m-%d"           -- i.e. @/YYYY-MM-DD/@
-'iso8601DateFormat' (Just "%H:%M:%S")  == "%Y-%m-%dT%H:%M:%S"  -- i.e. @/YYYY-MM-DD/T/HH:MM:SS/@
-@
--}
-
-iso8601DateFormat :: Maybe String -> String
-iso8601DateFormat mTimeFmt =
-    "%Y-%m-%d" ++ case mTimeFmt of
-             Nothing  -> ""
-             Just fmt -> 'T' : fmt
 
 -- | The typology of a context is the partioning of the concepts in that context into sets such that (isa\/isa~)*;typology |- typology
 data Typology = Typology { tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty, mostly one concept)

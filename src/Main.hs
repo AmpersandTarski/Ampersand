@@ -80,7 +80,7 @@ doGenProto fSpec =
               ; generatePhp fSpec
               ; generateGenerics fSpec
 
-              ; if (newFrontend (getOpts fSpec)) then
+              ; if newFrontend (getOpts fSpec) then
                   doGenFrontend fSpec
                 else
                   generateCustomCss fSpec
