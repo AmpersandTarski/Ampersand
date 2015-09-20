@@ -146,7 +146,7 @@ PROCESS "Domain Analysis for Compositions"
     RULE subComposition :
       dom~;I[Composition];first[BinaryTerm*Term];dom  \/
       cod~;I[Composition];second[BinaryTerm*Term];cod \/
-      inter~;first;cod \/ inter~;second;dom           |- sub
+      inter[Composition*TypeTerm]~;first;cod \/ inter[Composition*TypeTerm]~;second;dom           |- sub
       VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
       ROLE ExecEngine MAINTAINS subComposition
     {- FYI: Haskell equivalent
@@ -207,9 +207,25 @@ PROCESS "Domain Analysis for Unary complement"
 ENDPROCESS
 
 PROCESS "Domain Analysis for Relational Addition"
+    VIEW RelationalAddition : RelationalAddition(TXT "(", first, TXT "!", second, TXT ")")
+    CLASSIFY RelationalAddition ISA BinaryTerm
+    RELATION inter[RelationalAddition*TypeTerm]
 
+    ROLE ExecEngine MAINTAINS relAddNewTypeTerm
+    RULE relAddNewTypeTerm : I[RelationalAddition] |- inter;inter~
+    VIOLATION ( TXT "{EX}_; InsPair_;inter_;RelationalAddition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC I, TXT ")"
+              , TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC  first;cod   , TXT "_;TypeTerm_;inter(", SRC I, TXT ")"
+              , TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC second;dom   , TXT "_;TypeTerm_;inter(", SRC I, TXT ")"
+              )
+
+    RULE subRelationalAddition :
+      dom~;I[RelationalAddition];first[BinaryTerm*Term];dom  \/
+      cod~;I[RelationalAddition];second[BinaryTerm*Term];cod \/
+      inter[RelationalAddition*TypeTerm]~;first;cod \/ inter[RelationalAddition*TypeTerm]~;second;dom |- sub
+      VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+      ROLE ExecEngine MAINTAINS subRelationalAddition
     {- FYI: Haskell equivalent
-    = case term of (PRad _ a b) -> dom x .<. dom a .+. cod x .<. cod b .+. mGeneric' Tgt a Src b x .+. uType a a .+. uType b b
+    = case term of (PRad _ a b) -> dom x .<. dom a .+. cod x .<. cod b .+. mGeneric' Tgt a Src b x
     -}
 ENDPROCESS
 
