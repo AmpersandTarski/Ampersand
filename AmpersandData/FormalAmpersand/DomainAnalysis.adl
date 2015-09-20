@@ -21,7 +21,7 @@ ENDPROCESS
 PROCESS "Defining type-terms"
     RELATION dom[Term*TypeTerm] [UNI]                         -- TOT is maintained in RULE "dom is total"
     RELATION cod[Term*TypeTerm] [UNI]                         -- TOT is maintained in RULE "cod is total"
-    RELATION pop[Concept*TypeTerm] [UNI]                      -- TOT is maintained in RULE "pop is total"
+    RELATION popset[Concept*TypeTerm] [UNI]                   -- TOT is maintained in RULE "popset is total"
 
     RULE "dom is total" :                                    
       I[Term] |- dom;dom~
@@ -31,10 +31,10 @@ PROCESS "Defining type-terms"
       I[Term] |- cod;cod~
       VIOLATION (TXT "{EX}_; InsPair_;cod_;Term_;", SRC I, TXT "_;TypeTerm_;cod(", SRC I, TXT ")")
       ROLE ExecEngine MAINTAINS "cod is total"
-    RULE "pop is total" : 
-      I[Concept] |- pop;pop~
-      VIOLATION (TXT "{EX}_; InsPair_;pop_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC I, TXT ")")
-      ROLE ExecEngine MAINTAINS "pop is total"
+    RULE "popset is total" : 
+      I[Concept] |- popset;popset~
+      VIOLATION (TXT "{EX}_; InsPair_;pop_;Concept_;", SRC I, TXT "_;TypeTerm_;popset(", SRC I, TXT ")")
+      ROLE ExecEngine MAINTAINS "popset is total"
 ENDPROCESS
 
 PROCESS "Define order on type-terms"
@@ -77,10 +77,13 @@ PROCESS "Domain Analysis for Relations" -- This includes Vee-terms (e.g. V[A*B])
     VIEW Relation : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
     CLASSIFY Relation ISA Term
 
-    {-Example: for relation r[A*B] we get  dom(r) |- pop(A)   and   cod(r) |- pop(B) -}
-    ROLE ExecEngine MAINTAINS subRelation
+    {-Example: for relation r[A*B] we get  dom(r) |- popset(A)   and   cod(r) |- popset(B) -}
     RULE subRelation : dom~;source;popset \/ cod~;target;popset |- sub
-    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+      VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+      ROLE ExecEngine MAINTAINS subRelation
+    {- FYI: Haskell equivalent
+       case rel of PNamedRel _ _ (Just s) -> dom x.<.thing src .+. cod x.<.thing trg where Sign src trg = pSign2aSign s
+    -}
 ENDPROCESS
 
 PROCESS "Domain Analysis for Intersections"
@@ -92,6 +95,10 @@ PROCESS "Domain Analysis for Intersections"
       cod~;I[Intersection];first[BinaryTerm*Term];cod \/ cod~;I[Intersection];second[BinaryTerm*Term];cod |- sub
       VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
       ROLE ExecEngine MAINTAINS subIntersection
+    {- FYI: Haskell equivalent
+    = case term of (PIsc _ a b)  -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
+                                    .+. mSpecific Src a Src b Src x .+. mSpecific Tgt a Tgt b Tgt x
+    -}
 ENDPROCESS
 
 PROCESS "Domain Analysis for Unions"
@@ -99,10 +106,14 @@ PROCESS "Domain Analysis for Unions"
     CLASSIFY Union ISA BinaryTerm
 
     RULE subUnion :
-      dom~;I[Union];first[BinaryTerm*Term];dom \/ dom~;I[Union];second[BinaryTerm*Term];dom \/
-      cod~;I[Union];first[BinaryTerm*Term];cod \/ cod~;I[Union];second[BinaryTerm*Term];cod |- sub~
+      dom~;first[BinaryTerm*Term]~;I[Union];dom \/ dom~;second[BinaryTerm*Term]~;I[Union];dom \/
+      cod~;first[BinaryTerm*Term]~;I[Union];cod \/ cod~;second[BinaryTerm*Term]~;I[Union];cod |- sub
       VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
       ROLE ExecEngine MAINTAINS subUnion
+    {- FYI: Haskell equivalent
+    = case term of (PUni _ a b)  -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
+                                    .+. mGeneric Src a Src b Src x .+. mGeneric Tgt a Tgt b Tgt x
+    -}
 ENDPROCESS
 
 PROCESS "Domain Analysis for Minuses"
@@ -113,9 +124,12 @@ PROCESS "Domain Analysis for Minuses"
       dom~;I[Minus];first[BinaryTerm*Term];dom \/
       cod~;I[Minus];second[BinaryTerm*Term];cod |- sub
       VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-      ROLE ExecEngine MAINTAINS domainDomMinus
+      ROLE ExecEngine MAINTAINS subMinus
+    {- FYI: Haskell equivalent
+    = case term of (PDif o a b) -> dom x.<.dom a .+. cod x.<.cod a
+                                   .+. mGeneric Src x Src b Src (PUni o a b) .+. mGeneric Tgt x Tgt b Tgt (PUni o a b)
+    -}
 ENDPROCESS
-
 
 PROCESS "Domain Analysis for Compositions"
     VIEW Composition : Composition(TXT "(", first, TXT ";", second, TXT ")")
@@ -124,9 +138,9 @@ PROCESS "Domain Analysis for Compositions"
 
     ROLE ExecEngine MAINTAINS compositionNewTypeTerm
     RULE compositionNewTypeTerm : I[Composition] {-/\ first;cod;(subStar;subStar~);dom~;second~-} |- inter;inter~
-    VIOLATION (TXT "{EX}_; InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC I, TXT ")"
-              ,TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC I, TXT ")_;TypeTerm_;", SRC first;cod
-              ,TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC I, TXT ")_;TypeTerm_;", SRC second;dom
+    VIOLATION ( TXT "{EX}_; InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC I, TXT ")"
+              , TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC I, TXT ")_;TypeTerm_;", SRC first;cod
+              , TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC I, TXT ")_;TypeTerm_;", SRC second;dom
               )
 
     RULE subComposition :
@@ -135,41 +149,84 @@ PROCESS "Domain Analysis for Compositions"
       inter~;first;cod \/ inter~;second;dom           |- sub
       VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
       ROLE ExecEngine MAINTAINS subComposition
+    {- FYI: Haskell equivalent
+    = case term of (PCps _ a b) -> dom x.<.dom a .+. cod x.<.cod b .+. mSpecific' Tgt a Src b x
+    -}
 ENDPROCESS
 
 PROCESS "Domain Analysis for Converses"
     VIEW Converse : Converse(arg, TXT "~")
     CLASSIFY Converse ISA UnaryTerm
 
-    ROLE ExecEngine MAINTAINS converse, converseFlp
-    RULE converse :    dom~;I[Converse];arg;cod \/ cod~;I[Converse];arg;dom |- sub
-    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-    RULE converseFlp : dom~;I[Converse];arg;cod \/ cod~;I[Converse];arg;dom |- sub~
-    VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", TGT I, TXT "_;TypeTerm_;", SRC I)
+    RULE subConverse :
+      dom~;I[Converse];arg ;cod \/ cod~;I[Converse];arg; dom \/
+      dom~;arg~;I[Converse];cod \/ cod~;arg~;I[Converse];dom |- sub
+      VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+      ROLE ExecEngine MAINTAINS subConverse
+    {- FYI: Haskell equivalent
+    = (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x
+    -}
 ENDPROCESS
 
-PROCESS "Domain Analysis for Daggers"
+PROCESS "Domain Analysis for Cartesian product"
+    VIEW CartesianProduct : CartesianProduct(TXT "(", first, TXT "#", second, TXT ")")
+    CLASSIFY CartesianProduct ISA BinaryTerm
 
+    RULE subCartProd :
+      dom~;I[CartesianProduct];first ;dom \/ cod~;I[CartesianProduct];second ;cod \/
+      dom~;first~;I[CartesianProduct];dom \/ cod~;second~;I[CartesianProduct];cod |- sub
+      VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+      ROLE ExecEngine MAINTAINS subCartProd
+    {- FYI: Haskell equivalent
+    = case term of  (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b
+    -}
+ENDPROCESS
+
+PROCESS "Domain Analysis for Kleene closures"
+    VIEW KleeneStar : KleeneStar(arg, TXT "*")
+    VIEW KleenePlus : KleenePlus(arg, TXT "+")
+    CLASSIFY KleeneStar ISA UnaryTerm
+    CLASSIFY KleenePlus ISA UnaryTerm
+
+    RULE subKleeneClosures :
+      dom~;arg~;(I[KleeneStar]\/I[KleenePlus]);dom \/ cod~;arg~;(I[KleeneStar]\/I[KleenePlus]);cod |- sub
+      VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+      ROLE ExecEngine MAINTAINS subKleeneClosures
+    {- FYI: Haskell equivalent
+    = case term of  (PKl0 _ e) -> dom e.<.dom x .+. cod e.<.cod x
+                    (PKl1 _ e) -> dom e.<.dom x .+. cod e.<.cod x
+    -}
+ENDPROCESS
+
+PROCESS "Domain Analysis for Unary complement"
+
+    {- FYI: Haskell equivalent
+    = case term of  (PCpl o a) -> let e = PDif o (PVee o) a
+                                  in dom x.=.dom e .+. cod x.=.cod e
+    -}
+ENDPROCESS
+
+PROCESS "Domain Analysis for Relational Addition"
+
+    {- FYI: Haskell equivalent
+    = case term of (PRad _ a b) -> dom x .<. dom a .+. cod x .<. cod b .+. mGeneric' Tgt a Src b x .+. uType a a .+. uType b b
+    -}
 ENDPROCESS
 
 PROCESS "Domain Analysis for Left residual"
 
+    {- FYI: Haskell equivalent
+    = case term of  (PLrs o a b) -> let e = complement (PCps o (complement a) (p_flp b))
+                                    in dom x.=.dom e .+. cod x.=.cod e
+    -}
 ENDPROCESS
 
 PROCESS "Domain Analysis for Right residual"
 
-ENDPROCESS
-
-PROCESS "Domain Analysis for Cartesian product"
-
-ENDPROCESS
-
-PROCESS "Domain Analysis for Kleene star"
-
-ENDPROCESS
-
-PROCESS "Domain Analysis for Kleene plus"
-
+    {- FYI: Haskell equivalent
+    = case term of  (PRrs o a b) -> let e = complement (PCps o (p_flp a) (complement b))
+                                    in dom x.=.dom e .+. cod x.=.cod e
+    -}
 ENDPROCESS
 
 PROCESS "Allocate signatures to terms"
@@ -197,16 +254,6 @@ PROCESS "Analysing terms"
     ROLE ExecEngine MAINTAINS "INS isa INTO sub"
     RULE "INS isa INTO sub" : popset~;isa;popset |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-
-    ROLE User MAINTAINS "Unambiguous pretype"
-    RULE "Unambiguous pretype" : pretype~;pretype |- I[Concept]
-    MEANING "For every type-term, there is at most one concept that is the pretype of that type-term."
-    MESSAGE "Every type-term must be subset of one concept only."
-    VIOLATION (SRC pretype~, TXT " contains instances of both ", SRC pretype~, TXT " and ", TGT pretype~, TXT ".")
-
-    ROLE User MAINTAINS "Complete pretype"
-    RULE "Complete pretype" : I[TypeTerm] |- pretype;pretype~
-    MEANING "Every type-term must have a concept as its pretype."
 ENDPROCESS
 
 PROCESS "Superfluous terms"
