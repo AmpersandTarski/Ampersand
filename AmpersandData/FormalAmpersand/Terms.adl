@@ -7,6 +7,27 @@ INCLUDE "DomainAnalysis.adl"
     RULE SURrelations : I[Relation] |- relations~;relations
     VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
+PROCESS "Type checking"
+    RULE "Unambiguous pretype"
+     : pretype |- pretype~\I[Concept]
+    MESSAGE "Every type-term must be subset of one concept only."
+    VIOLATION (SRC I, TXT " is a subset of ", TGT I, TXT ".")
+    ROLE User MAINTAINS "Unambiguous pretype"
+
+    RULE "Complete pretype"
+     : I[TypeTerm] |- pretype;pretype~
+    MESSAGE "Every type-term must have one concept as its pretype."
+    VIOLATION (SRC I, TXT " has no pretype.")
+    ROLE User MAINTAINS "Complete pretype"
+
+    RULE compositionCheck :
+     I[Composition];first;tgt |- (src~;second~)\I
+    MESSAGE "Source and target in a composition must match."
+    VIOLATION (SRC I, TXT ": the tgt of ", SRC first, TXT " is ", TGT I, TXT " and ", SRC second;src, TXT " is the src of ", SRC second, TXT ", which is a mismatch.")
+    ROLE User MAINTAINS compositionCheck
+ENDPROCESS
+
+
 {- I can't get the following to work...  Grrr!
 PROCESS "Type graph"
     RELATION elem[TypeTerm*Node] [UNI]
