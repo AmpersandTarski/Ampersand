@@ -128,7 +128,7 @@ copyIncludes fSpec =
           ; sequence_ (fmap copyInclude absIncludes) -- recursively copy all includes
                       
           ; let ignoredPaths = includeDirContents \\ map includeSrc absIncludes
-          ; when (not $ null ignoredPaths) $
+          ; when (not . null . filter (\str -> head str /= '.') $ ignoredPaths) $  --filter paths starting with a dot, because on mac this is very common and it is a nuisance to avoid (see issue #
              do { putStrLn $ "\nWARNING: only the following include/ paths are allowed:\n  " ++ show (map includeSrc allowedIncludeSubDirs) ++ "\n"
                 ; mapM_ (\d -> putStrLn $ "  Ignored " ++ d) $ ignoredPaths
                 }
