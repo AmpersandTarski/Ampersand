@@ -54,7 +54,7 @@ writeStaticFiles opts =
                  ]
   else verboseLn opts "Skipping static files (because of command line argument)"
  where isRequired :: StaticFile -> Bool
-       isRequired sf = fileKind sf `elem` [if newFrontend opts then ZwolleFrontEnd else OldFrontend]
+       isRequired sf = fileKind sf == ZwolleFrontEnd
 writeStaticFile :: Options -> StaticFile -> IO()
 writeStaticFile opts sf =
   do { createDirectoryIfMissing True (takeDirectory (absFilePath opts sf))
