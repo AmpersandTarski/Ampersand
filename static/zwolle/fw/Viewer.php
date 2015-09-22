@@ -15,7 +15,7 @@ class Viewer {
 		$this->addHtmlLine('<html ng-app="AmpersandApp">');
 		$this->addHtmlLine('<head>');
 				
-		$this->addHtmlLine('<title>'.$dbName.'</title>');
+		$this->addHtmlLine('<title>'.Config::get('contextName').'</title>');
 		
 		// Meta tags
 		$this->addHtmlLine('<meta name="viewport" content="width=device-width, initial-scale=1.0"/>');
