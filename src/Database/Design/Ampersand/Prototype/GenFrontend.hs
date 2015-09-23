@@ -322,14 +322,14 @@ genView_Interface fSpec interf =
                      . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "editableRelations"   (map (show . escapeIdentifier . name) . _ifcEditableRels $ interf) -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
-                     . setAttribute "interfaceName"       (escapeIdentifier . ifcName $ interf)
-                     . setAttribute "interfaceLabel"      (ifcName interf) -- no escaping for labels in templates needed
+                     . setAttribute "interfaceName"       (ifcName  interf)
+                     . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"              (showADL . _ifcExp $ interf)
                      . setAttribute "source"              (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"              (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
 
-    ; let filename = escapeIdentifier (ifcName interf) ++ ".html" -- filenames with spaces aren't a huge problem, but it's probably safer to prevent them
+    ; let filename = ifcName interf ++ ".html" 
     ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
     }
 
@@ -448,13 +448,13 @@ genController_Interface fSpec interf =
                      . setAttribute "containsEditable"         containsEditable
                      . setAttribute "containsEditableObjects"  containsEditableObjects
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
-                     . setAttribute "interfaceName"            (escapeIdentifier . ifcName $ interf)
-                                         . setAttribute "interfaceLabel"           (ifcName interf) -- no escaping for labels in templates needed
+                     . setAttribute "interfaceName"            (ifcName interf)
+                     . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
 
-    ; let filename = (escapeIdentifier . ifcName $ interf) ++ ".js"
+    ; let filename = ifcName interf ++ ".js"
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
     
