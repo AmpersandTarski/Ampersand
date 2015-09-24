@@ -1,46 +1,26 @@
-﻿CONTEXT AST IN ENGLISH 
+﻿CONTEXT AST IN ENGLISH LATEX
+--INCLUDE "Atoms.docadl" TODO: Fix documentation, so it compiles again and hence can be included here
 
 PROCESS Atoms
-    RELATION name[Concept*Identifier] [UNI,TOT]
-    RELATION name[Relation*Identifier] [UNI,TOT]
-    RELATION source[Relation*Concept] [UNI,TOT]
-    RELATION target[Relation*Concept] [UNI,TOT]
+RELATION repr[Atom*Representation] [UNI,TOT]
+MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Representation TYPE ALPHANUMERIC
 
-    REPRESENT Identifier TYPE ALPHANUMERIC
+RELATION pop[Atom*Concept]
+MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
-    RULE "Identifiability of concepts": name;name~ |- I[Concept]
-    VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
+RELATION name[Concept*Identifier] [UNI,TOT]
+MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Identifier TYPE ALPHANUMERIC
 
-    RELATION in[Pair*Relation] [UNI,TOT]
-    RELATION l[Pair*Atom] [UNI,TOT]
-    RELATION r[Pair*Atom] [UNI,TOT]
-ENDPROCESS
+RULE "Identifiability of concepts": name;name~ |- I[Concept]
+MEANING "The name of a concept identifies that concept."
+VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
-PROCESS "Compute sources, targets, and populations"
-    RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
-    RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
+RULE "Identifiability of atoms": repr;repr~ /\ pop;pop~ |- I[Atom]
+MEANING "An Atom is identifiable by its representation and its concept."
+VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
-    ROLE ExecEngine MAINTAINS isaRelInsSrc, isaRelInsTgt, isaRelDelSrc, isaRelDelTgt
-    RULE isaRelInsSrc: source;isaStar~ |- sources
-    VIOLATION (TXT "{EX} InsPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
-    RULE isaRelInsTgt: target;isaStar~ |- targets
-    VIOLATION (TXT "{EX} InsPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
-    RULE isaRelDelSrc: sources |- source;isaStar~
-    VIOLATION (TXT "{EX} DelPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
-    RULE isaRelDelTgt: targets |- target;isaStar~
-    VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
-
-    RELATION pop[Atom*Concept]
-    MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
-
-    ROLE ExecEngine MAINTAINS insPop, delPop
-    RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop
-    VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-    RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
-    VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-ENDPROCESS
-
-PROCESS "Compute Closures"
     RELATION isa[Concept*Concept] [IRF,ASY]
     MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
     RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
@@ -58,6 +38,41 @@ PROCESS "Compute Closures"
     VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
     RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+
+RELATION name[Relation*Identifier] [UNI,TOT]
+RELATION source[Relation*Concept] [UNI,TOT]
+RELATION target[Relation*Concept] [UNI,TOT]
+
+RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
+RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
+
+ROLE ExecEngine MAINTAINS isaRelInsSrc, isaRelInsTgt, isaRelDelSrc, isaRelDelTgt
+RULE isaRelInsSrc: source;isaStar~ |- sources
+VIOLATION (TXT "{EX} InsPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelInsTgt: target;isaStar~ |- targets
+VIOLATION (TXT "{EX} InsPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelDelSrc: sources |- source;isaStar~
+VIOLATION (TXT "{EX} DelPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelDelTgt: targets |- target;isaStar~
+VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
+RELATION in[Pair*Relation] [UNI,TOT]
+RELATION l[Pair*Atom] [UNI]
+RELATION r[Pair*Atom] [UNI]
+
+RULE insLeft : I[Pair] |- l;l~
+    VIOLATION (TXT "{EX} NewStruct;Atom;" -- maak een nieuw atoom in concept Atom
+              ,TXT ";l;Pair;", SRC I, TXT ";Atom;_NEW")
+RULE insRight : I[Pair] |- r;r~
+    VIOLATION (TXT "{EX} NewStruct;Atom;" -- maak een nieuw atoom in concept Atom
+              ,TXT ";r;Pair;", SRC I, TXT ";Atom;_NEW")
+ROLE ExecEngine MAINTAINS insLeft, insRight
+
+ROLE ExecEngine MAINTAINS insPop, delPop
+RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
+VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+
 ENDPROCESS
 
 ENDCONTEXT

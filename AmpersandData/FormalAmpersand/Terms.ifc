@@ -3,7 +3,7 @@ INCLUDE "Terms.adl"
 INCLUDE "Views.adl"
 INCLUDE "Atoms.xlsx"
 
-INTERFACE Contexts (relations) : '_SESSION'
+INTERFACE Contexts (valid,relations) : '_SESSION'
 TABS[ "" : V[SESSION*Context]
       ROWS [ context        : I
            , "valid rules"  : valid~

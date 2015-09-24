@@ -3,6 +3,8 @@
 INCLUDE "Atoms.adl"
 INCLUDE "DomainAnalysis.adl"
 
+
+    RELATION valid[Rule*Context] [UNI]
     RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
     ROLE ExecEngine MAINTAINS SURrelations
     RULE SURrelations : I[Relation] |- relations~;relations
@@ -82,7 +84,6 @@ ENDPROCESS
 {- I can't get the following to work...  Grrr!
 PROCESS "Type graph"
     RELATION elem[TypeTerm*Node] [UNI]
-    RELATION valid[Rule*Context] [UNI]
 
     ROLE ExecEngine MAINTAINS elemFill, elemNew
     RULE elemNew : I[TypeTerm] |- elem;elem~
