@@ -20,11 +20,61 @@ PROCESS "Type checking"
     VIOLATION (SRC I, TXT " has no pretype.")
     ROLE User MAINTAINS "Complete pretype"
 
-    RULE compositionCheck :
-     I[Composition];first;tgt |- (src~;second~)\I
-    MESSAGE "Source and target in a composition must match."
-    VIOLATION (SRC I, TXT ": the tgt of ", SRC first, TXT " is ", TGT I, TXT " and ", SRC second;src, TXT " is the src of ", SRC second, TXT ", which is a mismatch.")
-    ROLE User MAINTAINS compositionCheck
+    RULE checkComposition :
+      I[Composition];first;tgt |- (src~;second~)\isaRfxStar
+      MESSAGE "Source and target in a composition must match."
+      VIOLATION ( TXT "In ", SRC I
+                , TXT ", the target concept of ", SRC first
+                , TXT " is ", TGT I
+                , TXT " and ", SRC second;src
+                , TXT " is the source concept of ", SRC second
+                , TXT ", which is a mismatch.")
+      ROLE User MAINTAINS checkComposition
+
+    RULE checkLeftResidual :
+      tgt~;second~;I[LeftResidual] |- isaStar/(first;tgt)
+      VIOLATION ( TXT "In ", TGT I
+                , TXT ", the target concept of ", TGT second
+                , TXT " is ", TGT second;tgt
+                , TXT " and ", TGT first;tgt
+                , TXT " is the target concept of ", TGT first
+                , TXT ", which is a mismatch.")
+      ROLE User MAINTAINS checkLeftResidual
+
+    RULE checkRightResidual :
+      I[RightResidual];second;src |- (src~;first~)\isaStar
+      VIOLATION ( TXT "In ", SRC I
+                , TXT ", the source concept of ", SRC first
+                , TXT " is ", SRC first;src
+                , TXT " and ", SRC second;src
+                , TXT " is the source concept of ", SRC second
+                , TXT ", which is a mismatch.")
+      ROLE User MAINTAINS checkRightResidual
+ENDPROCESS
+
+PROCESS "Reflexive isa closures"
+    RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa\/isa~
+    MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
+    RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa\/isa~
+    MEANING "s isaRfxPlus g  means that each element of concept  s  is an element of concept  g  or vice-versa."
+
+    RELATION isaRfx[Concept*Concept] -- isaRfx=isa\/isa~
+    ROLE ExecEngine MAINTAINS "Compute isaRfxIns", "Compute isaRfxDel"
+    RULE "Compute isaRfxIns" : isa\/isa~ |- isaRfx
+    VIOLATION (TXT "{EX} InsPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxDel" : isaRfx |- isa\/isa~
+    VIOLATION (TXT "{EX} DelPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
+
+    RELATION isaRfxCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa\\/isa~"
+    RULE "Compute transitive closure of isa\\/isa~" : isaRfx = isaRfxCopy
+    VIOLATION (TXT "{EX} TransitiveClosure;isaRfx;Concept;isaRfxCopy;isaRfxPlus")
+
+    ROLE ExecEngine MAINTAINS "Compute isaRfxStar by Ins", "Compute isaRfxStar by Del"
+    RULE "Compute isaRfxStar by Ins" : isaRfxPlus\/I |- isaRfxStar
+    VIOLATION (TXT "{EX} InsPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxStar by Del" : isaRfxStar |- isaRfxPlus\/I
+    VIOLATION (TXT "{EX} DelPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPROCESS
 
 

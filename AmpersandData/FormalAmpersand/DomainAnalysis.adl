@@ -59,15 +59,15 @@ ENDPROCESS
 
 PROCESS "Domain Analysis for Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
     CONCEPT Rule ""
-    RELATION lhTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
-    RELATION rhTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
+    RELATION lhsTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
+    RELATION rhsTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
  
     ROLE ExecEngine MAINTAINS domainDomRule
-    RULE domainDomRule : dom~;lhTerm~;rhTerm;dom \/ dom~;rhTerm~;lhTerm;dom |- sub
+    RULE domainDomRule : dom~;lhsTerm~;rhsTerm;dom \/ dom~;rhsTerm~;lhsTerm;dom |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodRule
-    RULE domainCodRule : cod~;lhTerm~;rhTerm;cod \/ cod~;rhTerm~;lhTerm;cod |- sub
+    RULE domainCodRule : cod~;lhsTerm~;rhsTerm;cod \/ cod~;rhsTerm~;lhsTerm;cod |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
@@ -121,7 +121,7 @@ PROCESS "Domain Analysis for Minuses"
     CLASSIFY Minus ISA BinaryTerm
 
     RULE subMinus :
-      dom~;I[Minus];first[BinaryTerm*Term];dom \/
+      dom~;I[Minus];first[BinaryTerm*Term] ;dom \/
       cod~;I[Minus];second[BinaryTerm*Term];cod |- sub
       VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
       ROLE ExecEngine MAINTAINS subMinus
@@ -138,15 +138,12 @@ PROCESS "Domain Analysis for Compositions"
 
     ROLE ExecEngine MAINTAINS compositionNewTypeTerm
     RULE compositionNewTypeTerm : I[Composition] {-/\ first;cod;(subStar;subStar~);dom~;second~-} |- inter;inter~
-    VIOLATION ( TXT "{EX}_; InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC I, TXT ")"
-              , TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC I, TXT ")_;TypeTerm_;", SRC first;cod
-              , TXT "{EX}_; InsPair_;sub_;TypeTerm_;inter(", SRC I, TXT ")_;TypeTerm_;", SRC second;dom
-              )
+    VIOLATION ( TXT "{EX}_; InsPair_;inter_;Composition_;", SRC I, TXT "_;TypeTerm_;inter(", SRC I, TXT ")" )
 
     RULE subComposition :
       dom~;I[Composition];first[BinaryTerm*Term];dom  \/
       cod~;I[Composition];second[BinaryTerm*Term];cod \/
-      inter[Composition*TypeTerm]~;first;cod \/ inter[Composition*TypeTerm]~;second;dom           |- sub
+      inter[Composition*TypeTerm]~;first;cod \/ inter[Composition*TypeTerm]~;second;dom |- sub
       VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
       ROLE ExecEngine MAINTAINS subComposition
     {- FYI: Haskell equivalent
@@ -199,6 +196,8 @@ PROCESS "Domain Analysis for Kleene closures"
 ENDPROCESS
 
 PROCESS "Domain Analysis for Unary complement"
+    CLASSIFY UnaryMinus ISA UnaryTerm
+    CLASSIFY UnaryMinus ISA Minus
 
     {- FYI: Haskell equivalent
     = case term of  (PCpl o a) -> let e = PDif o (PVee o) a
@@ -221,7 +220,7 @@ PROCESS "Domain Analysis for Relational Addition"
     RULE subRelationalAddition :
       dom~;I[RelationalAddition];first[BinaryTerm*Term];dom  \/
       cod~;I[RelationalAddition];second[BinaryTerm*Term];cod \/
-      inter[RelationalAddition*TypeTerm]~;first;cod \/ inter[RelationalAddition*TypeTerm]~;second;dom |- sub
+      cod~;first~;inter[RelationalAddition*TypeTerm] \/ dom~;second~;inter[RelationalAddition*TypeTerm] |- sub
       VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
       ROLE ExecEngine MAINTAINS subRelationalAddition
     {- FYI: Haskell equivalent
@@ -230,18 +229,60 @@ PROCESS "Domain Analysis for Relational Addition"
 ENDPROCESS
 
 PROCESS "Domain Analysis for Left residual"
+    VIEW LeftResidual : LeftResidual(TXT "(", first, TXT "/", second, TXT ")")
+    CLASSIFY LeftResidual ISA BinaryTerm
+    RELATION lResidualSource[LeftResidual*TypeTerm]
+    RELATION lResidualTarget[LeftResidual*TypeTerm]
 
-    {- FYI: Haskell equivalent
-    = case term of  (PLrs o a b) -> let e = complement (PCps o (complement a) (p_flp b))
-                                    in dom x.=.dom e .+. cod x.=.cod e
-    -}
-ENDPROCESS
+    ROLE ExecEngine MAINTAINS leftResSrcTerm
+    RULE leftResSrcTerm : I[LeftResidual] |- lResidualSource;lResidualSource~
+    VIOLATION ( TXT "{EX}_; InsPair_;lResidualSource_;LeftResidual_;", SRC I, TXT "_;TypeTerm_;lResSrc(", SRC I, TXT ")" )
 
-PROCESS "Domain Analysis for Right residual"
+    ROLE ExecEngine MAINTAINS leftResTgtTerm
+    RULE leftResTgtTerm : I[LeftResidual] |- lResidualTarget;lResidualTarget~
+    VIOLATION ( TXT "{EX}_; InsPair_;lResidualTarget_;LeftResidual_;", SRC I, TXT "_;TypeTerm_;lResTgT(", SRC I, TXT ")" )
+
+    RULE subLeftResidual :
+      dom~;I[LeftResidual];lResidualSource \/
+      dom~;first~;I[LeftResidual];lResidualSource \/
+      cod~;I[LeftResidual];lResidualTarget \/
+      dom~;second~;I[LeftResidual];lResidualTarget |- sub
+      VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+      ROLE ExecEngine MAINTAINS subLeftResidual
 
     {- FYI: Haskell equivalent
     = case term of  (PRrs o a b) -> let e = complement (PCps o (p_flp a) (complement b))
                                     in dom x.=.dom e .+. cod x.=.cod e
+    = case term of  (PRrs o a b) -> mGeneric' Src a Src x x .+. mGeneric' Src b Tgt x x
+    -}
+ENDPROCESS
+
+PROCESS "Domain Analysis for Right residual"
+    VIEW RightResidual : RightResidual(TXT "(", first, TXT "\\", second, TXT ")")
+    CLASSIFY RightResidual ISA BinaryTerm
+    RELATION rResidualSource[RightResidual*TypeTerm]
+    RELATION rResidualTarget[RightResidual*TypeTerm]
+
+    ROLE ExecEngine MAINTAINS rightResSrcTerm
+    RULE rightResSrcTerm : I[RightResidual] |- rResidualSource;rResidualSource~
+    VIOLATION ( TXT "{EX}_; InsPair_;rResidualSource_;RightResidual_;", SRC I, TXT "_;TypeTerm_;rResSrc(", SRC I, TXT ")" )
+
+    ROLE ExecEngine MAINTAINS rightResTgtTerm
+    RULE rightResTgtTerm : I[RightResidual] |- rResidualTarget;rResidualTarget~
+    VIOLATION ( TXT "{EX}_; InsPair_;rResidualTarget_;RightResidual_;", SRC I, TXT "_;TypeTerm_;rResTgT(", SRC I, TXT ")" )
+
+    RULE subRightResidual :
+      dom~;I[RightResidual];rResidualSource \/
+      cod~;first~;I[RightResidual];rResidualSource \/
+      cod~;I[RightResidual];rResidualTarget \/
+      cod~;second~;I[RightResidual];rResidualTarget |- sub
+      VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
+      ROLE ExecEngine MAINTAINS subRightResidual
+
+    {- FYI: Haskell equivalent
+    = case term of  (PRrs o a b) -> let e = complement (PCps o (p_flp a) (complement b))
+                                    in dom x.=.dom e .+. cod x.=.cod e
+    = case term of  (PRrs o a b) -> mGeneric' Tgt a Src x x .+. mGeneric' TgT b Tgt x x
     -}
 ENDPROCESS
 
@@ -275,7 +316,7 @@ ENDPROCESS
 PROCESS "Superfluous terms"
     ROLE ExecEngine MAINTAINS garbageTerm
     RULE garbageTerm :
-      I[Term] |- lhTerm~;lhTerm \/ rhTerm~;rhTerm \/
+      I[Term] |- lhsTerm~;lhsTerm \/ rhsTerm~;rhsTerm \/
                  first~;first \/ second~;second
 --  VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
 ENDPROCESS

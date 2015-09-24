@@ -61,7 +61,7 @@ ROWS [ pair           : I
      , "relation(s)"  : in
      ]
 
-VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+--VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
 ROWS [ name    : name
