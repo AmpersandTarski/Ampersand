@@ -2,7 +2,36 @@
 INCLUDE "Atoms.adl"
 INCLUDE "Atoms.xlsx"
 
-INTERFACE Overview : '_SESSION'[SESSION]
+sLRepr :: SESSION * Representation -- editing relation
+ROLE ExecEngine MAINTAINS "Create new left atom"
+RULE "Create new left atom": sRel~;'_SESSION';sLRepr |- source;pop~;repr
+VIOLATION ({EX} TXT "NewStruct;Atom"
+                  ,TXT ";pop;Atom;_New;Concept;", SRC source
+                  ,TXT ";repr;Atom;_NEW;Representation;", TGT I
+          )
+
+sRRepr :: SESSION * Representation -- editing relation
+ROLE ExecEngine MAINTAINS "Create new right atom"
+RULE "Create new right atom": sRel~;'_SESSION';sRRepr |- target;pop~;repr
+VIOLATION ({EX} TXT "NewStruct;Atom"
+                  ,TXT ";pop;Atom;_New;Concept;", SRC target
+                  ,TXT ";repr;Atom;_NEW;Representation;", TGT I
+          )
+
+sRel   :: SESSION * Relation -- editing relation
+ROLE ExecEngine MAINTAINS "Create new pair"
+RULE "Create new pair": '_SESSION' /\ sLRepr;sLRepr~ /\ sRRepr;sRRepr~ /\ sRel;sRel~ |- -V
+VIOLATION ({EX} TXT "NewStruct;Pair"
+                  ,TXT ";in;Pair;_NEW;Relation;", SRC sRel
+                  ,TXT ";l;Pair;_NEW;Atom;", SRC (sLRepr;repr~ /\ sRel;pop~)
+                  ,TXT ";r;Pair;_NEW;Atom;", SRC (sRRepr;repr~ /\ sRel;pop~)
+-- now, clean up so that we can add another pair.
+          ,{EX} TXT "DelPair;sLRepr;SESSION;", SRC I, TXT ";Representation;" SRC sLRepr
+          ,{EX} TXT "DelPair;sRRepr;SESSION;", SRC I, TXT ";Representation;" SRC sRRepr
+          ,{EX} TXT "DelPair;sRel;SESSION;", SRC I, TXT ";Representation;" SRC sRel
+          )
+
+INTERFACE Overview : (sLRepr, sRRepr, sRel) '_SESSION'[SESSION]
 TABS[ atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
@@ -25,6 +54,11 @@ TABS[ atoms : V[SESSION*Atom]
            [ pair          : I
            , "relation(s)" : in
            ]
+    , "new pair" : I
+      BOX[ "l;repr" : sLRepr -- representation of source atom
+         , "r;repr" : sRRepr -- representation of target atom
+         , "in" : sRel -- relation in which the pair is to be populated.
+         ]
     , relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]
