@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
+{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
@@ -262,7 +262,7 @@ instance Unique Declaration where
       Vs{}  -> "V"++uniqueShow False (decsgn d)
 instance Hashable Declaration where
    hashWithSalt s dcl =
-     s `hashWithSalt` constructorNr `hashWithSalt` (origin dcl)
+     s `hashWithSalt` constructorNr `hashWithSalt` origin dcl
      where constructorNr :: Int
            constructorNr
              = case dcl of
@@ -561,7 +561,7 @@ showValSQL val =
 showValADL :: AAtomValue -> String
 showValADL val =
   case val of
-   AAVString{}  ->      (aavstr val)
+   AAVString{}  ->       aavstr val
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)

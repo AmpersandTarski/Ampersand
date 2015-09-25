@@ -7,7 +7,7 @@
  - There is NO WARRANTY, to the extent permitted by law.
  -}
 
-{-# LANGUAGE FlexibleInstances, OverlappingInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 module Database.Design.Ampersand.Core.Poset.Internal where
 
 import qualified Prelude

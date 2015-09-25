@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances , OverlappingInstances #-}
+{-# LANGUAGE TypeSynonymInstances #-}
 module Database.Design.Ampersand.ADL1.Expression (
                        subst
                       ,foldlMapExpression,foldrMapExpression
@@ -155,7 +155,7 @@ exprPrd2list (EPrd (l,r)) = exprPrd2list l++exprPrd2list r
 exprPrd2list r            = [r]
 
 insParentheses :: Expression -> Expression
-insParentheses expr = insPar 0 expr
+insParentheses = insPar 0
    where
      wrap :: Integer -> Integer -> Expression -> Expression
      wrap i j e' = if i<=j then e' else EBrk (insPar 0 e')
@@ -213,4 +213,3 @@ insParentheses expr = insPar 0 expr
 =
    r; s; insPar 8 (t;x;y) |- p
 -}
-
