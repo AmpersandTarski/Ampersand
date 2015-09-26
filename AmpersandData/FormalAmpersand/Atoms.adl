@@ -2,7 +2,7 @@
 --INCLUDE "Atoms.docadl" TODO: Fix documentation, so it compiles again and hence can be included here
 
 PROCESS Atoms
-RELATION repr[Atom*Representation] [UNI,TOT]
+RELATION repr[Atom*Representation] [UNI]
 MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
 REPRESENT Representation TYPE ALPHANUMERIC
 
@@ -55,9 +55,9 @@ RULE isaRelDelSrc: sources |- source;isaStar~
 VIOLATION (TXT "{EX} DelPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
 RULE isaRelDelTgt: targets |- target;isaStar~
 VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
-RELATION in[Pair*Relation] [UNI,TOT]
-RELATION l[Pair*Atom] [UNI,TOT]
-RELATION r[Pair*Atom] [UNI,TOT]
+RELATION in[Pair*Relation] [UNI]
+RELATION l[Pair*Atom] [UNI]
+RELATION r[Pair*Atom] [UNI]
 
 ROLE ExecEngine MAINTAINS insPop, delPop
 RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop

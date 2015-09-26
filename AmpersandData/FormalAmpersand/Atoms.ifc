@@ -1,20 +1,20 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Atoms.adl"
 INCLUDE "Atoms.xlsx"
-
-sLRepr :: SESSION * Representation -- editing relation
+{-
+sLRepr :: SESSION * Representation [UNI] -- editing relation
 ROLE ExecEngine MAINTAINS "Create new left atom"
 RULE "Create new left atom": sRel~;'_SESSION';sLRepr |- source;pop~;repr
 VIOLATION (TXT "{EX} NewStruct;Atom"
-                  ,TXT ";pop;Atom;_New;Concept;", SRC source
+                  ,TXT ";pop;Atom;_NEW;Concept;", SRC source
                   ,TXT ";repr;Atom;_NEW;Representation;", TGT I
           )
 
-sRRepr :: SESSION * Representation -- editing relation
+sRRepr :: SESSION * Representation [UNI] -- editing relation
 ROLE ExecEngine MAINTAINS "Create new right atom"
 RULE "Create new right atom": sRel~;'_SESSION';sRRepr |- target;pop~;repr
 VIOLATION (TXT "{EX} NewStruct;Atom"
-                  ,TXT ";pop;Atom;_New;Concept;", SRC target
+                  ,TXT ";pop;Atom;_NEW;Concept;", SRC target
                   ,TXT ";repr;Atom;_NEW;Representation;", TGT I
           )
 
@@ -28,10 +28,11 @@ VIOLATION (TXT "{EX} NewStruct;Pair"
 -- now, clean up so that we can add another pair.
           ,TXT "{EX} DelPair;sLRepr;SESSION;", SRC I, TXT ";Representation;", SRC sLRepr
           ,TXT "{EX} DelPair;sRRepr;SESSION;", SRC I, TXT ";Representation;", SRC sRRepr
-          ,TXT "{EX} DelPair;sRel;SESSION;",   SRC I, TXT ";Representation;", SRC sRel
+          ,TXT "{EX} DelPair;sRel;SESSION;",   SRC I, TXT ";Relation;", SRC sRel
           )
+-}
 
-INTERFACE Overview (sLRepr, sRRepr, sRel) : '_SESSION'[SESSION]
+INTERFACE Overview {- (sLRepr, sRRepr, sRel) -} : '_SESSION'[SESSION]
 TABS[ atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
@@ -54,11 +55,13 @@ TABS[ atoms : V[SESSION*Atom]
            [ pair          : I
            , "relation(s)" : in
            ]
+{-
     , "new pair" : I
       BOX[ "l;repr" : sLRepr -- representation of source atom
          , "r;repr" : sRRepr -- representation of target atom
          , "in" : sRel -- relation in which the pair is to be populated.
          ]
+-}
     , relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]
@@ -88,14 +91,20 @@ ROWS [ name             : name
 
 VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
 
-INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+INTERFACE Pair(repr, l,r,in[Pair*Relation]) : I[Pair]
 ROWS [ pair           : I
-     , l              : l
-     , r              : r
+     , l              : l BOX [ repr : repr ]
+     , r              : r BOX [ repr : repr ]
      , "relation(s)"  : in
      ]
 
---VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+RULE r1 : I |- l;l~
+VIOLATION (TXT "{EX} NewStruct;Atom;l;Pair;", SRC I, TXT ";Atom;_NEW" )
+RULE r2 : I |- r;r~
+VIOLATION (TXT "{EX} NewStruct;Atom;r;Pair;", SRC I, TXT ";Atom;_NEW" )
+ROLE ExecEngine MAINTAINS r1, r2
+
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
 ROWS [ name    : name
