@@ -5,7 +5,7 @@ INCLUDE "Atoms.xlsx"
 sLRepr :: SESSION * Representation -- editing relation
 ROLE ExecEngine MAINTAINS "Create new left atom"
 RULE "Create new left atom": sRel~;'_SESSION';sLRepr |- source;pop~;repr
-VIOLATION ({EX} TXT "NewStruct;Atom"
+VIOLATION (TXT "{EX} NewStruct;Atom"
                   ,TXT ";pop;Atom;_New;Concept;", SRC source
                   ,TXT ";repr;Atom;_NEW;Representation;", TGT I
           )
@@ -13,7 +13,7 @@ VIOLATION ({EX} TXT "NewStruct;Atom"
 sRRepr :: SESSION * Representation -- editing relation
 ROLE ExecEngine MAINTAINS "Create new right atom"
 RULE "Create new right atom": sRel~;'_SESSION';sRRepr |- target;pop~;repr
-VIOLATION ({EX} TXT "NewStruct;Atom"
+VIOLATION (TXT "{EX} NewStruct;Atom"
                   ,TXT ";pop;Atom;_New;Concept;", SRC target
                   ,TXT ";repr;Atom;_NEW;Representation;", TGT I
           )
@@ -21,17 +21,17 @@ VIOLATION ({EX} TXT "NewStruct;Atom"
 sRel   :: SESSION * Relation -- editing relation
 ROLE ExecEngine MAINTAINS "Create new pair"
 RULE "Create new pair": '_SESSION' /\ sLRepr;sLRepr~ /\ sRRepr;sRRepr~ /\ sRel;sRel~ |- -V
-VIOLATION ({EX} TXT "NewStruct;Pair"
+VIOLATION (TXT "{EX} NewStruct;Pair"
                   ,TXT ";in;Pair;_NEW;Relation;", SRC sRel
-                  ,TXT ";l;Pair;_NEW;Atom;", SRC (sLRepr;repr~ /\ sRel;pop~)
-                  ,TXT ";r;Pair;_NEW;Atom;", SRC (sRRepr;repr~ /\ sRel;pop~)
+                  ,TXT ";l;Pair;_NEW;Atom;", SRC (sLRepr;repr~ /\ sRel;source;pop~)
+                  ,TXT ";r;Pair;_NEW;Atom;", SRC (sRRepr;repr~ /\ sRel;target;pop~)
 -- now, clean up so that we can add another pair.
-          ,{EX} TXT "DelPair;sLRepr;SESSION;", SRC I, TXT ";Representation;" SRC sLRepr
-          ,{EX} TXT "DelPair;sRRepr;SESSION;", SRC I, TXT ";Representation;" SRC sRRepr
-          ,{EX} TXT "DelPair;sRel;SESSION;", SRC I, TXT ";Representation;" SRC sRel
+          ,TXT "{EX} DelPair;sLRepr;SESSION;", SRC I, TXT ";Representation;", SRC sLRepr
+          ,TXT "{EX} DelPair;sRRepr;SESSION;", SRC I, TXT ";Representation;", SRC sRRepr
+          ,TXT "{EX} DelPair;sRel;SESSION;",   SRC I, TXT ";Representation;", SRC sRel
           )
 
-INTERFACE Overview : (sLRepr, sRRepr, sRel) '_SESSION'[SESSION]
+INTERFACE Overview (sLRepr, sRRepr, sRel) : '_SESSION'[SESSION]
 TABS[ atoms : V[SESSION*Atom]
       BOX<SCOLS>
            [ repr : I
