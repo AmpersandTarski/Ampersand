@@ -648,7 +648,7 @@ Class Atom {
 				return $date->format('Y-m-d');
 			case "DATETIME" :
 				$datetime = new DateTime($value);
-				return $data->format('Y-m-d H:i:s');
+				return $datetime->format('Y-m-d H:i:s');
 			case "INTEGER" :
 				return (int) $value;
 			case "BOOLEAN" :
