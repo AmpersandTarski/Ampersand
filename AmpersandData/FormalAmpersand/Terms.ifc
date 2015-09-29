@@ -1,11 +1,11 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
 
-INTERFACE Contexts (valid, relations) : '_SESSION'
+INTERFACE Contexts (relations) : '_SESSION'
 TABS[ "" : V[SESSION*Context]
-      ROWS [ context : I
-           , "valid rules"  : valid~
-           , relations : relations
+      ROWS [ context        : I
+--           , "valid rules"  : valid~
+           , relations      : relations
            ]
     ]
 
@@ -99,6 +99,6 @@ ROWS [ name    : name
      , target  : target
      ]
 
-VIEW Rule : Rule(TXT "RULE ", lhTerm, TXT " = ", rhTerm)
+VIEW Rule : Rule(TXT "RULE ", lhsTerm, TXT " = ", rhsTerm)
 
 ENDCONTEXT

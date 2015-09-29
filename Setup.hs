@@ -150,14 +150,13 @@ getPreviousStaticFileModuleContents sfModulePath =
       ; return []
       }
 
--- Scan static file directory and collect all files from oldFrontend and newFrontend
+-- Collect all files required to be inside the ampersand.exe 
 readAllStaticFiles :: IO String
 readAllStaticFiles =
-  do { oldFrontendFiles     <- readStaticFiles OldFrontend      "static/oldFrontend" "."
-     ; zwolleFrontEndFiles  <- readStaticFiles ZwolleFrontEnd   "static/newFrontend" "."
-     ; pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "."
-     ; formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand" "."
-     ; return $ mkStaticFileModule $ oldFrontendFiles ++ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles
+  do { zwolleFrontEndFiles  <- readStaticFiles ZwolleFrontEnd   "static/zwolle" "."  -- files that define the Zwolle Frontend
+     ; pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
+     ; formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand" "."  --meta information about Ampersand
+     ; return $ mkStaticFileModule $ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles
      }
 
 readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [String]
@@ -179,7 +178,7 @@ readStaticFiles fkind base fileOrDirPth =
   where utcToEpochTime :: UTCTime -> String
         utcToEpochTime utcTime = DTF.formatTime DTF.defaultTimeLocale "%s" utcTime
 
-data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)
+data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand deriving (Show, Eq)
 
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =

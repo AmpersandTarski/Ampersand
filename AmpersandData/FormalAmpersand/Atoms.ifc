@@ -3,21 +3,22 @@ INCLUDE "Atoms.adl"
 INCLUDE "Atoms.xlsx"
 
 INTERFACE Overview : '_SESSION'[SESSION]
-TABS[ atoms : V[SESSION*Atom]
+TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
-           [ repr : I
-           , type : pop - pop;isaStar
-           , pop  : pop
+           [ relation   : I[Relation]
+           , "pair(s)"  : in~
+           , sources    : sources
+           , targets    : targets
            ]
     , concepts :V[SESSION*Concept]
       BOX<SCOLS>
            [ name    : I[Concept]
            , "isa"   : isa
-           , "isa+"  : isaPlus
-           , "isa*"  : isaStar
+--           , "isa+"  : isaPlus
+--           , "isa*"  : isaStar
            , "isa~"  : isa~
-           , "isa+~" : isaPlus~
-           , "isa*~" : isaStar~
+--           , "isa+~" : isaPlus~
+--           , "isa*~" : isaStar~
            , atoms   : pop~
            ]
     , pairs : V[SESSION*Pair]
@@ -25,26 +26,19 @@ TABS[ atoms : V[SESSION*Atom]
            [ pair          : I
            , "relation(s)" : in
            ]
-    , relations : V[SESSION*Relation]
+    , atoms : V[SESSION*Atom]
       BOX<SCOLS>
-           [ relation   : I[Relation]
-           , "pair(s)"  : in~
-           , sources    : sources
-           , targets    : targets
-           ]
-    , garbage : V[SESSION*Atom];(I - pop;pop~)
-      COLS [ repr : repr
+           [ atom : I
+           , type : pop - pop;isaPlus
+           , pop  : pop
            ]
     ]
 
-VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
-
-INTERFACE Atom(repr) : I[Atom]
-ROWS [ repr : repr
-     , pop  : pop
-     ]
-
+--VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+REPRESENT Atom TYPE ALPHANUMERIC
 VIEW Concept : Concept(name)
+VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
 ROWS [ name             : name
@@ -52,16 +46,11 @@ ROWS [ name             : name
      , specializations  : isa~
      ]
 
-VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
-
 INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
-ROWS [ pair           : I
+ROWS [ "relation(s)"  : in
      , l              : l
      , r              : r
-     , "relation(s)"  : in
      ]
-
-VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
 ROWS [ name    : name

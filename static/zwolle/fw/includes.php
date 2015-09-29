@@ -15,6 +15,7 @@ require_once (__DIR__ . '/functions/JsonPatch.php'); // to compare 2 different J
 
 require_once (__DIR__ . '/../generics/Generics.php'); // loading the Ampersand model
 
+require_once (__DIR__ . '/Config.php');
 require_once (__DIR__ . '/Database.php');
 require_once (__DIR__ . '/Concept.php');
 require_once (__DIR__ . '/Atom.php');

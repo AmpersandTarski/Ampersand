@@ -137,7 +137,7 @@ makePicture fSpec pr =
       case pr of
             PTClassDiagram -> "1.0"
             PTRelsUsedInPat{}-> "0.7"
-            PTDeclaredInPat{}-> "0.5"
+            PTDeclaredInPat{}-> "0.6"
             PTSwitchBoard{}  -> "0.4"
             PTIsaInPattern{} -> "0.7"
             PTSingleRule{}   -> "0.7"
@@ -437,31 +437,29 @@ handleFlags po opts =
                           , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
                           ]
-      RelSrcEdge r -> [ ArrowHead ( if crowfoot opts  then normal                    else
+      RelSrcEdge r -> [ ArrowHead ( if crowfoot opts   then normal                    else
                                     if isFunction r    then noArrow                   else
-                                    if isInvFunction r then noArrow                   else
-                                    noArrow
+                                    if isInvFunction r then directionArrow            else
+                                    directionArrow
                                   )
-                      , ArrowTail ( if crowfoot opts  then crowfootArrowType False r else
+                      , ArrowTail ( if crowfoot opts   then crowfootArrowType False r else
                                     if isFunction r    then noArrow                   else
                                     if isInvFunction r then normal                    else
                                     noArrow
                                   )
                       ,HeadClip False
-                --      , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ]
       RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
-                      , ArrowHead ( if crowfoot opts  then crowfootArrowType True r  else
+                      , ArrowHead ( if crowfoot opts   then crowfootArrowType True r  else
                                     if isFunction r    then normal                    else
                                     if isInvFunction r then noArrow                   else
                                     noArrow
                                   )
-                      , ArrowTail ( if crowfoot opts  then noArrow                   else
+                      , ArrowTail ( if crowfoot opts   then noArrow                   else
                                     if isFunction r    then noArrow                   else
                                     if isInvFunction r then AType [(noMod ,Inv)]      else
                                     AType [(noMod ,Inv)]
                                   )
-                   --   , Dir Both  -- Needed because of change in graphviz. See http://www.graphviz.org/bugs/b1951.html
                       ,TailClip False
                       ]
       RelIntermediateNode r ->
@@ -512,3 +510,6 @@ noMod = ArrMod { arrowFill = FilledArrow
                }
 open :: ArrowModifier
 open  = noMod {arrowFill = OpenArrow}
+
+directionArrow :: ArrowType
+directionArrow = AType [(open,Vee)]

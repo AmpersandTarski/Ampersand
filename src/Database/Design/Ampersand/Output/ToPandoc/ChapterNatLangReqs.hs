@@ -122,14 +122,14 @@ chpNatLangReqs lev fSpec =
                    [] 
                      -> fatal 136 "Unexpected. There should be at least one concept to introduce."
                    [x]
-                     -> para(   (str.l) (NL "Nu volgt de definitie van concept "
+                     -> para(   (str.l) (NL "Nu volgt de definitie van het begrip "
                                         ,EN "At this point, the definition of ")
                              <> (showCpt x) 
                              <> (str.l) (NL "."
                                         ,EN " is given.")
                             )
                    _ 
-                     -> para(   (str.l) (NL "Nu volgen definities van de concepten "
+                     -> para(   (str.l) (NL "Nu volgen definities van de begrippen "
                                         ,EN "At this point, the definitions of ")
                              <> commaPandocAnd (fsLang fSpec) (map showCpt (sortWith theNr nCpts)) 
                              <> (str.l) (NL "."
@@ -138,14 +138,14 @@ chpNatLangReqs lev fSpec =
                )<>
                ( case filter hasMultipleDefs nCpts of
                    []  -> mempty
-                   [x] -> para(  (str.l) (NL "Het concept "
+                   [x] -> para(  (str.l) (NL "Het begrip "
                                          ,EN "Concept ")
                               <> showCpt x 
                               <> (str.l) (NL " heeft meerdere definities."
                                          ,EN " is multiple defined.")
                               )
                    multipleDefineds
-                       -> para(  (str.l) (NL "De concepten "
+                       -> para(  (str.l) (NL "De begrippen "
                                          ,EN "Concepts ")
                               <> commaPandocAnd (fsLang fSpec) (map showCpt multipleDefineds) 
                               <> (str.l) (NL " hebben meerdere definities."
