@@ -46,7 +46,9 @@ fatal = fatalMsg "Output.PandocAux"
 defaultWriterVariables :: FSpec -> [(String , String)]
 defaultWriterVariables fSpec
   = [ ("title", (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
-                        (Dutch  , False) -> "Functionele Specificatie van "
+                        (Dutch  , False) -> if test (getOpts fSpec)
+                                            then "Taalmodel van "
+                                            else "Functionele Specificatie van "
                         (English, False) -> "Functional Specification of "
                         (Dutch  ,  True) -> "Diagnose van "
                         (English,  True) -> "Diagnosis of "

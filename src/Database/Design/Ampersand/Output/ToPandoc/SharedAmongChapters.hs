@@ -81,7 +81,7 @@ chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
    -- temporarily switch off chapters that need too much refactoring, but keep this Haskell code compilable.
     disabled = []
     chapters
-     | test opts                  = [Interfaces]
+     | test opts                  = [SharedLang,Diagnosis]
      | diagnosisOnly opts         = [Diagnosis]
      | theme opts == StudentTheme = [Intro,SharedLang,Diagnosis,ConceptualAnalysis,DataAnalysis]
      | otherwise                   = [ Intro
