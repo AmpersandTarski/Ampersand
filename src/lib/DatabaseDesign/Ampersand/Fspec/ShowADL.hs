@@ -206,7 +206,7 @@ instance ShowADL Rule where
           Just (PairView pvSegs) -> "\n     VIOLATION ("++intercalate ", " (map showADL pvSegs)++")"
        
 instance ShowADL A_Gen where
- showADL (Gen _ g s _) = "SPEC "++showADL s++" ISA "++showADL g
+ showADL (Gen _ g s _) = "CLASSIFY "++showADL s++" ISA "++showADL g
 
 instance ShowADL RoleRelation where
  showADL r

@@ -37,7 +37,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                        , "RELATION", "MEANING", "DEFINE", "CONCEPT", "IDENT"
                        , "VIEW", "TXT", "PRIMHTML"
                        , "KEY" -- HJO, 20130605: Obsolete. Only usefull as long as the old prototype generator is still in use.
-                       , "IMPORT", "SPEC", "ISA", "I", "V"
+                       , "IMPORT", "CLASSIFY", "ISA", "I", "V"
                        , "PRAGMA", "EXPLAIN", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
                        , "REST", "HTML", "LATEX", "MARKDOWN"
                        , "ONE"
@@ -333,7 +333,7 @@ module DatabaseDesign.Ampersand.Input.ADL1.Parser
                           <*> (pString `opt` "")     -- a reference to the source of this definition.
 
    pGenDef :: Parser Token P_Gen
-   pGenDef           = rebuild <$ pKey "SPEC" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
+   pGenDef           = rebuild <$ pKey "CLASSIFY" <*> (pConid <|> pString) <*> pKey_pos "ISA" <*> (pConid <|> pString)
                        where rebuild spc p gen = PGen p (PCpt gen) (PCpt spc)
 
    -- | A identity definition looks like:   IDENT onNameAdress : Person(name, address),
