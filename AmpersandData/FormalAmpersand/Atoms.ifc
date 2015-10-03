@@ -26,12 +26,12 @@ TABS[ relations : V[SESSION*Relation]
            [ pair          : I
            , "relation(s)" : in
            ]
-    , atoms : V[SESSION*Atom]
-      BOX<SCOLS>
-           [ atom : I
-           , type : pop - pop;isaPlus
-           , pop  : pop
-           ]
+--    , atoms : V[SESSION*Atom]
+--      BOX<SCOLS>
+--           [ atom : I
+--           , type : pop - pop;isaPlus
+--           , pop  : pop
+--           ]
     ]
 
 --VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.

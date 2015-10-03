@@ -99,7 +99,7 @@ PURPOSE RELATION popset[Concept*TypeTerm]
 [UNI] -- TOT is computed by the exec-engine
 ROLE ExecEngine MAINTAINS "popset is total"
 PURPOSE RULE "popset is total" : I[Concept] |- popset;popset~
-VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;pop(", SRC name, TXT ")")
+VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;popset(", SRC I, TXT ")")
 
 ROLE ExecEngine MAINTAINS "Insert into pretype"
 PURPOSE RULE "Insert into pretype"
