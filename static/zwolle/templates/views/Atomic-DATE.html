@@ -1,4 +1,4 @@
-<!-- Atomic-Date.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+<!-- Atomic-DATE.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 <div style="min-width:6em;">
 $if(isEditable)$
   $if(exprIsUni)$
@@ -25,7 +25,7 @@ $else$
   <div>{{val['$name$'] | date : 'dd-MM-yyyy'}}</div>
   $else$
   <div ng-repeat="row in val['$name$'] track by \$index">
-    {{row}}
+    {{row | date : 'dd-MM-yyyy'}}
   </div>
   $endif$
 $endif$
