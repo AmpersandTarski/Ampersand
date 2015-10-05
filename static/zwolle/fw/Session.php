@@ -2,6 +2,10 @@
 
 define("EXPIRATION_TIME", 60*60 ); // expiration time in seconds
 
+// PHP SESSION : Start a new, or resume the existing, PHP session
+session_start();
+Notifications::addLog('Session id: ' . session_id(), 'SESSION');
+
 class Session {
 	
 	public $database;
@@ -14,16 +18,12 @@ class Session {
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
 	// prevent any outside instantiation of this object
-	private function __construct($sessionId){
+	private function __construct(){
 		global $allConcepts;
 		
-		if(!is_null($sessionId)) session_id($sessionId); // set php session_id, must be done before session_star()t; 
-			
-		// PHP SESSION : Start a new, or resume the existing, PHP session
-		session_start();
-		Notifications::addLog('Session id: ' . session_id(), 'SESSION');
+		// if(!is_null($sessionId)) session_id($sessionId); // set php session_id, must be done before session_start(); 
 		
-		try {			
+		try {
 			$this->database = Database::singleton();
 			
 			// AMPERSAND SESSION
@@ -56,7 +56,7 @@ class Session {
 	private function __clone(){}
 	
 	public static function singleton($sessionId = null){
-		if(is_null (self::$_instance) ) self::$_instance = new Session($sessionId);
+		if(is_null (self::$_instance) ) self::$_instance = new Session();
 		return self::$_instance;
 	}
 	
