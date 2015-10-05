@@ -6,7 +6,7 @@ $GLOBALS['hooks']['before_API_getAllNotifications_getViolations'][] = 'ExecEngin
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
 
 // Zet extension in applications menu
-$GLOBALS['navBar']['appMenu'][] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
+$GLOBALS['navBar']['refreshMenu'][] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
 
 class ExecEngine {
 	

@@ -342,6 +342,7 @@ class Api{
     		
     		return array ('top' => $top
     					 ,'new' => $new
+    					 ,'refreshMenu' => $GLOBALS['navBar']['refreshMenu']
     					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
     					 ,'roles' => $roles
