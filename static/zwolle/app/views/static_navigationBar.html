@@ -59,7 +59,7 @@
 							<span ng-show="role.id == $storage.roleId" class="glyphicon glyphicon-ok pull-right"></span>
 						</a>
 					</li>
-					<li class="divider" role="presentation"></li>
+					<li ng-if="navbar.roleMenu" class="divider" role="presentation"></li>
 					<li ng-repeat="ext in navbar.roleMenu" ng-include="ext.url"/>
 				</ul>
 			</li>
