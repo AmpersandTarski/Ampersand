@@ -27,7 +27,15 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	// Function to update notifications after api response
 	$rootScope.updateNotifications = function(notifications){
-		$rootScope.notifications = notifications;
+		// Overwrite
+		$rootScope.notifications.logs = notifications.logs;
+		$rootScope.notifications.violations = notifications.violations;
+		$rootScope.notifications.invariants = notifications.invariants;
+		
+		// Merge
+		$rootScope.notifications.successes.concat(notifications.successes);
+		$rootScope.notifications.errors.concat(notifications.errors);
+		$rootScope.notifications.infos.concat(notifications.infos);
 		
 		if($scope.$storage.notificationPrefs.switchAutoHideSuccesses){
 			$timeout(function() {
