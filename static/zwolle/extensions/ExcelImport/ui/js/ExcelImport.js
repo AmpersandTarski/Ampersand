@@ -27,7 +27,7 @@ AmpersandApp.controller('ExcelImportController', function ($scope, $rootScope, F
     };
     
     $rootScope.uploader.onErrorItem = function(item, response, status, headers){
-    	$rootScope.notifications.errors.push( {'message' : response.error.code + ' ' + response.error.message} );	
+    	$rootScope.addError( response.error.code + ' ' + response.error.message );	
     	
     };
     
