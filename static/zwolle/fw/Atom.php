@@ -60,7 +60,7 @@ Class Atom {
 	 * var $arrayType specifies if the arrays in the result are 'assoc' (associative, key index) or 'num' (numeric index).
 	 * var $metaData specifies if meta data about objects must be included or not
 	 */
-	public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
+    public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true, $recursionAtomArr = array()){
 		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
@@ -163,12 +163,14 @@ Class Atom {
 				}
 
 				// Ref subinterfaces (for LINKTO interfaces only when $inclLinktoData = true)
-				if(!empty($interface->refInterfaceId) && (!$interface->isLinkTo || $inclLinktoData)){
+				if(!empty($interface->refInterfaceId) && (!$interface->isLinkTo || $inclLinktoData) && ($recursionAtomArr[$tgtAtom->id] < 2)){
 					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have a ref interface defined", 501);
-				
+					
+					if($inclLinktoData) $recursionAtomArr[$tgtAtom->id]++;
+					
 					$refInterface = new InterfaceObject($interface->refInterfaceId, null);
 					foreach($refInterface->subInterfaces as $subinterface){
-						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
+						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData, $recursionAtomArr);
 						$content[$subinterface->id] = $otherAtom;
 							
 						// _sortValues_ (if subInterface is uni)
