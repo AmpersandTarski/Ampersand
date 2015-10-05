@@ -292,10 +292,11 @@ class Database
 	 * editUpdate(r, true, b1, B, a1, A);
 	 * 
 	 * The $stableAtom and $stableConcept are used to identify which row must be updated.
+	 * @param string $source specifies the source of the editUpdate command (e.g. ExecEngine). Defaults to 'User'. 
 	 * 
 	 * NOTE: if $originalAtom is provided, this means that tuple rel(stableAtom, originalAtom) is replaced by rel(stableAtom, modifiedAtom).
 	 */
-	public function editUpdate($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom = null){
+	public function editUpdate($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom = null, $source = 'User'){
 		Notifications::addLog("editUpdate($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom)", 'DATABASE');
 		try{			
 			// This function is under control of transaction check!
@@ -335,14 +336,20 @@ class Database
 			if ($tableModifiedColumnInfo['unique'] && !$tableStableColumnInfo['unique']){
 			
 				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
+				
+				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			}
 			// Elseif the stable column is unique, we do an update // TODO: maybe we can do updates also in non-unique columns
 			elseif ($tableStableColumnInfo['unique']){
 				
 				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
+				
+				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			// Otherwise, binary table, so perform a insert.
 			}else{
 				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");
+				
+				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_INSERT'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 				
 				// If $originalAtom is provided, delete tuple rel(stableAtom, originalAtom)
 				if (!is_null($originalAtom)) $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$originalAtomEsc'");			
@@ -363,8 +370,9 @@ class Database
 	 * r :: A * B
 	 * editDelete(r, false, a1, A, b1, B); 
 	 * editDelete(r, true, b1, B, a1, A);
+	 * @param string $source specifies the source of the editDelete command (e.g. ExecEngine). Defaults to 'User'. 
 	 */
-	public function editDelete($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept){
+	public function editDelete($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source = 'User'){
 		Notifications::addLog("editDelete($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept)", 'DATABASE');
 		try{			
 			// This function is under control of transaction check!
@@ -398,15 +406,21 @@ class Database
 			// If the modifiedCol can be set to null, we do an update
 			if ($tableModifiedColumnInfo['null']){
 				$this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				
+				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			
 			// Elseif the stableCol can be set to null, we do an update
 			}elseif ($tableStableColumnInfo['null']){
 				
 				$this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				
+				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
 				$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				
+				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_DELETE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			}
 			
 			if(!in_array($fullRelationSignature, $this->affectedRelations)){
@@ -426,7 +440,7 @@ class Database
 	 * TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
 	 */    
 	function deleteAtom($atom, $conceptName){
-		Notifications::addLog("deleteAtom($atom, $concept)", 'DATABASE');
+		Notifications::addLog("deleteAtom($atom, $conceptName)", 'DATABASE');
 		try{
 			$concept = new Concept($conceptName);
 			// This function is under control of transaction check!
