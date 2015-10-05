@@ -31,6 +31,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 				.get()
 				.then(function(data){
 					$rootScope.navbar = data;
+					$scope.$storage.session = data.session;
 				}, function(error){
 					// on error
 				})

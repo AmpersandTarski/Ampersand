@@ -347,6 +347,10 @@ class Api{
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
     					 ,'roles' => $roles
     					 ,'notifications' => Notifications::getAll()
+    					 ,'session' => array ( 'sessionUser' => Session::getSessionUserId()
+    					 					 , 'loggedIn' => Session::sessionUserLoggedIn()
+    					 					 , 'sessionRoles' => $roles
+    					 					 )
     		);
     		
     	}catch(Exception $e){

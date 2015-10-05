@@ -14,6 +14,7 @@ class Session {
 	public $viewer;
 	public $atom;
 	public $accessibleInterfaces = array();
+	public static $sessionUser;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
@@ -107,6 +108,56 @@ class Session {
 				
 		}else{
 			throw new Exception('No interface specified', 404);
+		}
+	}
+	
+	private static function setSessionUser(){
+		// Set sessionUser
+		if(!LOGIN_ENABLED){
+			Session::$sessionUser = false;
+		
+		}else{
+			$ifc = new InterfaceObject('SessionUser');
+			$session = new Atom(session_id(), 'SESSION');
+			$sessionUsers = array_keys((array)$session->getContent($ifc, true));
+				
+			if(count($sessionUsers) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
+			if(empty($sessionUsers)){
+				Session::$sessionUser = false;
+			}else{
+				Session::$sessionUser = current($sessionUsers);
+				Notifications::addLog("Session user set to '$sessionUser'", 'SESSION');
+			}
+		}		
+	}
+	
+	public static function getSessionUserId(){
+		if(!LOGIN_ENABLED){
+			return 'SYSTEM';
+		
+		}else{
+			if(!isset(Session::$sessionUser)) Session::setSessionUser();
+			
+			if(Session::$sessionUser === false){
+				return $_SERVER['REMOTE_ADDR'];
+			}else{
+				return Session::$sessionUser;
+			}
+		}
+	}
+	
+	public static function sessionUserLoggedIn(){
+		if(!LOGIN_ENABLED){
+			return false;
+		
+		}else{
+			if(!isset(Session::$sessionUser)) Session::setSessionUser();
+				
+			if(Session::$sessionUser === false){
+				return false;
+			}else{
+				return true;
+			}
 		}
 	}
 }
