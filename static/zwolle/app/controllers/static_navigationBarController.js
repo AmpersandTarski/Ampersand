@@ -10,7 +10,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		// refresh navbar + notifications
 		$rootScope.refreshNavBar();
 		$rootScope.getNotifications();
-		$scope.reload();
+		//$scope.reload();
 	};
 	
 	$scope.selectRoleByLabel = function (roleLabel){
