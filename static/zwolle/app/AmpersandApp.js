@@ -30,7 +30,7 @@ AmpersandApp.config(function(RestangularProvider) {
     
 });
 
-AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
+AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $location){
 	
 	// Declare $rootScope objects
 	$rootScope.session = {};
@@ -56,7 +56,14 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
     	var message = ((response.data || {}).error || {}).message || response.statusText;
-    	$rootScope.addError( response.status + ' ' + message);	
+    	
+    	if(response.status == 401 || response.status == 403) {
+    		$localStorage.roleId = 0;
+    		$rootScope.refreshNavBar();
+    		$location.path('ext/Login');
+    	}
+    	
+    	$rootScope.addError( response.status + ' ' + message);
     	
     	return true; // proceed with success or error hooks of promise
     });
