@@ -53,7 +53,13 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 			$database->addAtomToConcept($tgtAtom, $tgtConcept);
 		}
 		
-		$database->editUpdate($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
+		$srcAtoms = explode('_AND', $srcAtom);
+		$tgtAtoms = explode('_AND', $tgtAtom);
+		foreach($srcAtoms as $a){
+			foreach($tgtAtoms as $b){
+				$database->editUpdate($relation, false, $a, $srcConcept, $b, $tgtConcept, null, 'ExecEngine');
+			}
+		}
 		
 		return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
 	}catch(Exception $e){
@@ -77,7 +83,16 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
 		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
 		
-		$database->editDelete($relation, false, $srcAtom, $srcConcept, $tgtAtom, $tgtConcept);
+		$srcAtoms = explode('_AND', $srcAtom);
+		$tgtAtoms = explode('_AND', $tgtAtom);
+		if(count($srcAtoms) > 1) throw new Exception('DelPair function call has more than one src atom', 501); // 501: Not implemented
+		if(count($tgtAtoms) > 1) throw new Exception('DelPair function call has more than one tgt atom', 501); // 501: Not implemented
+		
+		foreach($srcAtoms as $a){
+			foreach($tgtAtoms as $b){
+				$database->editDelete($relation, false, $a, $srcConcept, $b, $tgtConcept, 'ExecEngine');
+			}
+		}
 		
 		return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
 	}catch(Exception $e){
