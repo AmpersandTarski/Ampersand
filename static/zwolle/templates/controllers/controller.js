@@ -43,7 +43,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   }else{
     srcAtom.all('$interfaceName$').getList().then(function(data){
 	  if(\$.isEmptyObject(data.plain())){
-		\$rootScope.notifications.errors.push( {'message' : 'Nothing here...'} );
+		\$rootScope.addError('Nothing here...');
 	  }else{
 		\$scope.val['$interfaceName$'] = data;
 		\$scope.resourceLabel = \$scope.val['$interfaceName$'][0]['@label'];
