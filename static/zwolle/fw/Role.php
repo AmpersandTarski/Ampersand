@@ -104,7 +104,8 @@ class Role {
 	public function getInterfacesToCreateAtom(){
 		$interfaces = array();
 		foreach($this->interfaces as $interface){
-			if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
+			//if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
+			if($interface->forCreate) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
