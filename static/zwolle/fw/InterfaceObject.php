@@ -10,6 +10,11 @@ class InterfaceObject {
 	public $invariantConjuctsIds;
 	public $signalConjunctsIds;
 	
+	public $forCreate;
+	public $forRead;
+	public $forUpdate;
+	public $forDelete;
+	
 	public $relation; 
 	public $relationIsFlipped;
 	public $univalent;
@@ -46,6 +51,12 @@ class InterfaceObject {
 		
 		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
+		
+		// CRUD rights
+		$this->forCreate = array_key_exists('forCreate', $interface) ? $interface['forCreate'] : Config::get('defaultIfcForCreate');
+		$this->forRead = array_key_exists('forRead', $interface) ? $interface['forRead'] : Config::get('defaultIfcForRead');  // defaults to true
+		$this->forUpdate = array_key_exists('forUpdate', $interface) ? $interface['forUpdate'] : Config::get('defaultIfcForUpdate'); // defaults to true
+		$this->forDelete = array_key_exists('forDelete', $interface) ? $interface['forDelete'] : Config::get('defaultIfcForDelete'); // defaults to true
 		
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 

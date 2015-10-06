@@ -18,4 +18,10 @@ class Config {
 // Default configuration
 Config::set('contextName', 'global', $contextName); // from Generics.php
 
+// Default CRUD rights for interfaces
+Config::set('defaultIfcForCreate', 'global', true);
+Config::set('defaultIfcForRead', 'global', true);
+Config::set('defaultIfcForUpdate', 'global', true);
+Config::set('defaultIfcForDelete', 'global', true);
+
 ?>
