@@ -21,7 +21,7 @@ PURPOSE RELATION hasView[Concept*Concept] -- hasView = concept~;concept/\I
 This property is computed by the system.
 -}
 
-PURPOSE RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaStar;hasView;isaPlus
+PURPOSE RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaPlus
 {+To define which concept must be viewed by which View, the relation viewBy is used.
 This relation is computed by the system.
 -}
