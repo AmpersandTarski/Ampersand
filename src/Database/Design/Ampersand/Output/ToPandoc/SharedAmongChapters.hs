@@ -306,7 +306,8 @@ orderingByTheme fSpec
         )
      where
        (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
-       (themeDcls,restDcls) = partition (inThisTheme relsMentionedIn) rels
+       (themeDcls,restDcls) = partition (inThisTheme relsInTheme) rels
+          where relsInTheme p = relsDefdIn p `uni` relsMentionedIn p
        (themeCpts,restCpts) = partition (inThisTheme concs) cpts
        inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
        inThisTheme allElemsOf x
