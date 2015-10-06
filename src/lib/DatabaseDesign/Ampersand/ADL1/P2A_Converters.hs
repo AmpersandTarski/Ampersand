@@ -111,6 +111,7 @@ mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te
 mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
 mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypInCps  e) .+. (domOrCod tb b) .<. (TypInCps  e) .+. between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (TypInCps e)))
 mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<. (domOrCod tb b) .+. between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypInCps e)))
+
 mEqual' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt a) (domOrCod sORt b) BTEqual])
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
@@ -227,19 +228,19 @@ instance Expr P_Rule where
                 ])
 
 instance Expr P_PairView where
- uType _ (P_PairView segments) = uType segments segments
+ uType _ (P_PairView segments) = uType' segments
 
 instance Expr P_PairViewSegment where
- uType _ (P_PairViewExp Src term) = uType term term
- uType _ (P_PairViewExp Tgt term) = uType term term
+ uType _ (P_PairViewExp Src term) = uType' term
+ uType _ (P_PairViewExp Tgt term) = uType' term
  uType _ P_PairViewText{} = nothing
   
 instance Expr P_IdentDef where
  p_keys k = [k]
  uType _ k
   = let x=Pid (ix_pos k) (ix_cpt k) in
-    uType x x .+. 
-    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType obj obj
+    uType' x .+. 
+    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType' obj
                         | P_IdentExp obj <- ix_ats k
                         ]
 
@@ -247,8 +248,8 @@ instance Expr P_ViewDef where
  p_views v = [v]
  uType _ v
   = let x=Pid (vd_pos v) (vd_cpt v) in
-    uType x x .+. 
-    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType obj obj
+    uType' x .+. 
+    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType' obj
                         | P_ViewExp obj <- vd_ats v
                         ]
  
@@ -257,13 +258,13 @@ instance Expr P_Interface where
  uType _ ifc
   = let x=ifc_Obj ifc in
     foldr (.+.) nothing (map uType' (ifc_Params ifc)) .+.
-    uType x x
+    uType' x
 
 instance Expr P_ObjectDef where
  uType _ o
   = let x=obj_ctx o in
-    uType x x .+. 
-    foldr (.+.) nothing [ uType obj obj .+.
+    uType' x .+. 
+    foldr (.+.) nothing [ uType' obj .+.
                           existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (TypInObjDef obj)
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
@@ -302,7 +303,7 @@ instance Expr P_Declaration where
 
 instance Expr P_Population where
  uType _ pop
-  = uType x x .+. dom x.=.dom x .+. cod x.=.cod x
+  = uType' x .+. dom x.=.dom x .+. cod x.=.cod x
     where x = case pop of
                    P_RelPopu{} -> Prel  (p_orig pop) (name pop)
                    P_TRelPop{} -> PTrel (p_orig pop) (name pop) (p_type pop)
@@ -318,8 +319,8 @@ instance Expr a => Expr [a] where
 instance Expr Term where 
  uType x term 
   = case term of
-     PI{}          -> dom x.=.cod x              -- I
-     Pid{}         -> dom x.=.cod x              -- I[C]
+     PI{}          -> dom x.=.cod x             -- I
+     Pid{}         -> dom x.=.cod x             -- I[C]
      (Patm _ _ []) -> dom x.=.cod x             -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x
@@ -327,23 +328,23 @@ instance Expr Term where
      (Pfull o s t) -> dom x.<.dom (Pid o s) .+. cod x.<.cod (Pid o t)              --  V[A*B] (the typed full set)
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
                       .+. mEqual' Src a b x .+. mEqual' Tgt a b x
-                      .+. uType a a .+. uType b b
+                      .+. uType' a .+. uType' b
      (PIsc _ a b)  -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
                       .+. mSpecific Src a Src b Src x .+. mSpecific Tgt a Tgt b Tgt x
-                      .+. uType a a .+. uType b b
+                      .+. uType' a .+. uType' b
      (PUni _ a b)  -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
                       .+. mGeneric Src a Src b Src x .+. mGeneric Tgt a Tgt b Tgt x
-                      .+. uType a a .+. uType b b
+                      .+. uType' a .+. uType' b
      (PDif o a b)  -> dom x.<.dom a .+. cod x.<.cod a  --  a-b    (difference)
                       .+. mGeneric Src x Src b Src (PUni o a b) .+. mGeneric Tgt x Tgt b Tgt (PUni o a b)
-                      .+. uType a a .+. uType b b
+                      .+. uType' a .+. uType' b .+. uType' (PUni o a b)
      (PCps _ a b)  -> let s = TypInCps x
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
                           pidTest (Patm{}) r = r
                           pidTest _ _ = nothing
                       in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
-                         mSpecific' Tgt a Src b x .+. uType a a .+. uType b b
+                         mSpecific' Tgt a Src b x .+. uType' a .+. uType' b
                          .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
      (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
@@ -352,13 +353,13 @@ instance Expr Term where
                          pnidTest _ _ = nothing
                          s = TypInCps x
                      in dom x .<. dom a .+. cod x .<. cod b
-                        .+. mGeneric' Tgt a Src b x .+. uType a a .+. uType b b
+                        .+. mGeneric' Tgt a Src b x .+. uType' a .+. uType' b
                         .+. pnidTest a (dom b.<. s) .+. pnidTest b (cod a.<. s)
-     (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
-                     .+. uType a a .+. uType b b
-     (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType e e
-     (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType e e
-     (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType e e
+     (PPrd _ a b) -> dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
+                     .+. uType' a .+. uType' b
+     (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
+     (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
+     (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType' e
      (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+. uType x e  -- (e) brackets
      (PTrel _ _ (P_Sign src trg)) -> dom x.<.thing src .+. cod x.<.thing trg
      (Prel _ _)   -> typeToMap (dom x) .+. typeToMap (cod x)
@@ -481,7 +482,7 @@ pCtx2aCtx p_context
               (Map.fromListWith mrgUnion [ (name (head cl)
                                            , uniqueCl cl)
                                          | cl<-eqCl name (p_declarations p_context) ])
-    (utypeST,betweens) = uType p_context p_context
+    (utypeST,betweens) = uType' p_context
     uniqueCl :: [P_Declaration] -> [P_Declaration]
     uniqueCl cl = sort (removeDoubleDeclarations (sortBy (\x y -> compare (dec_sign x) (dec_sign y)) cl))
     removeDoubleDeclarations [] = []
