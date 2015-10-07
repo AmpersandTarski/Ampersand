@@ -444,7 +444,7 @@ instance ShowMath Signature where
 instance ShowMath Expression where
  showMath = showExpr . insParentheses
    where  showExpr (EEqu (l,r)) = showExpr l++texOnly_equals++showExpr r
-          showExpr (EImp (l,r)) = showExpr l++texOnly_subs++showExpr r
+          showExpr (EInc (l,r)) = showExpr l++texOnly_subs++showExpr r
           showExpr (EIsc (l,r)) = showExpr l++texOnly_inter++showExpr r
           showExpr (EUni (l,r)) = showExpr l++texOnly_union++showExpr r
           showExpr (EDif (l,r)) = showExpr l++texOnly_bx ++showExpr r

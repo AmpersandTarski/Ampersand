@@ -87,7 +87,7 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
           lkp x contMap = (concat.maybeToList.lookup x) contMap in  -- (!) may not be used, because we don't know whether x `elem` keys fmap
       case expr of
          EEqu (l,r) -> contents ((l .|-. r) ./\. (r .|-. l))
-         EImp (l,r) -> contents (notCpl l .\/. r)
+         EInc (l,r) -> contents (notCpl l .\/. r)
          EUni (l,r) -> unions (contents l) (contents r)
          EIsc (l,r) -> inters (contents l) (contents r)
          EDif (l,r) -> differ (contents l) (contents r)

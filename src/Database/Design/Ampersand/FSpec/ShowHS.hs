@@ -537,7 +537,7 @@ instance ShowHS AMeaning where
 instance ShowHS RuleType where
   showHS _ _ Truth          = "Truth"
   showHS _ _ Equivalence    = "Equivalence"
-  showHS _ _ Implication    = "Implication"
+  showHS _ _ Inclusion      = "Inclusion"
 
 instance ShowHSName IdentityDef where
  showHSName identity = haskellIdentifier ("identity_"++name identity)
@@ -618,7 +618,7 @@ instance ShowHS SubInterface where
 
 instance ShowHS Expression where
  showHS opts indent (EEqu (l,r)) = "EEqu ("++showHS opts (indent++"      ") l++indent++"     ,"++showHS opts (indent++"      ") r++indent++"     )"
- showHS opts indent (EImp (l,r)) = "EImp ("++showHS opts (indent++"      ") l++indent++"     ,"++showHS opts (indent++"      ") r++indent++"     )"
+ showHS opts indent (EInc (l,r)) = "EInc ("++showHS opts (indent++"      ") l++indent++"     ,"++showHS opts (indent++"      ") r++indent++"     )"
  showHS opts indent (EIsc (l,r)) = "EIsc ("++showHS opts (indent++"      ") l++indent++"     ,"++showHS opts (indent++"      ") r++indent++"     )"
  showHS opts indent (EUni (l,r)) = "EUni ("++showHS opts (indent++"      ") l++indent++"     ,"++showHS opts (indent++"      ") r++indent++"     )"
  showHS opts indent (EDif (l,r)) = "EDif ("++showHS opts (indent++"      ") l++indent++"     ,"++showHS opts (indent++"      ") r++indent++"     )"

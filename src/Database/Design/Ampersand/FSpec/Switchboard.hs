@@ -218,7 +218,7 @@ positiveIn :: Expression -> Declaration -> [Bool]
 positiveIn expr decl = f expr   -- all are True, so an insert in rel means an insert in expr
  where
   f (EEqu _)     = fatal 237 "Illegal call of positiveIn."
-  f (EImp (l,r)) = f (notCpl l .\/. r)
+  f (EInc (l,r)) = f (notCpl l .\/. r)
   f (EIsc (l,r)) = f l ++ f r
   f (EUni (l,r)) = f l ++ f r
   f (EDif (l,r)) = f l ++ f (notCpl r)

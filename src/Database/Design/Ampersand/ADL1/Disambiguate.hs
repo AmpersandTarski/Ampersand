@@ -172,7 +172,7 @@ instance Disambiguatable Term where
   disambInfo (PEqu o a b) env1 = ( PEqu o a' b', propagateConstraints envA envB )
    where (a', envA) = disambInfo a (propagateConstraints env1 envB)
          (b', envB) = disambInfo b (propagateConstraints env1 envA)
-  disambInfo (PImp o a b) env1 = ( PImp o a' b', propagateConstraints envA envB )
+  disambInfo (PInc o a b) env1 = ( PInc o a' b', propagateConstraints envA envB )
    where (a', envA) = disambInfo a (propagateConstraints env1 envB)
          (b', envB) = disambInfo b (propagateConstraints env1 envA)
   disambInfo (PIsc o a b) env1 = ( PIsc o a' b', propagateConstraints envA envB )

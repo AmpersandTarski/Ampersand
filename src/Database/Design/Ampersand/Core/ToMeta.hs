@@ -281,7 +281,7 @@ instance MakeMeta a => MakeMeta (Term a) where
    = case t of
        Prim a     -> Prim (makeMeta f a)
        PEqu o a b -> PEqu o (makeMeta f a) (makeMeta f b)
-       PImp o a b -> PImp o (makeMeta f a) (makeMeta f b)
+       PInc o a b -> PInc o (makeMeta f a) (makeMeta f b)
        PIsc o a b -> PIsc o (makeMeta f a) (makeMeta f b)
        PUni o a b -> PUni o (makeMeta f a) (makeMeta f b)
        PDif o a b -> PDif o (makeMeta f a) (makeMeta f b)

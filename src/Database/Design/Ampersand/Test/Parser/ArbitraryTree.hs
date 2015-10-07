@@ -165,7 +165,7 @@ genTerm lv n = if n == 0
           levels = [
             -- level 0: pRule
             [PEqu <$> arbitrary <*> gen 1 <*> gen 1,
-             PImp <$> arbitrary <*> gen 1 <*> gen 1],
+             PInc <$> arbitrary <*> gen 1 <*> gen 1],
             -- level 1: pTerm
             [PIsc <$> arbitrary <*> gen 2 <*> gen 2,
              PUni <$> arbitrary <*> gen 2 <*> gen 2],

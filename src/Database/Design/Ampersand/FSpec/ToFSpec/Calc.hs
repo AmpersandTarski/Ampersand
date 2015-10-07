@@ -338,7 +338,7 @@ derivMono expr -- preconditie van actie a
                                     }
   showOp expr' = case expr' of
                   EEqu{} -> "="
-                  EImp{} -> "|-"
+                  EInc{} -> "|-"
                   EIsc{} -> "/\\"
                   EUni{} -> "\\/"
                   EDif{} -> "-"
@@ -459,7 +459,7 @@ lambda tOp' e' expr' = [reversePrf[(e'',txt,op)
 ruleType :: Rule -> RuleType
 ruleType r = case rrexp r of
               EEqu{} -> Equivalence
-              EImp{} -> Implication
+              EInc{} -> Inclusion
               _      -> Truth
 
 -- | Action semantics for inserting a delta into a relation dcl.
@@ -659,7 +659,7 @@ genPAclause editAble tOp' expr1 delta1 motive = genPAcl delta1 tOp' expr1
    genPAcl deltaX tOp expr =
      case (tOp, expr) of
        (_  , EEqu{})     -> Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
-       (_  , EImp{})     -> Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
+       (_  , EInc{})     -> Blk [(expr, nub [r |(_,rs)<-motive, r<-rs])]
        (_ ,  EFlp x)     -> genPAcl (flp deltaX) tOp x
        (_ ,  EBrk x)     -> genPAcl deltaX tOp x
        (Ins, ECpl x)     -> genPAcl deltaX Del x

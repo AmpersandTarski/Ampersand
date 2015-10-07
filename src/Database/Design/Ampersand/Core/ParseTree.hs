@@ -373,7 +373,7 @@ instance Eq TermPrim where
 data Term a
    = Prim a
    | PEqu Origin (Term a) (Term a)  -- ^ equivalence             =
-   | PImp Origin (Term a) (Term a)  -- ^ implication             |-
+   | PInc Origin (Term a) (Term a)  -- ^ inclusion               |-
    | PIsc Origin (Term a) (Term a)  -- ^ intersection            /\
    | PUni Origin (Term a) (Term a)  -- ^ union                   \/
    | PDif Origin (Term a) (Term a)  -- ^ difference              -
@@ -396,7 +396,7 @@ instance Traversable Term where
   = case x of
     Prim a -> Prim <$> f' a
     PEqu o a b -> PEqu o <$> f a <*> f b
-    PImp o a b -> PImp o <$> f a <*> f b
+    PInc o a b -> PInc o <$> f a <*> f b
     PIsc o a b -> PIsc o <$> f a <*> f b
     PUni o a b -> PUni o <$> f a <*> f b
     PDif o a b -> PDif o <$> f a <*> f b
@@ -457,7 +457,7 @@ instance Traced a => Traced (Term a) where
  origin e = case e of
    Prim a         -> origin a
    PEqu orig _ _  -> orig
-   PImp orig _ _  -> orig
+   PInc orig _ _  -> orig
    PIsc orig _ _  -> orig
    PUni orig _ _  -> orig
    PDif orig _ _  -> orig

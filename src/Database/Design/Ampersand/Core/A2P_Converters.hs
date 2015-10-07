@@ -190,7 +190,7 @@ aExpression2pTermPrim :: Expression -> Term TermPrim
 aExpression2pTermPrim expr = 
   case expr of
     EEqu (l,r)   -> PEqu o (aExpression2pTermPrim l) (aExpression2pTermPrim r)  
-    EImp (l,r)   -> PImp o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
+    EInc (l,r)   -> PInc o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     EIsc (l,r)   -> PIsc o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     EUni (l,r)   -> PUni o (aExpression2pTermPrim l) (aExpression2pTermPrim r)
     EDif (l,r)   -> PDif o (aExpression2pTermPrim l) (aExpression2pTermPrim r)

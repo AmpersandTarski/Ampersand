@@ -296,7 +296,7 @@ assemble expr
    rc = f [s,t] expr (s,t)
    f :: [Var] -> Expression -> (Var,Var) -> PredLogic
    f exclVars (EEqu (l,r)) (a,b)  = Equiv (f exclVars l (a,b)) (f exclVars r (a,b))
-   f exclVars (EImp (l,r)) (a,b)  = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
+   f exclVars (EInc (l,r)) (a,b)  = Implies (f exclVars l (a,b)) (f exclVars r (a,b))
    f exclVars e@EIsc{}     (a,b)  = Conj [f exclVars e' (a,b) | e'<-exprIsc2list e]
    f exclVars e@EUni{}     (a,b)  = Disj [f exclVars e' (a,b) | e'<-exprUni2list e]
    f exclVars (EDif (l,r)) (a,b)  = Conj [f exclVars l (a,b), Not (f exclVars r (a,b))]

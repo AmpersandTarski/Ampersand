@@ -608,7 +608,7 @@ pMarkup = P_Markup
 -- | Parses a rule
 pRule :: AmpParser (Term TermPrim) -- ^ The rule parser
 pRule  =  pTerm <??> (invert PEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
-                      invert PImp  <$> currPos <* pOperator "|-" <*> pTerm)
+                      invert PInc  <$> currPos <* pOperator "|-" <*> pTerm)
 
 
 {-

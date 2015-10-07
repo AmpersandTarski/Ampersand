@@ -224,11 +224,11 @@ instance ShowADL Expression where
    where
      showExpr :: (String,String,String,String,String,String,String,String,String,String,String,String,String,String,String -> String,String,String,String,String,String)
             -> Expression -> String
-     showExpr    (equi,  impl,  inter, union',diff,  lresi, rresi, rDia, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
+     showExpr    (equiv,  inclu,  inter, union',diff,  lresi, rresi, rDia, rMul  , rAdd , rPrd ,closK0,closK1,flp',  compl,           lpar,  rpar,  lbr,   star,  rbr)  expr
       = showchar (insParentheses expr)
         where
-          showchar (EEqu (l,r)) = showchar l++equi++showchar r
-          showchar (EImp (l,r)) = showchar l++impl++showchar r
+          showchar (EEqu (l,r)) = showchar l++equiv++showchar r
+          showchar (EInc (l,r)) = showchar l++inclu++showchar r
           showchar (EIsc (l,r)) = showchar l++inter++showchar r
           showchar (EUni (l,r)) = showchar l++union'++showchar r
           showchar (EDif (l,r)) = showchar l++diff ++showchar r
@@ -438,12 +438,12 @@ instance ShowADL P_NamedRel where
 instance (ShowADL a, Traced a) => ShowADL (Term a) where
  showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", "<>", ";", "!", "*", "*", "+", "~", "(", ")")
    where
-    showPExpr (equi,impl,inter,union',diff,lresi,rresi,rDia,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar) expr
+    showPExpr (equiv,inclu,inter,union',diff,lresi,rresi,rDia,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar) expr
      = showchar (insP_Parentheses expr)
       where
        showchar (Prim a) = showADL a
-       showchar (PEqu _ l r)                             = showchar l++equi++showchar r
-       showchar (PImp _ l r)                             = showchar l++impl++showchar r
+       showchar (PEqu _ l r)                             = showchar l++equiv++showchar r
+       showchar (PInc _ l r)                             = showchar l++inclu++showchar r
        showchar (PIsc _ l r)                             = showchar l++inter++showchar r
        showchar (PUni _ l r)                             = showchar l++union'++showchar r
        showchar (PDif _ l r)                             = showchar l++diff ++showchar r
@@ -466,7 +466,7 @@ insP_Parentheses = insPar 0
        wrap i j e' = if i<=j then e' else PBrk (origin e') e'
        insPar :: (Traced a) => Integer -> Term a -> Term a
        insPar i (PEqu o l r) = wrap i     0 (PEqu o (insPar 1 l) (insPar 1 r))
-       insPar i (PImp o l r) = wrap i     0 (PImp o (insPar 1 l) (insPar 1 r))
+       insPar i (PInc o l r) = wrap i     0 (PInc o (insPar 1 l) (insPar 1 r))
        insPar i (PIsc o l r) = wrap (i+1) 2 (PIsc o (insPar 2 l) (insPar 2 r))
        insPar i (PUni o l r) = wrap (i+1) 2 (PUni o (insPar 2 l) (insPar 2 r))
        insPar i (PDif o l r) = wrap i     4 (PDif o (insPar 5 l) (insPar 5 r))

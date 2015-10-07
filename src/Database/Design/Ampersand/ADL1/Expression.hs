@@ -21,7 +21,7 @@ subst :: (Declaration,Expression) -> Expression -> Expression
 subst (decl,expr) = subs
      where
        subs (EEqu (l,r)) = EEqu (subs l,subs r)
-       subs (EImp (l,r)) = EImp (subs l,subs r)
+       subs (EInc (l,r)) = EInc (subs l,subs r)
        subs (EIsc (l,r)) = EIsc (subs l,subs r)
        subs (EUni (l,r)) = EUni (subs l,subs r)
        subs (EDif (l,r)) = EDif (subs l,subs r)
@@ -48,7 +48,7 @@ foldlMapExpression f = foldrMapExpression f' where f' x y = f y x
 
 foldrMapExpression :: (r -> a -> a) -> (Declaration->r) -> a -> Expression -> a
 foldrMapExpression f g a (EEqu (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EImp (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
+foldrMapExpression f g a (EInc (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EIsc (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EUni (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
 foldrMapExpression f g a (EDif (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
@@ -73,7 +73,7 @@ primitives :: Expression -> [Expression]
 primitives expr =
   case expr of
     (EEqu (l,r)) -> primitives l `uni` primitives r
-    (EImp (l,r)) -> primitives l `uni` primitives r
+    (EInc (l,r)) -> primitives l `uni` primitives r
     (EIsc (l,r)) -> primitives l `uni` primitives r
     (EUni (l,r)) -> primitives l `uni` primitives r
     (EDif (l,r)) -> primitives l `uni` primitives r
@@ -161,7 +161,7 @@ insParentheses expr = insPar 0 expr
      wrap i j e' = if i<=j then e' else EBrk (insPar 0 e')
      insPar :: Integer -> Expression -> Expression
      insPar i  (EEqu (l,r)) = wrap i 0 (insPar 1 l .==. insPar 1 r)
-     insPar i  (EImp (l,r)) = wrap i 0 (insPar 1 l .|-. insPar 1 r)
+     insPar i  (EInc (l,r)) = wrap i 0 (insPar 1 l .|-. insPar 1 r)
      insPar i x@EIsc{}      = wrap i 2 (foldr1 (./\.) [insPar 3 e | e<-exprIsc2list x ])
      insPar i x@EUni{}      = wrap i 2 (foldr1 (.\/.) [insPar 3 e | e<-exprUni2list x ])
      insPar i  (EDif (l,r)) = wrap i 4 (insPar 5 l .-. insPar 5 r)

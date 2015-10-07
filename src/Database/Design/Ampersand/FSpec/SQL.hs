@@ -42,7 +42,7 @@ selectExpr :: FSpec    -- current context
         -> BinQueryExpr   -- resulting info for the binary SQL expression
 -- In order to translate all Expressions, code generators have been written for EUni ( \/ ), EIsc ( /\ ), EFlp ( ~ ), ECpl (unary - ), and ECps ( ; ),
 -- each of which is supposed to generate correct code in 100% of the cases. (TODO: how do we establish that properly?)
--- The other operators, EEqu ( = ), EImp ( |- ), ERad ( ! ), EPrd ( * ), ELrs ( / ), ERrs ( \ ), and EDia ( <> ), have been implemented in terms of the previous ones,
+-- The other operators, EEqu ( = ), EInc ( |- ), ERad ( ! ), EPrd ( * ), ELrs ( / ), ERrs ( \ ), and EDia ( <> ), have been implemented in terms of the previous ones,
 -- in order to prevent mistakes in the code generator. It is possible that more efficient code may be generated in these cases.
 -- Special cases are treated up front, so they will overrule the more general cases.
 -- That allows more efficient code while retaining correctness and completeness as much as possible.
@@ -522,8 +522,8 @@ nonSpecialSelectExpr fSpec expr=
     EEqu (l,r)
       -> BQEComment [BlockComment $ "case: EEqu (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec ((ECpl l .\/. r) ./\. (ECpl r .\/. l))
-    EImp (l,r)
-      -> BQEComment [BlockComment $ "case: EImp (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
+    EInc (l,r)
+      -> BQEComment [BlockComment $ "case: EInc (l,r) "++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec (ECpl l .\/. r)
     EDif (l,r)
       -> BQEComment [BlockComment $ "case: EDif (l,r) "++showADL expr++" ("++show (sign expr)++")"] $

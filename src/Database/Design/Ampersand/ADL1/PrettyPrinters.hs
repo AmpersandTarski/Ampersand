@@ -184,7 +184,7 @@ instance Pretty a => Pretty (Term a) where
        Prim a -> pretty a
        -- level 0 (rule)
        PEqu _ t1 t2 -> two t1 t2 "="
-       PImp _ t1 t2 -> two t1 t2 " |- "
+       PInc _ t1 t2 -> two t1 t2 " |- "
        -- level 1
        PIsc _ t1 t2 -> two t1 t2 "/\\"
        PUni _ t1 t2 -> two t1 t2 "\\/"

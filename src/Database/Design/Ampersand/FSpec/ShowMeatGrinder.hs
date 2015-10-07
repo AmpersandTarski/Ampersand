@@ -332,7 +332,7 @@ instance MetaPopulations Expression where
       ]++
       ( case expr of
             (EEqu (l,r)) -> makeBinaryTerm Equivalence l r
-            (EImp (l,r)) -> makeBinaryTerm Implication l r
+            (EInc (l,r)) -> makeBinaryTerm Inclusion l r
             (EIsc (l,r)) -> makeBinaryTerm Intersection l r
             (EUni (l,r)) -> makeBinaryTerm Union l r
             (EDif (l,r)) -> makeBinaryTerm Difference l r
@@ -373,7 +373,7 @@ data BinOp = CartesionProduct
            | Diamond
            | Difference
            | Equivalence 
-           | Implication 
+           | Inclusion 
            | Intersection 
            | LeftResidu
            | RightResidu

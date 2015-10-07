@@ -117,7 +117,7 @@ makeFSpec opts context
      ruleviolations :: Rule -> [AAtomPair]
      ruleviolations r = case rrexp r of
           EEqu{} -> (cra >- crc) ++ (crc >- cra)
-          EImp{} -> cra >- crc
+          EInc{} -> cra >- crc
           _      -> pairsinexpr (EDcV (sign (consequent r))) >- crc  --everything not in con
           where cra = pairsinexpr (antecedent r)
                 crc = pairsinexpr (consequent r)

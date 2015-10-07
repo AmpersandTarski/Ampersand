@@ -125,7 +125,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  isTrue expr
   = case expr of
      EEqu (l,r) -> l == r
-     EImp (l,_) -> isTrue l
+     EInc (l,_) -> isTrue l
      EIsc (l,r) -> isTrue l && isTrue r
      EUni (l,r) -> isTrue l || isTrue r
      EDif (l,r) -> isTrue l && isFalse r
@@ -150,7 +150,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  isFalse expr
   = case expr of
      EEqu (l,r) -> l == notCpl r
-     EImp (_,r) -> isFalse r
+     EInc (_,r) -> isFalse r
      EIsc (l,r) -> isFalse r || isFalse l
      EUni (l,r) -> isFalse r && isFalse l
      EDif (l,r) -> isFalse l || isTrue r
@@ -173,8 +173,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
  --    It does a little bit more than just test on ERel I _.
  --    If it returns False, this must be interpreted as: the expression is definitely not I, an may not be equal to I as far as the computer can tell on face value.
  isIdent expr = case expr of
-     EEqu (l,r) -> isIdent (EIsc (EImp (l,r), EImp (r,l)))    -- TODO: maybe derive something better?
-     EImp (l,r) -> isIdent (EUni (ECpl l, r))                     -- TODO: maybe derive something better?
+     EEqu (l,r) -> isIdent (EIsc (EInc (l,r), EInc (r,l)))    -- TODO: maybe derive something better?
+     EInc (l,r) -> isIdent (EUni (ECpl l, r))                     -- TODO: maybe derive something better?
      EIsc (l,r) -> isIdent l && isIdent r
      EUni (l,r) -> isIdent l && isIdent r
      EDif (l,r) -> isIdent l && isFalse r
@@ -194,8 +194,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
                 _      -> False
 
  isImin expr' = case expr' of       -- > tells whether the argument is equivalent to I-
-     EEqu (l,r) -> isImin (EIsc (EImp (l,r), EImp (r,l)))       -- TODO: maybe derive something better?
-     EImp (l,r) -> isImin (EUni (ECpl l, r))                  -- TODO: maybe derive something better?
+     EEqu (l,r) -> isImin (EIsc (EInc (l,r), EInc (r,l)))       -- TODO: maybe derive something better?
+     EInc (l,r) -> isImin (EUni (ECpl l, r))                  -- TODO: maybe derive something better?
      EIsc (l,r) -> isImin l && isImin r
      EUni (l,r) -> isImin l && isImin r
      EDif (l,r) -> isImin l && isFalse r
