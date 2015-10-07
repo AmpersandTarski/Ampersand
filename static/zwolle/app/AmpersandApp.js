@@ -53,7 +53,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $location){
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
     	var message = ((response.data || {}).error || {}).message || response.statusText;
     	
-    	if(response.status == 401 || response.status == 403) {
+    	if(response.status == 401) {
     		$localStorage.roleId = 0;
     		$rootScope.refreshNavBar();
     		$location.path('ext/Login');

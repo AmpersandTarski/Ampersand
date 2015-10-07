@@ -97,7 +97,7 @@ class Session {
 	public function setInterface($interfaceId){
 		
 		if(isset($interfaceId)) {
-			if(!$this->role->isInterfaceForRole($interfaceId)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 403); // 403: Forbidden
+			if(!$this->role->isInterfaceForRole($interfaceId)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 401); // 401: Unauthorized
 			
 			$this->interface = new InterfaceObject($interfaceId);
 			Notifications::addLog("Interface '". $this->interface->label . "' selected", 'SESSION');
