@@ -24,7 +24,8 @@ IDENT Context: Context(name[Context*ContextIdentifier])
 REPRESENT ContextIdentifier TYPE ALPHANUMERIC
 RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ]
 MEANING "The name of a context."
-RELATION patterns[Context*Pattern]
+RELATION valid[Rule*Context] [UNI]
+RELATION usedPatterns[Context*Pattern]
 MEANING "The patterns in a context."
 RELATION concs[Context*Concept]
 MEANING "A concept, mentioned anywhere in a context."

@@ -14,7 +14,7 @@ PATTERN Views
     RULE "del hasView" : hasView |- concept~;concept/\I
     VIOLATION (TXT "{EX}_; DelPair_;hasView_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
 
-    RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaStar;hasView - isaPlus
+    RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaPlus
     ROLE ExecEngine MAINTAINS "ins viewBy", "del viewBy"
     RULE "ins viewBy" : isaStar;hasView - isaPlus |- viewBy
     VIOLATION (TXT "{EX} InsPair;viewBy;Concept;", SRC I, TXT ";Concept;", TGT I)

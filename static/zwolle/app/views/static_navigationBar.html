@@ -54,7 +54,7 @@
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
 				<ul class="dropdown-menu" role="menu">
 					<li>
-						<a href="" ng-repeat="role in navbar.roles" ng-click="selectRole(role.id)">
+						<a href="" ng-repeat="role in navbar.roles" ng-click="selectRole(role.id)" style="white-space:normal;">
 							{{role.label}}
 							<span ng-show="role.id == $storage.roleId" class="glyphicon glyphicon-ok pull-right"></span>
 						</a>

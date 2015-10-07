@@ -1,5 +1,4 @@
 ﻿CONTEXT AST IN ENGLISH 
-INCLUDE "Atoms.xlsx"
 
 PROCESS Atoms
     RELATION name[Concept*Identifier] [UNI,TOT]

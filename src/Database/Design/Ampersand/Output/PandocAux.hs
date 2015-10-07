@@ -109,7 +109,7 @@ defaultWriterVariables fSpec
          , "% End-hack1"
          , ""
 
-         , "% hack2) The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that ecuations are"
+         , "% hack2) The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are"
          , "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note"
          , "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath"
          , "\\DeclareRobustCommand{\\[}{\\begin{equation}}"

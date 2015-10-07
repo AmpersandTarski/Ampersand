@@ -33,7 +33,7 @@ PROCESS "Defining type-terms"
       ROLE ExecEngine MAINTAINS "cod is total"
     RULE "popset is total" : 
       I[Concept] |- popset;popset~
-      VIOLATION (TXT "{EX}_; InsPair_;pop_;Concept_;", SRC I, TXT "_;TypeTerm_;popset(", SRC I, TXT ")")
+      VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;popset(", SRC I, TXT ")")
       ROLE ExecEngine MAINTAINS "popset is total"
 ENDPROCESS
 
@@ -260,8 +260,8 @@ ENDPROCESS
 PROCESS "Domain Analysis for Right residual"
     VIEW RightResidual : RightResidual(TXT "(", first, TXT "\\", second, TXT ")")
     CLASSIFY RightResidual ISA BinaryTerm
-    RELATION rResidualSource[RightResidual*TypeTerm]
-    RELATION rResidualTarget[RightResidual*TypeTerm]
+    RELATION rResidualSource[RightResidual*TypeTerm] [UNI]
+    RELATION rResidualTarget[RightResidual*TypeTerm] [UNI]
 
     ROLE ExecEngine MAINTAINS rightResSrcTerm
     RULE rightResSrcTerm : I[RightResidual] |- rResidualSource;rResidualSource~
@@ -305,7 +305,7 @@ PROCESS "Analysing terms"
     RELATION pretype[TypeTerm*Concept]
 
     ROLE ExecEngine MAINTAINS "Insert into pretype"
-    RULE "Insert into pretype" : subStar;popset~ |- pretype
+    RULE "Insert into pretype" : subStar;popset~-subStar;popset~;isa |- pretype
     VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
 
     ROLE ExecEngine MAINTAINS "INS isa INTO sub"
