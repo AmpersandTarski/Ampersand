@@ -11,7 +11,9 @@ class Api{
 	 * @param int $roleId
 	 */
 	public function installer($sessionId, $roleId = 0){
-		try{			
+		try{
+			if(Config::get('productionEnv')) throw new Exception ("Database reinstall not allowed in production environment", 403);
+			
 			Database::createDB();
 			
 			$db = Database::singleton();
