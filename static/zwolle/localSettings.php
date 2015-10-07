@@ -12,8 +12,6 @@ define ('JSONLD_TYPE_PATH', API_PATH . 'concept/');
 define ('JSONLD_ID_PATH', API_PATH . 'resource/');
 define ('JSONLD_CONTEXT_PATH', API_PATH . 'interface/');
 
-define ('LOG_ENABLED', true);
-
 define ('UPLOAD_DIR', __DIR__ . '/uploads/');
 $GLOBALS['api']['allowedMimeTypes'] = array('application/vnd.ms-excel'
 										   ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
