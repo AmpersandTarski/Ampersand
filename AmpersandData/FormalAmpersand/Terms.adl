@@ -6,9 +6,9 @@ INCLUDE "DomainAnalysis.adl"
 
     RELATION valid[Rule*Context] [UNI]
     RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
-    ROLE ExecEngine MAINTAINS SURrelations
-    RULE SURrelations : I[Relation] |- relations~;relations
-    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+--    ROLE ExecEngine MAINTAINS SURrelations
+--    RULE SURrelations : I[Relation] |- relations~;relations
+--    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
 PROCESS "Type checking"
     RULE "Unambiguous pretype"

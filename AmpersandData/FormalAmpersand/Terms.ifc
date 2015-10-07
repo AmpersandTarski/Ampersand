@@ -1,7 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
 INCLUDE "Views.adl"
-INCLUDE "Atoms.xlsx"
+INCLUDE "Terms.xlsx"
 
 INTERFACE Contexts (valid,relations) : '_SESSION'
 TABS[ "" : V[SESSION*Context]
@@ -11,10 +11,11 @@ TABS[ "" : V[SESSION*Context]
            ]
     ]
 
-INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) FOR User : '_SESSION'
+INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : '_SESSION'
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
-           [ relation   : name
+           [ relation   : I
+           , name       : name
            , source     : source
            , target     : target
            ]

@@ -59,7 +59,7 @@ ENDPROCESS
 
 PROCESS "Domain Analysis for Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
     CONCEPT Rule ""
-    RELATION lhsTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
+    RELATION rrexp[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
     RELATION rhsTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
  
     ROLE ExecEngine MAINTAINS domainDomRule
