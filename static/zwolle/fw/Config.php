@@ -18,6 +18,7 @@ class Config {
 // Default configuration
 Config::set('contextName', 'global', $contextName); // from Generics.php
 Config::set('sessionExpirationTime', 'global', 60*60); // expiration time in seconds
+Config::set('productionEnv', 'global', false); // set environment as production deployment (or not = default)
 
 // Default CRUD rights for interfaces
 Config::set('defaultIfcForCreate', 'global', true);
