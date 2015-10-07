@@ -7,7 +7,7 @@ Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 */
 
-AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location, \$timeout, \$localStorage) {
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location, \$timeout, \$sessionStorage) {
   
   \$scope.interfaceName = "$interfaceName$";
   \$scope.interfaceLabel = "$interfaceLabel$";
@@ -23,7 +23,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   if(typeof \$routeParams.resourceId != 'undefined'){
 	  srcAtomId = \$routeParams.resourceId;
   }else{ 
-	  srcAtomId = \$localStorage.session.id;
+	  srcAtomId = \$sessionStorage.session.id;
   }
 	  
   // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')

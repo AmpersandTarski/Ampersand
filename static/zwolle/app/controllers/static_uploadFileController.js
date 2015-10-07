@@ -1,11 +1,10 @@
-AmpersandApp.controller('uploadFileController', function($scope, $rootScope, $localStorage, FileUploader){
-	  $scope.$storage = $localStorage;
+AmpersandApp.controller('uploadFileController', function($scope, $rootScope, $localStorage, $sessionStorage, FileUploader){
 	  
 	  // File uploader stuff
 	  $scope.FileUploader = new FileUploader({
 		url					: 'api/v1/file',
 		alias 				: 'file', // fieldname as used in $_FILES['file']
-		formData 			: [{'sessionId' : $scope.$storage.session.id, 'roleId' : $scope.$storage.roleId}],
+		formData 			: [{'sessionId' : $sessionStorage.session.id, 'roleId' : $localStorage.roleId}],
 		removeAfterUpload 	: true,
 		autoUpload 			: true
 	  });

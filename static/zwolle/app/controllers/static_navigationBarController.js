@@ -1,6 +1,7 @@
-AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular, $localStorage) {
+AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular, $localStorage, $sessionStorage) {
 	
 	$scope.$storage = $localStorage;
+	$scope.$sessionStorage = $sessionStorage;
 	
 	$rootScope.myPromises = new Array(); // initialize an array for promises, used by angular-busy module (loading indicator)
 	
@@ -31,7 +32,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 				.get()
 				.then(function(data){
 					$rootScope.navbar = data;
-					$scope.$storage.session = data.session;
+					$scope.$sessionStorage.session = data.session;
 				}, function(error){
 					// on error
 				})
@@ -39,7 +40,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	};
 	
 	$scope.destroySession = function(){
-		session = Restangular.one('session', $scope.$storage.session.id);
+		session = Restangular.one('session', $scope.$sessionStorage.session.id);
 		session.remove().then(function(data){
 			$rootScope.updateNotifications(data.notifications);
 			
