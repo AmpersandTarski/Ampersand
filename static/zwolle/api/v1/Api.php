@@ -47,8 +47,9 @@ class Api{
 	 */
 	public function destroySession($session_id){
 		try{
-			$session = Session::singleton($session_id);
-			$session->destroySession($session_id);
+			if($session_id != session_id()) throw new Exception ("You can only destroy your own session", 403);
+			$session = Session::singleton();
+			$session->destroySession();
 		
 			return array('notifications' => Notifications::getAll());
 			

@@ -1,7 +1,5 @@
 <?php
 
-define("EXPIRATION_TIME", 60*60 ); // expiration time in seconds
-
 // PHP SESSION : Start a new, or resume the existing, PHP session
 session_start();
 Notifications::addLog('Session id: ' . session_id(), 'SESSION');
@@ -31,8 +29,8 @@ class Session {
 			if (array_key_exists('SESSION', $allConcepts)){ // Only execute following code when concept SESSION is used by adl script
 				
 				// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-				$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - EXPIRATION_TIME)), 'SESSION');
-				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroySession($expiredSessionAtom);
+				$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
+				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroyAmpersandSession($expiredSessionAtom);
 
 				// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
 				$sessionAtom = new Atom(session_id(), 'SESSION');
@@ -61,11 +59,14 @@ class Session {
 		return self::$_instance;
 	}
 	
-	public function destroySession($sessionAtom){
-		
+	private function destroyAmpersandSession($sessionAtom){
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
 		$this->database->deleteAtom($sessionAtom, 'SESSION');
-		$this->database->closeTransaction('Session deleted', false);
+		$this->database->commitTransaction();
+	}
+	
+	public function destroySession(){
+		$this->destroyAmpersandSession(session_id());
 		session_regenerate_id(true);
 		
 	}
