@@ -6,6 +6,7 @@ Notifications::addLog('Session id: ' . session_id(), 'SESSION');
 
 class Session {
 	
+	public $id;
 	public $database;
 	public $role;
 	public $interface;
@@ -17,38 +18,31 @@ class Session {
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
 	// prevent any outside instantiation of this object
-	private function __construct(){
-		global $allConcepts;
-		
-		// if(!is_null($sessionId)) session_id($sessionId); // set php session_id, must be done before session_start(); 
-		
+	private function __construct(){		
 		try {
+			$this->id = session_id();
+			
 			$this->database = Database::singleton();
 			
 			// AMPERSAND SESSION
-			if (array_key_exists('SESSION', $allConcepts)){ // Only execute following code when concept SESSION is used by adl script
-				
-				// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-				$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
-				foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroyAmpersandSession($expiredSessionAtom);
+			Concept::getConcept('SESSION');
+			
+			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
+			$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
+			foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroyAmpersandSession($expiredSessionAtom);
 
-				// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
-				$sessionAtom = new Atom(session_id(), 'SESSION');
-				if (!$sessionAtom->atomExists()){ 
-					$this->database->addAtomToConcept(session_id(), 'SESSION');
-					$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
-				}
-
-				$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".session_id()."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
-				
-			}else{
-				throw new Exception('Script does not contain SESSION concept!', 500);
+			// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
+			$sessionAtom = new Atom($this->id, 'SESSION');
+			if (!$sessionAtom->atomExists()){ 
+				$this->database->addAtomToConcept($this->id, 'SESSION');
+				$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
 			}
+
+			$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
 			
 		} catch (Exception $e){
 		  	throw $e;
 		}
-		
 	}
 	
 	// Prevent any copy of this object
@@ -68,6 +62,7 @@ class Session {
 	public function destroySession(){
 		$this->destroyAmpersandSession(session_id());
 		session_regenerate_id(true);
+		$this->id = session_id();
 		
 	}
 	
