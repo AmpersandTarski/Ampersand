@@ -1,11 +1,12 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
+INCLUDE "Views.adl"
 INCLUDE "Atoms.xlsx"
 
 INTERFACE Contexts (relations) : '_SESSION'
 TABS[ "" : V[SESSION*Context]
       ROWS [ context        : I
---           , "valid rules"  : valid~
+           , "valid rules"  : valid~
            , relations      : relations
            ]
     ]
@@ -27,12 +28,12 @@ TABS[ relations : V[SESSION*Relation]
            , src         : src
            , tgt         : tgt
            ]
-    , "type-terms" : V[SESSION*TypeTerm]
-      BOX<SCOLS>
-           [ "type-term" : I
-           , "sub+"      : subPlus
-           , pretype     : pretype
-           ]
+--    , "type-terms" : V[SESSION*TypeTerm]
+--      BOX<SCOLS>
+--           [ "type-term" : I
+--           , "sub+"      : subPlus
+--           , pretype     : pretype
+--           ]
     ]
 
 INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
