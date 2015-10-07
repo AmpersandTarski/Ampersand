@@ -28,21 +28,6 @@ class Api{
 	}
 	
 	/**
-	 * @url GET session
-	 */
-	public function getSession(){
-		try{
-			$session = Session::singleton();
-			
-			return array('id' => session_id());
-		
-		}catch(Exception $e){
-			throw new RestException($e->getCode(), $e->getMessage());
-		}
-	
-	}
-	
-	/**
 	 * @url DELETE session/{session_id}
 	 */
 	public function destroySession($session_id){
@@ -348,7 +333,8 @@ class Api{
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
     					 ,'roles' => $roles
     					 ,'notifications' => Notifications::getAll()
-    					 ,'session' => array ( 'sessionUser' => Session::getSessionUserId()
+    					 ,'session' => array ( 'id' => $session->id
+    					 					 , 'sessionUser' => Session::getSessionUserId()
     					 					 , 'loggedIn' => Session::sessionUserLoggedIn()
     					 					 , 'sessionRoles' => $roles
     					 					 )

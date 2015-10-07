@@ -32,12 +32,8 @@ AmpersandApp.config(function(RestangularProvider) {
 
 AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $location){
 	
-	// Declare $rootScope objects
-	$rootScope.session = {};
+	$localStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
 	$rootScope.notifications = {'errors' : []};
-	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
-	
-	Restangular.restangularizeElement('', $rootScope.session, 'session');
 	
 	if($localStorage.roleId === undefined){
 		$localStorage.roleId = 0; // set roleId to zero
@@ -45,7 +41,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $location){
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
 		params['roleId'] = $localStorage.roleId;
-		params['sessionId'] = $rootScope.session.id;
+		params['sessionId'] = $localStorage.session.id;
 		return params;
 	});
 	

@@ -9,9 +9,6 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
 			// set roleId back to 0
 			$localStorage.roleId = 0;
 			
-			// refresh session
-			$rootScope.session = Restangular.one('session').get().$object;
-			
 			// refresh navbar
 			$rootScope.refreshNavBar();
 			
