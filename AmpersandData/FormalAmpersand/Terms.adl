@@ -15,13 +15,13 @@ PROCESS "Type checking"
      : pretype |- pretype~\I[Concept]
     MESSAGE "Every type-term must be subset of one concept only."
     VIOLATION (SRC I, TXT " is a subset of ", TGT I, TXT ".")
-    ROLE User MAINTAINS "Unambiguous pretype"
+    ROLE "Type Checker" MAINTAINS "Unambiguous pretype"
 
     RULE "Complete pretype"
      : I[TypeTerm] |- pretype;pretype~
     MESSAGE "Every type-term must have one concept as its pretype."
     VIOLATION (SRC I, TXT " has no pretype.")
-    ROLE User MAINTAINS "Complete pretype"
+    ROLE "Type Checker" MAINTAINS "Complete pretype"
 
     RULE checkComposition :
       I[Composition];first;tgt |- (src~;second~)\isaRfxStar
@@ -32,7 +32,7 @@ PROCESS "Type checking"
                 , TXT " and ", SRC second;src
                 , TXT " is the source concept of ", SRC second
                 , TXT ", which is a mismatch.")
-      ROLE User MAINTAINS checkComposition
+      ROLE "Type Checker" MAINTAINS checkComposition
 
     RULE checkLeftResidual :
       tgt~;second~;I[LeftResidual] |- isaStar/(first;tgt)
@@ -42,7 +42,7 @@ PROCESS "Type checking"
                 , TXT " and ", TGT first;tgt
                 , TXT " is the target concept of ", TGT first
                 , TXT ", which is a mismatch.")
-      ROLE User MAINTAINS checkLeftResidual
+      ROLE "Type Checker" MAINTAINS checkLeftResidual
 
     RULE checkRightResidual :
       I[RightResidual];second;src |- (src~;first~)\isaStar
@@ -52,7 +52,7 @@ PROCESS "Type checking"
                 , TXT " and ", SRC second;src
                 , TXT " is the source concept of ", SRC second
                 , TXT ", which is a mismatch.")
-      ROLE User MAINTAINS checkRightResidual
+      ROLE "Type Checker" MAINTAINS checkRightResidual
 ENDPROCESS
 
 PROCESS "Reflexive isa closures"

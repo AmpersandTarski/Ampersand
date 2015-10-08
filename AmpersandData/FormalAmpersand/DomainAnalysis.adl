@@ -59,15 +59,24 @@ ENDPROCESS
 
 PROCESS "Domain Analysis for Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
     CONCEPT Rule ""
-    RELATION rrexp[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
-    RELATION rhsTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
- 
+    RELATION rrexp[Rule*Term] [UNI]
+    VIEW Relation : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
+
+    CLASSIFY Equivalence ISA BinaryTerm
+    VIEW Equivalence : Equivalence(TXT "RULE ", first, TXT " = ", second)
+
+    CLASSIFY Inclusion ISA BinaryTerm
+    VIEW Inclusion : Inclusion(TXT "RULE ", first, TXT " |- ", second)
+
+    CLASSIFY Truth ISA Term
+    VIEW Truth : Truth(TXT "RULE ", I[Term])
+
     ROLE ExecEngine MAINTAINS domainDomRule
-    RULE domainDomRule : dom~;lhsTerm~;rhsTerm;dom \/ dom~;rhsTerm~;lhsTerm;dom |- sub
+    RULE domainDomRule : dom~;first~;(I[Equivalence]\/I[Inclusion]);second;dom \/ dom~;second~;(I[Equivalence]\/I[Inclusion]);first;dom |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodRule
-    RULE domainCodRule : cod~;lhsTerm~;rhsTerm;cod \/ cod~;rhsTerm~;lhsTerm;cod |- sub
+    RULE domainCodRule : cod~;first~;(I[Equivalence]\/I[Inclusion]);second;cod \/ cod~;second~;(I[Equivalence]\/I[Inclusion]);first;cod |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
@@ -311,14 +320,6 @@ PROCESS "Analysing terms"
     ROLE ExecEngine MAINTAINS "INS isa INTO sub"
     RULE "INS isa INTO sub" : popset~;isa;popset |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-ENDPROCESS
-
-PROCESS "Superfluous terms"
-    ROLE ExecEngine MAINTAINS garbageTerm
-    RULE garbageTerm :
-      I[Term] |- lhsTerm~;lhsTerm \/ rhsTerm~;rhsTerm \/
-                 first~;first \/ second~;second
---  VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
 ENDPROCESS
 
 ENDCONTEXT

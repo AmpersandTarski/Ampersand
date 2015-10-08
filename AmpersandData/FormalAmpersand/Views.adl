@@ -21,7 +21,7 @@ PATTERN Views
     RULE "del viewBy" : viewBy |- isaStar;hasView - isaPlus
     VIOLATION (TXT "{EX} DelPair;viewBy;Concept;", SRC I, TXT ";Concept;", TGT I)
 
-    ROLE User MAINTAINS "deterministic choice of View"
+    ROLE "Type Checker" MAINTAINS "deterministic choice of View"
     RULE "deterministic choice of View" : viewBy~;viewBy |- I
     VIOLATION (SRC viewBy~, TXT " has both ", SRC default~, TXT " and ", TGT default~, TXT " as view.")
 ENDPATTERN
