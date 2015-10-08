@@ -89,13 +89,17 @@ a .=. b  = (Map.fromList [(a, [b]),(b, [a])],[])
 (.+.) :: TypeInfo -> TypeInfo -> TypeInfo
 (m1,l1) .+. (m2,l2) = (Map.unionWith mrgUnion m1 m2, l1++l2)
 thing :: P_Concept -> Type
-thing c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src
-dom, cod :: Term -> Type
-dom x    = TypExpr x Src -- the domain of x
-cod x    = TypExpr x Tgt 
-domOrCod :: SrcOrTgt -> Term -> Type
-domOrCod Src = dom
-domOrCod Tgt = cod
+thing c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src False
+domc, dom, codc, cod :: Term -> Type
+domc x = TypExpr x Src True  -- the domain of x
+dom  x = TypExpr x Src False -- and its complement
+codc x = TypExpr x Tgt True  -- the domain of x
+cod  x = TypExpr x Tgt False -- and its complement
+domOrCod :: SrcOrTgt -> Bool -> Term -> Type
+domOrCod Src True  = domc
+domOrCod Src False = dom
+domOrCod Tgt True  = codc
+domOrCod Tgt False = cod
 -- | mSpecific, mGeneric are shorthands for creating links in the type graph. mSpecific is used in unions, whereas mGeneric is used in intersections.
 {-
 mSpecific doet twee dingen:
@@ -106,14 +110,47 @@ mSpecific doet twee dingen:
 mSpecific' gebruik je wanneer je in de aanroep niet weet of je de source of target bedoelt, bijv. "intersection arising inside r;s" 
 -}
 mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> TypeInfo
-mGeneric   ta a tb b te e = (domOrCod ta a) .<. (domOrCod te e) .+. (domOrCod tb b) .<. (domOrCod te e) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (domOrCod te e)))
-mSpecific  ta a tb b te e = (domOrCod te e) .<. (domOrCod ta a) .+. (domOrCod te e) .<. (domOrCod tb b) .+. between (domOrCod te e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (domOrCod te e)))
+mGeneric   ta a tb b te e
+  = (domOrCod ta False a) .<. (domOrCod te False e) .+.
+    (domOrCod tb False b) .<. (domOrCod te False e) .+.
+    between (domOrCod te False e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTUnion (domOrCod te False e)))
+mSpecific  ta a tb b te e
+  = (domOrCod te False e) .<. (domOrCod ta False a) .+.
+    (domOrCod te False e) .<. (domOrCod tb False b) .+.
+    between (domOrCod te False e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTIntersection (domOrCod te False e)))
 mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
-mGeneric'   ta a tb b e = (domOrCod ta a) .<. (TypInCps  e) .+. (domOrCod tb b) .<. (TypInCps  e) .+. between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTUnion (TypInCps e)))
-mSpecific'  ta a tb b e = (TypInCps  e) .<. (domOrCod ta a) .+. (TypInCps  e) .<. (domOrCod tb b) .+. between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta a) (domOrCod tb b) (BetweenType BTIntersection (TypInCps e)))
+mGeneric'   ta a tb b e
+  = (domOrCod ta False a) .<. (TypInCps  e) .+.
+    (domOrCod tb False b) .<. (TypInCps  e) .+.
+    between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTUnion (TypInCps e)))
+mSpecific'  ta a tb b e
+  = (TypInCps  e) .<. (domOrCod ta False a) .+.
+    (TypInCps  e) .<. (domOrCod tb False b) .+.
+    between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTIntersection (TypInCps e)))
 
-mEqual' :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
-mEqual'    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt a) (domOrCod sORt b) BTEqual])
+{- it might become something like this?
+mSpecific, mGeneric :: SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> TypeInfo
+mGeneric   ta cplA a tb cplB b te cplE e
+  = (domOrCod ta cplA a) .<. (domOrCod te cplE e) .+.
+    (domOrCod tb cplB b) .<. (domOrCod te cplE e) .+.
+    between (domOrCod te cplE e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTUnion (domOrCod te cplE e)))
+mSpecific  ta cplA a tb cplB b te cplE e
+  = (domOrCod te cplE e) .<. (domOrCod ta cplA a) .+.
+    (domOrCod te cplE e) .<. (domOrCod tb cplB b) .+.
+    between (domOrCod te cplE e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTIntersection (domOrCod te cplE e)))
+mSpecific', mGeneric' :: SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> Bool -> Term -> TypeInfo
+mGeneric'   ta cplA a tb cplB b cplE e
+  = (domOrCod ta cplA a) .<. (TypInCps  e) .+.
+    (domOrCod tb cplB b) .<. (TypInCps  e) .+.
+    between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTUnion (TypInCps e)))
+mSpecific'  ta cplA a tb cplB b cplE e
+  = (TypInCps  e) .<. (domOrCod ta cplA a) .+.
+    (TypInCps  e) .<. (domOrCod tb cplB b) .+.
+    between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTIntersection (TypInCps e)))
+-}
+
+mEqual :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
+mEqual    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt False a) (domOrCod sORt False b) BTEqual])
 existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
 existsSpecific = existsGS BTIntersection
 existsGS :: BTUOrI -> Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
@@ -221,7 +258,7 @@ instance Expr P_Rule where
   = uType' (rr_exp r) .+. 
     uType' (rr_viol r) .+.
     (Map.empty, [ Between (\s t -> CxeObjMismatch{cxeExpr=trm,cxeEnv=s,cxeSrcs=t})
-                          (TypExpr (rr_exp r) sOrT) (TypExpr trm Src)
+                          (TypExpr (rr_exp r) sOrT False) (TypExpr trm Src False)
                           BTEqual
                 | Just pv <- [rr_viol r]
                 , P_PairViewExp sOrT trm <- ppv_segs pv
@@ -327,7 +364,7 @@ instance Expr Term where
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
      (Pfull o s t) -> dom x.<.dom (Pid o s) .+. cod x.<.cod (Pid o t)              --  V[A*B] (the typed full set)
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                      .+. mEqual' Src a b x .+. mEqual' Tgt a b x
+                      .+. mEqual Src a b x .+. mEqual Tgt a b x
                       .+. uType' a .+. uType' b
      (PIsc _ a b)  -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
                       .+. mSpecific Src a Src b Src x .+. mSpecific Tgt a Tgt b Tgt x
@@ -548,8 +585,8 @@ pCtx2aCtx p_context
     derivedEquals :: [CtxError]
     derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the terms derived from the script).
      = [ CxeEqConcepts eqs
-       | (TypExpr (Pid{}) _, equals)<-Map.toAscList eqType
-       , let eqs=[c | TypExpr (Pid _ c) _<-equals ]
+       | (TypExpr (Pid{}) _ _, equals)<-Map.toAscList eqType
+       , let eqs=[c | TypExpr (Pid _ c) _ _<-equals ]
        , length eqs>1]
     (stTypeGraph,eqTypeGraph) = typeAnimate st stClos eqType stClosAdded stClos1
     cxerrs = rulecxes++keycxes++viewcxes++interfacecxes++patcxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++themeschk
