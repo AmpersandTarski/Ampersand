@@ -13,39 +13,43 @@ class LoginApi{
 			$idps = array();			
 			
 			// Google
-			$auth_url = array(
-					'auth_base' => $GLOBALS['ext']['Login']['google']['authBase'],
-					'arguments' => array(
-							'client_id' => $GLOBALS['ext']['Login']['google']['clientId'],
-							'response_type' => 'code',
-							'redirect_uri' => $GLOBALS['ext']['Login']['google']['redirectUrl'],
-							'scope' => $GLOBALS['ext']['Login']['google']['scope']
-					)
-			);
-			$url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
-			
-			$idps[] = array( 'name' => 'Google' 
-						   , 'loginUrl' => $url
-						   , 'logo' => 'extensions/Login/ui/images/logo-google.png'
-						   );
+			if($GLOBALS['ext']['Login']['google']){
+				$auth_url = array(
+						'auth_base' => $GLOBALS['ext']['Login']['google']['authBase'],
+						'arguments' => array(
+								'client_id' => $GLOBALS['ext']['Login']['google']['clientId'],
+								'response_type' => 'code',
+								'redirect_uri' => $GLOBALS['ext']['Login']['google']['redirectUrl'],
+								'scope' => $GLOBALS['ext']['Login']['google']['scope']
+						)
+				);
+				$url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
+				
+				$idps[] = array( 'name' => 'Google' 
+							   , 'loginUrl' => $url
+							   , 'logo' => 'extensions/Login/ui/images/logo-google.png'
+							   );
+			}
 			
 			// LinkedIn
-			$auth_url = array(
-					'auth_base' => $GLOBALS['ext']['Login']['linkedin']['authBase'],
-					'arguments' => array(
-							'client_id' => $GLOBALS['ext']['Login']['linkedin']['clientId'],
-							'response_type' => 'code',
-							'redirect_uri' => $GLOBALS['ext']['Login']['linkedin']['redirectUrl'],
-							'scope' => $GLOBALS['ext']['Login']['linkedin']['scope'],
-							'state' => $GLOBALS['ext']['Login']['linkedin']['state']
-					)
-			);
-			$url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
-			
-			$idps[] = array( 'name' => 'LinkedIn'
-						   , 'loginUrl' => $url
-						   , 'logo' => 'extensions/Login/ui/images/logo-linkedin.png'
-						   );
+			if($GLOBALS['ext']['Login']['linkedin']){
+				$auth_url = array(
+						'auth_base' => $GLOBALS['ext']['Login']['linkedin']['authBase'],
+						'arguments' => array(
+								'client_id' => $GLOBALS['ext']['Login']['linkedin']['clientId'],
+								'response_type' => 'code',
+								'redirect_uri' => $GLOBALS['ext']['Login']['linkedin']['redirectUrl'],
+								'scope' => $GLOBALS['ext']['Login']['linkedin']['scope'],
+								'state' => $GLOBALS['ext']['Login']['linkedin']['state']
+						)
+				);
+				$url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
+				
+				$idps[] = array( 'name' => 'LinkedIn'
+							   , 'loginUrl' => $url
+							   , 'logo' => 'extensions/Login/ui/images/logo-linkedin.png'
+							   );
+			}
 			
 			// Return
 			return array('identityProviders' => $idps, 'notifications' => Notifications::getAll());
