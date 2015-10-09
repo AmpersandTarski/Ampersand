@@ -3,7 +3,7 @@
   <thead>
     <tr>
       $if(isEditable)$<th></th><!-- empty header because relation is editable -->$endif$
-      $subObjects:{subObj|<th$if(subObj.subObjExprIsUni)$ sort-by="_sortValues_['$subObj.subObjName$']"$endif$>$subObj.subObjLabel$</th>
+      $subObjects:{subObj|<th$if(subObj.subObjExprIsUni)$ sort-by="_sortValues_['$subObj.subObjName$']" class="sortable-col"$endif$>$subObj.subObjLabel$</th>
       }$
       $if(isRoot)$<th></th><!-- delete/save resource-->$endif$
     </tr>

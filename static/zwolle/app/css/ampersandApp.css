@@ -195,6 +195,10 @@ fieldset {
 	word-wrap			: break-word;	/* IE */	
 }
 
+.sortable-col {
+	min-width			: 35px;
+}
+
 /********* FORMS, INPUTS, ETC **************/
 input .ng-invalid .ng-dirty {
 	border				: 2px solid red;
