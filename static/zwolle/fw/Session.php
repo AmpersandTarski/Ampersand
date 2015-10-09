@@ -165,7 +165,7 @@ class Session {
 			try {
 				$ifc = new InterfaceObject('SessionVars');
 				$session = new Atom(session_id(), 'SESSION');
-				return $session->getContent($ifc, true, null, false, 'num', false);
+				return $session->getContent($ifc, false, null, false, 'num', false); // $rootElement = false => this will return a single object instead of array.
 			}catch (Exception $e){
 				return false;
 			}		

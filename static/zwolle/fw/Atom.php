@@ -195,7 +195,8 @@ Class Atom {
 			}elseif($interface->tgtConceptIsObject){
 				switch($arrayType){
 					case "num" :
-						$arr[] = $content;
+						if($interface->univalent && !$rootElement) $arr = $content;
+						else $arr[] = $content;
 						break;
 					case "assoc" :
 					default :
