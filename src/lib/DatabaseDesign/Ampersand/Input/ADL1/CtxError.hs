@@ -67,7 +67,7 @@ data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]       -- ^ The list o
                               , cxeSrcs ::      [P_Concept]
                               , cxeTrgs ::      [P_Concept]
                               }   
-              | CxeBetween     { cxeLhs ::       (Term,SrcOrTgt,[P_Concept])
+              | CxeBetween    { cxeLhs ::       (Term,SrcOrTgt,[P_Concept])
                               , cxeRhs ::       (Term,SrcOrTgt,[P_Concept])
                               , cxeTyp ::       TypErrTyp
                               }   
@@ -85,10 +85,6 @@ data CtxError = CxeEqConcepts { cxeConcepts :: [P_Concept]       -- ^ The list o
 
 instance Show CtxError where
     showsPrec _ err = showString (showErr err)
-
-niceSource :: (ShowADL a1, ShowADL a) => (a, SrcOrTgt, [a1]) -> String
-niceSource (t,s,[]) = "    There is no type for the "++showADL s++" of  "++showADL t++"."
-niceSource (t,s,cs) = "    The "++showADL s++" of  "++showADL t++"  is  "++ commaEng "or" (map showADL cs)++"."
 
 showErr :: CtxError -> String
 showErr err = case err of
@@ -139,7 +135,9 @@ showErr err = case err of
               case (cxeLhs err,cxeRhs err) of
                  ((t1,s1,[]),(t2,s2,[])) -> "\n    matching the "++show s1++" of  "++showADL t1++"  and the "++show s2++" of  "++showADL t2
                  (t1,t2) -> ".\n" ++ niceSource t1 ++ (if (t1==t2) then "" else "\n" ++ niceSource t2)
-          )
+          ) where
+              niceSource (t,s,[]) = "    There is no type for the "++showADL s++" of  "++showADL t++"."
+              niceSource (t,s,cs) = "    The "++showADL s++" of  "++showADL t++"  is  "++ commaEng "or" (map showADL cs)++"."
   CxeRelUndefined{}
      -> show (origin (cxeExpr err))++":\n    Relation  "++showADL (cxeExpr err)++"  is undefined."
   CxeRel{}

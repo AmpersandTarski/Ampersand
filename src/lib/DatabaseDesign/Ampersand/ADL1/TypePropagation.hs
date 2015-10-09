@@ -32,17 +32,23 @@ The atoms are not actually computed, but sets of atoms are represented for the p
 Example: TypExpr t Src False means (the set of atoms that is) the domain of term t.
 -}
 
-data TypeTerm = TypExpr     Term        -- The term of which the type is analyzed
-                            SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
-                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-              | TypInCps    Term        -- The term must be ECps
-                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-              | TypInRrs    Term        -- The term must be ERrs
-                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-              | TypInLrs    Term        -- The term must be ELrs
-                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-              | TypInObjDef P_ObjectDef -- term is deriving Ord
-                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+data TypeTerm
+   = TypExpr    { ttTerm :: Term        -- The term of which the type is analyzed
+                , ttSorT :: SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
+                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                }
+   | TypInCps   { ttTerm :: Term        -- The term must be ECps
+                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                }
+   | TypInRrs   { ttTerm :: Term        -- The term must be ERrs
+                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                }
+   | TypInLrs   { ttTerm :: Term        -- The term must be ELrs
+                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                }
+   | TypInObjDef{ ttObj  :: P_ObjectDef -- term is deriving Ord
+                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                }
 data Between = Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
                     TypeTerm -- lhs type, e.g. cod(a)
                     TypeTerm -- rhs type, e.g. dom(b)

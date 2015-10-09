@@ -80,6 +80,7 @@ between t a = (Map.fromList [(t,[])],[a])
 infixl 2 .+.   -- concatenate two lists of types
 infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
 infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
+--infixl 4 .&.   -- 
 typeToMap :: TypeTerm -> TypeInfo
 typeToMap x = (Map.fromList [(x,[])],[])
 (.<.) :: TypeTerm -> TypeTerm -> TypeInfo
@@ -109,55 +110,64 @@ mSpecific doet twee dingen:
    De feitelijke test wordt uitgevoerd in checkBetweens (in TypePropagation.adl)
 mSpecific' gebruik je wanneer je in de aanroep niet weet of je de source of target bedoelt, bijv. "intersection arising inside r;s" 
 -}
-mSpecific, mGeneric :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> SrcOrTgt -> Term -> TypeInfo
+mSpecific, mGeneric :: TypeTerm -> TypeTerm -> TypeTerm -> TypeInfo
+{-
 mGeneric   ta a tb b te e
-  = (domOrCod ta False a) .<. (domOrCod te False e) .+.
-    (domOrCod tb False b) .<. (domOrCod te False e) .+.
-    between (domOrCod te False e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTUnion (domOrCod te False e)))
+  = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
+    between typeTermE (Between (tCxe ta a tb b TETUnion e) typeTermA typeTermB (BetweenType BTUnion typeTermE))
+    where typeTermA = domOrCod ta False a
+          typeTermB = domOrCod tb False b
+          typeTermE = domOrCod te False e
+-}
+mGeneric typeTermA typeTermB typeTermE
+  = (Map.fromList [ (typeTermA, [typeTermE])
+                  , (typeTermE, [])
+                  , (typeTermB, [typeTermE])
+                  ]
+    , [Between (tCxe typeTermA typeTermB TETUnion (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTUnion typeTermE)]
+    )
+{-
 mSpecific  ta a tb b te e
-  = (domOrCod te False e) .<. (domOrCod ta False a) .+.
-    (domOrCod te False e) .<. (domOrCod tb False b) .+.
-    between (domOrCod te False e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTIntersection (domOrCod te False e)))
+  = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
+    between typeTermE (Between (tCxe ta a tb b TETIsc   e) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
+    where typeTermA = domOrCod ta False a
+          typeTermB = domOrCod tb False b
+          typeTermE = domOrCod te False e
+-}
+mSpecific typeTermA typeTermB typeTermE
+  = (Map.fromList [ (typeTermE, [typeTermA,typeTermB])
+                  , (typeTermA, [])
+                  , (typeTermB, [])
+                  ]
+    , [Between (tCxe typeTermA typeTermB TETIsc (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTIntersection typeTermE)]
+    )
 mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
 mGeneric'   ta a tb b e
-  = (domOrCod ta False a) .<. (TypInCps  e False) .+.
-    (domOrCod tb False b) .<. (TypInCps  e False) .+.
-    between (TypInCps e False) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTUnion (TypInCps e False)))
+  = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
+    between typeTermE (Between (tCxe typeTermA typeTermB TETUnion (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTUnion typeTermE))
+    where typeTermA = domOrCod ta False a
+          typeTermB = domOrCod tb False b
+          typeTermE = TypInCps  e False
 mSpecific'  ta a tb b e
-  = (TypInCps  e False) .<. (domOrCod ta False a) .+.
-    (TypInCps  e False) .<. (domOrCod tb False b) .+.
-    between (TypInCps e False) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTIntersection (TypInCps e False)))
-
-{- it might become something like this?
-mSpecific, mGeneric :: SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> TypeInfo
-mGeneric   ta cplA a tb cplB b te cplE e
-  = (domOrCod ta cplA a) .<. (domOrCod te cplE e) .+.
-    (domOrCod tb cplB b) .<. (domOrCod te cplE e) .+.
-    between (domOrCod te cplE e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTUnion (domOrCod te cplE e)))
-mSpecific  ta cplA a tb cplB b te cplE e
-  = (domOrCod te cplE e) .<. (domOrCod ta cplA a) .+.
-    (domOrCod te cplE e) .<. (domOrCod tb cplB b) .+.
-    between (domOrCod te cplE e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTIntersection (domOrCod te cplE e)))
-mSpecific', mGeneric' :: SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> Bool -> Term -> TypeInfo
-mGeneric'   ta cplA a tb cplB b cplE e
-  = (domOrCod ta cplA a) .<. (TypInCps  e False) .+.
-    (domOrCod tb cplB b) .<. (TypInCps  e False) .+.
-    between (TypInCps e False) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTUnion (TypInCps e False)))
-mSpecific'  ta cplA a tb cplB b cplE e
-  = (TypInCps  e False) .<. (domOrCod ta cplA a) .+.
-    (TypInCps  e False) .<. (domOrCod tb cplB b) .+.
-    between (TypInCps e False) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTIntersection (TypInCps e False)))
--}
+  = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
+    between typeTermE (Between (tCxe typeTermA typeTermB TETIsc (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
+    where typeTermA = domOrCod ta False a
+          typeTermB = domOrCod tb False b
+          typeTermE = TypInCps  e False
 
 mEqual :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
-mEqual    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt False a) (domOrCod sORt False b) BTEqual])
+mEqual    sORt a b e = (Map.empty, [Between (tCxe (domOrCod sORt False a) (domOrCod sORt False b) TETEq e) (domOrCod sORt False a) (domOrCod sORt False b) BTEqual])
 existsSpecific :: TypeTerm -> TypeTerm -> ([P_Concept] -> [P_Concept] -> CtxError) -> TypeTerm -> TypeInfo
 existsSpecific = existsGS BTIntersection
 existsGS :: BTUOrI -> TypeTerm -> TypeTerm -> ([P_Concept] -> [P_Concept] -> CtxError) -> TypeTerm -> TypeInfo
 existsGS BTIntersection a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
 existsGS BTUnion        a b err at = a .<. at .+. b .<. at .+. between at (Between err a b (BetweenType BTUnion        at))
+{- was:
 tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe ta a tb b msg e src trg = CxeBetween{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
+-}
+tCxe :: TypeTerm -> TypeTerm -> (Term -> TypErrTyp) -> Term -> [P_Concept] -> [P_Concept] -> CtxError
+tCxe ta tb msg e src trg = CxeBetween{cxeLhs=(ttTerm ta,ttSorT ta,src),cxeRhs=(ttTerm tb,ttSorT tb,trg),cxeTyp=msg e}
 
 flattenMap :: Map t [t1] -> [(t, t1)]
 flattenMap = Map.foldWithKey (\s ts o -> o ++ [(s,t)|t<-ts]) []
@@ -303,7 +313,7 @@ instance Expr P_ObjectDef where
   = let x=obj_ctx o in
     uType' x .+. 
     foldr (.+.) nothing [ uType' obj .+.
-                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (TypInObjDef obj False)
+                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe (cod x) (dom (obj_ctx obj)) TETBox (obj_ctx obj)) (TypInObjDef obj False)
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc
@@ -371,13 +381,16 @@ instance Expr Term where
                       .+. mEqual Src a b x .+. mEqual Tgt a b x
                       .+. uType' a .+. uType' b
      (PIsc _ a b)  -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
-                      .+. mSpecific Src a Src b Src x .+. mSpecific Tgt a Tgt b Tgt x
+                      .+. mSpecific (dom a) (dom b) (dom x) .+. mSpecific (cod a) (cod b) (cod x)
+-- was:               .+. mSpecific Src a Src b Src x .+. mSpecific Tgt a Tgt b Tgt x
                       .+. uType' a .+. uType' b
      (PUni _ a b)  -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
-                      .+. mGeneric Src a Src b Src x .+. mGeneric Tgt a Tgt b Tgt x
+                      .+. mGeneric (dom a) (dom b) (dom x) .+. mGeneric (cod a) (cod b) (cod x)
+-- was:               .+. mGeneric Src a Src b Src x .+. mGeneric Tgt a Tgt b Tgt x
                       .+. uType' a .+. uType' b
      (PDif o a b)  -> dom x.<.dom a .+. cod x.<.cod a  --  a-b    (difference)
-                      .+. mGeneric Src x Src b Src (PUni o a b) .+. mGeneric Tgt x Tgt b Tgt (PUni o a b)
+                      .+. mGeneric (dom x) (dom b) (dom (PUni o a b)) .+. mGeneric (cod x) (cod b) (cod (PUni o a b))
+-- was:               .+. mGeneric Src x Src b Src (PUni o a b) .+. mGeneric Tgt x Tgt b Tgt (PUni o a b)
                       .+. uType' a .+. uType' b .+. uType' (PUni o a b)
      (PCps _ a b)  -> let s = TypInCps x False
                           pidTest (PI{}) r = r
