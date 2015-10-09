@@ -120,13 +120,13 @@ mSpecific  ta a tb b te e
     between (domOrCod te False e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTIntersection (domOrCod te False e)))
 mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
 mGeneric'   ta a tb b e
-  = (domOrCod ta False a) .<. (TypInCps  e) .+.
-    (domOrCod tb False b) .<. (TypInCps  e) .+.
-    between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTUnion (TypInCps e)))
+  = (domOrCod ta False a) .<. (TypInCps  e False) .+.
+    (domOrCod tb False b) .<. (TypInCps  e False) .+.
+    between (TypInCps e False) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTUnion (TypInCps e False)))
 mSpecific'  ta a tb b e
-  = (TypInCps  e) .<. (domOrCod ta False a) .+.
-    (TypInCps  e) .<. (domOrCod tb False b) .+.
-    between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTIntersection (TypInCps e)))
+  = (TypInCps  e False) .<. (domOrCod ta False a) .+.
+    (TypInCps  e False) .<. (domOrCod tb False b) .+.
+    between (TypInCps e False) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta False a) (domOrCod tb False b) (BetweenType BTIntersection (TypInCps e False)))
 
 {- it might become something like this?
 mSpecific, mGeneric :: SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> TypeInfo
@@ -140,13 +140,13 @@ mSpecific  ta cplA a tb cplB b te cplE e
     between (domOrCod te cplE e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTIntersection (domOrCod te cplE e)))
 mSpecific', mGeneric' :: SrcOrTgt -> Bool -> Term -> SrcOrTgt -> Bool -> Term -> Bool -> Term -> TypeInfo
 mGeneric'   ta cplA a tb cplB b cplE e
-  = (domOrCod ta cplA a) .<. (TypInCps  e) .+.
-    (domOrCod tb cplB b) .<. (TypInCps  e) .+.
-    between (TypInCps e) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTUnion (TypInCps e)))
+  = (domOrCod ta cplA a) .<. (TypInCps  e False) .+.
+    (domOrCod tb cplB b) .<. (TypInCps  e False) .+.
+    between (TypInCps e False) (Between (tCxe ta a tb b TETUnion e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTUnion (TypInCps e False)))
 mSpecific'  ta cplA a tb cplB b cplE e
-  = (TypInCps  e) .<. (domOrCod ta cplA a) .+.
-    (TypInCps  e) .<. (domOrCod tb cplB b) .+.
-    between (TypInCps e) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTIntersection (TypInCps e)))
+  = (TypInCps  e False) .<. (domOrCod ta cplA a) .+.
+    (TypInCps  e False) .<. (domOrCod tb cplB b) .+.
+    between (TypInCps e False) (Between (tCxe ta a tb b TETIsc   e) (domOrCod ta cplA a) (domOrCod tb cplB b) (BetweenType BTIntersection (TypInCps e False)))
 -}
 
 mEqual :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
@@ -302,7 +302,7 @@ instance Expr P_ObjectDef where
   = let x=obj_ctx o in
     uType' x .+. 
     foldr (.+.) nothing [ uType' obj .+.
-                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (TypInObjDef obj)
+                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe Tgt x Src (obj_ctx obj) TETBox (obj_ctx obj)) (TypInObjDef obj False)
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc
@@ -356,11 +356,11 @@ instance Expr a => Expr [a] where
 instance Expr Term where 
  uType x term 
   = case term of
-     PI{}          -> dom x.=.cod x             -- I
-     Pid{}         -> dom x.=.cod x             -- I[C]
-     (Patm _ _ []) -> dom x.=.cod x             -- 'Piet'   (an untyped singleton)
+     PI{}          -> dom x.=.cod x  .+.  domc x.=.codc x            -- I
+     Pid{}         -> dom x.=.cod x  .+.  domc x.=.codc x            -- I[C]
+     (Patm _ _ []) -> dom x.=.cod x  .+.  domc x.=.codc x            -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
-                       .+. dom x.=.cod x
+                       .+. dom x.=.cod x  .+.  domc x.=.codc x
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
      (Pfull o s t) -> dom x.<.dom (Pid o s) .+. cod x.<.cod (Pid o t)              --  V[A*B] (the typed full set)
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
@@ -375,7 +375,7 @@ instance Expr Term where
      (PDif o a b)  -> dom x.<.dom a .+. cod x.<.cod a  --  a-b    (difference)
                       .+. mGeneric Src x Src b Src (PUni o a b) .+. mGeneric Tgt x Tgt b Tgt (PUni o a b)
                       .+. uType' a .+. uType' b .+. uType' (PUni o a b)
-     (PCps _ a b)  -> let s = TypInCps x
+     (PCps _ a b)  -> let s = TypInCps x False
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
                           pidTest (Patm{}) r = r
@@ -388,7 +388,7 @@ instance Expr Term where
                          pnidTest (PCpl _ (Pid{})) r = r
                          pnidTest (PCpl _ (Patm{})) r = r
                          pnidTest _ _ = nothing
-                         s = TypInCps x
+                         s = TypInCps x False
                      in dom x .<. dom a .+. cod x .<. cod b
                         .+. mGeneric' Tgt a Src b x .+. uType' a .+. uType' b
                         .+. pnidTest a (dom b.<. s) .+. pnidTest b (cod a.<. s)

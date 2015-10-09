@@ -27,11 +27,22 @@ fatal = fatalMsg "ADL1.TypePropagation"
 
 type Typemap = Map Type [Type]
 
-data Type = TypExpr     Term     -- The term of which the type is analyzed
-                        SrcOrTgt -- Src if this term represents the domain, Trg if it represents the codomain
-                        Bool     -- True if this term represents the complement, False if it doesn' represent the complement
-          | TypInCps    Term
+{- Type terms are introduced to represent a set of atoms.
+The atoms are not actually computed, but sets of atoms are represented for the purpose of constructing a graph of sets.
+Example: TypExpr t Src False means (the set of atoms that is) the domain of term t.
+-}
+
+data Type = TypExpr     Term        -- The term of which the type is analyzed
+                        SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
+                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+          | TypInCps    Term        -- The term must be ECps
+                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+          | TypInRrs    Term        -- The term must be ERrs
+                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+          | TypInLrs    Term        -- The term must be ELrs
+                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
           | TypInObjDef P_ObjectDef -- term is deriving Ord
+                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
 data Between = Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
                     Type -- lhs type, e.g. cod(a)
                     Type -- rhs type, e.g. dom(b)
@@ -65,16 +76,20 @@ instance Show Type where
 showType :: Type -> String
 showType t
  = case t of
-     TypExpr (Pid _ c) _ _           -> "pop ("++name c++") "
+     TypExpr (Pid _ c) _ _                        -> "pop ("++name c++") "
      TypExpr term@(PVee o)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "++"("++ show o++")"
      TypExpr term@(Pfull _ _ _) sORt complemented -> codOrDom sORt complemented++" ("++showADL term++")"
      TypExpr term               sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "++ show (origin term)
-     TypInCps term                   -> "Arising inside ("++showADL term++") "++show (origin term)
-     TypInObjDef obj                 -> "Arising inside object ("++name obj++") " ++ show (origin obj)
+     TypInCps term                   complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
+     TypInRrs term                   complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
+     TypInLrs term                   complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
+     TypInObjDef obj                 complemented -> witnesses complemented++" ("++name obj++") "++show (origin obj)
    where codOrDom Src True  = "domc"
          codOrDom Src False = "dom"
          codOrDom Tgt True  = "codc"
          codOrDom Tgt False = "cod"
+         witnesses True     = "Co-witnesses of "
+         witnesses False    = "Witnesses of "
 
 -- | Equality of Type is needed for the purpose of making graphs of types.
 --   These are used in the type checking process.
@@ -88,7 +103,7 @@ instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy 
   compare (TypExpr (Patm _ x [c]) _ _) (TypExpr (Patm _ x' [c']) _ _ ) = Prelude.compare (x,c) (x',c')
   compare (TypExpr (Patm _ _ [_]) _ _) (TypExpr (Patm _ _   _  ) _ _ ) = Prelude.LT
   compare (TypExpr (Patm _ _  _ ) _ _) (TypExpr (Patm _ _  [_ ]) _ _ ) = Prelude.GT
-  compare (TypExpr (Patm o x [] ) _ _) (TypExpr (Patm o' x' [] ) _ _ ) = Prelude.compare (o,x) (o',x')
+  compare (TypExpr (Patm o _ [] ) _ b) (TypExpr (Patm o' _  [] ) _ b') = Prelude.compare (o,b) (o',b')  -- the atom name is determined by o, so only compare with o.
   compare (TypExpr (Patm _ _ _  ) _ _) (TypExpr (Patm _  _  _  ) _ _ ) = fatal 76 "Patm should not have two types"
   compare (TypExpr (Patm _ _ _  ) _ _) (TypExpr _                _ _ ) = Prelude.LT
   compare (TypExpr _              _ _) (TypExpr (Patm _ _ _)     _ _ ) = Prelude.GT
@@ -102,12 +117,20 @@ instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy 
   compare (TypExpr _              _ _) (TypExpr (Pfull _ _ _)    _ _ ) = Prelude.GT
   -- as r = r~ does not hold in general, we need to compare x'==y'
   compare (TypExpr x             x' b) (TypExpr y               y' b') = Prelude.compare (x,x',b) (y,y',b')
-  compare (TypInObjDef _)              (TypInCps _)                    = Prelude.LT
-  compare (TypInCps _)                 (TypInObjDef _)                 = Prelude.GT
-  compare (TypInObjDef o)              (TypInObjDef o')                = Prelude.compare (origin o) (origin o')
   compare (TypExpr _              _ _) _                               = Prelude.LT
   compare _                            (TypExpr _                _ _ ) = Prelude.GT
-  compare (TypInCps t)                 (TypInCps t')                   = compare (origin t) (origin t')
+  compare (TypInCps t               b) (TypInCps t'                b') = compare (origin t,b) (origin t',b')
+  compare (TypInCps _               _) _                               = Prelude.LT
+  compare _                            (TypInCps _                 _ ) = Prelude.GT
+  compare (TypInRrs t               b) (TypInRrs t'                b') = compare (origin t,b) (origin t',b')
+  compare (TypInRrs _               _) _                               = Prelude.LT
+  compare _                            (TypInRrs _                 _ ) = Prelude.GT
+  compare (TypInLrs t               b) (TypInLrs t'                b') = compare (origin t,b) (origin t',b')
+  compare (TypInLrs _               _) _                               = Prelude.LT
+  compare _                            (TypInLrs _                 _ ) = Prelude.GT
+  compare (TypInObjDef o            b) (TypInObjDef o'             b') = Prelude.compare (origin o,b) (origin o',b')
+--  compare (TypInObjDef _            _) _                               = Prelude.LT -- these two lines are superfluous if all combinators are covered.
+--  compare _                            (TypInObjDef _              _ ) = Prelude.GT
   -- since the first argument of Between is a function, we cannot compare it.
   -- Besides, if there are two identical type inferences with different error messages, we should just pick one.
   -- compare (Between _ a b t) (Between _ a' b' t')                    = compare (t,a,b) (t',a',b')
