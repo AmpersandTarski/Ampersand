@@ -148,6 +148,8 @@ generateDBstructQueries fSpec =
                                  )
                             )
                         )
+                     ++ [" , "++show "ts_insert"++" TIMESTAMP DEFAULT CURRENT_TIMESTAMP"]
+                     ++ [" , "++show "ts_update"++" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL"]
                      ++ [" ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"]
                    )
           ]
