@@ -7,7 +7,7 @@ Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 */
 
-AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location, \$timeout, \$sessionStorage) {
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location, \$timeout, \$localStorage, \$sessionStorage) {
   
   \$scope.interfaceName = "$interfaceName$";
   \$scope.interfaceLabel = "$interfaceLabel$";
@@ -19,6 +19,9 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.showCancelButton = {}; // initialize object for show/hide cancel button
   \$scope.resourceStatus = {}; // initialize object for resource status colors
   \$scope.myPromises = {}; // initialize object for promises, used by angular-busy module (loading indicator)
+  
+  \$scope.\$localStorage = \$localStorage;
+  \$scope.\$sessionStorage = \$sessionStorage;
   
   if(typeof \$routeParams.resourceId != 'undefined'){
 	  srcAtomId = \$routeParams.resourceId;
