@@ -52,10 +52,10 @@ class Notifications {
 		// Make links to interfaces
 		$links = array();
 		if(isset($session->role)){
-			foreach ($session->role->getInterfacesForConcept($rule['srcConcept']) as $interface){
+			foreach ($session->role->getInterfacesToReadConcept($rule['srcConcept']) as $interface){
 				$links[] = '#/' . $interface->id . '/' . $srcAtom;
 			}
-			foreach ($session->role->getInterfacesForConcept($rule['tgtConcept']) as $interface){
+			foreach ($session->role->getInterfacesToReadConcept($rule['tgtConcept']) as $interface){
 				$links[] = '#/' . $interface->id . '/' . $tgtAtom;
 			}
 			$links = array_unique($links);
