@@ -50,6 +50,15 @@
 				</ul>
 			</li>
 			
+			<li ng-if="navbar.new" class="dropdown">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown">
+					<span class="glyphicon glyphicon-plus"></span>
+				</a>
+				<ul class="dropdown-menu" role="menu">
+						<li><a href="#/{{interface.id}}?new" ng-repeat="interface in navbar.new">{{interface.label}}</a></li>
+				</ul>
+			</li>
+			
 			<li class="dropdown" tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="top">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
 				<ul class="dropdown-menu" role="menu">
@@ -61,15 +70,6 @@
 					</li>
 					<li ng-if="navbar.roleMenu" class="divider" role="presentation"></li>
 					<li ng-repeat="ext in navbar.roleMenu" ng-include="ext.url"/>
-				</ul>
-			</li>
-			
-			<li ng-if="navbar.new" class="dropdown">
-				<a href="" class="dropdown-toggle" data-toggle="dropdown">
-					<span class="glyphicon glyphicon-plus"></span>
-				</a>
-				<ul class="dropdown-menu" role="menu">
-						<li><a href="#/{{interface.id}}?new" ng-repeat="interface in navbar.new">{{interface.label}}</a></li>
 				</ul>
 			</li>
 		</ul>
