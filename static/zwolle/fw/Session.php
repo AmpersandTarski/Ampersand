@@ -156,5 +156,21 @@ class Session {
 			}
 		}
 	}
+	
+	public static function getSessionVars(){
+		if(!LOGIN_ENABLED){
+			return false;
+		
+		}else{
+			try {
+				$ifc = new InterfaceObject('SessionVars');
+				$session = new Atom(session_id(), 'SESSION');
+				return $session->getContent($ifc, true, null, false, 'num', false);
+			}catch (Exception $e){
+				return false;
+			}		
+			
+		}
+	}
 }
 ?>

@@ -340,6 +340,7 @@ class Api{
     					 					 , 'loggedIn' => Session::sessionUserLoggedIn()
     					 					 , 'sessionRoles' => $roles
     					 					 )
+    					 , 'sessionVars' => Session::getSessionVars()
     		);
     		
     	}catch(Exception $e){
