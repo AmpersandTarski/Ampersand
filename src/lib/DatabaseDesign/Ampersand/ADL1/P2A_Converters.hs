@@ -38,7 +38,7 @@ head (a:_) = a
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
 
-{-The data structure Type is used to represent a term inside the type checker.
+{-The data structure TypeTerm is used to represent a term inside the type checker.
 TypExpr e flipped is read as:
   "the source type of e, with e equal to (if flipped then PFlp e else e)."
 Between err tl tr btp
@@ -52,11 +52,11 @@ complement :: Term -> Term
 complement (PCpl _ a) = a
 complement a          = PCpl (origin a) a
 
-{- The type  Typemap  is used to represent the population of relations r[Type*Type] (in Ampersand's metamodel)
-For the following, let m be a Typemap that represents relation r[Type*Type]
+{- The type  Typemap  is used to represent the population of relations r[TypeTerm*TypeTerm] (in Ampersand's metamodel)
+For the following, let m be a Typemap that represents relation r[TypeTerm*TypeTerm]
 Invariants are:
 1. m contains all elements of the source of r
-         keys m     equals the population of  I [source r], which are all Type object drawn from the script
+         keys m     equals the population of  I [source r], which are all TypeTerm object drawn from the script
 1a.      keys m     represents    dom r
 1b.      m is total (dom m=I[source r])
    By the way, keys m produces the elements in ascending order without duplicates.
@@ -74,28 +74,28 @@ type TypeInfo = (Typemap,[Between])
 
 nothing :: TypeInfo
 nothing = (Map.empty,[])
-between :: Type -> Between -> TypeInfo
+between :: TypeTerm -> Between -> TypeInfo
 between t a = (Map.fromList [(t,[])],[a])
 
 infixl 2 .+.   -- concatenate two lists of types
 infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
 infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
-typeToMap :: Type -> TypeInfo
+typeToMap :: TypeTerm -> TypeInfo
 typeToMap x = (Map.fromList [(x,[])],[])
-(.<.) :: Type -> Type -> TypeInfo
+(.<.) :: TypeTerm -> TypeTerm -> TypeInfo
 a .<. b  = (Map.fromList [(a, [b]),(b, [])],[]) -- a tuple meaning that a is a subset of b, and introducing b as a key.
-(.=.) :: Type -> Type -> TypeInfo
+(.=.) :: TypeTerm -> TypeTerm -> TypeInfo
 a .=. b  = (Map.fromList [(a, [b]),(b, [a])],[])
 (.+.) :: TypeInfo -> TypeInfo -> TypeInfo
 (m1,l1) .+. (m2,l2) = (Map.unionWith mrgUnion m1 m2, l1++l2)
-thing :: P_Concept -> Type
+thing :: P_Concept -> TypeTerm
 thing c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src False
-domc, dom, codc, cod :: Term -> Type
+domc, dom, codc, cod :: Term -> TypeTerm
 domc x = TypExpr x Src True  -- the domain of x
 dom  x = TypExpr x Src False -- and its complement
 codc x = TypExpr x Tgt True  -- the domain of x
 cod  x = TypExpr x Tgt False -- and its complement
-domOrCod :: SrcOrTgt -> Bool -> Term -> Type
+domOrCod :: SrcOrTgt -> Bool -> Term -> TypeTerm
 domOrCod Src True  = domc
 domOrCod Src False = dom
 domOrCod Tgt True  = codc
@@ -103,7 +103,7 @@ domOrCod Tgt False = cod
 -- | mSpecific, mGeneric are shorthands for creating links in the type graph. mSpecific is used in unions, whereas mGeneric is used in intersections.
 {-
 mSpecific doet twee dingen:
-1) probeert een Type te geven aan het laatste argument, e.
+1) probeert een TypeTerm te geven aan het laatste argument, e.
 2) genereert een foutmelding als 1) mislukt.
    De markering BTUnion (dan wel BTIntersect) betekent dat er getest moet worden (in TypePropagation.adl) of het UNION-type bestaat.
    De feitelijke test wordt uitgevoerd in checkBetweens (in TypePropagation.adl)
@@ -151,9 +151,9 @@ mSpecific'  ta cplA a tb cplB b cplE e
 
 mEqual :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual    sORt a b e = (Map.empty, [Between (tCxe sORt a sORt b TETEq e) (domOrCod sORt False a) (domOrCod sORt False b) BTEqual])
-existsSpecific :: Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
+existsSpecific :: TypeTerm -> TypeTerm -> ([P_Concept] -> [P_Concept] -> CtxError) -> TypeTerm -> TypeInfo
 existsSpecific = existsGS BTIntersection
-existsGS :: BTUOrI -> Type -> Type -> ([P_Concept] -> [P_Concept] -> CtxError) -> Type -> TypeInfo
+existsGS :: BTUOrI -> TypeTerm -> TypeTerm -> ([P_Concept] -> [P_Concept] -> CtxError) -> TypeTerm -> TypeInfo
 existsGS BTIntersection a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
 existsGS BTUnion        a b err at = a .<. at .+. b .<. at .+. between at (Between err a b (BetweenType BTUnion        at))
 tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
@@ -173,7 +173,8 @@ class Expr a where
   p_views :: a -> [P_ViewDef]
   p_views _ = []
   -- | uType provides the basis for a domain analysis. It traverses an Ampersand script recursively, harvesting on its way
-  --   the tuples of a relation st :: Type * Type. Each Type represents a set of atoms, even though the type checker will only use the fact that a type represents a set.
+  --   the tuples of a relation st :: TypeTerm * TypeTerm.
+  --   Each TypeTerm represents a set of atoms, even though the type checker will only use the fact that a type represents a set.
   --   Let t, t' be types, then    (t, t') `elem` st    means that the set that t represents is a subset of the set that t' represents.
   --   These tuples are produced in two TypeInfos. The second TypeInfo is kept separate, because it depends on the existence of the first TypeInfo.
   --   The first element of the first argument is a P_Context that represents the parse tree of one context.
@@ -356,13 +357,16 @@ instance Expr a => Expr [a] where
 instance Expr Term where 
  uType x term 
   = case term of
-     PI{}          -> dom x.=.cod x  .+.  domc x.=.codc x            -- I
-     Pid{}         -> dom x.=.cod x  .+.  domc x.=.codc x            -- I[C]
-     (Patm _ _ []) -> dom x.=.cod x  .+.  domc x.=.codc x            -- 'Piet'   (an untyped singleton)
+     PI{}          -> dom x.=.cod x                                  -- I
+     Pid o c       -> dom x.=.thing c .+.  cod x.=.thing c           -- I[C]
+     (Patm _ _ []) -> dom x.=.cod x   .+. domc x.=.codc x            -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x  .+.  domc x.=.codc x
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
-     (Pfull o s t) -> dom x.<.dom (Pid o s) .+. cod x.<.cod (Pid o t)              --  V[A*B] (the typed full set)
+     (Pfull o s t) -> dom x.=.thing s .+. cod x.=.thing t            --  V[A*B] (the typed full set)
+     (PTrel _ _ (P_Sign src trg)) -> dom x.<.thing src .+. cod x.<.thing trg
+     (Prel _ _)   -> typeToMap (dom x) .+. typeToMap (cod x)
+
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
                       .+. mEqual Src a b x .+. mEqual Tgt a b x
                       .+. uType' a .+. uType' b
@@ -398,8 +402,6 @@ instance Expr Term where
      (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
      (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType' e
      (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+. uType x e  -- (e) brackets
-     (PTrel _ _ (P_Sign src trg)) -> dom x.<.thing src .+. cod x.<.thing trg
-     (Prel _ _)   -> typeToMap (dom x) .+. typeToMap (cod x)
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
      (PCpl o a)   -> let e = PDif o (PVee o) a
                      in dom x.=.dom e .+. cod x.=.cod e .+.
@@ -1157,7 +1159,7 @@ typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
 {- The set st contains the essence of the type analysis. It contains tuples (t,t'),
    each of which means that the set of atoms contained by t is a subset of the set of atoms contained by t'. -}
      typeTerms = Map.keys stClos -- stClos contains more than st, because some terms were added through stClosAdded.
-     stNr :: Type -> Int
+     stNr :: TypeTerm -> Int
      stNr typ = case Map.lookup typ stTable of
                  Just x -> x
                  _ -> fatal 529 ("Element "++show typ++" not found in stNr")
@@ -1172,11 +1174,11 @@ typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
       = head ([ showType t | (i',t)<-zip [0..] typeTerms, i==i' ]
               ++fatal 506 ("No term numbered "++show i++" found by showStVertex\n numbered typeTerms:\n  "++(intercalate "\n  ".map show. zip [0::Int ..]) typeTerms)
              )
-     eqNr :: Type -> Int
+     eqNr :: TypeTerm -> Int
      eqNr typ = case Map.lookup typ (Map.fromList [(t,i) | (i,cl)<-zip [0..] eqClasses, t<-cl ]) of
                  Just x -> x
                  _ -> fatal 544 ("Element "++show typ++" not found in eqNr")
-     eqClasses :: [[Type]]             -- The strongly connected components of stGraph
+     eqClasses :: [[TypeTerm]]             -- The strongly connected components of stGraph
      eqClasses = nub (Map.elems eqType)
 
      eqTypeGraph :: DotGraph String

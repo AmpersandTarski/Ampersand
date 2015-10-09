@@ -2,7 +2,7 @@
 {-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.TypePropagation (
  -- * Exported functions
- typing, Type(..), Typemap, parallelList, findIn, showType, Guarded(..), p_flp
+ typing, TypeTerm(..), Typemap, parallelList, findIn, showType, Guarded(..), p_flp
  , mrgUnion, BetweenType(..), Between(..), BTUOrI(..)
  )
 where
@@ -25,30 +25,30 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.TypePropagation"
 
 
-type Typemap = Map Type [Type]
+type Typemap = Map TypeTerm [TypeTerm]
 
 {- Type terms are introduced to represent a set of atoms.
 The atoms are not actually computed, but sets of atoms are represented for the purpose of constructing a graph of sets.
 Example: TypExpr t Src False means (the set of atoms that is) the domain of term t.
 -}
 
-data Type = TypExpr     Term        -- The term of which the type is analyzed
-                        SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
-                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-          | TypInCps    Term        -- The term must be ECps
-                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-          | TypInRrs    Term        -- The term must be ERrs
-                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-          | TypInLrs    Term        -- The term must be ELrs
-                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-          | TypInObjDef P_ObjectDef -- term is deriving Ord
-                        Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+data TypeTerm = TypExpr     Term        -- The term of which the type is analyzed
+                            SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
+                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+              | TypInCps    Term        -- The term must be ECps
+                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+              | TypInRrs    Term        -- The term must be ERrs
+                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+              | TypInLrs    Term        -- The term must be ELrs
+                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+              | TypInObjDef P_ObjectDef -- term is deriving Ord
+                            Bool        -- True if this term represents the complement, False if it doesn't represent the complement
 data Between = Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
-                    Type -- lhs type, e.g. cod(a)
-                    Type -- rhs type, e.g. dom(b)
+                    TypeTerm -- lhs type, e.g. cod(a)
+                    TypeTerm -- rhs type, e.g. dom(b)
                     BetweenType -- whether for this term, the intersection or the union should be a valid type, or both
 type BetweenError = ([P_Concept] -> [P_Concept] -> CtxError)
-data BetweenType = BetweenType BTUOrI Type -- this must be a union/intersect type: foloowing the st-graph, a type must be encountered in the union/intersection (this must be a non-empty union/intersection and it must get a name)
+data BetweenType = BetweenType BTUOrI TypeTerm -- this must be a union/intersect type: foloowing the st-graph, a type must be encountered in the union/intersection (this must be a non-empty union/intersection and it must get a name)
                  | BTEqual     -- both sides must have the same type. Note that this is different from adding .=.
                                -- BTEqual requires both sides to be named and equal; this will be tested
                                -- while adding .=. makes both sides equal
@@ -70,10 +70,10 @@ instance Prelude.Ord Between where
 instance Eq Between where
   (==) a b = (compare a b) == EQ
 
-instance Show Type where
+instance Show TypeTerm where
     showsPrec _ typTerm = showString (showType typTerm)
 
-showType :: Type -> String
+showType :: TypeTerm -> String
 showType t
  = case t of
      TypExpr (Pid _ c) _ _                        -> "pop ("++name c++") "
@@ -91,12 +91,12 @@ showType t
          witnesses True     = "Co-witnesses of "
          witnesses False    = "Witnesses of "
 
--- | Equality of Type is needed for the purpose of making graphs of types.
+-- | Equality of TypeTerm is needed for the purpose of making graphs of types.
 --   These are used in the type checking process.
 --   The main idea is that the equality distinguishes between occurrences.
 --   So term 'r' on line 14:3 differs from  the term 'r' on line 87:19.
 --   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
-instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy r = r~.
+instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which satisfy r = r~.
   compare (TypExpr (Pid _ c)      _ _) (TypExpr (Pid _ c')       _ _ ) = Prelude.compare c c'
   compare (TypExpr (Pid _ _)      _ _) (TypExpr _                _ _ ) = Prelude.LT
   compare (TypExpr _              _ _) (TypExpr (Pid _ _ )       _ _ ) = Prelude.GT
@@ -135,7 +135,7 @@ instance Prelude.Ord Type where -- first we fix all forms of I's, which satisfy 
   -- Besides, if there are two identical type inferences with different error messages, we should just pick one.
   -- compare (Between _ a b t) (Between _ a' b' t')                    = compare (t,a,b) (t',a',b')
 
-instance Eq Type where
+instance Eq TypeTerm where
   t == t' = compare t t' == EQ
 
 -- On Guarded: it is intended to return something, as long as there were no errors creating it.
@@ -182,14 +182,14 @@ p_flp (Pfull o s t) = Pfull o t s
 p_flp (PFlp _ a)    = a
 p_flp a             = PFlp (origin a) a
 
-decToTyp :: SrcOrTgt -> Bool -> P_Declaration -> Type
+decToTyp :: SrcOrTgt -> Bool -> P_Declaration -> TypeTerm
 decToTyp sORt complemented d = TypExpr (PTrel (origin d) (dec_nm d) (dec_sign d)) sORt complemented
 
 improveBindings :: (Ord a,Show a,Ord b,Show b)
-                => (Map a [b] -> Map Type [(a,b,Type)])
-                -> [[Type]] -- equality classes for Between-like bindings yield improved propagation on (I /\ I /\ I);I-like terms.
-                -> (Map a [b], Map Type [Type])
-                -> (Map a [b], Map Type [Type])
+                => (Map a [b] -> Map TypeTerm [(a,b,TypeTerm)])
+                -> [[TypeTerm]] -- equality classes for Between-like bindings yield improved propagation on (I /\ I /\ I);I-like terms.
+                -> (Map a [b], Map TypeTerm [TypeTerm])
+                -> (Map a [b], Map TypeTerm [TypeTerm])
 improveBindings typByTyp eqtyps (oldMap,st')
  = (bindings', stPlus)
   where bindings' = Map.union decisions oldMap
@@ -202,13 +202,13 @@ improveBindings typByTyp eqtyps (oldMap,st')
         checkOne _ = Nothing
 
 -- find out which bindings can be determined.
--- candidate bindings are given in the first argument (inp), where the triple (from,to,Type) is used to bind "from" to "to"
+-- candidate bindings are given in the first argument (inp), where the triple (from,to,TypeTerm) is used to bind "from" to "to"
 -- (this results in a map of possible bindings)
 -- Note that it is possible that an element of type "from" is not in the final map (hence totality of the resulting map is not guaranteed)
 makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
-                    Map Type [(from,to,Type)] -- when binding "from" to "to", one knows that the first type equals the second
-                 -> Map Type [Type] -- reflexive transitive graph with inferred types
-                 -> [[Type]] -- classes of types that - according to Between-like bindings - should be of equal types
+                    Map TypeTerm [(from,to,TypeTerm)] -- when binding "from" to "to", one knows that the first type equals the second
+                 -> Map TypeTerm [TypeTerm] -- reflexive transitive graph with inferred types
+                 -> [[TypeTerm]] -- classes of types that - according to Between-like bindings - should be of equal types
                  -> Map from [to] -- resulting bindings
 makeDecisions inp trnRel eqtyps
  = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
@@ -223,7 +223,7 @@ makeDecisions inp trnRel eqtyps
        trnRel' = Map.map (filter isConc) trnRel
        isConc (TypExpr (Pid _ _) _ _) = True
        isConc _ = False
-       f :: Type -> [Type]
+       f :: TypeTerm -> [TypeTerm]
        f x = Map.findWithDefault [] x trnRel'
        f' x = Map.findWithDefault [] x typsFull
        getDecision equals
@@ -246,8 +246,8 @@ orWhenEmpty [] n = n
 orWhenEmpty n  _ = n
 
 -- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
---   It expects a list of tuples st::[(Type,Type)], which has been made by uType.
---   This list represents a relation, st,  over Type*Type.
+--   It expects a list of tuples st::[(TypeTerm,TypeTerm)], which has been made by uType.
+--   This list represents a relation, st,  over TypeTerm*TypeTerm.
 --   The function typing also expects a list of "between terms",
 --   which represent types that were created due to the use of specific operators, such as compose, union and intersect.
 --   Finally, it expects the declaration table. 
@@ -259,7 +259,7 @@ typing :: Typemap -> [Between] -> Map String [P_Declaration]
              , Typemap                    -- stClos           -- additional links added to stClos
              , Typemap                    -- stClos0          -- st* plus bindings for terms (transitive)
              , Guarded ( Map Term P_Declaration -- bindings   -- declarations that may be bound to relations
-                       , Type -> P_Concept)     -- srcTypes   -- types of terms and betweens
+                       , TypeTerm -> P_Concept) -- srcTypes   -- types of terms and betweens
              , Map P_Concept [P_Concept]  -- isaClos          -- concept lattice
              , Map P_Concept [P_Concept]  -- isaClosReversed  -- same, but reversed
              )                                   
@@ -331,7 +331,7 @@ typing st betweenTerms declsByName
     stClosAdd :: Typemap -> Typemap
     stClosAdd tm = reverseMap (foldl f (reverseMap (foldl f tm glbs)) lubs)
       where
-       f :: Typemap -> (Type,Type,Type) -> Typemap
+       f :: Typemap -> (TypeTerm,TypeTerm,TypeTerm) -> Typemap
        f dataMap (a, b, t) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups t dataMap]) dataMap
        -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
        -- (These arcs show up as dotted lines in the type graphs)
@@ -350,11 +350,11 @@ typing st betweenTerms declsByName
                        ]
                      )
     
-    ivTypByTyp :: Map Type [P_Concept] -> Map Type [(Type,P_Concept,Type)]
+    ivTypByTyp :: Map TypeTerm [P_Concept] -> Map TypeTerm [(TypeTerm,P_Concept,TypeTerm)]
     ivTypByTyp ivMap = Map.fromListWith mrgUnion [ (tp,map (\c -> (tp,c,TypExpr (Pid (SomewhereNear (fatal 313 "Hopefully this isn't inspected")) c) Src False)) concs)
                                                  | (tp,concs) <- Map.toList ivMap ]
     
-    typByTyp :: Map Term [P_Declaration] -> Map Type [(Term,P_Declaration,Type)]
+    typByTyp :: Map Term [P_Declaration] -> Map TypeTerm [(Term,P_Declaration,TypeTerm)]
     typByTyp oldMap = Map.fromList [ (trm, quadruples sORt complemented t) | trm@(TypExpr t sORt complemented) <- typeTerms ]
          where quadruples sORt complemented t = sort [(t,d,decToTyp sORt complemented d ) | d <- Map.findWithDefault [] t oldMap]
 
@@ -365,7 +365,7 @@ typing st betweenTerms declsByName
                                      (declByTerm,firstClos)
     bindings :: Map Term P_Declaration
     bindings = Map.mapMaybe exactlyOne newBindings
-    ivBoundConcepts :: Map Type [P_Concept]
+    ivBoundConcepts :: Map TypeTerm [P_Concept]
     (ivBoundConcepts, stClos1)
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
                                                      , fixPoint stClosAdd stClos0)
@@ -378,7 +378,7 @@ typing st betweenTerms declsByName
     exactlyOne _ = Nothing
     
     -- together, the firstSetOfEdges and secondSetOfEdges form the relation st
-    typeTerms :: [Type]          -- The list of all type terms in st.
+    typeTerms :: [TypeTerm]          -- The list of all type terms in st.
     typeTerms = Map.keys st -- Because a Typemap is total, it is sufficient to compute  Map.keys st
     
     fixPoint :: Eq a => (a->a) -> a -> a
@@ -396,22 +396,22 @@ typing st betweenTerms declsByName
     isaClosReversed :: Map P_Concept [P_Concept]
     isaClosReversed = reverseMap isaClos
     isaClos = addIdentity isaClos' 
-    stConcepts :: Map Type [P_Concept]
+    stConcepts :: Map TypeTerm [P_Concept]
     stConcepts =  Map.map f stClos
-                  where f :: [Type] -> [P_Concept]
+                  where f :: [TypeTerm] -> [P_Concept]
                         f ts = [t | t <- ownTypes ts, not (t `elem` derived ts)]
                         ownTypes ts = [c | TypExpr (Pid _ c) _ _<-ts]
                         derived ts = foldl mrgUnion [] [Map.findWithDefault [] t isaClos' | t<-ownTypes ts]
-    srcTypes' :: Type -> [P_Concept]
+    srcTypes' :: TypeTerm -> [P_Concept]
     srcTypes' typ = case Map.lookup typ stConcepts of
                       Just x -> x
-                      _ -> fatal 447 ("Type "++show typ++" was not found in stConcepts.")
-    srcTypes :: Type -> P_Concept
+                      _ -> fatal 447 ("TypeTerm "++show typ++" was not found in stConcepts.")
+    srcTypes :: TypeTerm -> P_Concept
     srcTypes typ = case srcTypes' typ of
                    -- A type may have an empty codomain in stConcepts, because that means it is type incorrect.
                     [cs] -> cs
-                    [] -> fatal 389 ("Type "++show typ++" was not found in stConcepts.")
-                    cs -> fatal 390 ("Type "++show typ++" was found in stConcepts more than once: "++intercalate ", " (map name cs))
+                    [] -> fatal 389 ("TypeTerm "++show typ++" was not found in stConcepts.")
+                    cs -> fatal 390 ("TypeTerm "++show typ++" was found in stConcepts more than once: "++intercalate ", " (map name cs))
      
 -- | if lst represents a binary relation, then reverseMap lst represents its inverse (viz. flip, wok)
 -- | note that the domain must be preserved!

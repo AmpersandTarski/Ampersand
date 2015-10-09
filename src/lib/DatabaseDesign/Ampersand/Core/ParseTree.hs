@@ -228,7 +228,7 @@ where
       | PBrk Origin Term               -- ^ bracketed expression ( ... )
       deriving (Ord, Show) -- deriving Show for debugging purposes
 
--- This instance of Eq is required in the type checker. It is needed in this way in order to define the relation st[Type*Type] correctly.
+-- This instance of Eq is required in the type checker. It is needed in this way in order to define the relation st[TypeTerm*TypeTerm] correctly.
    instance Eq Term where
       t == t' =
         case t of
