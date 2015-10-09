@@ -111,14 +111,10 @@ mSpecific doet twee dingen:
 mSpecific' gebruik je wanneer je in de aanroep niet weet of je de source of target bedoelt, bijv. "intersection arising inside r;s" 
 -}
 mSpecific, mGeneric :: TypeTerm -> TypeTerm -> TypeTerm -> TypeInfo
-{-
-mGeneric   ta a tb b te e
+mGeneric typeTermA typeTermB typeTermE
   = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
-    between typeTermE (Between (tCxe ta a tb b TETUnion e) typeTermA typeTermB (BetweenType BTUnion typeTermE))
-    where typeTermA = domOrCod ta False a
-          typeTermB = domOrCod tb False b
-          typeTermE = domOrCod te False e
--}
+    between typeTermE (Between (tCxe typeTermA typeTermB TETUnion (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTUnion typeTermE))
+{- if elaborated to lists, this reads:
 mGeneric typeTermA typeTermB typeTermE
   = (Map.fromList [ (typeTermA, [typeTermE])
                   , (typeTermE, [])
@@ -126,14 +122,11 @@ mGeneric typeTermA typeTermB typeTermE
                   ]
     , [Between (tCxe typeTermA typeTermB TETUnion (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTUnion typeTermE)]
     )
-{-
-mSpecific  ta a tb b te e
-  = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
-    between typeTermE (Between (tCxe ta a tb b TETIsc   e) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
-    where typeTermA = domOrCod ta False a
-          typeTermB = domOrCod tb False b
-          typeTermE = domOrCod te False e
 -}
+mSpecific typeTermA typeTermB typeTermE
+  = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
+    between typeTermE (Between (tCxe typeTermA typeTermB TETIsc (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
+{- if elaborated to lists, this reads:
 mSpecific typeTermA typeTermB typeTermE
   = (Map.fromList [ (typeTermE, [typeTermA,typeTermB])
                   , (typeTermA, [])
@@ -141,19 +134,16 @@ mSpecific typeTermA typeTermB typeTermE
                   ]
     , [Between (tCxe typeTermA typeTermB TETIsc (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTIntersection typeTermE)]
     )
-mSpecific', mGeneric' :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> Term -> TypeInfo
-mGeneric'   ta a tb b e
+-}
+mSpecific', mGeneric' :: TypeTerm -> TypeTerm -> Term -> TypeInfo
+mGeneric' typeTermA typeTermB e
   = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
-    between typeTermE (Between (tCxe typeTermA typeTermB TETUnion (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTUnion typeTermE))
-    where typeTermA = domOrCod ta False a
-          typeTermB = domOrCod tb False b
-          typeTermE = TypInCps  e False
-mSpecific'  ta a tb b e
+    between typeTermE (Between (tCxe typeTermA typeTermB TETUnion e) typeTermA typeTermB (BetweenType BTUnion typeTermE))
+    where typeTermE = TypInCps e False
+mSpecific' typeTermA typeTermB e
   = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
-    between typeTermE (Between (tCxe typeTermA typeTermB TETIsc (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
-    where typeTermA = domOrCod ta False a
-          typeTermB = domOrCod tb False b
-          typeTermE = TypInCps  e False
+    between typeTermE (Between (tCxe typeTermA typeTermB TETIsc e) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
+    where typeTermE = TypInCps e False
 
 mEqual :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual    sORt a b e = (Map.empty, [Between (tCxe (domOrCod sORt False a) (domOrCod sORt False b) TETEq e) (domOrCod sORt False a) (domOrCod sORt False b) BTEqual])
@@ -398,7 +388,7 @@ instance Expr Term where
                           pidTest (Patm{}) r = r
                           pidTest _ _ = nothing
                       in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
-                         mSpecific' Tgt a Src b x .+. uType' a .+. uType' b
+                         mSpecific' (cod a) (dom b) x .+. uType' a .+. uType' b
                          .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
      (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
@@ -407,7 +397,7 @@ instance Expr Term where
                          pnidTest _ _ = nothing
                          s = TypInCps x False
                      in dom x .<. dom a .+. cod x .<. cod b
-                        .+. mGeneric' Tgt a Src b x .+. uType' a .+. uType' b
+                        .+. mGeneric' (cod a) (dom b) x .+. uType' a .+. uType' b
                         .+. pnidTest a (dom b.<. s) .+. pnidTest b (cod a.<. s)
      (PPrd _ a b) -> dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
                      .+. uType' a .+. uType' b
