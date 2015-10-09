@@ -336,7 +336,6 @@ class Api{
     					 ,'roles' => $roles
     					 ,'notifications' => Notifications::getAll()
     					 ,'session' => array ( 'id' => $session->id
-    					 					 , 'sessionUser' => Session::getSessionUserId()
     					 					 , 'loggedIn' => Session::sessionUserLoggedIn()
     					 					 , 'sessionRoles' => $roles
     					 					 )
