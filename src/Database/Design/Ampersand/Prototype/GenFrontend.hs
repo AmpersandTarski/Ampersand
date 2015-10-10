@@ -300,6 +300,7 @@ genRouteProvider fSpec ifcs =
                        setAttribute "contextName"         (fsName fSpec)
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "ifcs"                ifcs
+                     . setAttribute "verbose"             (verboseP (getOpts fSpec))
 
     ; writePrototypeFile fSpec ("app/RouteProvider.js") $ contents 
     }
@@ -328,6 +329,7 @@ genView_Interface fSpec interf =
                      . setAttribute "source"              (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"              (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
+                     . setAttribute "verbose"             (verboseP (getOpts fSpec))
 
     ; let filename = ifcName interf ++ ".html" 
     ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
@@ -351,6 +353,7 @@ genView_Object fSpec depth obj =
                         . setAttribute "expAdl"     (showADL . objExp $ obj) 
                         . setAttribute "source"     (escapeIdentifier . name . objSource $ obj)
                         . setAttribute "target"     (escapeIdentifier . name . objTarget $ obj)
+                        . setAttribute "verbose"    (verboseP (getOpts fSpec))
   in  case atomicOrBox obj of
         FEAtomic{} ->
          do { {-
