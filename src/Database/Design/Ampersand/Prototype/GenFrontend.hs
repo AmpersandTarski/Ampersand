@@ -437,7 +437,8 @@ genController_Interface fSpec interf =
           containsEditableObjects    = (not . null) allEditableObjects
           containsDATE              = any (\o -> (cptTType fSpec) (objTarget o) == Date && objIsEditable o) allObjs
           
-    ; template <- readTemplate fSpec "controllers/controller.js"
+    ; let controlerTemplateName = "controllers/controller.js"
+    ; template <- readTemplate fSpec controlerTemplateName
     ; let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
@@ -454,7 +455,7 @@ genController_Interface fSpec interf =
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "verbose"                  (verboseP (getOpts fSpec))
-
+                     . setAttribute "usedTemplate"             controlerTemplateName
     ; let filename = ifcName interf ++ ".js"
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
