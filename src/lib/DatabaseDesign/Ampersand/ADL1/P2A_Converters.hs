@@ -114,7 +114,7 @@ mSpecific, mGeneric :: TypeTerm -> TypeTerm -> TypeTerm -> TypeInfo
 mGeneric typeTermA typeTermB typeTermE
   = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
     between typeTermE (Between (tCxe typeTermA typeTermB TETUnion (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTUnion typeTermE))
-{- if elaborated to lists, this reads:
+{- the equivalent code, yet elaborated to lists, would be:
 mGeneric typeTermA typeTermB typeTermE
   = (Map.fromList [ (typeTermA, [typeTermE])
                   , (typeTermE, [])
@@ -126,7 +126,7 @@ mGeneric typeTermA typeTermB typeTermE
 mSpecific typeTermA typeTermB typeTermE
   = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
     between typeTermE (Between (tCxe typeTermA typeTermB TETIsc (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
-{- if elaborated to lists, this reads:
+{- the equivalent code, yet elaborated to lists, would be:
 mSpecific typeTermA typeTermB typeTermE
   = (Map.fromList [ (typeTermE, [typeTermA,typeTermB])
                   , (typeTermA, [])
@@ -152,10 +152,6 @@ existsSpecific = existsGS BTIntersection
 existsGS :: BTUOrI -> TypeTerm -> TypeTerm -> ([P_Concept] -> [P_Concept] -> CtxError) -> TypeTerm -> TypeInfo
 existsGS BTIntersection a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
 existsGS BTUnion        a b err at = a .<. at .+. b .<. at .+. between at (Between err a b (BetweenType BTUnion        at))
-{- was:
-tCxe :: SrcOrTgt -> Term -> SrcOrTgt -> Term -> (t -> TypErrTyp) -> t -> [P_Concept] -> [P_Concept] -> CtxError
-tCxe ta a tb b msg e src trg = CxeBetween{cxeLhs=(a,ta,src),cxeRhs=(b,tb,trg),cxeTyp=msg e}
--}
 tCxe :: TypeTerm -> TypeTerm -> (Term -> TypErrTyp) -> Term -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe ta tb msg e src trg = CxeBetween{cxeLhs=(ttTerm ta,ttSorT ta,src),cxeRhs=(ttTerm tb,ttSorT tb,trg),cxeTyp=msg e}
 
