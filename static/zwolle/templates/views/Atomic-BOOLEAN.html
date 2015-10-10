@@ -1,16 +1,12 @@
 $if(verbose)$<!-- Atomic-BOOLEAN.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $endif$<div>
-  $if(exprIsUni)$
-  <div class="checkbox">
-    <label>
-      <input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="put(ResourceId)"/>
-    </label>
-  </div>
-  $else$
-  <div class="checkbox" ng-repeat="row in val['$name$'] track by \$index">
-    <label>
-      <input ng-model="val['$name$'][\$index]" type="checkbox" ng-disabled="true"/>
-    </label>
-  </div>
-  $endif$
+	$if(exprIsUni)$<div class="checkbox">
+		<label>
+			<input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="put(ResourceId)"/>
+		</label>
+	</div>$else$<div class="checkbox" ng-repeat="row in val['$name$'] track by \$index">
+		<label>
+			<input ng-model="val['$name$'][\$index]" type="checkbox" ng-disabled="true"/>
+		</label>
+	</div>$endif$
 </div>
