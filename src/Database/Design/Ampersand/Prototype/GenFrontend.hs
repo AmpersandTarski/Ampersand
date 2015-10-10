@@ -453,6 +453,7 @@ genController_Interface fSpec interf =
                      . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
+                     . setAttribute "verbose"                  (verboseP (getOpts fSpec))
 
     ; let filename = ifcName interf ++ ".js"
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
