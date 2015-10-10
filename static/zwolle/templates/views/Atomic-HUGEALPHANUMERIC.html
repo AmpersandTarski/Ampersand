@@ -1,5 +1,5 @@
-<!-- Atomic-HugeAlphanumeric.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-<div class="input-group">
+$if(verbose)$<!-- Atomic-HUGEALPHANUMERIC.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$endif$<div class="input-group">
 $if(isEditable)$
   $if(exprIsUni)$
   <textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Textarea" rows="20" cols="100" ng-blur="put(ResourceId)"></textarea>

@@ -1,5 +1,5 @@
-<!-- Atomic-Integer.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-<div>$if(isEditable)$
+$if(verbose)$<!-- Atomic-INTEGER.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$endif$<div>$if(isEditable)$
   <div class="input-group" style="min-width:60px;">$if(exprIsUni)$
     <input ng-model="val['$name$']" my-bluronenter type="number" class="form-control input-sm" ng-blur="put(ResourceId)">$else$
 	<div ng-repeat="row in val['$name$'] track by \$index">

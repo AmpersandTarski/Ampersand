@@ -1,5 +1,5 @@
-<!-- BOX<HCOLS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
-<table class="table table-striped table-hover table-condensed" ng-show="val['$name$']">
+$if(verbose)$<!-- Box-HCOLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
+$endif$<table class="table table-striped table-hover table-condensed" ng-show="val['$name$']">
   <thead>
     <tr>
       $if(isEditable)$<th></th><!-- empty header because relation is editable -->$endif$
@@ -13,7 +13,7 @@
       $if(isEditable)$<td>
         <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span>
       </td>$endif$
-      $subObjects:{subObj|<!-- BOX<HCOLS> CHILD: "$subObj.subObjLabel$" -->
+      $subObjects:{subObj|$if(verbose)$<!-- $subObj.subObjLabel$ -->$endif$
       <td class="row-content">
 $subObj.subObjContents$
       </td>

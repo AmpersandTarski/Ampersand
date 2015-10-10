@@ -1,5 +1,5 @@
-<!-- BOX<ROWS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
-<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{'panel-default' : resourceStatus[ResourceId]['default'], 'panel-warning' : resourceStatus[ResourceId]['warning'], 'panel-danger' : resourceStatus[ResourceId]['danger'], 'panel-success' : resourceStatus[ResourceId]['success']}"$endif$>
+$if(verbose)$<!-- Box-ROWS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
+$endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{'panel-default' : resourceStatus[ResourceId]['default'], 'panel-warning' : resourceStatus[ResourceId]['warning'], 'panel-danger' : resourceStatus[ResourceId]['danger'], 'panel-success' : resourceStatus[ResourceId]['success']}"$endif$>
   $if(isRoot)$<div class="panel-heading">
     <div class="pull-right panel-heading-options">
       <button type="button" class="btn btn-sm btn-warning" ng-if="showSaveButton[ResourceId]" ng-click="put(ResourceId, 'promise')">Save</button>
@@ -11,7 +11,7 @@
   </div>
   <div class="panel-body" cg-busy="myPromises[ResourceId]">
   $endif$
-    $subObjects:{subObj|<!-- BOX<ROWS> CHILD: "$subObj.subObjLabel$" -->
+    $subObjects:{subObj|$if(verbose)$<!-- $subObj.subObjLabel$ -->$endif$
     <div class="row">
       <div class="row-label col-md-2 wordwrap"><strong>$subObj.subObjLabel$</strong></div>
       <div class="row-content col-md-10">
