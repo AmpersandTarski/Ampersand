@@ -33,22 +33,19 @@ Example: TypExpr t Src False means (the set of atoms that is) the domain of term
 -}
 
 data TypeTerm
-   = TypExpr    { ttTerm :: Term        -- The term of which the type is analyzed
-                , ttSorT :: SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
-                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-                }
-   | TypInCps   { ttTerm :: Term        -- The term must be ECps
-                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-                }
-   | TypInRrs   { ttTerm :: Term        -- The term must be ERrs
-                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-                }
-   | TypInLrs   { ttTerm :: Term        -- The term must be ELrs
-                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-                }
-   | TypInObjDef{ ttObj  :: P_ObjectDef -- term is deriving Ord
-                , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-                }
+   = TypExpr      { ttTerm :: Term        -- The term of which the type is analyzed
+                  , ttSorT :: SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
+                  , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                  }
+   | TypUnion     { ttTerm :: Term
+                  , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                  }
+   | TypIntersect { ttTerm :: Term
+                  , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                  }
+   | TypInObjDef  { ttObj  :: P_ObjectDef -- term is deriving Ord
+                  , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                  }
 data Between = Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
                     TypeTerm -- lhs type, e.g. cod(a)
                     TypeTerm -- rhs type, e.g. dom(b)
@@ -82,13 +79,13 @@ instance Show TypeTerm where
 showType :: TypeTerm -> String
 showType t
  = case t of
-     TypExpr (Pid _ c) _ _                        -> "pop ("++name c++") "
+     TypExpr (Pid _ c) _ False                    -> "pop ("++name c++") "
+     TypExpr (Pid _ c) _ True                     -> "empty ("++name c++") "
      TypExpr term@(PVee o)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "++"("++ show o++")"
      TypExpr term@(Pfull _ _ _) sORt complemented -> codOrDom sORt complemented++" ("++showADL term++")"
      TypExpr term               sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "++ show (origin term)
-     TypInCps term                   complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
-     TypInRrs term                   complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
-     TypInLrs term                   complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
+     TypUnion term                   complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
+     TypIntersect term               complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
      TypInObjDef obj                 complemented -> witnesses complemented++" ("++name obj++") "++show (origin obj)
    where codOrDom Src True  = "domc"
          codOrDom Src False = "dom"
@@ -103,7 +100,7 @@ showType t
 --   So term 'r' on line 14:3 differs from  the term 'r' on line 87:19.
 --   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
 instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which satisfy r = r~.
-  compare (TypExpr (Pid _ c)      _ _) (TypExpr (Pid _ c')       _ _ ) = Prelude.compare c c'
+  compare (TypExpr (Pid _ c)      _ b) (TypExpr (Pid _ c')       _ b') = Prelude.compare (c,b) (c',b')
   compare (TypExpr (Pid _ _)      _ _) (TypExpr _                _ _ ) = Prelude.LT
   compare (TypExpr _              _ _) (TypExpr (Pid _ _ )       _ _ ) = Prelude.GT
   compare (TypExpr (Patm _ x [c]) _ _) (TypExpr (Patm _ x' [c']) _ _ ) = Prelude.compare (x,c) (x',c')
@@ -125,15 +122,12 @@ instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which sati
   compare (TypExpr x             x' b) (TypExpr y               y' b') = Prelude.compare (x,x',b) (y,y',b')
   compare (TypExpr _              _ _) _                               = Prelude.LT
   compare _                            (TypExpr _                _ _ ) = Prelude.GT
-  compare (TypInCps t               b) (TypInCps t'                b') = compare (origin t,b) (origin t',b')
-  compare (TypInCps _               _) _                               = Prelude.LT
-  compare _                            (TypInCps _                 _ ) = Prelude.GT
-  compare (TypInRrs t               b) (TypInRrs t'                b') = compare (origin t,b) (origin t',b')
-  compare (TypInRrs _               _) _                               = Prelude.LT
-  compare _                            (TypInRrs _                 _ ) = Prelude.GT
-  compare (TypInLrs t               b) (TypInLrs t'                b') = compare (origin t,b) (origin t',b')
-  compare (TypInLrs _               _) _                               = Prelude.LT
-  compare _                            (TypInLrs _                 _ ) = Prelude.GT
+  compare (TypUnion t               b) (TypUnion t'                b') = compare (origin t,b) (origin t',b')
+  compare (TypUnion _               _) _                               = Prelude.LT
+  compare _                            (TypUnion _                 _ ) = Prelude.GT
+  compare (TypIntersect t           b) (TypIntersect t'            b') = compare (origin t,b) (origin t',b')
+  compare (TypIntersect _           _) _                               = Prelude.LT
+  compare _                            (TypIntersect _             _ ) = Prelude.GT
   compare (TypInObjDef o            b) (TypInObjDef o'             b') = Prelude.compare (origin o,b) (origin o',b')
 --  compare (TypInObjDef _            _) _                               = Prelude.LT -- these two lines are superfluous if all combinators are covered.
 --  compare _                            (TypInObjDef _              _ ) = Prelude.GT
@@ -256,7 +250,7 @@ orWhenEmpty n  _ = n
 --   This list represents a relation, st,  over TypeTerm*TypeTerm.
 --   The function typing also expects a list of "between terms",
 --   which represent types that were created due to the use of specific operators, such as compose, union and intersect.
---   Finally, it expects the declaration table. 
+--   Finally, it expects the declaration table.
 
 typing :: Typemap -> [Between] -> Map String [P_Declaration]
           -> ( Typemap                    -- st               -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
@@ -297,10 +291,10 @@ typing st betweenTerms declsByName
     allTerms    = [e | TypExpr e _ _ <- typeTerms]
     allConcs    = [c | (Pid _ c) <- allTerms]
     
-    checkUndefined = parallelList (map checkNonempty (Map.toList declByTerm))
+    checkUndefined = parallelList (map checkNonempty (Map.toList declByTerm))  -- declByTerm maps Prel and PTrel terms to declarations, merely by their name or name+signature.
     checkNonempty (t,[]) = Errors [CxeRelUndefined { cxeExpr = t}]
     checkNonempty _ = return ()
-    checkBindings = parallelList (map checkUnique (Map.toList newBindings))
+    checkBindings = parallelList (map checkUnique (Map.toList newBindings)) -- newBindings maps Prel and PTrel terms to declarations after the typing algorithm.
     checkUnique (_,[_]) = return ()
     checkUnique (t,xs) = Errors [CxeRel { cxeExpr=t
                                         , cxeDecs=xs

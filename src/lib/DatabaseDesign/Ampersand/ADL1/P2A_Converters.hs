@@ -91,6 +91,8 @@ a .=. b  = (Map.fromList [(a, [b]),(b, [a])],[])
 (m1,l1) .+. (m2,l2) = (Map.unionWith mrgUnion m1 m2, l1++l2)
 thing :: P_Concept -> TypeTerm
 thing c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src False
+tNull :: P_Concept -> TypeTerm
+tNull c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src True
 domc, dom, codc, cod :: Term -> TypeTerm
 domc x = TypExpr x Src True  -- the domain of x
 dom  x = TypExpr x Src False -- and its complement
@@ -139,11 +141,11 @@ mSpecific', mGeneric' :: TypeTerm -> TypeTerm -> Term -> TypeInfo
 mGeneric' typeTermA typeTermB e
   = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
     between typeTermE (Between (tCxe typeTermA typeTermB TETUnion e) typeTermA typeTermB (BetweenType BTUnion typeTermE))
-    where typeTermE = TypInCps e False
+    where typeTermE = TypUnion e False
 mSpecific' typeTermA typeTermB e
   = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
     between typeTermE (Between (tCxe typeTermA typeTermB TETIsc e) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
-    where typeTermE = TypInCps e False
+    where typeTermE = TypIntersect e False
 
 mEqual :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual    sORt a b e = (Map.empty, [Between (tCxe (domOrCod sORt False a) (domOrCod sORt False b) TETEq e) (domOrCod sORt False a) (domOrCod sORt False b) BTEqual])
@@ -331,9 +333,16 @@ instance Expr P_Gen where
 
 instance Expr P_Declaration where
  uType _ d
-  = dom decl.<.thing src .+. cod decl.<.thing trg
+  = mGeneric  (dom decl) (domc decl) domUnion       .+. domUnion      .=. thing src .+.
+    mSpecific (dom decl) (domc decl) domcUnion      .+. domcUnion     .=. tNull src .+.
+    mGeneric  (cod decl) (codc decl) codIntersect   .+. codIntersect  .=. thing tgt .+.
+    mSpecific (cod decl) (codc decl) codcIntersect  .+. codcIntersect .=. tNull tgt
     where decl = PTrel (origin d) (dec_nm d) (dec_sign d)
-          P_Sign src trg = dec_sign d
+          domUnion      = TypUnion     decl False
+          domcUnion     = TypUnion     decl True
+          codIntersect  = TypIntersect decl False
+          codcIntersect = TypIntersect decl True
+          P_Sign src tgt = dec_sign d
 
 instance Expr P_Population where
  uType _ pop
@@ -360,9 +369,9 @@ instance Expr Term where
                        .+. dom x.=.cod x  .+.  domc x.=.codc x
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
      (Pfull o s t) -> dom x.=.thing s .+. cod x.=.thing t            --  V[A*B] (the typed full set)
-     (PTrel _ _ (P_Sign src trg)) -> dom x.<.thing src .+. cod x.<.thing trg
-     (Prel _ _)   -> typeToMap (dom x) .+. typeToMap (cod x)
-
+     (PTrel _ _ (P_Sign src trg))
+                   -> typeToMap (dom x) .+. typeToMap (cod x)
+     (Prel _ _)    -> typeToMap (dom x) .+. typeToMap (cod x)
      (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
                       .+. mEqual Src a b x .+. mEqual Tgt a b x
                       .+. uType' a .+. uType' b
@@ -378,7 +387,7 @@ instance Expr Term where
                       .+. mGeneric (dom x) (dom b) (dom (PUni o a b)) .+. mGeneric (cod x) (cod b) (cod (PUni o a b))
 -- was:               .+. mGeneric Src x Src b Src (PUni o a b) .+. mGeneric Tgt x Tgt b Tgt (PUni o a b)
                       .+. uType' a .+. uType' b .+. uType' (PUni o a b)
-     (PCps _ a b)  -> let s = TypInCps x False
+     (PCps _ a b)  -> let s = TypIntersect x False
                           pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
                           pidTest (Patm{}) r = r
@@ -391,7 +400,7 @@ instance Expr Term where
                          pnidTest (PCpl _ (Pid{})) r = r
                          pnidTest (PCpl _ (Patm{})) r = r
                          pnidTest _ _ = nothing
-                         s = TypInCps x False
+                         s = TypUnion x False
                      in dom x .<. dom a .+. cod x .<. cod b
                         .+. mGeneric' (cod a) (dom b) x .+. uType' a .+. uType' b
                         .+. pnidTest a (dom b.<. s) .+. pnidTest b (cod a.<. s)
@@ -400,7 +409,7 @@ instance Expr Term where
      (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
      (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
      (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType' e
-     (PBrk _ e)   -> dom x.=.dom e .+. cod x.=.cod e .+. uType x e  -- (e) brackets
+     (PBrk _ e)   -> uType x e  -- ignore brackets
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
      (PCpl o a)   -> let e = PDif o (PVee o) a
                      in dom x.=.dom e .+. cod x.=.cod e .+.
@@ -511,9 +520,9 @@ pCtx2aCtx p_context
         popsfromdecls = concatMap ptups pats    -- Populations from declarations inside all patterns
                      ++ concatMap prcUps procs  -- Populations from declarations inside all processes
                      ++ mapMaybe snd adecsNPops      -- Populations from declarations directly in side the context
-                      
+
     st, eqType :: Typemap                  -- eqType = (st*/\st*~)\/I  (total, reflexive, symmetric and transitive)
-    bindings :: Map Term P_Declaration         -- yields declarations that may be bound to relations, intended as a suggestion to the programmer
+    bindings :: Map Term P_Declaration     -- yields declarations that may be bound to relations, intended as a suggestion to the programmer
     isaClos, isaClosReversed :: Map P_Concept [P_Concept]                   -- 
     (st, stClos, eqType, stClosAdded, stClos1 , bindingsandsrcTypes, isaClos, isaClosReversed)
      = typing utypeST betweens
@@ -527,8 +536,7 @@ pCtx2aCtx p_context
     removeDoubleDeclarations [x] = [x]
     removeDoubleDeclarations (x:y:ys) | dec_sign x == dec_sign y = removeDoubleDeclarations (y:ys)
                                       | otherwise = x:removeDoubleDeclarations (y:ys)
-    
-    
+
     (bindings,srcTypes,srcTypErrs)
      = case bindingsandsrcTypes of
           Checked (a,b) -> (a,b,[])
