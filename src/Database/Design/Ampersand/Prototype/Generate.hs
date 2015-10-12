@@ -581,9 +581,18 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
              [ "      , 'relation' => '' // this interface expression does not represent a declared relation"
              , "      , 'relationIsFlipped' => ''"
              ] 
-  ++ [ "      , 'srcConcept' => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (if there is one), 
-     , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) -- which may be flipped.
-     , "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
+  ++ [ "      , 'srcConcept'    => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (if there is one), 
+     , "      , 'tgtConcept'    => "++showPhpStr (name tgtConcept) -- which may be flipped.
+     ]
+  ++ (case objcrud object of
+        Nothing        ->["      // No user-defined CRUD."] 
+        Just (c,r,u,d) ->[ "      , 'crudC'          => "++showPhpBool c
+                         , "      , 'crudR'          => "++showPhpBool r
+                         , "      , 'crudU'          => "++showPhpBool u
+                         , "      , 'crudD'          => "++showPhpBool d
+                         ]
+     )
+  ++ [ "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
      , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
      , "      , 'exprIsProp'    => " ++ showPhpBool (isProp normalizedInterfaceExp) 
      , "      , 'exprIsIdent'   => " ++ showPhpBool (isIdent normalizedInterfaceExp) 
