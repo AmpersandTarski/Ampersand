@@ -19,6 +19,7 @@ import qualified Data.Map as Map
 import Data.Function
 import Data.Maybe
 import Data.List(nub)
+import Data.Char(toUpper)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
@@ -446,20 +447,29 @@ pCtx2aCtx' _
     typecheckObjDef o@(P_Obj { obj_nm = nm
                              , obj_pos = orig
                              , obj_ctx = ctx
+                             , obj_crud = mCrud
                              , obj_mView = mView
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
      = unguard $
-        (\ (objExpr,(srcBounded,tgtBounded)) ->
+        (\ (objExpr,(srcBounded,tgtBounded)) crud ->
             (\case
-               Just (newExpr,subStructures) -> obj (newExpr,srcBounded) (Just subStructures)
-               Nothing -> obj (objExpr,srcBounded) Nothing
+               Just (newExpr,subStructures) -> obj crud (newExpr,srcBounded) (Just subStructures)
+               Nothing                      -> obj crud (objExpr,srcBounded) Nothing
             )
             <$> maybeOverGuarded (pSubi2aSubi objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
         ) <$> typecheckTerm ctx
+          <*> checkCrud mCrud
      where      
-      
+      checkCrud :: Maybe String -> Guarded (Maybe (Bool,Bool,Bool,Bool))
+      checkCrud Nothing = pure Nothing
+      checkCrud (Just str) 
+        = let us = map toUpper str
+          in if nub us == us && all (\c -> c `elem` "CRUD") us
+             then pure . Just $ 
+               ('C' `elem` us, 'R' `elem` us ,'U' `elem` us,'D' `elem` us)
+             else Errors [mkInvalidCRUDError orig str]
       lookupView :: String -> Maybe P_ViewDef
       lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
                             []   -> Nothing
@@ -476,10 +486,11 @@ pCtx2aCtx' _
           Nothing -> Errors [mkUndeclaredError "view" o viewId] 
      
       
-      obj (e,sr) s
+      obj crud (e,sr) s
        = ( Obj { objnm = nm
                , objpos = orig
                , objctx = e
+               , objcrud = crud
                , objmView = mView
                , objmsub = s
                , objstrs = ostrs
