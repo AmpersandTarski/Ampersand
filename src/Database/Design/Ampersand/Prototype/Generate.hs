@@ -586,10 +586,10 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
      ]
   ++ (case objcrud object of
         Nothing        ->["      // No user-defined CRUD."] 
-        Just (c,r,u,d) ->[ "      , 'crudC'          => "++showPhpBool c
-                         , "      , 'crudR'          => "++showPhpBool r
-                         , "      , 'crudU'          => "++showPhpBool u
-                         , "      , 'crudD'          => "++showPhpBool d
+        Just (c,r,u,d) ->[ "      , 'crudC'         => "++showPhpBool c
+                         , "      , 'crudR'         => "++showPhpBool r
+                         , "      , 'crudU'         => "++showPhpBool u
+                         , "      , 'crudD'         => "++showPhpBool d
                          ]
      )
   ++ [ "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
