@@ -33,9 +33,9 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		$rootScope.notifications.invariants = notifications.invariants;
 		
 		// Merge
-		$rootScope.notifications.successes.concat(notifications.successes);
-		$rootScope.notifications.errors.concat(notifications.errors);
-		$rootScope.notifications.infos.concat(notifications.infos);
+		$rootScope.notifications.successes = $rootScope.notifications.successes.concat(notifications.successes);
+		$rootScope.notifications.errors = $rootScope.notifications.errors.concat(notifications.errors);
+		$rootScope.notifications.infos = $rootScope.notifications.infos.concat(notifications.infos);
 		
 		if($scope.$storage.notificationPrefs.switchAutoHideSuccesses){
 			$timeout(function() {
@@ -58,6 +58,18 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 			}
 		}
 		if(!alreadyExists) $rootScope.notifications.errors.push( {'message' : message, 'count' : 1} );
+	}
+	
+	$rootScope.addInfo = function(message){
+		alreadyExists = false;
+		arr = $rootScope.notifications.infos;
+		for (var i = 0; i < arr.length; i++) {
+			if (arr[i].message == message) {
+				arr[i].count += 1;
+				alreadyExists = true;
+			}
+		}
+		if(!alreadyExists) $rootScope.notifications.infos.push( {'message' : message, 'count' : 1} );
 	}
 	
 	// Function to get notifications again
