@@ -1,4 +1,4 @@
 $if(verbose)$<!-- LINKTO.html "$label$" ($name$) : $expAdl$ :: $source$ * $target$ -->
 $endif$<div ng-repeat="(key, row) in val['$name$'] track by row.id">
-  <my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"></my-nav-to-interfaces>
+	<my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"></my-nav-to-interfaces>
 </div>

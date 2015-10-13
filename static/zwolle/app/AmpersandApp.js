@@ -67,6 +67,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     $rootScope.getCurrentDateTime = function (){
 		return (new Date);
 	}
+    
+    $rootScope.refreshNavBar(); // initialize navbar
 	
 });
 

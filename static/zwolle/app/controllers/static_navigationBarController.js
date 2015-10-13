@@ -2,6 +2,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.$storage = $localStorage;
 	$scope.$sessionStorage = $sessionStorage;
+	$scope.defaultNotificationSettings = {};
 	
 	$rootScope.myPromises = new Array(); // initialize an array for promises, used by angular-busy module (loading indicator)
 	
@@ -34,6 +35,13 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					$rootScope.navbar = data;
 					$scope.$sessionStorage.session = data.session;
 					$scope.$sessionStorage.sessionVars = data.sessionVars;
+					
+					$scope.defaultNotificationSettings = data.defaultSettings.notifications;
+					
+					// Default preferences for notifications
+					if($scope.$storage.notificationPrefs === undefined){
+						$scope.resetNotificationSettings();
+					}
 				}, function(error){
 					// on error
 				})
@@ -55,5 +63,25 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		$route.reload();
 	};
 	
-	$rootScope.refreshNavBar(); // initialize navbar
+	$scope.resetNotificationSettings = function(){
+		$scope.$storage.notificationPrefs = $.extend($scope.$storage.notificationPrefs, $scope.defaultNotificationSettings);
+		$scope.switchDefaultSettings = true;
+	};
+	
+	$scope.$watch('switchDefaultSettings', function(){
+		if($scope.switchDefaultSettings == true) $scope.resetNotificationSettings();
+	});
+	
+	$scope.$watchCollection('$storage.notificationPrefs', function() {
+		var isDefault = true;
+		if($scope.$storage.notificationPrefs.switchShowViolations != $scope.defaultNotificationSettings.switchShowViolations) isDefault = false;
+		if($scope.$storage.notificationPrefs.switchShowSuccesses != $scope.defaultNotificationSettings.switchShowSuccesses) isDefault = false;
+		if($scope.$storage.notificationPrefs.switchAutoHideSuccesses != $scope.defaultNotificationSettings.switchAutoHideSuccesses) isDefault = false;
+		if($scope.$storage.notificationPrefs.switchShowErrors != $scope.defaultNotificationSettings.switchShowErrors) isDefault = false;
+		if($scope.$storage.notificationPrefs.switchShowInvariants != $scope.defaultNotificationSettings.switchShowInvariants) isDefault = false;
+		if($scope.$storage.notificationPrefs.switchShowInfos != $scope.defaultNotificationSettings.switchShowInfos) isDefault = false;
+		
+		if(!isDefault) $scope.switchDefaultSettings = false;
+		else $scope.switchDefaultSettings = true;
+	});
 });

@@ -72,6 +72,7 @@ class Notifications {
 		if(isset($id)){ // ID can be integer, but also string
 			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
 			self::$infos[$id]['rows'][] = $message;
+			self::$infos[$id]['count'] = count(self::$infos[$id]['rows']);
 			if(!is_null($aggregatedMessage)) self::$infos[$id]['message'] = $aggregatedMessage;
 			
 			return $id;
@@ -135,6 +136,16 @@ class Notifications {
 		$all['logs'] = Config::get('productionEnv') ? array(array('type' => 'LOG', 'message' => 'Log is disabled in production environment')) : self::getLogs();
 		
 		return $all;
+	}
+	
+	public static function getDefaultSettings(){
+		return array('switchShowViolations' 	=> Config::get('defaultShowViolations', 'notifications')
+					,'switchShowInfos'			=> Config::get('defaultShowInfos', 'notifications')
+					,'switchShowSuccesses'		=> Config::get('defaultShowSuccesses', 'notifications')
+					,'switchAutoHideSuccesses'	=> Config::get('defaultAutoHideSuccesses', 'notifications')
+					,'switchShowErrors'			=> Config::get('defaultShowErrors', 'notifications')
+					,'switchShowInvariants'		=> Config::get('defaultShowInvariants', 'notifications')
+					);
 	}
 	
 

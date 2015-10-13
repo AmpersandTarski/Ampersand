@@ -26,4 +26,12 @@ Config::set('defaultCrudR', 'global', true);
 Config::set('defaultCrudU', 'global', true);
 Config::set('defaultCrudD', 'global', true);
 
+// Default notification settings
+Config::set('defaultShowViolations', 'notifications', true);
+Config::set('defaultShowInfos', 'notifications', false);
+Config::set('defaultShowSuccesses', 'notifications', true);
+Config::set('defaultAutoHideSuccesses', 'notifications', true);
+Config::set('defaultShowErrors', 'notifications', true);
+Config::set('defaultShowInvariants', 'notifications', true);
+
 ?>

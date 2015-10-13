@@ -2,18 +2,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$scope.$storage = $localStorage;
 	
-	// Default preferences for notifications
-	if($scope.$storage.notificationPrefs === undefined){
-		$scope.$storage.notificationPrefs = {
-			  switchShowViolations 		: true
-			, switchShowInfos			: false
-			, switchShowSuccesses		: true
-			, switchAutoHideSuccesses	: true
-			, switchShowErrors			: true
-			, switchShowInvariants		: true
-		}
-	}
-	
 	// Default setting for switchAutoCommit
 	if($scope.$storage.switchAutoCommit === undefined){
 		$scope.$storage.switchAutoCommit = true;
@@ -33,9 +21,9 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		$rootScope.notifications.invariants = notifications.invariants;
 		
 		// Merge
-		$rootScope.notifications.successes.concat(notifications.successes);
-		$rootScope.notifications.errors.concat(notifications.errors);
-		$rootScope.notifications.infos.concat(notifications.infos);
+		$rootScope.notifications.successes = $rootScope.notifications.successes.concat(notifications.successes);
+		$rootScope.notifications.errors = $rootScope.notifications.errors.concat(notifications.errors);
+		$rootScope.notifications.infos = $rootScope.notifications.infos.concat(notifications.infos);
 		
 		if($scope.$storage.notificationPrefs.switchAutoHideSuccesses){
 			$timeout(function() {
@@ -58,6 +46,18 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 			}
 		}
 		if(!alreadyExists) $rootScope.notifications.errors.push( {'message' : message, 'count' : 1} );
+	}
+	
+	$rootScope.addInfo = function(message){
+		alreadyExists = false;
+		arr = $rootScope.notifications.infos;
+		for (var i = 0; i < arr.length; i++) {
+			if (arr[i].message == message) {
+				arr[i].count += 1;
+				alreadyExists = true;
+			}
+		}
+		if(!alreadyExists) $rootScope.notifications.infos.push( {'message' : message, 'count' : 1} );
 	}
 	
 	// Function to get notifications again
