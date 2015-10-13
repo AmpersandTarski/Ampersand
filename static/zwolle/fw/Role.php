@@ -97,7 +97,7 @@ class Role {
 		$interfaces = array();
 		
 		foreach($this->getInterfacesForConcept($concept) as $interface){
-			if($interface->forRead) $interfaces[] = $interface;
+			if($interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
@@ -105,7 +105,7 @@ class Role {
 	public function getInterfacesForNavBar(){
 		$interfaces = array();
 		foreach($this->interfaces as $interface){
-			if(($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') && $interface->forRead) $interfaces[] = $interface;
+			if(($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') && $interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
@@ -114,7 +114,7 @@ class Role {
 		$interfaces = array();
 		foreach($this->interfaces as $interface){
 			//if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
-			if($interface->forCreate) $interfaces[] = $interface;
+			if($interface->crudC) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}

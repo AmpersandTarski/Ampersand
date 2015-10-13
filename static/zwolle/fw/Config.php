@@ -21,9 +21,9 @@ Config::set('sessionExpirationTime', 'global', 60*60); // expiration time in sec
 Config::set('productionEnv', 'global', false); // set environment as production deployment (or not = default)
 
 // Default CRUD rights for interfaces
-Config::set('defaultIfcForCreate', 'global', true);
-Config::set('defaultIfcForRead', 'global', true);
-Config::set('defaultIfcForUpdate', 'global', true);
-Config::set('defaultIfcForDelete', 'global', true);
+Config::set('defaultCrudC', 'global', true);
+Config::set('defaultCrudR', 'global', true);
+Config::set('defaultCrudU', 'global', true);
+Config::set('defaultCrudD', 'global', true);
 
 ?>

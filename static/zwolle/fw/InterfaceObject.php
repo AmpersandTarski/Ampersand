@@ -10,10 +10,10 @@ class InterfaceObject {
 	public $invariantConjuctsIds;
 	public $signalConjunctsIds;
 	
-	public $forCreate;
-	public $forRead;
-	public $forUpdate;
-	public $forDelete;
+	public $crudC;
+	public $crudR;
+	public $crudU;
+	public $crudD;
 	
 	public $relation; 
 	public $relationIsFlipped;
@@ -53,10 +53,10 @@ class InterfaceObject {
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
 		
 		// CRUD rights
-		$this->forCreate = array_key_exists('forCreate', $interface) ? $interface['forCreate'] : Config::get('defaultIfcForCreate');
-		$this->forRead = array_key_exists('forRead', $interface) ? $interface['forRead'] : Config::get('defaultIfcForRead');  // defaults to true
-		$this->forUpdate = array_key_exists('forUpdate', $interface) ? $interface['forUpdate'] : Config::get('defaultIfcForUpdate'); // defaults to true
-		$this->forDelete = array_key_exists('forDelete', $interface) ? $interface['forDelete'] : Config::get('defaultIfcForDelete'); // defaults to true
+		$this->crudC = array_key_exists('crudC', $interface) ? $interface['crudC'] : Config::get('defaultCrudC');
+		$this->crudR = array_key_exists('crudR', $interface) ? $interface['crudR'] : Config::get('defaultCrudR');
+		$this->crudU = array_key_exists('crudU', $interface) ? $interface['crudU'] : Config::get('defaultCrudU');
+		$this->crudD = array_key_exists('crudD', $interface) ? $interface['crudD'] : Config::get('defaultCrudD');
 		
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 
