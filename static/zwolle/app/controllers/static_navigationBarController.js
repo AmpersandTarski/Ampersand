@@ -84,6 +84,4 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		if(!isDefault) $scope.switchDefaultSettings = false;
 		else $scope.switchDefaultSettings = true;
 	});
-	
-	$rootScope.refreshNavBar(); // initialize navbar
 });
