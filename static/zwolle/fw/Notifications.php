@@ -72,6 +72,7 @@ class Notifications {
 		if(isset($id)){ // ID can be integer, but also string
 			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
 			self::$infos[$id]['rows'][] = $message;
+			self::$infos[$id]['count'] = count(self::$infos[$id]['rows']);
 			if(!is_null($aggregatedMessage)) self::$infos[$id]['message'] = $aggregatedMessage;
 			
 			return $id;
