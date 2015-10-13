@@ -19,6 +19,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   \$scope.showSaveButton = {}; // initialize object for show/hide save button
   \$scope.showCancelButton = {}; // initialize object for show/hide cancel button
   \$scope.resourceStatus = {}; // initialize object for resource status colors
+  \$scope.loadingInterface = []; // array for promises, used by angular-busy module (loading indicator)
   \$scope.myPromises = {}; // initialize object for promises, used by angular-busy module (loading indicator)
   
   \$scope.\$localStorage = \$localStorage;
@@ -31,28 +32,32 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
   }
 	  
   // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
-  srcAtom = Restangular.one('resource/$source$', srcAtomId);
+  \$scope.srcAtom = Restangular.one('resource/$source$', srcAtomId);
   \$scope.val['$interfaceName$'] = new Array();
   
   // Only insert code below if interface is allowed to create new atoms. This is not specified in interfaces yet, so add by default
   if(\$routeParams['new']){
-    srcAtom.all('$interfaceName$').post({})
-      .then(function(data) { // POST
-		\$rootScope.updateNotifications(data.notifications);
-		\$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(srcAtom, data.content, '$interfaceName$')); // Add to collection
-		showHideButtons(data.invariantRulesHold, data.requestType, data.content.id);
-	});
+	  \$scope.loadingInterface.push(
+	    \$scope.srcAtom.all('$interfaceName$').post({})
+	      .then(function(data) { // POST
+			\$rootScope.updateNotifications(data.notifications);
+			\$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
+			showHideButtons(data.invariantRulesHold, data.requestType, data.content.id);
+		})
+	  );
     
   // Else
   }else{
-    srcAtom.all('$interfaceName$').getList().then(function(data){
-	  if(\$.isEmptyObject(data.plain())){
-		\$rootScope.addInfo('No results found');
-	  }else{
-		\$scope.val['$interfaceName$'] = data;
-		\$scope.resourceLabel = \$scope.val['$interfaceName$'][0]['@label'];
-	  }
-    });
+    \$scope.loadingInterface.push(
+	    \$scope.srcAtom.all('$interfaceName$').getList().then(function(data){
+		  if(\$.isEmptyObject(data.plain())){
+			  \$rootScope.addInfo('No results found');
+		  }else{
+			\$scope.val['$interfaceName$'] = data;
+			\$scope.resourceLabel = \$scope.val['$interfaceName$'][0]['@label'];
+		  }
+	    })
+	);
   }
   
   \$scope.\$on("\$locationChangeStart", function(event, next, current) { 
@@ -103,7 +108,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 
   // Put function to update a Resource
   \$scope.put = function(resourceId, requestType){
-	
 	var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
 	
 	requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
@@ -111,22 +115,34 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	// myPromise is used for busy indicator
 	\$scope.myPromises[resourceId] = new Array();
 	
-	\$scope.myPromises[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
-      .put({'requestType' : requestType})
-      .then(function(data) {
-        \$rootScope.updateNotifications(data.notifications);
-        \$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.content);
-        
-        showHideButtons(data.invariantRulesHold, data.requestType, resourceId);
-        
-        if(data.invariantRulesHold && data.requestType == 'promise'){
-        	// If this atom was updated with the 'new' interface, change url
-			var location = \$location.search();
-			if(location['new']){
-				\$location.url('/$interfaceName$/' + data.content.id);
-			}        	
-        }
-      }));
+	var location = \$location.search();
+	// if ?new => POST
+	if(location['new']){
+		\$scope.myPromises[resourceId].push(
+			\$scope.srcAtom.all('$interfaceName$')
+			.post(\$scope.val['$interfaceName$'][resourceIndex].plain(), {'requestType' : requestType})
+			.then(function(data) { // POST
+				\$rootScope.updateNotifications(data.notifications);
+				\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.content);
+				showHideButtons(data.invariantRulesHold, data.requestType, data.content.id);
+				
+				if(data.invariantRulesHold && data.requestType == 'promise'){
+					// Atom is posted, change url
+					\$location.url('/$interfaceName$/' + data.content.id);
+				}
+			})
+		);
+	// else => PUT
+	}else{
+		\$scope.myPromises[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
+			.put({'requestType' : requestType})
+			.then(function(data) {
+				\$rootScope.updateNotifications(data.notifications);
+				\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.content);
+				showHideButtons(data.invariantRulesHold, data.requestType, resourceId);
+			})
+		);
+	}
   }
 
   // Function to cancel edits and reset resource data
