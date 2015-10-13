@@ -19,7 +19,7 @@ import qualified Data.Map as Map
 import Data.Function
 import Data.Maybe
 import Data.List(nub)
-import Data.Char(toUpper)
+import Data.Char(toUpper,toLower)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
@@ -462,14 +462,23 @@ pCtx2aCtx' _
         ) <$> typecheckTerm ctx
           <*> checkCrud mCrud
      where      
-      checkCrud :: Maybe String -> Guarded (Maybe (Bool,Bool,Bool,Bool))
-      checkCrud Nothing = pure Nothing
-      checkCrud (Just str) 
-        = let us = map toUpper str
-          in if nub us == us && all (\c -> c `elem` "CRUD") us
-             then pure . Just $ 
-               ('C' `elem` us, 'R' `elem` us ,'U' `elem` us,'D' `elem` us)
-             else Errors [mkInvalidCRUDError orig str]
+      checkCrud :: Maybe P_Cruds -> Guarded Cruds
+      checkCrud Nothing = pure def
+      checkCrud (Just (P_Cruds org str )) 
+        = if nub us == us && all (\c -> c `elem` "cCrRuUdD") str
+          then pure Cruds { crudOrig = org
+                          , crudC    = f 'C'
+                          , crudR    = f 'R'
+                          , crudU    = f 'U'
+                          , crudD    = f 'D'
+              }
+          else Errors [mkInvalidCRUDError orig str]
+         where us = map toUpper str
+               f :: Char -> Maybe Bool
+               f c 
+                 | toUpper c `elem` str = Just True
+                 | toLower c `elem` str = Just False
+                 | otherwise            = Nothing    
       lookupView :: String -> Maybe P_ViewDef
       lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
                             []   -> Nothing

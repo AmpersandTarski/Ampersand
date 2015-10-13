@@ -455,9 +455,9 @@ pInterface = lbl <$> currPos                                       <*>
                      optList pArgs                                 <*> -- either  Prel _ nm or  PNamedRel _ nm sgn
                      optList pRoles                                <*>
                      (pColon *> pTerm)                             <*> -- the expression of the interface object
-                     pMaybe (pADLid <|> pConid)                    <*> -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
+                     pMaybe pCruds                                 <*> -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                      pSubInterface
-    where lbl :: Origin -> String -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> Term TermPrim -> Maybe String -> P_SubInterface -> P_Interface
+    where lbl :: Origin -> String -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> P_SubInterface -> P_Interface
           lbl p nm iclass params args roles term mCrud sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
@@ -498,12 +498,15 @@ pObjDef :: AmpParser P_ObjectDef
 pObjDef = obj <$> currPos
               <*> pLabelProps
               <*> pTerm            -- the context expression (for example: I[c])
-              <*> pMaybe (pADLid <|> pConid)
+              <*> pMaybe pCruds
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
          where obj pos (nm, args) ctx mCrud mView msub =
                  P_Obj nm pos ctx mCrud mView msub args
-
+--- Cruds ::= ADLid | Conid
+pCruds :: AmpParser P_Cruds
+pCruds = P_Cruds <$> currPos 
+                 <*> (pADLid <|> pConid)
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
 pBox = pBrackets $ pObjDef `sepBy1` pComma

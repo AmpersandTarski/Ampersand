@@ -283,10 +283,11 @@ instance Pretty a => Pretty (P_ObjDef a) where
         prettyLabel nm strs <+> text ":"
                  <~> ctx <+> crud mCrud <+> view mView <~> msub
         where crud Nothing = empty
-              crud (Just s) = text s
+              crud (Just cruds) = pretty cruds
               view Nothing  = empty
               view (Just v) = text ("<" ++ v ++ ">")
-
+instance Pretty P_Cruds where
+    pretty (P_Cruds _ str) = text str
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
                 P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
