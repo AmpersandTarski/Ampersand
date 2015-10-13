@@ -138,6 +138,16 @@ class Notifications {
 		return $all;
 	}
 	
+	public static function getDefaultSettings(){
+		return array('switchShowViolations' 	=> Config::get('defaultShowViolations', 'notifications')
+					,'switchShowInfos'			=> Config::get('defaultShowInfos', 'notifications')
+					,'switchShowSuccesses'		=> Config::get('defaultShowSuccesses', 'notifications')
+					,'switchAutoHideSuccesses'	=> Config::get('defaultAutoHideSuccesses', 'notifications')
+					,'switchShowErrors'			=> Config::get('defaultShowErrors', 'notifications')
+					,'switchShowInvariants'		=> Config::get('defaultShowInvariants', 'notifications')
+					);
+	}
+	
 
 }
 

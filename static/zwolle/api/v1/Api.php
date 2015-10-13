@@ -334,6 +334,7 @@ class Api{
     					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
     					 ,'roles' => $roles
+    					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()) 
     					 ,'notifications' => Notifications::getAll()
     					 ,'session' => array ( 'id' => $session->id
     					 					 , 'loggedIn' => Session::sessionUserLoggedIn()

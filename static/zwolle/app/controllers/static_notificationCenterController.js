@@ -2,18 +2,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$scope.$storage = $localStorage;
 	
-	// Default preferences for notifications
-	if($scope.$storage.notificationPrefs === undefined){
-		$scope.$storage.notificationPrefs = {
-			  switchShowViolations 		: true
-			, switchShowInfos			: false
-			, switchShowSuccesses		: true
-			, switchAutoHideSuccesses	: true
-			, switchShowErrors			: true
-			, switchShowInvariants		: true
-		}
-	}
-	
 	// Default setting for switchAutoCommit
 	if($scope.$storage.switchAutoCommit === undefined){
 		$scope.$storage.switchAutoCommit = true;
