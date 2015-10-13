@@ -162,6 +162,10 @@ data FEObject = FEObject { objName :: String
                          , objSource :: A_Concept
                          , objTarget :: A_Concept
                          , objIsEditable :: Bool
+                         , objCrudC :: Maybe Bool
+                         , objCrudR :: Maybe Bool
+                         , objCrudU :: Maybe Bool
+                         , objCrudD :: Maybe Bool
                          , exprIsUni :: Bool
                          , exprIsTot :: Bool
                          , exprIsProp :: Bool
@@ -276,6 +280,10 @@ buildInterface fSpec allIfcs ifc =
                            , objSource = src
                            , objTarget = tgt
                            , objIsEditable = isEditable
+                           , objCrudC = crudC . objcrud $ object
+                           , objCrudR = crudR . objcrud $ object
+                           , objCrudU = crudU . objcrud $ object
+                           , objCrudD = crudD . objcrud $ object
                            , exprIsUni = isUni iExp'
                            , exprIsTot = isTot iExp'
                            , exprIsProp = isProp iExp'
@@ -328,6 +336,10 @@ genView_Interface fSpec interf =
                      . setAttribute "expAdl"              (showADL . _ifcExp $ interf)
                      . setAttribute "source"              (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"              (escapeIdentifier . name . _ifcTarget $ interf)
+                     . setAttribute "crudC"               (objCrudC (_ifcObj interf))
+                     . setAttribute "crudR"               (objCrudR (_ifcObj interf))
+                     . setAttribute "crudU"               (objCrudU (_ifcObj interf))
+                     . setAttribute "crudD"               (objCrudD (_ifcObj interf))
                      . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
                      . setAttribute "verbose"             (verboseP (getOpts fSpec))
 
@@ -349,10 +361,14 @@ genView_Object fSpec depth obj =
                         . setAttribute "exprIsUni"  (exprIsUni obj)
                         . setAttribute "exprIsTot"  (exprIsTot obj)
                         . setAttribute "name"       (escapeIdentifier . objName $ obj)
-                        . setAttribute "label"      (objName $ obj) -- no escaping for labels in templates needed
+                        . setAttribute "label"      (objName obj) -- no escaping for labels in templates needed
                         . setAttribute "expAdl"     (showADL . objExp $ obj) 
                         . setAttribute "source"     (escapeIdentifier . name . objSource $ obj)
                         . setAttribute "target"     (escapeIdentifier . name . objTarget $ obj)
+                        . setAttribute "crudC"      (objCrudC obj)
+                        . setAttribute "crudR"      (objCrudR obj)
+                        . setAttribute "crudU"      (objCrudU obj)
+                        . setAttribute "crudD"      (objCrudD obj)
                         . setAttribute "verbose"    (verboseP (getOpts fSpec))
   in  case atomicOrBox obj of
         FEAtomic{} ->
@@ -457,13 +473,16 @@ genController_Interface fSpec interf =
                      . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
+                     . setAttribute "crudC"                    (objCrudC (_ifcObj interf))
+                     . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
+                     . setAttribute "crudU"                    (objCrudU (_ifcObj interf))
+                     . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
                      . setAttribute "verbose"                  (verboseP (getOpts fSpec))
                      . setAttribute "usedTemplate"             controlerTemplateName
     ; let filename = ifcName interf ++ ".js"
     ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
     }
     
-      
 ------ Utility functions
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String
