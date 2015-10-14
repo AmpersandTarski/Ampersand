@@ -77,11 +77,13 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	}
 	
 	// Function to add a new Resource to the colletion
-	\$scope.addNewResource = function (){
+	\$scope.addNewResource = function (prepend){
+		if(prepend === 'undefined') var prepend = false;
 		\$scope.srcAtom.all('$interfaceName$')
 			.post({})
 			.then(function(data){ // POST
-				\$scope.val['$interfaceName$'].push(data.content); // Add to collection
+				if(prepend) \$scope.val['$interfaceName$'].unshift(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
+				else \$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
 			});
 	}
 	
