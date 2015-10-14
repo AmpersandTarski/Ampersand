@@ -18,7 +18,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.showCancelButton = {}; // initialize object for show/hide cancel button
 	\$scope.resourceStatus = {}; // initialize object for resource status colors
 	\$scope.loadingInterface = []; // array for promises, used by angular-busy module (loading indicator)
-	\$scope.myPromises = {}; // initialize object for promises, used by angular-busy module (loading indicator)
+	\$scope.loadingResources = {}; // initialize object for promises, used by angular-busy module (loading indicator)
 	
 	\$scope.\$localStorage = \$localStorage;
 	\$scope.\$sessionStorage = \$sessionStorage;
@@ -93,9 +93,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
 			
 			// myPromise is used for busy indicator
-			\$scope.myPromises[resourceId] = new Array();
-			
-			\$scope.myPromises[resourceId].push(
+			\$scope.loadingResources[resourceId] = new Array();
+			\$scope.loadingResources[resourceId].push(
 				\$scope.val['$interfaceName$'][resourceIndex]
 					.remove({ 'requestType' : 'promise'})
 					.then(function(data){
@@ -112,12 +111,12 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
 		// myPromise is used for busy indicator
-		\$scope.myPromises[resourceId] = new Array();
+		\$scope.loadingResources[resourceId] = new Array();
 	
 		var location = \$location.search();
 		// if ?new => POST
 		if(location['new']){
-			\$scope.myPromises[resourceId].push(
+			\$scope.loadingResources[resourceId].push(
 				\$scope.srcAtom.all('$interfaceName$')
 				.post(\$scope.val['$interfaceName$'][resourceIndex].plain(), {'requestType' : requestType})
 				.then(function(data) { // POST
@@ -133,7 +132,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			);
 		// else => PUT
 		}else{
-			\$scope.myPromises[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
+			\$scope.loadingResources[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
 				.put({'requestType' : requestType})
 				.then(function(data) {
 					\$rootScope.updateNotifications(data.notifications);
@@ -149,8 +148,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
 		
 		// myPromise is used for busy indicator
-		\$scope.myPromises[resourceId] = new Array();
-		\$scope.myPromises[resourceId].push(
+		\$scope.loadingResources[resourceId] = new Array();
+		\$scope.loadingResources[resourceId].push(
 			\$scope.val['$interfaceName$'][resourceIndex]
 				.get()
 				.then(function(data){

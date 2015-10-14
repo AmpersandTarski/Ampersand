@@ -14,7 +14,7 @@ $endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, 
 		</div>
 		<h4>{{val['@label']}}&nbsp;</h4>
 	</div>
-	<div class="panel-body" cg-busy="myPromises[ResourceId]">$endif$
+	<div class="panel-body" cg-busy="loadingResources[ResourceId]">$endif$
 		<tabset>
 			$subObjects:{subObj|$if(verbose)$<!-- $subObj.subObjLabel$ -->$endif$<tab heading="$subObj.subObjLabel$">
 				$subObj.subObjContents$
