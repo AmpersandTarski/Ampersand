@@ -79,12 +79,19 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	// Function to add a new Resource to the colletion
 	\$scope.addNewResource = function (prepend){
 		if(prepend === 'undefined') var prepend = false;
-		\$scope.srcAtom.all('$interfaceName$')
-			.post({})
-			.then(function(data){ // POST
-				if(prepend) \$scope.val['$interfaceName$'].unshift(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
-				else \$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
-			});
+		
+		\$scope.loadingResources['_new_'] = new Array();
+		\$scope.loadingResources['_new_'].push(
+			\$scope.srcAtom.all('$interfaceName$')
+				.post({})
+				.then(function(data){ // POST
+					\$rootScope.updateNotifications(data.notifications);
+					if(prepend) \$scope.val['$interfaceName$'].unshift(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
+					else \$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
+					showHideButtons(data.invariantRulesHold, data.requestType, data.content.id);
+					\$scope.loadingResources['_new_'] = new Array(); // empty arr
+				})
+		);
 	}
 	
 	// Delete function to delete a complete Resource
