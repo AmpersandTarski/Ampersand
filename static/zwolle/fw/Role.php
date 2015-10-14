@@ -114,7 +114,7 @@ class Role {
 		$interfaces = array();
 		foreach($this->interfaces as $interface){
 			//if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
-			if($interface->crudC) $interfaces[] = $interface;
+			if($interface->crudC && $interface->isIdent) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
