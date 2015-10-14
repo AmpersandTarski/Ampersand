@@ -202,14 +202,12 @@ class Api{
 	 */
 	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback'){
 		
-		if(!$session->interface->crudD) throw new Exception("DELETE is not allowed for interface " . $session->interface->label, 405);
-		
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 		
-			// TODO: insert check if Atom may be deleted with this interface
+			if(!$session->interface->crudD) throw new Exception("DELETE is not allowed for interface " . $session->interface->label, 405);
 			
 			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
 			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
