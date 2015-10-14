@@ -253,7 +253,7 @@ Class Atom {
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction('Updated', false, $databaseCommit);
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . 'updated', false, $databaseCommit);
 		
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
@@ -297,7 +297,7 @@ Class Atom {
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction('Updated', false, $databaseCommit);
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . 'updated', false, $databaseCommit);
 		
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
@@ -542,7 +542,7 @@ Class Atom {
 		$this->database->deleteAtom($this->id, $this->concept);
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction('Atom deleted', false, $databaseCommit, false);
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' deleted', false, $databaseCommit, false);
 		
 		return array('notifications' 		=> Notifications::getAll()
 					,'invariantRulesHold'	=> $invariantRulesHold
@@ -591,7 +591,7 @@ Class Atom {
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction('Updated', false, $databaseCommit);
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . 'created', false, $databaseCommit);
 		
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
