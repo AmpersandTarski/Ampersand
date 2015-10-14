@@ -73,9 +73,11 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	$endif$// Function to add a new Resource
 	\$scope.addNewResource = function (){
-		\$scope.val['$interfaceName$'].post({}).then(function(newItem) { // POST
-			\$scope.val['$interfaceName$'].push(newItem); // Add to collection
-		});
+		\$scope.srcAtom.all('$interfaceName$')
+			.post({})
+			.then(function(data){ // POST
+				\$scope.val['$interfaceName$'].push(data.content); // Add to collection
+			});
 	}
 	
 	// Delete function to delete a complete Resource
