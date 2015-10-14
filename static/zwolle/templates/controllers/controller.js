@@ -71,7 +71,12 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	$if(verbose)$// The functions below are only necessary if the interface allows to add/delete the complete atom,
 	// but since this cannot be specified yet in Ampersand we always include it.
 	
-	$endif$// Function to add a new Resource
+	$endif$// Function to create a new Resource
+	\$scope.newResource = function(){
+		\$location.url('/$interfaceName$?new');
+	}
+	
+	// Function to add a new Resource to the colletion
 	\$scope.addNewResource = function (){
 		\$scope.srcAtom.all('$interfaceName$')
 			.post({})
