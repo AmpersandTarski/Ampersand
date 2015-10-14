@@ -241,10 +241,12 @@ class Api{
 			if(!$session->interface->crudC) throw new Exception("POST is not allowed for interface " . $session->interface->label, 405);
 			
 			$concept = $session->interface->tgtConcept;
-			$newAtomId = $session->database->addAtomToConcept(Concept::createNewAtom($concept), $concept);
-			$session->atom = new Atom($newAtomId, $concept);
+			$atomId = $request_data['id'] ? $request_data['id'] : Concept::createNewAtom($concept);
 			
-			if(!$session->atom->atomExists()) throw new Exception("Resource not created", 500);
+			if($session->database->atomExists($atomId, $concept)) throw new Exception ("Resource already exists. POST method is not allowed", 405);
+			
+			$newAtomId = $session->database->addAtomToConcept($atomId, $concept);
+			$session->atom = new Atom($newAtomId, $concept);
 			
 			return $session->atom->post($session->interface, $request_data, $requestType);
 		
