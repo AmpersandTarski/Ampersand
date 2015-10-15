@@ -18,7 +18,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.showCancelButton = {}; // initialize object for show/hide cancel button
 	\$scope.resourceStatus = {}; // initialize object for resource status colors
 	\$scope.loadingInterface = []; // array for promises, used by angular-busy module (loading indicator)
-	\$scope.myPromises = {}; // initialize object for promises, used by angular-busy module (loading indicator)
+	\$scope.loadingResources = {}; // initialize object for promises, used by angular-busy module (loading indicator)
 	
 	\$scope.\$localStorage = \$localStorage;
 	\$scope.\$sessionStorage = \$sessionStorage;
@@ -71,11 +71,27 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	$if(verbose)$// The functions below are only necessary if the interface allows to add/delete the complete atom,
 	// but since this cannot be specified yet in Ampersand we always include it.
 	
-	$endif$// Function to add a new Resource
-	\$scope.addNewResource = function (){
-		\$scope.val['$interfaceName$'].post({}).then(function(newItem) { // POST
-			\$scope.val['$interfaceName$'].push(newItem); // Add to collection
-		});
+	$endif$// Function to create a new Resource
+	\$scope.newResource = function(){
+		\$location.url('/$interfaceName$?new');
+	}
+	
+	// Function to add a new Resource to the colletion
+	\$scope.addNewResource = function (prepend){
+		if(prepend === 'undefined') var prepend = false;
+		
+		\$scope.loadingResources['_new_'] = new Array();
+		\$scope.loadingResources['_new_'].push(
+			\$scope.srcAtom.all('$interfaceName$')
+				.post({})
+				.then(function(data){ // POST
+					\$rootScope.updateNotifications(data.notifications);
+					if(prepend) \$scope.val['$interfaceName$'].unshift(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
+					else \$scope.val['$interfaceName$'].push(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
+					showHideButtons(data.invariantRulesHold, data.requestType, data.content.id);
+					\$scope.loadingResources['_new_'] = new Array(); // empty arr
+				})
+		);
 	}
 	
 	// Delete function to delete a complete Resource
@@ -84,9 +100,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
 			
 			// myPromise is used for busy indicator
-			\$scope.myPromises[resourceId] = new Array();
-			
-			\$scope.myPromises[resourceId].push(
+			\$scope.loadingResources[resourceId] = new Array();
+			\$scope.loadingResources[resourceId].push(
 				\$scope.val['$interfaceName$'][resourceIndex]
 					.remove({ 'requestType' : 'promise'})
 					.then(function(data){
@@ -103,12 +118,12 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
 		// myPromise is used for busy indicator
-		\$scope.myPromises[resourceId] = new Array();
+		\$scope.loadingResources[resourceId] = new Array();
 	
 		var location = \$location.search();
 		// if ?new => POST
 		if(location['new']){
-			\$scope.myPromises[resourceId].push(
+			\$scope.loadingResources[resourceId].push(
 				\$scope.srcAtom.all('$interfaceName$')
 				.post(\$scope.val['$interfaceName$'][resourceIndex].plain(), {'requestType' : requestType})
 				.then(function(data) { // POST
@@ -124,7 +139,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			);
 		// else => PUT
 		}else{
-			\$scope.myPromises[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
+			\$scope.loadingResources[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
 				.put({'requestType' : requestType})
 				.then(function(data) {
 					\$rootScope.updateNotifications(data.notifications);
@@ -140,8 +155,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
 		
 		// myPromise is used for busy indicator
-		\$scope.myPromises[resourceId] = new Array();
-		\$scope.myPromises[resourceId].push(
+		\$scope.loadingResources[resourceId] = new Array();
+		\$scope.loadingResources[resourceId].push(
 			\$scope.val['$interfaceName$'][resourceIndex]
 				.get()
 				.then(function(data){

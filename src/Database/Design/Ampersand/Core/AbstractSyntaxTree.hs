@@ -23,6 +23,8 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , SubInterface(..)
  , ObjectDef(..)
  , Object(..)
+ , Cruds(..)
+ , Default(..)
  , objAts
  , Purpose(..)
  , ExplObj(..)
@@ -67,6 +69,7 @@ import Data.Char (toUpper,toLower)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
+import Data.Default
 import qualified System.Locale as SL (defaultTimeLocale)
 import qualified Data.Time.Format as DTF (formatTime,readTime)
 
@@ -401,6 +404,7 @@ instance Object ObjectDef where
 data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                      , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
                      , objctx ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
+                     , objcrud ::  Cruds -- ^ CRUD as defined by the user 
                      , objmView :: Maybe String   -- ^ The view that should be used for this object
                      , objmsub ::  Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
                      , objstrs ::  [[String]]     -- ^ directives that specify the interface.
@@ -409,7 +413,19 @@ instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
   origin = objpos
-
+data Cruds = Cruds { crudOrig :: Origin
+                   , crudC :: Maybe Bool
+                   , crudR :: Maybe Bool
+                   , crudU :: Maybe Bool
+                   , crudD :: Maybe Bool
+                   } deriving (Eq, Show)
+instance Default Cruds where
+  def = Cruds { crudOrig = Origin "Dummy default Origin"
+              , crudC    = Nothing
+              , crudR    = Nothing
+              , crudU    = Nothing
+              , crudD    = Nothing
+              }
 data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 
                   | InterfaceRef Bool -- is LINKTO? 
                                  String deriving (Eq, Show)

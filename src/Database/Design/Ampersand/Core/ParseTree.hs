@@ -18,7 +18,7 @@ module Database.Design.Ampersand.Core.ParseTree (
    , P_Population(..)
    , PAtomPair(..), PAtomValue(..), mkPair, PSingleton, makePSingleton
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
-
+   , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
    , P_ViewDef , P_ViewSegment, ViewHtmlTemplate(..) {-, ViewTextTemplate-}
    , P_ViewD(..) , P_ViewSegmt(..)
@@ -425,8 +425,8 @@ instance Traced (P_SubIfc a) where
 instance Functor P_ObjDef where fmap = fmapDefault
 instance Foldable P_ObjDef where foldMap = foldMapDefault
 instance Traversable P_ObjDef where
- traverse f (P_Obj nm pos ctx mView msub strs)
-  = (\ctx' msub'->(P_Obj nm pos ctx' mView msub' strs)) <$>
+ traverse f (P_Obj nm pos ctx mCrud mView msub strs)
+  = (\ctx' msub'->(P_Obj nm pos ctx' mCrud mView msub' strs)) <$>
      traverse f ctx <*> traverse (traverse f) msub
 
 instance Traced TermPrim where
@@ -609,6 +609,7 @@ data P_ObjDef a =
      P_Obj { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , obj_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , obj_ctx :: Term a         -- ^ this expression describes the instances of this object, related to their context.
+           , obj_crud :: Maybe P_Cruds  -- ^ string containing the CRUD actions as required by the user  
            , obj_mView :: Maybe String -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
            , obj_strs :: [[String]]    -- ^ directives that specify the interface.
@@ -618,7 +619,7 @@ instance Named (P_ObjDef a) where
  name = obj_nm
 instance Traced (P_ObjDef a) where
  origin = obj_pos
-
+data P_Cruds = P_Cruds Origin String deriving Show
 type P_IdentDef = P_IdentDf TermPrim -- this is what is returned by the parser, but we need to change the "TermPrim" for disambiguation
 data P_IdentDf a = -- so this is the parametric data-structure
          P_Id { ix_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).

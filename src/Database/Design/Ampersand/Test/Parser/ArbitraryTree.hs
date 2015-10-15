@@ -5,7 +5,7 @@ module Database.Design.Ampersand.Test.Parser.ArbitraryTree () where
 import Test.QuickCheck
 import Data.Char
 import Control.Applicative
-
+import Data.List (nub)
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer (keywords)
 
@@ -60,9 +60,10 @@ genObj = makeObj arbitrary genIfc (return Nothing)
 
 makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
 makeObj genPrim ifcGen genView n =
-        P_Obj <$> lowerId  <*> arbitrary <*> term <*> genView <*> ifc <*> args
+        P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc <*> args
               where args = listOf $ listOf1 identifier
                     term = Prim <$> genPrim
+                    crud = suchThatMaybe (sublistOf "CRUDX")(notElem 'X')
                     ifc  = if n == 0 then return Nothing
                            else Just <$> ifcGen (n`div`2)
 
@@ -77,6 +78,11 @@ subIfc objGen n =
 
 
 --- Now the arbitrary instances
+instance Arbitrary P_Cruds where
+    arbitrary = P_Cruds <$> arbitrary
+                        <*> suchThat (sublistOf "cCrRuUdD") isCrud
+      where isCrud str = nub (map toUpper str) == map toUpper str
+
 instance Arbitrary Origin where
     arbitrary = return OriginUnknown
 

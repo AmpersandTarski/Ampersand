@@ -250,6 +250,7 @@ instance MakeMeta a => MakeMeta (P_ObjDef a) where
    = P_Obj { obj_nm   =          f (obj_nm obj)
            , obj_pos  = makeMeta f (obj_pos obj)
            , obj_ctx  = makeMeta f (obj_ctx obj)
+           , obj_crud =            (obj_crud obj)
            , obj_mView =           (obj_mView obj)
            , obj_msub = makeMeta f (obj_msub obj)
            , obj_strs =            (obj_strs obj)

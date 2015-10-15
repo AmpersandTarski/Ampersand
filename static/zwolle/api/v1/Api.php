@@ -107,7 +107,7 @@ class Api{
 			
 			if($session->interface->srcConcept != $concept) throw new Exception("Concept '$concept' cannot be used as source concept for interface '".$session->interface->label."'", 400);
 			
-			if(!$session->interface->forRead) throw new Exception("GET is not allowed for interface " . $session->interface->label, 405);
+			if(!$session->interface->crudR) throw new Exception("GET is not allowed for interface " . $session->interface->label, 405);
 			
 			$atom = new Atom($srcAtomId, $concept);
 			if(!$atom->atomExists()) throw new Exception("Resource '$srcAtomId' not found", 404);
@@ -147,7 +147,7 @@ class Api{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 			
-			if(!$session->interface->forUpdate) throw new Exception("PATCH is not allowed for interface " . $session->interface->label, 405);
+			if(!$session->interface->crudU) throw new Exception("PATCH is not allowed for interface " . $session->interface->label, 405);
 			
 			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
 			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
@@ -177,7 +177,7 @@ class Api{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 
-			if(!$session->interface->forUpdate) throw new Exception("PUT is not allowed for interface " . $session->interface->label, 405);
+			if(!$session->interface->crudU) throw new Exception("PUT is not allowed for interface " . $session->interface->label, 405);
 			
 			if(!$session->database->atomExists($tgtAtomId, $session->interface->tgtConcept)){
 				// TODO: insert check if Atom may be created with this interface
@@ -207,14 +207,12 @@ class Api{
 	 */
 	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback'){
 		
-		if(!$session->interface->forDelete) throw new Exception("DELETE is not allowed for interface " . $session->interface->label, 405);
-		
 		try{
 			$session = Session::singleton($sessionId);
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 		
-			// TODO: insert check if Atom may be deleted with this interface
+			if(!$session->interface->crudD) throw new Exception("DELETE is not allowed for interface " . $session->interface->label, 405);
 			
 			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
 			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
@@ -243,13 +241,15 @@ class Api{
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 			
-			if(!$session->interface->forCreate) throw new Exception("POST is not allowed for interface " . $session->interface->label, 405);
+			if(!$session->interface->crudC) throw new Exception("POST is not allowed for interface " . $session->interface->label, 405);
 			
 			$concept = $session->interface->tgtConcept;
-			$newAtomId = $session->database->addAtomToConcept(Concept::createNewAtom($concept), $concept);
-			$session->atom = new Atom($newAtomId, $concept);
+			$atomId = $request_data['id'] ? $request_data['id'] : Concept::createNewAtom($concept);
 			
-			if(!$session->atom->atomExists()) throw new Exception("Resource not created", 500);
+			if($session->database->atomExists($atomId, $concept)) throw new Exception ("Resource already exists. POST method is not allowed", 405);
+			
+			$newAtomId = $session->database->addAtomToConcept($atomId, $concept);
+			$session->atom = new Atom($newAtomId, $concept);
 			
 			return $session->atom->post($session->interface, $request_data, $requestType);
 		

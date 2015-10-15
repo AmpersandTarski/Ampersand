@@ -6,7 +6,7 @@ module Database.Design.Ampersand.Prototype.ProtoUtil
          , addSlashes
          , indentBlock,addToLast
          , indentBlockBetween,quote
-         , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool
+         , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
          ) where
  
 import Prelude hiding (putStrLn, readFile, writeFile)
@@ -162,3 +162,6 @@ escapePhpStr []       = []
 showPhpBool :: Bool -> String
 showPhpBool b = if b then "true" else "false"
 
+showPhpMaybeBool :: Maybe Bool -> String
+showPhpMaybeBool Nothing = "null"
+showPhpMaybeBool (Just b) = showPhpBool b
