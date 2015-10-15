@@ -1,7 +1,7 @@
 ﻿JGCSCS
 5
 Ampersand files
-*.adl; *.pat; *.pop;*.proc;*.ifc
+*.adl;*.pop;*.ifc
 Rieks Joosten
 rieks.joosten@tno.nl
 
@@ -11,7 +11,7 @@ TRUE
 
 1
 ADL (ampersand) files
-54
+61
 #define spullenboel
 CONTEXT Piet IN DUTCH
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
@@ -23,13 +23,20 @@ PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt
 apenbroodboom :: A * B -X asdfsdfsdf  --[ Dit soort commentaar ook]--
 {-preCdx  :: Proces -> Conditie.-} --$ of dit soort commentaar
 postCdx :: Proces -> Conditie. --!sdfdfd
-kader   :: Proces * Conditie PRAGMA "" " wordt geacht om " " waar te maken c.q. te houden".
+RELATION[Proces * Conditie] PRAGMA "" " wordt geacht om " " waar te maken c.q. te houden".
  "sfdkfj"
+
+ROLE ExecEngine MAINTAINS Stuff for NobodyInParticular 
+"SessionRoles" of '_SESSION'[SESSION] en misschien 'ONE'
+
 deelProcVan :: Proces * Proces [ASY] PRAGMA "" " is een deelproces van ".
 deelCdxVan  :: Conditie * Conditie [ASY] PRAGMA "" " is een deelconditie  van ".
-
+RULE aap: sadfa
+RULE "aap noot": as;ldkfjasl;dkfj
 {+ {- blokcommentaar --!asdfasdfasdf -}
 activiteit :: Proces * Activiteit [UNI,INJ,SUR] PRAGMA "" " wordt uitgevoerd middels ".
+
+POPULATION relation CONTAINS  [(',c's)]
 
 #ifdef xxx
 deelProcVan |- postCdx;(kader \/ postCdx \/ deelProcVan~; preCdx; deelCdxVan{-*-})~
@@ -68,13 +75,13 @@ yx--!  asdfas
   yx--!  asdfa
 0
 FALSE
-21
+26
 Preprocessor
 Preprocessor regels hebben het '#' teken op de eerste positie van een regel
 ((?<!.)|[\n\r])#[^\n\r]*+
 FALSE
 FALSE
-5
+11
 0
 
 
@@ -91,7 +98,7 @@ FALSE
 
 Line Comment (emphasized)
 Text after --! on the same line
-([^]|[^-])--![^\n\r]*
+(^|[^-])--![^\n\r]*
 FALSE
 FALSE
 33
@@ -209,86 +216,6 @@ FALSE
 
 FALSE
 
-Square bracket '['
-
-\[
-FALSE
-FALSE
-25
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-0
-
-[]
-[]
-FALSE
-
-Square bracket ']'
-
-\]
-FALSE
-FALSE
-25
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-0
-[]
-[]
-FALSE
-
-Round parenthesis '('
-
-\(
-FALSE
-FALSE
-24
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-0
-
-()
-()
-FALSE
-
-Round parenthesis ')'
-
-\)
-FALSE
-FALSE
-24
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-0
-()
-()
-FALSE
-
 Multiplicities
 
 \[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\]
@@ -329,6 +256,26 @@ FALSE
 
 FALSE
 
+Special words
+Stuff for ExecEngine, Sessions, Logins
+(\bExecEngine\b|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|"SessionRoles"|\bNobodyInParticular\b)
+FALSE
+FALSE
+18
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Frontend templates
 names of frontend templates that are available by default
 <(TABS|ROWS|COLS|SCOLS|HCOLS|HROWS|SHCOLS|SPCOLS|SPHCOLS|ROWSNL)>
@@ -351,7 +298,17 @@ FALSE
 
 Reserved words
 Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
-\b(INCLUDE|CONTEXT|ENDCONTEXT|IN|DUTCH|ENGLISH|REST|HTML|LATEX|MARKDOWN|META|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|CLASSIFY|SPEC|ISA|IS|RULE|MEANING|VIOLATION|RELATION|CONCEPT|BYPLUG|TYPE|REPRESENT|ALPHANUMERIC|BIGALPHANUMERIC|HUGEALPHANUMERIC|PASSWORD|BINARY|BIGBINARY|HUGEBINARY|DATE|DATETIME|BOOLEAN|INTEGER|FLOAT|IDENT|VIEW|HTML|TEMPLATE|TXT|PRIMHTML|INTERFACE|BOX|CLASS|LINKTO|PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS|THEMES|'ONE'|'_SESSION'|'_SESSION\[SESSION\]')\b
+10
+\b(INCLUDE|CONTEXT|ENDCONTEXT|IN|DUTCH|ENGLISH|REST|HTML|LATEX|MARKDOWN|META
+|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS
+|CLASSIFY|SPEC|ISA|IS
+|RULE|MEANING|VIOLATION|RELATION|PRAGMA|CONCEPT|BYPLUG|TYPE|REPRESENT
+|ALPHANUMERIC|BIGALPHANUMERIC|HUGEALPHANUMERIC|PASSWORD
+|BINARY|BIGBINARY|HUGEBINARY|DATE|DATETIME|BOOLEAN|INTEGER|FLOAT
+|IDENT|VIEW|HTML|TEMPLATE|TXT|PRIMHTML
+|INTERFACE|BOX|CLASS|LINKTO
+|PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS
+|THEMES)\b
 FALSE
 FALSE
 12
@@ -360,7 +317,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 
@@ -391,7 +348,31 @@ FALSE
 
 Relations (function name)
 
-("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)(?=[\s]*::)
+2
+("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)
+(?=[\s]*::)
+FALSE
+FALSE
+13
+0
+
+
+0
+FALSE
+TRUE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+RELATIONs
+
+2
+(?<=\bRELATION[\s]+)("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)
+(?=[\s]*\[)
 FALSE
 FALSE
 13
@@ -409,9 +390,12 @@ FALSE
 
 FALSE
 
-Rules (function name)
+RULEs, VIEWs (function name)
 
-(?<=\bRULE[\s]+)("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)(?=[\s]*:)
+3
+(?<=\b(RULE|VIEW)[\s]+)
+("[^"\r\n]*"|\b\w*\b)
+(?=[\s]*:)
 FALSE
 FALSE
 13
@@ -420,7 +404,33 @@ FALSE
 
 0
 FALSE
+TRUE
 FALSE
+FALSE
+
+
+
+
+FALSE
+
+INTERFACEs
+
+6
+(?<=\bINTERFACE[\s]+)("[^"\r\n]*"|\b\w*\b)
+(?=([\s]*
+     (|\([^\)]*\)
+     )[\s]*:
+   )
+)
+FALSE
+FALSE
+13
+0
+
+
+0
+FALSE
+TRUE
 FALSE
 FALSE
 
@@ -487,6 +497,126 @@ FALSE
 
 
 
+FALSE
+
+Round parenthesis '('
+
+\(
+FALSE
+FALSE
+24
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+()
+()
+FALSE
+
+Round parenthesis ')'
+
+\)
+FALSE
+FALSE
+24
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+0
+()
+()
+FALSE
+
+Square bracket '['
+
+\[
+FALSE
+FALSE
+25
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+[]
+[]
+FALSE
+
+Square bracket ']'
+
+\]
+FALSE
+FALSE
+25
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+0
+[]
+[]
+FALSE
+
+Parenthesis '{'
+
+\{
+FALSE
+FALSE
+24
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{}
+{}
+FALSE
+
+Parenthesis '}'
+
+\}
+FALSE
+FALSE
+24
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+0
+{}
+{}
 FALSE
 
 0
