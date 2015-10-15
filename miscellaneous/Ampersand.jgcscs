@@ -11,7 +11,7 @@ TRUE
 
 1
 ADL (ampersand) files
-53
+54
 #define spullenboel
 CONTEXT Piet IN DUTCH
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
@@ -28,6 +28,7 @@ kader   :: Proces * Conditie PRAGMA "" " wordt geacht om " " waar te maken c.q. 
 deelProcVan :: Proces * Proces [ASY] PRAGMA "" " is een deelproces van ".
 deelCdxVan  :: Conditie * Conditie [ASY] PRAGMA "" " is een deelconditie  van ".
 
+{+ {- blokcommentaar --!asdfasdfasdf -}
 activiteit :: Proces * Activiteit [UNI,INJ,SUR] PRAGMA "" " wordt uitgevoerd middels ".
 
 #ifdef xxx
@@ -44,7 +45,7 @@ RULE isAncestorOf /\ isAncestorOf~ = -V
 RULE piet: I[LMH] = 'L' \/ 'M' \/ 'H' 
 MEANING "Naast L(aag), M(idden), en H(oog) zijn geen andere LMH-scores mogelijk."
 
--- syntaxfouten worden NIET MEER aangegeven. Voorbeelden:
+--? syntaxfouten worden NIET MEER aangegeven. Voorbeelden:
 kader :: aap * noot.
 kader :: Aap * noot.
 kader :: Aap * Noot [UNI,TOT] "" " wordt geacht om " " waar te maken c.q. te houden".
@@ -67,13 +68,13 @@ yx--!  asdfas
   yx--!  asdfa
 0
 FALSE
-16
+21
 Preprocessor
-Kleuren van preprocessor commando's - herkend aan het '#' teken aan het begin van een regel
+Preprocessor regels hebben het '#' teken op de eerste positie van een regel
 ((?<!.)|[\n\r])#[^\n\r]*+
 FALSE
 FALSE
-10
+5
 0
 
 
@@ -90,7 +91,7 @@ FALSE
 
 Line Comment (emphasized)
 Text after --! on the same line
-(^|[^-])--![^\n\r]*+
+([^]|[^-])--![^\n\r]*
 FALSE
 FALSE
 33
@@ -202,10 +203,90 @@ FALSE
 FALSE
 FALSE
 FALSE
+0
+
+{+/- xxx -}
+
+FALSE
+
+Square bracket '['
+
+\[
+FALSE
+FALSE
+25
+0
 
 
+0
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+[]
+[]
+FALSE
+
+Square bracket ']'
+
+\]
+FALSE
+FALSE
+25
+0
 
 
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+0
+[]
+[]
+FALSE
+
+Round parenthesis '('
+
+\(
+FALSE
+FALSE
+24
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+()
+()
+FALSE
+
+Round parenthesis ')'
+
+\)
+FALSE
+FALSE
+24
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+0
+()
+()
 FALSE
 
 Multiplicities
@@ -230,7 +311,7 @@ FALSE
 
 operators
 Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
-\|-|-|->|>|=|~|\+|;|!|\*|::|:|\\/|/\\|\\|/|<>
+\|-|-|->|=|~|\+|;|!|\*|::|:|\\/|/\\|\\|/|<>
 FALSE
 FALSE
 23
@@ -248,9 +329,29 @@ FALSE
 
 FALSE
 
+Frontend templates
+names of frontend templates that are available by default
+<(TABS|ROWS|COLS|SCOLS|HCOLS|HROWS|SHCOLS|SPCOLS|SPHCOLS|ROWSNL)>
+FALSE
+FALSE
+12
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Reserved words
 Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
-\b(INCLUDE|CONTEXT|ENDCONTEXT|IN|DUTCH|ENGLISH|REST|HTML|LATEX|MARKDOWN|META|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|CLASSIFY|SPEC|ISA|IS|RULE|MEANING|VIOLATION|RELATION|UNI|INJ|SUR|TOT|SYM|ASY|TRN|RFX|IRF|AUT|PROP|\*|->|<-|CONCEPT|BYPLUG|TYPE|REPRESENT|ALPHANUMERIC|BIGALPHANUMERIC|HUGEALPHANUMERIC|PASSWORD|BINARY|BIGBINARY|HUGEBINARY|DATE|DATETIME|BOOLEAN|INTEGER|FLOAT|IDENT|VIEW|HTML|TEMPLATE|TXT|PRIMHTML|INTERFACE|CLASS|BOX|ROWS|COLS|TABS|LINKTO|PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS|THEMES|'ONE'|'_SESSION'|'_SESSION\[SESSION\]')\b
+\b(INCLUDE|CONTEXT|ENDCONTEXT|IN|DUTCH|ENGLISH|REST|HTML|LATEX|MARKDOWN|META|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|CLASSIFY|SPEC|ISA|IS|RULE|MEANING|VIOLATION|RELATION|CONCEPT|BYPLUG|TYPE|REPRESENT|ALPHANUMERIC|BIGALPHANUMERIC|HUGEALPHANUMERIC|PASSWORD|BINARY|BIGBINARY|HUGEBINARY|DATE|DATETIME|BOOLEAN|INTEGER|FLOAT|IDENT|VIEW|HTML|TEMPLATE|TXT|PRIMHTML|INTERFACE|BOX|CLASS|LINKTO|PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS|THEMES|'ONE'|'_SESSION'|'_SESSION\[SESSION\]')\b
 FALSE
 FALSE
 12
@@ -373,7 +474,7 @@ string
 "[^"\r\n]*"
 FALSE
 FALSE
-18
+17
 0
 
 
@@ -388,39 +489,7 @@ FALSE
 
 FALSE
 
-8
-{-
--}
-TRUE
-2
-{+
--}
-FALSE
-2
-(?<!END)PATTERN
-ENDPATTERN
-FALSE
 0
-CONTEXT
-ENDCONTEXT
-FALSE
-0
-=[
-]
-TRUE
-0
-[*
-*]
-FALSE
-0
-(
-)
-TRUE
-0
-"
-"
-FALSE
-2
 2
 line comments
 1
@@ -593,8 +662,8 @@ FALSE
 FALSE
 FALSE
 
-
-
+0
+{+/- xxx -}
 
 FALSE
 
