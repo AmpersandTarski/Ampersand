@@ -12,10 +12,10 @@ AmpersandApp.controller('uploadFileController', function($scope, $rootScope, $lo
 	  $scope.FileUploader.onSuccessItem = function(fileItem, response, status, headers) {
 		$scope.updateNotifications(response.notifications);
 		
-		selected = { value : response.filename};
+		selected = { id : response.uploadId};
 		
 		// Add filename datamodel
-		$scope.addItem($scope.val, fileItem.key, selected, fileItem.resourceId);
+		$scope.addObject($scope.val, fileItem.key, selected, fileItem.resourceId);
 	  };
 	  
 	  $scope.FileUploader.onErrorItem = function(item, response, status, headers){

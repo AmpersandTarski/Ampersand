@@ -198,7 +198,11 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			console.log('selected id is undefined');
 		}else{
 			if(obj[property] === null) obj[property] = {};
-			obj[property][item.id] = item.plain(); // plain is Restangular function
+			try {
+				obj[property][item.id] = item.plain() // plain is Restangular function
+			}catch(e){
+				obj[property][item.id] = item // when plain() does not exists (i.e. item is not restangular object) 
+			}
 			\$scope.put(resourceId);
 		}
 	}

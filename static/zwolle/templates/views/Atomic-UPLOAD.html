@@ -1,14 +1,20 @@
 $if(verbose)$<!-- Atomic-UPLOAD.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+<!-- Requires & statement: 
+  CONCEPT Upload ""
+    IDENT UploadFileName 	: Upload (fileName)
+    VIEW UploadFile 		: Upload DEFAULT {fileName : fileName, label : originalFileName} HTML TEMPLATE "Atomic-UPLOAD.html" ENDVIEW
+    fileName          		:: Upload -> FileName
+    originalFileName  		:: Upload -> FileName
+      REPRESENT FileName TYPE ALPHANUMERIC
+-->
 $endif$<div class="input-group">
-	$if(isEditable)$$if(exprIsUni)$<div>
-		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
-		<a href="uploads/{{val['$name$']}}">{{val['$name$']}}</a>
-	</div>$else$<div ng-repeat="row in val['$name$'] track by \$index">
-		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
-		<a href="uploads/{{row}}">{{row}}</a>
-	</div>$endif$<div my-showonhover-box ng-controller="uploadFileController" addItem(val, '$name$', selected, ResourceId)>
+	$if(isEditable)$<div ng-repeat="row in val['$name$'] track by \$index">
+		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
+		<a href="uploads/{{row['@view']['fileName']}}">{{row['@view']['label']}}</a>
+	</div>
+	<div my-showonhover-box ng-controller="uploadFileController">
 		<input class="form-control input-sm" type="file" nv-file-select uploader="FileUploader" options="{'key' : '$name$', 'resourceId' : ResourceId}"/>
 	</div>$else$<div ng-repeat="row in val['$name$'] track by \$index" css="wordwrap">
-		<a href="uploads/{{row}}">{{row}}</a>
+		<a href="uploads/{{row['@view']['fileName']}}">{{row['@view']['label']}}</a>
 	</div>$endif$
 </div>

@@ -60,7 +60,7 @@ class Api{
 			
 			if (is_uploaded_file($_FILES['file']['tmp_name'])){
 				$tmp_name = $_FILES['file']['tmp_name'];
-				$new_name = $_FILES['file']['name'];
+				$new_name = time() . '_' . $_FILES['file']['name'];
 				$target = UPLOAD_DIR . $new_name;
 				$result = move_uploaded_file($tmp_name, $target);
 				
@@ -70,7 +70,12 @@ class Api{
 			    Notifications::addError('No file uploaded');
 			}
 			
-			$result = array('notifications' => Notifications::getAll(), 'files' => $_FILES, 'filename' => $new_name);
+			$newAtom = $session->database->addAtomToConcept(Concept::createNewAtom('Upload'), 'Upload');
+			$session->database->editUpdate('fileName', false, $newAtom, 'Upload', $new_name, 'FileName');
+			$session->database->editUpdate('originalFileName', false, $newAtom, 'Upload', $_FILES['file']['name'], 'FileName');
+			$session->database->commitTransaction();
+			
+			$result = array('notifications' => Notifications::getAll(), 'files' => $_FILES, 'uploadId' => $newAtom);
 			return $result;
 	
 		}catch(Exception $e){
