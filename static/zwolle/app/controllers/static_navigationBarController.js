@@ -15,7 +15,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		//$scope.reload();
 	};
 	
-	$scope.selectRoleByLabel = function (roleLabel){
+	$rootScope.selectRoleByLabel = function (roleLabel){
 		angular.forEach($scope.navbar.roles, function(role) {
 			if(role.label == roleLabel){
 				$scope.selectRole(role.id);
