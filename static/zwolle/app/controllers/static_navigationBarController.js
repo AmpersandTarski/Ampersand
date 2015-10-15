@@ -4,7 +4,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$scope.$sessionStorage = $sessionStorage;
 	$scope.defaultNotificationSettings = {};
 	
-	$rootScope.myPromises = new Array(); // initialize an array for promises, used by angular-busy module (loading indicator)
+	$rootScope.loadingNavBar = new Array(); // initialize an array for promises, used by angular-busy module (loading indicator)
 	
 	$rootScope.selectRole = function(roleId){
 		$localStorage.roleId = roleId;
@@ -18,7 +18,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$rootScope.selectRoleByLabel = function (roleLabel){
 		angular.forEach($scope.navbar.roles, function(role) {
 			if(role.label == roleLabel){
-				$scope.selectRole(role.id);
+				$rootScope.selectRole(role.id);
 				return;
 			}
 			
@@ -28,7 +28,8 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	};
 	
 	$rootScope.refreshNavBar = function(){
-		$rootScope.myPromises.push(
+		$rootScope.loadingNavBar = new Array();
+		$rootScope.loadingNavBar.push(
 			Restangular.one('navbar')
 				.get()
 				.then(function(data){
