@@ -1,5 +1,5 @@
-JGCSCS
-4
+﻿JGCSCS
+5
 Ampersand files
 *.adl; *.pat; *.pop;*.proc;*.ifc
 Rieks Joosten
@@ -11,16 +11,18 @@ TRUE
 
 1
 ADL (ampersand) files
-37
-#define spuleenboel
-CONTEXT Piet
+53
+#define spullenboel
+CONTEXT Piet IN DUTCH
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
 {- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
 
 --! Line comment die er qua colouring uitspringt kan soms handig zijn.
-
-{-preCdx  :: Proces -> Conditie.-}
-postCdx :: Proces -> Conditie.
+--[ Dit soort commentaar ook]--
+--$ of dit soort commentaar
+apenbroodboom :: A * B -X asdfsdfsdf  --[ Dit soort commentaar ook]--
+{-preCdx  :: Proces -> Conditie.-} --$ of dit soort commentaar
+postCdx :: Proces -> Conditie. --!sdfdfd
 kader   :: Proces * Conditie PRAGMA "" " wordt geacht om " " waar te maken c.q. te houden".
  "sfdkfj"
 deelProcVan :: Proces * Proces [ASY] PRAGMA "" " is een deelproces van ".
@@ -39,9 +41,10 @@ RULE "superholons": isAncestorOf /\ isAncestorOf~ = -V
 RULE superholons: isAncestorOf /\ isAncestorOf~ = -V
 RULE isAncestorOf /\ isAncestorOf~ = -V
 
-RULE piet: I[LMH] = 'L' \/ 'M' \/ 'H' PHRASE "Naast L(aag), M(idden), en H(oog) zijn geen andere LMH-scores mogelijk."
+RULE piet: I[LMH] = 'L' \/ 'M' \/ 'H' 
+MEANING "Naast L(aag), M(idden), en H(oog) zijn geen andere LMH-scores mogelijk."
 
---Sommige [*maar niet alle*] syntaxfouten worden met rood aangegeven. Voorbeelden:
+-- syntaxfouten worden NIET MEER aangegeven. Voorbeelden:
 kader :: aap * noot.
 kader :: Aap * noot.
 kader :: Aap * Noot [UNI,TOT] "" " wordt geacht om " " waar te maken c.q. te houden".
@@ -49,67 +52,165 @@ kader :: Proces * Conditie PRAGMA "" " wordt geacht om " " waar te maken c.q. te
 kader :: Aap * Noot [UNI,TOT] "" " wordt geacht om " " waar te maken c.q. te houden".
 ENDPATTERN
 ENDCONTEXT
+
+x--! 
+x--!asdfasdf
+x--!  asdfas
+  x--! 
+  x--!asdfasdf
+  x--!  asdfa
+yx--! 
+yx--!asdfasdf
+yx--!  asdfas
+  yx--! 
+  yx--!asdfasdf
+  yx--!  asdfa
 0
 FALSE
-17
+16
 Preprocessor
 Kleuren van preprocessor commando's - herkend aan het '#' teken aan het begin van een regel
 ((?<!.)|[\n\r])#[^\n\r]*+
 FALSE
 FALSE
-6
+10
 0
 
 
 0
 FALSE
-Err-Relations PRAGMA
-Error if relation declaration uses strings, but does not contain the keyword PRAGMA
-(?<=[^:])::\s*+\w*+\s*+(\-\>|\*)\s*+\w*+\s*+(\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\])\s*+"
 FALSE
 FALSE
-15
-0
+FALSE
 
 
-0
+
+
 FALSE
+
 Line Comment (emphasized)
 Text after --! on the same line
 (^|[^-])--![^\n\r]*+
 FALSE
 FALSE
-20
+33
 0
 
 
 3
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Line Comment (alternate highlight)
 Text after --? on the same line
 (^|[^-])--\?[^\n\r]*+
 FALSE
 FALSE
-21
+34
 0
 
 
 3
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Line Comment (VERY EMPHASIZED)
 --$
 (^|[^-])--\$[^\n\r]*+
 FALSE
 FALSE
-15
+32
 0
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Line Comment (Section header)
 Text after --[ on the same line
 (^|[^-])--\s*\[[^\n\r]*+
+FALSE
+FALSE
+26
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Line Comment
+Text after -- on the same line
+(^|[^-])--
+TRUE
+FALSE
+9
+0
+
+
+3
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Block Comment
+Text between {+ or {- and -}
+{(\+|-)
+FALSE
+FALSE
+9
+0
+
+
+4
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Multiplicities
+
+\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\]
 FALSE
 FALSE
 12
@@ -118,97 +219,118 @@ FALSE
 
 0
 FALSE
-Line Comment
-Text after -- on the same line
-(^|[^-])--
-TRUE
 FALSE
-5
-0
+FALSE
+FALSE
 
 
-3
-FALSE
-Block Comment
-Text between {+ or {- and -}
-{(\+|-)
-FALSE
-FALSE
-5
-0
 
 
-4
 FALSE
-Multiplicities
 
-\[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\]
-FALSE
-FALSE
-7
-0
-
-
-0
-FALSE
 operators
 Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
 \|-|-|->|>|=|~|\+|;|!|\*|::|:|\\/|/\\|\\|/|<>
 FALSE
 FALSE
-13
+23
 0
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Reserved words
 Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
-\b(INCLUDE|CONTEXT|ENDCONTEXT|EXTENDS|THEMES|META|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|INTERFACE|FOR|BOX|INITIAL|SQLPLUG|PHPPLUG|TYPE|POPULATION|CONTAINS|UNI|INJ|SUR|TOT|SYM|ASY|TRN|RFX|IRF|PROP|ALWAYS|RULE|MESSAGE|VIOLATION|SRC|TGT|TEST|RELATION|MEANING|DEFINE|CONCEPT|IDENT|VIEW|TXT|PRIMHTML|IMPORT|SPEC|ISA|IS|I|V|CLASSIFY|PRAGMA|EXPLAIN|PURPOSE|IN|REF|ENGLISH|DUTCH|REST|HTML|LATEX|MARKDOWN|ONE|BYPLUG|ROLE|EDITS|MAINTAINS)\b
+\b(INCLUDE|CONTEXT|ENDCONTEXT|IN|DUTCH|ENGLISH|REST|HTML|LATEX|MARKDOWN|META|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|CLASSIFY|SPEC|ISA|IS|RULE|MEANING|VIOLATION|RELATION|UNI|INJ|SUR|TOT|SYM|ASY|TRN|RFX|IRF|AUT|PROP|\*|->|<-|CONCEPT|BYPLUG|TYPE|REPRESENT|ALPHANUMERIC|BIGALPHANUMERIC|HUGEALPHANUMERIC|PASSWORD|BINARY|BIGBINARY|HUGEBINARY|DATE|DATETIME|BOOLEAN|INTEGER|FLOAT|IDENT|VIEW|HTML|TEMPLATE|TXT|PRIMHTML|INTERFACE|CLASS|BOX|ROWS|COLS|TABS|LINKTO|PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS|THEMES|'ONE'|'_SESSION'|'_SESSION\[SESSION\]')\b
 FALSE
 FALSE
-7
+12
 0
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 V, I
 
 \b[VI](\[\s*[A-Z]\w*\s*[*]\s*[A-Z]\w*\s*\])?\b
 FALSE
 FALSE
+23
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Relations (function name)
+
+("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)(?=[\s]*::)
+FALSE
+FALSE
 13
 0
 
 
 0
 FALSE
-Relations (function name)
-
-("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)(?=[\s]*::)
 FALSE
 FALSE
-8
-0
-
-
-0
 FALSE
+
+
+
+
+FALSE
+
 Rules (function name)
 
 (?<=\bRULE[\s]+)("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)(?=[\s]*:)
 FALSE
 FALSE
-8
+13
 0
 
 
 0
 FALSE
-EXPLAIN Concepts, Patterns, Contexts  (plain text)
+FALSE
+FALSE
+FALSE
 
-(?<=(PURPOSE)\s*\b(CONTEXT|PATTERN|PROCESS|CONCEPT|RELATION|RULE|INTERFACE|KEY)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+
+
+
+FALSE
+
+PURPOSE Concepts, Patterns, Contexts  (plain text)
+
+(?<=(PURPOSE)\s*\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
 FALSE
 FALSE
 0
@@ -217,28 +339,55 @@ FALSE
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Concepts, Patterns, Contexts  (function name)
 
-(?<=\b(CONTEXT|PATTERN|PROCESS|CONCEPT|RELATION|RULE|INTERFACE|KEY)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+(?<=\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
 FALSE
 FALSE
-8
+13
 0
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 string
 
 "[^"\r\n]*"
 FALSE
 FALSE
-19
+18
 0
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 8
 {-
 -}
@@ -275,42 +424,72 @@ FALSE
 2
 line comments
 1
-5
+9
 FALSE
+0
+
+
 4
 mailaddres
 
 \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
 FALSE
 FALSE
-1
+2
 3
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 URL
 We don't check the URL itself, it is just for coloring 99% of the URLs used...
 (http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
 FALSE
 FALSE
-1
+2
 4
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 empasize stuff
 Stuff between [! and a subsequent ] (or eol) will be highlighed
 \*\*[^*]*\*\*
 FALSE
 FALSE
-20
+33
 0
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 end of text
 
 (?=$)
@@ -322,52 +501,100 @@ FALSE
 
 1
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 block comments
 1
-5
+9
 FALSE
+0
+
+
 4
 mailaddres
 
 \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
 FALSE
 FALSE
-1
+2
 3
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 URL
 We don't check the URL itself, it is just for coloring 99% of the URLs used...
 (http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
 FALSE
 FALSE
-1
+2
 0
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 empasize stuff
 Stuff between [! and a subsequent ] (or eol) will be highlighed
 \*\*[^*]*\*\*
 FALSE
 FALSE
-20
+33
 0
 
 
 0
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 end of text
 
 -}
 FALSE
 FALSE
-5
+9
 0
 
 
 1
 FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
