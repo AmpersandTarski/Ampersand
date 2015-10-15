@@ -1,2 +1,4 @@
-Ampersand.jgcscs is a file that EditPad Pro can use for colouring ADL sources; it also contains some colouring patterns for colouring syntax errors, but that's not perfect.
-Ampersandtest.jgcscs is a similar file, but with experimental colouring stuff. Don't expect it to work, it's here just for backup purposes...
+This directory contains the following files:
+- Ampersand.jgcscs: this file is for Ampersand syntax colouring in EditPad
+- Ampersand.jgfnx: this file is for Ampersand collapsing/expanding texts in EditPad
+- Ampersand.ai: ???
