@@ -90,9 +90,9 @@ a .=. b  = (Map.fromList [(a, [b]),(b, [a])],[])
 (.+.) :: TypeInfo -> TypeInfo -> TypeInfo
 (m1,l1) .+. (m2,l2) = (Map.unionWith mrgUnion m1 m2, l1++l2)
 thing :: P_Concept -> TypeTerm
-thing c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src False
-tNull :: P_Concept -> TypeTerm
-tNull c  = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src True
+thing c = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src False
+tNull :: Term -> String -> TypeTerm
+tNull x str = TypEmpty x str
 domc, dom, codc, cod :: Term -> TypeTerm
 domc x = TypExpr x Src True  -- the domain of x
 dom  x = TypExpr x Src False -- and its complement
@@ -141,11 +141,11 @@ mSpecific', mGeneric' :: TypeTerm -> TypeTerm -> Term -> TypeInfo
 mGeneric' typeTermA typeTermB e
   = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
     between typeTermE (Between (tCxe typeTermA typeTermB TETUnion e) typeTermA typeTermB (BetweenType BTUnion typeTermE))
-    where typeTermE = TypUnion e False
+    where typeTermE = TypLub [typeTermA,typeTermB]
 mSpecific' typeTermA typeTermB e
   = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
     between typeTermE (Between (tCxe typeTermA typeTermB TETIsc e) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
-    where typeTermE = TypIntersect e False
+    where typeTermE = TypGlb [typeTermA,typeTermB]
 
 mEqual :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
 mEqual    sORt a b e = (Map.empty, [Between (tCxe (domOrCod sORt False a) (domOrCod sORt False b) TETEq e) (domOrCod sORt False a) (domOrCod sORt False b) BTEqual])
@@ -329,19 +329,19 @@ instance Expr P_Sign where
 
 instance Expr P_Gen where
  uType _ g
-  = uType' (Pimp (origin g) (Pid (origin g) (gen_spc g)) (Pid (origin g) (gen_gen g)))
+  = thing (gen_spc g) .<. thing (gen_gen g)
 
 instance Expr P_Declaration where
  uType _ d
-  = mGeneric  (dom decl) (domc decl) domUnion       .+. domUnion      .=. thing src .+.
-    mSpecific (dom decl) (domc decl) domcUnion      .+. domcUnion     .=. tNull src .+.
-    mGeneric  (cod decl) (codc decl) codIntersect   .+. codIntersect  .=. thing tgt .+.
-    mSpecific (cod decl) (codc decl) codcIntersect  .+. codcIntersect .=. tNull tgt
+  = mGeneric  (dom decl) (domc decl) domUnion     .+. domUnion     .=. thing src        .+.
+    mSpecific (dom decl) (domc decl) domIntersect .+. domIntersect .=. tNull (PTrel (origin d) (name d) (dec_sign d)) "source" .+.
+    mGeneric  (cod decl) (codc decl) codUnion     .+. codUnion     .=. thing tgt        .+.
+    mSpecific (cod decl) (codc decl) codIntersect .+. codIntersect .=. tNull (PTrel (origin d) (name d) (dec_sign d)) "target"
     where decl = PTrel (origin d) (dec_nm d) (dec_sign d)
-          domUnion      = TypUnion     decl False
-          domcUnion     = TypUnion     decl True
-          codIntersect  = TypIntersect decl False
-          codcIntersect = TypIntersect decl True
+          domUnion      = TypLub [dom decl, domc decl]
+          domIntersect  = TypGlb [dom decl, domc decl]
+          codIntersect  = TypGlb [cod decl, codc decl]
+          codUnion      = TypLub [cod decl, codc decl]
           P_Sign src tgt = dec_sign d
 
 instance Expr P_Population where
@@ -362,36 +362,42 @@ instance Expr a => Expr [a] where
 instance Expr Term where 
  uType x term 
   = case term of
-     PI{}          -> dom x.=.cod x                                  -- I
-     Pid o c       -> dom x.=.thing c .+.  cod x.=.thing c           -- I[C]
-     (Patm _ _ []) -> dom x.=.cod x   .+. domc x.=.codc x            -- 'Piet'   (an untyped singleton)
+     PI{}          -> dom x.=.cod x                               -- I
+     Pid o c       -> dom x.=.thing c     .+.  cod x.=.thing c    -- I[C]
+     (Patm _ _ []) -> dom x.=.cod x   .+. domc x.=.codc x         -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
                        .+. dom x.=.cod x  .+.  domc x.=.codc x
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
-     (Pfull o s t) -> dom x.=.thing s .+. cod x.=.thing t            --  V[A*B] (the typed full set)
+     (Pfull o s t) -> dom x.=.thing s .+. cod x.=.thing t         --  V[A*B] (the typed full set)
      (PTrel _ _ (P_Sign src trg))
                    -> typeToMap (dom x) .+. typeToMap (cod x)
      (Prel _ _)    -> typeToMap (dom x) .+. typeToMap (cod x)
-     (Pequ _ a b)  -> dom a.=.dom b .+. cod a.=.cod b .+. dom b.=.dom x .+. cod b.=.cod x    --  a=b    equality
-                      .+. mEqual Src a b x .+. mEqual Tgt a b x
-                      .+. uType' a .+. uType' b
-     (PIsc _ a b)  -> dom x.<.dom a .+. dom x.<.dom b .+. cod x.<.cod a .+. cod x.<.cod b
-                      .+. mSpecific (dom a) (dom b) (dom x) .+. mSpecific (cod a) (cod b) (cod x)
--- was:               .+. mSpecific Src a Src b Src x .+. mSpecific Tgt a Tgt b Tgt x
-                      .+. uType' a .+. uType' b
-     (PUni _ a b)  -> dom a.<.dom x .+. dom b.<.dom x .+. cod a.<.cod x .+. cod b.<.cod x
-                      .+. mGeneric (dom a) (dom b) (dom x) .+. mGeneric (cod a) (cod b) (cod x)
--- was:               .+. mGeneric Src a Src b Src x .+. mGeneric Tgt a Tgt b Tgt x
-                      .+. uType' a .+. uType' b
+     (PIsc _ a b)  -> domIsc.<.dom  a  .+. domIsc.<.dom  b  .+. domIsc .=.dom  x .+.
+                      codIsc.<.cod  a  .+. codIsc.<.cod  b  .+. codIsc .=.cod  x .+.
+                      domc a.<.domcIsc .+. domc b.<.domcIsc .+. domcIsc.=.domc x .+.
+                      codc a.<.codcIsc .+. codc b.<.codcIsc .+. codcIsc.=.codc x .+.
+                      uType' a .+. uType' b
+                      where domIsc  = TypGlb [dom  a, dom  b]
+                            domcIsc = TypLub [domc a, domc b]
+                            codIsc  = TypGlb [cod  a, cod  b]
+                            codcIsc = TypLub [codc a, codc b]
+     (PUni _ a b)  -> dom  a .<.domUni .+. dom  b .<.domUni .+. domUni .=.dom  x .+.
+                      cod  a .<.codUni .+. cod  b .<.codUni .+. codUni .=.cod  x .+.
+                      domcUni.<.domc a .+. domcUni.<.domc b .+. domcUni.=.domc x .+.
+                      codcUni.<.codc a .+. codcUni.<.codc b .+. codcUni.=.codc x .+.
+                      uType' a .+. uType' b
+                      where domUni  = TypLub [dom  a, dom  b]
+                            domcUni = TypGlb [domc a, domc b]
+                            codUni  = TypLub [cod  a, cod  b]
+                            codcUni = TypGlb [codc a, codc b]
      (PDif o a b)  -> dom x.<.dom a .+. cod x.<.cod a  --  a-b    (difference)
                       .+. mGeneric (dom x) (dom b) (dom (PUni o a b)) .+. mGeneric (cod x) (cod b) (cod (PUni o a b))
--- was:               .+. mGeneric Src x Src b Src (PUni o a b) .+. mGeneric Tgt x Tgt b Tgt (PUni o a b)
                       .+. uType' a .+. uType' b .+. uType' (PUni o a b)
-     (PCps _ a b)  -> let s = TypIntersect x False
-                          pidTest (PI{}) r = r
+     (PCps o a b)  -> let pidTest (PI{}) r = r
                           pidTest (Pid{}) r = r
                           pidTest (Patm{}) r = r
                           pidTest _ _ = nothing
+                          s = TypGlb [cod a, dom b]
                       in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
                          mSpecific' (cod a) (dom b) x .+. uType' a .+. uType' b
                          .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
@@ -400,7 +406,7 @@ instance Expr Term where
                          pnidTest (PCpl _ (Pid{})) r = r
                          pnidTest (PCpl _ (Patm{})) r = r
                          pnidTest _ _ = nothing
-                         s = TypUnion x False
+                         s = TypLub [cod a, dom b]
                      in dom x .<. dom a .+. cod x .<. cod b
                         .+. mGeneric' (cod a) (dom b) x .+. uType' a .+. uType' b
                         .+. pnidTest a (dom b.<. s) .+. pnidTest b (cod a.<. s)
@@ -411,18 +417,25 @@ instance Expr Term where
      (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType' e
      (PBrk _ e)   -> uType x e  -- ignore brackets
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
-     (PCpl o a)   -> let e = PDif o (PVee o) a
+     (PCpl o (PCpl _ a)) -> uType' a
+     (PCpl o a)   -> dom x.=.domc a .+. cod x.=.codc a .+. domc x.=.dom a .+. codc x.=.cod a .+.
+                     domEmpty.<.dom x .+. domEmpty.<.dom a .+. tNull (PIsc o a x) "source".=.domEmpty .+.
+                     codEmpty.<.cod x .+. codEmpty.<.cod a .+. tNull (PIsc o a x) "target".=.codEmpty .+.
+                     uType x a
+                     where domEmpty = TypGlb [dom a, dom x]
+                           codEmpty = TypGlb [cod a, cod x]
+     (Pequ o a b) -> let e = PUni o (PIsc o a b) (PIsc o (PCpl (origin a) a) (PCpl (origin b) b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType x e                  --  -a    unary complement
-     (Pimp o a b) -> let e = Pequ o a (PIsc o a b)
+                        uType' e
+     (Pimp o a b) -> let e = PUni o (PCpl o a) b
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType x e                 --  a|-b    implication (aka: subset)
+                        uType' e
      (PLrs o a b) -> let e = complement (PCps o (complement a) (p_flp b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType x e                 --  a/b = a!-b~ = -(-a;b~)
+                        uType' e                 --  a/b = a!-b~ = -(-a;b~)
      (PRrs o a b) -> let e = complement (PCps o (p_flp a) (complement b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType x e                 --  a\b = -a~!b = -(a~;-b)
+                        uType' e                 --  a\b = -a~!b = -(a~;-b)
 
 
 --  The following is for drawing graphs.

@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
+﻿{-# OPTIONS_GHC -Wall -XFlexibleInstances #-}
 {-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.TypePropagation (
  -- * Exported functions
@@ -37,11 +37,12 @@ data TypeTerm
                   , ttSorT :: SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
                   , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
                   }
-   | TypUnion     { ttTerm :: Term
-                  , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+   | TypEmpty     { ttDecl :: Term
+                  , ttStr  :: String      -- a string to distinguish two TypEmpty's with the same term (used in P_Declaration, for instance)
                   }
-   | TypIntersect { ttTerm :: Term
-                  , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+   | TypLub       { ttTerms :: [TypeTerm]
+                  }
+   | TypGlb       { ttTerms :: [TypeTerm]
                   }
    | TypInObjDef  { ttObj  :: P_ObjectDef -- term is deriving Ord
                   , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
@@ -79,20 +80,18 @@ instance Show TypeTerm where
 showType :: TypeTerm -> String
 showType t
  = case t of
-     TypExpr (Pid _ c) _ False                    -> "pop ("++name c++") "
-     TypExpr (Pid _ c) _ True                     -> "empty ("++name c++") "
-     TypExpr term@(PVee o)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "++"("++ show o++")"
-     TypExpr term@(Pfull _ _ _) sORt complemented -> codOrDom sORt complemented++" ("++showADL term++")"
-     TypExpr term               sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "++ show (origin term)
-     TypUnion term                   complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
-     TypIntersect term               complemented -> witnesses complemented++" ("++showADL term++") "++show (origin term)
-     TypInObjDef obj                 complemented -> witnesses complemented++" ("++name obj++") "++show (origin obj)
+     TypExpr (Pid _ c) _ _                        -> "pop ("++name c++") "
+     TypExpr term@(PVee o)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++"("++ show o++")"
+     TypExpr term@(Pfull _ _ _) sORt complemented -> codOrDom sORt complemented++" ("++showADL term++")"   --   
+     TypExpr term               sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++ show (origin term)
+     TypEmpty term _                              -> "empty"++"  "++showADL term
+     TypLub tTerms                                -> foldr1 f (map showType tTerms) where f a b = a++"\\/"++b
+     TypGlb tTerms                                -> foldr1 f (map showType tTerms) where f a b = a++"/\\"++b
+     TypInObjDef obj                 complemented -> "towbar of "++name obj                                --   ++show (origin obj)
    where codOrDom Src True  = "domc"
          codOrDom Src False = "dom"
          codOrDom Tgt True  = "codc"
          codOrDom Tgt False = "cod"
-         witnesses True     = "Co-witnesses of "
-         witnesses False    = "Witnesses of "
 
 -- | Equality of TypeTerm is needed for the purpose of making graphs of types.
 --   These are used in the type checking process.
@@ -103,7 +102,7 @@ instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which sati
   compare (TypExpr (Pid _ c)      _ b) (TypExpr (Pid _ c')       _ b') = Prelude.compare (c,b) (c',b')
   compare (TypExpr (Pid _ _)      _ _) (TypExpr _                _ _ ) = Prelude.LT
   compare (TypExpr _              _ _) (TypExpr (Pid _ _ )       _ _ ) = Prelude.GT
-  compare (TypExpr (Patm _ x [c]) _ _) (TypExpr (Patm _ x' [c']) _ _ ) = Prelude.compare (x,c) (x',c')
+  compare (TypExpr (Patm _ x [c]) _ b) (TypExpr (Patm _ x' [c']) _ b') = Prelude.compare (x,c,b) (x',c',b')
   compare (TypExpr (Patm _ _ [_]) _ _) (TypExpr (Patm _ _   _  ) _ _ ) = Prelude.LT
   compare (TypExpr (Patm _ _  _ ) _ _) (TypExpr (Patm _ _  [_ ]) _ _ ) = Prelude.GT
   compare (TypExpr (Patm o _ [] ) _ b) (TypExpr (Patm o' _  [] ) _ b') = Prelude.compare (o,b) (o',b')  -- the atom name is determined by o, so only compare with o.
@@ -122,12 +121,15 @@ instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which sati
   compare (TypExpr x             x' b) (TypExpr y               y' b') = Prelude.compare (x,x',b) (y,y',b')
   compare (TypExpr _              _ _) _                               = Prelude.LT
   compare _                            (TypExpr _                _ _ ) = Prelude.GT
-  compare (TypUnion t               b) (TypUnion t'                b') = compare (origin t,b) (origin t',b')
-  compare (TypUnion _               _) _                               = Prelude.LT
-  compare _                            (TypUnion _                 _ ) = Prelude.GT
-  compare (TypIntersect t           b) (TypIntersect t'            b') = compare (origin t,b) (origin t',b')
-  compare (TypIntersect _           _) _                               = Prelude.LT
-  compare _                            (TypIntersect _             _ ) = Prelude.GT
+  compare (TypEmpty x str            ) (TypEmpty x' str'             ) = Prelude.compare (x,str) (x',str')
+  compare (TypEmpty _ _              ) _                               = Prelude.LT
+  compare _                            (TypEmpty _ _                 ) = Prelude.GT
+  compare (TypLub tTerms)              (TypLub tTerms')                = compare tTerms tTerms'
+  compare (TypLub _                  ) _                               = Prelude.LT
+  compare _                            (TypLub _                     ) = Prelude.GT
+  compare (TypGlb tTerms)              (TypGlb tTerms')                = compare tTerms tTerms'
+  compare (TypGlb _                  ) _                               = Prelude.LT
+  compare _                            (TypGlb _                     ) = Prelude.GT
   compare (TypInObjDef o            b) (TypInObjDef o'             b') = Prelude.compare (origin o,b) (origin o',b')
 --  compare (TypInObjDef _            _) _                               = Prelude.LT -- these two lines are superfluous if all combinators are covered.
 --  compare _                            (TypInObjDef _              _ ) = Prelude.GT
@@ -221,6 +223,7 @@ makeDecisions inp trnRel eqtyps
        getConcsFromTriples [] = []
        getConcsFromTriples ((_,_,x):xs) = mrgUnion (Map.findWithDefault [] x trnRel') (getConcsFromTriples xs)
        trnRel' = Map.map (filter isConc) trnRel
+       isConc (TypExpr (Pid _ _) _ False) = True
        isConc (TypExpr (Pid _ _) _ _) = True
        isConc _ = False
        f :: TypeTerm -> [TypeTerm]
