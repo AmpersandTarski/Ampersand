@@ -258,10 +258,11 @@ FALSE
 
 Special words
 Stuff for ExecEngine, Sessions, Logins
-3
-(\bExecEngine\b|{EX}|InsPair|DelPair|NewStruct|DelAtom
-|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]
-|"SessionRoles"|\bNobodyInParticular\b)
+4
+(\bExecEngine\b|\b{EX}\b|\b(InsPair|DelPair|NewStruct|DelAtom)\b
+|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|\b_NEW\b
+|\b[Cc][Rr][Uu][Dd]\b
+|"SessionRoles"|\bRole\b|\bNobodyInParticular\b)
 FALSE
 FALSE
 18
