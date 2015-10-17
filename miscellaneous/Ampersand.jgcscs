@@ -40,10 +40,10 @@ POPULATION relation CONTAINS  [(',c's)]
 
 #ifdef xxx
 deelProcVan |- postCdx;(kader \/ postCdx \/ deelProcVan~; preCdx; deelCdxVan{-*-})~
-EXPLANATION "Voor elk (sub)proces die onderdeel is van een (super)proces geldt dat de het subproces een postconditie heeft die (a) ofwel een kaderregel is, (b) ofwel de postconditie is van het superproces, (c) ofwel een (onderdeel is van) de preconditie van een (mogelijk ander) subproces van het(zelfde) superproces."
+MEANING "Voor elk (sub)proces die onderdeel is van een (super)proces geldt dat de het subproces een postconditie heeft die (a) ofwel een kaderregel is, (b) ofwel de postconditie is van het superproces, (c) ofwel een (onderdeel is van) de preconditie van een (mogelijk ander) subproces van het(zelfde) superproces."
 #endif
 deelProcVan; kader |- kader \/ V-
-EXPLANATION "Het kader van een proces dat een deelproces is van een (super)proces, bevat alle kader(conditie)s van dat superproces."
+MEANING  "Het kader van een proces dat een deelproces is van een (super)proces, bevat alle kader(conditie)s van dat superproces."
 
 RULE "superholons": isAncestorOf /\ isAncestorOf~ = -V
 RULE superholons: isAncestorOf /\ isAncestorOf~ = -V
@@ -52,9 +52,9 @@ RULE isAncestorOf /\ isAncestorOf~ = -V
 RULE piet: I[LMH] = 'L' \/ 'M' \/ 'H' 
 MEANING "Naast L(aag), M(idden), en H(oog) zijn geen andere LMH-scores mogelijk."
 
---? syntaxfouten worden NIET MEER aangegeven. Voorbeelden:
+  --? syntaxfouten worden NIET MEER aangegeven. Voorbeelden:
 kader :: aap * noot.
-kader :: Aap * noot.
+kader : Aap * noot.
 kader :: Aap * Noot [UNI,TOT] "" " wordt geacht om " " waar te maken c.q. te houden".
 kader :: Proces * Conditie PRAGMA "" " wordt geacht om " " waar te maken c.q. te houden"
 kader :: Aap * Noot [UNI,TOT] "" " wordt geacht om " " waar te maken c.q. te houden".
@@ -98,7 +98,7 @@ FALSE
 
 Line Comment (emphasized)
 Text after --! on the same line
-(^|[^-])--![^\n\r]*
+--![^\n\r]*
 FALSE
 FALSE
 33
@@ -118,7 +118,7 @@ FALSE
 
 Line Comment (alternate highlight)
 Text after --? on the same line
-(^|[^-])--\?[^\n\r]*+
+--\?[^\n\r]*+
 FALSE
 FALSE
 34
@@ -138,7 +138,7 @@ FALSE
 
 Line Comment (VERY EMPHASIZED)
 --$
-(^|[^-])--\$[^\n\r]*+
+--\$[^\n\r]*+
 FALSE
 FALSE
 32
@@ -158,7 +158,7 @@ FALSE
 
 Line Comment (Section header)
 Text after --[ on the same line
-(^|[^-])--\s*\[[^\n\r]*+
+--\s*\[[^\n\r]*+
 FALSE
 FALSE
 26
@@ -178,7 +178,7 @@ FALSE
 
 Line Comment
 Text after -- on the same line
-(^|[^-])--
+--
 TRUE
 FALSE
 9
@@ -258,7 +258,11 @@ FALSE
 
 Special words
 Stuff for ExecEngine, Sessions, Logins
-(\bExecEngine\b|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|"SessionRoles"|\bNobodyInParticular\b)
+4
+(\bExecEngine\b|\b{EX}\b|\b(InsPair|DelPair|NewStruct|DelAtom)\b
+|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|\b_NEW\b
+|\b[Cc][Rr][Uu][Dd]\b
+|"SessionRoles"|\bRole\b|\bNobodyInParticular\b)
 FALSE
 FALSE
 18
@@ -267,7 +271,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 
@@ -298,17 +302,16 @@ FALSE
 
 Reserved words
 Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
-10
-\b(INCLUDE|CONTEXT|ENDCONTEXT|IN|DUTCH|ENGLISH|REST|HTML|LATEX|MARKDOWN|META
-|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS
+9
+\b(INCLUDE|THEMES|CONTEXT|ENDCONTEXT|IN|DUTCH|ENGLISH|REST|HTML|LATEX|MARKDOWN|META|THEMES
+|PATTERN|ENDPATTERN|PROCESS|ENDPROCESS|SERVICE|ENDSERVICE
 |CLASSIFY|SPEC|ISA|IS
-|RULE|MEANING|VIOLATION|RELATION|PRAGMA|CONCEPT|BYPLUG|TYPE|REPRESENT
+|RULE|MEANING|VIOLATION|RELATION|PRAGMA|CONCEPT|BYPLUG|TYPE|REPRESENT|SRC|TGT|TXT
 |ALPHANUMERIC|BIGALPHANUMERIC|HUGEALPHANUMERIC|PASSWORD
 |BINARY|BIGBINARY|HUGEBINARY|DATE|DATETIME|BOOLEAN|INTEGER|FLOAT
 |IDENT|VIEW|HTML|TEMPLATE|TXT|PRIMHTML
-|INTERFACE|BOX|CLASS|LINKTO
-|PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS
-|THEMES)\b
+|INTERFACE|BOX|ROWS|TABS|COLS|CLASS|LINKTO
+|PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS)\b
 FALSE
 FALSE
 12
