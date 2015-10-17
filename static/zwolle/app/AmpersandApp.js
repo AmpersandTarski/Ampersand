@@ -1,5 +1,5 @@
 // when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload']);
+var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload', 'agGrid']);
 
 AmpersandApp.config(function($routeProvider) {
 	$routeProvider
@@ -30,14 +30,10 @@ AmpersandApp.config(function(RestangularProvider) {
     
 });
 
-AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
+AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location){
 	
-	// Declare $rootScope objects
-	$rootScope.session = {};
+	$sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
 	$rootScope.notifications = {'errors' : []};
-	$rootScope.session.id = initSessionId; // initSessionId provided by index.php on startup application // Restangular.one('session').get().$object;
-	
-	Restangular.restangularizeElement('', $rootScope.session, 'session');
 	
 	if($localStorage.roleId === undefined){
 		$localStorage.roleId = 0; // set roleId to zero
@@ -45,7 +41,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
 		params['roleId'] = $localStorage.roleId;
-		params['sessionId'] = $rootScope.session.id;
+		params['sessionId'] = $sessionStorage.session.id;
 		return params;
 	});
 	
@@ -56,7 +52,14 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage){
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
     	var message = ((response.data || {}).error || {}).message || response.statusText;
-    	$rootScope.addError( response.status + ' ' + message);	
+    	
+    	if(response.status == 401) {
+    		$localStorage.roleId = 0;
+    		$rootScope.refreshNavBar();
+    		$location.path('ext/Login');
+    	}
+    	
+    	$rootScope.addError( response.status + ' ' + message);
     	
     	return true; // proceed with success or error hooks of promise
     });

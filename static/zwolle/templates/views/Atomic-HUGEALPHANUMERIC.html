@@ -1,24 +1,10 @@
-<!-- Atomic-HugeAlphanumeric.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-<div class="input-group">
-$if(isEditable)$
-  $if(exprIsUni)$
-  <textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Textarea" rows="6" cols="60" ng-blur="put(ResourceId)"></textarea>
-  $else$
-  <div ng-repeat="row in val['$name$'] track by \$index">
-    <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
-    <span>{{row}}</span>
-  </div>
-  <div my-showonhover-box ng-controller="addItemController">
-    <textarea ng-model="selected.value" placeholder="Add text" class="form-control input-sm" rows="6" cols="60" ng-blur="addItem(val, '$name$', selected, ResourceId)"></textarea>
-  </div>
-  $endif$
-$else$
-  $if(exprIsUni)$
-  <div css="wordwrap">{{val['$name$']}}</div>
-  $else$
-  <div ng-repeat="row in val['$name$'] track by \$index" css="wordwrap">
-    {{row}}
-  </div>
-  $endif$
-$endif$
+$if(verbose)$<!-- Atomic-HUGEALPHANUMERIC.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$endif$<div class="input-group">
+	$if(isEditable)$$if(exprIsUni)$<textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Textarea" rows="20" cols="100" ng-blur="put(ResourceId)"></textarea>$else$<div ng-repeat="row in val['$name$'] track by \$index">
+		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+		<span>{{row}}</span>
+	</div>
+	<div my-showonhover-box ng-controller="addItemController">
+		<textarea ng-model="selected.value" placeholder="Add text" class="form-control input-sm" rows="20" cols="100" ng-blur="addItem(val, '$name$', selected, ResourceId)"></textarea>
+	</div>$endif$$else$$if(exprIsUni)$<div css="wordwrap">{{val['$name$']}}</div>$else$<div ng-repeat="row in val['$name$'] track by \$index" css="wordwrap">{{row}}</div>$endif$$endif$
 </div>

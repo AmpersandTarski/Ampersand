@@ -12,20 +12,20 @@ hasantecedent :: Rule -> Bool
 hasantecedent r
  = case rrexp r of
      EEqu{} -> True
-     EImp{} -> True
+     EInc{} -> True
      _      -> False
 antecedent :: Rule -> Expression
 antecedent r
  = case rrexp r of
      EEqu (le,_) -> le
-     EImp (le,_) -> le
+     EInc (le,_) -> le
      _           -> fatal 134 $ "erroneous reference to antecedent of rule "++show r
 
 consequent :: Rule -> Expression
 consequent r
  = case rrexp r of
      EEqu (_,re) -> re
-     EImp (_,re) -> re
+     EInc (_,re) -> re
      x           -> x
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.

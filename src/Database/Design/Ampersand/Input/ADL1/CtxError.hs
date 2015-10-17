@@ -11,6 +11,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
+  , mkInvalidCRUDError
   , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
   , mkTypeMismatchError
   , Guarded(..)
@@ -162,6 +163,9 @@ mkMultipleRepresentationsForConceptError cpt rs =
                ++(intercalate ", " . map show . nub . map reprdom) rs ++
                   concatMap (("\n    "++ ) . show . origin ) rs
     _ -> fatal 142 "There are no multiple representations."
+
+mkInvalidCRUDError :: Origin -> String -> CtxError
+mkInvalidCRUDError o str = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `"++str++"`."
 
 mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
 mkIncompatibleAtomValueError pav msg= CTXE (origin pav) msg

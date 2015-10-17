@@ -4,7 +4,7 @@ INCLUDE "Atoms.adl"
 -- RJ: Ik maak duidelijk onderscheid tussen een 'representation' (bijv. een foto van een tomaat) 
 --     en een 'reference' (een verwijzing naar de tomaat). Een representation is wel een 
 --     reference, maar omgekeerd geldt dat niet. Ik heb een 2c-bijdrage gedaan in twee van de 
---     hiernavolgnede beschrijvingen.
+--     hiernavolgende beschrijvingen.
 
 PURPOSE PROCESS "Atoms"
 {+Here is a problem: Since an information system cannot store tomatoes, it must work with representations of tomatoes.
@@ -55,7 +55,7 @@ CONCEPT Relation "A relation is a set of pairs."
 PURPOSE CONCEPT Pair
 {+
 In order to populate relations, atoms are assembled in pairs.
-In fact, a relation may be regarded as a set of pairs of atoms.
+A relation may be regarded as a set of pairs of atoms.
 In an information system, the population of relations can change because of edit actions by users in user interfaces.
 This means that pairs are inserted into and deleted from relations as time goes by.
 -}

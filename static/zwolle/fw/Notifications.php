@@ -52,10 +52,10 @@ class Notifications {
 		// Make links to interfaces
 		$links = array();
 		if(isset($session->role)){
-			foreach ($session->role->getInterfacesForConcept($rule['srcConcept']) as $interface){
+			foreach ($session->role->getInterfacesToReadConcept($rule['srcConcept']) as $interface){
 				$links[] = '#/' . $interface->id . '/' . $srcAtom;
 			}
-			foreach ($session->role->getInterfacesForConcept($rule['tgtConcept']) as $interface){
+			foreach ($session->role->getInterfacesToReadConcept($rule['tgtConcept']) as $interface){
 				$links[] = '#/' . $interface->id . '/' . $tgtAtom;
 			}
 			$links = array_unique($links);
@@ -72,6 +72,7 @@ class Notifications {
 		if(isset($id)){ // ID can be integer, but also string
 			self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
 			self::$infos[$id]['rows'][] = $message;
+			self::$infos[$id]['count'] = count(self::$infos[$id]['rows']);
 			if(!is_null($aggregatedMessage)) self::$infos[$id]['message'] = $aggregatedMessage;
 			
 			return $id;
@@ -132,9 +133,19 @@ class Notifications {
 		$all['violations'] = self::getViolations();
 		$all['infos'] = self::getInfos();
 		$all['successes'] = self::getSuccesses();
-		$all['logs'] = LOG_ENABLED ? self::getLogs() : array(array('type' => 'LOG', 'message' => 'Logging is disabled'));
+		$all['logs'] = Config::get('productionEnv') ? array(array('type' => 'LOG', 'message' => 'Log is disabled in production environment')) : self::getLogs();
 		
 		return $all;
+	}
+	
+	public static function getDefaultSettings(){
+		return array('switchShowViolations' 	=> Config::get('defaultShowViolations', 'notifications')
+					,'switchShowInfos'			=> Config::get('defaultShowInfos', 'notifications')
+					,'switchShowSuccesses'		=> Config::get('defaultShowSuccesses', 'notifications')
+					,'switchAutoHideSuccesses'	=> Config::get('defaultAutoHideSuccesses', 'notifications')
+					,'switchShowErrors'			=> Config::get('defaultShowErrors', 'notifications')
+					,'switchShowInvariants'		=> Config::get('defaultShowInvariants', 'notifications')
+					);
 	}
 	
 

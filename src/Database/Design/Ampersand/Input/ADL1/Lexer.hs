@@ -410,7 +410,7 @@ getchar isAtomScan echrs s =
    (x:xs)      
     | x `elem` echrs   -> (Nothing,0,s)
     | isAtomScan && x `elem`[doubleQuote, singleQuote]  -> (Nothing,0,s) 
-   -- | isAtomScan && ec == singleQuote && x == doubleQuote -> (Nothing,0,s) 
+   --- | isAtomScan && ec == singleQuote && x == doubleQuote -> (Nothing,0,s) 
     | otherwise -> (Just x,1,xs)
   where
     (doubleQuote,singleQuote) = ('\"','\'')

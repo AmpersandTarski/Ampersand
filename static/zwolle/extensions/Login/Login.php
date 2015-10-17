@@ -41,9 +41,10 @@ class OAuthController {
 		curl_setopt_array($curl, 
 			array( CURLOPT_RETURNTRANSFER => 1
 				 , CURLOPT_URL => $token_request['token_url']
-				 , CURLOPT_USERAGENT => 'Semantic tooling tester'
+				 , CURLOPT_USERAGENT => Config::get('contextName')
 				 , CURLOPT_POST => 1
-				 , CURLOPT_POSTFIELDS => $token_request['arguments']
+				 , CURLOPT_POSTFIELDS => http_build_query ($token_request['arguments'])
+				 , CURLOPT_HTTPHEADER => array('Content-Type: application/x-www-form-urlencoded')
 				 )
 			);
 
@@ -80,8 +81,8 @@ class OAuthController {
 		curl_setopt_array($curl, 
 			array( CURLOPT_RETURNTRANSFER => 1
 				 , CURLOPT_URL => $api_url
-				 , CURLOPT_USERAGENT => 'Semantic tooling tester'
-				 , CURLOPT_HTTPHEADER => array('Authorization: ' . $this->tokenObj->token_type . ' ' . $this->tokenObj->access_token)
+				 , CURLOPT_USERAGENT => Config::get('contextName')
+				 , CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . $this->tokenObj->access_token, 'x-li-format: json')
 				 )
 			);
 
@@ -89,8 +90,10 @@ class OAuthController {
 		$data_resp = curl_exec($curl);
 		
 		// Check if response is received:
-		$error = "Error: " . curl_error($curl) . " - Code: " . curl_errno($curl);
-		if(!$data_resp) throw new Exception($error, 500);
+		if(!$data_resp) throw new Exception('Error: "' . curl_error($curl) . '" - Code: ' . curl_errno($curl), 500);
+		
+		// Close request to clear up some resources
+		curl_close($curl);
 
 		// Return data
 		return $this->dataObj = json_decode($data_resp);

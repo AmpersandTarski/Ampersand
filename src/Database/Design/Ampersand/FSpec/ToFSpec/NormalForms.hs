@@ -391,8 +391,8 @@ dSteps drs x = dStps x
      , let rewriteTerms = stepTerms template cl
      , not (null rewriteTerms)
      ]
-     where f (DEquR l r) = [DImpR l r, DImpR r l]
-           f implication = [implication]
+     where f (DEquiR l r) = [DInclR l r, DInclR r l]
+           f inclusion = [inclusion]
            stepTerms :: RTerm -> [DerivRule] -> [RTerm]
            stepTerms template cl  -- Only select rules with bindings within the template. Otherwise, we would have to "invent" bindings.
             = [term' | rule<-cl, let term' = rTerm rule, vars term' `Set.isSubsetOf` vars template ]
@@ -434,8 +434,8 @@ term2rTerm term
      where
       result
        = case term of
-           PEqu o l r               -> term2rTerm (PIsc o (PImp o l r) (PImp o r l))
-           PImp o l r               -> term2rTerm (PUni o (PCpl o l) r)
+           PEqu o l r               -> term2rTerm (PIsc o (PInc o l r) (PInc o r l))
+           PInc o l r               -> term2rTerm (PUni o (PCpl o l) r)
            PIsc _ l r               -> combSet RIsc (lSet `Set.union` rSet)
                                        where lSet = case term2rTerm l of
                                                       RIsc terms -> terms
@@ -492,8 +492,8 @@ expr2RTerm expr
      where
       result
        = case expr of
-          EEqu (l,r)           -> expr2RTerm (EIsc (EImp (l,r), EImp (r,l)))
-          EImp (l,r)           -> expr2RTerm (EUni (ECpl l, r))
+          EEqu (l,r)           -> expr2RTerm (EIsc (EInc (l,r), EInc (r,l)))
+          EInc (l,r)           -> expr2RTerm (EUni (ECpl l, r))
           EIsc (l,r)           -> combSet RIsc (lSet `Set.union` rSet)
                                   where lSet = case expr2RTerm l of
                                                  RIsc terms -> terms
@@ -659,16 +659,16 @@ vars (RVar r s t)  = Set.fromList [r, s, t]
 vars (RConst{})    = Set.empty
 vars  RAtm{}       = Set.empty
 
-data DerivRule = DEquR { lTerm :: RTerm
-                       , rTerm :: RTerm
-                       }
-               | DImpR { lTerm :: RTerm
-                       , rTerm :: RTerm
-                       }
+data DerivRule = DEquiR { lTerm :: RTerm  -- equivalence rule
+                        , rTerm :: RTerm
+                        }
+               | DInclR { lTerm :: RTerm  -- inclusion rule
+                        , rTerm :: RTerm
+                        }
 
 instance Show DerivRule where
-  showsPrec _ r@DEquR{}  = showString (showADL (lTerm r)++" = " ++showADL (rTerm r))
-  showsPrec _ r@DImpR{}  = showString (showADL (lTerm r)++" |- "++showADL (rTerm r))
+  showsPrec _ r@DEquiR{}  = showString (showADL (lTerm r)++" = " ++showADL (rTerm r))
+  showsPrec _ r@DInclR{}  = showString (showADL (lTerm r)++" |- "++showADL (rTerm r))
 
 -- For documentation purposes, the derivation rule which proves the step is included.
 
@@ -683,8 +683,8 @@ data DerivStep = DStep { lhs :: RTerm
 
 
 dRule :: Term TermPrim -> [DerivRule]
-dRule (PEqu _ l r) = [DEquR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
-dRule (PImp _ l r) = [DImpR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
+dRule (PEqu _ l r) = [DEquiR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
+dRule (PInc _ l r) = [DInclR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule term         = fatal 279 ("Illegal use of dRule with term "++showADL term)
 
 slideDown :: (RTerm -> Integer) -> RTerm -> [(Integer,DerivStep)]
@@ -1022,7 +1022,7 @@ tceDerivRules = concatMap (dRule.parseRule)
  ]
 
 {-
--- Type conserving implications: The following implications have an identical signature on either side.
+-- Type conserving inclusions: The following inclusions have an identical signature on either side.
 tciDerivRules :: [DerivRule]
 tciDerivRules = concatMap (dRule.parseRule)
  [ "(r[A*B]\\I[A]);s[A*C] |- r[A*B]\\s[A*C]"                   --  T{r\\I[A]}=[B*A] ; T{(r\\I[A]);s}=[B*C] ; T{r\\s}=[B*C] ; Jipsen&Tsinakis
@@ -1199,7 +1199,7 @@ simpProof shw expr
 normStep :: (Expression -> String) -> Bool -> Bool -> Bool ->
             Expression -> (Expression,[String],String) -- This might be generalized to "Expression" if it weren't for the fact that flip is embedded in the Relation type.
 normStep shw   -- a function to print an expression. Might be "showADL"
-         eq    -- If eq==True, only equivalences are used. Otherwise, implications are used as well.
+         eq    -- If eq==True, only equivalences are used. Otherwise, inclusions are used as well.
          dnf   -- If dnf==True, the result is in disjunctive normal form, otherwise in conjunctive normal form
          simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
          expr = if sign expr==sign res then (res,ss,equ) else
@@ -1215,7 +1215,7 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM posCpl (EEqu (l,r)) _     | simpl = (t .==. f, steps++steps', fEqu [equ',equ''])
                                          where (t,steps, equ')  = nM posCpl l []  -- TODO: the use of posCpl is erroneous
                                                (f,steps',equ'') = nM posCpl r []  -- TODO: the use of posCpl is erroneous
-  nM posCpl (EImp (l,r)) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
+  nM posCpl (EInc (l,r)) _     | simpl = (t .|-. f, steps++steps', fEqu [equ',equ''])
                                          where (t,steps, equ')  = nM (not posCpl) l []
                                                (f,steps',equ'') = nM posCpl r []
   nM posCpl (EUni (EUni (l,k),r)) rs   = nM posCpl (l .\/. (k .\/. r)) rs  -- standardize, using associativity of .\/.
@@ -1260,13 +1260,13 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM _      x _                | simpl = (x,[],"<=>")
 -- up to here, simplification has been treated. The remaining rules can safely assume  simpl==False
   nM _      (EEqu (l,r)) _                            = ((l .|-. r) ./\. (r .|-. l), ["remove ="],"<=>")
-  nM _      (EImp (x,r@(ELrs (z,y)))) _               = if sign x==sign z -- necessary to guarantee that sign expr is equal to sign of the result
+  nM _      (EInc (x,r@(ELrs (z,y)))) _               = if sign x==sign z -- necessary to guarantee that sign expr is equal to sign of the result
                                                         then (x .:. y .|-. z, ["remove left residual (/)"],"<=>")
                                                         else (notCpl x .\/. r, ["remove |-"],"<=>")
-  nM _      (EImp (y,r@(ERrs (x,z)))) _               = if sign y==sign z -- necessary to guarantee that sign expr is equal to sign of the result
+  nM _      (EInc (y,r@(ERrs (x,z)))) _               = if sign y==sign z -- necessary to guarantee that sign expr is equal to sign of the result
                                                         then (x .:. y .|-. z, ["remove right residual (\\)"],"<=>")
                                                         else (notCpl y .\/. r, ["remove |-"],"<=>")
-  nM _      (EImp (l,r)) _                            = (notCpl l .\/. r, ["remove |-"],"<=>")
+  nM _      (EInc (l,r)) _                            = (notCpl l .\/. r, ["remove |-"],"<=>")
 --   nM posCpl e@(ECpl EIsc{}) _           | posCpl==dnf = (deMorganEIsc e, ["De Morgan"], "<=>")
 --   nM posCpl e@(ECpl EUni{}) _           | posCpl/=dnf = (deMorganEUni e, ["De Morgan"], "<=>")
   nM _      e@(ECpl EIsc{}) _                         = (deMorganEIsc e, ["De Morgan"], "<=>")

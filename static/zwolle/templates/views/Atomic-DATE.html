@@ -1,32 +1,18 @@
-<!-- Atomic-Date.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-<div style="min-width:6em;">
-$if(isEditable)$
-  $if(exprIsUni)$
-  <div class="input-group" style="width:170px;">
-    <input ng-model="val['$name$']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-$name$'].open" ng-blur="put(ResourceId)"/>
-    <span class="input-group-btn">
-      <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, key+'-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>
-    </span>
-  </div>
-  $else$
-  <div ng-repeat="row in val['$name$'] track by \$index">
-    <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
-    <span>{{row | date : 'dd-MM-yyyy'}}</span>
-  </div>
-  <div my-showonhover-box class="input-group" ng-controller="addItemController" style="width:170px;">
-    <input ng-model="selected.value" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker['new-$name$'].open" ng-blur="addItem(val, '$name$', selected, ResourceId)"/>
-    <span class="input-group-btn">
-      <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, 'new-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>
-    </span>
-  </div>
-  $endif$
-$else$
-  $if(exprIsUni)$
-  <div>{{val['$name$'] | date : 'dd-MM-yyyy'}}</div>
-  $else$
-  <div ng-repeat="row in val['$name$'] track by \$index">
-    {{row}}
-  </div>
-  $endif$
-$endif$
+$if(verbose)$<!-- Atomic-DATE.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$endif$<div style="min-width:6em;">
+	$if(isEditable)$$if(exprIsUni)$<div class="input-group" style="width:170px;">
+		<input ng-model="val['$name$']" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker[key+'-$name$'].open" ng-blur="put(ResourceId)"/>
+		<span class="input-group-btn">
+			<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, key+'-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>
+		</span>
+	</div>$else$<div ng-repeat="row in val['$name$'] track by \$index">
+		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+		<span>{{row | date : 'dd-MM-yyyy'}}</span>
+	</div>
+	<div my-showonhover-box class="input-group" ng-controller="addItemController" style="width:170px;">
+		<input ng-model="selected.value" type="text" class="form-control input-sm" datepicker-popup="dd-MM-yyyy" is-open="datepicker['new-$name$'].open" ng-blur="addItem(val, '$name$', selected, ResourceId)"/>
+		<span class="input-group-btn">
+			<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event, 'new-$name$')"><i class="glyphicon glyphicon-calendar"></i></button>
+		</span>
+	</div>$endif$$else$$if(exprIsUni)$<div>{{val['$name$'] | date : 'dd-MM-yyyy'}}</div>$else$<div ng-repeat="row in val['$name$'] track by \$index">{{row | date : 'dd-MM-yyyy'}}</div>$endif$$endif$
 </div>

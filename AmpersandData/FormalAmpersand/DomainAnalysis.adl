@@ -33,7 +33,7 @@ PROCESS "Defining type-terms"
       ROLE ExecEngine MAINTAINS "cod is total"
     RULE "popset is total" : 
       I[Concept] |- popset;popset~
-      VIOLATION (TXT "{EX}_; InsPair_;pop_;Concept_;", SRC I, TXT "_;TypeTerm_;popset(", SRC I, TXT ")")
+      VIOLATION (TXT "{EX}_; InsPair_;popset_;Concept_;", SRC I, TXT "_;TypeTerm_;popset(", SRC I, TXT ")")
       ROLE ExecEngine MAINTAINS "popset is total"
 ENDPROCESS
 
@@ -59,15 +59,24 @@ ENDPROCESS
 
 PROCESS "Domain Analysis for Rules" -- This includes both equalities (e.g. r = s) and inequalities (e.g. r |- s)
     CONCEPT Rule ""
-    RELATION lhsTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
-    RELATION rhsTerm[Rule*Term] [UNI] -- @Stef: Haal jij deze weg? Worden niet gevuld vanuit Meatgrinder
- 
+    RELATION rrexp[Rule*Term] [UNI]
+    VIEW Relation : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
+
+    CLASSIFY Equivalence ISA BinaryTerm
+    VIEW Equivalence : Equivalence(TXT "RULE ", first, TXT " = ", second)
+
+    CLASSIFY Inclusion ISA BinaryTerm
+    VIEW Inclusion : Inclusion(TXT "RULE ", first, TXT " |- ", second)
+
+    CLASSIFY Truth ISA Term
+    VIEW Truth : Truth(TXT "RULE ", I[Term])
+
     ROLE ExecEngine MAINTAINS domainDomRule
-    RULE domainDomRule : dom~;lhsTerm~;rhsTerm;dom \/ dom~;rhsTerm~;lhsTerm;dom |- sub
+    RULE domainDomRule : dom~;first~;(I[Equivalence]\/I[Inclusion]);second;dom \/ dom~;second~;(I[Equivalence]\/I[Inclusion]);first;dom |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 
     ROLE ExecEngine MAINTAINS domainCodRule
-    RULE domainCodRule : cod~;lhsTerm~;rhsTerm;cod \/ cod~;rhsTerm~;lhsTerm;cod |- sub
+    RULE domainCodRule : cod~;first~;(I[Equivalence]\/I[Inclusion]);second;cod \/ cod~;second~;(I[Equivalence]\/I[Inclusion]);first;cod |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
 ENDPROCESS
 
@@ -260,8 +269,8 @@ ENDPROCESS
 PROCESS "Domain Analysis for Right residual"
     VIEW RightResidual : RightResidual(TXT "(", first, TXT "\\", second, TXT ")")
     CLASSIFY RightResidual ISA BinaryTerm
-    RELATION rResidualSource[RightResidual*TypeTerm]
-    RELATION rResidualTarget[RightResidual*TypeTerm]
+    RELATION rResidualSource[RightResidual*TypeTerm] [UNI]
+    RELATION rResidualTarget[RightResidual*TypeTerm] [UNI]
 
     ROLE ExecEngine MAINTAINS rightResSrcTerm
     RULE rightResSrcTerm : I[RightResidual] |- rResidualSource;rResidualSource~
@@ -305,20 +314,12 @@ PROCESS "Analysing terms"
     RELATION pretype[TypeTerm*Concept]
 
     ROLE ExecEngine MAINTAINS "Insert into pretype"
-    RULE "Insert into pretype" : subStar;popset~ |- pretype
+    RULE "Insert into pretype" : subStar;popset~-subStar;popset~;isa |- pretype
     VIOLATION (TXT "{EX}_; InsPair_;pretype_;TypeTerm_;", SRC I, TXT "_;Concept_;", TGT I)
 
     ROLE ExecEngine MAINTAINS "INS isa INTO sub"
     RULE "INS isa INTO sub" : popset~;isa;popset |- sub
     VIOLATION (TXT "{EX}_; InsPair_;sub_;TypeTerm_;", SRC I, TXT "_;TypeTerm_;", TGT I)
-ENDPROCESS
-
-PROCESS "Superfluous terms"
-    ROLE ExecEngine MAINTAINS garbageTerm
-    RULE garbageTerm :
-      I[Term] |- lhsTerm~;lhsTerm \/ rhsTerm~;rhsTerm \/
-                 first~;first \/ second~;second
---  VIOLATION ( TXT "{EX} DelAtom;Term;", SRC I )
 ENDPROCESS
 
 ENDCONTEXT

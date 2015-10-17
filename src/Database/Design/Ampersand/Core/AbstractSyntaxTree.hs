@@ -23,6 +23,8 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , SubInterface(..)
  , ObjectDef(..)
  , Object(..)
+ , Cruds(..)
+ , Default(..)
  , objAts
  , Purpose(..)
  , ExplObj(..)
@@ -67,6 +69,7 @@ import Data.Char (toUpper,toLower)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
+import Data.Default
 import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 
 fatal :: Int -> String -> a
@@ -186,7 +189,7 @@ ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p
                              -- NOTE: currently all rules coming from properties are invariants, so the not isSignal
                              -- condition is unnecessary, but this will change in the future.
 
-data RuleType = Implication | Equivalence | Truth  deriving (Eq,Show)
+data RuleType = Inclusion | Equivalence | Truth  deriving (Eq,Show)
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)
@@ -400,6 +403,7 @@ instance Object ObjectDef where
 data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                      , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
                      , objctx ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
+                     , objcrud ::  Cruds -- ^ CRUD as defined by the user 
                      , objmView :: Maybe String   -- ^ The view that should be used for this object
                      , objmsub ::  Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
                      , objstrs ::  [[String]]     -- ^ directives that specify the interface.
@@ -408,7 +412,19 @@ instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
   origin = objpos
-
+data Cruds = Cruds { crudOrig :: Origin
+                   , crudC :: Maybe Bool
+                   , crudR :: Maybe Bool
+                   , crudU :: Maybe Bool
+                   , crudD :: Maybe Bool
+                   } deriving (Eq, Show)
+instance Default Cruds where
+  def = Cruds { crudOrig = Origin "Dummy default Origin"
+              , crudC    = Nothing
+              , crudR    = Nothing
+              , crudU    = Nothing
+              , crudD    = Nothing
+              }
 data SubInterface = Box A_Concept (Maybe String) [ObjectDef]
                   | InterfaceRef Bool -- is LINKTO?
                                  String deriving (Eq, Show)
@@ -592,7 +608,7 @@ instance Unique ExplObj where
 
 data Expression
       = EEqu (Expression,Expression)   -- ^ equivalence             =
-      | EImp (Expression,Expression)   -- ^ implication             |-
+      | EInc (Expression,Expression)   -- ^ inclusion               |-
       | EIsc (Expression,Expression)   -- ^ intersection            /\
       | EUni (Expression,Expression)   -- ^ union                   \/
       | EDif (Expression,Expression)   -- ^ difference              -
@@ -620,7 +636,7 @@ instance Hashable Expression where
      s `hashWithSalt`
        case expr of
         EEqu (a,b) -> ( 0::Int) `hashWithSalt` a `hashWithSalt` b
-        EImp (a,b) -> ( 1::Int) `hashWithSalt` a `hashWithSalt` b
+        EInc (a,b) -> ( 1::Int) `hashWithSalt` a `hashWithSalt` b
         EIsc (a,b) -> ( 2::Int) `hashWithSalt` a `hashWithSalt` b
         EUni (a,b) -> ( 3::Int) `hashWithSalt` a `hashWithSalt` b
         EDif (a,b) -> ( 4::Int) `hashWithSalt` a `hashWithSalt` b
@@ -649,7 +665,7 @@ instance Unique (PairViewSegment Expression) where
 
 (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 infixl 1 .==.   -- equivalence
-infixl 1 .|-.   -- implication
+infixl 1 .|-.   -- inclusion
 infixl 2 ./\.   -- intersection
 infixl 2 .\/.   -- union
 infixl 4 .-.    -- difference
@@ -664,7 +680,7 @@ infixl 8 .*.    -- cartesian product
 l .==. r = if source l/=source r ||  target l/=target r then fatal 424 ("Cannot equate (with operator \"==\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EEqu (l,r)
 l .|-. r = if source l/=source r ||  target l/=target r then fatal 426 ("Cannot include (with operator \"|-\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
-           EImp (l,r)
+           EInc (l,r)
 l ./\. r = if source l/=source r ||  target l/=target r then fatal 428 ("Cannot intersect (with operator \"/\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EIsc (l,r)
 l .\/. r = if source l/=source r ||  target l/=target r then fatal 430 ("Cannot unite (with operator \"\\/\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
@@ -692,7 +708,7 @@ l .*. r  = -- SJC: always fits! No fatal here..
 instance Flippable Expression where
   flp expr = case expr of
                EEqu (l,r) -> EEqu (flp l, flp r)
-               EImp (l,r) -> EImp (flp l, flp r)
+               EInc (l,r) -> EInc (flp l, flp r)
                EIsc (l,r) -> EIsc (flp l, flp r)
                EUni (l,r) -> EUni (flp l, flp r)
                EDif (l,r) -> EDif (flp l, flp r)
@@ -715,7 +731,7 @@ instance Flippable Expression where
 
 instance Association Expression where
  sign (EEqu (l,r)) = Sign (source l) (target r)
- sign (EImp (l,r)) = Sign (source l) (target r)
+ sign (EInc (l,r)) = Sign (source l) (target r)
  sign (EIsc (l,r)) = Sign (source l) (target r)
  sign (EUni (l,r)) = Sign (source l) (target r)
  sign (EDif (l,r)) = Sign (source l) (target r)

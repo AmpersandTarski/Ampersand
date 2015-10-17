@@ -33,6 +33,7 @@ executable ampersand
                      bytestring == 0.10.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
+                     data-default >=0.5 && <0.6,
                      directory == 1.2.*,
                      hashable == 1.2.*,
                      old-locale == 1.0.*,
@@ -180,6 +181,7 @@ Test-Suite ampersand-test
                      bytestring == 0.10.*,
                      conduit == 1.2.*,
                      containers == 0.5.*,
+                     data-default >=0.5 && <0.6,
                      directory == 1.2.*,
                      hashable == 1.2.*,
                      lens == 4.12.*,
@@ -192,8 +194,7 @@ Test-Suite ampersand-test
                      QuickCheck == 2.8.*,
                      xlsx == 0.1.*,
                      wl-pprint == 1.2.*,
-                     zlib == 0.6.*
-
+                     lens
 
   if impl(ghc < 7.10)
       build-depends: filepath == 1.3.*,

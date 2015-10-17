@@ -1,17 +1,13 @@
-<!-- Atomic-Object.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-$if(isEditable)$
-  <div ng-repeat="(key, row) in val['$name$'] track by row.id">
-  	<div>
-      <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
-      <my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"></my-nav-to-interfaces>
-    </div>
-  </div>
-  <!-- Input to add new link to another resource -->
-  <div $if(exprIsUni)$ng-if="!val['$name$']"$endif$ my-showonhover-box ng-controller="addObjectController">
-    <input ng-model="selected.label" type="text" class="input-sm" placeholder="Add new" typeahead="item['@label'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="false" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, val, '$name$', ResourceId); selected.label=''">
-  </div>
-$else$
-  <div ng-repeat="(key, row) in val['$name$'] track by row.id">
-    <my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"></my-nav-to-interfaces>
-  </div>
-$endif$
+$if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$endif$$if(isEditable)$<div ng-repeat="(key, row) in val['$name$'] track by row.id">
+	<div>
+		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
+		<my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"></my-nav-to-interfaces>
+	</div>
+</div>
+<!-- Input to add new link to another resource -->
+<div $if(exprIsUni)$ng-if="!val['$name$']"$endif$ my-showonhover-box ng-controller="addObjectController">
+	<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add new" typeahead="item['@label'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="false" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, val, '$name$', ResourceId); selected.label=''">
+</div>$else$<div ng-repeat="(key, row) in val['$name$'] track by row.id">
+	<my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"></my-nav-to-interfaces>
+</div>$endif$

@@ -1,30 +1,38 @@
-<!-- BOX<SCOLS> "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
-<table si-table class="table table-striped table-hover table-condensed">
-  <thead>
-    <tr>
-      $if(isEditable)$<th></th><!-- empty header because relation is editable -->$endif$
-      $subObjects:{subObj|<th$if(subObj.subObjExprIsUni)$ sort-by="_sortValues_['$subObj.subObjName$']"$endif$>$subObj.subObjLabel$</th>
-      }$
-      $if(isRoot)$<th></th><!-- delete/save resource-->$endif$
-    </tr>
-  </thead>
-  <tbody $if(isEditable)$ng-init="parent = val['$name$']"$endif$>
-    <tr si-sortable class="box" ng-repeat="(key, val) in val['$name$'] | toArray" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>
-      $if(isEditable)$<td>
-        <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span>
-      </td>$endif$
-      $subObjects:{subObj|<!-- BOX<SCOLS> CHILD: "$subObj.subObjLabel$" -->
-      <td class="row-content">
-$subObj.subObjContents$
-      </td>
-      }$
-      $if(isRoot)$
-      <td>
-        <button type="button" class="btn btn-warning btn-xs" ng-if="showSaveButton[ResourceId]" ng-click="put(ResourceId, 'promise')">Save</button>
-        <button type="button" class="btn btn-danger btn-xs" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
-        <!--<a my-showonhover-box href="" ng-click="deleteResource(ResourceId)"><span class="glyphicon glyphicon-trash"/></a>-->
-        <div style="float:right;" cg-busy="{promise:myPromises[ResourceId],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
-      </td>$endif$
-    </tr>
-  </tbody>
+$if(verbose)$<!-- Box-SCOLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
+$endif$<table si-table class="table table-striped table-hover table-condensed">
+	<thead>
+		<tr>$if(isEditable)$
+			<th></th>$if(verbose)$<!-- empty header because relation is editable -->$endif$$endif$$subObjects:{subObj|
+			<th$if(subObj.subObjExprIsUni)$ class="sortable-col" sort-by="_sortValues_['$subObj.subObjName$']"$endif$>$subObj.subObjLabel$</th>}$$if(isRoot)$
+			<th>$if(crudC)$
+				<a ng-hide="loadingResources['_new_'].length" href="" ng-click="addNewResource(true)"><span class="glyphicon glyphicon-plus"/></a>
+				<span cg-busy="{promise:loadingResources['_new_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"/>$endif$
+			</th>$endif$
+		</tr>
+	</thead>
+	<tbody$if(isEditable)$ ng-init="parent = val['$name$']"$endif$>
+		<tr si-sortable class="box" ng-repeat="(key, val) in val['$name$'] | toArray" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>$if(isEditable)$
+			<td><span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span></td>$endif$$subObjects:{subObj|
+			$if(verbose)$<!-- $subObj.subObjLabel$ -->
+			$endif$<td class="row-content">
+				$subObj.subObjContents$
+			</td>}$$if(isRoot)$
+			<td>
+				<button type="button" class="btn btn-warning btn-xs" ng-if="showSaveButton[ResourceId]" ng-click="put(ResourceId, 'promise')">Save</button>
+				<button type="button" class="btn btn-danger btn-xs" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
+				$if(crudD)$<a my-showonhover-box href="" ng-click="deleteResource(ResourceId)"><span class="glyphicon glyphicon-trash"/></a>$endif$
+				<div style="float:right;" cg-busy="{promise:loadingResources[ResourceId],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
+			</td>$endif$
+		</tr>
+	</tbody>
+	<tfoot>
+		<tr>$if(isEditable)$
+			<td></td>$endif$$subObjects:{subObj|
+			<td></td>}$$if(isRoot)$
+			<td>$if(crudC)$
+				<a ng-hide="loadingResources['_new_'].length" href="" ng-click="addNewResource(false)"><span class="glyphicon glyphicon-plus"/></a>
+				<span cg-busy="{promise:loadingResources['_new_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"/>$endif$
+			</td>$endif$
+		</tr>
+	</tfoot>
 </table>

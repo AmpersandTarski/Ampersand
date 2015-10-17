@@ -2,10 +2,10 @@
 <div id="header" ng-include="'app/views/static_header.html'"></div>
 
 <!-- NAVIGATION BAR -->
-<div id="navbar" ng-include="'app/views/static_navigationBar.html'"></div>
+<div id="navbar" ng-include="'app/views/static_navigationBar.html'" cg-busy="{promise:loadingNavBar}"></div>
 
 <!-- MAIN -->
-<div id="main" class="container" cg-busy="myPromises">
+<div id="main" class="container">
 	<!-- Breadcrumb -->
 	<div ng-include="'app/views/static_breadcrumb.html'"></div>
 	

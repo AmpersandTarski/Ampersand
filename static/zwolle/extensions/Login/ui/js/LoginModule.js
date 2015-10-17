@@ -7,7 +7,7 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, L
 	
 	LoginRestangular.one('login').get().then(
 		function(data){ // success
-			$scope.loginUrl = data.loginUrl;
+			$scope.idps = data.identityProviders;
 			$rootScope.updateNotifications(data.notifications);
 			
 		}, function(){ // error

@@ -48,6 +48,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
          ,ViewDef(..)
          ,ViewSegment(..)
          ,ObjectDef(..)
+         , Default(..)
          ,SubInterface(..)
          ,Declaration(..),decusr
          ,Interface(..)

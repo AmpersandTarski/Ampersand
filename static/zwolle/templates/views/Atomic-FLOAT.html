@@ -1,16 +1,12 @@
-<!-- Atomic-FLOAT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-<div>$if(isEditable)$
-  <div class="input-group" style="min-width:60px;">$if(exprIsUni)$
-    <input ng-model="val['$name$']" my-bluronenter type="number" class="form-control input-sm" ng-blur="put(ResourceId)">$else$
-	<div ng-repeat="row in val['$name$'] track by \$index">
-	  <span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
-	  <span>{{row}}</span>
-	</div>
-	<div my-showonhover-box ng-controller="addItemController">
-	  <input ng-model="selected.value" my-bluronenter type="number" placeholder="Add value" class="form-control input-sm" ng-blur="addItem(val, '$name$', selected, ResourceId)">
-	</div>$endif$
-  </div>$else$$if(exprIsUni)$
-  <div>{{val['$name$']}}</div>$else$<div ng-repeat="row in val['$name$'] track by \$index">
-    {{row}}
-  </div>$endif$$endif$
+$if(verbose)$<!-- Atomic-FLOAT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$endif$<div>
+	$if(isEditable)$<div class="input-group" style="min-width:60px;">
+		$if(exprIsUni)$<input ng-model="val['$name$']" my-bluronenter type="number" class="form-control input-sm" ng-blur="put(ResourceId)">$else$<div ng-repeat="row in val['$name$'] track by \$index">
+			<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+			<span>{{row}}</span>
+		</div>
+		<div my-showonhover-box ng-controller="addItemController">
+			<input ng-model="selected.value" my-bluronenter type="number" placeholder="Add value" class="form-control input-sm" ng-blur="addItem(val, '$name$', selected, ResourceId)">
+		</div>$endif$
+	</div>$else$$if(exprIsUni)$<div>{{val['$name$']}}</div>$else$<div ng-repeat="row in val['$name$'] track by \$index">{{row}}</div>$endif$$endif$
 </div>

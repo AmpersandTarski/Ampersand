@@ -10,6 +10,11 @@ class InterfaceObject {
 	public $invariantConjuctsIds;
 	public $signalConjunctsIds;
 	
+	public $crudC;
+	public $crudR;
+	public $crudU;
+	public $crudD;
+	
 	public $relation; 
 	public $relationIsFlipped;
 	public $univalent;
@@ -46,6 +51,12 @@ class InterfaceObject {
 		
 		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
+		
+		// CRUD rights
+		$this->crudC = is_null($interface['crudC']) ? Config::get('defaultCrudC') : $interface['crudC'];
+		$this->crudR = is_null($interface['crudR']) ? Config::get('defaultCrudR') : $interface['crudR'];
+		$this->crudU = is_null($interface['crudU']) ? Config::get('defaultCrudU') : $interface['crudU'];
+		$this->crudD = is_null($interface['crudD']) ? Config::get('defaultCrudD') : $interface['crudD'];
 		
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 

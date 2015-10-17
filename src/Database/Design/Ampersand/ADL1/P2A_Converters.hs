@@ -18,6 +18,7 @@ import Data.Foldable (toList)
 import Data.Function
 import Data.Maybe
 import Data.List(nub)
+import Data.Char(toUpper,toLower)
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.P2A_Converters"
@@ -445,20 +446,38 @@ pCtx2aCtx' _
     typecheckObjDef o@(P_Obj { obj_nm = nm
                              , obj_pos = orig
                              , obj_ctx = ctx
+                             , obj_crud = mCrud
                              , obj_mView = mView
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
      = unguard $
-        (\ (objExpr,(srcBounded,tgtBounded)) ->
+        (\ (objExpr,(srcBounded,tgtBounded)) crud ->
             (\case
-               Just (newExpr,subStructures) -> obj (newExpr,srcBounded) (Just subStructures)
-               Nothing -> obj (objExpr,srcBounded) Nothing
+               Just (newExpr,subStructures) -> obj crud (newExpr,srcBounded) (Just subStructures)
+               Nothing                      -> obj crud (objExpr,srcBounded) Nothing
             )
             <$> maybeOverGuarded (pSubi2aSubi objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
         ) <$> typecheckTerm ctx
+          <*> checkCrud mCrud
      where      
-      
+      checkCrud :: Maybe P_Cruds -> Guarded Cruds
+      checkCrud Nothing = pure def
+      checkCrud (Just (P_Cruds org str )) 
+        = if nub us == us && all (\c -> c `elem` "cCrRuUdD") str
+          then pure Cruds { crudOrig = org
+                          , crudC    = f 'C'
+                          , crudR    = f 'R'
+                          , crudU    = f 'U'
+                          , crudD    = f 'D'
+              }
+          else Errors [mkInvalidCRUDError orig str]
+         where us = map toUpper str
+               f :: Char -> Maybe Bool
+               f c 
+                 | toUpper c `elem` str = Just True
+                 | toLower c `elem` str = Just False
+                 | otherwise            = Nothing    
       lookupView :: String -> Maybe P_ViewDef
       lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
                             []   -> Nothing
@@ -475,10 +494,11 @@ pCtx2aCtx' _
           Nothing -> Errors [mkUndeclaredError "view" o viewId] 
      
       
-      obj (e,sr) s
+      obj crud (e,sr) s
        = ( Obj { objnm = nm
                , objpos = orig
                , objctx = e
+               , objcrud = crud
                , objmView = mView
                , objmsub = s
                , objstrs = ostrs
@@ -542,12 +562,12 @@ pCtx2aCtx' _
                                    _      -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
          PEqu _ a b -> unguard $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PImp _ a b -> unguard $ binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <$> tt a <*> tt b
+         PInc _ a b -> unguard $ binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <$> tt a <*> tt b
          PIsc _ a b -> unguard $ binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
          PUni _ a b -> unguard $ binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
          PDif _ a b -> unguard $ binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PLrs _ a b -> unguard $ binary' (./.)  (MBG (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <$> tt a <*> tt b
-         PRrs _ a b -> unguard $ binary' (.\.)  (MBG (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <$> tt a <*> tt b
+         PLrs _ a b -> unguard $ binary' (./.)  (MBE (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <$> tt a <*> tt b
+         PRrs _ a b -> unguard $ binary' (.\.)  (MBE (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <$> tt a <*> tt b
          PDia _ a b -> unguard $ binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- MBE would have been correct, but too restrictive
          PCps _ a b -> unguard $ binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b
          PRad _ a b -> unguard $ binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan

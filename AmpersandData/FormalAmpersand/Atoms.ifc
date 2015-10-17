@@ -2,40 +2,41 @@
 INCLUDE "Atoms.adl"
 INCLUDE "Atoms.xlsx"
 
-INTERFACE Overview : '_SESSION'[SESSION]
+REPRESENT Atom TYPE ALPHANUMERIC
+
+INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]
+           , name       : name
            , "pair(s)"  : in~
            , sources    : sources
            , targets    : targets
            ]
     , concepts :V[SESSION*Concept]
       BOX<SCOLS>
-           [ name    : I[Concept]
+           [ name         : name
            , "isa"   : isa
 --           , "isa+"  : isaPlus
 --           , "isa*"  : isaStar
            , "isa~"  : isa~
 --           , "isa+~" : isaPlus~
 --           , "isa*~" : isaStar~
-           , atoms   : pop~
+           , atoms        : pop~
            ]
     , pairs : V[SESSION*Pair]
       BOX<SCOLS>
-           [ pair          : I
-           , "relation(s)" : in
+           [ pair           : I[Pair]
+           , "relation(s)"  : in
            ]
-    , atoms : V[SESSION*Atom]
-      BOX<SCOLS>
-           [ atom : I
-           , type : pop - pop;isaPlus
-           , pop  : pop
-           ]
+--    , atoms : V[SESSION*Atom]
+--      BOX<SCOLS>
+--           [ atom : I
+--           , "smallest concept(s)" : pop - pop;isaPlus
+--           , pop  : pop
+--           ]
     ]
 
---VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
-REPRESENT Atom TYPE ALPHANUMERIC
 VIEW Concept : Concept(name)
 VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")

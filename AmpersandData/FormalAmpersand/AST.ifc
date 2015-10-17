@@ -3,6 +3,7 @@ CONTEXT "AST Interface" IN ENGLISH
 INTERFACE Ampersand FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Context : V[SESSION*Context]
     COLS ["name" : name[Context*ContextIdentifier]
+         , patterns : usedPatterns
          ]
     , "Patterns" : V[SESSION*Pattern]
     COLS [ Pattern : name[Pattern*PatternIdentifier]

@@ -6,7 +6,7 @@ $GLOBALS['hooks']['before_API_getAllNotifications_getViolations'][] = 'ExecEngin
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
 
 // Zet extension in applications menu
-$GLOBALS['navBar']['appMenu'][] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
+$GLOBALS['navBar']['refreshMenu'][] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
 
 class ExecEngine {
 	
@@ -129,9 +129,17 @@ class ExecEngine {
 				$rows = $database->Exe($query);
 				
 				// returning the result
-				if(count($rows) > 1) throw new Exception('Expression of pairview results in more than one tgt atom', 501); // 501: Not implemented
-				elseif(count($rows) == 0) $pairStrs[] = '_NULL';
-				else $pairStrs[] = str_replace(array('{EX}','{php}'), '', $rows[0]['tgt']); // prevent php interpreter by user input
+				//if(count($rows) > 1) throw new Exception('Expression of pairview results in more than one tgt atom', 501); // 501: Not implemented
+				if(count($rows) == 0) $pairStrs[] = '_NULL';
+				else{
+					$str = '';
+					foreach ($rows as $row){
+						$str .= $row['tgt'] . '_AND';
+					}
+					$str = substr($str, 0, -4); // strip the last _AND
+					$pairStrs[] = str_replace(array('{EX}','{php}'), '', $str); // prevent php interpreter by user input
+				}
+				// else $pairStrs[] = str_replace(array('{EX}','{php}'), '', $rows[0]['tgt']); // prevent php interpreter by user input
 
 			// unknown segment
 			}else{

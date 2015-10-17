@@ -1,18 +1,21 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Terms.adl"
+INCLUDE "Views.adl"
+INCLUDE "Terms.xlsx"
 
-INTERFACE Contexts (relations) : '_SESSION'
+INTERFACE Contexts (valid,relations) : '_SESSION'
 TABS[ "" : V[SESSION*Context]
       ROWS [ context        : I
---           , "valid rules"  : valid~
+           , "valid rules"  : valid~
            , relations      : relations
            ]
     ]
 
-INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) FOR User : '_SESSION'
+INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : '_SESSION'
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
-           [ relation   : name
+           [ relation   : I
+           , name       : name
            , source     : source
            , target     : target
            ]
@@ -34,71 +37,63 @@ TABS[ relations : V[SESSION*Relation]
            ]
     ]
 
-INTERFACE Atoms : '_SESSION'
-TABS[ concepts :V[SESSION*Concept]
+INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
+TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
-           [ name         : I[Concept]
---            , "isa"        : isa
---            , "isa+"       : isaPlus
---            , "isa~"       : isa~
---            , "isa+~"      : isaPlus~
-           , atoms        : pop~
-           , "type-term"  : popset
+           [ relation   : I[Relation]
+           , name       : name
+           , "pair(s)"  : in~
+           , sources    : sources
+           , targets    : targets
            ]
-    , atoms : V[SESSION*Atom]
+    , concepts :V[SESSION*Concept]
       BOX<SCOLS>
-           [ repr : I
-           , "smallest concept(s)" : pop - pop;isaPlus
-           , pop  : pop
+           [ name         : name
+           , "isa"   : isa
+--           , "isa+"  : isaPlus
+--           , "isa*"  : isaStar
+           , "isa~"  : isa~
+--           , "isa+~" : isaPlus~
+--           , "isa*~" : isaStar~
+           , atoms        : pop~
            ]
     , pairs : V[SESSION*Pair]
       BOX<SCOLS>
            [ pair           : I[Pair]
            , "relation(s)"  : in
            ]
-    , relations : V[SESSION*Relation]
-      BOX<SCOLS>
-           [ relation   : I[Relation]
-           , "pair(s)"  : in~
-           , sources    : sources
-           , targets    : targets
-           ]
-    , garbage : V[SESSION*Atom];(I - pop;pop~)
-      COLS [ repr : repr
-           ]
+--    , atoms : V[SESSION*Atom]
+--      BOX<SCOLS>
+--           [ atom : I
+--           , "smallest concept(s)" : pop - pop;isaPlus
+--           , pop  : pop
+--           ]
     ]
 
-VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
-
-INTERFACE Atom(repr[Atom*Representation]) FOR Ampersand : I[Atom]
-ROWS [ repr : repr
-     ]
-
+REPRESENT Atom TYPE ALPHANUMERIC
+--VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 VIEW Concept : Concept(name)
+VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+VIEW Equivalence : Equivalence(TXT "RULE ", first, TXT " = ", second)
 
-INTERFACE Concept(name[Concept*Identifier],isa) FOR Ampersand : I[Concept]
+INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
 ROWS [ name             : name
      , generalizations  : isa
      , specializations  : isa~
      ]
 
-VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
-
-INTERFACE Pair(l,r,in[Pair*Relation]) FOR Ampersand: I[Pair]
-ROWS [ pair           : I
+INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+ROWS [ "relation(s)"  : in
      , l              : l
      , r              : r
-     , "relation(s)"  : in
      ]
 
-VIEW Relation : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
-
-INTERFACE Relation(name[Relation*Identifier], source, target) FOR Ampersand: I[Relation]
+INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
 ROWS [ name    : name
      , source  : source
      , target  : target
      ]
 
-VIEW Rule : Rule(TXT "RULE ", lhsTerm, TXT " = ", rhsTerm)
 
 ENDCONTEXT

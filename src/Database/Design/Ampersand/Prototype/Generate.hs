@@ -148,6 +148,8 @@ generateDBstructQueries fSpec =
                                  )
                             )
                         )
+                     ++ [" , "++show "ts_insert"++" TIMESTAMP DEFAULT CURRENT_TIMESTAMP"]
+                     ++ [" , "++show "ts_update"++" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL"]
                      ++ [" ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"]
                    )
           ]
@@ -579,8 +581,12 @@ genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
              [ "      , 'relation' => '' // this interface expression does not represent a declared relation"
              , "      , 'relationIsFlipped' => ''"
              ] 
-  ++ [ "      , 'srcConcept' => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (if there is one), 
-     , "      , 'tgtConcept' => "++showPhpStr (name tgtConcept) -- which may be flipped.
+  ++ [ "      , 'srcConcept'    => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (if there is one), 
+     , "      , 'tgtConcept'    => "++showPhpStr (name tgtConcept) -- which may be flipped.
+     , "      , 'crudC'         => "++ (showPhpMaybeBool . crudC . objcrud $ object)
+     , "      , 'crudR'         => "++ (showPhpMaybeBool . crudR . objcrud $ object)
+     , "      , 'crudU'         => "++ (showPhpMaybeBool . crudU . objcrud $ object)
+     , "      , 'crudD'         => "++ (showPhpMaybeBool . crudD . objcrud $ object)
      , "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
      , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
      , "      , 'exprIsProp'    => " ++ showPhpBool (isProp normalizedInterfaceExp) 

@@ -413,6 +413,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                            <*> pTerm
                            <*> return Nothing
                            <*> return Nothing
+                           <*> return Nothing
                            <*> return []
 
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
@@ -445,7 +446,7 @@ pViewDefLegacy = P_Vd <$> currPos
                          P_ViewHtml fat <$ pKey "PRIMHTML" <*> pString
                where fat = fatal 399 "numbering is done a little later."
 
---- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term SubInterface
+--- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term (ADLid | Conid)? SubInterface
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       <*>
                      (pKey "INTERFACE" *> pADLid)                  <*>
@@ -453,10 +454,11 @@ pInterface = lbl <$> currPos                                       <*>
                      optList pParams                               <*> -- a list of expressions, which say which relations are editable within this service.
                      optList pArgs                                 <*> -- either  Prel _ nm or  PNamedRel _ nm sgn
                      optList pRoles                                <*>
-                     (pColon *> pTerm)                             <*>
+                     (pColon *> pTerm)                             <*> -- the expression of the interface object
+                     pMaybe pCruds                                 <*> -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                      pSubInterface
-    where lbl :: Origin -> String -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> Term TermPrim -> P_SubInterface -> P_Interface
-          lbl p nm iclass params args roles term sub
+    where lbl :: Origin -> String -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> P_SubInterface -> P_Interface
+          lbl p nm iclass params args roles term mCrud sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
                      , ifc_Params = params
@@ -465,6 +467,7 @@ pInterface = lbl <$> currPos                                       <*>
                      , ifc_Obj    = P_Obj { obj_nm   = nm
                                           , obj_pos  = p
                                           , obj_ctx  = term
+                                          , obj_crud = mCrud
                                           , obj_mView = Nothing
                                           , obj_msub = Just sub
                                           , obj_strs = args
@@ -495,11 +498,15 @@ pObjDef :: AmpParser P_ObjectDef
 pObjDef = obj <$> currPos
               <*> pLabelProps
               <*> pTerm            -- the context expression (for example: I[c])
+              <*> pMaybe pCruds
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj pos (nm, args) ctx mView msub =
-                 P_Obj nm pos ctx mView msub args
-
+         where obj pos (nm, args) ctx mCrud mView msub =
+                 P_Obj nm pos ctx mCrud mView msub args
+--- Cruds ::= ADLid | Conid
+pCruds :: AmpParser P_Cruds
+pCruds = P_Cruds <$> currPos 
+                 <*> (pADLid <|> pConid)
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
 pBox = pBrackets $ pObjDef `sepBy1` pComma
@@ -608,7 +615,7 @@ pMarkup = P_Markup
 -- | Parses a rule
 pRule :: AmpParser (Term TermPrim) -- ^ The rule parser
 pRule  =  pTerm <??> (invert PEqu  <$> currPos <* pOperator "="  <*> pTerm <|>
-                      invert PImp  <$> currPos <* pOperator "|-" <*> pTerm)
+                      invert PInc  <$> currPos <* pOperator "|-" <*> pTerm)
 
 
 {-
@@ -707,7 +714,8 @@ value2PAtomValue o v = case v of
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
 pAtt = rebuild <$> currPos <*> try pLabelProps `opt` ("",[]) <*> try pTerm
-  where rebuild pos (nm, strs) ctx = P_Obj nm pos ctx mView msub strs
+  where rebuild pos (nm, strs) ctx = P_Obj nm pos ctx mCrud mView msub strs
+        mCrud = Nothing
         mView = Nothing
         msub = Nothing
 

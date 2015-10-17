@@ -82,7 +82,7 @@ class Role {
 		return false; // when $roleName is not found in $allRoles
 	}
 	
-	public function getInterfacesForConcept($concept){
+	private function getInterfacesForConcept($concept){
 		$interfaces = array();
 		
 		foreach($this->getSessionInterfaces() as $interface){
@@ -93,10 +93,19 @@ class Role {
 		return $interfaces;
 	}
 	
+	public function getInterfacesToReadConcept($concept){
+		$interfaces = array();
+		
+		foreach($this->getInterfacesForConcept($concept) as $interface){
+			if($interface->crudR) $interfaces[] = $interface;
+		}
+		return $interfaces;
+	}
+	
 	public function getInterfacesForNavBar(){
 		$interfaces = array();
 		foreach($this->interfaces as $interface){
-			if($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') $interfaces[] = $interface;
+			if(($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') && $interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
@@ -104,7 +113,8 @@ class Role {
 	public function getInterfacesToCreateAtom(){
 		$interfaces = array();
 		foreach($this->interfaces as $interface){
-			if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
+			//if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
+			if($interface->crudC && $interface->isIdent) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}

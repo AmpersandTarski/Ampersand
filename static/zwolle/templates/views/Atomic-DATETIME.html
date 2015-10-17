@@ -1,0 +1,4 @@
+$if(verbose)$<!-- Atomic-DATETIME.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$endif$<div style="min-width:6em;">
+	$if(isEditable)$<span>Not yet implemented</span>$else$$if(exprIsUni)$<div>{{val['$name$'] | date : 'yyyy-MM-dd HH:mm:ss Z'}}</div>$else$<div ng-repeat="row in val['$name$'] track by \$index">{{row | date : 'yyyy-MM-dd HH:mm:ss Z'}}</div>$endif$$endif$
+</div>

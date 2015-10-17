@@ -250,6 +250,7 @@ instance MakeMeta a => MakeMeta (P_ObjDef a) where
    = P_Obj { obj_nm   =          f (obj_nm obj)
            , obj_pos  = makeMeta f (obj_pos obj)
            , obj_ctx  = makeMeta f (obj_ctx obj)
+           , obj_crud =            (obj_crud obj)
            , obj_mView =           (obj_mView obj)
            , obj_msub = makeMeta f (obj_msub obj)
            , obj_strs =            (obj_strs obj)
@@ -281,7 +282,7 @@ instance MakeMeta a => MakeMeta (Term a) where
    = case t of
        Prim a     -> Prim (makeMeta f a)
        PEqu o a b -> PEqu o (makeMeta f a) (makeMeta f b)
-       PImp o a b -> PImp o (makeMeta f a) (makeMeta f b)
+       PInc o a b -> PInc o (makeMeta f a) (makeMeta f b)
        PIsc o a b -> PIsc o (makeMeta f a) (makeMeta f b)
        PUni o a b -> PUni o (makeMeta f a) (makeMeta f b)
        PDif o a b -> PDif o (makeMeta f a) (makeMeta f b)

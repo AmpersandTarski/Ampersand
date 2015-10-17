@@ -28,6 +28,8 @@
 					<li><switch ng-model="$storage.logWindowPrefs.switchShowLogWindow"> Show log window</switch></li>
 					<li class="divider" role="presentation"></li>
 					<li><switch ng-model="$storage.switchAutoCommit"> Auto commit changes</switch></li>
+					<li class="divider" role="presentation"></li>
+					<li><switch ng-model="switchDefaultSettings"> Default settings</a>
 				</ul>
 			</li>
 			
@@ -37,10 +39,12 @@
 					<li><a href="" ng-click="reload()"><span class="glyphicon glyphicon-refresh"></span> Refresh page</a></li>
 					<li><a href="#/" ng-click="destroySession()"><span class="glyphicon glyphicon-repeat"></span> Reset session</a></li>
 					<li><a href="#/installer"><span class="glyphicon glyphicon-trash"></span> Reinstall database</a></li>
+					<li ng-if="navbar.refreshMenu" class="divider" role="presentation"></li>
+					<li ng-repeat="app in navbar.refreshMenu" ng-include="app.url"/>
 				</ul>
 			</li>
 			
-			<li class="dropdown" tooltip="Select application extensions" tooltip-trigger="mouseenter" tooltip-placement="top">
+			<li ng-if="navbar.appMenu" class="dropdown" tooltip="Select application extensions" tooltip-trigger="mouseenter" tooltip-placement="top">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-th"></span></a>
 				<ul class="dropdown-menu" role="menu">
 					<li ng-repeat="app in navbar.appMenu" ng-include="app.url"/>
@@ -48,26 +52,26 @@
 				</ul>
 			</li>
 			
-			<li class="dropdown" tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="top">
-				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
-				<ul class="dropdown-menu" role="menu">
-					<li>
-						<a href="" ng-repeat="role in navbar.roles" ng-click="selectRole(role.id)">
-							{{role.label}}
-							<span ng-show="role.id == $storage.roleId" class="glyphicon glyphicon-ok pull-right"></span>
-						</a>
-					</li>
-					<li class="divider" role="presentation"></li>
-					<li ng-repeat="ext in navbar.roleMenu" ng-include="ext.url"/>
-				</ul>
-			</li>
-			
-			<li class="dropdown">
+			<li ng-if="navbar.new" class="dropdown">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown">
 					<span class="glyphicon glyphicon-plus"></span>
 				</a>
 				<ul class="dropdown-menu" role="menu">
-						<li><a href="#/{{interface.id}}?new" ng-repeat="interface in navbar.new">New {{interface.label | lowercase}}</a></li>
+						<li><a href="#/{{interface.id}}?new" ng-repeat="interface in navbar.new">{{interface.label}}</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown" tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="top">
+				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
+				<ul class="dropdown-menu" role="menu">
+					<li>
+						<a href="" ng-repeat="role in navbar.roles" ng-click="selectRole(role.id)" style="white-space:normal;">
+							{{role.label}}
+							<span ng-show="role.id == $storage.roleId" class="glyphicon glyphicon-ok pull-right"></span>
+						</a>
+					</li>
+					<li ng-if="navbar.roleMenu" class="divider" role="presentation"></li>
+					<li ng-repeat="ext in navbar.roleMenu" ng-include="ext.url"/>
 				</ul>
 			</li>
 		</ul>

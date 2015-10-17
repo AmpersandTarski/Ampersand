@@ -145,11 +145,12 @@ instance Disambiguatable P_SubIfc where
 
 instance Disambiguatable P_ObjDef where
   disambInfo (P_Obj a b c -- term/expression
+                        mCrud
                         v
                         d -- (potential) subobject
                         f)
                         env -- from the environment, only the source is important
-   = (P_Obj a b c' v d' f, Cnstr (sourceConstraintsOf env2) [] -- only source information should be relevant
+   = (P_Obj a b c' mCrud v d' f, Cnstr (sourceConstraintsOf env2) [] -- only source information should be relevant
      )
     where
      (d', env1)
@@ -172,7 +173,7 @@ instance Disambiguatable Term where
   disambInfo (PEqu o a b) env1 = ( PEqu o a' b', propagateConstraints envA envB )
    where (a', envA) = disambInfo a (propagateConstraints env1 envB)
          (b', envB) = disambInfo b (propagateConstraints env1 envA)
-  disambInfo (PImp o a b) env1 = ( PImp o a' b', propagateConstraints envA envB )
+  disambInfo (PInc o a b) env1 = ( PInc o a' b', propagateConstraints envA envB )
    where (a', envA) = disambInfo a (propagateConstraints env1 envB)
          (b', envB) = disambInfo b (propagateConstraints env1 envA)
   disambInfo (PIsc o a b) env1 = ( PIsc o a' b', propagateConstraints envA envB )

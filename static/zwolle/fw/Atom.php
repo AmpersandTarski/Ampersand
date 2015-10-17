@@ -60,7 +60,7 @@ Class Atom {
 	 * var $arrayType specifies if the arrays in the result are 'assoc' (associative, key index) or 'num' (numeric index).
 	 * var $metaData specifies if meta data about objects must be included or not
 	 */
-	public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
+    public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true, $recursionAtomArr = array()){
 		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
@@ -97,7 +97,7 @@ Class Atom {
 						// Define interface(s) to navigate to for this tgtAtom
 						$atomInterfaces = array();
 						if($interface->isLinkTo && !$inclLinktoData && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
-						elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
+						elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesToReadConcept($interface->tgtConcept));
 							
 						// Add meta data elements
 						$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
@@ -127,7 +127,7 @@ Class Atom {
 					// Define interface(s) to navigate to for this tgtAtom
 					$atomInterfaces = array();
 					if($interface->isLinkTo && !$inclLinktoData && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
-					elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesForConcept($interface->tgtConcept));
+					elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesToReadConcept($interface->tgtConcept));
 						
 					// Add meta data elements
 					$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
@@ -163,12 +163,14 @@ Class Atom {
 				}
 
 				// Ref subinterfaces (for LINKTO interfaces only when $inclLinktoData = true)
-				if(!empty($interface->refInterfaceId) && (!$interface->isLinkTo || $inclLinktoData)){
+				if(!empty($interface->refInterfaceId) && (!$interface->isLinkTo || $inclLinktoData) && ($recursionAtomArr[$tgtAtom->id] < 2)){
 					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have a ref interface defined", 501);
-				
+					
+					if($inclLinktoData) $recursionAtomArr[$tgtAtom->id]++;
+					
 					$refInterface = new InterfaceObject($interface->refInterfaceId, null);
 					foreach($refInterface->subInterfaces as $subinterface){
-						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
+						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData, $recursionAtomArr);
 						$content[$subinterface->id] = $otherAtom;
 							
 						// _sortValues_ (if subInterface is uni)
@@ -193,7 +195,8 @@ Class Atom {
 			}elseif($interface->tgtConceptIsObject){
 				switch($arrayType){
 					case "num" :
-						$arr[] = $content;
+						if($interface->univalent && !$rootElement) $arr = $content;
+						else $arr[] = $content;
 						break;
 					case "assoc" :
 					default :
@@ -250,7 +253,7 @@ Class Atom {
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction('Updated', false, $databaseCommit);
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' updated', false, $databaseCommit);
 		
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
@@ -294,7 +297,7 @@ Class Atom {
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction('Updated', false, $databaseCommit);
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' updated', false, $databaseCommit);
 		
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
@@ -539,7 +542,7 @@ Class Atom {
 		$this->database->deleteAtom($this->id, $this->concept);
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction('Atom deleted', false, $databaseCommit, false);
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' deleted', false, $databaseCommit, false);
 		
 		return array('notifications' 		=> Notifications::getAll()
 					,'invariantRulesHold'	=> $invariantRulesHold
@@ -588,7 +591,7 @@ Class Atom {
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction('Updated', false, $databaseCommit);
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' created', false, $databaseCommit);
 		
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.

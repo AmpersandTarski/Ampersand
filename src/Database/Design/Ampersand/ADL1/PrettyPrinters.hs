@@ -184,7 +184,7 @@ instance Pretty a => Pretty (Term a) where
        Prim a -> pretty a
        -- level 0 (rule)
        PEqu _ t1 t2 -> two t1 t2 "="
-       PImp _ t1 t2 -> two t1 t2 " |- "
+       PInc _ t1 t2 -> two t1 t2 " |- "
        -- level 1
        PIsc _ t1 t2 -> two t1 t2 "/\\"
        PUni _ t1 t2 -> two t1 t2 "\\/"
@@ -279,12 +279,15 @@ instance Pretty P_Interface where
                                 else text "FOR" <+> listOf roles
 
 instance Pretty a => Pretty (P_ObjDef a) where
-    pretty (P_Obj nm _ ctx mView msub strs) =
+    pretty (P_Obj nm _ ctx mCrud mView msub strs) =
         prettyLabel nm strs <+> text ":"
-                 <~> ctx <+> view mView <~> msub
-        where view Nothing  = empty
+                 <~> ctx <+> crud mCrud <+> view mView <~> msub
+        where crud Nothing = empty
+              crud (Just cruds) = pretty cruds
+              view Nothing  = empty
               view (Just v) = text ("<" ++ v ++ ">")
-
+instance Pretty P_Cruds where
+    pretty (P_Cruds _ str) = text str
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
                 P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
@@ -297,7 +300,7 @@ instance Pretty a => Pretty (P_IdentDf a) where
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
 instance Pretty a => Pretty (P_IdentSegmnt a) where
-    pretty (P_IdentExp (P_Obj nm _ ctx mView _ strs)) =
+    pretty (P_IdentExp (P_Obj nm _ ctx _ mView _ strs)) =
               if null nm
               then pretty ctx -- no label
               else prettyLabel nm strs <> text ":" <~> ctx <+> view mView
@@ -317,7 +320,7 @@ instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
 
 instance Pretty a => Pretty (P_ViewSegmt a) where
-    pretty (P_ViewExp _ (P_Obj nm _ ctx _ _ _))
+    pretty (P_ViewExp _ (P_Obj nm _ ctx _ _ _ _))
                               = maybeQuote nm <+> text ":" <~> ctx
     pretty (P_ViewText _ txt) = text "TXT" <+> quote txt
     pretty (P_ViewHtml _ htm) = text "PRIMHTML" <+> quote htm

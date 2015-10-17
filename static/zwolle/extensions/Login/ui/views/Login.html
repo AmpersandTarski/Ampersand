@@ -1,10 +1,13 @@
 <div class="container-fluid interface">
-	<fieldset>
-		<legend>Login</legend>
-		<div class="row">			
-			<div class="col-md-12">
-				<a ng-href="{{loginUrl}}">Login with Google</a>
+	<div class="row container">
+		<h4>Please login using...</h4>
+	</div>
+	<div class="row">
+	    <div class="col-xs-2" ng-repeat="idp in idps">
+			<div>
+				<a ng-href="{{idp.loginUrl}}"><img ng-src="{{idp.logo}}" class="img-responsive" style="max-width : 75%;" alt="{{idp.name}}"></a>
 			</div>
-		</div>
-	</fieldset>
+			<div><h5><a ng-href="{{idp.loginUrl}}">{{idp.name}}</a></h5></div>
+	    </div>
+	</div>
 </div>

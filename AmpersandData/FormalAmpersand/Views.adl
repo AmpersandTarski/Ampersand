@@ -2,28 +2,28 @@ CONTEXT AST IN ENGLISH
 INCLUDE "Atoms.adl"
 
 PATTERN Views
-    RELATION concept[View*Concept] [UNI] -- TOT is maintained by RULE TOTconcept, by deleting all views without a concept
-    RULE "TOTconcept" : I[View] |- concept;concept~
+    RELATION default[View*Concept] [UNI] -- TOT is maintained by RULE TOTdefault, by deleting all views without a default concept.
+    RULE "TOTdefault" : I[View] |- default;default~
     VIOLATION (TXT "{EX} DelAtom;View;", SRC I) -- all links in other relations in which the atom occurs are deleted as well.
-    ROLE ExecEngine MAINTAINS "TOTconcept"
+    ROLE ExecEngine MAINTAINS "TOTdefault"
 
-    RELATION hasView[Concept*Concept] -- hasView = concept~;concept/\I
+    RELATION hasView[Concept*Concept] -- hasView = default~;default/\I
     ROLE ExecEngine MAINTAINS "ins hasView", "del hasView"
-    RULE "ins hasView" : concept~;concept/\I |- hasView
+    RULE "ins hasView" : default~;default/\I |- hasView
     VIOLATION (TXT "{EX}_; InsPair_;hasView_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
-    RULE "del hasView" : hasView |- concept~;concept/\I
+    RULE "del hasView" : hasView |- default~;default/\I
     VIOLATION (TXT "{EX}_; DelPair_;hasView_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
 
-    RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaStar;hasView - isaPlus
+    RELATION viewBy[Concept*Concept] -- viewBy = isaStar;hasView - isaPlus
     ROLE ExecEngine MAINTAINS "ins viewBy", "del viewBy"
     RULE "ins viewBy" : isaStar;hasView - isaPlus |- viewBy
     VIOLATION (TXT "{EX} InsPair;viewBy;Concept;", SRC I, TXT ";Concept;", TGT I)
     RULE "del viewBy" : viewBy |- isaStar;hasView - isaPlus
     VIOLATION (TXT "{EX} DelPair;viewBy;Concept;", SRC I, TXT ";Concept;", TGT I)
 
-    ROLE User MAINTAINS "deterministic choice of View"
+    ROLE "Type Checker" MAINTAINS "deterministic choice of View"
     RULE "deterministic choice of View" : viewBy~;viewBy |- I
-    VIOLATION (SRC viewBy~, TXT " has both ", SRC concept~, TXT " and ", TGT concept~, TXT " as view.")
+    VIOLATION (SRC viewBy~, TXT " has both ", SRC default~, TXT " and ", TGT default~, TXT " as view.")
 ENDPATTERN
 
 ENDCONTEXT
