@@ -1,4 +1,4 @@
-$if(verbose)$<!-- Relation-PROP.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$ ($if(!isEditable)$not $endif$editable) -->
+$if(verbose)$<!-- View-PROPERTY.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$ ($if(!isEditable)$not $endif$editable) -->
 $endif$<div class="checkbox" style="margin-top: 0px;">
 	<label><input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="put(ResourceId)"/></label>
 </div>

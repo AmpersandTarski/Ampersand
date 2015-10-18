@@ -423,7 +423,7 @@ genView_Object fSpec depth obj =
         getTemplateForObject :: IO(FilePath)
         getTemplateForObject 
            | exprIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
-                       = return $  templatePath </> "Relation-PROP"++".html"
+                       = return $  templatePath </> "View-PROPERTY"++".html"
            | otherwise = getTemplateForConcept (objTarget obj)
         getTemplateForConcept :: A_Concept -> IO(FilePath)
         getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
