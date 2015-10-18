@@ -64,32 +64,8 @@ $GLOBALS['ext']['Login']['google']['apiUrl'] = '';
 $GLOBALS['ext']['Login']['google']['scope'] = '';
 
 
-/************ EXTENSIONS ***************
- *
- *	Define global variables, settings, etc using:
- *	$GLOBALS['ext']['<extension name']...
- *
- */
-
-// Enable ExecEngine
-require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php');
-$GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] = 'ExecEngine';
-$GLOBALS['ext']['ExecEngine']['MaxRunCount'] = 10;
-
-	
-	// Config params for SendEmail function of ExecEngine (now using Gmail) 
-	// For more info, see __DIR__.'/extensions/ExecEngine/functions/SendEmail.php'
-	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['from'] = '';
-	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['username'] = '';
-	$GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['password'] = '';
-	
-	// Config params for SendSMS function of ExecEngine (using MessageBird.com)
-	// For more info, see __DIR__.'/extensions/ExecEngine/functions/SendSMS.php'
-	$sender = $GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['sender'] = ''; // Set the sender, could be a number (16 numbers) or letters (11 characters)
-	$GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['username'] = '';
-	$GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['password'] = '';
-
-// Enable ExecImport
-require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php');
+/************ EXTENSIONS ***************/
+require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
+require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExecImport
 
 ?>

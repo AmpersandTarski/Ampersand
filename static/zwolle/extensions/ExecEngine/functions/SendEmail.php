@@ -11,11 +11,17 @@
 
 require_once (__DIR__ . '/SendEmail/lib/class.phpmailer.php');
 
+/* Config params for SendEmail function of ExecEngine (now using Gmail)
+ * 
+ */
+Config::set('sendEmailConfig', 'execEngine', array('from' => '', 'username' => '', 'password' => '')); // Copy this line to localSettings.php and provide settings
+
 function SendEmail($to,$subject,$message){ 
 	// adapted from http://phpmailer.worxware.com/?pg=examplebgmail
-	$from = $GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['from'];
-	$username = $GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['username'];
-	$password = $GLOBALS['ext']['ExecEngine']['functions']['SendEmail']['password'];
+	$config = Config::get('sendEmailConfig', 'execEngine');
+	$from = $config['from'];
+	$username = $config['username'];
+	$password = $config['password'];
 
 	Notifications::addLog('Username = '.$username, 'ExecEngine');
 	
