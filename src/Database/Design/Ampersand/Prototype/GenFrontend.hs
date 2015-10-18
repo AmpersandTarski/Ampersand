@@ -256,7 +256,7 @@ buildInterface fSpec allIfcs ifc =
                   [i]     -> 
                         if isLink
                         then do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
-                                ; let templatePath = "views" </> "LINKTO.html"
+                                ; let templatePath = "views" </> "View-LINKTO.html"
                                 ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
                                          , iExp, isEditable, src, tgt)
                                 }
