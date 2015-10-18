@@ -194,7 +194,7 @@ Test-Suite ampersand-test
                      QuickCheck == 2.8.*,
                      xlsx == 0.1.*,
                      wl-pprint == 1.2.*,
-                     lens
+                     zlib == 0.6.*
 
   if impl(ghc < 7.10)
       build-depends: filepath == 1.3.*,
