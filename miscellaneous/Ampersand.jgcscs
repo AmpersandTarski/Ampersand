@@ -13,7 +13,7 @@ TRUE
 ADL (ampersand) files
 61
 #define spullenboel
-CONTEXT Piet IN DUTCH
+CONTEXT Piet  IN DUTCH
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
 {- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
 
@@ -352,7 +352,7 @@ FALSE
 Relations (function name)
 
 2
-("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)
+("[a-z_][\s\w]*"|\b[a-z_]\w*\b)
 (?=[\s]*::)
 FALSE
 FALSE
@@ -373,8 +373,9 @@ FALSE
 
 RELATIONs
 
-2
-(?<=\bRELATION[\s]+)("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)
+3
+(?<=\bRELATION[\s]+)
+   ("[a-z_][\s\w]*"|\b[a-z_]\w*\b)
 (?=[\s]*\[)
 FALSE
 FALSE
@@ -384,7 +385,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 
@@ -397,7 +398,7 @@ RULEs, VIEWs (function name)
 
 3
 (?<=\b(RULE|VIEW)[\s]+)
-("[^"\r\n]*"|\b\w*\b)
+   ("[\s\w]*"|\b\w*\b)
 (?=[\s]*:)
 FALSE
 FALSE
@@ -445,7 +446,11 @@ FALSE
 
 PURPOSE Concepts, Patterns, Contexts  (plain text)
 
-(?<=(PURPOSE)\s*\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+4
+(?<=(PURPOSE)\s*
+  (CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)
+  [\s]+)
+("[A-Z]\w*"|\b[A-Z]\w*\b)
 FALSE
 FALSE
 0
@@ -454,7 +459,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 
@@ -465,7 +470,9 @@ FALSE
 
 Concepts, Patterns, Contexts  (function name)
 
-(?<=\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+2
+(?<=\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)
+("[A-Z]\w*"|\b[A-Z]\w*\b)
 FALSE
 FALSE
 13
@@ -474,7 +481,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 
