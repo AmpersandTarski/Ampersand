@@ -262,7 +262,7 @@ Stuff for ExecEngine, Sessions, Logins
 (\bExecEngine\b|\b{EX}\b|\b(InsPair|DelPair|NewStruct|DelAtom)\b
 |'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|\b_NEW\b
 |\b[Cc][Rr][Uu][Dd]\b
-|"SessionRoles"|\bRole\b|\bNobodyInParticular\b)
+|"SessionRoles"|\bRole\b|"SessionUser"|\bUser\b|\bNobodyInParticular\b)
 FALSE
 FALSE
 18
@@ -418,11 +418,12 @@ FALSE
 
 INTERFACEs
 
-6
-(?<=\bINTERFACE[\s]+)("[^"\r\n]*"|\b\w*\b)
-(?=([\s]*
-     (|\([^\)]*\)
-     )[\s]*:
+7
+(?<=\bINTERFACE[\s]+)
+  ("[\s\w]*"|\b\w*\b)
+(?=([\s\r\n]*
+     (|\([^\)]*\)\s*
+     ):
    )
 )
 FALSE
