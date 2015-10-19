@@ -7,6 +7,8 @@ html {
 
 #header {
 	position			: fixed;
+	height				: 40px;
+	margin-top			: 3px;
 	left				: 0;
 	right				: 0;
 	z-index				: 1030;
@@ -14,15 +16,11 @@ html {
 	background-color	: white;
 }
 
-#header .glyphicon {
-	color				: #428bca;
-}
-
 /********* NAVBAR *****************/
 
 #navbar {
 	position			: fixed;
-	top					: 45px;
+	top					: 0px;
 	left				: 0;
 	right				: 0;
 	z-index				: 1030;
@@ -129,7 +127,7 @@ html {
 #main {
 	display				: block;
 	margin				: 0 auto 60px; /* Margin bottom by footer height */
-  	padding				: 95px 15px 50px 15px;
+  	padding				: 50px 15px 50px 15px;
 	min-height			: 100%;
 }
 
@@ -140,8 +138,17 @@ html {
 	bottom				: 0px;
 	width				: 100%;
 	height				: auto;
-	padding-top			: 20px;
+	padding-top			: 10px;
 	background-color	: #f8f8f8;
+}
+
+#ampersand-footer img {
+	height				: 30px;
+}
+
+#ampersand-footer-logos img {
+	height				: 20px;
+	margin				: 2px;
 }
 
 
