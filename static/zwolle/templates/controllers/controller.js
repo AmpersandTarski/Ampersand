@@ -7,7 +7,7 @@ INTERFACE "$interfaceName$" : $expAdl$ :: $source$ * $target$  ($if(!isRoot)$non
 Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 $endif$*/
-AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$location, \$routeParams, Restangular, \$location, \$timeout, \$localStorage, \$sessionStorage) {
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, Restangular, \$location, \$timeout, \$localStorage, \$sessionStorage) {
 	\$scope.interfaceName = "$interfaceName$";
 	\$scope.interfaceLabel = "$interfaceLabel$";
 	\$scope.resourceLabel = ''; // label of requested interface source resource
