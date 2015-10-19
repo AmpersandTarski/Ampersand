@@ -107,29 +107,33 @@ class Concept {
 	
 	public static function getView($concept, $viewId = null){
 		global $allViews; // from Generics.php
-		$relevantViews = array();
 		
-		// Selecting all relevant views for this concept from $allViews in Generics.php
-		foreach ((array)$allViews as $view){
-			if ($concept == $view['concept'] || in_array($concept, Concept::getSpecializations($view['concept']))){
-				$relevantViews[$view['label']] = $view;
-				if($view['isDefault']) $defaultView = $view;
+		if(is_null($viewId)) $viewId = Concept::getDefaultViewId($concept); // Get defaultViewId
+		
+		// No view defined for this concept
+		if(is_null($viewId)){
+			return null;
+
+		// Get specified view
+		}else{
+			// Selecting all relevant views for this concept from $allViews in Generics.php
+			foreach ((array)$allViews as $view){
+				if($view['label'] == $viewId){
+					if (!($concept == $view['concept'] || in_array($concept, Concept::getSpecializations($view['concept'])))) throw new Exception("View '$viewId' is not for concept '$concept'");
+					return $view;
+				}
 			}
 		}
 		
-		if(empty($relevantViews)) return null; // No views for this concept
+		// Otherwise throw exception
+		throw new Exception("View '$viewId' is not defined");
+	}
+	
+	public static function getDefaultViewId($concept){		
+		$concept = Concept::getConcept($concept);
 		
-		// Return view
-		if(is_null($viewId)){
-			// Check if defaultView isset
-			if(isset($defaultView)) return $defaultView;
-			// Else, no specific view
-			else return null;
-		}else{
-			// Check if $viewId exists
-			if(!key_exists($viewId, $relevantViews)) throw new Exception("Specified viewId '$viewId' is not a view for concept '$concept'");
-			return $relevantViews[$viewId];
-		}
+		if(isset($concept['defaultViewId'])) return $concept['defaultViewId'];
+		else return null;
 	}
 	
 	public static function getConceptTableInfo($concept){
