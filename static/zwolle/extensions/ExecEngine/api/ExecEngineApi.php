@@ -14,11 +14,11 @@ class ExecEngineApi{
 			$session = Session::singleton();
 			$db = Database::singleton();
 			
-			if(LOGIN_ENABLED){
+			$allowedRoles = (array)Config::get('allowedRolesForRunFunction','execEngine');
+			if(LOGIN_ENABLED && !is_null($allowedRoles)){
 				$ok = false;
 				
 				$sessionRoles = Role::getAllSessionRoles(session_id());
-				$allowedRoles = (array)Config::get('allowedRolesForRunFunction','execEngine');
 				foreach($sessionRoles as $role){
 					if(in_array($role->label, $allowedRoles)) $ok = true;
 				}
