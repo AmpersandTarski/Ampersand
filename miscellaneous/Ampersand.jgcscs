@@ -260,12 +260,12 @@ Special words
 Stuff for ExecEngine, Sessions, Logins
 4
 (\bExecEngine\b|\b{EX}\b|\b(InsPair|DelPair|NewStruct|DelAtom)\b
-|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|\b_NEW\b
+|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|\bSESSION\b|\b_NEW\b
 |\b[Cc][Rr][Uu][Dd]\b
-|"SessionRoles"|\bRole\b|"SessionUser"|\bUser\b|\bNobodyInParticular\b)
+|"SessionRoles"|\bRole\b|"SessionUser"|\bUser\b|"SessionVars"|\bNobodyInParticular\b)
 FALSE
 FALSE
-18
+15
 0
 
 
@@ -310,7 +310,7 @@ Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parse
 |ALPHANUMERIC|BIGALPHANUMERIC|HUGEALPHANUMERIC|PASSWORD
 |BINARY|BIGBINARY|HUGEBINARY|DATE|DATETIME|BOOLEAN|INTEGER|FLOAT
 |IDENT|VIEW|HTML|TEMPLATE|TXT|PRIMHTML
-|INTERFACE|BOX|ROWS|TABS|COLS|CLASS|LINKTO
+|INTERFACE|FOR|BOX|ROWS|TABS|COLS|CLASS|LINKTO
 |PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS)\b
 FALSE
 FALSE
@@ -331,7 +331,7 @@ FALSE
 
 V, I
 
-\b[VI](\[\s*[A-Z]\w*\s*[*]\s*[A-Z]\w*\s*\])?\b
+\b[VI](\[\s*[A-Z]['\w]*\s*[*]\s*[A-Z]['\w]*\s*\])?\b
 FALSE
 FALSE
 23
@@ -352,7 +352,7 @@ FALSE
 Relations (function name)
 
 2
-("[a-z_][\s\w]*"|\b[a-z_]\w*\b)
+("[a-z_][\s'\w]*"|\b[a-z_]['\w]*\b)
 (?=[\s]*::)
 FALSE
 FALSE
@@ -375,7 +375,7 @@ RELATIONs
 
 3
 (?<=\bRELATION[\s]+)
-   ("[a-z_][\s\w]*"|\b[a-z_]\w*\b)
+   ("[a-z_][\s'\w]*"|\b[a-z_]['\w]*\b)
 (?=[\s]*\[)
 FALSE
 FALSE
@@ -398,7 +398,7 @@ RULEs, VIEWs (function name)
 
 3
 (?<=\b(RULE|VIEW)[\s]+)
-   ("[\s\w]*"|\b\w*\b)
+   ("[\s'\w]*"|\b['\w]*\b)
 (?=[\s]*:)
 FALSE
 FALSE
@@ -421,7 +421,7 @@ INTERFACEs
 
 7
 (?<=\bINTERFACE[\s]+)
-  ("[\s\w]*"|\b\w*\b)
+  ("[\s'\w]*"|\b['\w]*\b)
 (?=([\s\r\n]*
      (|\([^\)]*\)\s*
      ):
@@ -450,7 +450,7 @@ PURPOSE Concepts, Patterns, Contexts  (plain text)
 (?<=(PURPOSE)\s*
   (CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)
   [\s]+)
-("[A-Z]\w*"|\b[A-Z]\w*\b)
+("[A-Z]['\w]*"|\b[A-Z]['\w]*\b)
 FALSE
 FALSE
 0
@@ -472,7 +472,7 @@ Concepts, Patterns, Contexts  (function name)
 
 2
 (?<=\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)
-("[A-Z]\w*"|\b[A-Z]\w*\b)
+("[A-Z]['\w]*"|\b[A-Z]['\w]*\b)
 FALSE
 FALSE
 13
