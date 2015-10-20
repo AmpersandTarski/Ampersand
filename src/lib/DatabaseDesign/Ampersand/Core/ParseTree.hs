@@ -400,7 +400,7 @@ where
 -- PPurpose is a parse-time constructor. It contains the name of the object it explains.
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
-   data PRef2Obj = PRef2ConceptDef String
+   data PRef2Obj = PRef2ConceptDef P_Concept
                  | PRef2Declaration Term -- typically PTrel o nm sgn,   with nm::String and sgn::P_Sign
                                          -- or        Prel o nm; Other terms become fatals
                  | PRef2Rule String
@@ -415,7 +415,7 @@ where
    
    instance Identified PRef2Obj where
      name pe = case pe of 
-        PRef2ConceptDef str -> str
+        PRef2ConceptDef c -> name c
         PRef2Declaration (PTrel _ nm sgn) -> nm++show sgn
         PRef2Declaration (Prel _ nm) -> nm
         PRef2Declaration expr -> fatal 362 ("Expression "++show expr++" should never occur in PRef2Declaration")
@@ -441,14 +441,29 @@ where
     origin = pexPos
 
    data P_Concept
-      = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
-      | P_Singleton 
-      deriving (Eq, Ord)
+      = PCpt{ p_cptOrig :: Origin  -- ^The location where this concept is found in the script (for traceability)
+            , p_cptnm :: String    -- ^The name of this Concept
+            }
+      | P_Singleton { p_cptOrig :: Origin }
 -- (Sebastiaan 12 feb 2012) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
+
+   instance Eq P_Concept where
+    P_Singleton{} == P_Singleton{} = True
+    P_Singleton{} == _             = False
+    _             == P_Singleton{} = False
+    c             == c'            =  p_cptnm c == p_cptnm c'
+   instance Ord P_Concept where
+    compare P_Singleton{} P_Singleton{} = EQ
+    compare P_Singleton{} _             = LT
+    compare _             P_Singleton{} = GT
+    compare c             c'            = compare (p_cptnm c) (p_cptnm c')
+
+   instance Traced P_Concept where
+    origin = p_cptOrig
 
    instance Identified P_Concept where
     name (PCpt {p_cptnm = nm}) = nm
-    name P_Singleton = "ONE"
+    name P_Singleton{} = "ONE"
    
    instance Show P_Concept where
     showsPrec _ c = showString (name c)

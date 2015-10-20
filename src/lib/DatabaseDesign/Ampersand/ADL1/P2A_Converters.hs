@@ -84,13 +84,21 @@ infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t i
 typeToMap :: TypeTerm -> TypeInfo
 typeToMap x = (Map.fromList [(x,[])],[])
 (.<.) :: TypeTerm -> TypeTerm -> TypeInfo
-a .<. b  = (Map.fromList [(a, [b]),(b, [])],[]) -- a tuple meaning that a is a subset of b, and introducing b as a key.
+a .<. b = case (a,b) of
+           (TypEmpty _ _, _) -> a `leq` b 
+           (_, TypEmpty _ _) -> a `leq` b 
+           _                 -> a `leq` b .+. dual b `leq` dual a
+           where leq x y = (Map.fromList [(x, [y]),(y, [])],[]) -- x tuple meaning that x is x subset of y, and introducing y as x key.
 (.=.) :: TypeTerm -> TypeTerm -> TypeInfo
-a .=. b  = (Map.fromList [(a, [b]),(b, [a])],[])
+a .=. b = case (a,b) of
+           (TypEmpty _ _, _) -> a `eq` b 
+           (_, TypEmpty _ _) -> a `eq` b 
+           _                 -> a `eq` b .+. dual b `eq` dual a
+           where eq x y = x.<.y .+. y.<.x  -- yields: (Map.fromList [(x, [y]),(y, [x])],[])
 (.+.) :: TypeInfo -> TypeInfo -> TypeInfo
 (m1,l1) .+. (m2,l2) = (Map.unionWith mrgUnion m1 m2, l1++l2)
 thing :: P_Concept -> TypeTerm
-thing c = TypExpr (Pid (SomewhereNear (fatal 90 "clueless about where this is found. Sorry" )) c) Src False
+thing c = TypExpr (Pid (origin c) c) Src False
 tNull :: Term -> String -> TypeTerm
 tNull x str = TypEmpty x str
 domc, dom, codc, cod :: Term -> TypeTerm
@@ -301,7 +309,7 @@ instance Expr P_ObjectDef where
   = let x=obj_ctx o in
     uType' x .+. 
     foldr (.+.) nothing [ uType' obj .+.
-                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe (cod x) (dom (obj_ctx obj)) TETBox (obj_ctx obj)) (TypInObjDef obj False)
+                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe (cod x) (dom (obj_ctx obj)) TETBox (obj_ctx obj)) (TypGlb [cod x, dom (obj_ctx obj)])
                         | Just subIfc <- [obj_msub o]
                         , obj <- case subIfc of
                                    P_Box{}          -> si_box subIfc
@@ -320,7 +328,7 @@ instance Expr PPurpose where
 instance Expr PRef2Obj where
  uType _ pRef =
    case pRef of 
-     PRef2ConceptDef str -> uType' (Pid (SomewhereNear (fatal 279 "clueless about where this is found. Sorry" )) (PCpt str))
+     PRef2ConceptDef c -> uType' (Pid (origin c) c)
      PRef2Declaration t  -> uType' t
      _                   -> nothing
 
@@ -333,10 +341,10 @@ instance Expr P_Gen where
 
 instance Expr P_Declaration where
  uType _ d
-  = mGeneric  (dom decl) (domc decl) domUnion     .+. domUnion     .=. thing src        .+.
-    mSpecific (dom decl) (domc decl) domIntersect .+. domIntersect .=. tNull (PTrel (origin d) (name d) (dec_sign d)) "source" .+.
-    mGeneric  (cod decl) (codc decl) codUnion     .+. codUnion     .=. thing tgt        .+.
-    mSpecific (cod decl) (codc decl) codIntersect .+. codIntersect .=. tNull (PTrel (origin d) (name d) (dec_sign d)) "target"
+  = dom decl    .<.domUnion .+. domc decl   .<.domUnion  .+. domUnion     .=. thing src        .+.
+    domIntersect.<.dom decl .+. domIntersect.<.domc decl .+. domIntersect .=. tNull (Pid (origin d) src) "" .+.
+    cod decl    .<.codUnion .+. codc decl   .<.codUnion  .+. codUnion     .=. thing tgt        .+.
+    codIntersect.<.cod decl .+. codIntersect.<.codc decl .+. codIntersect .=. tNull (Pid (origin d) tgt) ""
     where decl = PTrel (origin d) (dec_nm d) (dec_sign d)
           domUnion      = TypLub [dom decl, domc decl]
           domIntersect  = TypGlb [dom decl, domc decl]
@@ -350,7 +358,7 @@ instance Expr P_Population where
     where x = case pop of
                    P_RelPopu{} -> Prel  (p_orig pop) (name pop)
                    P_TRelPop{} -> PTrel (p_orig pop) (name pop) (p_type pop)
-                   P_CptPopu{} -> Pid   (p_orig pop) (PCpt (name pop))
+                   P_CptPopu{} -> Pid   (p_orig pop) (PCpt (origin pop) (name pop))
 
 instance Expr a => Expr (Maybe a) where
  uType _ Nothing  = nothing
@@ -366,7 +374,7 @@ instance Expr Term where
      Pid o c       -> dom x.=.thing c     .+.  cod x.=.thing c    -- I[C]
      (Patm _ _ []) -> dom x.=.cod x   .+. domc x.=.codc x         -- 'Piet'   (an untyped singleton)
      (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
-                       .+. dom x.=.cod x  .+.  domc x.=.codc x
+                       .+. dom x.=.cod x
      PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
      (Pfull o s t) -> dom x.=.thing s .+. cod x.=.thing t         --  V[A*B] (the typed full set)
      (PTrel _ _ (P_Sign src trg))
@@ -374,32 +382,24 @@ instance Expr Term where
      (Prel _ _)    -> typeToMap (dom x) .+. typeToMap (cod x)
      (PIsc _ a b)  -> domIsc.<.dom  a  .+. domIsc.<.dom  b  .+. domIsc .=.dom  x .+.
                       codIsc.<.cod  a  .+. codIsc.<.cod  b  .+. codIsc .=.cod  x .+.
-                      domc a.<.domcIsc .+. domc b.<.domcIsc .+. domcIsc.=.domc x .+.
-                      codc a.<.codcIsc .+. codc b.<.codcIsc .+. codcIsc.=.codc x .+.
                       uType' a .+. uType' b
                       where domIsc  = TypGlb [dom  a, dom  b]
-                            domcIsc = TypLub [domc a, domc b]
                             codIsc  = TypGlb [cod  a, cod  b]
-                            codcIsc = TypLub [codc a, codc b]
      (PUni _ a b)  -> dom  a .<.domUni .+. dom  b .<.domUni .+. domUni .=.dom  x .+.
                       cod  a .<.codUni .+. cod  b .<.codUni .+. codUni .=.cod  x .+.
-                      domcUni.<.domc a .+. domcUni.<.domc b .+. domcUni.=.domc x .+.
-                      codcUni.<.codc a .+. codcUni.<.codc b .+. codcUni.=.codc x .+.
                       uType' a .+. uType' b
                       where domUni  = TypLub [dom  a, dom  b]
-                            domcUni = TypGlb [domc a, domc b]
                             codUni  = TypLub [cod  a, cod  b]
-                            codcUni = TypGlb [codc a, codc b]
-     (PDif o a b)  -> dom x.<.dom a .+. cod x.<.cod a  --  a-b    (difference)
-                      .+. mGeneric (dom x) (dom b) (dom (PUni o a b)) .+. mGeneric (cod x) (cod b) (cod (PUni o a b))
-                      .+. uType' a .+. uType' b .+. uType' (PUni o a b)
-     (PCps o a b)  -> let pidTest (PI{}) r = r
+     (PDif o a b)  -> dom x.<.dom a .+.    -- dom x.<.domDif .+. dom b.<.domDif .+. domDif.=.dom (PUni o a b) .+.   --  a-b    (difference)
+                      cod x.<.cod a .+.    -- cod x.<.codDif .+. cod b.<.codDif .+. codDif.=.cod (PUni o a b) .+.
+                      uType' a .+. uType' b
+     (PCps o a b)  -> let pidTest (PI{}) r = r                                    -- a;b      composition
                           pidTest (Pid{}) r = r
                           pidTest (Patm{}) r = r
                           pidTest _ _ = nothing
                           s = TypGlb [cod a, dom b]
-                      in dom x.<.dom a .+. cod x.<.cod b .+.                                    -- a;b      composition
-                         mSpecific' (cod a) (dom b) x .+. uType' a .+. uType' b
+                      in dom x.<.dom a .+. cod x.<.cod b .+.
+                         s.<.cod a .+. s.<.dom b .+. uType' a .+. uType' b
                          .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
 -- PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
      (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
@@ -407,8 +407,8 @@ instance Expr Term where
                          pnidTest (PCpl _ (Patm{})) r = r
                          pnidTest _ _ = nothing
                          s = TypLub [cod a, dom b]
-                     in dom x .<. dom a .+. cod x .<. cod b
-                        .+. mGeneric' (cod a) (dom b) x .+. uType' a .+. uType' b
+                     in dom x .<. dom a .+. cod x .<. cod b .+.
+                        cod a.<.s .+. dom b.<.s .+. uType' a .+. uType' b
                         .+. pnidTest a (dom b.<. s) .+. pnidTest b (cod a.<. s)
      (PPrd _ a b) -> dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
                      .+. uType' a .+. uType' b
@@ -418,18 +418,22 @@ instance Expr Term where
      (PBrk _ e)   -> uType x e  -- ignore brackets
  -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
      (PCpl o (PCpl _ a)) -> uType' a
-     (PCpl o a)   -> dom x.=.domc a .+. cod x.=.codc a .+. domc x.=.dom a .+. codc x.=.cod a .+.
-                     domEmpty.<.dom x .+. domEmpty.<.dom a .+. tNull (PIsc o a x) "source".=.domEmpty .+.
-                     codEmpty.<.cod x .+. codEmpty.<.cod a .+. tNull (PIsc o a x) "target".=.codEmpty .+.
+     (PCpl o a)   -> dom x.=.domc a .+. cod x.=.codc a .+.
+                     domEmpty.<.dom x .+. domEmpty.<.dom a .+. tNull (PIsc o a x) "dom".=.domEmpty .+.
+                     codEmpty.<.cod x .+. codEmpty.<.cod a .+. tNull (PIsc o a x) "cod".=.codEmpty .+.
                      uType x a
                      where domEmpty = TypGlb [dom a, dom x]
                            codEmpty = TypGlb [cod a, cod x]
      (Pequ o a b) -> let e = PUni o (PIsc o a b) (PIsc o (PCpl (origin a) a) (PCpl (origin b) b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
                         uType' e
-     (Pimp o a b) -> let e = PUni o (PCpl o a) b
-                     in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType' e
+     (Pimp o a b) -> domc a.<.dom x .+. dom x.=.domImp .+.
+                     cod b .<.cod x .+. cod x.=.codImp
+                     where domImp = TypLub [domc a, dom b]
+                           codImp = TypLub [codc a, cod b]
+--     (Pimp o a b) -> let e = PUni o (PCpl o a) b
+--                     in dom x.=.dom e .+. cod x.=.cod e .+.
+--                        uType' e
      (PLrs o a b) -> let e = complement (PCps o (complement a) (p_flp b))
                      in dom x.=.dom e .+. cod x.=.cod e .+.
                         uType' e                 --  a/b = a!-b~ = -(-a;b~)
@@ -973,8 +977,8 @@ pCtx2aCtx p_context
           }
 
     pExOb2aExOb :: PRef2Obj -> Guarded ExplObj
-    pExOb2aExOb (PRef2ConceptDef str  ) = case [cd | cd<-acds, cdcpt cd==str ] of
-                                           []   ->  Errors [newcxe (" No concept definition for '"++str++"'")]
+    pExOb2aExOb (PRef2ConceptDef c)     = case [cd | cd<-acds, cdcpt cd==name c ] of
+                                           []   ->  Errors [newcxe (" No concept definition for '"++name c++"'")]
                                            cd:_ ->  Checked (ExplConceptDef cd)
     pExOb2aExOb (PRef2Declaration t@(PTrel o nm sgn))
                                         = case [pDecl2aDecl d | d<-p_declarations p_context, name d==nm, dec_sign d== sgn ] of
@@ -1018,7 +1022,7 @@ pCtx2aCtx p_context
         Errors errs     -> Errors errs
        where
         expr = case pop of
-                    P_CptPopu{} -> Pid   (origin pop) (PCpt (name pop))
+                    P_CptPopu{} -> Pid   (origin pop) (PCpt (origin pop) (name pop))
                     P_RelPopu{} -> Prel  (origin pop) (name pop)
                     P_TRelPop{} -> PTrel (origin pop) (name pop) (p_type pop)
         popsOf e =
@@ -1059,13 +1063,13 @@ pCtx2aCtx p_context
                 ,cpttp = head ([cdtyp cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]++[""])
                 ,cptdf = [cd | cd<-conceptDefs contxt,cdcpt cd==p_cptnm pc]
                 } 
-            P_Singleton -> ONE
+            P_Singleton _ -> ONE
     
     aCpt2pCpt :: A_Concept -> P_Concept
     aCpt2pCpt c
         = case c of
-            PlainConcept{} -> PCpt { p_cptnm = cptnm c }
-            ONE -> P_Singleton
+            PlainConcept{} -> PCpt { p_cptOrig = SomewhereNear (fatal 1081 "clueless about where this is found. Sorry" ), p_cptnm = cptnm c }
+            ONE -> P_Singleton (SomewhereNear (fatal 1082 "clueless about where this is found. Sorry" ))
     
     pDecl2aDecl :: P_Declaration -> Guarded (Declaration , Maybe UserDefPop)
     pDecl2aDecl pd =

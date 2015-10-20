@@ -2,7 +2,7 @@
 {-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.TypePropagation (
  -- * Exported functions
- typing, TypeTerm(..), Typemap, parallelList, findIn, showType, Guarded(..), p_flp
+ typing, TypeTerm(..), dual, Typemap, parallelList, findIn, showType, Guarded(..), p_flp
  , mrgUnion, BetweenType(..), Between(..), BTUOrI(..)
  )
 where
@@ -33,20 +33,18 @@ Example: TypExpr t Src False means (the set of atoms that is) the domain of term
 -}
 
 data TypeTerm
-   = TypExpr      { ttTerm :: Term        -- The term of which the type is analyzed
-                  , ttSorT :: SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
-                  , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+   = TypExpr      { ttTerm  :: Term        -- The term of which the type is analyzed
+                  , ttSorT  :: SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
+                  , ttCplt  :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
                   }
-   | TypEmpty     { ttDecl :: Term
-                  , ttStr  :: String      -- a string to distinguish two TypEmpty's with the same term (used in P_Declaration, for instance)
+   | TypEmpty     { ttTerm  :: Term
+                  , ttStr   :: String      -- a string to distinguish two TypEmpty's with the same term (used in P_Declaration, for instance)
                   }
    | TypLub       { ttTerms :: [TypeTerm]
                   }
    | TypGlb       { ttTerms :: [TypeTerm]
                   }
-   | TypInObjDef  { ttObj  :: P_ObjectDef -- term is deriving Ord
-                  , ttCplt :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
-                  }
+
 data Between = Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
                     TypeTerm -- lhs type, e.g. cod(a)
                     TypeTerm -- rhs type, e.g. dom(b)
@@ -80,18 +78,30 @@ instance Show TypeTerm where
 showType :: TypeTerm -> String
 showType t
  = case t of
-     TypExpr (Pid _ c) _ _                        -> "pop ("++name c++") "
+     TypExpr (Pid _ c) _ _                        -> "pop ("++name c++")"
      TypExpr term@(PVee o)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++"("++ show o++")"
      TypExpr term@(Pfull _ _ _) sORt complemented -> codOrDom sORt complemented++" ("++showADL term++")"   --   
      TypExpr term               sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++ show (origin term)
-     TypEmpty term _                              -> "empty"++"  "++showADL term
-     TypLub tTerms                                -> foldr1 f (map showType tTerms) where f a b = a++"\\/"++b
-     TypGlb tTerms                                -> foldr1 f (map showType tTerms) where f a b = a++"/\\"++b
-     TypInObjDef obj                 complemented -> "towbar of "++name obj                                --   ++show (origin obj)
+     TypEmpty (Pid _ c) str                       -> "empty ("++name c++")"
+     TypEmpty term str                            -> "empty "++str++"("++showADL term++")"
+     TypLub tTerms                                -> foldr1 f (map showType tTerms) where f a b = a++" \\/ "++b
+     TypGlb tTerms                                -> foldr1 f (map showType tTerms) where f a b = a++" /\\ "++b
    where codOrDom Src True  = "domc"
          codOrDom Src False = "dom"
          codOrDom Tgt True  = "codc"
          codOrDom Tgt False = "cod"
+
+dual :: TypeTerm -> TypeTerm
+dual t
+ = case t of
+     TypExpr term@(Pid _ c) _ False   -> TypEmpty term ""
+     TypExpr (Pid _ c) _ True         -> fatal 97 ("TypExpr (Pid _ "++showADL c++") _ True  should never occur.")
+--     TypExpr term@(PVee o)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++"("++ show o++")"
+--     TypExpr term@(Pfull _ _ _) sORt complemented -> codOrDom sORt complemented++" ("++showADL term++")"   --   
+     TypExpr term   sORt complemented -> TypExpr term   sORt (not complemented)
+     TypEmpty term _                  -> fatal 101 ("TypEmpty ("++showADL term++")  has no dual.")
+     TypLub tTerms                    -> (TypGlb . sort . map dual) tTerms
+     TypGlb tTerms                    -> (TypLub . sort . map dual) tTerms
 
 -- | Equality of TypeTerm is needed for the purpose of making graphs of types.
 --   These are used in the type checking process.
@@ -121,6 +131,9 @@ instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which sati
   compare (TypExpr x             x' b) (TypExpr y               y' b') = Prelude.compare (x,x',b) (y,y',b')
   compare (TypExpr _              _ _) _                               = Prelude.LT
   compare _                            (TypExpr _                _ _ ) = Prelude.GT
+  compare (TypEmpty (Pid _ c) str    ) (TypEmpty (Pid _ c') str'     ) = Prelude.compare (c,str) (c',str')
+  compare (TypEmpty (Pid _ _) _      ) _                               = Prelude.LT
+  compare _                            (TypEmpty (Pid _ _ ) _        ) = Prelude.GT
   compare (TypEmpty x str            ) (TypEmpty x' str'             ) = Prelude.compare (x,str) (x',str')
   compare (TypEmpty _ _              ) _                               = Prelude.LT
   compare _                            (TypEmpty _ _                 ) = Prelude.GT
@@ -128,11 +141,9 @@ instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which sati
   compare (TypLub _                  ) _                               = Prelude.LT
   compare _                            (TypLub _                     ) = Prelude.GT
   compare (TypGlb tTerms)              (TypGlb tTerms')                = compare tTerms tTerms'
-  compare (TypGlb _                  ) _                               = Prelude.LT
-  compare _                            (TypGlb _                     ) = Prelude.GT
-  compare (TypInObjDef o            b) (TypInObjDef o'             b') = Prelude.compare (origin o,b) (origin o',b')
---  compare (TypInObjDef _            _) _                               = Prelude.LT -- these two lines are superfluous if all combinators are covered.
---  compare _                            (TypInObjDef _              _ ) = Prelude.GT
+--  compare (TypGlb _                  ) _                               = Prelude.LT -- these two lines are superfluous if all combinators are covered.
+--  compare _                            (TypGlb _                     ) = Prelude.GT
+
   -- since the first argument of Between is a function, we cannot compare it.
   -- Besides, if there are two identical type inferences with different error messages, we should just pick one.
   -- compare (Between _ a b t) (Between _ a' b' t')                    = compare (t,a,b) (t',a',b')
@@ -161,14 +172,14 @@ parallelList = foldr (parallel (:)) (Checked [])
 instance Functor Guarded where
  fmap _ (Errors a) = (Errors a)
  fmap f (Checked a) = Checked (f a)
- 
+
 instance Applicative Guarded where
  pure = Checked
  (<*>) (Checked f) (Checked a) = Checked (f a)
  (<*>) (Errors  a) (Checked _) = Errors a 
  (<*>) (Checked _) (Errors  b) = Errors b
  (<*>) (Errors  a) (Errors  b) = Errors (a ++ b)
- 
+
 instance Monad Guarded where
  (>>=) (Errors  a) _ = (Errors a)
  (>>=) (Checked a) f = f a
@@ -249,8 +260,8 @@ orWhenEmpty [] n = n
 orWhenEmpty n  _ = n
 
 -- | The purpose of 'typing' is to analyse the domains and codomains of a term in a context.
---   It expects a list of tuples st::[(TypeTerm,TypeTerm)], which has been made by uType.
---   This list represents a relation, st,  over TypeTerm*TypeTerm.
+--   It expects a Typemap, st, which is based on list of tuples [(TypeTerm,TypeTerm)] made by uType.
+--   This Typemap represents an order on TypeTerms, which can be interpreted as subsets.
 --   The function typing also expects a list of "between terms",
 --   which represent types that were created due to the use of specific operators, such as compose, union and intersect.
 --   Finally, it expects the declaration table.

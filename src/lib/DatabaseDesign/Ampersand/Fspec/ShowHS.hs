@@ -546,7 +546,7 @@ where
    instance ShowHS PRef2Obj where
     showHS _ _ peObj
      = case peObj of 
-            PRef2ConceptDef str               -> "PRef2ConceptDef " ++show str
+            PRef2ConceptDef c                 -> "PRef2ConceptDef " ++show c
             PRef2Declaration (PTrel _ nm sgn) -> "PRef2Declaration "++show nm++show sgn
             PRef2Declaration (Prel _ nm)      -> "PRef2Declaration "++show nm
             PRef2Declaration expr             -> fatal 583 ("Expression "++show expr++" should never occur in PRef2Declaration")
