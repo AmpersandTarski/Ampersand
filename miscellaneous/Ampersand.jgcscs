@@ -11,7 +11,7 @@ TRUE
 
 1
 ADL (ampersand) files
-61
+62
 #define spullenboel
 CONTEXT Piet  IN DUTCH
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
@@ -19,6 +19,7 @@ PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt
 
 --! Line comment die er qua colouring uitspringt kan soms handig zijn.
 --[ Dit soort commentaar ook]--
+-- [ of dit soort
 --$ of dit soort commentaar
 apenbroodboom :: A * B -X asdfsdfsdf  --[ Dit soort commentaar ook]--
 {-preCdx  :: Proces -> Conditie.-} --$ of dit soort commentaar
@@ -158,7 +159,7 @@ FALSE
 
 Line Comment (Section header)
 Text after --[ on the same line
---\s*\[[^\n\r]*+
+--\[[^\n\r]*+
 FALSE
 FALSE
 26
