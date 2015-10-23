@@ -76,7 +76,7 @@ yx--!  asdfas
   yx--!  asdfa
 0
 FALSE
-26
+27
 Preprocessor
 Preprocessor regels hebben het '#' teken op de eerste positie van een regel
 ((?<!.)|[\n\r])#[^\n\r]*+
@@ -137,6 +137,26 @@ FALSE
 
 FALSE
 
+Line Comment (Exceptional)
+Excluded chars prevent coloring of regularly commented out POPULATIONS, INTERFACE parts and relation properties
+--+\[[^\[\n\r][^\n\r]*\]--+
+FALSE
+FALSE
+35
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Line Comment (VERY EMPHASIZED)
 --$
 --\$[^\n\r]*+
@@ -159,7 +179,7 @@ FALSE
 
 Line Comment (Section header)
 Text after --[ on the same line
---\[[^\n\r]*+
+--+\[\[[^\n\r]*\]\]--+
 FALSE
 FALSE
 26
@@ -169,7 +189,7 @@ FALSE
 0
 FALSE
 FALSE
-FALSE
+TRUE
 FALSE
 
 
