@@ -14,11 +14,11 @@ define ('JSONLD_CONTEXT_PATH', API_PATH . 'interface/');
 
 define ('UPLOAD_DIR', __DIR__ . '/uploads/');
 $GLOBALS['api']['allowedMimeTypes'] = array('application/vnd.ms-excel'
-										   ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-										   ,'application/excel'
-										   ,'application/pdf'
-										   ,'text/xml'
-										   );
+                                           ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+                                           ,'application/excel'
+                                           ,'application/pdf'
+                                           ,'text/xml'
+                                           );
 
 /************ DB CONFIG ****************/
 $DB_host = 'localhost';
