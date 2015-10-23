@@ -148,7 +148,7 @@ defaultWriterVariables fSpec
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
---         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
+--         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .ltx
 writepandoc :: FSpec -> Pandoc -> (String,IO(),IO())
 writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
@@ -165,7 +165,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                  Frst          -> ".rst"
                                                  FPandoc       -> ".pandoc"
                                                  Frtf          -> ".rtf"
-                                                 FLatex        -> ".tex"
+                                                 FLatex        -> ".ltx"
                                                  Fhtml         -> ".html"
                                                  Fopendocument -> ".odt"
                                                  Ftexinfo      -> ".texinfo"
@@ -283,7 +283,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                           --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
                                             doRestOfPdfLatex (not notReady, roundsSoFar +1)
 
-                                texFilename = addExtension (baseName (getOpts fSpec)) ".tex"
+                                texFilename = addExtension (baseName (getOpts fSpec)) ".ltx"
 
                                 callPdfLatexOnce :: IO ExitCode
                                 callPdfLatexOnce =
