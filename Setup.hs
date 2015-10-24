@@ -192,6 +192,7 @@ staticFileModuleHeader =
   , "module "++staticFileModuleName++" where"
   , "import qualified Data.ByteString.Lazy.Char8 as BS"
   , "import qualified Codec.Compression.GZip as GZip"
+  , "import System.FilePath"
   , ""
   , "data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand deriving (Show, Eq)" 
   , "data StaticFile = SF { fileKind      :: FileKind"
@@ -207,7 +208,7 @@ staticFileModuleHeader =
   , "        _   -> Nothing"
   , "  where"
   , "    isRightFile :: StaticFile -> Bool"
-  , "    isRightFile (SF fKind path _ _ ) = fKind == fk && path == \".\\\\\"++fp"
+  , "    isRightFile (SF fKind path _ _ ) = fKind == fk && equalFilePath path (\".\" </> fp)"
   , ""
   , "{-"++"# NOINLINE allStaticFiles #-}" -- Workaround: break pragma start { - #, since it upsets Eclipse :-( 
   , "allStaticFiles :: [StaticFile]"
