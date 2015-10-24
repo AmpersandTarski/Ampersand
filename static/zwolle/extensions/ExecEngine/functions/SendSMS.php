@@ -8,10 +8,17 @@
 
 require_once __DIR__.'/SendSMS/lib/class.MessageBird.php';
 
+/* Config params for SendSMS function of ExecEngine (using MessageBird.com)
+ * Set the sender, could be a number (16 numbers) or letters (11 characters)
+ * 
+ */
+Config::set('sendSMSConfig', 'execEngine', array('username' => '', 'password' => '', 'sender' => '')); // Copy this line to localSettings.php and provide settings
+
 function SendSMS ($phonenumber,$message){
-	$username = $GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['username'];
-	$password = $GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['password'];
-	$sender = $GLOBALS['ext']['ExecEngine']['functions']['SendSMS']['sender'];
+	$config = Config::get('sendSMSConfig', 'execEngine');
+	$username = $config['username'];
+	$password = $config['password'];
+	$sender = $config['sender'];
 
 	Notifications::addLog('Username = '.$username, 'ExecEngine');
 	

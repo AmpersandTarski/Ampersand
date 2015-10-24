@@ -472,7 +472,8 @@ generateRoles fSpec =
                  [ [ "array ( 'id' => "++show i 
                    , "      , 'name' => "++showPhpStr (name role)
                    , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
-                   , "      , 'interfaces' => array ("++ intercalate ", " ((map (showPhpStr . name) . filter (forThisRole role) . interfaceS) fSpec) ++")"
+                   , "      , 'interfaces' => array ("++ intercalate ", " (map (showPhpStr . name) ((roleInterfaces fSpec) role)) ++")"
+                   , "      , 'editableConcepts' => array ("++ intercalate ", " (map (showPhpStr . name) ((editableConcepts fSpec) role)) ++")"
                    , "      )" ]
                  | (i,role) <- zip [1::Int ..] (filter serviceOrRole $ fRoles fSpec) ]
             ) )
@@ -480,9 +481,6 @@ generateRoles fSpec =
              serviceOrRole Role{} = not isService
              serviceOrRole Service{} = isService 
         maintainedByRole role (role',_) = role == role'
-        forThisRole role interf = case ifcRoles interf of
-                                     []   -> True -- interface is for all roles
-                                     rs  -> role `elem` rs
 
 generateViews :: FSpec -> [String]
 generateViews fSpec =

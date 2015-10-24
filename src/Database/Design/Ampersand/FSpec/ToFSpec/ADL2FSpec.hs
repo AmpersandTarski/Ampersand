@@ -40,6 +40,7 @@ makeFSpec opts context
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
+              , roleInterfaces = fSpecRoleInterfaces
               , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
                                       || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
@@ -110,8 +111,22 @@ makeFSpec opts context
               , contextInfo = contextinfo
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
+              , editableConcepts = nub . concatMap editablecpts . fSpecRoleInterfaces
               }
    where           
+     editablecpts :: Interface -> [A_Concept]
+     editablecpts ifc = editables (ifcObj ifc)
+        where
+          editables :: ObjectDef -> [A_Concept]
+          editables obj = 
+             case objmsub obj of
+               Nothing       -> case objctx obj of
+                                  EDcD rel -> f target rel
+                                  EFlp (EDcD rel) -> f source rel
+                                  _ -> []
+               Just (InterfaceRef _ _) -> []
+               Just (Box _ _ objs)     -> foldr (uni) [] (map editables objs)
+          f sORt dcl = [sORt dcl | dcl `elem` ifcParams ifc]
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
@@ -139,6 +154,12 @@ makeFSpec opts context
            = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
                 , ifcControls = makeIfcControls (ifcParams ifc) allConjs
                 }
+     fSpecRoleInterfaces :: Role -> [Interface]
+     fSpecRoleInterfaces role = filter (forThisRole role) fSpecAllInterfaces
+     forThisRole ::Role -> Interface -> Bool
+     forThisRole role interf = case ifcRoles interf of
+                                     []   -> True -- interface is for all roles
+                                     rs  -> role `elem` rs
      
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
                      then map name (patterns context)

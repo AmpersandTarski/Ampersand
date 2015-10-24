@@ -112,16 +112,16 @@ class Notifications {
 		return array_values(self::$errors);
 	}
 	public static function getInvariants(){
-		return self::$invariants;
+		return array_values(self::$invariants);
 	}
 	public static function getViolations(){
 		return array_values(self::$violations);
 	}
 	public static function getInfos(){
-		return self::$infos;
+		return array_values(self::$infos);
 	}
 	public static function getSuccesses(){
-		return self::$successes;
+		return array_values(self::$successes);
 	}
 	public static function getLogs(){
 		return self::$logs;

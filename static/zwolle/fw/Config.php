@@ -3,7 +3,7 @@
 class Config {
 	
 	public static function get($configVar, $scope = 'global'){
-		if (!isset($GLOBALS[$scope][$configVar])) throw new Exception("Variable $configVar in scope $scope does not exists", 500);
+		if (!isset($GLOBALS[$scope][$configVar])) return null; //throw new Exception("Variable $configVar in scope $scope does not exists", 500);
 		
 		return $GLOBALS[$scope][$configVar];
 	}

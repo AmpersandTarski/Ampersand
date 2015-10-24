@@ -64,6 +64,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
+                   , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
                    , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
                    , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
@@ -112,6 +113,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , contextInfo   :: ContextInfo 
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
+                   , editableConcepts :: Role -> [A_Concept]  -- ^ All editable concepts per role. (See https://github.com/AmpersandTarski/ampersand/issues/211 )
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'

@@ -46,7 +46,7 @@ defaultWriterVariables :: FSpec -> [(String , String)]
 defaultWriterVariables fSpec
   = [ ("title", (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                         (Dutch  , False) -> if test (getOpts fSpec)
-                                            then "Taalmodel van "
+                                            then "Afspraken van "
                                             else "Functionele Specificatie van "
                         (English, False) -> "Functional Specification of "
                         (Dutch  ,  True) -> "Diagnose van "
@@ -147,7 +147,7 @@ defaultWriterVariables fSpec
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
 --         The first IO() is a Pandoc output format
---         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .tex
+--         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .ltx
 writepandoc :: FSpec -> Pandoc -> (String,IO(),IO())
 writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
          where
@@ -164,7 +164,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                  Frst          -> ".rst"
                                                  FPandoc       -> ".pandoc"
                                                  Frtf          -> ".rtf"
-                                                 FLatex        -> ".tex"
+                                                 FLatex        -> ".ltx"
                                                  Fhtml         -> ".html"
                                                  Fopendocument -> ".odt"
                                                  Ftexinfo      -> ".texinfo"
@@ -282,7 +282,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                           --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
                                             doRestOfPdfLatex (not notReady, roundsSoFar +1)
 
-                                texFilename = addExtension (baseName (getOpts fSpec)) ".tex"
+                                texFilename = addExtension (baseName (getOpts fSpec)) ".ltx"
 
                                 callPdfLatexOnce :: IO ExitCode
                                 callPdfLatexOnce =

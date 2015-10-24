@@ -5,13 +5,14 @@ $GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'][] = 'ExecEn
 $GLOBALS['hooks']['before_API_getAllNotifications_getViolations'][] = 'ExecEngine::run';
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
 
-// Zet extension in applications menu
+// Put ExecEngine extension in applications menu
 $GLOBALS['navBar']['refreshMenu'][] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
+
+Config::set('execEngineRoleName', 'execEngine', 'ExecEngine'); // Can be overwritten in localSettings.php
+Config::set('maxRunCount', 'execEngine', 10); // Can be overwritten in localSettings.php
 
 class ExecEngine {
 	
-	private static $defaultRoleName = 'ExecEngine'; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']
-	private static $defaultMaxRunCount = 10; // Can be set in localSettings.php using $GLOBALS['ext']['ExecEngine']['MaxRunCount']
 	private static $roleName;
 	public static $doRun = true;
 	public static $runCount;
@@ -28,10 +29,10 @@ class ExecEngine {
 			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file, 'ExecEngine');
 		}
 		
-		self::$roleName = isset($GLOBALS['ext']['ExecEngine']['ExecEngineRoleName']) ? $GLOBALS['ext']['ExecEngine']['ExecEngineRoleName'] : self::defaultRoleName;
+		self::$roleName = Config::get('execEngineRoleName', 'execEngine');
 		$role = Role::getRoleByName(self::$roleName);
 		
-		$maxRunCount = isset($GLOBALS['ext']['ExecEngine']['MaxRunCount']) ? $GLOBALS['ext']['ExecEngine']['MaxRunCount'] : self::$defaultMaxRunCount;
+		$maxRunCount = Config::get('maxRunCount', 'execEngine');
 		self::$runCount = 0;
 		
 		if($role){

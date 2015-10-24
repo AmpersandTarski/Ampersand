@@ -19,11 +19,11 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		$rootScope.notifications.logs = notifications.logs;
 		$rootScope.notifications.violations = notifications.violations;
 		$rootScope.notifications.invariants = notifications.invariants;
+		$rootScope.notifications.infos = notifications.infos;
 		
 		// Merge
 		$rootScope.notifications.successes = $rootScope.notifications.successes.concat(notifications.successes);
 		$rootScope.notifications.errors = $rootScope.notifications.errors.concat(notifications.errors);
-		$rootScope.notifications.infos = $rootScope.notifications.infos.concat(notifications.infos);
 		
 		if($scope.$storage.notificationPrefs.switchAutoHideSuccesses){
 			$timeout(function() {

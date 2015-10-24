@@ -11,14 +11,15 @@ TRUE
 
 1
 ADL (ampersand) files
-61
+62
 #define spullenboel
-CONTEXT Piet IN DUTCH
+CONTEXT Piet  IN DUTCH
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
 {- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
 
 --! Line comment die er qua colouring uitspringt kan soms handig zijn.
 --[ Dit soort commentaar ook]--
+-- [ of dit soort
 --$ of dit soort commentaar
 apenbroodboom :: A * B -X asdfsdfsdf  --[ Dit soort commentaar ook]--
 {-preCdx  :: Proces -> Conditie.-} --$ of dit soort commentaar
@@ -75,7 +76,7 @@ yx--!  asdfas
   yx--!  asdfa
 0
 FALSE
-26
+27
 Preprocessor
 Preprocessor regels hebben het '#' teken op de eerste positie van een regel
 ((?<!.)|[\n\r])#[^\n\r]*+
@@ -136,6 +137,26 @@ FALSE
 
 FALSE
 
+Line Comment (Exceptional)
+Excluded chars prevent coloring of regularly commented out POPULATIONS, INTERFACE parts and relation properties
+--+\[[^\[\n\r][^\n\r]*\]--+
+FALSE
+FALSE
+35
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Line Comment (VERY EMPHASIZED)
 --$
 --\$[^\n\r]*+
@@ -158,7 +179,7 @@ FALSE
 
 Line Comment (Section header)
 Text after --[ on the same line
---\s*\[[^\n\r]*+
+--+\[\[[^\n\r]*\]\]--+
 FALSE
 FALSE
 26
@@ -168,7 +189,7 @@ FALSE
 0
 FALSE
 FALSE
-FALSE
+TRUE
 FALSE
 
 
@@ -260,12 +281,12 @@ Special words
 Stuff for ExecEngine, Sessions, Logins
 4
 (\bExecEngine\b|\b{EX}\b|\b(InsPair|DelPair|NewStruct|DelAtom)\b
-|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|\b_NEW\b
+|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|\bSESSION\b|\b_NEW\b
 |\b[Cc][Rr][Uu][Dd]\b
-|"SessionRoles"|\bRole\b|\bNobodyInParticular\b)
+|"SessionRoles"|\bRole\b|"SessionUser"|\bUser\b|"SessionVars"|\bNobodyInParticular\b)
 FALSE
 FALSE
-18
+15
 0
 
 
@@ -310,7 +331,7 @@ Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parse
 |ALPHANUMERIC|BIGALPHANUMERIC|HUGEALPHANUMERIC|PASSWORD
 |BINARY|BIGBINARY|HUGEBINARY|DATE|DATETIME|BOOLEAN|INTEGER|FLOAT
 |IDENT|VIEW|HTML|TEMPLATE|TXT|PRIMHTML
-|INTERFACE|BOX|ROWS|TABS|COLS|CLASS|LINKTO
+|INTERFACE|FOR|BOX|ROWS|TABS|COLS|CLASS|LINKTO
 |PURPOSE|POPULATION|CONTAINS|ROLE|SERVICE|MAINTAINS)\b
 FALSE
 FALSE
@@ -331,7 +352,7 @@ FALSE
 
 V, I
 
-\b[VI](\[\s*[A-Z]\w*\s*[*]\s*[A-Z]\w*\s*\])?\b
+\b[VI](\[\s*[A-Z]['\w]*\s*[*]\s*[A-Z]['\w]*\s*\])?\b
 FALSE
 FALSE
 23
@@ -352,7 +373,7 @@ FALSE
 Relations (function name)
 
 2
-("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)
+("[a-z_][\s'\w]*"|\b[a-z_]['\w]*\b)
 (?=[\s]*::)
 FALSE
 FALSE
@@ -373,8 +394,9 @@ FALSE
 
 RELATIONs
 
-2
-(?<=\bRELATION[\s]+)("[a-z_][^"\r\n]*"|\b[a-z_]\w*\b)
+3
+(?<=\bRELATION[\s]+)
+   ("[a-z_][\s'\w]*"|\b[a-z_]['\w]*\b)
 (?=[\s]*\[)
 FALSE
 FALSE
@@ -384,7 +406,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 
@@ -397,7 +419,7 @@ RULEs, VIEWs (function name)
 
 3
 (?<=\b(RULE|VIEW)[\s]+)
-("[^"\r\n]*"|\b\w*\b)
+   ("[\s'\w]*"|\b['\w]*\b)
 (?=[\s]*:)
 FALSE
 FALSE
@@ -418,11 +440,12 @@ FALSE
 
 INTERFACEs
 
-6
-(?<=\bINTERFACE[\s]+)("[^"\r\n]*"|\b\w*\b)
-(?=([\s]*
-     (|\([^\)]*\)
-     )[\s]*:
+7
+(?<=\bINTERFACE[\s]+)
+  ("[\s'\w]*"|\b['\w]*\b)
+(?=([\s\r\n]*
+     (|\([^\)]*\)\s*
+     ):
    )
 )
 FALSE
@@ -444,7 +467,11 @@ FALSE
 
 PURPOSE Concepts, Patterns, Contexts  (plain text)
 
-(?<=(PURPOSE)\s*\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+4
+(?<=(PURPOSE)\s*
+  (CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)
+  [\s]+)
+("[A-Z]['\w]*"|\b[A-Z]['\w]*\b)
 FALSE
 FALSE
 0
@@ -453,7 +480,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 
@@ -464,7 +491,9 @@ FALSE
 
 Concepts, Patterns, Contexts  (function name)
 
-(?<=\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)\b("[A-Z]\w*"|[A-Z]\w*)\b
+2
+(?<=\b(CONTEXT|PATTERN|PROCESS|SERVICE|CONCEPT|RELATION|RULE|INTERFACE|IDENT|VIEW)[\s]+)
+("[A-Z]['\w]*"|\b[A-Z]['\w]*\b)
 FALSE
 FALSE
 13
@@ -473,7 +502,7 @@ FALSE
 
 0
 FALSE
-FALSE
+TRUE
 FALSE
 FALSE
 

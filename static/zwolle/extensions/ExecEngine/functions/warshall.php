@@ -29,6 +29,7 @@
 
 
 function TransitiveClosure($r,$C,$rCopy,$rStar){
+	if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
 	Notifications::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)", 'ExecEngine');
 	
 	$warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];

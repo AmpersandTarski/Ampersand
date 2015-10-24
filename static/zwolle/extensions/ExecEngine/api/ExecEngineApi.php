@@ -14,6 +14,17 @@ class ExecEngineApi{
 			$session = Session::singleton();
 			$db = Database::singleton();
 			
+			$allowedRoles = (array)Config::get('allowedRolesForRunFunction','execEngine');
+			if(LOGIN_ENABLED && !is_null($allowedRoles)){
+				$ok = false;
+				
+				$sessionRoles = Role::getAllSessionRoles(session_id());
+				foreach($sessionRoles as $role){
+					if(in_array($role->label, $allowedRoles)) $ok = true;
+				}
+				if(!$ok) throw new Exception("You do not have access to run the exec engine", 401);
+			}
+				
 			$session->setRole();
 			
 			// ExecEngine::run(); // Not required, because closeTransaction call below already kicks the ExecEngine
