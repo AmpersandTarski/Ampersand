@@ -163,7 +163,10 @@ showImage opts pict =
          FLatex  -> rawInline "latex" "\n\\end{center}\n\\end{figure}"
          _       -> mempty
   where
-    fileOnly = (snd . splitFileName . imagePath opts) pict
+    fileOnly = ((case fspecFormat opts of
+         FLatex  -> dropExtension -- let pdflatex figure out the optimal extension
+         _ -> id
+      ) . takeFileName . imagePath opts) pict
     
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything

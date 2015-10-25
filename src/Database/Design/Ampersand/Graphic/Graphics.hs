@@ -17,6 +17,9 @@ import Data.String
 
 import System.FilePath hiding (addExtension)
 import System.Directory
+import System.Process (callCommand)
+import Control.Exception (catch, IOException)
+
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.Graphic.Graphics"
@@ -261,16 +264,34 @@ writePicture opts pict
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
       [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
       [writeDot (XDot Nothing)   | genFSpec opts  ]++ --Reproduces the input along with layout information, and provides even more information on how the graph is drawn.
-      [writeDot Png    | genFSpec opts ]
+      [writeDot Png    | genFSpec opts ]++
+      [writePdf        | genFSpec opts ]
           )
    where
      writeDot :: GraphvizOutput
               -> IO ()
-     writeDot  gvOutput  =
+     writeDot = writeDot' (\ _ -> return ())
+     writeDot' :: (FilePath -> IO ())
+              -> GraphvizOutput
+              -> IO ()
+     writeDot' postProcess gvOutput  =
          do verboseLn opts ("Generating "++show gvOutput++" using "++show gvCommand++".")
             path <- addExtension (runGraphvizCommand gvCommand (dotSource pict)) gvOutput ((dropExtension . imagePath opts) pict)
             verboseLn opts (path++" written.")
+            postProcess path
        where  gvCommand = dotProgName pict
+     -- The GraphVizOutput Pdf generates pixelised graphics;
+     -- the GraphVizOutput Ps2 generates PostScript intended for conversion to PDF.
+     makePdf :: FilePath -> IO ()
+     makePdf path = do
+         callCommand (ps2pdfCmd path)
+         verboseLn opts (replaceExtension path ".pdf" ++ " written.")
+       `catch` \ e -> verboseLn opts ("Could not invoke PostScript->PDF conversion: " ++ show (e :: IOException))
+                   
+     writePdf :: IO ()
+     writePdf = writeDot' makePdf Ps2
+
+     ps2pdfCmd path = "ps2pdf -dPDFSETTINGS=/prepress " ++ path
 
 class ReferableFromPandoc a where
   imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
