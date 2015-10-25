@@ -262,23 +262,25 @@ writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
-      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
-      [writeDot (XDot Nothing)   | genFSpec opts  ]++ --Reproduces the input along with layout information, and provides even more information on how the graph is drawn.
+--      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+--      [writeDot (XDot Nothing)   | genFSpec opts  ]++ --Reproduces the input along with layout information, and provides even more information on how the graph is drawn.
+      [writeDot Pdf    | genFSpec opts ]++
       [writeDot Png    | genFSpec opts ]++
-      [writePdf        | genFSpec opts ]
+--      [writePdf Ps2    | genFSpec opts ] --this does not work on Windows
           )
    where
-     writeDot :: GraphvizOutput
-              -> IO ()
-     writeDot = writeDot' (\ _ -> return ())
-     writeDot' :: (FilePath -> IO ())
+     writeDot :: GraphvizOutput -> IO ()
+     writeDot = writeDotPostProcess Nothing
+     writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor
               -> GraphvizOutput
               -> IO ()
-     writeDot' postProcess gvOutput  =
+     writeDotPostProcess postProcess gvOutput  =
          do verboseLn opts ("Generating "++show gvOutput++" using "++show gvCommand++".")
             path <- addExtension (runGraphvizCommand gvCommand (dotSource pict)) gvOutput ((dropExtension . imagePath opts) pict)
             verboseLn opts (path++" written.")
-            postProcess path
+            case postProcess of
+              Nothing -> return ()
+              Just x -> x path
        where  gvCommand = dotProgName pict
      -- The GraphVizOutput Pdf generates pixelised graphics;
      -- the GraphVizOutput Ps2 generates PostScript intended for conversion to PDF.
@@ -288,8 +290,9 @@ writePicture opts pict
          verboseLn opts (replaceExtension path ".pdf" ++ " written.")
        `catch` \ e -> verboseLn opts ("Could not invoke PostScript->PDF conversion: " ++ show (e :: IOException))
                    
-     writePdf :: IO ()
-     writePdf = writeDot' makePdf Ps2
+     writePdf :: GraphvizOutput
+              -> IO ()
+     writePdf = writeDotPostProcess (Just makePdf) 
 
      ps2pdfCmd path = "ps2pdf -dPDFSETTINGS=/prepress " ++ path
 
@@ -299,7 +302,7 @@ class ReferableFromPandoc a where
 instance ReferableFromPandoc Picture where
   imagePath opts p =
      ( dirOutput opts)
-     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "png"
+     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "pdf"
 
 class Named a => Navigatable a where
    interfacename :: a -> String
