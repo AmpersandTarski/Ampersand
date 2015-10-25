@@ -265,7 +265,7 @@ writePicture opts pict
 --      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
 --      [writeDot (XDot Nothing)   | genFSpec opts  ]++ --Reproduces the input along with layout information, and provides even more information on how the graph is drawn.
       [writeDot Pdf    | genFSpec opts ]++
-      [writeDot Png    | genFSpec opts ]++
+      [writeDot Png    | genFSpec opts ]
 --      [writePdf Ps2    | genFSpec opts ] --this does not work on Windows
           )
    where
