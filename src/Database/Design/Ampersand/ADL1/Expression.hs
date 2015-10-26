@@ -11,9 +11,6 @@ import Database.Design.Ampersand.Basics (uni)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 --import Debug.Trace
 
--- fatal :: Int -> String -> a
--- fatal = fatalMsg "ADL1.Expression"
-
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an
 --   expression of the form Erel rel.

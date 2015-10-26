@@ -2,13 +2,10 @@
 module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Basics (fatal)
 --import Control.Applicative
 --import Data.Traversable
 import qualified Data.Set as Set
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "ADL1.Disambiguate"
 
 findConcept :: String -> A_Concept
 -- SJC: ONE should be tokenized, so it cannot occur as a string

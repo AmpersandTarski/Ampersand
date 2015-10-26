@@ -72,9 +72,6 @@ import Data.Time.Clock
 import Data.Default
 import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Core.AbstractSyntaxTree"
-
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
          , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.

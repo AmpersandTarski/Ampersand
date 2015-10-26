@@ -38,9 +38,6 @@ import Data.List
 import Control.Monad
 import Data.Maybe
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.PandocAux"
-
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: FSpec -> [(String , String)]
 defaultWriterVariables fSpec

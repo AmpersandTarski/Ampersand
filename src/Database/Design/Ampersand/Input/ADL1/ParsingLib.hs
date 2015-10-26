@@ -33,12 +33,9 @@ import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
 import Data.Time.Calendar
 import Data.Time.Clock
-import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Basics (fatal)
 import Data.Maybe
 import Prelude hiding ((<$))
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "ParsingLib"
 
 -- | The Ampersand parser type
 type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.

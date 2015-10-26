@@ -18,9 +18,6 @@ import Data.String
 import System.FilePath hiding (addExtension)
 import System.Directory
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.Graphic.Graphics"
-
 data PictureReq = PTClassDiagram
                 | PTRelsUsedInPat Pattern
                 | PTDeclaredInPat Pattern

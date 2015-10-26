@@ -6,10 +6,6 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.List(nub,partition)
 import Data.Maybe(isJust)
 
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterDiagnosis"
-
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
  = (  chptHeader (fsLang fSpec) Diagnosis

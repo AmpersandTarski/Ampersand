@@ -17,10 +17,7 @@ import Data.Maybe (maybeToList)
 import Data.List (nub,delete)
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Classes.ViewPoint
-fatal :: Int -> String -> a
-fatal = fatalMsg "Classes.Populated"
-
-      
+  
        
        
 genericAndSpecifics :: A_Gen -> [(A_Concept,A_Concept)]

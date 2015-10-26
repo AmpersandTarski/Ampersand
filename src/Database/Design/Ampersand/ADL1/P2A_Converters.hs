@@ -20,9 +20,6 @@ import Data.Maybe
 import Data.List(nub)
 import Data.Char(toUpper,toLower)
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "ADL1.P2A_Converters"
-
 newtype SignOrd = SignOrd Signature
 instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)

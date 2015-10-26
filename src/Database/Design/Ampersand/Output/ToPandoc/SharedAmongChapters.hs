@@ -58,8 +58,6 @@ import System.FilePath
 import GHC.Exts(sortWith)
 import Database.Design.Ampersand.Graphic.Graphics
 import Database.Design.Ampersand.Classes()
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters"
 
 data Chapter = Intro
              | SharedLang

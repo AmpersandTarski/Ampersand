@@ -37,9 +37,8 @@ import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
 import Database.Design.Ampersand.Input.ADL1.FilePos()
 
-fatal,_notUsed :: Int -> String -> a
-fatal = fatalMsg "Input.ADL1.CtxError"
-_notUsed = fatal
+_notUsed :: a
+_notUsed = undefined fatal
 
 -- unguard is like an applicative join, which can be used to elegantly express monadic effects for Guarded.
 -- The function is a bit more compositional than the previously used <?> as you don't have to tuple all the arguments.

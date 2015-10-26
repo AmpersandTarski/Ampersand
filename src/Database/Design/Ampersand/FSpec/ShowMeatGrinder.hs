@@ -21,12 +21,7 @@ import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (RuleType(..))
 import Database.Design.Ampersand.Classes.ConceptStructure
 
---import Data.Hashable
 import Data.Maybe
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "ShowMeatGrinder"
-
 
 makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
 makeMetaPopulationFile mType fSpec

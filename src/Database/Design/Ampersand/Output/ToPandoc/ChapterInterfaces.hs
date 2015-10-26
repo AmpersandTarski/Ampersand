@@ -11,9 +11,6 @@ import Database.Design.Ampersand.FSpec.FPA
 import Database.Design.Ampersand.Output.PandocAux
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterInterfaces"
-
 chpInterfacesBlocks :: Int -> FSpec -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
   mconcat $ map interfaceChap regularInterfaces ++ [ messagesChap messageInterfaces | not (null messageInterfaces) ]

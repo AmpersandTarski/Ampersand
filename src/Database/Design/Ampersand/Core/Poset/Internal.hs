@@ -12,9 +12,7 @@ module Database.Design.Ampersand.Core.Poset.Internal where
 
 import qualified Prelude
 import Prelude hiding (Ordering(..), Ord(..))
-import Database.Design.Ampersand.Basics (fatalMsg)
-fatal :: Int -> String -> a
-fatal = fatalMsg "Core.Poset.Internal"
+import Database.Design.Ampersand.Basics (fatal)
 
 data Ordering = LT | EQ | GT | CP | NC
     deriving (Eq, Show, Read, Bounded, Enum)

@@ -15,9 +15,6 @@ import Data.List
 import Data.Maybe
 import Prelude hiding ((<$))
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Input.ADL1.Parser"
-
 --- Populations ::= Population+
 -- | Parses a list of populations
 pPopulations :: AmpParser [P_Population] -- ^ The population list parser

@@ -9,9 +9,6 @@ import Text.Pandoc
 import Database.Design.Ampersand.Core.ParseTree      (PandocFormat(..))
 import Database.Design.Ampersand.Basics
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Explain"
-
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
 -- | defaultPandocReader getOpts should be used on user-defined strings.
 string2Blocks :: PandocFormat -> String -> [Block]

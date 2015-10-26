@@ -53,9 +53,6 @@ import Data.Time.Calendar
 import Data.Time.Clock
 import Data.Time.LocalTime() -- for instance Show UTCTime
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Core.ParseTree"
-
 data P_Context
    = PCtx{ ctx_nm ::     String           -- ^ The name of this context
          , ctx_pos ::    [Origin]         -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.

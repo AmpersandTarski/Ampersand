@@ -22,11 +22,9 @@ import qualified Prelude (Ordering(..))
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.Poset.Instances() --required for instance Int of Poset only
-import Database.Design.Ampersand.Core.Poset.Internal hiding (fatal)
+import Database.Design.Ampersand.Core.Poset.Internal
 import qualified Data.List as List
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Core.Poset"
 
 -- | makePartialOrder makes a partial order containing local partial orders, i.e. comparable classes.
 --   it makes sense to sort comparable classes.

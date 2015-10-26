@@ -11,10 +11,6 @@ import Database.Design.Ampersand.Prototype.PHP
 import Database.Design.Ampersand.FSpec.SQL
 import qualified Database.Design.Ampersand.Misc.Options as Opts
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Prototype.ValidateEdit"
-
-
 tempDbName :: String
 tempDbName = "ampersand_temporaryeditvalidationdb"
 

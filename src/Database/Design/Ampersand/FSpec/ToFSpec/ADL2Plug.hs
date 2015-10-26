@@ -16,9 +16,6 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.ToFSpec.ADL2Plug"
-
 -- Not the most ideal place for showPlug, but putting it in Database.Design.Ampersand.FSpec.FSpec creates an import cycle, which will require quite some effort to resolve.
 showPlug :: PlugSQL -> [String]
 showPlug plug =

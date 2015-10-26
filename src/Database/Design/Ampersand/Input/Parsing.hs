@@ -25,9 +25,6 @@ import Database.Design.Ampersand.Input.Xslx.XLSX
 import Control.Exception
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Parsing"
-
 -- | Parse an Ampersand file and all transitive includes
 parseADL ::  Options                -- ^ The options given through the command line
          -> Either FilePath MetaType   -- ^ The path of the file to be parsed OR the MetaType. In the latter case, the files will be taken from `allStaticFiles`
@@ -79,8 +76,7 @@ parseSingleADL opts useAllStaticFiles filePath
                     <- if useAllStaticFiles
                        then case getStaticFileContent FormalAmpersand filePath of
                              Just cont -> do return (Right $ stripBom cont)
-                             Nothing -> fatalMsg ("Statically included "++ show FormalAmpersand++ " files. ") 0 $
-                                         "Cannot find `"++filePath++"`."
+                             Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++filePath++"`.")
                        else readUTF8File filePath
                 ; case mFileContents of
                     Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)

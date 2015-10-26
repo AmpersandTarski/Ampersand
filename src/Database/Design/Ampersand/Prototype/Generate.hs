@@ -13,12 +13,9 @@ import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.Prototype.ProtoUtil
 import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
+import Database.Design.Ampersand.Basics (fatal)
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 import Control.Exception
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "Generate"
-
 
 generateCustomCss :: FSpec -> IO ()
 generateCustomCss fSpec =

@@ -15,11 +15,6 @@ import System.FilePath
 import Database.Design.Ampersand.Core.ToMeta
 import Control.Monad
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "CreateFspec"
-
-
-
 -- | create an FSpec, based on the provided command-line options.
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)

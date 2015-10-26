@@ -6,9 +6,6 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Data.List (intersperse )
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis"
-
 chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis lev fSpec = (
       --  *** Header ***

@@ -3,10 +3,7 @@ module Database.Design.Ampersand.Output.Statistics (Statistics(..)) where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FPA
-import Database.Design.Ampersand.Basics (fatalMsg)
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.Statistics"
+import Database.Design.Ampersand.Basics (fatal)
 
 -- TODO Deze module moet nog verder worden ingekleurd...
 

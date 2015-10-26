@@ -7,9 +7,6 @@ import Database.Design.Ampersand.FSpec.FSpec(FSpec(..),Activity(..))
 import Database.Design.Ampersand.Basics
 import Text.Pandoc
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.Motivations"
-
 -- The general idea is that an Ampersand declaration such as:
 --     PURPOSE RELATION r[A*B] IN ENGLISH
 --     {+This text explains why r[A*B] exists-}
