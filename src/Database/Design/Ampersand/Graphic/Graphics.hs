@@ -262,11 +262,8 @@ writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
---      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
---      [writeDot (XDot Nothing)   | genFSpec opts  ]++ --Reproduces the input along with layout information, and provides even more information on how the graph is drawn.
-      [writeDot Pdf    | genFSpec opts ]++
-      [writeDot Png    | genFSpec opts ]
---      [writePdf Ps2    | genFSpec opts ] --this does not work on Windows
+      [writeDot DotOutput  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+      [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
      writeDot :: GraphvizOutput -> IO ()
@@ -282,19 +279,21 @@ writePicture opts pict
               Nothing -> return ()
               Just x -> x path
        where  gvCommand = dotProgName pict
-     -- The GraphVizOutput Pdf generates pixelised graphics;
-     -- the GraphVizOutput Ps2 generates PostScript intended for conversion to PDF.
+     -- The GraphVizOutput Pdf generates pixelised graphics on Linux
+     -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
      makePdf :: FilePath -> IO ()
      makePdf path = do
          callCommand (ps2pdfCmd path)
          verboseLn opts (replaceExtension path ".pdf" ++ " written.")
-       `catch` \ e -> verboseLn opts ("Could not invoke PostScript->PDF conversion: " ++ show (e :: IOException))
+       `catch` \ e -> verboseLn opts ("Could not invoke PostScript->PDF conversion."++
+                                      "\n  Did you install MikTex? Can the command epstopdf be found?"++
+                                      "\n  Your error message is:\n " ++ show (e :: IOException))
                    
      writePdf :: GraphvizOutput
               -> IO ()
      writePdf = writeDotPostProcess (Just makePdf) 
 
-     ps2pdfCmd path = "ps2pdf -dPDFSETTINGS=/prepress " ++ path
+     ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 class ReferableFromPandoc a where
   imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
@@ -302,7 +301,7 @@ class ReferableFromPandoc a where
 instance ReferableFromPandoc Picture where
   imagePath opts p =
      ( dirOutput opts)
-     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "pdf"
+     </> (escapeNonAlphaNum . pictureID . pType ) p 
 
 class Named a => Navigatable a where
    interfacename :: a -> String
