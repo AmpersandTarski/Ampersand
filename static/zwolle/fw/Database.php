@@ -331,16 +331,21 @@ class Database
 			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol); // unique=true, null=true
 			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol); // unique=true, null=false
 			
-			// If the modified column is unique, we do an update
-			// This is placed first, because of INJ constraints
-			if ($tableModifiedColumnInfo['unique'] && !$tableStableColumnInfo['unique']){
+			/* Complicated code to determine UPDATE or INSERT statement: see Github #169 for explanation */
+			if($tableModifiedColumnInfo['unique'] && $tableStableColumnInfo['unique']){
+				// If both columns are 'unique', we have to check the 'null' possibility
+				if($tableModifiedColumnInfo['null']) $this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
+				else $this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
+					
+				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+			}			
+			elseif ($tableModifiedColumnInfo['unique'] && !$tableStableColumnInfo['unique']){
 			
 				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
 				
 				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			}
-			// Elseif the stable column is unique, we do an update // TODO: maybe we can do updates also in non-unique columns
-			elseif ($tableStableColumnInfo['unique']){
+			elseif (!$tableModifiedColumnInfo['unique'] && $tableStableColumnInfo['unique']){
 				
 				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
 				
