@@ -14,12 +14,11 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkInvalidCRUDError
   , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
   , mkTypeMismatchError
-  , Guarded(..)
+  , Guarded(..) -- ^ If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
-  , unguard
   )
--- SJC: I consider it ill practice to export CTXE
--- Reason: CtxError should obtain all error messages
+-- SJC: I consider it ill practice to export any CtxError constructors
+-- Reason: All error messages should pass through the CtxError module
 -- By not exporting anything that takes a string, we prevent other modules from containing error message
 -- If you build a function that must generate an error, put it in CtxError and call it instead
 -- see `getOneExactly' / `GetOneGuarded' as a nice example
@@ -39,13 +38,6 @@ import Database.Design.Ampersand.Input.ADL1.FilePos()
 
 _notUsed :: a
 _notUsed = undefined fatal
-
--- unguard is like an applicative join, which can be used to elegantly express monadic effects for Guarded.
--- The function is a bit more compositional than the previously used <?> as you don't have to tuple all the arguments.
--- Similar to join and bind we have: unguard g = id <?> g, and f g = unguard $ f <$> pure g
-unguard :: Guarded (Guarded a) -> Guarded a
-unguard (Errors errs) = Errors errs
-unguard (Checked g)   = g
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
@@ -280,16 +272,15 @@ data Guarded a = Errors [CtxError] | Checked a deriving Show
 instance Functor Guarded where
  fmap _ (Errors a)  = Errors a
  fmap f (Checked a) = Checked (f a)
-
 instance Applicative Guarded where
  pure = Checked
  (<*>) (Checked f) (Checked a) = Checked (f a)
  (<*>) (Errors  a) (Checked _) = Errors a
  (<*>) (Checked _) (Errors  b) = Errors b
- (<*>) (Errors  a) (Errors  b) = Errors (a ++ b) -- this line makes Guarded not a monad
- -- Guarded is NOT a monad!
- -- Reason: (<*>) has to be equal to `ap' if it is, and this definition is different
- -- Use <?> if you wish to use the monad-like thing
+ (<*>) (Errors  a) (Errors  b) = Errors (a ++ b) -- this line makes Guarded violate some applicative/monad laws
+instance Monad Guarded where
+ (>>=) (Checked a) f = f a
+ (>>=) (Errors x) _ = Errors x
 
 -- Shorthand for working with Guarded in IO
 whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)

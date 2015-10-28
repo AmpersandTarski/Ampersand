@@ -45,7 +45,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , showValADL,showValPHP,showValSQL
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
- , (<==>),join,meet,greatest,least,maxima,minima,sortWith
+ , (<==>),greatest,least,maxima,minima,sortWith
  , showSign
  , aMarkup2String
  , module Database.Design.Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
