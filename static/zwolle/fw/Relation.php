@@ -2,11 +2,17 @@
 
 class Relation {
 
+	public static function getAllRelations(){
+		global $allRelations; // from Generics.php
+		
+		return $allRelations;
+	}
+	
 	/*
 	 * $relationName may be specified as fullRelationSignature (as provided in Generics) or as Ampersand relation name (as specified in Ampersand script)
 	 */
 	public static function isCombination($relationName, $srcConcept, $tgtConcept){
-		global $allRelations; // from Generics.php
+		$allRelations = Relation::getAllRelations();
 		
 		foreach($allRelations as $key => $relationInfo){
 			// Match relationName with relation name as specified in Ampersand script.
@@ -30,19 +36,19 @@ class Relation {
 	}
 	
 	public static function getTable($fullRelationSignature){
-		global $allRelations;
+		$allRelations = Relation::getAllRelations();
 		
 		return $allRelations[$fullRelationSignature]['table'];
 	}
 	
 	public static function getSrcCol($fullRelationSignature){
-		global $allRelations;
+		$allRelations = Relation::getAllRelations();
 	
 		return $allRelations[$fullRelationSignature]['srcCol'];
 	}
 	
 	public static function getTgtCol($fullRelationSignature){
-		global $allRelations;
+		$allRelations = Relation::getAllRelations();
 	
 		return $allRelations[$fullRelationSignature]['tgtCol'];
 	}
@@ -57,7 +63,7 @@ class Relation {
 	}
 	
 	public static function getAffectedSigConjunctIds($fullRelationSignature){
-		global $allRelations; // from Generics.php
+		$allRelations = Relation::getAllRelations();
 	
 		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation \'$fullRelationSignature\' does not exists in allRelations", 500);
 	
@@ -65,7 +71,7 @@ class Relation {
 	}
 	
 	public static function getAffectedInvConjunctIds($fullRelationSignature){
-		global $allRelations; // from Generics.php
+		$allRelations = Relation::getAllRelations();
 	
 		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation \'$fullRelationSignature\' does not exists in allRelations", 500);
 	
