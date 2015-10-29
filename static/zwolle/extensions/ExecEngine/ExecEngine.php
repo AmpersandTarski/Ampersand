@@ -17,6 +17,7 @@ class ExecEngine {
 	public static $runCount;
 	
 	public static function run(){
+		$database = Database::singleton();
 		
 		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------', 'ExecEngine');
 		
@@ -42,8 +43,23 @@ class ExecEngine {
 				if(self::$runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')', 500);
 				
 				Notifications::addLog("ExecEngine run (" . self::$runCount . ") for role '" . $role->label . "'", 'ExecEngine');
+				
+				// Determine affected rules that must be checked by the exec engine
+				$affectedConjuncts = (array)RuleEngine::getAffectedInvConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations());
+				$affectedConjuncts = array_merge($affectedConjuncts, (array)RuleEngine::getAffectedSigConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations()));
+				
+				$affectedRules = array();
+				foreach($affectedConjuncts as $conjunctId){
+					$conjunct = RuleEngine::getConjunct($conjunctId);
+					foreach ($conjunct['invariantRuleNames'] as $ruleName) $affectedRules[] = $ruleName;
+					foreach ($conjunct['signalRuleNames'] as $ruleName) $affectedRules[] = $ruleName;
+				}
+				
+				// Check rules
 				$rulesThatHaveViolations = array();
 				foreach ($role->maintains as $ruleName){
+					if(!in_array($ruleName, $affectedRules)) continue; // skip this rule
+					
 					$rule = RuleEngine::getRule($ruleName);
 					$violations = RuleEngine::checkRule($rule, false);
 					
