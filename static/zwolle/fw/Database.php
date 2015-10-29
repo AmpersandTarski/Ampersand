@@ -10,14 +10,14 @@ class Database
 	private $db_name;
 	
 	private $transaction;
+	private $trackAffectedConjuncts = true;
 	private $affectedConcepts = array(); // array with all affected Concepts during a transaction.
 	private $affectedRelations = array(); // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
 	
 	private static $_instance = null;
 	
 	// Prevent any outside instantiation of this object
-	private function __construct()
-	{
+	private function __construct(){
 		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
 		$this->db_host = $DB_host;
 		$this->db_user = $DB_user;
@@ -165,10 +165,7 @@ class Database
 				
 				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)");
 				
-				if(!in_array($concept, $this->affectedConcepts)){
-					$this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
-					Notifications::addLog("Mark concept $concept as affected concept", 'CONJUNCTS');
-				}
+				$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 				
 				Notifications::addLog("Atom $newAtom added into concept $concept", 'DATABASE');
 			}else{
@@ -212,10 +209,7 @@ class Database
 			// Perform update
 			$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"$anyConceptColForA\" = '$atomEsc'");
 			
-			if(!in_array($conceptB, $this->affectedConcepts)){
-				$this->affectedConcepts[] = $conceptB; // add $concept to affected concepts. Needed for conjunct evaluation.
-				Notifications::addLog("Mark concept $conceptB as affected concept", 'CONJUNCTS');
-			}
+			$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 			
 			Notifications::addLog("Atom '$atom' added as member to concept '$conceptB'", 'DATABASE');
 		
@@ -256,10 +250,7 @@ class Database
 			
 			$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"$conceptCol\" = '$atomEsc'");
 			
-			if(!in_array($concept, $this->affectedConcepts)){
-				$this->affectedConcepts[] = $concept; // add $concept to affected concepts. Needed for conjunct evaluation.
-				Notifications::addLog("Mark concept $concept as affected concept", 'CONJUNCTS');
-			}
+			$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 			
 			Notifications::addLog("Atom '$atom' removed as member from concept '$concept'", 'DATABASE');
 			
@@ -360,10 +351,7 @@ class Database
 				if (!is_null($originalAtom)) $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$originalAtomEsc'");			
 			}
 			
-			if(!in_array($fullRelationSignature, $this->affectedRelations)) {
-				$this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
-				Notifications::addLog("Mark relation $fullRelationSignature as affected relation", 'CONJUNCTS');
-			}
+			$this->addAffectedRelations($fullRelationSignature); // add relation to affected relations. Needed for conjunct evaluation.
 	
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -428,10 +416,7 @@ class Database
 				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_DELETE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			}
 			
-			if(!in_array($fullRelationSignature, $this->affectedRelations)){
-				Notifications::addLog("Mark relation $fullRelationSignature as affected relation", 'CONJUNCTS');
-				$this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
-			}
+			$this->addAffectedRelations($fullRelationSignature); // add relation to affected relations. Needed for conjunct evaluation.
 			
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -471,10 +456,7 @@ class Database
 				}
 			}
 			
-			if(!in_array($concept->name, $this->affectedConcepts)){
-				Notifications::addLog("Mark concept $concept->name as affected concept", 'CONJUNCTS');
-				$this->affectedConcepts[] = $concept->name; // add $concept to affected concepts. Needed for conjunct evaluation.
-			}
+			$this->addAffectedConcept($concept->name); // add concept to affected concepts. Needed for conjunct evaluation.
 			
 			Notifications::addLog("Atom $atom (and all related links) deleted in database", 'DATABASE');
 		}catch(Exception $e){
@@ -596,6 +578,40 @@ class Database
 		}
 		
 	}
+
+// =============================== AFFECTED CONJUNCTS ===========================================================
+	private function addAffectedConcept($conceptName){
+		
+		if(!in_array($conceptName, $this->affectedConcepts) && $this->trackAffectedConjuncts){
+			Notifications::addLog("Mark concept $conceptName as affected concept", 'CONJUNCTS');
+			$this->affectedConcepts[] = $conceptName; // add concept to affected concepts. Needed for conjunct evaluation.
+		}
+		
+	}
+	
+	private function addAffectedRelations($fullRelationSignature){
+	
+		if(!in_array($fullRelationSignature, $this->affectedRelations) && $this->trackAffectedConjuncts){
+			Notifications::addLog("Mark relation $fullRelationSignature as affected relation", 'CONJUNCTS');
+			$this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
+		}
+	}
+	
+// =============================== GETTERS SETTERS ===========================================================
+	
+	public function getAffectedConcepts(){
+		return $this->affectedConcepts;	
+	}
+	
+	public function getAffectedRelations(){
+		return $this->affectedRelations;
+	}
+	
+	public function setTrackAffectedConjuncts($bool){
+		$this->trackAffectedConjuncts = $bool;
+	}	
+	
+	
 }
 
 
