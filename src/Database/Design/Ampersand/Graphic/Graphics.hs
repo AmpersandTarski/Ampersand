@@ -263,6 +263,8 @@ writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
       [writeDot DotOutput  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+--      [writeDot Png    | genFSpec opts ] ++
+      [writeDot Svg    | genFSpec opts ] ++
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
@@ -301,7 +303,7 @@ class ReferableFromPandoc a where
 instance ReferableFromPandoc Picture where
   imagePath opts p =
      ( dirOutput opts)
-     </> (escapeNonAlphaNum . pictureID . pType ) p 
+     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
 
 class Named a => Navigatable a where
    interfacename :: a -> String

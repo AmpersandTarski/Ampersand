@@ -153,7 +153,7 @@ showImage opts pict =
       case fspecFormat opts of
          FLatex  -> rawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
          _       -> mempty
-   <> image fileOnly (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
+   <> image fileOnly (xLabel pict) (text $ "Here, the image `"++caption pict++"` should be visible" )
    <> case fspecFormat opts of
          FLatex  -> rawInline "latex" "}\n"
                   <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n")
