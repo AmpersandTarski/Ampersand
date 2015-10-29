@@ -15,7 +15,6 @@ class RuleEngine {
 	 */
 	// TODO: function can be made simpler.
 	public static function checkProcessRules($roleId = null, $cacheConjuncts = true){
-		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkProcessRules'] as $hook) call_user_func($hook); // Hook functions
 		
 		if(!is_null($roleId)){
 			$role = new Role($roleId);
@@ -46,9 +45,7 @@ class RuleEngine {
 	 * 		default: true
 	 */
 	public static function checkInvariantRules($invariantConjuctsIds = null, $cacheConjuncts = true){		
-		$invariantRulesHold = true; // default
-		
-		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkInvariantRules'] as $hook) call_user_func($hook); // Hook functions 
+		$invariantRulesHold = true; // default 
 		
 		// check invariant rules
 		Notifications::addLog('------------------------- CHECKING INVARIANT RULES -------------------------', 'RuleEngine');
