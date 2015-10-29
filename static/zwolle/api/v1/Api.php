@@ -361,11 +361,8 @@ class Api{
     	try{
     		$session = Session::singleton();
     		$session->setRole($roleId);
-    			
-    		foreach ((array)$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'] as $hook) call_user_func($hook);
     
     		$session->role->getViolations();
-    		// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
     
     		return Notifications::getAll();
     			

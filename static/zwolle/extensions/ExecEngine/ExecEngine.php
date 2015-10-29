@@ -2,7 +2,6 @@
 
 // Define hooks
 $GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'][] = 'ExecEngine::run';
-$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'][] = 'ExecEngine::run';
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
 
 // Put ExecEngine extension in applications menu
