@@ -370,5 +370,77 @@ class Api{
     		throw new RestException($e->getCode(), $e->getMessage());
     	}
     }
+    
+    /**
+     * @url GET stats/performance/conjuncts
+     * @param string $groupBy
+     * @param int $from
+     * @param int $to
+     */
+    public function conjPerfStats($groupBy = 'conjuncts', $from = 0, $to = 10){
+    	try{
+    		if(Config::get('productionEnv')) throw new Exception ("Performance tests are not allowed in production environment", 403);
+    		
+    		$performanceArr = array();
+    		
+    		// run all conjuncts (from - to)
+    		for ($i = $from; $i <= $to; $i++){
+    			$conj = RuleEngine::getConjunct('conj_' . $i);
+    			$startTimeStamp = microtime(true); // true means get as float instead of string
+    			RuleEngine::checkConjunct('conj_' . $i, false);
+    			$endTimeStamp = microtime(true);
+    			
+    			$performanceArr['conj_'.$i] = array( 'id' => 'conj_' . $i
+    										, 'start' => $startTimeStamp
+    										, 'end' => $endTimeStamp
+    										, 'duration' => $endTimeStamp - $startTimeStamp
+    										, 'invariantRules' => implode(';', $conj['invariantRuleNames'])
+    										, 'signalRules' => implode(';', $conj['signalRuleNames'])
+    										);
+    		}
+    		
+    		
+    		switch ($groupBy){
+    			case 'conjuncts' :
+    				return array_values($performanceArr);
+    				break;
+    			case 'rules' :
+    				$ruleArr = array();
+    				foreach(RuleEngine::getAllRules() as $rule){
+    					$duration = 0;
+    					foreach($rule['conjunctIds'] as $conj){
+    						$duration += $performanceArr[$conj]['duration'];
+    					}
+    					$ruleArr[] = array('ruleName' => $rule['name']
+    										, 'duration' => $duration
+    										, 'conjuncts' => implode(';', $rule['conjunctIds'])
+    										);
+    				}
+    				return $ruleArr;
+    				break;
+    			case 'relations' :
+    				$relArr = array();
+    				foreach(Relation::getAllRelations() as $sig => $rel){
+    					$duration = 0;
+    					$conjuncts = array_merge($rel['affectedInvConjunctIds'], $rel['affectedSigConjunctIds']);
+    					foreach($conjuncts as $conj){
+    						$duration += $performanceArr[$conj]['duration'];
+    					}
+    					$relArr[] = array('relationSignature' => $sig
+    									, 'duration' => $duration
+    									, 'conjuncts' => implode(';', $conjuncts)
+    									);
+    				}
+    				return $relArr;
+    				break;
+    			default :
+    				throw new Exception ("Unknown groupBy argument", 500);
+    				break;
+    		}
+    		
+    	}catch(Exception $e){
+    		throw new RestException($e->getCode(), $e->getMessage());
+    	}
+    }
 }
 ?>

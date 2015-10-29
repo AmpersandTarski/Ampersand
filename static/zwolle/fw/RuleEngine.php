@@ -133,7 +133,7 @@ class RuleEngine {
 	 * 		false: don't cache conjuncts (is used by ExecEngine)
 	 * 		default: true
 	 */
-	private static function checkConjunct($conjunctId, $cacheConjuncts = true){
+	public static function checkConjunct($conjunctId, $cacheConjuncts = true){
 		Notifications::addLog("Checking conjunct '" . $conjunctId."' cache:".var_export($cacheConjuncts, true), 'RuleEngine');
 		try{
 			
