@@ -48,8 +48,8 @@ createFspec flags =
      case bothCtx of
         Errors err -> return (Errors err)
         Checked pCtx
-           -> do let (gaCtx, stTypeGraph, condensedGraph) = pCtx2aCtx pCtx 
-                 when  (typeGraphs flags) (showGraphs stTypeGraph condensedGraph)
+           -> do let (gaCtx, stTypeGraph, eqTypeGraph) = pCtx2aCtx pCtx 
+                 when  (typeGraphs flags) (showGraphs stTypeGraph eqTypeGraph)
                  case gaCtx of
                    (Errors  err ) -> return (Errors err)
                    (Checked aCtx) -> return (Checked (makeFspec flags aCtx ))
@@ -58,8 +58,8 @@ createFspec flags =
 -- It prints three graphs. For an explanation of those graphs, consult the corresponding papers (yet to be written).
 -- Use only for very small scripts, or else the results will not be very informative.
 -- For the large scripts that are used in projects, the program may abort due to insufficient resources.
-    showGraphs stTypeGraph condensedGraph
-      = do condensedGraphPath<-runGraphvizCommand Dot condensedGraph Canon (replaceExtension ("Condensed_Graph_of_"++baseName flags) ".dot")
+    showGraphs stTypeGraph eqTypeGraph
+      = do condensedGraphPath<-runGraphvizCommand Dot eqTypeGraph Canon (replaceExtension ("Condensed_Graph_of_"++baseName flags) ".dot")
            verboseLn flags (condensedGraphPath++" written.")
            stDotGraphPath<-runGraphvizCommand Dot stTypeGraph Canon (replaceExtension ("stGraph_of_"++baseName flags) ".dot")
            verboseLn flags (stDotGraphPath++" written.")

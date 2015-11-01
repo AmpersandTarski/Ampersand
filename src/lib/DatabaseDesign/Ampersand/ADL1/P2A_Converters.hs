@@ -28,6 +28,7 @@ import Data.Char
 import Control.Applicative
 import Data.Map (Map)
 import qualified Data.Map as Map hiding (Map)
+import Debug.Trace
 
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
@@ -70,41 +71,26 @@ Invariants are:
 
 
 
-type TypeInfo = (Typemap,[Between])
-
-nothing :: TypeInfo
-nothing = (Map.empty,[])
-between :: TypeTerm -> Between -> TypeInfo
-between t a = (Map.fromList [(t,[])],[a])
-
-infixl 2 .+.   -- concatenate two lists of types
-infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
-infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
---infixl 4 .&.   -- 
-typeToMap :: TypeTerm -> TypeInfo
-typeToMap x = (Map.fromList [(x,[])],[])
-(.<.) :: TypeTerm -> TypeTerm -> TypeInfo
-a .<. b = case (a,b) of
-           (TypEmpty _ _, _) -> a `leq` b 
-           (_, TypEmpty _ _) -> a `leq` b 
-           _                 -> a `leq` b .+. dual b `leq` dual a
-           where leq x y = (Map.fromList [(x, [y]),(y, [])],[]) -- x tuple meaning that x is x subset of y, and introducing y as x key.
-(.=.) :: TypeTerm -> TypeTerm -> TypeInfo
-a .=. b = case (a,b) of
-           (TypEmpty _ _, _) -> a `eq` b 
-           (_, TypEmpty _ _) -> a `eq` b 
-           _                 -> a `eq` b .+. dual b `eq` dual a
-           where eq x y = x.<.y .+. y.<.x  -- yields: (Map.fromList [(x, [y]),(y, [x])],[])
-(.+.) :: TypeInfo -> TypeInfo -> TypeInfo
-(m1,l1) .+. (m2,l2) = (Map.unionWith mrgUnion m1 m2, l1++l2)
 thing :: P_Concept -> TypeTerm
-thing c = TypExpr (Pid (origin c) c) Src False
+thing c = TypFull c
 tNull :: Term -> String -> TypeTerm
 tNull x str = TypEmpty x str
 domc, dom, codc, cod :: Term -> TypeTerm
+--domc (Pid{}) = fatal 109 "Illegal Pid in domc"
+domc (PCpl _ x) = dom x
+domc (PFlp _ x) = codc x
 domc x = TypExpr x Src True  -- the domain of x
+--dom (Pid{}) = fatal 113 "Illegal Pid in dom"
+dom  (PCpl _ x) = domc x
+dom  (PFlp _ x) = cod  x
 dom  x = TypExpr x Src False -- and its complement
+--codc (Pid{}) = fatal 117 "Illegal Pid in codc"
+codc (PCpl _ x) = cod x
+codc (PFlp _ x) = domc x
 codc x = TypExpr x Tgt True  -- the domain of x
+--cod (Pid{}) = fatal 121 "Illegal Pid in cod"
+cod  (PCpl _ x) = codc x
+cod  (PFlp _ x) = dom  x
 cod  x = TypExpr x Tgt False -- and its complement
 domOrCod :: SrcOrTgt -> Bool -> Term -> TypeTerm
 domOrCod Src True  = domc
@@ -118,50 +104,15 @@ mSpecific doet twee dingen:
 2) genereert een foutmelding als 1) mislukt.
    De markering BTUnion (dan wel BTIntersect) betekent dat er getest moet worden (in TypePropagation.adl) of het UNION-type bestaat.
    De feitelijke test wordt uitgevoerd in checkBetweens (in TypePropagation.adl)
-mSpecific' gebruik je wanneer je in de aanroep niet weet of je de source of target bedoelt, bijv. "intersection arising inside r;s" 
 -}
-mSpecific, mGeneric :: TypeTerm -> TypeTerm -> TypeTerm -> TypeInfo
+mSpecific, mGeneric :: TypeTerm -> TypeTerm -> TypeTerm -> Typemap
 mGeneric typeTermA typeTermB typeTermE
-  = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
-    between typeTermE (Between (tCxe typeTermA typeTermB TETUnion (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTUnion typeTermE))
-{- the equivalent code, yet elaborated to lists, would be:
-mGeneric typeTermA typeTermB typeTermE
-  = (Map.fromList [ (typeTermA, [typeTermE])
-                  , (typeTermE, [])
-                  , (typeTermB, [typeTermE])
-                  ]
-    , [Between (tCxe typeTermA typeTermB TETUnion (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTUnion typeTermE)]
-    )
--}
+  = typeTermA .<. lub  .+.  typeTermB .<. lub  .+. typeTermE .=. lub
+    where lub = typLub (typeTermA) (typeTermB)
 mSpecific typeTermA typeTermB typeTermE
-  = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
-    between typeTermE (Between (tCxe typeTermA typeTermB TETIsc (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
-{- the equivalent code, yet elaborated to lists, would be:
-mSpecific typeTermA typeTermB typeTermE
-  = (Map.fromList [ (typeTermE, [typeTermA,typeTermB])
-                  , (typeTermA, [])
-                  , (typeTermB, [])
-                  ]
-    , [Between (tCxe typeTermA typeTermB TETIsc (ttTerm typeTermE)) typeTermA typeTermB (BetweenType BTIntersection typeTermE)]
-    )
--}
-mSpecific', mGeneric' :: TypeTerm -> TypeTerm -> Term -> TypeInfo
-mGeneric' typeTermA typeTermB e
-  = typeTermA .<. typeTermE  .+.  typeTermB .<. typeTermE  .+.
-    between typeTermE (Between (tCxe typeTermA typeTermB TETUnion e) typeTermA typeTermB (BetweenType BTUnion typeTermE))
-    where typeTermE = TypLub [typeTermA,typeTermB]
-mSpecific' typeTermA typeTermB e
-  = typeTermE .<. typeTermA  .+.  typeTermE .<. typeTermB  .+.
-    between typeTermE (Between (tCxe typeTermA typeTermB TETIsc e) typeTermA typeTermB (BetweenType BTIntersection typeTermE))
-    where typeTermE = TypGlb [typeTermA,typeTermB]
+  = glb .<. typeTermA  .+.  glb .<. typeTermB  .+. glb .=. typeTermE
+    where glb = typGlb (typeTermA) (typeTermB)
 
-mEqual :: SrcOrTgt -> Term -> Term -> Term -> TypeInfo
-mEqual    sORt a b e = (Map.empty, [Between (tCxe (domOrCod sORt False a) (domOrCod sORt False b) TETEq e) (domOrCod sORt False a) (domOrCod sORt False b) BTEqual])
-existsSpecific :: TypeTerm -> TypeTerm -> ([P_Concept] -> [P_Concept] -> CtxError) -> TypeTerm -> TypeInfo
-existsSpecific = existsGS BTIntersection
-existsGS :: BTUOrI -> TypeTerm -> TypeTerm -> ([P_Concept] -> [P_Concept] -> CtxError) -> TypeTerm -> TypeInfo
-existsGS BTIntersection a b err at = at .<. a .+. at .<. b .+. between at (Between err a b (BetweenType BTIntersection at))
-existsGS BTUnion        a b err at = a .<. at .+. b .<. at .+. between at (Between err a b (BetweenType BTUnion        at))
 tCxe :: TypeTerm -> TypeTerm -> (Term -> TypErrTyp) -> Term -> [P_Concept] -> [P_Concept] -> CtxError
 tCxe ta tb msg e src trg = CxeBetween{cxeLhs=(ttTerm ta,ttSorT ta,src),cxeRhs=(ttTerm tb,ttSorT tb,trg),cxeTyp=msg e}
 
@@ -182,14 +133,14 @@ class Expr a where
   --   the tuples of a relation st :: TypeTerm * TypeTerm.
   --   Each TypeTerm represents a set of atoms, even though the type checker will only use the fact that a type represents a set.
   --   Let t, t' be types, then    (t, t') `elem` st    means that the set that t represents is a subset of the set that t' represents.
-  --   These tuples are produced in two TypeInfos. The second TypeInfo is kept separate, because it depends on the existence of the first TypeInfo.
+  --   These tuples are produced in two Typemaps. The second Typemap is kept separate, because it depends on the existence of the first Typemap.
   --   The first element of the first argument is a P_Context that represents the parse tree of one context.
   --   This is provided to obtain a declaration table and a list of interfaces from the script.
   --   The second element of the first argument is a compatibility function, that determines whether two types are compatible.
   uType :: a           -- x:    the original term from the script, meant for representation in the graph.
         -> a           -- z:    the term to be analyzed, which must be logically equivalent to x
-        -> TypeInfo   -- for each type, a list of types that are subsets of it, which is the result of analysing term x.
-  uType' :: a -> TypeInfo
+        -> Typemap   -- for each type, a list of types that are subsets of it, which is the result of analysing term x.
+  uType' :: a -> Typemap
   uType' x = uType x x
 
 instance Expr P_Context where
@@ -210,18 +161,22 @@ instance Expr P_Context where
     concat [ p_views prc | prc<-ctx_PPrcs pContext] ++
     ctx_vs pContext
  uType _ pContext
-  = uType' (ctx_pats  pContext) .+.
-    uType' (ctx_PPrcs pContext) .+.
-    uType' (ctx_rs    pContext) .+.
-    uType' (ctx_ds    pContext) .+.
-    uType' (ctx_ks    pContext) .+.
-    uType' (ctx_vs    pContext) .+.
-    uType' (ctx_gs    pContext) .+.
-    uType' (ctx_ifcs  pContext) .+.
-    uType' (ctx_ps    pContext) .+.
-    uType' (ctx_sql   pContext) .+.
-    uType' (ctx_php   pContext) .+.
-    uType' (ctx_pops  pContext)
+  = uTypeEdges
+    where
+      uTypeEdges :: Typemap
+      uTypeEdges
+       = uType' (ctx_pats  pContext) .+.
+         uType' (ctx_PPrcs pContext) .+.
+         uType' (ctx_rs    pContext) .+.
+         uType' (ctx_ds    pContext) .+.
+         uType' (ctx_ks    pContext) .+.
+         uType' (ctx_vs    pContext) .+.
+         uType' (ctx_gs    pContext) .+.
+         uType' (ctx_ifcs  pContext) .+.
+         uType' (ctx_ps    pContext) .+.
+         uType' (ctx_sql   pContext) .+.
+         uType' (ctx_php   pContext) .+.
+         uType' (ctx_pops  pContext)
 
 instance Expr P_Pattern where
  p_declarations pPattern
@@ -262,14 +217,7 @@ instance Expr P_Process where
 instance Expr P_Rule where
  p_rules r = [r]
  uType _ r
-  = uType' (rr_exp r) .+. 
-    uType' (rr_viol r) .+.
-    (Map.empty, [ Between (\s t -> CxeObjMismatch{cxeExpr=trm,cxeEnv=s,cxeSrcs=t})
-                          (TypExpr (rr_exp r) sOrT False) (TypExpr trm Src False)
-                          BTEqual
-                | Just pv <- [rr_viol r]
-                , P_PairViewExp sOrT trm <- ppv_segs pv
-                ])
+  = uType' (rr_exp r) .+. uType' (rr_viol r)
 
 instance Expr P_PairView where
  uType _ (P_PairView segments) = uType' segments
@@ -277,14 +225,14 @@ instance Expr P_PairView where
 instance Expr P_PairViewSegment where
  uType _ (P_PairViewExp Src term) = uType' term
  uType _ (P_PairViewExp Tgt term) = uType' term
- uType _ P_PairViewText{} = nothing
+ uType _ P_PairViewText{} = Map.empty
   
 instance Expr P_IdentDef where
  p_keys k = [k]
  uType _ k
   = let x=Pid (ix_pos k) (ix_cpt k) in
     uType' x .+. 
-    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType' obj
+    foldr (.+.) Map.empty [ dom (obj_ctx obj) .<. dom x .+. uType' obj
                         | P_IdentExp obj <- ix_ats k
                         ]
 
@@ -293,7 +241,7 @@ instance Expr P_ViewDef where
  uType _ v
   = let x=Pid (vd_pos v) (vd_cpt v) in
     uType' x .+. 
-    foldr (.+.) nothing [ dom (obj_ctx obj) .<. dom x .+. uType' obj
+    foldr (.+.) Map.empty [ dom (obj_ctx obj) .<. dom x .+. uType' obj
                         | P_ViewExp obj <- vd_ats v
                         ]
  
@@ -301,26 +249,25 @@ instance Expr P_ViewDef where
 instance Expr P_Interface where
  uType _ ifc
   = let x=ifc_Obj ifc in
-    foldr (.+.) nothing (map uType' (ifc_Params ifc)) .+.
+    foldr (.+.) Map.empty (map uType' (ifc_Params ifc)) .+.
     uType' x
 
 instance Expr P_ObjectDef where
  uType _ o
   = let x=obj_ctx o in
     uType' x .+. 
-    foldr (.+.) nothing [ uType' obj .+.
-                          existsSpecific (cod x) (dom (obj_ctx obj)) (tCxe (cod x) (dom (obj_ctx obj)) TETBox (obj_ctx obj)) (TypGlb [cod x, dom (obj_ctx obj)])
-                        | Just subIfc <- [obj_msub o]
-                        , obj <- case subIfc of
-                                   P_Box{}          -> si_box subIfc
-                                   P_InterfaceRef{} -> []
-                        ]
+    foldr (.+.) Map.empty [ uType' obj .+. mSpecific (cod x) (dom (obj_ctx obj)) (TypInter (PCps (origin o) x (obj_ctx obj)) False)
+                          | Just subIfc <- [obj_msub o]
+                          , obj <- case subIfc of
+                                     P_Box{}          -> si_box subIfc
+                                     P_InterfaceRef{} -> []
+                          ]
  
 instance Expr P_SubInterface where
  uType _  mIfc = 
    case mIfc of
      P_Box{} -> uType' (si_box mIfc)
-     P_InterfaceRef {} -> nothing
+     P_InterfaceRef {} -> Map.empty
 
 instance Expr PPurpose where
  uType _ purp = uType' (pexObj purp)
@@ -330,10 +277,10 @@ instance Expr PRef2Obj where
    case pRef of 
      PRef2ConceptDef c -> uType' (Pid (origin c) c)
      PRef2Declaration t  -> uType' t
-     _                   -> nothing
+     _                   -> Map.empty
 
 instance Expr P_Sign where
- uType _ _ = nothing
+ uType _ _ = Map.empty
 
 instance Expr P_Gen where
  uType _ g
@@ -341,15 +288,11 @@ instance Expr P_Gen where
 
 instance Expr P_Declaration where
  uType _ d
-  = dom decl    .<.domUnion .+. domc decl   .<.domUnion  .+. domUnion     .=. thing src        .+.
-    domIntersect.<.dom decl .+. domIntersect.<.domc decl .+. domIntersect .=. tNull (Pid (origin d) src) "" .+.
-    cod decl    .<.codUnion .+. codc decl   .<.codUnion  .+. codUnion     .=. thing tgt        .+.
-    codIntersect.<.cod decl .+. codIntersect.<.codc decl .+. codIntersect .=. tNull (Pid (origin d) tgt) ""
+  = mGeneric  (dom decl) (domc decl) (thing src)                       .+.
+    mSpecific (dom decl) (domc decl) (tNull (Pid (origin src) src) "") .+.
+    mSpecific (cod decl) (codc decl) (tNull (Pid (origin tgt) tgt) "") .+.
+    mGeneric  (cod decl) (codc decl) (thing tgt)                      
     where decl = PTrel (origin d) (dec_nm d) (dec_sign d)
-          domUnion      = TypLub [dom decl, domc decl]
-          domIntersect  = TypGlb [dom decl, domc decl]
-          codIntersect  = TypGlb [cod decl, codc decl]
-          codUnion      = TypLub [cod decl, codc decl]
           P_Sign src tgt = dec_sign d
 
 instance Expr P_Population where
@@ -361,85 +304,89 @@ instance Expr P_Population where
                    P_CptPopu{} -> Pid   (p_orig pop) (PCpt (origin pop) (name pop))
 
 instance Expr a => Expr (Maybe a) where
- uType _ Nothing  = nothing
+ uType _ Nothing  = Map.empty
  uType _ (Just x) = uType' x
 
 instance Expr a => Expr [a] where
- uType _ xs = foldr (.+.) nothing (map uType' xs)
+ uType _ xs = foldr (.+.) Map.empty (map uType' xs)
 
 instance Expr Term where 
- uType x term 
-  = case term of
-     PI{}          -> dom x.=.cod x                               -- I
-     Pid o c       -> dom x.=.thing c     .+.  cod x.=.thing c    -- I[C]
-     (Patm _ _ []) -> dom x.=.cod x   .+. domc x.=.codc x         -- 'Piet'   (an untyped singleton)
-     (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
-                       .+. dom x.=.cod x
-     PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
-     (Pfull o s t) -> dom x.=.thing s .+. cod x.=.thing t         --  V[A*B] (the typed full set)
-     (PTrel _ _ (P_Sign src trg))
-                   -> typeToMap (dom x) .+. typeToMap (cod x)
-     (Prel _ _)    -> typeToMap (dom x) .+. typeToMap (cod x)
-     (PIsc _ a b)  -> domIsc.<.dom  a  .+. domIsc.<.dom  b  .+. domIsc .=.dom  x .+.
-                      codIsc.<.cod  a  .+. codIsc.<.cod  b  .+. codIsc .=.cod  x .+.
-                      uType' a .+. uType' b
-                      where domIsc  = TypGlb [dom  a, dom  b]
-                            codIsc  = TypGlb [cod  a, cod  b]
-     (PUni _ a b)  -> dom  a .<.domUni .+. dom  b .<.domUni .+. domUni .=.dom  x .+.
-                      cod  a .<.codUni .+. cod  b .<.codUni .+. codUni .=.cod  x .+.
-                      uType' a .+. uType' b
-                      where domUni  = TypLub [dom  a, dom  b]
-                            codUni  = TypLub [cod  a, cod  b]
-     (PDif o a b)  -> dom x.<.dom a .+.    -- dom x.<.domDif .+. dom b.<.domDif .+. domDif.=.dom (PUni o a b) .+.   --  a-b    (difference)
-                      cod x.<.cod a .+.    -- cod x.<.codDif .+. cod b.<.codDif .+. codDif.=.cod (PUni o a b) .+.
-                      uType' a .+. uType' b
-     (PCps o a b)  -> let pidTest (PI{}) r = r                                    -- a;b      composition
-                          pidTest (Pid{}) r = r
-                          pidTest (Patm{}) r = r
-                          pidTest _ _ = nothing
-                          s = TypGlb [cod a, dom b]
-                      in dom x.<.dom a .+. cod x.<.cod b .+.
-                         s.<.cod a .+. s.<.dom b .+. uType' a .+. uType' b
-                         .+. pidTest a (dom x.=.s) .+. pidTest b (cod x.=.s)
--- PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
-     (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
-                         pnidTest (PCpl _ (Pid{})) r = r
-                         pnidTest (PCpl _ (Patm{})) r = r
-                         pnidTest _ _ = nothing
-                         s = TypLub [cod a, dom b]
-                     in dom x .<. dom a .+. cod x .<. cod b .+.
-                        cod a.<.s .+. dom b.<.s .+. uType' a .+. uType' b
-                        .+. pnidTest a (dom b.<. s) .+. pnidTest b (cod a.<. s)
-     (PPrd _ a b) -> dom x.<.dom a .+. cod x.<.cod b                                        -- a*b cartesian product
-                     .+. uType' a .+. uType' b
-     (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
-     (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
-     (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType' e
-     (PBrk _ e)   -> uType x e  -- ignore brackets
- -- derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
-     (PCpl o (PCpl _ a)) -> uType' a
-     (PCpl o a)   -> dom x.=.domc a .+. cod x.=.codc a .+.
-                     domEmpty.<.dom x .+. domEmpty.<.dom a .+. tNull (PIsc o a x) "dom".=.domEmpty .+.
-                     codEmpty.<.cod x .+. codEmpty.<.cod a .+. tNull (PIsc o a x) "cod".=.codEmpty .+.
-                     uType x a
-                     where domEmpty = TypGlb [dom a, dom x]
-                           codEmpty = TypGlb [cod a, cod x]
-     (Pequ o a b) -> let e = PUni o (PIsc o a b) (PIsc o (PCpl (origin a) a) (PCpl (origin b) b))
-                     in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType' e
-     (Pimp o a b) -> domc a.<.dom x .+. dom x.=.domImp .+.
-                     cod b .<.cod x .+. cod x.=.codImp
-                     where domImp = TypLub [domc a, dom b]
-                           codImp = TypLub [codc a, cod b]
---     (Pimp o a b) -> let e = PUni o (PCpl o a) b
---                     in dom x.=.dom e .+. cod x.=.cod e .+.
---                        uType' e
-     (PLrs o a b) -> let e = complement (PCps o (complement a) (p_flp b))
-                     in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType' e                 --  a/b = a!-b~ = -(-a;b~)
-     (PRrs o a b) -> let e = complement (PCps o (p_flp a) (complement b))
-                     in dom x.=.dom e .+. cod x.=.cod e .+.
-                        uType' e                 --  a\b = -a~!b = -(a~;-b)
+ uType x term
+  = ( case term of
+       Pid _ c       -> dom x.=.thing c .+. cod x.=.thing c    -- I[C]
+       PI{}          -> dom x.=.cod x                          -- I
+       PVee{}        -> typeToMap (dom x) .+. typeToMap (cod x) 
+       (Pfull o s t) -> dom x.=.thing s .+. cod x.=.thing t                 --  V[A*B] (the typed full set)
+       _             -> dom x.<.typLub (dom x) (domc x) .+.                 -- there is a least upper bound for dom x
+                        cod x.<.typLub (cod x) (codc x) .+.                 -- there is a least upper bound for cod x
+                        mSpecific (dom x) (domc x) (tNull x "src") .+.      -- the empty set is the greatest lower bound of dom x/\domc x
+                        mSpecific (cod x) (codc x) (tNull x "tgt")          -- the empty set is the greatest lower bound of cod x/\codc x
+    ) .+.
+    case term of
+       Pid _ c       -> Map.empty
+       PI{}          -> Map.empty
+       (Patm _ _ []) -> dom x.=.cod x .+. domc x.=.codc x                   -- 'Piet'   (an untyped singleton)
+       (Patm _ _ cs) -> dom x.<.thing (head cs) .+. cod x.<.thing (last cs) -- 'Piet'[Persoon]  (a typed singleton)
+                         .+. dom x.=.cod x
+       PVee{}        -> Map.empty                                             --  V    (the untyped full set)
+       (Pfull o s t) -> Map.empty                                             --  V[A*B] (the typed full set)
+       (PTrel _ _ (P_Sign src trg))
+                     -> Map.empty -- typeToMap (dom x) .+. typeToMap (cod x)
+       (Prel _ _)    -> Map.empty -- typeToMap (dom x) .+. typeToMap (cod x)
+       (PIsc _ a b)  -> mSpecific (dom a) (dom  b) (dom  x) .+.
+                        mSpecific (cod a) (cod  b) (cod  x) .+.
+                        uType' a .+. uType' b
+       (PUni _ a b)  -> mGeneric (dom a) (dom  b) (dom  x) .+.
+                        mGeneric (cod a) (cod  b) (cod  x) .+.
+                        uType' a .+. uType' b
+       (PDif o a b)  -> dom x.<.dom a .+.    -- dom x.<.domDif .+. dom b.<.domDif .+. domDif.=.dom (PUni o a b) .+.   --  a-b    (difference)
+                        cod x.<.cod a .+.    -- cod x.<.codDif .+. cod b.<.codDif .+. codDif.=.cod (PUni o a b) .+.
+                        uType' a .+. uType' b
+       (PCps o a b)  -> let pidTest (PI{}) r = r                                    -- a;b      composition
+                            pidTest (Pid{}) r = r
+                            pidTest (Patm{}) r = r
+                            pidTest _ _ = Map.empty
+                            witnesSet = TypInter x False
+                        in dom x.<.dom a .+. cod x.<.cod b .+.
+                           mSpecific (cod a) (dom b) witnesSet .+.
+                           pidTest a (dom x.=.witnesSet) .+. pidTest b (cod x.=.witnesSet) .+.
+                           uType' a .+. uType' b
+--     PRad is the De Morgan dual of PCps. However, since PUni and UIsc are treated separately, mGeneric and mSpecific are not derived, hence PRad cannot be derived either
+       (PRad _ a b) -> let pnidTest (PCpl _ (PI{})) r = r
+                           pnidTest (PCpl _ (Pid{})) r = r
+                           pnidTest (PCpl _ (Patm{})) r = r
+                           pnidTest _ _ = Map.empty
+                           witnesSet = TypInter x False
+                       in dom x.<.domc a .+. cod x.<.codc b .+.
+                          mGeneric (cod a) (dom b) witnesSet .+.
+                          pnidTest a (dom b.<.witnesSet) .+. pnidTest b (cod a.<.witnesSet) .+.
+                          uType' a .+. uType' b
+       (PPrd _ a b) -> dom x.=.dom a .+. cod x.=.cod b                                        -- a*b cartesian product
+                       .+. uType' a .+. uType' b
+       (PKl0 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
+       (PKl1 _ e)   -> dom e.<.dom x .+. cod e.<.cod x .+. uType' e
+       (PFlp _ e)   -> cod e.=.dom x .+. dom e.=.cod x .+. uType' e
+       (PBrk _ e)   -> uType x e  -- ignore brackets
+--     derived uTypes: the following do no calculations themselves, but merely rewrite terms to the ones we covered
+       (PCpl o (PCpl _ a)) -> uType' a
+       (PCpl o a)   -> dom x.=.domc a .+. cod x.=.codc a .+.
+                       uType x a
+                       where domEmpty = typGlb (dom a) (dom x)
+                             codEmpty = typGlb (cod a) (cod x)
+       (Pequ o a b) -> let e = PUni o (PIsc o a b) (PIsc o (PCpl (origin a) a) (PCpl (origin b) b))
+                       in dom x.=.dom e .+. cod x.=.cod e .+.
+                          uType' e
+       (Pimp o a b) -> mGeneric (domc a) (dom b) (dom x) .+.
+                       mGeneric (codc a) (cod b) (cod x) .+.
+                       uType' a .+. uType' b
+       (PLrs o a b) -> dom  x.<.dom  a .+. cod x.<.domc b .+.
+                       cod  a.<.witnes .+. codc b.<.witnes .+.
+                       uType' a .+. uType' b
+                       where witnes = typLub (cod a) (codc b)
+       (PRrs o a b) -> dom  x.<.codc a .+. cod x.<.cod  b .+.
+                       domc a.<.witnes .+. dom b.<.witnes .+.
+                       uType' a .+. uType' b
+                       where witnes = typLub (domc a) (dom b)
 
 
 --  The following is for drawing graphs.
@@ -542,11 +489,11 @@ pCtx2aCtx p_context
     bindings :: Map Term P_Declaration     -- yields declarations that may be bound to relations, intended as a suggestion to the programmer
     isaClos, isaClosReversed :: Map P_Concept [P_Concept]                   -- 
     (st, stClos, eqType, stClosAdded, stClos1 , bindingsandsrcTypes, isaClos, isaClosReversed)
-     = typing utypeST betweens
+     = typing utypeST
               (Map.fromListWith mrgUnion [ (name (head cl)
                                            , uniqueCl cl)
                                          | cl<-eqCl name (p_declarations p_context) ])
-    (utypeST,betweens) = uType' p_context
+    utypeST = uType' p_context
     uniqueCl :: [P_Declaration] -> [P_Declaration]
     uniqueCl cl = sort (removeDoubleDeclarations (sortBy (\x y -> compare (dec_sign x) (dec_sign y)) cl))
     removeDoubleDeclarations [] = []
@@ -611,10 +558,10 @@ pCtx2aCtx p_context
     derivedEquals :: [CtxError]
     derivedEquals   -- These concepts can be proven to be equal, based on st (= typing sentences, i.e. the terms derived from the script).
      = [ CxeEqConcepts eqs
-       | (TypExpr (Pid{}) _ _, equals)<-Map.toAscList eqType
-       , let eqs=[c | TypExpr (Pid _ c) _ _<-equals ]
+       | (TypFull _, equals)<-Map.toAscList eqType
+       , let eqs=[c | TypFull c<-equals ]
        , length eqs>1]
-    (stTypeGraph,eqTypeGraph) = typeAnimate st stClos eqType stClosAdded stClos1
+    (stTypeGraph,eqTypeGraph) = typeAnimate st stClos (trace (show eqType) eqType) stClosAdded stClos1
     cxerrs = rulecxes++keycxes++viewcxes++interfacecxes++patcxes++proccxes++sPlugcxes++pPlugcxes++popcxes++deccxes++xplcxes++themeschk
     --postchcks are those checks that require null cxerrs 
     postchks = rulenmchk ++ ifcnmchk ++ patnmchk ++ cyclicInterfaces
@@ -1208,7 +1155,7 @@ typeAnimate st stClos eqType stClosAdded stClos1 = (stTypeGraph, eqTypeGraph)
      eqTypeGraph :: DotGraph String
      eqTypeGraph = toDotGraph showVtx show [0..length eqClasses-1] [] condensedEdges condensedEdges2
       where showVtx n = (intercalate "\n".map showType.nub) [  typTerm| typTerm<-typeTerms, n==eqNr typTerm]
-{- condensedGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
+{- eqTypeGraph is the condensed graph. Elements that are equal are brought together in the same equivalence class.
    The graph in which equivalence classes are vertices is called the condensed graph.
    These equivalence classes are the strongly connected components of the original graph
 -}

@@ -62,7 +62,7 @@ generateAmpersandOutput flags fSpec =
 typeCheck :: P_Context -> [P_Population] -> (Guarded A_Context,DotGraph String,DotGraph String)
 typeCheck p_context []   = pCtx2aCtx p_context                 
 typeCheck p_context pops = pCtx2aCtx (p_context{ctx_pops=pops})
-                           -- consisting of:  (aCtx,ctxcheck,stTypeGraph,condensedGraph)
+                           -- consisting of:  (aCtx,ctxcheck,stTypeGraph,eqTypeGraph)
   
 
 -- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.

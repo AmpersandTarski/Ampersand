@@ -2,8 +2,8 @@
 {-# LANGUAGE RelaxedPolyRec #-} -- RelaxedPolyRec required for OpenSuse, for as long as we@OpenUniversityNL use an older GHC
 module DatabaseDesign.Ampersand.ADL1.TypePropagation (
  -- * Exported functions
- typing, TypeTerm(..), dual, Typemap, parallelList, findIn, showType, Guarded(..), p_flp
- , mrgUnion, BetweenType(..), Between(..), BTUOrI(..)
+ typing, TypeTerm(..), dual, typGlb, typLub, symClosure, Typemap, typeToMap, (.+.), (.<.), (.=.), parallelList, findIn, showType, Guarded(..), p_flp
+ , mrgUnion
  )
 where
 import DatabaseDesign.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
@@ -25,25 +25,78 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "ADL1.TypePropagation"
 
 
-type Typemap = Map TypeTerm [TypeTerm]
-
 {- Type terms are introduced to represent a set of atoms.
 The atoms are not actually computed, but sets of atoms are represented for the purpose of constructing a graph of sets.
 Example: TypExpr t Src False means (the set of atoms that is) the domain of term t.
 -}
 
 data TypeTerm
-   = TypExpr      { ttTerm  :: Term        -- The term of which the type is analyzed
-                  , ttSorT  :: SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
-                  , ttCplt  :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+   = TypExpr      { ttTerm    :: Term        -- The term of which the type is analyzed
+                  , ttSorT    :: SrcOrTgt    -- Src if this term represents the domain, Trg if it represents the codomain
+                  , ttCplt    :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
                   }
-   | TypEmpty     { ttTerm  :: Term
-                  , ttStr   :: String      -- a string to distinguish two TypEmpty's with the same term (used in P_Declaration, for instance)
+   | TypEmpty     { ttTerm    :: Term        -- TypEmpty t s represents the empty set. Term t and String s are there to distinguish different empty sets.
+                  , ttStr     :: String      -- a string to distinguish two TypEmpty's with the same term (used in P_Declaration, for instance)
                   }
-   | TypLub       { ttTerms :: [TypeTerm]
+   | TypFull      { ttConcept :: P_Concept   -- TypFull t s represents a concept. Term t and String s are there to distinguish different empty sets.
                   }
-   | TypGlb       { ttTerms :: [TypeTerm]
+   | TypLub       { ttA       :: TypeTerm
+                  , ttB       :: TypeTerm
                   }
+   | TypGlb       { ttA       :: TypeTerm
+                  , ttB       :: TypeTerm
+                  }
+   | TypInter     { ttTerm    :: Term
+                  , ttCplt    :: Bool        -- True if this term represents the complement, False if it doesn't represent the complement
+                  }
+
+typGlb, typLub :: TypeTerm -> TypeTerm -> TypeTerm
+(typGlb, typLub) = (f TypGlb,  f TypLub)
+ where
+   f combinator a b = combinator a' b' where [a',b'] = sort [tidy a, tidy b]
+   tidy :: TypeTerm -> TypeTerm
+   tidy (TypExpr (Pid _ c) _ False) = TypFull c
+   tidy (TypExpr t@Pid{}   _ True ) = TypEmpty t ""
+   tidy (TypExpr (Pfull _ s _) Src False) = TypFull s
+   tidy (TypExpr (Pfull _ _ t) Tgt False) = TypFull t
+   tidy (TypExpr (Pfull o s _) Src True ) = TypEmpty (Pid o s) ""
+   tidy (TypExpr (Pfull o _ t) Tgt True ) = TypEmpty (Pid o t) ""
+   tidy tt = tt
+
+type Typemap = Map TypeTerm [TypeTerm]
+
+infixl 2 .+.   -- concatenate two lists of types
+infixl 3 .<.   -- makes a list of one tuple (t,t'), meaning that t is a subset of t'
+infixl 3 .=.   -- makes a list of two tuples (t,t') and (t',t), meaning that t is equal to t'
+--infixl 4 .&.   -- 
+typeToMap :: TypeTerm -> Typemap
+typeToMap x = Map.fromList [(x,[])]
+(.<.) :: TypeTerm -> TypeTerm -> Typemap
+a .<. b = case (a,b) of
+           (TypExpr (Pid _ c) _ False, _) -> TypFull c .<. b
+           (_, TypExpr (Pid _ c) _ False) -> a .<. TypFull c
+           (TypExpr t@Pid{}   _ True , _) -> TypEmpty t "" .<. b
+           (_, TypExpr t@Pid{}   _ True ) -> a .<. TypEmpty t ""
+           (TypEmpty _ _, _) -> a `leq` b 
+           (_, TypEmpty _ _) -> b `leq` a 
+           (TypFull  _  , _) -> b `leq` a 
+           (_, TypFull  _  ) -> a `leq` b 
+           _                 -> a `leq` b .+. dual b `leq` dual a
+           where leq x y = Map.fromList [(x, [y]),(y, [])] -- x tuple meaning that x is x subset of y, and introducing y as x key.
+(.=.) :: TypeTerm -> TypeTerm -> Typemap
+a .=. b = case (a,b) of
+           (TypExpr (Pid _ c) _ False, _) -> TypFull c .=. b
+           (_, TypExpr (Pid _ c) _ False) -> a .=. TypFull c
+           (TypExpr t@Pid{}   _ True , _) -> TypEmpty t "" .=. b
+           (_, TypExpr t@Pid{}   _ True ) -> a .=. TypEmpty t ""
+           (TypEmpty _ _, _) -> a `eq` b 
+           (_, TypEmpty _ _) -> a `eq` b 
+           (TypFull  _  , _) -> a `eq` b 
+           (_, TypFull  _  ) -> a `eq` b 
+           _                 -> a `eq` b .+. dual b `eq` dual a
+           where eq x y = Map.fromList [(x, [y]),(y, [x])]  -- for some reason,  eq x y = x.<.y .+. y.<.x   does not work... Why?  No idea!
+(.+.) :: (Ord a, Show a) => Map a [a] -> Map a [a] -> Map a [a]
+m1 .+. m2 = Map.unionWith mrgUnion m1 m2
 
 data Between = Between BetweenError -- Error in case this between turns out to be untypable. WARNING: equality-check ignores this!
                     TypeTerm -- lhs type, e.g. cod(a)
@@ -54,8 +107,11 @@ data BetweenType = BetweenType BTUOrI TypeTerm -- this must be a union/intersect
                  | BTEqual     -- both sides must have the same type. Note that this is different from adding .=.
                                -- BTEqual requires both sides to be named and equal; this will be tested
                                -- while adding .=. makes both sides equal
-                   -- deriving (Ord,Eq)
-data BTUOrI = BTUnion | BTIntersection deriving (Ord,Eq)
+                   -- deriving (Ord,Eq,Show) -- Show is for debug purposes only)
+data BTUOrI = BTUnion | BTIntersection deriving (Ord,Eq,Show) -- Show is for debug purposes only.
+
+instance Show Between where
+    showsPrec _ (Between _ lhs rhs _) = showString (show lhs++"\n"++show rhs)
 
 instance Prelude.Ord BetweenType where
   compare (BetweenType a _) (BetweenType b _) = compare a b
@@ -78,30 +134,36 @@ instance Show TypeTerm where
 showType :: TypeTerm -> String
 showType t
  = case t of
-     TypExpr (Pid _ c) _ _                        -> "pop ("++name c++")"
-     TypExpr term@(PVee o)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++"("++ show o++")"
+     TypExpr (Pid _ c) _ False                    -> fatal 84 ("pop ("++name c++")")
+     TypExpr (Pid _ c) _ True                     -> fatal 85 ("empty ("++name c++")")
+     TypExpr term@(PVee _)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++"("++ show o++")"
      TypExpr term@(Pfull _ _ _) sORt complemented -> codOrDom sORt complemented++" ("++showADL term++")"   --   
      TypExpr term               sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++ show (origin term)
-     TypEmpty (Pid _ c) str                       -> "empty ("++name c++")"
-     TypEmpty term str                            -> "empty "++str++"("++showADL term++")"
-     TypLub tTerms                                -> foldr1 f (map showType tTerms) where f a b = a++" \\/ "++b
-     TypGlb tTerms                                -> foldr1 f (map showType tTerms) where f a b = a++" /\\ "++b
+     TypEmpty (Pid _ c) _                         -> "empty ("++name c++")"
+     TypEmpty term str                            -> "empty "++"("++showADL term++") "++str++" side"
+     TypFull c                                    -> "pop ("++name c++")"
+     TypLub a b                                   -> showType a++" \\/ "++showType b
+     TypGlb a b                                   -> showType a++" /\\ "++showType b
+     TypInter term complemented                   -> "between"++(if complemented then "c " else " ")++showADL term
    where codOrDom Src True  = "domc"
          codOrDom Src False = "dom"
          codOrDom Tgt True  = "codc"
          codOrDom Tgt False = "cod"
 
 dual :: TypeTerm -> TypeTerm
-dual t
- = case t of
-     TypExpr term@(Pid _ c) _ False   -> TypEmpty term ""
-     TypExpr (Pid _ c) _ True         -> fatal 97 ("TypExpr (Pid _ "++showADL c++") _ True  should never occur.")
---     TypExpr term@(PVee o)      sORt complemented -> codOrDom sORt complemented++" ("++showADL term++") "  --   ++"("++ show o++")"
---     TypExpr term@(Pfull _ _ _) sORt complemented -> codOrDom sORt complemented++" ("++showADL term++")"   --   
-     TypExpr term   sORt complemented -> TypExpr term   sORt (not complemented)
-     TypEmpty term _                  -> fatal 101 ("TypEmpty ("++showADL term++")  has no dual.")
-     TypLub tTerms                    -> (TypGlb . sort . map dual) tTerms
-     TypGlb tTerms                    -> (TypLub . sort . map dual) tTerms
+dual tt
+ = case tt of
+     TypExpr (Pid _ c) _ False      -> TypEmpty (Pid (origin c) c) "" -- fatal 102 "Can TypExpr (Pid _ c) _ False occur?" -- 
+     TypExpr (Pid _ c) _ True       -> TypFull c                      -- fatal 103 "Can TypExpr (Pid _ c) _ True  occur?" -- 
+     TypExpr (PVee _)      _ _      -> fatal 104 ("TypExpr (PVee o) _ True  should never occur.")
+     TypExpr (Pfull _ _ _) _ _      -> fatal 105 ("TypExpr (Pfull _ _ _) _ True  should never occur.")  
+     TypExpr term sORt complemented -> TypExpr term sORt (not complemented)
+     TypEmpty (Pid _ c) _           -> TypFull c
+     TypEmpty term _                -> fatal 108 ("TypEmpty ("++showADL term++")  has no dual.")
+     TypFull c                      -> TypEmpty (Pid (origin c) c) ""
+     TypLub a b                     -> typGlb (dual a) (dual b)
+     TypGlb a b                     -> typLub (dual a) (dual b)
+     TypInter t complemented        -> TypInter t (not complemented)
 
 -- | Equality of TypeTerm is needed for the purpose of making graphs of types.
 --   These are used in the type checking process.
@@ -110,6 +172,10 @@ dual t
 --   However, different occurrences of specific terms that are fully typed (e.g. I[Person] or parent[Person*Person]), need not be distinguised.
 instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which satisfy r = r~.
   compare (TypExpr (Pid _ c)      _ b) (TypExpr (Pid _ c')       _ b') = Prelude.compare (c,b) (c',b')
+--  compare (TypFull c                 ) (TypExpr (Pid _ c')    _ False) = Prelude.compare c c'
+--  compare (TypExpr (Pid _ c)  _ False) (TypFull c'                   ) = Prelude.compare c c'
+--  compare (TypEmpty (Pid _ c) s      ) (TypExpr (Pid _ c')    _ True ) = Prelude.compare c c'
+--  compare (TypExpr (Pid _ c)  _  True) (TypEmpty (Pid _ c') s'       ) = Prelude.compare c c'
   compare (TypExpr (Pid _ _)      _ _) (TypExpr _                _ _ ) = Prelude.LT
   compare (TypExpr _              _ _) (TypExpr (Pid _ _ )       _ _ ) = Prelude.GT
   compare (TypExpr (Patm _ x [c]) _ b) (TypExpr (Patm _ x' [c']) _ b') = Prelude.compare (x,c,b) (x',c',b')
@@ -131,18 +197,22 @@ instance Prelude.Ord TypeTerm where -- first we fix all forms of I's, which sati
   compare (TypExpr x             x' b) (TypExpr y               y' b') = Prelude.compare (x,x',b) (y,y',b')
   compare (TypExpr _              _ _) _                               = Prelude.LT
   compare _                            (TypExpr _                _ _ ) = Prelude.GT
-  compare (TypEmpty (Pid _ c) str    ) (TypEmpty (Pid _ c') str'     ) = Prelude.compare (c,str) (c',str')
-  compare (TypEmpty (Pid _ _) _      ) _                               = Prelude.LT
-  compare _                            (TypEmpty (Pid _ _ ) _        ) = Prelude.GT
-  compare (TypEmpty x str            ) (TypEmpty x' str'             ) = Prelude.compare (x,str) (x',str')
+  compare (TypEmpty (Pid _ c) s      ) (TypEmpty (Pid _ c') s'       ) = Prelude.compare (c,s) (c',s')
+  compare (TypEmpty  t        s      ) (TypEmpty  t'        s'       ) = Prelude.compare (t,s) (t',s')
   compare (TypEmpty _ _              ) _                               = Prelude.LT
   compare _                            (TypEmpty _ _                 ) = Prelude.GT
-  compare (TypLub tTerms)              (TypLub tTerms')                = compare tTerms tTerms'
-  compare (TypLub _                  ) _                               = Prelude.LT
-  compare _                            (TypLub _                     ) = Prelude.GT
-  compare (TypGlb tTerms)              (TypGlb tTerms')                = compare tTerms tTerms'
---  compare (TypGlb _                  ) _                               = Prelude.LT -- these two lines are superfluous if all combinators are covered.
---  compare _                            (TypGlb _                     ) = Prelude.GT
+  compare (TypFull c                 ) (TypFull c'                   ) = Prelude.compare c c'
+  compare (TypFull  _                ) _                               = Prelude.LT
+  compare _                            (TypFull  _                   ) = Prelude.GT
+  compare (TypInter t b              ) (TypInter t' b'               ) = compare (t,b) (t',b')
+  compare (TypInter _ _              ) _                               = Prelude.LT
+  compare _                            (TypInter _ _                 ) = Prelude.GT
+  compare (TypLub a b                ) (TypLub a' b'                 ) = compare (a,b) (a',b')
+  compare (TypLub _ _                ) _                               = Prelude.LT
+  compare _                            (TypLub _ _                   ) = Prelude.GT
+  compare (TypGlb a b                ) (TypGlb a' b'                 ) = compare (a,b) (a',b')
+--  compare (TypGlb _ _                ) _                               = Prelude.LT -- these two lines are superfluous if all combinators are covered.
+--  compare _                            (TypGlb _ _                   ) = Prelude.GT
 
   -- since the first argument of Between is a function, we cannot compare it.
   -- Besides, if there are two identical type inferences with different error messages, we should just pick one.
@@ -209,7 +279,7 @@ improveBindings typByTyp eqtyps (oldMap,st')
         bindings = Map.mapMaybe checkOne bindings' -- these are final: add them to st'
         expanded = Map.fromListWith mrgUnion [(t1,[t2 | (_,_,t2)<-r]) | (t1,r)<-Map.toList (typByTyp bindings)]
         decisions = Map.filter (not.null) $ makeDecisions typByTyp' st' eqtyps
-        stPlus = setClosure (Map.unionWith mrgUnion st' (symClosure (expanded))) "(st' \\/ bindings')*"
+        stPlus = setClosure (st' .+. symClosure expanded) "(st' \\/ bindings')*"
         typByTyp' = typByTyp oldMap
         checkOne [c] = Just [c]
         checkOne _ = Nothing
@@ -223,20 +293,23 @@ makeDecisions :: (Ord from,Ord to,Show to,Show from) =>
                  -> Map TypeTerm [TypeTerm] -- reflexive transitive graph with inferred types
                  -> [[TypeTerm]] -- classes of types that - according to Between-like bindings - should be of equal types
                  -> Map from [to] -- resulting bindings
-makeDecisions inp trnRel eqtyps
+makeDecisions inp    -- 
+              trnRel
+              eqtyps
  = foldl (Map.unionWith mrgIntersect) Map.empty [ Map.filter (not . null) d
                                                 | eqs <- eqtyps
                                                 , let d = (getDecision eqs)
                                                 ]
- where inpTrnRel = composeMaps trnRel inp
-       typsFull = Map.unionWith mrgUnion trnRel
-                    (Map.map (getConcsFromTriples) inpTrnRel)
+ where inpTrnRel = composeMaps trnRel inp                      -- Relational: inpTrnRel = trnRel;inp
+       typsFull = trnRel .+. Map.map (getConcsFromTriples) inpTrnRel
        getConcsFromTriples [] = []
        getConcsFromTriples ((_,_,x):xs) = mrgUnion (Map.findWithDefault [] x trnRel') (getConcsFromTriples xs)
        trnRel' = Map.map (filter isConc) trnRel
-       isConc (TypExpr (Pid _ _) _ False) = True
-       isConc (TypExpr (Pid _ _) _ _) = True
-       isConc _ = False
+        where
+--         isConc (TypExpr (Pid _ _) _ False) = True
+         isConc (TypExpr (Pid _ _) _ _) = fatal 239 "can this occur?"
+         isConc (TypFull _) = True
+         isConc _ = False
        f :: TypeTerm -> [TypeTerm]
        f x = Map.findWithDefault [] x trnRel'
        f' x = Map.findWithDefault [] x typsFull
@@ -266,7 +339,7 @@ orWhenEmpty n  _ = n
 --   which represent types that were created due to the use of specific operators, such as compose, union and intersect.
 --   Finally, it expects the declaration table.
 
-typing :: Typemap -> [Between] -> Map String [P_Declaration]
+typing :: Typemap -> Map String [P_Declaration]
           -> ( Typemap                    -- st               -- the st relation: 'a st b' means that  'dom a' is a subset of 'dom b'
              , Typemap                    -- stClos           -- (st\/stAdded)*\/I  (reflexive and transitive)
              , Typemap                    -- eqType           -- (st*/\st*~)\/I  (reflexive, symmetric and transitive)
@@ -277,7 +350,7 @@ typing :: Typemap -> [Between] -> Map String [P_Declaration]
              , Map P_Concept [P_Concept]  -- isaClos          -- concept lattice
              , Map P_Concept [P_Concept]  -- isaClosReversed  -- same, but reversed
              )                                   
-typing st betweenTerms declsByName
+typing st declsByName
   = ( st
     , stClos
     , eqType
@@ -286,7 +359,7 @@ typing st betweenTerms declsByName
     , do _ <- checkUndefined  -- relation for which there is no declaration
          _ <- checkBindings   -- unresolved bindings for relations
          _ <- checkIVBindings -- unresolved bindings for I and V
-         _ <- checkBetweens   -- errors in matching operations such as ;
+--         _ <- checkBetweens   -- errors in matching operations such as ;
          return ( bindings, srcTypes )
   -- isas is produced for the sake of making a partial order of concepts in the A-structure.
     , isaClos
@@ -325,7 +398,7 @@ typing st betweenTerms declsByName
     fromVtoCpl v@(PVee o) = head ([t | t@(PCpl o' _) <- allTerms, o==o'] ++ [v])
     fromVtoCpl x = x
 
--- checkBetweens produces error messages for the "between terms", 
+{- checkBetweens produces error messages for the "between terms", 
     checkBetweens = parallelList (map checkBetween betweenTerms)
     checkBetween (Between e src trg BTEqual) -- since the BTEqual does not participate in stClosAdd, it will be isolated here
      = case (srcTypes' src,srcTypes' trg) of
@@ -337,21 +410,43 @@ typing st betweenTerms declsByName
      = case srcTypes' t of
         [_] -> return () -- if the between-term is unique, everything is fine...
         _ -> Errors [e (srcTypes' src) (srcTypes' trg)]
-    
-    stClosAdded :: Typemap
-    stClosAdded = fixPoint stClosAdd (addIdentity stClos1)
+-}
 
- -- The purpose of stClosAdd is to enhance a type map with the edges from Between nodes.
-    stClosAdd :: Typemap -> Typemap
-    stClosAdd tm = reverseMap (foldl f (reverseMap (foldl f tm glbs)) lubs)
-      where
-       f :: Typemap -> (TypeTerm,TypeTerm,TypeTerm) -> Typemap
-       f dataMap (a, b, t) = Map.map (\cs -> mrgUnion cs [e | a `elem` cs, b `elem` cs, e<-lookups t dataMap]) dataMap
-       -- We add arcs for the TypLubs, which means: if x .<. a  and x .<. b, then x .<. (a ./\. b), so we add this arc
-       -- (These arcs show up as dotted lines in the type graphs)
-       lubs = [(a,b,t) | (Between _ a b (BetweenType BTUnion t)) <- betweenTerms]
-       glbs = [(a,b,t) | (Between _ a b (BetweenType BTIntersection t)) <- betweenTerms]
-    
+    stClosAdded :: Typemap         -- stClosAdded should be transitive and reflexive
+    stClosAdded = addIdentity (setClosure (fixPoint stAddEdges (addIdentity stClos1)) "stClosAdded")
+
+-- The purpose of stAddEdges is to enhance a type map with the edges from Between nodes.
+--  If a type-term tt is the lub of a set of type-terms tts, all other upper bounds of tt are smaller.
+--  So, we must find those upper bounds and add an edge to encode that information in the stGraph.
+    stAddEdges :: Typemap -> Typemap
+    stAddEdges st
+     = foldr (.+.) st
+          ( [ a.<.tt .+. b.<.tt | tt@(TypLub a b) <- typeTerms ] ++
+            [ tt .<. upper
+            | tt@(TypLub a b) <- typeTerms
+            , upper <- nub [ t | t<-stClos Map.! a ]
+                       `isc`
+                       nub [ t | t<-stClos Map.! b ]
+            ] ++
+            [ tt.<.a .+. tt.<.b | tt@(TypGlb a b) <- typeTerms ] ++
+            [ lower .<. tt
+            | tt@(TypGlb a b) <- typeTerms
+            , lower <- nub [ t | t<-stClosRev Map.! a ]
+                       `isc`
+                       nub [ t | t<-stClosRev Map.! b ]
+            ] ++
+            [ lub.=.a | lub@(TypLub a _)<-typeTerms, e@(TypFull  _  )<-eq Map.! a] ++ [ lub.=.b | lub@(TypLub _ b)<-typeTerms, e@(TypFull  _  )<-eq Map.! b] ++
+            [ lub.=.b | lub@(TypLub a b)<-typeTerms, e@(TypEmpty _ _)<-eq Map.! a] ++ [ lub.=.a | lub@(TypLub a b)<-typeTerms, e@(TypEmpty _ _)<-eq Map.! b] ++
+            [ glb.=.b | glb@(TypGlb a b)<-typeTerms, e@(TypFull  _  )<-eq Map.! a] ++ [ glb.=.a | glb@(TypGlb a b)<-typeTerms, e@(TypFull  _  )<-eq Map.! b] ++
+            [ glb.=.a | glb@(TypGlb a _)<-typeTerms, e@(TypEmpty _ _)<-eq Map.! a] ++ [ glb.=.b | glb@(TypGlb _ b)<-typeTerms, e@(TypEmpty _ _)<-eq Map.! b]
+          )
+          where typeTerms = Map.keys st
+                stClosClosRev = composeMaps stClos stClosRev
+                stClosRevClos = composeMaps stClosRev stClos
+                eq = Map.intersectionWith mrgIntersect st (reverseMap st)   -- eq = (st/\st~)*\/I, so eq is symmetric, transitive (due to setClosure) and reflexive.
+                stClos = addIdentity (setClosure st "st")   -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
+                stClosRev = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
+
     declByTerm :: Map Term [P_Declaration]
     declByTerm
       = Map.fromList ( [ (o, dbn) 
@@ -365,7 +460,7 @@ typing st betweenTerms declsByName
                      )
     
     ivTypByTyp :: Map TypeTerm [P_Concept] -> Map TypeTerm [(TypeTerm,P_Concept,TypeTerm)]
-    ivTypByTyp ivMap = Map.fromListWith mrgUnion [ (tp,map (\c -> (tp,c,TypExpr (Pid (SomewhereNear (fatal 313 "Hopefully this isn't inspected")) c) Src False)) concs)
+    ivTypByTyp ivMap = Map.fromListWith mrgUnion [ (tp,map (\c -> (tp,c,TypFull c)) concs)
                                                  | (tp,concs) <- Map.toList ivMap ]
     
     typByTyp :: Map Term [P_Declaration] -> Map TypeTerm [(Term,P_Declaration,TypeTerm)]
@@ -374,6 +469,7 @@ typing st betweenTerms declsByName
 
     firstClos = setClosure (addIdentity st) "(st \\/ I)*"
     firstClosSym = Map.intersectionWith mrgIntersect firstClos (reverseMap firstClos)
+    eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) firstClosSym)
 
     (newBindings,stClos0) = fixPoint (improveBindings typByTyp eqtyps)
                                      (declByTerm,firstClos)
@@ -382,10 +478,8 @@ typing st betweenTerms declsByName
     ivBoundConcepts :: Map TypeTerm [P_Concept]
     (ivBoundConcepts, stClos1)
       = fixPoint (improveBindings ivTypByTyp eqtyps) ( Map.fromList [(iv,allConcs) | iv' <- allIVs, iv <- ivToTyps iv']
-                                                     , fixPoint stClosAdd stClos0)
+                                                     , fixPoint stAddEdges stClos0)
     ivToTyps o = nub' [TypExpr o Src False, TypExpr o Tgt False]
-
-    eqtyps = Map.elems (Map.filterWithKey (\x y -> x == head y) firstClosSym)
     
 
     exactlyOne [x] = Just x
@@ -404,17 +498,18 @@ typing st betweenTerms declsByName
     stClos = if stClosAdded == addIdentity (setClosure stClosAdded "stClosAdded") then stClosAdded else
                 fatal 358 "stClosAdded should be transitive and reflexive"  -- stClos = stClosAdded*\/I, so stClos is transitive (due to setClosure) and reflexive.
     stClosReversed = reverseMap stClos  -- stClosReversed is transitive too and like stClos, I is a subset of stClosReversed.
-    eqType = Map.intersectionWith mrgIntersect stClos stClosReversed  -- eqType = stAdded* /\ stAdded*~ i.e there exists a path from a to be and a path from b.
+    eqType = addIdentity (Map.intersectionWith mrgIntersect stClos stClosReversed)  -- eqType = (st* /\ st*~)\/I   (so: eqType is reflexive, symmetric and transitive)
+--    eqType = addIdentity (setClosure (Map.intersectionWith mrgIntersect stClos stClosReversed) "symClos")  -- eqType = (stClos/\stClos~)*\/I   (so: eqType is reflexive, symmetric and transitive)
     isaClos :: Map P_Concept [P_Concept]
-    isaClos' = Map.fromDistinctAscList [(c,[c' | TypExpr (Pid _ c') _ _<-ts,c'/=c]) | (TypExpr (Pid _ c) _ _, ts)<-Map.toAscList stClos]
+    isaClos' = Map.fromDistinctAscList [(c,[c' | TypFull c'<-ts, c'/=c]) | (TypFull c, ts)<-Map.toAscList stClos]
+    isaClos  = addIdentity isaClos' 
     isaClosReversed :: Map P_Concept [P_Concept]
     isaClosReversed = reverseMap isaClos
-    isaClos = addIdentity isaClos' 
     stConcepts :: Map TypeTerm [P_Concept]
     stConcepts =  Map.map f stClos
                   where f :: [TypeTerm] -> [P_Concept]
                         f ts = [t | t <- ownTypes ts, not (t `elem` derived ts)]
-                        ownTypes ts = [c | TypExpr (Pid _ c) _ _<-ts]
+                        ownTypes ts = [c | TypFull c<-ts]
                         derived ts = foldl mrgUnion [] [Map.findWithDefault [] t isaClos' | t<-ownTypes ts]
     srcTypes' :: TypeTerm -> [P_Concept]
     srcTypes' typ = case Map.lookup typ stConcepts of
@@ -494,7 +589,7 @@ setClosureSlow xs _ = if (mapIsOk res) then res else fatal 145 ("setClosure cont
 composeMaps :: (Ord k1, Ord a, Show a) => Map k [k1] -> Map k1 [a] -> Map k [a]
 composeMaps m1 m2 = Map.map (\x -> foldr mrgUnion [] [Map.findWithDefault [] s m2 | s <- x]) m1
 symClosure :: (Ord a, Show a) => Map a [a] -> Map a [a]
-symClosure m = Map.unionWith mrgUnion m (reverseMap m)
+symClosure m = m .+. reverseMap m
 
 -- The following mrgUnion and mrgIntersect are more efficient, but lack checking...
 mrgUnion :: (Show a,Ord a) => [a] -> [a] -> [a]
