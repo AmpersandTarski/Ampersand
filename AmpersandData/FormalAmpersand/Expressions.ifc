@@ -1,0 +1,70 @@
+﻿CONTEXT AST IN ENGLISH 
+INCLUDE "Expressions.adl"
+INCLUDE "Views.adl"
+INCLUDE "Expressions.xlsx"
+
+INTERFACE Contexts (valid,relations) : '_SESSION'
+TABS[ "" : V[SESSION*Context]
+      ROWS [ context        : I
+           , "valid rules"  : valid~
+           , relations      : relations
+           ]
+    ]
+
+INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
+TABS[ relations : V[SESSION*Relation]
+      BOX<SCOLS>
+           [ relation   : I[Relation]
+           , "pair(s)"  : in~
+           ]
+    , concepts :V[SESSION*Concept]
+      BOX<SCOLS>
+           [ name         : name
+           , "isa"   : isa
+--           , "isa+"  : isaPlus
+--           , "isa*"  : isaStar
+           , "isa~"  : isa~
+--           , "isa+~" : isaPlus~
+--           , "isa*~" : isaStar~
+           , atoms        : pop~
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX<SCOLS>
+           [ pair           : I[Pair]
+           , "relation(s)"  : in
+           ]
+--    , atoms : V[SESSION*Atom]
+--      BOX<SCOLS>
+--           [ atom : I
+--           , "smallest concept(s)" : pop - pop;isaPlus
+--           , pop  : pop
+--           ]
+    ]
+
+REPRESENT Atom TYPE ALPHANUMERIC
+--VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+VIEW Concept : Concept(name)
+VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+VIEW Equivalence : Equivalence(TXT "RULE ", first, TXT " = ", second)
+
+INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+ROWS [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+ROWS [ "relation(s)"  : in
+     , l              : l
+     , r              : r
+     ]
+
+INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+ROWS [ name    : name
+     , source  : source
+     , target  : target
+     ]
+
+
+ENDCONTEXT
