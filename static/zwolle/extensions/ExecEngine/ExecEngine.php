@@ -16,7 +16,7 @@ class ExecEngine {
 	public static $doRun = true;
 	public static $runCount;
 	
-	public static function run(){
+	public static function run($allRules = false){
 		$database = Database::singleton();
 		
 		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------', 'ExecEngine');
@@ -58,7 +58,7 @@ class ExecEngine {
 				// Check rules
 				$rulesThatHaveViolations = array();
 				foreach ($role->maintains as $ruleName){
-					if(!in_array($ruleName, $affectedRules)) continue; // skip this rule
+					if(!in_array($ruleName, $affectedRules) && !$allRules) continue; // skip this rule
 					
 					$rule = RuleEngine::getRule($ruleName);
 					$violations = RuleEngine::checkRule($rule, false);
