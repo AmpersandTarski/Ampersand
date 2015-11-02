@@ -92,6 +92,8 @@ class Database
 		foreach($allDefPopQueries as $query){
 			$this->Exe($query);
 		}
+		foreach ((array)$GLOBALS['hooks']['after_Database_reinstallDB_DefPop'] as $hook) call_user_func($hook, get_defined_vars());
+		
 		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
 		
 		$this->closeTransaction('Database successfully reinstalled', true, true, false);
