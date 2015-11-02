@@ -8,10 +8,7 @@ INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : '_SES
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]
-           , name       : name
            , "pair(s)"  : in~
-           , sources    : sources
-           , targets    : targets
            ]
     , concepts :V[SESSION*Concept]
       BOX<SCOLS>
