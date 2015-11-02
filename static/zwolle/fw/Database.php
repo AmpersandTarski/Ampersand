@@ -562,11 +562,12 @@ class Database
 	public function typeConversion($value, $concept){
 		switch(Concept::getTypeRepresentation($concept)){
 			case "DATE" :
-				$date = new DateTime($value);
-				return $date->format('Y-m-d');
-			case "DATETIME" :
 				$datetime = new DateTime($value);
-				return $datetime->format('Y-m-d H:i:s');
+				return $datetime->format('Y-m-d'); // format to store in database
+			case "DATETIME" :
+				$datetime = new DateTime($value); // $value can include timezone, e.g. 2005-08-15T15:52:01+00:00 (DATE_ATOM format)
+				$datetime->setTimezone(new DateTimeZone('UTC')); // convert to UTC to store in database
+				return $datetime->format('Y-m-d H:i:s'); // format to store in database (UTC)
 			case "INTEGER" :
 				return (int) $value;
 			case "BOOLEAN" :
