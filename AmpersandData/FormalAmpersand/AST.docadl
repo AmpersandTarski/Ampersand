@@ -3,7 +3,7 @@ CONTEXT RAP IN ENGLISH LATEX
    Each concept of the RAP metamodel has its own section, where sections are separated by comments -}
 INCLUDE "AST.adl"
 INCLUDE "Atoms.docadl"
---INCLUDE "Terms.docadl"
+--INCLUDE "Expressions.docadl"
 INCLUDE "Rules.docadl"
 
 -- Context
@@ -94,8 +94,6 @@ PURPOSE PATTERN Expressions
 {+The rules that govern expressions are brought together in one pattern,
 in order to formalize expressions and determine their meaning.
 -}
-CONCEPT ExpressionID "An expressionID identifies an expression with a context-dependent meaning e.g. a rule assertion, a signal relation, or a relation."
-REPRESENT ExpressionID TYPE ALPHANUMERIC
 CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
 REPRESENT Expression TYPE ALPHANUMERIC
 PURPOSE CONCEPT Expression
