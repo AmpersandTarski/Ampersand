@@ -1,7 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH 
-INCLUDE "Terms.adl"
+INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
-INCLUDE "Terms.xlsx"
+INCLUDE "Expressions.xlsx"
 
 INTERFACE Contexts (valid,relations) : '_SESSION'
 TABS[ "" : V[SESSION*Context]
@@ -11,40 +11,11 @@ TABS[ "" : V[SESSION*Context]
            ]
     ]
 
-INTERFACE "Domain Anaylsis" (name[Relation*Identifier], source, target) : '_SESSION'
-TABS[ relations : V[SESSION*Relation]
-      BOX<SCOLS>
-           [ relation   : I
-           , name       : name
-           , source     : source
-           , target     : target
-           ]
-    , rules : V[SESSION*Rule]
-      BOX<SCOLS>
-           [ rule       : I
-           ]
-    , terms : V[SESSION*Term]
-      BOX<SCOLS>
-           [ ""          : I
-           , src         : src
-           , tgt         : tgt
-           ]
-    , "type-terms" : V[SESSION*TypeTerm]
-      BOX<SCOLS>
-           [ "type-term" : I
-           , "sub+"      : subPlus
-           , pretype     : pretype
-           ]
-    ]
-
 INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]
-           , name       : name
            , "pair(s)"  : in~
-           , sources    : sources
-           , targets    : targets
            ]
     , concepts :V[SESSION*Concept]
       BOX<SCOLS>

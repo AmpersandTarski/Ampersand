@@ -27,7 +27,7 @@ class ExecEngineApi{
 				
 			$session->setRole();
 			
-			// ExecEngine::run(); // Not required, because closeTransaction call below already kicks the ExecEngine
+			ExecEngine::runAllRules();
 			
 			$db->closeTransaction('Run completed',false,true,false);
 			

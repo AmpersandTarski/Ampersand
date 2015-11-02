@@ -4,7 +4,7 @@
 			<div class="panel panel-info" id="info-panel-{{key}}" ng-repeat="(key, val) in notifications.infos">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#info-list-{{key}}">
 					<div class="text-left">
-						<strong>Info!</strong> {{val.message}}
+						<span class="glyphicon glyphicon-info-sign"></span><span> {{val.message}}</span>
 						<span class="badge pull-right">{{val.rows.length}}</span>				
 					</div>
 				</div>
@@ -15,17 +15,17 @@
 		</div>
 		
 		<div id="errors" ng-show="$storage.notificationPrefs.switchShowErrors">
-			<alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
-				<strong>Error!</strong> <span ng-bind-html="error.message | unsafe"></span>
+			<uib-alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
+				<span class="glyphicon glyphicon-exclamation-sign"></span> <span ng-bind-html="error.message | unsafe"></span>
 				<span class="badge pull-right">{{error.count}}</span>
-			</alert>
+			</uib-alert>
 		</div>
 		
 		<div id="invariants" ng-show="$storage.notificationPrefs.switchShowInvariants">
 			<div class="panel panel-danger" ng-repeat="(key, val) in notifications.invariants">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#invariant-{{key}}">
 					<div class="text-left">
-						<span class="glyphicon glyphicon-exclamation-sign"></span> <strong>{{val.ruleMessage}}</strong>
+						<span class="glyphicon glyphicon-warning-sign"></span><span> {{val.ruleMessage}}</span>
 						<span class="badge pull-right">{{val.tuples.length}}</span>					
 					</div>
 				</div>
@@ -41,7 +41,7 @@
 			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
 					<div class="text-left">
-						<strong>Rule violation!</strong> {{val.ruleMessage}}
+						<span class="glyphicon glyphicon-bell"></span><span> {{val.ruleMessage}}</span>
 						<span class="badge pull-right">{{val.tuples.length}}</span>					
 					</div>
 				</div>
@@ -65,7 +65,7 @@
 			<div class="panel panel-success" id="success-panel-{{key}}" ng-repeat="(key, val) in notifications.successes">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#success-list-{{key}}">
 					<div class="text-left">
-						<strong>Success!</strong> {{val.message}}
+						<span class="glyphicon glyphicon-ok-sign"></span><span> {{val.message}}</span>
 						<button type="button" class="close" data-target="#success-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss">
 							<span aria-hidden="true">&times;</span>
 						</button>				

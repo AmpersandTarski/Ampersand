@@ -647,11 +647,12 @@ Class Atom {
 	public function typeConversion($value, $concept){
 		switch(Concept::getTypeRepresentation($concept)){
 			case "DATE" :
-				$date = new DateTime($value);
-				return $date->format('Y-m-d');
-			case "DATETIME" :
 				$datetime = new DateTime($value);
-				return $datetime->format('Y-m-d H:i:s');
+				return $datetime->format('Y-m-d'); // format in ISO-8601 standard
+			case "DATETIME" :
+				$datetime = new DateTime($value, new DateTimeZone('UTC')); // datetimes are stored in UTC in database
+				$datetime->setTimezone(new DateTimeZone(date_default_timezone_get())); // convert back to systemtime
+				return $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
 			case "INTEGER" :
 				return (int) $value;
 			case "BOOLEAN" :

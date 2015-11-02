@@ -15,10 +15,10 @@ $endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, 
 		<h4>{{val['@label']}}&nbsp;</h4>
 	</div>
 	<div class="panel-body" cg-busy="loadingResources[ResourceId]">$endif$
-		<tabset>
-			$subObjects:{subObj|$if(verbose)$<!-- $subObj.subObjLabel$ -->$endif$<tab heading="$subObj.subObjLabel$">
+		<uib-tabset>
+			$subObjects:{subObj|$if(verbose)$<!-- $subObj.subObjLabel$ -->$endif$<uib-tab heading="$subObj.subObjLabel$">
 				$subObj.subObjContents$
-			</tab>}$
-		</tabset>
+			</uib-tab>}$
+		</uib-tabset>
 	$if(isRoot)$</div>
 $endif$</div>

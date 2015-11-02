@@ -15,7 +15,6 @@ class RuleEngine {
 	 */
 	// TODO: function can be made simpler.
 	public static function checkProcessRules($roleId = null, $cacheConjuncts = true){
-		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkProcessRules'] as $hook) call_user_func($hook); // Hook functions
 		
 		if(!is_null($roleId)){
 			$role = new Role($roleId);
@@ -46,9 +45,7 @@ class RuleEngine {
 	 * 		default: true
 	 */
 	public static function checkInvariantRules($invariantConjuctsIds = null, $cacheConjuncts = true){		
-		$invariantRulesHold = true; // default
-		
-		foreach ((array)$GLOBALS['hooks']['before_RuleEngine_checkInvariantRules'] as $hook) call_user_func($hook); // Hook functions 
+		$invariantRulesHold = true; // default 
 		
 		// check invariant rules
 		Notifications::addLog('------------------------- CHECKING INVARIANT RULES -------------------------', 'RuleEngine');
@@ -136,7 +133,7 @@ class RuleEngine {
 	 * 		false: don't cache conjuncts (is used by ExecEngine)
 	 * 		default: true
 	 */
-	private static function checkConjunct($conjunctId, $cacheConjuncts = true){
+	public static function checkConjunct($conjunctId, $cacheConjuncts = true){
 		Notifications::addLog("Checking conjunct '" . $conjunctId."' cache:".var_export($cacheConjuncts, true), 'RuleEngine');
 		try{
 			
@@ -208,9 +205,15 @@ class RuleEngine {
 		
 	}
 	
+	public static function getAllRules(){
+		global $allRules; // from Generics.php
+		
+		return $allRules;
+		
+	}
+	
 	public static function getRule($ruleName){
-		// from Generics.php
-		global $allRules;
+		$allRules = RuleEngine::getAllRules();
 
 		if(!array_key_exists($ruleName, $allRules)) throw new Exception("Rule \'$ruleName\' does not exists in allRules", 500);
 		

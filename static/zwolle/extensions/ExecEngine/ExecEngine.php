@@ -2,7 +2,7 @@
 
 // Define hooks
 $GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'][] = 'ExecEngine::run';
-$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'][] = 'ExecEngine::run';
+$GLOBALS['hooks']['after_Database_reinstallDB_DefPop'][] = 'ExecEngine::runAllRules';
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
 
 // Put ExecEngine extension in applications menu
@@ -17,7 +17,12 @@ class ExecEngine {
 	public static $doRun = true;
 	public static $runCount;
 	
-	public static function run(){
+	public static function runAllRules(){
+		ExecEngine::run(true);
+	}
+	
+	public static function run($allRules = false){
+		$database = Database::singleton();
 		
 		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------', 'ExecEngine');
 		
@@ -43,8 +48,23 @@ class ExecEngine {
 				if(self::$runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')', 500);
 				
 				Notifications::addLog("ExecEngine run (" . self::$runCount . ") for role '" . $role->label . "'", 'ExecEngine');
+				
+				// Determine affected rules that must be checked by the exec engine
+				$affectedConjuncts = (array)RuleEngine::getAffectedInvConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations());
+				$affectedConjuncts = array_merge($affectedConjuncts, (array)RuleEngine::getAffectedSigConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations()));
+				
+				$affectedRules = array();
+				foreach($affectedConjuncts as $conjunctId){
+					$conjunct = RuleEngine::getConjunct($conjunctId);
+					foreach ($conjunct['invariantRuleNames'] as $ruleName) $affectedRules[] = $ruleName;
+					foreach ($conjunct['signalRuleNames'] as $ruleName) $affectedRules[] = $ruleName;
+				}
+				
+				// Check rules
 				$rulesThatHaveViolations = array();
 				foreach ($role->maintains as $ruleName){
+					if(!in_array($ruleName, $affectedRules) && !$allRules) continue; // skip this rule
+					
 					$rule = RuleEngine::getRule($ruleName);
 					$violations = RuleEngine::checkRule($rule, false);
 					

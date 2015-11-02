@@ -6,6 +6,7 @@ class Role {
 	public $label;
 	public $maintains = array();
 	public $interfaces = array();
+	public $editableConcepts = array();
 	
 	/*
 	 * param int $id
@@ -21,6 +22,9 @@ class Role {
 		
 		// Rules that are maintained by this role
 		$this->maintains = (array)$roleInfo['ruleNames'];
+		
+		// Editable concepts
+		$this->editableConcepts = (array)$roleInfo['editableConcepts'];
 		
 		// Interfaces that are accessible by this role
 		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
