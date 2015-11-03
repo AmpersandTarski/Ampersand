@@ -30,7 +30,7 @@ class OAuthLoginApi{
 				
 				$idps[] = array( 'name' => 'Google' 
 							   , 'loginUrl' => $url
-							   , 'logo' => 'extensions/Login/ui/images/logo-google.png'
+							   , 'logo' => 'extensions/OAuthLogin/ui/images/logo-google.png'
 							   );
 			}
 			
@@ -50,7 +50,7 @@ class OAuthLoginApi{
 				
 				$idps[] = array( 'name' => 'LinkedIn'
 							   , 'loginUrl' => $url
-							   , 'logo' => 'extensions/Login/ui/images/logo-linkedin.png'
+							   , 'logo' => 'extensions/OAuthLogin/ui/images/logo-linkedin.png'
 							   );
 			}
 			
@@ -121,7 +121,7 @@ class OAuthLoginApi{
 			$emailField		= $identityProviders[$idp]['emailField'];
 
 			// instantiate authController
-			$authController = new OAuthController($client_id,$client_secret,$redirect_uri,$token_url);
+			$authController = new OAuthLoginController($client_id,$client_secret,$redirect_uri,$token_url);
 			
 			// request token
 			if($authController->requestToken($code)){
