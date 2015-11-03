@@ -9,6 +9,8 @@ $GLOBALS['navBar']['appMenu'][] = array ( 'url' => 'extensions/ExcelImport/ui/vi
 $GLOBALS['hooks']['after_Viewer_load_cssFiles'][] = 'extensions/ExcelImport/ui/css/style.css';
 $GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExcelImport/ui/js/ExcelImport.js';
 
+Config::set('allowedMimeTypes', 'excelImport', array('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/excel'));
+
 class ImportExcel {
 	public $file;
 	private $db;

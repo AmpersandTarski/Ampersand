@@ -150,7 +150,7 @@ class Role {
 	}
 	
 	private function getSessionInterfaces(){
-		if(LOGIN_ENABLED){
+		if(Config::get('loginEnabled')){
 			$session = Session::singleton();
 			return (array)$session->accessibleInterfaces;
 		}else{

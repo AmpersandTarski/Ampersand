@@ -67,7 +67,7 @@ class Session {
 	}
 	
 	public function setRole($roleId = null){
-		$roles = LOGIN_ENABLED ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
+		$roles = Config::get('loginEnabled') ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
 		if(empty($roles) || $roleId == 0) $this->role = new Role(0); // select role 0, no role
 		elseif(is_null($roleId)) $this->role = current($roles); // select first of $roles
 		elseif(isset($roleId)){
@@ -80,7 +80,7 @@ class Session {
 			throw new Exception("No role could be selected", 500);
 		}
 		
-		if(LOGIN_ENABLED){
+		if(Config::get('loginEnabled')){
 			$arr = array();
 			foreach($roles as $role){
 				$arr = array_merge($arr, $role->interfaces);
@@ -109,7 +109,7 @@ class Session {
 	
 	private static function setSessionUser(){
 		// Set sessionUser
-		if(!LOGIN_ENABLED){
+		if(!Config::get('loginEnabled')){
 			Session::$sessionUser = false;
 		
 		}else{
@@ -128,7 +128,7 @@ class Session {
 	}
 	
 	public static function getSessionUserId(){
-		if(!LOGIN_ENABLED){
+		if(!Config::get('loginEnabled')){
 			return 'SYSTEM';
 		
 		}else{
@@ -143,7 +143,7 @@ class Session {
 	}
 	
 	public static function sessionUserLoggedIn(){
-		if(!LOGIN_ENABLED){
+		if(!Config::get('loginEnabled')){
 			return false;
 		
 		}else{
@@ -158,7 +158,7 @@ class Session {
 	}
 	
 	public static function getSessionVars(){
-		if(!LOGIN_ENABLED){
+		if(!Config::get('loginEnabled')){
 			return false;
 		
 		}else{

@@ -4,34 +4,21 @@ define ('LOCALSETTINGS_VERSION', 1.1);
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", false);
 
-/************ CONFIG ********************/
-define ('HOME', 'http://localhost/' . $contextName);
-define ('API_PATH', 'http://localhost/' . $contextName . '/api/v1/'); // $contextName is defined in the (generated!) file __DIR__ . '/generics/Generics.php'
+/************ Server URL config ********************/
+// Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>
+// Config::set('apiPath', 'global', '/api/v1'); // relative path to api
 
-define ('JSONLD_TYPE_PATH', API_PATH . 'concept/');
-define ('JSONLD_ID_PATH', API_PATH . 'resource/');
-define ('JSONLD_CONTEXT_PATH', API_PATH . 'interface/');
+/************ MySQL database config ****************/
+// Config::set('dbHost', 'mysqlDatabase', 'localhost');
+// Config::set('dbUser', 'mysqlDatabase', 'ampersand');
+// Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
+// Config::set('dbName', 'mysqlDatabase', '');
 
-define ('UPLOAD_DIR', __DIR__ . '/uploads/');
-$GLOBALS['api']['allowedMimeTypes'] = array('application/vnd.ms-excel'
-                                           ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-                                           ,'application/excel'
-                                           ,'application/pdf'
-                                           ,'text/xml'
-                                           );
-
-/************ DB CONFIG ****************/
-$DB_host = 'localhost';
-$DB_user = 'ampersand';
-$DB_pass = 'ampersand';
-$DB_name = $dbName; // from Generics.php
-define ('CHECK_DEF_POP', true); // For debugging: FALSE: commit the initial population, regardless if it has invariant violations.
-define ('COMMIT_INV_VIOLATIONS', false); // For debugging: TRUE: always commit changes, even when there are invariant violations.
 
 /* For your convenience, the lines below can be copied straight into your source file (but outside a PATTERN or PROCESS).
 {- ----------- LOGIN FUNCTIONALITY -------------
  * Enable/disable built-in login functionality -- see comments in 'localSettings.php'
- * **In 'localSettings.php', the variable 'LOGIN_ENABLED' must be assigned the value 'true'**
+ * **In 'localSettings.php', enable login with Config::set('loginEnabled', 'global', true)**
  * This requires the following &-INTERFACE defintions:
 -} INTERFACE "SessionRoles" FOR NobodyInParticular : sessionRoles[SESSION*Role] BOX [ "ignored" : I]
 {- Notes: 
@@ -58,15 +45,7 @@ define ('COMMIT_INV_VIOLATIONS', false); // For debugging: TRUE: always commit c
    6) REPRESENT User TYPE <something> is not allowed: A 'User' may not be a scalar (it must be an Object-type)
 -}
 */
-define ('LOGIN_ENABLED', false);
-//require_once(__DIR__ . '/extensions/Login/Login.php');
-$GLOBALS['ext']['Login']['google']['redirectUrl'] = '';
-$GLOBALS['ext']['Login']['google']['clientId'] = '';
-$GLOBALS['ext']['Login']['google']['clientSecret'] = '';
-$GLOBALS['ext']['Login']['google']['tokenUrl'] = '';
-$GLOBALS['ext']['Login']['google']['apiUrl'] = '';
-$GLOBALS['ext']['Login']['google']['scope'] = '';
-
+// Config::set('loginEnabled', 'global', false);
 
 /************ EXTENSIONS ***************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine

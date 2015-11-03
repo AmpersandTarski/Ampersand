@@ -14,7 +14,7 @@ class ExcelImportApi{
 			$session = Session::singleton();
 			
 			$allowedRoles = (array)Config::get('allowedRolesForExcelImport','excelImport');
-			if(LOGIN_ENABLED && !is_null($allowedRoles)){
+			if(Config::get('loginEnabled') && !is_null($allowedRoles)){
 				$ok = false;
 			
 				$sessionRoles = Role::getAllSessionRoles();

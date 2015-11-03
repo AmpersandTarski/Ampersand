@@ -59,7 +59,7 @@ class Api{
 			if (is_uploaded_file($_FILES['file']['tmp_name'])){
 				$tmp_name = $_FILES['file']['tmp_name'];
 				$new_name = time() . '_' . $_FILES['file']['name'];
-				$target = UPLOAD_DIR . $new_name;
+				$target = Config::get('uploadPath') . '/' . $new_name;
 				$result = move_uploaded_file($tmp_name, $target);
 				
 				if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
@@ -277,7 +277,7 @@ class Api{
     public function getConceptAtoms($concept){
     	try{
     		// If login is enabled, check if users may request all atoms.
-    		if(LOGIN_ENABLED){
+    		if(Config::get('loginEnabled')){
     			$editableConcepts = array();
     			$roles = Role::getAllSessionRoles();
     			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
@@ -298,7 +298,7 @@ class Api{
     public function getConceptAtom($concept, $atomId){
     	try{
     		// If login is enabled, check if users may request all atoms.
-    		if(LOGIN_ENABLED){
+    		if(Config::get('loginEnabled')){
     			$editableConcepts = array();
     			$roles = Role::getAllSessionRoles();
     			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
@@ -338,7 +338,7 @@ class Api{
     		
     		// roles
     		$roles = array();
-    		$allRoles = LOGIN_ENABLED ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
+    		$allRoles = Config::get('loginEnabled') ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
     		foreach((array)$allRoles as $role){
     			$roles[] = array('id' => $role->id, 'label' => $role->label);
     		}
