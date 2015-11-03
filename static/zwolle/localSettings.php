@@ -71,5 +71,7 @@ $GLOBALS['ext']['Login']['google']['scope'] = '';
 /************ EXTENSIONS ***************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExecImport
+//require_once(__DIR__ . '/extensions/OAuthLogin/OAuthLogin.php'); // Enable OAuthLogin, supported identityProviders are 'google' and 'linkedin'
+	//Config::set('identityProviders', 'OAuthLogin', array('google' => array('redirectUrl' => '', 'clientId' => '' ,'clientSecret' => '' ,'tokenUrl' => '' ,'apiUrl' => '' ,'scope' => ''), 'linkedin' => array()));
 
 ?>
