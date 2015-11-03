@@ -53,7 +53,10 @@ class Database {
 	}
 	
 	public static function createDB(){
-		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
+		$DB_host = Config::get('dbHost', 'mysqlDatabase');
+		$DB_user = Config::get('dbUser', 'mysqlDatabase');
+		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
+		$DB_name = Config::get('dbName', 'mysqlDatabase');
 		
 		// Connect to MYSQL database
 		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
