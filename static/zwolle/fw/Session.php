@@ -48,7 +48,7 @@ class Session {
 	// Prevent any copy of this object
 	private function __clone(){}
 	
-	public static function singleton($sessionId = null){
+	public static function singleton(){
 		if(is_null (self::$_instance) ) self::$_instance = new Session();
 		return self::$_instance;
 	}
@@ -67,7 +67,7 @@ class Session {
 	}
 	
 	public function setRole($roleId = null){
-		$roles = LOGIN_ENABLED ? Role::getAllSessionRoles(session_id()) : Role::getAllRoleObjects();
+		$roles = LOGIN_ENABLED ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
 		if(empty($roles) || $roleId == 0) $this->role = new Role(0); // select role 0, no role
 		elseif(is_null($roleId)) $this->role = current($roles); // select first of $roles
 		elseif(isset($roleId)){

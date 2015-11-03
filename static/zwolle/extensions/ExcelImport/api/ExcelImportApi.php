@@ -17,7 +17,7 @@ class ExcelImportApi{
 			if(LOGIN_ENABLED && !is_null($allowedRoles)){
 				$ok = false;
 			
-				$sessionRoles = Role::getAllSessionRoles(session_id());
+				$sessionRoles = Role::getAllSessionRoles();
 				foreach($sessionRoles as $role){
 					if(in_array($role->label, $allowedRoles)) $ok = true;
 				}
