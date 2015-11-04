@@ -124,7 +124,7 @@ function shutdown(){
 
 $r = new Restler();
 $r->setSupportedFormats('JsonFormat', 'XmlFormat', 'HtmlFormat', 'UploadFormat');
-UploadFormat::$allowedMimeTypes = $GLOBALS['api']['allowedMimeTypes'];
+UploadFormat::$allowedMimeTypes = Config::get('allowedMimeTypes');
 UploadFormat::$maximumFileSize = 10485760; // 1048576 bytes = 10 MB
 // $r->setOverridingFormats('HtmlFormat');
 $r->addAPIClass('Api','');

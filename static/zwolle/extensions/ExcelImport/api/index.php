@@ -7,7 +7,7 @@ use Luracast\Restler\Restler;
 use Luracast\Restler\Format\UploadFormat;
 
 $r = new Restler();
-UploadFormat::$allowedMimeTypes = array('application/vnd.ms-excel', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/excel');
+UploadFormat::$allowedMimeTypes = Config::get('allowedMimeTypes', 'excelImport');
 $r->setSupportedFormats('JsonFormat', 'UploadFormat'); // some strange error in Restler when UploadFormat is mentioned as first parameter
 $r->addAPIClass('ExcelImportApi','');
 $r->handle();

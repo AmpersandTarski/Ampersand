@@ -64,12 +64,12 @@ class Role {
             		, 'interfaces' => array ());
 	}
 	
-	public static function getAllSessionRoles($sessionId){		
+	public static function getAllSessionRoles(){		
 		$sessionRoleLabels = array();
 		$sessionRoles = array();
 		
 		$interface = new InterfaceObject('SessionRoles');
-		$session = new Atom($sessionId, 'SESSION');
+		$session = new Atom(session_id(), 'SESSION');
 		$sessionRoleLabels = array_keys((array)$session->getContent($interface, true));
 		
 		foreach(Role::getAllRoleObjects() as $role){
@@ -150,7 +150,7 @@ class Role {
 	}
 	
 	private function getSessionInterfaces(){
-		if(LOGIN_ENABLED){
+		if(Config::get('loginEnabled')){
 			$session = Session::singleton();
 			return (array)$session->accessibleInterfaces;
 		}else{

@@ -1,9 +1,12 @@
 <?php
 
-class Database
-{	
+Config::set('dbHost', 'mysqlDatabase', 'localhost'); // Can be overwritten in localSettings.php
+Config::set('dbUser', 'mysqlDatabase', 'ampersand'); // Can be overwritten in localSettings.php
+Config::set('dbPassword', 'mysqlDatabase', 'ampersand'); // Can be overwritten in localSettings.php
+Config::set('dbName', 'mysqlDatabase', $dbName); // $dbName from Generics.php. Can be overwritten in localSettings.php
+
+class Database {	
 	private $db_link;
-	
 	private $db_host;
 	private $db_user;
 	private $db_pass;
@@ -18,11 +21,10 @@ class Database
 	
 	// Prevent any outside instantiation of this object
 	private function __construct(){
-		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
-		$this->db_host = $DB_host;
-		$this->db_user = $DB_user;
-		$this->db_pass = $DB_pass;
-		$this->db_name = $DB_name;
+		$this->db_host = Config::get('dbHost', 'mysqlDatabase');
+		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
+		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
+		$this->db_name = Config::get('dbName', 'mysqlDatabase');
 		
 		// Connect to MYSQL database
 		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
@@ -51,7 +53,10 @@ class Database
 	}
 	
 	public static function createDB(){
-		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
+		$DB_host = Config::get('dbHost', 'mysqlDatabase');
+		$DB_user = Config::get('dbUser', 'mysqlDatabase');
+		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
+		$DB_name = Config::get('dbName', 'mysqlDatabase');
 		
 		// Connect to MYSQL database
 		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
@@ -86,7 +91,7 @@ class Database
 			
 		}
 		
-		if(CHECK_DEF_POP) $this->startTransaction(); // default must be true: when CHECK_DEF_POP is undefined, this is true
+		if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
 		
 		Notifications::addLog('---------- DB population queries -----------', 'INSTALLER');
 		foreach($allDefPopQueries as $query){
@@ -533,7 +538,7 @@ class Database
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
 			Notifications::addSuccess($succesMessage);
-		}elseif(defined(COMMIT_INV_VIOLATIONS) && COMMIT_INV_VIOLATIONS){
+		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && COMMIT_INV_VIOLATIONS){
 			$this->commitTransaction();
 			Notifications::addError("Transaction committed with invariant violations");
 		}elseif($invariantRulesHold){

@@ -25,12 +25,11 @@ require_once (__DIR__ . '/Role.php');
 require_once (__DIR__ . '/RuleEngine.php');
 require_once (__DIR__ . '/Session.php');
 require_once (__DIR__ . '/InterfaceObject.php');
-require_once (__DIR__ . '/Viewer.php');
 
 require_once (__DIR__ . '/../localSettings.php');
 
 // Check version of localSettings.php
-$requiredVersion = 1.1;
+$requiredVersion = 1.2;
 if(!defined('LOCALSETTINGS_VERSION') || $requiredVersion > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to v" . number_format ($requiredVersion, 1) . " or higher", 500);
 
 ?>

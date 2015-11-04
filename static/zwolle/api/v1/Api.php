@@ -7,10 +7,9 @@ class Api{
 	/****************************** INSTALLER & SESSION RESET ******************************/
 	/**
 	 * @url GET installer
-	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function installer($sessionId, $roleId = 0){
+	public function installer($roleId = 0){
 		try{
 			if(Config::get('productionEnv')) throw new Exception ("Database reinstall not allowed in production environment", 403);
 			
@@ -19,7 +18,7 @@ class Api{
 			$db = Database::singleton();
 			$db->reinstallDB();
 			
-			$session = Session::singleton($sessionId);
+			$session = Session::singleton();
 			$session->setRole($roleId);
 			
 			return Notifications::getAll(); // Return all notifications
@@ -48,12 +47,11 @@ class Api{
 	/**************************** FILE ****************************/
 	/**
 	 * @url POST file
-	 * @param string $sessionId
 	 * @param int $roleId
 	 */
-	public function fileUpload($sessionId, $roleId = 0){
+	public function fileUpload($roleId = 0){
 		try{
-			$session = Session::singleton($sessionId);
+			$session = Session::singleton();
 			$session->setRole($roleId);
 			
 			// TODO: Check if upload is allowed in interface
@@ -61,7 +59,7 @@ class Api{
 			if (is_uploaded_file($_FILES['file']['tmp_name'])){
 				$tmp_name = $_FILES['file']['tmp_name'];
 				$new_name = time() . '_' . $_FILES['file']['name'];
-				$target = UPLOAD_DIR . $new_name;
+				$target = Config::get('uploadPath') . '/' . $new_name;
 				$result = move_uploaded_file($tmp_name, $target);
 				
 				if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
@@ -91,15 +89,14 @@ class Api{
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $tgtAtomId
-	 * @param string $sessionId
 	 * @param int $roleId
 	 * @param boolean $inclLinktoData
 	 * @param string $arrayType
 	 * @param boolean $metaData
 	 */
-	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $sessionId = null, $roleId = 0, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
+	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $roleId = 0, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
 		try{
-			$session = Session::singleton($sessionId);
+			$session = Session::singleton();
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 		
@@ -135,15 +132,14 @@ class Api{
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $tgtAtomId
-	 * @param string $sessionId
 	 * @param int $roleId
 	 * @param string $requestType
 	 *
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
+	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
-			$session = Session::singleton($sessionId);
+			$session = Session::singleton();
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 			
@@ -165,15 +161,14 @@ class Api{
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $tgtAtomId
-	 * @param string $sessionId
 	 * @param int $roleId
 	 * @param string $requestType
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
+	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
-			$session = Session::singleton($sessionId);
+			$session = Session::singleton();
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 
@@ -199,16 +194,15 @@ class Api{
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $tgtAtomId
-	 * @param string $sessionId
 	 * @param int $roleId
 	 * @param string $requestType
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $sessionId = null, $roleId = 0, $requestType = 'feedback'){
+	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleId = 0, $requestType = 'feedback'){
 		
 		try{
-			$session = Session::singleton($sessionId);
+			$session = Session::singleton();
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 		
@@ -229,15 +223,14 @@ class Api{
 	 * @param string $concept
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
-	 * @param string $sessionId
 	 * @param int $roleId
 	 * @param string $requestType
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function postAtom($concept, $srcAtomId, $interfaceId, $sessionId = null, $roleId = 0, $requestType = 'feedback', $request_data = null){
+	public function postAtom($concept, $srcAtomId, $interfaceId, $roleId = 0, $requestType = 'feedback', $request_data = null){
 		try{
-			$session = Session::singleton($sessionId);			
+			$session = Session::singleton();			
 			$session->setRole($roleId);
 			$session->setInterface($interfaceId);
 			
@@ -284,9 +277,9 @@ class Api{
     public function getConceptAtoms($concept){
     	try{
     		// If login is enabled, check if users may request all atoms.
-    		if(LOGIN_ENABLED){
+    		if(Config::get('loginEnabled')){
     			$editableConcepts = array();
-    			$roles = Role::getAllSessionRoles(session_id());
+    			$roles = Role::getAllSessionRoles();
     			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
     			
     			if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
@@ -305,9 +298,9 @@ class Api{
     public function getConceptAtom($concept, $atomId){
     	try{
     		// If login is enabled, check if users may request all atoms.
-    		if(LOGIN_ENABLED){
+    		if(Config::get('loginEnabled')){
     			$editableConcepts = array();
-    			$roles = Role::getAllSessionRoles(session_id());
+    			$roles = Role::getAllSessionRoles();
     			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
     			 
     			if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
@@ -326,12 +319,11 @@ class Api{
     
     /**
      * @url GET navBar
-     * @param string $sessionId
      * @param int $roleId
      */
-    public function getNavBar($sessionId = null, $roleId = 0){
+    public function getNavBar($roleId = 0){
     	try{
-    		$session = Session::singleton($sessionId);
+    		$session = Session::singleton();
     		$session->setRole($roleId);
     		
     		// top level interfaces
@@ -346,7 +338,7 @@ class Api{
     		
     		// roles
     		$roles = array();
-    		$allRoles = LOGIN_ENABLED ? Role::getAllSessionRoles($sessionId) : Role::getAllRoleObjects();
+    		$allRoles = Config::get('loginEnabled') ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
     		foreach((array)$allRoles as $role){
     			$roles[] = array('id' => $role->id, 'label' => $role->label);
     		}
