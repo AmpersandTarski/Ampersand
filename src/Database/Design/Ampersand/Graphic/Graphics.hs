@@ -17,6 +17,9 @@ import Data.String
 
 import System.FilePath hiding (addExtension)
 import System.Directory
+import System.Process (callCommand)
+import Control.Exception (catch, IOException)
+
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "FSpec.Graphic.Graphics"
@@ -259,18 +262,40 @@ writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
-      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
-      [writeDot (XDot Nothing)   | genFSpec opts  ]++ --Reproduces the input along with layout information, and provides even more information on how the graph is drawn.
-      [writeDot Png    | genFSpec opts ]
+      [writeDot DotOutput  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+--      [writeDot Png    | genFSpec opts ] ++
+      [writeDot Svg    | genFSpec opts ] ++
+      [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
-     writeDot :: GraphvizOutput
+     writeDot :: GraphvizOutput -> IO ()
+     writeDot = writeDotPostProcess Nothing
+     writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor
+              -> GraphvizOutput
               -> IO ()
-     writeDot  gvOutput  =
+     writeDotPostProcess postProcess gvOutput  =
          do verboseLn opts ("Generating "++show gvOutput++" using "++show gvCommand++".")
             path <- addExtension (runGraphvizCommand gvCommand (dotSource pict)) gvOutput ((dropExtension . imagePath opts) pict)
             verboseLn opts (path++" written.")
+            case postProcess of
+              Nothing -> return ()
+              Just x -> x path
        where  gvCommand = dotProgName pict
+     -- The GraphVizOutput Pdf generates pixelised graphics on Linux
+     -- the GraphVizOutput Eps generates extended postscript that can be postprocessed to PDF.
+     makePdf :: FilePath -> IO ()
+     makePdf path = do
+         callCommand (ps2pdfCmd path)
+         verboseLn opts (replaceExtension path ".pdf" ++ " written.")
+       `catch` \ e -> verboseLn opts ("Could not invoke PostScript->PDF conversion."++
+                                      "\n  Did you install MikTex? Can the command epstopdf be found?"++
+                                      "\n  Your error message is:\n " ++ show (e :: IOException))
+                   
+     writePdf :: GraphvizOutput
+              -> IO ()
+     writePdf = writeDotPostProcess (Just makePdf) 
+
+     ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 class ReferableFromPandoc a where
   imagePath :: Options -> a -> FilePath   -- ^ the full file path to the image file
@@ -278,7 +303,7 @@ class ReferableFromPandoc a where
 instance ReferableFromPandoc Picture where
   imagePath opts p =
      ( dirOutput opts)
-     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "png"
+     </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
 
 class Named a => Navigatable a where
    interfacename :: a -> String

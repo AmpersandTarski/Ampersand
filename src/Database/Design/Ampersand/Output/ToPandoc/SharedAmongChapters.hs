@@ -153,7 +153,7 @@ showImage opts pict =
       case fspecFormat opts of
          FLatex  -> rawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
          _       -> mempty
-   <> image fileOnly (xLabel pict) (text $ "Here, "++caption pict++" should have been visible" )
+   <> image fileOnly (xLabel pict) (text $ "Here, the image `"++caption pict++"` should be visible" )
    <> case fspecFormat opts of
          FLatex  -> rawInline "latex" "}\n"
                   <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n")
@@ -163,7 +163,10 @@ showImage opts pict =
          FLatex  -> rawInline "latex" "\n\\end{center}\n\\end{figure}"
          _       -> mempty
   where
-    fileOnly = (snd . splitFileName . imagePath opts) pict
+    fileOnly = ((case fspecFormat opts of
+         FLatex  -> dropExtension -- let pdflatex figure out the optimal extension
+         _ -> id
+      ) . takeFileName . imagePath opts) pict
     
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
