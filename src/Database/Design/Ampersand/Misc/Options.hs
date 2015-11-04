@@ -416,21 +416,6 @@ options = [ (Option ['v']   ["version"]
                (NoArg  (\opts -> return opts{genStaticFiles = False}))
                "Do not generate static files into the prototype directory"
             , Public)
-          , (Option []        ["sqlHost"]
-               (ReqArg (\nm opts -> return opts{sqlHost = nm}
-                       ) "HOSTNAME")
-               "specify database host name."
-            , Hidden)
-          , (Option []        ["sqlLogin"]
-               (ReqArg (\nm opts -> return opts{sqlLogin = nm}
-                       ) "NAME")
-               "specify database login name."
-            , Hidden)
-          , (Option []        ["sqlPwd"]
-               (ReqArg (\nm opts -> return opts{sqlPwd = nm}
-                       ) "STR")
-               "specify database password."
-            , Hidden)
           , (Option []        ["oldNormalizer"]
                (NoArg (\opts -> return opts{oldNormalizer = True}))
                "use the old normalizer at your own risk."

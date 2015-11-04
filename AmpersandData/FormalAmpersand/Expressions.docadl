@@ -39,12 +39,12 @@ Likewise, we will use type-term cod(t) to represent the set of atoms in the codo
 The set of atoms associated with a concept c will be represented by the type-term pop(c).
 -}
 
-PURPOSE RELATION repr[Term*Representation]
+PURPOSE RELATION repr[Expression*Representation]
 {+In order to define type-terms, we must have an injective representation for terms.
 With that representation, the system can construct all kinds of type terms from which the originating term can be determined.
 -}
 
-PURPOSE RELATION dom[Term*TypeTerm]
+PURPOSE RELATION dom[Expression*TypeTerm]
 {+In order to associate a type-term dom(t) with every term t, we use the function dom.
 Its totality is maintained automatically by rule "dom is total".
 -}
@@ -55,7 +55,7 @@ the system uses a representation from which the original term can be reconstruct
 Momentarily, this hinges on the representation, which is specified by hand or by the meatgrinder.
 -}
 
-PURPOSE RELATION cod[Term*TypeTerm]
+PURPOSE RELATION cod[Expression*TypeTerm]
 {+In order to associate a type-term cod(t) with every term t, we use the function cod.
 Its totality is maintained automatically by rule "cod is total".
 -}
@@ -75,7 +75,7 @@ PURPOSE RELATION sub[TypeTerm*TypeTerm]
 {+
 -}
 
-PURPOSE RELATION typehalf[Term*Signature]
+PURPOSE RELATION typehalf[Expression*Signature]
 {+
 -}
 

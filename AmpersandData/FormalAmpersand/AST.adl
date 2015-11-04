@@ -2,7 +2,7 @@
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "AST.ifc"
 INCLUDE "Rules.adl"
-INCLUDE "Terms.adl"
+INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
@@ -127,25 +127,12 @@ MEANING "The population of a relation."
 --VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC sign;tgt)
 ENDPATTERN
 
-PATTERN Expression
---IDENT ExpressionID : ExpressionID(exprvalue)  -- @Stef wat wordt hiermee bedoeld? stel wat is de exprvalue van bijvoorbeeld de expressie 'r;t~' ?? Waarom onderscheid in Expression en ExpressonID??
-
-RELATION exprvalue[ExpressionID*Expression] --[UNI,TOT]
-MEANING "The value of an expression."
-RELATION relsMentionedIn[ExpressionID*Declaration]
-MEANING "The user-declared relations in an expression."
-
-ENDPATTERN
-
 PROCESS Plugs -- This pattern documents the semantics of plugs as of november 2014.
 RELATION maintains[Plug*Rule]
 RELATION in[Concept*Plug] --TODO: 'Nearly TOT: All concepts are in a plug, except ONE".
 RELATION in[Declaration*Plug] [TOT]
 
 -- Rules
-RULE "rule allocation" : maintains;rrexp;relsMentionedIn |- in~
-MEANING "A plug, which maintains a rule, must contain every relation that is mentioned explicitly in that rule."
-
 ROLE Ampersand MAINTAINS "All isas in one plug"
 RULE "All isas in one plug" : (-(genspc~;gengen;in[Concept*Plug]) \/ in[Concept*Plug]) /\ (-(gengen~;genspc;in[Concept*Plug]) \/ in[Concept*Plug])
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."

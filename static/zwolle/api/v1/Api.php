@@ -283,6 +283,15 @@ class Api{
      */
     public function getConceptAtoms($concept){
     	try{
+    		// If login is enabled, check if users may request all atoms.
+    		if(LOGIN_ENABLED){
+    			$editableConcepts = array();
+    			$roles = Role::getAllSessionRoles(session_id());
+    			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
+    			
+    			if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
+    		}
+    		
         	return Concept::getAllAtomObjects($concept); // "Return list of all atoms for $concept"
         	
         }catch(Exception $e){
@@ -295,6 +304,15 @@ class Api{
      */
     public function getConceptAtom($concept, $atomId){
     	try{
+    		// If login is enabled, check if users may request all atoms.
+    		if(LOGIN_ENABLED){
+    			$editableConcepts = array();
+    			$roles = Role::getAllSessionRoles(session_id());
+    			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
+    			 
+    			if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
+    		}
+    		
     		$atom = new Atom($atomId, $concept);
     		if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
     		return $atom->getAtom();
@@ -361,14 +379,83 @@ class Api{
     	try{
     		$session = Session::singleton();
     		$session->setRole($roleId);
-    			
-    		foreach ((array)$GLOBALS['hooks']['before_API_getAllNotifications_getViolations'] as $hook) call_user_func($hook);
     
     		$session->role->getViolations();
-    		// RuleEngine::checkProcessRules($session->role->id);  // Leave here to measure performance difference
     
     		return Notifications::getAll();
     			
+    	}catch(Exception $e){
+    		throw new RestException($e->getCode(), $e->getMessage());
+    	}
+    }
+    
+    /**
+     * @url GET stats/performance/conjuncts
+     * @param string $groupBy
+     * @param int $from
+     * @param int $to
+     */
+    public function conjPerfStats($groupBy = 'conjuncts', $from = 0, $to = 10){
+    	try{
+    		if(Config::get('productionEnv')) throw new Exception ("Performance tests are not allowed in production environment", 403);
+    		
+    		$performanceArr = array();
+    		
+    		// run all conjuncts (from - to)
+    		for ($i = $from; $i <= $to; $i++){
+    			$conj = RuleEngine::getConjunct('conj_' . $i);
+    			$startTimeStamp = microtime(true); // true means get as float instead of string
+    			RuleEngine::checkConjunct('conj_' . $i, false);
+    			$endTimeStamp = microtime(true);
+    			
+    			$performanceArr['conj_'.$i] = array( 'id' => 'conj_' . $i
+    										, 'start' => $startTimeStamp
+    										, 'end' => $endTimeStamp
+    										, 'duration' => $endTimeStamp - $startTimeStamp
+    										, 'invariantRules' => implode(';', $conj['invariantRuleNames'])
+    										, 'signalRules' => implode(';', $conj['signalRuleNames'])
+    										);
+    		}
+    		
+    		
+    		switch ($groupBy){
+    			case 'conjuncts' :
+    				return array_values($performanceArr);
+    				break;
+    			case 'rules' :
+    				$ruleArr = array();
+    				foreach(RuleEngine::getAllRules() as $rule){
+    					$duration = 0;
+    					foreach($rule['conjunctIds'] as $conj){
+    						$duration += $performanceArr[$conj]['duration'];
+    					}
+    					$ruleArr[] = array('ruleName' => $rule['name']
+    										, 'duration' => $duration
+    										, 'conjuncts' => implode(';', $rule['conjunctIds'])
+    										);
+    				}
+    				return $ruleArr;
+    				break;
+    			case 'relations' :
+    				$relArr = array();
+    				foreach(Relation::getAllRelations() as $sig => $rel){
+    					$duration = 0;
+    					$conjuncts = array_merge($rel['affectedInvConjunctIds'], $rel['affectedSigConjunctIds']);
+    					foreach($conjuncts as $conj){
+    						$duration += $performanceArr[$conj]['duration'];
+    					}
+    					$relArr[] = array('relationSignature' => $sig
+    									, 'duration' => $duration
+    									, 'conjuncts' => implode(';', $conjuncts)
+    									);
+    				}
+    				return $relArr;
+    				break;
+    			default :
+    				throw new Exception ("Unknown groupBy argument", 500);
+    				break;
+    		}
+    		
     	}catch(Exception $e){
     		throw new RestException($e->getCode(), $e->getMessage());
     	}
