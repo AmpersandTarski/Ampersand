@@ -16,7 +16,7 @@ generateJSONfiles fSpec =
 
   where 
     writeJSON = writeJSONFile fSpec 
---    settings :: Settings
+    settings :: Settings
     settings = fromFspec fSpec
 
 {- Note on data structure convention
@@ -34,7 +34,8 @@ instance JSON Settings where
   , sngJSONcontextName   = fsName $ fSpec
   , sngJSONmysqlSettings = fromFspec $ fSpec
   } 
-
+instance ToJSON Settings where
+  toJSON = amp2Jason
 data MySQLSettings = MySQLSettings
   { msqlJSONdbHost :: String
   , msqlJSONdbName :: String
@@ -50,6 +51,8 @@ instance JSON MySQLSettings where
   , msqlJSONdbPass = sqlPwd   . getOpts $ fSpec
   , msqlJSONdbsignalTableName = "__all_signals__"
   }
+instance ToJSON MySQLSettings where
+  toJSON = amp2Jason
 
 
   

@@ -1,7 +1,7 @@
-{-# LANGUAGE FlexibleInstances #-} 
-{-# LANGUAGE UndecidableInstances #-} 
+{-# LANGUAGE FlexibleContexts #-}
+ 
 module Database.Design.Ampersand.Output.ToJSON.JSONutils 
-  (writeJSONFile, JSON(..))
+  (writeJSONFile, JSON(..), ToJSON(..) )
 where
 import Data.Aeson
 import Data.Aeson.Types
@@ -26,9 +26,10 @@ writeJSONFile fSpec fName x
        BS.writeFile fullFile (encode x)
   where file = fName <.> "json"
         fullFile = getGenericsDir fSpec </> file
-class JSON a where
+class (GToJSON (Rep a), Generic a) => JSON a where
   fromFspec :: FSpec -> a
-  write :: a -> IO ()
+  amp2Jason :: a -> Value
+  amp2Jason = genericToJSON ampersandDefault
 ampersandDefault :: Data.Aeson.Types.Options
 ampersandDefault = defaultOptions {fieldLabelModifier = stripLabel}
   where stripLabel str 
@@ -38,9 +39,8 @@ ampersandDefault = defaultOptions {fieldLabelModifier = stripLabel}
              where pfx = "JSON"    
   
   
-instance ((GToJSON (Rep a)), Generic a, JSON a) => ToJSON a where
-   toJSON = genericToJSON ampersandDefault
-  
+--instance ((GToJSON (Rep a)), Generic a, JSON a) => ToJSON a where
+--   toJSON = genericToJSON ampersandDefault
   
   
   
