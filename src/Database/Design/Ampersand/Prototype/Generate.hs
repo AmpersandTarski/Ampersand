@@ -1,4 +1,8 @@
-module Database.Design.Ampersand.Prototype.Generate (generateGenerics, generateCustomCss) where
+module Database.Design.Ampersand.Prototype.Generate 
+  (generateGenerics, generateCustomCss
+  , generateDBstructQueries, generateAllDefPopQueries
+  )
+where
 
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 

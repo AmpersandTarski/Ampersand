@@ -1,7 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
  
 module Database.Design.Ampersand.Output.ToJSON.JSONutils 
-  (writeJSONFile, JSON(..), ToJSON(..) )
+  (writeJSONFile, JSON(..), ToJSON(..)
+  , module Database.Design.Ampersand.FSpec.FSpec
+  , module Database.Design.Ampersand.Misc
+  , ampersandVersionStr
+  , module GHC.Generics
+  
+   )
 where
 import Data.Aeson
 import Data.Aeson.Types
