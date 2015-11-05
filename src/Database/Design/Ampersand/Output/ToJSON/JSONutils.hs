@@ -1,0 +1,47 @@
+{-# LANGUAGE FlexibleInstances #-} 
+{-# LANGUAGE UndecidableInstances #-} 
+module Database.Design.Ampersand.Output.ToJSON.JSONutils 
+  (writeJSONFile, JSON(..))
+where
+import Data.Aeson
+import Data.Aeson.Types
+import Data.List
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Basics
+import System.FilePath
+import System.Directory
+import qualified Data.ByteString.Lazy as BS
+import Database.Design.Ampersand.Prototype.ProtoUtil(getGenericsDir)
+import Prelude hiding (writeFile)
+import GHC.Generics
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "JSONutils"
+
+writeJSONFile :: ToJSON a => FSpec -> FilePath -> a -> IO()
+writeJSONFile fSpec fName x 
+  = do verboseLn (getOpts fSpec) ("  Generating "++file)
+       createDirectoryIfMissing True (takeDirectory fullFile)
+       BS.writeFile fullFile (encode x)
+  where file = fName <.> "json"
+        fullFile = getGenericsDir fSpec </> file
+class JSON a where
+  fromFspec :: FSpec -> a
+  write :: a -> IO ()
+ampersandDefault :: Data.Aeson.Types.Options
+ampersandDefault = defaultOptions {fieldLabelModifier = stripLabel}
+  where stripLabel str 
+          = case filter (isPrefixOf pfx) (tails str) of
+                [] -> fatal 71 $ "Label at Haskall side must contain `JSON`: "++str
+                xs -> snd . splitAt (length pfx) . head $ xs
+             where pfx = "JSON"    
+  
+  
+instance ((GToJSON (Rep a)), Generic a, JSON a) => ToJSON a where
+   toJSON = genericToJSON ampersandDefault
+  
+  
+  
+  
+  
