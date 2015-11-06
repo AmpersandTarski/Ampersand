@@ -4,20 +4,23 @@ where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils
 import Database.Design.Ampersand.Output.ToJSON.Settings
 import Database.Design.Ampersand.Output.ToJSON.MySQLInstaller
+import Database.Design.Ampersand.Output.ToJSON.Relations
 
 generateJSONfiles :: FSpec -> IO ()
 generateJSONfiles fSpec =
  sequence_ [ writeJSON "settings" settings
            , writeJSON "mysql-installer" mySqlInstaller
-           ]
+           , writeJSON "relations" relations]
 
   where 
     writeJSON :: ToJSON  a => String -> a -> IO()
     writeJSON = writeJSONFile fSpec 
     settings :: Settings
-    settings = fromFspec fSpec
+    settings = fromAmpersand fSpec fSpec
     mySqlInstaller :: MySQLInstaller
-    mySqlInstaller = fromFspec fSpec
+    mySqlInstaller = fromAmpersand fSpec fSpec
+    relations :: Relations
+    relations = fromAmpersand fSpec fSpec
     
 {- Note on data structure convention
    The data definitions in this module are not ment to be exported. The idea on naming is that all names

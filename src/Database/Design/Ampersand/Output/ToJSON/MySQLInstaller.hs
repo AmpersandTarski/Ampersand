@@ -1,4 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE MultiParamTypeClasses #-} 
 module Database.Design.Ampersand.Output.ToJSON.MySQLInstaller 
   (MySQLInstaller)
 where
@@ -11,8 +12,8 @@ data MySQLInstaller = MySQLInstaller
   } deriving (Generic, Show)
 instance ToJSON MySQLInstaller where
   toJSON = amp2Jason
-instance JSON MySQLInstaller where
- fromFspec fSpec = MySQLInstaller
+instance JSON FSpec MySQLInstaller where
+ fromAmpersand fSpec _ = MySQLInstaller
   { msiJSONallDBstructQueries = generateDBstructQueries fSpec
   , msiJSONallDefPopQueries   = generateAllDefPopQueries fSpec
   }

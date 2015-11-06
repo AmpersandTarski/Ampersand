@@ -1,5 +1,6 @@
 {-# LANGUAGE FlexibleContexts #-}
- 
+{-# LANGUAGE MultiParamTypeClasses #-} 
+{-# LANGUAGE FunctionalDependencies #-} 
 module Database.Design.Ampersand.Output.ToJSON.JSONutils 
   (writeJSONFile, JSON(..), ToJSON(..)
   , module Database.Design.Ampersand.FSpec.FSpec
@@ -32,9 +33,9 @@ writeJSONFile fSpec fName x
        BS.writeFile fullFile (encode x)
   where file = fName <.> "json"
         fullFile = getGenericsDir fSpec </> file
-class (GToJSON (Rep a), Generic a) => JSON a where
-  fromFspec :: FSpec -> a
-  amp2Jason :: a -> Value
+class (GToJSON (Rep b), Generic b) => JSON a b | b -> a where
+  fromAmpersand :: FSpec -> a -> b
+  amp2Jason :: b -> Value
   amp2Jason = genericToJSON ampersandDefault
 ampersandDefault :: Data.Aeson.Types.Options
 ampersandDefault = defaultOptions {fieldLabelModifier = stripLabel}
