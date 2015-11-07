@@ -12,6 +12,7 @@ Class Hooks {
 			else $callback = $hook['function'];
 			
 			// Construct params
+			$callBackParams = array();
 			foreach((array)$hook['params'] as $param){
 				if(substr((string)$param, 0, 1) == '$') $callBackParams[] = $hookpointParams[substr($param, 1)];
 				else $callBackParams[] = $param;
