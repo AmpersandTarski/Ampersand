@@ -1,10 +1,15 @@
 <?php
 
 // Define hooks
-$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'][] = 'Mutation::mutUpdate';
-$GLOBALS['hooks']['after_Database_editUpdate_INSERT'][] = 'Mutation::mutInsert';
-$GLOBALS['hooks']['after_Database_editDelete_UPDATE'][] = 'Mutation::mutDelete'; // mutDelete is correct!
-$GLOBALS['hooks']['after_Database_editDelete_DELETE'][] = 'Mutation::mutDelete';
+$updateHook = array('class' => 'Mutation', 'function' => 'mutUpdate', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation', 
+		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
+$insertHook = array('class' => 'Mutation', 'function' => 'mutInsert', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
+		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
+$deleteHook = array('class' => 'Mutation', 'function' => 'mutDelete', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
+		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
+Hooks::addHook('postDatabaseUpdate', $updateHook);
+Hooks::addHook('postDatabaseInsert', $insertHook);
+Hooks::addHook('postDatabaseDelete', $deleteHook);
 
 class Mutation {
 	
