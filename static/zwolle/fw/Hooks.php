@@ -6,6 +6,8 @@ Class Hooks {
 	
 	public static function callHooks($hookpoint, $hookpointParams){
 		
+		Notifications::addLog("Hook $hookpoint called", 'Hooks');
+		
 		foreach (Hooks::getHooks($hookpoint) as $hook){
 			// Determine funtioncall
 			if($hook['class']) $callback = $hook['class'] . '::' . $hook['function'];
@@ -17,6 +19,9 @@ Class Hooks {
 				if(substr((string)$param, 0, 1) == '$') $callBackParams[] = $hookpointParams[substr($param, 1)];
 				else $callBackParams[] = $param;
 			}
+			
+			$log = $callback . '(' . implode(', ', $callBackParams) . ')';
+			Notifications::addLog("Call hook $log", 'Hooks');
 			
 			call_user_func_array ($callback, $callBackParams);
 			
@@ -42,6 +47,12 @@ Class Hooks {
 	public static function addHook($hookpoint, $hook){
 		
 		Hooks::$hooks[$hookpoint][] = $hook;
+		
+		if($hook['class']) $log = $hook['class'] . '::';
+		$log .= $hook['function'] . '(';
+		$log .= implode(', ', $hook['params']) . ')'; 
+		
+		Notifications::addLog("Hook $log added to $hookpoint", 'Hooks');
 		
 	}
 }
