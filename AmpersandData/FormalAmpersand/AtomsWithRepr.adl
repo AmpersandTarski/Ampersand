@@ -1,0 +1,142 @@
+﻿CONTEXT AST IN ENGLISH 
+INCLUDE "Atoms.xlsx"
+
+INTERFACE Overview : '_SESSION'[SESSION]
+TABS[ relations : V[SESSION*Relation]
+      BOX<SCOLS>
+           [ relation   : I[Relation]
+           , "pair(s)"  : in~
+           , sources    : sources
+           , targets    : targets
+           ]
+    , concepts :V[SESSION*Concept]
+      BOX<SCOLS>
+           [ name    : I[Concept]
+           , "isa"   : isa
+--           , "isa+"  : isaPlus
+--           , "isa*"  : isaStar
+           , "isa~"  : isa~
+--           , "isa+~" : isaPlus~
+--           , "isa*~" : isaStar~
+           , atoms   : pop~
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX<SCOLS>
+           [ pair          : I
+           , "relation(s)" : in
+           ]
+    , atoms : V[SESSION*Atom]
+      BOX<SCOLS>
+           [ atom : I
+           , type : pop - pop;isaPlus
+           , pop  : pop
+           ]
+    ]
+
+VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+VIEW Concept : Concept(name)
+VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+
+INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+ROWS [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+INTERFACE Pair(lRepr,rRepr,in[Pair*Relation]) : I[Pair]
+ROWS [ "relation(s)"  : in
+     , l              : lRepr
+     , r              : rRepr
+     ]
+
+INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+ROWS [ name    : name
+     , source  : source
+     , target  : target
+     ]
+
+PROCESS Atoms
+RELATION repr[Atom*Representation] [UNI]
+MEANING "Every atom has a representation." -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Representation TYPE ALPHANUMERIC
+
+RELATION pop[Atom*Concept]
+MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
+
+RELATION name[Concept*Identifier] [UNI,TOT]
+MEANING "Every concept has a name" -- Identifiability is not a property of this relation, and therefore should be specified by a rule.
+REPRESENT Identifier TYPE ALPHANUMERIC
+
+RULE "Identifiability of concepts": name;name~ |- I[Concept]
+MEANING "The name of a concept identifies that concept."
+VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
+
+    RELATION isa[Concept*Concept] [IRF,ASY]
+    MEANING "s isa g  means that each element of concept  s  is defined to be an element of concept  g  as well."
+    RELATION isaStar[Concept*Concept] -- Transitive, reflexive closure of isa, aka isa*
+    MEANING "s isa g  means that  s  is  g  or  each element of concept s  is an element of concept  g  as well."
+    RELATION isaPlus[Concept*Concept] -- Transitive closure of isa, aka isa+
+    MEANING "s isa g  means that each element of concept  s  is an element of concept  g  as well."
+
+    RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
+    RULE "Compute transitive closure of isa" : isa = isaCopy
+    VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
+
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
+    RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
+    VIOLATION (TXT "{EX} InsPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute transitive closure of isa by Del" : isaStar |- isaPlus\/I
+    VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+
+RELATION name[Relation*Identifier] [UNI,TOT]
+RELATION source[Relation*Concept] [UNI,TOT]
+RELATION target[Relation*Concept] [UNI,TOT]
+
+RELATION sources[Relation*Concept] -- meant for: sources = source;isaStar~
+RELATION targets[Relation*Concept] -- meant for: targets = target;isaStar~
+
+ROLE ExecEngine MAINTAINS isaRelInsSrc, isaRelInsTgt, isaRelDelSrc, isaRelDelTgt
+RULE isaRelInsSrc: source;isaStar~ |- sources
+VIOLATION (TXT "{EX} InsPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelInsTgt: target;isaStar~ |- targets
+VIOLATION (TXT "{EX} InsPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelDelSrc: sources |- source;isaStar~
+VIOLATION (TXT "{EX} DelPair;sources;Relation;", SRC I, TXT ";Concept;", TGT I)
+RULE isaRelDelTgt: targets |- target;isaStar~
+VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
+
+RELATION in[Pair*Relation] [UNI]
+RELATION lRepr[Pair*Representation] [UNI]
+RELATION l[Pair*Atom] [UNI]
+RULE "select left atom"  : in;source;pop~/\lRepr;repr~ |- l
+VIOLATION (TXT "{EX} InsPair;l;Pair;", SRC I, TXT ";Atom;", TGT I)
+RULE "create left atom"  : in;source;V /\ lRepr;V - (lRepr;repr~/\in;source;pop~) |- l
+VIOLATION ( TXT "{EX} NewStruct;Atom"
+          , TXT ";l;Pair;", SRC I, TXT ";Atom;_NEW"
+          , TXT ";repr;Atom;_NEW;Representation;", SRC lRepr
+          )
+ROLE ExecEngine MAINTAINS "select left atom", "create left atom"
+
+RELATION rRepr[Pair*Representation] [UNI]
+RELATION r[Pair*Atom] [UNI]
+RULE "select right atom"  : in;target;pop~/\rRepr;repr~ |- r
+VIOLATION (TXT "{EX} InsPair;r;Pair;", SRC I, TXT ";Atom;", TGT I)
+RULE "create right atom"  : in;target;V /\ rRepr;V - (in;target;pop~/\rRepr;repr~) |- r
+VIOLATION ( TXT "{EX} NewStruct;Atom"
+          , TXT ";r;Pair;", SRC I, TXT ";Atom;_NEW"
+          , TXT ";repr;Atom;_NEW;Representation;", SRC rRepr
+          )
+ROLE ExecEngine MAINTAINS "select right atom", "create right atom"
+
+
+ROLE ExecEngine MAINTAINS insPop, delPop
+RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop
+VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
+VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+
+ENDPROCESS
+
+ENDCONTEXT

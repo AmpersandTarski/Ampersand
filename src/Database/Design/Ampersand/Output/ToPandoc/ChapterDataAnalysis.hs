@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings #-}
+﻿{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
 import Database.Design.Ampersand.ADL1 hiding (Association)
@@ -160,7 +160,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
             <> fromList (maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) c)
            , mempty
            ]
-         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE $ allConcepts fSpec
+         | c <- sortBy (compare `on` name) . filter keyFilter . delete ONE $ concs fSpec
          ]
      where
        keyFilter :: A_Concept -> Bool

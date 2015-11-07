@@ -214,7 +214,7 @@ orderingByTheme fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
      , (sortWith origin . filter rulMustBeShown . fallRules)       fSpec
      , (sortWith origin . filter relMustBeShown . relsMentionedIn) fSpec
-     , (sortBy conceptOrder . filter cptMustBeShown . allConcepts)     fSpec
+     , (sortBy conceptOrder . filter cptMustBeShown . concs)     fSpec
      ) $ 
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
         ,    null (themes fSpec)        -- all patterns if no specific themes are requested

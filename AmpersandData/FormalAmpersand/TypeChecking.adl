@@ -1,0 +1,97 @@
+﻿CONTEXT AST IN ENGLISH LATEX
+-- The comments for this script can be found in Atoms.doc
+INCLUDE "Atoms.adl"
+INCLUDE "DomainAnalysis.adl"
+
+
+    RELATION valid[Rule*Context] [UNI]
+    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
+--    ROLE ExecEngine MAINTAINS SURrelations
+--    RULE SURrelations : I[Relation] |- relations~;relations
+--    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+
+PROCESS "Type checking"
+    RULE "Unambiguous pretype"
+     : pretype |- pretype~\I[Concept]
+    MESSAGE "Every type-term must be subset of one concept only."
+    VIOLATION (SRC I, TXT " is a subset of ", TGT I, TXT ".")
+    ROLE "Type Checker" MAINTAINS "Unambiguous pretype"
+
+    RULE "Complete pretype"
+     : I[TypeTerm] |- pretype;pretype~
+    MESSAGE "Every type-term must have one concept as its pretype."
+    VIOLATION (SRC I, TXT " has no pretype.")
+    ROLE "Type Checker" MAINTAINS "Complete pretype"
+
+    RULE checkComposition :
+      I[Composition];first;tgt |- (src~;second~)\isaRfxStar
+      MESSAGE "Source and target in a composition must match."
+      VIOLATION ( TXT "In ", SRC I
+                , TXT ", the target concept of ", SRC first
+                , TXT " is ", TGT I
+                , TXT " and ", SRC second;src
+                , TXT " is the source concept of ", SRC second
+                , TXT ", which is a mismatch.")
+      ROLE "Type Checker" MAINTAINS checkComposition
+
+    RULE checkLeftResidual :
+      tgt~;second~;I[LeftResidual] |- isaStar/(first;tgt)
+      VIOLATION ( TXT "In ", TGT I
+                , TXT ", the target concept of ", TGT second
+                , TXT " is ", TGT second;tgt
+                , TXT " and ", TGT first;tgt
+                , TXT " is the target concept of ", TGT first
+                , TXT ", which is a mismatch.")
+      ROLE "Type Checker" MAINTAINS checkLeftResidual
+
+    RULE checkRightResidual :
+      I[RightResidual];second;src |- (src~;first~)\isaStar
+      VIOLATION ( TXT "In ", SRC I
+                , TXT ", the source concept of ", SRC first
+                , TXT " is ", SRC first;src
+                , TXT " and ", SRC second;src
+                , TXT " is the source concept of ", SRC second
+                , TXT ", which is a mismatch.")
+      ROLE "Type Checker" MAINTAINS checkRightResidual
+ENDPROCESS
+
+PROCESS "Reflexive isa closures"
+    RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa\/isa~
+    MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
+    RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa\/isa~
+    MEANING "s isaRfxPlus g  means that each element of concept  s  is an element of concept  g  or vice-versa."
+
+    RELATION isaRfx[Concept*Concept] -- isaRfx=isa\/isa~
+    ROLE ExecEngine MAINTAINS "Compute isaRfxIns", "Compute isaRfxDel"
+    RULE "Compute isaRfxIns" : isa\/isa~ |- isaRfx
+    VIOLATION (TXT "{EX} InsPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxDel" : isaRfx |- isa\/isa~
+    VIOLATION (TXT "{EX} DelPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
+
+    RELATION isaRfxCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa\\/isa~"
+    RULE "Compute transitive closure of isa\\/isa~" : isaRfx = isaRfxCopy
+    VIOLATION (TXT "{EX} TransitiveClosure;isaRfx;Concept;isaRfxCopy;isaRfxPlus")
+
+    ROLE ExecEngine MAINTAINS "Compute isaRfxStar by Ins", "Compute isaRfxStar by Del"
+    RULE "Compute isaRfxStar by Ins" : isaRfxPlus\/I |- isaRfxStar
+    VIOLATION (TXT "{EX} InsPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxStar by Del" : isaRfxStar |- isaRfxPlus\/I
+    VIOLATION (TXT "{EX} DelPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+ENDPROCESS
+
+
+{- I can't get the following to work...  Grrr!
+PROCESS "Type graph"
+    RELATION elem[TypeTerm*Node] [UNI]
+
+    ROLE ExecEngine MAINTAINS elemFill, elemNew
+    RULE elemNew : I[TypeTerm] |- elem;elem~
+    VIOLATION (TXT "{EX}_; NewStruct_;Node" -- maak een nieuw atoom in concept Node
+                    ,TXT "_;elem_;TypeTerm_;", SRC I, TXT "_;Node_;_NEW"
+              )
+    RULE elemFill : (subStar/\subStar~);elem |- elem
+    VIOLATION (TXT "{EX} InsPair;elem;TypeTerm;", SRC I, TXT ";Node;", TGT I)
+ENDPROCESS -}
+
+ENDCONTEXT

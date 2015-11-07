@@ -9,7 +9,7 @@ TABS[ Context : V[SESSION*Context]
     COLS [ Pattern : name[Pattern*PatternIdentifier]
          , Purpose : purpose
          , Rules : rules
-         , Declarations : declarations
+         , Relations : declarations
          ]
     , "Specializations" : V[SESSION*Gen]
     COLS [ Generic  : gengen
@@ -21,7 +21,7 @@ TABS[ Context : V[SESSION*Context]
        --  , Purpose : cptpurpose
        --  , "Technical Type" : cpttp
          ]
-    , "Declarations" : V[SESSION*Declaration]
+    , "Relations" : V[SESSION*Relation]
     COLS [ name : name
          , signature : sign
          , properties : decprps;declaredthrough
@@ -34,13 +34,14 @@ TABS[ Context : V[SESSION*Context]
     , "Rules" : V[SESSION*Rule]
     COLS [ name : name
          , signature : sign
-         , Expression : rrexp
+         , Expression : rrexp[Rule*Expression]
          , Meaning : rrmean
          , Purpose : rrpurpose
          , Property : declaredthrough
          ]
 --    , "All plugs" : V[ONE*Context];
     ]
+
 INTERFACE Atoms FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Atom" : I
@@ -63,7 +64,7 @@ TABS[ Atoms : V[SESSION*Atom]
     ]
     
 
-          
+
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternIdentifier]
     ]
@@ -74,7 +75,7 @@ BOX [ gengen : gengen
     , genspc : genspc
     ]
 
-INTERFACE Declaration FOR Ampersand : I[Declaration]
+INTERFACE Relation FOR Ampersand : I[Relation]
 BOX [ name    : name
     , sign    : sign
     , decprL  : decprL

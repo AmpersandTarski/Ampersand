@@ -1,0 +1,23 @@
+﻿CONTEXT RAP IN ENGLISH
+INCLUDE "Contexts.adl"
+
+VIEW Context : Context(name)
+INTERFACE Contexts (valid,relations) : '_SESSION'
+TABS[ "Contexts" : ingelogd;owner~
+      BOX<SCOLS>
+           [ context        : I
+           , "valid rules"  : valid~
+           , relations      : relations
+           ]
+    ]
+
+INTERFACE Context (valid,relations,name[Context*ContextIdentifier]) : I[Context]
+      BOX<SCOLS>
+           [ context        : name[Context*ContextIdentifier]
+           , "valid rules"  : valid~
+           , relations      : relations
+           ]
+
+ENDCONTEXT
+
+

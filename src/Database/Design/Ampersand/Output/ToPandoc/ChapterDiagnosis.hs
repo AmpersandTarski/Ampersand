@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+﻿{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
@@ -146,7 +146,7 @@ chpDiagnosis fSpec
          ccs = concs [ d | d<-vrels fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
   unusedConceptDefs :: Blocks
   unusedConceptDefs
-   = case [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (allConcepts fSpec)] of
+   = case [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (concs fSpec)] of
       []  -> if (null.cDefsInScope) fSpec
              then mempty
              else para.str.l $

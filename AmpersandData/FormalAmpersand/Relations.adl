@@ -1,0 +1,61 @@
+﻿CONTEXT AST IN ENGLISH LATEX
+-- The comments for this script can be found in Rules.doc
+
+PATTERN Relations
+--VIEW Relation: Relation( name , TXT "::", sign;src;name[Concept*Identifier] ,TXT " * ", sign;tgt;name[Concept*Identifier] )
+--IDENT Relation: Relation( name, sign;src;name, sign;tgt;name )
+RULE "eq relation": name;name~ /\ sign;src;(sign;src)~ /\ sign;tgt;(sign;tgt)~ |- I[Relation]
+MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
+
+RELATION name[Relation*Identifier] [UNI,TOT]
+MEANING "Every relation has a name by which it can be referenced within its Context(s)."
+RELATION sign[Relation*Signature] [UNI] --TODO: Should be TOT, but this is only true for user-defined relations. TODO: I[<Concept>] is a relation? And what about V?? In Haskell, it currently is.
+MEANING "The signature of a relation."
+RELATION decprps[Relation*PropertyRule] [INJ]
+MEANING "The properties of a relation."
+
+VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , tgt;name[Concept*Identifier] , TXT "]" )
+
+RELATION src[Signature*Concept] [UNI,TOT]
+MEANING "The source of a signature."
+ROLE Ampersand MAINTAINS "TOT src::Signature*Concept", "TOT tgt::Signature*Concept"
+RELATION tgt[Signature*Concept] [UNI,TOT]
+MEANING "The target of a signature."
+
+CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
+CLASSIFY PropertyRule ISA Rule
+CONCEPT Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
+RULE "property enum": I[Property] |- 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR' \/ 'RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP'
+MEANING "There are eleven tokens, that can be used to define properties on a relation. -> is syntactic suger for UNI and TOT; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
+RELATION decprL[Relation*String] [UNI]
+MEANING "The prefix of the pragma of a relation."
+RELATION decprM[Relation*String] [UNI]
+MEANING "The infix of the pragma of a relation."
+RELATION decprR[Relation*String] [UNI]
+MEANING "The suffix of the pragma of a relation."
+RELATION decmean[Relation * Meaning]
+MEANING "The meanings of a relation."
+RELATION decpurpose[Relation * Purpose]
+MEANING "The purposes of a relation."
+RELATION in[Pair*Relation]
+MEANING "The population of a relation."
+RELATION context[Relation*Context] [UNI,TOT]
+MEANING "If a relation declaration is used in a context, that relation exists in that context. This is registered in the system."
+
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE "entity integrity of relation": left;left~ /\ right;right~ /\ in;in~ |- I
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "There cannot be two relationships in the population of a relation with the same source and same target."
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
+--HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: VIOLATION (TXT "A tuple with the same source and target atoms ", SRC I, TXT " already exists." )
+
+--RULE "typed domain": decpopu;left;cptos~;order  |- sign;src;order
+--MEANING "The atoms in the domain of a relation belong to the same class as the source of that relation."
+--MESSAGE "You try to add a tuple with a source atom, that is not in the population of the source of the relation. This is a violation of the type of the tuple. TIP: enter text in the left input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
+--VIOLATION (TXT "Source atom ", TGT I, TXT " is not in the population of ", SRC sign;src)
+
+--RULE "typed codomain": decpopu;right;cptos~;order |- sign;tgt;order
+--MEANING "The atoms in the codomain of a relation belong to the same class as the target of that relation."
+--MESSAGE "You try to add a tuple with a target atom, that is not in the population of the target of the relation. This is a violation of the type of the tuple. TIP: enter text in the right input field to get a shorter pick list. Note on ISA-relations: You can make an atom more specific by moving it to the population of a more specific concept."
+--VIOLATION (TXT "Target atom ", TGT I, TXT " is not in the population of ", SRC sign;tgt)
+ENDPATTERN
+
+ENDCONTEXT

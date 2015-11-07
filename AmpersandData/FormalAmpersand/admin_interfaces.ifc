@@ -11,7 +11,7 @@ BOX ["loaded files": V[ONE*File];(sourcefile~;sourcefile \/ parseerror;parseerro
         BOX ["name":ctxnm
             ,"source files":(sourcefile \/ includes);filename
             ,"number of rules":countrules
-            ,"number of declarations":countdecls
+            ,"number of relations":countdecls
             ,"number of concepts":countcpts] 
     ]
 ]
