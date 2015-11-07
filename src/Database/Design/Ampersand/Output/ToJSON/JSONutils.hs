@@ -22,6 +22,7 @@ import qualified Data.ByteString.Lazy as BS
 import Database.Design.Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import Prelude hiding (writeFile)
 import GHC.Generics
+import Data.Aeson.Encode.Pretty
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "JSONutils"
@@ -30,7 +31,7 @@ writeJSONFile :: ToJSON a => FSpec -> FilePath -> a -> IO()
 writeJSONFile fSpec fName x 
   = do verboseLn (getOpts fSpec) ("  Generating "++file)
        createDirectoryIfMissing True (takeDirectory fullFile)
-       BS.writeFile fullFile (encode x)
+       BS.writeFile fullFile (encodePretty x)
   where file = fName <.> "json"
         fullFile = getGenericsDir fSpec </> file
 class (GToJSON (Rep b), Generic b) => JSON a b | b -> a where
