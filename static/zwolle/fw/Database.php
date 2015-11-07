@@ -97,7 +97,8 @@ class Database {
 		foreach($allDefPopQueries as $query){
 			$this->Exe($query);
 		}
-		foreach ((array)$GLOBALS['hooks']['after_Database_reinstallDB_DefPop'] as $hook) call_user_func($hook, get_defined_vars());
+		
+		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
 		
 		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
 		
@@ -335,27 +336,32 @@ class Database {
 				if($tableModifiedColumnInfo['null']) $this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
 				else $this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
 					
-				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			}			
 			elseif ($tableModifiedColumnInfo['unique'] && !$tableStableColumnInfo['unique']){
 			
 				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
 				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			}
 			elseif (!$tableModifiedColumnInfo['unique'] && $tableStableColumnInfo['unique']){
 				
 				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
 				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			// Otherwise, binary table, so perform a insert.
 			}else{
 				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");
 				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_INSERT'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+				Hooks::callHooks('postDatabaseInsert', get_defined_vars());
 				
 				// If $originalAtom is provided, delete tuple rel(stableAtom, originalAtom)
-				if (!is_null($originalAtom)) $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$originalAtomEsc'");			
+				if (!is_null($originalAtom)) {
+					$modifiedAtom = $originalAtom;
+					$modifiedAtomEsc = $originalAtomEsc;
+					$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+					Hooks::callHooks('postDatabaseDelete', get_defined_vars());
+				}
 			}
 			
 			$this->addAffectedRelations($fullRelationSignature); // add relation to affected relations. Needed for conjunct evaluation.
@@ -406,24 +412,20 @@ class Database {
 			// If the modifiedCol can be set to null, we do an update
 			if ($tableModifiedColumnInfo['null']){
 				$this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
-				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			
 			// Elseif the stableCol can be set to null, we do an update
 			}elseif ($tableStableColumnInfo['null']){
-				
 				$this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
-				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
 				$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_DELETE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			}
 			
 			$this->addAffectedRelations($fullRelationSignature); // add relation to affected relations. Needed for conjunct evaluation.
+			
+			Hooks::callHooks('postDatabaseDelete', get_defined_vars());
 			
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -506,7 +508,7 @@ class Database {
 		
 		Notifications::addLog('========================= CLOSING TRANSACTION =========================', 'DATABASE');
 		
-		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
+		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
 		
 		if($checkAllConjucts){
 			Notifications::addLog("Check all conjuncts", 'DATABASE');
