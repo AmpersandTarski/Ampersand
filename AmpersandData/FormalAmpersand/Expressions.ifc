@@ -1,15 +1,6 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
-INCLUDE "Expressions.xlsx"
-
-INTERFACE Contexts (valid,relations) : '_SESSION'
-TABS[ "" : V[SESSION*Context]
-      ROWS [ context        : I
-           , "valid rules"  : valid~
-           , relations      : relations
-           ]
-    ]
 
 INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
 TABS[ relations : V[SESSION*Relation]

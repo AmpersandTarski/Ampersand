@@ -58,9 +58,9 @@ executable ampersand
                      lens,
                      MissingH,
                      wl-pprint
-  else
-   build-depends:    filepath == 1.4.*,
-                     graphviz == 2999.18.*,
+                     data-default >=0.5 && <0.6,
+                     aeson >=0.7 && <0.8,
+                     aeson-pretty
                      HStringTemplate == 0.8.*,
                      lens == 4.12.*,
                      mtl == 2.2.*,
@@ -85,14 +85,15 @@ executable ampersand
                      Database.Design.Ampersand.Basics.BuildInfo_Generated,
                      Database.Design.Ampersand.Basics.Collection,
                      Database.Design.Ampersand.Basics.String,
-                     Database.Design.Ampersand.Basics.Unique,
                      Database.Design.Ampersand.Basics.UTF8,
+                     Database.Design.Ampersand.Basics.Unique,
                      Database.Design.Ampersand.Basics.Version,
                      Database.Design.Ampersand.Classes,
                      Database.Design.Ampersand.Classes.ConceptStructure,
                      Database.Design.Ampersand.Classes.Relational,
                      Database.Design.Ampersand.Classes.ViewPoint,
                      Database.Design.Ampersand.Components,
+                     Database.Design.Ampersand.Core.A2P_Converters,
                      Database.Design.Ampersand.Core.AbstractSyntaxTree,
                      Database.Design.Ampersand.Core.ParseTree,
                      Database.Design.Ampersand.Core.Poset,
@@ -107,6 +108,7 @@ executable ampersand
                      Database.Design.Ampersand.FSpec.GenerateUML,
                      Database.Design.Ampersand.FSpec.Motivations,
                      Database.Design.Ampersand.FSpec.Plug,
+                     Database.Design.Ampersand.FSpec.SQL,
                      Database.Design.Ampersand.FSpec.ShowADL,
                      Database.Design.Ampersand.FSpec.ShowECA,
                      Database.Design.Ampersand.FSpec.ShowHS,
@@ -145,6 +147,8 @@ executable ampersand
                      Database.Design.Ampersand.Output.Population2Xlsx,
                      Database.Design.Ampersand.Output.PredLogic,
                      Database.Design.Ampersand.Output.Statistics,
+                     Database.Design.Ampersand.Output.ToJSON.JSONutils,
+                     Database.Design.Ampersand.Output.ToJSON.ToJson,
                      Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
                      Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis,
                      Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis,
@@ -159,8 +163,8 @@ executable ampersand
                      Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters,
                      Database.Design.Ampersand.Prototype.CoreImporter,
                      Database.Design.Ampersand.Prototype.GenBericht,
-                     Database.Design.Ampersand.Prototype.Generate,
                      Database.Design.Ampersand.Prototype.GenFrontend,
+                     Database.Design.Ampersand.Prototype.Generate,
                      Database.Design.Ampersand.Prototype.Installer,
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
@@ -168,7 +172,10 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand,
-                     Database.Design.Ampersand.Core.A2P_Converters
+                     Database.Design.Ampersand.Output.ToJSON.MySQLInstaller,
+                     Database.Design.Ampersand.Output.ToJSON.Settings,
+                     Database.Design.Ampersand.Output.ToJSON.Relations,
+                     Database.Design.Ampersand.Output.ToJSON.Rules
 
 
 Test-Suite ampersand-test
@@ -223,4 +230,8 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Output.Population2Xlsx,
                      Database.Design.Ampersand.Graphic.ClassDiag2Dot,
                      Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams,
-                     Database.Design.Ampersand.Core.A2P_Converters
+                     Database.Design.Ampersand.Core.A2P_Converters,
+                     Database.Design.Ampersand.Output.ToJSON.MySQLInstaller,
+                     Database.Design.Ampersand.Output.ToJSON.Settings,
+                     Database.Design.Ampersand.Output.ToJSON.Relations,
+                     Database.Design.Ampersand.Output.ToJSON.Rules

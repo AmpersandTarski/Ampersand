@@ -70,6 +70,7 @@ makeFSpec opts context
               , vrules       = filter      isUserDefined  allrules
               , grules       = filter (not.isUserDefined) allrules
               , invariants   = filter (not.isSignal)      allrules
+              , signals      = filter      isSignal       allrules
               , vconjs       = allConjs
               , allConjsPerRule = fSpecAllConjsPerRule
               , allConjsPerDecl = fSpecAllConjsPerDecl

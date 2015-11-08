@@ -15,7 +15,7 @@ PURPOSE RELATION tgt[Signature*Concept]
 The relation tgt[Signature*Concept] is filled automatically, by means of rule "signatureTgt".
 -}
 PURPOSE RELATION signature[Relation*Signature]
-{+Every relation must be declared and every declaration determines the signature.
+{+Every relation must be declared and every relation determines the signature.
 That signature is stored in the relation signature[Relation*Signature] by means of rule "totSign"
 -}
 PURPOSE RULE totSign

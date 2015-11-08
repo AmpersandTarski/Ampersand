@@ -1,4 +1,4 @@
-CONTEXT FormalAmpersand IN ENGLISH LATEX
+﻿CONTEXT FormalAmpersand IN ENGLISH LATEX
 PATTERN Conjuncts
 RELATION qRule[Quad*Rule] [UNI,TOT]
 RELATION qConjuncts[Quad*Conjunct]
@@ -11,7 +11,7 @@ RELATION allShifts[DnfClause*DnfClause]
 RELATION rrexp[Rule*Expression] [UNI,TOT]
 RELATION conjNF[Expression*Expression] [UNI,TOT]
 RELATION exprIsc2list[Expression*Expression] [TOT]
-RELATION name[Rule*RuleName] [UNI,TOT]
+RELATION name[Rule*RuleID] [UNI,TOT]
 
 RULE Conjuncts1 : qConjuncts;rc_conjunct |- qRule;conjuncts
 MEANING "All conjuncts in a quad are derived by means of the relation ``conjuncts''."

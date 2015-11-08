@@ -1,9 +1,12 @@
 <?php
 
-class Database
-{	
+Config::set('dbHost', 'mysqlDatabase', 'localhost'); // Can be overwritten in localSettings.php
+Config::set('dbUser', 'mysqlDatabase', 'ampersand'); // Can be overwritten in localSettings.php
+Config::set('dbPassword', 'mysqlDatabase', 'ampersand'); // Can be overwritten in localSettings.php
+Config::set('dbName', 'mysqlDatabase', $dbName); // $dbName from Generics.php. Can be overwritten in localSettings.php
+
+class Database {	
 	private $db_link;
-	
 	private $db_host;
 	private $db_user;
 	private $db_pass;
@@ -18,11 +21,10 @@ class Database
 	
 	// Prevent any outside instantiation of this object
 	private function __construct(){
-		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
-		$this->db_host = $DB_host;
-		$this->db_user = $DB_user;
-		$this->db_pass = $DB_pass;
-		$this->db_name = $DB_name;
+		$this->db_host = Config::get('dbHost', 'mysqlDatabase');
+		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
+		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
+		$this->db_name = Config::get('dbName', 'mysqlDatabase');
 		
 		// Connect to MYSQL database
 		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
@@ -51,7 +53,10 @@ class Database
 	}
 	
 	public static function createDB(){
-		global $DB_host, $DB_user, $DB_pass, $DB_name; // from config.php
+		$DB_host = Config::get('dbHost', 'mysqlDatabase');
+		$DB_user = Config::get('dbUser', 'mysqlDatabase');
+		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
+		$DB_name = Config::get('dbName', 'mysqlDatabase');
 		
 		// Connect to MYSQL database
 		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
@@ -86,13 +91,14 @@ class Database
 			
 		}
 		
-		if(CHECK_DEF_POP) $this->startTransaction(); // default must be true: when CHECK_DEF_POP is undefined, this is true
+		if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
 		
 		Notifications::addLog('---------- DB population queries -----------', 'INSTALLER');
 		foreach($allDefPopQueries as $query){
 			$this->Exe($query);
 		}
-		foreach ((array)$GLOBALS['hooks']['after_Database_reinstallDB_DefPop'] as $hook) call_user_func($hook, get_defined_vars());
+		
+		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
 		
 		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
 		
@@ -330,27 +336,32 @@ class Database
 				if($tableModifiedColumnInfo['null']) $this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
 				else $this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
 					
-				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			}			
 			elseif ($tableModifiedColumnInfo['unique'] && !$tableStableColumnInfo['unique']){
 			
 				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
 				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			}
 			elseif (!$tableModifiedColumnInfo['unique'] && $tableStableColumnInfo['unique']){
 				
 				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
 				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			// Otherwise, binary table, so perform a insert.
 			}else{
 				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");
 				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editUpdate_INSERT'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
+				Hooks::callHooks('postDatabaseInsert', get_defined_vars());
 				
 				// If $originalAtom is provided, delete tuple rel(stableAtom, originalAtom)
-				if (!is_null($originalAtom)) $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$originalAtomEsc'");			
+				if (!is_null($originalAtom)) {
+					$modifiedAtom = $originalAtom;
+					$modifiedAtomEsc = $originalAtomEsc;
+					$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+					Hooks::callHooks('postDatabaseDelete', get_defined_vars());
+				}
 			}
 			
 			$this->addAffectedRelations($fullRelationSignature); // add relation to affected relations. Needed for conjunct evaluation.
@@ -401,24 +412,20 @@ class Database
 			// If the modifiedCol can be set to null, we do an update
 			if ($tableModifiedColumnInfo['null']){
 				$this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
-				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			
 			// Elseif the stableCol can be set to null, we do an update
 			}elseif ($tableStableColumnInfo['null']){
-				
 				$this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
-				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_UPDATE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
 				$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 				
-				foreach ((array)$GLOBALS['hooks']['after_Database_editDelete_DELETE'] as $hook) call_user_func($hook, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source);
 			}
 			
 			$this->addAffectedRelations($fullRelationSignature); // add relation to affected relations. Needed for conjunct evaluation.
+			
+			Hooks::callHooks('postDatabaseDelete', get_defined_vars());
 			
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -501,7 +508,7 @@ class Database
 		
 		Notifications::addLog('========================= CLOSING TRANSACTION =========================', 'DATABASE');
 		
-		foreach ((array)$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'] as $hook) call_user_func($hook);
+		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
 		
 		if($checkAllConjucts){
 			Notifications::addLog("Check all conjuncts", 'DATABASE');
@@ -533,7 +540,7 @@ class Database
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
 			Notifications::addSuccess($succesMessage);
-		}elseif(defined(COMMIT_INV_VIOLATIONS) && COMMIT_INV_VIOLATIONS){
+		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && COMMIT_INV_VIOLATIONS){
 			$this->commitTransaction();
 			Notifications::addError("Transaction committed with invariant violations");
 		}elseif($invariantRulesHold){

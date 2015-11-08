@@ -25,10 +25,10 @@ INTERFACE "Diagnosis" FOR Student: I[ONE]
 BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- THIS IS A THIRD CHOICE expression!!
 --SECOND CHOICE: V[ONE*Concept];-(cptdf;cptdf~) <= results in SQL with empty atoms => see test2 below in comments
 --FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal error 583 (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
-    , "relations without MEANING": V[ONE*Declaration];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
+    , "relations without MEANING": V[ONE*Relation];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
     , "RULEs without MEANING": V[ONE*Rule];(-(rrmean;rrmean~) /\ I) -- -(V[ONE*Blob];rrmean~)
-    , "populated relations": V[ONE*PairID];decpopu~
-    , "unpopulated relations": V[ONE*Declaration];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*PairID];decpopu~)
+    , "populated relations": V[ONE*Pair];decpopu~
+    , "unpopulated relations": V[ONE*Relation];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*Pair];decpopu~)
 --INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;relsMentionedIn;reldcl)
     ]
 
@@ -44,7 +44,7 @@ BOX [ "error" : I
         , "stating" :te_origname
         ]
     , "error message":te_message
-    , "declared relations": V[TypeError*Declaration]
+    , "declared relations": V[TypeError*Relation]
     ]
 
 {-
@@ -175,7 +175,7 @@ BOX ["PURPOSEs" :cptpurpose
     ]
 INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
 BOX ["in POPULATION of": cptos~]
-INTERFACE Relation(decpopu,left,right) FOR Student: I[Declaration]
+INTERFACE Relation(decpopu,left,right) FOR Student: I[Relation]
 BOX ["PURPOSEs" :decpurpose
     ,"MEANING" :decmean
     ,"example of basic sentence" :decexample

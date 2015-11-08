@@ -3,8 +3,8 @@
 
 PATTERN Rules
 IDENT Rule: Rule(name)
-REPRESENT RuleName TYPE ALPHANUMERIC
-RELATION name[Rule*RuleName] [UNI,TOT,INJ]
+REPRESENT RuleID TYPE ALPHANUMERIC
+RELATION name[Rule*RuleID] [UNI,TOT,INJ]
 MEANING "The name of a rule."
 RELATION sign[Rule*Signature] [UNI,TOT]
 RELATION rrexp[Rule*Expression] [UNI,TOT]

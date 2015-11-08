@@ -184,7 +184,7 @@ It refers the the total of all populations in relations and concepts inside that
 
 CONCEPT RelPopu "The content of a relation"
 CONCEPT CptPopu "The content of a concept"
-CONCEPT PairID "A pairID is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
+CONCEPT Pair "A pair is an identifier for a pair of atomic terms as an instance of an element with a sign e.g. the population of a relation or the violations of a rule"
 CONCEPT Blob "A blob is a pString expected to need more than 256 characters of reserved space."
 REPRESENT Blob TYPE BIGBINARY
 CONCEPT String "A string is a pString expected to be less than 256 characters."
@@ -196,7 +196,7 @@ CONCEPT Signature "A signature is a pair of concepts, which are called source co
 CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
 CONCEPT Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
 CONCEPT Declaration "A declaration is a statement saying there exists a relation."
-CONCEPT Relation "A relation is a set of pairs."
+CONCEPT Relation "A relation is a set of pairs, that is characterized by a name, a source concept and a target concept."
 CONCEPT Pair "A pair is an element of a relation, which has a left atom and a right atom."
 ENDPATTERN
 

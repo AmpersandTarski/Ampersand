@@ -3,13 +3,16 @@
 INCLUDE "Atoms.adl"
 
 
-    RELATION valid[Rule*Context] [UNI]
-    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
---    ROLE ExecEngine MAINTAINS SURrelations
---    RULE SURrelations : I[Relation] |- relations~;relations
---    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
-
 PROCESS "Expression definitions"
+    RELATION patterns[Context*Pattern]
+    RELATION src[Term*Concept]
+    RELATION tgt[Term*Concept]
+    RELATION lhs[BinaryTerm*Term]
+    RELATION rhs[BinaryTerm*Term]
+    RELATION bind[Term*Relation]
+    RELATION term[Rule*Term]
+    RELATION rrexp[Rule*ExpressionID]
+
     VIEW Equivalence        : Equivalence(TXT "RULE ", first, TXT " = ", second)
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first, TXT " |- ", second)
     VIEW Truth              : Truth      (TXT "RULE ", I[Expression])

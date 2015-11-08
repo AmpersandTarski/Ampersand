@@ -41,7 +41,6 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
 		params['roleId'] = $localStorage.roleId;
-		params['sessionId'] = $sessionStorage.session.id;
 		return params;
 	});
 	

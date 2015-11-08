@@ -1,25 +1,23 @@
 <?php
-
 // Define hooks
-$GLOBALS['hooks']['before_Database_transaction_checkInvariantRules'][] = 'ExecEngine::run';
-$GLOBALS['hooks']['after_Database_reinstallDB_DefPop'][] = 'ExecEngine::runAllRules';
-$GLOBALS['hooks']['after_Viewer_load_angularScripts'][] = 'extensions/ExecEngine/ui/js/ExecEngine.js';
+$hook1 = array('class' => 'ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());
+Hooks::addHook('preDatabaseCloseTransaction', $hook1);
+$hook2 = array('class' => 'ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array(true));
+Hooks::addHook('postDatabaseReinstallDB', $hook2);
 
-// Put ExecEngine extension in applications menu
+// UI
 $GLOBALS['navBar']['refreshMenu'][] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
+AngularApp::addJS('extensions/ExecEngine/ui/js/ExecEngine.js');
 
-Config::set('execEngineRoleName', 'execEngine', 'ExecEngine'); // Can be overwritten in localSettings.php
-Config::set('maxRunCount', 'execEngine', 10); // Can be overwritten in localSettings.php
+// Config (can be overwritten in localSettings.php)
+Config::set('execEngineRoleName', 'execEngine', 'ExecEngine');
+Config::set('maxRunCount', 'execEngine', 10);
 
 class ExecEngine {
 	
 	private static $roleName;
 	public static $doRun = true;
 	public static $runCount;
-	
-	public static function runAllRules(){
-		ExecEngine::run(true);
-	}
 	
 	public static function run($allRules = false){
 		$database = Database::singleton();

@@ -10,6 +10,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
 import Database.Design.Ampersand.Prototype.Generate    (generateGenerics, generateCustomCss)
+import Database.Design.Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 
@@ -79,6 +80,7 @@ doGenProto fSpec =
               ; writeStaticFiles (getOpts fSpec)
               ; generatePhp fSpec
               ; generateGenerics fSpec
+              ; generateJSONfiles fSpec
 
               ; if newFrontend (getOpts fSpec) then
                   doGenFrontend fSpec

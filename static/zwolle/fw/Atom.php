@@ -27,8 +27,8 @@ Class Atom {
 		$this->label = is_null($this->view) ? $this->id : implode($this->view); // no view? label = id
 		
 		// JSON-LD attributes
-		$this->jsonld_id = JSONLD_ID_PATH . $concept . '/' . $this->id;
-		$this->jsonld_type = JSONLD_TYPE_PATH . $concept;
+		$this->jsonld_id = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $concept . '/' . $this->id;
+		$this->jsonld_type = Config::get('serverURL') . Config::get('apiPath') . '/concept/' . $concept;
 
 	}
 	
@@ -78,7 +78,7 @@ Class Atom {
 			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
 			
 			// Add @context for JSON-LD to rootElement
-			if($rootElement) $content['@context'] = JSONLD_CONTEXT_PATH . $interface->id;
+			if($rootElement) $content['@context'] = Config::get('serverURL') . Config::get('apiPath') . '/interface/' . $interface->id;
 			
 			// Leaf
 			if(empty($interface->subInterfaces) && empty($interface->refInterfaceId)){

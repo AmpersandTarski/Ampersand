@@ -72,6 +72,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                    , invariants ::   [Rule]                   -- ^ All invariant rules
+                   , signals ::      [Rule]                   -- ^ All signal rules
                    , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
                    , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
                    , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.

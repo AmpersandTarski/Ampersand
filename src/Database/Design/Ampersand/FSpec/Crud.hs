@@ -39,17 +39,17 @@ getCrudObjectsForInterface crudInfo ifc =
     Just crudObjs -> crudObjs
   
 mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
-mkCrudInfo  allConceptsPrim allDecls allIfcs =
+mkCrudInfo  allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
-  where allConcepts = [ c | c <- allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
-        nonCrudConcpts = [ source d | d <- allDecls, isUni d && isSur d ] ++
-                         [ target d | d <- allDecls, isInj d && isTot d ]
-        crudCncpts = allConcepts \\ nonCrudConcpts
+  where allConcs = [ c | c <- allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
+        nonCrudConcpts = [ source d | d <- decls, isUni d && isSur d ] ++
+                         [ target d | d <- decls, isInj d && isTot d ]
+        crudCncpts = allConcs \\ nonCrudConcpts
         
         transSurjClosureMap :: Map A_Concept [A_Concept]
         transSurjClosureMap = transClosureMap . Map.fromListWith union $
-          [ (target d, [source d]) | d <- allDecls, isSur d ] ++ -- TODO: no isUni?
-          [ (source d, [target d]) | d <- allDecls, isTot d ]    -- TODO: no isInj?
+          [ (target d, [source d]) | d <- decls, isSur d ] ++ -- TODO: no isUni?
+          [ (source d, [target d]) | d <- decls, isTot d ]    -- TODO: no isInj?
         
         
         -- crud concept together with its target concept in the surjective/total transitive closure of declarations

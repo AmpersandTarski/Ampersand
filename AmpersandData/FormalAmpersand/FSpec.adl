@@ -1,4 +1,4 @@
-CONTEXT RAP IN ENGLISH
+﻿CONTEXT RAP IN ENGLISH
 INCLUDE "AST.adl"
 
 PATTERN Image
@@ -17,7 +17,7 @@ MEANING IN ENGLISH "A conceptual diagram for a rule."
 ENDPATTERN
 
 PATTERN RuleEnforcement
-SPEC Violation ISA PairID
+SPEC Violation ISA Pair
 rrviols::Rule*Violation
 MEANING IN ENGLISH "The violations of a rule."
 ENDPATTERN
@@ -25,7 +25,7 @@ ENDPATTERN
 PATTERN Misc
 CONCEPT PragmaSentence "An example sentence using the pragma of a relation declaration." 
 REPRESENT PragmaSentence TYPE BIGALPHANUMERIC
-decexample :: Declaration * PragmaSentence
+decexample :: Relation * PragmaSentence
 MEANING IN ENGLISH "An example sentence using the pragma of a relation."
 ENDPATTERN
 ENDCONTEXT

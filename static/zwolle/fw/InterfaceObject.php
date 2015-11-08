@@ -53,10 +53,10 @@ class InterfaceObject {
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
 		
 		// CRUD rights
-		$this->crudC = is_null($interface['crudC']) ? Config::get('defaultCrudC') : $interface['crudC'];
-		$this->crudR = is_null($interface['crudR']) ? Config::get('defaultCrudR') : $interface['crudR'];
-		$this->crudU = is_null($interface['crudU']) ? Config::get('defaultCrudU') : $interface['crudU'];
-		$this->crudD = is_null($interface['crudD']) ? Config::get('defaultCrudD') : $interface['crudD'];
+		$this->crudC = is_null($interface['crudC']) ? Config::get('defaultCrudC', 'transactions') : $interface['crudC'];
+		$this->crudR = is_null($interface['crudR']) ? Config::get('defaultCrudR', 'transactions') : $interface['crudR'];
+		$this->crudU = is_null($interface['crudU']) ? Config::get('defaultCrudU', 'transactions') : $interface['crudU'];
+		$this->crudD = is_null($interface['crudD']) ? Config::get('defaultCrudD', 'transactions') : $interface['crudD'];
 		
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 

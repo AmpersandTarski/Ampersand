@@ -10,6 +10,7 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Prototype.PHP
 import Database.Design.Ampersand.FSpec.SQL
 import qualified Database.Design.Ampersand.Misc.Options as Opts
+import Database.Design.Ampersand.Classes.ConceptStructure
 
 tempDbName :: String
 tempDbName = "ampersand_temporaryeditvalidationdb"
@@ -32,7 +33,7 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             
             ; let expectedConceptTables  = [ (c,map showValSQL atoms) | ACptPopu c atoms <- afterPops ]
             ; let expectedRelationTables = [ (d,map showValsSQL pairs) | ARelPopu{popdcl=d,popps=pairs} <- afterPops ]
-            ; let actualConcepts = [ c | c<- allConcepts fSpec, c /= ONE, name c /= "SESSION" ] -- TODO: are these the right concepts and decls?
+            ; let actualConcepts = [ c | c<- concs fSpec, c /= ONE, name c /= "SESSION" ] -- TODO: are these the right concepts and decls?
             ; let actualRelations = allDecls fSpec            --
             ; actualConceptTables <- mapM (getSqlConceptTable fSpec) actualConcepts
             ; actualRelationTables <- mapM (getSqlRelationTable fSpec) actualRelations

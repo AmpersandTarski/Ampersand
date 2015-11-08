@@ -3,51 +3,54 @@
 use Luracast\Restler\Data\Object;
 use Luracast\Restler\RestException;
 
-class LoginApi{
+class OAuthLoginApi{
 	
 	/**
 	 * @url GET login
 	 */
 	public function login(){
 		try{
-			$idps = array();			
+			$idps = array();
+			$identityProviders = Config::get('identityProviders', 'OAuthLogin');
+			
+			if(is_null($identityProviders)) throw new Exception ("No identity providers specified for OAuthLogin extension", 500);
 			
 			// Google
-			if($GLOBALS['ext']['Login']['google']){
+			if($identityProviders['google']){
 				$auth_url = array(
-						'auth_base' => $GLOBALS['ext']['Login']['google']['authBase'],
+						'auth_base' => $identityProviders['google']['authBase'],
 						'arguments' => array(
-								'client_id' => $GLOBALS['ext']['Login']['google']['clientId'],
+								'client_id' => $identityProviders['google']['clientId'],
 								'response_type' => 'code',
-								'redirect_uri' => $GLOBALS['ext']['Login']['google']['redirectUrl'],
-								'scope' => $GLOBALS['ext']['Login']['google']['scope']
+								'redirect_uri' => $identityProviders['google']['redirectUrl'],
+								'scope' => $identityProviders['google']['scope']
 						)
 				);
 				$url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
 				
 				$idps[] = array( 'name' => 'Google' 
 							   , 'loginUrl' => $url
-							   , 'logo' => 'extensions/Login/ui/images/logo-google.png'
+							   , 'logo' => 'extensions/OAuthLogin/ui/images/logo-google.png'
 							   );
 			}
 			
 			// LinkedIn
-			if($GLOBALS['ext']['Login']['linkedin']){
+			if($identityProviders['linkedin']){
 				$auth_url = array(
-						'auth_base' => $GLOBALS['ext']['Login']['linkedin']['authBase'],
+						'auth_base' => $identityProviders['linkedin']['authBase'],
 						'arguments' => array(
-								'client_id' => $GLOBALS['ext']['Login']['linkedin']['clientId'],
+								'client_id' => $identityProviders['linkedin']['clientId'],
 								'response_type' => 'code',
-								'redirect_uri' => $GLOBALS['ext']['Login']['linkedin']['redirectUrl'],
-								'scope' => $GLOBALS['ext']['Login']['linkedin']['scope'],
-								'state' => $GLOBALS['ext']['Login']['linkedin']['state']
+								'redirect_uri' => $identityProviders['linkedin']['redirectUrl'],
+								'scope' => $identityProviders['linkedin']['scope'],
+								'state' => $identityProviders['linkedin']['state']
 						)
 				);
 				$url = $auth_url['auth_base'] . '?' . http_build_query($auth_url['arguments']);
 				
 				$idps[] = array( 'name' => 'LinkedIn'
 							   , 'loginUrl' => $url
-							   , 'logo' => 'extensions/Login/ui/images/logo-linkedin.png'
+							   , 'logo' => 'extensions/OAuthLogin/ui/images/logo-linkedin.png'
 							   );
 			}
 			
@@ -101,22 +104,24 @@ class LoginApi{
 	
 	private function callback($code, $idp){
 		try{
+			$identityProviders = Config::get('identityProviders', 'OAuthLogin');
+			
 			if(empty($code)) throw new Exception("Oops. Someting went wrong during login. Please try again", 401);
 			
 			$session = Session::singleton();
 			$db = Database::singleton();
 			
-			if(!isset($GLOBALS['ext']['Login'][$idp])) throw new Exception("Unknown identity provider", 500);
+			if(!isset($identityProviders[$idp])) throw new Exception("Unknown identity provider", 500);
 			
-			$client_id 		= $GLOBALS['ext']['Login'][$idp]['clientId'];
-			$client_secret 	= $GLOBALS['ext']['Login'][$idp]['clientSecret'];
-			$redirect_uri 	= $GLOBALS['ext']['Login'][$idp]['redirectUrl'];
-			$token_url 		= $GLOBALS['ext']['Login'][$idp]['tokenUrl'];
-			$api_url 		= $GLOBALS['ext']['Login'][$idp]['apiUrl'];
-			$emailField		= $GLOBALS['ext']['Login'][$idp]['emailField'];
+			$client_id 		= $identityProviders[$idp]['clientId'];
+			$client_secret 	= $identityProviders[$idp]['clientSecret'];
+			$redirect_uri 	= $identityProviders[$idp]['redirectUrl'];
+			$token_url 		= $identityProviders[$idp]['tokenUrl'];
+			$api_url 		= $identityProviders[$idp]['apiUrl'];
+			$emailField		= $identityProviders[$idp]['emailField'];
 
 			// instantiate authController
-			$authController = new OAuthController($client_id,$client_secret,$redirect_uri,$token_url);
+			$authController = new OAuthLoginController($client_id,$client_secret,$redirect_uri,$token_url);
 			
 			// request token
 			if($authController->requestToken($code)){
@@ -169,7 +174,7 @@ class LoginApi{
 				}
 			}
 			
-			header('Location: '.HOME);
+			header('Location: '. Config::get('serverURL'));
 			exit;
 			
 		}catch(Exception $e){

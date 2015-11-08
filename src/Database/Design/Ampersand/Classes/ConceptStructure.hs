@@ -18,8 +18,8 @@ import Prelude hiding (Ordering(..))
 -}
 
 class ConceptStructure a where
-  concs ::    a -> [A_Concept]       -- ^ the set of all concepts used in data structure a
-  relsUsedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
+  concs ::      a -> [A_Concept]               -- ^ the set of all concepts used in data structure a
+  relsUsedIn :: a -> [Declaration]             -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
   relsUsedIn a = [ d | d@Sgn{}<-relsMentionedIn a]++[Isn c | c<-concs a]
   relsMentionedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
   relsMentionedIn = nub . map prim2rel . primsMentionedIn

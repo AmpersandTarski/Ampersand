@@ -117,7 +117,7 @@ PURPOSE RULE "attributes with unique names"
 
 PURPOSE RULE quadsInInterface
 {+In order to make quads work, an interface needs permission to use relations for inputs or outputs.
-If a quad that you expect is missing, try if you have granted the required permissions by entering the right declarations in the inputs or outputs of the interface.
+If a quad that you expect is missing, try if you have granted the required permissions by entering the right relations in the inputs or outputs of the interface.
 -}
 
 PURPOSE RULE violatableByInterface

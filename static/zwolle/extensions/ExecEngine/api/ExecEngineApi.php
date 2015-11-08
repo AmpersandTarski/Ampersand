@@ -15,10 +15,10 @@ class ExecEngineApi{
 			$db = Database::singleton();
 			
 			$allowedRoles = (array)Config::get('allowedRolesForRunFunction','execEngine');
-			if(LOGIN_ENABLED && !is_null($allowedRoles)){
+			if(Config::get('loginEnabled') && !is_null($allowedRoles)){
 				$ok = false;
 				
-				$sessionRoles = Role::getAllSessionRoles(session_id());
+				$sessionRoles = Role::getAllSessionRoles();
 				foreach($sessionRoles as $role){
 					if(in_array($role->label, $allowedRoles)) $ok = true;
 				}
@@ -27,7 +27,7 @@ class ExecEngineApi{
 				
 			$session->setRole();
 			
-			ExecEngine::runAllRules();
+			ExecEngine::run(true);
 			
 			$db->closeTransaction('Run completed',false,true,false);
 			

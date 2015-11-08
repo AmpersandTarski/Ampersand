@@ -1,0 +1,130 @@
+﻿CONTEXT Session IN DUTCH LATEX
+--INCLUDE "LoginDTVdoc.adl" -- use "Login_doc.adl" for comments that apply generically for many projects.
+
+META "authors" "Stef Joosten"
+
+PROCESS Login
+
+RELATION accLogin[Account*Loginnaam] [UNI,INJ] PRAGMA "" " heeft als loginnaam "
+MEANING "Elk account heeft een unieke loginnaam."
+VIEW Account : Account(accLogin)
+
+RELATION accPassword[Account*Password] [UNI]
+MEANING "Het systeem kan het wachtwoord herkennen, dat bij een gegeven account hoort."
+
+RELATION accRol[Account*Role]
+MEANING "Aan elk account kan een aantal rollen zijn toegekend"
+
+CONCEPT Role "Een eigenschap waarmee kan worden bepaald welke functionaliteit toegankelijk is."
+RULE 'SystemAdmin' |- I[Role]
+
+RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
+MEANING "Het systeem onthoudt de loginnaam van elke lopende sessie, zolang die sessie leeft."
+REPRESENT Loginnaam TYPE ALPHANUMERIC
+
+RELATION sessionPassword[SESSION*Password] [UNI] -- een wachtwoord is verplicht.
+MEANING "Het systeem onthoudt het wachtwoord van elke lopende sessie, zolang die sessie leeft."
+REPRESENT Password TYPE PASSWORD
+
+RELATION sessionRole[SESSION*Role] [UNI]
+MEANING "Het systeem onthoudt de rol van elke lopende sessie, zolang die sessie leeft."
+
+RELATION ingelogd[SESSION*Account] [INJ,AUT]
+MEANING "Zolang een gebruiker is ingelogd, onthoudt het systeem bij welk account deze sessie hoort."
+
+ROLE ExecEngine MAINTAINS registerSession
+RULE registerSession: sessionLoginnaam;accLogin~ /\ sessionPassword;accPassword~ |- ingelogd
+MEANING "Zolang de combinatie loginnaam/wachtwoord, die in een sessie is aangeboden, overeenkomt met de gegevens van een gebruiker, is deze gebruiker ingelogd."
+VIOLATION (TXT "{EX} InsPair;ingelogd;SESSION;", SRC I, TXT ";Account;", TGT I)
+
+ROLE ExecEngine MAINTAINS logoutW
+RULE logoutW: ingelogd |- sessionLoginnaam;accLogin~ /\ sessionPassword;accPassword~
+MEANING "Zolang een gebruiker is ingelogd, moet de combinatie loginnaam/wachtwoord in een sessie overeenkomen met de gegevens van deze gebruiker."
+VIOLATION ( TXT "{EX} DelPair;ingelogd;SESSION;", SRC I, TXT ";Account;", TGT I
+          , TXT "{EX} DelPair;sessionLoginnaam;SESSION;",TGT I, TXT ";Loginnaam;", SRC sessionLoginnaam
+          , TXT "{EX} DelPair;sessionPassword;SESSION;",TGT I, TXT ";Password;", SRC sessionPassword
+          )
+
+
+ROLE ExecEngine MAINTAINS pwdChange, loginChange
+
+RULE pwdChange: ingelogd;accPassword |- sessionPassword
+MEANING "Wanneer het wachtwoord van een gebruiker wijzigt gedurende een sessie, wijzigt het sessie-wachtwoord mee."
+VIOLATION (TXT "{EX} InsPair;sessionPassword;SESSION;", SRC I, TXT ";Password;", TGT I)
+
+RULE loginChange: ingelogd;accLogin |- sessionLoginnaam
+MEANING "Wanneer de loginnaam van een gebruiker wijzigt gedurende een sessie, wijzigt de sessie-loginnaam mee."
+VIOLATION (TXT "{EX} InsPair;sessionLoginnaam;SESSION;", SRC I, TXT ";Loginnaam;", TGT I)
+
+RULE "username password combination": sessionLoginnaam~;sessionPassword |- accLogin~;accPassword
+MEANING "Elke loginnaam/wachtwoord combinatie dient een persoon te identificeren, van wie een loginnaam/wachtwoord combinatie in het systeem is geregistreerd."
+MESSAGE "Ongeldige combinatie van gebruikernaam en password!"
+ENDPROCESS
+
+VIEW SESSION : SESSION(sessionLoginnaam)
+
+INTERFACE "Login" (sessionLoginnaam, sessionPassword) : '_SESSION'/\-(ingelogd;V)
+BOX [ "loginnaam" : sessionLoginnaam
+    , "Wachtwoord" : sessionPassword
+    ]
+
+
+INTERFACE "Logout" (sessionLoginnaam) : '_SESSION'/\ingelogd;ingelogd~
+BOX [ "Logout:" : sessionLoginnaam
+    ]
+
+
+INTERFACE "Internals" FOR Beheerder: '_SESSION'[SESSION]
+BOX [ --"Actieve sessies" : V[SESSION*SESSION]
+      --BOX [ "Sessie id" : I[SESSION]
+      --    , "loginnaam" : ingelogd;accLogin
+      --    , "rol"       : ingelogd;accRol
+      --    ]
+     "Accounts" : V[SESSION*Account]
+      COLS [ loginnaam : I LINKTO INTERFACE "Account"
+           , rol       : accRol
+           ]
+    ]
+
+INTERFACE "Account" (accLogin, accPassword, accRol) FOR Beheerder: I[Account]
+BOX [ loginnaam: accLogin
+    , wachtwoord: accPassword
+    , rol: accRol
+    ]
+
+-- a) een interface voor het beheren van je eigen account in de MENU bar.
+INTERFACE "Mijn account"
+    (accPassword, sessionPassword, accLogin):
+    '_SESSION';ingelogd
+BOX [ "Login naam"  : accLogin
+    , "Wachtwoord"  : accPassword
+    , "Rol(len)"    : accRol
+    , "Herhaal" : ingelogd~                -- this is a bit of a hack: to allow changing the
+      BOX [ "Wachtwoord" : sessionPassword -- accPassword, the sessionPassword needs to change
+          ]                                -- simultaneously, or rule login will fail.   
+    ]
+
+-- b) een interface voor het beheren van je account, niet in de MENU bar.
+INTERFACE "Mijn Persoonsgegevens" -- Zelfde, maar dan als 'gewone' INTERFACE.
+    (accPassword, sessionPassword, accLogin):
+    I[Account] /\ ingelogd~;'_SESSION';ingelogd
+BOX [ "Login naam"  : accLogin
+    , "Wachtwoord"  : accPassword
+    , "Rol(len)"    : accRol
+    , "Herhaal" : ingelogd~                -- this is a bit of a hack: to allow changing the
+      BOX [ "Wachtwoord" : sessionPassword -- accPassword, the sessionPassword needs to change
+          ]                                -- simultaneously, or rule login will fail.   
+    ]
+
+-- c) een interface voor een beheerder om elk account behalve het eigen account te wijzigen.
+--    Het eigen account mag niet gewijzigd worden, omdat zulks de sessie-integriteit zou kunnen verstoren.
+INTERFACE "Beheerde Accounts"
+    (accLogin, accPassword, accRol) FOR Beheerder:
+    '_SESSION';ingelogd;(accRol;'SystemAdmin';V[Role*Account]-I)
+BOX <SCOLS>
+    [ "Login naam" : accLogin
+    , "Wachtwoord" : accPassword
+    , "Rol(len)"   : accRol
+    ]
+
+ENDCONTEXT

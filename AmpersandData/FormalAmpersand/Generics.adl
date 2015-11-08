@@ -17,15 +17,7 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 --    ();
 
 --[Relations]--
---IDENT Relations: Relation(name,srcConcept,tgtConcept,allRelations~) -- the name of the relation must be unique; it is therefor not the same as a RAP:Declaration.
-RELATION allRelations[Context*Relation] [SUR,INJ] -- generics.php:$allRelations
-MEANING "Every relation belongs to a Context" -- For now, we assume there is one Context. 
-RELATION name[Relation*RelationName] [UNI,TOT]
-MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-RELATION srcConcept[Relation*Concept] [UNI,TOT]
-MEANING "Every relation has one source Concept"
-RELATION tgtConcept[Relation*Concept] [UNI,TOT]
-MEANING "Every relation has one target Concept"
+--IDENT Relations: Relation(name,source,target,context) -- the name of the relation must be unique; it is therefore not the same as a RAP:Relation.
 RELATION table[Relation*DBTable] [UNI,TOT]
 MEANING "The population of a relation is stored in one database-table."
 RELATION srcCol[Relation*DBTableColumn] [UNI,TOT]
@@ -38,8 +30,6 @@ RELATION affectedSigConjunctIds[Relation*ConjunctID]
 MEANING "When a pair in a relation is edited (created, updated or deleted), a (signal) conjunct may be affected"
 
 --[Concepts]--
-RELATION allConcepts[Context*Concept] [SUR,INJ]
--- Aanname: De key (de lelijke identifier) van een Concept is gelijk aan de naam van dat Concept.
 RELATION name[Concept*Identifier][TOT,UNI] 
 RELATION affectedInvConjunctIds[Concept*ConjunctID]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (invariant) conjunct may be affected"
@@ -122,6 +112,7 @@ RELATION violationsSQL[Conjunct*MySQLQuery] -- e.g. '/* case: (EIsc lst\\\'@(_:_
 
 RELATION allRoles[Context*Role] [SUR,INJ]
 RELATION name[Role*RoleName] [UNI,TOT]
+REPRESENT RoleName TYPE ALPHANUMERIC
 RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
 
 --[

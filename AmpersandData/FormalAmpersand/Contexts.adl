@@ -1,0 +1,38 @@
+﻿CONTEXT RAP IN ENGLISH
+INCLUDE "Login.adl"
+--! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
+PATTERN Authorizations
+PURPOSE PATTERN Authorizations
+{+
+-}
+PURPOSE RELATION owner[Context*Account]
+{+In RAP, every context must have one owner, who can exercise all ownership rights that contexts have.
+Initially, the creator of a context is its owner.
+-}
+    RELATION owner[Context*Account] [UNI]
+    MEANING "A context has an owner, which is an account."
+    ROLE ExecEngine MAINTAINS TOTowner
+    RULE TOTowner : (I[Context]#'_SESSION'[SESSION]);ingelogd |- owner
+    MEANING "The creator of a context is the account that was logged in when the context was created."
+    VIOLATION ( TXT "{EX} InsPair;owner;Context;", SRC I, TXT ";Account;", TGT I )
+ENDPATTERN
+
+PATTERN Context
+    CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
+    IDENT Context: Context(name[Context*ContextIdentifier])  
+    REPRESENT ContextIdentifier TYPE ALPHANUMERIC
+    RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ,SUR]
+    MEANING "The name of a context."
+    RELATION valid[Rule*Context]
+    RELATION usedPatterns[Context*Pattern]
+    MEANING "The patterns in a context."
+    RELATION concs[Context*Concept]
+    MEANING "A concept, mentioned anywhere in a context."
+    RELATION gens[Context*Gen]
+    MEANING "The user-defined generalization rules in a context."
+    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
+ENDPATTERN
+
+ENDCONTEXT
+
+
