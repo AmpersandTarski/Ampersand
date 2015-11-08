@@ -29,7 +29,9 @@ executable ampersand
   hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall
-  build-depends:     base >= 4.7 && < 5.0,
+  build-depends:     aeson >=0.7 && <0.8,
+                     aeson-pretty,
+                     base >= 4.7 && < 5.0,
                      bytestring == 0.10.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
@@ -59,8 +61,6 @@ executable ampersand
                      MissingH,
                      wl-pprint
                      data-default >=0.5 && <0.6,
-                     aeson >=0.7 && <0.8,
-                     aeson-pretty
                      HStringTemplate == 0.8.*,
                      lens == 4.12.*,
                      mtl == 2.2.*,
