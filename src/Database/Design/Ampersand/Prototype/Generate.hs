@@ -72,8 +72,8 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
-        , generateDBstructQueries fSpec
-        , generateAllDefPopQueries fSpec
+        , generateDBstructQueries False fSpec
+        , generateAllDefPopQueries False fSpec
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
@@ -100,13 +100,16 @@ generateConstants fSpec =
   ]
   where opts = getOpts fSpec
   
-generateDBstructQueries :: FSpec -> [String]
-generateDBstructQueries fSpec =
-  [ "$allDBstructQueries ="
-  ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
-   ++
-  [          "        );"
-  ]
+generateDBstructQueries :: Bool -> FSpec -> [String]
+generateDBstructQueries isforJsonOutput fSpec =
+  if isforJsonOutput 
+  then theSQLstatements
+  else
+    [ "$allDBstructQueries ="
+    ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
+     ++
+    [          "        );"
+    ]
   where
     theSQLstatements :: [String]
     theSQLstatements =
@@ -115,7 +118,7 @@ generateDBstructQueries fSpec =
        ]
     createTableStatements :: [String]
     createTableStatements = 
-      map (intercalate "\n         ")
+      map (if isforJsonOutput then concat else (intercalate "\n         "))
       [ [ "CREATE TABLE "++ show "__SessionTimeout__"
         , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
         , "   , "++show "lastAccess"++" BIGINT NOT NULL"
@@ -142,7 +145,7 @@ generateDBstructQueries fSpec =
         tableSpec2Queries :: TableSpecNew -> [String]
         tableSpec2Queries ts = 
          -- [ "DROP TABLE "++show (tsName ts)] ++
-          [ intercalate "\n           " $  
+          [ (if isforJsonOutput then concat else (intercalate "\n           ")) $  
                    ( tsCmnt ts ++ 
                      ["CREATE TABLE "++show (tsName ts)] 
                      ++ (map (uncurry (++)) 
@@ -204,16 +207,18 @@ plug2TableSpec plug
 
 commentBlockSQL :: [String] -> [String]
 commentBlockSQL xs = 
-   map ("-- "++) $ hbar ++ xs ++ hbar
+   map (\cmmnt -> "/* "++cmmnt++" */") $ hbar ++ xs ++ hbar
   where hbar = [replicate (maximum . map length $ xs) '-']
   
-generateAllDefPopQueries :: FSpec -> [String]
-generateAllDefPopQueries fSpec =
-  [ "$allDefPopQueries ="
-  ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
-   ++
-  [          "        );"
-  ]
+generateAllDefPopQueries :: Bool -> FSpec -> [String]
+generateAllDefPopQueries isforJsonOutput fSpec =
+  if isforJsonOutput
+  then theSQLstatements
+  else [ "$allDefPopQueries ="
+       ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
+        ++
+       [          "        );"
+       ]
   where
     theSQLstatements
       = fillSignalTable (initialConjunctSignals fSpec) ++
@@ -223,7 +228,7 @@ generateAllDefPopQueries fSpec =
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
-     = [intercalate "\n           " $ 
+     = [(if isforJsonOutput then concat else intercalate "\n           ") $ 
             [ "INSERT INTO "++show (getTableName signalTableSpec)
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
@@ -243,9 +248,9 @@ generateAllDefPopQueries fSpec =
           = case tableContents fSpec plug of
              []  -> []
              tblRecords 
-                 -> [intercalate "\n           " $ 
+                 -> [(if isforJsonOutput then concat else intercalate "\n           ") $ 
                        [ "INSERT INTO "++show (name plug)
-                       , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++")"
+                       , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++") "
                        ] ++ lines
                          ( "VALUES " ++ intercalate "\n     , " 
                           [ "(" ++valuechain md++ ")" | md<-tblRecords]
