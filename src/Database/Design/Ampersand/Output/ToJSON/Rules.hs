@@ -28,7 +28,7 @@ data JsonRule = JsonRule
 data JsonPairView = JsonPairView [JsonPairViewSegment]
     deriving (Generic, Show)
 data JsonPairViewSegment = JsonPairViewSegment
-  { pvsJSONsegmentNr   :: Int
+  { pvsJSONseqNr   :: Int
   , pvsJSONsegmentType :: String
   , pvsJSONText        :: Maybe String
   , pvsJSONsrcOrTgt    :: Maybe String
@@ -69,7 +69,7 @@ instance JSON (PairView Expression) JsonPairView where
  fromAmpersand fSpec pv = JsonPairView $ map (fromAmpersand fSpec) (zip [0..] (ppv_segs pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
  fromAmpersand fSpec (nr,pvs) = JsonPairViewSegment
-  { pvsJSONsegmentNr   = nr
+  { pvsJSONseqNr   = nr
   , pvsJSONsegmentType = case pvs of
                            PairViewText{} -> "Text"
                            PairViewExp{}  -> "Exp"
@@ -84,7 +84,7 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
                            PairViewExp _ _ e         -> Just . show . target $ e
   , pvsJSONexpSQL      = case pvs of
                            PairViewText{} -> Nothing
-                           PairViewExp _ _ e         -> Just . prettySQLQuery fSpec 3 $ e
+                           PairViewExp _ _ e         -> Just . prettySQLQuery fSpec 0 $ e
   } 
  
   

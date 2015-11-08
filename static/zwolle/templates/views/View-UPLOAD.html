@@ -9,7 +9,7 @@ $if(verbose)$<!-- View-UPLOAD.html "$label$" : $expAdl$ :: $source$ * $target$ $
 -->
 $endif$<div class="input-group">
 	$if(isEditable)$<div ng-repeat="row in val['$name$'] track by \$index">
-		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
+		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
 		<a href="uploads/{{row['@view']['fileName']}}" target="_blank">{{row['@view']['label']}}</a>
 	</div>
 	<div my-showonhover-box ng-controller="uploadFileController">

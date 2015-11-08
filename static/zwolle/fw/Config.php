@@ -15,9 +15,27 @@ class Config {
 	}
 }
 
-// Default configuration
-Config::set('contextName', 'global', $contextName); // set the name of the application context
+try{
+	// Load settings.json
+	$settings = file_get_contents(__DIR__ . '/../generics/settings.json');
+	$settings = json_decode($settings, true);
+	
+	// Settings
+	Config::set('versionInfo', 'global', $settings['versionInfo']); // e.g. "Ampersand v3.2.0[master:acbd148], build time: 07-Nov-15 22:14:00 W. Europe Standard Time"
+	Config::set('contextName', 'global', $settings['contextName']); // set the name of the application context
+	
+	// Mysql settings,  can be overwritten in localSettings.php
+	Config::set('dbHost', 'mysqlDatabase', $settings['mysqlSettings']['dbHost']);
+	Config::set('dbUser', 'mysqlDatabase', $settings['mysqlSettings']['dbUser']);
+	Config::set('dbPassword', 'mysqlDatabase', $settings['mysqlSettings']['dbPass']);
+	Config::set('dbName', 'mysqlDatabase', $settings['mysqlSettings']['dbName']);
+	Config::set('dbsignalTableName', 'mysqlDatabase', $settings['mysqlSettings']['dbsignalTableName']);
+	
+}catch(Exception $e){
+	throw $e;	
+}
 
+// Other default configuration
 Config::set('serverURL', 'global', 'http://localhost/' . Config::get('contextName')); // set the base url for the application
 Config::set('apiPath', 'global', '/api/v1'); // relative path to api
 

@@ -4,7 +4,7 @@ $endif$<div style="min-width:6em;">
 		<datetimepicker ng-model="val['$name$']" show-meridian="false" date-format="dd-MM-yyyy" placeholder="dd-mm-yyyy" starting-day="1" show-spinners="false"></datetimepicker>
 		<span my-showonhover-box class="glyphicon glyphicon-ok" ng-click="saveDateTimeItem(val['$name$'], ResourceId)"></span>
 	</div>$else$<div ng-repeat="row in val['$name$'] track by \$index">
-		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
 		<span>{{row | date : 'yyyy-MM-dd HH:mm:ss Z'}}</span>
 	</div>
 	<div my-showonhover-box ng-controller="static_dateTimeController">

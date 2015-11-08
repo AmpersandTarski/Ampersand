@@ -224,6 +224,10 @@ input .ng-invalid .ng-dirty {
 	color				: red; 
 }
 
+.glyphicon-minus {
+	color				: red;
+}
+
 .glyphicon-ok {
 	color				: green; 
 }

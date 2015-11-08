@@ -1,10 +1,5 @@
 <?php
 
-Config::set('dbHost', 'mysqlDatabase', 'localhost'); // Can be overwritten in localSettings.php
-Config::set('dbUser', 'mysqlDatabase', 'ampersand'); // Can be overwritten in localSettings.php
-Config::set('dbPassword', 'mysqlDatabase', 'ampersand'); // Can be overwritten in localSettings.php
-Config::set('dbName', 'mysqlDatabase', $dbName); // $dbName from Generics.php. Can be overwritten in localSettings.php
-
 class Database {	
 	private $db_link;
 	private $db_host;
@@ -176,8 +171,12 @@ class Database {
 				$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 				
 				Notifications::addLog("Atom $newAtom added into concept $concept", 'DATABASE');
+				
+				Hooks::callHooks('postDatabaseAddAtomToConceptInsert', get_defined_vars());
 			}else{
 				Notifications::addLog("Atom $newAtom already in concept $concept", 'DATABASE');
+				
+				Hooks::callHooks('postDatabaseAddAtomToConceptSkip', get_defined_vars());
 			}
 			
 			return $newAtom;
@@ -468,6 +467,8 @@ class Database {
 			$this->addAffectedConcept($concept->name); // add concept to affected concepts. Needed for conjunct evaluation.
 			
 			Notifications::addLog("Atom $atom (and all related links) deleted in database", 'DATABASE');
+			
+			Hooks::callHooks('postDatabaseDeleteAtom', get_defined_vars());
 		}catch(Exception $e){
 			// Catch exception and continue script
 			Notifications::addError($e->getMessage());
@@ -481,6 +482,8 @@ class Database {
 		$this->Exe("START TRANSACTION"); // start database transaction
 		$this->transaction = rand();
 		
+		Hooks::callHooks('postDatabaseStartTransaction', get_defined_vars());
+		
 	}
 	
 	// TODO: make private function, now also used by in Session class for session atom initiation
@@ -489,12 +492,16 @@ class Database {
 		$this->setLatestUpdateTime();
 		$this->Exe("COMMIT"); // commit database transaction
 		unset($this->transaction);
+		
+		Hooks::callHooks('postDatabaseCommitTransaction', get_defined_vars());
 	}
 	
 	private function rollbackTransaction(){
 		Notifications::addLog('------------------------- ROLLBACK -------------------------', 'DATABASE');
 		$this->Exe("ROLLBACK"); // rollback database transaction
 		unset($this->transaction);
+		
+		Hooks::callHooks('postDatabaseRollbackTransaction', get_defined_vars());
 	}
 	
 	/*
@@ -506,9 +513,9 @@ class Database {
 	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = false, $setNewContent = true){
 		$session = Session::singleton();
 		
-		Notifications::addLog('========================= CLOSING TRANSACTION =========================', 'DATABASE');
-		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
+		
+		Notifications::addLog('========================= CLOSING TRANSACTION =========================', 'DATABASE');
 		
 		if($checkAllConjucts){
 			Notifications::addLog("Check all conjuncts", 'DATABASE');
@@ -549,6 +556,8 @@ class Database {
 		}else{
 			$this->rollbackTransaction(); // rollback database transaction
 		}
+		
+		Hooks::callHooks('postDatabaseCloseTransaction', get_defined_vars());
 		
 		return $invariantRulesHold;
 		

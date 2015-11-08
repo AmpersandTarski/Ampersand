@@ -11,12 +11,14 @@ AngularApp::addJS('extensions/ExecEngine/ui/js/ExecEngine.js');
 
 // Config (can be overwritten in localSettings.php)
 Config::set('execEngineRoleName', 'execEngine', 'ExecEngine');
+Config::set('autoRerun', 'execEngine', true);
 Config::set('maxRunCount', 'execEngine', 10);
 
 class ExecEngine {
 	
 	private static $roleName;
 	public static $doRun = true;
+	public static $autoRerun;
 	public static $runCount;
 	
 	public static function run($allRules = false){
@@ -37,6 +39,7 @@ class ExecEngine {
 		
 		$maxRunCount = Config::get('maxRunCount', 'execEngine');
 		self::$runCount = 0;
+		self::$autoRerun = Config::get('autoRerun', 'execEngine');
 		
 		if($role){
 			// Get all rules that are maintained by the ExecEngine
@@ -45,7 +48,7 @@ class ExecEngine {
 				self::$runCount++;
 				if(self::$runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')', 500);
 				
-				Notifications::addLog("ExecEngine run (" . self::$runCount . ") for role '" . $role->label . "'", 'ExecEngine');
+				Notifications::addLog("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '" . $role->label . "'", 'ExecEngine');
 				
 				// Determine affected rules that must be checked by the exec engine
 				$affectedConjuncts = (array)RuleEngine::getAffectedInvConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations());
@@ -66,9 +69,16 @@ class ExecEngine {
 					$rule = RuleEngine::getRule($ruleName);
 					$violations = RuleEngine::checkRule($rule, false);
 					
-					if(count($violations)) $rulesThatHaveViolations[] = $rule['name'];
-					// Fix violations for every rule
-					ExecEngine::fixViolations($rule, $violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine 
+					if(count($violations)){
+						$rulesThatHaveViolations[] = $rule['name'];
+						
+						// Fix violations for every rule
+						ExecEngine::fixViolations($rule, $violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
+						
+						// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)
+						if(self::$autoRerun) self::$doRun = true;
+					}
+					 
 				}
 				
 				
