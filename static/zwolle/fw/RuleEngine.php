@@ -129,7 +129,7 @@ class RuleEngine {
 	
 	/*
 	 * $cacheConjuncts
-	 * 		true: chache conjuncts, i.e. store them locally in self::$conjunctViolations and, if there are violations, in the database table `__all_signals__`
+	 * 		true: chache conjuncts, i.e. store them locally in self::$conjunctViolations and, if there are violations, in the database
 	 * 		false: don't cache conjuncts (is used by ExecEngine)
 	 * 		default: true
 	 */
@@ -145,6 +145,7 @@ class RuleEngine {
 			// Otherwise evaluate conjunct, cache and return violations
 			}else{
 				$db = Database::singleton();
+				$dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 				$violations = array();
 				
 				// Evaluate conjunct
@@ -159,18 +160,18 @@ class RuleEngine {
 					Notifications::addLog("Conjunct '".$conjunctId."' holds", 'RuleEngine');
 					
 					// Remove "old" conjunct violations from database
-					$query = "DELETE FROM `__all_signals__` WHERE `conjId` = '$conjunctId'";
+					$query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '$conjunctId'";
 					$db->Exe($query);
 					
 				}elseif($cacheConjuncts){
 					Notifications::addLog("Conjunct '".$conjunctId."' broken, caching violations in database", 'RuleEngine');
 					
 					// Remove "old" conjunct violations from database
-					$query = "DELETE FROM `__all_signals__` WHERE `conjId` = '$conjunctId'";
+					$query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '$conjunctId'";
 					$db->Exe($query);
 					
-					// Add new conjunct violation to database table __all_signals__
-					$query = "INSERT IGNORE INTO `__all_signals__` (`conjId`, `src`, `tgt`) VALUES ";
+					// Add new conjunct violation to database
+					$query = "INSERT IGNORE INTO `$dbsignalTableName` (`conjId`, `src`, `tgt`) VALUES ";
 					foreach ($violations as $violation) $values[] = "('".$conjunctId."', '".$violation['src']."', '".$violation['tgt']."')";
 					$query .= implode(',', $values);
 					$db->Exe($query);
@@ -188,6 +189,7 @@ class RuleEngine {
 	
 	public static function getSignalsFromDB($conjunctIds){
 		$db = Database::singleton();
+		$dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 		
 		$result = array();
 		
@@ -195,7 +197,7 @@ class RuleEngine {
 		
 		if (count($conjunctIds) > 0) {
 			// TODO: DB Query can be changed to WHERE `conjId` IN (<conjId1>, <conjId2>, etc)
-			$query = "SELECT * FROM `__all_signals__` WHERE " . implode(' OR ', array_map( function($conjunctId) {return "`conjId` = '$conjunctId'";}, $conjunctIds));
+			$query = "SELECT * FROM `$dbsignalTableName` WHERE " . implode(' OR ', array_map( function($conjunctId) {return "`conjId` = '$conjunctId'";}, $conjunctIds));
 			$result = $db->Exe($query);
 		} else {
 			Notifications::addInfo("No conjunctIds provided (can be that this role does not maintain any rule)");

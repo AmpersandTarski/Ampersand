@@ -1,10 +1,5 @@
 <?php
 
-Config::set('dbHost', 'mysqlDatabase', 'localhost'); // Can be overwritten in localSettings.php
-Config::set('dbUser', 'mysqlDatabase', 'ampersand'); // Can be overwritten in localSettings.php
-Config::set('dbPassword', 'mysqlDatabase', 'ampersand'); // Can be overwritten in localSettings.php
-Config::set('dbName', 'mysqlDatabase', $dbName); // $dbName from Generics.php. Can be overwritten in localSettings.php
-
 class Database {	
 	private $db_link;
 	private $db_host;
