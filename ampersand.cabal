@@ -59,8 +59,9 @@ executable ampersand
                      text >=1.1 && <1.3,
                      lens,
                      MissingH,
-                     wl-pprint,
-                     data-default >=0.5 && <0.6,
+                     wl-pprint
+  else
+      build-depends: data-default >=0.5 && <0.6,
                      HStringTemplate == 0.8.*,
                      lens == 4.12.*,
                      mtl == 2.2.*,
