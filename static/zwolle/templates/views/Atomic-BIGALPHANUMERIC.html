@@ -1,7 +1,7 @@
 $if(verbose)$<!-- Atomic-BIGALPHANUMERIC.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $endif$<div class="input-group">
 	$if(isEditable)$$if(exprIsUni)$<textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Textarea" rows="6" cols="80" ng-blur="put(ResourceId)"></textarea>$else$<div ng-repeat="row in val['$name$'] track by \$index">
-		<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
 		<span>{{row}}</span>
 	</div>
 	<div my-showonhover-box ng-controller="addItemController">

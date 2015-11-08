@@ -2,7 +2,7 @@ $if(verbose)$<!-- Atomic-FLOAT.html "$label$" : $expAdl$ :: $source$ * $target$ 
 $endif$<div>
 	$if(isEditable)$<div class="input-group" style="min-width:60px;">
 		$if(exprIsUni)$<input ng-model="val['$name$']" my-bluronenter type="number" class="form-control input-sm" ng-blur="put(ResourceId)">$else$<div ng-repeat="row in val['$name$'] track by \$index">
-			<span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
+			<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(val['$name$'], \$index, ResourceId)"></span>
 			<span>{{row}}</span>
 		</div>
 		<div my-showonhover-box ng-controller="addItemController">

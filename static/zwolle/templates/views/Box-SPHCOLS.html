@@ -12,7 +12,7 @@ $endif$<table si-table class="table table-striped table-hover table-condensed" n
 	</thead>
 	<tbody$if(isEditable)$ ng-init="parent = val['$name$']"$endif$>
 		<tr si-sortable class="box" ng-repeat="(key, val) in val['$name$'] | toArray" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>$if(isEditable)$
-			<td><span my-showonhover-box class="glyphicon glyphicon-remove" ng-click="removeObject(parent, key, ResourceId)"></span></td>$endif$$subObjects:{subObj|
+			<td><span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(parent, key, ResourceId)"></span></td>$endif$$subObjects:{subObj|
 			$if(verbose)$<!-- $subObj.subObjLabel$ -->
 			$endif$<td class="row-content">
 				$subObj.subObjContents$
