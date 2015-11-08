@@ -10,10 +10,14 @@ import Data.Maybe
 
 data Relations = Relations [Relation]deriving (Generic, Show)
 data Relation = Relation
-  { relJSONname       :: String
-  , relJSONsignature  :: String
+  { relJSONname        :: String
+  , relJSONsignature   :: String
   , relJSONsrcConcept  :: String
   , relJSONtgtConcept  :: String
+  , relJSONsrcMin      :: Int
+  , relJSONsrcMax      :: Maybe Int
+  , relJSONtgtMin      :: Int
+  , relJSONtgtMax      :: Maybe Int
   , relJSONaffectedConjuncts :: [String]
 --  , relJSONaffectedInvConjunctIds  :: [Conjunct]
 --  , relJSONaffectedSigConjunctIds  :: [Conjunct]
@@ -27,10 +31,14 @@ instance JSON FSpec Relations where
 instance JSON Declaration Relation where
  fromAmpersand fSpec dcl = Relation 
          { relJSONname       = name dcl
-         , relJSONsignature  = show . sign $ dcl
+         , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConcept  = name . source $ dcl 
          , relJSONtgtConcept  = name . target $ dcl
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
+         , relJSONsrcMin      = if isSur dcl then 1 else 0 
+         , relJSONsrcMax      = if isInj dcl then Just 1 else Nothing
+         , relJSONtgtMin      = if isTot dcl then 1 else 0
+         , relJSONtgtMax      = if isUni dcl then Just 1 else Nothing
 --         , relJSONaffectedInvConjunctIds  = 
 --         , relJSONaffectedSigConjunctIds  
          }
