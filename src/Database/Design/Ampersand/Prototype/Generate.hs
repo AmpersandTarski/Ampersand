@@ -83,18 +83,7 @@ generateGenerics fSpec =
         
 generateConstants :: FSpec -> [String]
 generateConstants fSpec =
-  [ "$versionInfo = "++showPhpStr ampersandVersionStr++";" -- so we can show the version in the php-generated html
-  , ""
-  , "$contextName = " ++ showPhpStr (fsName fSpec) ++ ";"
-  , ""
-  , "$dbName =  isset($isValidationSession) && $isValidationSession ? "++showPhpStr ValidateEdit.tempDbName++" : "++showPhpStr (dbName opts)++";"
-  , "// If this script is called with $isValidationSession == true, use the temporary db name instead of the normal one." 
-  , ""
-  , "$signalTableName = "++showPhpStr (getTableName signalTableSpec)++";"
-  , ""
-  , "$isDev = "++showPhpBool (development opts)++";"
-  , ""
-  , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
+  [ "$isDev = "++showPhpBool (development opts)++";"
   ]
   where opts = getOpts fSpec
   
