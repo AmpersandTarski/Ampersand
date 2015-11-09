@@ -75,13 +75,13 @@ class Database {
 	}
 	
 	public function reinstallDB(){
-		global $allDBstructQueries; // from Generics.php
-		global $allDefPopQueries; // from Generics.php
+		$queries = file_get_contents(__DIR__ . '/../generics/mysql-installer.json');
+		$queries = json_decode($queries, true);
 		
 		Notifications::addLog('========= INSTALLER ==========', 'INSTALLER');
 		
 		Notifications::addLog('---------- DB structure queries ------------', 'INSTALLER');
-		foreach($allDBstructQueries as $query){
+		foreach($queries['allDBstructQueries'] as $query){
 			$this->Exe($query);
 			
 		}
@@ -89,7 +89,7 @@ class Database {
 		if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
 		
 		Notifications::addLog('---------- DB population queries -----------', 'INSTALLER');
-		foreach($allDefPopQueries as $query){
+		foreach($queries['allDefPopQueries'] as $query){
 			$this->Exe($query);
 		}
 		

@@ -72,8 +72,6 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
-        , generateDBstructQueries False fSpec
-        , generateAllDefPopQueries False fSpec
         , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
