@@ -16,7 +16,6 @@ import System.Directory
 import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.Prototype.ProtoUtil
-import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 import Control.Exception
 
