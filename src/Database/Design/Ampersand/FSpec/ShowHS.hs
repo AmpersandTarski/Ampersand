@@ -232,52 +232,52 @@ instance ShowHSName FSpec where
 
 instance ShowHS FSpec where
  showHS opts indent fSpec
-  = intercalate (indent ++"    ")
+  = intercalate (indent ++"     ")
         [ "FSpec{ fsName        = " ++ show (name fSpec)
-        ,wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
-        ,     ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
-        ,     ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
-        ,wrap ", pattsInScope  = " indentA (\_->showHSName) (pattsInScope fSpec)
-        ,wrap ", rulesInScope  = " indentA (\_->showHSName) (rulesInScope fSpec)
-        ,wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fSpec)
-        ,wrap ", cDefsInScope  = " indentA (\_->showHS opts (indentA++"  ")) (cDefsInScope fSpec)
-        ,wrap ", gensInScope   = " indentA (showHS opts)   (gensInScope fSpec)
-        ,wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
-        ,wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
-        ,     ", interfaceS    = interfaceS'"
-        ,     ", interfaceG    = interfaceG'"
-        ,wrap ", fActivities   = " indentA (\_->showHS opts (indentA++"  ")) (fActivities fSpec)
-        ,     ", fRoleRels     = " ++
-              case fRoleRels fSpec of
-                []        -> "[]"
-                [(r,rel)] -> "[ ("++show r++", "++showHS opts "" rel++") ]"
-                _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
-        ,     ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
-        ,wrap ", fRoles        = " indentA (showHS opts)    (fRoles fSpec)
-        ,wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
-        ,wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
-        ,wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
-        ,wrap ", fallRules     = " indentA (\_->showHSName) (fallRules fSpec)
-        ,wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fSpec)
-        ,wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
-        ,wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
-        ,wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fSpec)
-        ,wrap ", kernels       = " indentA (\_->showHSName) (kernels fSpec)
-        ,wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fSpec)
-        ,wrap ", vviews        = " indentA (\_->showHSName) (vviews fSpec)
-        ,wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
-        ,wrap ", fsisa         = " indentA (\_->showHSName) (fsisa fSpec)
-        ,wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fSpec)
-        ,wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
-        ,wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
-        ,     ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)
-        ,wrap ", vpatterns     = " indentA (\_->showHSName) (vpatterns fSpec)
-        ,wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
-        ,wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
-        ,     ", metas         = allMetas"
-        ,wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
-        ,wrap ", allExprs      = " indentA (showHS opts)    (allExprs fSpec)
-        ,"}"
+        , wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
+        ,      ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
+        ,      ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
+        , wrap ", pattsInScope  = " indentA (\_->showHSName) (pattsInScope fSpec)
+        , wrap ", rulesInScope  = " indentA (\_->showHSName) (rulesInScope fSpec)
+        , wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fSpec)
+        , wrap ", cDefsInScope  = " indentA (\_->showHS opts (indentA++"  ")) (cDefsInScope fSpec)
+        , wrap ", gensInScope   = " indentA (showHS opts)   (gensInScope fSpec)
+        , wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
+        , wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
+        ,      ", interfaceS    = interfaceS'"
+        ,      ", interfaceG    = interfaceG'"
+        , wrap ", fActivities   = " indentA (\_->showHS opts (indentA++"  ")) (fActivities fSpec)
+        ,      ", fRoleRels     = " ++
+               case fRoleRels fSpec of
+                 []        -> "[]"
+                 [(r,rel)] -> "[ ("++show r++", "++showHS opts "" rel++") ]"
+                 _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
+        ,      ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
+        , wrap ", fRoles        = " indentA (showHS opts)    (fRoles fSpec)
+        , wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
+        , wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
+        , wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
+        , wrap ", fallRules     = " indentA (\_->showHSName) (fallRules fSpec)
+        , wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fSpec)
+        , wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
+        , wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
+        , wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fSpec)
+        , wrap ", kernels       = " indentA (\_->showHSName) (kernels fSpec)
+        , wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fSpec)
+        , wrap ", vviews        = " indentA (\_->showHSName) (vviews fSpec)
+        , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
+        , wrap ", fsisa         = " indentA (\_->showHSName) (fsisa fSpec)
+        , wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fSpec)
+        , wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
+        , wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
+        ,      ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)
+        , wrap ", vpatterns     = " indentA (\_->showHSName) (vpatterns fSpec)
+        , wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
+        , wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
+        ,      ", metas         = allMetas"
+        , wrap ", allViolations = " indentA showViolatedRule (allViolations fSpec)
+        , wrap ", allExprs      = " indentA (showHS opts)    (allExprs fSpec)
+        , "}"
         ] ++
     indent++"where"++
      "\n -- ***Interfaces Specified in Ampersand script***: "++
@@ -357,7 +357,7 @@ instance ShowHS FSpec where
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x
           ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fSpec)]++"\n"
     )
-        where indentA = indent ++"                      "
+        where indentA = indent ++"                       "
               indentB = indent ++"             "
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
