@@ -72,7 +72,6 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
-        , generateSpecializations fSpec
         , generateTableInfos fSpec
         , generateRules fSpec
         , generateConjuncts fSpec
@@ -251,16 +250,6 @@ generateAllDefPopQueries isforJsonOutput fSpec =
                     Just val -> showValPHP val
                  | fld <- record ]
 
-generateSpecializations :: FSpec -> [String]
-generateSpecializations fSpec =
-  [ "$allSpecializations = // transitive, so including specializations of specializations"
-  , "  array" ] ++
-  addToLastLine ";"
-    (indent 4 (blockParenthesize "(" ")" ","
-         [ [ showPhpStr (name cpt)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ]
-         | cpt <- concs fSpec, let specializations = smallerConcepts (vgens fSpec) cpt,  not ( null specializations) ])
-    )
-
 generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
   [ "$allRelations ="
@@ -292,7 +281,8 @@ generateTableInfos fSpec =
        blockParenthesize "(" ")" ","
          [ [ (showPhpStr.name) c++" => array"] ++
            (indent 2 $
-              [ "( 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
+              [ "( 'concept' => "++ (showPhpStr.name) c
+              , ", 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
               , ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
               , ", 'conceptTables' => array" ] ++
               (indent 3

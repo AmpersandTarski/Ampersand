@@ -35,21 +35,17 @@ class Concept {
 		return $conceptInfo['type'];
 	}
 
-	public static function getSpecializations($concept) {
-		global $allSpecializations; // from Generics.php
-		
-		$conceptInfo = Concept::getConcept($concept); // only to check if concept is defined
-		return isset($allSpecializations[$concept]) ? $allSpecializations[$concept] : array ();
+	public static function getSpecializations($concept) {		
+		$conceptInfo = Concept::getConcept($concept);
+		return $conceptInfo['specializations'];
 	}
 	
 	public static function getGeneralizations($concept){
-		global $allSpecializations; // from Generics.php
-		
-		$conceptInfo = Concept::getConcept($concept); // only to check if concept is defined
+		Concept::getConcept($concept); // only to check if concept is defined
 		
 		$generalizations = array();
-		foreach ($allSpecializations as $key => $specializations){
-			if(in_array($concept, $specializations)) $generalizations[] = $key;
+		foreach (Concept::getAllConcepts() as $c){
+			if(in_array($concept, $c['specializations'])) $generalizations[] = $c['concept'];
 		}
 		return $generalizations;
 	}
