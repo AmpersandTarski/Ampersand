@@ -15,6 +15,6 @@ instance ToJSON MySQLInstaller where
   toJSON = amp2Jason
 instance JSON FSpec MySQLInstaller where
  fromAmpersand fSpec _ = MySQLInstaller
-  { msiJSONallDBstructQueries = generateDBstructQueries  True fSpec
-  , msiJSONallDefPopQueries   = generateAllDefPopQueries True fSpec
+  { msiJSONallDBstructQueries = generateDBstructQueries  fSpec
+  , msiJSONallDefPopQueries   = generateAllDefPopQueries fSpec
   }

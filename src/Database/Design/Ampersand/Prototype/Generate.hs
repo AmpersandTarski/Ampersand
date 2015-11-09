@@ -85,16 +85,8 @@ generateConstants fSpec =
   ]
   where opts = getOpts fSpec
   
-generateDBstructQueries :: Bool -> FSpec -> [String]
-generateDBstructQueries isforJsonOutput fSpec =
-  if isforJsonOutput 
-  then theSQLstatements
-  else
-    [ "$allDBstructQueries ="
-    ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
-     ++
-    [          "        );"
-    ]
+generateDBstructQueries :: FSpec -> [String]
+generateDBstructQueries fSpec = theSQLstatements
   where
     theSQLstatements :: [String]
     theSQLstatements =
@@ -103,7 +95,7 @@ generateDBstructQueries isforJsonOutput fSpec =
        ]
     createTableStatements :: [String]
     createTableStatements = 
-      map (if isforJsonOutput then concat else (intercalate "\n         "))
+      map concat
       [ [ "CREATE TABLE "++ show "__SessionTimeout__"
         , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
         , "   , "++show "lastAccess"++" BIGINT NOT NULL"
@@ -130,7 +122,7 @@ generateDBstructQueries isforJsonOutput fSpec =
         tableSpec2Queries :: TableSpecNew -> [String]
         tableSpec2Queries ts = 
          -- [ "DROP TABLE "++show (tsName ts)] ++
-          [ (if isforJsonOutput then concat else (intercalate "\n           ")) $  
+          [ concat $  
                    ( tsCmnt ts ++ 
                      ["CREATE TABLE "++show (tsName ts)] 
                      ++ (map (uncurry (++)) 
@@ -195,15 +187,8 @@ commentBlockSQL xs =
    map (\cmmnt -> "/* "++cmmnt++" */") $ hbar ++ xs ++ hbar
   where hbar = [replicate (maximum . map length $ xs) '-']
   
-generateAllDefPopQueries :: Bool -> FSpec -> [String]
-generateAllDefPopQueries isforJsonOutput fSpec =
-  if isforJsonOutput
-  then theSQLstatements
-  else [ "$allDefPopQueries ="
-       ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
-        ++
-       [          "        );"
-       ]
+generateAllDefPopQueries :: FSpec -> [String]
+generateAllDefPopQueries fSpec = theSQLstatements
   where
     theSQLstatements
       = fillSignalTable (initialConjunctSignals fSpec) ++
@@ -213,7 +198,7 @@ generateAllDefPopQueries isforJsonOutput fSpec =
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
-     = [(if isforJsonOutput then concat else intercalate "\n           ") $ 
+     = [concat $ 
             [ "INSERT INTO "++show (getTableName signalTableSpec)
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
@@ -233,7 +218,7 @@ generateAllDefPopQueries isforJsonOutput fSpec =
           = case tableContents fSpec plug of
              []  -> []
              tblRecords 
-                 -> [(if isforJsonOutput then concat else intercalate "\n           ") $ 
+                 -> [concat $ 
                        [ "INSERT INTO "++show (name plug)
                        , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++") "
                        ] ++ lines
