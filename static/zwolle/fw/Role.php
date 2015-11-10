@@ -43,9 +43,7 @@ class Role {
 	public static function getAllRoles(){
 		global $allRoles; // from Generics.php
 		
-		$roles = $allRoles;
-		$roles[] = Role::getRoleZero();
-		return (array)$roles;
+		return (array)$allRoles;
 	}
 		
 	public static function getAllRoleObjects(){		
@@ -57,13 +55,6 @@ class Role {
 		return $roleObjects;
 	}
 	
-	public static function getRoleZero(){
-		return array( 'id' => 0
-            		, 'name' => 'No role'
-            		, 'ruleNames'  => array ()
-            		, 'interfaces' => array ());
-	}
-	
 	public static function getAllSessionRoles(){		
 		$sessionRoleLabels = array();
 		$sessionRoles = array();
@@ -73,7 +64,7 @@ class Role {
 		$sessionRoleLabels = array_keys((array)$session->getContent($interface, true));
 		
 		foreach(Role::getAllRoleObjects() as $role){
-			if(in_array($role->label, $sessionRoleLabels) || $role->id == 0) $sessionRoles[] = $role;
+			if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
 		}
 		
 		return $sessionRoles;
