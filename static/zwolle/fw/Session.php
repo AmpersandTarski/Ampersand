@@ -87,8 +87,6 @@ class Session {
 				Notifications::addLog("Role $role->id is activate", 'SESSION');
 			}
 			$this->rulesToMaintain = array_unique($this->rulesToMaintain); // filter duplicate values
-			
-			if(!isset($this->role)) throw new Exception("You do not have access to the selected role", 401);
 		}
 		
 		if(Config::get('loginEnabled')){
