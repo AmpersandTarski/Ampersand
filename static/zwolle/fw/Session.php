@@ -8,7 +8,7 @@ class Session {
 	
 	public $id;
 	public $database;
-	public $role;
+	public $activeRoles = array();
 	public $interface;
 	public $viewer;
 	public $atom;
@@ -66,18 +66,22 @@ class Session {
 		
 	}
 	
-	public function setRole($roleId = null){
+	public function activateRoles($roleIds = null){
 		$roles = Config::get('loginEnabled') ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
-		if(empty($roles) || $roleId == 0) $this->role = new Role(0); // select role 0, no role
-		elseif(is_null($roleId)) $this->role = current($roles); // select first of $roles
-		elseif(isset($roleId)){
-			if(!is_int($roleId)) throw new Exception ("roleId must be an integer", 400);
+		if(empty($roles)){
+			Notifications::addLog("No roles available to activate", 'SESSION');	
+		}elseif(is_null($roleIds)){
+			// TODO: insert default roles here
+			Notifications::addLog("No activate roles", 'SESSION');
+		}elseif(empty($roleIds)){
+			Notifications::addLog("No activate roles", 'SESSION');
+		}else{
+			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
 			foreach($roles as $role){
-				if($role->id == $roleId) $this->role = $role;
+				if(in_array($role->id, $roleIds)) $this->activeRoles[] = $role;
+				Notifications::addLog("Role $role->id is activate", 'SESSION');
 			}
 			if(!isset($this->role)) throw new Exception("You do not have access to the selected role", 401);
-		}else{
-			throw new Exception("No role could be selected", 500);
 		}
 		
 		if(Config::get('loginEnabled')){
@@ -86,12 +90,9 @@ class Session {
 				$arr = array_merge($arr, $role->interfaces);
 			}
 			$this->accessibleInterfaces = array_unique($arr);
-			
 		}
-		
-		Notifications::addLog("Role " . $this->role->name . " selected", 'SESSION');
 
-		return $this->role->id;
+		return $this->activeRoles;
 	}
 	
 	public function setInterface($interfaceId){
