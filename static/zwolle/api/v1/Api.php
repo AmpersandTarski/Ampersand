@@ -373,7 +373,7 @@ class Api{
     		$session = Session::singleton();
     		$session->activateRoles($roleIds);
     
-    		$session->role->getViolations();
+    		RuleEngine::getProcessViolationsFromDB($session);
     
     		return Notifications::getAll();
     			

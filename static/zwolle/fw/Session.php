@@ -13,6 +13,8 @@ class Session {
 	public $viewer;
 	public $atom;
 	public $accessibleInterfaces = array();
+	public $rulesToMaintain = array(); // depends on activeRoles
+	
 	public static $sessionUser;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
@@ -78,9 +80,14 @@ class Session {
 		}else{
 			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
 			foreach($roles as $role){
-				if(in_array($role->id, $roleIds)) $this->activeRoles[] = $role;
+				if(in_array($role->id, $roleIds)){
+					$this->activeRoles[] = $role;
+					$this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains);
+				}	
 				Notifications::addLog("Role $role->id is activate", 'SESSION');
 			}
+			$this->rulesToMaintain = array_unique($this->rulesToMaintain); // filter duplicate values
+			
 			if(!isset($this->role)) throw new Exception("You do not have access to the selected role", 401);
 		}
 		

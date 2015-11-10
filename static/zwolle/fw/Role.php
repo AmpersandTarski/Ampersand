@@ -118,28 +118,6 @@ class Role {
 		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->getSessionInterfaces()));
 	}
 	
-	public function getViolations(){
-		$conjunctIds = array();
-		$conjunctRuleMap = array();
-		foreach ($this->maintains as $ruleName){
-			$rule = RuleEngine::getRule($ruleName);
-			foreach($rule['conjunctIds'] as $conjunctId) $conjunctRuleMap[$conjunctId][] = $ruleName; 
-			$conjunctIds = array_merge($conjunctIds, $rule['conjunctIds']);
-		}
-		$signals = RuleEngine::getSignalsFromDB($conjunctIds);
-		
-		/*
-		 * $signal[] = array('conjId' => , 'src' => , 'tgt' => )
-		 * 
-		 */
-		foreach ($signals as $signal){
-			foreach($conjunctRuleMap[$signal['conjId']] as $ruleName){
-				Notifications::addViolation(RuleEngine::getRule($ruleName), $signal['src'], $signal['tgt']);
-			}			
-		}
-		
-	}
-	
 	private function getSessionInterfaces(){
 		if(Config::get('loginEnabled')){
 			$session = Session::singleton();

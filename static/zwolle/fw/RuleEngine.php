@@ -327,6 +327,23 @@ class RuleEngine {
 	
 		return array_unique($affectedConjuncts); // remove duplicate entries.
 	}
+	
+	public static function getProcessViolationsFromDB($session){		
+		$conjunctIds = array();
+		$conjunctRuleMap = array();
+		foreach ($session->rulesToMaintain as $ruleName){
+			$rule = RuleEngine::getRule($ruleName);
+			foreach($rule['conjunctIds'] as $conjunctId) $conjunctRuleMap[$conjunctId][] = $ruleName;
+			$conjunctIds = array_merge($conjunctIds, $rule['conjunctIds']);
+		}
+		$signals = RuleEngine::getSignalsFromDB($conjunctIds);
+		
+		foreach ($signals as $signal){ // $signal[] = array('conjId' => , 'src' => , 'tgt' => )
+			foreach($conjunctRuleMap[$signal['conjId']] as $ruleName){
+				Notifications::addViolation(RuleEngine::getRule($ruleName), $signal['src'], $signal['tgt']);
+			}
+		}
+	}
 
 }
 
