@@ -7,6 +7,13 @@ class RuleEngine {
 	 */
 	static $conjunctViolations = array();
 	
+	/*
+	 * variables to store rules that are included from rules.json
+	 */
+	static $allInvariantRules = null;
+	static $allProcessRules = null;
+	static $allRules = null; // associative (using 'name') merge of $allInvariantRules and $allProcessRules
+	
 	/* 
 	 * $cacheConjuncts
 	 * 		true: chache conjuncts
@@ -28,9 +35,7 @@ class RuleEngine {
 			}
 		}else{
 			Notifications::addLog("------------------------- CHECKING ALL PROCESS RULES -------------------------", 'RuleEngine');
-			foreach(RuleEngine::getAllProcessRuleNames() as $ruleName){
-				$rule = RuleEngine::getRule($ruleName);
-				
+			foreach(RuleEngine::getAllProcessRules() as $rule){				
 				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
 				foreach ((array)$violations as $violation) Notifications::addViolation($rule, $violation['src'], $violation['tgt']);;
 			}
@@ -71,9 +76,7 @@ class RuleEngine {
 		// Otherwise check all invariantConjuncts
 		}else{
 			Notifications::addLog("Checking all invariant rules", 'RuleEngine');
-			foreach (RuleEngine::getAllInvariantRulesNames() as $ruleName){
-				$rule = RuleEngine::getRule($ruleName);
-			
+			foreach (RuleEngine::getAllInvariantRules() as $rule){			
 				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
 				
 				foreach ((array)$violations as $violation){
@@ -208,10 +211,31 @@ class RuleEngine {
 	}
 	
 	public static function getAllRules(){
-		global $allRules; // from Generics.php
+		if(is_null(self::$allRules)){
+			$rules = file_get_contents(__DIR__ . '/../generics/rules.json');
+			$rules = json_decode($rules, true);
+			
+			self::$allInvariantRules = (array)$rules['invariants'];
+			self::$allProcessRules = (array)$rules['signals'];
+			
+			$allRules = array();
+			foreach (array_merge((array)$rules['invariants'], (array)$rules['signals']) as $r) $allRules[$r['name']] = $r; 
+			self::$allRules = $allRules;
+		}
 		
-		return $allRules;
-		
+		return self::$allRules;
+	}
+	
+	public static function getAllInvariantRules(){
+		RuleEngine::getAllRules();
+	
+		return self::$allInvariantRules;
+	}
+	
+	public static function getAllProcessRules(){
+		RuleEngine::getAllRules();
+	
+		return self::$allProcessRules;
 	}
 	
 	public static function getRule($ruleName){
@@ -302,45 +326,6 @@ class RuleEngine {
 		}
 	
 		return array_unique($affectedConjuncts); // remove duplicate entries.
-	}
-	
-	
-	/*
-	 * This function returns all InvariantRulesNames. Currently there is no such array in Generics.php.
-	 * Therefore this function finds all the processRuleNames (as provided by the $allRoles array) and
-	 * selects those rules from $allRules, that are not processRules (a rule is either a processRule or 
-	 * an invariantRule, but not both).
-	 * 
-	 * TODO: 
-	 */
-	public static function getAllInvariantRulesNames(){
-		global $allRules; // from Generics.php
-		$allRoles = Role::getAllRoles();
-				
-		// list of all process rules
-		$processRuleNames = array();
-		foreach($allRoles as $role){
-			$processRuleNames = array_merge($processRuleNames, $role['ruleNames']);
-		}
-		
-		// list of all rules
-		$allRuleNames = array_keys($allRules);
-		
-		// return list of all invariant rules (= all rules that are not process rules)
-		return array_diff($allRuleNames, $processRuleNames);
-	}
-	
-	public static function getAllProcessRuleNames(){
-		global $allRules; // from Generics.php
-		$allRoles = Role::getAllRoles();
-		
-		// list of all process rules
-		$processRuleNames = array();
-		foreach($allRoles as $role){
-			$processRuleNames = array_merge($processRuleNames, $role['ruleNames']);
-		}
-		
-		return $processRuleNames;
 	}
 
 }

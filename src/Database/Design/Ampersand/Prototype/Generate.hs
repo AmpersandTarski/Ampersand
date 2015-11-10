@@ -72,7 +72,7 @@ generateGenerics fSpec =
       intercalate [""]
         [ generateConstants fSpec
         , generateTableInfos fSpec
-        , generateRules fSpec
+        --, generateRules fSpec
         , generateConjuncts fSpec
         , generateRoles fSpec
         , generateViews fSpec
