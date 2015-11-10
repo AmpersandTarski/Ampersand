@@ -19,7 +19,7 @@ class Api{
 			$db->reinstallDB();
 			
 			$session = Session::singleton();
-			$session->setRole($roleIds);
+			$session->activateRoles($roleIds);
 			
 			return Notifications::getAll(); // Return all notifications
 		
@@ -52,7 +52,7 @@ class Api{
 	public function fileUpload($roleIds = null){
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleIds);
+			$session->activateRoles($roleIds);
 			
 			// TODO: Check if upload is allowed in interface
 			
@@ -97,7 +97,7 @@ class Api{
 	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $roleIds = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleIds);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 		
 			$result = array();
@@ -140,7 +140,7 @@ class Api{
 	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleIds = null, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleIds);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 			
 			if(!$session->interface->crudU) throw new Exception("PATCH is not allowed for interface " . $session->interface->label, 405);
@@ -169,7 +169,7 @@ class Api{
 	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleIds = null, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleIds);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 
 			if(!$session->interface->crudU) throw new Exception("PUT is not allowed for interface " . $session->interface->label, 405);
@@ -203,7 +203,7 @@ class Api{
 		
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleIds);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 		
 			if(!$session->interface->crudD) throw new Exception("DELETE is not allowed for interface " . $session->interface->label, 405);
@@ -231,7 +231,7 @@ class Api{
 	public function postAtom($concept, $srcAtomId, $interfaceId, $roleIds = null, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton();			
-			$session->setRole($roleIds);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 			
 			if(!$session->interface->crudC) throw new Exception("POST is not allowed for interface " . $session->interface->label, 405);
@@ -324,7 +324,7 @@ class Api{
     public function getNavBar($roleIds = null){
     	try{
     		$session = Session::singleton();
-    		$session->setRole($roleIds);
+    		$session->activateRoles($roleIds);
     		
     		// top level interfaces
     		foreach ($session->role->getInterfacesForNavBar() as $ifc){
@@ -371,7 +371,7 @@ class Api{
     public function getAllNotifications($roleIds = null){
     	try{
     		$session = Session::singleton();
-    		$session->setRole($roleIds);
+    		$session->activateRoles($roleIds);
     
     		$session->role->getViolations();
     

@@ -25,7 +25,7 @@ class ExecEngineApi{
 				if(!$ok) throw new Exception("You do not have access to run the exec engine", 401);
 			}
 				
-			$session->setRole();
+			$session->activateRoles();
 			
 			ExecEngine::run(true);
 			
