@@ -15,21 +15,19 @@
 		<ul class="collapse navbar-collapse nav navbar-nav navbar-right" id="navbar-options">	
 			<li class="dropdown" uib-tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="left">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-bullhorn"></span></a>
-				<ul class="dropdown-menu" role="menu">
-					<li><switch ng-model="$storage.notificationPrefs.switchShowViolations"> Show violation messages</switch></li>
-					<li class="divider" role="presentation"></li>
+				<ul class="dropdown-menu" role="menu" ng-click="$event.stopPropagation();">
+					<li><switch ng-model="$storage.notificationPrefs.switchShowViolations"> Show process violations</switch></li>
+					<li><switch ng-model="$storage.notificationPrefs.switchShowInvariants"> Show invariant violations</switch></li>
 					<li><switch ng-model="$storage.notificationPrefs.switchShowSuccesses"> Show success messages</switch></li>
 					<li><switch ng-model="$storage.notificationPrefs.switchAutoHideSuccesses"> Auto hide success messages</switch></li>
-					<li class="divider" role="presentation"></li>
 					<li><switch ng-model="$storage.notificationPrefs.switchShowErrors"> Show error messages</switch></li>
-					<li><switch ng-model="$storage.notificationPrefs.switchShowInvariants"> Show invariant violations</switch></li>
-					<li class="divider" role="presentation"></li>
 					<li><switch ng-model="$storage.notificationPrefs.switchShowInfos"> Show info messages</switch></li>
+					<li class="divider" role="presentation"></li>
 					<li><switch ng-model="$storage.logWindowPrefs.switchShowLogWindow"> Show log window</switch></li>
 					<li class="divider" role="presentation"></li>
 					<li><switch ng-model="$storage.switchAutoCommit"> Auto commit changes</switch></li>
 					<li class="divider" role="presentation"></li>
-					<li><switch ng-model="switchDefaultSettings"> Default settings</a>
+					<li><a href="" ng-click="resetSettings();"><span class="glyphicon glyphicon-repeat" style="margin: 4px; width: 30px;"></span> Default settings</a></li>
 				</ul>
 			</li>
 			
