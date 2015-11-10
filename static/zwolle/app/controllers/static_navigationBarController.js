@@ -39,13 +39,18 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					
 					$scope.defaultSettings = data.defaultSettings;
 					
-					// Default preferences for notifications
+					// Default settings for notificationPrefs
 					if($scope.$storage.notificationPrefs === undefined){
 						$scope.resetNotificationSettings();
 					}
-					// Default setting for AutoCommit
+					// Default setting for switchAutoCommit
 					if($scope.$storage.switchAutoCommit === undefined){
 						$scope.resetSwitchAutoCommit();
+					}
+					
+					// Default setting for cacheGetCalls
+					if($scope.$storage.cacheGetCalls === undefined){
+						$scope.$storage.cacheGetCalls = $scope.defaultSettings.cacheGetCalls;
 					}
 				}, function(error){
 					// on error
@@ -92,6 +97,10 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$rootScope.defaultRequestType = $scope.$storage.switchAutoCommit ? 'promise' : 'feedback';
 	$scope.$watch('$storage.switchAutoCommit', function() {
 		$rootScope.defaultRequestType = $scope.$storage.switchAutoCommit ? 'promise' : 'feedback';
+	});
+	
+	$scope.$watch('$storage.cacheGetCalls', function() {
+		Restangular.setDefaultHttpFields({cache: $scope.$storage.cacheGetCalls });
 	});
 	
 	$rootScope.refreshNavBar(); // initialize navbar
