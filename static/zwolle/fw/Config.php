@@ -56,6 +56,7 @@ Config::set('loginEnabled', 'global', false); // enable/disable login functional
 Config::set('checkDefaultPopulation', 'transactions', true); // For debugging set to false (commits the initial population, regardless if it has invariant violations)
 Config::set('ignoreInvariantViolations', 'transactions', false); // for debugging can be set to true (transactions will be committed regardless off invariant violations)
 Config::set('interfaceAutoCommitChanges', 'transactions', true); // specifies whether changes in an interface are automatically commited when allowed (all invariants hold)
+Config::set('interfaceCacheGetCalls', 'transactions', false); // specifies whether GET calls should be cached by the frontend (e.g. angular) application
 
 // Default CRUD rights for interfaces
 Config::set('defaultCrudC', 'transactions', true);

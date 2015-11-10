@@ -350,7 +350,8 @@ class Api{
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
     					 ,'roles' => $roles
     					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
-    					 							 ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')) 
+    					 							 ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
+    												 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions'))
     					 ,'notifications' => Notifications::getAll()
     					 ,'session' => array ( 'id' => $session->id
     					 					 , 'loggedIn' => Session::sessionUserLoggedIn()
