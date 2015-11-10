@@ -35,6 +35,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 				.then(function(data){
 					$rootScope.navbar = data;
 					$scope.$sessionStorage.session = data.session;
+					$scope.$sessionStorage.sessionRoles = data.sessionRoles;
 					$scope.$sessionStorage.sessionVars = data.sessionVars;
 					
 					$scope.defaultSettings = data.defaultSettings;

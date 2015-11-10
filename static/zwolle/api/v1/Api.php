@@ -354,10 +354,9 @@ class Api{
     												 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions'))
     					 ,'notifications' => Notifications::getAll()
     					 ,'session' => array ( 'id' => $session->id
-    					 					 , 'loggedIn' => Session::sessionUserLoggedIn()
-    					 					 , 'sessionRoles' => $roles
-    					 					 )
-    					 , 'sessionVars' => Session::getSessionVars()
+    					 					 , 'loggedIn' => Session::sessionUserLoggedIn())
+    					 ,'sessionRoles' => $roles
+    					 ,'sessionVars' => Session::getSessionVars()
     		);
     		
     	}catch(Exception $e){
