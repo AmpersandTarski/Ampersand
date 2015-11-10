@@ -1,8 +1,8 @@
-AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular, $localStorage, $sessionStorage) {
+AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular, $localStorage, $sessionStorage, $timeout) {
 	
 	$scope.$storage = $localStorage;
 	$scope.$sessionStorage = $sessionStorage;
-	$scope.defaultNotificationSettings = {};
+	$scope.defaultSettings = {};
 	
 	$rootScope.loadingNavBar = new Array(); // initialize an array for promises, used by angular-busy module (loading indicator)
 	
@@ -37,11 +37,15 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					$scope.$sessionStorage.session = data.session;
 					$scope.$sessionStorage.sessionVars = data.sessionVars;
 					
-					$scope.defaultNotificationSettings = data.defaultSettings.notifications;
+					$scope.defaultSettings = data.defaultSettings;
 					
 					// Default preferences for notifications
 					if($scope.$storage.notificationPrefs === undefined){
 						$scope.resetNotificationSettings();
+					}
+					// Default setting for AutoCommit
+					if($scope.$storage.switchAutoCommit === undefined){
+						$scope.resetSwitchAutoCommit();
 					}
 				}, function(error){
 					// on error
@@ -64,26 +68,30 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		$route.reload();
 	};
 	
-	$scope.resetNotificationSettings = function(){
-		$scope.$storage.notificationPrefs = $.extend($scope.$storage.notificationPrefs, $scope.defaultNotificationSettings);
-		$scope.switchDefaultSettings = true;
+	$scope.resetSettings = function(){
+		// all off
+		$scope.$storage.switchAutoCommit = false;
+		$.each($scope.$storage.notificationPrefs, function(index, value){ $scope.$storage.notificationPrefs[index] = false });
+		
+		$timeout(function() {
+			// reset to default		
+			$scope.resetNotificationSettings();
+			$scope.resetSwitchAutoCommit();
+		}, 500);
 	};
 	
-	$scope.$watch('switchDefaultSettings', function(){
-		if($scope.switchDefaultSettings == true) $scope.resetNotificationSettings();
-	});
+	$scope.resetNotificationSettings = function(){
+		$scope.$storage.notificationPrefs = $.extend($scope.$storage.notificationPrefs, $scope.defaultSettings.notifications);
+	};
 	
-	$scope.$watchCollection('$storage.notificationPrefs', function() {
-		var isDefault = true;
-		if($scope.$storage.notificationPrefs.switchShowViolations != $scope.defaultNotificationSettings.switchShowViolations) isDefault = false;
-		if($scope.$storage.notificationPrefs.switchShowSuccesses != $scope.defaultNotificationSettings.switchShowSuccesses) isDefault = false;
-		if($scope.$storage.notificationPrefs.switchAutoHideSuccesses != $scope.defaultNotificationSettings.switchAutoHideSuccesses) isDefault = false;
-		if($scope.$storage.notificationPrefs.switchShowErrors != $scope.defaultNotificationSettings.switchShowErrors) isDefault = false;
-		if($scope.$storage.notificationPrefs.switchShowInvariants != $scope.defaultNotificationSettings.switchShowInvariants) isDefault = false;
-		if($scope.$storage.notificationPrefs.switchShowInfos != $scope.defaultNotificationSettings.switchShowInfos) isDefault = false;
-		
-		if(!isDefault) $scope.switchDefaultSettings = false;
-		else $scope.switchDefaultSettings = true;
+	$scope.resetSwitchAutoCommit = function(){
+		$scope.$storage.switchAutoCommit = $scope.defaultSettings.switchAutoCommit;
+	};
+	
+	// Set request type based upon switchAutoCommit
+	$rootScope.defaultRequestType = $scope.$storage.switchAutoCommit ? 'promise' : 'feedback';
+	$scope.$watch('$storage.switchAutoCommit', function() {
+		$rootScope.defaultRequestType = $scope.$storage.switchAutoCommit ? 'promise' : 'feedback';
 	});
 	
 	$rootScope.refreshNavBar(); // initialize navbar

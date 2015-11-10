@@ -2,17 +2,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	$scope.$storage = $localStorage;
 	
-	// Default setting for switchAutoCommit
-	if($scope.$storage.switchAutoCommit === undefined){
-		$scope.$storage.switchAutoCommit = true;
-	}
-	
-	// Set request type based upon switchAutoCommit
-	$rootScope.defaultRequestType = $scope.$storage.switchAutoCommit ? 'promise' : 'feedback';
-	$scope.$watch('$storage.switchAutoCommit', function() {
-		$rootScope.defaultRequestType = $scope.$storage.switchAutoCommit ? 'promise' : 'feedback';
-	});
-	
 	// Function to update notifications after api response
 	$rootScope.updateNotifications = function(notifications){
 		// Overwrite
