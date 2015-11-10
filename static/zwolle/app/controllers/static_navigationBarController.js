@@ -15,6 +15,14 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		//$scope.reload();
 	};
 	
+	$rootScope.toggleRole = function(roleId){
+		for (var i = 0; i < $scope.$sessionStorage.sessionRoles.length; i++) {
+			if ($scope.$sessionStorage.sessionRoles[i].id == roleId) {
+				$scope.$sessionStorage.sessionRoles[i].active = !$scope.$sessionStorage.sessionRoles[i].active;
+			}
+		}
+	}
+	
 	$rootScope.selectRoleByLabel = function (roleLabel){
 		angular.forEach($scope.navbar.roles, function(role) {
 			if(role.label == roleLabel){
