@@ -40,39 +40,32 @@ instance Eq SignOrd where
 -- 3) Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
 -- Part 3 is done below, the other two are done in pCtx2aCtx'
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx opts = checkOtherAtomsInSessionConcept
-               . checkMultipleRepresentationsOfConcepts
-               . checkPurposes             -- Check whether all purposes refer to existing objects
-               . checkDanglingRulesInRuleRoles -- Check whether all rules in MAINTAIN statements are declared
-               . checkInterfaceCycles      -- Check that interface references are not cyclic
-               . checkMultipleDefaultViews -- Check whether each concept has at most one default view
-               . checkUnique udefrules     -- Check uniquene names of: rules,
-               . checkUnique patterns      --                          patterns,
-               . checkUnique ctxvs         --                          view defs,
-               . checkUnique ctxifcs       --                          and interfaces.
-               . pCtx2aCtx' opts
+pCtx2aCtx opts ctx = do actx <- pCtx2aCtx' opts ctx
+                        checkOtherAtomsInSessionConcept actx
+                        checkMultipleRepresentationsOfConcepts actx
+                        checkPurposes actx             -- Check whether all purposes refer to existing objects
+                        checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
+                        checkInterfaceCycles actx      -- Check that interface references are not cyclic
+                        checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
+                        checkUnique udefrules actx     -- Check uniquene names of: rules,
+                        checkUnique patterns  actx     --                          patterns,
+                        checkUnique ctxvs     actx     --                          view defs,
+                        checkUnique ctxifcs   actx     --                          and interfaces.
+                        return actx
   where
-    checkUnique f gCtx =
-     case gCtx of
-       Checked ctx -> case uniqueNames (f ctx) of
-                         Checked () -> gCtx
-                         Errors err -> Errors err
-       Errors err -> Errors err
+    checkUnique f ctx = uniqueNames (f ctx)
 
 -- NOTE: Static checks like checkPurposes should ideally occur on the P-structure before type-checking, as it makes little
 -- sense to do type checking when there are static errors. However, in Ampersand all collect functions (e.g. in ViewPoint)
 -- only exist on the A-Structure, so we do it afterwards. Static purpose errors won't affect types, so in this case it is no problem. 
 
 -- Check whether all purposes refer to existing objects.
-checkPurposes :: Guarded A_Context -> Guarded A_Context
-checkPurposes gCtx =
-  case gCtx of
-    Errors err  -> Errors err
-    Checked ctx -> let topLevelPurposes = ctxps ctx
-                       purposesInPatterns = concatMap ptxps (ctxpats ctx)
-                       allPurposes = topLevelPurposes ++ purposesInPatterns
-                       danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
-                   in  if null danglingPurposes then gCtx else Errors $ map mkDanglingPurposeError danglingPurposes
+checkPurposes :: A_Context -> Guarded ()
+checkPurposes ctx = let topLevelPurposes = ctxps ctx
+                        purposesInPatterns = concatMap ptxps (ctxpats ctx)
+                        allPurposes = topLevelPurposes ++ purposesInPatterns
+                        danglingPurposes = filter (isDanglingPurpose ctx) allPurposes
+                    in  if null danglingPurposes then pure () else Errors $ map mkDanglingPurposeError danglingPurposes
 
 -- Return True if the ExplObj in this Purpose does not exist.
 isDanglingPurpose :: A_Context -> Purpose -> Bool
@@ -89,11 +82,8 @@ isDanglingPurpose ctx purp =
                          && False -- HJO: This line is a workaround for the issue mentioned in https://github.com/AmpersandTarski/ampersand/issues/46
                                   -- TODO: fix this when we pick up working on multiple contexts.
 -- Check that interface references are not cyclic
-checkInterfaceCycles :: Guarded A_Context -> Guarded A_Context
-checkInterfaceCycles gCtx =
-  case gCtx of
-    Errors err  -> Errors err
-    Checked ctx -> if null interfaceCycles then gCtx else Errors $  map mkInterfaceRefCycleError interfaceCycles
+checkInterfaceCycles :: A_Context -> Guarded ()
+checkInterfaceCycles ctx = if null interfaceCycles then return () else Errors $  map mkInterfaceRefCycleError interfaceCycles
       where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
@@ -105,48 +95,36 @@ checkInterfaceCycles gCtx =
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
 
 -- Check whether each concept has at most one default view
-checkMultipleDefaultViews :: Guarded A_Context -> Guarded A_Context
-checkMultipleDefaultViews gCtx =
-  case gCtx of
-    Errors err  -> Errors err
-    Checked ctx -> let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
-                   in  if null conceptsWithMultipleViews then gCtx else Errors $ map mkMultipleDefaultError conceptsWithMultipleViews
+checkMultipleDefaultViews :: A_Context -> Guarded ()
+checkMultipleDefaultViews ctx = let conceptsWithMultipleViews = [ (c,vds)| vds@(Vd{vdcpt=c}:_:_) <- eqClass ((==) `on` vdcpt) $ filter vdIsDefault (ctxvs ctx) ]
+                                in  if null conceptsWithMultipleViews then return () else Errors $ map mkMultipleDefaultError conceptsWithMultipleViews
 
-checkDanglingRulesInRuleRoles :: Guarded A_Context -> Guarded A_Context
-checkDanglingRulesInRuleRoles gCtx =
-  case gCtx of
-    Errors _  -> gCtx
-    Checked ctx -> case [mkDanglingRefError "Rule" nm (arPos rr)  
-                        | rr <- ctxrrules ctx
-                        , nm <- arRules rr
-                        , nm `notElem` map name (allRules ctx)
-                        ] of
-                     [] -> gCtx
-                     errs -> Errors errs
-checkOtherAtomsInSessionConcept :: Guarded A_Context -> Guarded A_Context
-checkOtherAtomsInSessionConcept gCtx =
-   case gCtx of
-     Errors _  -> gCtx
-     Checked ctx -> case [mkOtherAtomInSessionError atom
-                         | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
-                         , name cpt == "SESSION"
-                         , atom <- filter (not.isPermittedSessionValue) (popas pop)
-                         ] of
-                      [] -> gCtx
-                      errs -> Errors errs
+checkDanglingRulesInRuleRoles :: A_Context -> Guarded ()
+checkDanglingRulesInRuleRoles ctx = case [mkDanglingRefError "Rule" nm (arPos rr)  
+                                         | rr <- ctxrrules ctx
+                                         , nm <- arRules rr
+                                         , nm `notElem` map name (allRules ctx)
+                                         ] of
+                                      [] -> return ()
+                                      errs -> Errors errs
+checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
+checkOtherAtomsInSessionConcept ctx = case [mkOtherAtomInSessionError atom
+                                           | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
+                                           , name cpt == "SESSION"
+                                           , atom <- filter (not.isPermittedSessionValue) (popas pop)
+                                           ] of
+                                        [] -> return ()
+                                        errs -> Errors errs
         where isPermittedSessionValue :: AAtomValue -> Bool
               isPermittedSessionValue (AAVString _ str) = str == "_SESSION"
               isPermittedSessionValue _                 = False
-checkMultipleRepresentationsOfConcepts :: Guarded A_Context -> Guarded A_Context
-checkMultipleRepresentationsOfConcepts gCtx =
-   case gCtx of 
-     Errors _ -> gCtx
-     Checked ctx -> case [ mkMultipleRepresentationsForConceptError cpt (filter (isAbout cpt) (ctxreprs ctx))
-                         | cpt <- nub . concatMap reprcpts . ctxreprs $ ctx
-                         , (length . nub . map reprdom . filter (isAbout cpt) . ctxreprs) ctx > 1
-                         ] of
-                      []   -> gCtx
-                      errs -> Errors errs
+checkMultipleRepresentationsOfConcepts :: A_Context -> Guarded ()
+checkMultipleRepresentationsOfConcepts ctx = case [ mkMultipleRepresentationsForConceptError cpt (filter (isAbout cpt) (ctxreprs ctx))
+                                                  | cpt <- nub . concatMap reprcpts . ctxreprs $ ctx
+                                                  , (length . nub . map reprdom . filter (isAbout cpt) . ctxreprs) ctx > 1
+                                                  ] of
+                                               []   -> return ()
+                                               errs -> Errors errs
    where
     isAbout :: String -> Representation -> Bool 
     isAbout cpt rep = cpt `elem` reprcpts rep                 

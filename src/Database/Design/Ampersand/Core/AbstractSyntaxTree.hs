@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE ImplicitParams #-}
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
@@ -70,6 +71,7 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.Default
+import GHC.Stack
 import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 
 data A_Context
@@ -660,7 +662,7 @@ instance Unique (PairViewSegment Expression) where
   showUnique = show
 
 
-(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
+(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: (?loc :: CallStack) => Expression -> Expression -> Expression
 infixl 1 .==.   -- equivalence
 infixl 1 .|-.   -- inclusion
 infixl 2 ./\.   -- intersection
