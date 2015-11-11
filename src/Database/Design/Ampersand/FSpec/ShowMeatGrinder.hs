@@ -203,8 +203,8 @@ instance MetaPopulations A_Concept where
              [(uri cpt, uri cpt)]
       , Pop "conceptColumn" "Concept" "SqlAttribute"
              [(uri cpt, uri att) | att <- tablesAndAttributes]
-      , Pop "cptdf" "Concept" "ConceptDefinition"
-             [(uri cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
+--      , Pop "cptdf" "Concept" "ConceptDefinition"
+--             [(uri cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
       , Pop "cptpurpose" "Concept" "Purpose"
              [(uri cpt,(show.showADL) x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
