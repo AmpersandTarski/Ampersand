@@ -18,14 +18,14 @@ module Database.Design.Ampersand.FSpec.FSpec
 --        , Event(..)
 --        , PAclause(..)
           , Activity(..)
-          , PlugSQL(..),plugFields
+          , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
           , metaValues
-          , SqlField(..)
+          , SqlAttribute(..)
           , Object(..)
           , PlugInfo(..)
           , SqlTType(..)
-          , SqlFieldUsage(..)
+          , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..),AAtomValue
           , showValADL,showValPHP,showValSQL
@@ -159,21 +159,21 @@ data Fswitchboard
            , fsbECAs :: [ECArule]
            }
 
---type Fields = [Field]
---data Field  = Att { fld_name :: String        -- The name of this field
---                  , fld_sub :: Fields        -- all sub-fields
---                  , fld_expr :: Expression    -- The expression by which this field is attached to the interface
---                  , fld_rel :: Relation      -- The relation to which the database table is attached.
---                  , fld_editable :: Bool          -- can this field be changed by the user of this interface?
---                  , fld_list :: Bool          -- can there be multiple values in this field?
---                  , fld_must :: Bool          -- is this field obligatory?
---                  , fld_new :: Bool          -- can new elements be filled in? (if no, only existing elements can be selected)
---                  , fld_sLevel :: Int           -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
---                  , fld_insAble :: Bool          -- can the user insert in this field?
---                  , fld_onIns :: ECArule       -- the PAclause to be executed after an insert on this field
---                  , fld_delAble :: Bool          -- can the user delete this field?
---                  , fld_onDel :: ECArule       -- the PAclause to be executed after a delete on this field
---                  }
+--type Attributes = [Attribute]
+--data Attribute  = Attr { fld_name :: String        -- The name of this attribute
+--                       , fld_sub :: Attributes        -- all sub-attributes
+--                       , fld_expr :: Expression    -- The expression by which this attribute is attached to the interface
+--                       , fld_rel :: Relation      -- The relation to which the database table is attached.
+--                       , fld_editable :: Bool          -- can this attribute be changed by the user of this interface?
+--                       , fld_list :: Bool          -- can there be multiple values in this attribute?
+--                       , fld_must :: Bool          -- is this attribute obligatory?
+--                       , fld_new :: Bool          -- can new elements be filled in? (if no, only existing elements can be selected)
+--                       , fld_sLevel :: Int           -- The (recursive) depth of the current servlet wrt the entire interface. This is used for documentation.
+--                       , fld_insAble :: Bool          -- can the user insert in this attribute?
+--                       , fld_onIns :: ECArule       -- the PAclause to be executed after an insert on this attribute
+--                       , fld_delAble :: Bool          -- can the user delete this attribute?
+--                       , fld_onDel :: ECArule       -- the PAclause to be executed after a delete on this attribute
+--                       }
 
 {- from http://www.w3.org/TR/wsdl20/#InterfaceOperation
  - "The properties of the Interface Operation component are as follows:
@@ -245,46 +245,46 @@ instance ConceptStructure PlugInfo where
   expressionsIn (InternalPlug psql) = expressionsIn psql
   expressionsIn (ExternalPlug obj)  = expressionsIn obj
 instance ConceptStructure PlugSQL where
-  concs     p = concs   (plugFields p)
-  expressionsIn   p = expressionsIn (plugFields p)
+  concs     p = concs   (plugAttributes p)
+  expressionsIn   p = expressionsIn (plugAttributes p)
 
 data PlugSQL
    -- | stores a related collection of relations: a kernel of concepts and attribute relations of this kernel
-   --   i.e. a list of SqlField given some A -> [target r | r::A*B,isUni r,isTot r, isInj r]
-   --                                        ++ [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
+   --   i.e. a list of SqlAttribute given some A -> [target r | r::A*B,isUni r,isTot r, isInj r]
+   --                                            ++ [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
    --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ]
-   --              (r=fldexpr of kernel field holding instances of B, in practice r is I or a makeRelation(flipped declaration))
+   --              (r=attExpr of kernel attribute holding instances of B, in practice r is I or a makeRelation(flipped declaration))
    --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
-   --              (r=fldexpr of attMor field, in practice r is a makeRelation(declaration))
- = TblSQL  { sqlname :: String
-           , fields :: [SqlField]                          -- ^ the first field is the concept table of the most general concept (e.g. Person)
-                                                           --   then follow concept tables of specializations. Together with the first field this is called the "kernel"
-                                                           --   the remaining fields represent attributes.
-           , cLkpTbl :: [(A_Concept,SqlField)]             -- ^ lookup table that links all kernel concepts to fields in the plug
-                                                           -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-           , mLkpTbl :: [(Expression,SqlField,SqlField)]   -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
-                                                           -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+   --              (r=attExpr of attMor attribute, in practice r is a makeRelation(declaration))
+ = TblSQL  { sqlname ::    String
+           , attributes :: [SqlAttribute]                           -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
+                                                                    --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
+                                                                    --   the remaining attributes represent attributes.
+           , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all kernel concepts to attributes in the plug
+                                                                    -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+           , mLkpTbl ::    [(Expression,SqlAttribute,SqlAttribute)] -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
+                                                                    -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
            }
    -- | stores one relation r in two ordered columns
-   --   i.e. a tuple of SqlField -> (source r,target r) with (fldexpr=I/\r;r~, fldexpr=r)
+   --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
    --   (note: if r TOT then (I/\r;r~ = I). Thus, the concept (source r) is stored in this plug too)
    --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
    --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
  | BinSQL  { sqlname :: String
-           , columns :: (SqlField,SqlField)
-           , cLkpTbl :: [(A_Concept,SqlField)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
-                                                --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
-                                                --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
+           , columns :: (SqlAttribute,SqlAttribute)
+           , cLkpTbl :: [(A_Concept,SqlAttribute)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
+                                                   --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
+                                                   --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
            , mLkp :: Expression -- the relation links concepts implemented by this plug
            }
  -- |stores one concept c in one column
- --  i.e. a SqlField -> c
+ --  i.e. a SqlAttribute -> c
  --  with tblcontents = [[Just x] |(x,_)<-contents c].
- --  Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. fldexpr=I[c]
+ --  Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. attExpr=I[c]
  | ScalarSQL
-           { sqlname :: String
-           , sqlColumn :: SqlField
-           , cLkp :: A_Concept -- the concept implemented by this plug
+           { sqlname ::   String
+           , sqlColumn :: SqlAttribute
+           , cLkp ::      A_Concept -- the concept implemented by this plug
            }
    deriving (Show, Typeable)
 instance Named PlugSQL where
@@ -296,18 +296,18 @@ instance Unique PlugSQL where
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
-plugFields :: PlugSQL->[SqlField]
-plugFields plug = case plug of
-    TblSQL{}    -> fields plug
+plugAttributes :: PlugSQL->[SqlAttribute]
+plugAttributes plug = case plug of
+    TblSQL{}    -> attributes plug
     BinSQL{}    -> [fst(columns plug),snd(columns plug)]
     ScalarSQL{} -> [sqlColumn plug]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
-lookupCpt :: FSpec -> A_Concept -> [(PlugSQL,SqlField)]
-lookupCpt fSpec cpt = [(plug,fld) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
-                 [(plug,fld) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,fld)<-cLkpTbl plug,c==cpt]++
-                 [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
+lookupCpt :: FSpec -> A_Concept -> [(PlugSQL,SqlAttribute)]
+lookupCpt fSpec cpt = [(plug,att) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]++
+                      [(plug,att) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]++
+                      [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
 getConceptTableFor :: FSpec -> A_Concept -> String
@@ -315,27 +315,27 @@ getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
                                (t,_):_ -> name t -- in case there are more, we use the first one
 
-data SqlFieldUsage = TableKey Bool A_Concept  -- The field is the (primary) key of the table. (The boolean tells whether or not it is primary)
-                   | ForeignKey A_Concept  -- The field is a reference (containing the primary key value of) a TblSQL
-                   | PlainAttr             -- None of the above
-                   deriving (Eq, Show)
+data SqlAttributeUsage = TableKey Bool A_Concept  -- The SQL-attribute is the (primary) key of the table. (The boolean tells whether or not it is primary)
+                       | ForeignKey A_Concept  -- The SQL-attribute is a reference (containing the primary key value of) a TblSQL
+                       | PlainAttr             -- None of the above
+                       deriving (Eq, Show)
 
-data SqlField = Fld { fldname :: String
-                    , fldexpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-                    , fldtype :: SqlTType
-                    , flduse ::  SqlFieldUsage
-                    , fldnull :: Bool           -- ^ True if there can be empty field-values (intended for data dictionary of DB-implementation)
-                    , flduniq :: Bool           -- ^ True if all field-values are unique? (intended for data dictionary of DB-implementation)
-                    } deriving (Eq, Show,Typeable)
-instance Named SqlField where
-  name = fldname
-instance Unique (PlugSQL,SqlField) where
-  showUnique (p,f) = showUnique p++"."++fldname f
-instance Ord SqlField where
-  compare x y = compare (fldname x) (fldname y)
-instance ConceptStructure SqlField where
-  concs     f = [target e' |let e'=fldexpr f,isSur e']
-  expressionsIn   f = expressionsIn   (fldexpr f)
+data SqlAttribute = Att { attName :: String
+                        , attExpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
+                        , attType :: SqlTType
+                        , attUse ::  SqlAttributeUsage
+                        , attNull :: Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
+                        , attUniq :: Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
+                        } deriving (Eq, Show,Typeable)
+instance Named SqlAttribute where
+  name = attName
+instance Unique (PlugSQL,SqlAttribute) where
+  showUnique (p,f) = showUnique p++"."++attName f
+instance Ord SqlAttribute where
+  compare x y = compare (attName x) (attName y)
+instance ConceptStructure SqlAttribute where
+  concs     f = [target e' |let e'=attExpr f,isSur e']
+  expressionsIn   f = expressionsIn   (attExpr f)
 
 data SqlTType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-types.html
              | SQLVarchar Int

@@ -117,9 +117,9 @@ chpConceptualAnalysis lev fSpec = (
                                        langs -> plain (str ("(No meaning has been specified, except in "++langs++")"))
                     ms -> fromList ms
               ])
-  ukadjs d  = case [Uni,Tot]>-multiplicities d of
-               [] -> commaEng "and" (map ukadj (multiplicities d>-[Uni,Tot]))++" function"
-               _  -> commaEng "and" (map ukadj (multiplicities d))++" relation"
+  ukadjs d  = case [Uni,Tot]>-properties d of
+               [] -> commaEng "and" (map ukadj (properties d>-[Uni,Tot]))++" function"
+               _  -> commaEng "and" (map ukadj (properties d))++" relation"
    where
     ukadj Uni = "univalent"
     ukadj Inj = "injective"
@@ -132,9 +132,9 @@ chpConceptualAnalysis lev fSpec = (
     ukadj Irf = "irreflexive"
     ukadj Aut = "automatically computed"
     ukadj Prop = "symmetric and antisymmetric"
-  nladjs d = case [Uni,Tot]>-multiplicities d of
-               [] -> commaNL "en" (map nladj (multiplicities d>-[Uni,Tot]))++" functie"
-               _  -> commaNL "en" (map nladj (multiplicities d))++" relatie"
+  nladjs d = case [Uni,Tot]>-properties d of
+               [] -> commaNL "en" (map nladj (properties d>-[Uni,Tot]))++" functie"
+               _  -> commaNL "en" (map nladj (properties d))++" relatie"
    where
     nladj Uni = "univalente"
     nladj Inj = "injectieve"

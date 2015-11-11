@@ -304,11 +304,11 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
              InternalPlug tbl@TblSQL{}
                -> (case fsLang fSpec of
                 Dutch
-                   -> para (text $ "Deze tabel heeft de volgende "++(show.length.fields) tbl++" velden:")
+                   -> para (text $ "Deze tabel heeft de volgende "++(show.length.attributes) tbl++" attributen:")
                 English
-                   -> para (text $ "This table has the following "++(show.length.fields) tbl++" fields:")
+                   -> para (text $ "This table has the following "++(show.length.attributes) tbl++" attributes:")
                   )
-               <> showFields (plugFields tbl)
+               <> showAttributes (plugAttributes tbl)
              InternalPlug bin@BinSQL{}
                -> para
                        (case fsLang fSpec of
@@ -322,7 +322,7 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
                             <> primExpr2pandocMath (fsLang fSpec) (mLkp bin)
                             <> ". It contains the following columns:"
                        )
-                     <> showFields (plugFields bin)
+                     <> showAttributes (plugAttributes bin)
 
              InternalPlug ScalarSQL{}
                 -> mempty
@@ -330,18 +330,18 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
                -> case fsLang fSpec of
                     Dutch   -> para "De details van deze service zijn in dit document (nog) niet verder uitgewerkt."
                     English -> para "The details of this dataservice are not available in this document."
-      showFields :: [SqlField] -> Blocks
-      showFields flds = bulletList (map showField flds)
+      showAttributes :: [SqlAttribute] -> Blocks
+      showAttributes atts = bulletList (map showAttribute atts)
         where
-          showField fld =
---FIXME 20140525: Onderstaande code vervangen door afl te leiden van `flduse`. Daar zit deze info al in verwerkt!
-             let isPrimaryKey = case fldexpr fld of
-                                  e@EDcI{} -> e==fldexpr (head flds) -- The first field represents the most general concept
+          showAttribute att =
+--FIXME 20140525: Onderstaande code vervangen door afl te leiden van `attUse`. Daar zit deze info al in verwerkt!
+             let isPrimaryKey = case attExpr att of
+                                  e@EDcI{} -> e==attExpr (head atts) -- The first attribute represents the most general concept
                                   _        -> False
-                 mForeignKey  = case fldexpr fld of
+                 mForeignKey  = case attExpr att of
                                   EIsc (EDcI c,_) -> Just c
                                   _               -> Nothing
-             in para (  (strong.text.fldname) fld
+             in para (  (strong.text.attName) att
                       <> linebreak
                       <> (if isPrimaryKey
                           then case fsLang fSpec of
@@ -360,21 +360,21 @@ technicalDataModelSection lev fSpec = (theBlocks,[pict])
                                   (case fsLang fSpec of
                                      Dutch   -> "Dit attribuut implementeert "
                                      English -> "This attribute implements "
-                                  <> primExpr2pandocMath (fsLang fSpec) (fldexpr fld)
+                                  <> primExpr2pandocMath (fsLang fSpec) (attExpr att)
                                   <> "."
                                   )
                          )
                       <> linebreak
-                      <> (code.show.fldtype) fld
+                      <> (code.show.attType) att
                       <> ", "
                       <> (case fsLang fSpec of
                             Dutch
-                              ->  (if fldnull fld then "Optioneel" else "Verplicht")
-                               <> (if flduniq fld then ", Uniek" else "")
+                              ->  (if attNull att then "Optioneel" else "Verplicht")
+                               <> (if attUniq att then ", Uniek" else "")
                                <> "."
                             English
-                              ->  (if fldnull fld then "Optional" else "Mandatory")
-                               <> (if flduniq fld then ", Unique" else "")
+                              ->  (if attNull att then "Optional" else "Mandatory")
+                               <> (if attUniq att then ", Unique" else "")
                                <> "."
                          )
                      )
@@ -470,7 +470,7 @@ daRulesSection lev fSpec = theBlocks
                                     (False, True ) -> "is surjective."
                                     (True,  True ) -> "is total and surjective."
                            ]]
-        rs' -> case [r | r<-rs', (not.null) ([Tot,Sur] `isc` multiplicities r) ] of
+        rs' -> case [r | r<-rs', (not.null) ([Tot,Sur] `isc` properties r) ] of
                []  -> []
                [r] -> [ case fsLang fSpec of
                           Dutch   ->
@@ -506,9 +506,9 @@ daRulesSection lev fSpec = theBlocks
                         | r<-rs', not (isAttribute r)
                         ]
                       ]
-    isAttribute r = (not.null) ([Uni,Inj] `isc` multiplicities r)
+    isAttribute r = (not.null) ([Uni,Inj] `isc` properties r)
     endoProperties
-     = if null [ m | r<-hMults, m<-multiplicities r, m `elem` [Rfx,Irf,Trn,Sym,Asy]]
+     = if null [ m | r<-hMults, m<-properties r, m `elem` [Rfx,Irf,Trn,Sym,Asy]]
        then []
        else [ Para (case fsLang fSpec of
                           Dutch   ->
@@ -568,7 +568,7 @@ daRulesSection lev fSpec = theBlocks
 
   daAttributes :: PlugSQL -> [Block]
   daAttributes p
-   = if length (plugFields p)<=1 then [] else
+   = if length (plugAttributes p)<=1 then [] else
      [ case fsLang fSpec of
                Dutch   ->
                  Para [ Str $ "De attributen van "++name p++" hebben de volgende multipliciteitsrestricties. "
@@ -588,20 +588,20 @@ daRulesSection lev fSpec = theBlocks
              ,[Plain [Str "type"]]
              ,[Plain [Str "mandatory"]]
              ,[Plain [Str "unique"]]] )
-      [ if isProp (fldexpr fld) && fld/=head (plugFields p)
-        then [ [Plain [Str (fldname fld)]]
+      [ if isProp (attExpr att) && att/=head (plugAttributes p)
+        then [ [Plain [Str (attName att)]]
              , [Plain [ Str "Bool"]]
              , [Plain [Math InlineMath "\\surd"]]
              , []
              ]
-        else [ [Plain [if fld==head (plugFields p) || null ([Uni,Inj,Sur]>-multiplicities (fldexpr fld))
+        else [ [Plain [if att==head (plugAttributes p) || null ([Uni,Inj,Sur]>-properties (attExpr att))
                        then Str  "key "
-                       else Str (fldname fld)]]
-             , [Plain [ (Str . latexEscShw.name.target.fldexpr) fld]]
-             , [Plain [Math InlineMath "\\surd" | not (fldnull fld)]]
-             , [Plain [Math InlineMath "\\surd" | flduniq fld]]
+                       else Str (attName att)]]
+             , [Plain [ (Str . latexEscShw.name.target.attExpr) att]]
+             , [Plain [Math InlineMath "\\surd" | not (attNull att)]]
+             , [Plain [Math InlineMath "\\surd" | attUniq att]]
              ]
-      | fld<-plugFields p  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.
+      | att<-plugAttributes p  -- tail haalt het eerste veld, zijnde I[c], eruit omdat die niet in deze tabel thuishoort.
       ]
 
      ]
@@ -609,8 +609,8 @@ daRulesSection lev fSpec = theBlocks
 
   -- daPlugs describes data sets.
   -- These can be recognized by:
-  --    1. the first field has the "unique" attribute on (otherwise it is a binary association)
-  --    2. there is more than one field (otherwise it is a scalar).
+  --    1. the first attribute has the "unique" property on (otherwise it is a binary association)
+  --    2. there is more than one attribute (otherwise it is a scalar).
   -- The text gives all rules that are maintained internally within the data structure,
   -- because they might very well be implemented as database integrity rules.
   -- Multiplicity rules are not reported separately, because they are already taken care of in the multiplicity tables.

@@ -159,13 +159,13 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
             nbsp = RawInline (Format "latex") "~"
 
 -- TODO: copied from prototype GenBericht.hs, if that module is kept, we should move this to a shared module.  
-data Entity = Entity { entName ::     String
-                     , depth ::       Int
-                     , expr ::        String
-                     , cardinality :: String
-                     , definition ::  String
-                     , refType ::     String
-                     , properties ::  [Entity]
+data Entity = Entity { entName ::      String
+                     , depth ::        Int
+                     , expr ::         String
+                     , cardinality ::  String
+                     , definition ::   String
+                     , refType ::      String
+                     , associations :: [Entity]
                      } deriving Show
 
 genEntity_Interfaces :: FSpec -> [Interface] -> [Entity]
@@ -182,7 +182,7 @@ genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
                   , cardinality = card $ objctx objDef
                   , definition  = defn $ objctx objDef
                   , refType     = name (target $ objctx objDef)
-                  , properties  =
+                  , associations  =
                       case objmsub objDef of
                         Nothing -> []
                         Just (Box _ _ objs)      -> map (genEntity_ObjDef (dpth+1)) objs

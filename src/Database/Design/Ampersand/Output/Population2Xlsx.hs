@@ -42,7 +42,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
        matrix :: Maybe  [[Cell]]
        matrix = 
          case plug of
-           TblSQL{} -> if length (fields plug) > 1
+           TblSQL{} -> if length (attributes plug) > 1
                        then Just $ headers ++ content
                        else Nothing
            BinSQL{} -> -- trace ("## Warning: Handling of link-tables isn't correct yet. Therefor, sheet`"++name plug++"` doesn't contain proper info") $
@@ -50,18 +50,18 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
            ScalarSQL{} -> Nothing
          where
            headers :: [[Cell]]
-           headers = transpose (Prelude.map f (zip (True : repeat False) (plugFields plug))) 
-             where f :: (Bool,SqlField) -> [Cell]
-                   f (isFirstField,fld) = Prelude.map toCell 
+           headers = transpose (Prelude.map f (zip (True : repeat False) (plugAttributes plug))) 
+             where f :: (Bool,SqlAttribute) -> [Cell]
+                   f (isFirstField,att) = Prelude.map toCell 
                          [ if isFirstField  -- In case of the first field of the table, we put the fieldname inbetween brackets,
                                             -- to be able to find the population again by the reader of the .xlsx file
-                           then Just $ "["++name fld++"]" 
+                           then Just $ "["++name att++"]" 
                            else Just . cleanUpRelName $
                                           case plug of
-                                            TblSQL{}    -> name fld
+                                            TblSQL{}    -> name att
                                             BinSQL{}    -> name plug
                                             ScalarSQL{} -> fatal 57 "ScalarSQL not expected here"
-                         , Just $ name .target . fldexpr $ fld ]
+                         , Just $ name .target . attExpr $ att ]
                    cleanUpRelName :: String -> String
                    --TODO: This is a not-so-nice way to get the relationname from the fieldname.
                    cleanUpRelName orig

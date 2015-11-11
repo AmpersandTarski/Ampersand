@@ -75,11 +75,11 @@ instance ShowHS PlugSQL where
    = case plug of
        TblSQL{} -> intercalate indent
                    ["let " ++ intercalate (indent++"    ")
-                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-fields plug] ++indent++"in"
-                   ,"TblSQL { sqlname = " ++ (show.name) plug
-                   ,"       , fields  = ["++intercalate ", " (map showHSName (fields plug))++"]"
-                   ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                   ,"       , mLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHS opts "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-attributes plug] ++indent++"in"
+                   ,"TblSQL { sqlname    = " ++ (show.name) plug
+                   ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
+                   ,"       , cLkpTbl    = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                   ,"       , mLkpTbl    = [ "++intercalate (indent++"                   , ") ["("++showHS opts "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
                --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
                    ,"       }"
                    ]
@@ -150,23 +150,23 @@ instance ShowHS PAclause where
      where ms = paMotiv p
            showMotiv ind (conj,rs) = "( "++showHS opts (ind++"  ") conj++" -- conjunct:  "++showADL conj++ind++", "++showHSName rs++ind++")"
 
-instance ShowHSName SqlField where
- showHSName sqFd = haskellIdentifier ("sqlFld_"++fldname sqFd)
+instance ShowHSName SqlAttribute where
+ showHSName sqAtt = haskellIdentifier ("sqlAtt_"++attName sqAtt)
 
-instance ShowHS SqlField where
- showHS opts indent sqFd
+instance ShowHS SqlAttribute where
+ showHS opts indent sqAtt
    = intercalate indentA
-       [  "Fld { fldname = " ++ show (fldname sqFd)
-       ,      ", fldexpr = " ++ showHS opts indentB (fldexpr sqFd)
-       ,      ", fldtype = " ++ showHS opts "" (fldtype sqFd)
-       ,      ", flduse  = " ++ showHS opts "" (flduse sqFd)
-       ,      ", fldnull = " ++ show (fldnull sqFd)
-       ,      ", flduniq = " ++ show (flduniq sqFd)
+       [  "Att { attName = " ++ show (attName sqAtt)
+       ,      ", attExpr = " ++ showHS opts indentB (attExpr sqAtt)
+       ,      ", attType = " ++ showHS opts "" (attType sqAtt)
+       ,      ", attUse  = " ++ showHS opts "" (attUse sqAtt)
+       ,      ", attNull = " ++ show (attNull sqAtt)
+       ,      ", attUniq = " ++ show (attUniq sqAtt)
        ,      "}"
-       ] where indentA = indent ++"    "         -- adding the width of "Fld "
-               indentB = indentA++"            " -- adding the width of ", fldexpr = "
+       ] where indentA = indent ++"    "         -- adding the width of "Att "
+               indentB = indentA++"            " -- adding the width of ", attExpr = "
 
-instance ShowHS SqlFieldUsage where
+instance ShowHS SqlAttributeUsage where
  showHS _ _ (TableKey isPrimary aCpt) = "TableKey "  ++show isPrimary++" "++showHSName aCpt
  showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
  showHS _ _ PlainAttr                 = "PlainAttr "

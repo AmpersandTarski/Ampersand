@@ -34,11 +34,11 @@ clAnalysis fSpec =
 
  where
     cpts       = concs (gensInScope fSpec)
-    attrs c    = [ OOAttr (fldname fld) (if isPropty fld then "Bool" else  (name.target.fldexpr) fld) (fldnull fld)
-                 | plug<-lookup' c, fld<-tail (plugFields plug), not (inKernel fld), source (fldexpr fld)==c]
-                 where inKernel fld = null([Uni,Inj,Sur]>-multiplicities (fldexpr fld)) && not (isPropty fld)
+    attrs c    = [ OOAttr (attName att) (if isPropty att then "Bool" else  (name.target.attExpr) att) (attNull att)
+                 | plug<-lookup' c, att<-tail (plugAttributes plug), not (inKernel att), source (attExpr att)==c]
+                 where inKernel att = null([Uni,Inj,Sur]>-properties (attExpr att)) && not (isPropty att)
     lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
-    isPropty fld = null([Sym,Asy]>-multiplicities (fldexpr fld))
+    isPropty att = null([Sym,Asy]>-properties (attExpr att))
 
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
@@ -66,7 +66,7 @@ cdAnalysis fSpec =
                      , attTyp = if isPropty r then "Bool" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
-   isPropty r = null([Sym,Asy]>-multiplicities r)
+   isPropty r = null([Sym,Asy]>-properties r)
    topLevelDcls = vrels fSpec \\
                   (concatMap relsDefdIn (vpatterns fSpec))
    allDcls = topLevelDcls `uni`
@@ -99,7 +99,7 @@ cdAnalysis fSpec =
              , assrhr = name d
              , assmdcl = Just d
              }
-   attribDcls = [ d | d <- allDcls, Aut `notElem` multiplicities d, isUni d || isInj d ]
+   attribDcls = [ d | d <- allDcls, Aut `notElem` properties d, isUni d || isInj d ]
    attribs = [ if isInj d then flp (EDcD d) else EDcD d | d<-attribDcls ]
    ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.
    roots = map (source.head) ooClasses
@@ -120,16 +120,16 @@ tdAnalysis fSpec =
       [ OOClass{ clName = sqlname table
                , clcpt  = primKey table
                , clAtts = case table of
-                            TblSQL{fields=attribs, cLkpTbl=kernelLookupTbl, mLkpTbl=t} -> 
-                              let kernelFlds = map snd $ kernelLookupTbl -- extract kernel fields from kernel lookup table
-                              in  map (ooAttr kernelFlds . lookInFor t . fldexpr) attribs
+                            TblSQL{attributes=attribs, cLkpTbl=kernelLookupTbl, mLkpTbl=t} -> 
+                              let kernelAtts = map snd $ kernelLookupTbl -- extract kernel attributes from kernel lookup table
+                              in  map (ooAttr kernelAtts . lookInFor t . attExpr) attribs
                             BinSQL{columns=(a,b)}      ->
-                              [ OOAttr { attNm       = fldname a
-                                       , attTyp      = (name.target.fldexpr) a
+                              [ OOAttr { attNm       = attName a
+                                       , attTyp      = (name.target.attExpr) a
                                        , attOptional = False
                                        }
-                              , OOAttr { attNm       = fldname b
-                                       , attTyp      = (name.target.fldexpr) b
+                              , OOAttr { attNm       = attName b
+                                       , attTyp      = (name.target.attExpr) b
                                        , attOptional = False
                                        }
                               ]
@@ -137,7 +137,7 @@ tdAnalysis fSpec =
                , clMths = []
                }
       | table <- tables
-      , length (plugFields table) > 1
+      , length (plugAttributes table) > 1
       ]
 
    lookInFor [] _ = fatal 191 "Expression not found!"
@@ -150,15 +150,15 @@ tdAnalysis fSpec =
    roots :: [A_Concept]
    roots = (catMaybes.map primKey) tables
    primKey :: PlugSQL -> Maybe A_Concept
-   primKey TblSQL{fields=(f:_)} = Just (source (fldexpr f))
+   primKey TblSQL{attributes=(f:_)} = Just (source (attExpr f))
    primKey _                    = Nothing
-   ooAttr :: [SqlField] -> SqlField -> CdAttribute
-   ooAttr kernelFlds f =
-     OOAttr { attNm = fldname f
-            , attTyp = if null([Sym,Asy]>-multiplicities (fldexpr f)) && (f `notElem` kernelFlds)
+   ooAttr :: [SqlAttribute] -> SqlAttribute -> CdAttribute
+   ooAttr kernelAtts f =
+     OOAttr { attNm = attName f
+            , attTyp = if null([Sym,Asy]>-properties (attExpr f)) && (f `notElem` kernelAtts)
                        then "Bool"
-                       else (name.target.fldexpr) f
-            , attOptional = fldnull f
+                       else (name.target.attExpr) f
+            , attOptional = attNull f
             }
    allAssocs = filter isAssocBetweenClasses $ concatMap relsOf tables
      where
@@ -168,22 +168,22 @@ tdAnalysis fSpec =
 
        relsOf t =
          case t of
-           TblSQL{} -> map (mkRel t) (catMaybes (map relOf (fields t)))
+           TblSQL{} -> map (mkRel t) (catMaybes (map relOf (attributes t)))
            BinSQL{columns=(a,b)} ->
                      [ OOAssoc { assSrc = sqlname t
-                               , assSrcPort = fldname a
+                               , assSrcPort = attName a
                                , asslhm = Mult MinZero MaxMany
                                , asslhr = ""
-                               , assTgt = getConceptTableFor fSpec . target . fldexpr $ a
+                               , assTgt = getConceptTableFor fSpec . target . attExpr $ a
                                , assrhm = Mult MinOne MaxOne
                                , assrhr = ""
                                , assmdcl = Nothing
                                }
                      , OOAssoc { assSrc = sqlname t
-                               , assSrcPort = fldname b
+                               , assSrcPort = attName b
                                , asslhm = Mult MinZero MaxMany
                                , asslhr = ""
-                               , assTgt = getConceptTableFor fSpec . target . fldexpr $ b
+                               , assTgt = getConceptTableFor fSpec . target . attExpr $ b
                                , assrhm = Mult MinOne MaxOne
                                , assrhr = ""
                                , assmdcl = Nothing
@@ -191,18 +191,18 @@ tdAnalysis fSpec =
                      ]
            _  -> fatal 195 "Unexpected type of table"
        relOf f =
-         let expr = fldexpr f in
+         let expr = attExpr f in
          case expr of
            EDcI{} -> Nothing
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
            _ -> fatal 200 ("Unexpected expression: "++show expr)
-       mkRel :: PlugSQL -> (Expression,SqlField) -> Database.Design.Ampersand.Graphic.ClassDiagram.Association
+       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Database.Design.Ampersand.Graphic.ClassDiagram.Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t
-                    , assSrcPort = fldname f
+                    , assSrcPort = attName f
                     , asslhm = (mults.flp) expr
-                    , asslhr = fldname f
+                    , asslhr = attName f
                     , assTgt = getConceptTableFor fSpec (target expr)
                     , assrhm = mults expr
                     , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
