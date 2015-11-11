@@ -788,6 +788,7 @@ data Prop      = Uni          -- ^ univalent
                | Aut          -- ^ automatically computed (NOTE: this is a hacky way to denote these until we have appropriate syntax)
                | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
                  deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
+
 instance Show Prop where
  showsPrec _ Uni = showString "UNI"
  showsPrec _ Inj = showString "INJ"
@@ -800,6 +801,9 @@ instance Show Prop where
  showsPrec _ Irf = showString "IRF"
  showsPrec _ Aut = showString "AUT"
  showsPrec _ Prop = showString "PROP"
+
+instance Unique Prop where
+ showUnique = show
 
 instance Flippable Prop where
  flp Uni = Inj

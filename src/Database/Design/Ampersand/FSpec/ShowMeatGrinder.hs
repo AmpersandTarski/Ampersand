@@ -245,10 +245,8 @@ instance MetaPopulations (PlugSQL,SqlAttribute) where
                  [(uri (plug,att), uri plug) ]
       , Pop "concept" "SqlAttribute" "Concept"
                  [(uri (plug,att), uri.target.attExpr $ att)]
-      , Pop "unique" "SqlAttribute" "Boolean"
-                 [(uri (plug,att), (uri.attUniq) att)]
-      , Pop "null" "SqlAttribute" "Boolean"
-                 [(uri (plug,att), (uri.attNull) att)]
+      , Pop "null" "SqlAttribute" "SqlAttribute"
+                 [(a,a) | attNull att, let a=uri (plug,att)]
       ]
 
 instance GenericPopulations Role where
@@ -340,7 +338,7 @@ instance MetaPopulations Declaration where
       , Pop "target" "Relation" "Concept"
              [(uri dcl,uri (target dcl))]
       , Pop "prop" "Relation" "Property"
-             [(uri dcl, showADL x) | x <- decprps dcl]  -- decprps gives the user defined properties; not the derived properties.
+             [(uri dcl, uri x) | x <- decprps dcl]  -- decprps gives the user defined properties; not the derived properties.
       , Pop "decprL" "Relation" "String"
              [(uri dcl,(show.decprL) dcl)]
       , Pop "decprM" "Relation" "String"
@@ -521,7 +519,7 @@ instance MetaPopulations Rule where
       , Pop "origin"  "Rule" "Origin"
              [(uri rul, (show.show.origin) rul)]
       , Pop "message"  "Rule" "Message"
-             [(uri rul,aMarkup2String ReST m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
+             [(uri rul, show (aMarkup2String ReST m)) | m <- rrmsg rul, amLang m == fsLang fSpec ]
       , Pop "srcConcept"  "Rule" "Concept"
              [(uri rul, (uri.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept"
@@ -531,14 +529,14 @@ instance MetaPopulations Rule where
       , Pop "rrexp"  "Rule" "Expression"
              [(uri rul, uri (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
-             [(uri rul, aMarkup2String ReST m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
+             [(uri rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , Pop "rrpurpose"  "Rule" "Purpose"
              [(uri rul, showADL x) | x <- explanations rul]
       , -- The next population is from the adl pattern 'Plugs':
         Pop "sign" "Rule" "Signature"
              [(uri rul, uri (sign rul))]
       , Pop "declaredthrough" "PropertyRule" "Property"
-             [(uri rul, show prp) | Just(prp,_) <- [rrdcl rul]]
+             [(uri rul, uri prp) | Just(prp,_) <- [rrdcl rul]]
       , Pop "decprps" "Relation" "PropertyRule"
              [(uri dcl, uri rul) | Just(_,dcl) <- [rrdcl rul]]
       ]
@@ -606,6 +604,7 @@ instance AdlId A_Gen
 instance AdlId Atom
 instance AdlId ConceptDef
 instance AdlId Declaration
+instance AdlId Prop
 instance AdlId Expression
 instance AdlId BinOp
 instance AdlId FSpec
