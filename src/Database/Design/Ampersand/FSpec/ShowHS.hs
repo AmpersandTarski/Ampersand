@@ -534,11 +534,6 @@ instance ShowHS Rule where
 instance ShowHS AMeaning where
   showHS opts indent (AMeaning x) = "AMeaning " ++ showHS opts (indent++"        ") x
 
-instance ShowHS RuleType where
-  showHS _ _ Truth          = "Truth"
-  showHS _ _ Equivalence    = "Equivalence"
-  showHS _ _ Inclusion      = "Inclusion"
-
 instance ShowHSName IdentityDef where
  showHSName identity = haskellIdentifier ("identity_"++name identity)
 

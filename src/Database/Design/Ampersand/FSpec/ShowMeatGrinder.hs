@@ -19,7 +19,7 @@ import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (RuleType(..))
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ConceptStructure
 
 
