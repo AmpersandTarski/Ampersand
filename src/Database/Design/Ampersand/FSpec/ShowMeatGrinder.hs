@@ -204,9 +204,9 @@ instance MetaPopulations A_Concept where
       , Pop "conceptColumn" "Concept" "SqlAttribute"
              [(uri cpt, uri att) | att <- tablesAndAttributes]
       , Pop "cptdf" "Concept" "ConceptDefinition"
-             [(uri cpt,showADL cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
+             [(uri cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
       , Pop "cptpurpose" "Concept" "Purpose"
-             [(uri cpt,showADL x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
+             [(uri cpt,(show.showADL) x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
      ONE -> []
   where
@@ -348,7 +348,7 @@ instance MetaPopulations Declaration where
       , Pop "decmean" "Relation" "Meaning"
              [(uri dcl, (show.concatMap showADL.ameaMrk.decMean) dcl)]
       , Pop "decpurpose" "Relation" "Purpose"
-             [(uri dcl, showADL x) | x <- explanations dcl]
+             [(uri dcl, (show.showADL) x) | x <- explanations dcl]
       ]
      Isn{} -> 
       [ Comment " "
@@ -531,7 +531,7 @@ instance MetaPopulations Rule where
       , Pop "rrmean"  "Rule" "Meaning"
              [(uri rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , Pop "rrpurpose"  "Rule" "Purpose"
-             [(uri rul, showADL x) | x <- explanations rul]
+             [(uri rul, (show.showADL) x) | x <- explanations rul]
       , -- The next population is from the adl pattern 'Plugs':
         Pop "sign" "Rule" "Signature"
              [(uri rul, uri (sign rul))]
