@@ -203,7 +203,7 @@ class RuleEngine {
 			$query = "SELECT * FROM `$dbsignalTableName` WHERE " . implode(' OR ', array_map( function($conjunctId) {return "`conjId` = '$conjunctId'";}, $conjunctIds));
 			$result = $db->Exe($query);
 		} else {
-			Notifications::addInfo("No conjunctIds provided (can be that this role does not maintain any rule)");
+			Notifications::addLog("No conjuncts to check (it can be that this role does not maintain any rule)", 'RuleEngine');
 		}
 		
 		return $result;
