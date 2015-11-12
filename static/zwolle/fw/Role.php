@@ -28,8 +28,7 @@ class Role {
 		$this->editableConcepts = (array)$roleInfo['editableConcepts'];
 		
 		// Interfaces that are accessible by this role
-		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
-			$ifc = new InterfaceObject($interfaceId);
+		foreach (InterfaceObject::getAllInterfaceObjects() as $ifc){
 			if (in_array($this->label, $ifc->interfaceRoles) || empty($ifc->interfaceRoles)) $this->interfaces[] = $ifc;
 		}
 	}

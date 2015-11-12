@@ -2,6 +2,8 @@
 
 class InterfaceObject {
 	
+	private static $allInterfaces; // contains all interface objects
+	
 	public $id;			// Interface id (i.e. safe name) to use in framework
 	public $label;		// Interface name to show in UI
 	
@@ -105,19 +107,31 @@ class InterfaceObject {
 		return empty($result) ? false : $result;
 	}
 	
-	public static function getAllInterfaceObjects(){
-		global $allInterfaceObjects; // from Generics.php
+	public static function getAllInterfaceObjects(){		
+		if(!isset(self::$allInterfaces)){
+			global $allInterfaceObjects; // from Generics.php
 		
-		return (array)$allInterfaceObjects;
+			foreach ($allInterfaceObjects as $interfaceId => $interface){
+				$ifc = new InterfaceObject($interfaceId);
+				self::$allInterfaces[$ifc->id] = $ifc;
+			}
+		}
+		return self::$allInterfaces;
 	}
 	
 	public static function getAllInterfacesForConcept($concept){
 		$interfaces = array();
-	
-		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
-			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceId;
+		foreach (InterfaceObject::getAllInterfaceObjects() as $ifc){
+			if ($ifc->$srcConcept == $concept) $interfaces[$ifc->id] = $ifc;
 		}
+		return $interfaces;
+	}
 	
+	public static function getPublicInterfaces(){
+		$interfaces = array();
+		foreach(InterfaceObject::getAllInterfaceObjects() as $ifc){
+			if (empty($ifc->interfaceRoles)) $interfaces[$ifc->id] = $ifc;
+		}
 		return $interfaces;
 	}
 }
