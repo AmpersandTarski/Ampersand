@@ -137,45 +137,45 @@ generateDBstructQueries fSpec = theSQLstatements
                      ++ [" ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"]
                    )
           ]
-        fld2sql :: SqlField -> String
-        fld2sql = fieldSpec2Str . fld2FieldSpec
+        fld2sql :: SqlAttribute -> String
+        fld2sql = attributeSpec2Str . fld2AttributeSpec
 
 data TableSpecNew 
   = TableSpec { tsCmnt :: [String]
               , tsName :: String
-              , tsflds :: [SqlField]
+              , tsflds :: [SqlAttribute]
               , tsKey ::  [String]
               , tsEngn :: String
               }
-data FieldSpecNew
-  = FieldSpec { fsname :: String
-              , fstype :: String
-              , fsauto :: Bool
-              }
-fld2FieldSpec ::SqlField -> FieldSpecNew
-fld2FieldSpec fld 
-  = FieldSpec { fsname = name fld
-              , fstype = showSQL (fldtype fld)
-              , fsauto = fldauto fld 
-              }
-fieldSpec2Str :: FieldSpecNew -> String
-fieldSpec2Str fs = intercalate " "
-                    [ show (fsname fs)
-                    , fstype fs
-                    , if fsauto fs then " AUTO_INCREMENT" else " DEFAULT NULL"
-                    ] 
+data AttributeSpecNew
+  = AttributeSpec { fsname :: String
+                  , fstype :: String
+                  , fsauto :: Bool
+                  }
+fld2AttributeSpec ::SqlAttribute -> AttributeSpecNew
+fld2AttributeSpec att 
+  = AttributeSpec { fsname = name att
+                  , fstype = showSQL (attType att)
+                  , fsauto = fldauto att 
+                  }
+attributeSpec2Str :: AttributeSpecNew -> String
+attributeSpec2Str fs = intercalate " "
+                        [ show (fsname fs)
+                        , fstype fs
+                        , if fsauto fs then " AUTO_INCREMENT" else " DEFAULT NULL"
+                        ] 
 plug2TableSpec :: PlugSQL -> TableSpecNew
 plug2TableSpec plug 
   = TableSpec 
-     { tsCmnt = commentBlockSQL (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
+     { tsCmnt = commentBlockSQL (["Plug "++name plug,"","attributes:"]++map (\x->showADL (attExpr x)++"  "++(show.properties.attExpr) x) (plugAttributes plug))
      , tsName = name plug
-     , tsflds = plugFields plug
-     , tsKey  = case (plug, (head.plugFields) plug) of
+     , tsflds = plugAttributes plug
+     , tsKey  = case (plug, (head.plugAttributes) plug) of
                  (BinSQL{}, _)   -> []
                  (_,    primFld) ->
-                      case flduse primFld of
+                      case attUse primFld of
                          TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
-                                                ++ "KEY ("++(show . fldname) primFld++")"
+                                                ++ "KEY ("++(show . attName) primFld++")"
                                         ]
                          ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                          PlainAttr     -> []
@@ -220,7 +220,7 @@ generateAllDefPopQueries fSpec = theSQLstatements
              tblRecords 
                  -> [concat $ 
                        [ "INSERT INTO "++show (name plug)
-                       , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++") "
+                       , "   ("++intercalate ", " (map (show . attName) (plugAttributes plug))++") "
                        ] ++ lines
                          ( "VALUES " ++ intercalate "\n     , " 
                           [ "(" ++valuechain md++ ")" | md<-tblRecords]
@@ -229,10 +229,10 @@ generateAllDefPopQueries fSpec = theSQLstatements
          where
            valuechain record 
              = intercalate ", " 
-                 [case fld of 
+                 [case att of 
                     Nothing -> "NULL"
                     Just val -> showValPHP val
-                 | fld <- record ]
+                 | att <- record ]
 
 generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
@@ -244,8 +244,8 @@ generateTableInfos fSpec =
                                                  ++ ", 'srcConcept' => "++showPhpStr (name (source decl))
                                                  ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
                                                  ++ ", 'table'      => "++showPhpStr (name table)
-                                                 ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)
-                                                 ++ ", 'tgtCol'     => "++showPhpStr (fldname tgtCol)
+                                                 ++ ", 'srcCol'     => "++showPhpStr (attName srcCol)
+                                                 ++ ", 'tgtCol'     => "++showPhpStr (attName tgtCol)
                                                  ++ ", 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
                                                  ++ ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
                                                  ++ ")"]
@@ -272,11 +272,11 @@ generateTableInfos fSpec =
               (indent 3
                 (blockParenthesize "(" ")" ","
                   [ [ "array ( 'table' => "++(showPhpStr.name) table ++
-                            ", 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")" ++
+                            ", 'cols' => array ("++ intercalate ", " (map (showPhpStr . attName) conceptAttributes) ++")" ++
                            " )"
                     ]
                   -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
+                  | (table,conceptAttributes) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
                   ])) ++
               [ ", 'type' => '"++(show . cptTType fSpec) c++"'" ]++
               [ ", 'specializations' => array ("++intercalate ", " (map (showPhpStr . name)(smallerConcepts (vgens fSpec) c))++")"]++
@@ -307,18 +307,18 @@ generateTableInfos fSpec =
            ] ++
            indent 4
               (blockParenthesize "(" ")" ","
-                [ [ (showPhpStr.fldname) field++ " => array ( 'concept' => "++(showPhpStr.name.target.fldexpr) field++
-                                                           ", 'unique' => " ++(showPhpBool.flduniq)            field++
-                                                           ", 'null' => "  ++ (showPhpBool.fldnull)            field++
-                                                           ")"
+                [ [ (showPhpStr.attName) attribute++ " => array ( 'concept' => "++(showPhpStr.name.target.attExpr) attribute++
+                                                               ", 'unique' => " ++(showPhpBool.attUniq)            attribute++
+                                                               ", 'null' => "  ++ (showPhpBool.attNull)            attribute++
+                                                               ")"
                   ]
-                | field <- plugFields plug]
+                | attribute <- plugAttributes plug]
               )
          | InternalPlug plug <- plugInfos fSpec
          ]
      )  )
- where groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]
-       groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
+ where groupOnTable :: [(PlugSQL,SqlAttribute)] -> [(PlugSQL,[SqlAttribute])]
+       groupOnTable tablesAttributes = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesAttributes ]
 
 generateRules :: FSpec -> [String]
 generateRules fSpec =

@@ -53,7 +53,7 @@ CONCEPT Statement "A statement is an affirmative sentence."
 
 PURPOSE CONCEPT Concept
 {+In a world full of things, we use the word ``concept'' to name and characterize a set of things that are similar.
-We use the concept ``Table'' to denote the set of tables in a context. When asked: which tables are there, we can point at all available tables and conclude that each one is an instance of ``Table''.
+For instance, we use the concept ``Car'' to denote the set of cars in a context. When asked: which cars are there, we can point at all available cars and conclude that each one is an instance of ``Car''.
 Similarly, we may use the concept ``Number'' to denote things such as 1, 2 or 101.
 Words such as ``Joy'' or ``Peace'' will not be used as a concept, as long as they do not represent a set of things. (Ask: Which joys are there? Which peaces are there?).
 -}

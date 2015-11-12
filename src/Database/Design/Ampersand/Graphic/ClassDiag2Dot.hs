@@ -109,7 +109,7 @@ classdiagram2dot opts cd
 --       assRels    = [r |r<-relsLim, not (isUni r), not (isInj r)]
 --       attrs rs   = [ OOAttr ((name.head.relsMentionedIn) r) (name (target r)) (not(isTot r))
 --                    | r<-rs, not (isPropty r)]
---       isPropty r = null([Sym,Asy]>-multiplicities r)
+--       isPropty r = null([Sym,Asy]>-properties r)
 
 -------------------------------
 --        ASSOCIATIONS:      --

@@ -100,9 +100,9 @@ getSqlConceptTable fSpec c =
  do { -- to prevent needing a unary query function, we add a dummy NULL column and use `src` and `tgt` as column names (in line with what performQuery expects)
       let query = case lookupCpt fSpec c of
                     []                      -> fatal 58  "No concept table for concept \"" ++ name c ++ "\""
-                    (table,conceptField):_ -> "SELECT DISTINCT `" ++ fldname conceptField ++ "` as `src`, NULL as `tgt`"++
-                                              " FROM `" ++ name table ++ "`" ++
-                                              " WHERE `" ++ fldname conceptField ++ "` IS NOT NULL"
+                    (table,conceptAttribute):_ -> "SELECT DISTINCT `" ++ attName conceptAttribute ++ "` as `src`, NULL as `tgt`"++
+                                                  " FROM `" ++ name table ++ "`" ++
+                                                  " WHERE `" ++ attName conceptAttribute ++ "` IS NOT NULL"
     --; putStrLn $ "Query for concept " ++ name c ++ ":" ++ query 
     ; atomsDummies <- performQuery (getOpts fSpec) tempDbName query
     ; return (c, map fst atomsDummies)

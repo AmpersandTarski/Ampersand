@@ -10,7 +10,6 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , ruleIsInvariantUniOrInj
- , RuleType(..)
  , RuleOrigin(..)
  , Declaration(..)
  , IdentityDef(..)
@@ -190,7 +189,6 @@ ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p
                              -- NOTE: currently all rules coming from properties are invariants, so the not isSignal
                              -- condition is unnecessary, but this will change in the future.    
     
-data RuleType = Inclusion | Equivalence | Truth  deriving (Eq,Show)
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because 
                                                -- this is an internal id that has no counterpart at the ADL level)
@@ -217,7 +215,7 @@ instance Prelude.Ord Conjunct where
 data Declaration =
   Sgn { decnm :: String              -- ^ the name of the declaration
       , decsgn :: Signature          -- ^ the source and target concepts of the declaration
-       --multiplicities returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use multiplicities but decprps
+       --properties returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use 'properties' but 'decprps'.
       , decprps :: [Prop]            -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
       , decprps_calc :: Maybe [Prop] -- ^ the calculated and user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx, Irf). Note that calculated properties are made by adl2fspec, so in the A-structure decprps and decprps_calc yield exactly the same answer.
       , decprL :: String             -- ^ three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
@@ -392,13 +390,13 @@ objAts obj
      Just (Box _ _ objs)     -> objs
 
 class Object a where
- concept :: a -> A_Concept        -- the type of the object
- attributes :: a -> [ObjectDef]   -- the objects defined within the object
+ concept ::   a -> A_Concept        -- the type of the object
+ fields ::    a -> [ObjectDef]   -- the objects defined within the object
  contextOf :: a -> Expression     -- the context expression
 
 instance Object ObjectDef where
  concept obj = target (objctx obj)
- attributes  = objAts
+ fields      = objAts
  contextOf   = objctx
 
 data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -406,7 +404,7 @@ data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object d
                      , objctx ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
                      , objcrud ::  Cruds -- ^ CRUD as defined by the user 
                      , objmView :: Maybe String   -- ^ The view that should be used for this object
-                     , objmsub ::  Maybe SubInterface    -- ^ the attributes, which are object definitions themselves.
+                     , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
                      , objstrs ::  [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
 instance Named ObjectDef where

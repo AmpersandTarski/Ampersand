@@ -3,7 +3,7 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (Ord(..))
 import Database.Design.Ampersand.ADL1.Rule
-import Database.Design.Ampersand.Classes.Relational  (Relational(multiplicities))
+import Database.Design.Ampersand.Classes.Relational  (Relational(properties))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Explain
 import Data.Maybe
@@ -23,7 +23,7 @@ class Language a where
   udefrules :: a -> [Rule]           -- ^ all user defined rules that are maintained within this viewpoint,
                                      --   which are not multiplicity- and not identity rules.
   multrules :: a -> [Rule]           -- ^ all multiplicityrules that are maintained within this viewpoint.
-  multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-multiplicities d]
+  multrules x   = catMaybes [rulefromProp p d |d<-relsDefdIn x, p<-properties d]
   identityRules :: a -> [Rule]       -- all identity rules that are maintained within this viewpoint.
   identityRules x    = concatMap rulesFromIdentity (identities x)
   allRules :: a -> [Rule]

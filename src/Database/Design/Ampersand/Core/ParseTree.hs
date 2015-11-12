@@ -93,6 +93,10 @@ data Meta = Meta { mtPos :: Origin
               , mtName :: String
               , mtVal :: String
               } deriving (Show)
+instance Eq Meta where --Required for merge of P_Contexts
+ p1 == p2 = show p1 == show p2 && origin p1 ==origin p2 
+instance Traced Meta where
+  origin = mtPos
 data MetaObj = ContextMeta deriving Show -- for now, we just have meta data for the entire context
 
 -- | A RoleRelation rs means that any role in 'rrRoles rs' may edit any Relation  in  'rrInterfaces rs'
@@ -143,6 +147,8 @@ data P_Pattern
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
            } deriving (Show) --For QuickCheck error messages only!
 
+instance Eq P_Pattern where --Required for merge of P_Contexts
+ p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
 instance Named P_Pattern where
  name = pt_nm
 
@@ -170,6 +176,8 @@ data Representation
          , reprcpts  :: [String]  -- ^ the concepts 
          , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Show)
+instance Eq Representation where --Required for merge of P_Contexts
+ p1 == p2 = show p1 == show p2 && origin p1 ==origin p2 
 instance Traced Representation where
  origin = reprpos
          
@@ -532,6 +540,8 @@ data P_Rule a  =
         , rr_msg ::  [PMessage]        -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rr_viol :: Maybe (PairView (Term a))  -- ^ Custom presentation for violations, currently only in a single language
         } deriving Show
+instance Eq (P_Rule a) where --Required for merge of P_Contexts
+ p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
 
 instance Traced (P_Rule a) where
  origin = rr_fps
@@ -567,6 +577,8 @@ data P_Population
               } 
    deriving (Show) --For QuickCheck error messages only!
   
+instance Eq P_Population where --Required for merge of P_Contexts
+ p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
 
 instance Named P_Population where
  name P_RelPopu{p_nmdr = nr} = name nr
@@ -586,6 +598,8 @@ data P_Interface =
            , ifc_Prp :: String
            } deriving (Show) --For QuickCheck error messages only!
 
+instance Eq P_Interface where --Required for merge of P_Contexts
+ p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
 instance Named P_Interface where
  name = ifc_Name
 
@@ -656,6 +670,8 @@ data P_ViewD a =
 --              , vd_text :: Maybe P_ViewText -- Future extension
               , vd_ats :: [P_ViewSegmt a]   -- ^ the constituent segments of this view.
               } deriving (Show)
+instance Eq (P_ViewD a) where --Required for merge of P_Contexts
+ p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
               
 instance Named (P_ViewD a) where
  name = vd_lbl
@@ -720,6 +736,8 @@ data PPurpose = PRef2 { pexPos :: Origin      -- the position in the Ampersand s
                       , pexMarkup:: P_Markup  -- the piece of text, including markup and language info
                       , pexRefIDs :: [String] -- the references (for traceability)
                       } deriving Show
+instance Eq PPurpose where --Required for merge of P_Contexts
+ p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
 
 instance Named PPurpose where
  name pe = name (pexObj pe)
@@ -759,6 +777,8 @@ data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand 
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
                   }
+instance Eq P_Gen where --Required for merge of P_Contexts
+ p1 == p2 = origin p1 ==origin p2 
 gen_concs :: P_Gen -> [P_Concept]
 gen_concs (P_Cy {gen_rhs=x}) = x
 gen_concs (PGen {gen_gen=x,gen_spc=y}) = [x,y]
@@ -788,6 +808,7 @@ data Prop      = Uni          -- ^ univalent
                | Aut          -- ^ automatically computed (NOTE: this is a hacky way to denote these until we have appropriate syntax)
                | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
                  deriving (Eq, Ord, Enum, Bounded,Typeable, Data)
+
 instance Show Prop where
  showsPrec _ Uni = showString "UNI"
  showsPrec _ Inj = showString "INJ"
@@ -800,6 +821,9 @@ instance Show Prop where
  showsPrec _ Irf = showString "IRF"
  showsPrec _ Aut = showString "AUT"
  showsPrec _ Prop = showString "PROP"
+
+instance Unique Prop where
+ showUnique = show
 
 instance Flippable Prop where
  flp Uni = Inj
@@ -822,26 +846,26 @@ mergeContexts ctx1 ctx2 =
   PCtx{ ctx_nm     = case (filter (not.null) . map ctx_nm) contexts of
                         []    -> ""
                         (x:_) -> x
-      , ctx_pos    = concatMap ctx_pos contexts
+      , ctx_pos    = nub . concatMap ctx_pos $ contexts
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
-      , ctx_thms   = concatMap ctx_thms contexts
-      , ctx_pats   = concatMap ctx_pats contexts
-      , ctx_rs     = concatMap ctx_rs contexts
-      , ctx_ds     = concatMap ctx_ds contexts
-      , ctx_cs     = concatMap ctx_cs contexts
-      , ctx_ks     = concatMap ctx_ks contexts
-      , ctx_rrules = concatMap ctx_rrules contexts
-      , ctx_rrels  = concatMap ctx_rrels contexts
-      , ctx_reprs  = concatMap ctx_reprs contexts
-      , ctx_vs     = concatMap ctx_vs contexts
-      , ctx_gs     = concatMap ctx_gs contexts
-      , ctx_ifcs   = concatMap ctx_ifcs contexts
-      , ctx_ps     = concatMap ctx_ps contexts
-      , ctx_pops   = concatMap ctx_pops contexts
-      , ctx_sql    = concatMap ctx_sql contexts
-      , ctx_php    = concatMap ctx_php contexts
-      , ctx_metas  = concatMap ctx_metas contexts
+      , ctx_thms   = nub . concatMap ctx_thms $ contexts
+      , ctx_pats   = nub . concatMap ctx_pats $ contexts
+      , ctx_rs     = nub . concatMap ctx_rs $ contexts
+      , ctx_ds     = nub . concatMap ctx_ds $ contexts
+      , ctx_cs     = nub . concatMap ctx_cs $ contexts
+      , ctx_ks     = nub . concatMap ctx_ks $ contexts
+      , ctx_rrules = nub . concatMap ctx_rrules $ contexts
+      , ctx_rrels  = nub . concatMap ctx_rrels $ contexts
+      , ctx_reprs  = nub . concatMap ctx_reprs $ contexts
+      , ctx_vs     = nub . concatMap ctx_vs $ contexts
+      , ctx_gs     = nub . concatMap ctx_gs $ contexts
+      , ctx_ifcs   = nub . concatMap ctx_ifcs $ contexts
+      , ctx_ps     = nub . concatMap ctx_ps $ contexts
+      , ctx_pops   = nub . concatMap ctx_pops $ contexts
+      , ctx_sql    = nub . concatMap ctx_sql $ contexts
+      , ctx_php    = nub . concatMap ctx_php $ contexts
+      , ctx_metas  = nub . concatMap ctx_metas $ contexts
       }
     where contexts = [ctx1,ctx2]
 

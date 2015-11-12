@@ -7,6 +7,7 @@ INCLUDE "Rules.adl"
 INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
 INCLUDE "Generics.adl"
+INCLUDE "Tables.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
 1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als name, ptnm). Deze nieuwe beperking lijkt me onwenselijk.

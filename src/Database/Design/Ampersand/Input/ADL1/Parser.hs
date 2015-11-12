@@ -368,7 +368,7 @@ pIndex  = P_Id <$> currPos
                <*> pConceptRef
                <*> pParens (pIndSegment `sepBy1` pComma)
     where
-          --- IndSegmentList ::= Att (',' Att)*
+          --- IndSegmentList ::= Attr (',' Attr)*
           pIndSegment :: AmpParser P_IdentSegment
           pIndSegment = P_IdentExp <$> pAtt
 
@@ -439,7 +439,7 @@ pViewDefLegacy = P_Vd <$> currPos
                     | (i,viewSeg) <- zip [(1::Integer)..] xs]
                     -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
           --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
-          --- ViewSegment ::= Att | 'TXT' String | 'PRIMHTML' String
+          --- ViewSegment ::= Attr | 'TXT' String | 'PRIMHTML' String
           pViewSegment :: AmpParser P_ViewSegment
           pViewSegment = P_ViewExp  fat <$> pAtt <|>
                          P_ViewText fat <$ pKey "TXT" <*> pString <|>
@@ -710,7 +710,7 @@ value2PAtomValue o v = case v of
          VDateTime x    -> ScriptDateTime o x
          VDate x        -> ScriptDate o x
          
---- Att ::= LabelProps? Term
+--- Attr ::= LabelProps? Term
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
 pAtt = rebuild <$> currPos <*> try pLabelProps `opt` ("",[]) <*> try pTerm

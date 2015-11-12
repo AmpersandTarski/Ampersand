@@ -251,6 +251,8 @@ checkMono opts expr ev dcl
               simplify (consequent conclusion)
   where (conclusion,_,_) = last (derivMono expr ev dcl)
 
+data RuleType = Inclusion | Equivalence | Truth  deriving (Eq,Show)
+
 type Proof expr = [(expr,[String],String)]
 reversePrf :: Proof e -> Proof e
 reversePrf [] = []

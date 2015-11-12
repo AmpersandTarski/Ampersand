@@ -128,8 +128,8 @@ fspec2Workbook fSpec =
        , string ( case (lang,plug) of
                    (English, ExternalPlug _)             -> "PHP plugs are not (yet) taken into account!"
                    (Dutch  , ExternalPlug _)             -> "PHP plugs worden (nog) niet meegerekend!"
-                   (English, InternalPlug p@TblSQL{})    -> "Table with "++(show.length.fields) p++" attributes."
-                   (Dutch  , InternalPlug p@TblSQL{})    -> "Tabel met "++(show.length.fields) p++" attributen."
+                   (English, InternalPlug p@TblSQL{})    -> "Table with "++(show.length.attributes) p++" attributes."
+                   (Dutch  , InternalPlug p@TblSQL{})    -> "Tabel met "++(show.length.attributes) p++" attributen."
                    (English, InternalPlug   BinSQL{})    -> "Link table"
                    (Dutch  , InternalPlug   BinSQL{})    -> "Koppel tabel"
                    (English, InternalPlug   ScalarSQL{}) -> "Enumeration tabel"
