@@ -1,5 +1,6 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE LambdaCase #-}
+-- unfortunately not in GHC yet, try to add this line when at GHC 8.0: {-# ApplicativeDo #-}
 module Database.Design.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
 import Database.Design.Ampersand.ADL1.Disambiguate
@@ -11,6 +12,7 @@ import Database.Design.Ampersand.Classes.ViewPoint
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
+import Control.Monad (join)
 import Prelude hiding (sequence, mapM)
 import qualified Data.Set as Set
 import qualified Data.Map as Map
@@ -19,6 +21,63 @@ import Data.Function
 import Data.Maybe
 import Data.List(nub)
 import Data.Char(toUpper,toLower)
+import Data.Either
+
+data Type = UserConcept String
+          | BuiltIn TType
+          | DefaultRepresentable
+          deriving (Eq,Ord,Show)
+
+instance Named Type where
+  name v = case typeOrConcept v of
+                Right (Just x) -> "Built-in type "++show x
+                Right Nothing  -> "The Generic Built-in type"
+                Left  x -> "Concept "++name x
+
+typeOrConcept :: Type -> Either A_Concept (Maybe TType)
+typeOrConcept (BuiltIn TypeOfOne)  = Left$ ONE
+typeOrConcept (UserConcept s)      = Left$ PlainConcept s
+typeOrConcept (BuiltIn x)          = Right (Just x)
+typeOrConcept DefaultRepresentable = Right Nothing
+
+pConcToType :: P_Concept -> Type
+pConcToType P_Singleton = BuiltIn TypeOfOne
+pConcToType p = UserConcept (name p)
+aConcToType :: A_Concept -> Type
+aConcToType ONE = BuiltIn TypeOfOne
+aConcToType p = UserConcept (name p)
+
+_getAsType :: Origin -> Type -> Guarded (Maybe TType)
+_getAsType o v = case typeOrConcept v of
+                  Right x -> return x
+                  Left  x -> unexpectedType o x
+getAsConcept :: Origin -> Type -> Guarded A_Concept
+getAsConcept o v = case typeOrConcept v of
+                     Right x -> unexpectedType o x
+                     Left  x -> return x
+
+mustBeConceptBecauseMath :: Type -> A_Concept
+mustBeConceptBecauseMath tp
+ = let fatalV = fatal 54 "A concept turned out to be a built-in type."
+   in case getAsConcept fatalV tp of
+        Checked v -> v
+        _ -> fatalV
+
+-- pAdlTType :: AmpParser TType
+-- pAdlTType
+--         = k Alphanumeric     "ALPHANUMERIC"
+--       <|> k BigAlphanumeric  "BIGALPHANUMERIC"
+--       <|> k HugeAlphanumeric "HUGEALPHANUMERIC"
+--       <|> k Password         "PASSWORD"
+--       <|> k Binary           "BINARY"
+--       <|> k BigBinary        "BIGBINARY"
+--       <|> k HugeBinary       "HUGEBINARY"
+--       <|> k Date             "DATE"
+--       <|> k DateTime         "DATETIME"
+--       <|> k Boolean          "BOOLEAN"
+--       <|> k Integer          "INTEGER"
+--       <|> k Float            "FLOAT"
+
 
 newtype SignOrd = SignOrd Signature
 instance Ord SignOrd where
@@ -47,13 +106,11 @@ pCtx2aCtx opts ctx = do actx <- pCtx2aCtx' opts ctx
                         checkDanglingRulesInRuleRoles actx -- Check whether all rules in MAINTAIN statements are declared
                         checkInterfaceCycles actx      -- Check that interface references are not cyclic
                         checkMultipleDefaultViews actx -- Check whether each concept has at most one default view
-                        checkUnique udefrules actx     -- Check uniquene names of: rules,
-                        checkUnique patterns  actx     --                          patterns,
-                        checkUnique ctxvs     actx     --                          view defs,
-                        checkUnique ctxifcs   actx     --                          and interfaces.
+                        uniqueNames (udefrules actx)   -- Check uniquene names of: rules,
+                        uniqueNames (patterns  actx)   --                          patterns,
+                        uniqueNames (ctxvs     actx)   --                          view defs,
+                        uniqueNames (ctxifcs   actx)   --                          and interfaces.
                         return actx
-  where
-    checkUnique f ctx = uniqueNames (f ctx)
 
 -- NOTE: Static checks like checkPurposes should ideally occur on the P-structure before type-checking, as it makes little
 -- sense to do type checking when there are static errors. However, in Ampersand all collect functions (e.g. in ViewPoint)
@@ -175,7 +232,7 @@ pCtx2aCtx' _
             , ctxreprs = allRepresentations
             , ctxvs = viewdefs
             , ctxgs = map pGen2aGen p_gens
-            , ctxgenconcs = map (map castConcept) (concGroups ++ map (:[]) soloConcs)
+            , ctxgenconcs = map (lefts . map typeOrConcept) (concGroups ++ map (:[]) soloConcs)
             , ctxifcs = interfaces
             , ctxps = purposes
             , ctxsql = sqldefs
@@ -203,20 +260,21 @@ pCtx2aCtx' _
 
     p_interfaceAndDisambObjs :: [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
     p_interfaceAndDisambObjs = [ (ifc, disambiguate termPrimDisAmb $ ifc_Obj ifc) | ifc <- p_interfaces ]
+      
     -- story about genRules and genLattice
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
-    genRules = [ ( Set.singleton (name (gen_spc x)), Set.fromList (map name (gen_concs x)))
+    genRules = [ ( Set.singleton (pConcToType (gen_spc x)), Set.fromList (map pConcToType (gen_concs x)))
                | x <- p_gens ++ concatMap pt_gns p_patterns
                ]
-    genLattice :: Op1EqualitySystem String
+    genLattice :: Op1EqualitySystem Type
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
 
-    concGroups :: [[String]]
+    concGroups :: [[Type]]
     concGroups = getGroups genLattice
-    allConcs :: Set.Set String
-    allConcs = Set.fromList (map (name . source) decls ++ map (name . target) decls)
-    soloConcs :: [String]
+    allConcs :: Set.Set Type
+    allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)
+    soloConcs :: [Type]
     soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs)
 
     deflangCtxt = lang -- take the default language from the top-level context
@@ -308,41 +366,41 @@ pCtx2aCtx' _
              , genspc = pCpt2aCpt (gen_spc pg)
              }
 
-    castSign :: String -> String -> Signature
-    castSign a b = Sign (castConcept a) (castConcept b)
+    castSign :: Type -> Type -> Signature
+    castSign a b = Sign (mustBeConceptBecauseMath a) (mustBeConceptBecauseMath b)
 
-    leastConcept :: A_Concept -> String -> A_Concept
+    leastConcept :: A_Concept -> Type -> A_Concept
     leastConcept c str
-     = case (name c `elem` leastConcepts, str `elem` leastConcepts) of
+     = case (aConcToType c `elem` leastConcepts, str `elem` leastConcepts) of
          (True, _) -> c
-         (_, True) -> castConcept str
-         (_, _)    -> fatal 178 ("Either "++name c++" or "++str++" should be a subset of the other." )
+         (_, True) -> mustBeConceptBecauseMath str
+         (_, _)    -> fatal 178 ("Either "++name c++" or "++show str++" should be a subset of the other." )
        where
-         leastConcepts = findExact genLattice (Atom (name c) `Meet` (Atom str))
+         leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` (Atom str))
 
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
     castConcept x     = PlainConcept { cptnm = x }
+    userConcept :: String -> Type
+    userConcept "ONE" = BuiltIn TypeOfOne
+    userConcept x     = UserConcept x
     
     pPop2aPop :: P_Population -> Guarded Population
     pPop2aPop pop = 
      case pop of
        P_RelPopu{p_nmdr = nmdr, p_popps=aps, p_src = src, p_tgt = tgt}
-         -> unguard $
-             (\dcl
-               -> (\aps' src' tgt'
-                    -> ARelPopu { popdcl = dcl
+         -> do dcl <- (case p_mbSign nmdr of
+                         Nothing -> findDeclLooselyTyped pop (name nmdr) (castConcept <$> src) (castConcept <$> tgt)
+                         Just s -> findDeclTyped nmdr (p_nrnm nmdr) (pSign2aSign s)
+                      )
+               aps' <- traverse (pAtomPair2aAtomPair dcl) aps
+               src' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric pop dcl Src . userConcept) src
+               tgt' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric pop dcl Tgt . userConcept) tgt
+               return (ARelPopu { popdcl = dcl
                                 , popps = aps'
-                                , popsrc = maybe (source dcl) castConcept src'
-                                , poptgt = maybe (target dcl) castConcept tgt'
-                                }
-                  ) <$> traverse (pAtomPair2aAtomPair dcl) aps
-                    <*> maybeOverGuarded (isMoreGeneric pop dcl Src) src
-                    <*> maybeOverGuarded (isMoreGeneric pop dcl Tgt) tgt
-             ) <$> (case p_mbSign nmdr of
-                      Nothing -> findDeclLooselyTyped pop (name nmdr) (castConcept <$> src) (castConcept <$> tgt)
-                      Just s -> findDeclTyped nmdr (p_nrnm nmdr) (pSign2aSign s)
-                   ) -- disambiguate
+                                , popsrc = fromMaybe (source dcl) src'
+                                , poptgt = fromMaybe (target dcl) tgt'
+                                })
        P_CptPopu{}
          -> let cpt = castConcept (p_cnme pop) in  
             (\vals
@@ -350,10 +408,11 @@ pCtx2aCtx' _
                           , popas  = vals
                           }
               ) <$> traverse (pAtomValue2aAtomValue cpt) (p_popas pop)
+    -- isMoreGeneric :: a2 -> t -> SrcOrTgt -> Type -> Guarded Type
     isMoreGeneric o dcl sourceOrTarget givenType
      = if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
        then pure givenType
-       else mkTypeMismatchError o dcl sourceOrTarget (castConcept givenType)
+       else mkTypeMismatchError o dcl sourceOrTarget givenType
          
     
     pAtomPair2aAtomPair :: Declaration -> PAtomPair -> Guarded AAtomPair
@@ -404,17 +463,16 @@ pCtx2aCtx' _
     typeCheckViewSegment o vs
      = case vs of 
         P_ViewExp{} -> 
-          unguard $
-            (\(obj,b) -> case toList$ findExact genLattice (mIsc c (name (source (objctx obj)))) of
+          do (obj,b) <- typecheckObjDef (vs_obj vs)
+             case toList$ findExact genLattice (mIsc c (aConcToType (source (objctx obj)))) of
                            [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
                            r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
-                                 else mustBeBound (origin obj) [(Tgt,objctx obj)])
-         <$> typecheckObjDef (vs_obj vs)
+                                 else mustBeBound (origin obj) [(Tgt,objctx obj)]
         P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_txt vs)
         P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_htm vs)
-     where c = name (vd_cpt o)
+     where c = pConcToType (vd_cpt o)
     
-    isa :: String -> String -> Bool
+    isa :: Type -> Type -> Bool
     isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
     
     typecheckObjDef :: (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
@@ -426,15 +484,12 @@ pCtx2aCtx' _
                              , obj_msub = subs
                              , obj_strs = ostrs
                              })
-     = unguard $
-        (\ (objExpr,(srcBounded,tgtBounded)) crud ->
-            (\case
-               Just (newExpr,subStructures) -> obj crud (newExpr,srcBounded) (Just subStructures)
-               Nothing                      -> obj crud (objExpr,srcBounded) Nothing
-            )
-            <$> maybeOverGuarded (pSubi2aSubi objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
-        ) <$> typecheckTerm ctx
-          <*> checkCrud mCrud
+     = do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
+          crud <- checkCrud mCrud
+          maybeObj <- maybeOverGuarded (pSubi2aSubi objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
+          case maybeObj of
+               Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
+               Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
      where      
       checkCrud :: Maybe P_Cruds -> Guarded Cruds
       checkCrud Nothing = pure def
@@ -462,13 +517,11 @@ pCtx2aCtx' _
       typeCheckViewAnnotation _       Nothing       = pure ()
       typeCheckViewAnnotation objExpr (Just viewId) =
         case lookupView viewId of 
-          Just vd -> let viewAnnCptStr = name $ target objExpr
-                         viewDefCptStr = name $ vd_cpt vd
+          Just vd -> let viewAnnCptStr = aConcToType $ target objExpr
+                         viewDefCptStr = pConcToType $ vd_cpt vd
                          viewIsCompatible = viewAnnCptStr `isa` viewDefCptStr
                      in  if viewIsCompatible then pure () else Errors [mkIncompatibleViewError o viewId viewAnnCptStr viewDefCptStr]
           Nothing -> Errors [mkUndeclaredError "view" o viewId] 
-     
-      
       obj crud (e,sr) s
        = ( Obj { objnm = nm
                , objpos = orig
@@ -478,12 +531,12 @@ pCtx2aCtx' _
                , objmsub = s
                , objstrs = ostrs
                }, sr)
-    addEpsilonLeft',addEpsilonRight' :: String -> Expression -> Expression -- TODO: why use primes here?
+    addEpsilonLeft',addEpsilonRight' :: Type -> Expression -> Expression -- TODO: why use primes here?
     addEpsilonLeft' a e
-     = if a==name (source e) then e else EEps (leastConcept (source e) a) (castSign a (name (source e))) .:. e
+     = if a==aConcToType (source e) then e else EEps (leastConcept (source e) a) (castSign a (aConcToType (source e))) .:. e
     addEpsilonRight' a e
-     = if a==name (target e) then e else e .:. EEps (leastConcept (target e) a) (castSign (name (target e)) a)
-    addEpsilon :: String -> String -> Expression -> Expression
+     = if a==aConcToType (target e) then e else e .:. EEps (leastConcept (target e) a) (castSign (aConcToType (target e)) a)
+    addEpsilon :: Type -> Type -> Expression -> Expression
     addEpsilon s t e
      = addEpsilonLeft' s (addEpsilonRight' t e)
 
@@ -497,18 +550,18 @@ pCtx2aCtx' _
     pSubi2aSubi objExpr b o x
       = case x of
          P_InterfaceRef{si_str = ifcId} 
-           ->  unguard $
-             (\(refIfcExpr,_) -> (\objExprEps -> (objExprEps,InterfaceRef (si_isLink x) ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
-             <$> case lookupDisambIfcObj ifcId of
-                   Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
-                   Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
+           -> do (refIfcExpr,_) <- case lookupDisambIfcObj ifcId of
+                                        Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                                        Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
+                 objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
+                 return (objExprEps,InterfaceRef (si_isLink x) ifcId)
          P_Box{}
            -> case si_box x of
                 []  -> const undefined <$> hasNone ([]::[P_SubIfc a]) x -- error
-                l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (unguard . fmap (matchWith (target objExpr)) . typecheckObjDef) l <* uniqueNames l
+                l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
-              ( case toList$ findExact genLattice (mIsc (name$ target objExpr) (name . source . objctx $ ojd)) of
+              ( case toList$ findExact genLattice (mIsc (aConcToType$ target objExpr) (aConcToType . source . objctx $ ojd)) of
                     [] -> mustBeOrderedLst x [(source (objctx ojd),Src, ojd)]
                     (r:_) -> pure (ojd{objctx=addEpsilonLeft' r (objctx ojd)})
               )
@@ -516,9 +569,9 @@ pCtx2aCtx' _
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr
-          expTargetStr = name expTarget
+          expTargetStr = aConcToType expTarget
           ifcSource = source ifcExpr
-          ifcSourceStr = name ifcSource
+          ifcSourceStr = aConcToType ifcSource
           refIsCompatible = expTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` expTargetStr
       in  if refIsCompatible 
           then pure $ addEpsilonRight' ifcSourceStr objExpr 
@@ -536,19 +589,19 @@ pCtx2aCtx' _
                                    PVee _ -> (False,False)
                                    _      -> (True,True)
                                    )) <$> pDisAmb2Expr (t,v)
-         PEqu _ a b -> unguard $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PInc _ a b -> unguard $ binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <$> tt a <*> tt b
-         PIsc _ a b -> unguard $ binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PUni _ a b -> unguard $ binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PDif _ a b -> unguard $ binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
-         PLrs _ a b -> unguard $ binary' (./.)  (MBE (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <$> tt a <*> tt b
-         PRrs _ a b -> unguard $ binary' (.\.)  (MBE (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <$> tt a <*> tt b
-         PDia _ a b -> unguard $ binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- MBE would have been correct, but too restrictive
-         PCps _ a b -> unguard $ binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b
-         PRad _ a b -> unguard $ binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan
+         PEqu _ a b -> join $ binary  (.==.) (MBE (Src,fst) (Src,snd), MBE (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+         PInc _ a b -> join $ binary  (.|-.) (MBG (Src,snd) (Src,fst), MBG (Tgt,snd) (Tgt,fst)) <$> tt a <*> tt b
+         PIsc _ a b -> join $ binary  (./\.) (ISC (Src,fst) (Src,snd), ISC (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+         PUni _ a b -> join $ binary  (.\/.) (UNI (Src,fst) (Src,snd), UNI (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+         PDif _ a b -> join $ binary  (.-.)  (MBG (Src,fst) (Src,snd), MBG (Tgt,fst) (Tgt,snd)) <$> tt a <*> tt b
+         PLrs _ a b -> join $ binary' (./.)  (MBE (Tgt,snd) (Tgt,fst)) ((Src,fst),(Src,snd)) Tgt Tgt <$> tt a <*> tt b
+         PRrs _ a b -> join $ binary' (.\.)  (MBE (Src,fst) (Src,snd)) ((Tgt,fst),(Tgt,snd)) Src Src <$> tt a <*> tt b
+         PDia _ a b -> join $ binary' (.<>.) (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- MBE would have been correct, but too restrictive
+         PCps _ a b -> join $ binary' (.:.)  (ISC (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b
+         PRad _ a b -> join $ binary' (.!.)  (MBE (Tgt,fst) (Src,snd)) ((Src,fst),(Tgt,snd)) Tgt Src <$> tt a <*> tt b -- Using MBE instead of ISC allows the programmer to use De Morgan
          PPrd _ a b -> (\(x,(s,_)) (y,(_,t)) -> (x .*. y, (s,t))) <$> tt a <*> tt b
-         PKl0 _ a   -> unguard $ unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
-         PKl1 _ a   -> unguard $ unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
+         PKl0 _ a   -> join $ unary   EKl0   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
+         PKl1 _ a   -> join $ unary   EKl1   (UNI (Src, id) (Tgt, id), UNI (Src, id) (Tgt, id)) <$> tt a
          PFlp _ a   -> (\(x,(s,t)) -> ((EFlp x), (t,s))) <$> tt a
          PCpl _ a   -> (\(x,_) -> (ECpl x,(False,False))) <$> tt a
          PBrk _ e   -> (\(x,t) -> (EBrk x,t)) <$> tt e 
@@ -621,7 +674,7 @@ pCtx2aCtx' _
           [r] -> case (b1 || Set.member (getConcept p1 e1) r,b2 || Set.member (getConcept p2 e2) r ) of
                    (True,True) -> pure (head (Set.toList r))
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
-          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map castConcept . Set.toList) lst)
+          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map Set.toList lst)
     termPrimDisAmb :: TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb x
      = (x, case x of
@@ -711,23 +764,20 @@ pCtx2aCtx' _
                           , rr_msg = msgs
                           , rr_viol = viols
                           }
-     = unguard $ 
-         (\ (exp',_) -> 
-           (\ vls ->
-             Ru { rrnm = nm
-                , rrexp = exp'
-                , rrfps = orig
-                , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
-                , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
-                , rrviol = vls
-                , rrtyp = sign exp'
-                , rrdcl = Nothing
-                , r_env = env
-                , r_usr = UserDefined
-                , isSignal = not . null . concatMap arRoles . filter (\x -> nm `elem` arRules x) $ allRoleRules 
-                })
-           <$> maybeOverGuarded (typeCheckPairView orig exp') viols)
-         <$> typecheckTerm expr
+     = do (exp',_) <- typecheckTerm expr
+          vls <- maybeOverGuarded (typeCheckPairView orig exp') viols
+          return (Ru { rrnm = nm
+                     , rrexp = exp'
+                     , rrfps = orig
+                     , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
+                     , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs
+                     , rrviol = vls
+                     , rrtyp = sign exp'
+                     , rrdcl = Nothing
+                     , r_env = env
+                     , r_usr = UserDefined
+                     , isSignal = not . null . concatMap arRoles . filter (\x -> nm `elem` arRules x) $ allRoleRules 
+                     })
     pIdentity2aIdentity :: P_IdentDef -> Guarded IdentityDef
     pIdentity2aIdentity pidt
      = case disambiguate termPrimDisAmb pidt of
@@ -742,26 +792,22 @@ pCtx2aCtx' _
            orig = ix_pos pidt
            pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
-              unguard $
-                (\o -> case toList$ findExact genLattice $ name (source $ objctx o) `mjoin` name conc of
-                         [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
-                         _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (name conc) (objctx o)}
-                ) <$> pObjDefDisamb2aObjDef ojd
-
+              do o <- pObjDefDisamb2aObjDef ojd
+                 case toList$ findExact genLattice $ aConcToType (source $ objctx o) `mjoin` aConcToType conc of
+                          [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
+                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (aConcToType conc) (objctx o)}
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg o x) lst
     typeCheckPairViewSeg :: Origin -> Expression -> (PairViewSegment (Term (TermPrim, DisambPrim))) -> Guarded (PairViewSegment Expression)
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
-     = unguard $
-         (\(e,(b,_)) -> case toList$ (findSubsets genLattice (mjoin (name (source e)) (getConcept s t))) of
+     = do (e,(b,_)) <- typecheckTerm x
+          case toList$ (findSubsets genLattice (mjoin (aConcToType (source e)) (getConcept s t))) of
                           [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
-                          lst -> if b || and (map (name (source e) `elem`) lst)
+                          lst -> if b || and (map (aConcToType (source e) `elem`) lst)
                                  then pure (PairViewExp orig s e)
-                                 else mustBeBound (origin (fmap fst x)) [(Src, e)])
-         <$> typecheckTerm x
-
+                                 else mustBeBound (origin (fmap fst x)) [(Src, e)]
     pPurp2aPurp :: PPurpose -> Guarded Purpose
     pPurp2aPurp PRef2 { pexPos    = orig     -- :: Origin
                       , pexObj    = objref   -- :: PRefObj
@@ -861,7 +907,7 @@ data TT a  -- (In order of increasing strictness. If you are unsure which to pic
 deriv' :: (Applicative f)
        => ((SrcOrTgt, t -> (Expression, (Bool, Bool))), (SrcOrTgt, t -> (Expression, (Bool, Bool))))
        -> t
-       -> f ((String, Bool), (String, Bool))
+       -> f ((Type, Bool), (Type, Bool))
 deriv' (a,b) es = let (sourceOrTarget1, (e1, t1)) = resolve es a
                       (sourceOrTarget2, (e2, t2)) = resolve es b
                   in pure ((getConcept sourceOrTarget1 e1, t1), (getConcept sourceOrTarget2 e2, t2))
@@ -871,7 +917,6 @@ instance Functor TT where
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
   
--- TODO: would probably be better to return an A_Concept
-getConcept :: Association a => SrcOrTgt -> a -> String
-getConcept Src = name . source
-getConcept Tgt = name . target
+getConcept :: Association a => SrcOrTgt -> a -> Type
+getConcept Src = aConcToType . source
+getConcept Tgt = aConcToType . target

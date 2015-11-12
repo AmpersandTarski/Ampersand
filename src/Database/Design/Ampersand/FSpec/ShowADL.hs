@@ -61,6 +61,10 @@ instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
   showADL (P_InterfaceRef _ isLink nm) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
 
+instance ShowADL (Maybe TType) where
+  showADL (Just v) = show v
+  showADL Nothing = "'Default'"
+
 instance ShowADL ObjectDef where
 -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
 --              Het vertroebelt de code ook een beetje, want nu moeten er dingen als 'source' en

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr, makeError, addError
@@ -7,6 +7,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames
+  , TypeAware(..), unexpectedType
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
@@ -35,6 +36,8 @@ import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
 import Database.Design.Ampersand.Input.ADL1.FilePos()
+import Data.Monoid
+
 
 _notUsed :: a
 _notUsed = undefined fatal
@@ -55,6 +58,36 @@ makeError msg = Errors [PE (Message msg)]
 
 addError :: String -> Guarded a -> Guarded b
 addError msg guard = Errors (PE (Message msg):errors guard)
+
+class TypeAware x where
+  -- How to create something of type "p x"?
+  -- Well, [x], Maybe x, Guarded x are all of the type "p x".
+  -- The reason for us to write "p x" (without constraints on p) is that we want to disallow getADLType to inspect its argument
+  -- This way, it has no information about x
+  getADLType :: p x -> String
+  getADLTypes :: p x -> String
+  getADLTypes p = getADLType_A p<>"s"
+  getADLType_A :: p x -> String
+  getADLType_A p = "A "<>getADLType_A p
+  getADLType_a :: p x -> String
+  getADLType_a p = "a "<>getADLType_A p
+
+instance TypeAware TType where
+  getADLType _ = "built-in type"
+instance TypeAware (Maybe TType) where
+  getADLType _ = "built-in type"
+instance TypeAware A_Concept where
+  getADLType _ = "concept"
+
+-- SJC, Note about Haskell: I'm using scoped type variables here, via the flag "ScopedTypeVariables"
+-- the result is that the b is bound by the type signature, so I can use `getADLType_a' with exactly that type
+unexpectedType :: forall a b. (TypeAware a, TypeAware b, ShowADL a) => Origin -> a -> Guarded b
+unexpectedType o x = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showADL x<>"\n  expecting "<>getADLType_a ([]::[b])]
+-- There is a way to work around this without ScopedTypeVariables, but in my (SJC) view, this is less readable:
+-- unexpectedType :: (TypeAware a, TypeAware b, ShowADL a) => Origin -> a -> Guarded b
+-- unexpectedType o x = res
+--   where res = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showADL x<>"\n  expecting "<>getADLType_a res]
+-- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
 
 class GetOneGuarded a where
   getOneExactly :: (Traced a1, ShowADL a1) => a1 -> [a] -> Guarded a
@@ -180,10 +213,10 @@ mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
                       concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
                              | vd <- viewDefs ]
 
-mkIncompatibleViewError :: P_ObjDef a -> String -> String -> String -> CtxError
+mkIncompatibleViewError :: (Named b,Named c) => P_ObjDef a -> String -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
-  CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
-                         ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
+  CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ name viewCptStr ++
+                         ", which should be equal to or more general than the target " ++ name viewRefCptStr ++ " of the expression at this field."
 
 mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
@@ -241,7 +274,7 @@ mustBeOrderedLst o lst
              "\n  if you think there is no type error, add an order between the mismatched concepts."
           ]
 
-mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded a
+mustBeOrderedConcLst :: (Named a_conc) => Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[a_conc]] -> Guarded a
 mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
  = Errors [CTXE o$ "Ambiguous type when matching: "++show p1++" of "++showADL e1++"\n"
                                           ++" and "++show p2++" of "++showADL e2++".\n"
@@ -249,8 +282,8 @@ mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
                    ++"\n  None of these concepts is known to be the smallest, you may want to add an order between them."]
 
 newtype Slash a = Slash [a]
-instance ShowADL a => ShowADL (Slash a) where
-  showADL (Slash x) = intercalate "/" (map showADL x)
+instance Named a => ShowADL (Slash a) where
+  showADL (Slash x) = intercalate "/" (map name x)
 
 mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
 mustBeBound o [(p,e)]
@@ -272,7 +305,6 @@ data Guarded a = Errors [CtxError] | Checked a deriving Show
 instance Functor Guarded where
  fmap _ (Errors a)  = Errors a
  fmap f (Checked a) = Checked (f a)
-
 instance Applicative Guarded where
  pure = Checked
  (<*>) (Checked f) (Checked a) = Checked (f a)
