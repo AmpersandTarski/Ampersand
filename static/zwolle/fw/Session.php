@@ -102,7 +102,7 @@ class Session {
 		if(Config::get('loginEnabled')){
 			$arr = array();
 			foreach($roles as $role){
-				$arr = array_merge($arr, $role->interfaces);
+				$arr = array_merge($arr, $role->interfaces());
 			}
 			$this->accessibleInterfaces = array_unique($arr);
 		}

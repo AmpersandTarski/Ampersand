@@ -280,7 +280,7 @@ class Api{
     		
     		// Check if user may request all atoms for given $concept
     		$editableConcepts = array();
-    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
+    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts());
     			
     		if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
     		
@@ -300,7 +300,7 @@ class Api{
     		
     		// Check if user may request atom(s) for given $concept
     		$editableConcepts = array();
-    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
+    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts());
     			 
     		if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
     		
@@ -334,12 +334,6 @@ class Api{
     			$new[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
     		}
     		
-    		// roles
-    		$roles = array();
-    		foreach($session->getSessionRoles() as $role){
-    			$roles[] = array('id' => $role->id, 'label' => $role->label);
-    		}
-    		
     		return array ('top' => $top
     					 ,'new' => $new
     					 ,'refreshMenu' => $GLOBALS['navBar']['refreshMenu']
@@ -351,7 +345,7 @@ class Api{
     					 ,'notifications' => Notifications::getAll()
     					 ,'session' => array ( 'id' => $session->id
     					 					 , 'loggedIn' => Session::sessionUserLoggedIn())
-    					 ,'sessionRoles' => $roles
+    					 ,'sessionRoles' => $session->getSessionRoles()
     					 ,'sessionVars' => Session::getSessionVars()
     		);
     		

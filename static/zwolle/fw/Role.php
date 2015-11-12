@@ -4,10 +4,10 @@ class Role {
 
 	public $id;
 	public $label;
-	public $maintains = array();
-	public $interfaces = array();
-	public $editableConcepts = array();
 	public $active = false;
+	private $maintains = array();
+	private $interfaces = array();
+	private $editableConcepts = array();
 	
 	/*
 	 * param int $id
@@ -32,6 +32,18 @@ class Role {
 			$ifc = new InterfaceObject($interfaceId);
 			if (in_array($this->label, $ifc->interfaceRoles) || empty($ifc->interfaceRoles)) $this->interfaces[] = $ifc;
 		}
+	}
+	
+	public function maintains(){
+		return $this->maintains;
+	}
+	
+	public function interfaces(){
+		return $this->interfaces;
+	}
+	
+	public function editableConcepts(){
+		return $this->editableConcepts;
 	}
 	
 	public static function getRoleInfo($roleId){		
