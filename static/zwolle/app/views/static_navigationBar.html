@@ -62,12 +62,7 @@
 			<li class="dropdown" uib-tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="left">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
 				<ul class="dropdown-menu" role="menu">
-					<li>
-						<a href="" ng-repeat="role in $sessionStorage.sessionRoles" ng-click="toggleRole(role.id)" style="white-space:normal;">
-							{{role.label}}
-							<span ng-show="role.active" class="glyphicon glyphicon-ok pull-right"></span>
-						</a>
-					</li>
+					<li ng-repeat="role in $sessionStorage.sessionRoles" ng-click="$event.stopPropagation(); toggleRole();"><switch ng-model="role.active"> {{role.label}}</switch></li>
 					<li ng-if="navbar.roleMenu" class="divider" role="presentation"></li>
 					<li ng-repeat="ext in navbar.roleMenu" ng-include="ext.url"/>
 				</ul>
