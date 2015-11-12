@@ -12,7 +12,6 @@ class Session {
 	public $viewer;
 	public $atom;
 	
-	private $activeRoles = array(); // all active roles (e.g. selected by user)
 	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
 	
 	private $accessibleInterfaces = array(); // when login enabled: all interfaces for sessionRoles, otherwise: interfaces for active roles
@@ -83,12 +82,12 @@ class Session {
 			Notifications::addLog("No roles provided to activate", 'SESSION');
 		}else{
 			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
-			foreach($roles as $role){
+			foreach($this->sessionRoles as &$role){
 				if(in_array($role->id, $roleIds)){
-					$this->activeRoles[] = $role;
-					$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces);
-					$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces);
-					$this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains);
+					$role->active = true;
+					$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
+					$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+					$this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
 				}
 				Notifications::addLog("Role $role->id is activate", 'SESSION');
 			}
@@ -107,8 +106,6 @@ class Session {
 			}
 			$this->accessibleInterfaces = array_unique($arr);
 		}
-
-		return $this->activeRoles;
 	}
 	
 	public function setInterface($interfaceId){

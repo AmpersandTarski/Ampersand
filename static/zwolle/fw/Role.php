@@ -7,6 +7,7 @@ class Role {
 	public $maintains = array();
 	public $interfaces = array();
 	public $editableConcepts = array();
+	public $active = false;
 	
 	/*
 	 * param int $id
