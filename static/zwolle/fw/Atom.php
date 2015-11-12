@@ -96,8 +96,8 @@ Class Atom {
 						
 						// Define interface(s) to navigate to for this tgtAtom
 						$atomInterfaces = array();
-						if($interface->isLinkTo && !$inclLinktoData && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
-						elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesToReadConcept($interface->tgtConcept));
+						if($interface->isLinkTo && !$inclLinktoData && $session->isAccessibleIfc($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
+						else $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->getInterfacesToReadConcept($interface->tgtConcept));
 							
 						// Add meta data elements
 						$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
@@ -126,8 +126,8 @@ Class Atom {
 					
 					// Define interface(s) to navigate to for this tgtAtom
 					$atomInterfaces = array();
-					if($interface->isLinkTo && !$inclLinktoData && $session->role->isInterfaceForRole($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
-					elseif(isset($session->role)) $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->role->getInterfacesToReadConcept($interface->tgtConcept));
+					if($interface->isLinkTo && !$inclLinktoData && $session->isAccessibleIfc($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
+					else $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->getInterfacesToReadConcept($interface->tgtConcept));
 						
 					// Add meta data elements
 					$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id

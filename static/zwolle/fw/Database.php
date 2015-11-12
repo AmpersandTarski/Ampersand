@@ -535,8 +535,8 @@ class Database {
 			// Evaluate all affected signal conjuncts. Conjuncts are cached
 			RuleEngine::checkConjuncts(RuleEngine::getAffectedSigConjuncts($this->affectedConcepts, $this->affectedRelations), true);
 			
-			// Check only those process rules that are relevant for the current role
-			if(isset($session->role->id)) RuleEngine::checkProcessRules($session->role->id);
+			// Check only those process rules that are relevant for the activate roles
+			RuleEngine::checkProcessRules($session);
 		}
 		
 		unset($this->affectedConcepts, $this->affectedRelations);

@@ -8,12 +8,16 @@ class Session {
 	
 	public $id;
 	public $database;
-	public $activeRoles = array();
 	public $interface;
 	public $viewer;
 	public $atom;
-	public $accessibleInterfaces = array();
-	public $rulesToMaintain = array(); // depends on activeRoles
+	
+	private $activeRoles = array(); // all active roles (e.g. selected by user)
+	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
+	
+	private $accessibleInterfaces = array(); // when login enabled: all interfaces for sessionRoles, otherwise: interfaces for active roles
+	private $ifcsOfActiveRoles = array(); // interfaces for active roles
+	public $rulesToMaintain = array(); // rules that are maintained by active roles 
 	
 	public static $sessionUser;
 	
@@ -69,7 +73,7 @@ class Session {
 	}
 	
 	public function activateRoles($roleIds = null){
-		$roles = Config::get('loginEnabled') ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
+		$roles = Config::get('loginEnabled') ? $this->sessionRoles = Role::getAllSessionRoles() : Role::getAllRoleObjects();
 		if(empty($roles)){
 			Notifications::addLog("No roles available to activate", 'SESSION');	
 		}elseif(is_null($roleIds)){
@@ -82,13 +86,20 @@ class Session {
 			foreach($roles as $role){
 				if(in_array($role->id, $roleIds)){
 					$this->activeRoles[] = $role;
+					$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces);
+					$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces);
 					$this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains);
-				}	
+				}
 				Notifications::addLog("Role $role->id is activate", 'SESSION');
 			}
-			$this->rulesToMaintain = array_unique($this->rulesToMaintain); // filter duplicate values
+			
+			// filter duplicate values
+			$this->ifcsOfActiveRoles = array_unique($this->ifcsOfActiveRoles); 
+			$this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
+			$this->rulesToMaintain = array_unique($this->rulesToMaintain);
 		}
 		
+		// If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
 		if(Config::get('loginEnabled')){
 			$arr = array();
 			foreach($roles as $role){
@@ -103,13 +114,36 @@ class Session {
 	public function setInterface($interfaceId){
 		
 		if(isset($interfaceId)) {
-			if(!$this->role->isInterfaceForRole($interfaceId)) throw new Exception('Interface is not accessible for specified role: '.$this->role->name.' (roleId:' . $this->role->id .')', 401); // 401: Unauthorized
+			if(!$this->isAccessibleIfc($interfaceId)) throw new Exception("Interface is not accessible for active roles or accessible roles (login)", 401); // 401: Unauthorized
 			
 			$this->interface = new InterfaceObject($interfaceId);
 			Notifications::addLog("Interface '". $this->interface->label . "' selected", 'SESSION');
 				
 		}else{
 			throw new Exception('No interface specified', 404);
+		}
+	}
+	
+	public function getSessionRoles(){
+		if(isset($this->sessionRoles)){
+			return $this->sessionRoles;
+		}else{
+			if(Config::get('loginEnabled')){
+				$sessionRoleLabels = array();
+				$sessionRoles = array();
+				
+				$interface = new InterfaceObject('SessionRoles');
+				$session = new Atom(session_id(), 'SESSION');
+				$sessionRoleLabels = array_keys((array)$session->getContent($interface, true));
+				
+				foreach(Role::getAllRoleObjects() as $role){
+					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
+				}
+			}else{
+				$sessionRoles = Role::getAllRoleObjects();
+			}
+			
+			return $this->sessionRoles = $sessionRoles;
 		}
 	}
 	
@@ -177,6 +211,38 @@ class Session {
 			}		
 			
 		}
+	}
+	
+	public function getInterfacesForNavBar(){
+		$interfaces = array();
+		foreach($this->ifcsOfActiveRoles as $interface){
+			if(($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') && $interface->crudR) $interfaces[] = $interface;
+		}
+		return $interfaces;
+	}
+	
+	public function getInterfacesToCreateAtom(){
+		$interfaces = array();
+		foreach($this->ifcsOfActiveRoles as $interface){
+			//if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
+			if($interface->crudC && $interface->isIdent) $interfaces[] = $interface;
+		}
+		return $interfaces;
+	}
+	
+	public function getInterfacesToReadConcept($concept){
+		$interfaces = array();
+	
+		foreach($this->accessibleInterfaces as $interface){
+			if(($interface->srcConcept == $concept || in_array($concept, Concept::getSpecializations($interface->srcConcept))
+					&& $interface->crudR)
+			) $interfaces[] = $interface;
+		}
+		return $interfaces;
+	}
+	
+	public function isAccessibleIfc($interfaceId){
+		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->accessibleInterfaces));
 	}
 }
 ?>

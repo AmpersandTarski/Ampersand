@@ -77,54 +77,8 @@ class Role {
 		return false; // when $roleName is not found in $allRoles
 	}
 	
-	private function getInterfacesForConcept($concept){
-		$interfaces = array();
-		
-		foreach($this->getSessionInterfaces() as $interface){
-			if($interface->srcConcept == $concept || 
-					in_array($concept, Concept::getSpecializations($interface->srcConcept)) 
-				) $interfaces[] = $interface;
-		}
-		return $interfaces;
-	}
-	
-	public function getInterfacesToReadConcept($concept){
-		$interfaces = array();
-		
-		foreach($this->getInterfacesForConcept($concept) as $interface){
-			if($interface->crudR) $interfaces[] = $interface;
-		}
-		return $interfaces;
-	}
-	
-	public function getInterfacesForNavBar(){
-		$interfaces = array();
-		foreach($this->interfaces as $interface){
-			if(($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') && $interface->crudR) $interfaces[] = $interface;
-		}
-		return $interfaces;
-	}
-	
-	public function getInterfacesToCreateAtom(){
-		$interfaces = array();
-		foreach($this->interfaces as $interface){
-			//if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
-			if($interface->crudC && $interface->isIdent) $interfaces[] = $interface;
-		}
-		return $interfaces;
-	}
-	
 	public function isInterfaceForRole($interfaceId){		
-		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->getSessionInterfaces()));
-	}
-	
-	private function getSessionInterfaces(){
-		if(Config::get('loginEnabled')){
-			$session = Session::singleton();
-			return (array)$session->accessibleInterfaces;
-		}else{
-			return (array)$this->interfaces;
-		}
+		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->interfaces));
 	}
 }
 ?>
