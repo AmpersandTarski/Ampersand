@@ -263,7 +263,7 @@ class Api{
         		// return Concept::getConcept(); // Return specific concept
         		throw new RestException(501); // 501: not implemented
     		}else{
-    			return Concept::getAllConcepts(); // Return list of all concepts
+    			return array_keys(Concept::getAllConcepts()); // Return list of all concepts
     		}
         	
         }catch(Exception $e){

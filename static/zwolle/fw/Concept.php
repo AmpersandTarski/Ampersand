@@ -25,7 +25,7 @@ class Concept {
 	public static function getAllConcepts(){
 		global $allConcepts; // from Generics.php
 	
-		return array_keys($allConcepts);
+		return $allConcepts;
 	}
 	
 	public static function getTypeRepresentation($concept){
