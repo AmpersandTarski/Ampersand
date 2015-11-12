@@ -1,4 +1,3 @@
-{-# OPTIONS_GHC -fno-enable-rewrite-rules #-} -- Disable rewrite rules to drastically improve compilation speed
 {-# LANGUAGE FlexibleContexts #-}
 module Database.Design.Ampersand.Input.ADL1.Parser
     ( AmpParser
