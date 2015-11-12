@@ -7,24 +7,44 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$rootScope.loadingNavBar = new Array(); // initialize an array for promises, used by angular-busy module (loading indicator)
 	
 	$rootScope.selectRole = function(roleId){
-		$localStorage.roleId = roleId;
+		$rootScope.toggleRole(roleId, true);
+	};
+	
+	$rootScope.toggleRole = function(roleId, set){
+		angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
+			if (role.id == roleId) {
+				if(set === undefined){
+					role.active = !role.active;
+				}else{
+					role.active = set;
+				}
+			}
+		});
 		
 		// refresh navbar + notifications
 		$rootScope.refreshNavBar();
 		$rootScope.getNotifications();
-		//$scope.reload();
-	};
+	}
 	
-	$rootScope.toggleRole = function(roleId){
-		for (var i = 0; i < $scope.$sessionStorage.sessionRoles.length; i++) {
-			if ($scope.$sessionStorage.sessionRoles[i].id == roleId) {
-				$scope.$sessionStorage.sessionRoles[i].active = !$scope.$sessionStorage.sessionRoles[i].active;
+	$rootScope.deactivateAllRoles = function(){
+		angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
+			role.active = false;
+		});
+		$rootScope.refreshNavBar();
+	}
+	
+	$rootScope.getActiveRoleIds = function(){
+		var roleIds = [];
+		angular.forEach($scope.sessionStorage.sessionRoles, function(role) {
+			if (role.active == true) {
+				roleIds.push(role.id);
 			}
-		}
+		});
+		return roleIds;
 	}
 	
 	$rootScope.selectRoleByLabel = function (roleLabel){
-		angular.forEach($scope.navbar.roles, function(role) {
+		angular.forEach($scope.sessionStorage.sessionRoles, function(role) {
 			if(role.label == roleLabel){
 				$rootScope.selectRole(role.id);
 				return;
@@ -72,8 +92,8 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		session.remove().then(function(data){
 			$rootScope.updateNotifications(data.notifications);
 			
-			// set roleId back to 0
-			$scope.selectRole(0);
+			// deactivate roles
+			$rootScope.deactivateAllRoles();
 			
 		});
 	};
