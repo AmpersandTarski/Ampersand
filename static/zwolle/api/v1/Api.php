@@ -276,14 +276,13 @@ class Api{
      */
     public function getConceptAtoms($concept){
     	try{
-    		// If login is enabled, check if users may request all atoms.
-    		if(Config::get('loginEnabled')){
-    			$editableConcepts = array();
-    			$roles = Role::getAllSessionRoles();
-    			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
+    		$session = Session::singleton();
+    		
+    		// Check if user may request all atoms for given $concept
+    		$editableConcepts = array();
+    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
     			
-    			if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
-    		}
+    		if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
     		
         	return Concept::getAllAtomObjects($concept); // "Return list of all atoms for $concept"
         	
@@ -297,14 +296,13 @@ class Api{
      */
     public function getConceptAtom($concept, $atomId){
     	try{
-    		// If login is enabled, check if users may request all atoms.
-    		if(Config::get('loginEnabled')){
-    			$editableConcepts = array();
-    			$roles = Role::getAllSessionRoles();
-    			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
+    		$session = Session::singleton();
+    		
+    		// Check if user may request atom(s) for given $concept
+    		$editableConcepts = array();
+    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
     			 
-    			if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
-    		}
+    		if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
     		
     		$atom = new Atom($atomId, $concept);
     		if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
@@ -327,19 +325,18 @@ class Api{
     		$session->activateRoles($roleIds);
     		
     		// top level interfaces
-    		foreach ($session->role->getInterfacesForNavBar() as $ifc){
+    		foreach ($session->getInterfacesForNavBar() as $ifc){
     			$top[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
     		}
     		
     		// new interfaces
-    		foreach ($session->role->getInterfacesToCreateAtom() as $ifc){
+    		foreach ($session->getInterfacesToCreateAtom() as $ifc){
     			$new[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
     		}
     		
     		// roles
     		$roles = array();
-    		$allRoles = Config::get('loginEnabled') ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
-    		foreach((array)$allRoles as $role){
+    		foreach($session->getSessionRoles() as $role){
     			$roles[] = array('id' => $role->id, 'label' => $role->label);
     		}
     		

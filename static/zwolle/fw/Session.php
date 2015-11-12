@@ -73,14 +73,14 @@ class Session {
 	}
 	
 	public function activateRoles($roleIds = null){
-		$roles = Config::get('loginEnabled') ? $this->sessionRoles = Role::getAllSessionRoles() : Role::getAllRoleObjects();
+		$roles = $this->getSessionRoles();
 		if(empty($roles)){
 			Notifications::addLog("No roles available to activate", 'SESSION');	
 		}elseif(is_null($roleIds)){
 			// TODO: insert default roles here
-			Notifications::addLog("No activate roles", 'SESSION');
+			Notifications::addLog("No roles provided to activate", 'SESSION');
 		}elseif(empty($roleIds)){
-			Notifications::addLog("No activate roles", 'SESSION');
+			Notifications::addLog("No roles provided to activate", 'SESSION');
 		}else{
 			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
 			foreach($roles as $role){

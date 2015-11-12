@@ -12,23 +12,22 @@ class ExecEngineApi{
 	public function run(){
 		try{
 			$session = Session::singleton();
-			$db = Database::singleton();
+			$session->activateRoles();
 			
+			// Check sessionRoles if allowedRolesForRunFunction is specified
 			$allowedRoles = (array)Config::get('allowedRolesForRunFunction','execEngine');
-			if(Config::get('loginEnabled') && !is_null($allowedRoles)){
+			if(!is_null($allowedRoles)){
 				$ok = false;
 				
-				$sessionRoles = Role::getAllSessionRoles();
-				foreach($sessionRoles as $role){
+				foreach($session->getSessionRoles() as $role){
 					if(in_array($role->label, $allowedRoles)) $ok = true;
 				}
 				if(!$ok) throw new Exception("You do not have access to run the exec engine", 401);
-			}
-				
-			$session->activateRoles();
+			}			
 			
 			ExecEngine::run(true);
 			
+			$db = Database::singleton();
 			$db->closeTransaction('Run completed',false,true,false);
 			
 			$result = array('notifications' => Notifications::getAll());
