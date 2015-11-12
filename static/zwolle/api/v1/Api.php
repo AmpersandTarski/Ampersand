@@ -345,7 +345,6 @@ class Api{
     					 ,'refreshMenu' => $GLOBALS['navBar']['refreshMenu']
     					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
-    					 ,'roles' => $roles
     					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
     					 							 ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
     												 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions'))
