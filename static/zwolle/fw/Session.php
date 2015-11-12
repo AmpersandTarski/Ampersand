@@ -91,12 +91,11 @@ class Session {
 				}
 				Notifications::addLog("Role $role->id is activate", 'SESSION');
 			}
-			
-			// filter duplicate values
-			$this->ifcsOfActiveRoles = array_unique($this->ifcsOfActiveRoles); 
-			$this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
-			$this->rulesToMaintain = array_unique($this->rulesToMaintain);
 		}
+		
+		// Add public interfaces
+		$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, InterfaceObject::getPublicInterfaces());
+		$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
 		
 		// If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
 		if(Config::get('loginEnabled')){
@@ -106,6 +105,11 @@ class Session {
 			}
 			$this->accessibleInterfaces = array_unique($arr);
 		}
+		
+		// Filter duplicate values
+		$this->ifcsOfActiveRoles = array_unique($this->ifcsOfActiveRoles);
+		$this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
+		$this->rulesToMaintain = array_unique($this->rulesToMaintain);
 	}
 	
 	public function setInterface($interfaceId){
