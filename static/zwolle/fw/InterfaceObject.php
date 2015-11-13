@@ -122,7 +122,7 @@ class InterfaceObject {
 	public static function getAllInterfacesForConcept($concept){
 		$interfaces = array();
 		foreach (InterfaceObject::getAllInterfaceObjects() as $ifc){
-			if ($ifc->$srcConcept == $concept) $interfaces[$ifc->id] = $ifc;
+			if ($ifc->srcConcept == $concept) $interfaces[$ifc->id] = $ifc;
 		}
 		return $interfaces;
 	}
