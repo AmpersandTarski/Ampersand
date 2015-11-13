@@ -1,4 +1,4 @@
-﻿{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
 import Database.Design.Ampersand.ADL1 hiding (Association)
