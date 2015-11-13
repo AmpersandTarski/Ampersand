@@ -2,8 +2,7 @@
 
 // UI
 AngularApp::addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
-$GLOBALS['navBar']['roleMenu'][] = array ('url' => 'extensions/OAuthLogin/ui/views/MenuItemLogin.html');
-$GLOBALS['navBar']['roleMenu'][] = array ('url' => 'extensions/OAuthLogin/ui/views/MenuItemLogout.html');
+$GLOBALS['navBar']['roleMenu'][] = array ('url' => 'extensions/OAuthLogin/ui/views/MenuItem.html');
 
 class OAuthLoginController {
 
