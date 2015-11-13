@@ -21,6 +21,9 @@ import System.Process (callCommand)
 import Control.Exception (catch, IOException)
 
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpec.Graphic.Graphics"
+
 data PictureReq = PTClassDiagram
                 | PTRelsUsedInPat Pattern
                 | PTDeclaredInPat Pattern

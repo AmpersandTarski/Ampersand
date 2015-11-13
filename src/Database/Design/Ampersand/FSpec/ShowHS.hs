@@ -15,6 +15,9 @@ import Data.Hashable
 import Data.Ord
 import Data.Function
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpec.ShowHS"
+
 fSpec2Haskell :: FSpec -> String
 fSpec2Haskell fSpec
         = "{-# OPTIONS_GHC -Wall #-}"

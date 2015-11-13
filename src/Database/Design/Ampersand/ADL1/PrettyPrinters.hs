@@ -3,12 +3,15 @@ module Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
-import Database.Design.Ampersand.Basics        (fatal)
+import Database.Design.Ampersand.Basics        (fatalMsg)
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
 import Data.Char (toUpper)
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "PrettyPrinters"
 
 prettyPrint :: Pretty a => a -> String
 prettyPrint x = displayS (renderPretty rfrac col_width doc) ""

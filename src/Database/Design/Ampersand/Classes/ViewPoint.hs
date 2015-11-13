@@ -8,6 +8,9 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Explain
 import Data.Maybe
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Classes.ViewPoint"
+
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, relations, etc.)
 

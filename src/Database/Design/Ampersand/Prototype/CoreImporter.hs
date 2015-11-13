@@ -3,5 +3,5 @@ module Database.Design.Ampersand.Prototype.CoreImporter
     )
 where
 
-import Database.Design.Ampersand hiding (fatal) -- we wrote our own version for the prototype
+import Database.Design.Ampersand hiding (fatalMsg) -- we wrote our own version for the prototype
    

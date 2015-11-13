@@ -12,6 +12,8 @@ import Data.Hashable
 import Data.Data
 import Codec.Xlsx.Types
 import qualified Data.Text as T
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Input.ADL1.FilePos"
 
 -- | The line number
 type Line = Int

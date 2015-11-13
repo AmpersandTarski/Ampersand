@@ -7,6 +7,9 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.ADL1.Expression
 import Database.Design.Ampersand.Basics
 
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Classes.Relational"
+
 class Association r => Relational r where
     properties :: r -> [Prop]
     isProp :: r -> Bool  -- > tells whether the argument is a property

@@ -9,6 +9,9 @@ import Database.Design.Ampersand.ADL1.Expression(primitives,isMp1,foldrMapExpres
 import Database.Design.Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Classes.ConceptStructure"
+
 {- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
    (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but
    define relsMentionedIn directly.

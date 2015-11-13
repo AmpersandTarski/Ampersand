@@ -45,6 +45,9 @@ import Database.Design.Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
 import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpec.FSpec"
+
 data FSpec = FSpec { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showADL)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.

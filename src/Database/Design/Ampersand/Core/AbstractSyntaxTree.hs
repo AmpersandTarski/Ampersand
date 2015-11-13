@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances, UndecidableInstances, OverlappingInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 module Database.Design.Ampersand.Core.AbstractSyntaxTree (
@@ -69,7 +69,11 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.Default
-import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
+import qualified System.Locale as SL (defaultTimeLocale)
+import qualified Data.Time.Format as DTF (formatTime,readTime)
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Core.AbstractSyntaxTree"
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
@@ -136,8 +140,8 @@ instance Traced Pattern where
 
 
 data A_RoleRule = A_RoleRule { arRoles :: [Role]
-                             , arRules ::  [String] -- the names of the rules
-                             , arPos ::   Origin
+                             , arRules ::  [String] -- the names of the rules 
+                             , arPos ::   Origin 
                              } deriving (Show)
 data A_Markup =
     A_Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
@@ -160,11 +164,11 @@ data Rule =
         , r_env ::    String                      -- ^ Name of pattern in which it was defined.
         , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
         , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
-        } deriving Typeable
+        } deriving Typeable 
 instance Eq Rule where
   r==r' = rrnm r==rrnm r'
 instance Unique Rule where
-  showUnique = rrnm
+  showUnique = rrnm 
 instance Prelude.Ord Rule where
   compare = Prelude.compare `on` rrnm
 instance Show Rule where
@@ -183,10 +187,10 @@ ruleIsInvariantUniOrInj :: Rule -> Bool
 ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p `elem` [Uni, Inj]
                              | otherwise                                     = False
                              -- NOTE: currently all rules coming from properties are invariants, so the not isSignal
-                             -- condition is unnecessary, but this will change in the future.
+                             -- condition is unnecessary, but this will change in the future.    
+    
 
-
-data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
+data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because 
                                                -- this is an internal id that has no counterpart at the ADL level)
                      , rc_orgRules ::   [Rule] -- All rules this conjunct originates from
                      , rc_conjunct ::   Expression
@@ -197,10 +201,10 @@ data DnfClause = Dnf { antcs :: [Expression]
                      , conss :: [Expression]
                      }  deriving (Show, Eq) -- Show is for debugging purposes only.
 
-{- The intended semantics of |Dnf ns ps| is the disjunction |foldr1 ( .\/. ) (map notCpl ns ++ ps)|.
+{- The intended semantics of |Dnf ns ps| is the disjunction |foldr1 ( .\/. ) (map notCpl ns ++ ps)|. 
    The list |ns| and |ps| are not guaranteed to be sorted or duplicate-free.
 -}
-
+ 
 instance Eq Conjunct where
   rc==rc' = rc_id rc==rc_id rc'
 instance Unique Conjunct where
@@ -239,7 +243,7 @@ instance Ord Declaration where
   compare a b =
     case a of
       Sgn{} -> case b of
-                Sgn{} -> if name a == name b
+                Sgn{} -> if name a == name b 
                          then Prelude.compare (sign a) (sign b)
                          else Prelude.compare (name a) (name b)
                 Isn{} -> GT
@@ -248,25 +252,25 @@ instance Ord Declaration where
                 Sgn{} -> LT
                 Isn{} -> Prelude.compare (sign a) (sign b)
                 Vs{}  -> GT
-      Vs{}  -> case b of
+      Vs{}  -> case b of 
                 Sgn{} -> LT
                 Isn{} -> LT
                 Vs{}  -> Prelude.compare (sign a) (sign b)
 instance Unique Declaration where
-  showUnique d =
+  showUnique d = 
     case d of
       Sgn{} -> name d++uniqueShow False (decsgn d)
       Isn{} -> "I["++uniqueShow False (detyp d)++"]"
       Vs{}  -> "V"++uniqueShow False (decsgn d)
 instance Hashable Declaration where
-   hashWithSalt s dcl =
-     s `hashWithSalt` constructorNr `hashWithSalt` origin dcl
+   hashWithSalt s dcl = 
+     s `hashWithSalt` constructorNr `hashWithSalt` (origin dcl)
      where constructorNr :: Int
-           constructorNr
-             = case dcl of
+           constructorNr 
+             = case dcl of 
                  Sgn{} -> 0
                  Isn{} -> 1
-                 Vs{}  -> 2
+                 Vs{}  -> 2 
 instance Show Declaration where  -- For debugging purposes only (and fatal messages)
   showsPrec _ decl@Sgn{}
    = showString (case decl of
@@ -326,7 +330,7 @@ data ViewSegment = ViewExp { vsgmNr   :: Integer
                            }
                  | ViewText{ vsgmNr   :: Integer
                            , vsgmTxt  :: String
-                           }
+                           } 
                  | ViewHtml{ vsgmNr   :: Integer
                            , vsgmHtml :: String
                            } deriving (Eq, Show)
@@ -343,7 +347,7 @@ data A_Gen = Isa { genspc :: A_Concept      -- ^ specific concept
                  } deriving (Typeable, Eq)
 instance Unique A_Gen where
   showUnique a =
-    case a of
+    case a of 
       Isa{} -> uniqueShow False (genspc a)++" ISA "++uniqueShow False (gengen a)
       IsE{} -> uniqueShow False (genspc a)++" IS "++intercalate " /\\ " (map (uniqueShow False) (genrhs a))
 instance Show A_Gen where
@@ -377,7 +381,7 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
                                 []    -> fatal 327 $ "getInterface by name: no interfaces named "++show nm
                                 [ifc] -> ifc
                                 _     -> fatal 330 $ "getInterface by name: multiple interfaces named "++show nm
-
+ 
 objAts :: ObjectDef -> [ObjectDef]
 objAts obj
   = case objmsub obj of
@@ -420,8 +424,8 @@ instance Default Cruds where
               , crudU    = Nothing
               , crudD    = Nothing
               }
-data SubInterface = Box A_Concept (Maybe String) [ObjectDef]
-                  | InterfaceRef Bool -- is LINKTO?
+data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 
+                  | InterfaceRef Bool -- is LINKTO? 
                                  String deriving (Eq, Show)
 
 data InsDel   = Ins | Del
@@ -431,7 +435,7 @@ data ECArule= ECA { ecaTriggr :: Event       -- The event on which this rule is 
                   , ecaAction :: PAclause    -- The action to be taken when triggered.
                   , ecaNum ::    Int         -- A unique number that identifies the ECArule within its scope.
                   }
-
+                  
 instance Show ECArule where
   showsPrec _ r = showString ("ON "++show (ecaTriggr r)++" "++show (ecaDelta r)++" do something.")
 
@@ -495,8 +499,8 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explRefIds :: [String]     -- ^ The references of the explaination
                      } deriving (Show, Typeable)
 instance Eq Purpose where
-  x0 == x1  =  explObj x0 == explObj x1 &&  -- TODO: check if this definition is right.
-                                            -- I(Han) suspect that the Origin should be part of it.
+  x0 == x1  =  explObj x0 == explObj x1 &&  -- TODO: check if this definition is right. 
+                                            -- I(Han) suspect that the Origin should be part of it. 
                (amLang . explMarkup) x0 == (amLang . explMarkup) x1
 instance Unique Purpose where
   showUnique p = uniqueShow True (explObj p)++" in "++(show.amLang.explMarkup) p
@@ -514,7 +518,7 @@ data Population -- The user defined populations
              , popas ::  [AAtomValue]  -- The user-defined atoms that populate the concept
              } deriving (Eq)
 
-data AAtomPair
+data AAtomPair 
   = APair { apLeft  :: AAtomValue
           , apRight :: AAtomValue
           }deriving(Eq,Prelude.Ord)
@@ -543,9 +547,9 @@ data AAtomValue
 showValPHP :: AAtomValue -> String
 showValPHP val =
   case val of
-   AAVString{}  -> "'"++f (aavstr val)++"'"
-     where
-        f str'=
+   AAVString{}  -> "'"++f (aavstr val)++"'" 
+     where 
+        f str'= 
           case str' of
             []        -> []
             ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
@@ -554,32 +558,32 @@ showValPHP val =
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> "'"++showGregorian (aadateDay val)++"'"
-   AAVDateTime {} -> "'"++DTF.formatTime DTF.defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+   AAVDateTime {} -> "'"++DTF.formatTime SL.defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
      --formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
 showValSQL :: AAtomValue -> String
 showValSQL val =
   case val of
-   AAVString{}  -> aavstr val
+   AAVString{}  -> aavstr val 
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)
-   AAVDateTime {} -> "'"++DTF.formatTime DTF.defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+   AAVDateTime {} -> "'"++DTF.formatTime SL.defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
      --formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
 showValADL :: AAtomValue -> String
-showValADL val =
+showValADL val = 
   case val of
-   AAVString{}  ->       aavstr val
+   AAVString{}  ->      (aavstr val)
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)
-   AAVDateTime {} -> DTF.formatTime DTF.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
+   AAVDateTime {} -> DTF.formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
-
+ 
 data ExplObj = ExplConceptDef ConceptDef
              | ExplDeclaration Declaration
              | ExplRule String
@@ -591,7 +595,7 @@ data ExplObj = ExplConceptDef ConceptDef
           deriving (Show ,Eq, Typeable)
 instance Unique ExplObj where
   showUnique e = "Explanation of "++
-    case e of
+    case e of 
      (ExplConceptDef cd) -> uniqueShow True cd
      (ExplDeclaration d) -> uniqueShow True d
      (ExplRule s)        -> "a Rule named "++s
@@ -600,7 +604,7 @@ instance Unique ExplObj where
      (ExplPattern s)     -> "a Pattern named "++s
      (ExplInterface s)   -> "an Interface named "++s
      (ExplContext s)     -> "a Context named "++s
-
+     
 data Expression
       = EEqu (Expression,Expression)   -- ^ equivalence             =
       | EInc (Expression,Expression)   -- ^ inclusion               |-
@@ -622,13 +626,13 @@ data Expression
       | EDcI A_Concept                 -- ^ Identity relation
       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Signature                 -- ^ Cartesian product relation
-      | EMp1 PSingleton A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
+      | EMp1 PSingleton A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet. 
       deriving (Eq, Prelude.Ord, Show, Typeable, Generic, Data)
 instance Unique Expression where
   showUnique = show
 instance Hashable Expression where
-   hashWithSalt s expr =
-     s `hashWithSalt`
+   hashWithSalt s expr = 
+     s `hashWithSalt` 
        case expr of
         EEqu (a,b) -> ( 0::Int) `hashWithSalt` a `hashWithSalt` b
         EInc (a,b) -> ( 1::Int) `hashWithSalt` a `hashWithSalt` b
@@ -650,7 +654,7 @@ instance Hashable Expression where
         EDcI c     -> (17::Int) `hashWithSalt` c
         EEps c sgn -> (18::Int) `hashWithSalt` c `hashWithSalt` sgn
         EDcV sgn   -> (19::Int) `hashWithSalt` sgn
-        EMp1 val c -> (21::Int) `hashWithSalt` show val `hashWithSalt` c
+        EMp1 val c -> (21::Int) `hashWithSalt` show val `hashWithSalt` c        
 
 instance Unique (PairView Expression) where
   showUnique = show
@@ -759,8 +763,8 @@ getExpressionRelation expr = case getRelation expr of
    Just (s,Just d,t,isFlipped)  -> Just (s,d,t,isFlipped)
    _                            -> Nothing
  where
-    -- If the expression represents an editable relation, the relation is returned together with the narrowest possible source and target
-    -- concepts, as well as a boolean that states whether the relation is flipped.
+    -- If the expression represents an editable relation, the relation is returned together with the narrowest possible source and target 
+    -- concepts, as well as a boolean that states whether the relation is flipped. 
     getRelation :: Expression -> Maybe (A_Concept, Maybe Declaration, A_Concept, Bool)
     getRelation (ECps (e, EDcI{})) = getRelation e
     getRelation (ECps (EDcI{}, e)) = getRelation e
@@ -770,12 +774,12 @@ getExpressionRelation expr = case getRelation expr of
                                                            if i1==target e1 && i2/=source e2 then Just (i2, Nothing, i2, False) else
                                                            if i1/=target e1 && i2==source e2 then Just (i1, Nothing, i1, False) else
                                                            Nothing
-         (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else
-                                                           if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else
-                                                           Nothing
+         (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else                       
+                                                           if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else                       
+                                                           Nothing                                                     
          (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                 then Just (s,d,t,isFlipped) else
-                                                           if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else
-                                                           Nothing
+                                                           if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else        
+                                                           Nothing                                                                 
          _                                              -> Nothing
     getRelation (EFlp e)
      = case getRelation e of
@@ -806,7 +810,7 @@ instance Hashable A_Concept where
      s `hashWithSalt` (case cpt of
                         PlainConcept{} -> (0::Int) `hashWithSalt` name cpt
                         ONE            -> (1::Int)
-                      )
+                      ) 
 instance Named A_Concept where
   name PlainConcept{cptnm = nm} = nm
   name ONE = "ONE"
@@ -839,42 +843,42 @@ class Association rel where
 
 
 -- Convenient data structure to hold information about concepts and their representations
---  in a context.
+--  in a context. 
 data ContextInfo =
   CI { ctxiGens       :: [A_Gen]      -- The generalisation relations in the context
      , ctxiRepresents :: [Representation] -- a list containing all user defined Representations in the context
      }
 representationOf :: ContextInfo -> A_Concept -> TType
-representationOf ci cpt =
+representationOf ci cpt = 
 -- TODO: Fix this function, to take care of classifications
-  case cpt of
+  case cpt of 
     ONE -> TypeOfOne
     PlainConcept{}
         ->  case eqCl reprdom . filter isAboutThisCpt . ctxiRepresents $ ci of
               [] ->  Object  --The default value, when no representation is specified
-              [rs] -> case rs of
+              [rs] -> case rs of   
                          []  -> fatal 498 "This should be impossible with eqClass"
                          r: _ ->reprdom r
               _ -> fatal 500 $ "There are multiple Types for "++show cpt++". That should have been checked earlier!"
   where
-    isAboutThisCpt :: Representation -> Bool
-    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep
+    isAboutThisCpt :: Representation -> Bool 
+    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep                 
 contextInfoOf :: A_Context -> ContextInfo
-contextInfoOf context
+contextInfoOf context 
   = CI { ctxiGens       = concatMap ptgns (ctxpats context) ++ ctxgs context
        , ctxiRepresents = ctxreprs context
        }
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
 --   after the expression has been built inside an A_Context. Only at that time
---   the TType is known, enabling the correct transformation.
---   To ensure that this function is not used too early, ContextInfo is required,
+--   the TType is known, enabling the correct transformation. 
+--   To ensure that this function is not used too early, ContextInfo is required, 
 --   which only exsists after disambiguation.
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
-safePSingleton2AAtomVal ci c val =
+safePSingleton2AAtomVal ci c val = 
    case unsafePAtomVal2AtomValue typ (Just c) val of
      Left _ -> fatal 855 $ "This should be impossible: after checking everything an unhandled singleton value found!\n  "
                      ++ show val
-     Right x -> x
+     Right x -> x 
   where typ = representationOf ci c
 
 unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
@@ -885,33 +889,32 @@ unsafePAtomVal2AtomValue typ mCpt pav =
       where roundedVal =
              case rawVal of
               AAVDateTime t x -> -- Rounding is needed, to maximize the number of databases
-                                 -- on wich this runs. (MySQL 5.5 only knows seconds)
+                                 -- on wich this runs. (MySQL 5.5 only knows seconds)  
                                  AAVDateTime t (truncateByFormat x)
                                   where
                                     truncateByFormat :: UTCTime  -> UTCTime
-                                    truncateByFormat = f (DTF.parseTimeOrError True) . f DTF.formatTime
+                                    truncateByFormat = f DTF.readTime . f DTF.formatTime
                                       where
-                                        format = DTF.iso8601DateFormat (Just "%H:%M:%S")
-                                    --    f:: DTF.TimeLocale -> String -> typ
-                                        f fun = fun DTF.defaultTimeLocale format
+                                        format = iso8601DateFormat (Just "%H:%M:%S")
+                                        f fun = fun SL.defaultTimeLocale format
               _          -> rawVal
-
+             
 unsafePAtomVal2AtomValue' :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
 unsafePAtomVal2AtomValue' typ mCpt pav
   = case pav of
-      PSingleton _ str mval
-         -> case typ of
-             Alphanumeric     -> Right (AAVString typ str)
+      PSingleton _ str mval 
+         -> case typ of 
+             Alphanumeric     -> Right (AAVString typ str) 
              BigAlphanumeric  -> Right (AAVString typ str)
              HugeAlphanumeric -> Right (AAVString typ str)
              Password         -> Right (AAVString typ str)
-             Object           -> Right (AAVString typ str)
+             Object           -> Right (AAVString typ str) 
              _                -> case mval of
                                    Nothing -> message str
                                    Just x -> unsafePAtomVal2AtomValue typ mCpt x
-      ScriptString _ str
+      ScriptString _ str 
          -> case typ of
-             Alphanumeric     -> Right (AAVString typ str)
+             Alphanumeric     -> Right (AAVString typ str) 
              BigAlphanumeric  -> Right (AAVString typ str)
              HugeAlphanumeric -> Right (AAVString typ str)
              Password         -> Right (AAVString typ str)
@@ -924,10 +927,10 @@ unsafePAtomVal2AtomValue' typ mCpt pav
              Integer          -> message str
              Float            -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> Right (AAVString typ str)
+             Object           -> Right (AAVString typ str) 
       XlsxString _ str
          -> case typ of
-             Alphanumeric     -> Right (AAVString typ str)
+             Alphanumeric     -> Right (AAVString typ str) 
              BigAlphanumeric  -> Right (AAVString typ str)
              HugeAlphanumeric -> Right (AAVString typ str)
              Password         -> Right (AAVString typ str)
@@ -945,56 +948,56 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                                         ]
                                  in case lookup (map toUpper str) table of
                                     Just b -> Right (AAVBoolean typ b)
-                                    Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table
+                                    Nothing -> Left $ "permitted Booleans: "++(show . map (camelCase . fst)) table  
                                    where camelCase []     = []
-                                         camelCase (c:xs) = toUpper c: map toLower xs
-
+                                         camelCase (c:xs) = toUpper c: map toLower xs 
+                                    
              Integer          -> case maybeRead str  of
                                    Just i  -> Right (AAVInteger typ i)
                                    Nothing -> message str
-             Float         -> case maybeRead str of
+             Float         -> case maybeRead str of 
                                    Just r  -> Right (AAVFloat typ r)
                                    Nothing -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> Right (AAVString typ str)
+             Object           -> Right (AAVString typ str) 
       ScriptInt _ i
          -> case typ of
-             Alphanumeric     -> message i
-             BigAlphanumeric  -> message i
-             HugeAlphanumeric -> message i
-             Password         -> message i
+             Alphanumeric     -> message i 
+             BigAlphanumeric  -> message i 
+             HugeAlphanumeric -> message i 
+             Password         -> message i 
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> message i
-             DateTime         -> message i
-             Boolean          -> message i
+             Date             -> message i 
+             DateTime         -> message i 
+             Boolean          -> message i 
              Integer          -> Right (AAVInteger typ i)
              Float            -> Right (AAVFloat typ (fromInteger i)) -- must convert, because `34.000` is lexed as Integer
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> message i
+             Object           -> message i 
       ScriptFloat _ x
          -> case typ of
              Alphanumeric     -> message x
-             BigAlphanumeric  -> message x
-             HugeAlphanumeric -> message x
-             Password         -> message x
+             BigAlphanumeric  -> message x 
+             HugeAlphanumeric -> message x 
+             Password         -> message x 
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> message x
-             DateTime         -> message x
-             Boolean          -> message x
+             Date             -> message x 
+             DateTime         -> message x 
+             Boolean          -> message x 
              Integer          -> message x
              Float            -> Right (AAVFloat typ x)
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
              Object           -> message x
       XlsxDouble _ d
          -> case typ of
-             Alphanumeric     -> message d
-             BigAlphanumeric  -> message d
-             HugeAlphanumeric -> message d
-             Password         -> message d
+             Alphanumeric     -> message d 
+             BigAlphanumeric  -> message d 
+             HugeAlphanumeric -> message d 
+             Password         -> message d 
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -1004,11 +1007,11 @@ unsafePAtomVal2AtomValue' typ mCpt pav
              DateTime         -> Right (AAVDateTime {aavtyp = typ
                                                     ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
                                                                           (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
-
+                                                              
                                                 })
                                      where picosecondsPerDay = 24*60*60*1000000000000
-                                           (daysSinceZero, fractionOfDay) = properFraction d
-             Boolean          -> message d
+                                           (daysSinceZero, fractionOfDay) = properFraction d 
+             Boolean          -> message d 
              Integer          -> if frac == 0
                                  then Right (AAVInteger typ int)
                                  else message d
@@ -1016,20 +1019,20 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                                     (int,frac) = properFraction d
              Float            -> Right (AAVFloat typ d)
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> message d
+             Object           -> message d 
       ComnBool _ b
-         -> if typ == Boolean
+         -> if typ == Boolean 
             then Right (AAVBoolean typ b)
             else message b
       ScriptDate _ x
-         -> if typ == Date
+         -> if typ == Date  
             then Right (AAVDate typ x)
             else message x
       ScriptDateTime _ x
-         -> if typ == DateTime
+         -> if typ == DateTime  
             then Right (AAVDateTime typ x)
             else message x
-
+         
    where
      message :: Show x => x -> Either String a
      message x = Left . intercalate "\n    " $
@@ -1040,15 +1043,34 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                  , "defined as "++show expected++". The found value does not match that type."
                  ]
         where
-          c = fromMaybe (fatal 1004 "Representation mismatch without concept known should not happen.") mCpt
+          c = fromMaybe (fatal 1004 $ "Representation mismatch without concept known should not happen.") mCpt
           expected = if typ == Object then Alphanumeric else typ
           implicitly = if typ == Object then "(implicitly) " else ""
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
      maybeRead :: Read a => String -> Maybe a
      maybeRead = fmap fst . listToMaybe . reads
 
+-- Awaiting use of time package 1.5, we copy from there:
+
+{- | Construct format string according to <http://en.wikipedia.org/wiki/ISO_8601 ISO-8601>.
+
+The @Maybe String@ argument allows to supply an optional time specification. E.g.:
+
+@
+'iso8601DateFormat' Nothing            == "%Y-%m-%d"           -- i.e. @/YYYY-MM-DD/@
+'iso8601DateFormat' (Just "%H:%M:%S")  == "%Y-%m-%dT%H:%M:%S"  -- i.e. @/YYYY-MM-DD/T/HH:MM:SS/@
+@
+-}
+
+iso8601DateFormat :: Maybe String -> String
+iso8601DateFormat mTimeFmt =
+    "%Y-%m-%d" ++ case mTimeFmt of
+             Nothing  -> ""
+             Just fmt -> 'T' : fmt
 
 -- | The typology of a context is the partioning of the concepts in that context into sets such that (isa\/isa~)*;typology |- typology
 data Typology = Typology { tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty, mostly one concept)
                          , tyCpts :: [A_Concept]
                          } deriving Show
+
+             

@@ -20,6 +20,9 @@ import Database.Design.Ampersand.Misc
 import qualified Database.Design.Ampersand.Misc.Options as Opts
 import Database.Design.Ampersand.Prototype.ProtoUtil
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "GenFrontend"
+
 {- TODO
 - Converse navInterfaces?
 - Be more consistent with record selectors/pattern matching

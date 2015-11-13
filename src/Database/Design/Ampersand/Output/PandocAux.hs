@@ -34,9 +34,13 @@ import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath  -- (combine,addExtension,replaceExtension)
 import System.Directory
 import System.Info         (os)
+import Data.Monoid
 import Data.List
 import Control.Monad
 import Data.Maybe
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Output.PandocAux"
 
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: FSpec -> [(String , String)]
@@ -249,18 +253,18 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
                                                was read using readFile, it will fail because the file is still open. 8-((
                                             -}
-
+                                            
                                             case result of
                                               ExitSuccess   -> verboseLn (getOpts fSpec) "PDF file created."
                                               ExitFailure _ ->
                                                do { let nrOfErrLines = 15
                                                   ; putStrLn "----------- LaTeX error-----------"
-
+                                                  
                                                   -- get rid of latex memory info and take required nr of lines
-                                                  ; let reverseErrLines = take nrOfErrLines . drop 2
-                                                                        . dropWhile (not . ("Here is how much of TeX's memory you used:" `isPrefixOf`))
+                                                  ; let reverseErrLines = take nrOfErrLines . drop 2 
+                                                                        . dropWhile (not . ("Here is how much of TeX's memory you used:" `isPrefixOf`)) 
                                                                         . reverse $ logFileLines
-                                                  ; putStrLn $ unlines . reverse $ reverseErrLines
+                                                  ; putStrLn $ unlines . reverse $ reverseErrLines   
                                                   ; putStrLn "----------------------------------\n"
                                                   ; putStrLn $ "ERROR: Latex execution failed."
                                                   ; putStrLn $ "For more information, run pdflatex on: "++texFilename
@@ -285,7 +289,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                 callPdfLatexOnce =
                                    do if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
                                       then do { res <- system ( pdfLatexCommand++"> "++combine (dirOutput (getOpts fSpec)) "pdflog" )
-                                              ; if res /= ExitSuccess then return res else
+                                              ; if res /= ExitSuccess then return res else 
                                                   system  makeIndexCommand -- TODO: failure of makeindex is not reported correctly (requires refactoring command execution)
                                               }
                                       --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
@@ -302,7 +306,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                       makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (getOpts fSpec)) "glossaries.log"
                                       pdfgetOpts = " -include-directory="++dirOutput (getOpts fSpec)++ " -output-directory="++dirOutput (getOpts fSpec)++" "
                                       commonFlags = "--halt-on-error --interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted
-                                      -- we don't do --disable-installer on Windows, so the install dialog will pop up, even when we are in nonstopmode
+                                      -- we don't do --disable-installer on Windows, so the install dialog will pop up, even when we are in nonstopmode 
                _  -> return()
 
 -----Linguistic goodies--------------------------------------
@@ -338,7 +342,7 @@ data XRefObj = XRefNaturalLanguageDeclaration Declaration
              | XRefConceptualAnalysisDeclaration Declaration
              | XRefConceptualAnalysisRule Rule
              | XRefInterfacesInterface Interface
-             | XRefNaturalLanguageTheme (Maybe Pattern)
+             | XRefNaturalLanguageTheme (Maybe Pattern) 
 xRefTo :: XRefObj -> Inlines
 xRefTo x = rawInline "latex"  $ xRefToLatexRefString x
 xRefToLatexRefString :: XRefObj -> String
@@ -351,20 +355,20 @@ xRefRawLabel x
      XRefDataAnalRule r           -> "dataAnalRule:"++(escapeNonAlphaNum.name) r
      XRefNaturalLanguageRule r    -> "natLangRule:"++(escapeNonAlphaNum.name) r
      XRefProcessAnalysis p        -> "prcAnal:"++(escapeNonAlphaNum.name) p
-     XRefProcessAnalysisDeclaration d
+     XRefProcessAnalysisDeclaration d 
                                   -> "prcAnalDcl:"++(escapeNonAlphaNum.fullName) d
-     XRefConceptualAnalysisPattern p
+     XRefConceptualAnalysisPattern p 
                                   -> "cptAnalPat:"++(escapeNonAlphaNum.name) p
-     XRefConceptualAnalysisDeclaration d
+     XRefConceptualAnalysisDeclaration d 
                                   -> "cptAnalDcl:"++(escapeNonAlphaNum.fullName) d
      XRefConceptualAnalysisRule r -> "cptAnalRule:"++(escapeNonAlphaNum.name) r
      XRefInterfacesInterface i    -> "interface:"++(escapeNonAlphaNum.name) i
      XRefNaturalLanguageTheme (Just t)
                                   -> "theme:"++(escapeNonAlphaNum.name) t
-     XRefNaturalLanguageTheme Nothing
+     XRefNaturalLanguageTheme Nothing 
                                   -> ":losseEindjes"
     where
-      fullName d = name d++"*"++(name.source) d++"*"++(name.target) d
+      fullName d = name d++"*"++(name.source) d++"*"++(name.target) d                              
 
 headerWithLabel :: XRefObj -> Int -> Inlines -> Blocks
 headerWithLabel x = headerWith (xRefRawLabel x, [],[])
@@ -380,16 +384,16 @@ xrefCitation myLabel = RawInline (Text.Pandoc.Builder.Format "latex") ("\\cite{"
 pandocEqnArray :: [[String]] -> [Block]
 pandocEqnArray [] = []
 pandocEqnArray xs
- = (toList . para . displayMath)
+ = (toList . para . displayMath) 
        ( "\\begin{aligned}\n"
          ++ intercalate "\\\\\n   " [ intercalate "&" row  | row <-xs ]
          ++"\n\\end{aligned}"
        )
-
-pandocEqnArrayWithLabels :: [(XRefObj,[String])] -> Blocks
+    
+pandocEqnArrayWithLabels :: [(XRefObj,[String])] -> Blocks 
 pandocEqnArrayWithLabels [] = mempty
 pandocEqnArrayWithLabels rows
- = (para .displayMath)
+ = (para .displayMath) 
        ( "\\begin{aligned}\n"
          ++ intercalate "\\\\\n   " [ intercalate "&" row ++ "\\label{"++xRefRawLabel x++"}" | (x,row)<-rows ]
          ++"\n\\end{aligned}"
@@ -398,17 +402,17 @@ pandocEqnArrayWithLabels rows
 pandocEqnArrayWithLabel :: XRefObj -> [[String]] -> Blocks
 pandocEqnArrayWithLabel _ [] = mempty
 pandocEqnArrayWithLabel xref rows
- = (para . displayMath)
+ = (para . displayMath)  
        ( "\\label{"++xRefRawLabel xref++"}\\begin{aligned}\\\\\n"
          ++ intercalate "\\\\\n   " [ intercalate "&" row | row <- rows ]
          ++"\n\\end{aligned}"
        )
-
+                                
 pandocEquation :: String -> [Block]
 pandocEquation x = toList . para . displayMath $ x
 
 pandocEquationWithLabel :: XRefObj -> String -> Blocks
-pandocEquationWithLabel xref x =
+pandocEquationWithLabel xref x = 
    para . displayMath $
         ( "\\begin{aligned}\\label{"++xRefRawLabel xref++"}\\\\\n"
            ++x
@@ -629,7 +633,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 ---------------------------
 --- LaTeX related stuff ---
 ---------------------------
--- safe function to have plain text in a piece of Math
+-- safe function to have plain text in a piece of Math  
 mathText :: String -> String
 mathText s = "\\text{"++latexEscShw s++"} "
 
@@ -685,8 +689,8 @@ texOnly_flip :: String
 texOnly_flip = "\\smallsmile "
 
 newGlossaryEntry :: String -> String -> Inlines
-newGlossaryEntry nm cnt =
+newGlossaryEntry nm cnt = 
   rawInline "latex"
     ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
      "     { name={"++latexEscShw nm ++"}\n"++
-     "     , description={"++latexEscShw (cnt)++"}}\n")
+     "     , description={"++latexEscShw (cnt)++"}}\n") 

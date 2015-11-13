@@ -14,7 +14,10 @@ import System.Directory
 import Database.Design.Ampersand hiding (putStr, origin)
 import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.FSpec.SQL
-import Database.Design.Ampersand.Basics (fatal)
+
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "PHP"
 
 createTablesPHP :: FSpec -> [String]
 createTablesPHP fSpec =

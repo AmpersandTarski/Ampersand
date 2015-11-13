@@ -6,6 +6,9 @@ import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.PHP
 
+--fatal :: Int -> String -> a
+--fatal = fatalMsg "Installer"
+
 installerDBstruct :: FSpec -> String
 installerDBstruct fSpec = unlines $
       ["<?php"

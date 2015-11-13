@@ -15,6 +15,10 @@ import Database.Design.Ampersand.Misc
 import Data.List
 import Data.Maybe
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpec.SQL"
+
+
 class SQLAble a where
   -- | prettyprint and indent it with spaces
   prettySQLQuery :: FSpec -> Int -> a -> String

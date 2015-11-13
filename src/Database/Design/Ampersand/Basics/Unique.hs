@@ -13,6 +13,9 @@ import Data.List
 import Data.Char
 import Database.Design.Ampersand.Basics.Version
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Unique"
+
 -- | anything could have some label, can't it?
 class Named a where
   name :: a->String

@@ -8,9 +8,11 @@ import System.FilePath
 import System.Directory
 import Control.Monad
 import Database.Design.Ampersand
-import Database.Design.Ampersand.Basics (fatal)
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "GenBericht"
 
 -- an intermediate data type, so we can easily generate to several output formats
 data Entity = Entity { entName ::      String

@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE TypeSynonymInstances , OverlappingInstances #-}
 module Database.Design.Ampersand.ADL1.Expression (
                        subst
                       ,foldlMapExpression,foldrMapExpression
@@ -10,6 +10,9 @@ where
 import Database.Design.Ampersand.Basics (uni)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 --import Debug.Trace
+
+-- fatal :: Int -> String -> a
+-- fatal = fatalMsg "ADL1.Expression"
 
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an
@@ -152,7 +155,7 @@ exprPrd2list (EPrd (l,r)) = exprPrd2list l++exprPrd2list r
 exprPrd2list r            = [r]
 
 insParentheses :: Expression -> Expression
-insParentheses = insPar 0
+insParentheses expr = insPar 0 expr
    where
      wrap :: Integer -> Integer -> Expression -> Expression
      wrap i j e' = if i<=j then e' else EBrk (insPar 0 e')
@@ -210,3 +213,4 @@ insParentheses = insPar 0
 =
    r; s; insPar 8 (t;x;y) |- p
 -}
+

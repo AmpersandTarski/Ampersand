@@ -11,6 +11,9 @@ import Data.Maybe
 --import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
+
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
       --  *** Header ***

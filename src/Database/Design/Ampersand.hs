@@ -74,7 +74,7 @@ module Database.Design.Ampersand
    , verboseLn, verbose
    ,helpNVersionTexts
    -- * Other functions
-   , eqCl, showErr, unCap,upCap,escapeNonAlphaNum
+   , eqCl, showErr, unCap,upCap,escapeNonAlphaNum, fatalMsg
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr
    , Database.Design.Ampersand.Basics.putStr
    , Database.Design.Ampersand.Basics.hGetContents

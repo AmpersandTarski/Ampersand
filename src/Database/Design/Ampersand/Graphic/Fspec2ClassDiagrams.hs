@@ -12,6 +12,10 @@ import Data.Maybe
 import Data.Either
 import Database.Design.Ampersand.Graphic.ClassDiagram
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Fspec2ClassDiagrams"
+
+
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag

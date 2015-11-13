@@ -20,6 +20,9 @@ import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Database.Design.Ampersand.FSpec.ShowADL
 import qualified Data.Set as Set
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
+
 makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
  =      FSpec { fsName       = name context

@@ -23,6 +23,9 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ConceptStructure
 
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "ShowMeatGrinder"
+
 makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
 makeMetaPopulationFile mType fSpec
   = ("MetaPopulationFile"++show mType++".adl", content popKind mType fSpec)

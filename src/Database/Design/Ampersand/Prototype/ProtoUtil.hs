@@ -19,6 +19,9 @@ import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Misc.Options (verboseLn) -- TODO: verboseLn shouldn't be in Options
 import qualified Database.Design.Ampersand.Misc.Options as Opts
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "ProtoUtil"
+
 writePrototypeFile :: FSpec -> String -> String -> IO ()
 writePrototypeFile fSpec relFilePath content =
  do { verboseLn (getOpts fSpec) ("  Generating "++relFilePath)

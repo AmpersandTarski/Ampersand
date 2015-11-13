@@ -45,6 +45,7 @@ import Data.Traversable
 import Data.Foldable hiding (concat)
 import Data.List (nub)
 import Prelude hiding (foldr, sequence, foldl, concatMap)
+import Control.Applicative
 import Data.Typeable
 import Data.Data
 import GHC.Generics (Generic)
@@ -52,6 +53,9 @@ import Data.Hashable
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.Time.LocalTime() -- for instance Show UTCTime
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Core.ParseTree"
 
 data P_Context
    = PCtx{ ctx_nm ::     String           -- ^ The name of this context
@@ -113,11 +117,11 @@ data P_RoleRule
      , mRules :: [String]  -- ^ name of a Rule
      } deriving (Eq, Show) -- deriving (Eq, Show) is just for debugging
 
-data Role = Role String
+data Role = Role String 
           | Service String
            deriving (Show, Typeable, Data )   -- deriving (Eq, Show) is just for debugging
 instance Eq Role where
- r == r' = name r == name r'
+ r == r' = name r == name r' 
 instance Named Role where
  name (Role nm) = nm
  name (Service nm) = nm
@@ -169,37 +173,37 @@ instance Named ConceptDef where
 
 data Representation
   = Repr { reprpos  :: Origin
-         , reprcpts  :: [String]  -- ^ the concepts
+         , reprcpts  :: [String]  -- ^ the concepts 
          , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Show)
 instance Eq Representation where --Required for merge of P_Contexts
  p1 == p2 = show p1 == show p2 && origin p1 ==origin p2 
 instance Traced Representation where
  origin = reprpos
-
-data TType
+         
+data TType 
   = Alphanumeric | BigAlphanumeric | HugeAlphanumeric | Password
-  | Binary | BigBinary | HugeBinary
-  | Date | DateTime
-  | Boolean | Integer | Float | Object
+  | Binary | BigBinary | HugeBinary 
+  | Date | DateTime 
+  | Boolean | Integer | Float | Object  
   | TypeOfOne --special type for the special concept ONE.
      deriving (Eq, Ord)
 instance Show TType where
   show tt = case tt of
     Alphanumeric      ->   "ALPHANUMERIC"
     BigAlphanumeric   ->   "BIGALPHANUMERIC"
-    HugeAlphanumeric  ->   "HUGEALPHANUMERIC"
-    Password          ->   "PASSWORD"
-    Binary            ->   "BINARY"
-    BigBinary         ->   "BIGBINARY"
-    HugeBinary        ->   "HUGEBINARY"
-    Date              ->   "DATE"
-    DateTime          ->   "DATETIME"
-    Boolean           ->   "BOOLEAN"
-    Integer           ->   "INTEGER"
-    Float             ->   "FLOAT"
-    Object            ->   "OBJECT"
-    TypeOfOne         ->   "TYPEOFONE"
+    HugeAlphanumeric  ->   "HUGEALPHANUMERIC"   
+    Password          ->   "PASSWORD"           
+    Binary            ->   "BINARY"             
+    BigBinary         ->   "BIGBINARY"          
+    HugeBinary        ->   "HUGEBINARY"         
+    Date              ->   "DATE"               
+    DateTime          ->   "DATETIME"           
+    Boolean           ->   "BOOLEAN"            
+    Integer           ->   "INTEGER"            
+    Float             ->   "FLOAT"              
+    Object            ->   "OBJECT"             
+    TypeOfOne         ->   "TYPEOFONE"   
 data P_Declaration =
       P_Sgn { dec_nm :: String    -- ^ the name of the declaration
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
@@ -220,7 +224,7 @@ instance Named P_Declaration where
 instance Traced P_Declaration where
  origin = dec_fpos
 
-data PAtomPair
+data PAtomPair 
   = PPair { pppos :: Origin
           , ppLeft  :: PAtomValue
           , ppRight :: PAtomValue
@@ -232,13 +236,13 @@ instance Flippable PAtomPair where
              ,ppRight = ppLeft pr}
 --data PSingleton
 --  = PSingleton { psOrig :: Origin
---               , psRaw  :: String
+--               , psRaw  :: String 
 --               , psInterprets :: [PAtomValue]
 --               }
 --instance Show PSingleton where
 -- show = psRaw
 --instance Eq PSingleton where
--- a == b = psRaw a == psRaw b
+-- a == b = psRaw a == psRaw b 
 --instance Ord PSingleton where
 -- compare a b = compare (psRaw a) (psRaw b)
 --instance Traced PSingleton where
@@ -248,7 +252,7 @@ makePSingleton :: String -> PSingleton
 makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
 --   PSingleton { psOrig =Origin "ParseTree.hs"
 --              , psRaw = s
---              , psInterprets = fatal 241 "Probably no need to make something up..."
+--              , psInterprets = fatal 241 "Probably no need to make something up..." 
 --              }
 data PAtomValue
   = PSingleton Origin String (Maybe PAtomValue)
@@ -263,7 +267,7 @@ data PAtomValue
    deriving (Typeable, Data)
 instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
  show pav =
-  case pav of
+  case pav of 
     PSingleton   _ s _ -> singleQuote s
     ScriptString   _ s -> singleQuote s
     XlsxString     _ s -> singleQuote s
@@ -273,12 +277,12 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     ComnBool       _ b -> singleQuote (show b)
     ScriptDate     _ x -> singleQuote (show x)
     ScriptDateTime _ x -> singleQuote (show x)
-   where
+   where 
      singleQuote :: String -> String
      singleQuote str = "\'" ++concatMap f str++"\'"
      f :: Char -> String
      f '\'' = "\\'"
-     f c    = [c]
+     f c    = [c] 
 instance Eq PAtomValue where
   PSingleton _ s _ == PSingleton _ s' _ = s == s'
   PSingleton _ _ _ == _                 = False
@@ -300,7 +304,7 @@ instance Eq PAtomValue where
   ComnBool     _ _ == _                 = False
 
 instance Ord PAtomValue where
-  compare a b =
+  compare a b = 
    case (a,b) of
     (PSingleton  _ x _ , PSingleton   _ x' _) -> compare x x'
     (PSingleton  _ _ _ , _                  ) -> GT
@@ -322,7 +326,7 @@ instance Ord PAtomValue where
     (ComnBool       _ _, _                  ) -> GT
 instance Traced PAtomValue where
   origin pav =
-   case pav of
+   case pav of 
     PSingleton   o _ _ -> o
     ScriptString   o _ -> o
     XlsxString     o _ -> o
@@ -334,7 +338,7 @@ instance Traced PAtomValue where
     ScriptDateTime o _ -> o
 
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
-mkPair o l r
+mkPair o l r 
    = PPair { pppos   = o
            , ppLeft  = l
            , ppRight = r}
@@ -346,12 +350,12 @@ data TermPrim
                                             --   to know whether an eqClass represents a concept, we only look at its witness
                                             --   By making Pid the first in the data decleration, it becomes the least element for "deriving Ord".
    | Pid Origin P_Concept                   -- ^ identity element restricted to a type
-   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values
-                                                  --   eg, when `123` is found by the parser, the list will contain both interpretations as
-                                                  --   the String "123" or as Integer 123.
-                                                  --   Since everything between the single quotes can allways be interpretated as a String,
+   | Patm Origin PSingleton (Maybe P_Concept)   -- ^ a singleton atom, possibly with a type. The list contains denotational equivalent values 
+                                                  --   eg, when `123` is found by the parser, the list will contain both interpretations as 
+                                                  --   the String "123" or as Integer 123.  
+                                                  --   Since everything between the single quotes can allways be interpretated as a String, 
                                                   --   it is quaranteed that the list contains the interpretation as String, and thus cannot
-                                                  --   be empty.
+                                                  --   be empty.    
    | PVee Origin                            -- ^ the complete relation, of which the type is yet to be derived by the type checker.
    | Pfull Origin P_Concept P_Concept       -- ^ the complete relation, restricted to a type.
                                             --   At parse time, there may be zero, one or two elements in the list of concepts.
@@ -441,7 +445,7 @@ instance Traced TermPrim where
    PVee orig      -> orig
    Pfull orig _ _ -> orig
    PNamedR r      -> origin r
-
+   
 --instance Named TermPrim where
 -- name e = case e of
 --   PI _        -> "I"
@@ -450,7 +454,7 @@ instance Traced TermPrim where
 --   PVee _      -> "V"
 --   Pfull _ _ _ -> "V"
 --   PNamedR r   -> name r
---
+--   
 instance Traced P_NamedRel where
   origin (PNamedRel o _ _) = o
 
@@ -490,11 +494,11 @@ isSrc Tgt = False
 data PairView a = PairView { ppv_segs :: [PairViewSegment a] } deriving (Show, Typeable, Eq, Generic)
 instance Hashable a => Hashable (PairView a)
 instance Traced a => Traced (PairView a) where
-  origin pv =
+  origin pv = 
     case ppv_segs pv of
        [] -> fatal 342 "An empty PairView must not occur"
-       xs -> origin (head xs)
-data PairViewSegment a =
+       xs -> origin (head xs)   
+data PairViewSegment a = 
     PairViewText{ pvsOrg :: Origin
                 , pvsStr :: String
                 }
@@ -570,9 +574,9 @@ data P_Population
   | P_CptPopu { p_orig  :: Origin  -- the origin
               , p_cnme  :: String  -- the name of a concept
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
-              }
+              } 
    deriving (Show) --For QuickCheck error messages only!
-
+  
 instance Eq P_Population where --Required for merge of P_Contexts
  p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
 
@@ -655,20 +659,20 @@ type P_IdentSegment = P_IdentSegmnt TermPrim
 data P_IdentSegmnt a
               = P_IdentExp  { ks_obj :: P_ObjDef a}
                 deriving (Eq, Show)
-
+                
 type P_ViewDef = P_ViewD TermPrim
 data P_ViewD a =
          P_Vd { vd_pos :: Origin            -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
               , vd_lbl :: String            -- ^ the name (or label) of this View. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
               , vd_cpt :: P_Concept         -- ^ the concept for which this view is applicable
-              , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept
+              , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept 
               , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
               , vd_ats :: [P_ViewSegmt a]   -- ^ the constituent segments of this view.
               } deriving (Show)
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
  p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
-
+              
 instance Named (P_ViewD a) where
  name = vd_lbl
 instance Functor P_ViewD where fmap = fmapDefault
@@ -683,12 +687,12 @@ data P_ViewSegmt a  = P_ViewExp  { vs_nr ::Integer, vs_obj :: P_ObjDef a }
                       deriving (Eq, Show)
 
 data ViewHtmlTemplate = ViewHtmlTemplateFile String
---              | ViewHtmlTemplateInline String -- Future extension
+--              | ViewHtmlTemplateInline String -- Future extension 
                   deriving (Eq, Show)
 
 {- Future extension:
 data ViewText = ViewTextTemplateFile String
-              | ViewTextTemplateInline String
+              | ViewTextTemplateInline String 
                   deriving (Eq, Show)
 -}
 
@@ -866,7 +870,7 @@ mergeContexts ctx1 ctx2 =
     where contexts = [ctx1,ctx2]
 
 mkContextOfPopsOnly :: [P_Population] -> P_Context
-mkContextOfPopsOnly pops =
+mkContextOfPopsOnly pops = 
   PCtx{ ctx_nm     = ""
       , ctx_pos    = []
       , ctx_lang   = fatal 686 "No language because of excel import hack. Please report this as a bug"
@@ -894,3 +898,4 @@ orElse :: Maybe a -> Maybe a -> Maybe a
 x `orElse` y = case x of
                  Just _  -> x
                  Nothing -> y
+

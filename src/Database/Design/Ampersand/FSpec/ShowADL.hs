@@ -12,7 +12,7 @@ module Database.Design.Ampersand.FSpec.ShowADL
 where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics      (fatal,Collection(..),Named(..))
+import Database.Design.Ampersand.Basics      (fatalMsg,Collection(..),Named(..))
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
@@ -20,6 +20,9 @@ import Data.List
 import Prelude
 --import Data.Time.Calendar
 
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpec.ShowADL"
 
 class ShowADL a where
  showADL :: a -> String

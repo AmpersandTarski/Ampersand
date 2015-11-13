@@ -12,6 +12,9 @@ import Data.List
 import Data.Function (on)
 import qualified Text.Pandoc.Builder
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis"
+
 ------------------------------------------------------------
 --DESCR -> the data analysis contains a section for each class diagram in the fSpec
 --         the class diagram and multiplicity rules are printed

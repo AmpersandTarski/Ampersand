@@ -9,6 +9,9 @@ import Database.Design.Ampersand.FSpec.Plug(plugpath)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpecAux"
+
 --WHY bestaat sqlRelPlugs?
 -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin (primitieve) expressie e is opgeslagen.
 -- | sqlRelPlugs mag alleen gebruikt worden voor primitieve expressies EDcD, EDcI, en EDcV

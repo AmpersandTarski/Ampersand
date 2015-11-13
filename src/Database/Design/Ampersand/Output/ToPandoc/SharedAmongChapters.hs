@@ -53,11 +53,13 @@ import Data.List      --       (intercalate,partition)
 import Data.Monoid
 import Data.Maybe
 import Data.Ord
-import qualified Data.Time.Format as DTF
+import qualified System.Locale as SL
 import System.FilePath
 import GHC.Exts(sortWith)
 import Database.Design.Ampersand.Graphic.Graphics
 import Database.Design.Ampersand.Classes()
+fatal :: Int -> String -> a
+fatal = fatalMsg "Output.ToPandoc.SharedAmongChapters"
 
 data Chapter = Intro
              | SharedLang
@@ -165,12 +167,12 @@ showImage opts pict =
          FLatex  -> dropExtension -- let pdflatex figure out the optimal extension
          _ -> id
       ) . takeFileName . imagePath opts) pict
-
+    
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
 --   that isn't handled in a specific theme.
 
-data ThemeContent =
+data ThemeContent = 
        Thm { themeNr ::      Int
            , patOfTheme ::   Maybe Pattern -- A theme is about either a pattern or about everything outside patterns
            , rulesOfTheme :: [Numbered RuleCont] -- The (numbered) rules of that theme
@@ -180,32 +182,32 @@ data ThemeContent =
 data Numbered t =
  Nr { theNr ::   Int
     , theLoad :: t
-    }
+    }   
 instance Named t => Named (Numbered t) where
- name = name . theLoad
+ name = name . theLoad    
 data RuleCont = CRul { cRul ::  Rule
-                     , cRulPurps :: [Purpose]
+                     , cRulPurps :: [Purpose] 
                      , cRulMeaning :: Maybe A_Markup
-                     }
+                     } 
 data DeclCont = CDcl { cDcl ::  Declaration
-                     , cDclPurps :: [Purpose]
+                     , cDclPurps :: [Purpose] 
                      , cDclMeaning :: Maybe A_Markup
                      , cDclPairs :: [AAtomPair]
-                     }
+                     } 
 data CptCont  = CCpt { cCpt ::  A_Concept
                      , cCptDefs :: [ConceptDef]
-                     , cCptPurps :: [Purpose]
-                     }
+                     , cCptPurps :: [Purpose] 
+                     } 
 instance Named RuleCont where
   name = name . cRul
 instance Named DeclCont where
   name = name . cDcl
 instance Named CptCont where
   name = name . cCpt
-data Counters
+data Counters 
   = Counter { pNr :: Int --Theme number
             , definitionNr :: Int --For Concepts
-            , agreementNr ::  Int --For declarations andrules
+            , agreementNr ::  Int --For declarations andrules 
             }
 orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
@@ -213,15 +215,15 @@ orderingByTheme fSpec
      , (sortWith origin . filter rulMustBeShown . fallRules)       fSpec
      , (sortWith origin . filter relMustBeShown . relsMentionedIn) fSpec
      , (sortBy conceptOrder . filter cptMustBeShown . concs)     fSpec
-     ) $
+     ) $ 
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
         ,    null (themes fSpec)        -- all patterns if no specific themes are requested
           || name pat  `elem` themes fSpec  -- otherwise the requested ones only
         ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
  where
-  conceptOrder :: A_Concept -> A_Concept -> Ordering
+  conceptOrder :: A_Concept -> A_Concept -> Ordering 
   conceptOrder a b =
-  -- The sorting of Concepts is done by the origin of its first definition if there is one.
+  -- The sorting of Concepts is done by the origin of its first definition if there is one. 
   -- Concepts without definition are placed last, and sorted by name.
    case (originOfFirstCDef a, originOfFirstCDef b) of
      (Just origA, Just origB) -> compare origA origB
@@ -229,13 +231,13 @@ orderingByTheme fSpec
      (Nothing   , Just _    ) -> GT
      (Nothing   , Nothing   ) -> comparing name a b
   originOfFirstCDef :: A_Concept -> Maybe Origin
-  originOfFirstCDef cpt
+  originOfFirstCDef cpt 
     = case sortWith origin $ concDefs fSpec cpt of
         [] -> Nothing
         cd :_ -> Just (origin cd)
-
+        
   rulMustBeShown r = r_usr r == UserDefined && (hasMeaning r || hasPurpose r)
-  relMustBeShown d = isUserDefined d && hasPurpose d
+  relMustBeShown d = isUserDefined d && hasPurpose d 
   isUserDefined d = case d of
                        Sgn{} -> decusr d
                        _     -> False
@@ -243,7 +245,7 @@ orderingByTheme fSpec
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning = isJust . meaning (fsLang fSpec)
   cptMustBeShown = not . null . concDefs fSpec
-  f ::
+  f :: 
    (Counters, [Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
   f stuff ts
    = case ts of
@@ -268,7 +270,7 @@ orderingByTheme fSpec
            }
 
   cpt2cptCont :: A_Concept -> CptCont
-  cpt2cptCont cpt
+  cpt2cptCont cpt 
     = CCpt { cCpt      = cpt
            , cCptDefs  = sortWith origin $ concDefs fSpec cpt
            , cCptPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) cpt
@@ -277,10 +279,10 @@ orderingByTheme fSpec
 
   setNumbers :: Int           -- ^ the initial number
              -> (t -> a)      -- ^ the constructor function
-             -> [t]           -- ^ a list of things that are numberd
-             -> [Numbered a]
+             -> [t]           -- ^ a list of things that are numberd        
+             -> [Numbered a] 
   setNumbers i construct items =
-    case items of
+    case items of 
       []     -> []
       (x:xs) ->  Nr { theNr   = i
                     , theLoad = construct x
@@ -336,10 +338,10 @@ dpRule' fSpec = dpR
          (  (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r)) -- Als eerste de uitleg van de betreffende regel..
          <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
          <> case (nds, fsLang fSpec) of
-             ([] ,_)       -> mempty
+             ([] ,_)       -> mempty 
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
              ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
-             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> xRefTo (XRefNaturalLanguageRule r)
+             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> xRefTo (XRefNaturalLanguageRule r) 
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
              (_  ,English) -> plain ("To arrive at the formalization of "   <> xRefTo (XRefNaturalLanguageRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
@@ -358,7 +360,7 @@ dpRule' fSpec = dpR
                                      <> l (NL " wordt gebruikt.", EN ".")
                                      )
                        _    -> plain (  (case fsLang fSpec of
-                                          Dutch   ->  "We gebruiken de relaties "
+                                          Dutch   ->  "We gebruiken de relaties " 
                                                      <> commaNLPandoc'  "en"  [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
                                           English ->   "We use relations "
                                                      <> commaEngPandoc' "and" [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
@@ -370,7 +372,7 @@ dpRule' fSpec = dpR
                                       [rd] ->   l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
                                               <> xRefTo (XRefConceptualAnalysisDeclaration rd) <> "(" <> (str.name) rd <> ")"
                                       _ -> (case fsLang fSpec of
-                                          Dutch   ->   "Ook gebruiken we relaties "
+                                          Dutch   ->   "Ook gebruiken we relaties " 
                                                      <> commaNLPandoc'  "en"  [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
                                           English ->   "We also use relations "
                                                      <> commaEngPandoc' "and" [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
@@ -391,12 +393,12 @@ dpRule' fSpec = dpR
              then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
              else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
             )
-         <> (if length nds<=1
+         <> (if length nds<=1 
              then mempty
              else plain (  l (NL "Dit komt overeen met ", EN "This corresponds to ")
                         <> xRefTo (XRefNaturalLanguageRule r)
                         <> " (" <> (singleQuoted.str.name) r  <> ")."
-
+                        
                         )
             )
          )
@@ -455,8 +457,8 @@ isMissing mp =
     Nothing -> True
     Just p  -> (not . explUserdefd) p
 
-lclForLang :: Lang -> DTF.TimeLocale
-lclForLang lang = DTF.defaultTimeLocale { DTF.months =
+lclForLang :: Lang -> SL.TimeLocale
+lclForLang lang = SL.defaultTimeLocale { SL.months =
          case lang of
            Dutch   -> [ ("januari","jan"),("februari","feb"),("maart","mrt"),("april","apr")
                       , ("mei","mei"),("juni","jun"),("juli","jul"),("augustus","aug")
@@ -471,8 +473,8 @@ inlineIntercalate _  [] = mempty
 inlineIntercalate _ [x] = x
 inlineIntercalate sep (x:xs) = x <> sep <> inlineIntercalate sep xs
 
-plainText :: String -> Blocks
-plainText = plain . text
+plainText :: String -> Blocks 
+plainText = plain . text 
 
 -- Temporary fixes of Pandoc builder. ---
 bulletList :: [Blocks] -> Blocks
@@ -486,8 +488,8 @@ math s = BuggyBuilder.math ("{"++s++"}")
 -- Utility types and functions for handling multiple-language strings
 
 -- If you declare a local function:   l lstr = localize (fsLang fSpec) lstr
--- you can use:  l (NL "Nederlandse tekst", EN "English text")
--- to specify strings in multiple languages.
+-- you can use:  l (NL "Nederlandse tekst", EN "English text") 
+-- to specify strings in multiple languages. 
 
 newtype NLString = NL String
 newtype ENString = EN String
@@ -497,3 +499,5 @@ type LocalizedStr = (NLString, ENString)
 localize :: Lang -> LocalizedStr -> String
 localize Dutch   (NL s, _) = s
 localize English (_, EN s) = s
+
+

@@ -25,6 +25,9 @@ import Database.Design.Ampersand.Misc (Lang(..),Options(..),PandocFormat(ReST),s
 import Text.Pandoc.Builder
 import Prelude hiding (head)
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpec.ToFSpec.Calc"
+
 head :: [a] -> a
 head [] = fatal 30 "head must not be used on an empty list!"
 head (a:_) = a

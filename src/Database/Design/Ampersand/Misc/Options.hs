@@ -21,6 +21,9 @@ import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 import Data.Char
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Misc.Options"
+
 -- | This data constructor is able to hold all kind of information that is useful to
 --   express what the user would like Ampersand to do.
 data Options = Options { showVersion :: Bool

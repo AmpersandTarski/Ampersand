@@ -2,10 +2,13 @@
 module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
-import Database.Design.Ampersand.Basics (fatal)
---import Control.Applicative
---import Data.Traversable
+import Database.Design.Ampersand.Basics (fatalMsg)
+import Control.Applicative
+import Data.Traversable
 import qualified Data.Set as Set
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "ADL1.Disambiguate"
 
 findConcept :: String -> A_Concept
 -- SJC: ONE should be tokenized, so it cannot occur as a string
@@ -14,7 +17,7 @@ findConcept :: String -> A_Concept
 -- (1) made a programming error in the call of findConcept (in which case you should call findConceptOrONE instead)
 -- (2) made an error in the tokenizer/parser
 findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
-findConcept x =
+findConcept x = 
    PlainConcept { cptnm = x
                 }
 
@@ -22,7 +25,7 @@ findConcept x =
 -- this is *only* used internally!
 data D_Concept
  = MustBe A_Concept
- | MayBe  A_Concept
+ | MayBe  A_Concept 
  deriving (Show, Eq)
 
 data Constraints = Cnstr {sourceConstraintsOf :: [D_Concept]
@@ -53,11 +56,11 @@ class Traversable d => Disambiguatable d where
 --          where (a', (ia,ic1)) = disambInfo a (ia1,ic2) -- here ic2 is top-down, so that is ok
 --                (b', (ic2,ib)) = disambInfo b (ic1,ib1)
   disambInfo :: d (TermPrim,DisambPrim)  --the thing that is disabmiguated
-   -> Constraints -- the inferred types (from the environment = top down)
+   -> Constraints -- the inferred types (from the environment = top down) 
    -> ( d ((TermPrim,DisambPrim), Constraints) -- only the environment for the term (top down)
       , Constraints -- the inferred type, bottom up (not including the environment, that is: not using the second argument: prevent loops!)
       )
-  disambiguate ::
+  disambiguate :: 
                 (TermPrim -> (TermPrim, DisambPrim)) -- disambiguation function
                 -> d TermPrim -- object to be disambiguated
                 -> d (TermPrim, DisambPrim) -- disambiguated object
@@ -74,16 +77,16 @@ class Traversable d => Disambiguatable d where
       where (withInfo, _) = disambInfo thing noConstraints
 
 noConstraints :: Constraints
-noConstraints = Cnstr [][]
+noConstraints = Cnstr [][]  
 
 --TODO: Rename to a more meaningfull name
 fullConstraints :: Constraints -> Constraints
 fullConstraints cs = Cnstr { sourceConstraintsOf = sourceConstraintsOf cs ++ targetConstraintsOf cs
                            , targetConstraintsOf = sourceConstraintsOf cs ++ targetConstraintsOf cs
                            }
-
+                           
 propagateConstraints :: Constraints -> Constraints -> Constraints
-propagateConstraints topDown bottomUp
+propagateConstraints topDown bottomUp 
   = Cnstr{sourceConstraintsOf = sourceConstraintsOf topDown ++ sourceConstraintsOf bottomUp
          ,targetConstraintsOf = targetConstraintsOf topDown ++ targetConstraintsOf bottomUp
          }
@@ -111,7 +114,7 @@ instance Disambiguatable PairViewTerm where
 instance Disambiguatable PairViewSegmentTerm where
   disambInfo (PairViewSegmentTerm (PairViewText orig s)) _ = (PairViewSegmentTerm (PairViewText orig s), noConstraints)
   disambInfo (PairViewSegmentTerm (PairViewExp orig st a)) constraints = (PairViewSegmentTerm (PairViewExp orig st res), rt)
-    where (res,rt) = disambInfo a (Cnstr (case st of
+    where (res,rt) = disambInfo a (Cnstr (case st of 
                                             Src -> sourceConstraintsOf constraints
                                             Tgt -> targetConstraintsOf constraints) [])
 instance Disambiguatable P_ViewD where
@@ -135,7 +138,7 @@ instance Disambiguatable P_ViewSegmt where
 instance Disambiguatable P_SubIfc where
   disambInfo (P_InterfaceRef o a b) _      = (P_InterfaceRef o a b,noConstraints)
   disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],noConstraints)
-  disambInfo (P_Box o cl (a:lst)) env1  =
+  disambInfo (P_Box o cl (a:lst)) env1  = 
      (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf envA++sourceConstraintsOf envB) [])
    where (a', envA)              = disambInfo a                (Cnstr (sourceConstraintsOf envB++sourceConstraintsOf env1) [])
          (P_Box _ cl' lst',envB) = disambInfo (P_Box o cl lst) (Cnstr (sourceConstraintsOf env1++sourceConstraintsOf envA) [])
@@ -271,3 +274,4 @@ instance Functor Change where
 instance Applicative Change where
  (<*>) (Change f b) (Change a b2) = Change (f a) (b && b2)
  pure a = Change a True
+

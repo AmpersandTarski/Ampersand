@@ -13,7 +13,10 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
-import Prelude hiding ((<$))
+import Control.Applicative(pure)
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "Input.ADL1.Parser"
 
 --- Populations ::= Population+
 -- | Parses a list of populations
@@ -45,7 +48,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_ks     = [k | CIndx k<-ces]      -- The identity definitions defined in this context, outside the scope of patterns
             , ctx_rrules = [x | Cm x <-ces]        -- The MAINTAINS statements in the context
             , ctx_rrels  = [x | Cl x <-ces]        -- The EDITS statements in the context
-            , ctx_reprs  = [r | CRep r<-ces]
+            , ctx_reprs  = [r | CRep r<-ces] 
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
             , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]
@@ -55,8 +58,8 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_metas  = [meta | CMeta meta <-ces]
             }
        , [s | CIncl s<-ces] -- the INCLUDE filenames
-       )
-
+       ) 
+      
     --- ContextElement ::= Meta | PatternDef | ProcessDef | RuleDef | Classify | RelationDef | ConceptDef | GenDef | Index | ViewDef | Interface | Sqlplug | Phpplug | Purpose | Population | PrintThemes | IncludeStatement
     pContextElement :: AmpParser ContextElement
     pContextElement = CMeta    <$> pMeta         <|>
@@ -322,7 +325,7 @@ pConceptDef       = Cd <$> currPos
 
 --- Representation ::= 'REPRESENT' ConceptNameList 'TYPE' AdlTType
 pRepresentation :: AmpParser Representation
-pRepresentation
+pRepresentation 
   = Repr <$> currPos
          <*  pKey "REPRESENT"
          <*> pConceptName `sepBy1` pComma
@@ -343,7 +346,7 @@ pAdlTType
       <|> k Boolean          "BOOLEAN"
       <|> k Integer          "INTEGER"
       <|> k Float            "FLOAT"
-
+      
   where
    k tt str = f <$> pKey str where f _ = tt
 
@@ -428,11 +431,11 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pParens(ats <$> pViewSegment `sepBy1` pComma)
     --TODO: Numbering should not happen in the parser
     where ats xs = [ case viewSeg of
-                         P_ViewExp _ x  -> if null (obj_nm x) then P_ViewExp i $ x{obj_nm="seg_"++show i}
-                                                              else P_ViewExp i x
+                         P_ViewExp _ x  -> if null (obj_nm x) then P_ViewExp i $ x{obj_nm="seg_"++show i} 
+                                                              else P_ViewExp i x 
                          P_ViewText _ x -> P_ViewText i x
                          P_ViewHtml _ x -> P_ViewHtml i x
-
+                         
                     | (i,viewSeg) <- zip [(1::Integer)..] xs]
                     -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
           --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
@@ -682,7 +685,7 @@ rightAssociate combinator operator term
 
 --- RelationRef ::= NamedRel | 'I' ('[' ConceptOneRef ']')? | 'V' Signature? | Singleton ('[' ConceptOneRef ']')?
 pRelationRef :: AmpParser TermPrim
-pRelationRef      = PNamedR <$> pNamedRel
+pRelationRef      = PNamedR <$> pNamedRel                                                
                 <|> pid   <$> currPos <* pKey "I" <*> pMaybe (pBrackets pConceptOneRef)
                 <|> pfull <$> currPos <* pKey "V" <*> pMaybe pSign
                 <|> Patm  <$> currPos <*> pSingleton <*> pMaybe (pBrackets pConceptOneRef)
@@ -698,7 +701,7 @@ pAtomValue :: AmpParser PAtomValue
 pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation
 
 value2PAtomValue :: Origin -> Value -> PAtomValue
-value2PAtomValue o v = case v of
+value2PAtomValue o v = case v of 
          VSingleton s x -> PSingleton o s (fmap (value2PAtomValue o) x)
          VRealString s  -> ScriptString o s
          VInt i         -> ScriptInt o (toInteger i)
@@ -706,7 +709,7 @@ value2PAtomValue o v = case v of
          VBoolean b     -> ComnBool o b
          VDateTime x    -> ScriptDateTime o x
          VDate x        -> ScriptDate o x
-
+         
 --- Attr ::= LabelProps? Term
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
@@ -760,15 +763,17 @@ pContent = pBrackets (pRecord `sepBy` (pComma <|> pSemi))
           --- RecordList ::= Record ((','|';') Record)*
           --- Record ::= String ',' String
     where pRecord :: AmpParser PAtomPair
-          pRecord =
+          pRecord = 
              pParens (PPair <$> currPos
                             <*> pAtomValue
                             <*  pComma
                             <*> pAtomValue
                      )
-
+                     
 --- ADLid ::= Varid | Conid | String
 --- ADLidList ::= ADLid (',' ADLid)*
 --- ADLidListList ::= ADLid+ (',' ADLid+)*
 pADLid :: AmpParser String
 pADLid = pVarid <|> pConid <|> pString
+
+

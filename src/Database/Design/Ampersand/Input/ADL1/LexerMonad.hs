@@ -17,6 +17,7 @@ import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Database.Design.Ampersand.Input.ADL1.FilePos
 import Database.Design.Ampersand.Misc
 
+import Control.Applicative
 import Control.Monad
 
 type Bracket = (FilePos, Char)
@@ -85,3 +86,4 @@ lexerWarning :: LexerWarningInfo -- ^ The generated warning
 lexerWarning warning warningPos =
     LM (\_ pos brackets ->
         Right ((), [LexerWarning warningPos warning], pos, brackets))
+

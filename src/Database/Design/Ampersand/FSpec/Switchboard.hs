@@ -4,7 +4,7 @@ module Database.Design.Ampersand.FSpec.Switchboard
 import Data.GraphViz
 import Data.GraphViz.Attributes.Complete
 import Data.List
-import Database.Design.Ampersand.Basics        (fatal,Named(..), flp)
+import Database.Design.Ampersand.Basics        (fatalMsg,Named(..), flp)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -13,6 +13,9 @@ import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..), LanguageDependent(.
 import Data.String
 
 --import Database.Design.Ampersand.FSpec.ShowECA (showECA) -- for testing purposes
+
+fatal :: Int -> String -> a
+fatal = fatalMsg "FSpec.Switchboard"
 
 data SwitchBdDiagram
  = SBdgrm { sbName :: String

@@ -9,6 +9,9 @@ import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Classes.Relational
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Crud"
+
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 
 -- NOTE: The definitions of the various CRUD aspects are still a bit quirky and will most-likely need refinement. 

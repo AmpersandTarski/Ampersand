@@ -14,6 +14,9 @@ import Data.Maybe
 import Data.List
 import Data.Time.Calendar
 
+fatal :: Int -> String -> a
+fatal = fatalMsg "Population2Xlsx"
+
 fSpec2PopulationXlsx :: ClockTime -> FSpec -> L.ByteString 
 fSpec2PopulationXlsx ct fSpec = 
   fromXlsx ct xlsx
