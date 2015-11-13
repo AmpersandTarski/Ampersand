@@ -55,15 +55,15 @@
 					<span class="glyphicon glyphicon-plus"></span>
 				</a>
 				<ul class="dropdown-menu" role="menu">
-						<li><a href="#/{{interface.id}}?new" ng-repeat="interface in navbar.new">{{interface.label}}</a></li>
+					<li><a href="#/{{interface.id}}?new" ng-repeat="interface in navbar.new">{{interface.label}}</a></li>
 				</ul>
 			</li>
 			
-			<li class="dropdown" uib-tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="right">
+			<li ng-if="$sessionStorage.sessionRoles.length > 0 || navbar.roleMenu" class="dropdown" uib-tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="right">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
 				<ul class="dropdown-menu" role="menu">
 					<li ng-repeat="role in $sessionStorage.sessionRoles" ng-click="$event.stopPropagation(); toggleRole();"><switch ng-model="role.active"> {{role.label}}</switch></li>
-					<li ng-if="navbar.roleMenu" class="divider" role="presentation"></li>
+					<li ng-if="navbar.roleMenu && $sessionStorage.sessionRoles.length > 0" class="divider" role="presentation"></li>
 					<li ng-repeat="ext in navbar.roleMenu" ng-include="ext.url"/>
 				</ul>
 			</li>
