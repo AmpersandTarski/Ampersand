@@ -113,7 +113,7 @@ class Database {
 		$result = $this->db_link->query($query);
 		Notifications::addLog($query, 'QUERY');
 
-		if ($this->db_link->error) throw new Exception($this->db_link->error . " in query:" . $query, 500);
+		if ($this->db_link->error) throw new Exception("MYSQL error " . $this->db_link->errno . ": " . $this->db_link->error . " in query:" . $query, 500);
 
 		if ($result === false) return false;
 		elseif ($result === true) return true;
@@ -166,7 +166,11 @@ class Database {
 				$newAtomsArray = array_fill(0, count($conceptCols), $newAtomEsc);
 				$allValues = "'".implode("', '", $newAtomsArray)."'";
 				
-				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)");
+				foreach($conceptCols as $col) $str .= ", `$col` = '$newAtomEsc'";
+				$duplicateStatement = substr($str, 1);
+				
+				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
+						  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
 				
 				$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 				
