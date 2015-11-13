@@ -440,7 +440,7 @@ generateRoles fSpec =
                    , "      , 'name' => "++showPhpStr (name role)
                    , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
                    , "      , 'interfaces' => array ("++ intercalate ", " (map (showPhpStr . name) ((roleInterfaces fSpec) role)) ++")"
-                   , "      , 'editableConcepts' => array ("++ intercalate ", " (map (showPhpStr . name) ((editableConceptsOld fSpec) role)) ++")"
+               --    , "      , 'editableConcepts' => array ("++ intercalate ", " (map (showPhpStr . name) ((editableConceptsOld fSpec) role)) ++")"
                    , "      )" ]
                  | (i,role) <- zip [1::Int ..] (filter serviceOrRole $ fRoles fSpec) ]
             ) )

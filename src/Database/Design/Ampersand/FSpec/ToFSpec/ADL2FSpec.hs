@@ -114,8 +114,9 @@ makeFSpec opts context
               }
    where           
      editablecpts :: Interface -> [A_Concept]
-     editablecpts ifc = editables (ifcObj ifc)
+     editablecpts ifc = nub (cpts ++ concatMap (smallerConcepts (gens context)) cpts)
         where
+          cpts = editables (ifcObj ifc)
           editables :: ObjectDef -> [A_Concept]
           editables obj = 
              case objmsub obj of
