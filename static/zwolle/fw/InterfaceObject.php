@@ -2,6 +2,8 @@
 
 class InterfaceObject {
 	
+	private static $allInterfaces; // contains all interface objects
+	
 	public $id;			// Interface id (i.e. safe name) to use in framework
 	public $label;		// Interface name to show in UI
 	
@@ -41,7 +43,7 @@ class InterfaceObject {
 		if(empty($interface)) $interface = $allInterfaceObjects[$id]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
 		
 		// Check if interface exists
-		if(empty($interface['id'])) throw new Exception ("Interface \'$id\' does not exists", 500);
+		if(empty($interface['id'])) throw new Exception ("Interface '$id' does not exists", 500);
 		
 		// Set attributes of interface
 		$this->id = $interface['id'];
@@ -105,19 +107,31 @@ class InterfaceObject {
 		return empty($result) ? false : $result;
 	}
 	
-	public static function getAllInterfaceObjects(){
-		global $allInterfaceObjects; // from Generics.php
+	public static function getAllInterfaceObjects(){		
+		if(!isset(self::$allInterfaces)){
+			global $allInterfaceObjects; // from Generics.php
 		
-		return (array)$allInterfaceObjects;
+			foreach ($allInterfaceObjects as $interfaceId => $interface){
+				$ifc = new InterfaceObject($interfaceId);
+				self::$allInterfaces[$ifc->id] = $ifc;
+			}
+		}
+		return self::$allInterfaces;
 	}
 	
 	public static function getAllInterfacesForConcept($concept){
 		$interfaces = array();
-	
-		foreach (InterfaceObject::getAllInterfaceObjects() as $interfaceId => $interface){
-			if ($interface['srcConcept'] == $concept) $interfaces[] = $interfaceId;
+		foreach (InterfaceObject::getAllInterfaceObjects() as $ifc){
+			if ($ifc->srcConcept == $concept) $interfaces[$ifc->id] = $ifc;
 		}
+		return $interfaces;
+	}
 	
+	public static function getPublicInterfaces(){
+		$interfaces = array();
+		foreach(InterfaceObject::getAllInterfaceObjects() as $ifc){
+			if (empty($ifc->interfaceRoles)) $interfaces[$ifc->id] = $ifc;
+		}
 		return $interfaces;
 	}
 }

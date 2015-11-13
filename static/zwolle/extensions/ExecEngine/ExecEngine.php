@@ -63,7 +63,7 @@ class ExecEngine {
 				
 				// Check rules
 				$rulesThatHaveViolations = array();
-				foreach ($role->maintains as $ruleName){
+				foreach ($role->maintains() as $ruleName){
 					if(!in_array($ruleName, $affectedRules) && !$allRules) continue; // skip this rule
 					
 					$rule = RuleEngine::getRule($ruleName);
