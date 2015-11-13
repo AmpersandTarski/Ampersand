@@ -233,13 +233,18 @@ class Session {
 	
 	public function getInterfacesToReadConcept($concept){
 		$interfaces = array();
-	
 		foreach($this->accessibleInterfaces as $interface){
 			if(($interface->srcConcept == $concept || in_array($concept, Concept::getSpecializations($interface->srcConcept))
 					&& $interface->crudR)
 			) $interfaces[] = $interface;
 		}
 		return $interfaces;
+	}
+	
+	public function getEditableConcepts(){
+		$editableConcepts = array();
+		foreach($this->accessibleInterfaces as $ifc) $editableConcepts = array_merge($editableConcepts, $ifc->editableConcepts);
+		return $editableConcepts;
 	}
 	
 	public function isAccessibleIfc($interfaceId){

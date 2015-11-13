@@ -277,12 +277,9 @@ class Api{
     public function getConceptAtoms($concept){
     	try{
     		$session = Session::singleton();
-    		
-    		// Check if user may request all atoms for given $concept
-    		$editableConcepts = array();
-    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts());
+    		$session->activateRoles();
     			
-    		if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
+    		if(!in_array($concept, $session->getEditableConcepts())) throw new Exception ("You do not have access for this call", 403);
     		
         	return Concept::getAllAtomObjects($concept); // "Return list of all atoms for $concept"
         	
@@ -297,12 +294,9 @@ class Api{
     public function getConceptAtom($concept, $atomId){
     	try{
     		$session = Session::singleton();
-    		
-    		// Check if user may request atom(s) for given $concept
-    		$editableConcepts = array();
-    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts());
-    			 
-    		if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
+    		$session->activateRoles();
+    		    			 
+    		if(!in_array($concept, $session->getEditableConcepts())) throw new Exception ("You do not have access for this call", 403);
     		
     		$atom = new Atom($atomId, $concept);
     		if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);

@@ -8,6 +8,7 @@ class InterfaceObject {
 	public $label;		// Interface name to show in UI
 	
 	public $interfaceRoles = array();
+	public $editableConcepts = array();
 	
 	public $invariantConjuctsIds;
 	public $signalConjunctsIds;
@@ -50,6 +51,7 @@ class InterfaceObject {
 		$this->label = $interface['label'];
 		
 		$this->interfaceRoles = $interface['interfaceRoles'];
+		$this->editableConcepts = (array)$interface['editableConcepts'];
 		
 		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
