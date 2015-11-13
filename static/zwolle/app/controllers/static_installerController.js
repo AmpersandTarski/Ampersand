@@ -7,7 +7,7 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
 			$rootScope.updateNotifications(data);
 			
 			// deactive all roles
-			$localStorage.deactivateAllRoles();
+			$rootScope.deactivateAllRoles();
 			
 			$scope.installing = false;
 			$scope.installed = true;
