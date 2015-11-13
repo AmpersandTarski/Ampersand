@@ -112,7 +112,8 @@ makeFSpec opts context
               , contextInfo = contextinfo
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
-              , editableConcepts = nub . concatMap editablecpts . fSpecRoleInterfaces
+              , editableConceptsOld = nub . concatMap editablecpts . fSpecRoleInterfaces
+              , editableConcepts = editablecpts 
               }
    where           
      editablecpts :: Interface -> [A_Concept]

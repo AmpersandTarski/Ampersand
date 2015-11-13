@@ -443,7 +443,7 @@ generateRoles fSpec =
                    , "      , 'name' => "++showPhpStr (name role)
                    , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
                    , "      , 'interfaces' => array ("++ intercalate ", " (map (showPhpStr . name) ((roleInterfaces fSpec) role)) ++")"
-                   , "      , 'editableConcepts' => array ("++ intercalate ", " (map (showPhpStr . name) ((editableConcepts fSpec) role)) ++")"
+                   , "      , 'editableConcepts' => array ("++ intercalate ", " (map (showPhpStr . name) ((editableConceptsOld fSpec) role)) ++")"
                    , "      )" ]
                  | (i,role) <- zip [1::Int ..] (filter serviceOrRole $ fRoles fSpec) ]
             ) )
@@ -514,6 +514,7 @@ generateInterface fSpec interface =
           [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map (showPhpStr.name) $ ifcRoles interface) ++")" 
           , "      , 'invConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ invConjuncts) ++")"
           , "      , 'sigConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ sigConjuncts) ++")"
+          , "      , 'editableConcepts' => array ("++ intercalate ", " (map (showPhpStr . name) ((editableConcepts fSpec) interface)) ++")"
           ]
         invConjuncts = [ c | c <- ifcControls interface, any isFrontEndInvariant $ rc_orgRules c ] -- NOTE: these two
         sigConjuncts = [ c | c <- ifcControls interface, any isFrontEndSignal    $ rc_orgRules c ] --       may overlap
