@@ -56,7 +56,7 @@ createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
   , "}"
   ] ++
   [ "mysqli_query($DB_link,\"CREATE TABLE `"++tableName++"`"] ++
-  [ replicate 23 ' ' ++ [pref] ++ " " ++ fld | (pref, fld) <- zip ('(' : repeat ',') crflds ] ++
+  [ replicate 23 ' ' ++ [pref] ++ " " ++ att | (pref, att) <- zip ('(' : repeat ',') crflds ] ++
   [ replicate 23 ' ' ++ ") ENGINE=" ++engineOpts ++ "\");"]++
   [ "if($err=mysqli_error($DB_link)) {"
   , "  $error=true; echo $err.'<br />';"
@@ -67,16 +67,16 @@ createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
 
 plug2TableSpec :: PlugSQL -> TableSpec
 plug2TableSpec plug
- = ( unlines $ commentBlock (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
+ = ( unlines $ commentBlock (["Plug "++name plug,"","attributes:"]++map (\x->showADL (attExpr x)++"  "++(show.properties.attExpr) x) (plugAttributes plug))
    , name plug
-   , [ quote (fldname f)++" " ++ showSQL (fldtype f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
-     | f <- plugFields plug ]++
-      case (plug, (head.plugFields) plug) of
+   , [ quote (attName f)++" " ++ showSQL (attType f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
+     | f <- plugAttributes plug ]++
+      case (plug, (head.plugAttributes) plug) of
            (BinSQL{}, _)   -> []
-           (_,    primFld) ->
-                case flduse primFld of
+           (_,    primAtt) ->
+                case attUse primAtt of
                    TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
-                                          ++ "KEY (`"++fldname primFld++"`)"
+                                          ++ "KEY (`"++attName primAtt++"`)"
                                         ]
                    ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                    PlainAttr     -> []
@@ -136,14 +136,14 @@ populateTablesWithInitialPopsPHP fSpec =
          = case tableContents fSpec plug of
                [] -> []
                tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++quote (name plug)
-                                                           ++" ("++intercalate "," [quote (fldname f) |f<-plugFields plug]++")"
+                                                           ++" ("++intercalate "," [quote (attName f) |f<-plugAttributes plug]++")"
                                                            ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") [ "(" ++valuechain md++ ")" | md<-tblRecords]
                                                            ++phpIndent 16 )
                                         ++");"
                              ):
                              ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
      where
-        valuechain record = intercalate ", " [case fld of Nothing -> "NULL" ; Just val -> showValPHP val | fld<-record]
+        valuechain record = intercalate ", " [case att of Nothing -> "NULL" ; Just val -> showValPHP val | att<-record]
 
 
 dropplug :: PlugSQL -> String

@@ -553,29 +553,29 @@ tblcontents ci ps plug
      BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
- --fields are assumed to be in the order kernel+other,
- --where NULL in a kernel field implies NULL in the following kernel fields
- --and the first field is unique and not null
- --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, fldexpr t is expected to hold r or (flp r), s and t are assumed to be different
-       case fields plug of 
-         []   -> fatal 593 "no fields in plug."
+ --attributes are assumed to be in the order kernel+other,
+ --where NULL in a kernel attribute implies NULL in the following kernel attributes
+ --and the first attribute is unique and not null
+ --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
+       case attributes plug of 
+         []   -> fatal 593 "no attributes in plug."
          f:fs -> transpose
                  ( map Just cAtoms
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
                        _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
-                   | fld<-fs, let fExp=fldexpr fld
+                   | att<-fs, let fExp=attExpr att
                    ]
                  )
                  where
-                   cAtoms = (atomValuesOf ci ps. source . fldexpr) f
+                   cAtoms = (atomValuesOf ci ps. source . attExpr) f
                    lkp a pairs
                     = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
                        _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
                                "Looking for: '"++showValADL a++"'.\n"++
-                               "Multiple values in one field. \n"
+                               "Multiple values in one attribute. \n"
                                )
                         
                         

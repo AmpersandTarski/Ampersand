@@ -1,0 +1,30 @@
+﻿CONTEXT AST IN ENGLISH
+
+PATTERN Tables
+CLASSIFY TblSQL ISA PlugInfo
+CLASSIFY BinSQL ISA PlugInfo
+RELATION context[PlugInfo*Context] [UNI,TOT]  
+RELATION concept[SqlAttribute*Concept] [UNI,TOT] -- name of concept in a column of a (broad) table
+RELATION null[SqlAttribute] [PROP] -- can this column be 'NULL'? ('true' or 'false')
+
+RELATION table[SqlAttribute*PlugInfo] [UNI,TOT]
+MEANING "Each SQL-attribute is a column in precisely one SQL-table."
+RELATION srcCol[Relation*SqlAttribute] [UNI,TOT]
+MEANING "The source atoms of the population of a relation are stored in a specific database column"
+RELATION tgtCol[Relation*SqlAttribute] [UNI,TOT]
+MEANING "The target atoms of the population of a relation are stored in a specific  database column"
+RELATION conceptColumn[Concept*SqlAttribute] [TOT] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
+MEANING "the database-table columns that contain all atoms of a given concept"
+
+RELATION prop[Relation*Property]
+MEANING "Relations may have any number of properties from a predefined set of properties."
+
+RELATION key[PlugInfo*SqlAttribute] [UNI,TOT]
+MEANING "Each PlugInfo has one field designated to contain atom keys."
+RELATION ttype[Concept*TType] [UNI,TOT]
+MEANING "Each Concept has a technical type."
+RELATION ttype[TblSQL*TType] [UNI,TOT]
+MEANING "Each wide table has precisely one technical type."
+ENDPATTERN
+
+ENDCONTEXT

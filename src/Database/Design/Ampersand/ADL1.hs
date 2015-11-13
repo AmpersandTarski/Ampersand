@@ -54,7 +54,6 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
          ,Interface(..)
          ,Pattern(..)
          ,Rule(..)
-         ,RuleType(..)
          ,A_RoleRelation(..)
          ,Population(..)
          ,Purpose(..), ExplObj(..)

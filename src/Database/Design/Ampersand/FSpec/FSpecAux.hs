@@ -12,18 +12,18 @@ import Data.List
 --WHY bestaat sqlRelPlugs?
 -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin (primitieve) expressie e is opgeslagen.
 -- | sqlRelPlugs mag alleen gebruikt worden voor primitieve expressies EDcD, EDcI, en EDcV
--- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (fldexpr sf)~;(fldexpr tf)
+-- | Als (plug,sf,tf) `elem` sqlRelPlugs fSpec e, dan geldt e = (attExpr sf)~;(attExpr tf)
 -- | Als sqlRelPlugs fSpec e = [], dan volstaat een enkele tabel lookup niet om e te bepalen
 -- | Opletten dus, met de nieuwe ISA-structuur van 2013, omdat daarin tabellen bestaan met disjuncte verzamelingen...
-sqlRelPlugs :: FSpec -> Expression  -> [(PlugSQL,SqlField,SqlField)] --(plug,source,target)
+sqlRelPlugs :: FSpec -> Expression  -> [(PlugSQL,SqlAttribute,SqlAttribute)] --(plug,source,target)
 sqlRelPlugs fSpec e
    = [ (plug,fld0,fld1)
      | InternalPlug plug<-plugInfos fSpec
-     , (fld0,fld1)<-sqlPlugFields fSpec plug e
+     , (fld0,fld1)<-sqlPlugAttributes fSpec plug e
      ]
 
 -- return table name and source and target column names for relation rel, or nothing if the relation is not found
-getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlField,SqlField)
+getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute)
 getDeclarationTableInfo fSpec decl =
  case decl of
    Sgn{} ->
@@ -42,12 +42,12 @@ getDeclarationTableInfo fSpec decl =
    where
     showPInfo (tab, src, trg) = intercalate "  \n"
                                  [ "Table: "++name tab
-                                 , "  sourceField: "++fldname src
-                                 , "  targetField: "++fldname trg
+                                 , "  sourceAttribute: "++attName src
+                                 , "  targetAttribute: "++attName trg
                                  ]
 
 
-getConceptTableInfo :: FSpec -> A_Concept -> (PlugSQL,SqlField)
+getConceptTableInfo :: FSpec -> A_Concept -> (PlugSQL,SqlAttribute)
 getConceptTableInfo fSpec cpt 
   = case lookupCpt fSpec cpt of
       []    -> fatal 55 $ "No plug found for concept '"++name cpt++"'."
@@ -57,16 +57,16 @@ getConceptTableInfo fSpec cpt
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)
 --TODO -> can you prove for all e whether e is equivalent to plugexpr or not?
-sqlPlugFields :: FSpec -> PlugSQL -> Expression  -> [(SqlField, SqlField)]
-sqlPlugFields fSpec p e' =
+sqlPlugAttributes :: FSpec -> PlugSQL -> Expression  -> [(SqlAttribute, SqlAttribute)]
+sqlPlugAttributes fSpec p e' =
     let e = disjNF (getOpts fSpec) e' -- SJ20140207 Why is this normalization necessary?
     in nub
         [(fld0,fld1)
-        | fld0<-[f |f<-plugFields p,target (fldexpr f)==source e] --fld0 must be a field matching the source of e
-        , fld1<-[f |f<-plugFields p,target (fldexpr f)==target e] --fld1 must be a field matching the target of e
+        | fld0<-[f |f<-plugAttributes p,target (attExpr f)==source e] --fld0 must be a attribute matching the source of e
+        , fld1<-[f |f<-plugAttributes p,target (attExpr f)==target e] --fld1 must be a attribute matching the target of e
         , Just plugexpr <- [plugpath p fld0 fld1] --the smallest expression from fld0 to fld1 (both in same plug)
-        , let se = fldexpr fld0
-              te = fldexpr fld1
+        , let se = attExpr fld0
+              te = attExpr fld1
               bs = (isTrue.disjNF (getOpts fSpec)) (notCpl e .\/. flp se .:. te)    --       e |- se~;te
               bt = (isTrue.disjNF (getOpts fSpec)) (notCpl (flp se .:. te) .\/. e)  --       se~;te |- e
         , --reasons why e is equivalent to plugexpr:
@@ -116,7 +116,7 @@ sqlPlugFields fSpec p e' =
            fs  = case res of ECps{} -> [exprCps2list res] ; _ -> []
 
   replF [] -- this should not occur here, and if it does, it might cause errors in other code that should be solved here
-   = fatal 542 "Could not define a properly typed I for ECps[] in replF in sqlPlugFields in Prototype/RelBinGenSQL.hs"
+   = fatal 542 "Could not define a properly typed I for ECps[] in replF in sqlPlugAttributes in Prototype/RelBinGenSQL.hs"
            -- this error does not guarantee, however, that simplF yields no ECps []. In particular: simplify (ECps [I;I]) == ECps []
   replF ks = ECps (ks)
   -----------------

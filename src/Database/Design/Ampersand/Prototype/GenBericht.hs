@@ -13,12 +13,12 @@ import Database.Design.Ampersand.Basics (fatal)
 --       what about Typ, Brk etc.?
 
 -- an intermediate data type, so we can easily generate to several output formats
-data Entity = Entity { entName ::     String
-                     , depth ::       Int
-                     , cardinality :: String
-                     , definition ::  String
-                     , refType ::     String
-                     , properties ::  [Entity]
+data Entity = Entity { entName ::      String
+                     , depth ::        Int
+                     , cardinality ::  String
+                     , definition ::   String
+                     , refType ::      String
+                     , associations :: [Entity]
                      } deriving Show
 
 doGenBericht :: FSpec -> IO ()
@@ -47,10 +47,10 @@ doGenBericht fSpec =
            genEntity_ObjDef dpth objDef =
                Entity { entName = name objDef
                       , depth = dpth
-                      , cardinality = card $ objctx objDef
-                      , definition  = def $ objctx objDef
-                      , refType     = name (target $ objctx objDef)
-                      , properties  =
+                      , cardinality  = card $ objctx objDef
+                      , definition   = def $ objctx objDef
+                      , refType      = name (target $ objctx objDef)
+                      , associations =
                           case objmsub objDef of
                             Nothing -> []
                             Just (Box _ _ objs)    -> map (genEntity_ObjDef (dpth+1)) objs

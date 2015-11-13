@@ -263,7 +263,7 @@ class Api{
         		// return Concept::getConcept(); // Return specific concept
         		throw new RestException(501); // 501: not implemented
     		}else{
-    			return Concept::getAllConcepts(); // Return list of all concepts
+    			return array_keys(Concept::getAllConcepts()); // Return list of all concepts
     		}
         	
         }catch(Exception $e){
@@ -349,7 +349,9 @@ class Api{
     					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
     					 ,'roles' => $roles
-    					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()) 
+    					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
+    					 							 ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
+    												 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions'))
     					 ,'notifications' => Notifications::getAll()
     					 ,'session' => array ( 'id' => $session->id
     					 					 , 'loggedIn' => Session::sessionUserLoggedIn()

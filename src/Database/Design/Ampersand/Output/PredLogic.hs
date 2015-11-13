@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Output.PredLogic
+﻿module Database.Design.Ampersand.Output.PredLogic
          ( PredLogicShow(..), showLatex, showRtf, mkVar
          ) where
 
@@ -482,7 +482,7 @@ assemble expr
    denote :: Expression -> Notation
    denote e = case e of
       (EDcD d)
-        | null([Uni,Inj,Tot,Sur] >- multiplicities d)  -> Rn
+        | null([Uni,Inj,Tot,Sur] >- properties d)  -> Rn
         | isUni d && isTot d                           -> Flr
         | isInj d && isSur d                           -> Frl
         | otherwise                                    -> Rn

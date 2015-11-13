@@ -18,12 +18,6 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 
 --[Relations]--
 --IDENT Relations: Relation(name,source,target,context) -- the name of the relation must be unique; it is therefore not the same as a RAP:Relation.
-RELATION table[Relation*DBTable] [UNI,TOT]
-MEANING "The population of a relation is stored in one database-table."
-RELATION srcCol[Relation*DBTableColumn] [UNI,TOT]
-MEANING "The source atoms of the population of a relation are stored in a database column"
-RELATION tgtCol[Relation*DBTableColumn] [UNI,TOT]
-MEANING "The target atoms of the population of a relation are stored in a database column"
 RELATION affectedInvConjunctIds[Relation*ConjunctID]
 MEANING "When a pair in a relation is edited (created, updated or deleted), an (invariant) conjunct may be affected"
 RELATION affectedSigConjunctIds[Relation*ConjunctID]
@@ -35,22 +29,6 @@ RELATION affectedInvConjunctIds[Concept*ConjunctID]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (invariant) conjunct may be affected"
 RELATION affectedSigConjunctIds[Concept*ConjunctID]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (signal) conjunct may be affected"
-RELATION conceptTableFields[Concept*TableColumn] [TOT] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
-MEANING "the database-table column of the concept"
---[ConceptTables]--
---MEANING "A ConceptTable is associated with a database-table"
--- cols[ConceptTable*DBTableColumn] [TOT]
---MEANING "A ConceptTable is associated with at least one database-table column"
-
-
---[TableColumnInfo]--  -- HJO: Ik heb hier bewust moeten afwijken van huidige Generics.php, omdat er een concept tussen zit
-RELATION tableInfo[Context*DBTable] [SUR,INJ]  
-RELATION columninfo[DBTable*TableColumn] [SUR,INJ]
-RELATION concept[TableColumn*Concept] [UNI,TOT] -- name of concept in a column of a (broad) table
-RELATION unique[TableColumn*Boolean] [UNI,TOT] -- is this column unique? ('true' or 'false')
-REPRESENT Boolean TYPE BOOLEAN
-RELATION null[TableColumn*Boolean] [UNI,TOT] -- can this column be 'NULL'? ('true' or 'false')
-
 
 --[Rules]--
 --IDENT Rules: Rule(ruleContext,ruleID)

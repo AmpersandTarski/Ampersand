@@ -16,7 +16,6 @@ import System.Directory
 import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.Prototype.ProtoUtil
-import qualified Database.Design.Ampersand.Prototype.ValidateEdit as ValidateEdit 
 import Database.Design.Ampersand.Basics (fatal)
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 import Control.Exception
@@ -69,11 +68,8 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
-        , generateDBstructQueries False fSpec
-        , generateAllDefPopQueries False fSpec
-        , generateSpecializations fSpec
         , generateTableInfos fSpec
-        , generateRules fSpec
+        --, generateRules fSpec
         , generateConjuncts fSpec
         , generateRoles fSpec
         , generateViews fSpec
@@ -82,31 +78,12 @@ generateGenerics fSpec =
         
 generateConstants :: FSpec -> [String]
 generateConstants fSpec =
-  [ "$versionInfo = "++showPhpStr ampersandVersionStr++";" -- so we can show the version in the php-generated html
-  , ""
-  , "$contextName = " ++ showPhpStr (fsName fSpec) ++ ";"
-  , ""
-  , "$dbName =  isset($isValidationSession) && $isValidationSession ? "++showPhpStr ValidateEdit.tempDbName++" : "++showPhpStr (dbName opts)++";"
-  , "// If this script is called with $isValidationSession == true, use the temporary db name instead of the normal one." 
-  , ""
-  , "$signalTableName = "++showPhpStr (getTableName signalTableSpec)++";"
-  , ""
-  , "$isDev = "++showPhpBool (development opts)++";"
-  , ""
-  , "$autoRefreshInterval = "++showPhpStr (show $ fromMaybe 0 $ autoRefresh opts)++";"
+  [ "$isDev = "++showPhpBool (development opts)++";"
   ]
   where opts = getOpts fSpec
   
-generateDBstructQueries :: Bool -> FSpec -> [String]
-generateDBstructQueries isforJsonOutput fSpec =
-  if isforJsonOutput 
-  then theSQLstatements
-  else
-    [ "$allDBstructQueries ="
-    ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
-     ++
-    [          "        );"
-    ]
+generateDBstructQueries :: FSpec -> [String]
+generateDBstructQueries fSpec = theSQLstatements
   where
     theSQLstatements :: [String]
     theSQLstatements =
@@ -115,7 +92,7 @@ generateDBstructQueries isforJsonOutput fSpec =
        ]
     createTableStatements :: [String]
     createTableStatements = 
-      map (if isforJsonOutput then concat else (intercalate "\n         "))
+      map concat
       [ [ "CREATE TABLE "++ show "__SessionTimeout__"
         , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
         , "   , "++show "lastAccess"++" BIGINT NOT NULL"
@@ -142,7 +119,7 @@ generateDBstructQueries isforJsonOutput fSpec =
         tableSpec2Queries :: TableSpecNew -> [String]
         tableSpec2Queries ts = 
          -- [ "DROP TABLE "++show (tsName ts)] ++
-          [ (if isforJsonOutput then concat else (intercalate "\n           ")) $  
+          [ concat $  
                    ( tsCmnt ts ++ 
                      ["CREATE TABLE "++show (tsName ts)] 
                      ++ (map (uncurry (++)) 
@@ -157,45 +134,45 @@ generateDBstructQueries isforJsonOutput fSpec =
                      ++ [" ) ENGINE=InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"]
                    )
           ]
-        fld2sql :: SqlField -> String
-        fld2sql = fieldSpec2Str . fld2FieldSpec
+        fld2sql :: SqlAttribute -> String
+        fld2sql = attributeSpec2Str . fld2AttributeSpec
 
 data TableSpecNew 
   = TableSpec { tsCmnt :: [String]
               , tsName :: String
-              , tsflds :: [SqlField]
+              , tsflds :: [SqlAttribute]
               , tsKey ::  [String]
               , tsEngn :: String
               }
-data FieldSpecNew
-  = FieldSpec { fsname :: String
-              , fstype :: String
-              , fsauto :: Bool
-              }
-fld2FieldSpec ::SqlField -> FieldSpecNew
-fld2FieldSpec fld 
-  = FieldSpec { fsname = name fld
-              , fstype = showSQL (fldtype fld)
-              , fsauto = fldauto fld 
-              }
-fieldSpec2Str :: FieldSpecNew -> String
-fieldSpec2Str fs = intercalate " "
-                    [ show (fsname fs)
-                    , fstype fs
-                    , if fsauto fs then " AUTO_INCREMENT" else " DEFAULT NULL"
-                    ] 
+data AttributeSpecNew
+  = AttributeSpec { fsname :: String
+                  , fstype :: String
+                  , fsauto :: Bool
+                  }
+fld2AttributeSpec ::SqlAttribute -> AttributeSpecNew
+fld2AttributeSpec att 
+  = AttributeSpec { fsname = name att
+                  , fstype = showSQL (attType att)
+                  , fsauto = fldauto att 
+                  }
+attributeSpec2Str :: AttributeSpecNew -> String
+attributeSpec2Str fs = intercalate " "
+                        [ show (fsname fs)
+                        , fstype fs
+                        , if fsauto fs then " AUTO_INCREMENT" else " DEFAULT NULL"
+                        ] 
 plug2TableSpec :: PlugSQL -> TableSpecNew
 plug2TableSpec plug 
   = TableSpec 
-     { tsCmnt = commentBlockSQL (["Plug "++name plug,"","fields:"]++map (\x->showADL (fldexpr x)++"  "++show (multiplicities $ fldexpr x)) (plugFields plug))
+     { tsCmnt = commentBlockSQL (["Plug "++name plug,"","attributes:"]++map (\x->showADL (attExpr x)++"  "++(show.properties.attExpr) x) (plugAttributes plug))
      , tsName = name plug
-     , tsflds = plugFields plug
-     , tsKey  = case (plug, (head.plugFields) plug) of
+     , tsflds = plugAttributes plug
+     , tsKey  = case (plug, (head.plugAttributes) plug) of
                  (BinSQL{}, _)   -> []
                  (_,    primFld) ->
-                      case flduse primFld of
+                      case attUse primFld of
                          TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
-                                                ++ "KEY ("++(show . fldname) primFld++")"
+                                                ++ "KEY ("++(show . attName) primFld++")"
                                         ]
                          ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                          PlainAttr     -> []
@@ -207,15 +184,8 @@ commentBlockSQL xs =
    map (\cmmnt -> "/* "++cmmnt++" */") $ hbar ++ xs ++ hbar
   where hbar = [replicate (maximum . map length $ xs) '-']
   
-generateAllDefPopQueries :: Bool -> FSpec -> [String]
-generateAllDefPopQueries isforJsonOutput fSpec =
-  if isforJsonOutput
-  then theSQLstatements
-  else [ "$allDefPopQueries ="
-       ]++lines ( "  array ( " ++ intercalate "\n        , " (map showPhpStr theSQLstatements))
-        ++
-       [          "        );"
-       ]
+generateAllDefPopQueries :: FSpec -> [String]
+generateAllDefPopQueries fSpec = theSQLstatements
   where
     theSQLstatements
       = fillSignalTable (initialConjunctSignals fSpec) ++
@@ -225,7 +195,7 @@ generateAllDefPopQueries isforJsonOutput fSpec =
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
-     = [(if isforJsonOutput then concat else intercalate "\n           ") $ 
+     = [concat $ 
             [ "INSERT INTO "++show (getTableName signalTableSpec)
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
@@ -245,9 +215,9 @@ generateAllDefPopQueries isforJsonOutput fSpec =
           = case tableContents fSpec plug of
              []  -> []
              tblRecords 
-                 -> [(if isforJsonOutput then concat else intercalate "\n           ") $ 
+                 -> [concat $ 
                        [ "INSERT INTO "++show (name plug)
-                       , "   ("++intercalate ", " (map (show . fldname) (plugFields plug))++") "
+                       , "   ("++intercalate ", " (map (show . attName) (plugAttributes plug))++") "
                        ] ++ lines
                          ( "VALUES " ++ intercalate "\n     , " 
                           [ "(" ++valuechain md++ ")" | md<-tblRecords]
@@ -256,20 +226,10 @@ generateAllDefPopQueries isforJsonOutput fSpec =
          where
            valuechain record 
              = intercalate ", " 
-                 [case fld of 
+                 [case att of 
                     Nothing -> "NULL"
                     Just val -> showValPHP val
-                 | fld <- record ]
-
-generateSpecializations :: FSpec -> [String]
-generateSpecializations fSpec =
-  [ "$allSpecializations = // transitive, so including specializations of specializations"
-  , "  array" ] ++
-  addToLastLine ";"
-    (indent 4 (blockParenthesize "(" ")" ","
-         [ [ showPhpStr (name cpt)++" => array ("++ intercalate ", " (map (showPhpStr . name) specializations) ++")" ]
-         | cpt <- concs fSpec, let specializations = smallerConcepts (vgens fSpec) cpt,  not ( null specializations) ])
-    )
+                 | att <- record ]
 
 generateTableInfos :: FSpec -> [String]
 generateTableInfos fSpec =
@@ -281,8 +241,8 @@ generateTableInfos fSpec =
                                                  ++ ", 'srcConcept' => "++showPhpStr (name (source decl))
                                                  ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
                                                  ++ ", 'table'      => "++showPhpStr (name table)
-                                                 ++ ", 'srcCol'     => "++showPhpStr (fldname srcCol)
-                                                 ++ ", 'tgtCol'     => "++showPhpStr (fldname tgtCol)
+                                                 ++ ", 'srcCol'     => "++showPhpStr (attName srcCol)
+                                                 ++ ", 'tgtCol'     => "++showPhpStr (attName tgtCol)
                                                  ++ ", 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
                                                  ++ ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
                                                  ++ ")"]
@@ -302,17 +262,18 @@ generateTableInfos fSpec =
        blockParenthesize "(" ")" ","
          [ [ (showPhpStr.name) c++" => array"] ++
            (indent 2 $
-              [ "( 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
+              [ "( 'concept' => "++ (showPhpStr.name) c
+              , ", 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
               , ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
               , ", 'conceptTables' => array" ] ++
               (indent 3
                 (blockParenthesize "(" ")" ","
                   [ [ "array ( 'table' => "++(showPhpStr.name) table ++
-                            ", 'cols' => array ("++ intercalate ", " (map (showPhpStr . fldname) conceptFields) ++")" ++
+                            ", 'cols' => array ("++ intercalate ", " (map (showPhpStr . attName) conceptAttributes) ++")" ++
                            " )"
                     ]
                   -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                  | (table,conceptFields) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
+                  | (table,conceptAttributes) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
                   ])) ++
               [ ", 'type' => '"++(show . cptTType fSpec) c++"'" ]++
               [ ", 'specializations' => array ("++intercalate ", " (map (showPhpStr . name)(smallerConcepts (vgens fSpec) c))++")"]++
@@ -343,18 +304,18 @@ generateTableInfos fSpec =
            ] ++
            indent 4
               (blockParenthesize "(" ")" ","
-                [ [ (showPhpStr.fldname) field++ " => array ( 'concept' => "++(showPhpStr.name.target.fldexpr) field++
-                                                           ", 'unique' => " ++(showPhpBool.flduniq)            field++
-                                                           ", 'null' => "  ++ (showPhpBool.fldnull)            field++
-                                                           ")"
+                [ [ (showPhpStr.attName) attribute++ " => array ( 'concept' => "++(showPhpStr.name.target.attExpr) attribute++
+                                                               ", 'unique' => " ++(showPhpBool.attUniq)            attribute++
+                                                               ", 'null' => "  ++ (showPhpBool.attNull)            attribute++
+                                                               ")"
                   ]
-                | field <- plugFields plug]
+                | attribute <- plugAttributes plug]
               )
          | InternalPlug plug <- plugInfos fSpec
          ]
      )  )
- where groupOnTable :: [(PlugSQL,SqlField)] -> [(PlugSQL,[SqlField])]
-       groupOnTable tablesFields = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesFields ]
+ where groupOnTable :: [(PlugSQL,SqlAttribute)] -> [(PlugSQL,[SqlAttribute])]
+       groupOnTable tablesAttributes = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesAttributes ]
 
 generateRules :: FSpec -> [String]
 generateRules fSpec =

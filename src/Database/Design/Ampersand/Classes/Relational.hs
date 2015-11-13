@@ -8,38 +8,38 @@ import Database.Design.Ampersand.ADL1.Expression
 import Database.Design.Ampersand.Basics
 
 class Association r => Relational r where
-    multiplicities :: r -> [Prop]
+    properties :: r -> [Prop]
     isProp :: r -> Bool  -- > tells whether the argument is a property
     isImin :: r -> Bool  -- > tells whether the argument is equivalent to I-
     isTrue :: r -> Bool  -- > tells whether the argument is equivalent to V
     isFalse :: r -> Bool  -- > tells whether the argument is equivalent to V-
     isFunction :: r -> Bool
-    isFunction r   = null ([Uni,Tot]>-multiplicities r)
+    isFunction r   = null ([Uni,Tot]>-properties r)
     isTot :: r -> Bool  --
-    isTot r = Tot `elem` multiplicities r
+    isTot r = Tot `elem` properties r
     isUni :: r -> Bool  --
-    isUni r = Uni `elem` multiplicities r
+    isUni r = Uni `elem` properties r
     isSur :: r -> Bool  --
-    isSur r = Sur `elem` multiplicities r
+    isSur r = Sur `elem` properties r
     isInj :: r -> Bool  --
-    isInj r = Inj `elem` multiplicities r
+    isInj r = Inj `elem` properties r
     isRfx :: r -> Bool  --
-    isRfx r = Rfx `elem` multiplicities r
+    isRfx r = Rfx `elem` properties r
     isIrf :: r -> Bool  --
-    isIrf r = Irf `elem` multiplicities r
+    isIrf r = Irf `elem` properties r
     isTrn :: r -> Bool  --
-    isTrn r = Trn `elem` multiplicities r
+    isTrn r = Trn `elem` properties r
     isSym :: r -> Bool  --
-    isSym r = Sym `elem` multiplicities r
+    isSym r = Sym `elem` properties r
     isAsy :: r -> Bool  --
-    isAsy r = Asy `elem` multiplicities r
+    isAsy r = Asy `elem` properties r
     isIdent :: r -> Bool  -- > tells whether the argument is equivalent to I
     isEpsilon :: r -> Bool  -- > tells whether the argument is equivalent to I
 
 --instance Relational Relation where
---    multiplicities rel
+--    properties rel
 --      = case rel of
---           Rel{}               -> multiplicities (reldcl rel)
+--           Rel{}               -> properties (reldcl rel)
 --           V {}                -> [Tot]
 --                                ++[Sur]
 --                                ++[Inj | isSingleton (source rel)]
@@ -50,7 +50,7 @@ class Association r => Relational r where
 --                                ++[Trn | isEndo rel]
 --           I{}                 -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
 --    isProp rel = case rel of
---           Rel{}               -> null ([Asy,Sym]>-multiplicities (reldcl rel))
+--           Rel{}               -> null ([Asy,Sym]>-properties (reldcl rel))
 --           V{}                 -> isEndo rel && isSingleton (source rel)
 --           I{}                 -> True
 --    isImin rel  = isImin (makeDeclaration rel)   -- > tells whether the argument is equivalent to I-
@@ -65,14 +65,14 @@ class Association r => Relational r where
 --                   I{}   -> True
 
 instance Relational Declaration where
-    multiplicities d = case d of
+    properties d = case d of
            Sgn {}       -> case decprps_calc d of
                              Nothing -> decprps d
                              Just ps -> ps
            Isn{}        -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
            Vs{}         -> [Tot,Sur]
     isProp d = case d of         -- > tells whether the argument is a property.
-           Sgn {}       -> null ([Asy,Sym]>-multiplicities d)
+           Sgn {}       -> null ([Asy,Sym]>-properties d)
            Isn{}        -> True
            Vs{}         -> isEndo (sign d) && isSingleton (source d)
     isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
@@ -89,13 +89,13 @@ isSingleton :: A_Concept -> Bool
 isSingleton ONE = True
 isSingleton _   = False
 
--- The function "multiplicities" does not only provide the multiplicities provided by the Ampersand user,
+-- The function "properties" does not only provide the properties provided by the Ampersand user,
 -- but tries to derive the most obvious multiplicity constraints as well. The more multiplicity constraints are known,
 -- the better the data structure that is derived.
 -- Not every constraint that can be proven is obtained by this function. This does not hurt Ampersand.
 instance Relational Expression where        -- TODO: see if we can find more multiplicity constraints...
- multiplicities expr = case expr of
-     EDcD dcl   -> multiplicities dcl
+ properties expr = case expr of
+     EDcD dcl   -> properties dcl
      EDcI{}     -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
      EEps a sgn -> [Tot | a == source sgn]++[Sur | a == target sgn] ++ [Uni,Inj]
      EDcV sgn   -> [Tot]
@@ -106,13 +106,13 @@ instance Relational Expression where        -- TODO: see if we can find more mul
                  ++[Sym | isEndo sgn]
                  ++[Rfx | isEndo sgn]
                  ++[Trn | isEndo sgn]
-     EBrk f     -> multiplicities f
-     ECps (l,r) -> [m | m<-multiplicities l `isc` multiplicities r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are multiplicities (TODO)
+     EBrk f     -> properties f
+     ECps (l,r) -> [m | m<-properties l `isc` properties r, m `elem` [Uni,Tot,Inj,Sur]] -- endo properties can be used and deduced by and from rules: many rules are properties (TODO)
      EPrd (l,r) -> [Tot | isTot l]++[Sur | isSur r]++[Rfx | isRfx l&&isRfx r]++[Trn]
-     EKl0 e'    -> [Rfx,Trn] `uni` (multiplicities e'>-[Uni,Inj])
-     EKl1 e'    -> [    Trn] `uni` (multiplicities e'>-[Uni,Inj])
-     ECpl e'    -> [p |p<-multiplicities e', p==Sym]
-     EFlp e'    -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- multiplicities e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
+     EKl0 e'    -> [Rfx,Trn] `uni` (properties e'>-[Uni,Inj])
+     EKl1 e'    -> [    Trn] `uni` (properties e'>-[Uni,Inj])
+     ECpl e'    -> [p |p<-properties e', p==Sym]
+     EFlp e'    -> [fromMaybe m $ lookup m [(Uni,Inj),(Inj,Uni),(Sur,Tot),(Tot,Sur)] | m <- properties e'] -- switch Uni<->Inj and Sur<->Tot, keeping the others the same
      EMp1{}     -> [Uni,Inj,Sym,Asy,Trn]
      _          -> []
 
@@ -126,8 +126,8 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EIsc (l,r) -> isTrue l && isTrue r
      EUni (l,r) -> isTrue l || isTrue r
      EDif (l,r) -> isTrue l && isFalse r
-     ECps (l,r) | null ([Uni,Tot]>-multiplicities l) -> isTrue r
-                | null ([Sur,Inj]>-multiplicities r) -> isTrue l
+     ECps (l,r) | null ([Uni,Tot]>-properties l) -> isTrue r
+                | null ([Sur,Inj]>-properties r) -> isTrue l
                 | otherwise                          -> isTrue l && isTrue r
      EPrd (l,r) -> isTrue l && isTrue r || isTot l && isSur r || isRfx l && isRfx r
      EKl0 e     -> isTrue e
@@ -164,7 +164,7 @@ instance Relational Expression where        -- TODO: see if we can find more mul
      EBrk e     -> isFalse e
      _          -> False  -- TODO: find richer answers for ERrs, ELrs, EDia, and ERad
 
- isProp expr = null ([Asy,Sym]>-multiplicities expr)
+ isProp expr = null ([Asy,Sym]>-properties expr)
 
  -- |  The function isIdent tries to establish whether an expression is an identity relation.
  --    It does a little bit more than just test on ERel I _.

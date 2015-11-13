@@ -406,10 +406,10 @@ nonSpecialSelectExpr fSpec expr=
                          , bseWhr = Nothing
                          }
     (EDcV (Sign s t))    -> 
-                 let (psrc,fsrc) = (QName (name plug), QName (name fld))
-                                     where (plug,fld) = getConceptTableInfo fSpec s
-                     (ptgt,ftgt) = (QName (name plug), QName (name fld))
-                                     where (plug,fld) = getConceptTableInfo fSpec t
+                 let (psrc,fsrc) = (QName (name plug), QName (name att))
+                                     where (plug,att) = getConceptTableInfo fSpec s
+                     (ptgt,ftgt) = (QName (name plug), QName (name att))
+                                     where (plug,att) = getConceptTableInfo fSpec t
                  in BQEComment [BlockComment $ "case: (EDcV (Sign s t))   V[ \""++show (Sign s t)++"\" ]"] $
                     case (s,t) of
                      (ONE, ONE) -> one
@@ -640,7 +640,7 @@ selectDeclaration fSpec dcl =
                      , bseWhr = Just (conjunctSQL (map notNull [src,trg]))
                      }
    where
-     leafCode :: (PlugSQL,SqlField,SqlField) -> BinQueryExpr
+     leafCode :: (PlugSQL,SqlAttribute,SqlAttribute) -> BinQueryExpr
      leafCode (plug,s,t) 
          = BSE { bseSrc = Iden [QName (name s)]
                , bseTrg = Iden [QName (name t)]
@@ -695,8 +695,8 @@ selectExists tbl whr =
             }
 
 -- | a (local) data structure to hold SQL info for binary expressions
-data BinQueryExpr = BSE  { bseSrc :: ValueExpr       -- ^ source field and table
-                         , bseTrg :: ValueExpr       -- ^ target field and table
+data BinQueryExpr = BSE  { bseSrc :: ValueExpr       -- ^ source attribute and table
+                         , bseTrg :: ValueExpr       -- ^ target attribute and table
                          , bseTbl :: [TableRef]      -- ^ tables
                          , bseWhr :: Maybe ValueExpr -- ^ the (optional) WHERE clause
                          }
@@ -751,7 +751,7 @@ sqlAttConcept fSpec c | c==ONE = QName "ONE"
                       | otherwise
              = if null cs then fatal 594 $ "A_Concept \""++show c++"\" does not occur in its plug in fSpec \""++name fSpec++"\"" else
                QName (head cs)
-               where cs = [name f |f<-plugFields (sqlConceptPlug fSpec c), c'<-concs f,c==c']
+               where cs = [name f |f<-plugAttributes (sqlConceptPlug fSpec c), c'<-concs f,c==c']
 
 
 stringOfName :: Name -> String

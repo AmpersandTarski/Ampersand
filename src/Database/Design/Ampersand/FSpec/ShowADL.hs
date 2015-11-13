@@ -259,8 +259,8 @@ instance ShowADL DnfClause where
 instance ShowADL Declaration where
  showADL decl =
   case decl of
-     Sgn{} -> name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-multiplicities decl) then " -> " else " * ")++name (target decl)++
-              (let mults=if null ([Uni,Tot]>-multiplicities decl) then multiplicities decl>-[Uni,Tot] else multiplicities decl in
+     Sgn{} -> name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-properties decl) then " -> " else " * ")++name (target decl)++
+              (let mults=if null ([Uni,Tot]>-properties decl) then properties decl>-[Uni,Tot] else properties decl in
                if null mults then "" else "["++intercalate "," (map showADL mults)++"]")++
               (if null(decprL decl++decprM decl++decprR decl) then "" else
                " PRAGMA "++unwords (map show [decprL decl,decprM decl,decprR decl]))
