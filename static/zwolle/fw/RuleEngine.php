@@ -21,20 +21,19 @@ class RuleEngine {
 	 * 		default: true
 	 */
 	// TODO: function can be made simpler.
-	public static function checkProcessRules($roleId = null, $cacheConjuncts = true){
+	public static function checkProcessRules($session = null, $cacheConjuncts = true){
 		
-		if(!is_null($roleId)){
-			$role = new Role($roleId);
+		if(!is_null($session)){
 			
-			Notifications::addLog("------------------------- CHECKING PROCESS RULES (for role $role->name) -------------------------", 'RuleEngine');
-			foreach ($role->maintains as $ruleName){
+			Notifications::addLog("-- Checking process rules maintained by active roles --", 'RuleEngine');
+			foreach ($session->rulesToMaintain as $ruleName){
 				$rule = RuleEngine::getRule($ruleName);
 				
 				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
 				foreach ((array)$violations as $violation) Notifications::addViolation($rule, $violation['src'], $violation['tgt']);
 			}
 		}else{
-			Notifications::addLog("------------------------- CHECKING ALL PROCESS RULES -------------------------", 'RuleEngine');
+			Notifications::addLog("-- Checking ALL process rules --", 'RuleEngine');
 			foreach(RuleEngine::getAllProcessRules() as $rule){				
 				$violations = RuleEngine::checkRule($rule, $cacheConjuncts);
 				foreach ((array)$violations as $violation) Notifications::addViolation($rule, $violation['src'], $violation['tgt']);;
@@ -326,6 +325,23 @@ class RuleEngine {
 		}
 	
 		return array_unique($affectedConjuncts); // remove duplicate entries.
+	}
+	
+	public static function getProcessViolationsFromDB($session){		
+		$conjunctIds = array();
+		$conjunctRuleMap = array();
+		foreach ($session->rulesToMaintain as $ruleName){
+			$rule = RuleEngine::getRule($ruleName);
+			foreach($rule['conjunctIds'] as $conjunctId) $conjunctRuleMap[$conjunctId][] = $ruleName;
+			$conjunctIds = array_merge($conjunctIds, $rule['conjunctIds']);
+		}
+		$signals = RuleEngine::getSignalsFromDB($conjunctIds);
+		
+		foreach ($signals as $signal){ // $signal[] = array('conjId' => , 'src' => , 'tgt' => )
+			foreach($conjunctRuleMap[$signal['conjId']] as $ruleName){
+				Notifications::addViolation(RuleEngine::getRule($ruleName), $signal['src'], $signal['tgt']);
+			}
+		}
 	}
 
 }

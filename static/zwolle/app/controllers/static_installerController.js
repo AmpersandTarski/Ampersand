@@ -6,11 +6,8 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
 		Restangular.one('installer').get().then(function(data) {
 			$rootScope.updateNotifications(data);
 			
-			// set roleId back to 0
-			$localStorage.roleId = 0;
-			
-			// refresh navbar
-			$rootScope.refreshNavBar();
+			// deactive all roles
+			$rootScope.deactivateAllRoles();
 			
 			$scope.installing = false;
 			$scope.installed = true;

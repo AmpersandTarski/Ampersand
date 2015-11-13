@@ -19,7 +19,7 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, L
 }).controller('LoginExtLogoutController', function($scope, $rootScope, LoginRestangular, $location){
 	
 	$scope.logout = function(){
-		$rootScope.selectRole(0);
+		$rootScope.deactivateAllRoles();
 		$location.path('/'); // goto home
 		
 		LoginRestangular.one('logout').get().then(

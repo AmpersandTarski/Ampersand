@@ -7,9 +7,9 @@ class Api{
 	/****************************** INSTALLER & SESSION RESET ******************************/
 	/**
 	 * @url GET installer
-	 * @param int $roleId
+	 * @param array $roleIds
 	 */
-	public function installer($roleId = 0){
+	public function installer($roleIds = null){
 		try{
 			if(Config::get('productionEnv')) throw new Exception ("Database reinstall not allowed in production environment", 403);
 			
@@ -19,7 +19,7 @@ class Api{
 			$db->reinstallDB();
 			
 			$session = Session::singleton();
-			$session->setRole($roleId);
+			$session->activateRoles($roleIds);
 			
 			return Notifications::getAll(); // Return all notifications
 		
@@ -47,12 +47,12 @@ class Api{
 	/**************************** FILE ****************************/
 	/**
 	 * @url POST file
-	 * @param int $roleId
+	 * @param array $roleIds
 	 */
-	public function fileUpload($roleId = 0){
+	public function fileUpload($roleIds = null){
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleId);
+			$session->activateRoles($roleIds);
 			
 			// TODO: Check if upload is allowed in interface
 			
@@ -89,15 +89,15 @@ class Api{
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $tgtAtomId
-	 * @param int $roleId
+	 * @param array $roleIds
 	 * @param boolean $inclLinktoData
 	 * @param string $arrayType
 	 * @param boolean $metaData
 	 */
-	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $roleId = 0, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
+	public function getAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId = null, $roleIds = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true){
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleId);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 		
 			$result = array();
@@ -132,15 +132,15 @@ class Api{
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $tgtAtomId
-	 * @param int $roleId
+	 * @param array $roleIds
 	 * @param string $requestType
 	 *
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleId = 0, $requestType = 'feedback', $request_data = null){
+	public function patchAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleIds = null, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleId);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 			
 			if(!$session->interface->crudU) throw new Exception("PATCH is not allowed for interface " . $session->interface->label, 405);
@@ -161,15 +161,15 @@ class Api{
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $tgtAtomId
-	 * @param int $roleId
+	 * @param array $roleIds
 	 * @param string $requestType
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleId = 0, $requestType = 'feedback', $request_data = null){
+	public function putAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleIds = null, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleId);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 
 			if(!$session->interface->crudU) throw new Exception("PUT is not allowed for interface " . $session->interface->label, 405);
@@ -194,16 +194,16 @@ class Api{
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
 	 * @param string $tgtAtomId
-	 * @param int $roleId
+	 * @param array $roleIds
 	 * @param string $requestType
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleId = 0, $requestType = 'feedback'){
+	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleIds = null, $requestType = 'feedback'){
 		
 		try{
 			$session = Session::singleton();
-			$session->setRole($roleId);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 		
 			if(!$session->interface->crudD) throw new Exception("DELETE is not allowed for interface " . $session->interface->label, 405);
@@ -223,15 +223,15 @@ class Api{
 	 * @param string $concept
 	 * @param string $srcAtomId
 	 * @param string $interfaceId
-	 * @param int $roleId
+	 * @param array $roleIds
 	 * @param string $requestType
 	 * 
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
-	public function postAtom($concept, $srcAtomId, $interfaceId, $roleId = 0, $requestType = 'feedback', $request_data = null){
+	public function postAtom($concept, $srcAtomId, $interfaceId, $roleIds = null, $requestType = 'feedback', $request_data = null){
 		try{
 			$session = Session::singleton();			
-			$session->setRole($roleId);
+			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 			
 			if(!$session->interface->crudC) throw new Exception("POST is not allowed for interface " . $session->interface->label, 405);
@@ -276,14 +276,13 @@ class Api{
      */
     public function getConceptAtoms($concept){
     	try{
-    		// If login is enabled, check if users may request all atoms.
-    		if(Config::get('loginEnabled')){
-    			$editableConcepts = array();
-    			$roles = Role::getAllSessionRoles();
-    			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
+    		$session = Session::singleton();
+    		
+    		// Check if user may request all atoms for given $concept
+    		$editableConcepts = array();
+    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts());
     			
-    			if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
-    		}
+    		if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
     		
         	return Concept::getAllAtomObjects($concept); // "Return list of all atoms for $concept"
         	
@@ -297,14 +296,13 @@ class Api{
      */
     public function getConceptAtom($concept, $atomId){
     	try{
-    		// If login is enabled, check if users may request all atoms.
-    		if(Config::get('loginEnabled')){
-    			$editableConcepts = array();
-    			$roles = Role::getAllSessionRoles();
-    			foreach($roles as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts);
+    		$session = Session::singleton();
+    		
+    		// Check if user may request atom(s) for given $concept
+    		$editableConcepts = array();
+    		foreach($session->getSessionRoles() as $role) $editableConcepts = array_merge($editableConcepts, $role->editableConcepts());
     			 
-    			if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
-    		}
+    		if(!in_array($concept, $editableConcepts)) throw new Exception ("You do not have access for this call", 403);
     		
     		$atom = new Atom($atomId, $concept);
     		if(!$atom->atomExists()) throw new Exception("Resource '$atomId' not found", 404);
@@ -319,28 +317,21 @@ class Api{
     
     /**
      * @url GET navBar
-     * @param int $roleId
+     * @param array $roleIds
      */
-    public function getNavBar($roleId = 0){
+    public function getNavBar($roleIds = null){
     	try{
     		$session = Session::singleton();
-    		$session->setRole($roleId);
+    		$session->activateRoles($roleIds);
     		
     		// top level interfaces
-    		foreach ($session->role->getInterfacesForNavBar() as $ifc){
+    		foreach ($session->getInterfacesForNavBar() as $ifc){
     			$top[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
     		}
     		
     		// new interfaces
-    		foreach ($session->role->getInterfacesToCreateAtom() as $ifc){
+    		foreach ($session->getInterfacesToCreateAtom() as $ifc){
     			$new[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
-    		}
-    		
-    		// roles
-    		$roles = array();
-    		$allRoles = Config::get('loginEnabled') ? Role::getAllSessionRoles() : Role::getAllRoleObjects();
-    		foreach((array)$allRoles as $role){
-    			$roles[] = array('id' => $role->id, 'label' => $role->label);
     		}
     		
     		return array ('top' => $top
@@ -348,16 +339,14 @@ class Api{
     					 ,'refreshMenu' => $GLOBALS['navBar']['refreshMenu']
     					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
     					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
-    					 ,'roles' => $roles
     					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
     					 							 ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
     												 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions'))
     					 ,'notifications' => Notifications::getAll()
     					 ,'session' => array ( 'id' => $session->id
-    					 					 , 'loggedIn' => Session::sessionUserLoggedIn()
-    					 					 , 'sessionRoles' => $roles
-    					 					 )
-    					 , 'sessionVars' => Session::getSessionVars()
+    					 					 , 'loggedIn' => Session::sessionUserLoggedIn())
+    					 ,'sessionRoles' => $session->getSessionRoles()
+    					 ,'sessionVars' => Session::getSessionVars()
     		);
     		
     	}catch(Exception $e){
@@ -367,14 +356,14 @@ class Api{
     
     /**
      * @url GET notifications/all
-     * @param int $roleId
+     * @param array $roleIds
      */
-    public function getAllNotifications($roleId = 0){
+    public function getAllNotifications($roleIds = null){
     	try{
     		$session = Session::singleton();
-    		$session->setRole($roleId);
+    		$session->activateRoles($roleIds);
     
-    		$session->role->getViolations();
+    		RuleEngine::getProcessViolationsFromDB($session);
     
     		return Notifications::getAll();
     			
