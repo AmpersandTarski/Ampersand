@@ -111,7 +111,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , contextInfo   :: ContextInfo 
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
-                   , editableConcepts :: Role -> [A_Concept]  -- ^ All editable concepts per role. (See https://github.com/AmpersandTarski/ampersand/issues/211 )
+                   , editableConceptsOld :: Role -> [A_Concept]  -- ^ All editable concepts per role. (See https://github.com/AmpersandTarski/ampersand/issues/211 )
+                   , editableConcepts :: Interface -> [A_Concept]  -- ^ All editable concepts per Interface. (See https://github.com/AmpersandTarski/ampersand/issues/211 )
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'
