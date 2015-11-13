@@ -273,11 +273,13 @@ class Api{
 	
 	/**
      * @url GET resource/{concept}
+     * @param string $concept
+     * @param array $roleIds
      */
-    public function getConceptAtoms($concept){
+    public function getConceptAtoms($concept, $roleIds = null){
     	try{
     		$session = Session::singleton();
-    		$session->activateRoles();
+    		$session->activateRoles($roleIds);
     			
     		if(!in_array($concept, $session->getEditableConcepts())) throw new Exception ("You do not have access for this call", 403);
     		
@@ -290,11 +292,14 @@ class Api{
     
     /**
      * @url GET resource/{concept}/{atomId}
+     * @param string $concept
+     * @param string $atomId
+     * @param array $roleIds
      */
-    public function getConceptAtom($concept, $atomId){
+    public function getConceptAtom($concept, $atomId, $roleIds = null){
     	try{
     		$session = Session::singleton();
-    		$session->activateRoles();
+    		$session->activateRoles($roleIds);
     		    			 
     		if(!in_array($concept, $session->getEditableConcepts())) throw new Exception ("You do not have access for this call", 403);
     		
