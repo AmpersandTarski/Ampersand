@@ -186,8 +186,6 @@ instance Association Rule where
 ruleIsInvariantUniOrInj :: Rule -> Bool
 ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p `elem` [Uni, Inj]
                              | otherwise                                     = False
-                             -- NOTE: currently all rules coming from properties are invariants, so the not isSignal
-                             -- condition is unnecessary, but this will change in the future.    
     
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because 
