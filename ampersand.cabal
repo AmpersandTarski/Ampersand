@@ -167,7 +167,8 @@ executable ampersand
                      Database.Design.Ampersand.Output.ToJSON.Relations,
                      Database.Design.Ampersand.Output.ToJSON.Rules,
                      Database.Design.Ampersand.Output.ToJSON.Concepts,
-                     Database.Design.Ampersand.Output.ToJSON.Conjuncts
+                     Database.Design.Ampersand.Output.ToJSON.Conjuncts,
+                     Database.Design.Ampersand.Output.ToJSON.Interfaces
 
 
 Test-Suite ampersand-test
@@ -221,4 +222,5 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Output.ToJSON.Relations,
                      Database.Design.Ampersand.Output.ToJSON.Rules,
                      Database.Design.Ampersand.Output.ToJSON.Concepts,
-                     Database.Design.Ampersand.Output.ToJSON.Conjuncts
+                     Database.Design.Ampersand.Output.ToJSON.Conjuncts,
+                     Database.Design.Ampersand.Output.ToJSON.Interfaces

@@ -8,6 +8,7 @@ import Database.Design.Ampersand.Output.ToJSON.Relations
 import Database.Design.Ampersand.Output.ToJSON.Rules 
 import Database.Design.Ampersand.Output.ToJSON.Concepts 
 import Database.Design.Ampersand.Output.ToJSON.Conjuncts 
+import Database.Design.Ampersand.Output.ToJSON.Interfaces 
 
 generateJSONfiles :: FSpec -> IO ()
 generateJSONfiles fSpec =
@@ -17,6 +18,7 @@ generateJSONfiles fSpec =
            , writeJSON "rules" rules
            , writeJSON "concepts" concepts
            , writeJSON "conjuncts" conjuncts
+           , writeJSON "interfaces" interfaces
            ]
 
   where 
@@ -34,6 +36,8 @@ generateJSONfiles fSpec =
     concepts = fromAmpersand fSpec fSpec
     conjuncts :: Conjuncts
     conjuncts = fromAmpersand fSpec fSpec
+    interfaces :: Interfaces
+    interfaces = fromAmpersand fSpec fSpec
 {- Note on data structure convention
    The data definitions in this module are not ment to be exported. The idea on naming is that all names
    contain a substring `JSON`. The part following that substring will be the name of the JSON attribute  -}
