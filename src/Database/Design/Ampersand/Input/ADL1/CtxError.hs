@@ -17,6 +17,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkTypeMismatchError
   , Guarded(..) -- ^ If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
+  , multipleRepresentTypes
   )
 -- SJC: I consider it ill practice to export any CtxError constructors
 -- Reason: All error messages should pass through the CtxError module
@@ -60,10 +61,10 @@ addError :: String -> Guarded a -> Guarded b
 addError msg guard = Errors (PE (Message msg):errors guard)
 
 class TypeAware x where
-  -- How to create something of type "p x"?
-  -- Well, [x], Maybe x, Guarded x are all of the type "p x".
-  -- The reason for us to write "p x" (without constraints on p) is that we want to disallow getADLType to inspect its argument
-  -- This way, it has no information about x
+  -- Need something of type "p x"? Use on of these: [x], Maybe x, Guarded x
+  -- They are all of the type "p x".
+  -- The reason for us to write "p x" (without constraints on p, thus not specifying p) is that we want to disallow getADLType to inspect its argument
+  -- This way, we have no information about x, except for its type
   getADLType :: p x -> String
   getADLTypes :: p x -> String
   getADLTypes p = getADLType_A p<>"s"
@@ -89,21 +90,26 @@ unexpectedType o x = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showAD
 --   where res = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showADL x<>"\n  expecting "<>getADLType_a res]
 -- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
 
+multipleRepresentTypes :: (ShowADL a1, ShowADL a2) => Origin -> a1 -> [a2] -> Guarded a
+multipleRepresentTypes o h tps
+ = Errors [CTXE o$ "The Concept "++showADL h++" was shown to be representable as too many types: "++
+                   intercalate ", " (map showADL tps)
+                   ++"\n  It should be representable as at most one type"]
+
 class GetOneGuarded a where
   getOneExactly :: (Traced a1, ShowADL a1) => a1 -> [a] -> Guarded a
   getOneExactly _ [a] = Checked a
-  getOneExactly o l@[] = hasNone l o
-  getOneExactly o lst = Errors [CTXE o'$ "Found too many:\n  "++s | CTXE o' s <- errors (hasNone lst o)]
-  hasNone :: (Traced a1, ShowADL a1) => [a] -- this argument should be ignored! It is only here to help indicate a type (you may put [])
-                                     -> a1  -- the object where the problem is arising
+  getOneExactly o []  = hasNone o
+  getOneExactly o _ = Errors [CTXE o'$ "Found too many:\n  "++s | CTXE o' s <- errors (hasNone o :: Guarded a)]
+  hasNone :: (Traced a1, ShowADL a1) => a1  -- the object where the problem is arising
                                      -> Guarded a
-  hasNone _ o = getOneExactly o []
+  hasNone o = getOneExactly o []
 
 instance GetOneGuarded (P_SubIfc a) where
-  hasNone _ o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
 
 instance GetOneGuarded (SubInterface) where
-  hasNone _ o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
 
 instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d

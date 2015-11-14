@@ -88,7 +88,7 @@ data A_Context
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctxrrules :: [A_RoleRule]
          , ctxRRels :: [A_RoleRelation] -- ^ The assignment of roles to Relations (which role mayEdit what relations)
-         , ctxreprs :: [Representation]
+         , ctxreprs :: A_Concept -> TType
          , ctxvs :: [ViewDef]        -- ^ The view definitions defined in this context, outside the scope of patterns
          , ctxgs :: [A_Gen]          -- ^ The specialization statements defined in this context, outside the scope of patterns
          , ctxgenconcs :: [[A_Concept]] -- ^ A partitioning of all concepts: the union of all these concepts contains all atoms, and the concept-lists are mutually distinct in terms of atoms in one of the mentioned concepts
@@ -845,28 +845,13 @@ class Association rel where
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
 data ContextInfo =
-  CI { ctxiGens       :: [A_Gen]      -- The generalisation relations in the context
-     , ctxiRepresents :: [Representation] -- a list containing all user defined Representations in the context
+  CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
+     , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      }
-representationOf :: ContextInfo -> A_Concept -> TType
-representationOf ci cpt =
--- TODO: Fix this function, to take care of classifications
-  case cpt of
-    ONE -> TypeOfOne
-    PlainConcept{}
-        ->  case eqCl reprdom . filter isAboutThisCpt . ctxiRepresents $ ci of
-              [] ->  Object  --The default value, when no representation is specified
-              [rs] -> case rs of
-                         []  -> fatal 498 "This should be impossible with eqClass"
-                         r: _ ->reprdom r
-              _ -> fatal 500 $ "There are multiple Types for "++show cpt++". That should have been checked earlier!"
-  where
-    isAboutThisCpt :: Representation -> Bool
-    isAboutThisCpt rep = cptnm cpt `elem` reprcpts rep
 contextInfoOf :: A_Context -> ContextInfo
 contextInfoOf context
   = CI { ctxiGens       = concatMap ptgns (ctxpats context) ++ ctxgs context
-       , ctxiRepresents = ctxreprs context
+       , representationOf = ctxreprs context
        }
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
 --   after the expression has been built inside an A_Context. Only at that time
@@ -881,6 +866,10 @@ safePSingleton2AAtomVal ci c val =
      Right x -> x
   where typ = representationOf ci c
 
+-- SJC: Note about this code:
+-- error messages are written here, and later turned into error messages via mkIncompatibleAtomValueError
+-- Ideally, this module would import Database.Design.Ampersand.Input.ADL1.CtxError
+-- that way, unsafePAtomVal2AtomValue could create a 'Origin -> Guarded AAtomValue' instead.
 unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
 unsafePAtomVal2AtomValue typ mCpt pav =
   case unsafePAtomVal2AtomValue' typ mCpt pav of
