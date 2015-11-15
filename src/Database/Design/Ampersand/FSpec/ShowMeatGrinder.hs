@@ -245,10 +245,18 @@ instance MetaPopulations (PlugSQL,SqlAttribute) where
                  [(dirtyId (plug,att), dirtyId plug) ]
       , Pop "concept" "SqlAttribute" "Concept"
                  [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]
+      , Pop "relsMentionedIn" "Plug" "Relation"
+                 [(dirtyId plug, dirtyId rel) | Just rel <- [primRel.attExpr $ att]]
       , Pop "null" "SqlAttribute" "SqlAttribute"
                  [(a,a) | attNull att, let a=dirtyId (plug,att)]
       ]
-
+    where primRel :: Expression -> Maybe Declaration
+          primRel expr =
+            case expr of
+              EDcD dcl -> Just dcl
+              EFlp (EDcD dcl) -> Just dcl
+              EDcI cpt -> Just (Isn cpt)
+              _  -> Nothing
 instance GenericPopulations Role where
   generics fSpec rol =
       [ Comment $ "Role: '"++name rol++"'"
