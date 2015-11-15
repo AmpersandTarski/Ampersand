@@ -360,6 +360,7 @@ instance MetaPopulations Declaration where
       , Pop "decpurpose" "Relation" "Purpose"
              [(dirtyId dcl, (show.showADL) x) | x <- explanations dcl]
       ]
+     Isn ONE -> [Comment "No population for the declaration ONE" ]
      Isn{} -> 
       [ Comment " "
       , Comment $ " Relation `I["++name (source dcl)++"]`"
@@ -369,6 +370,10 @@ instance MetaPopulations Declaration where
              [(dirtyId dcl,dirtyId fSpec)]
       , Pop "name" "Relation" "Identifier"
              [(dirtyId dcl, (show.name) dcl)]
+      , Pop "srcCol" "Relation" "SqlAttribute"
+             [(dirtyId dcl,dirtyId (table,srcCol))]
+      , Pop "tgtCol" "Relation" "SqlAttribute"
+             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "source" "Relation" "Concept"
              [(dirtyId dcl,dirtyId (source dcl))]
       , Pop "target" "Relation" "Concept"

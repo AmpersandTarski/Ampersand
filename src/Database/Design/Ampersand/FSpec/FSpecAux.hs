@@ -29,10 +29,15 @@ sqlRelPlugs fSpec e
 getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute)
 getDeclarationTableInfo fSpec decl =
  case decl of
-   Sgn{} ->
-      case sqlRelPlugs fSpec (EDcD decl) of
+   Sgn{}   -> getPrimExprTableInfo (EDcD decl)
+   Isn cpt -> getPrimExprTableInfo (EDcI cpt) 
+   _     -> fatal 420 "getDeclarationTableInfo must not be used on this type of declaration!"
+   where
+    getPrimExprTableInfo :: Expression -> (PlugSQL,SqlAttribute,SqlAttribute)
+    getPrimExprTableInfo primExpr =
+      case sqlRelPlugs fSpec primExpr of
             [plugInfo] -> plugInfo
-            []         -> fatal 527 "Reference to a non-existing plug."
+            []         -> fatal 527 $ "Reference to a non-existing plug: "++show primExpr
             [(t1,src1,trg1),(t2,src2,trg2)]
                -> if t1 ==t2 && src1 == trg2 && trg1 == src2
                   then (t1,src1,trg1)
@@ -40,9 +45,7 @@ getDeclarationTableInfo fSpec decl =
                             intercalate "\n\n" (map showPInfo [(t1,src1,trg1),(t2,src2,trg2)])
             pinfos     -> fatal 428 $ "Multiple plugs for relation "++ show decl ++"\n" ++
                             intercalate "\n\n" (map showPInfo pinfos)
-                      -- TODO: some relations return multiple plugs (see ticket #217)
-   _     -> fatal 420 "getDeclarationTableInfo must not be used on this type of declaration!"
-   where
+     
     showPInfo (tab, src, trg) = intercalate "  \n"
                                  [ "Table: "++name tab
                                  , "  sourceAttribute: "++attName src
