@@ -613,7 +613,7 @@ instance AdlId Pattern
 instance AdlId PlugInfo
 instance AdlId PlugSQL
 instance AdlId (PlugSQL,SqlAttribute)
-  where dirtyId (plug,att) = dirtyId plug++(show.camelCase.attName) att
+  where dirtyId (plug,att) = concatDirtyIdStrings $ [dirtyId plug, (show.camelCase.attName) att]
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Role
@@ -637,6 +637,20 @@ camelCase str = concatMap capitalize (words str)
     capitalize [] = []
     capitalize (s:ss) = toUpper s : ss
 
+-- | utility function to concat dirtyId's, knowing that the individual strings are doublequoted
+concatDirtyIdStrings :: [String] -> String
+concatDirtyIdStrings [] = []
+concatDirtyIdStrings [s] = s
+concatDirtyIdStrings (s0:s1:ss)   
+  | length s0 < 2 = fatal 645 "String too short to have quotes: "++s0
+  | length s1 < 2 = fatal 646 "String too short to have quotes: "++s1
+  | otherwise = concatDirtyIdStrings (concatFirstTwo:ss)
+  where
+   concatFirstTwo = show (unquoted s0 ++ separator ++ unquoted s1)
+   separator = "."
+   unquoted = reverse . unqfst . reverse . unqfst
+   unqfst ('"':tl) = tl
+   unqfst _ = fatal 653 "expected quote, but it is not there!"
 nullContent :: Pop -> Bool
 nullContent (Pop _ _ _ []) = True
 nullContent _ = False
