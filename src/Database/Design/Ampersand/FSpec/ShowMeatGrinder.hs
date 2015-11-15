@@ -613,7 +613,7 @@ instance AdlId Pattern
 instance AdlId PlugInfo
 instance AdlId PlugSQL
 instance AdlId (PlugSQL,SqlAttribute)
-  where uri (plug,att) = (show.camelCase.attName) att
+  where uri (plug,att) = uri plug++(show.camelCase.attName) att
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Role
