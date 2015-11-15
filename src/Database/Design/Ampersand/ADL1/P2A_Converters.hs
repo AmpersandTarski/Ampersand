@@ -25,7 +25,7 @@ import Data.Either
 
 data Type = UserConcept String
           | BuiltIn TType
-          | RepresentableSeparator
+          | RepresentSeparator
           deriving (Eq,Ord,Show)
 
 type DeclMap = Map.Map String (Map.Map SignOrd Declaration)
@@ -40,7 +40,7 @@ typeOrConcept :: Type -> Either A_Concept (Maybe TType)
 typeOrConcept (BuiltIn TypeOfOne)  = Left$ ONE
 typeOrConcept (UserConcept s)      = Left$ PlainConcept s
 typeOrConcept (BuiltIn x)          = Right (Just x)
-typeOrConcept RepresentableSeparator = Right Nothing
+typeOrConcept RepresentSeparator = Right Nothing
 
 pConcToType :: P_Concept -> Type
 pConcToType P_Singleton = BuiltIn TypeOfOne
@@ -276,18 +276,28 @@ pCtx2aCtx _
     deflangCtxt = lang -- take the default language from the top-level context
     deffrmtCtxt = fromMaybe ReST pandocf
     
+    allGens = p_gens ++ concatMap pt_gns p_patterns
+    
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do mp <- Map.fromList . concat <$> sequenceA (map findGens concGroups)
+     = do mp <- Map.fromList . concat <$> traverse findTypes concGroups
+          let findR = flip (Map.findWithDefault Object) mp -- default representation is Object (sometimes called `ugly identifiers')
+          _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
           return (CI { ctxiGens = map pGen2aGen p_gens
-                     , representationOf = flip (Map.findWithDefault Object) mp -- default representation is Object (sometimes called `ugly identifiers')
+                     , representationOf = findR
                      })
-    findGens :: [Type] -> Guarded [(A_Concept, TType)]
-    findGens [] = fatal 281 "Empty set of equivalent concepts"
-    findGens lst@(h:_)
-     = case (map toList)$ toList$ findSubsets genLattice (lJoin h RepresentableSeparator) of
+    
+    compareTypes f p_gen
+     = sequence_ [ if (f genC == rightType) then pure () else nonMatchingRepresentTypes p_gen (f genC) rightType
+                 | genC <- gen_concs p_gen ]
+     where rightType = f (gen_spc p_gen)
+    
+    findTypes :: [Type] -> Guarded [(A_Concept, TType)]
+    findTypes [] = fatal 281 "Empty set of equivalent concepts"
+    findTypes lst@(h:_)
+     = case (map toList)$ toList$ findSubsets genLattice (lJoin h RepresentSeparator) of
         [] -> pure$ [] -- use default
-        [(r:_)] -> representAs <$> getAsType OriginUnknown r
+        [(r:_)] -> representAs <$> getAsType (fatal 293 "A custom type turned out to be above the RepresentSeparator, which is wrong") r
         lst' -> case typeOrConcept h of
                  (Right Nothing) -> return []
                  Right _ -> fatal 288 "Error in the built-in types."
@@ -304,13 +314,13 @@ pCtx2aCtx _
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
     genRules = [ ( Set.singleton (pConcToType (gen_spc x)), Set.fromList (map pConcToType (gen_concs x)))
-               | x <- p_gens ++ concatMap pt_gns p_patterns
+               | x <- allGens
                ] ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
                | x <- allRepresentations
                , cpt <- reprcpts x
                ] ++
-               [ ( Set.singleton RepresentableSeparator
+               [ ( Set.singleton RepresentSeparator
                  , Set.fromList [ BuiltIn Alphanumeric
                                 , BuiltIn BigAlphanumeric
                                 , BuiltIn HugeAlphanumeric
@@ -325,7 +335,7 @@ pCtx2aCtx _
                                 , BuiltIn Float
                                 , BuiltIn Object
                                 -- , BuiltIn TypeOfOne -- not a valid way to represent something, also treated differently in this code
-                                , RepresentableSeparator
+                                , RepresentSeparator
                                 ])]
     genLattice :: Op1EqualitySystem Type
     genLattice = optimize1 (foldr addEquality emptySystem genRules)

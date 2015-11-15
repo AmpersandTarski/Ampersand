@@ -17,7 +17,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkTypeMismatchError
   , Guarded(..) -- ^ If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
-  , multipleRepresentTypes
+  , multipleRepresentTypes, nonMatchingRepresentTypes
   )
 -- SJC: I consider it ill practice to export any CtxError constructors
 -- Reason: All error messages should pass through the CtxError module
@@ -95,6 +95,10 @@ multipleRepresentTypes o h tps
  = Errors [CTXE o$ "The Concept "++showADL h++" was shown to be representable as too many types: "++
                    intercalate ", " (map showADL tps)
                    ++"\n  It should be representable as at most one type"]
+
+nonMatchingRepresentTypes :: (Traced a1, Show a2, Show a3) => a1 -> a2 -> a3 -> Guarded a
+nonMatchingRepresentTypes genStmt wrongType rightType
+ = Errors [CTXE (origin genStmt)$ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "++show wrongType++" is not the same as "++show rightType]
 
 class GetOneGuarded a where
   getOneExactly :: (Traced a1, ShowADL a1) => a1 -> [a] -> Guarded a
