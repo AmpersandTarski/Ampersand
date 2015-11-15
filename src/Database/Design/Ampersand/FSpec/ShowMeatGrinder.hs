@@ -225,6 +225,8 @@ instance MetaPopulations PlugSQL where
   metaPops fSpec plug =
       [ Pop "context" "PlugInfo" "Context"
                [(dirtyId plug, dirtyId fSpec)]
+      , Pop "key" "PlugInfo" "SqlAttribute"
+               [(dirtyId plug, dirtyId (plug, head . plugAttributes $ plug))]
       ] ++ concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
 
 instance GenericPopulations (PlugSQL,SqlAttribute) where
