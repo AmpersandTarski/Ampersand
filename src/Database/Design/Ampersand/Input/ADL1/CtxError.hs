@@ -67,11 +67,11 @@ class TypeAware x where
   -- This way, we have no information about x, except for its type
   getADLType :: p x -> String
   getADLTypes :: p x -> String
-  getADLTypes p = getADLType_A p<>"s"
+  getADLTypes p = getADLType p<>"s"
   getADLType_A :: p x -> String
-  getADLType_A p = "A "<>getADLType_A p
+  getADLType_A p = "A "<>getADLType p
   getADLType_a :: p x -> String
-  getADLType_a p = "a "<>getADLType_A p
+  getADLType_a p = "a "<>getADLType p
 
 instance TypeAware TType where
   getADLType _ = "built-in type"

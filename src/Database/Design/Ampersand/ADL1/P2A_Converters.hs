@@ -49,11 +49,10 @@ aConcToType :: A_Concept -> Type
 aConcToType ONE = BuiltIn TypeOfOne
 aConcToType p = UserConcept (name p)
 
-getAsType :: Origin -> Type -> Guarded TType
+getAsType :: Origin -> Type -> Guarded (Maybe TType)
 getAsType o v = case typeOrConcept v of
-                  Right (Just x) -> return x
+                  Right x -> return x
                   Left  x -> unexpectedType o x
-                  _ -> unexpectedType o ONE
 getAsConcept :: Origin -> Type -> Guarded A_Concept
 getAsConcept o v = case typeOrConcept v of
                      Right x -> unexpectedType o x
@@ -280,7 +279,7 @@ pCtx2aCtx _
     
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do mp <- Map.fromList . concat <$> traverse findTypes concGroups
+     = do mp <- Map.fromList . concat <$> traverse findTypes (concat concGroups)
           let findR = flip (Map.findWithDefault Object) mp -- default representation is Object (sometimes called `ugly identifiers')
           _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
           return (CI { ctxiGens = map pGen2aGen p_gens
@@ -292,19 +291,17 @@ pCtx2aCtx _
                  | genC <- gen_concs p_gen ]
      where rightType = f (gen_spc p_gen)
     
-    findTypes :: [Type] -> Guarded [(A_Concept, TType)]
-    findTypes [] = fatal 281 "Empty set of equivalent concepts"
-    findTypes lst@(h:_)
-     = case (map toList)$ toList$ findSubsets genLattice (lJoin h RepresentSeparator) of
-        [] -> pure$ [] -- use default
-        [(r:_)] -> representAs <$> getAsType (fatal 293 "A custom type turned out to be above the RepresentSeparator, which is wrong") r
-        lst' -> case typeOrConcept h of
-                 (Right Nothing) -> return []
-                 Right _ -> fatal 288 "Error in the built-in types."
-                 Left v -> multipleRepresentTypes OriginUnknown v (concatMap (take 1 . lefts . map typeOrConcept) lst')
-     where representAs v = concatMap (f v) lst
-           f v itm
-             = case typeOrConcept itm of
+    findTypes :: Type -> Guarded [(A_Concept, TType)]
+    findTypes h
+     = case typeOrConcept h of
+        Right _ -> return []
+        Left v -> case (map toList)$ toList$ findSubsets genLattice (lJoin h RepresentSeparator) of
+                    [] -> pure$ [] -- use default
+                    o@[[r]] -> representAs <$> getAsType (fatal 293 (show o++", A custom type found for "++show v++" turned out to be above the RepresentSeparator, which is wrong")) r
+                    lst' -> multipleRepresentTypes OriginUnknown v (concatMap (take 1 . lefts . map typeOrConcept) lst')
+     where representAs Nothing = fatal 304 "Something turned out to be representable as the RepresentSeparator, which should never happen" -- []
+           representAs (Just v)
+             = case typeOrConcept h of
                 Left c -> [(c,v)]
                 _ -> []
     p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
@@ -333,10 +330,10 @@ pCtx2aCtx _
                                 , BuiltIn Boolean
                                 , BuiltIn Integer
                                 , BuiltIn Float
+                                -- , BuiltIn TypeOfOne -- not a valid way to represent something! Also treated differently in this code
                                 , BuiltIn Object
-                                -- , BuiltIn TypeOfOne -- not a valid way to represent something, also treated differently in this code
                                 , RepresentSeparator
-                                ])]
+                                ]) ]
     genLattice :: Op1EqualitySystem Type
     genLattice = optimize1 (foldr addEquality emptySystem genRules)
 
