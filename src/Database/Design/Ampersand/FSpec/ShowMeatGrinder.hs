@@ -193,10 +193,14 @@ instance GenericPopulations A_Concept where
 
 instance MetaPopulations A_Concept where
  metaPops fSpec cpt =
+   [ Comment " "
+   , Comment $ " Concept `"++name cpt++"` "
+   , Pop "ttype" "Concept" "TType"
+             [(dirtyId cpt,dirtyId ((cptTType fSpec) cpt))] 
+   ]++
    case cpt of
      PlainConcept{} ->
-      [ Comment " "
-      , Comment $ " Concept `"++name cpt++"` "
+      [ Comment $ " Concept `"++name cpt++"` "
       , Pop "concs" "Context" "Concept"
              [(dirtyId fSpec,dirtyId cpt)]
       , Pop "name" "Concept" "Identifier"
@@ -633,6 +637,7 @@ instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Role
 instance AdlId Signature
+instance AdlId TType
 instance AdlId Conjunct
 instance AdlId (PairView Expression)
   where dirtyId x = show (typeOf x)++show (hash x)

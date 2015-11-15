@@ -187,7 +187,9 @@ data TType
   | Date | DateTime 
   | Boolean | Integer | Float | Object  
   | TypeOfOne --special type for the special concept ONE.
-     deriving (Eq, Ord)
+     deriving (Eq, Ord, Typeable)
+instance Unique TType where
+ showUnique = show
 instance Show TType where
   show tt = case tt of
     Alphanumeric      ->   "ALPHANUMERIC"
