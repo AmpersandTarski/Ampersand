@@ -183,6 +183,14 @@ findDeclLooselyTyped :: DeclMap
 findDeclLooselyTyped declMap o x src tgt = getOneExactly o (findDeclsLooselyTyped declMap x src tgt)
 findDeclsTyped :: DeclMap -> String -> Signature -> [Declaration]
 findDeclsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls declMap x))
+
+onlyUserConcepts :: [[Type]] -> [[A_Concept]]
+onlyUserConcepts [] = []
+onlyUserConcepts (lst:r)
+  = case lefts (map typeOrConcept lst) of
+     [] -> onlyUserConcepts r
+     v -> v:onlyUserConcepts r
+
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx _
  PCtx { ctx_nm     = n1
@@ -226,11 +234,6 @@ pCtx2aCtx _
       declsAndPops <- traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) p_declarations
       let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
       let soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs) :: [Type]
-      let onlyUserConcepts [] = []
-          onlyUserConcepts (lst:r)
-            = case lefts (map typeOrConcept lst) of
-               [] -> onlyUserConcepts r
-               v -> v:onlyUserConcepts r
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
@@ -271,7 +274,7 @@ pCtx2aCtx _
       uniqueNames (ctxifcs   actx)   --                          and interfaces.
       return actx
   where
-    concGroups = getGroups genLattice :: [[Type]]
+    concGroups = getGroups genLatticeIncomplete :: [[Type]]
     deflangCtxt = lang -- take the default language from the top-level context
     deffrmtCtxt = fromMaybe ReST pandocf
     
@@ -279,7 +282,7 @@ pCtx2aCtx _
     
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do mp <- Map.fromList . concat <$> traverse findTypes (concat concGroups)
+     = do mp <- Map.fromList . concat <$> traverse findTypes (concat (onlyUserConcepts concGroups))
           let findR = flip (Map.findWithDefault Object) mp -- default representation is Object (sometimes called `ugly identifiers')
           _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
           return (CI { ctxiGens = map pGen2aGen p_gens
@@ -291,19 +294,14 @@ pCtx2aCtx _
                  | genC <- gen_concs p_gen ]
      where rightType = f (gen_spc p_gen)
     
-    findTypes :: Type -> Guarded [(A_Concept, TType)]
+    findTypes :: A_Concept -> Guarded [(A_Concept, TType)]
     findTypes h
-     = case typeOrConcept h of
-        Right _ -> return []
-        Left v -> case (map toList)$ toList$ findSubsets genLattice (lJoin h RepresentSeparator) of
-                    [] -> pure$ [] -- use default
-                    o@[[r]] -> representAs <$> getAsType (fatal 293 (show o++", A custom type found for "++show v++" turned out to be above the RepresentSeparator, which is wrong")) r
-                    lst' -> multipleRepresentTypes OriginUnknown v (concatMap (take 1 . lefts . map typeOrConcept) lst')
+     = case (map toList)$ toList$ findSubsets genLattice (lJoin (aConcToType h) RepresentSeparator) of
+           [] -> pure$ [] -- use default
+           o@[[r]] -> representAs <$> getAsType (fatal 293 (show o++", A custom type found for "++show h++" turned out to be above the RepresentSeparator, which is wrong")) r
+           lst' -> multipleRepresentTypes OriginUnknown h (concatMap (take 1 . lefts . map typeOrConcept) lst')
      where representAs Nothing = fatal 304 "Something turned out to be representable as the RepresentSeparator, which should never happen" -- []
-           representAs (Just v)
-             = case typeOrConcept h of
-                Left c -> [(c,v)]
-                _ -> []
+           representAs (Just v) = [(h,v)]
     p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
     p_interfaceAndDisambObjs declMap = [ (ifc, disambiguate (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces ]
     
@@ -312,9 +310,10 @@ pCtx2aCtx _
     -- the genLattice is the resulting optimized structure
     genRules = [ ( Set.singleton (pConcToType (gen_spc x)), Set.fromList (map pConcToType (gen_concs x)))
                | x <- allGens
-               ] ++
+               ]
+    completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
-               | x <- allRepresentations
+               | x <- p_representations++concatMap pt_Reprs p_patterns
                , cpt <- reprcpts x
                ] ++
                [ ( Set.singleton RepresentSeparator
@@ -334,8 +333,10 @@ pCtx2aCtx _
                                 , BuiltIn Object
                                 , RepresentSeparator
                                 ]) ]
+    genLatticeIncomplete :: Op1EqualitySystem Type -- used to derive the concept groups
+    genLatticeIncomplete = optimize1 (foldr addEquality emptySystem genRules)
     genLattice :: Op1EqualitySystem Type
-    genLattice = optimize1 (foldr addEquality emptySystem genRules)
+    genLattice = optimize1 (foldr addEquality emptySystem completeRules)
 
     -- accumDecl is the function that combines two relations into one
     -- meanings, for instance, two should get combined into a list of meanings, et cetera
@@ -856,8 +857,6 @@ pCtx2aCtx _
     allRoleRules :: [A_RoleRule]
     allRoleRules = map pRoleRule2aRoleRule 
                       (p_roleRules ++ concatMap pt_RRuls p_patterns)
-    allRepresentations :: [Representation]
-    allRepresentations = p_representations++concatMap pt_Reprs p_patterns
 
 pDisAmb2Expr :: (TermPrim, DisambPrim) -> Guarded Expression
 pDisAmb2Expr (_,Known x) = pure x
