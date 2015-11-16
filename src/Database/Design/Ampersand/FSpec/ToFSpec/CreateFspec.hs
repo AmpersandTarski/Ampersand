@@ -37,7 +37,7 @@ createFSpec opts =
          -> return (pCtx2Fspec uCtx)
        Just mType
          -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the
-               let populationPctx       = unguard ( grind mType <$> pCtx2Fspec uCtx)
+               let populationPctx       = join ( grind mType <$> pCtx2Fspec uCtx)
                    populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
                    metaPopulatedRapPctx = toMeta opts <$> populatedRapPctx
                    allCombinedPctx      = merge.sequenceA $ [uCtx, metaPopulatedRapPctx]
@@ -57,7 +57,7 @@ createFSpec opts =
     toFspec :: A_Context -> Guarded FSpec
     toFspec = pure . makeFSpec opts
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
-    pCtx2Fspec c = unguard $ toFspec <$> (unguard $ pCtx2aCtx opts <$> c)
+    pCtx2Fspec c = join $ toFspec <$> (join $ pCtx2aCtx opts <$> c)
     merge :: Guarded [P_Context] -> Guarded P_Context
     merge ctxs = fmap f ctxs
       where

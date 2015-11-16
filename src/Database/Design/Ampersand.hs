@@ -44,7 +44,7 @@ module Database.Design.Ampersand
    , Language(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
-   , (<==>),meet,join,sortWith,atomValuesOf
+   , (<==>),sortWith,atomValuesOf
    , smallerConcepts, largerConcepts, rootConcepts
    -- * Functions on relations
    -- * Functions on rules

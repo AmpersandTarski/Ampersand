@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
 module Database.Design.Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr, makeError, addError
@@ -7,6 +7,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeOrdered, mustBeOrderedLst, mustBeOrderedConcLst
   , mustBeBound
   , GetOneGuarded(..), uniqueNames
+  , TypeAware(..), unexpectedType
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
@@ -14,12 +15,12 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkInvalidCRUDError
   , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
   , mkTypeMismatchError
-  , Guarded(..)
+  , Guarded(..) -- ^ If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
-  , unguard
+  , multipleRepresentTypes, nonMatchingRepresentTypes
   )
--- SJC: I consider it ill practice to export CTXE
--- Reason: CtxError should obtain all error messages
+-- SJC: I consider it ill practice to export any CtxError constructors
+-- Reason: All error messages should pass through the CtxError module
 -- By not exporting anything that takes a string, we prevent other modules from containing error message
 -- If you build a function that must generate an error, put it in CtxError and call it instead
 -- see `getOneExactly' / `GetOneGuarded' as a nice example
@@ -36,16 +37,11 @@ import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
 import Database.Design.Ampersand.Input.ADL1.FilePos()
+import Data.Monoid
+
 
 _notUsed :: a
 _notUsed = undefined fatal
-
--- unguard is like an applicative join, which can be used to elegantly express monadic effects for Guarded.
--- The function is a bit more compositional than the previously used <?> as you don't have to tuple all the arguments.
--- Similar to join and bind we have: unguard g = id <?> g, and f g = unguard $ f <$> pure g
-unguard :: Guarded (Guarded a) -> Guarded a
-unguard (Errors errs) = Errors errs
-unguard (Checked g)   = g
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
@@ -64,21 +60,60 @@ makeError msg = Errors [PE (Message msg)]
 addError :: String -> Guarded a -> Guarded b
 addError msg guard = Errors (PE (Message msg):errors guard)
 
+class TypeAware x where
+  -- Need something of type "p x"? Use on of these: [x], Maybe x, Guarded x
+  -- They are all of the type "p x".
+  -- The reason for us to write "p x" (without constraints on p, thus not specifying p) is that we want to disallow getADLType to inspect its argument
+  -- This way, we have no information about x, except for its type
+  getADLType :: p x -> String
+  getADLTypes :: p x -> String
+  getADLTypes p = getADLType p<>"s"
+  getADLType_A :: p x -> String
+  getADLType_A p = "A "<>getADLType p
+  getADLType_a :: p x -> String
+  getADLType_a p = "a "<>getADLType p
+
+instance TypeAware TType where
+  getADLType _ = "built-in type"
+instance TypeAware (Maybe TType) where
+  getADLType _ = "built-in type"
+instance TypeAware A_Concept where
+  getADLType _ = "concept"
+
+-- SJC, Note about Haskell: I'm using scoped type variables here, via the flag "ScopedTypeVariables"
+-- the result is that the b is bound by the type signature, so I can use `getADLType_a' with exactly that type
+unexpectedType :: forall a b. (TypeAware a, TypeAware b, ShowADL a) => Origin -> a -> Guarded b
+unexpectedType o x = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showADL x<>"\n  expecting "<>getADLType_a ([]::[b])]
+-- There is a way to work around this without ScopedTypeVariables, but in my (SJC) view, this is less readable:
+-- unexpectedType :: (TypeAware a, TypeAware b, ShowADL a) => Origin -> a -> Guarded b
+-- unexpectedType o x = res
+--   where res = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showADL x<>"\n  expecting "<>getADLType_a res]
+-- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
+
+multipleRepresentTypes :: (ShowADL a1, ShowADL a2) => Origin -> a1 -> [a2] -> Guarded a
+multipleRepresentTypes o h tps
+ = Errors [CTXE o$ "The Concept "++showADL h++" was shown to be representable as too many types: "++
+                   intercalate ", " (map showADL tps)
+                   ++"\n  It should be representable as at most one type"]
+
+nonMatchingRepresentTypes :: (Traced a1, Show a2, Show a3) => a1 -> a2 -> a3 -> Guarded a
+nonMatchingRepresentTypes genStmt wrongType rightType
+ = Errors [CTXE (origin genStmt)$ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "++show wrongType++" is not the same as "++show rightType]
+
 class GetOneGuarded a where
   getOneExactly :: (Traced a1, ShowADL a1) => a1 -> [a] -> Guarded a
   getOneExactly _ [a] = Checked a
-  getOneExactly o l@[] = hasNone l o
-  getOneExactly o lst = Errors [CTXE o'$ "Found too many:\n  "++s | CTXE o' s <- errors (hasNone lst o)]
-  hasNone :: (Traced a1, ShowADL a1) => [a] -- this argument should be ignored! It is only here to help indicate a type (you may put [])
-                                     -> a1  -- the object where the problem is arising
+  getOneExactly o []  = hasNone o
+  getOneExactly o _ = Errors [CTXE o'$ "Found too many:\n  "++s | CTXE o' s <- errors (hasNone o :: Guarded a)]
+  hasNone :: (Traced a1, ShowADL a1) => a1  -- the object where the problem is arising
                                      -> Guarded a
-  hasNone _ o = getOneExactly o []
+  hasNone o = getOneExactly o []
 
 instance GetOneGuarded (P_SubIfc a) where
-  hasNone _ o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
 
 instance GetOneGuarded (SubInterface) where
-  hasNone _ o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
 
 instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d
@@ -188,10 +223,10 @@ mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
                       concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
                              | vd <- viewDefs ]
 
-mkIncompatibleViewError :: P_ObjDef a -> String -> String -> String -> CtxError
+mkIncompatibleViewError :: (Named b,Named c) => P_ObjDef a -> String -> b -> c -> CtxError
 mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
-  CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ show viewCptStr ++
-                         ", which should be equal to or more general than the target " ++ show viewRefCptStr ++ " of the expression at this field."
+  CTXE (origin objDef) $ "Incompatible view annotation <"++viewId++"> at field " ++ show (name objDef) ++ ":\nView " ++ show viewId ++ " has type " ++ name viewCptStr ++
+                         ", which should be equal to or more general than the target " ++ name viewRefCptStr ++ " of the expression at this field."
 
 mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
@@ -249,7 +284,7 @@ mustBeOrderedLst o lst
              "\n  if you think there is no type error, add an order between the mismatched concepts."
           ]
 
-mustBeOrderedConcLst :: Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[A_Concept]] -> Guarded a
+mustBeOrderedConcLst :: (Named a_conc) => Origin -> (SrcOrTgt, Expression) -> (SrcOrTgt, Expression) -> [[a_conc]] -> Guarded a
 mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
  = Errors [CTXE o$ "Ambiguous type when matching: "++show p1++" of "++showADL e1++"\n"
                                           ++" and "++show p2++" of "++showADL e2++".\n"
@@ -257,8 +292,8 @@ mustBeOrderedConcLst o (p1,e1) (p2,e2) cs
                    ++"\n  None of these concepts is known to be the smallest, you may want to add an order between them."]
 
 newtype Slash a = Slash [a]
-instance ShowADL a => ShowADL (Slash a) where
-  showADL (Slash x) = intercalate "/" (map showADL x)
+instance Named a => ShowADL (Slash a) where
+  showADL (Slash x) = intercalate "/" (map name x)
 
 mustBeBound :: Origin -> [(SrcOrTgt, Expression)] -> Guarded a
 mustBeBound o [(p,e)]
@@ -280,16 +315,15 @@ data Guarded a = Errors [CtxError] | Checked a deriving Show
 instance Functor Guarded where
  fmap _ (Errors a)  = Errors a
  fmap f (Checked a) = Checked (f a)
-
 instance Applicative Guarded where
  pure = Checked
  (<*>) (Checked f) (Checked a) = Checked (f a)
  (<*>) (Errors  a) (Checked _) = Errors a
  (<*>) (Checked _) (Errors  b) = Errors b
- (<*>) (Errors  a) (Errors  b) = Errors (a ++ b) -- this line makes Guarded not a monad
- -- Guarded is NOT a monad!
- -- Reason: (<*>) has to be equal to `ap' if it is, and this definition is different
- -- Use <?> if you wish to use the monad-like thing
+ (<*>) (Errors  a) (Errors  b) = Errors (a ++ b) -- this line makes Guarded violate some (potential) applicative/monad laws
+instance Monad Guarded where
+ (>>=) (Checked a) f = f a
+ (>>=) (Errors x) _ = Errors x
 
 -- Shorthand for working with Guarded in IO
 whenCheckedIO :: IO  (Guarded a) -> (a -> IO (Guarded b)) -> IO (Guarded b)

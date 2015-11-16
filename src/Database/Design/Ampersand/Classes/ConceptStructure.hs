@@ -25,7 +25,7 @@ class ConceptStructure a where
   relsMentionedIn = nub . map prim2rel . primsMentionedIn
   primsMentionedIn :: a -> [Expression]
   primsMentionedIn = nub . concatMap primitives . expressionsIn
-  expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a
+  expressionsIn :: a -> [Expression] -- ^ The set of all expressions within data structure a
   
   -- | mp1Pops draws the population from singleton expressions.
   mp1Pops :: ContextInfo -> a -> [Population]
