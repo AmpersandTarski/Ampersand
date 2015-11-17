@@ -99,11 +99,9 @@ class Session {
 		
 		// If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
 		if(Config::get('loginEnabled')){
-			$arr = array();
 			foreach($roles as $role){
-				$arr = array_merge($arr, $role->interfaces());
+				$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
 			}
-			$this->accessibleInterfaces = array_unique($arr);
 		}
 		
 		// Filter duplicate values
