@@ -60,7 +60,7 @@ Class Atom {
 	 * var $arrayType specifies if the arrays in the result are 'assoc' (associative, key index) or 'num' (numeric index).
 	 * var $metaData specifies if meta data about objects must be included or not
 	 */
-    public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true, $recursionAtomArr = array()){
+    public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true, $recursionAtomArr = array(), $path = null){
 		$session = Session::singleton();
 		
 		if(is_null($tgtAtom)){
@@ -102,6 +102,7 @@ Class Atom {
 						// Add meta data elements
 						$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
 								, '@label' => $tgtAtom->label
+								, '@path' => $path .= $rootElement ? '/' : $interface->id . '/' . $tgtAtom->id . '/'
 								, '@view' => $tgtAtom->view
 								, '@type' => $tgtAtom->jsonld_type
 								, '@interfaces' => $atomInterfaces
@@ -132,6 +133,7 @@ Class Atom {
 					// Add meta data elements
 					$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
 							, '@label' => $tgtAtom->label
+							, '@path' => $path .= $rootElement ? '/' : $interface->id . '/' . $tgtAtom->id . '/'
 							, '@view' => $tgtAtom->view
 							, '@type' => $tgtAtom->jsonld_type
 							, '@interfaces' => $atomInterfaces
@@ -147,7 +149,7 @@ Class Atom {
 					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have subinterfaces", 501);
 				
 					foreach($interface->subInterfaces as $subinterface){
-						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData);
+						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData, null, $path);
 						$content[$subinterface->id] = $otherAtom;
 							
 						// _sortValues_ (if subInterface is uni)
@@ -170,7 +172,7 @@ Class Atom {
 					
 					$refInterface = new InterfaceObject($interface->refInterfaceId, null);
 					foreach($refInterface->subInterfaces as $subinterface){
-						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData, $recursionAtomArr);
+						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData, $recursionAtomArr, $path);
 						$content[$subinterface->id] = $otherAtom;
 							
 						// _sortValues_ (if subInterface is uni)
