@@ -291,7 +291,7 @@ Class Atom {
 					$this->doPatchAdd($patch, $interface, $before);
 					break;
 				case "remove" :
-					$this->doPatchRemove($patch, $interface, $before);
+					$this->doPatchRemove($patch, $interface);
 					break;
 				default :
 					throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
@@ -465,7 +465,7 @@ Class Atom {
 		}
 	}
 	
-	private function doPatchRemove($patch, $interface, $before){
+	private function doPatchRemove($patch, $interface){
 				
 		$pathArr = explode('/', $patch['path']);
 		
@@ -497,28 +497,14 @@ Class Atom {
 		}
 		
 		/******* Perform edit *********
-		 * Properties are always a 'replace', so no dealing with them here
+		 * Properties are treated as a 'replace', so not handled here
+		 * UNI interface expressions to scalar are also a 'replace' and not handled here
+		 * 
+		 * If interface is an expression to an object -> perform editDelete
+		 * If interface is an non-uni expression to a scalar -> perform editDelete
 		 */
+		$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
 		
-		/* Interface is a relation to an object
-		 */
-		if($tgtInterface->tgtConceptIsObject){
-		
-			$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
-		
-		/* Interface is a relation to a scalar (i.e. not an object)
-		 * Two situations:
-		 * 1) Interface is UNI -> not handled here, this is detected as a replace to ''
-		 * 2) Interface is not UNI -> $tgtAtom is index of array, so we have to get the corresponding value
-		 */
-		}elseif(!$tgtInterface->tgtConceptIsObject){
-			try{
-				$tgtAtom = JsonPatch::get($before, $patch['path']);
-			}catch(Exception $e){
-				Notifications::addError($e->getMessage());
-			}
-			$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
-		}
 	}
 	
 	public function setNewContent($interface){
