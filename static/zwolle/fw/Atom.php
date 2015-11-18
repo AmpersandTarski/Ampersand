@@ -271,8 +271,8 @@ Class Atom {
 				$databaseCommit = false;
 				break;
 			case 'promise' :
-				break;
 				$databaseCommit = true;
+				break;
 			default :
 				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
 		}
