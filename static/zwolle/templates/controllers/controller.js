@@ -207,10 +207,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			obj[property].push(selected.value);
 			
 			// Construct patch(es)
-			patches = [];
-			patch = { op : 'add', path : obj['@path'] + property, value : selected.value};
-			patches.push(patch);
-			console.log(patch);
+			patches = [{ op : 'add', path : obj['@path'] + property, value : selected.value}];
+			console.log(patches);
 			
 			// Reset selected value
 			selected.value = '';			
