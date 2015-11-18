@@ -244,10 +244,10 @@ Class Atom {
 					$this->doPatchReplace($patch, $interface, $before);
 					break;
 				case "add" :
-					$this->doPatchAdd($patch, $interface, $before);
+					$this->doPatchAdd($patch, $interface);
 					break;
 				case "remove" :
-					$this->doPatchRemove($patch, $interface, $before);
+					$this->doPatchRemove($patch, $interface);
 					break;
 				default :
 					throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
@@ -288,7 +288,7 @@ Class Atom {
 					$this->doPatchReplace($patch, $interface, $before);
 					break;
 				case "add" :
-					$this->doPatchAdd($patch, $interface, $before);
+					$this->doPatchAdd($patch, $interface);
 					break;
 				case "remove" :
 					$this->doPatchRemove($patch, $interface);
@@ -402,92 +402,30 @@ Class Atom {
 		}
 	}
 		
-	private function doPatchAdd($patch, $interface, $before){
-								
-		$pathArr = explode('/', $patch['path']);
-		
-		$tgtInterface = $interface;
-		$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
-		
-		// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
-		if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
-		
-		// find the right subinterface
-		while (count($pathArr)){
-			$interfaceId = array_shift($pathArr);
-			
-			// if path starts with '@' skip
-			if(substr($interfaceId, 0, 1) == '@') return; // break function
-			if($interfaceId == '_sortValues_') return; // break function
-		
-			$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
-		
-			$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-			$tgtAtom = array_shift($pathArr); // set tgtAtom
-		
+	private function doPatchAdd($patch, $interface){
+
+		// Report error when no patch value is provided.
+		if(is_null($patch['value'])){
+			Notifications::addError("Patch operation add provided without value: '{$patch['path']}'");
+			return;
 		}
 		
-		// Check if interface is editable
-		if(!$tgtInterface->editable){
-			Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
-			return;
-		}	
+		$patchInfo = $this->processPatchPath($patch, $interface);
 		
 		/******* Perform edit *********
-		 * Properties are always a 'replace', so no dealing with them here
+		 * Properties are treated as a 'replace', so not handled here
+		 * UNI interface expressions to scalar are also a 'replace' and not handled here
+		 * 
+		 * If interface is an expression to an object -> perform editUpdate
+		 * If interface is an non-uni expression to a scalar -> perform editUpdate
 		 */
+		$this->database->editDelete($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom'], $patchInfo['ifc']->srcConcept, $patchInfo['tgtAtom'], $patchInfo['ifc']->tgtConcept);
 		
-		/* Interface is a relation to an object
-		 */
-		if($tgtInterface->tgtConceptIsObject){
-			$tgtAtom = $patch['value']['id'];
-			
-			// In case $tgtAtom is null provide error.
-			if(is_null($tgtAtom)) Notifications::addError($tgtInterface->label . ": add operation without value '");
-			
-			$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
-		
-		// Interface is a relation to a scalar (i.e. not an object)
-		}elseif(!$tgtInterface->tgtConceptIsObject){
-			$tgtAtom = $patch['value'];
-			
-			// In case $tgtAtom is null provide error.
-			if(is_null($tgtAtom)) Notifications::addError($tgtInterface->label . ": add operation without value '");
-				
-			$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
-		}
 	}
 	
 	private function doPatchRemove($patch, $interface){
-				
-		$pathArr = explode('/', $patch['path']);
 		
-		$tgtInterface = $interface;
-		$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
-		
-		// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
-		if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
-		
-		// find the right subinterface
-		while (count($pathArr)){
-			$interfaceId = array_shift($pathArr);
-			
-			// if path starts with '@' skip
-			if(substr($interfaceId, 0, 1) == '@') return; // break function
-			if($interfaceId == '_sortValues_') return; // break function
-			
-			$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
-			
-			$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-			$tgtAtom = array_shift($pathArr); // set tgtAtom
-
-		}
-		
-		// Check if interface is editable
-		if(!$tgtInterface->editable){
-			Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
-			return;
-		}
+		$patchInfo = $this->processPatchPath($patch, $interface);
 		
 		/******* Perform edit *********
 		 * Properties are treated as a 'replace', so not handled here
@@ -496,7 +434,42 @@ Class Atom {
 		 * If interface is an expression to an object -> perform editDelete
 		 * If interface is an non-uni expression to a scalar -> perform editDelete
 		 */
-		$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $tgtAtom, $tgtInterface->tgtConcept);
+		$this->database->editDelete($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom'], $patchInfo['ifc']->srcConcept, $patchInfo['tgtAtom'], $patchInfo['ifc']->tgtConcept);
+		
+	}
+	
+	private function processPatchPath($patch, $interface){
+		
+		$pathArr = explode('/', $patch['path']);
+		
+		$tgtInterface = $interface;
+		$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
+		
+		// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
+		if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
+		
+		// find the right subinterface
+		while (count($pathArr)){
+			$interfaceId = array_shift($pathArr);
+				
+			// if path starts with '@' skip
+			if(substr($interfaceId, 0, 1) == '@') return; // break function
+			if($interfaceId == '_sortValues_') return; // break function
+				
+			$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
+				
+			$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
+			$tgtAtom = array_shift($pathArr); // set tgtAtom
+		
+		}
+		
+		// Check if interface is editable
+		if(!$tgtInterface->editable){
+			Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
+			return;
+		}
+		
+		return array('ifc' => $tgtInterface, 'srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom);
 		
 	}
 	
@@ -561,10 +534,10 @@ Class Atom {
 					$this->doPatchReplace($patch, $interface, $before);
 					break;
 				case "add" :
-					$this->doPatchAdd($patch, $interface, $before);
+					$this->doPatchAdd($patch, $interface);
 					break;
 				case "remove" :
-					$this->doPatchRemove($patch, $interface, $before);
+					$this->doPatchRemove($patch, $interface);
 					break;
 				default :
 					throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
