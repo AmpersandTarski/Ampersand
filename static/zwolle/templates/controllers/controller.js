@@ -172,10 +172,22 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	$if(containsEditable)$$if(verbose)$// The interface contains at least 1 editable relation
 	$endif$// Function to patch only the changed attributes of a Resource
-	\$scope.patch = function(resourceId){
+	\$scope.patch = function(patches, resourceId, requestType){
 		var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
-		patches = diff(\$scope.initialVal['$interfaceName$'][resourceIndex], \$scope.val['$interfaceName$'][resourceIndex]) // determine patches
-		console.log('not yet implemented');
+		
+		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
+		
+		// myPromise is used for busy indicator
+		\$scope.loadingResources[resourceId] = new Array();
+	
+		\$scope.loadingResources[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
+			.patch(patches, {'requestType' : requestType})
+			.then(function(data) {
+				\$rootScope.updateNotifications(data.notifications);
+				\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.content);
+				showHideButtons(data.invariantRulesHold, data.requestType, resourceId);
+			})
+		);
 	}
 	
 	$if(containsDATE)$$if(verbose)$// The interface contains an editable relation to a concept with representation DATE
