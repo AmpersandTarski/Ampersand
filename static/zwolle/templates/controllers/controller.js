@@ -220,10 +220,17 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		}
 	}
 	
-	//Function to remove item from array of scalar
-	\$scope.removeItem = function(obj, key, resourceId){
-		obj.splice(key, 1);
-		\$scope.put(resourceId);
+	// Function to remove item from array of scalar
+	\$scope.removeItem = function(obj, property, key, resourceId){
+		// Adapt js modal
+		value = obj[property][key];
+		obj[property].splice(key, 1);
+		
+		// Patch!
+		patches = [{ op : 'remove', path : obj['@path'] + property + '/' + value}];
+		console.log(patches);
+		\$scope.patch(patches, resourceId);
+		
 	}$else$$if(verbose)$// The interface does not contain any editable relations$endif$$endif$
 	
 	$if(containsEditableObjects)$$if(verbose)$// The interface contains at least 1 editable relation to a concept with representation OBJECT
