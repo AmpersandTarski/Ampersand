@@ -202,10 +202,21 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	// Function to add item to array of scalar
 	\$scope.addItem = function(obj, property, selected, resourceId){
 		if(selected.value != ''){
+			// Adapt in js modal
 			if(obj[property] === null) obj[property] = [];
 			obj[property].push(selected.value);
-			selected.value = '';
-			\$scope.put(resourceId);
+			
+			// Construct patch(es)
+			patches = [];
+			patch = { op : 'add', path : obj['@path'] + property, value : selected.value};
+			patches.push(patch);
+			console.log(patch);
+			
+			// Reset selected value
+			selected.value = '';			
+			
+			// Patch!
+			\$scope.patch(patches, resourceId);
 		}else{
 			console.log('Empty value selected');
 		}
