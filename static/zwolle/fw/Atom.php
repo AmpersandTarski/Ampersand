@@ -340,9 +340,6 @@ Class Atom {
 			return; 
 		}
 		
-		// Convert true and false into "true" and "false" strings
-		if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true);
-		
 		/******* Perform edit *********/
 		
 		// Interface is property
@@ -434,11 +431,7 @@ Class Atom {
 		if(!$tgtInterface->editable){
 			Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
 			return;
-		}
-		
-		// Convert true and false into "true" and "false" strings
-		if(is_bool($tgtAtom)) $tgtAtom = var_export($tgtAtom, true);
-		if(is_bool($patch['value'])) $patch['value'] = var_export($patch['value'], true);		
+		}	
 		
 		/******* Perform edit *********
 		 * Properties are always a 'replace', so no dealing with them here
