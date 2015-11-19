@@ -14,7 +14,14 @@ Class Atom {
 	private $jsonld_id;
 	private $jsonld_type;
 	private $database;
-		
+	
+	/**
+	 * Atom constructor
+	 * @param string $id
+	 * @param string $concept
+	 * @param string $viewId
+	 * @return void
+	 */
 	public function __construct($id, $concept, $viewId = null){
 		$this->database = Database::singleton();
 		
@@ -32,33 +39,44 @@ Class Atom {
 
 	}
 	
-	/*
-	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
+	/**
+	 * Checks if atom exists in database
+	 * @return boolean
 	 */
 	public function atomExists(){
+		// Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE' (relevant for all scalars)
 		return $this->database->atomExists($this->id, $this->concept);
 	}
 	
-	public function getAtom($interface = null){
-		foreach(InterfaceObject::getAllInterfacesForConcept($this->concept) as $ifc) $interfaces[] = $this->jsonld_id . '/' . $ifc->id;
+	/**
+	 * Returns basic information about an atom
+	 * @return array (string @id, string @label, array @view, string @type, array @interfaces, string id)
+	 */
+	public function getAtom(){
+		foreach(InterfaceObject::getAllInterfacesForConcept($this->concept) as $ifc){
+			$interfaces[] = $this->jsonld_id . '/' . $ifc->id;
+		}
 		
-		$result =  array('@id' => $this->jsonld_id
-						,'@label' => $this->label
-		        		,'@view' => $this->view
-						,'@type' => $this->jsonld_type
-						,'@interfaces' => $interfaces
-						,'id' => $this->id
-						);
-
-		return $result;
+		return array( '@id' => $this->jsonld_id
+					, '@label' => $this->label
+		        	, '@view' => $this->view
+					, '@type' => $this->jsonld_type
+					, '@interfaces' => $interfaces
+					, 'id' => $this->id
+					);
 	}
 	
-	/*
-	 * var $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
-	 * var $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
-	 * var $inclLinktoData specifies if data from LINKTO (ref) subinterfaces must be included or not.
-	 * var $arrayType specifies if the arrays in the result are 'assoc' (associative, key index) or 'num' (numeric index).
-	 * var $metaData specifies if meta data about objects must be included or not
+	/**
+	 * Returns atom content given a certain interface
+	 * @param InterfaceObject $interface
+	 * @param boolean $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
+	 * @param string $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
+	 * @param boolean $inclLinktoData specifies if data from LINKTO (ref) subinterfaces must be included or not.
+	 * @param string $arrayType specifies if the arrays in the result are 'assoc' (associative, key index) or 'num' (numeric index).
+	 * @param boolean $metaData specifies if meta data about objects must be included or not
+	 * @param array $recursionAtomArr contains atomIds when linkto data is included (used to detect recursion and prevent infinite loops)
+	 * @param string $path contains JSON path to objects in (sub)interface(s) (needed to determine patch operations in frontend)
+	 * @return array
 	 */
     public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true, $recursionAtomArr = array(), $path = null){
 		$session = Session::singleton();
@@ -218,25 +236,45 @@ Class Atom {
 		return $arr;
 	}
 	
-	public function put(&$interface, $request_data, $requestType){		
+	/**********************************************************************************************
+	 * 
+	 * PUT POST DELETE and PATCH functions 
+	 *  
+	 **********************************************************************************************/
+	
+	/**
+	 * Put (new) atom properties in database
+	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @param mixed $requestData contains the data of this atom to put
+	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
+	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
+	 */
+	public function put(&$interface, $requestData, $requestType){		
 				
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
 		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
 		
 		// Determine differences between current state ($before) and requested state ($request_data)
-		$patches = JsonPatch::diff($before, $request_data);
+		$patches = JsonPatch::diff($before, $requestData);
 		
 		return $this->patch($interface, $patches, $requestType);
 	}
 	
-	public function post(&$interface, $request_data, $requestType){
+	/**
+	 * Create atom in database
+	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @param mixed $requestData contains the data of this atom to post
+	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
+	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
+	 */
+	public function post(&$interface, $requestData, $requestType){
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
 		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
-	
+		
 		// Determine differences between current state ($before) and requested state ($request_data)
-		$patches = JsonPatch::diff($before, $request_data);
+		$patches = JsonPatch::diff($before, $requestData);
 	
 		// Skip remove operations, because it is a POST operation and there are no values in de DB yet
 		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
@@ -246,6 +284,12 @@ Class Atom {
 		return $this->patch($interface, $patches, $requestType, $successMessage);
 	}
 	
+	/**
+	 * Delete atom from database
+	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
+	 * @throws Exception when concept of atom is not known
+	 * @return array (array notifications, boolean invariantRulesHold, string requestType)
+	 */
 	public function delete($requestType){
 		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
 	
@@ -263,6 +307,15 @@ Class Atom {
 	
 	}
 	
+	/**
+	 * Processes array of patches (according to specifications: JSON Patch is specified in RFC 6902 from the IETF)
+	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @param array $patches contains all patches that need to be applied to this atom
+	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
+	 * @param string $successMessage
+	 * @throws Exception when patch operation is unknown
+	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
+	 */
 	public function patch(&$interface, $patches, $requestType, $successMessage = null){
 		
 		$databaseCommit = $this->processRequestType($requestType);
@@ -293,14 +346,21 @@ Class Atom {
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
 		$invariantRulesHold = $this->database->closeTransaction($successMessage, false, $databaseCommit, true);
 		
-		return array(	'patches' 				=> $patches
-					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
-					,	'notifications' 		=> Notifications::getAll()
-					,	'invariantRulesHold'	=> $invariantRulesHold
-					,	'requestType'			=> $requestType
+		return array( 'patches' 			=> $patches
+					, 'content' 			=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
+					, 'notifications' 		=> Notifications::getAll()
+					, 'invariantRulesHold'	=> $invariantRulesHold
+					, 'requestType'			=> $requestType
 					);
 	}
 	
+	/** 
+	 * Performs editUpdate or editDelete based on patch replace operation
+	 * @param array $patch
+	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @throws Exception
+	 * @return void
+	 */
 	private function doPatchReplace($patch, $interface){
 		
 		$patchInfo = $this->processPatchPath($patch, $interface);
@@ -339,7 +399,14 @@ Class Atom {
 			}
 		}
 	}
-		
+	
+	/**
+	 * Performs editUpdate based on patch add operation
+	 * @param array $patch
+	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @throws Exception
+	 * @return void
+	 */
 	private function doPatchAdd($patch, $interface){
 
 		// Report error when no patch value is provided.
@@ -358,6 +425,12 @@ Class Atom {
 		
 	}
 	
+	/**
+	 * Performs editDelete based on patch remove operation
+	 * @param array $patch
+	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @return void
+	 */
 	private function doPatchRemove($patch, $interface){
 		
 		$patchInfo = $this->processPatchPath($patch, $interface);
@@ -370,9 +443,21 @@ Class Atom {
 		 * If interface is an non-uni expression to a scalar -> perform editDelete
 		 */
 		$this->database->editDelete($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom'], $patchInfo['ifc']->srcConcept, $patchInfo['tgtAtom'], $patchInfo['ifc']->tgtConcept);
-		
 	}
 	
+	/**********************************************************************************************
+	 *
+	 * Helper functions
+	 *
+	 **********************************************************************************************/
+	
+	/**
+	 * Finds the subinterface, srcAtom, tgtAtom combination given a patch path
+	 * @param array $patch
+	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @throws Exception when interface path does not exists or is not editable
+	 * @return array (InterfaceObject ifc, string srcAtom, string tgtAtom)
+	 */
 	private function processPatchPath($patch, $interface){
 		
 		$pathArr = explode('/', $patch['path']);
@@ -406,6 +491,12 @@ Class Atom {
 		
 	}
 	
+	/**
+	 * Checks request type and returns boolean to determine database commit
+	 * @param string $requestType
+	 * @throws Exception when unknown request type specified (allowed: 'feedback' and 'promise')
+	 * @return boolean (true for 'promise', false for 'feedback')
+	 */
 	private function processRequestType($requestType){
 		switch($requestType){
 			case 'feedback' : return false;
@@ -414,12 +505,21 @@ Class Atom {
 		}
 	}
 	
+	/**
+	 * Sets the new content of the atom in $this->newContent
+	 * @param InterfaceObject $interface specifies the interface to use to get the content
+	 * @return void
+	 */
 	public function setNewContent($interface){
-		
 		$this->newContent = $this->getContent($interface, true, $this->id);
-
 	}
 	
+	/**
+	 * Returns components of view
+	 * @param string $viewId specifies which view to use
+	 * @throws Exception when unknown or unsupported segment type is found
+	 * @return NULL|array
+	 */
 	private function getView($viewId = null){
 		$view = Concept::getView($this->concept, $viewId);
 		
@@ -460,8 +560,11 @@ Class Atom {
 		}
 	}
 	
-	/*
-	 * Conversion to PHP/JSON types
+	/**
+	 * Coversion of php variables to json according to Ampersand technical types (TTypes)
+	 * @param mixed $value
+	 * @param string $concept
+	 * @return mixed
 	 */
 	public function typeConversion($value, $concept){
 		switch(Concept::getTypeRepresentation($concept)){
@@ -481,8 +584,6 @@ Class Atom {
 			default :
 				return $value;
 		}
-	
 	}
 }
-
 ?>
