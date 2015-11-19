@@ -76,6 +76,52 @@ Class Atom {
 	}
 	
 	/**
+	 * Returns components of view
+	 * @param string $viewId specifies which view to use
+	 * @throws Exception when unknown or unsupported segment type is found
+	 * @return NULL|array
+	 */
+	private function getView($viewId = null){
+		$view = Concept::getView($this->concept, $viewId);
+	
+		if(empty($view) || $this->id == ''){
+			return null;
+	
+		}else{
+			$viewStrs = array ();
+				
+			foreach ($view['segments'] as $viewSegment){
+				// text segment
+				if ($viewSegment['segmentType'] == 'Text'){
+					$viewStrs[$viewSegment['label']] = $viewSegment['Text'];
+	
+					// expressie segment
+				}elseif($viewSegment['segmentType'] == 'Exp'){
+					$idEsc = $this->database->escape($this->id);
+					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
+					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
+						
+					$txt = count($tgtAtoms) ? $tgtAtoms[0] : null;
+					$viewStrs[$viewSegment['label']] = $txt;
+	
+					// html segment
+				}elseif($viewSegment['segmentType'] == 'Html'){
+					$errorMessage = "Unsupported segmentType 'Html' in view '" . $view['label'] . "'";
+					throw new Exception($errorMessage, 501); // 501: Not implemented
+						
+					//$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
+	
+					// unknown segment
+				}else{
+					$errorMessage = "Unknown segmentType '" . $viewSegment['segmentType'] . "' in view '" . $view['label'] . "'";
+					throw new Exception($errorMessage, 501); // 501: Not implemented
+				}
+			}
+			return $viewStrs;
+		}
+	}
+	
+	/**
 	 * Returns atom content given a certain interface
 	 * @param InterfaceObject $interface
 	 * @param boolean $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
@@ -511,52 +557,6 @@ Class Atom {
 			case 'feedback' : return false;
 			case 'promise' : return true;
 			default : throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
-		}
-	}
-	
-	/**
-	 * Returns components of view
-	 * @param string $viewId specifies which view to use
-	 * @throws Exception when unknown or unsupported segment type is found
-	 * @return NULL|array
-	 */
-	private function getView($viewId = null){
-		$view = Concept::getView($this->concept, $viewId);
-		
-		if(empty($view) || $this->id == ''){
-			return null;
-		
-		}else{
-			$viewStrs = array ();
-			
-			foreach ($view['segments'] as $viewSegment){
-				// text segment
-				if ($viewSegment['segmentType'] == 'Text'){ 
-					$viewStrs[$viewSegment['label']] = $viewSegment['Text'];
-				
-				// expressie segment
-				}elseif($viewSegment['segmentType'] == 'Exp'){
-					$idEsc = $this->database->escape($this->id);
-					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
-					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
-					
-					$txt = count($tgtAtoms) ? $tgtAtoms[0] : null;
-					$viewStrs[$viewSegment['label']] = $txt;
-				
-				// html segment
-				}elseif($viewSegment['segmentType'] == 'Html'){
-					$errorMessage = "Unsupported segmentType 'Html' in view '" . $view['label'] . "'";
-					throw new Exception($errorMessage, 501); // 501: Not implemented
-					
-					//$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
-				
-				// unknown segment
-				}else{
-					$errorMessage = "Unknown segmentType '" . $viewSegment['segmentType'] . "' in view '" . $view['label'] . "'";
-					throw new Exception($errorMessage, 501); // 501: Not implemented
-				}
-			}
-			return $viewStrs;
 		}
 	}
 	
