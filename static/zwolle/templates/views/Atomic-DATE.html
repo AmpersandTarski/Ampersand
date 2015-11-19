@@ -1,7 +1,7 @@
 $if(verbose)$<!-- Atomic-DATE.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $endif$<div style="min-width:6em;">
 	$if(isEditable)$$if(exprIsUni)$<div class="input-group" ng-controller="static_dateController" style="width:170px;">
-		<input ng-model="val['$name$']" type="text" class="form-control input-sm" uib-datepicker-popup="dd-MM-yyyy" placeholder="dd-mm-yyyy" is-open="isOpen" ng-blur="saveDateItem(val['$name$'], ResourceId)"/>
+		<input ng-model="val['$name$']" type="text" class="form-control input-sm" uib-datepicker-popup="dd-MM-yyyy" placeholder="dd-mm-yyyy" is-open="isOpen" ng-blur="saveDateItem(val, '$name$', ResourceId)"/>
 		<span class="input-group-btn">
 			<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event)"><i class="glyphicon glyphicon-calendar"></i></button>
 		</span>

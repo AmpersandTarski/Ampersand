@@ -26,20 +26,15 @@ AmpersandApp.controller('static_dateController', function ($scope) {
 	
 	$scope.selected = { value : ''}; // an empty object for temporary storing the input values
 	
-	$scope.saveDateItem = function(obj, resourceId){
-		modifyToJSON(obj);
-		$scope.put(resourceId);
+	$scope.saveDateItem = function(obj, property, resourceId){
+		modifyToJSON(obj[property]);
+		$scope.saveItem(obj, property, resourceId);
 	}
 			
 	$scope.addDateItem = function(obj, property, selected, resourceId){
 		if(selected.value != ''){
-			if(obj[property] === null) obj[property] = [];
-			
 			modifyToJSON(selected.value);
-			
-			obj[property].push(selected.value);
-			selected.value = '';
-			$scope.put(resourceId);
+			$scope.addItem(obj, property, selected, resourceId);
 		}else{
 			console.log('Empty date selected');
 		}
