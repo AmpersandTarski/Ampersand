@@ -240,13 +240,18 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		if(item.id === undefined || item.id == ''){
 			console.log('selected id is undefined');
 		}else{
+			// Adapt js modal
 			if(obj[property] === null) obj[property] = {};
 			try {
 				obj[property][item.id] = item.plain() // plain is Restangular function
 			}catch(e){
 				obj[property][item.id] = item // when plain() does not exists (i.e. item is not restangular object) 
 			}
-			\$scope.put(resourceId);
+			
+			// Patch!
+			patches = [{ op : 'add', path : obj['@path'] + property, value : item.id}];
+			console.log(patches);
+			\$scope.patch(patches, resourceId);
 		}
 	}
 	
