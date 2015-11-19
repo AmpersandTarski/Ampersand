@@ -133,7 +133,8 @@ class Database {
 	 * 
 	 */
 	public function escape($param){
-		return $this->db_link->real_escape_string($param);
+		if(is_null($param)) return null;
+		else return $this->db_link->real_escape_string($param);
 	}
 	
 
@@ -387,6 +388,9 @@ class Database {
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
+			// Check if stableAtom is provided (i.e. not null)
+			if(is_null($stableAtom)) throw new Exception("Cannot perform editDelete, because stable atom is null", 500);
+			
 			$stableAtom = $this->typeConversion($stableAtom, $stableConcept);
 			$modifiedAtom = $this->typeConversion($modifiedAtom, $modifiedConcept);
 			
@@ -414,15 +418,18 @@ class Database {
 			
 			// If the modifiedCol can be set to null, we do an update
 			if ($tableModifiedColumnInfo['null']){
-				$this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom)) $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc'");
+				else $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 			
 			// Elseif the stableCol can be set to null, we do an update
 			}elseif ($tableStableColumnInfo['null']){
-				$this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
+				else $this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
-				$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
+				else $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 				
 			}
 			
@@ -582,6 +589,8 @@ class Database {
 	 * Conversion to MYSQL types
 	 */
 	public function typeConversion($value, $concept){
+		if(is_null($value)) return null;
+		
 		switch(Concept::getTypeRepresentation($concept)){
 			case "DATE" :
 				$datetime = new DateTime($value);

@@ -447,13 +447,12 @@ Class Atom {
 		}elseif(!$tgtInterface->tgtConceptIsObject){
 			
 			// Replace by nothing => editDelete
-			if(empty($patch['value'])){
-				
-				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patch['oldValue'], $tgtInterface->tgtConcept);
+			if(is_null($patch['value'])){
+				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, null, $tgtInterface->tgtConcept);
 			
 			// Replace by other atom => editUpdate
 			}else{
-				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patch['value'], $tgtInterface->tgtConcept, $patch['oldValue']);
+				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patch['value'], $tgtInterface->tgtConcept);
 			}
 		}
 	}
