@@ -60,11 +60,11 @@ instance GenericPopulations FSpec where
    filter (not.nullContent)
     (
     [ Pop "versionInfo" "Context"  "AmpersandVersion"
-           [(uri fSpec, show ampersandVersionStr)]
+           [(dirtyId fSpec, show ampersandVersionStr)]
     , Pop "contextName" "Context" "ContextName"
-           [(uri fSpec, (show.name) fSpec)]
+           [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "dbName" "Context" "DatabaseName"
-           [(uri fSpec, (show.dbName.getOpts) fSpec)]
+           [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
     , Comment " ", Comment $ "[Relations]--: (count="++(show.length.allDecls) fSpec++")" ]
   ++   concatMap (generics fSpec) (allDecls fSpec)
   ++[ Comment " ", Comment $ "[Concepts]--: (count="++(show.length) [c | c <- concs fSpec]++")"]
@@ -87,15 +87,15 @@ instance MetaPopulations FSpec where
     (
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
   ++[ Pop "versionInfo" "Context"  "AmpersandVersion"
-           [(uri fSpec, show ampersandVersionStr)]
+           [(dirtyId fSpec, show ampersandVersionStr)]
     , Pop "contextName" "Context" "ContextName"
-           [(uri fSpec, (show.name) fSpec)]
+           [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "dbName" "Context" "DatabaseName"
-           [(uri fSpec, (show.dbName.getOpts) fSpec)]
+           [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
     , Pop "concs" "Context" "Concept"
-           [(uri fSpec, show "SESSION"), (uri fSpec, show "ONE")]
+           [(dirtyId fSpec, show "SESSION"), (dirtyId fSpec, show "ONE")]
     , Pop "name"   "Context" "ContextIdentifier"
-           [(uri fSpec, (show.name) fSpec)]
+           [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "allRoles" "Context" "Role"
            []
     , Pop "name"   "Role" "RoleName"
@@ -130,24 +130,24 @@ instance MetaPopulations Pattern where
    [ Comment " "
    , Comment $ " Pattern `"++name pat++"` "
    , Pop "patterns" "Context" "Pattern"
-          [(uri fSpec,uri pat)]
+          [(dirtyId fSpec,dirtyId pat)]
    , Pop "name"    "Pattern" "PatternIdentifier"
-          [(uri pat, (show.name) pat)]
+          [(dirtyId pat, (show.name) pat)]
    , Pop "rules"   "Pattern" "Rule"
-          [(uri pat,uri x) | x <- ptrls pat]
+          [(dirtyId pat,dirtyId x) | x <- ptrls pat]
    , Pop "declarations"   "Pattern" "Relation"
-          [(uri pat,uri x) | x <- ptdcs pat]
+          [(dirtyId pat,dirtyId x) | x <- ptdcs pat]
    , Pop "purpose"   "Pattern" "Purpose"
-          [(uri pat,uri x) | x <- ptxps pat]
+          [(dirtyId pat,dirtyId x) | x <- ptxps pat]
    ]
 instance MetaPopulations A_Gen where
  metaPops fSpec gen =
   [ Pop "gens" "Context" "Gen"
-          [(uri fSpec,uri gen)]
+          [(dirtyId fSpec,dirtyId gen)]
   , Pop "genspc"  "Gen" "Concept"
-          [(uri gen,uri(genspc gen))]
+          [(dirtyId gen,dirtyId(genspc gen))]
   , Pop "gengen"  "Gen" "Concept"
-          [(uri gen,uri c) | c<- case gen of
+          [(dirtyId gen,dirtyId c) | c<- case gen of
                                    Isa{} -> [gengen gen]
                                    IsE{} -> genrhs gen
           ]
@@ -160,25 +160,25 @@ instance GenericPopulations A_Concept where
       [ Comment " "
       , Comment $ " Concept `"++name cpt++"` "
       , Pop "allConcepts" "Context" "Concept"
-             [(uri fSpec,uri cpt)]
+             [(dirtyId fSpec,dirtyId cpt)]
       , Pop "name" "Concept" "Identifier"
-             [(uri cpt, (show.name) cpt)]
+             [(dirtyId cpt, (show.name) cpt)]
       , Pop "affectedInvConjunctIds" "Concept" "ConjunctID"
-             [(uri cpt, uri conj) | conj <- filterFrontEndInvConjuncts affConjs]
+             [(dirtyId cpt, dirtyId conj) | conj <- filterFrontEndInvConjuncts affConjs]
       , Pop "affectedSigConjunctIds" "Concept" "ConjunctID"
-             [(uri cpt, uri conj) | conj <- filterFrontEndSigConjuncts affConjs]
+             [(dirtyId cpt, dirtyId conj) | conj <- filterFrontEndSigConjuncts affConjs]
       , Pop "conceptTableFields" "Concept" "TableColumn"
-             [(uri cpt, uri att) | att <- tablesAndAttributes]
+             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
       ]
      ONE -> 
       [ Comment " "
       , Comment $ " Concept ONE "
       , Pop "allConcepts" "Context" "Concept"
-             [(uri fSpec,uri cpt)]
+             [(dirtyId fSpec,dirtyId cpt)]
       , Pop "name" "Concept" "Identifier"
-             [(uri cpt, (show.name) cpt)]
+             [(dirtyId cpt, (show.name) cpt)]
       , Pop "conceptTableFields" "Concept" "TableColumn"
-             [(uri cpt, uri att) | att <- tablesAndAttributes]
+             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
       ]
   where
     affConjs = nub [ conj  
@@ -190,20 +190,24 @@ instance GenericPopulations A_Concept where
 
 instance MetaPopulations A_Concept where
  metaPops fSpec cpt =
+   [ Comment " "
+   , Comment $ " Concept `"++name cpt++"` "
+   , Pop "ttype" "Concept" "TType"
+             [(dirtyId cpt,dirtyId ((cptTType fSpec) cpt))] 
+   ]++
    case cpt of
      PlainConcept{} ->
-      [ Comment " "
-      , Comment $ " Concept `"++name cpt++"` "
+      [ Comment $ " Concept `"++name cpt++"` "
       , Pop "concs" "Context" "Concept"
-             [(uri fSpec,uri cpt)]
+             [(dirtyId fSpec,dirtyId cpt)]
       , Pop "name" "Concept" "Identifier"
-             [(uri cpt, uri cpt)]
+             [(dirtyId cpt, dirtyId cpt)]
       , Pop "conceptColumn" "Concept" "SqlAttribute"
-             [(uri cpt, uri att) | att <- tablesAndAttributes]
+             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
 --      , Pop "cptdf" "Concept" "ConceptDefinition"
---             [(uri cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
+--             [(dirtyId cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
       , Pop "cptpurpose" "Concept" "Purpose"
-             [(uri cpt,(show.showADL) x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
+             [(dirtyId cpt,(show.showADL) x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
      ONE -> []
   where
@@ -215,72 +219,82 @@ instance GenericPopulations PlugSQL where
       [ Comment " "
       , Comment $ "Plug: '"++name plug++"'"
       , Pop "tableInfo" "Context" "DBTable"
-               [(uri fSpec, uri plug)]
+               [(dirtyId fSpec, dirtyId plug)]
       ] ++ concatMap (generics fSpec) [(plug,att) | att <- plugAttributes plug]
 
 instance MetaPopulations PlugSQL where
   metaPops fSpec plug =
       [ Pop "context" "PlugInfo" "Context"
-               [(uri plug, uri fSpec)]
+               [(dirtyId plug, dirtyId fSpec)]
+      , Pop "key" "PlugInfo" "SqlAttribute"
+               [(dirtyId plug, dirtyId (plug, head . plugAttributes $ plug))]
       ] ++ concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
 
 instance GenericPopulations (PlugSQL,SqlAttribute) where
   generics _ (plug,att) =
       [ Pop "columninfo" "DBTable" "TableColumn"
-                 [(uri plug, uri (plug,att)) ]
+                 [(dirtyId plug, dirtyId (plug,att)) ]
       , Pop "concept" "TableColumn" "Concept"
-                 [(uri (plug,att), uri.target.attExpr $ att)]
+                 [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]
       , Pop "unique" "TableColumn" "Boolean"
-                 [(uri (plug,att), (uri.attUniq) att)]
+                 [(dirtyId (plug,att), (dirtyId.attUniq) att)]
       , Pop "null" "TableColumn" "Boolean"
-                 [(uri (plug,att), (uri.attNull) att)]
+                 [(dirtyId (plug,att), (dirtyId.attNull) att)]
       ]
 
 instance MetaPopulations (PlugSQL,SqlAttribute) where
   metaPops _ (plug,att) =
       [ Pop "table" "SqlAttribute" "PlugInfo"
-                 [(uri (plug,att), uri plug) ]
+                 [(dirtyId (plug,att), dirtyId plug) ]
       , Pop "concept" "SqlAttribute" "Concept"
-                 [(uri (plug,att), uri.target.attExpr $ att)]
+                 [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]
+      , Pop "relsMentionedIn" "Plug" "Relation"
+                 [(dirtyId plug, dirtyId rel) | Just rel <- [primRel.attExpr $ att]]
       , Pop "null" "SqlAttribute" "SqlAttribute"
-                 [(a,a) | attNull att, let a=uri (plug,att)]
+                 [(a,a) | attNull att, let a=dirtyId (plug,att)]
       ]
-
+    where primRel :: Expression -> Maybe Declaration
+          primRel expr =
+            case expr of
+              EDcD dcl -> Just dcl
+              EFlp (EDcD dcl) -> Just dcl
+              EDcI cpt -> Just (Isn cpt)
+              _  -> Nothing
 instance GenericPopulations Role where
   generics fSpec rol =
       [ Comment $ "Role: '"++name rol++"'"
       , Pop "allRoles" "Context" "Role"
-                 [(uri fSpec, uri rol) ]
+                 [(dirtyId fSpec, dirtyId rol) ]
       , Pop "name" "Role" "TEXT"
-                 [(uri rol, uri rol) ]
+                 [(dirtyId rol, dirtyId rol) ]
       , Pop "maintains" "Role" "Rule"
-                 [(uri rol, uri rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
+                 [(dirtyId rol, dirtyId rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
       ]
 
 instance MetaPopulations Role where
   metaPops fSpec rol =
       [ Pop "allRoles" "Context" "Role"
-                 [(uri fSpec, uri rol) ]
+                 [(dirtyId fSpec, dirtyId rol) ]
       , Pop "name" "Role" "RoleName"
-                 [(uri rol, uri rol) ]
+                 [(dirtyId rol, dirtyId rol) ]
       , Pop "maintains" "Role" "Rule"
-                 [(uri rol, uri rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
+                 [(dirtyId rol, dirtyId rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
       ]
 
 instance MetaPopulations Atom where
  metaPops _ atm =
    [ Pop "pop" "Atom" "Concept" 
-          [(uri atm, uri cpt)
+          [(dirtyId atm, dirtyId cpt)
           |cpt <- atmRoots atm]
    , Pop "repr"  "Atom" "Representation"
-          [(uri atm, (showValADL.atmVal) atm)]
+          [(dirtyId atm, (showValADL.atmVal) atm)]
    ]
 instance MetaPopulations Signature where
  metaPops _ sgn =
       [ Pop "src" "Signature" "Concept"
-             [(uri sgn, uri (source sgn))]
+             [(dirtyId sgn, dirtyId (source sgn))]
       , Pop "tgt" "Signature" "Concept"
-             [(uri sgn, uri (target sgn))]
+             [(dirtyId sgn, dirtyId (target sgn))]
       ]
 
 instance GenericPopulations Declaration where
@@ -290,23 +304,23 @@ instance GenericPopulations Declaration where
       [ Comment " "
       , Comment $ " Relation '"++name dcl++showSign (sign dcl)++"'"
       , Pop "allRelations" "Context" "Relation"
-             [(uri fSpec, uri dcl)]
+             [(dirtyId fSpec, dirtyId dcl)]
       , Pop "name" "Relation" "RelationName"
-             [(uri dcl, (show.name) dcl)]
+             [(dirtyId dcl, (show.name) dcl)]
       , Pop "srcConcept" "Relation" "Concept"
-             [(uri dcl,uri (source dcl))]
+             [(dirtyId dcl,dirtyId (source dcl))]
       , Pop "tgtConcept" "Relation" "Concept"
-             [(uri dcl,uri (target dcl))]
+             [(dirtyId dcl,dirtyId (target dcl))]
       , Pop "table" "Relation" "DBTable"
-             [(uri dcl,uri table)]
+             [(dirtyId dcl,dirtyId table)]
       , Pop "srcCol" "Relation" "DBTableColumn"
-             [(uri dcl,uri (table,srcCol))]
+             [(dirtyId dcl,dirtyId (table,srcCol))]
       , Pop "tgtCol" "Relation" "DBTableColumn"
-             [(uri dcl,uri (table,tgtCol))]
+             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "affectedInvConjunctIds" "Relation" "ConjunctID"
-             [(uri dcl,uri conj) | conj <- filterFrontEndInvConjuncts affConjs ]
+             [(dirtyId dcl,dirtyId conj) | conj <- filterFrontEndInvConjuncts affConjs ]
       , Pop "affectedSigConjunctIds" "Relation" "ConjunctID"
-             [(uri dcl,uri conj) | conj <- filterFrontEndSigConjuncts affConjs ]
+             [(dirtyId dcl,dirtyId conj) | conj <- filterFrontEndSigConjuncts affConjs ]
       ]
      Isn{} -> fatal 157 "Isn is not implemented yet"
      Vs{}  -> fatal 158 "Vs is not implemented yet"
@@ -321,45 +335,50 @@ instance MetaPopulations Declaration where
       [ Comment " "
       , Comment $ " Relation `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
       , Pop "context" "Relation" "Context"
-             [(uri dcl,uri fSpec)] 
+             [(dirtyId dcl,dirtyId fSpec)] 
       , Pop "name" "Relation" "Identifier"
-             [(uri dcl, (show.name) dcl)]
+             [(dirtyId dcl, (show.name) dcl)]
       , Pop "srcCol" "Relation" "SqlAttribute"
-             [(uri dcl,uri (table,srcCol))]
+             [(dirtyId dcl,dirtyId (table,srcCol))]
       , Pop "tgtCol" "Relation" "SqlAttribute"
-             [(uri dcl,uri (table,tgtCol))]
+             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "sign" "Relation" "Signature"
-             [(uri dcl,uri (sign dcl))]
+             [(dirtyId dcl,dirtyId (sign dcl))]
       , Pop "source" "Relation" "Concept"
-             [(uri dcl,uri (source dcl))]
+             [(dirtyId dcl,dirtyId (source dcl))]
       , Pop "target" "Relation" "Concept"
-             [(uri dcl,uri (target dcl))]
+             [(dirtyId dcl,dirtyId (target dcl))]
       , Pop "prop" "Relation" "Property"
-             [(uri dcl, uri x) | x <- decprps dcl]  -- decprps gives the user defined properties; not the derived properties.
+             [(dirtyId dcl, dirtyId x) | x <- decprps dcl]  -- decprps gives the user defined properties; not the derived properties.
       , Pop "decprL" "Relation" "String"
-             [(uri dcl,(show.decprL) dcl)]
+             [(dirtyId dcl,(show.decprL) dcl)]
       , Pop "decprM" "Relation" "String"
-             [(uri dcl,(show.decprM) dcl)]
+             [(dirtyId dcl,(show.decprM) dcl)]
       , Pop "decprR" "Relation" "String"
-             [(uri dcl,(show.decprR) dcl)]
+             [(dirtyId dcl,(show.decprR) dcl)]
       , Pop "decmean" "Relation" "Meaning"
-             [(uri dcl, (show.concatMap showADL.ameaMrk.decMean) dcl)]
+             [(dirtyId dcl, (show.concatMap showADL.ameaMrk.decMean) dcl)]
       , Pop "decpurpose" "Relation" "Purpose"
-             [(uri dcl, (show.showADL) x) | x <- explanations dcl]
+             [(dirtyId dcl, (show.showADL) x) | x <- explanations dcl]
       ]
+     Isn ONE -> [Comment "No population for the declaration ONE" ]
      Isn{} -> 
       [ Comment " "
       , Comment $ " Relation `I["++name (source dcl)++"]`"
       , Pop "sign" "Relation" "Signature"
-             [(uri dcl,uri (sign dcl))]
+             [(dirtyId dcl,dirtyId (sign dcl))]
       , Pop "context" "Relation" "Context"
-             [(uri dcl,uri fSpec)]
+             [(dirtyId dcl,dirtyId fSpec)]
       , Pop "name" "Relation" "Identifier"
-             [(uri dcl, (show.name) dcl)]
+             [(dirtyId dcl, (show.name) dcl)]
+      , Pop "srcCol" "Relation" "SqlAttribute"
+             [(dirtyId dcl,dirtyId (table,srcCol))]
+      , Pop "tgtCol" "Relation" "SqlAttribute"
+             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "source" "Relation" "Concept"
-             [(uri dcl,uri (source dcl))]
+             [(dirtyId dcl,dirtyId (source dcl))]
       , Pop "target" "Relation" "Concept"
-             [(uri dcl,uri (target dcl))]
+             [(dirtyId dcl,dirtyId (target dcl))]
       ]
      Vs{}  -> fatal 158 "Vs is not implemented yet"
    where
@@ -368,11 +387,11 @@ instance MetaPopulations Declaration where
 instance MetaPopulations A_Pair where
  metaPops _ pair =
       [ Pop "in" "Pair" "Relation"
-             [(uri pair, uri (lnkDcl pair))]
+             [(dirtyId pair, dirtyId (lnkDcl pair))]
       , Pop "l" "Pair" "Atom"
-             [(uri pair, uri(lnkLeft pair))]
+             [(dirtyId pair, dirtyId(lnkLeft pair))]
       , Pop "r" "Pair" "Atom"
-             [(uri pair, uri(lnkRight pair))]
+             [(dirtyId pair, dirtyId(lnkRight pair))]
       ]
 
 instance MetaPopulations Expression where
@@ -381,9 +400,9 @@ instance MetaPopulations Expression where
     EBrk e -> metaPops fSpec e
     _      ->
       [ Pop "src" "Term" "Concept"
-             [(uri expr, uri (source expr))]
+             [(dirtyId expr, dirtyId (source expr))]
       , Pop "tgt" "Term" "Concept"
-             [(uri expr, uri (target expr))]
+             [(dirtyId expr, dirtyId (target expr))]
       ]++
       ( case expr of
             (EEqu (l,r)) -> makeBinaryTerm Equivalence l r
@@ -402,7 +421,7 @@ instance MetaPopulations Expression where
 --            (EFlp e)     -> 
 --            (ECpl e)     -> 
             (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
-            (EDcD dcl)   -> [Pop "bind" "Term" "Relation" [(uri expr,uri dcl)]
+            (EDcD dcl)   -> [Pop "bind" "Term" "Relation" [(dirtyId expr,dirtyId dcl)]
                             ]
 --            EDcI{}       -> 
 --            EEps{}       -> 
@@ -415,11 +434,11 @@ instance MetaPopulations Expression where
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
     makeBinaryTerm bop lhs rhs = 
       [ Pop "lhs"  "BinaryTerm" "Term"
-             [(uri expr,uri lhs)]
+             [(dirtyId expr,dirtyId lhs)]
       , Pop "rhs"  "BinaryTerm" "Term"
-             [(uri expr,uri rhs)]
+             [(dirtyId expr,dirtyId rhs)]
       , Pop "operator"  "BinaryTerm" "Operator"
-             [(uri expr,uri bop)]
+             [(dirtyId expr,dirtyId bop)]
       ]++metaPops fSpec lhs
        ++metaPops fSpec rhs
        
@@ -443,28 +462,28 @@ instance GenericPopulations Rule where
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
       , Pop "allRules" "Context" "Rule"
-             [(uri fSpec, uri rul)]
+             [(dirtyId fSpec, dirtyId rul)]
       , Pop "name"  "Rule" "RuleID"
-             [(uri rul, (show.name) rul)]
+             [(dirtyId rul, (show.name) rul)]
       , Pop "ruleAdl"  "Rule" "Adl"
-             [(uri rul,(show.showADL.rrexp) rul)]
+             [(dirtyId rul,(show.showADL.rrexp) rul)]
       , Pop "origin"  "Rule" "Origin"
-             [(uri rul,(show.show.origin) rul)]
+             [(dirtyId rul,(show.show.origin) rul)]
       , Pop "meaning"  "Rule" "Meaning"
-             [(uri rul,aMarkup2String ReST m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
+             [(dirtyId rul,aMarkup2String ReST m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , Pop "message"  "Rule" "Message"
-             [(uri rul,aMarkup2String ReST m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
+             [(dirtyId rul,aMarkup2String ReST m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
       , Pop "srcConcept"  "Rule" "Concept"
-             [(uri rul,(uri.source.rrexp) rul)]
+             [(dirtyId rul,(dirtyId.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept"
-             [(uri rul,(uri.target.rrexp) rul)]
+             [(dirtyId rul,(dirtyId.target.rrexp) rul)]
       , Pop "conjunctIds"  "Rule" "ConjunctID"
-             [(uri rul,uri conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
+             [(dirtyId rul,dirtyId conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       ]++case rrviol rul of
         Nothing -> []
         Just pve ->
          [ Pop "pairView"  "Rule" "PairView"
-              [(uri rul, uri pve)]
+              [(dirtyId rul, dirtyId pve)]
          ]++generics fSpec pve
       
       
@@ -476,11 +495,11 @@ instance GenericPopulations (PairView Expression) where
     makeSegment :: (Int,PairViewSegment Expression) -> [Pop]
     makeSegment (i,pvs) =
       [ Pop "segment" "PairView" "PairViewSegment"
-             [(uri pve,uri pvs)]
+             [(dirtyId pve,dirtyId pvs)]
       , Pop "sequenceNr" "PairViewSegment" "Int"
-             [(uri pvs,show i)]
+             [(dirtyId pvs,show i)]
       , Pop "segmentType" "PairViewSegment" "PairViewSegmentType"
-             [(uri pvs, case pvs of 
+             [(dirtyId pvs, case pvs of 
                          PairViewText{} -> "Text"
                          PairViewExp{}  -> "Exp")
             ]
@@ -488,18 +507,18 @@ instance GenericPopulations (PairView Expression) where
       case pvs of
         PairViewText{} -> 
           [Pop "text" "PairViewSegment" "String"
-               [(uri pvs, pvsStr pvs)] 
+               [(dirtyId pvs, pvsStr pvs)] 
           ]
         PairViewExp{} -> 
           [Pop "srcOrTgt" "PairViewSegment" "SourceOrTarget"
-               [(uri pvs, show (pvsSoT pvs))] 
+               [(dirtyId pvs, show (pvsSoT pvs))] 
           ,Pop "expTgt" "PairViewSegment" "Concept"
-               [(uri pvs, uri (case pvsSoT pvs of
+               [(dirtyId pvs, dirtyId (case pvsSoT pvs of
                                 Src -> source (pvsExp pvs)
                                 Tgt -> target (pvsExp pvs)
                               ))] 
           ,Pop "expSQL" "PairViewSegment" "MySQLQuery"
-               [(uri pvs, prettySQLQuery fSpec 0 (pvsExp pvs))] 
+               [(dirtyId pvs, prettySQLQuery fSpec 0 (pvsExp pvs))] 
           ]
 
 instance MetaPopulations Rule where
@@ -508,34 +527,34 @@ instance MetaPopulations Rule where
       , Comment $ " Rule `"++name rul++"` "
 
       , Pop "allRules" "Context" "Rule"
-             [(uri fSpec, uri rul)]
+             [(dirtyId fSpec, dirtyId rul)]
       , Pop "name"  "Rule" "RuleID"
-             [(uri rul, (show.name) rul)]
+             [(dirtyId rul, (show.name) rul)]
       , Pop "ruleAdl"  "Rule" "Adl"
-             [(uri rul, (show.showADL.rrexp) rul)]
+             [(dirtyId rul, (show.showADL.rrexp) rul)]
       , Pop "origin"  "Rule" "Origin"
-             [(uri rul, (show.show.origin) rul)]
+             [(dirtyId rul, (show.show.origin) rul)]
       , Pop "message"  "Rule" "Message"
-             [(uri rul, show (aMarkup2String ReST m)) | m <- rrmsg rul, amLang m == fsLang fSpec ]
+             [(dirtyId rul, show (aMarkup2String ReST m)) | m <- rrmsg rul, amLang m == fsLang fSpec ]
       , Pop "srcConcept"  "Rule" "Concept"
-             [(uri rul, (uri.source.rrexp) rul)]
+             [(dirtyId rul, (dirtyId.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept"
-             [(uri rul, (uri.target.rrexp) rul)]
+             [(dirtyId rul, (dirtyId.target.rrexp) rul)]
       , Pop "conjunctIds"  "Rule" "ConjunctID"
-             [(uri rul, uri conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
+             [(dirtyId rul, dirtyId conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "rrexp"  "Rule" "Expression"
-             [(uri rul, uri (rrexp rul))]
+             [(dirtyId rul, dirtyId (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
-             [(uri rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
+             [(dirtyId rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , Pop "rrpurpose"  "Rule" "Purpose"
-             [(uri rul, (show.showADL) x) | x <- explanations rul]
+             [(dirtyId rul, (show.showADL) x) | x <- explanations rul]
       , -- The next population is from the adl pattern 'Plugs':
         Pop "sign" "Rule" "Signature"
-             [(uri rul, uri (sign rul))]
+             [(dirtyId rul, dirtyId (sign rul))]
       , Pop "declaredthrough" "PropertyRule" "Property"
-             [(uri rul, uri prp) | Just(prp,_) <- [rrdcl rul]]
+             [(dirtyId rul, dirtyId prp) | Just(prp,_) <- [rrdcl rul]]
       , Pop "decprps" "Relation" "PropertyRule"
-             [(uri dcl, uri rul) | Just(_,dcl) <- [rrdcl rul]]
+             [(dirtyId dcl, dirtyId rul) | Just(_,dcl) <- [rrdcl rul]]
       ]
 
 
@@ -545,9 +564,9 @@ instance MetaPopulations PlugInfo where
       [ Comment $ " Plug `"++name plug++"` "
       , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
       , Pop "in" "Concept" "Plug"                 
-             [(uri cpt,uri plug)| cpt <- concs plug]  
+             [(dirtyId cpt,dirtyId plug)| cpt <- concs plug]  
       , Pop "relsMentionedIn" "Plug" "Relation"
-             [(uri plug,uri dcl)| dcl <- relsMentionedIn plug]
+             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
       ]      
 
 instance MetaPopulations a => MetaPopulations [a] where
@@ -557,13 +576,13 @@ instance GenericPopulations Conjunct where
  generics fSpec conj =
   [ Comment $ "Conjunct: '"++rc_id conj++"'."
   , Pop "allConjuncts" "Context" "Conjunct" 
-         [(uri fSpec, uri conj)]
+         [(dirtyId fSpec, dirtyId conj)]
   , Pop "signalRuleNames" "Conjunct" "Rule" 
-         [(uri conj,uri r) | r <- rc_orgRules conj, isFrontEndSignal r]
+         [(dirtyId conj,dirtyId r) | r <- rc_orgRules conj, isFrontEndSignal r]
   , Pop "invariantRuleNames" "Conjunct" "Rule" 
-         [(uri conj,uri r) | r <- rc_orgRules conj, isFrontEndInvariant  r]
+         [(dirtyId conj,dirtyId r) | r <- rc_orgRules conj, isFrontEndInvariant  r]
   , Pop "violationsSQL" "Conjunct" "MySQLQuery" 
-         [(uri conj , prettySQLQuery fSpec 0 (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
+         [(dirtyId conj , prettySQLQuery fSpec 0 (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
           )]
   ] 
 
@@ -592,8 +611,8 @@ instance ShowADL Pop where
           prepend str = "-- " ++ str
 
 class Unique a => AdlId a where
- uri :: a -> String
- uri = show . camelCase . uniqueShow False
+ dirtyId :: a -> String
+ dirtyId = show . camelCase . uniqueShow False
 -- All 'things' that are relevant in the meta-environment (RAP),
 -- must be an instance of AdlId:
 instance AdlId A_Concept
@@ -610,18 +629,19 @@ instance AdlId Pattern
 instance AdlId PlugInfo
 instance AdlId PlugSQL
 instance AdlId (PlugSQL,SqlAttribute)
-  where uri (plug,att) = (show.camelCase.attName) att
+  where dirtyId (plug,att) = concatDirtyIdStrings $ [dirtyId plug, (show.camelCase.attName) att]
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Role
 instance AdlId Signature
+instance AdlId TType
 instance AdlId Conjunct
 instance AdlId (PairView Expression)
-  where uri x = show (typeOf x)++show (hash x)
+  where dirtyId x = show (typeOf x)++show (hash x)
 instance AdlId (PairViewSegment Expression)
-  where uri x = show (typeOf x)++show (hash (show (hash x) ++ show (origin x)))
+  where dirtyId x = show (typeOf x)++show (hash (show (hash x) ++ show (origin x)))
 instance AdlId Bool
-  where uri = map toUpper . show
+  where dirtyId = map toUpper . show
 instance AdlId a => AdlId [a] where
 --instance AdlId (Declaration,Paire)
 
@@ -634,6 +654,20 @@ camelCase str = concatMap capitalize (words str)
     capitalize [] = []
     capitalize (s:ss) = toUpper s : ss
 
+-- | utility function to concat dirtyId's, knowing that the individual strings are doublequoted
+concatDirtyIdStrings :: [String] -> String
+concatDirtyIdStrings [] = []
+concatDirtyIdStrings [s] = s
+concatDirtyIdStrings (s0:s1:ss)   
+  | length s0 < 2 = fatal 645 "String too short to have quotes: "++s0
+  | length s1 < 2 = fatal 646 "String too short to have quotes: "++s1
+  | otherwise = concatDirtyIdStrings (concatFirstTwo:ss)
+  where
+   concatFirstTwo = show (unquoted s0 ++ separator ++ unquoted s1)
+   separator = "."
+   unquoted = reverse . unqfst . reverse . unqfst
+   unqfst ('"':tl) = tl
+   unqfst _ = fatal 653 "expected quote, but it is not there!"
 nullContent :: Pop -> Bool
 nullContent (Pop _ _ _ []) = True
 nullContent _ = False

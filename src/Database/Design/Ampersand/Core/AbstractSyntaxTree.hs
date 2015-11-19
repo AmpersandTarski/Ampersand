@@ -187,7 +187,6 @@ ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p
                              -- NOTE: currently all rules coming from properties are invariants, so the not isSignal
                              -- condition is unnecessary, but this will change in the future.
 
-
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)
                      , rc_orgRules ::   [Rule] -- All rules this conjunct originates from

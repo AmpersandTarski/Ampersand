@@ -317,63 +317,6 @@ generateTableInfos fSpec =
  where groupOnTable :: [(PlugSQL,SqlAttribute)] -> [(PlugSQL,[SqlAttribute])]
        groupOnTable tablesAttributes = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesAttributes ]
 
-generateRules :: FSpec -> [String]
-generateRules fSpec =
-  [ "$allRules ="
-  , "  array"
-  ] ++
-  addToLastLine ";"
-    (indent 4
-      (blockParenthesize  "(" ")" ","
-         [ [ (showPhpStr.rrnm) rule ++ " =>"
-           , "  array ( 'name'          => "++(showPhpStr.rrnm)              rule
-           , "        , 'ruleAdl'       => "++(showPhpStr.showADL.rrexp)     rule
-           , "        , 'origin'        => "++(showPhpStr.show.rrfps)        rule
-           , "        , 'meaning'       => "++(showPhpStr.showMeaning)       rule
-           , "        , 'message'       => "++(showPhpStr.showMessage)       rule
-           , "        , 'srcConcept'    => "++(showPhpStr.name.source.rrexp) rule
-           , "        , 'tgtConcept'    => "++(showPhpStr.name.target.rrexp) rule
-           , "        , 'conjunctIds'   => array ("++intercalate ", " (map (showPhpStr . rc_id) conjs) ++")"
-           ] ++
-           ( if development (getOpts fSpec)
-             then [ "        // Rule Ampersand: "++escapePhpStr (showADL rExpr) 
-                  , "        , 'contentsSQL'   => " ++
-                                  let contentsExpr = conjNF (getOpts fSpec) rExpr
-                                  in  showPhpStr (prettySQLQuery fSpec 26 contentsExpr)
-                    -- with --dev, also generate sql for the rule itself (without negation) so it can be tested with
-                    -- php/Database.php?testRule=RULENAME
-                  ]
-             else [] ) ++                  
-           [ "        , 'pairView'      =>" -- a list of sql queries for the pair-view segments
-           , "            array"
-           ] ++
-           indent 14
-             (blockParenthesize "(" ")" ","
-               ((genMPairView.rrviol) rule
-             ) ) ++
-           [ "        )" ]
-         | (rule, conjs) <- allConjsPerRule fSpec
-         , let rExpr=rrexp rule
-         ]
-    ) )
- where showMeaning rule = maybe "" (aMarkup2String ReST) (meaning (fsLang fSpec) rule)
-       showMessage rule = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
-                            []    -> ""
-                            markup:_ -> aMarkup2String ReST markup
-
-       genMPairView Nothing                  = []
-       genMPairView (Just (PairView pvsegs)) = map genPairViewSeg pvsegs
-
-       genPairViewSeg (PairViewText _ str)   = [ "array ( 'segmentType' => 'Text', 'Text' => " ++ showPhpStr str ++ ")" ]
-       genPairViewSeg (PairViewExp _ srcOrTgt exp) =
-         [ "array ( 'segmentType' => 'Exp'"
-         , "      , 'srcOrTgt' => "++showPhpStr (show srcOrTgt)
-         , "      , 'expTgt' => "++showPhpStr (show $ target exp)
-         , "      , 'expSQL' =>"
-         , "          " ++ showPhpStr (prettySQLQuery fSpec 33 exp)
-         , "      )"
-         ]
-
 generateConjuncts :: FSpec -> [String]
 generateConjuncts fSpec =
   [ "$allConjuncts ="
@@ -412,7 +355,7 @@ generateConjuncts fSpec =
 -- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
 -- two abstractions to guarantee the same implementation.
 isFrontEndInvariant :: Rule -> Bool
-isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
+isFrontEndInvariant r = not (ruleIsInvariantUniOrInj r)
 
 isFrontEndSignal :: Rule -> Bool
 isFrontEndSignal r = isSignal r
@@ -440,7 +383,6 @@ generateRoles fSpec =
                    , "      , 'name' => "++showPhpStr (name role)
                    , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
                    , "      , 'interfaces' => array ("++ intercalate ", " (map (showPhpStr . name) ((roleInterfaces fSpec) role)) ++")"
-               --    , "      , 'editableConcepts' => array ("++ intercalate ", " (map (showPhpStr . name) ((editableConceptsOld fSpec) role)) ++")"
                    , "      )" ]
                  | (i,role) <- zip [1::Int ..] (filter serviceOrRole $ fRoles fSpec) ]
             ) )
