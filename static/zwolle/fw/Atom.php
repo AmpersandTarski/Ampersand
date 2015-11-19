@@ -320,10 +320,7 @@ Class Atom {
 	private function doPatchAdd($patch, $interface){
 
 		// Report error when no patch value is provided.
-		if(is_null($patch['value'])){
-			Notifications::addError("Patch operation add provided without value: '{$patch['path']}'");
-			return;
-		}
+		if(is_null($patch['value'])) throw new Exception("Patch operation add provided without value: '{$patch['path']}'", 500);
 		
 		$patchInfo = $this->processPatchPath($patch, $interface);
 		
