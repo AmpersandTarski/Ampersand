@@ -230,9 +230,11 @@ Class Atom {
 		return $this->patch($interface, $patches, $requestType);
 	}
 	
-	public function patch(&$interface, $patches, $requestType){
+	public function patch(&$interface, $patches, $requestType, $successMessage = null){
 		
 		$databaseCommit = $this->processRequestType($requestType);
+		
+		if(is_null($successMessage)) $successMessage = $this->concept . ' updated';
 		
 		// Patch
 		foreach ((array)$patches as $key => $patch){
@@ -256,7 +258,7 @@ Class Atom {
 		}
 		
 		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' updated', false, $databaseCommit);
+		$invariantRulesHold = $this->database->closeTransaction($successMessage, false, $databaseCommit, true);
 		
 		return array(	'patches' 				=> $patches
 					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
@@ -402,10 +404,7 @@ Class Atom {
 		
 	}
 	
-	public function post(&$interface, $request_data, $requestType){		
-		
-		$databaseCommit = $this->processRequestType($requestType);
-		
+	public function post(&$interface, $request_data, $requestType){
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
 		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
@@ -417,35 +416,8 @@ Class Atom {
 		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
 		
 		// Patch
-		foreach ((array)$patches as $key => $patch){
-			try{
-				switch($patch['op']){
-					case "replace" :
-						$this->doPatchReplace($patch, $interface);
-						break;
-					case "add" :
-						$this->doPatchAdd($patch, $interface);
-						break;
-					case "remove" :
-						$this->doPatchRemove($patch, $interface);
-						break;
-					default :
-						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
-				}
-			}catch (Exception $e){
-				Notifications::addError($e->getMessage());
-			}
-		}
-		
-		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' created', false, $databaseCommit);
-		
-		return array(	'patches' 				=> $patches
-					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
-					,	'notifications' 		=> Notifications::getAll()
-					,	'invariantRulesHold'	=> $invariantRulesHold
-					,	'requestType'			=> $requestType
-					);
+		$successMessage = $this-> concept . ' created';
+		return $this->patch($interface, $patches, $requestType, $successMessage);
 	}
 	
 	private function getView($viewId = null){
