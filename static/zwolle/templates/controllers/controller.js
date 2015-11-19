@@ -13,7 +13,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.resourceLabel = ''; // label of requested interface source resource
 	
 	\$scope.val = {};
-	\$scope.initialVal = {};
 	\$scope.showSaveButton = {}; // initialize object for show/hide save button
 	\$scope.showCancelButton = {}; // initialize object for show/hide cancel button
 	\$scope.resourceStatus = {}; // initialize object for resource status colors
