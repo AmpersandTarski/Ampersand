@@ -309,36 +309,10 @@ Class Atom {
 					);
 	}
 	
-	private function doPatchReplace($patch, $interface, $before){
+	private function doPatchReplace($patch, $interface){
 		
-		$pathArr = explode('/', $patch['path']);
-			
-		$tgtInterface = $interface;
-		$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
-		
-		// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
-		if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
-		
-		// find the right subinterface
-		while (count($pathArr)){
-			$interfaceId = array_shift($pathArr);
-			
-			// if path starts with '@' skip
-			if(substr($interfaceId, 0, 1) == '@') return; // break function
-			if($interfaceId == '_sortValues_') return; // break function
-			
-			$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
-			
-			$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-			$tgtAtom = array_shift($pathArr); // set tgtAtom 	
-			
-		}
-		
-		// Check if interface is editable
-		if(!$tgtInterface->editable){
-			Notifications::addError($tgtInterface->label . " is not editable in interface '" . $interface->label . "'");
-			return; 
-		}
+		$patchInfo = $this->processPatchPath($patch, $interface);
+		$tgtInterface = $patchInfo['ifc'];
 		
 		/******* Perform edit *********/
 		
@@ -349,55 +323,27 @@ Class Atom {
 			
 			// When true
 			if($patch['value']){						
-				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
+				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patchInfo['srcAtom'], $tgtInterface->tgtConcept);
 			// When false or null
 			}else{
-				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $srcAtom, $tgtInterface->tgtConcept);
+				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patchInfo['srcAtom'], $tgtInterface->tgtConcept);
 			}
 			
 		// Interface is a relation to an object
 		}elseif($tgtInterface->tgtConceptIsObject){
-			// Replace by nothing => editDelete
-			if(empty($patch['value'])){
-				// The $tgtAtom(s) is/are not provided, so we have to get this value to perform the editDelete function
-				try{
-					$tgtAtoms = JsonPatch::get($before, $patch['path']);
-				}catch(Exception $e){
-					Notifications::addError($e->getMessage());
-				}
-				
-				foreach ((array)$tgtAtoms as $key => $val){
-					$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $key, $tgtInterface->tgtConcept);
-				}
-			// Replace by other atom(s) => editUpdate
-			}else{
-				foreach ((array)$patch['value'] as $key => $val){
-					$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $key, $tgtInterface->tgtConcept);
-				}
-			}
+			throw new Exception("Cannot perform patch replace for object reference: {$patch['path']}. Use add or remove instead", 500);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
 		}elseif(!$tgtInterface->tgtConceptIsObject){
-			if(is_bool($patch['value'])) $patch['value'] = var_export($patch['value'], true);
 			
 			// Replace by nothing => editDelete
 			if(empty($patch['value'])){
-				// The $tgtAtom(s) is/are not provided, so we have to get this value to perform the editDelete function
-				try{
-					$tgtAtoms = JsonPatch::get($before, $patch['path']);
-				}catch(Exception $e){
-					Notifications::addError($e->getMessage());
-				}
 				
-				foreach ((array)$tgtAtoms as $val){
-					$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $val, $tgtInterface->tgtConcept);
-				}
+				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patch['oldValue'], $tgtInterface->tgtConcept);
 			
-			// Replace by other atom(s) => editUpdate
+			// Replace by other atom => editUpdate
 			}else{
-				foreach ((array)$patch['value'] as $val){
-					$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $srcAtom, $tgtInterface->srcConcept, $val, $tgtInterface->tgtConcept, $originalAtom);
-				}
+				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patch['value'], $tgtInterface->tgtConcept, $patch['oldValue']);
 			}
 		}
 	}
