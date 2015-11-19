@@ -19,9 +19,6 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, L
 }).controller('LoginExtLogoutController', function($scope, $rootScope, LoginRestangular, $location){
 	
 	$scope.logout = function(){
-		$rootScope.deactivateAllRoles();
-		$location.path('/'); // goto home
-		
 		LoginRestangular.one('logout').get().then(
 			function(data){ // success
 				
@@ -31,6 +28,9 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, L
 				
 			}
 		);
+		
+		$rootScope.deactivateAllRoles();
+		$location.path('/'); // goto home
 	}
 	
 });

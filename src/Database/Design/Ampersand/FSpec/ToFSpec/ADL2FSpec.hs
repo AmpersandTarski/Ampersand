@@ -109,12 +109,14 @@ makeFSpec opts context
               , contextInfo = contextinfo
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
-              , editableConcepts = nub . concatMap editablecpts . fSpecRoleInterfaces
+              , editableConceptsOld = nub . concatMap editablecpts . fSpecRoleInterfaces
+              , editableConcepts = editablecpts 
               }
    where           
      editablecpts :: Interface -> [A_Concept]
-     editablecpts ifc = editables (ifcObj ifc)
+     editablecpts ifc = nub (cpts ++ concatMap (smallerConcepts (gens context)) cpts)
         where
+          cpts = editables (ifcObj ifc)
           editables :: ObjectDef -> [A_Concept]
           editables obj = 
              case objmsub obj of

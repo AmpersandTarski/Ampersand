@@ -15,7 +15,7 @@ class ExecEngineApi{
 			$session->activateRoles();
 			
 			// Check sessionRoles if allowedRolesForRunFunction is specified
-			$allowedRoles = (array)Config::get('allowedRolesForRunFunction','execEngine');
+			$allowedRoles = Config::get('allowedRolesForRunFunction','execEngine');
 			if(!is_null($allowedRoles)){
 				$ok = false;
 				
