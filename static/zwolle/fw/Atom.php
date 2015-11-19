@@ -230,6 +230,22 @@ Class Atom {
 		return $this->patch($interface, $patches, $requestType);
 	}
 	
+	public function post(&$interface, $request_data, $requestType){
+		// Get current state of atom
+		$before = $this->getContent($interface, true, $this->id);
+		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
+	
+		// Determine differences between current state ($before) and requested state ($request_data)
+		$patches = JsonPatch::diff($before, $request_data);
+	
+		// Skip remove operations, because it is a POST operation and there are no values in de DB yet
+		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
+	
+		// Patch
+		$successMessage = $this-> concept . ' created';
+		return $this->patch($interface, $patches, $requestType, $successMessage);
+	}
+	
 	public function patch(&$interface, $patches, $requestType, $successMessage = null){
 		
 		$databaseCommit = $this->processRequestType($requestType);
@@ -404,21 +420,7 @@ Class Atom {
 		
 	}
 	
-	public function post(&$interface, $request_data, $requestType){
-		// Get current state of atom
-		$before = $this->getContent($interface, true, $this->id);
-		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
-		
-		// Determine differences between current state ($before) and requested state ($request_data)
-		$patches = JsonPatch::diff($before, $request_data);
-		
-		// Skip remove operations, because it is a POST operation and there are no values in de DB yet
-		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
-		
-		// Patch
-		$successMessage = $this-> concept . ' created';
-		return $this->patch($interface, $patches, $requestType, $successMessage);
-	}
+
 	
 	private function getView($viewId = null){
 		$view = Concept::getView($this->concept, $viewId);
