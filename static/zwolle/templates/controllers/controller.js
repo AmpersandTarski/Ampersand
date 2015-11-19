@@ -255,10 +255,15 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		}
 	}
 	
-	// RemoveObject function to remove an item (key) from list (obj).
-	\$scope.removeObject = function(obj, key, resourceId){
-		delete obj[key];
-		\$scope.put(resourceId);
+	// RemoveObject function to remove an item (key) from list (obj[property]).
+	\$scope.removeObject = function(obj, property, key, resourceId){
+		// Adapt js model
+		delete obj[property][key];
+		
+		// Patch!
+		patches = [{ op : 'remove', path : obj['@path'] + property + '/' + key}];
+		console.log(patches);
+		\$scope.patch(patches, resourceId);
 	}
 	
 	// Typeahead functionality

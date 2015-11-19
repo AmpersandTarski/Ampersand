@@ -1,7 +1,7 @@
 $if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $endif$$if(isEditable)$<div ng-repeat="(key, row) in val['$name$'] track by row.id">
 	<div>
-		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(val['$name$'], row.id, ResourceId)"></span>
+		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(val, '$name$', row.id, ResourceId)"></span>
 		<my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"></my-nav-to-interfaces>
 	</div>
 </div>
