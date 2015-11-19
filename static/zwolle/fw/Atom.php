@@ -365,7 +365,7 @@ Class Atom {
 		 * If interface is an expression to an object -> perform editUpdate
 		 * If interface is an non-uni expression to a scalar -> perform editUpdate
 		 */
-		$this->database->editDelete($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom'], $patchInfo['ifc']->srcConcept, $patchInfo['tgtAtom'], $patchInfo['ifc']->tgtConcept);
+		$this->database->editUpdate($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom'], $patchInfo['ifc']->srcConcept, $patch['value'], $patchInfo['ifc']->tgtConcept);
 		
 	}
 	
