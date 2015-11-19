@@ -248,18 +248,22 @@ Class Atom {
 		
 		// Patch
 		foreach ((array)$patches as $key => $patch){
-			switch($patch['op']){
-				case "replace" :
-					$this->doPatchReplace($patch, $interface, $before);
-					break;
-				case "add" :
-					$this->doPatchAdd($patch, $interface);
-					break;
-				case "remove" :
-					$this->doPatchRemove($patch, $interface);
-					break;
-				default :
-					throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
+			try{
+				switch($patch['op']){
+					case "replace" :
+						$this->doPatchReplace($patch, $interface);
+						break;
+					case "add" :
+						$this->doPatchAdd($patch, $interface);
+						break;
+					case "remove" :
+						$this->doPatchRemove($patch, $interface);
+						break;
+					default :
+						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
+				}
+			}catch (Exception $e){
+				Notifications::addError($e->getMessage());
 			}
 		}
 		
@@ -438,18 +442,22 @@ Class Atom {
 		
 		// Patch
 		foreach ((array)$patches as $key => $patch){
-			switch($patch['op']){
-				case "replace" :
-					$this->doPatchReplace($patch, $interface, $before);
-					break;
-				case "add" :
-					$this->doPatchAdd($patch, $interface);
-					break;
-				case "remove" :
-					$this->doPatchRemove($patch, $interface);
-					break;
-				default :
-					throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
+			try{
+				switch($patch['op']){
+					case "replace" :
+						$this->doPatchReplace($patch, $interface);
+						break;
+					case "add" :
+						$this->doPatchAdd($patch, $interface);
+						break;
+					case "remove" :
+						$this->doPatchRemove($patch, $interface);
+						break;
+					default :
+						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
+				}
+			}catch (Exception $e){
+				Notifications::addError($e->getMessage());
 			}
 		}
 		
