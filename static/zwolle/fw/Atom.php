@@ -230,17 +230,9 @@ Class Atom {
 		return $this->patch($interface, $patches, $requestType);
 	}
 	
-	public function patch(&$interface, $patches, $requestType){		
-		switch($requestType){
-			case 'feedback' :
-				$databaseCommit = false;
-				break;
-			case 'promise' :
-				$databaseCommit = true;
-				break;
-			default :
-				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
-		}
+	public function patch(&$interface, $patches, $requestType){
+		
+		$databaseCommit = $this->processRequestType($requestType);
 		
 		// Patch
 		foreach ((array)$patches as $key => $patch){
@@ -379,6 +371,14 @@ Class Atom {
 		
 	}
 	
+	private function processRequestType($requestType){
+		switch($requestType){
+			case 'feedback' : return false;
+			case 'promise' : return true;
+			default : throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
+	}
+	
 	public function setNewContent($interface){
 		
 		$this->newContent = $this->getContent($interface, true, $this->id);
@@ -388,16 +388,7 @@ Class Atom {
 	public function delete($requestType){	
 		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
 		
-		switch($requestType){
-			case 'feedback' :
-				$databaseCommit = false;
-				break;
-			case 'promise' :
-				$databaseCommit = true;
-				break;
-			default :
-				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
-		}
+		$databaseCommit = $this->processRequestType($requestType);
 		
 		$this->database->deleteAtom($this->id, $this->concept);
 		
@@ -412,16 +403,8 @@ Class Atom {
 	}
 	
 	public function post(&$interface, $request_data, $requestType){		
-		switch($requestType){
-			case 'feedback' :
-				$databaseCommit = false;
-				break;
-			case 'promise' :
-				$databaseCommit = true;
-				break;
-			default :
-				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
-		}
+		
+		$databaseCommit = $this->processRequestType($requestType);
 		
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
