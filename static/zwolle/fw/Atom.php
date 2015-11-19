@@ -49,6 +49,15 @@ Class Atom {
 	}
 	
 	/**
+	 * Sets the new content of the atom in $this->newContent
+	 * @param InterfaceObject $interface specifies the interface to use to get the content
+	 * @return void
+	 */
+	public function setNewContent($interface){
+		$this->newContent = $this->getContent($interface, true, $this->id);
+	}
+	
+	/**
 	 * Returns basic information about an atom
 	 * @return array (string @id, string @label, array @view, string @type, array @interfaces, string id)
 	 */
@@ -503,15 +512,6 @@ Class Atom {
 			case 'promise' : return true;
 			default : throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
 		}
-	}
-	
-	/**
-	 * Sets the new content of the atom in $this->newContent
-	 * @param InterfaceObject $interface specifies the interface to use to get the content
-	 * @return void
-	 */
-	public function setNewContent($interface){
-		$this->newContent = $this->getContent($interface, true, $this->id);
 	}
 	
 	/**
