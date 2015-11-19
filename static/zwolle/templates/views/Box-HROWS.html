@@ -2,7 +2,7 @@ $if(verbose)$<!-- Box-HROWS.html "$label$" $expAdl$ :: $source$ * $target$ $if(e
 $endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{'panel-default' : resourceStatus[ResourceId]['default'], 'panel-warning' : resourceStatus[ResourceId]['warning'], 'panel-danger' : resourceStatus[ResourceId]['danger'], 'panel-success' : resourceStatus[ResourceId]['success']}"$endif$>$if(isRoot)$
 	<div class="panel-heading">
 		<div class="pull-right panel-heading-options">
-			<button type="button" class="btn btn-sm btn-warning" ng-if="showSaveButton[ResourceId]" ng-click="put(ResourceId, 'promise')">Save</button>
+			<button type="button" class="btn btn-sm btn-warning" ng-if="showSaveButton[ResourceId]" ng-click="save(ResourceId, 'promise')">Save</button>
 			<button type="button" class="btn btn-sm btn-danger" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
 			<my-nav-to-other-interfaces ifcs="val['@interfaces']" resource="val.id" label="val['@label']"></my-nav-to-other-interfaces>
 			$if(crudD)$<button type="button" class="btn btn-sm" ng-click="deleteResource(ResourceId)">
