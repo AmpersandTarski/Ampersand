@@ -189,6 +189,17 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		);
 	}
 	
+	// Function to save item
+	\$scope.saveItem = function(obj, property, resourceId){
+		if(obj[property] == '') value = null;
+		else value = obj[property];
+		
+		// Patch!
+		patches = [{ op : 'replace', path : obj['@path'] + property, value : value}];
+		console.log(patches);
+		\$scope.patch(patches, resourceId);
+	};
+	
 	// Function to add item to array of scalar
 	\$scope.addItem = function(obj, property, selected, resourceId){
 		if(selected.value != ''){

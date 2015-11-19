@@ -1,6 +1,6 @@
 $if(verbose)$<!-- Atomic-ALPHANUMERIC.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $endif$<div class="input-group">
-	$if(isEditable)$$if(exprIsUni)$<input ng-model="val['$name$']" my-bluronenter type="text" class="form-control input-sm" ng-blur="put(ResourceId)">$else$<div ng-repeat="row in val['$name$'] track by \$index">
+	$if(isEditable)$$if(exprIsUni)$<input ng-model="val['$name$']" my-bluronenter type="text" class="form-control input-sm" ng-blur="saveItem(val, '$name$', ResourceId)">$else$<div ng-repeat="row in val['$name$'] track by \$index">
 		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(val, '$name$', \$index, ResourceId)"></span>
 		<span css="wordwrap">{{row}}</span>
 	</div>

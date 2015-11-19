@@ -2,7 +2,7 @@ $if(verbose)$<!-- Atomic-BOOLEAN.html "$label$" : $expAdl$ :: $source$ * $target
 $endif$<div style="text-align:center; vertical-align:middle;">
 	$if(exprIsUni)$<div class="checkbox">
 		<label>
-			<input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="put(ResourceId)"/>
+			<input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="saveItem(val, '$name$', ResourceId)"/>
 		</label>
 	</div>$else$<div class="checkbox" ng-repeat="row in val['$name$'] track by \$index">
 		<label>
