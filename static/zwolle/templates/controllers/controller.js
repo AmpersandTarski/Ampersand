@@ -190,15 +190,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		);
 	}
 	
-	$if(containsDATE)$$if(verbose)$// The interface contains an editable relation to a concept with representation DATE
-	$endif$// Function for Datepicker
-	\$scope.datepicker = []; // empty array to administer if datepickers (can be multiple on one page) are open and closed
-	\$scope.openDatepicker = function(\$event, datepicker){
-		\$event.preventDefault();
-		\$event.stopPropagation();
-		\$scope.datepicker[datepicker] = {'open' : true};
-	}$else$$if(verbose)$// The interface does not contain editable relations to a concept with representation DATE$endif$$endif$
-	
 	// Function to add item to array of scalar
 	\$scope.addItem = function(obj, property, selected, resourceId){
 		if(selected.value != ''){

@@ -1,5 +1,13 @@
 AmpersandApp.controller('static_dateController', function ($scope) {
 	
+	$scope.isOpen = false;
+	
+	$scope.openDatepicker = function($event){
+		$event.preventDefault();
+		$event.stopPropagation();
+		$scope.isOpen = true;
+	}
+	
 	function pad(number) {
 		var r = String(number);
 		if ( r.length === 1 ) {
