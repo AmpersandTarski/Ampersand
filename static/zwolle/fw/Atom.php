@@ -246,6 +246,23 @@ Class Atom {
 		return $this->patch($interface, $patches, $requestType, $successMessage);
 	}
 	
+	public function delete($requestType){
+		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
+	
+		$databaseCommit = $this->processRequestType($requestType);
+	
+		$this->database->deleteAtom($this->id, $this->concept);
+	
+		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
+		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' deleted', false, $databaseCommit, false);
+	
+		return array('notifications' 		=> Notifications::getAll()
+				,'invariantRulesHold'	=> $invariantRulesHold
+				,'requestType'			=> $requestType
+		);
+	
+	}
+	
 	public function patch(&$interface, $patches, $requestType, $successMessage = null){
 		
 		$databaseCommit = $this->processRequestType($requestType);
@@ -402,25 +419,6 @@ Class Atom {
 		$this->newContent = $this->getContent($interface, true, $this->id);
 
 	}
-	
-	public function delete($requestType){	
-		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
-		
-		$databaseCommit = $this->processRequestType($requestType);
-		
-		$this->database->deleteAtom($this->id, $this->concept);
-		
-		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' deleted', false, $databaseCommit, false);
-		
-		return array('notifications' 		=> Notifications::getAll()
-					,'invariantRulesHold'	=> $invariantRulesHold
-					,'requestType'			=> $requestType
-		);
-		
-	}
-	
-
 	
 	private function getView($viewId = null){
 		$view = Concept::getView($this->concept, $viewId);
