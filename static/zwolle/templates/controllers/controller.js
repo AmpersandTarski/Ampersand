@@ -13,6 +13,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.resourceLabel = ''; // label of requested interface source resource
 	
 	\$scope.val = {};
+	\$scope.patchesCache = {}; // objects to cache patches for resources in case of request type = feedback or invariant rules do not hold
 	\$scope.showSaveButton = {}; // initialize object for show/hide save button
 	\$scope.showCancelButton = {}; // initialize object for show/hide cancel button
 	\$scope.resourceStatus = {}; // initialize object for resource status colors
@@ -162,16 +163,27 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					\$rootScope.getNotifications();
 					\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.plain());
 					
+					\$scope.patchesCache[resourceId] = []; // empty cache
 					setResourceStatus(resourceId, 'default');
 					\$scope.showSaveButton[resourceId] = false;
 					\$scope.showCancelButton[resourceId] = false;
 				})
 		);
-	}
+	};
 	
 	$if(containsEditable)$$if(verbose)$// The interface contains at least 1 editable relation
 	$endif$// Function to patch only the changed attributes of a Resource
 	\$scope.patch = function(patches, resourceId, requestType){
+		
+		if(\$scope.patchesCache[resourceId] === undefined) \$scope.patchesCache[resourceId] = []; // new array
+		
+		\$scope.patchesCache[resourceId] = \$scope.patchesCache[resourceId].concat(patches);
+		
+		\$scope.save(resourceId, requestType);
+		
+	};
+	
+	\$scope.save = function(resourceId, requestType){
 		var resourceIndex = _getResourceIndex(resourceId, \$scope.val['$interfaceName$']);
 		
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
@@ -180,14 +192,14 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		\$scope.loadingResources[resourceId] = new Array();
 	
 		\$scope.loadingResources[resourceId].push( \$scope.val['$interfaceName$'][resourceIndex]
-			.patch(patches, {'requestType' : requestType})
+			.patch(\$scope.patchesCache[resourceId], {'requestType' : requestType})
 			.then(function(data) {
 				\$rootScope.updateNotifications(data.notifications);
 				\$scope.val['$interfaceName$'][resourceIndex] = \$.extend(\$scope.val['$interfaceName$'][resourceIndex], data.content);
 				showHideButtons(data.invariantRulesHold, data.requestType, resourceId);
 			})
 		);
-	}
+	};
 	
 	// Function to save item
 	\$scope.saveItem = function(obj, property, resourceId){
@@ -278,6 +290,12 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	$endif$$editableObjects:{concept|\$scope.typeahead['$concept$'] = Restangular.all('resource/$concept$').getList().\$object;
 	}$$else$$if(verbose)$// The interface does not contain editable relations to a concept with representation OBJECT$endif$$endif$
 	
+	/**********************************************************************************************
+	 *
+	 * Helper functions
+	 *
+	 **********************************************************************************************/
+	
 	function _getResourceIndex(itemId, items){
 		var index;
 		items.some(function(item, idx){
@@ -296,6 +314,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			\$scope.showSaveButton[resourceId] = false;
 			\$scope.showCancelButton[resourceId] = false;
 			setResourceStatus(resourceId, 'success');
+			\$scope.patchesCache[resourceId] = []; // empty cache
 			\$timeout(function(){
 				setResourceStatus(resourceId, 'default');
 			}, 3000);
