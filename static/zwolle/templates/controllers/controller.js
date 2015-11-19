@@ -202,7 +202,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	// Function to add item to array of scalar
 	\$scope.addItem = function(obj, property, selected, resourceId){
 		if(selected.value != ''){
-			// Adapt in js modal
+			// Adapt in js model
 			if(obj[property] === null) obj[property] = [];
 			obj[property].push(selected.value);
 			
@@ -222,7 +222,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to remove item from array of scalar
 	\$scope.removeItem = function(obj, property, key, resourceId){
-		// Adapt js modal
+		// Adapt js model
 		value = obj[property][key];
 		obj[property].splice(key, 1);
 		
@@ -240,7 +240,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		if(item.id === undefined || item.id == ''){
 			console.log('selected id is undefined');
 		}else{
-			// Adapt js modal
+			// Adapt js model
 			if(obj[property] === null) obj[property] = {};
 			try {
 				obj[property][item.id] = item.plain() // plain is Restangular function
