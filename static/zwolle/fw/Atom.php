@@ -421,6 +421,9 @@ Class Atom {
 		$patchInfo = $this->processPatchPath($patch, $interface);
 		$tgtInterface = $patchInfo['ifc'];
 		
+		// PatchReplace only works for UNI expressions. Otherwise, use PatchRemove and PatchAdd
+		if(!$tgtInterface->univalent) throw new Exception("Cannot perform patch replace for univalent path '{$patch['path']}'. Use patch remove + add instead", 500); 
+		
 		/******* Perform edit *********/
 		
 		// Interface is property
@@ -438,7 +441,7 @@ Class Atom {
 			
 		// Interface is a relation to an object
 		}elseif($tgtInterface->tgtConceptIsObject){
-			throw new Exception("Cannot perform patch replace for object reference: {$patch['path']}. Use add or remove instead", 500);
+			throw new Exception("Cannot perform patch replace for object reference '{$patch['path']}'. Use patch remove + add instead", 500);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
 		}elseif(!$tgtInterface->tgtConceptIsObject){
