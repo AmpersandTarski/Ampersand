@@ -219,17 +219,7 @@ Class Atom {
 	}
 	
 	public function put(&$interface, $request_data, $requestType){		
-		switch($requestType){
-			case 'feedback' :
-				$databaseCommit = false;
-				break;
-			case 'promise' :
-				$databaseCommit = true;
-				break;
-			default :
-				throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
-		}
-		
+				
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
 		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
@@ -237,32 +227,7 @@ Class Atom {
 		// Determine differences between current state ($before) and requested state ($request_data)
 		$patches = JsonPatch::diff($before, $request_data);
 		
-		// Put current state based on differences
-		foreach ((array)$patches as $key => $patch){
-			switch($patch['op']){
-				case "replace" :
-					$this->doPatchReplace($patch, $interface, $before);
-					break;
-				case "add" :
-					$this->doPatchAdd($patch, $interface);
-					break;
-				case "remove" :
-					$this->doPatchRemove($patch, $interface);
-					break;
-				default :
-					throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
-			}
-		}
-		
-		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' updated', false, $databaseCommit);
-		
-		return array(	'patches' 				=> $patches
-					,	'content' 				=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
-					,	'notifications' 		=> Notifications::getAll()
-					,	'invariantRulesHold'	=> $invariantRulesHold
-					,	'requestType'			=> $requestType
-					);
+		return $this->patch($interface, $patches, $requestType);
 	}
 	
 	public function patch(&$interface, $patches, $requestType){		
