@@ -77,13 +77,14 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	}
 	
 	// Function to add a new Resource to the colletion
-	\$scope.addNewResource = function (prepend){
+	\$scope.addNewResource = function (prepend, requestType){
 		if(prepend === 'undefined') var prepend = false;
+		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
 		\$scope.loadingResources['_new_'] = new Array();
 		\$scope.loadingResources['_new_'].push(
 			\$scope.srcAtom.all('$interfaceName$')
-				.post({})
+				.post({}, {'requestType' : requestType})
 				.then(function(data){ // POST
 					\$rootScope.updateNotifications(data.notifications);
 					if(prepend) \$scope.val['$interfaceName$'].unshift(Restangular.restangularizeElement(\$scope.srcAtom, data.content, '$interfaceName$')); // Add to collection
