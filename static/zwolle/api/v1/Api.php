@@ -269,6 +269,9 @@ class Api{
 			$newAtomId = $session->database->addAtomToConcept($atomId, $concept);
 			$session->atom = new Atom($newAtomId, $concept);
 			
+			// If interface expression is editable, also add (srcAtom, newAtom) link in interface expression
+			if($session->interface->editable) $session->database->editUpdate($session->interface->relation, $session->interface->relationIsFlipped, $srcAtomId, $session->interface->srcConcept, $newAtomId, $session->interface->tgtConcept);
+			
 			return $session->atom->post($session->interface, $request_data, $requestType);
 		
 		}catch(Exception $e){
