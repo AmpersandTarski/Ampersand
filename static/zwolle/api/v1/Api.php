@@ -143,8 +143,6 @@ class Api{
 			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 			
-			if(!$session->interface->crudU) throw new Exception("PATCH is not allowed for interface " . $session->interface->label, 405);
-			
 			// If tgtAtom does not exists
 			if(!$session->database->atomExists($tgtAtomId, $session->interface->tgtConcept)){
 				// Check if tgtAtom may be created with this interface

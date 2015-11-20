@@ -542,7 +542,8 @@ Class Atom {
 		
 		// Check if interface is editable
 		if($tgtInterface === false) throw new Exception("Interface path does not exists: {$patch['path']}", 500);
-		if(!$tgtInterface->editable) throw new Exception($tgtInterface->label . " is not editable in interface '" . $interface->label . "'", 403);
+		if(!$tgtInterface->editable) throw new Exception($tgtInterface->label . " is not editable", 403);
+		if(!$tgtInterface->crudU) throw new Exception("PATCH is not allowed for interface " . $tgtInterface->label, 403);
 		
 		return array('ifc' => $tgtInterface, 'srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom);
 		
