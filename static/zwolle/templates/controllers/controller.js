@@ -283,10 +283,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	// Typeahead functionality
 	\$scope.typeahead = {}; // an empty object for typeahead
 	
-	\$scope.typeaheadOnSelect = function (\$item, \$model, \$label, obj, property, resourceId){
-		\$scope.addObject(obj, property, \$item, resourceId);
-	};
-	
 	$if(verbose)$// A property for every concept with representation OBJECT of the editable relations in this interface
 	$endif$$editableObjects:{concept|\$scope.typeahead['$concept$'] = Restangular.all('resource/$concept$').getList().\$object;
 	}$$else$$if(verbose)$// The interface does not contain editable relations to a concept with representation OBJECT$endif$$endif$
