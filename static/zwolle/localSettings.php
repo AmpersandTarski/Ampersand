@@ -3,6 +3,7 @@ define ('LOCALSETTINGS_VERSION', 1.2);
 
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", false);
+date_default_timezone_set('Europe/Amsterdam');
 
 /************ Server URL config ********************/
 // Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>
