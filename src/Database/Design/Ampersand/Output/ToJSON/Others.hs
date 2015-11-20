@@ -19,7 +19,8 @@ data TableColumnInfo = TableColumnInfo
   , plgJSONatts      :: [Attribute]
   } deriving (Generic, Show)
 data Attribute = Attribute
-  { attJSONconcept   :: String
+  { attJSONattName   :: String
+  , attJSONconcept   :: String
   , attJSONunique    :: Bool
   , attJSONnull      :: Bool
   } deriving (Generic, Show)
@@ -40,7 +41,8 @@ instance JSON PlugInfo TableColumnInfo where
  
 instance JSON SqlAttribute Attribute where
  fromAmpersand _ att = Attribute
-  { attJSONconcept   = name . target . attExpr $ att
+  { attJSONattName   = attName $ att
+  , attJSONconcept   = name . target . attExpr $ att
   , attJSONunique    = attUniq $ att
   , attJSONnull      = attNull $ att
   }
