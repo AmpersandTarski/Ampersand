@@ -74,7 +74,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	$endif$// Function to create a new Resource
 	\$scope.newResource = function(){
 		\$location.url('/$interfaceName$?new');
-	}
+	};
 	
 	// Function to add a new Resource to the colletion
 	\$scope.addNewResource = function (prepend, requestType){
@@ -93,7 +93,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					\$scope.loadingResources['_new_'] = new Array(); // empty arr
 				})
 		);
-	}
+	};
 	
 	// Delete function to delete a complete Resource
 	\$scope.deleteResource = function (resourceId){
@@ -111,7 +111,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					})
 			);
 		}
-	}
+	};
 	
 	// Put function to update a Resource
 	\$scope.put = function(resourceId, requestType){
@@ -149,7 +149,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 				})
 			);
 		}
-	}
+	};
 	
 	// Function to cancel edits and reset resource data
 	\$scope.cancel = function(resourceId){
@@ -232,7 +232,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		}else{
 			console.log('Empty value selected');
 		}
-	}
+	};
 	
 	// Function to remove item from array of scalar
 	\$scope.removeItem = function(obj, property, key, resourceId){
@@ -245,7 +245,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		console.log(patches);
 		\$scope.patch(patches, resourceId);
 		
-	}$else$$if(verbose)$// The interface does not contain any editable relations$endif$$endif$
+	};$else$$if(verbose)$// The interface does not contain any editable relations$endif$$endif$
 	
 	$if(containsEditableObjects)$$if(verbose)$// The interface contains at least 1 editable relation to a concept with representation OBJECT
 	$endif$// AddObject function to add a new item (val) to a certain property (property) of an object (obj)
@@ -267,7 +267,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			console.log(patches);
 			\$scope.patch(patches, resourceId);
 		}
-	}
+	};
 	
 	// RemoveObject function to remove an item (key) from list (obj[property]).
 	\$scope.removeObject = function(obj, property, key, resourceId){
@@ -278,7 +278,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		patches = [{ op : 'remove', path : obj['@path'] + property + '/' + key}];
 		console.log(patches);
 		\$scope.patch(patches, resourceId);
-	}
+	};
 	
 	// Typeahead functionality
 	\$scope.typeahead = {}; // an empty object for typeahead
@@ -303,7 +303,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			return (item.id === itemId) && (index = idx)
 		});
 		return index;
-	}
+	};
 	
 	//show/hide save button
 	function showHideButtons(invariantRulesHold, requestType, resourceId){
@@ -324,7 +324,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			\$scope.showSaveButton[resourceId] = false;
 			\$scope.showCancelButton[resourceId] = true;
 		}
-	}
+	};
 	
 	function setResourceStatus(resourceId, status){
 		\$scope.resourceStatus[resourceId] = { 'warning' : false
@@ -333,5 +333,5 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 											 , 'success' : false
 											 };
 		\$scope.resourceStatus[resourceId][status] = true; // set new status
-	}
+	};
 });
