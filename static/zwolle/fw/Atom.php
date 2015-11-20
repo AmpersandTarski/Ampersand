@@ -335,7 +335,7 @@ Class Atom {
 		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
 	
 		// Patch
-		$successMessage = $this-> concept . ' created';
+		$successMessage = $this->concept . ' added';
 		return $this->patch($interface, $patches, $requestType, $successMessage);
 	}
 	
@@ -412,13 +412,13 @@ Class Atom {
 	/** 
 	 * Performs editUpdate or editDelete based on patch replace operation
 	 * @param array $patch
-	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
 	 * @throws Exception
 	 * @return void
 	 */
 	private function doPatchReplace($patch, $interface){
 		
-		$patchInfo = $this->processPatchPath($patch, $interface);
+		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
 		$tgtInterface = $patchInfo['ifc'];
 		
 		// PatchReplace only works for UNI expressions. Otherwise, use PatchRemove and PatchAdd
@@ -460,7 +460,7 @@ Class Atom {
 	/**
 	 * Performs editUpdate based on patch add operation
 	 * @param array $patch
-	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
 	 * @throws Exception
 	 * @return void
 	 */
@@ -469,7 +469,7 @@ Class Atom {
 		// Report error when no patch value is provided.
 		if(is_null($patch['value'])) throw new Exception("Patch operation add provided without value: '{$patch['path']}'", 500);
 		
-		$patchInfo = $this->processPatchPath($patch, $interface);
+		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
 		
 		/******* Perform edit *********
 		 * Properties are treated as a 'replace', so not handled here
@@ -490,7 +490,7 @@ Class Atom {
 	 */
 	private function doPatchRemove($patch, $interface){
 		
-		$patchInfo = $this->processPatchPath($patch, $interface);
+		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
 		
 		/******* Perform edit *********
 		 * Properties are treated as a 'replace', so not handled here
@@ -529,9 +529,9 @@ Class Atom {
 		while (count($pathArr)){
 			$interfaceId = array_shift($pathArr);
 				
-			// if path starts with '@' skip
-			if(substr($interfaceId, 0, 1) == '@') return; // break function
-			if($interfaceId == '_sortValues_') return; // break function
+			// if path starts with '@' or is '_sortValues_' return false
+			if(substr($interfaceId, 0, 1) == '@') return false;
+			if($interfaceId == '_sortValues_') return false;
 				
 			$tgtInterface = is_null($interface) ? new InterfaceObject($interfaceId) : InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
 				
