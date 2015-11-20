@@ -145,8 +145,16 @@ class Api{
 			
 			if(!$session->interface->crudU) throw new Exception("PATCH is not allowed for interface " . $session->interface->label, 405);
 			
+			// If tgtAtom does not exists
+			if(!$session->database->atomExists($tgtAtomId, $session->interface->tgtConcept)){
+				// Check if tgtAtom may be created with this interface
+				if(!$session->interface->crudC) throw new Exception("Cannot patch resource '$tgtAtomId'. Resource does not exists", 404);
+				
+				// Create atom
+				$session->database->addAtomToConcept($tgtAtomId, $session->interface->tgtConcept);
+			}
+			
 			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
-			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
 				
 			return $session->atom->patch($session->interface, $request_data, $requestType);
 	
@@ -174,8 +182,12 @@ class Api{
 
 			if(!$session->interface->crudU) throw new Exception("PUT is not allowed for interface " . $session->interface->label, 405);
 			
+			// If tgtAtom does not exists
 			if(!$session->database->atomExists($tgtAtomId, $session->interface->tgtConcept)){
-				// TODO: insert check if Atom may be created with this interface
+				// Check if tgtAtom may be created with this interface
+				if(!$session->interface->crudC) throw new Exception("Cannot patch resource '$tgtAtomId'. Resource does not exists", 404);
+				
+				// Create atom
 				$session->database->addAtomToConcept($tgtAtomId, $session->interface->tgtConcept);
 			}
 			
