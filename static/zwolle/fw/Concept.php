@@ -18,7 +18,7 @@ class Concept {
 	public static function getConcept($concept){
 		global $allConcepts;
 		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept not defined in \$allConcepts (Generics.php)", 500);
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept '$concept' not defined in \$allConcepts (Generics.php)", 500);
 		return $allConcepts[$concept];
 	}
 	
