@@ -257,21 +257,21 @@ class Api{
 			$session->activateRoles($roleIds);
 			$session->setInterface($interfaceId);
 			
-			if(!$session->interface->crudC) throw new Exception("POST is not allowed for interface " . $session->interface->label, 405);
+			// Set tgtAtom
+			$tgtAtomId = $request_data['id'] ? $request_data['id'] : Concept::createNewAtom($session->interface->tgtConcept);
+			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
 			
-			$concept = $session->interface->tgtConcept;
-			$atomId = $request_data['id'] ? $request_data['id'] : Concept::createNewAtom($concept);
-			
-			if($session->database->atomExists($atomId, $concept)) throw new Exception ("Resource already exists. POST method is not allowed", 405);
-			
-			$newAtomId = $session->database->addAtomToConcept($atomId, $concept);
-			$session->atom = new Atom($newAtomId, $concept);
+			// Check if atom exists
+			if(!$session->atom->atomExists()){
+				if(!$session->interface->crudC) throw new Exception("Creating a new resource is not allowed for interface " . $session->interface->label, 403);
+				else $session->database->addAtomToConcept($tgtAtomId, $concept);
+			}
 			
 			// If interface expression is editable, also add (srcAtom, newAtom) link in interface expression
-			if($session->interface->editable) $session->database->editUpdate($session->interface->relation, $session->interface->relationIsFlipped, $srcAtomId, $session->interface->srcConcept, $newAtomId, $session->interface->tgtConcept);
+			if($session->interface->editable) $session->database->editUpdate($session->interface->relation, $session->interface->relationIsFlipped, $srcAtomId, $session->interface->srcConcept, $tgtAtomId, $session->interface->tgtConcept);
 			
 			return $session->atom->post($session->interface, $request_data, $requestType);
-		
+			
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());
 		}
