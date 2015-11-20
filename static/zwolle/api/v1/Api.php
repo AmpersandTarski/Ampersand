@@ -212,7 +212,6 @@ class Api{
 	 * RequestType: reuqest for 'feedback' (try) or request to 'promise' (commit if possible).
 	 */
 	public function deleteAtom($concept, $srcAtomId, $interfaceId, $tgtAtomId, $roleIds = null, $requestType = 'feedback'){
-		
 		try{
 			$session = Session::singleton();
 			$session->activateRoles($roleIds);
@@ -220,10 +219,24 @@ class Api{
 		
 			if(!$session->interface->crudD) throw new Exception("DELETE is not allowed for interface " . $session->interface->label, 405);
 			
-			$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
-			if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
+			// If interface expression is not editable, delete tgtAtom (including all links to other atoms)
+			if(!$session->interface->editable){
+				$session->atom = new Atom($tgtAtomId, $session->interface->tgtConcept);
+				if(!$session->atom->atomExists()) throw new Exception("Resource '$tgtAtomId' does not exists", 404);
 			
-			return $session->atom->delete($requestType);
+				return $session->atom->delete($requestType);
+			
+			// Else remove (src,tgt) link from interface expression
+			}else{
+				$patches = array(array('op' => 'remove', 'path' => '/' . $session->interface->id . '/' . $tgtAtomId));
+				
+				$session->atom = new Atom($srcAtomId, $session->interface->srcConcept);
+				
+				if(!$session->atom->atomExists()) throw new Exception("Resource $srcAtomId does not exists", 404);
+				
+				return $session->atom->patch(null, $patches, $requestType);
+				
+			}
 		
 		}catch(Exception $e){
 			throw new RestException($e->getCode(), $e->getMessage());

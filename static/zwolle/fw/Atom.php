@@ -304,7 +304,7 @@ Class Atom {
 	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
 	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
 	 */
-	public function put(&$interface, $requestData, $requestType){		
+	public function put($interface, $requestData, $requestType){		
 				
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
@@ -323,7 +323,7 @@ Class Atom {
 	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
 	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
 	 */
-	public function post(&$interface, $requestData, $requestType){
+	public function post($interface, $requestData, $requestType){
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
 		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
@@ -364,14 +364,14 @@ Class Atom {
 	
 	/**
 	 * Processes array of patches (according to specifications: JSON Patch is specified in RFC 6902 from the IETF)
-	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
 	 * @param array $patches contains all patches that need to be applied to this atom
 	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
 	 * @param string $successMessage
 	 * @throws Exception when patch operation is unknown
 	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
 	 */
-	public function patch(&$interface, $patches, $requestType, $successMessage = null){
+	public function patch($interface, $patches, $requestType, $successMessage = null){
 		
 		$databaseCommit = $this->processRequestType($requestType);
 		
@@ -485,7 +485,7 @@ Class Atom {
 	/**
 	 * Performs editDelete based on patch remove operation
 	 * @param array $patch
-	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
 	 * @return void
 	 */
 	private function doPatchRemove($patch, $interface){
@@ -511,11 +511,11 @@ Class Atom {
 	/**
 	 * Finds the subinterface, srcAtom, tgtAtom combination given a patch path
 	 * @param array $patch
-	 * @param InterfaceObject $interface specifies the interface of this transaction
+	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
 	 * @throws Exception when interface path does not exists or is not editable
 	 * @return array (InterfaceObject ifc, string srcAtom, string tgtAtom)
 	 */
-	private function processPatchPath($patch, $interface){
+	private function processPatchPath($patch, $interface = null){
 		
 		$pathArr = explode('/', $patch['path']);
 		
@@ -533,7 +533,7 @@ Class Atom {
 			if(substr($interfaceId, 0, 1) == '@') return; // break function
 			if($interfaceId == '_sortValues_') return; // break function
 				
-			$tgtInterface = InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
+			$tgtInterface = is_null($interface) ? new InterfaceObject($interfaceId) : InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
 				
 			$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
 			$tgtAtom = array_shift($pathArr); // set tgtAtom
