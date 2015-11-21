@@ -523,7 +523,7 @@ generateMSubInterface :: FSpec -> [Declaration] -> Int -> Maybe SubInterface -> 
 generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
     Nothing -> [ "      // No subinterfaces" ]
-    Just (InterfaceRef isLink nm)
+    Just (InterfaceRef isLink nm _)
             -> [ "      // InterfaceRef"
          --      , "      , 'refSubInterface' => " ++ showPhpStr nm
                , "      , 'refSubInterfaceId' => " ++ showPhpStr (escapeIdentifier nm) -- only for new front-end

@@ -126,7 +126,7 @@ makeFSpec opts context
                                   EDcD rel -> f target rel
                                   EFlp (EDcD rel) -> f source rel
                                   _ -> []
-               Just (InterfaceRef _ _) -> []
+               Just (InterfaceRef _ _ _) -> []
                Just (Box _ _ objs)     -> foldr (uni) [] (map editables objs)
           f sORt dcl = [sORt dcl | dcl `elem` ifcParams ifc]
      pairsinexpr  :: Expression -> [AAtomPair]

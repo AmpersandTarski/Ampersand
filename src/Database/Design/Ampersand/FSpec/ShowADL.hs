@@ -18,7 +18,7 @@ import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List
 import Prelude
---import Data.Time.Calendar
+import Data.Char
 
 
 fatal :: Int -> String -> a
@@ -29,7 +29,7 @@ class ShowADL a where
 
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
-  showADL (P_InterfaceRef _ isLink nm) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
+  showADL (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
 
 instance ShowADL ObjectDef where
 -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
@@ -42,7 +42,7 @@ instance ShowADL ObjectDef where
                recur "\n  " (objmsub obj)
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
-        recur ind (Just (InterfaceRef isLink nm)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
+        recur ind (Just (InterfaceRef isLink nm cruds)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm++showADL cruds
         recur ind (Just (Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
@@ -55,6 +55,14 @@ instance ShowADL ObjectDef where
            ind++"     ]"
         showClass Nothing = ""
         showClass (Just cl) = "<" ++ cl ++ ">" -- TODO: parser cannot handle these class annotations yet
+instance ShowADL Cruds where
+ showADL x = " "++f crudC 'C'++f crudR 'R'++f crudU 'U'++f crudD 'D'
+   where
+     f :: (Cruds -> Maybe Bool) -> Char -> String
+     f fun c = case fun x of
+                 Nothing -> ""
+                 Just b  -> [(if b then toUpper else toLower) c]
+     
 
 instance ShowADL Meta where
  showADL (Meta _ metaObj nm val) =

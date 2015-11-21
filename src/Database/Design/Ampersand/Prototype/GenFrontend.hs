@@ -249,7 +249,7 @@ buildInterface fSpec allIfcs ifc =
                                   }
                            , iExp, isEditable, src, tgt)
                   }
-              Just (InterfaceRef isLink nm)   -> 
+              Just (InterfaceRef isLink nm _)   -> 
                 case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
                   []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm

@@ -485,7 +485,10 @@ pInterface = lbl <$> currPos                                       <*>
 --- SubInterface ::= ('BOX' ('<' Conid '>')? | 'ROWS' | 'COLS') Box | 'LINKTO'? 'INTERFACE' ADLid
 pSubInterface :: AmpParser P_SubInterface
 pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
-            <|> P_InterfaceRef <$> currPos <*> pIsThere (pKey "LINKTO") <*  pKey "INTERFACE" <*> pADLid
+            <|> P_InterfaceRef <$> currPos 
+                               <*> pIsThere (pKey "LINKTO") <*  pKey "INTERFACE" 
+                               <*> pADLid
+                               <*> pMaybe pCruds
   where pBoxKey :: AmpParser (Maybe String)
         pBoxKey = pKey "BOX" *> pMaybe (pChevrons pConid)
               <|> Just <$> pKey "ROWS"
