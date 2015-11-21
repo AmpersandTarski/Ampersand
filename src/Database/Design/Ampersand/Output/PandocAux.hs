@@ -217,20 +217,13 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
               readDefaultTemplate :: String -> Maybe String
               readDefaultTemplate s = getStaticFileContent PandocTemplates ("default."++s)
               writerOptions :: Maybe String -> WriterOptions
-              writerOptions template = case theme (getOpts fSpec) of
-                          ProofTheme -> ampersandDefaultWriterOptions
-                                           { writerTableOfContents=False
-                                           , writerNumberSections=False
-                                           }
-                          _          -> ampersandDefaultWriterOptions
-                     where
-                       ampersandDefaultWriterOptions =
-                         def
+              writerOptions template = def
                             { writerStandalone=isJust template
                             , writerTableOfContents=True
                             , writerNumberSections=True
                             , writerTemplate=fromMaybe "" template
-                            , writerVariables=defaultWriterVariables fSpec}
+                            , writerVariables=defaultWriterVariables fSpec
+                            }
          postProcessMonad :: IO()
          postProcessMonad =
            case fspecFormat (getOpts fSpec) of

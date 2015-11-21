@@ -92,12 +92,7 @@ doGenDocument fSpec =
      -- postProcessing of the generated output file depends on the format:
     ; postProcessor
     }
-  where (thePandoc,thePictures) =
-          case (theme (getOpts fSpec), fspecFormat (getOpts fSpec)) of
- -- TODO Ticket #104: Could not find texOnly_proofdoc in any module? Where has in gone?
- --                (ProofTheme, FLatex ) -> (texOnly_proofdoc fSpec,[])     --generate a proof document
-                 (ProofTheme, _      ) -> fatal 116 "Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
-                 (_         , _      ) -> fSpec2Pandoc fSpec
+  where (thePandoc,thePictures) = fSpec2Pandoc fSpec
         (outputFile,makeOutput,postProcessor) = writepandoc fSpec thePandoc
 
 -- | This function will generate an Excel workbook file, containing an extract from the FSpec

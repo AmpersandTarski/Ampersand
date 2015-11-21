@@ -25,7 +25,7 @@ module Database.Design.Ampersand
    , Lang(..)
    , SqlAttributeUsage(..)
    , DnfClause(..)
-   , Options(..), DocTheme(..)
+   , Options(..)
    , FilePos(..), Origin(..)
    , mkPair
    -- * Classes:
