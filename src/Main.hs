@@ -71,21 +71,14 @@ doGenProto fSpec =
     ; if null violationsOfInvariants || development (getOpts fSpec)
       then do { verboseLn (getOpts fSpec) "Generating prototype..."
 
-              ; when (newFrontend (getOpts fSpec)) $
-                  clearTemplateDirs fSpec
+              ; clearTemplateDirs fSpec
                   
               ; writeStaticFiles (getOpts fSpec)
               ; generatePhp fSpec
               ; generateGenerics fSpec
               ; generateJSONfiles fSpec
-              
-              ; if (newFrontend (getOpts fSpec)) then
-                  doGenFrontend fSpec
-                else
-                  generateCustomCss fSpec
-              
+              ; doGenFrontend fSpec
               ; verboseLn (getOpts fSpec) "\n"
-              
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
               }
       else do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"

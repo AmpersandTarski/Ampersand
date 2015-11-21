@@ -82,7 +82,6 @@ data Options = Options { showVersion :: Bool
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
                        , oldNormalizer :: Bool
-                       , newFrontend :: Bool
                        }
 
 getOptions :: IO Options
@@ -174,7 +173,6 @@ getOptions =
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
-                      , newFrontend      = True
                       }
       -- Here we thread startOptions through all supplied option actions
       opts <- foldl (>>=) (return startOptions) actions
@@ -406,11 +404,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["newNormalizer"]
                (NoArg (\opts -> return opts{oldNormalizer = False}))
                "use the new normalizer at your own risk." -- :-)
-            , Hidden)
-          , (Option []        ["newFrontend"]
-               (NoArg (\opts -> do putStrLn "WARNING: Option '--newFrontend' is obsolete, and will soon be removed. The only supported interface currently is the Zwolle interface."
-                                   return opts{newFrontend = True}))
-               "Use the new frontend."
             , Hidden)
           ]
 

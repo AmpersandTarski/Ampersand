@@ -446,8 +446,7 @@ generateInterface :: FSpec -> Interface -> [String]
 generateInterface fSpec interface =
   let roleStr = case ifcRoles interface of []    -> " for all roles"
                                            rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (map name (ifcRoles interface))
-      arrayKey | newFrontend $ getOpts fSpec = escapeIdentifier $ name interface -- For new front-end only, index on escaped name (id)
-               | otherwise                   = name interface                    -- otherwise, use normal name to prevent breakage on old prototypes
+      arrayKey = escapeIdentifier $ name interface
   in  ["// Top-level interface " ++ name interface ++ roleStr  ++ ":"
       , showPhpStr arrayKey ++ " => " 
       ] ++
