@@ -27,39 +27,6 @@ fatal = fatalMsg "FSpec.ShowADL"
 class ShowADL a where
  showADL :: a -> String
 
--- there are data types yielding language dependent data like an Expression
--- the LanguageDependent class provides function(s) to map language dependent functions on those data if any.
--- for example to print all expressions in a data structure with a practical amount of type directives
--- (instances have been created when needed)
---
--- LanguageDependent is part of ShowAdl because the only application at time of writing is to disambiguate expressions for the purpose of printing
--- SJ 31-12-2012: Since 'disambiguate' has become obsolete, do we still need this?
-class LanguageDependent a where
-  mapexprs :: (Language l, ConceptStructure l, Named l) => (l -> Expression -> Expression) -> l -> a -> a
-  mapexprs _ _ = id
-
-instance LanguageDependent a => LanguageDependent (Maybe a) where
-  mapexprs _ _ Nothing  = Nothing
-  mapexprs f l (Just x) = Just $ mapexprs f l x
-
-instance LanguageDependent (a, Expression) where
-  mapexprs f l (x,e) = (x, f l e)
-instance LanguageDependent Rule where
-  mapexprs f l rul = rul{rrexp = f l (rrexp rul)}
-instance LanguageDependent Interface where
-  mapexprs f l ifc = ifc{ifcObj = mapexprs f l (ifcObj ifc)}
-instance LanguageDependent ObjectDef where
-  mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
-instance LanguageDependent SubInterface where
-  mapexprs _ _ iref@(InterfaceRef _ _) = iref
-  mapexprs f l (Box o cl objs) = Box o cl $ map (mapexprs f l) objs
-instance LanguageDependent Declaration where
-  mapexprs _ _ = id
-instance LanguageDependent ECArule where
-  mapexprs _ _ = id
-instance LanguageDependent Event where
-  mapexprs _ _ = id
---------------------------------------------------------------
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
   showADL (P_InterfaceRef _ isLink nm) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
