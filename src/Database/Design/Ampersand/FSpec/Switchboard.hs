@@ -9,7 +9,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..), LanguageDependent(..))
+import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..))
 import Data.String
 
 --import Database.Design.Ampersand.FSpec.ShowECA (showECA) -- for testing purposes
@@ -208,7 +208,7 @@ switchboardAct fSpec act
      nameONode :: [Declaration] -> Declaration -> String
      nameONode = nmLkp fSpec "out_"
 
-nmLkp :: (LanguageDependent a, Eq a, ShowADL a) => FSpec -> String -> [a] -> a -> String
+nmLkp :: (Eq a, ShowADL a) => FSpec -> String -> [a] -> a -> String
 nmLkp _ prefix xs x
  = head ([prefix++show (i::Int) | (i,e)<-zip [1..] xs, e==x]++
          fatal 216 ("illegal lookup in nmLkp "++show prefix++": " ++showADL x++

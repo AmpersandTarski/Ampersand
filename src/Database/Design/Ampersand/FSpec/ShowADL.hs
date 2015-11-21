@@ -8,7 +8,7 @@
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
 module Database.Design.Ampersand.FSpec.ShowADL
-    ( ShowADL(..), LanguageDependent(..), showPAclause, showREL)
+    ( ShowADL(..), showPAclause, showREL)
 where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
