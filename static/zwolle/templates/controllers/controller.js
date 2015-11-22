@@ -215,7 +215,9 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to add item to array of scalar
 	\$scope.addItem = function(obj, property, selected, resourceId){
-		if(selected.value !== ''){
+		if(selected.value === undefined){
+			console.log('Value undefined');
+		}else if(selected.value !== ''){
 			// Adapt in js model
 			if(obj[property] === null) obj[property] = [];
 			obj[property].push(selected.value);
