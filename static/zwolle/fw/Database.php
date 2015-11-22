@@ -591,7 +591,15 @@ class Database {
 	public function typeConversion($value, $concept){
 		if(is_null($value)) return null;
 		
-		switch(Concept::getTypeRepresentation($concept)){
+		switch(Concept::getTypeRepresentation($concept)){				
+			case "ALPHANUMERIC" :
+			case "BIGALPHANUMERIC" :
+			case "HUGEALPHANUMERIC" :
+			case "PASSWORD" :
+			case "TYPEOFONE" :
+				return (string) $value;
+			case "BOOLEAN" :
+				return (bool) $value;
 			case "DATE" :
 				$datetime = new DateTime($value);
 				return $datetime->format('Y-m-d'); // format to store in database
@@ -599,14 +607,14 @@ class Database {
 				$datetime = new DateTime($value); // $value can include timezone, e.g. 2005-08-15T15:52:01+00:00 (DATE_ATOM format)
 				$datetime->setTimezone(new DateTimeZone('UTC')); // convert to UTC to store in database
 				return $datetime->format('Y-m-d H:i:s'); // format to store in database (UTC)
+			case "FLOAT" :
+				return (float) $value;
 			case "INTEGER" :
 				return (int) $value;
-			case "BOOLEAN" :
-				return (bool) $value;
-			case "DECIMAL" :
-				return (float) $value;
-			default : 
+			case "OBJECT" :
 				return $value;
+			default :
+				throw new Exception("Unknown/unsupported representation type for concept $concept", 501);
 		}
 		
 	}
