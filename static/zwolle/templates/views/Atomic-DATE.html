@@ -6,10 +6,10 @@ $endif$<div style="min-width:6em;">
 			<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event)"><i class="glyphicon glyphicon-calendar"></i></button>
 		</span>
 	</div>$else$<div ng-repeat="row in val['$name$'] track by \$index">
-		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(val, '$name$', \$index, ResourceId)"></span>
+		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(val, '$name$', \$index, ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
 		<span>{{row | date : 'dd-MM-yyyy'}}</span>
 	</div>
-	<div my-showonhover-box class="input-group" ng-controller="static_dateController" style="width:170px;">
+	<div class="input-group" ng-controller="static_dateController" style="width:170px;">
 		<input ng-model="selected.value" type="text" class="form-control input-sm" uib-datepicker-popup="dd-MM-yyyy" placeholder="dd-mm-yyyy" is-open="isOpen" ng-blur="addDateItem(val, '$name$', selected, ResourceId)"/>
 		<span class="input-group-btn">
 			<button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event)"><i class="glyphicon glyphicon-calendar"></i></button>
