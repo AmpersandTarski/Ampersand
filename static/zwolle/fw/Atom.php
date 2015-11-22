@@ -421,6 +421,8 @@ Class Atom {
 		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
 		$tgtInterface = $patchInfo['ifc'];
 		
+		if(!$tgtInterface->crudU) throw new Exception("Update is not allowed for interface " . $tgtInterface->label, 403);
+		
 		// PatchReplace only works for UNI expressions. Otherwise, use PatchRemove and PatchAdd
 		if(!$tgtInterface->univalent) throw new Exception("Cannot perform patch replace for univalent path '{$patch['path']}'. Use patch remove + add instead", 500); 
 		
@@ -471,6 +473,8 @@ Class Atom {
 		
 		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
 		
+		if(!$patchInfo['ifc']->crudU) throw new Exception("Update is not allowed for interface " . $patchInfo['ifc']->label, 403);
+		
 		/******* Perform edit *********
 		 * Properties are treated as a 'replace', so not handled here
 		 * UNI interface expressions to scalar are also a 'replace' and not handled here
@@ -491,6 +495,8 @@ Class Atom {
 	private function doPatchRemove($patch, $interface){
 		
 		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
+		
+		if(!$patchInfo['ifc']->crudU) throw new Exception("Update is not allowed for interface " . $patchInfo['ifc']->label, 403);
 		
 		/******* Perform edit *********
 		 * Properties are treated as a 'replace', so not handled here
@@ -543,7 +549,6 @@ Class Atom {
 		// Check if interface is editable
 		if($tgtInterface === false) throw new Exception("Interface path does not exists: {$patch['path']}", 500);
 		if(!$tgtInterface->editable) throw new Exception($tgtInterface->label . " is not editable", 403);
-		if(!$tgtInterface->crudU) throw new Exception("PATCH is not allowed for interface " . $tgtInterface->label, 403);
 		
 		return array('ifc' => $tgtInterface, 'srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom);
 		
