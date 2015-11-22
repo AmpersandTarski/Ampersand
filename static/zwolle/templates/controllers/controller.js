@@ -204,7 +204,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to save item
 	\$scope.saveItem = function(obj, property, resourceId){
-		if(obj[property] == '') value = null;
+		if(obj[property] === '') value = null;
 		else value = obj[property];
 		
 		// Patch!
@@ -215,7 +215,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to add item to array of scalar
 	\$scope.addItem = function(obj, property, selected, resourceId){
-		if(selected.value != ''){
+		if(selected.value !== ''){
 			// Adapt in js model
 			if(obj[property] === null) obj[property] = [];
 			obj[property].push(selected.value);
