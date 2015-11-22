@@ -599,7 +599,7 @@ class Database {
 			case "TYPEOFONE" :
 				return (string) $value;
 			case "BOOLEAN" :
-				return (bool) $value;
+				return (int) $value; // booleans are stored as tinyint(1) in the database. false = 0, true = 1
 			case "DATE" :
 				$datetime = new DateTime($value);
 				return $datetime->format('Y-m-d'); // format to store in database
