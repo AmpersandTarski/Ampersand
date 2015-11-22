@@ -6,9 +6,10 @@ $endif$$if(isEditable)$<div ng-repeat="(key, row) in val['$name$'] track by row.
 	</div>
 </div>
 <!-- Input to add new link to another resource -->
-<div $if(exprIsUni)$ng-if="!val['$name$']"$endif$ ng-controller="addObjectController">
+<div $if(exprIsUni)$ng-if="!val['$name$']" $endif$ng-controller="addObjectController">
 	<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item['@label'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, val, '$name$', ResourceId); selected.label=''" typeahead-no-results="hasNoResults">$if(crudC)$
-	<span ng-show="hasNoResults" class="glyphicon glyphicon-plus" ng-click="addObject(val, '$name$', {id : selected.label}, ResourceId); selected.label='';" uib-tooltip="Create new" tooltip-trigger="mouseenter" tooltip-placement="right"></span>$endif$
+	<span ng-show="hasNoResults && selected.label" class="glyphicon glyphicon-plus" ng-click="addObject(val, '$name$', {id : selected.label}, ResourceId); selected.label='';" uib-tooltip="Create new" tooltip-trigger="mouseenter" tooltip-placement="right"></span>$endif$
+	<div ng-show="hasNoResults && selected.label" style="color:orangered; font-size:12px;">$target$ not found!</div>
 </div>$else$<div ng-repeat="(key, row) in val['$name$'] track by row.id">
 	<my-nav-to-interfaces ifcs="row['@interfaces']" resource="row.id" label="row['@label']"></my-nav-to-interfaces>
 </div>$endif$
