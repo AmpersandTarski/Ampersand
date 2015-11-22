@@ -1,10 +1,10 @@
 $if(verbose)$<!-- Atomic-HUGEALPHANUMERIC.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
 $endif$<div class="input-group">
-	$if(isEditable)$$if(exprIsUni)$<textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Text" rows="20" cols="150" ng-blur="saveItem(val, '$name$', ResourceId)"></textarea>$else$<div ng-repeat="row in val['$name$'] track by \$index">
-		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(val, '$name$', \$index, ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
-		<span class="wordwrap">{{row}}</span>
+	$if(isEditable)$$if(exprIsUni)$<textarea ng-model="val['$name$']" class="form-control input-sm" placeholder="Text" rows="20" cols="150" ng-blur="saveItem(val, '$name$', ResourceId)"></textarea>$else$<div ng-repeat="row in val['$name$'] track by \$index" style="display:flex;">
+		<span my-showonhover-box class="glyphicon glyphicon-minus" style="margin-right: 5px;" ng-click="removeItem(val, '$name$', \$index, ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
+		<div class="hugealphanumeric wordwrap">{{row}}</div>
 	</div>
 	<div ng-controller="addItemController">
 		<textarea ng-model="selected.value" placeholder="Add text" class="form-control input-sm" rows="20" cols="150" ng-blur="addItem(val, '$name$', selected, ResourceId)"></textarea>
-	</div>$endif$$else$$if(exprIsUni)$<div class="wordwrap">{{val['$name$']}}</div>$else$<div ng-repeat="row in val['$name$'] track by \$index" class="wordwrap">{{row}}</div>$endif$$endif$
+	</div>$endif$$else$$if(exprIsUni)$<div class="hugealphanumeric wordwrap">{{val['$name$']}}</div>$else$<div ng-repeat="row in val['$name$'] track by \$index" class="hugealphanumeric wordwrap">{{row}}</div>$endif$$endif$
 </div>

@@ -14,7 +14,7 @@ $endif$<div class="input-group">
 	</div>
 	<div my-showonhover-box ng-controller="uploadFileController">
 		<input class="form-control input-sm" type="file" nv-file-select uploader="FileUploader" options="{'key' : '$name$', 'resourceId' : ResourceId}"/>
-	</div>$else$<div ng-repeat="row in val['$name$'] track by \$index" css="wordwrap">
+	</div>$else$<div class="wordwrap" ng-repeat="row in val['$name$'] track by \$index">
 		<a href="uploads/{{row['@view']['fileName']}}" target="_blank">{{row['@view']['label']}}</a>
 	</div>$endif$
 </div>
