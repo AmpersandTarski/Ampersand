@@ -22,6 +22,10 @@ fatal = fatalMsg "Output.ToPandoc.ChapterDataAnalysis"
 chpDataAnalysis :: FSpec -> (Blocks,[Picture])
 chpDataAnalysis fSpec = (theBlocks, thePictures)
  where
+   -- shorthand for easy localizing    
+  l :: LocalizedStr -> String
+  l lstr = localize (fsLang fSpec) lstr
+ 
   theBlocks
     =  chptHeader (fsLang fSpec) DataAnalysis  -- The header
     <> (case fsLang fSpec of
@@ -50,83 +54,78 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     ++ logicalDataModelPictures ++ technicalDataModelPictures
 
   daRulesBlocks                                          = daRulesSection            sectionLevel fSpec
-  (classificationBlocks    , mClassificationPicture    ) = classificationSection     sectionLevel fSpec
-  (logicalDataModelBlocks  , logicalDataModelPictures  ) = logicalDataModelSection   sectionLevel fSpec
+  (classificationBlocks    , mClassificationPicture    ) = classificationSection     sectionLevel
+  (logicalDataModelBlocks  , logicalDataModelPictures  ) = logicalDataModelSection   sectionLevel
   (technicalDataModelBlocks, technicalDataModelPictures) = technicalDataModelSection sectionLevel fSpec
   sectionLevel = 2
 
-classificationSection :: Int -> FSpec -> (Blocks, Maybe Picture)
-classificationSection _   fSpec | null (classes $ clAnalysis fSpec) = (mempty,    Nothing)
-classificationSection lev fSpec | otherwise                         = (theBlocks, Just pict)
- where
-  theBlocks =
-       header lev (case fsLang fSpec of
-                    Dutch   ->  "Classificaties"
-                    English ->  "Classifications"
-                  )
-    <> para (case fsLang fSpec of
-              Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                       <> (if canXRefer (getOpts fSpec)
-                           then  "Deze is in figuur " <> xRefReference (getOpts fSpec) pict <> "weergegeven."
-                           else "Deze is in onderstaand figuur weergegeven."
-                          )
-              English -> "A number of concepts is organized in a classification structure. "
-                       <> (if canXRefer (getOpts fSpec)
-                           then "This is shown in figure " <> xRefReference (getOpts fSpec) pict <> "."
-                           else "This is shown in the figure below."
-                          )
-            )
-         <> para (showImage (getOpts fSpec) pict)
+  classificationSection :: Int -> (Blocks, Maybe Picture)
+  classificationSection _    | null (classes $ clAnalysis fSpec) = (mempty,    Nothing)
+  classificationSection lev  | otherwise                         = 
+     (   chptHeader (fsLang fSpec) SharedLang
+      <> header lev (text.l $ (NL "Classificaties", EN "Classifications")
+                    )
+      <> para (case fsLang fSpec of
+                Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
+                         <> (if canXRefer (getOpts fSpec)
+                             then  "Deze is in figuur " <> xRefReference (getOpts fSpec) cdPict <> "weergegeven."
+                             else "Deze is in onderstaand figuur weergegeven."
+                            )
+                English -> "A number of concepts is organized in a classification structure. "
+                         <> (if canXRefer (getOpts fSpec)
+                             then "This is shown in figure " <> xRefReference (getOpts fSpec) cdPict <> "."
+                             else "This is shown in the figure below."
+                            )
+              )
+           <> para (showImage (getOpts fSpec) cdPict)
+      , Just cdPict
+      )
+   where   
+    cdPict :: Picture
+    cdPict = makePicture fSpec PTClassDiagram
 
-  pict :: Picture
-  pict = makePicture fSpec PTClassDiagram
-
-logicalDataModelSection :: Int -> FSpec -> (Blocks,[Picture])
-logicalDataModelSection lev fSpec = (theBlocks, [pict])
- where
-  theBlocks =
-       header lev (case fsLang fSpec of
-                    Dutch   -> text "Logisch gegevensmodel"
-                    English -> text "Logical data model"
-                )
-    <> para (case fsLang fSpec of
-               Dutch   -> (text "De afspraken zijn vertaald naar een gegevensmodel. "
-                         <> ( if canXRefer (getOpts fSpec)
-                              then text "Dit gegevensmodel is in figuur " <> xRefReference (getOpts fSpec) pict <> text " weergegeven."
-                              else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
-                          ) )
-               English -> (text "The functional requirements have been translated into a data model. "
-                         <> ( if canXRefer (getOpts fSpec)
-                              then text "This model is shown by figure " <> xRefReference (getOpts fSpec) pict <> text "."
-                              else text "This model is shown by the figure below. "
-                          ) )
-            )
-     <> para (showImage (getOpts fSpec) pict)
-     <> let nrOfClasses = length (classes oocd)
-        in case fsLang fSpec of
-             Dutch   -> para (case nrOfClasses of
-                                0 -> text "Er zijn geen gegevensverzamelingen."
-                                1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
-                                _ -> text ("Er zijn "++count Dutch nrOfClasses "gegevensverzameling"++". ")
-                                  <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de twee nu volgende tabellen beschreven:"
-                             )
-             English -> para (case nrOfClasses of
-                                0 -> text "There are no entity types."
-                                1 -> text "There is only one entity type:"
-                                _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
-                                  <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
-                             )
-     <> conceptTable True
-     <> conceptTable False
-     <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
+  logicalDataModelSection :: Int -> (Blocks,[Picture])
+  logicalDataModelSection lev =
+     (   header lev (case fsLang fSpec of
+                      Dutch   -> text "Logisch gegevensmodel"
+                      English -> text "Logical data model"
+                    )
+      <> para (case fsLang fSpec of
+                 Dutch   -> (text "De afspraken zijn vertaald naar een gegevensmodel. "
+                           <> ( if canXRefer (getOpts fSpec)
+                                then text "Dit gegevensmodel is in figuur " <> xRefReference (getOpts fSpec) lDMpict <> text " weergegeven."
+                                else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
+                            ) )
+                 English -> (text "The functional requirements have been translated into a data model. "
+                           <> ( if canXRefer (getOpts fSpec)
+                                then text "This model is shown by figure " <> xRefReference (getOpts fSpec) lDMpict <> text "."
+                                else text "This model is shown by the figure below. "
+                            ) )
+              )
+       <> para (showImage (getOpts fSpec) lDMpict)
+       <> let nrOfClasses = length (classes oocd)
+          in case fsLang fSpec of
+               Dutch   -> para (case nrOfClasses of
+                                  0 -> text "Er zijn geen gegevensverzamelingen."
+                                  1 -> text "Er is één gegevensverzameling, die in de volgende paragraaf in detail is beschreven:"
+                                  _ -> text ("Er zijn "++count Dutch nrOfClasses "gegevensverzameling"++". ")
+                                    <> text "De details van elk van deze gegevensverzameling worden, op alfabetische volgorde, in de twee nu volgende tabellen beschreven:"
+                               )
+               English -> para (case nrOfClasses of
+                                  0 -> text "There are no entity types."
+                                  1 -> text "There is only one entity type:"
+                                  _ -> text ("There are "++count English nrOfClasses "entity type" ++".")
+                                    <> text "The details of each entity type are described (in alphabetical order) in the following two tables:"
+                               )
+       <> conceptTable True
+       <> conceptTable False
+       <> mconcat (map detailsOfClass (sortBy (compare `on` name) (classes oocd)))
+      , [lDMpict]
+      )
 
 
-  -- shorthand for easy localizing    
-  l :: LocalizedStr -> String
-  l lstr = localize (fsLang fSpec) lstr
-
-  pict :: Picture
-  pict = makePicture fSpec PTLogicalDM
+  lDMpict :: Picture
+  lDMpict = makePicture fSpec PTLogicalDM
 
   oocd :: ClassDiag
   oocd = cdAnalysis fSpec
@@ -166,7 +165,7 @@ logicalDataModelSection lev fSpec = (theBlocks, [pict])
        
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
-       (   header (lev+1) 
+       (   header (sectionLevel+1) 
                   (((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl))
         <> case clcpt cl of
              Nothing -> mempty
