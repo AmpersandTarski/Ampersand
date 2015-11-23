@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Prototype.Generate 
-  (generateGenerics, generateCustomCss
+  (generateGenerics
   , generateDBstructQueries, generateAllDefPopQueries
   )
 where
@@ -23,41 +23,6 @@ fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
 
 
-generateCustomCss :: FSpec -> IO ()
-generateCustomCss fSpec =
- do { when (genStaticFiles (getOpts fSpec)) $
-        case customCssFile (getOpts fSpec) of
-          Just customCssFilePath ->
-           do { customCssContents <- readCustomCssFile customCssFilePath
-              ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
-              }
-          Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
-           do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
-              ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
-              ; if dedicatedCSSExists then
-                 do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
-                    ; customCssContents <- readCustomCssFile dedicatedCSSPath
-                    ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
-                    }
-                else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
-                 do { customExists <- doesFileExist $ getGenericsDir fSpec </> generatedCustomCssPath
-                    ; if customExists
-                      then verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ " already exists."
-                      else do { verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ 
-                                                            " does not exist, creating default for Oblomilan style."
-                              ; writePrototypeFile fSpec generatedCustomCssPath "@import url(\"Oblomilan.css\");"
-                              }
-                    }
-              }
-    }
-  where
-    generatedCustomCssPath = "css/Custom.css"
-
-    readCustomCssFile f =
-      catch (readFile f)
-            (\e -> do let err = show (e :: IOException)
-                      _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
-                      return "")
 
 -- Generate Generics.php
 generateGenerics :: FSpec -> IO ()
