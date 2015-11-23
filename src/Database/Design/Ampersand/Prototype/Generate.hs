@@ -358,7 +358,7 @@ generateConjuncts fSpec =
 -- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
 -- two abstractions to guarantee the same implementation.
 isFrontEndInvariant :: Rule -> Bool
-isFrontEndInvariant r = not (ruleIsInvariantUniOrInj r)
+isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
 
 isFrontEndSignal :: Rule -> Bool
 isFrontEndSignal r = isSignal r
