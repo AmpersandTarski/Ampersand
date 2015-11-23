@@ -10,14 +10,10 @@ import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
 import Data.Maybe
-import Control.Monad
-import System.FilePath
-import System.Directory
 import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
-import Control.Exception
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"

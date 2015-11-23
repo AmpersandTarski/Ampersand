@@ -126,8 +126,8 @@ defaultWriterVariables fSpec
          , "\\newcommand{\\full}{\\mathbb{V}}"
          , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
          , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
-         , "\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
-         , "\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
+         , "%\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
+         , "%\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
          , "\\newcommand{\\asterisk}{*}"
          , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
          , "\\newcommand{\\subs}{\\vdash}"
@@ -140,7 +140,7 @@ defaultWriterVariables fSpec
          , "\\newcommand{\\signat}[3]{\\id{#1}:\\id{#2}\\rel\\id{#3}}"
          , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
          , "\\newcommand{\\declare}[3]{\\id{#1}:\\ \\id{#2}\\rel\\id{#3}}"
-         , "\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}"
+         , "%\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}"
          , "% ============Ampersand specific End==================="
          ])
     | fspecFormat (getOpts fSpec) == FLatex ]

@@ -21,9 +21,6 @@ import System.FilePath
 import System.Time
 import qualified Data.ByteString.Lazy as L
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Components"
-
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: FSpec -> IO ()
