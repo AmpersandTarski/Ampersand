@@ -12,8 +12,8 @@ require_once(__DIR__ . '/extensions/Pushover/Pushover.php');
 	Config::set('alwaysNotifyUsers', 'pushover', array('<userkey>', '<userkey>', '<etc>')); // array of pushover user keys that receive a copy of all notifications
 
 // ExecEngine rule violation example:
-VIOLATION(TXT "{EX}PushoverNotifications::execEnginePushNotificationOnCommit;<userKeys>;<title>;<message>;<url>")
+VIOLATION(TXT "{EX}PushoverNotifications::execEnginePushNotificationOnCommit;<userKeys>;<message>;<title>;<url>")
 Note:
 - Multiple <userKeys> must be seperated with _AND. This is atomatically done when using an ampersand expression to fill the userKeys.
 - The message is sent as html content. You can use a limited set of html tags (see https://pushover.net/api)
-- The url is optional
+- The title and url are optional

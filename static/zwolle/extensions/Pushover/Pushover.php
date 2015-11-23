@@ -21,29 +21,29 @@ class PushoverNotifications {
 	
 	private static $notifications = array();
 	
-	public static function execEnginePushNotificationOnCommit($userKeys, $title, $message, $url = null){
+	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title = null, $url = null){
 		
 		if($userKeys == '_NULL') $userKeys = array(null);
 		else $userKeys = explode('_AND', $userKeys);
 		
-		self::pushNotificationOnCommit($userKeys, $title, $message, $url);
+		self::pushNotificationOnCommit($userKeys, $message, $title, $url);
 	}
 	
-	public static function pushNotificationOnCommit($userKeys, $title, $message, $url = null){
+	public static function pushNotificationOnCommit($userKeys, $message, $title = null, $url = null){
 		
 		foreach($userKeys as $userKey){
-			if(!is_null($userKey)) self::$notifications[] = array('userKey' => $userKey, 'title' => $title, 'message' => $message, 'url' => $url);
+			if(!is_null($userKey)) self::$notifications[] = array('userKey' => $userKey, 'message' => $message, 'title' => $title, 'url' => $url);
 		}
 		
 		// Send same notification to users in 'alwaysNotifyUsers' config
 		foreach((array)Config::get('alwaysNotifyUsers', 'pushover') as $notifyUser){
 			if(!in_array($notifyUser, $userKeys)){ // prevent duplicate notifications
-				self::$notifications[] = array('userKey' => $notifyUser, 'title' => $title, 'message' => $message, 'url' => $url);
+				self::$notifications[] = array('userKey' => $notifyUser, 'message' => $message, 'title' => $title, 'url' => $url);
 			}
 		}
 	}
 	
-	private static function pushNotification($userKey, $title, $message, $url = null){
+	private static function pushNotification($userKey, $message, $title = null, $url = null){
 		$notification = new Pushover();
 		
 		$token = Config::get('applicationToken', 'pushover');
@@ -52,8 +52,8 @@ class PushoverNotifications {
 		
 		$notification->setToken($token);
 		$notification->setUser($userKey);
-		$notification->setTitle($title);
 		$notification->setMessage($message);
+		if(!is_null($title)) $notification->setTitle($title);
 		$notification->setHtml(1);
 		$notification->setUrl($url);
 		
@@ -62,7 +62,7 @@ class PushoverNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['title'], $notification['message'], $notification['url']);
+		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url']);
 	}
 
 	public static function clearNotificationCache(){
