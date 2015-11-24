@@ -107,7 +107,7 @@ function OverwritePopulation($rArray, $relationName, $concept){
 		$srcCol = Relation::getSrcCol($fullRelationSignature);
 		$tgtCol = Relation::getTgtCol($fullRelationSignature);
 		
-		$query = "TRUNCATE TABLE $table";
+		$query = "DELETE FROM $table"; // Do not use TRUNCATE statement, this causes an implicit commit
 		$database->Exe($query);
 		
 		foreach($rArray as $src => $tgtArray){
