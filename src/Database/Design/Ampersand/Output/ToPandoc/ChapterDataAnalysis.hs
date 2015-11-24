@@ -24,6 +24,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
    -- shorthand for easy localizing    
   l :: LocalizedStr -> String
   l lstr = localize (fsLang fSpec) lstr
+  sectionLevel = 2
  
   theBlocks
     =  chptHeader (fsLang fSpec) DataAnalysis  -- The header
@@ -43,40 +44,36 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                             <>  "Finally, the logical and technical data model are discussed."
                              )
        )
-    <> classificationBlocks
-    <> daRulesBlocks
+    <>  if null (classes $ clAnalysis fSpec) 
+        then mempty
+        else 
+          (   header sectionLevel
+                  (text.l $ (NL "Classificaties", EN "Classifications")
+                  )
+           <> para (case fsLang fSpec of
+                     Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
+                              <> (if canXRefer (getOpts fSpec)
+                                  then  "Deze is in figuur " <> xRefReference (getOpts fSpec) classificationPicture <> "weergegeven."
+                                  else "Deze is in onderstaand figuur weergegeven."
+                                 )
+                     English -> "A number of concepts is organized in a classification structure. "
+                              <> (if canXRefer (getOpts fSpec)
+                                  then "This is shown in figure " <> xRefReference (getOpts fSpec) classificationPicture <> "."
+                                  else "This is shown in the figure below."
+                                 )
+                   )
+                <> para (showImage (getOpts fSpec) classificationPicture)
+           )
+
+    <> daRulesSection
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
     <> crudMatrixSection 
   thePictures
     =  [classificationPicture, logicalDataModelPicture, technicalDataModelPicture]
-
-  daRulesBlocks                                          = daRulesSection            sectionLevel fSpec
-  sectionLevel = 2
-
-  classificationBlocks =
-   if null (classes $ clAnalysis fSpec) 
-   then mempty
-   else 
-     (   header sectionLevel
-             (text.l $ (NL "Classificaties", EN "Classifications")
-             )
-      <> para (case fsLang fSpec of
-                Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                         <> (if canXRefer (getOpts fSpec)
-                             then  "Deze is in figuur " <> xRefReference (getOpts fSpec) classificationPicture <> "weergegeven."
-                             else "Deze is in onderstaand figuur weergegeven."
-                            )
-                English -> "A number of concepts is organized in a classification structure. "
-                         <> (if canXRefer (getOpts fSpec)
-                             then "This is shown in figure " <> xRefReference (getOpts fSpec) classificationPicture <> "."
-                             else "This is shown in the figure below."
-                            )
-              )
-           <> para (showImage (getOpts fSpec) classificationPicture)
-      )
-      
   classificationPicture = makePicture fSpec PTClassDiagram
+
+      
 
   logicalDataModelBlocks =
          header sectionLevel
@@ -361,9 +358,9 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                      )
   technicalDataModelPicture = makePicture fSpec PTTechnicalDM
 
-  daRulesSection :: Int -> FSpec -> Blocks
-  daRulesSection lev fSpec = mconcat 
-      [ header lev . text $ l (NL "Regels", EN "Rules")
+  daRulesSection :: Blocks
+  daRulesSection = mconcat 
+      [ header sectionLevel . text $ l (NL "Regels", EN "Rules")
       , para . text $ l (NL "TODO: uitleg paragraaf", EN "TODO: explain section")
       , docRules (NL "Procesregels", EN "Process rules")
                  ( NL "TODO: uitleg procesregels"
@@ -385,7 +382,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> [Rule] -> Blocks
     docRules _     _     noRules _       []    = para . text $ l noRules
     docRules title intro _       heading rules = mconcat $
-      [ header (lev+1) . text $ l title 
+      [ header (sectionLevel+1) . text $ l title 
       , para . text $ l intro
       ] ++
       map (docRule heading) rules
