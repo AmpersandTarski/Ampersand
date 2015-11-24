@@ -79,7 +79,7 @@ getTemplateDir :: FSpec -> String
 getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> "templates"
 
 -- Clear template dirs so the generator won't use lingering template files. 
--- (Needs to be called before statics are generated, otherwise the templates from statics/newFrontend/templates will get deleted)
+-- (Needs to be called before statics are generated, otherwise the templates from statics/ZwolleFrontend/templates will get deleted)
 -- TODO: refactor generate, so we can call generation of static files and generics.php from this module.
 clearTemplateDirs :: FSpec -> IO ()
 clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
@@ -249,7 +249,7 @@ buildInterface fSpec allIfcs ifc =
                                   }
                            , iExp, isEditable, src, tgt)
                   }
-              Just (InterfaceRef isLink nm)   -> 
+              Just (InterfaceRef isLink nm _)   -> 
                 case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
                   []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm

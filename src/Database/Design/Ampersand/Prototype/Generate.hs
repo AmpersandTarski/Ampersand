@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.Prototype.Generate 
-  (generateGenerics, generateCustomCss
+  (generateGenerics
   , generateDBstructQueries, generateAllDefPopQueries
   )
 where
@@ -10,54 +10,15 @@ import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Function
 import Data.List
 import Data.Maybe
-import Control.Monad
-import System.FilePath
-import System.Directory
 import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
-import Control.Exception
 
 fatal :: Int -> String -> a
 fatal = fatalMsg "Generate"
 
 
-generateCustomCss :: FSpec -> IO ()
-generateCustomCss fSpec =
- do { when (genStaticFiles (getOpts fSpec)) $
-        case customCssFile (getOpts fSpec) of
-          Just customCssFilePath ->
-           do { customCssContents <- readCustomCssFile customCssFilePath
-              ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
-              }
-          Nothing -> -- If no css file is specified, we use <filename>.css, if it exists.
-           do { let dedicatedCSSPath = replaceExtension (fileName (getOpts fSpec)) "css"
-              ; dedicatedCSSExists <- doesFileExist dedicatedCSSPath
-              ; if dedicatedCSSExists then
-                 do { putStrLn $ "  Found " ++ dedicatedCSSPath ++ ", which will be used as Custom.css."
-                    ; customCssContents <- readCustomCssFile dedicatedCSSPath
-                    ; writePrototypeFile fSpec generatedCustomCssPath customCssContents
-                    }
-                else -- If not, we check whether there is a css/Custom.css in the prototype directory and create a default one if there isn't.
-                 do { customExists <- doesFileExist $ getGenericsDir fSpec </> generatedCustomCssPath
-                    ; if customExists
-                      then verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ " already exists."
-                      else do { verboseLn (getOpts fSpec) $ "  File " ++ generatedCustomCssPath ++ 
-                                                            " does not exist, creating default for Oblomilan style."
-                              ; writePrototypeFile fSpec generatedCustomCssPath "@import url(\"Oblomilan.css\");"
-                              }
-                    }
-              }
-    }
-  where
-    generatedCustomCssPath = "css/Custom.css"
-
-    readCustomCssFile f =
-      catch (readFile f)
-            (\e -> do let err = show (e :: IOException)
-                      _ <- fatal 75 ("ERROR: Cannot open custom css file ' " ++ f ++ "': " ++ err)
-                      return "")
 
 -- Generate Generics.php
 generateGenerics :: FSpec -> IO ()
@@ -358,7 +319,7 @@ generateConjuncts fSpec =
 -- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
 -- two abstractions to guarantee the same implementation.
 isFrontEndInvariant :: Rule -> Bool
-isFrontEndInvariant r = not (ruleIsInvariantUniOrInj r)
+isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
 
 isFrontEndSignal :: Rule -> Bool
 isFrontEndSignal r = isSignal r
@@ -446,8 +407,7 @@ generateInterface :: FSpec -> Interface -> [String]
 generateInterface fSpec interface =
   let roleStr = case ifcRoles interface of []    -> " for all roles"
                                            rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (map name (ifcRoles interface))
-      arrayKey | newFrontend $ getOpts fSpec = escapeIdentifier $ name interface -- For new front-end only, index on escaped name (id)
-               | otherwise                   = name interface                    -- otherwise, use normal name to prevent breakage on old prototypes
+      arrayKey = escapeIdentifier $ name interface
   in  ["// Top-level interface " ++ name interface ++ roleStr  ++ ":"
       , showPhpStr arrayKey ++ " => " 
       ] ++
@@ -523,7 +483,7 @@ generateMSubInterface :: FSpec -> [Declaration] -> Int -> Maybe SubInterface -> 
 generateMSubInterface fSpec editableRels depth subIntf =
   case subIntf of
     Nothing -> [ "      // No subinterfaces" ]
-    Just (InterfaceRef isLink nm)
+    Just (InterfaceRef isLink nm _)
             -> [ "      // InterfaceRef"
          --      , "      , 'refSubInterface' => " ++ showPhpStr nm
                , "      , 'refSubInterfaceId' => " ++ showPhpStr (escapeIdentifier nm) -- only for new front-end

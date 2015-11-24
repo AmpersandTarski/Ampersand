@@ -745,10 +745,9 @@ sqlConcept fSpec = QName . name . sqlConceptPlug fSpec
 sqlConceptPlug :: FSpec -> A_Concept -> PlugSQL
 sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represented in SQL."
                        | otherwise
-             = if null ps then fatal 585 $ "A_Concept \""++show c++"\" does not occur in fSpec." else
-               head ps
-               where ps = [plug |InternalPlug plug<-plugInfos fSpec
-                                , not (null (case plug of ScalarSQL{} -> [c |c==cLkp plug]; _ -> [c' |(c',_)<-cLkpTbl plug, c'==c]))]
+             = case lookupCpt fSpec c of
+                 []   ->  fatal 585 $ "A_Concept \""++show c++"\" does not occur in fSpec." 
+                 (plug,_):_ -> plug
 
 sqlAttConcept :: FSpec -> A_Concept -> Name
 sqlAttConcept fSpec c | c==ONE = QName "ONE"

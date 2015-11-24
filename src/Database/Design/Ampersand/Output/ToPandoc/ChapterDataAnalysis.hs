@@ -9,6 +9,7 @@ import Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
 import Database.Design.Ampersand.Output.PredLogic
 import Data.Char
 import Data.List
+import Data.Maybe
 import Data.Function (on)
 import qualified Text.Pandoc.Builder
 
@@ -27,29 +28,25 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
              Dutch   -> para ( "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
                             <> "De opbouw is als volgt:"
                              )
-                     <> para ( if summaryOnly
-                               then  "We beginnen met "
-                               else  "We beginnen met het classificatiemodel, gevolgd door "
+                     <> para (  "We beginnen met het classificatiemodel, gevolgd door "
                             <>  "een overzicht van alle relaties, die samen de basis vormen van de rest van deze analyse. "
                             <>  "Ten slotte volgen achtereenvolgend het logische- en technische gegevensmodel."
                              )
              English -> para (  "This chapter contains the result of the data analysis. "
                             <>  "It is structured as follows:"
                              )
-                     <> para ( if summaryOnly
-                               then  "We start with "
-                               else  "We start with the classification model, followed by "
+                     <> para (  "We start with the classification model, followed by "
                             <>  "a list of all relations, that are the foundation of the rest of the analysis. "
                             <>  "Finally, the logical and technical data model are discussed."
                              )
        )
-    <> if summaryOnly then mempty else classificationBlocks
+    <> classificationBlocks
     <> daRulesBlocks
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
     <> crudMatrixSection sectionLevel fSpec
   thePictures
-    =  (if not summaryOnly then maybe [] (\p->[p]) mClassificationPicture else [])
+    =  maybeToList mClassificationPicture
     ++ logicalDataModelPictures ++ technicalDataModelPictures
 
   daRulesBlocks                                          = daRulesSection            sectionLevel fSpec
@@ -57,10 +54,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   (logicalDataModelBlocks  , logicalDataModelPictures  ) = logicalDataModelSection   sectionLevel fSpec
   (technicalDataModelBlocks, technicalDataModelPictures) = technicalDataModelSection sectionLevel fSpec
   sectionLevel = 2
-
-  -- | In some cases, only a summary of the data analysis is required as output.
-  summaryOnly :: Bool
-  summaryOnly = theme (getOpts fSpec) `elem` [StudentTheme]
 
 classificationSection :: Int -> FSpec -> (Blocks, Maybe Picture)
 classificationSection _   fSpec | null (classes $ clAnalysis fSpec) = (mempty,    Nothing)

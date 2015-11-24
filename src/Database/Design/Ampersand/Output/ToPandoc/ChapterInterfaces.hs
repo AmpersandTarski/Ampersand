@@ -124,7 +124,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
     docMSubInterface editableRels roles hierarchy subIfc =
       case subIfc of
         Nothing                -> []
-        Just (InterfaceRef isLink nm) -> [ plainText $ (if isLink then "LINKTO " else "")++"REF "++nm ] -- TODO: handle InterfaceRef
+        Just (InterfaceRef isLink nm _) -> [ plainText $ (if isLink then "LINKTO " else "")++"REF "++nm ] -- TODO: handle InterfaceRef
         Just (Box _ _ objects) -> [ docInterfaceObjects editableRels roles (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
 
     docCrudMatrix :: Interface -> Blocks
@@ -186,7 +186,7 @@ genEntity_Interfaces fSpec interfaces = map genEntity_Interface interfaces
                       case objmsub objDef of
                         Nothing -> []
                         Just (Box _ _ objs)      -> map (genEntity_ObjDef (dpth+1)) objs
-                        Just (InterfaceRef _ nm) -> map (genEntity_ObjDef (dpth+1)) $ objsForInterfaceNamed nm
+                        Just (InterfaceRef _ nm _) -> map (genEntity_ObjDef (dpth+1)) $ objsForInterfaceNamed nm
                   }
         where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
   

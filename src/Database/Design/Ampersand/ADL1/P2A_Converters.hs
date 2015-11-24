@@ -102,7 +102,7 @@ checkInterfaceCycles gCtx =
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
                                    Nothing                  -> []
-                                   Just (InterfaceRef isLinkto nm) -> [nm | not isLinkto]
+                                   Just (InterfaceRef isLinkto nm _) -> [nm | not isLinkto]
                                    Just (Box _ _ objs)      -> concatMap getDeepIfcRefs objs
             lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                    [ifc] -> ifc
@@ -460,25 +460,8 @@ pCtx2aCtx' _
             )
             <$> maybeOverGuarded (pSubi2aSubi objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
         ) <$> typecheckTerm ctx
-          <*> checkCrud mCrud
+          <*> pCruds2aCruds mCrud
      where      
-      checkCrud :: Maybe P_Cruds -> Guarded Cruds
-      checkCrud Nothing = pure def
-      checkCrud (Just (P_Cruds org str )) 
-        = if nub us == us && all (\c -> c `elem` "cCrRuUdD") str
-          then pure Cruds { crudOrig = org
-                          , crudC    = f 'C'
-                          , crudR    = f 'R'
-                          , crudU    = f 'U'
-                          , crudD    = f 'D'
-              }
-          else Errors [mkInvalidCRUDError orig str]
-         where us = map toUpper str
-               f :: Char -> Maybe Bool
-               f c 
-                 | toUpper c `elem` str = Just True
-                 | toLower c `elem` str = Just False
-                 | otherwise            = Nothing    
       lookupView :: String -> Maybe P_ViewDef
       lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
                             []   -> Nothing
@@ -512,6 +495,23 @@ pCtx2aCtx' _
     addEpsilon :: String -> String -> Expression -> Expression
     addEpsilon s t e
      = addEpsilonLeft' s (addEpsilonRight' t e)
+    pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
+    pCruds2aCruds Nothing = pure def
+    pCruds2aCruds (Just (P_Cruds org str )) 
+        = if nub us == us && all (\c -> c `elem` "cCrRuUdD") str
+          then pure Cruds { crudOrig = org
+                          , crudC    = f 'C'
+                          , crudR    = f 'R'
+                          , crudU    = f 'U'
+                          , crudD    = f 'D'
+              }
+          else Errors [mkInvalidCRUDError org str]
+         where us = map toUpper str
+               f :: Char -> Maybe Bool
+               f c 
+                 | toUpper c `elem` str = Just True
+                 | toLower c `elem` str = Just False
+                 | otherwise            = Nothing    
 
     pSubi2aSubi :: Expression -- Expression of the surrounding
                 -> Bool -- Whether the surrounding is bounded
@@ -524,10 +524,11 @@ pCtx2aCtx' _
       = case x of
          P_InterfaceRef{si_str = ifcId} 
            ->  unguard $
-             (\(refIfcExpr,_) -> (\objExprEps -> (objExprEps,InterfaceRef (si_isLink x) ifcId)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
+             (\(refIfcExpr,_) cs -> (\objExprEps -> (objExprEps,InterfaceRef (si_isLink x) ifcId cs)) <$> typeCheckInterfaceRef o ifcId objExpr refIfcExpr)
              <$> case lookupDisambIfcObj ifcId of
                    Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                    Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
+             <*> pCruds2aCruds (si_crud x)
          P_Box{}
            -> case si_box x of
                 []  -> const undefined <$> hasNone ([]::[P_SubIfc a]) x -- error

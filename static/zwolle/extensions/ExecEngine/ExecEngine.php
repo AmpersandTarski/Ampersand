@@ -122,8 +122,9 @@ class ExecEngine {
 					$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
 					
 					$function = array_shift($params); // First parameter is function name
+					$classMethod = (array)explode('::', $function);
 					
-					if (function_exists($function)){
+					if (function_exists($function) || method_exists($classMethod[0], $classMethod[1])){
 						$successMessage = call_user_func_array($function,$params);
 						Notifications::addLog($successMessage, 'ExecEngine');
 						

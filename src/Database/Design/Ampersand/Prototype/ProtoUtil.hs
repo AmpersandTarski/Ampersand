@@ -32,8 +32,8 @@ writePrototypeFile fSpec relFilePath content =
 
 getGenericsDir :: FSpec -> String
 getGenericsDir fSpec = 
-  let protoDir = Opts.dirPrototype (getOpts fSpec)
-  in  if (Opts.newFrontend $ getOpts fSpec) then protoDir </> "generics" else protoDir
+  Opts.dirPrototype (getOpts fSpec) </> "generics" 
+   
 
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent

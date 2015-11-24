@@ -9,7 +9,7 @@ import Database.Design.Ampersand.Prototype.ObjBinGen   (generatePhp, writeStatic
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
-import Database.Design.Ampersand.Prototype.Generate    (generateGenerics, generateCustomCss)
+import Database.Design.Ampersand.Prototype.Generate    (generateGenerics)
 import Database.Design.Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
@@ -58,9 +58,9 @@ generateProtoStuff fSpec
          ; case testRule (getOpts fSpec) of
              Just ruleName -> ruleTest fSpec ruleName
              Nothing       -> return ()
-    ; when ((not . null $ allViolations fSpec) && (development (getOpts fSpec) || theme (getOpts fSpec)==StudentTheme)) $
-        verboseLn (getOpts fSpec) "\nWARNING: There are rule violations (see above)."
-    ; verboseLn (getOpts fSpec) "Done."  -- if there are violations, but we generated anyway (ie. with --dev or --theme=student), issue a warning
+    ; when ((not . null . allViolations) fSpec && (development . getOpts) fSpec ) $
+        verboseLn (getOpts fSpec) "\nWARNING: There are rule violations (see above). The database might be invalid."
+    ; verboseLn (getOpts fSpec) "Done."  -- if there are violations, but we generated anyway (ie. with --dev), issue a warning
     }
 
 doGenProto :: FSpec -> IO ()
@@ -68,28 +68,21 @@ doGenProto fSpec =
  do { verboseLn (getOpts fSpec) "Checking on rule violations..."
     ; reportViolations violationsOfInvariants
     ; reportSignals (initialConjunctSignals fSpec)
-    ; if (not . null) violationsOfInvariants && not (development (getOpts fSpec)) && theme (getOpts fSpec)/=StudentTheme
-      then do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
-              ; exitWith $ ExitFailure 40
-              }
-      else do { verboseLn (getOpts fSpec) "Generating prototype..."
+    ; if null violationsOfInvariants || development (getOpts fSpec)
+      then do { verboseLn (getOpts fSpec) "Generating prototype..."
 
-              ; when (newFrontend (getOpts fSpec)) $
-                  clearTemplateDirs fSpec
+              ; clearTemplateDirs fSpec
                   
               ; writeStaticFiles (getOpts fSpec)
               ; generatePhp fSpec
               ; generateGenerics fSpec
               ; generateJSONfiles fSpec
-              
-              ; if (newFrontend (getOpts fSpec)) then
-                  doGenFrontend fSpec
-                else
-                  generateCustomCss fSpec
-              
+              ; doGenFrontend fSpec
               ; verboseLn (getOpts fSpec) "\n"
-              
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
+              }
+      else do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
+              ; exitWith $ ExitFailure 40
               }
     }
  where violationsOfInvariants :: [(Rule,[AAtomPair])]

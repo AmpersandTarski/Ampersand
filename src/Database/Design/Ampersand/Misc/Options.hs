@@ -2,7 +2,7 @@
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FSpecFormat(..)
-        ,DocTheme(..),helpNVersionTexts
+        , helpNVersionTexts
         ,MetaType(..)
         )
 where
@@ -43,7 +43,6 @@ data Options = Options { showVersion :: Bool
                        , testRule :: Maybe String
                        , customCssFile :: Maybe FilePath
                                                    --class Populated a where populate::a->b->a
-                       , theme :: DocTheme --the theme of some generated output. (style, content differentiation etc.)
                        , genFSpec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
@@ -83,7 +82,6 @@ data Options = Options { showVersion :: Bool
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
                        , oldNormalizer :: Bool
-                       , newFrontend :: Bool
                        }
 
 getOptions :: IO Options
@@ -127,7 +125,6 @@ getOptions =
                       , ampersandDataDir = dataDir
                       , preVersion       = fromMaybe ""        (lookup "CCPreVersion"  env)
                       , postVersion      = fromMaybe ""        (lookup "CCPostVersion" env)
-                      , theme            = DefaultTheme
                       , showVersion      = False
                       , showHelp         = False
                       , verboseP         = False
@@ -176,7 +173,6 @@ getOptions =
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
-                      , newFrontend      = True
                       }
       -- Here we thread startOptions through all supplied option actions
       opts <- foldl (>>=) (return startOptions) actions
@@ -201,14 +197,6 @@ allFSpecFormats = "["++intercalate ", "
           f fmt = case show fmt of
                     _:h:t -> toUpper h : map toLower t
                     x     -> x 
-
-data DocTheme = DefaultTheme   -- Just the functional specification
-              | ProofTheme     -- A document with type inference proofs
-              | StudentTheme   -- Output for normal students of the business rules course
-              | StudentDesignerTheme   -- Output for advanced students of the business rules course
-              | DesignerTheme   -- Output for non-students
-                 deriving (Show, Eq)
-
 
 type OptionDef = OptDescr (Options -> IO Options)
 options :: [(OptionDef, DisplayMode) ]
@@ -249,16 +237,6 @@ options = [ (Option ['v']   ["version"]
                                                          else map toLower nm}
                        ) "NAME")
                ("database name (overrules environment variable "++ envdbName ++ ", defaults to filename)")
-            , Public)
-          , (Option []      ["theme"]
-               (ReqArg (\t opts -> return opts{theme = case map toUpper t of
-                                                          "STUDENT"  -> StudentTheme
-                                                          "STUDENTDESIGNER" -> StudentDesignerTheme
-                                                          "DESIGNER" -> DesignerTheme
-                                                          "PROOF"    -> ProofTheme
-                                                          _          -> DefaultTheme}
-                        ) "THEME")
-               "differentiate between certain outputs e.g. student"
             , Public)
           , (Option ['x']     ["interfaces"]
                (NoArg (\opts -> return opts{allInterfaces  = True}))
@@ -426,11 +404,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["newNormalizer"]
                (NoArg (\opts -> return opts{oldNormalizer = False}))
                "use the new normalizer at your own risk." -- :-)
-            , Hidden)
-          , (Option []        ["newFrontend"]
-               (NoArg (\opts -> do putStrLn "WARNING: Option '--newFrontend' is obsolete, and will soon be removed. The only supported interface currently is the Zwolle interface."
-                                   return opts{newFrontend = True}))
-               "Use the new frontend."
             , Hidden)
           ]
 
