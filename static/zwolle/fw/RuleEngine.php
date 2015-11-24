@@ -252,7 +252,7 @@ class RuleEngine {
 		Notifications::addLog('Creating violation message', 'RuleEngine');
 		$pairStrs = array();
 		$interfaceIds = array();
-		foreach ($pairView as $segment){
+		foreach ((array)$pairView as $segment){
 			// interface segment
 			if ($segment['segmentType'] == 'Ifc'){
 				$interfaceIds = explode(';', $segment['Interfaces']);
