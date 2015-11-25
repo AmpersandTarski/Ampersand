@@ -143,7 +143,7 @@ class ExecEngine {
 		$database = Database::singleton();
 		
 		$pairStrs = array();
-		foreach ($pairView as $segment){ 
+		foreach ((array)$pairView as $segment){ 
 			// text segment		
 			if ($segment['segmentType'] == 'Text'){
 				$pairStrs[] = $segment['Text'];
