@@ -436,8 +436,8 @@ pCtx2aCtx' _
                            r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
                                  else mustBeBound (origin obj) [(Tgt,objctx obj)])
          <$> typecheckObjDef (vs_obj vs)
-        P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_txt vs)
-        P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_htm vs)
+        P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_name vs) (vs_txt vs)
+        P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_name vs) (vs_htm vs)
      where c = name (vd_cpt o)
     
     isa :: String -> String -> Bool

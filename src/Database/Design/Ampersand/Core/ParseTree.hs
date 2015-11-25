@@ -686,8 +686,8 @@ instance Traversable P_ViewD where
 
 type P_ViewSegment = P_ViewSegmt TermPrim
 data P_ViewSegmt a  = P_ViewExp  { vs_nr ::Integer, vs_obj :: P_ObjDef a }
-                    | P_ViewText { vs_nr ::Integer, vs_txt :: String }
-                    | P_ViewHtml { vs_nr ::Integer, vs_htm :: String }
+                    | P_ViewText { vs_nr ::Integer, vs_name :: String, vs_txt :: String }
+                    | P_ViewHtml { vs_nr ::Integer, vs_name :: String, vs_htm :: String }
                       deriving (Eq, Show)
 
 data ViewHtmlTemplate = ViewHtmlTemplateFile String
@@ -704,8 +704,8 @@ instance Functor P_ViewSegmt where fmap = fmapDefault
 instance Foldable P_ViewSegmt where foldMap = foldMapDefault
 instance Traversable P_ViewSegmt where
  traverse f (P_ViewExp i a) = P_ViewExp i <$> traverse f a
- traverse _ (P_ViewText i a) = pure (P_ViewText i a)
- traverse _ (P_ViewHtml i a) = pure (P_ViewHtml i a)
+ traverse _ (P_ViewText i nm a) = pure (P_ViewText i nm a)
+ traverse _ (P_ViewHtml i nm a) = pure (P_ViewHtml i nm a)
 
 instance Traced (P_ViewD a) where
  origin = vd_pos

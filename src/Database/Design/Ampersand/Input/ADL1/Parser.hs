@@ -391,7 +391,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> (pBraces ((P_ViewExp fatl <$> pViewObj) `sepBy` pComma)) `opt` []
+                      <*> (pBraces ((P_ViewExp fat <$> pViewObj) `sepBy` pComma)) `opt` []
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos nm cpt isDef ats html =
@@ -402,7 +402,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                  , vd_html = html
                  , vd_ats = numbered ats
                  }
-          fatl = fatal 363 "Numbering of segment goes wrong."
+          fat = fatal 363 "Numbering of segment goes wrong."
           numbered xs = map numbr (zip [1..] xs)
               where numbr (i,x)= x{vs_nr=i}
           --- ViewObjList ::= ViewObj (',' ViewObj)*
@@ -415,7 +415,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                            <*> return Nothing
                            <*> return Nothing
                            <*> return []
-
+          
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
           pHtmlView :: AmpParser ViewHtmlTemplate
           pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
@@ -433,8 +433,8 @@ pViewDefLegacy = P_Vd <$> currPos
     where ats xs = [ case viewSeg of
                          P_ViewExp _ x  -> if null (obj_nm x) then P_ViewExp i $ x{obj_nm="seg_"++show i} 
                                                               else P_ViewExp i x 
-                         P_ViewText _ x -> P_ViewText i x
-                         P_ViewHtml _ x -> P_ViewHtml i x
+                         P_ViewText _ nm x -> P_ViewText i nm x
+                         P_ViewHtml _ nm x -> P_ViewHtml i nm x
                          
                     | (i,viewSeg) <- zip [(1::Integer)..] xs]
                     -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
@@ -442,8 +442,8 @@ pViewDefLegacy = P_Vd <$> currPos
           --- ViewSegment ::= Attr | 'TXT' String | 'PRIMHTML' String
           pViewSegment :: AmpParser P_ViewSegment
           pViewSegment = P_ViewExp  fat <$> pAtt <|>
-                         P_ViewText fat <$ pKey "TXT" <*> pString <|>
-                         P_ViewHtml fat <$ pKey "PRIMHTML" <*> pString
+                         P_ViewText fat <$> pLabel <* pKey "TXT" <*> pString <|>
+                         P_ViewHtml fat <$> pLabel <* pKey "PRIMHTML" <*> pString
                where fat = fatal 399 "numbering is done a little later."
 
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term (ADLid | Conid)? SubInterface

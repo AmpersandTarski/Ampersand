@@ -557,8 +557,8 @@ instance ShowHS ViewDef where
 -- showHSName vd = haskellIdentifier ("vdef_"++name vd)
 
 instance ShowHS ViewSegment where
- showHS _     _     (ViewText i str)    = "ViewText "++show i ++show str
- showHS _     _     (ViewHtml i str)    = "ViewHtml "++show i ++show str
+ showHS _     _     (ViewText i _ str)    = "ViewText "++show i ++show str
+ showHS _     _     (ViewHtml i _ str)    = "ViewHtml "++show i ++show str
  showHS opts indent (ViewExp  i objDef) = "ViewExp " ++show i ++showHS opts (indent++"            ") objDef
 
 instance ShowHS Population where

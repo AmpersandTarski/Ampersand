@@ -375,22 +375,22 @@ generateViews fSpec =
          | Vd _ label cpt isDefault  _ viewSegs <- [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ] --sort from spec to gen
          ]
     ) )
- where genViewSeg (ViewText i str) = [ "array ( 'segmentType' => 'Text'"
-                                     , "      , 'label' => " ++ lab i
-                                     , "      , 'Text' => " ++ showPhpStr str
-                                     , "      )" ]
-       genViewSeg (ViewHtml i str) = [ "array ( 'segmentType' => 'Html'"
-                                     , "      , 'label' => " ++ lab i
-                                     , "      , 'Html' => " ++ showPhpStr str
-                                     , "      )" ]
-       genViewSeg (ViewExp _ objDef) = [ "array ( 'segmentType' => 'Exp'"
-                                     , "      , 'label' => " ++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
-                                     , "      , 'expSQL' =>"
-                                     , "          " ++ showPhpStr (prettySQLQuery fSpec 33 (objctx objDef))
-                                     , "      )"
-                                     ]
+ where genViewSeg (ViewText i nm str) = [ "array ( 'segmentType' => 'Text'"
+                                        , "      , 'label' => " ++ lab i nm
+                                        , "      , 'Text' => " ++ showPhpStr str
+                                        , "      )" ]
+       genViewSeg (ViewHtml i nm str) = [ "array ( 'segmentType' => 'Html'"
+                                        , "      , 'label' => " ++ lab i nm
+                                        , "      , 'Html' => " ++ showPhpStr str
+                                        , "      )" ]
+       genViewSeg (ViewExp _ objDef) =  [ "array ( 'segmentType' => 'Exp'"
+                                        , "      , 'label' => " ++ showPhpStr (objnm objDef) ++ " // view exp: " ++ escapePhpStr (showADL $ objctx objDef) -- note: unlabeled exps are labeled by (index + 1)
+                                        , "      , 'expSQL' =>"
+                                        , "          " ++ showPhpStr (prettySQLQuery fSpec 33 (objctx objDef))
+                                        , "      )"
+                                        ]
        conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
-       lab i = showPhpStr ("seg_"++show i)
+       lab i nm = showPhpStr (if null nm then "seg_"++show i else nm)
 
 generateInterfaces :: FSpec -> [String]
 generateInterfaces fSpec =

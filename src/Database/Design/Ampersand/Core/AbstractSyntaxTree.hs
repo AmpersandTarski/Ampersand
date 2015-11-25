@@ -327,9 +327,11 @@ data ViewSegment = ViewExp { vsgmNr   :: Integer
                            , vsgmObj  :: ObjectDef
                            }
                  | ViewText{ vsgmNr   :: Integer
+                           , vsgmName :: String
                            , vsgmTxt  :: String
                            } 
                  | ViewHtml{ vsgmNr   :: Integer
+                           , vsgmName :: String
                            , vsgmHtml :: String
                            } deriving (Eq, Show)
 

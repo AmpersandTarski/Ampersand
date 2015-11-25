@@ -130,8 +130,8 @@ instance Disambiguatable P_ViewD where
    where constraints = Cnstr [MustBe (pCpt2aCpt c)] []
 
 instance Disambiguatable P_ViewSegmt where
-  disambInfo (P_ViewText nr a) _ = (P_ViewText nr a,noConstraints)
-  disambInfo (P_ViewHtml nr a) _ = (P_ViewHtml nr a,noConstraints)
+  disambInfo (P_ViewText nr nm a) _ = (P_ViewText nr nm a,noConstraints)
+  disambInfo (P_ViewHtml nr nm a) _ = (P_ViewHtml nr nm a,noConstraints)
   disambInfo (P_ViewExp nr a) i = (P_ViewExp nr a',r)
     where (a',r) = disambInfo a i
 

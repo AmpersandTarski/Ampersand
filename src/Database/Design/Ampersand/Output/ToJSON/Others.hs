@@ -83,16 +83,16 @@ instance JSON ViewDef View where
 instance JSON ViewSegment JSONViewSegment where
  fromAmpersand fSpec seg = 
   case seg of 
-   (ViewText i str) -> JSONViewSegment
+   (ViewText i nm str) -> JSONViewSegment
     { vwsJSONsegmentType = "Text"
-    , vwsJSONlabel     = lab i
+    , vwsJSONlabel     = lab i nm
     , vwsJSONText      = Just str
     , vwsJSONHtml      = Nothing
     , vwsJSONexpSQL    = Nothing
     }
-   (ViewHtml i str) -> JSONViewSegment
+   (ViewHtml i nm str) -> JSONViewSegment
     { vwsJSONsegmentType = "Html"
-    , vwsJSONlabel     = lab i
+    , vwsJSONlabel     = lab i nm
     , vwsJSONText      = Nothing
     , vwsJSONHtml      = Just str
     , vwsJSONexpSQL    = Nothing
@@ -105,7 +105,7 @@ instance JSON ViewSegment JSONViewSegment where
     , vwsJSONexpSQL    = Just . prettySQLQuery fSpec 0 . objctx $ objDef
     }
   where
-   lab i = "segmnt_"++show i
+   lab i nm = if null nm then "seg_"++show i else nm
 
 
 
