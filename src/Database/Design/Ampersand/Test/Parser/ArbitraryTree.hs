@@ -303,8 +303,8 @@ instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
     arbitrary =
         oneof [
             P_ViewExp  <$> arbitrary <*> arbitrary,
-            P_ViewText <$> arbitrary <*> safeStr,
-            P_ViewHtml <$> arbitrary <*> safeStr
+            P_ViewText <$> arbitrary <*> arbitrary <*> safeStr,
+            P_ViewHtml <$> arbitrary <*> arbitrary <*> safeStr
         ]
 
 instance Arbitrary PPurpose where

@@ -322,8 +322,16 @@ instance Pretty ViewHtmlTemplate where
 instance Pretty a => Pretty (P_ViewSegmt a) where
     pretty (P_ViewExp _ (P_Obj nm _ ctx _ _ _ _))
                               = maybeQuote nm <+> text ":" <~> ctx
-    pretty (P_ViewText _ txt) = text "TXT" <+> quote txt
-    pretty (P_ViewHtml _ htm) = text "PRIMHTML" <+> quote htm
+    pretty (P_ViewText _ lab txt) = 
+      (case lab of 
+        []     -> empty
+        nm     -> maybeQuote nm <+> text ":" 
+      ) <~>  text "TXT" <+> quote txt
+    pretty (P_ViewHtml _ lab htm) =
+      (case lab of 
+        []     -> empty
+        nm     -> maybeQuote nm <+> text ":" 
+      ) <~>  text "PRIMHTML" <+> quote htm
                         
 instance Pretty PPurpose where
     pretty (PRef2 _ obj markup refIds) =

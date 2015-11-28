@@ -456,10 +456,10 @@ pViewDefLegacy = P_Vd <$> currPos
           --- ViewSegment ::= Attr | 'TXT' String | 'PRIMHTML' String
           pViewSegment :: AmpParser P_ViewSegment
           pViewSegment = P_ViewExp  fat <$> pAtt <|>
-                         P_ViewText fat <$> pLabel <* pKey "TXT" <*> pString <|>
-                         P_ViewHtml fat <$> pLabel <* pKey "PRIMHTML" <*> pString
+                         P_ViewText fat noLabel <$ pKey "TXT" <*> pString <|>
+                         P_ViewHtml fat noLabel <$ pKey "PRIMHTML" <*> pString
                where fat = fatal 399 "numbering is done a little later."
-
+                     noLabel = ""
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term (ADLid | Conid)? SubInterface
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       <*>
