@@ -16,6 +16,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , IdentitySegment(..)
  , ViewDef(..)
  , ViewSegment(..)
+ , ViewSegmentPayLoad(..)
  , A_Gen(..)
  , Interface(..)
  , getInterfaceByName
@@ -317,22 +318,23 @@ data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in
                   , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --                  , vdtext :: Maybe ViewText -- Future extension
                   , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
-                  } deriving (Eq,Show)
+                  } deriving (Show)
 instance Named ViewDef where
   name = vdlbl
 instance Traced ViewDef where
   origin = vdpos
-
-data ViewSegment = ViewExp { vsgmNr   :: Integer
-                           , vsgmObj  :: ObjectDef
+data ViewSegment = ViewSegment
+     { vsmpos :: Origin
+     , vsmlabel :: Maybe String
+     , vsmSeqNr :: Integer
+     , vsmLoad  :: ViewSegmentPayLoad
+     } deriving Show
+data ViewSegmentPayLoad
+                 = ViewExp { vsgmExpr :: Expression
                            }
-                 | ViewText{ vsgmNr   :: Integer
-                           , vsgmName :: String
-                           , vsgmTxt  :: String
+                 | ViewText{ vsgmTxt  :: String
                            } 
-                 | ViewHtml{ vsgmNr   :: Integer
-                           , vsgmName :: String
-                           , vsgmHtml :: String
+                 | ViewHtml{ vsgmHtml :: String
                            } deriving (Eq, Show)
 
 

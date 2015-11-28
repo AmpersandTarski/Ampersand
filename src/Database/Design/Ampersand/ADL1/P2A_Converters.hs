@@ -426,18 +426,28 @@ pCtx2aCtx' _
               })
        <$> traverse (typeCheckViewSegment o) pvs
 
-    typeCheckViewSegment :: (P_ViewD a) -> (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
-    typeCheckViewSegment o vs
+    typeCheckViewSegment :: P_ViewD a -> P_ViewSegment (TermPrim, DisambPrim) -> Guarded ViewSegment
+    typeCheckViewSegment o seg
+      = (\vdts
+         -> ViewSegment { vsmpos = origin seg
+                        , vsmlabel = vsm_labl seg
+                        , vsmSeqNr = vsm_nr seg
+                        , vsmLoad  = vdts
+                        }
+        ) <$> traverse (typeCheckViewSegmentPayLoad o) (vsm_load seg)
+    
+    typeCheckViewSegmentPayLoad ::P_ViewD a -> P_ViewSegmtPayLoad  (TermPrim, DisambPrim) -> Guarded ViewSegmentPayLoad
+    typeCheckViewSegmentPayLoad o vs
      = case vs of 
         P_ViewExp{} -> 
           unguard $
-            (\(obj,b) -> case findExact genLattice (mIsc c (name (source (objctx obj)))) of
-                           [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                           r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
-                                 else mustBeBound (origin obj) [(Tgt,objctx obj)])
-         <$> typecheckObjDef (vs_obj vs)
-        P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_name vs) (vs_txt vs)
-        P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_name vs) (vs_htm vs)
+            (\(expr,b) -> case findExact genLattice (mIsc c (name (source expr))) of
+                           [] -> mustBeOrdered o o (Src,(source expr),expr)
+                           r  -> if b || c `elem` r then pure (ViewExp (addEpsilonLeft' (head r) expr))
+                                 else mustBeBound (origin expr) [(Tgt,expr)])
+         <$> typecheckTerm (vs_expr vs)
+        P_ViewText{} -> pure$ ViewText (vs_txt vs)
+        P_ViewHtml{} -> pure$ ViewHtml (vs_htm vs)
      where c = name (vd_cpt o)
     
     isa :: String -> String -> Bool

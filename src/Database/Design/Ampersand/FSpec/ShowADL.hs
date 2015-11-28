@@ -182,13 +182,18 @@ instance ShowADL ViewDef where
   = "VIEW "++vdlbl vd
           ++ ": " ++name (vdcpt vd)
           ++ "(" ++intercalate ", " (map showADL $ vdats vd) ++ ")"
-
+     --TODO: Make this output the more generic FancyViewDef 
 instance ShowADL ViewSegment where
+ showADL vs = ( case vsmlabel vs of
+                  Nothing -> ""
+                  Just s  -> s ++ " : "
+              ) ++ showADL (vsmLoad vs)
+instance ShowADL ViewSegmentPayLoad where
  showADL x = case x of
-   (ViewExp _ objDef)  -> lab(name objDef) ++ showADL (objctx objDef)
-   (ViewText _ nm str) -> lab nm ++"TXT " ++ show str
-   (ViewHtml _ nm str) -> lab nm ++"PRIMHTML " ++ show str
-  where lab str = if null str then "" else "\""++str++"\": " 
+   (ViewExp expr)  -> showADL expr
+   (ViewText str) -> "TXT " ++ show str
+   (ViewHtml str) -> "PRIMHTML " ++ show str
+  
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only
 --instance ShowADL Relation where
