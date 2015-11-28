@@ -391,7 +391,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> (pBraces ((P_ViewExp fat <$> pViewObj) `sepBy` pComma)) `opt` []
+                      <*> (pBraces (pViewObj `sepBy` pComma)) `opt` []
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos nm cpt isDef ats html =
@@ -402,19 +402,33 @@ pFancyViewDef  = mkViewDef <$> currPos
                  , vd_html = html
                  , vd_ats = numbered ats
                  }
-          fat = fatal 363 "Numbering of segment goes wrong."
           numbered xs = map numbr (zip [1..] xs)
               where numbr (i,x)= x{vs_nr=i}
           --- ViewObjList ::= ViewObj (',' ViewObj)*
-          --- ViewObj ::= Label Term
-          pViewObj :: AmpParser P_ObjectDef
-          pViewObj = P_Obj <$> pLabel
-                           <*> currPos
-                           <*> pTerm
-                           <*> return Nothing
-                           <*> return Nothing
-                           <*> return Nothing
-                           <*> return []
+          --- ViewObj ::= Label (Term | 'TXT' String)
+          pViewObj :: AmpParser P_ViewSegment
+          pViewObj = 
+               build <$> currPos
+                     <*> pLabel
+                     <*> (     Right <$ pKey "TXT" <*> pString
+                           <|> Left <$> pTerm
+                         )
+               where build :: Origin -> String -> (Either (Term TermPrim) String) -> P_ViewSegment
+                     build pos lab x =
+                       case x of 
+                         Left t -> P_ViewExp fat P_Obj { obj_nm    = lab
+                                                       , obj_pos   = pos
+                                                       , obj_ctx   = t
+                                                       , obj_crud  = Nothing  
+                                                       , obj_mView = Nothing
+                                                       , obj_msub  = Nothing
+                                                       , obj_strs  = []
+                                                       }
+                         Right  str 
+                               -> P_ViewText fat lab str
+                     fat = fatal 429 "numbering is done a little later."
+                     
+                              
           
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
           pHtmlView :: AmpParser ViewHtmlTemplate
