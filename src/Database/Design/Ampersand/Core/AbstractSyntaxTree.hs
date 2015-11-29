@@ -329,6 +329,8 @@ data ViewSegment = ViewSegment
      , vsmSeqNr :: Integer
      , vsmLoad  :: ViewSegmentPayLoad
      } deriving Show
+instance Traced ViewSegment where
+  origin = vsmpos
 data ViewSegmentPayLoad
                  = ViewExp { vsgmExpr :: Expression
                            }

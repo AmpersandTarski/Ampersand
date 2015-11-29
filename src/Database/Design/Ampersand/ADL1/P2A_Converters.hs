@@ -434,17 +434,17 @@ pCtx2aCtx' _
                         , vsmSeqNr = vsm_nr seg
                         , vsmLoad  = vdts
                         }
-        ) <$> traverse (typeCheckViewSegmentPayLoad o) (vsm_load seg)
+        ) <$> (typeCheckViewSegmentPayLoad o) (vsm_load seg :: P_ViewSegmtPayLoad (TermPrim, DisambPrim))
     
     typeCheckViewSegmentPayLoad ::P_ViewD a -> P_ViewSegmtPayLoad  (TermPrim, DisambPrim) -> Guarded ViewSegmentPayLoad
     typeCheckViewSegmentPayLoad o vs
      = case vs of 
         P_ViewExp{} -> 
           unguard $
-            (\(expr,b) -> case findExact genLattice (mIsc c (name (source expr))) of
+            (\(expr,(b,_)) -> case findExact genLattice (mIsc c (name (source expr))) of
                            [] -> mustBeOrdered o o (Src,(source expr),expr)
                            r  -> if b || c `elem` r then pure (ViewExp (addEpsilonLeft' (head r) expr))
-                                 else mustBeBound (origin expr) [(Tgt,expr)])
+                                 else mustBeBound (origin o) [(Tgt,expr)])
          <$> typecheckTerm (vs_expr vs)
         P_ViewText{} -> pure$ ViewText (vs_txt vs)
         P_ViewHtml{} -> pure$ ViewHtml (vs_htm vs)

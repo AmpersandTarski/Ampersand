@@ -231,7 +231,7 @@ buildInterface fSpec allIfcs ifc =
                   ; mSpecificTemplatePath <-
                           case mView of
                             Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just ("views" </> fName, [ viewAttr | ViewExp _ Obj{objnm=viewAttr} <- viewSegs])
+                              -> return $ Just ("views" </> fName, mapMaybe vsmlabel viewSegs)
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
                              do { let templatePath = "views" </> "Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"

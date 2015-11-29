@@ -553,13 +553,18 @@ instance ShowHS ViewDef where
   = "Vd ("++showHS opts "" (vdpos vd)++") "++show (vdlbl vd)++" "++showHSName (vdcpt vd)
     ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS opts indent) $ vdats vd)++indent++"  ]"
 
---instance ShowHSName ViewSegment where
+instance ShowHS ViewSegment where
+  showHS opts indent vs =
+    "ViewSegment "++showHS opts indent (origin vs) ++ " "
+                  ++showHS opts indent (vsmlabel vs)
+                  ++" "++show (vsmSeqNr vs)++" "
+                  ++showHS opts indent (vsmLoad vs)
 -- showHSName vd = haskellIdentifier ("vdef_"++name vd)
 
-instance ShowHS ViewSegment where
- showHS _     _     (ViewText i _ str)    = "ViewText "++show i ++show str
- showHS _     _     (ViewHtml i _ str)    = "ViewHtml "++show i ++show str
- showHS opts indent (ViewExp  i objDef) = "ViewExp " ++show i ++showHS opts (indent++"            ") objDef
+instance ShowHS ViewSegmentPayLoad where
+ showHS _     _     (ViewText str)  = "ViewText "++show str
+ showHS _     _     (ViewHtml str)  = "ViewHtml "++show str
+ showHS opts indent (ViewExp  expr) = showHS opts (indent++"            ") expr
 
 instance ShowHS Population where
  showHS _ indent pop

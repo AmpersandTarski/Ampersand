@@ -676,7 +676,8 @@ data P_ViewD a =
               } deriving (Show)
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
  p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
-              
+instance Traced (P_ViewD a) where
+ origin = vd_pos
 instance Named (P_ViewD a) where
  name = vd_lbl
 instance Functor P_ViewD where fmap = fmapDefault
@@ -690,6 +691,8 @@ data P_ViewSegment a =
                    , vsm_org :: Origin
                    , vsm_load :: P_ViewSegmtPayLoad a
                    } deriving Show
+instance Traced (P_ViewSegment a) where
+  origin = vsm_org
 instance Functor P_ViewSegment where fmap = fmapDefault
 instance Foldable P_ViewSegment where foldMap = foldMapDefault
 instance Traversable P_ViewSegment where
@@ -716,9 +719,6 @@ instance Traversable P_ViewSegmtPayLoad where
  traverse f (P_ViewExp a) = P_ViewExp <$> traverse f a
  traverse _ (P_ViewText a) = pure (P_ViewText a)
  traverse _ (P_ViewHtml a) = pure (P_ViewHtml a)
-
-instance Traced (P_ViewD a) where
- origin = vd_pos
 
 
 -- PPurpose is a parse-time constructor. It contains the name of the object it explains.
