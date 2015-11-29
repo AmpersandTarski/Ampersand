@@ -491,18 +491,19 @@ pCtx2aCtx _
     isa :: Type -> Type -> Bool
     isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
     
-    typecheckObjDef :: (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
-    typecheckObjDef o@(P_Obj { obj_nm = nm
-                             , obj_pos = orig
-                             , obj_ctx = ctx
-                             , obj_crud = mCrud
-                             , obj_mView = mView
-                             , obj_msub = subs
-                             , obj_strs = ostrs
-                             })
+    typecheckObjDef :: DeclMap -> (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
+    typecheckObjDef declMap
+       o@(P_Obj { obj_nm = nm
+         , obj_pos = orig
+         , obj_ctx = ctx
+         , obj_crud = mCrud
+         , obj_mView = mView
+         , obj_msub = subs
+         , obj_strs = ostrs
+         })
      = do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
           crud <- pCruds2aCruds mCrud
-          maybeObj <- maybeOverGuarded (pSubi2aSubi objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
+          maybeObj <- maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
           case maybeObj of
                Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
                Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
