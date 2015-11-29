@@ -9,10 +9,6 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.SQL (prettySQLQuery)
 import Database.Design.Ampersand.Basics
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "ToJSON.Others"
-
-
 data TableColumnInfos = TableColumnInfos [TableColumnInfo] deriving (Generic, Show)
 data TableColumnInfo = TableColumnInfo
   { plgJSONname      :: String
