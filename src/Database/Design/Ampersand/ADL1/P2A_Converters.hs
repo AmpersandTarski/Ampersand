@@ -572,17 +572,16 @@ pCtx2aCtx _
                                          Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
                   cs <- pCruds2aCruds (si_crud x)
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-                  return (objExprEps,InterfaceRef (si_isLink x) ifcId cs)))
+                  return (objExprEps,InterfaceRef (si_isLink x) ifcId cs)
          P_Box{}
            -> case si_box x of
                 []  -> const undefined <$> (hasNone x :: Guarded SubInterface) -- error
                 l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
-              ( case toList$ findExact genLattice (lMeet (aConcToType$ target objExpr) (aConcToType . source . objctx $ ojd)) of
+                case toList$ findExact genLattice (lMeet (aConcToType$ target objExpr) (aConcToType . source . objctx $ ojd)) of
                     [] -> mustBeOrderedLst x [(source (objctx ojd),Src, ojd)]
                     (r:_) -> pure (ojd{objctx=addEpsilonLeft' r (objctx ojd)})
-              )
               else mustBeBound (origin ojd) [(Src,objctx ojd),(Tgt,objExpr)]
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
