@@ -572,7 +572,7 @@ pCtx2aCtx _
                                          Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
                   cs <- pCruds2aCruds (si_crud x)
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-                  return (objExprEps,InterfaceRef (si_isLink x) ifcId cs)))
+                  return (objExprEps,InterfaceRef (si_isLink x) ifcId cs)
          P_Box{}
            -> case si_box x of
                 []  -> const undefined <$> (hasNone x :: Guarded SubInterface) -- error
