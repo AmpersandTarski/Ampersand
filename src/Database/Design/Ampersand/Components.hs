@@ -38,11 +38,6 @@ generateAmpersandOutput fSpec =
     ; verboseLn (getOpts fSpec) "Done."
     }
 
--- An expression e is type ambiguous means that   (showADL e) cannot be parsed (in the context of fSpec) without a type ambiguity error.
--- Q: Should we disambiguate the exprs in the fSpec i.e. mapexprs disambiguate fSpec fSpec?
---    Or do we assume a correct implementation with unambiguous expressions only?
--- A: The fSpec may contain disambiguated expressions only. If one expression somewhere in fSpec is type-ambiguous, fSpec is wrong.
---    So the answer is: we assume a correct implementation with unambiguous expressions only.
 doGenADL :: FSpec -> IO()
 doGenADL fSpec =
  do { writeFile outputFile . showADL . originalContext $ fSpec
@@ -94,12 +89,7 @@ doGenDocument fSpec =
      -- postProcessing of the generated output file depends on the format:
     ; postProcessor
     }
-  where (thePandoc,thePictures) =
-          case (theme (getOpts fSpec), fspecFormat (getOpts fSpec)) of
- -- TODO Ticket #104: Could not find texOnly_proofdoc in any module? Where has in gone?
- --                (ProofTheme, FLatex ) -> (texOnly_proofdoc fSpec,[])     --generate a proof document
-                 (ProofTheme, _      ) -> fatal 116 "Ampersand only supports proof documents output in LaTeX format. try `-fLatex` "
-                 (_         , _      ) -> fSpec2Pandoc fSpec
+  where (thePandoc,thePictures) = fSpec2Pandoc fSpec
         (outputFile,makeOutput,postProcessor) = writepandoc fSpec thePandoc
 
 -- | This function will generate an Excel workbook file, containing an extract from the FSpec

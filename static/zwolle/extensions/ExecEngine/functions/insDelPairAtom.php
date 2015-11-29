@@ -151,7 +151,10 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 			if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 			
 			// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-			if($srcAtom == '_NULL' or $tgtAtom == '_NULL') continue; 
+			if($srcAtom == '_NULL' or $tgtAtom == '_NULL') {
+				Notifications::addLog("Skipping insPair $relation, because source and tgt are null", 'ExecEngine');
+				continue; 
+			}
 			
 			// populate relation r1, first checking for allowed syntax:		
 			if (!($srcAtom == '_NEW' or $tgtAtom == '_NEW')){ // Note: when populating a [PROP] relation, both atoms can be new

@@ -1,11 +1,11 @@
 <?php 
 /* This file defines the (php) function 'TransitiveClosure', that computes the transitive closure of a relation.
 
-   Suppose you have a relation r :: C * C, and that you need the transitive closure r* of that relation.
+   Suppose you have a relation r :: C * C, and that you need the transitive closure r+ of that relation.
    Since r* is not supported in the prototype generator as is, we need a way to instruct the ExecEngine
-   to populate a relation rStar :: C * C that contains the same population as r*
-   Maintaining the population of rStar correctly is not trivial, particularly when r is depopulated.
-   The easiest way around this is to compute rStar from scratch (using Warshall's algorithm).
+   to populate a relation rPlus :: C * C that contains the same population as r+
+   Maintaining the population of rPlus correctly is not trivial, particularly when r is depopulated.
+   The easiest way around this is to compute rPlus from scratch (using Warshall's algorithm).
    However, you then need to know that r is being (de)populated, so we need a copy of r.
 
    This leads to the following pattern:
@@ -25,19 +25,20 @@
    2) Of course, there are all sorts of alternative ways in which 'TransitiveClosure' can be used.
    3) There are ways to optimize the below code, e.g. by splitting the function into an 'InsTransitiveClosure'
       and a 'DelTransitiveClosure'
+   4) Rather than defining/computing rStar (for r*), you may use the expression (I \/ rPlus)
 */
 
 
-function TransitiveClosure($r,$C,$rCopy,$rStar){
+function TransitiveClosure($r,$C,$rCopy,$rPlus){
 	if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rStar)", 'ExecEngine');
+	Notifications::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)", 'ExecEngine');
 	
 	$warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
 	$execEngineRunCount = ExecEngine::$runCount;
 
 	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
 		if($warshallRunCount == $execEngineRunCount){
-			Notifications::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rStar)", 'ExecEngine');
+			Notifications::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)", 'ExecEngine');
 			return;  // this is the case if we have executed this function already in this transaction
 		}		
 	}
@@ -70,7 +71,7 @@ function TransitiveClosure($r,$C,$rCopy,$rStar){
 		}
 	}
 	
-	OverwritePopulation($closure, $rStar, $C);
+	OverwritePopulation($closure, $rPlus, $C);
 }
 
 function RetrievePopulation($relationName, $concept){
@@ -106,7 +107,7 @@ function OverwritePopulation($rArray, $relationName, $concept){
 		$srcCol = Relation::getSrcCol($fullRelationSignature);
 		$tgtCol = Relation::getTgtCol($fullRelationSignature);
 		
-		$query = "TRUNCATE TABLE $table";
+		$query = "DELETE FROM $table"; // Do not use TRUNCATE statement, this causes an implicit commit
 		$database->Exe($query);
 		
 		foreach($rArray as $src => $tgtArray){

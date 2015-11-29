@@ -9,35 +9,25 @@ import Database.Design.Ampersand.Output.ToJSON.Rules
 import Database.Design.Ampersand.Output.ToJSON.Concepts 
 import Database.Design.Ampersand.Output.ToJSON.Conjuncts 
 import Database.Design.Ampersand.Output.ToJSON.Interfaces 
-
+import Database.Design.Ampersand.Output.ToJSON.Others
 generateJSONfiles :: FSpec -> IO ()
 generateJSONfiles fSpec =
- sequence_ [ writeJSON "settings" settings
-           , writeJSON "mysql-installer" mySqlInstaller
-           , writeJSON "relations" relations
-           , writeJSON "rules" rules
-           , writeJSON "concepts" concepts
-           , writeJSON "conjuncts" conjuncts
-           , writeJSON "interfaces" interfaces
+ sequence_ [ writeJSON "settings"   (fromAmpersand fSpec fSpec :: Settings)
+           , writeJSON "mysql-installer"
+                                    (fromAmpersand fSpec fSpec :: MySQLInstaller)
+           , writeJSON "relations"  (fromAmpersand fSpec fSpec :: Relations)
+           , writeJSON "rules"      (fromAmpersand fSpec fSpec :: Rules)
+           , writeJSON "concepts"   (fromAmpersand fSpec fSpec :: Concepts)
+           , writeJSON "conjuncts"  (fromAmpersand fSpec fSpec :: Conjuncts)
+           , writeJSON "interfaces" (fromAmpersand fSpec fSpec :: Interfaces)
+           , writeJSON "tables"     (fromAmpersand fSpec fSpec :: TableColumnInfos)
+           , writeJSON "views"      (fromAmpersand fSpec fSpec :: Views)
            ]
 
   where 
     writeJSON :: ToJSON  a => String -> a -> IO()
     writeJSON = writeJSONFile fSpec 
-    settings :: Settings
-    settings = fromAmpersand fSpec fSpec
-    mySqlInstaller :: MySQLInstaller
-    mySqlInstaller = fromAmpersand fSpec fSpec
-    relations :: Relations
-    relations = fromAmpersand fSpec fSpec
-    rules :: Rules
-    rules = fromAmpersand fSpec fSpec
-    concepts :: Concepts
-    concepts = fromAmpersand fSpec fSpec
-    conjuncts :: Conjuncts
-    conjuncts = fromAmpersand fSpec fSpec
-    interfaces :: Interfaces
-    interfaces = fromAmpersand fSpec fSpec
+
 {- Note on data structure convention
    The data definitions in this module are not ment to be exported. The idea on naming is that all names
    contain a substring `JSON`. The part following that substring will be the name of the JSON attribute  -}

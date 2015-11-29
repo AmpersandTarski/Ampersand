@@ -8,7 +8,7 @@
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
 module Database.Design.Ampersand.FSpec.ShowADL
-    ( ShowADL(..), LanguageDependent(..), showPAclause, showREL)
+    ( ShowADL(..), showPAclause, showREL)
 where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -18,48 +18,15 @@ import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List
 import Prelude
---import Data.Time.Calendar
+import Data.Char
 
 
 class ShowADL a where
  showADL :: a -> String
 
--- there are data types yielding language dependent data like an Expression
--- the LanguageDependent class provides function(s) to map language dependent functions on those data if any.
--- for example to print all expressions in a data structure with a practical amount of type directives
--- (instances have been created when needed)
---
--- LanguageDependent is part of ShowAdl because the only application at time of writing is to disambiguate expressions for the purpose of printing
--- SJ 31-12-2012: Since 'disambiguate' has become obsolete, do we still need this?
-class LanguageDependent a where
-  mapexprs :: (Language l, ConceptStructure l, Named l) => (l -> Expression -> Expression) -> l -> a -> a
-  mapexprs _ _ = id
-
-instance LanguageDependent a => LanguageDependent (Maybe a) where
-  mapexprs _ _ Nothing  = Nothing
-  mapexprs f l (Just x) = Just $ mapexprs f l x
-
-instance LanguageDependent (a, Expression) where
-  mapexprs f l (x,e) = (x, f l e)
-instance LanguageDependent Rule where
-  mapexprs f l rul = rul{rrexp = f l (rrexp rul)}
-instance LanguageDependent Interface where
-  mapexprs f l ifc = ifc{ifcObj = mapexprs f l (ifcObj ifc)}
-instance LanguageDependent ObjectDef where
-  mapexprs f l obj = obj{objctx = f l (objctx obj), objmsub = mapexprs f l $ objmsub obj}
-instance LanguageDependent SubInterface where
-  mapexprs _ _ iref@(InterfaceRef _ _) = iref
-  mapexprs f l (Box o cl objs) = Box o cl $ map (mapexprs f l) objs
-instance LanguageDependent Declaration where
-  mapexprs _ _ = id
-instance LanguageDependent ECArule where
-  mapexprs _ _ = id
-instance LanguageDependent Event where
-  mapexprs _ _ = id
---------------------------------------------------------------
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
-  showADL (P_InterfaceRef _ isLink nm) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
+  showADL (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
 
 instance ShowADL (Maybe TType) where
   showADL (Just v) = show v
@@ -76,7 +43,7 @@ instance ShowADL ObjectDef where
                recur "\n  " (objmsub obj)
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
-        recur ind (Just (InterfaceRef isLink nm)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
+        recur ind (Just (InterfaceRef isLink nm cruds)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm++showADL cruds
         recur ind (Just (Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
@@ -89,6 +56,14 @@ instance ShowADL ObjectDef where
            ind++"     ]"
         showClass Nothing = ""
         showClass (Just cl) = "<" ++ cl ++ ">" -- TODO: parser cannot handle these class annotations yet
+instance ShowADL Cruds where
+ showADL x = " "++f crudC 'C'++f crudR 'R'++f crudU 'U'++f crudD 'D'
+   where
+     f :: (Cruds -> Maybe Bool) -> Char -> String
+     f fun c = case fun x of
+                 Nothing -> ""
+                 Just b  -> [(if b then toUpper else toLower) c]
+     
 
 instance ShowADL Meta where
  showADL (Meta _ metaObj nm val) =

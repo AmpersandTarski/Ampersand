@@ -383,7 +383,7 @@ objAts :: ObjectDef -> [ObjectDef]
 objAts obj
   = case objmsub obj of
      Nothing       -> []
-     Just (InterfaceRef _ _) -> []
+     Just (InterfaceRef _ _ _) -> []
      Just (Box _ _ objs)     -> objs
 
 class Object a where
@@ -421,9 +421,11 @@ instance Default Cruds where
               , crudU    = Nothing
               , crudD    = Nothing
               }
-data SubInterface = Box A_Concept (Maybe String) [ObjectDef]
-                  | InterfaceRef Bool -- is LINKTO?
-                                 String deriving (Eq, Show)
+
+data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 
+                  | InterfaceRef Bool -- is LINKTO? 
+                                 String 
+                                 Cruds deriving (Eq, Show)
 
 data InsDel   = Ins | Del
                  deriving (Show,Eq)

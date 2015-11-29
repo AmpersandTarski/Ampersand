@@ -440,14 +440,9 @@ FALSE
 
 INTERFACEs
 
-7
+2
 (?<=\bINTERFACE[\s]+)
   ("[\s_-().,'\w]*"|\b[_-().,'\w]*\b)
-(?=([\s\r\n]*
-     (|\([^\)]*\)\s*
-     ):
-   )
-)
 FALSE
 FALSE
 13

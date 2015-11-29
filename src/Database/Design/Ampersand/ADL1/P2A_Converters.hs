@@ -119,7 +119,7 @@ checkInterfaceCycles ctx = if null interfaceCycles then return () else Errors $ 
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
                                    Nothing                  -> []
-                                   Just (InterfaceRef isLinkto nm) -> [nm | not isLinkto]
+                                   Just (InterfaceRef isLinkto nm _) -> [nm | not isLinkto]
                                    Just (Box _ _ objs)      -> concatMap getDeepIfcRefs objs
             lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                    [ifc] -> ifc
@@ -491,40 +491,22 @@ pCtx2aCtx _
     isa :: Type -> Type -> Bool
     isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
     
-    typecheckObjDef :: DeclMap -> (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
-    typecheckObjDef declMap
-      o@(P_Obj { obj_nm = nm
-               , obj_pos = orig
-               , obj_ctx = ctx
-               , obj_crud = mCrud
-               , obj_mView = mView
-               , obj_msub = subs
-               , obj_strs = ostrs
-               })
+    typecheckObjDef :: (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
+    typecheckObjDef o@(P_Obj { obj_nm = nm
+                             , obj_pos = orig
+                             , obj_ctx = ctx
+                             , obj_crud = mCrud
+                             , obj_mView = mView
+                             , obj_msub = subs
+                             , obj_strs = ostrs
+                             })
      = do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
           crud <- checkCrud mCrud
-          maybeObj <- maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
+          maybeObj <- maybeOverGuarded (pSubi2aSubi objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
           case maybeObj of
                Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
                Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
      where      
-      checkCrud :: Maybe P_Cruds -> Guarded Cruds
-      checkCrud Nothing = pure def
-      checkCrud (Just (P_Cruds org str )) 
-        = if nub us == us && all (\c -> c `elem` "cCrRuUdD") str
-          then pure Cruds { crudOrig = org
-                          , crudC    = f 'C'
-                          , crudR    = f 'R'
-                          , crudU    = f 'U'
-                          , crudD    = f 'D'
-              }
-          else Errors [mkInvalidCRUDError orig str]
-         where us = map toUpper str
-               f :: Char -> Maybe Bool
-               f c 
-                 | toUpper c `elem` str = Just True
-                 | toLower c `elem` str = Just False
-                 | otherwise            = Nothing    
       lookupView :: String -> Maybe P_ViewDef
       lookupView viewId = case [ vd | vd <- p_viewdefs, vd_lbl vd == viewId ] of
                             []   -> Nothing
@@ -556,6 +538,23 @@ pCtx2aCtx _
     addEpsilon :: Type -> Type -> Expression -> Expression
     addEpsilon s t e
      = addEpsilonLeft' s (addEpsilonRight' t e)
+    pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
+    pCruds2aCruds Nothing = pure def
+    pCruds2aCruds (Just (P_Cruds org str )) 
+        = if nub us == us && all (\c -> c `elem` "cCrRuUdD") str
+          then pure Cruds { crudOrig = org
+                          , crudC    = f 'C'
+                          , crudR    = f 'R'
+                          , crudU    = f 'U'
+                          , crudD    = f 'D'
+              }
+          else Errors [mkInvalidCRUDError org str]
+         where us = map toUpper str
+               f :: Char -> Maybe Bool
+               f c 
+                 | toUpper c `elem` str = Just True
+                 | toLower c `elem` str = Just False
+                 | otherwise            = Nothing    
 
     pSubi2aSubi :: DeclMap
                 -> Expression -- Expression of the surrounding
@@ -568,11 +567,12 @@ pCtx2aCtx _
     pSubi2aSubi declMap objExpr b o x
       = case x of
          P_InterfaceRef{si_str = ifcId} 
-           -> do (refIfcExpr,_) <- case (lookupDisambIfcObj declMap) ifcId of
-                                        Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
-                                        Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
-                 objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-                 return (objExprEps,InterfaceRef (si_isLink x) ifcId)
+           ->  do (refIfcExpr,_) <- case lookupDisambIfcObj declMap ifcId of
+                                         Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                                         Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
+                  cs <- pCruds2aCruds (si_crud x)
+                  objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
+                  return (objExprEps,InterfaceRef (si_isLink x) ifcId cs)))
          P_Box{}
            -> case si_box x of
                 []  -> const undefined <$> (hasNone x :: Guarded SubInterface) -- error

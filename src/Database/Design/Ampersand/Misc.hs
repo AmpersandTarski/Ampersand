@@ -7,7 +7,7 @@ import Database.Design.Ampersand.Misc.Languages
        (Lang(..), plural, allLangs)
 import Database.Design.Ampersand.Misc.Options
        (getOptions, Options(..),
-        verboseLn, verbose, DocTheme(..), FSpecFormat(..),
+        verboseLn, verbose, FSpecFormat(..),
         helpNVersionTexts,MetaType(..))
 import Database.Design.Ampersand.Misc.Explain
        (string2Blocks, blocks2String, PandocFormat(..))

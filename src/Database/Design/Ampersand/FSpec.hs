@@ -20,7 +20,7 @@ import Database.Design.Ampersand.FSpec.Plug
         showSQL, fldauto)
 import Database.Design.Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
-import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..), LanguageDependent(..))
+import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..))
 import Database.Design.Ampersand.FSpec.ShowECA (showECA)
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile,MetaType(..))
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc

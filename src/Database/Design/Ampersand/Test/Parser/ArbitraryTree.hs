@@ -62,7 +62,6 @@ makeObj genPrim ifcGen genView n =
         P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc <*> args
               where args = listOf $ listOf1 identifier
                     term = Prim <$> genPrim
-                    crud = suchThatMaybe (sublistOf "CRUDX")(notElem 'X')
                     ifc  = if n == 0 then return Nothing
                            else Just <$> ifcGen (n`div`2)
 
@@ -71,7 +70,7 @@ genIfc = subIfc genObj
 
 subIfc :: (Int -> Gen (P_ObjDef a)) -> Int -> Gen (P_SubIfc a)
 subIfc objGen n =
-    if n == 0 then P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
+    if n == 0 then P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1 <*> arbitrary
     else P_Box          <$> arbitrary <*> boxKey   <*> vectorOf n (objGen$ n`div`2)
     where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
 

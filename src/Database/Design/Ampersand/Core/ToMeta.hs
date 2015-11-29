@@ -266,6 +266,7 @@ instance MakeMeta a => MakeMeta (P_SubIfc a) where
       P_InterfaceRef{} -> P_InterfaceRef{ si_ori   = makeMeta f (si_ori sub)
                                         , si_isLink =            si_isLink sub
                                         , si_str   =            (si_str sub)
+                                        , si_crud  =            (si_crud sub)
                                         }
 
 instance MakeMeta a => MakeMeta (PairView a) where

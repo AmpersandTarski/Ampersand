@@ -51,6 +51,10 @@ data JSONSubInterface = JSONSubInterface
   , subJSONboxSubInterfaces   :: Maybe [JSONObjectDef]
   , subJSONrefSubInterfaceId  :: Maybe String
   , subJSONrefIsLinTo         :: Maybe Bool
+  , subJSONcrudC              :: Maybe Bool
+  , subJSONcrudR              :: Maybe Bool
+  , subJSONcrudU              :: Maybe Bool
+  , subJSONcrudD              :: Maybe Bool
   } deriving (Generic, Show)
 instance ToJSON JSONSubInterface where
   toJSON = amp2Jason
@@ -63,20 +67,28 @@ instance ToJSON JSONObjectDef where
 instance JSON FSpec Interfaces where
  fromAmpersand fSpec _ = Interfaces (map (fromAmpersand fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 instance JSON ([Declaration], SubInterface) JSONSubInterface where
- fromAmpersand fSpec (editableRels, sub) = JSONSubInterface
-  { subJSONboxClass           = case sub of
-                                 Box _ cl _       -> cl
-                                 InterfaceRef _ _ -> Nothing
-  , subJSONboxSubInterfaces   = case sub of
-                                 Box _ _ objs     -> Just . map (fromAmpersand fSpec) . zip (repeat editableRels) $ objs
-                                 InterfaceRef _ _ -> Nothing
-  , subJSONrefSubInterfaceId  = case sub of
-                                 Box _ _ _         -> Nothing
-                                 InterfaceRef _ nm -> Just nm
-  , subJSONrefIsLinTo         = case sub of
-                                 Box _ _ _         -> Nothing
-                                 InterfaceRef isLink _ -> Just isLink
-  }
+ fromAmpersand fSpec (editableRels, sub) = 
+   case sub of 
+     Box _ cl objs         -> JSONSubInterface
+       { subJSONboxClass   = cl
+       , subJSONboxSubInterfaces   = Just . map (fromAmpersand fSpec) . zip (repeat editableRels) $ objs
+       , subJSONrefSubInterfaceId  = Nothing
+       , subJSONrefIsLinTo         = Nothing
+       , subJSONcrudC              = Nothing
+       , subJSONcrudR              = Nothing
+       , subJSONcrudU              = Nothing
+       , subJSONcrudD              = Nothing
+       }
+     InterfaceRef isLink nm cr -> JSONSubInterface
+       { subJSONboxClass           = Nothing
+       , subJSONboxSubInterfaces   = Nothing
+       , subJSONrefSubInterfaceId  = Just nm
+       , subJSONrefIsLinTo         = Just isLink
+       , subJSONcrudC              = crudC cr
+       , subJSONcrudR              = crudR cr
+       , subJSONcrudU              = crudU cr
+       , subJSONcrudD              = crudD cr
+       }
  
 instance JSON Interface JSONInterface where
  fromAmpersand fSpec interface = JSONInterface

@@ -1,6 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
-  (showPlug
-  ,makeGeneratedSqlPlugs
+  (makeGeneratedSqlPlugs
   ,makeUserDefinedSqlPlug
   ,representationOf)
 where
@@ -8,33 +7,12 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import GHC.Exts (sortWith)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowHS --for debugging
 import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
-
--- Not the most ideal place for showPlug, but putting it in Database.Design.Ampersand.FSpec.FSpec creates an import cycle, which will require quite some effort to resolve.
-showPlug :: PlugSQL -> [String]
-showPlug plug =
-  [ "Table: " ++ (show $ sqlname plug) ++ " (" ++ plugType ++ ")" ] ++
-  indent 4
-    (blockParenthesize "[" "]" "," $ map showAttribute $ plugAttributes plug)
-  where plugType = case plug of
-          TblSQL{}    -> "wide"
-          BinSQL{}    -> "binary"
-          ScalarSQL{} -> "scalar"
-  
-        showAttribute :: SqlAttribute -> [String]
-        showAttribute att = ["{" ++ (if attNull att then "+" else "-") ++ "NUL," ++ (if attUniq att then "+" else "-") ++ "UNQ" ++
-                             (if att `elem` kernelAttributes then ", K} " else "}    ") ++
-                             (show $ attName att) ++ ": "++showADL (target $ attExpr att)]
-
-        kernelAttributes = case plug of 
-                             TblSQL{} -> map snd $ cLkpTbl plug
-                             _        -> [] -- binaries and scalars do not have kernel attributes
 
 makeGeneratedSqlPlugs :: Options
               -> A_Context
