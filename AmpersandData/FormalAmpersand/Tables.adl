@@ -1,30 +1,114 @@
 ﻿CONTEXT AST IN ENGLISH
+INCLUDE "Atoms.adl"
+INCLUDE "Tables.xlsx"
 
 PATTERN Tables
 CLASSIFY TblSQL ISA PlugInfo
 CLASSIFY BinSQL ISA PlugInfo
-RELATION context[PlugInfo*Context] [UNI,TOT]  
-RELATION concept[SqlAttribute*Concept] [UNI,TOT] -- name of concept in a column of a (broad) table
+RELATION context[PlugInfo*Context] [UNI]   -- Should be TOT too, when relations get a context.29-nov-2015 9:24
+RELATION concept[SqlAttribute*Concept] [UNI,TOT] -- concept in a column of a (broad) table
+MEANING "Every atom stored in an attribute is more specific than or equal to type Concept."
 RELATION null[SqlAttribute] [PROP] -- can this column be 'NULL'? ('true' or 'false')
 
-RELATION table[SqlAttribute*PlugInfo] [UNI,TOT]
+RELATION table[SqlAttribute*PlugInfo] [UNI]
 MEANING "Each SQL-attribute is a column in precisely one SQL-table."
-RELATION srcCol[Relation*SqlAttribute] [UNI,TOT]
+RELATION srcAtt[Relation*SqlAttribute] [UNI]
 MEANING "The source atoms of the population of a relation are stored in a specific database column"
-RELATION tgtCol[Relation*SqlAttribute] [UNI,TOT]
+RELATION tgtAtt[Relation*SqlAttribute] [UNI]
 MEANING "The target atoms of the population of a relation are stored in a specific  database column"
-RELATION conceptColumn[Concept*SqlAttribute] [TOT] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
+RELATION conceptAttribute[Concept*SqlAttribute] [TOT] -- alleen 'ONE' overtreedt de TOTaliteit hier, maar ONE gaat er toch uit.
 MEANING "the database-table columns that contain all atoms of a given concept"
 
 RELATION prop[Relation*Property]
 MEANING "Relations may have any number of properties from a predefined set of properties."
 
-RELATION key[PlugInfo*SqlAttribute] [UNI,TOT]
+RELATION key[TblSQL*SqlAttribute] [UNI,TOT]
 MEANING "Each PlugInfo has one field designated to contain atom keys."
 RELATION ttype[Concept*TType] [UNI,TOT]
 MEANING "Each Concept has a technical type."
-RELATION ttype[TblSQL*TType] [UNI,TOT]
+RELATION reprType[TblSQL*TType] [UNI,TOT]
 MEANING "Each wide table has precisely one technical type."
+
 ENDPATTERN
 
+
+INTERFACE PlugInfo (context[PlugInfo*Context],table, key, concept): I[TblSQL]
+BOX [ PlugInfo : I
+    , context : context[PlugInfo*Context]
+    , attributes : table~
+      BOX [ SqlAttribute : I
+          , concept : concept
+          ]
+    , key : key
+    ]
+
+INTERFACE SqlAttribute (concept): I[SqlAttribute] CRUD
+BOX [ SqlAttribute : I
+    , concept  : concept
+    , pluginfo : table
+    ]
+
+REPRESENT Atom TYPE ALPHANUMERIC
+
+INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
+TABS[ relations : V[SESSION*Relation]
+      BOX<SCOLS>
+           [ relation   : I[Relation]
+           , "pair(s)"  : in~
+           , srcAtt     : srcAtt
+           , tgtAtt     : tgtAtt
+           ]
+    , concepts :V[SESSION*Concept]
+      BOX<SCOLS>
+           [ name         : name
+           , "isa"   : isa
+--           , "isa+"  : isaPlus
+--           , "isa*"  : isaStar
+           , "isa~"  : isa~
+--           , "isa+~" : isaPlus~
+--           , "isa*~" : isaStar~
+           , conceptAttribute : conceptAttribute
+           , atoms        : pop~
+           ]
+    , pluginfos : V[SESSION*PlugInfo]
+      BOX<SCOLS>
+           [ PlugInfo : I
+           , context : context
+           ]
+    , pairs : V[SESSION*Pair]
+      BOX<SCOLS>
+           [ pair           : I[Pair]
+           , "relation(s)"  : in
+           ]
+--    , atoms : V[SESSION*Atom]
+--      BOX<SCOLS>
+--           [ atom : I
+--           , "smallest concept(s)" : pop - pop;isaPlus
+--           , pop  : pop
+--           ]
+    ]
+
+VIEW Concept : Concept(name)
+VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
+VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+
+INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+ROWS [ name             : name
+     , generalizations  : isa
+     , specializations  : isa~
+     ]
+
+INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+ROWS [ "relation(s)"  : in
+     , l              : l
+     , r              : r
+     ]
+
+INTERFACE RelTable(name[Relation*Identifier],source,target) : I[Relation]
+ROWS [ name    : name
+     , source  : source
+     , target  : target
+     , srcAtt  : srcAtt
+     , tgtAtt  : tgtAtt
+     ]
 ENDCONTEXT
