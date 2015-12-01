@@ -12,9 +12,9 @@ import Prelude hiding (Ordering(..))
 fatal :: Int -> String -> a
 fatal = fatalMsg "Classes.ConceptStructure"
 
-{- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn,
-   to preserve the meaning of relsMentionedIn (implemented using primsMentionedIn, which calls expressionsIn).
-   A more correct way to do this would be to not use expressionsIn, but define relsMentionedIn directly.
+{- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
+   (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but
+   define relsMentionedIn directly.
    
    Another improvement would be to factorize the prim constructors from the Expression data type, so expressionsIn won't need to be partial
    anymore.

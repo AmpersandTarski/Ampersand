@@ -205,13 +205,13 @@ generateTableInfos fSpec =
                                                  ++ ", 'srcConcept' => "++showPhpStr (name (source decl))
                                                  ++ ", 'tgtConcept' => "++showPhpStr (name (target decl))
                                                  ++ ", 'table'      => "++showPhpStr (name table)
-                                                 ++ ", 'srcAtt'     => "++showPhpStr (attName srcAtt)
-                                                 ++ ", 'tgtAtt'     => "++showPhpStr (attName tgtAtt)
+                                                 ++ ", 'srcCol'     => "++showPhpStr (attName srcCol)
+                                                 ++ ", 'tgtCol'     => "++showPhpStr (attName tgtCol)
                                                  ++ ", 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
                                                  ++ ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
                                                  ++ ")"]
          | decl@Sgn{} <- allDecls fSpec  -- SJ 13 nov 2013: changed to generate all relations instead of just the ones used.
-         , let (table,srcAtt,tgtAtt) = getDeclarationTableInfo fSpec decl
+         , let (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec decl
          , let affConjs = case lookup decl $ allConjsPerDecl fSpec of
                  Nothing    -> []
                  Just conjs -> conjs

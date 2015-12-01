@@ -190,7 +190,7 @@ makeFSpec opts context
      fSpecAllConjsPerRule :: [(Rule,[Conjunct])]
      fSpecAllConjsPerRule = converse [ (conj, rc_orgRules conj) | conj <- allConjs ]
      fSpecAllConjsPerDecl = converse [ (conj, relsUsedIn $ rc_conjunct conj) | conj <- allConjs ] 
-     fSpecAllConjsPerConcept = converse [ (conj, smaller (source r) `uni` smaller (target r)) | conj <- allConjs, r <- relsMentionedIn (rc_conjunct conj) ]
+     fSpecAllConjsPerConcept = converse [ (conj, smaller (source r) `uni` smaller (target r)) | conj <- allConjs, r <- relsMentionedIn $ rc_conjunct conj ]
                                where smaller :: A_Concept -> [A_Concept]
                                      smaller cpt = [cpt] `uni` smallerConcepts (gens context) cpt
      allQuads = quadsOfRules opts allrules 

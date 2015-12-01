@@ -68,7 +68,7 @@ instance GenericPopulations FSpec where
            [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "dbName" "Context" "DatabaseName"
            [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
-    , Comment " ", Comment ( "[Relations]--: (count="++(show.length.allDecls) fSpec++")" )]
+    , Comment " ", Comment $ "[Relations]--: (count="++(show.length.allDecls) fSpec++")" ]
   ++   concatMap (generics fSpec) (allDecls fSpec)
   ++[ Comment " ", Comment $ "[Concepts]--: (count="++(show.length) [c | c <- concs fSpec]++")"]
   ++   concatMap (generics fSpec) [c | c <- concs fSpec]
@@ -205,7 +205,7 @@ instance MetaPopulations A_Concept where
              [(dirtyId fSpec,dirtyId cpt)]
       , Pop "name" "Concept" "Identifier"
              [(dirtyId cpt, dirtyId cpt)]
-      , Pop "conceptAttribute" "Concept" "SqlAttribute"
+      , Pop "conceptColumn" "Concept" "SqlAttribute"
              [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
 --      , Pop "cptdf" "Concept" "ConceptDefinition"
 --             [(dirtyId cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
@@ -229,7 +229,7 @@ instance MetaPopulations PlugSQL where
   metaPops fSpec plug =
       [ Pop "context" "PlugInfo" "Context"
                [(dirtyId plug, dirtyId fSpec)]
-      , Pop "key" "TblSQL" "SqlAttribute"
+      , Pop "key" "PlugInfo" "SqlAttribute"
                [(dirtyId plug, dirtyId (plug, head . plugAttributes $ plug))]
       ] ++ concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
 
@@ -251,6 +251,8 @@ instance MetaPopulations (PlugSQL,SqlAttribute) where
                  [(dirtyId (plug,att), dirtyId plug) ]
       , Pop "concept" "SqlAttribute" "Concept"
                  [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]
+      , Pop "relsMentionedIn" "Plug" "Relation"
+                 [(dirtyId plug, dirtyId rel) | Just rel <- [primRel.attExpr $ att]]
       , Pop "null" "SqlAttribute" "SqlAttribute"
                  [(a,a) | attNull att, let a=dirtyId (plug,att)]
       ]
@@ -314,10 +316,10 @@ instance GenericPopulations Declaration where
              [(dirtyId dcl,dirtyId (target dcl))]
       , Pop "table" "Relation" "DBTable"
              [(dirtyId dcl,dirtyId table)]
-      , Pop "srcAtt" "Relation" "DBTableColumn"
-             [(dirtyId dcl,dirtyId (table,srcAtt))]
-      , Pop "tgtAtt" "Relation" "DBTableColumn"
-             [(dirtyId dcl,dirtyId (table,tgtAtt))]
+      , Pop "srcCol" "Relation" "DBTableColumn"
+             [(dirtyId dcl,dirtyId (table,srcCol))]
+      , Pop "tgtCol" "Relation" "DBTableColumn"
+             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "affectedInvConjunctIds" "Relation" "ConjunctID"
              [(dirtyId dcl,dirtyId conj) | conj <- filterFrontEndInvConjuncts affConjs ]
       , Pop "affectedSigConjunctIds" "Relation" "ConjunctID"
@@ -326,7 +328,7 @@ instance GenericPopulations Declaration where
      Isn{} -> fatal 157 "Isn is not implemented yet"
      Vs{}  -> fatal 158 "Vs is not implemented yet"
    where
-     (table,srcAtt,tgtAtt) = getDeclarationTableInfo fSpec dcl  -- type: (PlugSQL,SqlAttribute,SqlAttribute)
+     (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec dcl  -- type: (PlugSQL,SqlAttribute,SqlAttribute)
      affConjs = fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
 
 instance MetaPopulations Declaration where
@@ -339,10 +341,10 @@ instance MetaPopulations Declaration where
              [(dirtyId dcl,dirtyId fSpec)] 
       , Pop "name" "Relation" "Identifier"
              [(dirtyId dcl, (show.name) dcl)]
-      , Pop "srcAtt" "Relation" "SqlAttribute"
-             [(dirtyId dcl,dirtyId (table,srcAtt))]
-      , Pop "tgtAtt" "Relation" "SqlAttribute"
-             [(dirtyId dcl,dirtyId (table,tgtAtt))]
+      , Pop "srcCol" "Relation" "SqlAttribute"
+             [(dirtyId dcl,dirtyId (table,srcCol))]
+      , Pop "tgtCol" "Relation" "SqlAttribute"
+             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "sign" "Relation" "Signature"
              [(dirtyId dcl,dirtyId (sign dcl))]
       , Pop "source" "Relation" "Concept"
@@ -372,10 +374,10 @@ instance MetaPopulations Declaration where
              [(dirtyId dcl,dirtyId fSpec)]
       , Pop "name" "Relation" "Identifier"
              [(dirtyId dcl, (show.name) dcl)]
-      , Pop "srcAtt" "Relation" "SqlAttribute"
-             [(dirtyId dcl,dirtyId (table,srcAtt))]
-      , Pop "tgtAtt" "Relation" "SqlAttribute"
-             [(dirtyId dcl,dirtyId (table,tgtAtt))]
+      , Pop "srcCol" "Relation" "SqlAttribute"
+             [(dirtyId dcl,dirtyId (table,srcCol))]
+      , Pop "tgtCol" "Relation" "SqlAttribute"
+             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "source" "Relation" "Concept"
              [(dirtyId dcl,dirtyId (source dcl))]
       , Pop "target" "Relation" "Concept"
@@ -383,7 +385,7 @@ instance MetaPopulations Declaration where
       ]
      Vs{}  -> fatal 158 "Vs is not implemented yet"
    where
-     (table,srcAtt,tgtAtt) = getDeclarationTableInfo fSpec dcl  -- type: (PlugSQL,SqlAttribute,SqlAttribute)
+     (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec dcl  -- type: (PlugSQL,SqlAttribute,SqlAttribute)
 
 instance MetaPopulations A_Pair where
  metaPops _ pair =
@@ -566,6 +568,8 @@ instance MetaPopulations PlugInfo where
       , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
       , Pop "in" "Concept" "Plug"                 
              [(dirtyId cpt,dirtyId plug)| cpt <- concs plug]  
+      , Pop "relsMentionedIn" "Plug" "Relation"
+             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
       ]      
 
 instance MetaPopulations a => MetaPopulations [a] where
