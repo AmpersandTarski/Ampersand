@@ -318,15 +318,15 @@ instance Pretty a => Pretty (P_ViewD a) where
 
 instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
-
-instance Pretty a => Pretty (P_ViewSegmt a) where
-    pretty (P_ViewExp _ (P_Obj nm _ ctx _ _ _ _))
-                              = maybeQuote nm <+> text ":" <~> ctx
-    pretty (P_ViewText _ lab txt) = 
-      (case lab of 
-        []     -> empty
-        nm     -> maybeQuote nm <+> text ":" 
-      ) <~>  text "TXT" <+> quote txt
+instance Pretty a => Pretty (P_ViewSegment a) where
+    pretty (P_ViewSegment mlab _ _ pl)
+        = ( case mlab of 
+             Nothing  -> empty
+             Just str -> maybeQuote str <+> text ":" 
+          ) <~> pretty pl
+instance Pretty a => Pretty (P_ViewSegmtPayLoad a) where
+    pretty (P_ViewExp expr) = pretty expr
+    pretty (P_ViewText txt) = text "TXT" <+> quote txt
                         
 instance Pretty PPurpose where
     pretty (PRef2 _ obj markup refIds) =

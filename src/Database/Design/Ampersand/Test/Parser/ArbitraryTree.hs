@@ -294,15 +294,17 @@ instance Arbitrary a => Arbitrary (P_ViewD a) where
         oneof [P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
                     <*> return True <*> return Nothing <*> listOf1 arbitrary,
                P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> arbitrary <*> arbitrary <*> listOf1 (P_ViewExp <$> arbitrary <*> arbitrary)]
+                    <*> arbitrary <*> arbitrary <*> listOf1 arbitrary]
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeStr
 
-instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
+instance Arbitrary a => Arbitrary (P_ViewSegment a) where
+    arbitrary = P_ViewSegment <$> arbitrary <*> arbitrary <*>arbitrary <*> arbitrary 
+instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
     arbitrary =
-        oneof [ P_ViewExp  <$> arbitrary <*> arbitrary
-              , P_ViewText <$> arbitrary <*> arbitrary <*> safeStr
+        oneof [ P_ViewExp  <$> arbitrary
+              , P_ViewText <$> safeStr
               ]
 
 instance Arbitrary PPurpose where
