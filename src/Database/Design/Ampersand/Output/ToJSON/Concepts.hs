@@ -2,9 +2,11 @@
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
 module Database.Design.Ampersand.Output.ToJSON.Concepts 
-  (Concepts)
+  (Concepts,Segment)
 where
+import Database.Design.Ampersand.FSpec(showADL)
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
+import Database.Design.Ampersand.FSpec.SQL (prettySQLQuery)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
@@ -27,9 +29,12 @@ data View = View
   , vwJSONsegments :: [Segment]
   } deriving (Generic, Show)
 data Segment = Segment
-  { segJSONobject :: Maybe String
-  , segJSONtext   :: Maybe String
-  , segJSONhtml   :: Maybe String
+  { segJSONlabel :: Maybe String
+  , segJSONsegType :: String
+  , segJSONadl  :: Maybe String
+  , segJSONexpSQL :: Maybe String
+  , segJSONtext  :: Maybe String
+  , segJSONhtml  :: Maybe String
   } deriving (Generic, Show)
 instance ToJSON Concept where
   toJSON = amp2Jason
@@ -66,14 +71,22 @@ instance JSON ViewDef View where
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where
- fromAmpersand _ seg = Segment
-  { segJSONobject  = case seg of
-                       ViewExp{}  -> Just . objnm . vsgmObj $ seg
-                       _          -> Nothing
-  , segJSONtext    = case seg of
-                       ViewText{} -> Just . vsgmTxt $ seg
-                       _          -> Nothing
-  , segJSONhtml    = case seg of
-                       ViewHtml{} -> Just . vsgmHtml $ seg
-                       _          -> Nothing
+ fromAmpersand fSpec seg = Segment
+  { segJSONlabel = vsmlabel seg
+  , segJSONsegType = case vsmLoad seg of
+                       ViewExp{}  -> "Exp"
+                       ViewText{} -> "Text"
+                       ViewHtml{} -> "Html"
+  , segJSONadl  = case vsmLoad seg of
+                       ViewExp expr -> Just . showADL $ expr
+                       _            -> Nothing
+  , segJSONexpSQL = case vsmLoad seg of
+                       ViewExp expr -> Just $ prettySQLQuery fSpec 0 expr
+                       _            -> Nothing
+  , segJSONtext    = case vsmLoad seg of
+                       ViewText str -> Just str
+                       _            -> Nothing
+  , segJSONhtml    = case vsmLoad seg of
+                       ViewHtml str -> Just str
+                       _            -> Nothing
   }
