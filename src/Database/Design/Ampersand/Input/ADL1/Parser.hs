@@ -400,10 +400,8 @@ pFancyViewDef  = mkViewDef <$> currPos
                  , vd_cpt = cpt
                  , vd_isDefault = isDef
                  , vd_html = html
-                 , vd_ats = numbered ats
+                 , vd_ats = ats
                  }
-          numbered xs = map numbr (zip [1..] xs)
-              where numbr (i,x)= x{vsm_nr=i}
           --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
           pHtmlView :: AmpParser ViewHtmlTemplate
@@ -421,8 +419,7 @@ pViewSegment labelIsOptional
                <*> pViewSegmentLoad
    where build :: Origin -> Maybe String -> P_ViewSegmtPayLoad TermPrim -> P_ViewSegment TermPrim
          build pos lab x =
-            P_ViewSegment lab fat pos x
-         fat = fatal 429 "numbering is done a little later."
+            P_ViewSegment lab pos x
 
 --- ViewDefLegacy ::= 'VIEW' LabelProps ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
@@ -432,12 +429,7 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pConceptOneRef
                       <*> return True
                       <*> return Nothing
-                      <*> pParens(numbered <$> (pViewSegment True) `sepBy1` pComma)
-    --TODO: Numbering should not happen in the parser
-    where 
-          numbered xs = map numbr (zip [1..] xs)
-              where numbr (i,x)= x{vsm_nr=i}
-    
+                      <*> pParens((pViewSegment True) `sepBy1` pComma)
     
 
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term (ADLid | Conid)? SubInterface

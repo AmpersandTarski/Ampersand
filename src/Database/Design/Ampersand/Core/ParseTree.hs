@@ -687,7 +687,6 @@ instance Traversable P_ViewD where
 
 data P_ViewSegment a = 
      P_ViewSegment { vsm_labl :: Maybe String
-                   , vsm_nr ::Integer
                    , vsm_org :: Origin
                    , vsm_load :: P_ViewSegmtPayLoad a
                    } deriving Show
@@ -696,7 +695,7 @@ instance Traced (P_ViewSegment a) where
 instance Functor P_ViewSegment where fmap = fmapDefault
 instance Foldable P_ViewSegment where foldMap = foldMapDefault
 instance Traversable P_ViewSegment where
- traverse fn (P_ViewSegment a b c d) = P_ViewSegment a b c <$> traverse fn d
+ traverse fn (P_ViewSegment a b c) = P_ViewSegment a b <$> traverse fn c
 data P_ViewSegmtPayLoad a  
                     = P_ViewExp  { vs_expr :: Term a }
                     | P_ViewText { vs_txt :: String }

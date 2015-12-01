@@ -319,7 +319,7 @@ instance Pretty a => Pretty (P_ViewD a) where
 instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
 instance Pretty a => Pretty (P_ViewSegment a) where
-    pretty (P_ViewSegment mlab _ _ pl)
+    pretty (P_ViewSegment mlab _ pl)
         = ( case mlab of 
              Nothing  -> empty
              Just str -> maybeQuote str <+> text ":" 

@@ -164,7 +164,6 @@ instance MakeMeta a => MakeMeta (P_ViewD a) where
 instance MakeMeta a => MakeMeta (P_ViewSegment a) where
   makeMeta f vs = P_ViewSegment
       { vsm_labl = vsm_labl vs
-      , vsm_nr   = vsm_nr vs 
       , vsm_org  = vsm_org vs
       , vsm_load = makeMeta f (vsm_load vs)
       }

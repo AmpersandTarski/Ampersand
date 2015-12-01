@@ -414,7 +414,7 @@ pCtx2aCtx' _
             , vd_cpt  = cpt   -- Concept
             , vd_isDefault = isDefault
             , vd_html = mHtml -- Html template
-            , vd_ats  = pvs   -- view segment
+            , vd_ats  = pvs   -- view segments
             })
      = (\vdts
         -> Vd { vdpos  = orig
@@ -424,14 +424,14 @@ pCtx2aCtx' _
               , vdhtml = mHtml
               , vdats  = vdts
               })
-       <$> traverse (typeCheckViewSegment o) pvs
+       <$> traverse (typeCheckViewSegment o) (zip [0..] pvs)
 
-    typeCheckViewSegment :: P_ViewD a -> P_ViewSegment (TermPrim, DisambPrim) -> Guarded ViewSegment
-    typeCheckViewSegment o seg
+    typeCheckViewSegment :: P_ViewD a -> (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
+    typeCheckViewSegment o (seqNr,seg)
       = (\vdts
          -> ViewSegment { vsmpos = origin seg
                         , vsmlabel = vsm_labl seg
-                        , vsmSeqNr = vsm_nr seg
+                        , vsmSeqNr = seqNr
                         , vsmLoad  = vdts
                         }
         ) <$> (typeCheckViewSegmentPayLoad o) (vsm_load seg :: P_ViewSegmtPayLoad (TermPrim, DisambPrim))

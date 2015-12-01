@@ -300,7 +300,7 @@ instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeStr
 
 instance Arbitrary a => Arbitrary (P_ViewSegment a) where
-    arbitrary = P_ViewSegment <$> arbitrary <*> arbitrary <*>arbitrary <*> arbitrary 
+    arbitrary = P_ViewSegment <$> arbitrary <*> arbitrary <*> arbitrary 
 instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
     arbitrary =
         oneof [ P_ViewExp  <$> arbitrary
