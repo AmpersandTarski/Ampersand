@@ -335,9 +335,7 @@ data ViewSegmentPayLoad
                  = ViewExp { vsgmExpr :: Expression
                            }
                  | ViewText{ vsgmTxt  :: String
-                           } 
-                 | ViewHtml{ vsgmHtml :: String
-                           } deriving (Eq, Show)
+                           }deriving (Eq, Show)
 
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script

@@ -192,7 +192,6 @@ instance ShowADL ViewSegmentPayLoad where
  showADL x = case x of
    (ViewExp expr)  -> showADL expr
    (ViewText str) -> "TXT " ++ show str
-   (ViewHtml str) -> "PRIMHTML " ++ show str
   
 -- showADL Relation only prints complete signatures to ensure unambiguity.
 -- therefore, when printing expressions, do not apply this function to print relations, but apply one that prints names only

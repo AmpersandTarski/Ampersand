@@ -134,7 +134,6 @@ instance Disambiguatable P_ViewSegment where
     where (d', r) = disambInfo d i
 instance Disambiguatable P_ViewSegmtPayLoad where
   disambInfo (P_ViewText a) _ = (P_ViewText a,noConstraints)
-  disambInfo (P_ViewHtml a) _ = (P_ViewHtml a,noConstraints)
   disambInfo (P_ViewExp a) i = (P_ViewExp a',r)
     where (a',r) = disambInfo a i
 

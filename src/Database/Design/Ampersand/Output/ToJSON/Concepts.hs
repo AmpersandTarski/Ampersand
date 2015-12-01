@@ -34,7 +34,6 @@ data Segment = Segment
   , segJSONadl  :: Maybe String
   , segJSONexpSQL :: Maybe String
   , segJSONtext  :: Maybe String
-  , segJSONhtml  :: Maybe String
   } deriving (Generic, Show)
 instance ToJSON Concept where
   toJSON = amp2Jason
@@ -76,7 +75,6 @@ instance JSON ViewSegment Segment where
   , segJSONsegType = case vsmLoad seg of
                        ViewExp{}  -> "Exp"
                        ViewText{} -> "Text"
-                       ViewHtml{} -> "Html"
   , segJSONadl  = case vsmLoad seg of
                        ViewExp expr -> Just . showADL $ expr
                        _            -> Nothing
@@ -85,8 +83,5 @@ instance JSON ViewSegment Segment where
                        _            -> Nothing
   , segJSONtext    = case vsmLoad seg of
                        ViewText str -> Just str
-                       _            -> Nothing
-  , segJSONhtml    = case vsmLoad seg of
-                       ViewHtml str -> Just str
                        _            -> Nothing
   }

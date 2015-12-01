@@ -563,7 +563,6 @@ instance ShowHS ViewSegment where
 
 instance ShowHS ViewSegmentPayLoad where
  showHS _     _     (ViewText str)  = "ViewText "++show str
- showHS _     _     (ViewHtml str)  = "ViewHtml "++show str
  showHS opts indent (ViewExp  expr) = showHS opts (indent++"            ") expr
 
 instance ShowHS Population where

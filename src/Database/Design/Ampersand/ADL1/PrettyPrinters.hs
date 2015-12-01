@@ -327,11 +327,6 @@ instance Pretty a => Pretty (P_ViewSegmt a) where
         []     -> empty
         nm     -> maybeQuote nm <+> text ":" 
       ) <~>  text "TXT" <+> quote txt
-    pretty (P_ViewHtml _ lab htm) =
-      (case lab of 
-        []     -> empty
-        nm     -> maybeQuote nm <+> text ":" 
-      ) <~>  text "PRIMHTML" <+> quote htm
                         
 instance Pretty PPurpose where
     pretty (PRef2 _ obj markup refIds) =

@@ -380,13 +380,11 @@ generateViews fSpec =
           , "      , 'segmentType' => "++ 
                          (case vsmLoad seg of
                             ViewText{} -> showPhpStr "Text"
-                            ViewHtml{} -> showPhpStr "Html"
                             ViewExp{}  -> showPhpStr "Exp"
                          )
           ]++ 
           (case vsmLoad seg of
              (ViewText str) -> ["      , 'Text'        => " ++ showPhpStr str]
-             (ViewHtml str) -> ["      , 'Html'        => " ++ showPhpStr str]
              (ViewExp expr) -> ["      // view exp: " ++ escapePhpStr (showADL expr)
                                ,"      , 'expSQL'      =>"
                                ,"          " ++ showPhpStr (prettySQLQuery fSpec 33 expr)

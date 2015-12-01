@@ -174,7 +174,6 @@ instance MakeMeta a => MakeMeta (P_ViewSegmtPayLoad a) where
       P_ViewExp{}  -> P_ViewExp { vs_expr = makeMeta f (vs_expr vs)
                                 }
       P_ViewText{} -> vs
-      P_ViewHtml{} -> vs
 
 instance MakeMeta P_Gen where
   makeMeta f gen

@@ -447,7 +447,6 @@ pCtx2aCtx' _
                                  else mustBeBound (origin o) [(Tgt,expr)])
          <$> typecheckTerm (vs_expr vs)
         P_ViewText{} -> pure$ ViewText (vs_txt vs)
-        P_ViewHtml{} -> pure$ ViewHtml (vs_htm vs)
      where c = name (vd_cpt o)
     
     isa :: String -> String -> Bool

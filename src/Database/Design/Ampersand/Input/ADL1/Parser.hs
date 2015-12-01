@@ -408,11 +408,10 @@ pFancyViewDef  = mkViewDef <$> currPos
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
           pHtmlView :: AmpParser ViewHtmlTemplate
           pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
---- ViewSegmentLoad ::= Term | 'TXT' String | 'PRIMHTML' String
+--- ViewSegmentLoad ::= Term | 'TXT' String
 pViewSegmentLoad :: AmpParser (P_ViewSegmtPayLoad TermPrim)           
 pViewSegmentLoad = P_ViewExp  <$> pTerm
                <|> P_ViewText <$ pKey "TXT" <*> pString
-               <|> P_ViewHtml <$ pKey "PRIMHTML" <*> pString
             
 --- ViewSegment ::= Label ViewSegmentLoad
 pViewSegment :: Bool -> AmpParser (P_ViewSegment  TermPrim)

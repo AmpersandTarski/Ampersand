@@ -700,7 +700,6 @@ instance Traversable P_ViewSegment where
 data P_ViewSegmtPayLoad a  
                     = P_ViewExp  { vs_expr :: Term a }
                     | P_ViewText { vs_txt :: String }
-                    | P_ViewHtml { vs_htm :: String }
                       deriving (Show)
 
 data ViewHtmlTemplate = ViewHtmlTemplateFile String
@@ -718,7 +717,6 @@ instance Foldable P_ViewSegmtPayLoad where foldMap = foldMapDefault
 instance Traversable P_ViewSegmtPayLoad where
  traverse f (P_ViewExp a) = P_ViewExp <$> traverse f a
  traverse _ (P_ViewText a) = pure (P_ViewText a)
- traverse _ (P_ViewHtml a) = pure (P_ViewHtml a)
 
 
 -- PPurpose is a parse-time constructor. It contains the name of the object it explains.
