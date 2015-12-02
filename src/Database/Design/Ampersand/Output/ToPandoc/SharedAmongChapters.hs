@@ -235,14 +235,28 @@ orderingByTheme fSpec
         [] -> Nothing
         cd :_ -> Just (origin cd)
         
-  rulMustBeShown r = r_usr r == UserDefined && (hasMeaning r || hasPurpose r)
-  relMustBeShown d = isUserDefined d && hasPurpose d 
+  rulMustBeShown :: Rule -> Bool
+  rulMustBeShown r = (hasMeaning r || hasPurpose r)
+  relMustBeShown :: Declaration -> Bool
+  relMustBeShown d 
+    | isIdent d || name d == "V" = False  --Identity relation has no meaning defined
+    | otherwise = (hasMeaning d || hasPurpose d) && (isUserDefined d || forNonUserDefdRule d)  
   isUserDefined d = case d of
                        Sgn{} -> decusr d
                        _     -> False
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
+  hasMeaning :: Meaning a => a -> Bool
   hasMeaning = isJust . meaning (fsLang fSpec)
+  forNonUserDefdRule :: Declaration -> Bool
+  forNonUserDefdRule d = not . null
+      . filter isPropRuleForDcl . fallRules $ fSpec 
+    where
+      isPropRuleForDcl :: Rule -> Bool
+      isPropRuleForDcl rul =
+        case rrdcl rul of
+           Nothing -> False
+           Just (_,x) -> x == d
   cptMustBeShown = not . null . concDefs fSpec
   f :: 
    (Counters, [Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
