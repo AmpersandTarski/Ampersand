@@ -94,8 +94,6 @@ class AngularApp {
 		$this->addHtmlLine('<script src="app/lib/ui-bootstrap/datetimepicker/datetimepicker.js"></script>');
 		$this->addHtmlLine('<link href="app/lib/ui-bootstrap/datetimepicker/datetimepicker.css" rel="stylesheet" media="screen" type="text/css">');
 
-		$this->addHtmlLine('<script src="app/lib/json-patch/json-patch-duplex.min.js"></script>');
-
 		/*
 		 ********** CSS *********************************
 		 *
