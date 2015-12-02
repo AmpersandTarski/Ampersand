@@ -31,7 +31,7 @@ data View = View
 data Segment = Segment
   { segJSONlabel :: Maybe String
   , segJSONsegType :: String
-  , segJSONadl  :: Maybe String
+  , segJSONexpADL  :: Maybe String
   , segJSONexpSQL :: Maybe String
   , segJSONtext  :: Maybe String
   } deriving (Generic, Show)
@@ -75,10 +75,10 @@ instance JSON ViewSegment Segment where
   , segJSONsegType = case vsmLoad seg of
                        ViewExp{}  -> "Exp"
                        ViewText{} -> "Text"
-  , segJSONadl  = case vsmLoad seg of
+  , segJSONexpADL  = case vsmLoad seg of
                        ViewExp expr -> Just . showADL $ expr
                        _            -> Nothing
-  , segJSONexpSQL = case vsmLoad seg of
+  , segJSONexpSQL  = case vsmLoad seg of
                        ViewExp expr -> Just $ prettySQLQuery fSpec 0 expr
                        _            -> Nothing
   , segJSONtext    = case vsmLoad seg of
