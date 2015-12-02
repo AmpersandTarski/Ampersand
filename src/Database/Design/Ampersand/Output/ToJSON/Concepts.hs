@@ -29,7 +29,8 @@ data View = View
   , vwJSONsegments :: [Segment]
   } deriving (Generic, Show)
 data Segment = Segment
-  { segJSONlabel :: Maybe String
+  { segJSONseqNr   :: Integer
+  , segJSONlabel :: Maybe String
   , segJSONsegType :: String
   , segJSONexpADL  :: Maybe String
   , segJSONexpSQL :: Maybe String
@@ -71,7 +72,8 @@ instance JSON ViewDef View where
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where
  fromAmpersand fSpec seg = Segment
-  { segJSONlabel = vsmlabel seg
+  { segJSONseqNr = vsmSeqNr seg
+  , segJSONlabel = vsmlabel seg
   , segJSONsegType = case vsmLoad seg of
                        ViewExp{}  -> "Exp"
                        ViewText{} -> "Text"
