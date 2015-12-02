@@ -98,7 +98,7 @@ clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStrLn "Generating new frontend.." 
+ do { putStrLn "Generating frontend.." 
     ; copyIncludes fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
