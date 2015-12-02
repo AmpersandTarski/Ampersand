@@ -415,7 +415,7 @@ pViewSegmentLoad = P_ViewExp  <$> pTerm
 pViewSegment :: Bool -> AmpParser (P_ViewSegment  TermPrim)
 pViewSegment labelIsOptional
        = build <$> currPos
-               <*> (if labelIsOptional then pMaybe pLabel else (Just <$> pLabel))
+               <*> (if labelIsOptional then pMaybe (try pLabel) else (Just <$> (try pLabel)))
                <*> pViewSegmentLoad
    where build :: Origin -> Maybe String -> P_ViewSegmtPayLoad TermPrim -> P_ViewSegment TermPrim
          build pos lab x =
