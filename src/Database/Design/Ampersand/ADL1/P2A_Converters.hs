@@ -632,11 +632,12 @@ pCtx2aCtx' _
              if (b1 && b2) || (getConcept p1 e1 == getConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType mjoin (p1, e1) (p2, e2)
              else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
         (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
-             (\x -> (x,b1)) <$> getAndCheckType mjoin (p1, True, e1) (p2, b2, e2)
+             (\x -> (fst x,b1)) <$> getAndCheckType mjoin (p1, True, e1) (p2, b2, e2)
         (UNI (p1,(e1,b1)) (p2,(e2,b2))) ->
-             (\x -> (x,b1 && b2)) <$> getAndCheckType mjoin (p1, b1, e1) (p2, b2, e2)
+             (\x -> (fst x,b1 && b2)) <$> getAndCheckType mjoin (p1, b1, e1) (p2, b2, e2)
         (ISC (p1,(e1,b1)) (p2,(e2,b2))) ->
-             (\x -> (x,b1 || b2)) <$> getAndCheckType mIsc  (p1, b1, e1) (p2, b2, e2)
+             (\(x,r) -> (x, (b1 && Set.member (getConcept p1 e1) r) || (b2 && Set.member (getConcept p2 e2) r) || (b1 && b2))
+             ) <$> getAndCheckType mIsc  (p1, b1, e1) (p2, b2, e2)
      where
       getExactType flf (p1,e1) (p2,e2)
        = case findExact genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of
@@ -646,7 +647,7 @@ pCtx2aCtx' _
        = case findSubsets genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
           [r] -> case (b1 || Set.member (getConcept p1 e1) r,b2 || Set.member (getConcept p2 e2) r ) of
-                   (True,True) -> pure (head (Set.toList r))
+                   (True,True) -> pure (head (Set.toList r),r)
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
           lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map (map castConcept . Set.toList) lst)
     termPrimDisAmb :: TermPrim -> (TermPrim, DisambPrim)
