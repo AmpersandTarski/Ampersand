@@ -51,10 +51,10 @@ date_default_timezone_set('Europe/Amsterdam');
 /************ EXTENSIONS ***************/
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
 //If you use the login features, the ExecEngine function is only available to users that have a specific role. The line here below configures the role 'ExecEngineer' for this. If you so wish, you can change this role name, or add others in the array. If you do not use the login features, then you can leave this line as is.
-Config::set('allowedRolesForRunFunction', 'ExecEngine', array('ExecEngineer'));
+//Config::set('allowedRolesForRunFunction', 'ExecEngine', array('ExecEngineer'));
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
 //If you use the login features, the ExcelImport function is only available to users that have a specific role. The line here below configures the role 'ExcelImporter' for this. If you so wish, you can change this role name, or add others in the array. If you do not use the login features, then you can leave this line as is.
-Config::set('allowedRolesForExcelImport', 'excelImport', array('ExcelImporter'));
+//Config::set('allowedRolesForExcelImport', 'excelImport', array('ExcelImporter'));
 //require_once(__DIR__ . '/extensions/OAuthLogin/OAuthLogin.php'); // Enable OAuthLogin, supported identityProviders are 'google' and 'linkedin'
 	//Config::set('identityProviders', 'OAuthLogin', array('google' => array('redirectUrl' => '', 'clientId' => '' ,'clientSecret' => '' ,'tokenUrl' => '' ,'apiUrl' => '' ,'scope' => ''), 'linkedin' => array()));
 

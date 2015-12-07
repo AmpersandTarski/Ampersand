@@ -29,23 +29,21 @@ sqlRelPlugs fSpec e
 getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute)
 getDeclarationTableInfo fSpec decl =
  case decl of
-   Sgn{}   -> getPrimExprTableInfo (EDcD decl)
-   Isn cpt -> getPrimExprTableInfo (EDcI cpt) 
-   _     -> fatal 420 "getDeclarationTableInfo must not be used on this type of declaration!"
+   Sgn{}   -> case sqlRelPlugs fSpec (EDcD decl) of
+                    [plugInfo] -> plugInfo
+                    []         -> fatal 34 $ "Reference to a non-existing plug: "++show (EDcD decl)
+                    [(t1,src1,trg1),(t2,src2,trg2)]
+                       -> if t1 ==t2 && src1 == trg2 && trg1 == src2
+                          then (t1,src1,trg1)
+                          else fatal 426 $ "Multiple plugs for relation "++ show decl ++"\n" ++
+                                    intercalate "\n\n" (map showPInfo [(t1,src1,trg1),(t2,src2,trg2)])
+                    pinfos     -> fatal 428 $ "Multiple plugs for relation "++ show decl ++"\n" ++
+                                    intercalate "\n\n" (map showPInfo pinfos)
+   Isn cpt -> case sqlRelPlugs fSpec (EDcI cpt) of
+                    plugInfo:_ -> plugInfo        -- There may be multiple plugInfo's for concepts. This is not a problem.
+                    []         -> fatal 44 $ "Reference to a non-existing plug: "++show (EDcI cpt)
+   _       -> fatal 420 "getDeclarationTableInfo must not be used on this type of declaration!"
    where
-    getPrimExprTableInfo :: Expression -> (PlugSQL,SqlAttribute,SqlAttribute)
-    getPrimExprTableInfo primExpr =
-      case sqlRelPlugs fSpec primExpr of
-            [plugInfo] -> plugInfo
-            []         -> fatal 527 $ "Reference to a non-existing plug: "++show primExpr
-            [(t1,src1,trg1),(t2,src2,trg2)]
-               -> if t1 ==t2 && src1 == trg2 && trg1 == src2
-                  then (t1,src1,trg1)
-                  else fatal 426 $ "Multiple plugs for relation "++ show decl ++"\n" ++
-                            intercalate "\n\n" (map showPInfo [(t1,src1,trg1),(t2,src2,trg2)])
-            pinfos     -> fatal 428 $ "Multiple plugs for relation "++ show decl ++"\n" ++
-                            intercalate "\n\n" (map showPInfo pinfos)
-     
     showPInfo (tab, src, trg) = intercalate "  \n"
                                  [ "Table: "++name tab
                                  , "  sourceAttribute: "++attName src
