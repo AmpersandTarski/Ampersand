@@ -35,7 +35,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$rootScope.getActiveRoleIds = function(){
 		var roleIds = [];
-		angular.forEach($scope.sessionStorage.sessionRoles, function(role) {
+		angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
 			if (role.active == true) {
 				roleIds.push(role.id);
 			}
