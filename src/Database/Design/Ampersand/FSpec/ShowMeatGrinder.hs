@@ -92,14 +92,14 @@ instance MetaPopulations FSpec where
            [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "dbName" "Context" "DatabaseName"
            [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
-    , Pop "concs" "Context" "Concept"
-           [(dirtyId fSpec, show "SESSION"), (dirtyId fSpec, show "ONE")]
-    , Pop "name"   "Context" "ContextIdentifier"
-           [(dirtyId fSpec, (show.name) fSpec)]
+--    , Pop "concs" "Context" "Concept"
+--           [(dirtyId fSpec, show "SESSION"), (dirtyId fSpec, show "ONE")]
+--    , Pop "name"   "Context" "ContextIdentifier"
+--           [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "allRoles" "Context" "Role"
-           []
+           [(dirtyId fSpec, show "SystemAdmin")]
     , Pop "name"   "Role" "RoleName"
-           []
+           [(show "SystemAdmin", show "SystemAdmin")]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)

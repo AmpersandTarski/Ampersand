@@ -85,11 +85,11 @@ class Session {
 			foreach($this->sessionRoles as &$role){
 				if(in_array($role->id, $roleIds)){
 					$role->active = true;
+					Notifications::addLog("Role $role->id is active", 'SESSION');
 					$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
 					$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
 					$this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
 				}
-				Notifications::addLog("Role $role->id is activate", 'SESSION');
 			}
 		}
 		
@@ -99,11 +99,9 @@ class Session {
 		
 		// If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
 		if(Config::get('loginEnabled')){
-			$arr = array();
 			foreach($roles as $role){
-				$arr = array_merge($arr, $role->interfaces());
+				$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
 			}
-			$this->accessibleInterfaces = array_unique($arr);
 		}
 		
 		// Filter duplicate values

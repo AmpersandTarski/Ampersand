@@ -8,11 +8,12 @@ class ExecEngineApi{
 	/****************************** PARSE FILE ******************************/
 	/**
 	 * @url GET run
+	 * @param array $roleIds
 	 */
-	public function run(){
+	public function run($roleIds = null){
 		try{
 			$session = Session::singleton();
-			$session->activateRoles();
+			$session->activateRoles($roleIds);
 			
 			// Check sessionRoles if allowedRolesForRunFunction is specified
 			$allowedRoles = Config::get('allowedRolesForRunFunction','execEngine');
