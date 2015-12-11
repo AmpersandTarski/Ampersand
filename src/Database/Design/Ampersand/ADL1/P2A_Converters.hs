@@ -621,8 +621,8 @@ pCtx2aCtx' _
          wrap expr  ((src,b1), (tgt,b2))  = (cbn (addEpsilon src tgt expr), (b1, b2))
       binary' cbn preConcept tp side1 side2 e1 e2 = unguard$ wrap (fst e1,fst e2) <$> deriv1 o (fmap (resolve (e1,e2)) preConcept) <*> deriv' tp (e1,e2)
         where
-         wrap _ (_,False) ((p1,b1), (p2,b2))
-          = mustBeBound o [(p,e) | (False,p,e)<-[(b1,p1,fst e1),(b2,p2,fst e2)]]
+         wrap _ (cpt,False) ((p1,b1), (p2,b2))
+          = mustBeBound o [(p,e) | (False,p,e)<-[(b1,cpt,fst e1),(b2,cpt,fst e2)]]
          wrap (expr1,expr2) (cpt,True) ((_,b1), (_,b2))
           = pure (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
             where lrDecide side e = case side of Src -> addEpsilonLeft' cpt e; Tgt -> addEpsilonRight' cpt e
