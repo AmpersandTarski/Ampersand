@@ -663,7 +663,10 @@ pCtx2aCtx _
       unary   cbn     tp e1      = wrap (fst e1) <$> deriv tp e1
         where
          wrap expr  ((src,b1), (tgt,b2))  = (cbn (addEpsilon src tgt expr), (b1, b2))
-      binary' cbn preConcept tp side1 side2 e1 e2 = unguard$ wrap (fst e1,fst e2) <$> deriv1 o (fmap (resolve (e1,e2)) preConcept) <*> deriv' tp (e1,e2)
+      binary' cbn preConcept tp side1 side2 e1 e2 = 
+          do a <- deriv1 o (fmap (resolve (e1,e2)) preConcept) 
+             b <- deriv' tp (e1,e2)
+             wrap (fst e1,fst e2) a b
         where
          wrap _ (_,False) ((_,b1), (_,b2))
           = mustBeBound o [(p,e) | (False,p,e)<-[(b1,side1,fst e1),(b2,side2,fst e2)]]
