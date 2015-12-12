@@ -9,11 +9,10 @@ packages:
 
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
-   [ SpreadsheetML-0.1
-   , graphviz-2999.18.0.2
-   , simple-sql-parser-0.4.1
-   , zlib-0.6.1.1
-   ]
+- SpreadsheetML-0.1  # not in lts-3.17
+- graphviz-2999.18.0.2 # not in lts-3.17
+- simple-sql-parser-0.4.1 # not in lts-3.17
+# - zlib-0.6.1.1 # not in lts-3.17
 
 # Override default flag values for local packages and extra-deps
 flags: {}
@@ -23,7 +22,7 @@ extra-package-dbs: []
 
 # Control whether we use the GHC we find on the path
 # system-ghc: true
-
+compiler-check: newer-minor
 # Require a specific version of stack, using version ranges
 # require-stack-version: -any # Default
 # require-stack-version: >= 0.1.10.0
