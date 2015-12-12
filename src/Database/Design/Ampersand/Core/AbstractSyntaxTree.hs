@@ -542,7 +542,7 @@ data AAtomValue
   | AAVDateTime { aavtyp :: TType
                 , aadatetime ::  UTCTime
                 }
-  | AtomValueOfONE deriving (Eq,Prelude.Ord)
+  | AtomValueOfONE deriving (Eq,Prelude.Ord, Show)
 showValPHP :: AAtomValue -> String
 showValPHP val =
   case val of

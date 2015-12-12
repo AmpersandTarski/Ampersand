@@ -78,7 +78,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                                                   AAVFloat _ x -> CellDouble x
                                                   AAVBoolean _ b -> CellBool b
                                                   AAVDate _ day -> (CellDouble . fromInteger) (diffDays (fromGregorian 1900 1 1) day)
-                                                  _ -> fatal 87 $ "Content found that cannot be converted to Excel (jet)." 
+                                                  _ -> fatal 87 ( "Content found that cannot be converted to Excel (yet): "++show aVal) 
                                            )  
        toCell :: Maybe String -> Cell
        toCell mVal 
