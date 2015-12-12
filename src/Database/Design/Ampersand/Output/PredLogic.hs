@@ -1,4 +1,4 @@
-﻿module Database.Design.Ampersand.Output.PredLogic
+module Database.Design.Ampersand.Output.PredLogic
          ( PredLogicShow(..), showLatex, showRtf, mkVar
          ) where
 
