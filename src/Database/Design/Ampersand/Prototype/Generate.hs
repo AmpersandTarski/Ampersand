@@ -13,12 +13,8 @@ import Data.Maybe
 import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.Prototype.ProtoUtil
+import Database.Design.Ampersand.Basics (fatal)
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "Generate"
-
-
 
 -- Generate Generics.php
 generateGenerics :: FSpec -> IO ()

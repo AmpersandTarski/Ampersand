@@ -18,9 +18,6 @@ import Data.Char
 import Data.String
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "XLSX"
-
 parseXlsxFile :: Options 
               -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
               -> FilePath -> IO (Guarded [P_Population])
@@ -28,8 +25,7 @@ parseXlsxFile _ useAllStaticFiles file =
   do bytestr <- if useAllStaticFiles
                 then case getStaticFileContent FormalAmpersand file of
                       Just cont -> do return $ fromString cont
-                      Nothing -> fatalMsg ("Statically included "++ show FormalAmpersand++ " files. ") 0 $
-                                  "Cannot find `"++file++"`."
+                      Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++file++"`.")
                 else L.readFile file
      return . xlsx2pContext . toXlsx $ bytestr
  where

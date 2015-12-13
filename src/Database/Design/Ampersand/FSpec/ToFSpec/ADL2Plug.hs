@@ -14,9 +14,6 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.ToFSpec.ADL2Plug"
-
 makeGeneratedSqlPlugs :: Options
               -> A_Context
               -> [Expression]

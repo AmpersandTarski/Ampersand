@@ -24,9 +24,6 @@ import Prelude hiding (writeFile)
 import GHC.Generics
 import Data.Aeson.Encode.Pretty
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "JSONutils"
-
 writeJSONFile :: ToJSON a => FSpec -> FilePath -> a -> IO()
 writeJSONFile fSpec fName x 
   = do verboseLn (getOpts fSpec) ("  Generating "++file)

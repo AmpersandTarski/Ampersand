@@ -6,9 +6,6 @@ import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Data.List (intersperse )
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterConceptualAnalysis"
-
 chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis lev fSpec = (
       --  *** Header ***
@@ -18,7 +15,7 @@ chpConceptualAnalysis lev fSpec = (
    <> --  *** For all themes, a section containing the conceptual analysis for that theme  ***
    caBlocks, pictures)
   where
-  -- shorthand for easy localizing    
+  -- shorthand for easy localizing
   l :: LocalizedStr -> String
   l lstr = localize (fsLang fSpec) lstr
   caIntro :: Blocks
@@ -104,8 +101,8 @@ chpConceptualAnalysis lev fSpec = (
                <> pandocEqnArrayWithLabel (XRefConceptualAnalysisDeclaration d)
                      [ [ texOnly_Id(name d)
                        , ":"
-                       , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d)) 
-                       ]  
+                       , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
+                       ]
                      ]
                <> case meaning2Blocks (fsLang fSpec) d of
                     [] -> case fsLang fSpec of
@@ -146,7 +143,7 @@ chpConceptualAnalysis lev fSpec = (
     nladj Rfx = "reflexieve"
     nladj Irf = "irreflexieve"
     nladj Aut = "automatisch berekende"
-    nladj Prop  = "symmetrische en antisymmetrische" 
+    nladj Prop  = "symmetrische en antisymmetrische"
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
         = let purp = (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))
@@ -154,9 +151,9 @@ chpConceptualAnalysis lev fSpec = (
              , [  -- First the reason why the rule exists, if any..
                   purp
                   -- Then the rule as a requirement
-               <> plain 
+               <> plain
                    ( if isNull purp
-                     then (xRefTo . XRefNaturalLanguageRule) r 
+                     then (xRefTo . XRefNaturalLanguageRule) r
                        <> str (l (NL " is gemaakt :" ,EN " has been made:"))
                      else str (l (NL "Daarom bestaat ", EN "Therefore "))
                        <> (xRefTo . XRefNaturalLanguageRule) r
@@ -164,15 +161,15 @@ chpConceptualAnalysis lev fSpec = (
                    )
                <> fromList (meaning2Blocks  (fsLang fSpec) r)
                   -- then the formal rule
-               <> plain 
+               <> plain
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
-                    <>(mconcat (intersperse  (str ", ") 
-                                [   xRefTo (XRefConceptualAnalysisDeclaration d) 
+                    <>(mconcat (intersperse  (str ", ")
+                                [   xRefTo (XRefConceptualAnalysisDeclaration d)
                                  <> text (" ("++name d++")")
-                                | d@Sgn{}<-relsMentionedIn r])) 
+                                | d@Sgn{}<-relsMentionedIn r]))
                     <> str (l (NL " - geformaliseerd als "
-                              ,EN ", this is formalized as "))    
+                              ,EN ", this is formalized as "))
                    )
                <> (if showPredExpr (getOpts fSpec)
                    then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)

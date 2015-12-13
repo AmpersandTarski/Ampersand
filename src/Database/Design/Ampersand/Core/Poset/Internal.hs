@@ -7,15 +7,12 @@
  - There is NO WARRANTY, to the extent permitted by law.
  -}
 
-{-# LANGUAGE FlexibleInstances, OverlappingInstances, UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 module Database.Design.Ampersand.Core.Poset.Internal where
 
 import qualified Prelude
 import Prelude hiding (Ordering(..), Ord(..))
-import Data.Monoid
-import Database.Design.Ampersand.Basics (fatalMsg)
-fatal :: Int -> String -> a
-fatal = fatalMsg "Core.Poset.Internal"
+import Database.Design.Ampersand.Basics (fatal)
 
 data Ordering = LT | EQ | GT | CP | NC
     deriving (Eq, Show, Read, Bounded, Enum)
@@ -110,4 +107,3 @@ class Poset a => Sortable a where
 -- | Class for totally ordered data types.  Instances should satisfy
 -- @isOrdered a = True@ for all @a@.
 class Poset a => Ord a
-
