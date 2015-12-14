@@ -63,7 +63,7 @@ ENDPROCESS
 
 VIEW SESSION : SESSION(sessionLoginnaam)
 
-INTERFACE "Login" (sessionLoginnaam, sessionPassword) : '_SESSION'/\-(ingelogd;V)
+INTERFACE "Login" (sessionLoginnaam, sessionPassword) : '_SESSION' - ingelogd;V
 BOX [ "loginnaam" : sessionLoginnaam
     , "Wachtwoord" : sessionPassword
     ]
