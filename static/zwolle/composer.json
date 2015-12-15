@@ -1,0 +1,8 @@
+{
+	"config": {
+		"vendor-dir" : "lib"
+	},
+    "require": {
+    	"slim/slim": "2.*"
+    }
+}
