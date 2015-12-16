@@ -11,6 +11,8 @@ class Database {
 	private $trackAffectedConjuncts = true;
 	private $affectedConcepts = array(); // array with all affected Concepts during a transaction.
 	private $affectedRelations = array(); // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
+	private $invariantRulesHold = null; // boolean true/false or null if not set (i.e. no transaction has occurred)
+	private $requestType = 'feedback';
 	
 	private static $_instance = null;
 	
@@ -515,13 +517,15 @@ class Database {
 		Hooks::callHooks('postDatabaseRollbackTransaction', get_defined_vars());
 	}
 	
-	/*
-	 * $checkAllInvariantConjuncts 
-	 * 		true: checkAllInvariantConjuncts, 
-	 * 		false: check only InvariantRules that are relevant for the interface of the current session.
-	 * 		default: true
+	/**
+	 * 
+	 * @param string $succesMessage specifies success/info message when invariants hold
+	 * @param boolean $checkAllConjucts specifies to check all (true) or only the affected conjuncts (false)
+	 * @param boolean $databaseCommit specifies to commit (true) or rollback (false) when all invariants hold
+	 * @param boolean $setNewContent specifies to set the new content of the updated $session->atom
+	 * @return boolean specifies if invariant rules hold (true) or not (false)
 	 */
-	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = false, $setNewContent = true){
+	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = null, $setNewContent = true){
 		$session = Session::singleton();
 		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
@@ -555,6 +559,9 @@ class Database {
 		
 		if($setNewContent && isset($session->atom)) $session->atom->setNewContent($session->interface); // e.g. not needed in Atom::delete() function
 		
+		// Determine if transaction should be committed or not when all invariant rules hold based on $requestType
+		if(is_null($databaseCommit)) $databaseCommit = $this->processRequestType();
+		
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
 			Notifications::addSuccess($succesMessage);
@@ -570,8 +577,22 @@ class Database {
 		
 		Hooks::callHooks('postDatabaseCloseTransaction', get_defined_vars());
 		
-		return $invariantRulesHold;
+		return $this->invariantRulesHold = $invariantRulesHold;
 		
+	}
+	
+	/**
+	 * Checks request type and returns boolean to determine database commit
+	 * @param string $requestType
+	 * @throws Exception when unknown request type specified (allowed: 'feedback' and 'promise')
+	 * @return boolean (true for 'promise', false for 'feedback')
+	 */
+	private function processRequestType(){
+		switch($this->requestType){
+			case 'feedback' : return false;
+			case 'promise' : return true;
+			default : throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
 	}
 	
 	// TODO: onderstaande timestamp generatie opschonen. Kan de database ook zelf doen, bij insert/update/delete
@@ -647,9 +668,21 @@ class Database {
 		return $this->affectedRelations;
 	}
 	
+	public function getInvariantRulesHold(){
+		return $this->invariantRulesHold;
+	}
+	
+	public function getRequestType(){
+		return $this->requestType;
+	}
+	
 	public function setTrackAffectedConjuncts($bool){
 		$this->trackAffectedConjuncts = $bool;
-	}	
+	}
+	
+	public function setRequestType($requestType){
+		$this->requestType = $requestType;
+	}
 	
 	
 }
