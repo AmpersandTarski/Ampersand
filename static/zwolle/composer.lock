@@ -4,9 +4,39 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "ef2538328f612e8a009a862b808a5a0c",
-    "content-hash": "22d60a1750e0e5d3022134f0221b8dcf",
+    "hash": "9d94504cf35120d9a34ead6fbc1c3ecf",
+    "content-hash": "8765f1fac1802883205a52ee4b314a68",
     "packages": [
+        {
+            "name": "mikemccabe/json-patch-php",
+            "version": "dev-master",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/mikemccabe/json-patch-php.git",
+                "reference": "006a018ea71b17a90198c6db340bdd09f36278cc"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/mikemccabe/json-patch-php/zipball/006a018ea71b17a90198c6db340bdd09f36278cc",
+                "reference": "006a018ea71b17a90198c6db340bdd09f36278cc",
+                "shasum": ""
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "mikemccabe\\JsonPatch\\": "src"
+                }
+            },
+            "license": [
+                "LGPL-3.0"
+            ],
+            "description": "Produce and apply json-patch objects",
+            "support": {
+                "source": "https://github.com/mikemccabe/json-patch-php/tree/master",
+                "issues": "https://github.com/mikemccabe/json-patch-php/issues"
+            },
+            "time": "2015-01-14 00:59:52"
+        },
         {
             "name": "slim/slim",
             "version": "2.6.2",
@@ -57,7 +87,9 @@
     "packages-dev": [],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": [],
+    "stability-flags": {
+        "mikemccabe/json-patch-php": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": [],
