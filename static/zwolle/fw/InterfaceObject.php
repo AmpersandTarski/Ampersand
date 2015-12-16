@@ -33,6 +33,7 @@ class InterfaceObject {
 	
 	public $refInterfaceId;
 	public $isLinkTo;
+	public $isTopLevelIfc = false;
 	private $boxSubInterfaces;
 	public $subInterfaces = array();
 	
@@ -41,7 +42,10 @@ class InterfaceObject {
 	public function __construct($id, $interface = array()){
 		global $allInterfaceObjects; // from Generics.php
 		
-		if(empty($interface)) $interface = $allInterfaceObjects[$id]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
+		if(empty($interface)){
+			$interface = $allInterfaceObjects[$id]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
+			$this->isTopLevelIfc = true;
+		}
 		
 		// Check if interface exists
 		if(empty($interface['id'])) throw new Exception ("Interface '$id' does not exists", 500);
