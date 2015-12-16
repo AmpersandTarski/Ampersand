@@ -296,7 +296,7 @@ Class Atom {
 	 * @param array $options
 	 * @return mixed content of created atom
 	 */
-	public function create($interface, $data, $options = array()){
+	public function create($interface, $pathEntry, $data, $options = array()){
 		
 		// Handle options
 		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -325,7 +325,7 @@ Class Atom {
 	 * @param array $options
 	 * @return array
 	 */
-	public function update($interface, $data, $options){
+	public function update($interface, $pathEntry, $data, $options){
 	
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
@@ -334,7 +334,7 @@ Class Atom {
 		// Determine differences between current state ($before) and requested state ($request_data)
 		$patches = mikemccabe\JsonPatch\JsonPatch::diff($before, $data);
 	
-		return $this->patch($interface, $patches, $options);
+		return $this->patch($interface, $pathEntry, $patches, $options);
 	}
 	
 	/**
@@ -362,7 +362,7 @@ Class Atom {
 	 * @param array $options 
 	 * @return array
 	 */
-	public function patch($interface, $patches, $options = array()){
+	public function patch($interface, $pathEntry, $patches, $options = array()){
 		
 		// Handle options
 		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -373,13 +373,13 @@ Class Atom {
 			try{
 				switch($patch['op']){
 					case "replace" :
-						$this->doPatchReplace($patch, $interface);
+						$this->doPatchReplace($interface, $pathEntry, $patch);
 						break;
 					case "add" :
-						$this->doPatchAdd($patch, $interface);
+						$this->doPatchAdd($interface, $pathEntry, $patch);
 						break;
 					case "remove" :
-						$this->doPatchRemove($patch, $interface);
+						$this->doPatchRemove($interface, $pathEntry, $patch);
 						break;
 					default :
 						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
@@ -410,7 +410,7 @@ Class Atom {
 	 * @throws Exception
 	 * @return void
 	 */
-	private function doPatchReplace($patch, $interface){
+	private function doPatchReplace($interface, $pathEntry, $patch){
 		
 		if(($patchInfo = $this->walkIfcPath($patch['path'], $interface)) === false) return; // skip
 		$tgtInterface = $patchInfo['ifc'];
@@ -460,7 +460,7 @@ Class Atom {
 	 * @throws Exception
 	 * @return void
 	 */
-	private function doPatchAdd($patch, $interface){
+	private function doPatchAdd($interface, $pathEntry, $patch){
 
 		// Report error when no patch value is provided.
 		if(is_null($patch['value'])) throw new Exception("Patch operation add provided without value: '{$patch['path']}'", 500);
@@ -486,7 +486,7 @@ Class Atom {
 	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
 	 * @return void
 	 */
-	private function doPatchRemove($patch, $interface){
+	private function doPatchRemove($interface, $pathEntry, $patch){
 		
 		if(($patchInfo = $this->walkIfcPath($patch['path'], $interface)) === false) return; // skip
 		
