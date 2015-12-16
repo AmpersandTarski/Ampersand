@@ -12,7 +12,6 @@ require_once (__DIR__ . '/functions/array_column.php'); //TODO: can be removed a
 
 /* OTHER GENERIC FUNCTIONS */
 require_once (__DIR__ . '/functions/getDirectoryList.php');
-require_once (__DIR__ . '/functions/JsonPatch.php'); // to compare 2 different Json filesS
 
 /* INCLUDES OF AMPERSAND FRAMEWORK */
 
