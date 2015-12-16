@@ -103,14 +103,19 @@ class InterfaceObject {
 				
 	}
 	
-	public static function getSubinterface($interface, $subinterfaceId){
-		
-		foreach((array)$interface->subInterfaces as $subinterface){
-			if($subinterface->id == $subinterfaceId) {
-				$result = $subinterface;
+	public static function getSubinterface($ifcId, $parentIfc = null){
+		// Top level interface
+		if(is_null($parentIfc)){
+			return new InterfaceObject($ifcId);
+		// Subinterface
+		}else{
+			foreach((array)$parentIfc->subInterfaces as $subinterface){
+				if($subinterface->id == $ifcId) {
+					return $subinterface;
+				}
 			}
+			return false;
 		}
-		return empty($result) ? false : $result;
 	}
 	
 	public static function getAllInterfaceObjects(){		
