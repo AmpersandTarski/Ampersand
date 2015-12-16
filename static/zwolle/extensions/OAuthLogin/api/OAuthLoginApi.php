@@ -140,7 +140,7 @@ class OAuthLoginApi{
 					
 					// create new user
 					if(empty($users)){
-						$newUser = Concept::createNewAtom('User');
+						$newUser = Concept::createNewAtomId('User');
 						$db->addAtomToConcept($newUser, 'User');
 						$db->editUpdate('userEmail', false, $newUser, 'User', $email, 'Email');
 						

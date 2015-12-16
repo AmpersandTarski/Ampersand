@@ -121,7 +121,7 @@ class ImportExcel {
 
 				// Check if this is an atom-create line, syntax = &atomname
 				if (strpos('&', $atom[0]) === 0){ 
-					$atom[0] = Concept::createNewAtom($concept[0]); // Create a unique atom name
+					$atom[0] = Concept::createNewAtomId($concept[0]); // Create a unique atom name
 				}
 				
 				// Insert $atom[0] into the DB if it does not yet exist
