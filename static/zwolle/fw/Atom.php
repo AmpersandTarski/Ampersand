@@ -1,6 +1,7 @@
 <?php
 
 Class Atom {
+	private $database;
 	
 	// Ampersand attributes
 	public $id;
@@ -13,7 +14,6 @@ Class Atom {
 	// JSON-LD attributes
 	private $jsonld_id;
 	private $jsonld_type;
-	private $database;
 	
 	/**
 	 * Atom constructor
@@ -63,15 +63,17 @@ Class Atom {
 	 */
 	public function getAtom(){
 		foreach(InterfaceObject::getAllInterfacesForConcept($this->concept) as $ifc){
-			$interfaces[] = $this->jsonld_id . '/' . $ifc->id;
+			$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->jsonld_id . '/' . $ifc->id);
 		}
 		
-		return array( '@id' => $this->jsonld_id
-					, '@label' => $this->label
-		        	, '@view' => $this->view
+		return array( 
+					// JSON LD parts
+					  '@id' => $this->jsonld_id
 					, '@type' => $this->jsonld_type
-					, '@interfaces' => $interfaces
-					, 'id' => $this->id
+					// Ampersand parts
+					, '_label_' => $this->label
+		        	, '_view_' => $this->view
+					, '_ifc_' => $ifcs
 					);
 	}
 	
@@ -121,263 +123,252 @@ Class Atom {
 		}
 	}
 	
+	
 	/**
-	 * Returns atom content given a certain interface
+	 * 
 	 * @param InterfaceObject $interface
-	 * @param boolean $rootElement specifies if this Atom is the root element (true), or a subelement (false) in an interface
-	 * @param string $tgtAtom specifies that a specific tgtAtom must be used instead of querying the tgtAtoms with the expressionSQL of the interface
-	 * @param boolean $inclLinktoData specifies if data from LINKTO (ref) subinterfaces must be included or not.
-	 * @param string $arrayType specifies if the arrays in the result are 'assoc' (associative, key index) or 'num' (numeric index).
-	 * @param boolean $metaData specifies if meta data about objects must be included or not
-	 * @param array $recursionAtomArr contains atomIds when linkto data is included (used to detect recursion and prevent infinite loops)
-	 * @param string $path contains JSON path to objects in (sub)interface(s) (needed to determine patch operations in frontend)
-	 * @return array
+	 * @param string $pathEntry
+	 * @param string $tgt
+	 * @param array $options specifies arrayType, metaData, navIfc and inclLinktoData
+	 * @param array $recursionArr contains atomIds when linkto data is included (used to detect recursion and prevent infinite loops)
+	 * @throws Exception
+	 * @return array|string
 	 */
-    public function getContent($interface, $rootElement = true, $tgtAtom = null, $inclLinktoData = false, $arrayType = "assoc", $metaData = true, $recursionAtomArr = array(), $path = null){
+	public function getContent($interface, $pathEntry, $tgt = null, $options = array(), $recursionArr = array()){
 		$session = Session::singleton();
 		
-		if(is_null($tgtAtom)){
-			$idEsc = $this->database->escape($this->id);
-			$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
-			$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
-		}else{
-			// Make sure that atom is in db (not necessarily the case: e.g. new atom)
-			$this->database->addAtomToConcept($this->id, $this->concept);
-			
-			$tgtAtoms[] = $tgtAtom;
+		// CRUD check
+		if(!$interface->crudR) throw new Exception("Read not allowed for '$pathEntry'", 405);
+		
+		// Default options
+		$options['arrayType'] = isset($options['arrayType']) ? $options['arrayType'] : 'num';
+		$options['metaData'] = isset($options['metaData']) ? filter_var($options['metaData'], FILTER_VALIDATE_BOOLEAN) : true;
+		$options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
+		$options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : true;
+		
+		$idEsc = $this->database->escape($this->id);
+		$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
+		$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
+		
+		// Check if tgtAtom is part of tgtAtoms
+		if(!is_null($tgt)){
+			if(!in_array($tgt, $tgtAtomIds)) throw new Exception ("Resource not found", 404);
+			$tgtAtomIds = array($tgt);
 		}
 		
-		foreach ($tgtAtoms as $tgtAtomId){
-			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);
+		// Integrity check
+		if($interface->univalent && (count($tgtAtomIds) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '$pathEntry'", 500);
+		
+		// Initialize result array
+		$result = $interface->univalent ? null : array();
+		
+		// Loop over target atoms
+		foreach ($tgtAtomIds as $tgtAtomId){
 			
-			// Add @context for JSON-LD to rootElement
-			if($rootElement) $content['@context'] = Config::get('serverURL') . Config::get('apiPath') . '/interface/' . $interface->id;
+			$tgtAtom = new Atom($tgtAtomId, $interface->tgtConcept, $interface->viewId);				
 			
-			// Leaf
-			if(empty($interface->subInterfaces) && empty($interface->refInterfaceId)){
-				
-				// Property
-				if($interface->isProperty && !$interface->isIdent){
-					$content = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
-				
-				// Object
-				}elseif($interface->tgtConceptIsObject){
-					$content = array();
-					
-					// Add meta data
-					if($metaData){
-						
-						// Define interface(s) to navigate to for this tgtAtom
-						$atomInterfaces = array();
-						if($interface->isLinkTo && !$inclLinktoData && $session->isAccessibleIfc($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
-						else $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->getInterfacesToReadConcept($interface->tgtConcept));
-							
-						// Add meta data elements
-						$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
-								, '@label' => $tgtAtom->label
-								, '@path' => $path .= $rootElement ? '/' : $interface->id . '/' . $tgtAtom->id . '/'
-								, '@view' => $tgtAtom->view
-								, '@type' => $tgtAtom->jsonld_type
-								, '@interfaces' => $atomInterfaces
-								, '_sortValues_' => array())
-						);
-					}
-					
-					// Add id TODO:can be removed when angular templates use @id instead of id
-					$content = array_merge($content, array (  'id' => $tgtAtom->id));
-					
-				// Scalar
+			// Object
+			if($interface->tgtConceptIsObject){
+				// Property leaf: a property at a leaf of a (sub)interface is presented as true/false
+				if($interface->isProperty && !$interface->isIdent && empty($interface->subInterfaces) && empty($interface->refInterfaceId)){
+					$result = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
+
+				// Regular object, with or without subinterfaces
 				}else{
-					$content = $this->typeConversion($tgtAtom->id, $interface->tgtConcept); // TODO: now same conversion as to database is used, maybe this must be changed to JSON types (or the json_encode/decode does this automaticaly?)
-				}
-				
-			// Tree
-			}else{
-				$content = array();
 					
-				// Add meta data
-				if($metaData){
+					$content = array();
+					$pathEntry = is_null($tgt) ? $pathEntry . '/' . $tgtAtom->id : $pathEntry;
+					
+					$content['@id'] = $tgtAtom->jsonld_id;
+					
+					// Meta data
+					if($options['metaData']){
+						$content['_path_'] = $pathEntry;
+						$content['_label_'] = $tgtAtom->label;
+					}
 					
 					// Define interface(s) to navigate to for this tgtAtom
-					$atomInterfaces = array();
-					if($interface->isLinkTo && !$inclLinktoData && $session->isAccessibleIfc($interface->refInterfaceId)) $atomInterfaces[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId);
-					else $atomInterfaces = array_map(function($o) { return array('id' => $o->id, 'label' => $o->label); }, $session->getInterfacesToReadConcept($interface->tgtConcept));
-						
-					// Add meta data elements
-					$content = array_merge($content, array (  '@id' => $tgtAtom->jsonld_id
-							, '@label' => $tgtAtom->label
-							, '@path' => $path .= $rootElement ? '/' : $interface->id . '/' . $tgtAtom->id . '/'
-							, '@view' => $tgtAtom->view
-							, '@type' => $tgtAtom->jsonld_type
-							, '@interfaces' => $atomInterfaces
-							, '_sortValues_' => array())
-					);
-				}
-				
-				// Add id TODO:can be removed when angular templates use @id instead of id
-				$content = array_merge($content, array (  'id' => $tgtAtom->id));
-				
-				// Subinterfaces
-				if(!empty($interface->subInterfaces)){
-					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have subinterfaces", 501);
-				
+					if($options['navIfc']){
+						$ifcs = array();
+						if($interface->isLinkTo && $session->isAccessibleIfc($interface->refInterfaceId)) 
+							$ifcs[] = array('id' => $interface->refInterfaceId, 'label' => $interface->refInterfaceId, 'url' => $this->jsonld_id . '/' . $interface->refInterfaceId);
+						else $ifcs = array_map(function($o) { 
+							return array('id' => $o->id, 'label' => $o->label, 'url' => $this->jsonld_id . '/' . $o->id); 
+						}, $session->getInterfacesToReadConcept($interface->tgtConcept));
+						$content['_ifc_'] = $ifcs;
+					}
+					
+					
+					// Subinterfaces											
 					foreach($interface->subInterfaces as $subinterface){
-						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData, null, $path);
-						$content[$subinterface->id] = $otherAtom;
+						// Skip subinterface if not given read rights
+						if(!$subinterface->crudR) continue;
+						
+						$subcontent = $tgtAtom->getContent($subinterface, $pathEntry . '/' . $subinterface->id, null, $options, $recursionArr);
+						$content[$subinterface->id] = $subcontent;
 							
 						// _sortValues_ (if subInterface is uni)
-						if($subinterface->univalent && $metaData){
-							// property
-							if(is_bool($otherAtom)) $content['_sortValues_'][$subinterface->id] = $otherAtom;
-							// object
-							elseif($subinterface->tgtConceptIsObject) $content['_sortValues_'][$subinterface->id] = current((array)$otherAtom)['@label'];
-							// scalar
-							else $content['_sortValues_'][$subinterface->id] = $otherAtom;
-						}
-					}
-				}
-
-				// Ref subinterfaces (for LINKTO interfaces only when $inclLinktoData = true)
-				if(!empty($interface->refInterfaceId) && (!$interface->isLinkTo || $inclLinktoData) && ($recursionAtomArr[$tgtAtom->id] < 2)){
-					if(!$interface->tgtConceptIsObject) throw new Exception("TgtConcept of interface: '" . $interface->label . "' is scalar and can not have a ref interface defined", 501);
-					
-					if($inclLinktoData) $recursionAtomArr[$tgtAtom->id]++;
-					
-					$refInterface = new InterfaceObject($interface->refInterfaceId, null);
-					foreach($refInterface->subInterfaces as $subinterface){
-						$otherAtom = $tgtAtom->getContent($subinterface, false, null, $inclLinktoData, $arrayType, $metaData, $recursionAtomArr, $path);
-						$content[$subinterface->id] = $otherAtom;
+						if($subinterface->univalent && $options['metaData']){
+							if(is_bool($subcontent)) $sortValue = $subcontent; // property
+							elseif($subinterface->tgtConceptIsObject) $sortValue = $subcontent['_label_']; // use label to sort objects
+							else $sortValue = $subcontent; // scalar
 							
-						// _sortValues_ (if subInterface is uni)
-						if($subinterface->univalent && $metaData){
-							// property
-							if(is_bool($otherAtom)) $content['_sortValues_'][$subinterface->id] = $otherAtom;
-							// object
-							elseif($subinterface->tgtConceptIsObject) $content['_sortValues_'][$subinterface->id] = current((array)$otherAtom)['@label'];
-							// scalar
-							else $content['_sortValues_'][$subinterface->id] = $otherAtom;
+							$content['_sortValues_'][$subinterface->id] = $sortValue;
 						}
 					}
-				}				
-			}
-			
-			// Determine whether value of atom must be inserted as list or as single value
-			
-			// Properties are represented as single value
-			if($interface->isProperty && !$interface->isIdent && empty($interface->subInterfaces) && empty($interface->refInterfaceId)){
-				$arr = $content;
-			// Object are always inserted as array
-			}elseif($interface->tgtConceptIsObject){
-				switch($arrayType){
-					case "num" :
-						if($interface->univalent && !$rootElement) $arr = $content;
-						else $arr[] = $content;
-						break;
-					case "assoc" :
-					default :
-						$arr[$content['id']] = $content;
-						break;
+					
+					// Include content for subinterfaces that refer to other interface (e.g. "label" : expr [LINKTO] INTERFACE <refInterface>)
+					if(!empty($interface->refInterfaceId)
+							&& (!$interface->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
+							&& (!in_array($tgtAtom->id, $recursionArr[$interface->refInterfaceId]))) // Prevent infinite loops
+					{
+						// Add target atom to $recursionArr to prevent infinite loops
+						if($options['inclLinktoData']) $recursionArr[$interface->refInterfaceId][] = $tgtAtom->id;
+							
+						$refInterface = new InterfaceObject($interface->refInterfaceId, null);
+						
+						foreach($refInterface->subInterfaces as $subinterface){
+							// Skip subinterface if not given read rights
+							if(!$subinterface->crudR) continue;
+							
+							$subcontent = $tgtAtom->getContent($subinterface, $pathEntry . '/' . $subinterface->id, null, $options, $recursionArr);
+							$content[$subinterface->id] = $subcontent;
+								
+							// _sortValues_ (if subInterface is uni)
+							if($subinterface->univalent && $options['metaData']){
+								if(is_bool($subcontent)) $sortValue = $subcontent; // property
+								elseif($subinterface->tgtConceptIsObject) $sortValue = $subcontent['_label_']; // use label to sort objects
+								else $sortValue = $subcontent; // scalar
+									
+								$content['_sortValues_'][$subinterface->id] = $sortValue;
+							}
+						}
+					}
+					
+					// Add target atom to result array
+					switch($options['arrayType']){
+						case 'num' :
+							if($interface->univalent) $result = $content;
+							else $result[] = $content;
+							break;
+						case 'assoc' :
+							if($interface->univalent) $result = $content;
+							$result[$tgtAtom->id] = $content;
+							break;
+						default :
+							throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
+					}
+					
 				}
-			// Non-object UNI results are inserted as single value
-			}elseif($interface->univalent){
-				$arr = $content;
-			// Non-object Non-UNI results are inserted as array 
+				
+			// Scalar
 			}else{
-				$arr[] = $content;
+				// Leaf
+				if(empty($interface->subInterfaces) && empty($interface->refInterfaceId)){
+					$content = $this->typeConversion($tgtAtom->id, $interface->tgtConcept);
+					
+					if($interface->univalent) $result = $content;
+					else $result[] = $content;
+					
+				// Tree
+				}else{
+					throw new Exception("Scalar cannot have a subinterface (box) defined: '$pathEntry'", 500);
+				}
 			}
-			unset($content);
 		}
 		
-		return $arr;
+		// Return result
+		if(!$interface->univalent && !is_null($tgt)) return current($result); 
+		else return $result;
+			
 	}
 	
 	/**********************************************************************************************
 	 * 
-	 * PUT POST DELETE and PATCH functions 
+	 * CREATE, UPDATE and DELETE functions 
 	 *  
 	 **********************************************************************************************/
 	
 	/**
-	 * Put (new) atom properties in database
-	 * @param InterfaceObject $interface specifies the interface of this transaction
-	 * @param mixed $requestData contains the data of this atom to put
-	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
-	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
+	 * 
+	 * @param InterfaceObject $interface
+	 * @param array $data
+	 * @param array $options
+	 * @return mixed content of created atom
 	 */
-	public function put($interface, $requestData, $requestType){		
-				
-		// Get current state of atom
-		$before = $this->getContent($interface, true, $this->id);
-		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
+	public function create($interface, $data, $options = array()){
 		
-		// Determine differences between current state ($before) and requested state ($request_data)
-		$patches = JsonPatch::diff($before, $requestData);
+		// Handle options
+		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 		
-		return $this->patch($interface, $patches, $requestType);
+		// Perform create
+		$newAtom = Concept::createNewAtom($interface->tgtConcept);
+		$this->database->addAtomToConcept($newAtom->id, $newAtom->concept);
+		
+		// TODO: add part to handle $data, for now: only create atom itself
+		
+		// If interface expression is a relation, also add tuple(this, newAtom) in this relation
+		if($interface->relation) $this->database->editUpdate($interface->relation, $interface->relationIsFlipped, $this->id, $this->concept, $newAtom->id, $newAtom->concept);
+		
+		// Close transaction
+		$this->database->closeTransaction($newAtom->concept . ' created', false, null, false);
+		
+		// Return content of created atom TODO: make sure that content is also returned when database was not committed
+		return $this->getContent($interface, $pathEntry, $newAtom->id, $options);
+		
 	}
 	
 	/**
-	 * Create atom in database
+	 * Update atom properties in database
 	 * @param InterfaceObject $interface specifies the interface of this transaction
-	 * @param mixed $requestData contains the data of this atom to post
-	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
-	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
+	 * @param mixed $data contains the data of this atom to put
+	 * @param array $options
+	 * @return array
 	 */
-	public function post($interface, $requestData, $requestType){
+	public function update($interface, $data, $options){
+	
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
 		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
-		
+	
 		// Determine differences between current state ($before) and requested state ($request_data)
-		$patches = JsonPatch::diff($before, $requestData);
+		$patches = mikemccabe\JsonPatch\JsonPatch::diff($before, $data);
 	
-		// Skip remove operations, because it is a POST operation and there are no values in de DB yet
-		$patches = array_filter($patches, function($patch){return $patch['op'] <> 'remove';});
-	
-		// Patch
-		$successMessage = $this->concept . ' added';
-		return $this->patch($interface, $patches, $requestType, $successMessage);
+		return $this->patch($interface, $patches, $options);
 	}
 	
 	/**
-	 * Delete atom from database
-	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
-	 * @throws Exception when concept of atom is not known
-	 * @return array (array notifications, boolean invariantRulesHold, string requestType)
+	 * 
+	 * @param array $options
+	 * @return void
 	 */
-	public function delete($requestType){
-		if(is_null($this->concept)) throw new Exception('Concept type of atom ' . $this->id . ' not provided', 500);
+	public function delete($options = array()){
+		
+		// Handle options
+		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 	
-		$databaseCommit = $this->processRequestType($requestType);
-	
+		// Perform delete
 		$this->database->deleteAtom($this->id, $this->concept);
-	
-		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction($this->concept . ' deleted', false, $databaseCommit, false);
-	
-		return array('notifications' 		=> Notifications::getAll()
-				,'invariantRulesHold'	=> $invariantRulesHold
-				,'requestType'			=> $requestType
-		);
-	
+
+		// Close transaction
+		$this->database->closeTransaction($this->concept . ' deleted', false, null, false);
+		
 	}
 	
 	/**
 	 * Processes array of patches (according to specifications: JSON Patch is specified in RFC 6902 from the IETF)
 	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
 	 * @param array $patches contains all patches that need to be applied to this atom
-	 * @param string $requestType specifies the intention of this transaction, i.e.'promise' or 'feedback'
-	 * @param string $successMessage
-	 * @throws Exception when patch operation is unknown
-	 * @return array (array patches, array content, array notifications, boolean invariantRulesHold, string requestType)
+	 * @param array $options 
+	 * @return array
 	 */
-	public function patch($interface, $patches, $requestType, $successMessage = null){
+	public function patch($interface, $patches, $options = array()){
 		
-		$databaseCommit = $this->processRequestType($requestType);
+		// Handle options
+		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
+		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
 		
-		if(is_null($successMessage)) $successMessage = $this->concept . ' updated';
-		
-		// Patch
+		// Perform patches
 		foreach ((array)$patches as $key => $patch){
 			try{
 				switch($patch['op']){
@@ -398,16 +389,19 @@ Class Atom {
 			}
 		}
 		
-		// $databaseCommit defines if transaction should be committed or not when all invariant rules hold. Returns if invariant rules hold.
-		$invariantRulesHold = $this->database->closeTransaction($successMessage, false, $databaseCommit, true);
+		// Close transaction
+		$this->database->closeTransaction($successMessage, false, null, false);
 		
-		return array( 'patches' 			=> $patches
-					, 'content' 			=> current((array)$this->newContent) // current(), returns first item of array. This is valid, because patchAtom() concerns exactly 1 atom.
-					, 'notifications' 		=> Notifications::getAll()
-					, 'invariantRulesHold'	=> $invariantRulesHold
-					, 'requestType'			=> $requestType
-					);
+		// Return content of created atom TODO: make sure that content is also returned when database was not committed
+		return $this->getContent($interface, $pathEntry, $this->id, $options);
+		
 	}
+	
+	/**********************************************************************************************
+	 *
+	 * PATCH functions
+	 *
+	 **********************************************************************************************/
 	
 	/** 
 	 * Performs editUpdate or editDelete based on patch replace operation
@@ -418,7 +412,7 @@ Class Atom {
 	 */
 	private function doPatchReplace($patch, $interface){
 		
-		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
+		if(($patchInfo = $this->walkIfcPath($patch['path'], $interface)) === false) return; // skip
 		$tgtInterface = $patchInfo['ifc'];
 		
 		if(!$tgtInterface->crudU) throw new Exception("Update is not allowed for interface " . $tgtInterface->label, 403);
@@ -435,10 +429,10 @@ Class Atom {
 			
 			// When true
 			if($patch['value']){						
-				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patchInfo['srcAtom'], $tgtInterface->tgtConcept);
+				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom']->id, $tgtInterface->srcConcept, $patchInfo['srcAtom']->id, $tgtInterface->tgtConcept);
 			// When false or null
 			}else{
-				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patchInfo['srcAtom'], $tgtInterface->tgtConcept);
+				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom']->id, $tgtInterface->srcConcept, $patchInfo['srcAtom']->id, $tgtInterface->tgtConcept);
 			}
 			
 		// Interface is a relation to an object
@@ -450,11 +444,11 @@ Class Atom {
 			
 			// Replace by nothing => editDelete
 			if(is_null($patch['value'])){
-				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, null, $tgtInterface->tgtConcept);
+				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom']->id, $tgtInterface->srcConcept, null, $tgtInterface->tgtConcept);
 			
 			// Replace by other atom => editUpdate
 			}else{
-				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom'], $tgtInterface->srcConcept, $patch['value'], $tgtInterface->tgtConcept);
+				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom']->id, $tgtInterface->srcConcept, $patch['value'], $tgtInterface->tgtConcept);
 			}
 		}
 	}
@@ -471,7 +465,7 @@ Class Atom {
 		// Report error when no patch value is provided.
 		if(is_null($patch['value'])) throw new Exception("Patch operation add provided without value: '{$patch['path']}'", 500);
 		
-		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
+		if(($patchInfo = $this->walkIfcPath($patch['path'], $interface)) === false) return; // skip
 		
 		if(!$patchInfo['ifc']->crudU) throw new Exception("Update is not allowed for interface " . $patchInfo['ifc']->label, 403);
 		
@@ -482,7 +476,7 @@ Class Atom {
 		 * If interface is an expression to an object -> perform editUpdate
 		 * If interface is an non-uni expression to a scalar -> perform editUpdate
 		 */
-		$this->database->editUpdate($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom'], $patchInfo['ifc']->srcConcept, $patch['value'], $patchInfo['ifc']->tgtConcept);
+		$this->database->editUpdate($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom']->id, $patchInfo['ifc']->srcConcept, $patch['value'], $patchInfo['ifc']->tgtConcept);
 		
 	}
 	
@@ -494,7 +488,7 @@ Class Atom {
 	 */
 	private function doPatchRemove($patch, $interface){
 		
-		if(($patchInfo = $this->processPatchPath($patch, $interface)) === false) return; // skip
+		if(($patchInfo = $this->walkIfcPath($patch['path'], $interface)) === false) return; // skip
 		
 		if(!$patchInfo['ifc']->crudU) throw new Exception("Update is not allowed for interface " . $patchInfo['ifc']->label, 403);
 		
@@ -505,7 +499,7 @@ Class Atom {
 		 * If interface is an expression to an object -> perform editDelete
 		 * If interface is an non-uni expression to a scalar -> perform editDelete
 		 */
-		$this->database->editDelete($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom'], $patchInfo['ifc']->srcConcept, $patchInfo['tgtAtom'], $patchInfo['ifc']->tgtConcept);
+		$this->database->editDelete($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom']->id, $patchInfo['ifc']->srcConcept, $patchInfo['tgtAtom']->id, $patchInfo['ifc']->tgtConcept);
 	}
 	
 	/**********************************************************************************************
@@ -516,57 +510,56 @@ Class Atom {
 	
 	/**
 	 * Finds the subinterface, srcAtom, tgtAtom combination given a patch path
-	 * @param array $patch
-	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
-	 * @throws Exception when interface path does not exists or is not editable
-	 * @return array (InterfaceObject ifc, string srcAtom, string tgtAtom)
+	 * @param string $path starts with '/' after which a sequence of 'ifc/atom/ifc/atom/ifc/atom/etc' can be placed
+	 * @param InterfaceObject|null $interface start walking path from a specific (sub)interface  
+	 * @return array (InterfaceObject ifc, Atom srcAtom, Atom|null tgtAtom)
 	 */
-	private function processPatchPath($patch, $interface = null){
+	public function walkIfcPath($path, $ifc = null){
+		$session = Session::singleton();
 		
-		$pathArr = explode('/', $patch['path']);
+		if(!$this->atomExists()) throw new Exception ("Resource not found", 404);
 		
-		$tgtInterface = $interface;
-		$tgtAtom = $this->id; // init of tgtAtom is this atom itself, will be changed in while statement
+		$srcAtomId = $this->id;
+		$tgtAtomId = null;
 		
-		// remove first empty arr element, due to root slash e.g. '/Projects/{atomid}/...'
-		if(current($pathArr) == false) array_shift($pathArr); // was empty(current($pathArr)), but prior to PHP 5.5, empty() only supports variables, not expressions.
-		
-		// find the right subinterface
+		// remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
+		$path = trim($path, '/');
+		$pathArr = explode('/', $path);
+		if(empty($pathArr)) throw new Exception ("No interface path provided", 500); 
+
 		while (count($pathArr)){
+			// Ifc
 			$interfaceId = array_shift($pathArr);
+			$ifc = InterfaceObject::getSubinterface($interfaceId, $ifc);
+			
+			// Checks
+			if($ifc === false) throw new Exception("Interface path does not exists: '$path'", 500);
+			if($ifc->isTopLevelIfc && !$session->isAccessibleIfc($ifc->id)) throw new Exception("Interface is not accessible for active roles or accessible roles (login)", 401); // 401: Unauthorized
+			if((!$ifc->crudR) && (count($pathArr) > 1)) throw new Exception ("Read not allowed for '{$ifc->id}' in path '$path'", 405); // crudR required to walk the path futher when this is not the last ifc part in the path (count > 1).
+
+			// Set tgtAtom as srcAtom, but skip the first time
+			if(!is_null($tgtAtomId)) $srcAtomId = $tgtAtomId;
+			
+			// Set new tgtAtom
+			$tgtAtomId = array_shift($pathArr); // Returns the shifted value, or NULL if array is empty or is not an array.
+			
+			// Check if tgtAtom is part of (sub)interface
+			if(!is_null($tgtAtomId)){
+				$idEsc = $this->database->escape($this->id);
+				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
+				$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
 				
-			// if path starts with '@' or is '_sortValues_' return false
-			if(substr($interfaceId, 0, 1) == '@') return false;
-			if($interfaceId == '_sortValues_') return false;
-				
-			$tgtInterface = is_null($interface) ? new InterfaceObject($interfaceId) : InterfaceObject::getSubinterface($tgtInterface, $interfaceId);
-				
-			$srcAtom = $tgtAtom; // set srcAtom, before changing tgtAtom
-			$tgtAtom = array_shift($pathArr); // set tgtAtom
+				if(!in_array($tgtAtomId, $tgtAtomIds)) throw new Exception ("Resource not found", 404);
+			}			
 		
 		}
+		$srcAtom = new Atom($srcAtomId, $ifc->srcConcept);
+		$tgtAtom = is_null($tgtAtomId) ? null : new Atom($tgtAtomId, $ifc->tgtConcept);
 		
-		// Check if interface is editable
-		if($tgtInterface === false) throw new Exception("Interface path does not exists: {$patch['path']}", 500);
-		if(!$tgtInterface->editable) throw new Exception($tgtInterface->label . " is not editable", 403);
-		
-		return array('ifc' => $tgtInterface, 'srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom);
+		return array('ifc' => $ifc, 'srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom);
 		
 	}
 	
-	/**
-	 * Checks request type and returns boolean to determine database commit
-	 * @param string $requestType
-	 * @throws Exception when unknown request type specified (allowed: 'feedback' and 'promise')
-	 * @return boolean (true for 'promise', false for 'feedback')
-	 */
-	private function processRequestType($requestType){
-		switch($requestType){
-			case 'feedback' : return false;
-			case 'promise' : return true;
-			default : throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
-		}
-	}
 	
 	/**
 	 * Coversion of php variables to json according to Ampersand technical types (TTypes)
