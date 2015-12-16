@@ -136,7 +136,7 @@ class OAuthLoginApi{
 					// Set sessionUser
 					$interface = new InterfaceObject('EmailUser');
 					$atom = new Atom($email, 'Email');
-					$users = array_keys((array)$atom->getContent($interface, true));
+					$users = array_keys((array)$atom->getContent($interface, $interface->id));
 					
 					// create new user
 					if(empty($users)){
@@ -148,7 +148,7 @@ class OAuthLoginApi{
 						$domain = explode('@', $email)[1];
 						$interface = new InterfaceObject('DomainOrgs');
 						$atom = new Atom($domain, 'Domain');
-						$orgs = array_keys((array)$atom->getContent($interface, true));
+						$orgs = array_keys((array)$atom->getContent($interface, $interface->id));
 						
 						foreach ($orgs as $org){
 							$db->editUpdate('userOrganization', false, $newUser, 'User', $org, 'Organization');

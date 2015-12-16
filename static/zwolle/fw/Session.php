@@ -135,7 +135,7 @@ class Session {
 				
 				$interface = new InterfaceObject('SessionRoles');
 				$session = new Atom(session_id(), 'SESSION');
-				$sessionRoleLabels = array_keys((array)$session->getContent($interface, true));
+				$sessionRoleLabels = array_keys((array)$session->getContent($interface, $interface->id));
 				
 				foreach(Role::getAllRoleObjects() as $role){
 					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
@@ -156,7 +156,7 @@ class Session {
 		}else{
 			$ifc = new InterfaceObject('SessionUser');
 			$session = new Atom(session_id(), 'SESSION');
-			$sessionUsers = array_keys((array)$session->getContent($ifc, true));
+			$sessionUsers = array_keys((array)$session->getContent($ifc, $interface->id));
 				
 			if(count($sessionUsers) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
 			if(empty($sessionUsers)){
@@ -206,7 +206,7 @@ class Session {
 			try {
 				$ifc = new InterfaceObject('SessionVars');
 				$session = new Atom(session_id(), 'SESSION');
-				return $session->getContent($ifc, false, null, false, 'num', false); // $rootElement = false => this will return a single object instead of array.
+				return $session->getContent($ifc, $ifc->id);
 			}catch (Exception $e){
 				return false;
 			}		
