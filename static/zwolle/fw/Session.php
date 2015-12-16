@@ -45,6 +45,9 @@ class Session {
 
 			$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
 			
+			// Add public interfaces
+			$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
+			
 		} catch (Exception $e){
 		  	throw $e;
 		}
@@ -95,7 +98,6 @@ class Session {
 		
 		// Add public interfaces
 		$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, InterfaceObject::getPublicInterfaces());
-		$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
 		
 		// If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
 		if(Config::get('loginEnabled')){
