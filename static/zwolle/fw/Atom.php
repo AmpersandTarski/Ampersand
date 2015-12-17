@@ -423,8 +423,8 @@ Class Atom {
 	 */
 	private function doPatchReplace($ifc, $src, $value){
 		
-		// PatchReplace only works for UNI expressions. Otherwise, use PatchRemove and PatchAdd
-		if(!$ifc->univalent) throw new Exception("Cannot patch replace for univalent interface {$ifc->label}. Use patch remove + add instead", 500);
+		// PatchReplace only works for UNI expressions. Otherwise, use patch remove and patch add
+		if(!$ifc->univalent) throw new Exception("Cannot patch replace for non-univalent interface {$ifc->label}. Use patch remove + add instead", 500);
 		
 		/******* Perform patch *********/
 		
@@ -544,7 +544,7 @@ Class Atom {
 	public function walkIfcPath($path, $ifc = null){
 		$session = Session::singleton();
 		
-		if(!$this->atomExists()) throw new Exception ("Resource not found", 404);
+		if(!$this->atomExists()) throw new Exception ("Resource {$this->id}[{$this->concept}] not found", 404);
 		
 		$srcAtomId = $this->id;
 		$tgtAtomId = null;
