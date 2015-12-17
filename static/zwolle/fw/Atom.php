@@ -152,7 +152,7 @@ Class Atom {
 		
 		// Check if tgtAtom is part of tgtAtoms
 		if(!is_null($tgt)){
-			if(!in_array($tgt, $tgtAtomIds)) throw new Exception ("Resource not found", 404);
+			if(!in_array($tgt, $tgtAtomIds)) throw new Exception ("Resource '{$tgt}[{$interface->tgtConcept}]' not found", 404);
 			$tgtAtomIds = array($tgt);
 		}
 		
@@ -547,7 +547,7 @@ Class Atom {
 	public function walkIfcPath($path, $ifc = null){
 		$session = Session::singleton();
 		
-		if(!$this->atomExists()) throw new Exception ("Resource {$this->id}[{$this->concept}] not found", 404);
+		if(!$this->atomExists()) throw new Exception ("Resource '{$this->id}[{$this->concept}]' not found", 404);
 		
 		$srcAtomId = $this->id;
 		$tgtAtomId = null;
@@ -580,7 +580,7 @@ Class Atom {
 				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
 				$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
 				
-				if(!in_array($tgtAtomId, $tgtAtomIds)) throw new Exception ("Resource not found", 404);
+				if(!in_array($tgtAtomId, $tgtAtomIds)) throw new Exception ("Resource '{$tgtAtomId}[{$ifc->tgtConcept}]' not found", 404);
 			}			
 		
 		}

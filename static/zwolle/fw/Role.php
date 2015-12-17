@@ -49,7 +49,7 @@ class Role {
 		foreach(Role::getAllRoles() as $arr){
 			if($arr['id'] == $roleId) return $arr;
 		}
-		throw new Exception ("Role with roleId \'$roleId\' does not exists", 404);
+		throw new Exception ("Role with id '{$roleId}' does not exists", 404);
 	}
 	
 	public static function getAllRoles(){

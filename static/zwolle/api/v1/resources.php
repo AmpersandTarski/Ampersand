@@ -37,7 +37,7 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 
 	// Get specific resource (i.e. atom)
 	$resource = new Atom($resourceId, $resourceType);
-	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->id}' not found", 404);
+	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->id}[{$resource->concept}]' not found", 404);
 	
 	$content = $resource->getAtom();
 
