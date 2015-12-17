@@ -172,8 +172,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		);
 	};
 	
-	$if(containsEditable)$$if(verbose)$// The interface contains at least 1 editable relation
-	$endif$// Function to patch only the changed attributes of a Resource
+	// Function to patch only the changed attributes of a Resource
 	\$scope.patch = function(patches, resourceId, requestType){
 		
 		if(\$scope.patchesCache[resourceId] === undefined) \$scope.patchesCache[resourceId] = []; // new array
@@ -247,11 +246,9 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		console.log(patches);
 		\$scope.patch(patches, resourceId);
 		
-	};$else$$if(verbose)$// The interface does not contain any editable relations$endif$$endif$
+	};
 	
-	$if(containsEditableObjects)$$if(verbose)$// The interface contains at least 1 editable relation to a concept with representation OBJECT
-	$endif$// AddObject function to add a new item (val) to a certain property (property) of an object (obj)
-	// Also needed by addModal function.
+	// AddObject function to add a new item (val) to a certain property (property) of an object (obj)
 	\$scope.addObject = function(obj, property, item, resourceId){
 		if(item.id === undefined || item.id == ''){
 			console.log('selected id is undefined');
@@ -287,7 +284,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	$if(verbose)$// A property for every concept with representation OBJECT of the editable relations in this interface
 	$endif$$editableObjects:{concept|\$scope.typeahead['$concept$'] = Restangular.all('resource/$concept$').getList().\$object;
-	}$$else$$if(verbose)$// The interface does not contain editable relations to a concept with representation OBJECT$endif$$endif$
+	}$
 	
 	/**********************************************************************************************
 	 *
