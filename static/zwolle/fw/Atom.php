@@ -373,6 +373,10 @@ Class Atom {
 		// Perform patches
 		foreach ((array)$patches as $key => $patch){
 			try{
+				// Check patch
+				if(!array_key_exists('op', $patch)) throw new Exception ("No 'op' (i.e. operation) specfied for patch #{$key}", 400);
+				if(!array_key_exists('path', $patch)) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
+				
 				$pathInfo = $this->walkIfcPath($patch['path'], $interface);
 				$path = $pathEntry . '/' . $patch['path'];
 				
@@ -382,10 +386,12 @@ Class Atom {
 				switch($patch['op']){
 					case "replace" :
 						if(!is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch replace '{$path}'. Path ends with resource", 405);
+						if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch replace. No 'value' specfied in '{$path}'", 400);
 						$this->doPatchReplace($pathInfo['ifc'], $pathInfo['srcAtom'], $patch['value']);
 						break;
 					case "add" :
 						if(!is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch add '{$path}'. Path ends with resource", 405);
+						if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied in '{$path}'", 400);
 						$this->doPatchAdd($pathInfo['ifc'], $pathInfo['srcAtom'], $patch['value']);
 						break;
 					case "remove" :
@@ -469,9 +475,6 @@ Class Atom {
 	 * @return void
 	 */
 	private function doPatchAdd($ifc, $src, $value){
-
-		// Report error when no patch value is provided.
-		if(is_null($value)) throw new Exception("Cannot patch add '{$ifc->label}' without value", 500);
 		
 		/******* Perform patch *********/
 		
