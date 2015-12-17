@@ -53,21 +53,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	    );
     }
 	
-	\$scope.\$on("\$locationChangeStart", function(event, next, current){
-		$if(verbose)$console.log("location changing to:" + next);$endif$
-		checkRequired = false; // default
-		for(var item in \$scope.showSaveButton) { // iterate over all properties (resourceIds) in showSaveButton object
-			if(\$scope.showSaveButton.hasOwnProperty( item ) ) { // only checks its own properties, not inherited ones
-				if(\$scope.showSaveButton[item] == true) checkRequired = true; // if item is not saved, checkRequired before location change
-			}
-		}
-		
-		if(checkRequired){ // if checkRequired (see above)
-			confirmed = confirm("You have unsaved edits. Do you wish to leave?");
-			if (event && !confirmed) event.preventDefault();
-		}
-	});
-	
 	$if(verbose)$// The functions below are only necessary if the interface allows to add/delete the complete atom,
 	// but since this cannot be specified yet in Ampersand we always include it.
 	
@@ -285,6 +270,27 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	$if(verbose)$// A property for every concept with representation OBJECT of the editable relations in this interface
 	$endif$$editableObjects:{concept|\$scope.typeahead['$concept$'] = Restangular.all('resource/$concept$').getList().\$object;
 	}$
+	
+	/**********************************************************************************************
+	 *
+	 * Transaction status function
+	 *
+	 **********************************************************************************************/
+	
+	\$scope.\$on("\$locationChangeStart", function(event, next, current){
+		$if(verbose)$console.log("location changing to:" + next);$endif$
+		checkRequired = false; // default
+		for(var item in \$scope.showSaveButton) { // iterate over all properties (resourceIds) in showSaveButton object
+			if(\$scope.showSaveButton.hasOwnProperty( item ) ) { // only checks its own properties, not inherited ones
+				if(\$scope.showSaveButton[item] == true) checkRequired = true; // if item is not saved, checkRequired before location change
+			}
+		}
+		
+		if(checkRequired){ // if checkRequired (see above)
+			confirmed = confirm("You have unsaved edits. Do you wish to leave?");
+			if (event && !confirmed) event.preventDefault();
+		}
+	});
 	
 	/**********************************************************************************************
 	 *
