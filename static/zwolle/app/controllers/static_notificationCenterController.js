@@ -1,6 +1,7 @@
-AmpersandApp.controller('static_notificationCenterController', function ($scope, $rootScope, $route, $routeParams, $timeout, Restangular, $localStorage) {
+AmpersandApp.controller('static_notificationCenterController', function ($scope, $rootScope, $route, $routeParams, $timeout, Restangular, $localStorage, $sessionStorage) {
 	
 	$scope.$storage = $localStorage;
+	$scope.$sessionStorage = $sessionStorage;
 	
 	// Function to update notifications after api response
 	$rootScope.updateNotifications = function(notifications){
@@ -51,7 +52,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	// Function to get notifications again
 	$rootScope.getNotifications = function(){
-		Restangular.one('notifications/all').get().then(function(data){
+		Restangular.one('sessions', $scope.$sessionStorage.session.id).one('notifications').get().then(function(data){
 			$rootScope.updateNotifications(data);
 		});
 	}
