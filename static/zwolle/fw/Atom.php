@@ -371,6 +371,7 @@ Class Atom {
 		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
 		
 		// Perform patches
+		$errorCount = 0;
 		foreach ((array)$patches as $key => $patch){
 			try{
 				// Check patch
@@ -403,7 +404,15 @@ Class Atom {
 				}
 			}catch (Exception $e){
 				Notifications::addError($e->getMessage());
+				$errorCount++;
 			}
+		}
+		
+		if($errorCount){
+			$successMessage .= " WITH ERRORS";
+			$totalPatches = count($patches);
+			$processed = $totalPatches - $errorCount;
+			Notifications::addInfo("{$processed}/{$totalPatches} patches processed. {$errorCount} errors.");
 		}
 		
 		// Close transaction
