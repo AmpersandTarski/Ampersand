@@ -59,22 +59,26 @@ Class Atom {
 	
 	/**
 	 * Returns basic information about an atom
-	 * @return array (string @id, string @label, array @view, string @type, array @interfaces, string id)
+	 * @param array $options
+	 * @return array
 	 */
-	public function getAtom(){
-		foreach(InterfaceObject::getAllInterfacesForConcept($this->concept) as $ifc){
-			$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->jsonld_id . '/' . $ifc->id);
+	public function getAtom($options = array()){
+		$result = array('_id_' => $this->id, '_label_' => $this->label, '_view_' => $this->view);
+		
+		if($options['jsonld']){
+			$result['@id'] = $this->jsonld_id;
+			$result['@type'] = $this->jsonld_type;
 		}
 		
-		return array( 
-					// JSON LD parts
-					  '@id' => $this->jsonld_id
-					, '@type' => $this->jsonld_type
-					// Ampersand parts
-					, '_label_' => $this->label
-		        	, '_view_' => $this->view
-					, '_ifc_' => $ifcs
-					);
+		if($options['navIfc']){
+			foreach(InterfaceObject::getAllInterfacesForConcept($this->concept) as $ifc){
+				$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->jsonld_id . '/' . $ifc->id);
+			}
+			
+			$result['_ifcs_'] = $ifcs;
+		}
+		
+		return $result;
 	}
 	
 	/**
@@ -176,15 +180,18 @@ Class Atom {
 				// Regular object, with or without subinterfaces
 				}else{
 					
-					$content = array();
 					$pathEntry = is_null($tgt) ? $pathEntry . '/' . $tgtAtom->id : $pathEntry;
 					
-					$content['@id'] = $tgtAtom->jsonld_id;
+					$content = array('_id_' => $tgtAtom->id, '_label_' => $tgtAtom->label, '_view_' => $tgtAtom->view);
 					
+					if($options['jsonld']){
+						$content['@id'] = $tgtAtom->jsonld_id;
+						$content['@type'] = $tgtAtom->jsonld_type;
+					}
+										
 					// Meta data
 					if($options['metaData']){
 						$content['_path_'] = $pathEntry;
-						$content['_label_'] = $tgtAtom->label;
 					}
 					
 					// Define interface(s) to navigate to for this tgtAtom
@@ -195,7 +202,7 @@ Class Atom {
 						else $ifcs = array_map(function($o) { 
 							return array('id' => $o->id, 'label' => $o->label, 'url' => $this->jsonld_id . '/' . $o->id); 
 						}, $session->getInterfacesToReadConcept($interface->tgtConcept));
-						$content['_ifc_'] = $ifcs;
+						$content['_ifcs_'] = $ifcs;
 					}
 					
 					
