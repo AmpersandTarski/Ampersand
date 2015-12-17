@@ -10,7 +10,7 @@ AmpersandApp.config(function($routeProvider) {
 			,	interfaceLabel: 'Home'
 			})
 		// installer page
-		.when('/installer',
+		.when('/admin/installer',
 			{	controller: 'static_installerController'
 			,	templateUrl: 'app/views/static_installer.html'
 			,	interfaceLabel: 'Installer'

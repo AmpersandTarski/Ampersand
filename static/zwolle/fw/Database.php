@@ -72,7 +72,7 @@ class Database {
 	private function selectDB(){
 		$this->db_link->select_db($this->db_name);
 		
-		if ($this->db_link->error) throw new Exception($this->db_link->error . '. Please <a href="#/installer" class="alert-link">Reinstall database</a>', 500);
+		if ($this->db_link->error) throw new Exception($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">Reinstall database</a>', 500);
 		
 	}
 	
