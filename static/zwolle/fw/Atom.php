@@ -378,7 +378,7 @@ Class Atom {
 				if(!array_key_exists('path', $patch)) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
 				
 				$pathInfo = $this->walkIfcPath($patch['path'], $interface);
-				$path = $pathEntry . '/' . $patch['path'];
+				$path = $pathEntry . $pathInfo['path'];
 				
 				// Checks
 				if(!$pathInfo['ifc']->crudU) throw new Exception("Update is not allowed for path '{$path}'", 403);
@@ -555,6 +555,7 @@ Class Atom {
 		// remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
 		$path = trim($path, '/');
 		$pathArr = explode('/', $path);
+		$path = '/' . $path;
 		if(empty($pathArr)) throw new Exception ("No interface path provided", 500); 
 
 		while (count($pathArr)){
@@ -586,7 +587,7 @@ Class Atom {
 		$srcAtom = new Atom($srcAtomId, $ifc->srcConcept);
 		$tgtAtom = is_null($tgtAtomId) ? null : new Atom($tgtAtomId, $ifc->tgtConcept);
 		
-		return array('ifc' => $ifc, 'srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom);
+		return array('ifc' => $ifc, 'srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom, 'path' => $path);
 		
 	}
 	
