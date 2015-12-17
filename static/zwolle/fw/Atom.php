@@ -371,15 +371,24 @@ Class Atom {
 		// Perform patches
 		foreach ((array)$patches as $key => $patch){
 			try{
+				$pathInfo = $this->walkIfcPath($patch['path'], $interface);
+				$path = $pathEntry . '/' . $patch['path'];
+				
+				// Checks
+				if(!$pathInfo['ifc']->crudU) throw new Exception("Update is not allowed for path '{$path}'", 403);
+				
 				switch($patch['op']){
 					case "replace" :
-						$this->doPatchReplace($interface, $pathEntry, $patch);
+						if(!is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch replace '{$path}'. Path ends with resource", 405);
+						$this->doPatchReplace($pathInfo['ifc'], $pathInfo['srcAtom'], $patch['value']);
 						break;
 					case "add" :
-						$this->doPatchAdd($interface, $pathEntry, $patch);
+						if(!is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch add '{$path}'. Path ends with resource", 405);
+						$this->doPatchAdd($pathInfo['ifc'], $pathInfo['srcAtom'], $patch['value']);
 						break;
 					case "remove" :
-						$this->doPatchRemove($interface, $pathEntry, $patch);
+						if(is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch remove '{$path}'. Missing resource identifier", 405);
+						$this->doPatchRemove($pathInfo['ifc'], $pathInfo['srcAtom'], $pathInfo['tgtAtom']);
 						break;
 					default :
 						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
@@ -405,101 +414,117 @@ Class Atom {
 	
 	/** 
 	 * Performs editUpdate or editDelete based on patch replace operation
-	 * @param array $patch
-	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
-	 * @throws Exception
+	 * @param InterfaceObject $ifc
+	 * @param Atom $src
+	 * @param mixed $value
 	 * @return void
 	 */
-	private function doPatchReplace($interface, $pathEntry, $patch){
-		
-		if(($patchInfo = $this->walkIfcPath($patch['path'], $interface)) === false) return; // skip
-		$tgtInterface = $patchInfo['ifc'];
-		
-		if(!$tgtInterface->crudU) throw new Exception("Update is not allowed for interface " . $tgtInterface->label, 403);
+	private function doPatchReplace($ifc, $src, $value){
 		
 		// PatchReplace only works for UNI expressions. Otherwise, use PatchRemove and PatchAdd
-		if(!$tgtInterface->univalent) throw new Exception("Cannot perform patch replace for univalent path '{$patch['path']}'. Use patch remove + add instead", 500); 
+		if(!$ifc->univalent) throw new Exception("Cannot patch replace for univalent interface {$ifc->label}. Use patch remove + add instead", 500);
 		
-		/******* Perform edit *********/
+		/******* Perform patch *********/
 		
 		// Interface is property
-		if ($tgtInterface->isProperty && !$tgtInterface->isIdent){
+		if($ifc->isProperty && !$ifc->isIdent){
 			// Throw error when patch value is something else then true, false or null 
-			if(!(is_bool($patch['value']) || is_null($patch['value']))) throw new Exception("Interface $tgtInterface->label is property, boolean expected, non-boolean provided");
+			if(!(is_bool($value) || is_null($value))) throw new Exception("Interface {$ifc->label} is property, boolean expected, non-boolean provided");
 			
 			// When true
-			if($patch['value']){						
-				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom']->id, $tgtInterface->srcConcept, $patchInfo['srcAtom']->id, $tgtInterface->tgtConcept);
+			if($value){						
+				$this->database->editUpdate($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $src->id, $ifc->tgtConcept);
 			// When false or null
 			}else{
-				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom']->id, $tgtInterface->srcConcept, $patchInfo['srcAtom']->id, $tgtInterface->tgtConcept);
+				$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $src->id, $ifc->tgtConcept);
 			}
 			
 		// Interface is a relation to an object
-		}elseif($tgtInterface->tgtConceptIsObject){
-			throw new Exception("Cannot perform patch replace for object reference '{$patch['path']}'. Use patch remove + add instead", 500);
+		}elseif($ifc->tgtConceptIsObject){
+			throw new Exception("Cannot patch replace for object reference in interface '{$ifc->label}'. Use patch remove + add instead", 500);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
-		}elseif(!$tgtInterface->tgtConceptIsObject){
+		}elseif(!$ifc->tgtConceptIsObject){
 			
 			// Replace by nothing => editDelete
-			if(is_null($patch['value'])){
-				$this->database->editDelete($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom']->id, $tgtInterface->srcConcept, null, $tgtInterface->tgtConcept);
+			if(is_null($value)){
+				$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, null, $ifc->tgtConcept);
 			
 			// Replace by other atom => editUpdate
 			}else{
-				$this->database->editUpdate($tgtInterface->relation, $tgtInterface->relationIsFlipped, $patchInfo['srcAtom']->id, $tgtInterface->srcConcept, $patch['value'], $tgtInterface->tgtConcept);
+				$this->database->editUpdate($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $value, $ifc->tgtConcept);
 			}
+		}else{
+			throw new Exception ("Unknown patch replace. Please contact the application administrator", 500);
 		}
 	}
 	
 	/**
 	 * Performs editUpdate based on patch add operation
-	 * @param array $patch
-	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
-	 * @throws Exception
+	 * @param InterfaceObject $ifc
+	 * @param Atom $src
+	 * @param mixed $value
 	 * @return void
 	 */
-	private function doPatchAdd($interface, $pathEntry, $patch){
+	private function doPatchAdd($ifc, $src, $value){
 
 		// Report error when no patch value is provided.
-		if(is_null($patch['value'])) throw new Exception("Patch operation add provided without value: '{$patch['path']}'", 500);
+		if(is_null($value)) throw new Exception("Cannot patch add '{$ifc->label}' without value", 500);
 		
-		if(($patchInfo = $this->walkIfcPath($patch['path'], $interface)) === false) return; // skip
+		/******* Perform patch *********/
 		
-		if(!$patchInfo['ifc']->crudU) throw new Exception("Update is not allowed for interface " . $patchInfo['ifc']->label, 403);
+		// Interface is property
+		if($ifc->isProperty && !$ifc->isIdent){
+			// Properties must be treated as a 'replace', so not handled here
+			throw new Exception("Cannot patch add for property '{$ifc->label}'. Use patch replace instead", 500);
 		
-		/******* Perform edit *********
-		 * Properties are treated as a 'replace', so not handled here
-		 * UNI interface expressions to scalar are also a 'replace' and not handled here
-		 * 
-		 * If interface is an expression to an object -> perform editUpdate
-		 * If interface is an non-uni expression to a scalar -> perform editUpdate
-		 */
-		$this->database->editUpdate($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom']->id, $patchInfo['ifc']->srcConcept, $patch['value'], $patchInfo['ifc']->tgtConcept);
+		// Interface is a relation to an object
+		}elseif($ifc->tgtConceptIsObject){
+			
+			$this->database->editUpdate($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $value, $ifc->tgtConcept);
 		
+		// Interface is a relation to a scalar (i.e. not an object)
+		}elseif(!$ifc->tgtConceptIsObject){
+			if($ifc->univalent) throw new Exception("Cannot patch add for univalent interface {$ifc->label}. Use patch replace instead", 500);
+			
+			$this->database->editUpdate($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $value, $ifc->tgtConcept);
+			
+		}else{
+			throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
+		}
 	}
 	
 	/**
 	 * Performs editDelete based on patch remove operation
-	 * @param array $patch
-	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
+	 * @param InterfaceObject $ifc
+	 * @param Atom $src
+	 * @param Atom $tgt
 	 * @return void
 	 */
-	private function doPatchRemove($interface, $pathEntry, $patch){
+	private function doPatchRemove($ifc, $src, $tgt){
+				
+		/******* Perform patch *********/
 		
-		if(($patchInfo = $this->walkIfcPath($patch['path'], $interface)) === false) return; // skip
+		// Interface is property
+		if($ifc->isProperty && !$ifc->isIdent){
+			// Properties must be treated as a 'replace', so not handled here
+			throw new Exception("Cannot patch remove for property '{$ifc->label}'. Use patch replace instead", 500);
 		
-		if(!$patchInfo['ifc']->crudU) throw new Exception("Update is not allowed for interface " . $patchInfo['ifc']->label, 403);
+		// Interface is a relation to an object
+		}elseif($ifc->tgtConceptIsObject){
+			
+			$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $tgt->id, $ifc->tgtConcept);
 		
-		/******* Perform edit *********
-		 * Properties are treated as a 'replace', so not handled here
-		 * UNI interface expressions to scalar are also a 'replace' and not handled here
-		 * 
-		 * If interface is an expression to an object -> perform editDelete
-		 * If interface is an non-uni expression to a scalar -> perform editDelete
-		 */
-		$this->database->editDelete($patchInfo['ifc']->relation, $patchInfo['ifc']->relationIsFlipped, $patchInfo['srcAtom']->id, $patchInfo['ifc']->srcConcept, $patchInfo['tgtAtom']->id, $patchInfo['ifc']->tgtConcept);
+		// Interface is a relation to a scalar (i.e. not an object)
+		}elseif(!$ifc->tgtConceptIsObject){
+			if($ifc->univalent) throw new Exception("Cannot patch remove for univalent interface {$ifc->label}. Use patch replace instead", 500);
+			
+			$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $tgt->id, $ifc->tgtConcept);
+			
+		}else{
+			throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
+		}
+		
 	}
 	
 	/**********************************************************************************************
