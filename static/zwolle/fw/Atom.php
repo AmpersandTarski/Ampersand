@@ -326,6 +326,8 @@ Class Atom {
 	 * @return array
 	 */
 	public function update($interface, $pathEntry, $data, $options){
+		
+		throw new Exception ("Not yet implemented", 501);
 	
 		// Get current state of atom
 		$before = $this->getContent($interface, true, $this->id);
