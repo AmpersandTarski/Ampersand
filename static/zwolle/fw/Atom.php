@@ -495,10 +495,15 @@ Class Atom {
 		// Interface is a relation to an object
 		}elseif($ifc->tgtConceptIsObject){
 			
+			// Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception 
+			if(!$this->database->atomExists($value, $ifc->tgtConcept) && !$ifc->crudC) throw new Exception ("Resource '{$ifc}[{$ifc->tgtConcept}]' does not exist and may not be created in {$ifc->label}", 403);
+			
 			$this->database->editUpdate($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $value, $ifc->tgtConcept);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
 		}elseif(!$ifc->tgtConceptIsObject){
+			
+			// Check: If interface is univalent, throw exception
 			if($ifc->univalent) throw new Exception("Cannot patch add for univalent interface {$ifc->label}. Use patch replace instead", 500);
 			
 			$this->database->editUpdate($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $value, $ifc->tgtConcept);
