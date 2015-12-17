@@ -106,5 +106,85 @@ class OAuthLoginController {
 		if(!isset($this->dataObj)) return false;
 		else return $this->dataObj;
 	}
+	
+	public static function callback($code, $idp){
+		try{
+			$identityProviders = Config::get('identityProviders', 'OAuthLogin');
+	
+			if(empty($code)) throw new Exception("Oops. Someting went wrong during login. Please try again", 401);
+	
+			$session = Session::singleton();
+			$db = Database::singleton();
+	
+			if(!isset($identityProviders[$idp])) throw new Exception("Unknown identity provider", 500);
+	
+			$client_id 		= $identityProviders[$idp]['clientId'];
+			$client_secret 	= $identityProviders[$idp]['clientSecret'];
+			$redirect_uri 	= $identityProviders[$idp]['redirectUrl'];
+			$token_url 		= $identityProviders[$idp]['tokenUrl'];
+			$api_url 		= $identityProviders[$idp]['apiUrl'];
+			$emailField		= $identityProviders[$idp]['emailField'];
+	
+			// instantiate authController
+			$authController = new OAuthLoginController($client_id,$client_secret,$redirect_uri,$token_url);
+	
+			// request token
+			if($authController->requestToken($code)){
+				// request data
+				if($authController->requestData($api_url)){
+	
+					// Verify email/role here
+					$email = $authController->getData()->$emailField;
+	
+					// Get user with $email
+	
+					// Set sessionUser
+					$interface = new InterfaceObject('EmailUser');
+					$atom = new Atom($email, 'Email');
+					$users = array_keys((array)$atom->getContent($interface, $interface->id));
+	
+					// create new user
+					if(empty($users)){
+						$newUser = Concept::createNewAtomId('User');
+						$db->addAtomToConcept($newUser, 'User');
+						$db->editUpdate('userEmail', false, $newUser, 'User', $email, 'Email');
+	
+						// add to Organization
+						$domain = explode('@', $email)[1];
+						$interface = new InterfaceObject('DomainOrgs');
+						$atom = new Atom($domain, 'Domain');
+						$orgs = array_keys((array)$atom->getContent($interface, $interface->id));
+	
+						foreach ($orgs as $org){
+							$db->editUpdate('userOrganization', false, $newUser, 'User', $org, 'Organization');
+						}
+	
+						$users[] = $newUser;
+	
+					}
+	
+					if(count($users) > 1) throw new Exception("Multiple users registered with email $email", 401);
+	
+					foreach ($users as $userId){
+						// Set sessionUser
+						$db->editUpdate('sessionUser', false, session_id(), 'SESSION', $userId, 'User');
+	
+						// Timestamps
+						$db->editUpdate('userLastLoginTimeStamp', false, $userId, 'User', date(DATE_ISO8601), 'DateTime');
+						$db->editUpdate('userLoginTimeStamp', false, $userId, 'User', date(DATE_ISO8601), 'DateTime');
+					}
+	
+					$db->closeTransaction('Login successfull', false, true, false);
+	
+				}
+			}
+	
+			header('Location: '. Config::get('serverURL'));
+			exit;
+	
+		}catch(Exception $e){
+			throw new RestException($e->getCode(), $e->getMessage());
+		}
+	}
 }
 ?>
