@@ -44,6 +44,8 @@ Class Atom {
 	 * @return boolean
 	 */
 	public function atomExists(){
+		if($this->id === '_NEW_') return true; // Return true if id is '_NEW_' (special case)
+		
 		// Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE' (relevant for all scalars)
 		return $this->database->atomExists($this->id, $this->concept);
 	}
@@ -310,6 +312,7 @@ Class Atom {
 		
 		// Perform create
 		$newAtom = Concept::createNewAtom($interface->tgtConcept);
+		if($this->id === '_NEW_') $this->id = $newAtom->id; // Special case for CREATE in I[Concept] interfaces
 		$this->database->addAtomToConcept($newAtom->id, $newAtom->concept);
 		
 		// TODO: add part to handle $data, for now: only create atom itself
