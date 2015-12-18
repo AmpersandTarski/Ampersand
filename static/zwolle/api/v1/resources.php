@@ -64,6 +64,9 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 
 	$pathEntry = Config::get('serverURL') . Config::get('apiPath') . '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
 	$content = $pathInfo['srcAtom']->getContent($pathInfo['ifc'], $pathEntry, $pathInfo['tgtAtom']->id, $options);
+	
+	// If force list option is provided, make sure to return an array
+	if($options['forceList'] && $pathInfo['ifc']->univalent) $content = array($content); 
 
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
