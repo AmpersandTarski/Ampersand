@@ -2,11 +2,11 @@ $if(verbose)$<!-- Atomic-BOOLEAN.html "$label$" : $expAdl$ :: $source$ * $target
 $endif$<div style="vertical-align:middle;">
 	$if(exprIsUni)$<div>
 		<label>
-			<input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="saveItem(val, '$name$', ResourceId)"/>
+			<input ng-model="resource['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="saveItem(resource, '$name$', ResourceId)"/>
 		</label>
-	</div>$else$$if(isEditable)$<span>Not implemented: editable non-uni boolean</span>$else$<div ng-repeat="row in val['$name$'] track by \$index">
+	</div>$else$$if(isEditable)$<span>Not implemented: editable non-uni boolean</span>$else$<div ng-repeat="row in resource['$name$'] track by \$index">
 		<label>
-			<input ng-model="val['$name$'][\$index]" type="checkbox" ng-disabled="true"/>
+			<input ng-model="resource['$name$'][\$index]" type="checkbox" ng-disabled="true"/>
 		</label>
 	</div>$endif$$endif$
 </div>

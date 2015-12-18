@@ -1,7 +1,7 @@
 $if(verbose)$<!-- Box-COLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
 $endif$<table class="table table-striped table-hover table-condensed">
-	<tbody$if(isEditable)$ ng-init="parent = val"$endif$>
-		<tr class="box" ng-repeat="(key, val) in val['$name$'] track by val.id" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>$if(isEditable)$
+	<tbody$if(isEditable)$ ng-init="parent = resource"$endif$>
+		<tr class="box" ng-repeat="(key, resource) in resource['$name$'] track by resource['_id_']" $if(isRoot)$ng-init="ResourceId = resource['_id_']" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>$if(isEditable)$
 			<td><span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(parent, '$name$', key, ResourceId)"></span></td>$endif$$subObjects:{subObj|
 			$if(verbose)$<!-- $subObj.subObjLabel$ -->
 			$endif$<td class="row-content">

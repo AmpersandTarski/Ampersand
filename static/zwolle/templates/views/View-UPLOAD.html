@@ -8,13 +8,13 @@ $if(verbose)$<!-- View-UPLOAD.html "$label$" : $expAdl$ :: $source$ * $target$ $
       REPRESENT FileName TYPE ALPHANUMERIC
 -->
 $endif$<div class="input-group">
-	$if(isEditable)$<div ng-repeat="row in val['$name$'] track by \$index">
-		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(val, '$name$', row.id, ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
-		<a href="uploads/{{row['@view']['fileName']}}" target="_blank">{{row['@view']['label']}}</a>
+	$if(isEditable)$<div ng-repeat="row in resource['$name$'] track by \$index">
+		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', row['_id_'], ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
+		<a href="uploads/{{row['_view_']['fileName']}}" target="_blank">{{row['_view_']['label']}}</a>
 	</div>
 	<div my-showonhover-box ng-controller="uploadFileController">
 		<input class="form-control input-sm" type="file" nv-file-select uploader="FileUploader" options="{'key' : '$name$', 'resourceId' : ResourceId}"/>
-	</div>$else$<div class="wordwrap" ng-repeat="row in val['$name$'] track by \$index">
-		<a href="uploads/{{row['@view']['fileName']}}" target="_blank">{{row['@view']['label']}}</a>
+	</div>$else$<div class="wordwrap" ng-repeat="row in resource['$name$'] track by \$index">
+		<a href="uploads/{{row['_view_']['fileName']}}" target="_blank">{{row['_view_']['label']}}</a>
 	</div>$endif$
 </div>

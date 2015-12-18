@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Box-SPHCOLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
-$endif$<table si-table class="table table-striped table-hover table-condensed" ng-show="val['$name$']">
+$endif$<table si-table class="table table-striped table-hover table-condensed" ng-show="resource['$name$']">
 	<thead>
 		<tr>$if(isEditable)$
 			<th></th>$if(verbose)$<!-- empty header because relation is editable -->$endif$$endif$$subObjects:{subObj|
@@ -10,8 +10,8 @@ $endif$<table si-table class="table table-striped table-hover table-condensed" n
 			</th>$endif$
 		</tr>
 	</thead>
-	<tbody$if(isEditable)$ ng-init="parent = val"$endif$>
-		<tr si-sortable class="box" ng-repeat="(key, val) in val['$name$'] | toArray" $if(isRoot)$ng-init="ResourceId = val.id" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>$if(isEditable)$
+	<tbody$if(isEditable)$ ng-init="parent = resource"$endif$>
+		<tr si-sortable class="box" ng-repeat="(key, resource) in resource['$name$'] | toArray" $if(isRoot)$ng-init="ResourceId = resource['_id_']" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>$if(isEditable)$
 			<td><span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(parent, '$name$', key, ResourceId)"></span></td>$endif$$subObjects:{subObj|
 			$if(verbose)$<!-- $subObj.subObjLabel$ -->
 			$endif$<td class="row-content">
