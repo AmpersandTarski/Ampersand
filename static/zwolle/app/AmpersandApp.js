@@ -30,7 +30,7 @@ AmpersandApp.config(function(RestangularProvider) {
     
 });
 
-AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location){
+AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route){
 	
 	$sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
 	$rootScope.notifications = {'errors' : []};
@@ -68,6 +68,20 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     $rootScope.getCurrentDateTime = function (){
 		return (new Date);
 	}
+    
+    // Add feature to $location.path() function to be able to prevent reloading page (set reload param to false)
+    var original = $location.path;
+    $location.path = function (path, reload) {
+        if (reload === false) {
+            var lastRoute = $route.current;
+            var un = $rootScope.$on('$locationChangeSuccess', function () {
+                $route.current = lastRoute;
+                un();
+            });
+        }
+        return original.apply($location, [path]);
+    };
+    
 	
 });
 
