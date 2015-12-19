@@ -70,8 +70,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 	}
     
     // Add feature to $location.path() function to be able to prevent reloading page (set reload param to false)
-    var original = $location.path;
-    $location.path = function (path, reload) {
+    var original = $location.url;
+    $location.url = function (url, reload) {
         if (reload === false) {
             var lastRoute = $route.current;
             var un = $rootScope.$on('$locationChangeSuccess', function () {
@@ -79,7 +79,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
                 un();
             });
         }
-        return original.apply($location, [path]);
+        return original.apply($location, [url]);
     };
     
 	
