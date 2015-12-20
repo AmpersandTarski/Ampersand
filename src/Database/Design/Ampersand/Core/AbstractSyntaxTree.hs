@@ -56,7 +56,7 @@ import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
                                                 , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..), PSingleton, makePSingleton
                                                 )
-import Database.Design.Ampersand.Core.Poset (Poset(..), Sortable(..),greatest,least,maxima,minima,sortWith)
+import Database.Design.Ampersand.Core.Poset (Poset(..), greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.Function
