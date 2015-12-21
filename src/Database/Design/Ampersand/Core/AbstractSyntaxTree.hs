@@ -41,7 +41,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , Population(..)
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf, PAtomValue(..)
+ , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), PAtomValue(..)
  , showValADL,showValPHP,showValSQL
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
