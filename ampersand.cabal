@@ -154,7 +154,6 @@ executable ampersand
                      Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis,
                      Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics,
                      Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters,
-                     Database.Design.Ampersand.Prototype.CoreImporter,
                      Database.Design.Ampersand.Prototype.GenBericht,
                      Database.Design.Ampersand.Prototype.GenFrontend,
                      Database.Design.Ampersand.Prototype.Generate,
