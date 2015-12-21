@@ -50,6 +50,7 @@ before_install:
      cabal)
        export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH;;
    esac
+ - chmod +x ./.travis-setup.sh  # There should be some possibility to do this permenently in Github, but I do not know how to do so.
  - ./.travis-setup.sh
 
 install:
