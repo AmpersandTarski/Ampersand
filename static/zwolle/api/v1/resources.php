@@ -62,7 +62,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	// Checks
 	if(!$pathInfo['ifc']->crudR) throw new Exception ("Read not allowed for '$ifcPath'", 405);
 
-	$pathEntry = Config::get('serverURL') . Config::get('apiPath') . '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
+	$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
 	$content = $pathInfo['srcAtom']->getContent($pathInfo['ifc'], $pathEntry, $pathInfo['tgtAtom']->id, $options);
 	
 	// If force list option is provided, make sure to return an array
@@ -92,7 +92,7 @@ $app->patch('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourc
 	if(is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch '$ifcPath'. Missing resource identifier", 405);
 		
 	// Perform patch(es)
-	$pathEntry = Config::get('serverURL') . Config::get('apiPath') . '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
+	$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
 	$content = $pathInfo['tgtAtom']->patch($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
 	
 	// Return result
@@ -146,7 +146,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 	END FILE UPLOAD */
 	
 	// Perform create
-	$pathEntry = Config::get('serverURL') . Config::get('apiPath') . '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
+	$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
 	$content = $pathInfo['srcAtom']->create($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
 
 	// Return result
