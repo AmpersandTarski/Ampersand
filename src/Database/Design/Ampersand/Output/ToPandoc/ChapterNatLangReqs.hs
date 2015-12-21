@@ -1,4 +1,4 @@
-{-# LANGUAGE ScopedTypeVariables #-}
+﻿{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
@@ -96,9 +96,11 @@ chpNatLangReqs lev fSpec =
                      (NL "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven."
                      ,EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
                      )
-                 Just pat -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
+                 Just pat -> 
+                   case purposesDefinedIn fSpec (fsLang fSpec) pat of
+                     []    -> printIntro    (cptsOfTheme tc)
+                     purps -> purposes2Blocks (getOpts fSpec) purps
              )
-          <> printIntro    (cptsOfTheme tc)
           <> (mconcat . map printConcept . cptsOfTheme ) tc
           <> (mconcat . map printRel     . dclsOfTheme ) tc
           <> (mconcat . map printRule    . rulesOfTheme) tc
