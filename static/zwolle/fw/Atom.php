@@ -182,7 +182,7 @@ Class Atom {
 				// Regular object, with or without subinterfaces
 				}else{
 					
-					$pathEntry = is_null($tgt) ? $pathEntry . '/' . $tgtAtom->id : $pathEntry;
+					$path = $pathEntry . '/' . $tgtAtom->id;
 					
 					$content = array('_id_' => $tgtAtom->id, '_label_' => $tgtAtom->label, '_view_' => $tgtAtom->view);
 					
@@ -193,7 +193,7 @@ Class Atom {
 										
 					// Meta data
 					if($options['metaData']){
-						$content['_path_'] = $pathEntry;
+						$content['_path_'] = $path;
 					}
 					
 					// Define interface(s) to navigate to for this tgtAtom
@@ -213,7 +213,7 @@ Class Atom {
 						// Skip subinterface if not given read rights
 						if(!$subinterface->crudR) continue;
 						
-						$subcontent = $tgtAtom->getContent($subinterface, $pathEntry . '/' . $subinterface->id, null, $options, $recursionArr);
+						$subcontent = $tgtAtom->getContent($subinterface, $path . '/' . $subinterface->id, null, $options, $recursionArr);
 						$content[$subinterface->id] = $subcontent;
 							
 						// _sortValues_ (if subInterface is uni)
@@ -240,7 +240,7 @@ Class Atom {
 							// Skip subinterface if not given read rights
 							if(!$subinterface->crudR) continue;
 							
-							$subcontent = $tgtAtom->getContent($subinterface, $pathEntry . '/' . $subinterface->id, null, $options, $recursionArr);
+							$subcontent = $tgtAtom->getContent($subinterface, $path . '/' . $subinterface->id, null, $options, $recursionArr);
 							$content[$subinterface->id] = $subcontent;
 								
 							// _sortValues_ (if subInterface is uni)
@@ -262,7 +262,7 @@ Class Atom {
 							break;
 						case 'assoc' :
 							if($interface->univalent) $result = $content;
-							$result[$tgtAtom->id] = $content;
+							else $result[$tgtAtom->id] = $content;
 							break;
 						default :
 							throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
