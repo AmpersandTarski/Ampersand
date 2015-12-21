@@ -18,7 +18,7 @@ import Database.Design.Ampersand.Graphic.Graphics (writePicture)
 import Database.Design.Ampersand.Output
 import Control.Monad
 import System.FilePath
-import System.Time
+import Data.Time.Clock.POSIX
 import qualified Data.ByteString.Lazy as L
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
@@ -103,7 +103,7 @@ doGenFPAExcel fSpec =
 doGenPopsXLSX :: FSpec -> IO()
 doGenPopsXLSX fSpec =
  do { verboseLn (getOpts fSpec) "Generating .xlsx file containing the population "
-    ; ct <- getClockTime
+    ; ct <- getPOSIXTime 
     ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
     ; Prelude.putStrLn $ "Generated file: " ++ outputFile
     }

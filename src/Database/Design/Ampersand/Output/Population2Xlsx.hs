@@ -5,7 +5,6 @@ where
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import System.Time
 import qualified Data.Map as M
 import Codec.Xlsx
 import qualified Data.ByteString.Lazy as L
@@ -13,8 +12,9 @@ import qualified Data.Text as T
 import Data.Maybe
 import Data.List
 import Data.Time.Calendar
+import Data.Time.Clock.POSIX
 
-fSpec2PopulationXlsx :: ClockTime -> FSpec -> L.ByteString 
+fSpec2PopulationXlsx :: POSIXTime -> FSpec -> L.ByteString 
 fSpec2PopulationXlsx ct fSpec = 
   fromXlsx ct xlsx
     where
