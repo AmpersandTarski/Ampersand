@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-$endif$$if(isEditable)$$if(exprIsUni)$<div ng-if="resource['$name$']" ng-init="row = resource['$name$']">$else$<div ng-repeat="(key, row) in resource['$name$'] track by row['_id_']">$endif$
+$endif$$if(isEditable)$<div ng-repeat="(key, row) in resource['$name$'] track by row['_id_']">
 	<div>
 		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', row['_id_'], ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
 		<my-nav-to-interfaces ifcs="row['_ifcs_']" resource="row['_id_']" label="row['_label_']"></my-nav-to-interfaces>
@@ -10,6 +10,6 @@ $endif$$if(isEditable)$$if(exprIsUni)$<div ng-if="resource['$name$']" ng-init="r
 	<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', ResourceId); selected.label=''" typeahead-no-results="hasNoResults">$if(crudC)$
 	<span ng-show="hasNoResults && selected.label" class="glyphicon glyphicon-plus" ng-click="addObject(resource, '$name$', {id : selected.label}, ResourceId); selected.label='';" uib-tooltip="Create new" tooltip-trigger="mouseenter" tooltip-placement="right"></span>$endif$
 	<div ng-show="hasNoResults && selected.label" style="color:orangered; font-size:12px;">$target$ not found!</div>
-</div>$else$$if(exprIsUni)$<div ng-init="row = resource['$name$']">$else$<div ng-repeat="(key, row) in resource['$name$'] track by row['_id_']">$endif$
+</div>$else$<div ng-repeat="(key, row) in resource['$name$'] track by row['_id_']">
 	<my-nav-to-interfaces ifcs="row['_ifcs_']" resource="row['_id_']" label="row['_label_']"></my-nav-to-interfaces>
 </div>$endif$

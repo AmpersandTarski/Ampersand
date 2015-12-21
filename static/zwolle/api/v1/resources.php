@@ -66,7 +66,8 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	$content = $pathInfo['srcAtom']->getContent($pathInfo['ifc'], $pathEntry, $pathInfo['tgtAtom']->id, $options);
 	
 	// If force list option is provided, make sure to return an array
-	if($options['forceList'] && $pathInfo['ifc']->univalent) $content = array($content); 
+	// Interfaces that have an object as tgt already return an array (when ifc is univalent or not)
+	if($options['forceList'] && $pathInfo['ifc']->univalent && !$pathInfo['ifc']->tgtConceptIsObject) $content = array($content); 
 
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 

@@ -257,12 +257,12 @@ Class Atom {
 					// Add target atom to result array
 					switch($options['arrayType']){
 						case 'num' :
-							if($interface->univalent) $result = $content;
-							else $result[] = $content;
+							// if($interface->univalent) $result = $content; else $result[] = $content;
+							$result[] = $content;
 							break;
 						case 'assoc' :
-							if($interface->univalent) $result = $content;
-							else $result[$tgtAtom->id] = $content;
+							// if($interface->univalent) $result = $content; else $result[$tgtAtom->id] = $content;
+							$result[$tgtAtom->id] = $content;
 							break;
 						default :
 							throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
