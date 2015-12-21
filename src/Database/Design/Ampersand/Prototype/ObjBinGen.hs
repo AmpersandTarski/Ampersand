@@ -7,7 +7,7 @@ import Control.Monad
 import System.FilePath
 import System.Directory
 import qualified Data.ByteString.Char8 as BS
-import Database.Design.Ampersand.Prototype.CoreImporter
+import Database.Design.Ampersand
 import Prelude hiding (writeFile,readFile,getContents)
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 import Database.Design.Ampersand.Prototype.PHP
