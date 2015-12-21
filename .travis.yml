@@ -72,7 +72,7 @@ script:
      stack)
        stack --no-terminal test;;
      cabal)
-       cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 -Werror";
+       cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0";
        cabal build;
        cabal test;
        cabal check;
