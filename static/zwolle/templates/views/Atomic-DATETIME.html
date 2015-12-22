@@ -1,6 +1,6 @@
 $if(verbose)$<!-- Atomic-DATETIME.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
 $endif$<div style="min-width:6em;">
-	$if(isEditable)$$if(exprIsUni)$<div ng-controller="static_dateTimeController">
+	$if(crudU)$$if(exprIsUni)$<div ng-controller="static_dateTimeController">
 		<datetimepicker ng-model="resource['$name$']" show-meridian="false" date-format="dd-MM-yyyy" placeholder="dd-mm-yyyy" starting-day="1" show-spinners="false"></datetimepicker>
 		<span my-showonhover-box class="glyphicon glyphicon-ok" ng-click="saveDateTimeItem(resource, '$name$', ResourceId)" uib-tooltip="Save" tooltip-trigger="mouseenter" tooltip-placement="right"></span>
 	</div>$else$<div ng-repeat="row in resource['$name$'] track by \$index">
