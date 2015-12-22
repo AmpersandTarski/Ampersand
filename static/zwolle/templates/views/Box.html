@@ -1,5 +1,5 @@
-$if(verbose)$<!-- Box.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
 $endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, resource) in resource['$name$'] track by resource['_id_']" $if(isRoot)$ng-init="ResourceId = resource['_id_']" ng-class="{'panel-default' : resourceStatus[ResourceId]['default'], 'panel-warning' : resourceStatus[ResourceId]['warning'], 'panel-danger' : resourceStatus[ResourceId]['danger'], 'panel-success' : resourceStatus[ResourceId]['success']}"$endif$>$if(isRoot)$
+$if(verbose)$<!-- Box.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
 	<div class="panel-heading">
 		<div class="pull-right panel-heading-options">
 			<button type="button" class="btn btn-sm btn-warning" ng-if="showSaveButton[ResourceId]" ng-click="save(ResourceId, 'promise')">Save</button>

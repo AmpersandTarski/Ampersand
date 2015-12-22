@@ -1,4 +1,4 @@
-$if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
 $endif$$if(isEditable)$<div ng-repeat="(key, row) in resource['$name$'] track by row['_id_']">
 	<div>
 		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', row['_id_'], ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>

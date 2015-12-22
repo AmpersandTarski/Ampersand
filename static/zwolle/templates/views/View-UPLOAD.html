@@ -1,4 +1,4 @@
-$if(verbose)$<!-- View-UPLOAD.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$if(verbose)$<!-- View-UPLOAD.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$ ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
 <!-- Requires & statement: 
   CONCEPT Upload ""
     IDENT UploadFileName 	: Upload (fileName)

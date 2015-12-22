@@ -1,4 +1,4 @@
-$if(verbose)$<!-- Atomic-FLOAT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
+$if(verbose)$<!-- Atomic-FLOAT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
 $endif$<div>
 	$if(isEditable)$<div class="input-group" style="min-width:60px;">
 		$if(exprIsUni)$<input ng-model="resource['$name$']" my-bluronenter type="number" placeholder="0.00" class="form-control input-sm" ng-blur="saveItem(resource, '$name$', ResourceId)">$else$<div ng-repeat="row in resource['$name$'] track by \$index">
