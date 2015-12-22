@@ -234,9 +234,7 @@ class Session {
 	public function getInterfacesToReadConcept($concept){
 		$interfaces = array();
 		foreach($this->accessibleInterfaces as $interface){
-			if(($interface->srcConcept == $concept || in_array($concept, Concept::getSpecializations($interface->srcConcept))
-					&& $interface->crudR)
-			) $interfaces[] = $interface;
+			if(($interface->srcConcept == $concept || in_array($concept, Concept::getSpecializations($interface->srcConcept)))	&& $interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
