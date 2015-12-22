@@ -22,7 +22,6 @@ class InterfaceObject {
 	public $relationIsFlipped;
 	public $univalent;
 	public $totaal;
-	public $editable;
 	public $isProperty;
 	public $isIdent;
 	
@@ -69,7 +68,6 @@ class InterfaceObject {
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
-		$this->editable = (empty($interface['relation'])) ? false : $interface['relationIsEditable'];
 		$this->totaal = $interface['exprIsTot'];
 		$this->univalent = $interface['exprIsUni'];
 		$this->isProperty = $interface['exprIsProp'];
