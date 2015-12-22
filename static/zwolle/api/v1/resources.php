@@ -95,7 +95,10 @@ $app->patch('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourc
 		
 	// Perform patch(es)
 	$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
-	$content = $pathInfo['tgtAtom']->patch($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
+	$pathInfo['tgtAtom']->patch($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
+	
+	// Return content of atom TODO: make sure that content is also returned when database was not committed
+	$content = $pathInfo['srcAtom']->getContent($pathInfo['ifc'], $pathEntry, $pathInfo['tgtAtom']->id, $options);
 	
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()

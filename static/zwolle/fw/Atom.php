@@ -182,7 +182,7 @@ Class Atom {
 				// Regular object, with or without subinterfaces
 				}else{
 					
-					$path = $pathEntry . '/' . $tgtAtom->id;
+					if(is_null($tgt)) $pathEntry .= '/' . $tgtAtom->id;
 					
 					$content = array('_id_' => $tgtAtom->id, '_label_' => $tgtAtom->label, '_view_' => $tgtAtom->view);
 					
@@ -193,7 +193,7 @@ Class Atom {
 										
 					// Meta data
 					if($options['metaData']){
-						$content['_path_'] = $path;
+						$content['_path_'] = $pathEntry;
 					}
 					
 					// Define interface(s) to navigate to for this tgtAtom
@@ -213,7 +213,7 @@ Class Atom {
 						// Skip subinterface if not given read rights
 						if(!$subinterface->crudR) continue;
 						
-						$subcontent = $tgtAtom->getContent($subinterface, $path . '/' . $subinterface->id, null, $options, $recursionArr);
+						$subcontent = $tgtAtom->getContent($subinterface, $pathEntry . '/' . $subinterface->id, null, $options, $recursionArr);
 						$content[$subinterface->id] = $subcontent;
 							
 						// _sortValues_ (if subInterface is uni)
@@ -240,7 +240,7 @@ Class Atom {
 							// Skip subinterface if not given read rights
 							if(!$subinterface->crudR) continue;
 							
-							$subcontent = $tgtAtom->getContent($subinterface, $path . '/' . $subinterface->id, null, $options, $recursionArr);
+							$subcontent = $tgtAtom->getContent($subinterface, $pathEntry . '/' . $subinterface->id, null, $options, $recursionArr);
 							$content[$subinterface->id] = $subcontent;
 								
 							// _sortValues_ (if subInterface is uni)
@@ -372,7 +372,7 @@ Class Atom {
 	 * @param InterfaceObject|NULL $interface specifies the interface of this transaction
 	 * @param array $patches contains all patches that need to be applied to this atom
 	 * @param array $options 
-	 * @return array
+	 * @return void
 	 */
 	public function patch($interface, $pathEntry, $patches, $options = array()){
 		
@@ -427,10 +427,6 @@ Class Atom {
 		
 		// Close transaction
 		$this->database->closeTransaction($successMessage, false, null, false);
-		
-		// Return content of created atom TODO: make sure that content is also returned when database was not committed
-		return $this->getContent($interface, $pathEntry, $this->id, $options);
-		
 	}
 	
 	/**********************************************************************************************
