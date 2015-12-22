@@ -2,41 +2,41 @@ $if(verbose)$<!-- Box-COLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(
 $endif$<table class="table table-striped table-hover table-condensed">
 	<thead>
 		<tr>$subObjects:{subObj|
-			<th>$subObj.subObjLabel$</th>}$$if(isRoot)$
-			<th>$if(crudC)$
-				<a ng-hide="loadingResources['_new_'].length" href="" ng-click="addNewResource(true)"><span class="glyphicon glyphicon-plus"/></a>
-				<span cg-busy="{promise:loadingResources['_new_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"/>$endif$
-			</th>$else$$if(isEditable)$
-			<th></th>$if(verbose)$<!-- empty header because relation is editable -->$endif$$endif$$endif$
+			<th>$subObj.subObjLabel$</th>}$
+			<th style="text-align:right;">$if(crudC)$
+				<a ng-hide="resource['_loading_'].length" href="" ng-click="createResource(resource, '$name$', true, 'promise', ResourceId)"><span class="glyphicon glyphicon-plus"></span></a>
+				<span cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></span>$endif$
+			</th>
 		</tr>
 	</thead>
-	<tbody$if(isEditable)$ ng-init="parent = resource"$endif$>
-		<tr class="box" ng-repeat="(key, resource) in resource['$name$'] track by resource['_id_']" $if(isRoot)$ng-init="ResourceId = resource['_id_']" ng-class="{warning : resourceStatus[ResourceId]['warning'], danger : resourceStatus[ResourceId]['danger'], success : resourceStatus[ResourceId]['success']}"$endif$>$subObjects:{subObj|
+	<tbody ng-init="parent = resource">
+		<tr class="box" ng-repeat="(key, resource) in resource['$name$'] track by resource['_id_']" $if(isRoot)$ng-init="ResourceId = resource['_id_']" ng-class="resource['_status_']"$endif$>$subObjects:{subObj|
 			$if(verbose)$<!-- $subObj.subObjLabel$ -->
 			$endif$<td class="row-content">
 				$subObj.subObjContents$
-			</td>}$$if(isRoot)$
-			<td>
-				<button type="button" class="btn btn-warning btn-xs" ng-if="showSaveButton[ResourceId]" ng-click="save(ResourceId, 'promise')">Save</button>
-				<button type="button" class="btn btn-danger btn-xs" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>$if(crudD)$
-				<a my-showonhover-box href="" ng-click="deleteResource(ResourceId)">$if(isEditable)$<span class="glyphicon glyphicon-minus"/>$else$<span class="glyphicon glyphicon-trash"/>$endif$</a>$endif$
-				<div style="float:right;" cg-busy="{promise:loadingResources[ResourceId],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
-			</td>$else$$if(isEditable)$
-			<td><span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(parent, '$name$', key, ResourceId)"></span></td>$endif$$endif$
-		</tr>$if(isEditable)$$if(crudU)$
-		<tr>
-			<td colspan="42" ng-controller="addObjectController">
-				<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add new" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="$if(isRoot)$addExistingResourceOnSelect(\$item, \$model, \$label, resource, '$name$', false)$else$typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', ResourceId)$endif$; selected.label=''">
+			</td>}$
+			<td>$if(isRoot)$
+				<button type="button" class="btn btn-warning btn-xs" ng-if="showSaveButton[ResourceId]" ng-click="saveResource(resource, 'promise')">Save</button>
+				<button type="button" class="btn btn-danger btn-xs" ng-if="showCancelButton[ResourceId]" ng-click="cancel(resource)">Cancel</button>$endif$$if(crudU)$
+				<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(parent, '$name$', key, ResourceId)"></span>$endif$$if(crudD)$
+				<span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(parent, '$name$', resource, 'promise')"></span>$endif$
+				<span my-showonhover-box class="glyphicon glyphicon-refresh" ng-click="getResource(resource)"></span>
+				<div style="float:right;" cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
 			</td>
-		</tr>$endif$$endif$
-	</tbody>$if(isRoot)$$if(crudC)$
+		</tr>$if(crudU)$
+		<tr>
+			<td colspan="42" ng-controller="addObjectController" $if(crudU)$ng-init="getTypeahead('$target$')"$endif$>
+				<input ng-model="selected.label" type="text" class="input-sm" placeholder="Select" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="$if(isRoot)$addExistingResourceOnSelect(\$item, \$model, \$label, resource, '$name$', false)$else$typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', ResourceId)$endif$; selected.label=''">
+			</td>
+		</tr>$endif$
+	</tbody>$if(crudC)$ <!-- <tfoot> only needed if crudC -->
 	<tfoot>
 		<tr>$subObjects:{subObj|
-			<td></td>}$$if(isRoot)$
-			<td>$if(crudC)$
-				<a ng-hide="loadingResources['_new_'].length" href="" ng-click="addNewResource(false)"><span class="glyphicon glyphicon-plus"/></a>
-				<span cg-busy="{promise:loadingResources['_new_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"/>$endif$
-			</td>$endif$
+			<td></td>}$
+			<td style="text-align:right;">$if(crudC)$
+				<a ng-hide="resource['_loading_'].length" href="" ng-click="createResource(resource, '$name$', false, 'promise', ResourceId)"><span class="glyphicon glyphicon-plus"></span></a>
+				<span cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></span>$endif$
+			</td>
 		</tr>
-	</tfoot>$endif$$endif$
+	</tfoot>$endif$
 </table>

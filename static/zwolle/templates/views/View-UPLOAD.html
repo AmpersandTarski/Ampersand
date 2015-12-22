@@ -8,8 +8,8 @@ $if(verbose)$<!-- View-UPLOAD.html "$label$" : $expAdl$ :: $source$ * $target$ $
       REPRESENT FileName TYPE ALPHANUMERIC
 -->
 $endif$<div class="input-group">
-	$if(crudU)$<div ng-repeat="row in resource['$name$'] track by \$index">
-		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', row['_id_'], ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
+	$if(crudU)$<div ng-repeat="(key, row) in resource['$name$'] track by \$index">
+		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
 		<a href="uploads/{{row['_view_']['fileName']}}" target="_blank">{{row['_view_']['label']}}</a>
 	</div>
 	<div my-showonhover-box ng-controller="uploadFileController">
