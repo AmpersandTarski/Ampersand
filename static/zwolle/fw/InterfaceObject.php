@@ -54,7 +54,6 @@ class InterfaceObject {
 		$this->label = $interface['label'];
 		
 		$this->interfaceRoles = $interface['interfaceRoles'];
-		$this->editableConcepts = (array)$interface['editableConcepts'];
 		
 		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
@@ -79,6 +78,8 @@ class InterfaceObject {
 		// Determine if tgtConcept is Object (true) or Scalar (false)
 		$this->tgtConceptIsObject = (Concept::getTypeRepresentation($this->tgtConcept) == "OBJECT") ? true : false;
 		
+		if($this->crudU && $this->tgtConceptIsObject) $this->editableConcepts[] = $this->tgtConcept;
+		
 		// Set attributes
 		$this->refInterfaceId = $interface['refSubInterfaceId'];
 		$this->isLinkTo = $interface['isLinkTo'];
@@ -87,7 +88,9 @@ class InterfaceObject {
 				
 		// Determine subInterfaces
 		foreach ((array)$this->boxSubInterfaces as $subInterface){
-			$this->subInterfaces[] = new InterfaceObject($subInterface['id'], $subInterface);
+			$ifc = new InterfaceObject($subInterface['id'], $subInterface);
+			$this->subInterfaces[] = $ifc;
+			$this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
 		}
 	}
 	
