@@ -67,7 +67,8 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	
 	// If force list option is provided, make sure to return an array
 	// Interfaces that have an object as tgt already return an array (when ifc is univalent or not)
-	if($options['forceList'] && $pathInfo['ifc']->univalent && !$pathInfo['ifc']->tgtConceptIsObject) $content = array($content); 
+	if($options['forceList'] && $pathInfo['ifc']->univalent && !$pathInfo['ifc']->tgtConceptIsObject) $content = array($content);
+	if($options['forceList'] && empty($content)) $content = array();
 
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 

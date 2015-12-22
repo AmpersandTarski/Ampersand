@@ -287,7 +287,7 @@ Class Atom {
 		}
 		
 		// Return result
-		if(!$interface->univalent && !is_null($tgt)) return current($result); 
+		if(!is_null($tgt) && is_array($result)) return current($result); 
 		else return $result;
 			
 	}
