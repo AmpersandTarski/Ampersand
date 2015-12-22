@@ -94,20 +94,7 @@ AmpersandApp.value('cgBusyDefaults',{
 	  // wrapperClass: 'my-class my-class2'
 	});
 
-AmpersandApp.directive('myShowonhoverRow', function (){
-	return {
-		link : function(scope, element, attrs) {
-			element.hide(); // default hide
-			
-			element.closest('.row-content').bind('mouseenter', function() {
-				element.show();
-			});
-			element.closest('.row-content').bind('mouseleave', function() {
-				element.hide();
-			});
-		}
-	}
-}).directive('myShowonhoverBox', function (){
+AmpersandApp.directive('myShowonhoverBox', function (){
 	return {
 		link : function(scope, element, attrs) {
 			element.hide(); // default hide
