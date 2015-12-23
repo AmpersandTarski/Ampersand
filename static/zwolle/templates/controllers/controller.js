@@ -274,8 +274,13 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to add an object to a certain interface (array) of a resource
 	\$scope.addObject = function(resource, ifc, obj, resourceId){
-		index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
-		topLevelResource = \$scope.resource['$interfaceName$'][index];
+		// If resourceId is undefined, the resource equals a toplevelresource
+		if(resourceId === undefined){
+			topLevelResource = resource
+		}else{
+			index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
+			topLevelResource = \$scope.resource['$interfaceName$'][index];
+		}
 		
 		if(obj['_id_'] === undefined || obj['_id_'] == ''){
 			console.log('Selected object id is undefined');
