@@ -597,7 +597,7 @@ Class Atom {
 			
 			// Check if tgtAtom is part of (sub)interface
 			if(!is_null($tgtAtomId)){
-				$idEsc = $this->database->escape($this->id);
+				$idEsc = $this->database->escape($srcAtomId);
 				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
 				$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
 				
