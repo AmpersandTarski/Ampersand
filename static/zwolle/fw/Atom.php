@@ -182,7 +182,7 @@ Class Atom {
 				// Regular object, with or without subinterfaces
 				}else{
 					
-					if(is_null($tgt)) $pathEntry .= '/' . $tgtAtom->id;
+					if(is_null($tgt)) $path = $pathEntry . '/' . $tgtAtom->id; else $path = $pathEntry;
 					
 					$content = array('_id_' => $tgtAtom->id, '_label_' => $tgtAtom->label, '_view_' => $tgtAtom->view);
 					
@@ -193,7 +193,7 @@ Class Atom {
 										
 					// Meta data
 					if($options['metaData']){
-						$content['_path_'] = $pathEntry;
+						$content['_path_'] = $path;
 					}
 					
 					// Define interface(s) to navigate to for this tgtAtom
@@ -213,7 +213,7 @@ Class Atom {
 						// Skip subinterface if not given read rights
 						if(!$subinterface->crudR) continue;
 						
-						$subcontent = $tgtAtom->getContent($subinterface, $pathEntry . '/' . $subinterface->id, null, $options, $recursionArr);
+						$subcontent = $tgtAtom->getContent($subinterface, $path . '/' . $subinterface->id, null, $options, $recursionArr);
 						$content[$subinterface->id] = $subcontent;
 							
 						// _sortValues_ (if subInterface is uni)
@@ -240,7 +240,7 @@ Class Atom {
 							// Skip subinterface if not given read rights
 							if(!$subinterface->crudR) continue;
 							
-							$subcontent = $tgtAtom->getContent($subinterface, $pathEntry . '/' . $subinterface->id, null, $options, $recursionArr);
+							$subcontent = $tgtAtom->getContent($subinterface, $path . '/' . $subinterface->id, null, $options, $recursionArr);
 							$content[$subinterface->id] = $subcontent;
 								
 							// _sortValues_ (if subInterface is uni)
@@ -324,6 +324,7 @@ Class Atom {
 		$this->database->closeTransaction($newAtom->concept . ' created', false, null, false);
 		
 		// Return content of created atom TODO: make sure that content is also returned when database was not committed
+		$pathEntry .= '/' . $newAtom->id;
 		return $this->getContent($interface, $pathEntry, $newAtom->id, $options);
 		
 	}
