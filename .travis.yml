@@ -37,7 +37,12 @@ matrix:
       os: osx
 
   allow_failures:
+    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.1
+    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.2
+    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.3
+#    - env: BUILD=stack GHCVER=7.10.2 STACK_YAML=stack.yaml
     - env: BUILD=cabal CABALVER=head GHCVER=head
+    - env: BUILD=stack STACK_YAML=stack.yaml
 
 # Note: the distinction between `before_install` and `install` is not important.
 # - in before_install we install build tools
