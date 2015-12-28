@@ -88,7 +88,7 @@ instance MetaPopulations FSpec where
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
   ++[ Pop "versionInfo" "Context"  "AmpersandVersion"
            [(dirtyId fSpec, show ampersandVersionStr)]
-    , Pop "contextName" "Context" "ContextName"
+    , Pop "name" "Context" "ContextIdentifier"
            [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "dbName" "Context" "DatabaseName"
            [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
@@ -202,8 +202,8 @@ instance MetaPopulations A_Concept where
              [(dirtyId fSpec,dirtyId cpt)]
       , Pop "name" "Concept" "Identifier"
              [(dirtyId cpt, dirtyId cpt)]
-      , Pop "conceptColumn" "Concept" "SqlAttribute"
-             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
+--      , Pop "conceptColumn" "Concept" "SqlAttribute"
+--             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
 --      , Pop "cptdf" "Concept" "ConceptDefinition"
 --             [(dirtyId cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
       , Pop "cptpurpose" "Concept" "Purpose"
@@ -224,11 +224,12 @@ instance GenericPopulations PlugSQL where
 
 instance MetaPopulations PlugSQL where
   metaPops fSpec plug =
-      [ Pop "context" "PlugInfo" "Context"
-               [(dirtyId plug, dirtyId fSpec)]
-      , Pop "key" "PlugInfo" "SqlAttribute"
-               [(dirtyId plug, dirtyId (plug, head . plugAttributes $ plug))]
-      ] ++ concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
+  --    [ Pop "context" "PlugInfo" "Context"
+  --             [(dirtyId plug, dirtyId fSpec)]
+  --    , Pop "key" "PlugInfo" "SqlAttribute"
+  --             [(dirtyId plug, dirtyId (plug, head . plugAttributes $ plug))]
+  --    ] ++ 
+      concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
 
 instance GenericPopulations (PlugSQL,SqlAttribute) where
   generics _ (plug,att) =
@@ -248,10 +249,10 @@ instance MetaPopulations (PlugSQL,SqlAttribute) where
                  [(dirtyId (plug,att), dirtyId plug) ]
       , Pop "concept" "SqlAttribute" "Concept"
                  [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]
-      , Pop "relsMentionedIn" "Plug" "Relation"
+      , Pop "relsInPlug" "Plug" "Relation"
                  [(dirtyId plug, dirtyId rel) | Just rel <- [primRel.attExpr $ att]]
-      , Pop "null" "SqlAttribute" "SqlAttribute"
-                 [(a,a) | attNull att, let a=dirtyId (plug,att)]
+--      , Pop "null" "SqlAttribute" "SqlAttribute"
+--                 [(a,a) | attNull att, let a=dirtyId (plug,att)]
       ]
     where primRel :: Expression -> Maybe Declaration
           primRel expr =
@@ -338,10 +339,10 @@ instance MetaPopulations Declaration where
              [(dirtyId dcl,dirtyId fSpec)] 
       , Pop "name" "Relation" "Identifier"
              [(dirtyId dcl, (show.name) dcl)]
-      , Pop "srcCol" "Relation" "SqlAttribute"
-             [(dirtyId dcl,dirtyId (table,srcCol))]
-      , Pop "tgtCol" "Relation" "SqlAttribute"
-             [(dirtyId dcl,dirtyId (table,tgtCol))]
+--      , Pop "srcCol" "Relation" "SqlAttribute"
+--             [(dirtyId dcl,dirtyId (table,srcCol))]
+--      , Pop "tgtCol" "Relation" "SqlAttribute"
+--             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "sign" "Relation" "Signature"
              [(dirtyId dcl,dirtyId (sign dcl))]
       , Pop "source" "Relation" "Concept"
@@ -371,10 +372,10 @@ instance MetaPopulations Declaration where
              [(dirtyId dcl,dirtyId fSpec)]
       , Pop "name" "Relation" "Identifier"
              [(dirtyId dcl, (show.name) dcl)]
-      , Pop "srcCol" "Relation" "SqlAttribute"
-             [(dirtyId dcl,dirtyId (table,srcCol))]
-      , Pop "tgtCol" "Relation" "SqlAttribute"
-             [(dirtyId dcl,dirtyId (table,tgtCol))]
+--      , Pop "srcCol" "Relation" "SqlAttribute"
+--             [(dirtyId dcl,dirtyId (table,srcCol))]
+--      , Pop "tgtCol" "Relation" "SqlAttribute"
+--             [(dirtyId dcl,dirtyId (table,tgtCol))]
       , Pop "source" "Relation" "Concept"
              [(dirtyId dcl,dirtyId (source dcl))]
       , Pop "target" "Relation" "Concept"
@@ -416,10 +417,10 @@ instance MetaPopulations Expression where
             (ECps (l,r)) -> makeBinaryTerm Composition l r
             (ERad (l,r)) -> makeBinaryTerm RelativeAddition l r
             (EPrd (l,r)) -> makeBinaryTerm CartesionProduct l r
---            (EKl0 e)     -> 
---            (EKl1 e)     -> 
---            (EFlp e)     -> 
---            (ECpl e)     -> 
+            (EKl0 e)     -> makeUnaryTerm  KleeneStar e
+            (EKl1 e)     -> makeUnaryTerm  KleenePlus e
+            (EFlp e)     -> makeUnaryTerm  Converse   e
+            (ECpl e)     -> makeUnaryTerm  UnaryMinus e
             (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
             (EDcD dcl)   -> [Pop "bind" "Term" "Relation" [(dirtyId expr,dirtyId dcl)]
                             ]
@@ -427,21 +428,40 @@ instance MetaPopulations Expression where
 --            EEps{}       -> 
 --            EDcV{}       -> 
 --            EMp1{}       -> 
-            _            -> [Comment $ "TODO: "++showADL expr]
+            _            -> [Comment $ "TODO(in instance MetaPopulations Expression): "++showADL expr]
 -- TODO: Work on the rest of the expressions (get rid of the statement above) 
        ) 
   where
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
-    makeBinaryTerm bop lhs rhs = 
+    makeBinaryTerm op lhs rhs = 
       [ Pop "lhs"  "BinaryTerm" "Term"
              [(dirtyId expr,dirtyId lhs)]
       , Pop "rhs"  "BinaryTerm" "Term"
              [(dirtyId expr,dirtyId rhs)]
+      , Pop "first"  "BinaryTerm" "Expression"
+             [(dirtyId expr,dirtyId lhs)]
+      , Pop "second" "BinaryTerm" "Expreseeion"
+             [(dirtyId expr,dirtyId rhs)]
       , Pop "operator"  "BinaryTerm" "Operator"
-             [(dirtyId expr,dirtyId bop)]
+             [(dirtyId expr,dirtyId op)]
       ]++metaPops fSpec lhs
        ++metaPops fSpec rhs
-       
+    makeUnaryTerm :: UnaryOp -> Expression -> [Pop]
+    makeUnaryTerm op arg =
+      [ Pop "arg" "UnaryTerm" "Expression"
+             [(dirtyId expr,dirtyId arg)]
+      , Pop "operator"  "BinaryTerm" "Operator"
+             [(dirtyId expr,dirtyId op)]
+      ]++metaPops fSpec arg
+
+data UnaryOp = 
+             KleeneStar
+           | KleenePlus
+           | Converse
+           | UnaryMinus deriving (Eq, Show, Typeable)
+instance Unique UnaryOp where
+  showUnique = show
+
 data BinOp = CartesionProduct
            | Composition
            | Diamond
@@ -565,8 +585,8 @@ instance MetaPopulations PlugInfo where
       , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
       , Pop "in" "Concept" "Plug"                 
              [(dirtyId cpt,dirtyId plug)| cpt <- concs plug]  
-      , Pop "relsMentionedIn" "Plug" "Relation"
-             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
+--      , Pop "relsMentionedIn" "Plug" "Relation"
+--             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
       ]      
 
 instance MetaPopulations a => MetaPopulations [a] where
