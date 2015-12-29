@@ -643,6 +643,7 @@ instance AdlId Declaration
 instance AdlId Prop
 instance AdlId Expression
 instance AdlId BinOp
+instance AdlId UnaryOp
 instance AdlId FSpec
 instance AdlId A_Pair
 instance AdlId Pattern
