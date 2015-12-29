@@ -89,6 +89,5 @@ script:
 #       true stack setup;
 #       true stack test;
 #       cd ../..;
-       SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz &&
-       (cd dist && cabal install --force-reinstalls "$SRC_TGZ");;
+       SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && (cd dist && cabal install --force-reinstalls "$SRC_TGZ");;
    esac
