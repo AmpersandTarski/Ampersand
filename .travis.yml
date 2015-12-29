@@ -65,6 +65,8 @@ install:
        stack --no-terminal test --only-dependencies;;
      cabal)
        cabal --version;
+       echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]";
+       ghc --info;
        travis_retry cabal update;
        rm -f $(stack path --dist-dir)/stack-*.tar.gz;
        stack sdist --pvp-bounds=both;
@@ -83,10 +85,10 @@ script:
        cabal check;
        cabal sdist;
        cabal copy;
-       cd test/integration;
-       true stack setup;
-       true stack test;
-       cd ../..;
+#       cd test/integration;
+#       true stack setup;
+#       true stack test;
+#       cd ../..;
        SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz &&
        (cd dist && cabal install --force-reinstalls "$SRC_TGZ");;
    esac
