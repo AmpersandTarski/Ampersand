@@ -14,7 +14,8 @@ require_once (__DIR__ . '/SendEmail/lib/class.phpmailer.php');
 /* Config params for SendEmail function of ExecEngine (now using Gmail)
  * 
  */
-Config::set('sendEmailConfig', 'execEngine', array('from' => '', 'username' => '', 'password' => '')); // Copy this line to localSettings.php and provide settings
+// Copy the following line to localSettings.php and provide settings
+// Config::set('sendEmailConfig', 'execEngine', array('from' => '', 'username' => '', 'password' => '')); 
 
 function SendEmail($to,$subject,$message){ 
 	// adapted from http://phpmailer.worxware.com/?pg=examplebgmail
@@ -30,8 +31,8 @@ function SendEmail($to,$subject,$message){
 	$mail->IsSMTP();				// Set mailer to use SMTP
 	// $mail->SMTPDebug = 1;
 	$mail->Host = 'smtp.gmail.com';	// Specify main and backup server
-	$mail->SMTPSecure = 'tls';		// Enable encryption, 'ssl' also accepted
-	$mail->Port = 587;
+	$mail->SMTPSecure = 'ssl';		// Enable encryption, 'ssl' also accepted
+	$mail->Port = 465;
 	$mail->SMTPAuth = true;			// Enable SMTP authentication
 	
 	$mail->Username = $username;	// SMTP username (for GMAIL)

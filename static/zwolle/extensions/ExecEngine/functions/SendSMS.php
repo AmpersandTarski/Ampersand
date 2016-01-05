@@ -12,7 +12,8 @@ require_once __DIR__.'/SendSMS/lib/class.MessageBird.php';
  * Set the sender, could be a number (16 numbers) or letters (11 characters)
  * 
  */
-Config::set('sendSMSConfig', 'execEngine', array('username' => '', 'password' => '', 'sender' => '')); // Copy this line to localSettings.php and provide settings
+// Copy the following line to localSettings.php and provide settings
+// Config::set('sendSMSConfig', 'execEngine', array('username' => '', 'password' => '', 'sender' => '')); 
 
 function SendSMS ($phonenumber,$message){
 	$config = Config::get('sendSMSConfig', 'execEngine');
