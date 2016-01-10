@@ -1,6 +1,5 @@
 ﻿MSG_Pushalot README
 ===================
-testje voor Han
 
 In order to start using the Pushalot notifications extension within a prototype, you must execute the following steps:
 1) Enable the Pushalot extension in your localsettings file.
