@@ -6,9 +6,9 @@ In order to start using the Pushalot notifications extension within a prototype,
    This is done by adding the following lines to your 'localSettings.php' file:
 
 	// Enable Pushalot notification extension
-	require_once(__DIR__ . '/extensions/Pushalot/Pushalot.php');
+	require_once(__DIR__ . '/extensions/Messaging/Pushalot.php');
 
-2) Include the Pushalot messaging module in your script:
+2) Include the Pushalot messaging module in your Ampersand script:
 
         INCLUDE "../Messaging/MSG-Pushalot.adl"
 
