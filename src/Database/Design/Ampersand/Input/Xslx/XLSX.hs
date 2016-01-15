@@ -133,6 +133,7 @@ toPops file x = map popForColumn' (colNrs x)
              CellText t   -> map (XlsxString orig) (map T.unpack (unDelimit mDelimiter t))
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [ComnBool orig b] 
+             CellRich ts -> map (XlsxString orig) . map T.unpack . unDelimit mDelimiter . T.concat . map _richTextRunText $ ts
        unDelimit :: Maybe Char -> T.Text -> [T.Text]
        unDelimit mDelimiter xs =
          case mDelimiter of
@@ -211,6 +212,7 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellText t)   -> (not . T.null) t
             Just (CellDouble _) -> True
             Just (CellBool _)   -> True
+            Just (CellRich _)   -> True
             Nothing -> False
        theCols = filter isProperCol [1..maxColOfWorksheet]
        isProperCol :: Int -> Bool
