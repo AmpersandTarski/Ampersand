@@ -12,14 +12,6 @@ cache:
 
 matrix:
   include:
-    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.1
-      compiler: ": #GHC 7.10.1"
-      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.1], sources: [hvr-ghc]}}
-
-    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.2
-      compiler: ": #GHC 7.10.2"
-      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.2], sources: [hvr-ghc]}}
-
     - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.3
       compiler: ": #GHC 7.10.3"
       addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.3], sources: [hvr-ghc]}}
@@ -37,8 +29,6 @@ matrix:
       os: osx
 
   allow_failures:
-    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.1
-    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.2
     - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.3
 #    - env: BUILD=stack GHCVER=7.10.2 STACK_YAML=stack.yaml
     - env: BUILD=cabal CABALVER=head GHCVER=head
