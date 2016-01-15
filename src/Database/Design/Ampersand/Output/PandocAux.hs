@@ -53,11 +53,12 @@ defaultWriterVariables fSpec
  --   , ("sansfont",
  --   , ("monofont",
  --   , ("mathfont",
-    , ("fontsize", "10pt,a4paper")   --can be overridden by geometry package (see below)
+    , ("fontsize", "10pt")   --can be overridden by geometry package (see below)
     , ("lang"    , case fsLang fSpec of
                        Dutch   -> "dutch"
                        English -> "english")
-    , ("mainlang", case fsLang fSpec of
+    , ("papersize", "a4")
+    , ("babel-lang", case fsLang fSpec of
                        Dutch   -> "dutch"
                        English -> "english")
     , ("documentclass","report")
