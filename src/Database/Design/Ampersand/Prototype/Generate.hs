@@ -284,7 +284,7 @@ generateConjuncts fSpec =
   addToLastLine ";"
      (indent 4
        (blockParenthesize  "(" ")" ","
-         [ [ showPhpStr (rc_id conj) ++ " =>"
+         [ [ showPhpStr (rc_id conj) ++ " =>  /* conj = " ++ showADL rExpr ++ " */"
            , "  array ( 'signalRuleNames' => array ("++ intercalate ", " signalRuleNames ++")"
            , "        , 'invariantRuleNames' => array ("++ intercalate ", " invRuleNames ++")"
                       -- the name of the rules that gave rise to this conjunct
