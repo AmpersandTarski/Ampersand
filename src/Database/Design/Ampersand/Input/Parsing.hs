@@ -9,7 +9,6 @@ module Database.Design.Ampersand.Input.Parsing (
 import Control.Applicative
 import Data.List
 import Data.Char(toLower)
-import Data.Traversable (sequenceA)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Input.ADL1.CtxError
@@ -26,9 +25,6 @@ import Database.Design.Ampersand.Input.Xslx.XLSX
 import Control.Exception
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Parsing"
-
 -- | Parse an Ampersand file and all transitive includes
 parseADL ::  Options                -- ^ The options given through the command line
          -> Either FilePath MetaType   -- ^ The path of the file to be parsed OR the MetaType. In the latter case, the files will be taken from `allStaticFiles`
@@ -43,7 +39,7 @@ parseADL opts thingToParse =
                                          Right AST      -> ("AST.adl"     ,True )
 -- | Parses several ADL files
 parseADLs :: Options                    -- ^ The options given through the command line
-          -> Bool                       -- ^ True iff the file is from FormalAmpersand files in `allStaticFiles` 
+          -> Bool                       -- ^ True iff the file is from FormalAmpersand files in `allStaticFiles`
           -> [FilePath]                 -- ^ The list of files that have already been parsed
           -> [FilePath]                 -- ^ The list of files to parse
           -> IO (Guarded [P_Context])   -- ^ The resulting contexts
@@ -58,46 +54,45 @@ parseADLs opts useAllStaticFiles parsedFilePaths filePaths =
     }
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
-parseSingleADL :: 
-    Options 
- -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
+parseSingleADL ::
+    Options
+ -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles`
  -> FilePath -> IO (Guarded (P_Context, [FilePath]))
 parseSingleADL opts useAllStaticFiles filePath
  = do verboseLn opts $ "Reading file " ++ filePath ++ if useAllStaticFiles then " (from within ampersand.exe)" else ""
       exists <- doesFileExist filePath
-      if useAllStaticFiles || exists 
+      if useAllStaticFiles || exists
       then parseSingleADL'
       else return . makeError $ "Could not find `"++filePath++"`."
     where
      parseSingleADL' :: IO(Guarded (P_Context, [FilePath]))
      parseSingleADL'
-         | extension == ".xlsx" = 
+         | extension == ".xlsx" =
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts useAllStaticFiles filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
-         | otherwise =   
-             do { mFileContents 
+         | otherwise =
+             do { mFileContents
                     <- if useAllStaticFiles
                        then case getStaticFileContent FormalAmpersand filePath of
                              Just cont -> do return (Right $ stripBom cont)
-                             Nothing -> fatalMsg ("Statically included "++ show FormalAmpersand++ " files. ") 0 $
-                                         "Cannot find `"++filePath++"`."
+                             Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++filePath++"`.")
                        else readUTF8File filePath
                 ; case mFileContents of
                     Left err -> return $ makeError ("ERROR reading file " ++ filePath ++ ":\n" ++ err)
                     Right fileContents ->
-                         whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) -> 
+                         whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) ->
                                do return (Checked (ctxts, relativePaths))
             }
          where stripBom :: String -> String
                stripBom ('\239':'\187':'\191': s) = s
-               stripBom s = s 
+               stripBom s = s
                extension = map toLower $ takeExtension filePath
-               catchInvalidXlsx :: IO a -> IO a 
-               catchInvalidXlsx m = catch m f 
+               catchInvalidXlsx :: IO a -> IO a
+               catchInvalidXlsx m = catch m f
                  where f :: SomeException -> IO a
                        f exception = fatal 34 $ "The file does not seem to have a valid .xlsx structure:\n  "++show exception
-             
+
 parseErrors :: Lang -> ParseError -> [CtxError]
 parseErrors lang err = [PE (Message msg)]
                 where msg :: String
@@ -108,7 +103,7 @@ parseErrors lang err = [PE (Message msg)]
 
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =
-      -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a 
+      -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
     case runP p pos fn ts of
         --TODO: Add language support to the parser errors
         Left err -> Errors $ parseErrors English err
@@ -118,7 +113,7 @@ parse p fn ts =
 
 --TODO: Give the errors in a better way
 lexerError2CtxError :: LexerError -> CtxError
-lexerError2CtxError (LexerError pos err) = 
+lexerError2CtxError (LexerError pos err) =
    PE (Message ("Lexer error at "++show pos++"\n  "
                 ++ intercalate "\n    " (showLexerErrorInfo err)
                )

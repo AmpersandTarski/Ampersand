@@ -121,10 +121,14 @@ PURPOSE RULE "Identifiability of concepts"
 {+In order to identify and distinguish concepts, they have a name.
 Throughout the context, this name refers to that particular concept, so there cannot be two distinct concepts with the same name within a context.
 -}
-PURPOSE RULE "Identifiability of atoms"
-{+In order to identify and distinguish atoms, each one has its own representation.
-Within the same typology, it refers to that particular atom.
-There cannot be two distinct atoms with the same representation within one typology.
+PURPOSE RULE "TOT in"
+{+To ensure that pairs only exist in relations, Ampersand requires the totality of in.
+This rule is automated.
+When a relation ceases to exist, the application deletes all pairs in that relation.
+-}
+PURPOSE RULE "SUR l and r"
+{+To ensure that atoms only exist in pairs, Ampersand automates the surjectivity of l and r.
+When an atom no longer resides in l or r, the application deletes that atom.
 -}
 
 PURPOSE RULE "equality on Atoms"

@@ -7,7 +7,7 @@ Steps:
 3) Register hooks or use the execEngine to sent Pushover notifications
 
 // Enable Pushover notification extension
-require_once(__DIR__ . '/extensions/Pushover/Pushover.php');
+require_once(__DIR__ . '/extensions/Messaging/Pushover.php');
 	Config::set('applicationToken', 'pushover', '<token here>'); // pushover application token
 	Config::set('alwaysNotifyUsers', 'pushover', array('<userkey>', '<userkey>', '<etc>')); // array of pushover user keys that receive a copy of all notifications
 

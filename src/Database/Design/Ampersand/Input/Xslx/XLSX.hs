@@ -18,9 +18,6 @@ import Data.Char
 import Data.String
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "XLSX"
-
 parseXlsxFile :: Options 
               -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
               -> FilePath -> IO (Guarded [P_Population])
@@ -28,8 +25,7 @@ parseXlsxFile _ useAllStaticFiles file =
   do bytestr <- if useAllStaticFiles
                 then case getStaticFileContent FormalAmpersand file of
                       Just cont -> do return $ fromString cont
-                      Nothing -> fatalMsg ("Statically included "++ show FormalAmpersand++ " files. ") 0 $
-                                  "Cannot find `"++file++"`."
+                      Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++file++"`.")
                 else L.readFile file
      return . xlsx2pContext . toXlsx $ bytestr
  where
@@ -137,6 +133,7 @@ toPops file x = map popForColumn' (colNrs x)
              CellText t   -> map (XlsxString orig) (map T.unpack (unDelimit mDelimiter t))
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [ComnBool orig b] 
+             CellRich ts -> map (XlsxString orig) . map T.unpack . unDelimit mDelimiter . T.concat . map _richTextRunText $ ts
        unDelimit :: Maybe Char -> T.Text -> [T.Text]
        unDelimit mDelimiter xs =
          case mDelimiter of
@@ -215,6 +212,7 @@ theSheetCellsForTable (sheetName,ws)
             Just (CellText t)   -> (not . T.null) t
             Just (CellDouble _) -> True
             Just (CellBool _)   -> True
+            Just (CellRich _)   -> True
             Nothing -> False
        theCols = filter isProperCol [1..maxColOfWorksheet]
        isProperCol :: Int -> Bool

@@ -20,9 +20,8 @@ import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Database.Design.Ampersand.FSpec.ShowADL
 import qualified Data.Set as Set
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.ToFSpec.ADL2FSpec"
-
+{- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
+such as the code generator, the functional-specification generator, and future extentions. -}
 makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
  =      FSpec { fsName       = name context

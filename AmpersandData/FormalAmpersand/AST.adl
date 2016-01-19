@@ -60,7 +60,7 @@ ENDPATTERN
 PROCESS Plugs -- This pattern documents the semantics of plugs as of november 2014.
 RELATION maintains[Plug*Rule]
 RELATION in[Concept*Plug] --TODO: 'Nearly TOT: All concepts are in a plug, except ONE".
-RELATION relsMentionedIn[Plug*Relation] [SUR] -- Note: Declared relations only. This excludes I and V relations!
+RELATION relsInPlug[Plug*Relation] --FIXME [SUR] -- Note: Declared relations only. This excludes I and V relations!
 
 -- Rules
 ROLE Ampersand MAINTAINS "All isas in one plug"

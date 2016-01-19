@@ -18,22 +18,13 @@
 module Database.Design.Ampersand.Core.Poset (
     Poset(..), Sortable(..), Ordering(..), Ord, comparableClass,greatest,least,maxima,minima,sortWith
 ) where
-import qualified Prelude
---import qualified GHC.Exts (sortWith)
-
+import qualified Prelude (Ordering(..))
 import Prelude hiding (Ord(..), Ordering(..))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.Poset.Instances() --required for instance Int of Poset only
-import Database.Design.Ampersand.Core.Poset.Internal hiding (fatal)
-
---import Data.Function
-import Data.Monoid
-
---import Database.Design.Ampersand.Basics (eqCl,isc,fatalMsg)
+import Database.Design.Ampersand.Core.Poset.Internal
 import qualified Data.List as List
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Core.Poset"
 
 -- | makePartialOrder makes a partial order containing local partial orders, i.e. comparable classes.
 --   it makes sense to sort comparable classes.
@@ -137,4 +128,3 @@ least xs =
 minima :: Sortable a => [a] -> [a]
 minima [] = fatal 156 "the empty list has no minimum"
 minima xs = [x | x<-List.nub xs,not (or [y < x | y<-List.nub xs])]
-

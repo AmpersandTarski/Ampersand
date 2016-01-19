@@ -1,4 +1,4 @@
-﻿module Database.Design.Ampersand.Output.PredLogic
+module Database.Design.Ampersand.Output.PredLogic
          ( PredLogicShow(..), showLatex, showRtf, mkVar
          ) where
 
@@ -10,9 +10,6 @@ import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Data.Char
 import Database.Design.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.PredLogic"
 
 --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
 data PredLogic

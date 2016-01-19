@@ -5,9 +5,6 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "ADL1.Rule"
-
 hasantecedent :: Rule -> Bool
 hasantecedent r
  = case rrexp r of
