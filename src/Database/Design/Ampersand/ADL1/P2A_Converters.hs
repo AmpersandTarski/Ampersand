@@ -457,13 +457,13 @@ pCtx2aCtx _
      where tpda = disambiguate (termPrimDisAmb declMap) x
 
     typecheckViewDef :: DeclMap -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
-    typecheckViewDef declMap
+    typecheckViewDef _
        o@(P_Vd { vd_pos = orig
             , vd_lbl  = lbl   -- String
             , vd_cpt  = cpt   -- Concept
             , vd_isDefault = isDefault
             , vd_html = mHtml -- Html template
-            , vd_ats  = pvs   -- view segment
+            , vd_ats  = pvs   -- view segments
             })
      = (\vdts
         -> Vd { vdpos  = orig
@@ -473,19 +473,27 @@ pCtx2aCtx _
               , vdhtml = mHtml
               , vdats  = vdts
               })
-       <$> traverse typeCheckViewSegment pvs
+       <$> traverse typeCheckViewSegment (zip [0..] pvs)
      where
-       typeCheckViewSegment :: (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
-       typeCheckViewSegment vs
-        = case vs of 
-           P_ViewExp{} -> 
-             do (obj,b) <- typecheckObjDef declMap (vs_obj vs)
-                case toList$ findExact genLattice (lMeet c (aConcToType (source (objctx obj)))) of
-                              [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                              r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
-                                    else mustBeBound (origin obj) [(Tgt,objctx obj)]
-           P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_txt vs)
-           P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_htm vs)
+       typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
+       typeCheckViewSegment (seqNr, seg)
+        = do payload <- typecheckPayload (vsm_load seg)
+             return ViewSegment { vsmpos   = vsm_org seg
+                                , vsmlabel = vsm_labl seg
+                                , vsmSeqNr = seqNr
+                                , vsmLoad  = payload
+                                }
+         where 
+          typecheckPayload :: (P_ViewSegmtPayLoad (TermPrim, DisambPrim)) -> Guarded ViewSegmentPayLoad
+          typecheckPayload payload 
+           = case payload of
+              P_ViewExp term -> 
+                 do (viewExpr,(srcBounded,_)) <- typecheckTerm term
+                    case toList$ findExact genLattice (lMeet c (aConcToType (source viewExpr))) of
+                       [] -> mustBeOrdered o o (Src,(source viewExpr),viewExpr)
+                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft' (head r) viewExpr))
+                             else mustBeBound (origin seg) [(Tgt,viewExpr)]
+              P_ViewText str -> pure$ ViewText str
        c = pConcToType (vd_cpt o)
     
     isa :: Type -> Type -> Bool
