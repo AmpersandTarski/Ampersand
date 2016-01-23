@@ -255,9 +255,6 @@ aViewSegment2pViewSegmt segment =
   ViewText{} -> P_ViewText { vs_nr  = vsgmNr segment
                            , vs_txt = vsgmTxt segment
                            }
-  ViewHtml{} -> P_ViewHtml { vs_nr  = vsgmNr segment
-                           , vs_htm = vsgmHtml segment
-                           }
 
 aExplObj2PRef2Obj :: ExplObj -> PRef2Obj
 aExplObj2PRef2Obj obj =

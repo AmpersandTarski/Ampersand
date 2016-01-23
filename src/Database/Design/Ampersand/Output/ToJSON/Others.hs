@@ -6,9 +6,8 @@ module Database.Design.Ampersand.Output.ToJSON.Others
 where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand.FSpec.SQL (prettySQLQuery)
 import Database.Design.Ampersand.Basics
-
+import Database.Design.Ampersand.Output.ToJSON.Concepts 
 data TableColumnInfos = TableColumnInfos [TableColumnInfo] deriving (Generic, Show)
 data TableColumnInfo = TableColumnInfo
   { plgJSONname      :: String
@@ -49,20 +48,11 @@ data View = View
   { vwJSONlabel      :: String
   , vwJSONconcept    :: String
   , vwJSONisDefault  :: Bool
-  , vwJSONsegments   :: [JSONViewSegment]
-  } deriving (Generic, Show)
-data JSONViewSegment = JSONViewSegment
-  { vwsJSONsegmentType :: String
-  , vwsJSONlabel       :: String
-  , vwsJSONText        :: Maybe String
-  , vwsJSONHtml        :: Maybe String
-  , vwsJSONexpSQL      :: Maybe String
+  , vwJSONsegments   :: [Segment]
   } deriving (Generic, Show)
 instance ToJSON View where
   toJSON = amp2Jason
 instance ToJSON Views where
-  toJSON = amp2Jason
-instance ToJSON JSONViewSegment where
   toJSON = amp2Jason
 instance JSON FSpec Views where
  fromAmpersand fSpec _ = Views $ (map (fromAmpersand fSpec) 
@@ -76,32 +66,6 @@ instance JSON ViewDef View where
   , vwJSONisDefault  = vdIsDefault vd
   , vwJSONsegments   = map (fromAmpersand fSpec) . vdats $ vd
   } 
-instance JSON ViewSegment JSONViewSegment where
- fromAmpersand fSpec seg = 
-  case seg of 
-   (ViewText i str) -> JSONViewSegment
-    { vwsJSONsegmentType = "Text"
-    , vwsJSONlabel     = lab i
-    , vwsJSONText      = Just str
-    , vwsJSONHtml      = Nothing
-    , vwsJSONexpSQL    = Nothing
-    }
-   (ViewHtml i str) -> JSONViewSegment
-    { vwsJSONsegmentType = "Html"
-    , vwsJSONlabel     = lab i
-    , vwsJSONText      = Nothing
-    , vwsJSONHtml      = Just str
-    , vwsJSONexpSQL    = Nothing
-    }
-   (ViewExp _ objDef) -> JSONViewSegment
-    { vwsJSONsegmentType = "Exp"
-    , vwsJSONlabel     = objnm objDef
-    , vwsJSONText      = Nothing
-    , vwsJSONHtml      = Nothing
-    , vwsJSONexpSQL    = Just . prettySQLQuery fSpec 0 . objctx $ objDef
-    }
-  where
-   lab i = "segmnt_"++show i
 
 
 
