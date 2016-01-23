@@ -85,7 +85,7 @@ class ExecEngine {
 			}
 			
 		}else{
-			Notifications::addInfo("ExecEngine role '" . self::$roleName . "' not found.");
+			Notifications::addInfo("ExecEngine extension included but role '" . self::$roleName . "' not found.");
 		}
 		
 		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------', 'ExecEngine');

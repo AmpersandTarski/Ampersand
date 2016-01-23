@@ -23,3 +23,5 @@ miscellaneous/AmpersandBackup.jgfns
 /hpc
 .settings/org.eclipse.wst.common.project.facet.core.xml
 .settings/org.eclipse.php.core.prefs
+/.stack-work
+static/zwolle/lib/

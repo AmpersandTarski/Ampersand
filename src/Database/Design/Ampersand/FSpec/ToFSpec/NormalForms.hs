@@ -19,9 +19,6 @@ import Database.Design.Ampersand.Misc.Options
 import Database.Design.Ampersand.Input (parseRule)
 import Database.Design.Ampersand.FSpec.ShowADL  -- for debug purposes only
 import Prelude hiding (head)
--- import Debug.Trace
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.ToFSpec.NormalForms"
 
 {- SJC:
 Ideas for future work:

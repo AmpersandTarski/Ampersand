@@ -9,11 +9,6 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Data.Maybe
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "A2P_Converters"
-
-
-
 aCtx2pCtx :: A_Context -> P_Context
 aCtx2pCtx ctx = 
  PCtx { ctx_nm     = ctxnm ctx

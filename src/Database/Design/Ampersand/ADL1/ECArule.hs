@@ -7,7 +7,7 @@ module Database.Design.Ampersand.ADL1.ECArule ( isAll
                                              )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics     (fatalMsg)
+import Database.Design.Ampersand.Basics     (fatal)
 
   --   Ampersand derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
   --   So how does Ampersand derive dynamic behaviour from static rules? An example may clarify this:
@@ -20,8 +20,6 @@ import Database.Design.Ampersand.Basics     (fatalMsg)
   --   This example ilustrates how the order of activities is restricted by an invariant property.
   --   So it is possible to derive some dynamic behaviour from static properties.
   --   The following datatypes form a process algebra.
-fatal :: Int -> String -> a
-fatal = fatalMsg "ADL1.ECArule"
 
 isAll :: PAclause -> Bool
 isAll ALL{} = True

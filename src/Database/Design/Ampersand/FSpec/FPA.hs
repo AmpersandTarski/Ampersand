@@ -8,9 +8,6 @@ import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Basics
 import Data.Maybe
 
---fatal :: Int -> String -> a
---fatal = fatalMsg "FSpec.FPA"
-
 data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) } deriving Show
 
 -- NOTE: FPA constructors are in Dutch (so 'output function' is not OF, but UF)   

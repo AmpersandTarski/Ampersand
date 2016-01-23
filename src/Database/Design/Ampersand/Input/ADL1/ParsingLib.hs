@@ -33,11 +33,9 @@ import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
 import Data.Time.Calendar
 import Data.Time.Clock
-import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Basics (fatal)
 import Data.Maybe
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "ParsingLib"
+import Prelude hiding ((<$))
 
 -- | The Ampersand parser type
 type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.
@@ -134,16 +132,16 @@ pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "l
 
 --- Atom ::= "'" Any* "'"
 pAtomInExpression :: AmpParser Value
-pAtomInExpression = check (\lx -> case lx of 
+pAtomInExpression = check (\lx -> case lx of
                                    LexSingleton s -> Just (VSingleton s (mval s))
-                                   _              -> Nothing 
+                                   _              -> Nothing
                           ) <?> "Singleton value"
-   where 
-    mval s = 
+   where
+    mval s =
       case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
         Left _  -> Nothing
-        Right (toks,_) 
-           -> case runParser pAtomValInPopulation 
+        Right (toks,_)
+           -> case runParser pAtomValInPopulation
                                (FilePos ("Reparse `"++s++"` ") 0 0) -- Todo: Fix buggy position
                                 "" toks of
                 Left _ -> Nothing
@@ -157,10 +155,10 @@ data Value = VRealString String
            | VDateTime UTCTime
            | VDate Day
 pAtomValInPopulation :: AmpParser Value
-pAtomValInPopulation = 
+pAtomValInPopulation =
               VBoolean True  <$ pKey "TRUE"
           <|> VBoolean False <$ pKey "FALSE"
-          <|> VRealString DF.<$> pString 
+          <|> VRealString DF.<$> pString
           <|> VDateTime DF.<$> pUTCTime
           <|> VDate DF.<$> pDay
           <|> fromNumeric DF.<$> pNumeric
@@ -177,7 +175,7 @@ pDay = check (\lx -> case lx of { LexDate s -> Just s; _ -> Nothing }) <?> "iso 
 
 pUTCTime :: AmpParser UTCTime
 pUTCTime  = check (\lx -> case lx of { LexDateTime s -> Just s; _ -> Nothing }) <?> "iso 8601 DateTime"
-    
+
 -----------------------------------------------------------
 -- Integers /float(Double)
 -----------------------------------------------------------
@@ -186,12 +184,12 @@ pNumber :: Int -> AmpParser String
 pNumber nr = match (LexDecimal nr) <|> match (LexHex nr) <|> match (LexOctal nr)
 
 pNumeric :: AmpParser (Either Int Double)
-pNumeric = (f DF.<$> pIsNeg CA.<*> pUnsignedNumeric) <?> "numerical value"  
+pNumeric = (f DF.<$> pIsNeg CA.<*> pUnsignedNumeric) <?> "numerical value"
   where
      f :: Bool -> Either Int Double -> Either Int Double
-     f isNeg b = 
+     f isNeg b =
         case b of
-          Left i  -> Left . (if isNeg then (0-) else id) $ i 
+          Left i  -> Left . (if isNeg then (0-) else id) $ i
           Right d -> Right. (if isNeg then (0-) else id) $ d
 
 pIsNeg :: AmpParser Bool

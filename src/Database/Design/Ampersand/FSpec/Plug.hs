@@ -21,9 +21,6 @@ import GHC.Exts (sortWith)
 import Database.Design.Ampersand.FSpec.FSpec
 import Prelude hiding (Ordering(..))
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.Plug"
-
 ----------------------------------------------
 --Plug
 ----------------------------------------------

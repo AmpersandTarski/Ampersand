@@ -11,9 +11,6 @@ import Data.Maybe
 --import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterNatLangReqs"
-
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
       --  *** Header ***
@@ -99,9 +96,11 @@ chpNatLangReqs lev fSpec =
                      (NL "Deze paragraaf beschrijft de relaties en concepten die niet in voorgaande secties zijn beschreven."
                      ,EN "This paragraph shows remaining artifacts that have not been described in previous paragraphs."
                      )
-                 Just pat -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
+                 Just pat -> 
+                   case purposesDefinedIn fSpec (fsLang fSpec) pat of
+                     []    -> printIntro    (cptsOfTheme tc)
+                     purps -> purposes2Blocks (getOpts fSpec) purps
              )
-          <> printIntro    (cptsOfTheme tc)
           <> (mconcat . map printConcept . cptsOfTheme ) tc
           <> (mconcat . map printRel     . dclsOfTheme ) tc
           <> (mconcat . map printRule    . rulesOfTheme) tc

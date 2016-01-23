@@ -9,9 +9,6 @@ import Database.Design.Ampersand.ADL1.Expression(primitives,isMp1,foldrMapExpres
 import Database.Design.Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Classes.ConceptStructure"
-
 {- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
    (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but
    define relsMentionedIn directly.
@@ -28,7 +25,7 @@ class ConceptStructure a where
   relsMentionedIn = nub . map prim2rel . primsMentionedIn
   primsMentionedIn :: a -> [Expression]
   primsMentionedIn = nub . concatMap primitives . expressionsIn
-  expressionsIn :: a -> [Expression] -- ^The set of all expressions within data structure a
+  expressionsIn :: a -> [Expression] -- ^ The set of all expressions within data structure a
   
   -- | mp1Pops draws the population from singleton expressions.
   mp1Pops :: ContextInfo -> a -> [Population]

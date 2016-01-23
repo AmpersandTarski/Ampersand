@@ -26,14 +26,11 @@ import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Data.Char hiding(isSymbol)
 import Data.Set (member, fromList)
-import Database.Design.Ampersand.Basics (fatalMsg)
+import Database.Design.Ampersand.Basics (fatal)
 import Database.Design.Ampersand.Misc
 import Data.Time.Calendar
 import Data.Time.Clock
 import Numeric
-
-fatal :: Int -> String -> a
-fatal = fatalMsg "Lexer"
 
 -- | Retrieves a list of keywords accepted by the ampersand language
 keywords :: [String] -- ^ The keywords

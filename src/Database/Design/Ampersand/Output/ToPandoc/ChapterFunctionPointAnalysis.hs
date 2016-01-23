@@ -4,9 +4,6 @@ module Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis wh
 import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
 import Database.Design.Ampersand.FSpec.FPA
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Output.ToPandoc.ChapterFunctionPointAnalysis"
-
 -- TODO: add introductory and explanatory text to chapter
 -- TODO: what about KGVs?
 

@@ -12,7 +12,7 @@ module Database.Design.Ampersand.FSpec.ShowADL
 where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics      (fatalMsg,Collection(..),Named(..))
+import Database.Design.Ampersand.Basics      (fatal,Collection(..),Named(..))
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.ADL1 (insParentheses)
 import Database.Design.Ampersand.FSpec.FSpec
@@ -21,15 +21,16 @@ import Prelude
 import Data.Char
 
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "FSpec.ShowADL"
-
 class ShowADL a where
  showADL :: a -> String
 
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
   showADL (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
+
+instance ShowADL (Maybe TType) where
+  showADL (Just v) = show v
+  showADL Nothing = "'Default'"
 
 instance ShowADL ObjectDef where
 -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.

@@ -5,7 +5,6 @@ where
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import System.Time
 import qualified Data.Map as M
 import Codec.Xlsx
 import qualified Data.ByteString.Lazy as L
@@ -13,11 +12,9 @@ import qualified Data.Text as T
 import Data.Maybe
 import Data.List
 import Data.Time.Calendar
+import Data.Time.Clock.POSIX
 
-fatal :: Int -> String -> a
-fatal = fatalMsg "Population2Xlsx"
-
-fSpec2PopulationXlsx :: ClockTime -> FSpec -> L.ByteString 
+fSpec2PopulationXlsx :: POSIXTime -> FSpec -> L.ByteString 
 fSpec2PopulationXlsx ct fSpec = 
   fromXlsx ct xlsx
     where
@@ -81,7 +78,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                                                   AAVFloat _ x -> CellDouble x
                                                   AAVBoolean _ b -> CellBool b
                                                   AAVDate _ day -> (CellDouble . fromInteger) (diffDays (fromGregorian 1900 1 1) day)
-                                                  _ -> fatal 87 $ "Content found that cannot be converted to Excel (jet)." 
+                                                  _ -> fatal 87 ( "Content found that cannot be converted to Excel (yet): "++show aVal) 
                                            )  
        toCell :: Maybe String -> Cell
        toCell mVal 

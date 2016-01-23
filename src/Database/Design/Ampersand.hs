@@ -44,7 +44,7 @@ module Database.Design.Ampersand
    , Language(..)
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
-   , (<==>),meet,join,sortWith,atomValuesOf
+   , (<==>),sortWith,atomValuesOf
    , smallerConcepts, largerConcepts, rootConcepts
    -- * Functions on relations
    -- * Functions on rules
@@ -74,7 +74,7 @@ module Database.Design.Ampersand
    , verboseLn, verbose
    ,helpNVersionTexts
    -- * Other functions
-   , eqCl, showErr, unCap,upCap,escapeNonAlphaNum, fatalMsg
+   , eqCl, showErr, unCap,upCap,escapeNonAlphaNum
    , ampersandVersionStr, ampersandVersionWithoutBuildTimeStr
    , Database.Design.Ampersand.Basics.putStr
    , Database.Design.Ampersand.Basics.hGetContents
