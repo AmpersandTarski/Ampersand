@@ -312,8 +312,6 @@ nonSpecialSelectExpr fSpec expr=
                         case fenceExpr i of 
                        -- In some cases of a non-outer expression, a fence need not be generated, to get better SQL queries. 
                             EDcV{} -> Nothing  
-                            EMp1{} -> Nothing
-                            (ECpl EMp1{}) -> Nothing 
                             _      -> makeNormalFence
                      where
                        makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
@@ -357,6 +355,7 @@ nonSpecialSelectExpr fSpec expr=
                                     _         -> fatal 258 "there is no reason for having no fenceTable!"
 
                              (Nothing, Nothing) -> 
+                                  -- This can be the case that EDcV and EMp1 are neighbour fences. 
                                   fatal 286 $ intercalate "\n  " $
                                      ["Can this happen? Here is a case to analyse: (i = "++show i++")"
                                      , "expr: "++showADL expr
