@@ -177,12 +177,7 @@ nonSpecialSelectExpr fSpec expr=
                         case subTerms of
                           [] -> case specificValue of 
                                  Nothing  -> emptySet -- case might occur with only negMp1Terms??
-                                 Just singleton ->
-                                    BSE { bseSrc = singleton2SQL (source expr) singleton
-                                        , bseTrg = singleton2SQL (source expr) singleton
-                                        , bseTbl = []
-                                        , bseWhr = Nothing
-                                        }
+                                 Just singleton -> selectExpr fSpec (EMp1 singleton (source expr))
                           ts  ->    BSE { bseSrc = theSrc
                                         , bseTrg = theTrg
                                         , bseTbl = theTbl
@@ -403,10 +398,7 @@ nonSpecialSelectExpr fSpec expr=
                          BSE { bseSrc = cAtt
                              , bseTrg = cAtt
                              , bseTbl = [sqlConceptTable fSpec c]
-                             , bseWhr = Just $ conjunctSQL 
-                                                 [ BinOp cAtt [Name "="] (singleton2SQL c val)
-                                                 , BinOp cAtt [Name "="] (singleton2SQL c val)
-                                                 ] 
+                             , bseWhr = Just $ BinOp cAtt [Name "="] (singleton2SQL c val)
                              } 
     (EDcV (Sign s t))    -> 
                  let (psrc,fsrc) = (QName (name plug), QName (name att))
