@@ -398,12 +398,16 @@ nonSpecialSelectExpr fSpec expr=
                                 -> case flipped e of
                                     BQEComment (_:c') fe -> BQEComment (c++c') fe
                                     _ -> fatal 309 "A flipped expression will always start with the comment `Flipped: ..."
-    (EMp1 val c) -> BQEComment [BlockComment "case: EMp1 val c"] $
-                     BSE { bseSrc = singleton2SQL c val
-                         , bseTrg = singleton2SQL c val
-                         , bseTbl = []
-                         , bseWhr = Nothing
-                         }
+    (EMp1 val c) -> let cAtt = Iden [sqlAttConcept fSpec c]
+                    in BQEComment [BlockComment "case: EMp1 val c"] $
+                         BSE { bseSrc = cAtt
+                             , bseTrg = cAtt
+                             , bseTbl = [sqlConceptTable fSpec c]
+                             , bseWhr = Just $ conjunctSQL 
+                                                 [ BinOp cAtt [Name "="] (singleton2SQL c val)
+                                                 , BinOp cAtt [Name "="] (singleton2SQL c val)
+                                                 ] 
+                             } 
     (EDcV (Sign s t))    -> 
                  let (psrc,fsrc) = (QName (name plug), QName (name att))
                                      where (plug,att) = getConceptTableInfo fSpec s
