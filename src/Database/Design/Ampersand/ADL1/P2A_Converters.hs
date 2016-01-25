@@ -282,8 +282,8 @@ pCtx2aCtx _
     
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do mp <- Map.fromList . concat <$> traverse findTypes (concat (onlyUserConcepts concGroups))
-          let findR = flip (Map.findWithDefault Object) mp -- default representation is Object (sometimes called `ugly identifiers')
+     = do mp <- Map.fromList . concat <$> traverse findTypes (concat (onlyUserConcepts (getGroups genLattice)))
+          let findR x = Map.findWithDefault Object x mp -- default representation is Object (sometimes called `ugly identifiers')
           _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
           return (CI { ctxiGens = map pGen2aGen p_gens
                      , representationOf = findR

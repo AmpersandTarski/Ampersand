@@ -177,12 +177,7 @@ nonSpecialSelectExpr fSpec expr=
                         case subTerms of
                           [] -> case specificValue of 
                                  Nothing  -> emptySet -- case might occur with only negMp1Terms??
-                                 Just singleton ->
-                                    BSE { bseSrc = singleton2SQL (source expr) singleton
-                                        , bseTrg = singleton2SQL (source expr) singleton
-                                        , bseTbl = []
-                                        , bseWhr = Nothing
-                                        }
+                                 Just singleton -> selectExpr fSpec (EMp1 singleton (source expr))
                           ts  ->    BSE { bseSrc = theSrc
                                         , bseTrg = theTrg
                                         , bseTbl = theTbl
@@ -312,8 +307,6 @@ nonSpecialSelectExpr fSpec expr=
                         case fenceExpr i of 
                        -- In some cases of a non-outer expression, a fence need not be generated, to get better SQL queries. 
                             EDcV{} -> Nothing  
-                            EMp1{} -> Nothing
-                            (ECpl EMp1{}) -> Nothing 
                             _      -> makeNormalFence
                      where
                        makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
@@ -357,6 +350,7 @@ nonSpecialSelectExpr fSpec expr=
                                     _         -> fatal 258 "there is no reason for having no fenceTable!"
 
                              (Nothing, Nothing) -> 
+                                  -- This can be the case that EDcV and EMp1 are neighbour fences. 
                                   fatal 286 $ intercalate "\n  " $
                                      ["Can this happen? Here is a case to analyse: (i = "++show i++")"
                                      , "expr: "++showADL expr
@@ -399,12 +393,13 @@ nonSpecialSelectExpr fSpec expr=
                                 -> case flipped e of
                                     BQEComment (_:c') fe -> BQEComment (c++c') fe
                                     _ -> fatal 309 "A flipped expression will always start with the comment `Flipped: ..."
-    (EMp1 val c) -> BQEComment [BlockComment "case: EMp1 val c"] $
-                     BSE { bseSrc = singleton2SQL c val
-                         , bseTrg = singleton2SQL c val
-                         , bseTbl = []
-                         , bseWhr = Nothing
-                         }
+    (EMp1 val c) -> let cAtt = Iden [sqlAttConcept fSpec c]
+                    in BQEComment [BlockComment "case: EMp1 val c"] $
+                         BSE { bseSrc = cAtt
+                             , bseTrg = cAtt
+                             , bseTbl = [sqlConceptTable fSpec c]
+                             , bseWhr = Just $ BinOp cAtt [Name "="] (singleton2SQL c val)
+                             } 
     (EDcV (Sign s t))    -> 
                  let (psrc,fsrc) = (QName (name plug), QName (name att))
                                      where (plug,att) = getConceptTableInfo fSpec s
