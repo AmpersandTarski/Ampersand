@@ -59,11 +59,8 @@ instance ShowADL ObjectDef where
 instance ShowADL Cruds where
  showADL x = " "++f crudC 'C'++f crudR 'R'++f crudU 'U'++f crudD 'D'
    where
-     f :: (Cruds -> Maybe Bool) -> Char -> String
-     f fun c = case fun x of
-                 Nothing -> ""
-                 Just b  -> [(if b then toUpper else toLower) c]
-     
+     f :: (Cruds -> Bool) -> Char -> String
+     f fun c = [(if fun x then toUpper else toLower) c]
 
 instance ShowADL Meta where
  showADL (Meta _ metaObj nm val) =

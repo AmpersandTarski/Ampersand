@@ -159,10 +159,10 @@ data FEObject = FEObject { objName :: String
                          , objSource :: A_Concept
                          , objTarget :: A_Concept
                          , objIsEditable :: Bool
-                         , objCrudC :: Maybe Bool
-                         , objCrudR :: Maybe Bool
-                         , objCrudU :: Maybe Bool
-                         , objCrudD :: Maybe Bool
+                         , objCrudC :: Bool
+                         , objCrudR :: Bool
+                         , objCrudU :: Bool
+                         , objCrudD :: Bool
                          , exprIsUni :: Bool
                          , exprIsTot :: Bool
                          , exprIsProp :: Bool

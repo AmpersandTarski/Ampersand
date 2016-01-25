@@ -413,17 +413,17 @@ instance Named ObjectDef where
 instance Traced ObjectDef where
   origin = objpos
 data Cruds = Cruds { crudOrig :: Origin
-                   , crudC :: Maybe Bool
-                   , crudR :: Maybe Bool
-                   , crudU :: Maybe Bool
-                   , crudD :: Maybe Bool
+                   , crudC :: Bool
+                   , crudR :: Bool
+                   , crudU :: Bool
+                   , crudD :: Bool
                    } deriving (Eq, Show)
 instance Default Cruds where
   def = Cruds { crudOrig = Origin "Dummy default Origin"
-              , crudC    = Nothing
-              , crudR    = Nothing
-              , crudU    = Nothing
-              , crudD    = Nothing
+              , crudC    = True
+              , crudR    = True
+              , crudU    = True
+              , crudD    = True
               }
 
 data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 

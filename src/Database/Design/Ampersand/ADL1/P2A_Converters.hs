@@ -559,11 +559,8 @@ pCtx2aCtx _
               }
           else Errors [mkInvalidCRUDError org str]
          where us = map toUpper str
-               f :: Char -> Maybe Bool
-               f c 
-                 | toUpper c `elem` str = Just True
-                 | toLower c `elem` str = Just False
-                 | otherwise            = Nothing    
+               f :: Char -> Bool
+               f c = not (toLower c `elem` str)   
 
     pSubi2aSubi :: DeclMap
                 -> Expression -- Expression of the surrounding

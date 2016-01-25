@@ -35,10 +35,10 @@ data JSONObjectDef = JSONObjectDef
   , ifcJSONrelationIsFlipped  :: Maybe Bool
   , ifcJSONsrcConcept         :: String
   , ifcJSONtgtConcept         :: String
-  , ifcJSONcrudC              :: Maybe Bool
-  , ifcJSONcrudR              :: Maybe Bool
-  , ifcJSONcrudU              :: Maybe Bool
-  , ifcJSONcrudD              :: Maybe Bool
+  , ifcJSONcrudC              :: Bool
+  , ifcJSONcrudR              :: Bool
+  , ifcJSONcrudU              :: Bool
+  , ifcJSONcrudD              :: Bool
   , ifcJSONexprIsUni          :: Bool
   , ifcJSONexprIsTot          :: Bool
   , ifcJSONexprIsProp         :: Bool
@@ -51,10 +51,10 @@ data JSONSubInterface = JSONSubInterface
   , subJSONboxSubInterfaces   :: Maybe [JSONObjectDef]
   , subJSONrefSubInterfaceId  :: Maybe String
   , subJSONrefIsLinTo         :: Maybe Bool
-  , subJSONcrudC              :: Maybe Bool
-  , subJSONcrudR              :: Maybe Bool
-  , subJSONcrudU              :: Maybe Bool
-  , subJSONcrudD              :: Maybe Bool
+  , subJSONcrudC              :: Bool
+  , subJSONcrudR              :: Bool
+  , subJSONcrudU              :: Bool
+  , subJSONcrudD              :: Bool
   } deriving (Generic, Show)
 instance ToJSON JSONSubInterface where
   toJSON = amp2Jason
@@ -74,10 +74,10 @@ instance JSON ([Declaration], SubInterface) JSONSubInterface where
        , subJSONboxSubInterfaces   = Just . map (fromAmpersand fSpec) . zip (repeat editableRels) $ objs
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinTo         = Nothing
-       , subJSONcrudC              = Nothing
-       , subJSONcrudR              = Nothing
-       , subJSONcrudU              = Nothing
-       , subJSONcrudD              = Nothing
+       , subJSONcrudC              = True
+       , subJSONcrudR              = True
+       , subJSONcrudU              = True
+       , subJSONcrudD              = True
        }
      InterfaceRef isLink nm cr -> JSONSubInterface
        { subJSONboxClass           = Nothing
