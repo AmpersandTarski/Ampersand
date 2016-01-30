@@ -418,14 +418,6 @@ data Cruds = Cruds { crudOrig :: Origin
                    , crudU :: Bool
                    , crudD :: Bool
                    } deriving (Eq, Show)
-instance Default Cruds where
-  def = Cruds { crudOrig = Origin "Dummy default Origin"
-              , crudC    = True
-              , crudR    = True
-              , crudU    = True
-              , crudD    = True
-              }
-
 data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 
                   | InterfaceRef Bool -- is LINKTO? 
                                  String 

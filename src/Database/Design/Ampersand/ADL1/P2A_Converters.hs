@@ -192,7 +192,7 @@ onlyUserConcepts (lst:r)
      v -> v:onlyUserConcepts r
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx _
+pCtx2aCtx opts
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = lang
@@ -548,19 +548,27 @@ pCtx2aCtx _
     addEpsilon s t e
      = addEpsilonLeft' s (addEpsilonRight' t e)
     pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
-    pCruds2aCruds Nothing = pure def
-    pCruds2aCruds (Just (P_Cruds org str )) 
-        = if nub us == us && all (\c -> c `elem` "cCrRuUdD") str
-          then pure Cruds { crudOrig = org
-                          , crudC    = f 'C'
-                          , crudR    = f 'R'
-                          , crudU    = f 'U'
-                          , crudD    = f 'D'
-              }
-          else Errors [mkInvalidCRUDError org str]
-         where us = map toUpper str
-               f :: Char -> Bool
-               f c = not (toLower c `elem` str)   
+    pCruds2aCruds mCrud = 
+       case mCrud of 
+         Nothing -> build (Origin "default for Cruds") ""
+         Just (P_Cruds org str ) -> if (length . nub . map toUpper) str == length str && all (\c -> c `elem` "cCrRuUdD") str
+                                    then build org str 
+                                    else Errors [mkInvalidCRUDError org str]
+      where (defC, defR, defU, defD) = defaultCrud opts
+            build org str 
+             = pure Cruds { crudOrig = org
+                          , crudC    = f 'C' defC
+                          , crudR    = f 'R' defR
+                          , crudU    = f 'U' defU
+                          , crudD    = f 'D' defD
+                          }
+               where f :: Char -> Bool -> Bool 
+                     f c def'
+                      | toUpper c `elem` str = True
+                      | toLower c `elem` str = False
+                      | otherwise            = def'
+
+
 
     pSubi2aSubi :: DeclMap
                 -> Expression -- Expression of the surrounding

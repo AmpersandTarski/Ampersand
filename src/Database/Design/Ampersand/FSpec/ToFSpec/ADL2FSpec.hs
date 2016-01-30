@@ -348,7 +348,7 @@ makeFSpec opts context
              = [ Obj { objnm   = showADL t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objctx  = t
-                     , objcrud = def
+                     , objcrud = fatal 351 "No default crud in generated interface"
                      , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                      , objstrs = [] }
@@ -368,7 +368,7 @@ makeFSpec opts context
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
-                                 , objcrud = def
+                                 , objcrud = fatal 371 "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
                                  , objstrs = [] }
@@ -397,7 +397,7 @@ makeFSpec opts context
              , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
-                                 , objcrud = def
+                                 , objcrud = fatal 400 "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
                                  , objstrs = [] }
@@ -416,7 +416,7 @@ makeFSpec opts context
               nm
                 | null nms = fatal 355 "impossible"
                 | otherwise = head nms
-              att = Obj (name c) (Origin "generated attribute object: step 4b") (EDcV (Sign ONE c)) def Nothing Nothing []
+              att = Obj (name c) (Origin "generated attribute object: step 4b") (EDcV (Sign ONE c)) (fatal 419 "No default crud in generated interface.") Nothing Nothing []
         ]
      ----------------------
      --END: making interfaces
