@@ -36,7 +36,6 @@ data Options = Options { showVersion :: Bool
                        , allInterfaces :: Bool
                        , dbName :: String
                        , namespace :: String
-                       , autoRefresh :: Maybe Int
                        , testRule :: Maybe String
                        , customCssFile :: Maybe FilePath
                                                    --class Populated a where populate::a->b->a
@@ -132,7 +131,6 @@ getOptions =
                       , genPrototype     = False
                       , allInterfaces    = False
                       , namespace        = ""
-                      , autoRefresh      = Nothing
                       , testRule         = Nothing
                       , customCssFile    = Nothing
                       , genFSpec         = False
@@ -280,15 +278,6 @@ options = [ (Option ['v']   ["version"]
                        ) "FORMAT")
                ("generate a functional specification document in specified format (FORMAT="++allFSpecFormats++").")
             , Public)
-          , (Option []        ["refresh"]
-               (OptArg (\r opts -> return
-                            opts{autoRefresh = Just (case r of
-                                                       Just str | [(i,"")] <- reads str -> i
-                                                       _                                -> 5
-                                                     )}
-                       ) "INTERVAL")
-               "Experimental auto-refresh feature"
-            , Hidden)
           , (Option []        ["testRule"]
                (ReqArg (\ruleName opts -> return opts{ testRule = Just ruleName }
                        ) "RULE")
