@@ -1,7 +1,8 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
   ,makeUserDefinedSqlPlug
-  ,representationOf)
+  ,representationOf
+  ,kernls)
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import GHC.Exts (sortWith)
@@ -24,7 +25,7 @@ makeGeneratedSqlPlugs opts context totsurs entityDcls = gTables
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         gTables = gPlugs ++ gLinkTables
         gPlugs :: [PlugSQL]
-        gPlugs   = makeEntityTables opts context entityDcls (gens context) (ctxgenconcs context) (relsUsedIn vsqlplugs)
+        gPlugs   = makeEntityTables opts context entityDcls (relsUsedIn vsqlplugs)
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
         gLinkTables = [ makeLinkTable (contextInfoOf context) dcl totsurs
@@ -239,6 +240,39 @@ rel2att ci
 -- ^ (attExpr k) is the relation from the plug's ID to k
 -- ^ (attExpr k);rel is the relation from ID to f
 
+kernls :: A_Context -> [[A_Concept]]
+kernls context    -- Step 3: compute the kernels
+ = trace aap $
+   [ largerCs++[ c | c<-kernel, c `notElem` largerCs ]              -- put the largest element up front
+   | kernel <- kernPartition (extraIsas++gens context)                -- recompute the kernels with the extra isa-pairs.
+   , let largerCs = [c | c<-kernel, null (largerConcepts (gens context) c)]   -- get the set of largest concepts (each kernel has precisely one)
+   ]
+ where
+    aap = intercalate "\n" . map writeLineFor . concs $ context
+    writeLineFor :: A_Concept -> String
+    writeLineFor cpt = "smaller than "++show cpt++": "++show (smallerConcepts (gens context) cpt)
+    -- | kernels are computed, starting with the set of concepts, on the basis of generalization tuples.
+    kernPartition :: [A_Gen] -> [[A_Concept]] -- ^ This function contains the recipe to derive a set of kernels from a set of isa-pairs.
+    kernPartition specialzs
+     = foldl f (group (delete ONE (concs context))) specialzs
+       where f disjuncLists g = concat haves : nohaves
+               where
+                 (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
+    extraIsas  -- Step 2: Maybe extra isa-pairs are needed to ensure that each kernel has precisely one largest concept
+       = concat
+         [ case [c | c<-kernel, null (largerConcepts (gens context) c)] of -- determine how many concepts in one kernel are largest
+             [_] -> []
+             rs  -> [ Isa{gengen=rootConcept, genspc=c} | c<-rs ]
+         | (rootConcept,kernel) <- zip [rc | i<-[0::Int ..]
+                                           , let rc=PlainConcept { cptnm = "rootConcept"++show i
+                                                                 }
+                                           , rc `notElem` concs context ]
+                                       (kernPartition (gens context))
+         ]
+    
+
+
+
 -----------------------------------------
 --makeEntityTables  (formerly called: makeTblPlugs)
 -----------------------------------------
@@ -267,47 +301,19 @@ rel2att ci
 makeEntityTables :: Options
                 -> A_Context
                 -> [Declaration] -- ^ all relations in scope
-                -> [A_Gen]
-                -> [[A_Concept]] -- ^ concepts `belonging' together.
-                                 --   for each class<-conceptss: c,c'<-class:   c `join` c' exists (although there is not necessarily a concept d=c `join` c'    ...)
                 -> [Declaration] -- ^ relations that should be excluded, because they wil not be implemented using generated sql plugs.
                 -> [PlugSQL]
-makeEntityTables opts context allDcls isas conceptss exclusions
+makeEntityTables opts context allDcls exclusions
  = sortWith ((0-).length.plugAttributes)
     (map (kernel2Plug (contextInfoOf context)) kernelsWithAttributes)
    where
     diagnostics
       = "\nallDcls:" ++     concat ["\n  "++showHSName r           | r<-allDcls]++
         "\nallDcls:" ++     concat ["\n  "++showHS opts "\n  " r  | r<-allDcls]++
-        "\nconceptss:" ++   concat ["\n  "++showHS opts "    " cs | cs<-conceptss]++
         "\nexclusions:" ++  concat ["\n  "++showHSName r           | r<-exclusions]++
         "\nattRels:" ++     concat ["\n  "++showHS opts "    " e  | e<-attRels]++
         "\n"
-    -- | kernels are computed, starting with the set of concepts, on the basis of generalization tuples.
-    kernPartition :: [A_Gen] -> [[A_Concept]] -- ^ This function contains the recipe to derive a set of kernels from a set of isa-pairs.
-    kernPartition specialzs
-     = foldl f (group (delete ONE (concs context))) specialzs
-       where f disjuncLists g = concat haves : nohaves
-               where
-                 (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
-    preKernels = kernPartition (gens context) -- Step 1: compute the kernels from the isa-pairs from the context
-    extraIsas  -- Step 2: Maybe extra isa-pairs are needed to ensure that each kernel has precisely one largest concept
-       = concat
-         [ case [c | c<-kernel, null (largerConcepts isas c)] of -- determine how many concepts in one kernel are largest
-             [_] -> []
-             rs  -> [ Isa{gengen=rootConcept, genspc=c} | c<-rs ]
-         | (rootConcept,kernel) <- zip [rc | i<-[0::Int ..]
-                                           , let rc=PlainConcept { cptnm = "rootConcept"++show i
-                                                                 }
-                                           , rc `notElem` concs context ]
-                                       preKernels
-         ]
-    kernls     -- Step 3: compute the kernels
-     = [ largerCs++[ c | c<-kernel, c `notElem` largerCs ]              -- put the largest element up front
-       | kernel <- kernPartition (extraIsas++gens context)                -- recompute the kernels with the extra isa-pairs.
-       , let largerCs = [c | c<-kernel, null (largerConcepts isas c)]   -- get the set of largest concepts (each kernel has precisely one)
-       ]
-    kernelsWithAttributes = dist attRels kernls []
+    kernelsWithAttributes = dist attRels (kernls context) []
       where
         dist :: (Association attrib, Show attrib) => [attrib] -> [[A_Concept]] -> [([A_Concept], [attrib])] -> [([A_Concept], [attrib])]
         dist []   []     result = result

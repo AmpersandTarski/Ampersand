@@ -83,7 +83,7 @@ makeFSpec opts context
               , allUsedDecls = relsUsedIn context
               , allDecls     = fSpecAllDecls
               , allConcepts  = fSpecAllConcepts
-              , kernels      = constructKernels
+              , kernels      = kernls context
               , cptTType     = (\cpt -> representationOf contextinfo cpt)
               , fsisa        = concatMap genericAndSpecifics (gens context)
               , vpatterns    = patterns context
@@ -216,10 +216,6 @@ makeFSpec opts context
          where calculated = decprps d `uni` [Tot | d `elem` totals]
                                       `uni` [Sur | d `elem` surjectives]
      calculatedDecls = map calcProps fSpecAllDecls
-     constructKernels = foldl f (group (delete ONE fSpecAllConcepts)) (gens context)
-         where f disjuncLists g = concat haves : nohaves
-                 where
-                   (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
   -- determine relations that are total (as many as possible, but not necessarily all)
      totals      = [ d |       EDcD d  <- totsurs ]
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
