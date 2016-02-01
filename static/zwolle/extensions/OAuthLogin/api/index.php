@@ -94,11 +94,13 @@ $app->get('/logout', function () use ($app){
 });
 
 $app->get('/callback/google', function () use ($app){
+	$code = $app->request->params('code');
 	OAuthLoginController::callback($code, 'google');
 });
 
 $app->get('/callback/linkedin', function () use ($app){
 	// TODO: add check $state variable, to prevent CSPF attack
+	$code = $app->request->params('code');
 	OAuthLoginController::callback($code, 'linkedin');
 });
 
