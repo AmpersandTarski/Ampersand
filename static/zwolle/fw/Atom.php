@@ -229,7 +229,7 @@ Class Atom {
 					// Include content for subinterfaces that refer to other interface (e.g. "label" : expr [LINKTO] INTERFACE <refInterface>)
 					if(!empty($interface->refInterfaceId)
 							&& (!$interface->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
-							&& (!in_array($tgtAtom->id, $recursionArr[$interface->refInterfaceId]))) // Prevent infinite loops
+							&& (!in_array($tgtAtom->id, (array)$recursionArr[$interface->refInterfaceId]))) // Prevent infinite loops
 					{
 						// Add target atom to $recursionArr to prevent infinite loops
 						if($options['inclLinktoData']) $recursionArr[$interface->refInterfaceId][] = $tgtAtom->id;
