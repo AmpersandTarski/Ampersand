@@ -242,15 +242,11 @@ rel2att ci
 
 kernls :: A_Context -> [[A_Concept]]
 kernls context    -- Step 3: compute the kernels
- = trace aap $
-   [ largerCs++[ c | c<-kernel, c `notElem` largerCs ]              -- put the largest element up front
+ = [ largerCs++[ c | c<-kernel, c `notElem` largerCs ]              -- put the largest element up front
    | kernel <- kernPartition (extraIsas++gens context)                -- recompute the kernels with the extra isa-pairs.
    , let largerCs = [c | c<-kernel, null (largerConcepts (gens context) c)]   -- get the set of largest concepts (each kernel has precisely one)
    ]
  where
-    aap = intercalate "\n" . map writeLineFor . concs $ context
-    writeLineFor :: A_Concept -> String
-    writeLineFor cpt = "smaller than "++show cpt++": "++show (smallerConcepts (gens context) cpt)
     -- | kernels are computed, starting with the set of concepts, on the basis of generalization tuples.
     kernPartition :: [A_Gen] -> [[A_Concept]] -- ^ This function contains the recipe to derive a set of kernels from a set of isa-pairs.
     kernPartition specialzs
