@@ -78,27 +78,43 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	throw new Exception ("Not implemented yet", 501);
 });
 
-$app->patch('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
+$app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app) {
 	$session = Session::singleton();
 	
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
 	
 	$options = $app->request->params();
-	$ifcPath = implode ('/', $ifcPath);
 	
 	$atom = new Atom($resourceId, $resourceType);
-	$pathInfo = $atom->walkIfcPath($ifcPath);
 	
-	// Checks
-	if(is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch '$ifcPath'. Missing resource identifier", 405);
+	if(!empty($ifcPath)){
+		$ifcPath = implode ('/', $ifcPath);
+		$pathInfo = $atom->walkIfcPath($ifcPath);
+		$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
 		
-	// Perform patch(es)
-	$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
-	$pathInfo['tgtAtom']->patch($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
+		// Checks
+		if(is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch '$ifcPath'. Missing resource identifier", 405);
+		
+		// Perform patch(es)	
+		$pathInfo['tgtAtom']->patch($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
 	
-	// Return content of atom TODO: make sure that content is also returned when database was not committed
-	$content = $pathInfo['srcAtom']->getContent($pathInfo['ifc'], $pathEntry, $pathInfo['tgtAtom']->id, $options);
+		// Get content of patched atom TODO: make sure that content is also returned when database was not committed
+		$content = $pathInfo['srcAtom']->getContent($pathInfo['ifc'], $pathEntry, $pathInfo['tgtAtom']->id, $options);
+	
+	}else{		
+		// Checks
+		if(is_null($app->request->params('topLevelIfc'))) throw new Exception ("Top level interface required, but not specified", 400);
+		
+		// Perform patch(es)
+		$atom->patch(null, '', $app->request->getBody(), $options);
+		
+		// Get content of patched atom TODO: make sure that content is also returned when database was not committed
+		$ifc = new InterfaceObject($app->request->params('topLevelIfc'));
+		$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifc->id;
+		$content = $atom->getContent($ifc, $pathEntry, null, $options);
+	
+	}
 	
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
