@@ -1,12 +1,18 @@
-All generated files will be placed in this folder. This includes:
+The .htaccess file in this folder prevents outside access (not from backend itself) to this folder. DO NOT REMOVE/EDIT this .htaccess file.
 
-* app (folder)
-  * RouteProvider.js (contains part of the routeProvider config that mathes URL path to controllers and views
-  * controllers (folder)
-    * contains all controllers, 1 controller for every interface
-  * views (folder)
-    * contains all html views, 1 view for every interface)
-* dbSettings.php (contains database settings, needed for InstallerDBstruct.php and InstallerDefPop.php)
+All generated config and ampersand model files will be placed in this folder. This includes:
+* concepts.json
+* conjuncts.json
+* interfaces.json
+* mysql-installer.json
+* relations.json
+* rules.json
+* settings.json
+* tables.json
+* views.json
+
+The following files are still in use, but will be phased out and replaced by json files specified above (see ticket #197 and #198):
 * Generics.php (contains ampersand model, needed by the framework)
-* InstallerDBstruct.php (file with SQL queries that create the database structure)
-* InstallerDefPop.php (file with SQL queries that populates the database with the included population)
+* dbSettings.php
+* InstallerDBstruct.php
+* InstallerDefPop.php
