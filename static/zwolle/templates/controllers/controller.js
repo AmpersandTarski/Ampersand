@@ -29,6 +29,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	// Set requested resource
 	\$scope.resource = Restangular.one('resources').one('$source$', resourceId); // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
 	\$scope.resource['_path_'] = '/resources/$source$/' + resourceId;
+	\$scope.resource['_ifcEntryResource_'] = true;
+	\$scope.entryResource = \$scope.resource; // Used in templates to specify as patchOnResource
 	\$scope.resource['$interfaceName$'] = new Array();
 	
 	// Create new resource
@@ -45,7 +47,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 				.then(function(data) { // POST
 					\$rootScope.updateNotifications(data.notifications);
 					\$scope.resource['$interfaceName$'].push(Restangular.restangularizeElement(\$scope.resource, data.content, '$interfaceName$')); // Add to collection
-					showHideButtons(data.invariantRulesHold, data.requestType, data.content['_id_']);
+					showHideButtons(resource, data.invariantRulesHold, data.requestType);
 					\$location.url('/$interfaceName$/'+ data.content['_id_'], false);
 				})
 		);
@@ -91,7 +93,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	}
 	
 	// Function to create a new resource and add to the colletion
-	\$scope.createResource = function (obj, ifc, prepend, requestType, resourceId){
+	\$scope.createResource = function (obj, ifc, prepend, requestType, resourceId){		
 		if(prepend === 'undefined') var prepend = false;
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
@@ -100,14 +102,13 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			Restangular.one(obj['_path_']).all(ifc)
 				.post({}, {requestType : requestType})
 				.then(function(data){					
+					// Update visual feedback (notifications and buttons)
+					\$rootScope.updateNotifications(data.notifications);
+					showHideButtons(data.content, data.invariantRulesHold, data.requestType); // Show/hide buttons on top level resource
+					
 					// Add new resource to collection/list
 					if(prepend) obj[ifc].unshift(data.content);
 					else obj[ifc].push(data.content);
-					
-					// Update visual feedback (notifications and buttons)
-					\$rootScope.updateNotifications(data.notifications);
-					if(resourceId === undefined) resourceId = data.content['_id_']; 
-					showHideButtons(data.invariantRulesHold, data.requestType, resourceId);
 					
 					// Empty loading array
 					obj['_loading_'] = new Array();
@@ -146,19 +147,27 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to send all patches
 	\$scope.saveResource = function(resource, requestType){
+		// Find top level resource from ifc list
+		index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
+		tlResource = \$scope.resource['$interfaceName$'][index];
+		
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
 		resource['_loading_'] = new Array();
 		resource['_loading_'].push( // shows loading indicator
 			Restangular.one(resource['_path_'])
-				.patch(resource['_patchesCache_'], {'requestType' : requestType})
+				.patch(resource['_patchesCache_'], {'requestType' : requestType, 'topLevelIfc' : '$interfaceName$'})
 				.then(function(data) {
 					// Update resource data
-					resource = \$.extend(resource, data.content);
+					if(resource['_ifcEntryResource_']){
+						resource['$interfaceName$'] = data.content;
+						tlResource = resource;
+					}
+					else resource = \$.extend(resource, data.content);
 					
 					// Update visual feedback (notifications and buttons)
 					\$rootScope.updateNotifications(data.notifications);
-					showHideButtons(data.invariantRulesHold, data.requestType, resourceId);
+					showHideButtons(tlResource, data.invariantRulesHold, data.requestType); // Show/hide buttons on top level resource
 					
 					// Empty loading array
 					resource['_loading_'] = new Array();					
@@ -307,16 +316,13 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	};
 	
 	// Function to remove an object from a certain interface (array) of a resource
-	\$scope.removeObject = function(resource, ifc, key, resourceId){
-		index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
-		topLevelResource = \$scope.resource['$interfaceName$'][index];
-		
+	\$scope.removeObject = function(resource, ifc, key, pathOnResource){		
 		// Adapt js model
 		id = resource[ifc][key]['_id_'];
 		resource[ifc].splice(key, 1);
 		
 		// Construct path
-		pathLength = topLevelResource['_path_'].length;
+		pathLength = pathOnResource['_path_'].length;
 		path = resource['_path_'].substring(pathLength) + '/' + ifc + '/' + id;
 		
 		// Construct patch
@@ -324,7 +330,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
-		\$scope.patchResource(topLevelResource, patches);
+		\$scope.patchResource(pathOnResource, patches);
 	};
 	
 	// Typeahead functionality
@@ -373,9 +379,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	};
 	
 	// Show/hide save buttons
-	function showHideButtons(invariantRulesHold, requestType, resourceId){
-		index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
-		resource = \$scope.resource['$interfaceName$'][index];		
+	function showHideButtons(resource, invariantRulesHold, requestType){
 		
 		if(invariantRulesHold && requestType == 'feedback'){
 			resource['_showButtons_'] = {'save' : true, 'cancel' : true};
