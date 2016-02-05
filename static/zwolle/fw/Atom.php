@@ -312,20 +312,28 @@ Class Atom {
 		
 		// Perform create
 		$newAtom = Concept::createNewAtom($interface->tgtConcept);
-		if($this->id === '_NEW_') $this->id = $newAtom->id; // Special case for CREATE in I[Concept] interfaces
 		$this->database->addAtomToConcept($newAtom->id, $newAtom->concept);
 		
-		// TODO: add part to handle $data, for now: only create atom itself
+		// Special case for CREATE in I[Concept] interfaces
+		if($this->id === '_NEW_'){
+			$this->id = $newAtom->id;
+			$pathEntry = str_replace('_NEW_', $newAtom->id, $pathEntry);
+		}
+		
+		$pathEntry .= '/' . $newAtom->id;
 		
 		// If interface expression is a relation, also add tuple(this, newAtom) in this relation
 		if($interface->relation) $this->database->editUpdate($interface->relation, $interface->relationIsFlipped, $this->id, $this->concept, $newAtom->id, $newAtom->concept);
+	
+		// Set requested state (using patches)
+		$newAtom->doPatches($interface, $pathEntry, $data['patches']);
 		
 		// Close transaction
 		$this->database->closeTransaction($newAtom->concept . ' created', false, null, false);
 		
 		// Return content of created atom TODO: make sure that content is also returned when database was not committed
-		$pathEntry .= '/' . $newAtom->id;
-		return $this->getContent($interface, $pathEntry, $newAtom->id, $options);
+		
+		if($interface->crudR) return $this->getContent($interface, $pathEntry, $newAtom->id, $options);
 		
 	}
 	
@@ -341,13 +349,12 @@ Class Atom {
 		throw new Exception ("Not yet implemented", 501);
 	
 		// Get current state of atom
-		$before = $this->getContent($interface, true, $this->id);
-		$before = current($before); // current(), returns first item of array. This is valid, because put() concerns exactly 1 atom.
+		$before = $this->getContent($interface, $pathEntry, $this->id, $options);
 	
-		// Determine differences between current state ($before) and requested state ($request_data)
+		// Determine differences between current state ($before) and requested state ($data)
 		$patches = mikemccabe\JsonPatch\JsonPatch::diff($before, $data);
 	
-		return $this->patch($interface, $pathEntry, $patches, $options);
+		return $this->doPatches($interface, $pathEntry, $patches);
 	}
 	
 	/**
