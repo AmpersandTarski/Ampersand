@@ -382,19 +382,32 @@ Class Atom {
 		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
 		
 		// Perform patches
+		$this->doPatches($interface, $pathEntry, $patches);
+		
+		// Close transaction
+		$this->database->closeTransaction($successMessage, false, null, false);
+	}
+	
+	/**********************************************************************************************
+	 *
+	 * PATCH functions
+	 *
+	 **********************************************************************************************/
+	
+	private function doPatches($interface, $pathEntry, $patches){
 		$errorCount = 0;
 		foreach ((array)$patches as $key => $patch){
 			try{
 				// Check patch
 				if(!array_key_exists('op', $patch)) throw new Exception ("No 'op' (i.e. operation) specfied for patch #{$key}", 400);
 				if(!array_key_exists('path', $patch)) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
-				
+		
 				$pathInfo = $this->walkIfcPath($patch['path'], $interface);
 				$path = $pathEntry . $pathInfo['path'];
-				
+		
 				// Checks
 				if(!$pathInfo['ifc']->crudU) throw new Exception("Update is not allowed for path '{$path}'", 403);
-				
+		
 				switch($patch['op']){
 					case "replace" :
 						if(!is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch replace '{$path}'. Path ends with resource", 405);
@@ -425,16 +438,7 @@ Class Atom {
 			$processed = $totalPatches - $errorCount;
 			Notifications::addInfo("{$processed}/{$totalPatches} patches processed. {$errorCount} errors.");
 		}
-		
-		// Close transaction
-		$this->database->closeTransaction($successMessage, false, null, false);
 	}
-	
-	/**********************************************************************************************
-	 *
-	 * PATCH functions
-	 *
-	 **********************************************************************************************/
 	
 	/** 
 	 * Performs editUpdate or editDelete based on patch replace operation
