@@ -57,7 +57,7 @@ defaultWriterVariables fSpec
     , ("lang"    , case fsLang fSpec of
                        Dutch   -> "dutch"
                        English -> "english")
-    , ("papersize", "a4paper")
+    , ("papersize", "a4")
     , ("babel-lang", case fsLang fSpec of
                        Dutch   -> "dutch"
                        English -> "english")
