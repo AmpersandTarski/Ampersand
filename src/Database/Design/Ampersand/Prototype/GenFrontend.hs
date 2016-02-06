@@ -307,7 +307,7 @@ genRouteProvider fSpec ifcs =
                      . setAttribute "ifcs"                ifcs
                      . setAttribute "verbose"             (verboseP (getOpts fSpec))
 
-    ; writePrototypeFile fSpec ("app/RouteProvider.js") $ contents 
+    ; writePrototypeAppFile fSpec ("RouteProvider.js") $ contents 
     }
 
     
@@ -341,7 +341,7 @@ genView_Interface fSpec interf =
                      . setAttribute "verbose"             (verboseP (getOpts fSpec))
 
     ; let filename = ifcName interf ++ ".html" 
-    ; writePrototypeFile fSpec ("app/views" </> filename) $ contents 
+    ; writePrototypeAppFile fSpec ("views" </> filename) $ contents 
     }
 
 -- Helper data structure to pass attribute values to HStringTemplate
@@ -477,7 +477,7 @@ genController_Interface fSpec interf =
                      . setAttribute "verbose"                  (verboseP (getOpts fSpec))
                      . setAttribute "usedTemplate"             controlerTemplateName
     ; let filename = ifcName interf ++ ".js"
-    ; writePrototypeFile fSpec ("app/controllers" </> filename) $ contents 
+    ; writePrototypeAppFile fSpec ("controllers" </> filename) $ contents 
     }
     
 ------ Utility functions

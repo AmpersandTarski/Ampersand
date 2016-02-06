@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.Prototype.ProtoUtil
          ( writePrototypeFile, getGenericsDir
+         , writePrototypeAppFile, getAppDir
          , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
@@ -30,8 +31,19 @@ writePrototypeFile fSpec relFilePath content =
 getGenericsDir :: FSpec -> String
 getGenericsDir fSpec = 
   Opts.dirPrototype (getOpts fSpec) </> "generics" 
-   
 
+writePrototypeAppFile :: FSpec -> String -> String -> IO ()
+writePrototypeAppFile fSpec relFilePath content =
+ do { verboseLn (getOpts fSpec) ("  Generating "++relFilePath)
+    ; let filePath = getAppDir fSpec </> relFilePath
+    ; createDirectoryIfMissing True (takeDirectory filePath)
+    ; writeFile filePath content
+    }
+   
+getAppDir :: FSpec -> String
+getAppDir fSpec =
+  Opts.dirPrototype (getOpts fSpec) </> "app"
+  
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
 copyDirRecursively :: FilePath -> FilePath -> IO ()
