@@ -39,7 +39,18 @@ chpConceptualAnalysis lev fSpec = (
                     )
      )<> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
 
-  caBlocks = mconcat (map caSection (vpatterns fSpec))
+  caBlocks = 
+        (mconcat (map caSection (vpatterns fSpec)))
+      <>(case fsLang fSpec of
+           Dutch   -> para "De definities van concepten zijn te vinden in de index."
+                   <> header (lev+3) "Gedeclareerde relaties"
+                   <> para "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."
+           English -> para "The definitions of concepts can be found in the glossary."
+                   <> header (lev+3) "Declared relations"
+                   <> para "This section itemizes the declared relations with properties and purpose."
+        )
+      <> definitionList (map caRelation [d | d@Sgn{}<-allDecls fSpec])
+     
   pictures = concatMap patPicts (vpatterns fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
@@ -67,16 +78,7 @@ chpConceptualAnalysis lev fSpec = (
         ) <>
     (
         -- now provide the text of this pattern.
-        (case fsLang fSpec of
-           Dutch   -> para "De definities van concepten zijn te vinden in de index."
-                   <> header (lev+3) "Gedeclareerde relaties"
-                   <> para "Deze paragraaf geeft een opsomming van de gedeclareerde relaties met eigenschappen en betekenis."
-           English -> para "The definitions of concepts can be found in the glossary."
-                   <> header (lev+3) "Declared relations"
-                   <> para "This section itemizes the declared relations with properties and purpose."
-        )
-     <> definitionList (map caRelation [d | d@Sgn{}<-relsDefdIn pat `uni` relsMentionedIn pat])
-     <> case map caRule (invariants fSpec `isc` udefrules pat) of
+       case map caRule (invariants fSpec `isc` udefrules pat) of
          []     -> mempty
          blocks -> (case fsLang fSpec of
                       Dutch   -> header (lev+3) "Regels"
@@ -172,8 +174,8 @@ chpConceptualAnalysis lev fSpec = (
                               ,EN ", this is formalized as "))
                    )
                <> (if showPredExpr (getOpts fSpec)
-                   then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
-                   else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
+                   then pandocEqnArrayWithLabel (XRefConceptualAnalysisRuleA r) ((showLatex.toPredLogic) r)
+                   else pandocEquationWithLabel (XRefConceptualAnalysisRuleA r) (showMath r)
                   )
                -- followed by a conceptual model for this rule
                <> para

@@ -400,8 +400,8 @@ dpRule' fSpec = dpR
                    else l (NL "De regel luidt: ", EN "This means: ")
                   )
          <> (if showPredExpr (getOpts fSpec)
-             then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
-             else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
+             then pandocEqnArrayWithLabel (XRefConceptualAnalysisRuleB r) ((showLatex.toPredLogic) r)
+             else pandocEquationWithLabel (XRefConceptualAnalysisRuleB r) (showMath r)
             )
          <> (if length nds<=1
              then mempty

@@ -330,7 +330,8 @@ data XRefObj = XRefNaturalLanguageDeclaration Declaration
              | XRefProcessAnalysisDeclaration Declaration
              | XRefConceptualAnalysisPattern Pattern
              | XRefConceptualAnalysisDeclaration Declaration
-             | XRefConceptualAnalysisRule Rule
+             | XRefConceptualAnalysisRuleA Rule
+             | XRefConceptualAnalysisRuleB Rule
              | XRefInterfacesInterface Interface
              | XRefNaturalLanguageTheme (Maybe Pattern)
 xRefTo :: XRefObj -> Inlines
@@ -351,7 +352,8 @@ xRefRawLabel x
                                   -> "cptAnalPat:"++(escapeNonAlphaNum.name) p
      XRefConceptualAnalysisDeclaration d
                                   -> "cptAnalDcl:"++(escapeNonAlphaNum.fullName) d
-     XRefConceptualAnalysisRule r -> "cptAnalRule:"++(escapeNonAlphaNum.name) r
+     XRefConceptualAnalysisRuleA r -> "cptAnalRuleA:"++(escapeNonAlphaNum.name) r
+     XRefConceptualAnalysisRuleB r -> "cptAnalRuleB:"++(escapeNonAlphaNum.name) r
      XRefInterfacesInterface i    -> "interface:"++(escapeNonAlphaNum.name) i
      XRefNaturalLanguageTheme (Just t)
                                   -> "theme:"++(escapeNonAlphaNum.name) t
