@@ -248,7 +248,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                               ExitSuccess   -> verboseLn (getOpts fSpec) "PDF file created."
                                               ExitFailure _ ->
                                                do { let nrOfErrLines = 15
-                                                  ; putStrLn "----------- LaTeX error-----------"
+                                                  ; putStrLn "----------- LaTeX output-----------"
 
                                                   -- get rid of latex memory info and take required nr of lines
                                                   ; let reverseErrLines = take nrOfErrLines . drop 2
@@ -256,7 +256,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
                                                                         . reverse $ logFileLines
                                                   ; putStrLn $ unlines . reverse $ reverseErrLines
                                                   ; putStrLn "----------------------------------\n"
-                                                  ; putStrLn $ "ERROR: Latex execution failed."
+                                                  ; putStrLn $ "Warning: Latex execution has warnings."
                                                   ; putStrLn $ "For more information, run pdflatex on: "++texFilename
                                                   ; putStrLn $ "Or consult the log file:\n"++logFileName
                                                   }
@@ -330,7 +330,8 @@ data XRefObj = XRefNaturalLanguageDeclaration Declaration
              | XRefProcessAnalysisDeclaration Declaration
              | XRefConceptualAnalysisPattern Pattern
              | XRefConceptualAnalysisDeclaration Declaration
-             | XRefConceptualAnalysisRule Rule
+             | XRefConceptualAnalysisRuleA Rule
+             | XRefConceptualAnalysisRuleB Rule
              | XRefInterfacesInterface Interface
              | XRefNaturalLanguageTheme (Maybe Pattern)
 xRefTo :: XRefObj -> Inlines
@@ -351,7 +352,8 @@ xRefRawLabel x
                                   -> "cptAnalPat:"++(escapeNonAlphaNum.name) p
      XRefConceptualAnalysisDeclaration d
                                   -> "cptAnalDcl:"++(escapeNonAlphaNum.fullName) d
-     XRefConceptualAnalysisRule r -> "cptAnalRule:"++(escapeNonAlphaNum.name) r
+     XRefConceptualAnalysisRuleA r -> "cptAnalRuleA:"++(escapeNonAlphaNum.name) r
+     XRefConceptualAnalysisRuleB r -> "cptAnalRuleB:"++(escapeNonAlphaNum.name) r
      XRefInterfacesInterface i    -> "interface:"++(escapeNonAlphaNum.name) i
      XRefNaturalLanguageTheme (Just t)
                                   -> "theme:"++(escapeNonAlphaNum.name) t
