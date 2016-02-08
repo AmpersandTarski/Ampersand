@@ -46,7 +46,12 @@ class ExecEngine {
 			while(self::$doRun){
 				self::$doRun = false;
 				self::$runCount++;
-				if(self::$runCount > $maxRunCount) throw new Exception('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')', 500);
+
+				// Prevent infinite loop in ExecEngine reruns 				
+				if(self::$runCount > $maxRunCount){
+					Notifications::addError('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')');
+					break;
+				}
 				
 				Notifications::addLog("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '" . $role->label . "'", 'ExecEngine');
 				
