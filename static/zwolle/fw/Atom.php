@@ -287,7 +287,8 @@ Class Atom {
 		}
 		
 		// Return result
-		if(!is_null($tgt) && is_array($result)) return current($result); 
+		if(!is_null($tgt) && is_array($result)) return current($result);
+        elseif($interface->tgtConceptIsObject) return (array)$result; // always return array if tgtConceptIsObject, even if result is empty
 		else return $result;
 			
 	}
@@ -326,7 +327,8 @@ Class Atom {
 		if($interface->relation) $this->database->editUpdate($interface->relation, $interface->relationIsFlipped, $this->id, $this->concept, $newAtom->id, $newAtom->concept);
 	
 		// Set requested state (using patches)
-		$newAtom->doPatches($interface, $pathEntry, $data['patches']);
+        $patches = is_array($data) ? $data['patches'] : array();
+		$newAtom->doPatches($interface, $pathEntry, $patches);
 		
 		// Close transaction
 		$this->database->closeTransaction($newAtom->concept . ' created', false, null, false);
