@@ -67,6 +67,7 @@ import GHC.Generics (Generic)
 import Data.Data
 import Data.Hashable
 import Data.Char (toUpper,toLower)
+import Data.List (nub)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
@@ -979,10 +980,10 @@ unsafePAtomVal2AtomValue' typ mCpt pav
              Object           -> message x
       XlsxDouble _ d
          -> case typ of
-             Alphanumeric     -> message d
-             BigAlphanumeric  -> message d
-             HugeAlphanumeric -> message d
-             Password         -> message d
+             Alphanumeric     -> relaxXLSXInput d    
+             BigAlphanumeric  -> relaxXLSXInput d
+             HugeAlphanumeric -> relaxXLSXInput d
+             Password         -> relaxXLSXInput d
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -1004,7 +1005,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                                     (int,frac) = properFraction d
              Float            -> Right (AAVFloat typ d)
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> message d
+             Object           -> relaxXLSXInput d
       ComnBool _ b
          -> if typ == Boolean
             then Right (AAVBoolean typ b)
@@ -1019,6 +1020,18 @@ unsafePAtomVal2AtomValue' typ mCpt pav
             else message x
 
    where
+     relaxXLSXInput :: Double -> Either String AAtomValue
+     relaxXLSXInput = Right . AAVString typ . neat . show
+       where neat :: String -> String
+             neat str 
+               | onlyZeroes dotAndAfter = beforeDot
+               | otherwise = str
+               where (beforeDot, dotAndAfter) = span (/= '.') str
+                     onlyZeroes str =
+                      case str of 
+                       [] -> True
+                       '.':zeros ->  nub zeros == "0"
+                       _ -> False
      message :: Show x => x -> Either String a
      message x = Left . intercalate "\n    " $
                  ["Representation mismatch"
