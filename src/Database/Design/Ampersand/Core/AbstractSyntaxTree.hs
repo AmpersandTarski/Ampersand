@@ -66,6 +66,7 @@ import GHC.Generics (Generic)
 import Data.Data
 import Data.Hashable
 import Data.Char (toUpper,toLower)
+import Data.List (nub)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
@@ -1024,7 +1025,17 @@ unsafePAtomVal2AtomValue' typ mCpt pav
 
    where
      relaxXLSXInput :: Double -> Either String AAtomValue
-     relaxXLSXInput = Right . AAVString typ . show
+     relaxXLSXInput = Right . AAVString typ . neat . show
+       where neat :: String -> String
+             neat str 
+               | onlyZeroes dotAndAfter = beforeDot
+               | otherwise = str
+               where (beforeDot, dotAndAfter) = span (/= '.') str
+                     onlyZeroes str =
+                      case str of 
+                       [] -> True
+                       '.':zeros ->  nub zeros == "0"
+                       _ -> False
      message :: Show x => x -> Either String a
      message x = Left . intercalate "\n    " $
                  ["Representation mismatch"
