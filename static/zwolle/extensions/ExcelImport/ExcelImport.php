@@ -104,15 +104,28 @@ class ImportExcel {
 	// Output is function call: 
 	// InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
 	private function ParseLines($data){
-		$relation = $concept = $atom = array();
+		$relation = $concept = $separator = $atom = array();
 		
 		foreach ($data as $linenr => $values){ 
 			$totalcolumns = count($values);
 			
 			if ($linenr == 0){ // Relations:
 				for ($col = 0; $col < $totalcolumns; $col++) $relation[$col] = $values[$col];
-			}elseif ($linenr == 1){ // Concepts:
-				for ($col = 0; $col < $totalcolumns; $col++) $concept[$col] = $values[$col];
+			}elseif ($linenr == 1){ // Concepts (and optionally: separators):
+				for ($col = 0; $col < $totalcolumns; $col++){
+// The cell contains either 'Concept' or '[Conceptx]' where x is a separator character (e.g. ';', ',', ...)
+					if (  (strpos($values[$col], '[') === 0) // if we have a '[' at the first position
+					   && (strrpos($values[$col], ']') === (strlen($values[$col])-1)) // and a ']' at the last position
+					   ){ // then we have a concept AND separator specification
+//					   0123456789   positions/indexes
+//					   [Concept,]   length=10, separatorpos=length-2
+						$concept[$col] = substr($values[$col], 1, strlen($values[$col])-3);
+						$separator[$col] = substr($values[$col], strlen($values[$col])-2, 1);
+					else{
+						$concept[$col] = $values[$col];
+						$separator[$col] = false;
+					}
+				}
 			}else{ // Atoms:
 				for ($col = 0; $col < $totalcolumns; $col++) $atom[$col] = $values[$col];
 
@@ -121,23 +134,31 @@ class ImportExcel {
 
 				// Check if this is an atom-create line, syntax = &atomname
 				if (strpos('&', $atom[0]) === 0){ 
-					$atom[0] = Concept::createNewAtom($concept[0]); // Create a unique atom name
+					$atom[0] = Concept::createNewAtomId($concept[0]); // Create a unique atom name
 				}
 				
 				// Insert $atom[0] into the DB if it does not yet exist
 				$this->addAtomToConcept($atom[0], $concept[0]);
-								
 				for ($col = 1; $col < $totalcolumns; $col++){ // Now we transform the data info function calls:
-					if ($atom[$col] == '') continue; // Empty cells are allowed but shouldn't do anything
-					if ($concept[$col] == '' OR empty($concept[$col])) continue; // if no concept is specified, the contents of the cell should be ignored.
-					if ($relation[$col] == '' OR empty($relation[$col])) continue; // if no relation is specified, the contents of the cell should be ignored.
-					
-					if (strpos('&', $atom[$col]) === 0){ // Check if this is an atom-create line, syntax = &atomname
-						$atom[$col] = $atom[0]; // '&' copies the atom-value; useful for property-relations.
+				    $atoms = array();
+					if ($separator[$col]){
+						$atoms = explode($separator[$col],$atom[$col]);
+					}else{
+						$atoms = $atom[$col];
 					}
-					
-					$this->insertRel($relation[$col], $atom[0], $atom[$col], $concept[0], $concept[$col]);
-					
+					for ($i=0; $i < count($atoms); $i++){
+						$tgtatom = $atoms[i];
+						$tgtatom = trim($tgtatom); // remove leading and trailing spaces, tabs, newlines, etc.
+						if ($tgtatom == '') continue; // Empty cells are allowed but shouldn't do anything
+						if ($concept[$col] == '' OR empty($concept[$col])) continue; // if no concept is specified, the contents of the cell should be ignored.
+						if ($relation[$col] == '' OR empty($relation[$col])) continue; // if no relation is specified, the contents of the cell should be ignored.
+						
+						if (strpos('&', $tgtatom) === 0){ // Check if this is an atom-create line, syntax = &atomname
+							$tgtatom = $atom[0]; // '&' copies the atom-value; useful for property-relations.
+						}
+						
+						$this->insertRel($relation[$col], $atom[0], $tgtatom, $concept[0], $concept[$col]);
+					}
 				}
 				$atom = array();
 			}
