@@ -243,12 +243,7 @@ pCtx2aCtx _
                      , ctxrs = rules
                      , ctxds = map fst declsAndPops
                      , ctxpopus = nub (udpops
-                                     ++map snd declsAndPops
-                                     ++mp1Pops contextInfo rules
-                                     ++mp1Pops contextInfo pats
-                                     ++mp1Pops contextInfo identdefs
-                                     ++mp1Pops contextInfo viewdefs
-                                     ++mp1Pops contextInfo interfaces)
+                                     ++map snd declsAndPops)
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
