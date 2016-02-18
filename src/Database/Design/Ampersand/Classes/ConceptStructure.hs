@@ -89,8 +89,7 @@ instance ConceptStructure Expression where
   concs (EEps i sgn) = nub (i:concs sgn)
   concs (EDcV   sgn) = concs sgn
   concs (EMp1 _ c  ) = [c]
-  concs e            = trace ("concs ("++show e++") = ") $
-                       concs (primitives e)
+  concs e            = concs (primitives e)
   expressionsIn e = [e]
 
 instance ConceptStructure A_Concept where
