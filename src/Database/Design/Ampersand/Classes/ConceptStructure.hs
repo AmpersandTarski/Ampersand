@@ -29,14 +29,14 @@ class ConceptStructure a where
   
   -- | mp1Pops draws the population from singleton expressions.
   mp1Pops :: ContextInfo -> a -> [Population]
-  mp1Pops ci struc
-   = [ ACptPopu{ popcpt = cpt (head cl)
-               , popas = map atm cl } 
-     | cl<-eqCl cpt ((filter isMp1.primsMentionedIn) struc)]
-     where cpt (EMp1 _ c)   = c
-           cpt _            = fatal 31 "cpt error"
-           atm (EMp1 val c) = safePSingleton2AAtomVal ci c val
-           atm _            = fatal 31 "atm error"
+  mp1Pops ci struc = []
+--   = [ ACptPopu{ popcpt = cpt (head cl)
+--               , popas = map atm cl } 
+--     | cl<-eqCl cpt ((filter isMp1.primsMentionedIn) struc)]
+--     where cpt (EMp1 _ c)   = c
+--           cpt _            = fatal 31 "cpt error"
+--           atm (EMp1 val c) = safePSingleton2AAtomVal ci c val
+--           atm _            = fatal 31 "atm error"
            
 prim2rel :: Expression -> Declaration
 prim2rel e
