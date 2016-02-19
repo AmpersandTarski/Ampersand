@@ -53,7 +53,7 @@ module Database.Design.Ampersand
    , cfProof,dfProof,normPA
    , lookupCpt
    , showPrf
-   , notCpl, isCpl, isPos, isNeg, foldrMapExpression
+   , notCpl, isCpl, isPos, isNeg
       , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
    , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
    , exprUni2list, exprIsc2list, exprCps2list, exprRad2list, exprPrd2list
@@ -102,6 +102,6 @@ import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Components
-import Database.Design.Ampersand.ADL1.Expression (isPos,isNeg,foldrMapExpression)
+import Database.Design.Ampersand.ADL1.Expression (isPos,isNeg)
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Database.Design.Ampersand.ADL1.P2A_Converters

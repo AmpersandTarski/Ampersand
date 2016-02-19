@@ -1,7 +1,6 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Database.Design.Ampersand.ADL1.Expression (
                        subst
-                      ,foldlMapExpression,foldrMapExpression
                       ,primitives,isMp1, isEEps
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
@@ -40,31 +39,6 @@ subst (decl,expr) = subs
        subs e@EDcV{}     = e
        subs e@EMp1{}     = e
 
-foldlMapExpression :: (a -> r -> a) -> (Declaration->r) -> a -> Expression -> a
-foldlMapExpression f = foldrMapExpression f' where f' x y = f y x
-
-foldrMapExpression :: (r -> a -> a) -> (Declaration->r) -> a -> Expression -> a
-foldrMapExpression f g a (EEqu (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EInc (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EIsc (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EUni (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EDif (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ELrs (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ERrs (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EDia (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ECps (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (ERad (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EPrd (l,r)) = foldrMapExpression f g (foldrMapExpression f g a l) r
-foldrMapExpression f g a (EKl0 e)     = foldrMapExpression f g a                         e
-foldrMapExpression f g a (EKl1 e)     = foldrMapExpression f g a                         e
-foldrMapExpression f g a (EFlp e)     = foldrMapExpression f g a                         e
-foldrMapExpression f g a (ECpl e)     = foldrMapExpression f g a                         e
-foldrMapExpression f g a (EBrk e)     = foldrMapExpression f g a                         e
-foldrMapExpression f g a (EDcD d)     = f (g d) a
-foldrMapExpression _ _ a  EDcI{}      = a
-foldrMapExpression _ _ a  EEps{}      = a
-foldrMapExpression _ _ a  EDcV{}      = a
-foldrMapExpression _ _ a  EMp1{}      = a
 
 primitives :: Expression -> [Expression]
 primitives expr =

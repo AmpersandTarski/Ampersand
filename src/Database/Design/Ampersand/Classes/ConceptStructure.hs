@@ -5,7 +5,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
 import Data.List
 import Data.Maybe
-import Database.Design.Ampersand.ADL1.Expression(primitives,isMp1,foldrMapExpression)
+import Database.Design.Ampersand.ADL1.Expression(primitives)
 import Database.Design.Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 
@@ -27,17 +27,6 @@ class ConceptStructure a where
   primsMentionedIn = nub . concatMap primitives . expressionsIn
   expressionsIn :: a -> [Expression] -- ^ The set of all expressions within data structure a
   
-  -- | mp1Pops draws the population from singleton expressions.
-  mp1Pops :: ContextInfo -> a -> [Population]
-  mp1Pops ci struc
-   = [ ACptPopu{ popcpt = cpt (head cl)
-               , popas = map atm cl } 
-     | cl<-eqCl cpt ((filter isMp1.primsMentionedIn) struc)]
-     where cpt (EMp1 _ c)   = c
-           cpt _            = fatal 31 "cpt error"
-           atm (EMp1 val c) = safePSingleton2AAtomVal ci c val
-           atm _            = fatal 31 "atm error"
-           
 prim2rel :: Expression -> Declaration
 prim2rel e
  = case e of
@@ -96,11 +85,12 @@ instance ConceptStructure ViewDef where
   expressionsIn vd = expressionsIn        [objDef | ViewExp _ objDef <- vdats vd]
 
 instance ConceptStructure Expression where
+  concs (EDcD d    ) = concs d
   concs (EDcI c    ) = [c]
   concs (EEps i sgn) = nub (i:concs sgn)
   concs (EDcV   sgn) = concs sgn
   concs (EMp1 _ c  ) = [c]
-  concs e            = foldrMapExpression uni concs [] e
+  concs e            = concs (primitives e)
   expressionsIn e = [e]
 
 instance ConceptStructure A_Concept where
