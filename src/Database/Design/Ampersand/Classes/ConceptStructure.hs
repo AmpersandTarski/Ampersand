@@ -85,6 +85,7 @@ instance ConceptStructure ViewDef where
   expressionsIn vd = expressionsIn        [objDef | ViewExp _ objDef <- vdats vd]
 
 instance ConceptStructure Expression where
+  concs (EDcD d    ) = concs d
   concs (EDcI c    ) = [c]
   concs (EEps i sgn) = nub (i:concs sgn)
   concs (EDcV   sgn) = concs sgn
