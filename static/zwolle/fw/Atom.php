@@ -288,7 +288,7 @@ Class Atom {
 		
 		// Return result
 		if(!is_null($tgt) && is_array($result)) return current($result);
-        elseif($interface->tgtConceptIsObject) return (array)$result; // always return array if tgtConceptIsObject, even if result is empty
+        elseif($interface->tgtConceptIsObject && !$interface->isProperty) return (array)$result; // always return array if tgtConceptIsObject, even if result is empty
 		else return $result;
 			
 	}
