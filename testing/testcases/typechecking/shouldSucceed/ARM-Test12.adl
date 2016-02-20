@@ -1,0 +1,10 @@
+CONTEXT ARM_Test12 IN DUTCH
+
+bfGebruiktARM20_DefProp :: Bedrijfsfunctie * Bedrijfsfunctie [PROP]
+
+ENDCONTEXT
+
+{- This script generates the following erro:
+prototype.exe: !fatal error 62 (module RelBinGenSQL, Prototype v2.2.1.2804 (lib: Ampersand v2.2.1.1242))
+  Multiple plugs for relation RELATION bfGebruiktARM20_DefProp [Bedrijfsfunctie*Bedrijfsfunctie] Nothing PRAGMA "" "" ""
+-}
