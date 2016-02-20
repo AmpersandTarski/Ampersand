@@ -60,6 +60,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					\$rootScope.addInfo('No results found');
 				}else{
 					\$scope.resource['$interfaceName$'] = data;
+					\$scope.\$broadcast('interfaceDataReceived', data);
 				}
 			})
 		);
