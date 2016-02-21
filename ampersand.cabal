@@ -176,6 +176,7 @@ Test-Suite regression-test
                      conduit,
                      conduit-extra,
                      conduit-combinators,
+                     yaml,
                      transformers == 0.4.*,
                      directory == 1.2.*,
                      filepath == 1.4.*

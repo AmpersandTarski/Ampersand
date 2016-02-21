@@ -11,7 +11,7 @@ import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist
 --import Control.Monad.Trans.Class (lift)
 --import Data.Conduit
 import System.Exit --(ExitCode, exitFailure, exitSuccess)
-
+import Database.Design.Ampersand.Test.Regression
 
 main :: IO ExitCode
 main = do 
@@ -27,16 +27,7 @@ main = do
       | otherwise = 
           do putStrLn $ "Regression test failed! ("++show x++" tests failed.)"
              exitFailure
-
-
-
-
-data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
-                | DirError IOError               
-data DirData = DirData FilePath DirContent       -- path and content of a directory
---data DirInfo = DirInfo [FilePath] TestInfo       -- list of testscripts and information on how to test them
-
-    
+   
 
 -- Produces directory data
 walk :: FilePath -> Source IO DirData
@@ -66,40 +57,20 @@ walk path = do
             filterHidden paths = return $ filter (not.isHidden) paths
             isHidden dir = head dir == '.'
             
--- Convert a DirData into an ExitCode
+-- Convert a DirData into an Int that contains the number of failed tests
 myVisitor :: Conduit DirData IO Int
 myVisitor = loop 1
   where
     loop :: Int -> Conduit DirData IO Int
-    loop n = do
-        lift $ putStr $ ">> " ++ show n ++ ". "
-        mdird <- await
-        case mdird of
-            Nothing     -> return()
-            Just dird   -> do x <- liftIO $ process dird 
-                              yield x
-                              loop (n + 1) 
-    process :: DirData -> IO Int 
-    process (DirData path dirContent) =
-      case dirContent of
-        DirError err     -> do
-                putStrLn $ "I've tried to look in " ++ path ++ "."
-                putStrLn $ "    There was an error: "
-                putStrLn $ "       " ++ show err
-                return 1
-        DirList dirs files -> do
-                putStr $ path ++" : "
-                doTestSet files
+    loop n = 
+        awaitForever 
+          (\dird -> do lift $ putStr $ ">> " ++ show n ++ ". "
+                       x <- liftIO $ process 4 dird 
+                       yield x
+                       loop (n + 1)
+          ) 
                 
 
-doTestSet :: [FilePath] -> IO Int
-doTestSet fs 
-  | "testinfo.yaml" `elem` fs = 
-       do putStrLn $ "yaml file present."
-          return 0
-  | otherwise =
-       do putStrLn $ "no yaml file present."
-          return 0
 sumarize :: Sink Int IO Int
 sumarize = gensum 0 
   where
