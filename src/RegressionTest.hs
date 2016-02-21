@@ -1,28 +1,42 @@
 module Main (main) where
 
-import Data.Char(toUpper)
-import System.FilePath ((</>),takeExtension)
+import Conduit
+--import qualified Data.Conduit.List as CL
+--import qualified Data.Conduit.Binary as CB
+
+import System.FilePath ((</>))
 import Control.Monad --(filterM, forM_, foldM,when)
 import System.IO.Error (tryIOError)
 import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
-import Control.Monad.Trans.Class (lift)
-import Data.Conduit
+--import Control.Monad.Trans.Class (lift)
+--import Data.Conduit
+import System.Exit --(ExitCode, exitFailure, exitSuccess)
 
 
-main :: IO ()
-main = walkRegressionTestSets
+main :: IO ExitCode
+main = do 
+    totalfails <- walk baseDir $$ myVisitor =$ sumarize
+    failWhenNotZero totalfails 
+  where 
+    baseDir = "." </> "testing"
+    failWhenNotZero :: Int -> IO ExitCode
+    failWhenNotZero x 
+      | x==0 =
+          do putStrLn $ "Regression test of all scripts succeeded."
+             exitSuccess
+      | otherwise = 
+          do putStrLn $ "Regression test failed! ("++show x++" tests failed.)"
+             exitFailure
+
+
+
 
 data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
                 | DirError IOError               
 data DirData = DirData FilePath DirContent       -- path and content of a directory
 --data DirInfo = DirInfo [FilePath] TestInfo       -- list of testscripts and information on how to test them
 
-walkRegressionTestSets :: IO ()
-walkRegressionTestSets
- = do 
-    walk baseDir $$ myVisitor
- where
-    baseDir = "." </> "testing"
+    
 
 -- Produces directory data
 walk :: FilePath -> Source IO DirData
@@ -52,28 +66,46 @@ walk path = do
             filterHidden paths = return $ filter (not.isHidden) paths
             isHidden dir = head dir == '.'
             
--- Consume directories
-myVisitor :: Sink DirData IO ()
-myVisitor = addCleanup (\_ -> putStrLn "Finished.") $ loop 1
+-- Convert a DirData into an ExitCode
+myVisitor :: Conduit DirData IO Int
+myVisitor = loop 1
   where
-    loop :: Int -> ConduitM DirData a IO ()
+    loop :: Int -> Conduit DirData IO Int
     loop n = do
         lift $ putStr $ ">> " ++ show n ++ ". "
-        mr <- await
-        case mr of
-            Nothing     -> return ()
-            Just r      -> lift (process r) >> loop (n + 1)
+        mdird <- await
+        case mdird of
+            Nothing     -> return()
+            Just dird   -> do x <- liftIO $ process dird 
+                              yield x
+                              loop (n + 1) 
+    process :: DirData -> IO Int 
     process (DirData path dirContent) =
       case dirContent of
         DirError err     -> do
                 putStrLn $ "I've tried to look in " ++ path ++ "."
                 putStrLn $ "    There was an error: "
                 putStrLn $ "       " ++ show err
-
+                return 1
         DirList dirs files -> do
-                putStrLn $ path ++ ". ("++ show (length dirs) ++ " directorie(s) and " ++ show (length files) ++ " file(s):"
-                forM_ files doTheFile
-      where
-        doTheFile :: FilePath -> IO()
-        doTheFile file = putStrLn $ file
+                putStr $ path ++" : "
+                doTestSet files
+                
+
+doTestSet :: [FilePath] -> IO Int
+doTestSet fs 
+  | "testinfo.yaml" `elem` fs = 
+       do putStrLn $ "yaml file present."
+          return 0
+  | otherwise =
+       do putStrLn $ "no yaml file present."
+          return 0
+sumarize :: Sink Int IO Int
+sumarize = gensum 0 
+  where
+    gensum :: Int -> Sink Int IO Int
+    gensum i = do
+      await >>= maybe (return i) 
+                      (\x -> gensum (i+x))
+
 

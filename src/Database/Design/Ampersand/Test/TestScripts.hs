@@ -78,6 +78,7 @@ myVisitor = addCleanup (\_ -> putStrLn "Finished.") $ loop 1
         case mr of
             Nothing     -> return ()
             Just r      -> lift (process r) >> loop (n + 1)
+    process :: DirData -> IO ()
     process (DirData path (DirError err)) = do
         putStrLn $ "I've tried to look in " ++ path ++ "."
         putStrLn $ "    There was an error: "
