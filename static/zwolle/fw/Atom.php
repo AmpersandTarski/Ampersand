@@ -333,9 +333,12 @@ Class Atom {
 		// Close transaction
 		$this->database->closeTransaction($newAtom->concept . ' created', false, null, false);
 		
-		// Return content of created atom TODO: make sure that content is also returned when database was not committed
-		
-		if($interface->crudR) return $this->getContent($interface, $pathEntry, $newAtom->id, $options);
+        try {
+        	// Return content of created atom TODO: make sure that content is also returned when database was not committed
+			if($interface->crudR) return $this->getContent($interface, $pathEntry, $newAtom->id, $options);
+        } catch (Exception $e){
+        	Notifications::addError($e->getMessage());
+        }
 		
 	}
 	
