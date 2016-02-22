@@ -3,6 +3,9 @@
 if (version_compare(PHP_VERSION, '5.4.0', '<')) {
 	throw new Exception("PHP version >= 5.4 required. You are on " . PHP_VERSION, 500);
 }
+if (version_compare(PHP_VERSION, '7.0.0', '>=')) {
+    throw new Exception("PHP version 7 is not yet supported " . PHP_VERSION, 500);
+}
 
 /* Composer Autoload third-party libraries */
 if(file_exists(__DIR__ . '/../lib/autoload.php')) require_once (__DIR__ . '/../lib/autoload.php');
