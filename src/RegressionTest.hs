@@ -4,7 +4,7 @@ import Conduit
 --import qualified Data.Conduit.List as CL
 --import qualified Data.Conduit.Binary as CB
 
-import System.FilePath ((</>))
+import System.FilePath ((</>),takeExtension)
 import Control.Monad --(filterM, forM_, foldM,when)
 import System.IO.Error (tryIOError)
 import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
@@ -72,11 +72,11 @@ myVisitor = loop 1
                 
 
 sumarize :: Sink Int IO Int
-sumarize = gensum 0 
+sumarize = loop 0 
   where
-    gensum :: Int -> Sink Int IO Int
-    gensum i = do
+    loop :: Int -> Sink Int IO Int
+    loop i = 
       await >>= maybe (return i) 
-                      (\x -> gensum (i+x))
+                      (\x -> loop $! (i+x))
 
 
