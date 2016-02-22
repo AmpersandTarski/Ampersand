@@ -17,10 +17,11 @@ class Notifications {
 	static $successes = array();
 	static $logs = array();
 	
-	public static function addError($message){
+	public static function addError($message, $code = null){
 		$errorHash = hash('md5', $message);
 		
 		self::$errors[$errorHash]['message'] = $message;
+		self::$errors[$errorHash]['message'] = $code;
 		self::$errors[$errorHash]['count']++;
 		self::addLog($message, 'ERROR');
 	}

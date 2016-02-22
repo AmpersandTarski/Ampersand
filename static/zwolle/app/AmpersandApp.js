@@ -53,14 +53,14 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 	});
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-    	var message = ((response.data || {}).error || {}).message || response.statusText;
+    	var message = (response.data || {}).msg || response.statusText;
     	
     	if(response.status == 401) {
     		$rootScope.deactivateAllRoles();
     		$location.path('ext/Login'); // add: if exists, otherwise do nothing
     	}
     	
-    	$rootScope.addError( response.status + ' ' + message);
+    	$rootScope.addError(message, response.status, true);
     	
     	return true; // proceed with success or error hooks of promise
     });
@@ -69,7 +69,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 		return (new Date);
 	}
     
-    // Add feature to $location.path() function to be able to prevent reloading page (set reload param to false)
+    // Add feature to $location.url() function to be able to prevent reloading page (set reload param to false)
     var original = $location.url;
     $location.url = function (url, reload) {
         if (reload === false) {
