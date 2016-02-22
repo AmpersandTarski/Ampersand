@@ -7,16 +7,16 @@ module Database.Design.Ampersand.Test.Regression
 where 
 import Conduit
 import qualified Data.Conduit.List as CL
-import qualified Data.Conduit.Binary as CB
+--import qualified Data.Conduit.Binary as CB
 
 import Data.Char
 import System.FilePath ((</>),takeExtension)
-import Control.Monad --(filterM, forM_, foldM,when)
-import System.IO.Error (tryIOError)
-import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
-import Control.Monad.Trans.Class (lift)
-import Data.Conduit
-import System.Exit --(ExitCode, exitFailure, exitSuccess)
+--import Control.Monad --(filterM, forM_, foldM,when)
+--import System.IO.Error (tryIOError)
+--import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
+--import Control.Monad.Trans.Class (lift)
+--import Data.Conduit
+--import System.Exit --(ExitCode, exitFailure, exitSuccess)
 import System.Process
 
 import Data.Yaml
@@ -25,7 +25,7 @@ import GHC.Generics
 data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
                 | DirError IOError               
 data DirData = DirData FilePath DirContent       -- path and content of a directory
-data DirInfo = DirInfo FilePath [FilePath] TestInfo       -- list of testscripts and information on how to test them
+--data DirInfo = DirInfo FilePath [FilePath] TestInfo       -- list of testscripts and information on how to test them
 
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the 
 -- yaml files in the test suite.
@@ -81,8 +81,10 @@ doTestSet indent dir fs
       where 
          dotheTest (ti,dir,file) = 
             do liftIO $ putStrLni $ "Start processing "++file
-               liftIO $ callCommand "dir"
-               liftIO $ callCommand "pwd"
+               liftIO $ callCommand "pwd "
+               liftIO $ callCommand $ "cd "++dir
+               liftIO $ callCommand "dir "
+               liftIO $ callCommand $ "ls -al "++file
                liftIO $ callCommand "ampersand --version"
                liftIO $ putStrLni $ "End processing "++file
                yield 0
@@ -103,8 +105,10 @@ doTestSet indent dir fs
     
 
 
-testAdlfiles :: FilePath -- the filepath of the directory where the tests should be done
+testAdlfiles :: Int -- Number of spaces to indent (for output during testing)
+             -> FilePath -- the filepath of the directory where the tests should be done
              -> [FilePath] -- the scripts that are undergoing the test
              -> TestInfo --The testinfo, so it is known how to test the files
              -> IO (Int,Int)    -- the number of files that were tested and the number of them that failed
-testAdlfiles path adls tinfo = do return (length adls, 0) 
+testAdlfiles indent path adls tinfo = 
+    do return (length adls, 0) 
