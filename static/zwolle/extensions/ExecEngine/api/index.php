@@ -16,7 +16,7 @@ require_once (__DIR__ . '/../../../fw/includes.php');
 
 // Create and configure Slim app (version 2.x)
 $app = new \Slim\Slim(array(
-    'debug' => !Config::get('debugMode')
+    'debug' => Config::get('debugMode')
 ));
 
 $app->add(new \Slim\Middleware\ContentTypes());

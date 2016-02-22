@@ -140,7 +140,7 @@ class Notifications {
 		$all['violations'] = self::getViolations();
 		$all['infos'] = self::getInfos();
 		$all['successes'] = self::getSuccesses();
-		$all['logs'] = Config::get('debugMode') ? array(array('type' => 'LOG', 'message' => 'Log is disabled (debugMode = false)')) : self::getLogs();
+		$all['logs'] = Config::get('debugMode') ? self::getLogs() : array(array('type' => 'LOG', 'message' => 'Log is disabled (debugMode = false)'));
 		
 		return $all;
 	}
