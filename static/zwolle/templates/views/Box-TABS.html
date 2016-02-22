@@ -1,11 +1,11 @@
-$if(verbose)$<!-- Box-TABS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable, $if(!isRoot)$non-$endif$root box) -->
-$endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, resource) in resource['$name$'] track by resource['_id_']" $if(isRoot)$ng-init="ResourceId = resource['_id_']" ng-class="{'panel-default' : resourceStatus[ResourceId]['default'], 'panel-warning' : resourceStatus[ResourceId]['warning'], 'panel-danger' : resourceStatus[ResourceId]['danger'], 'panel-success' : resourceStatus[ResourceId]['success']}"$endif$>$if(isRoot)$
-	<div class="panel-heading">
+$if(verbose)$<!-- Box-TABS.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
+$endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, resource) in resource['$name$']" $if(isRoot)$ng-init="ResourceId = resource['_id_']" ng-class="{'panel-default' : resource['_status_']['default'], 'panel-warning' : resource['_status_']['warning'], 'panel-danger' : resource['_status_']['danger'], 'panel-success' : resource['_status_']['success']}"$endif$>$if(isRoot)$
+	<div class="panel-heading" ng-init="parent = resource">
 		<div class="pull-right panel-heading-options">
-			<button type="button" class="btn btn-sm btn-warning" ng-if="showSaveButton[ResourceId]" ng-click="save(ResourceId, 'promise')">Save</button>
-			<button type="button" class="btn btn-sm btn-danger" ng-if="showCancelButton[ResourceId]" ng-click="cancel(ResourceId)">Cancel</button>
+			<button type="button" class="btn btn-sm btn-warning" ng-if="resource['_showButtons_']['save']" ng-click="save(resource, 'promise')">Save</button>
+			<button type="button" class="btn btn-sm btn-danger" ng-if="resource['_showButtons_']['cancel']" ng-click="cancel(resource)">Cancel</button>
 			<my-nav-to-other-interfaces ifcs="resource['_ifcs_']" resource="resource['_id_']" label="resource['_label_']"></my-nav-to-other-interfaces>
-			$if(crudD)$<button type="button" class="btn btn-sm" ng-click="deleteResource(ResourceId)">
+			$if(crudD)$<button type="button" class="btn btn-sm" ng-click="deleteResource(parent, '$name$', resource, 'promise')">
 				<span class="glyphicon glyphicon-trash"></span>
 			</button>$endif$
 			$if(crudC)$<button type="button" class="btn btn-sm" ng-click="newResource()">
@@ -14,11 +14,11 @@ $endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, 
 		</div>
 		<h4>{{resource['_label_']}}&nbsp;</h4>
 	</div>
-	<div class="panel-body" cg-busy="loadingResources[ResourceId]">$endif$
-		<uib-tabset>
-			$subObjects:{subObj|$if(verbose)$<!-- $subObj.subObjLabel$ -->$endif$<uib-tab heading="$subObj.subObjLabel$">
-				$subObj.subObjContents$
-			</uib-tab>}$
-		</uib-tabset>
+	<div class="panel-body" cg-busy="resource['_loading_']">$endif$
+        <uib-tabset>$subObjects:{subObj|$if(verbose)$<!-- TAB: $subObj.subObjLabel$ -->$endif$
+            <uib-tab heading="$subObj.subObjLabel$">
+                $subObj.subObjContents$
+            </uib-tab>}$
+        </uib-tabset>
 	$if(isRoot)$</div>
 $endif$</div>

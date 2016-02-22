@@ -1,15 +1,14 @@
 $if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$<div ng-repeat="(key, row) in resource['$name$'] track by row['_id_']">
+$endif$<div ng-repeat="(key, row) in resource['$name$']">
 	<div>$if(crudU)$
 		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, ResourceId)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$$if(crudD)$
 		<span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(resource, '$name$', row, 'promise')" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
 		<my-nav-to-interfaces ifcs="row['_ifcs_']" resource="row['_id_']" label="row['_label_']"></my-nav-to-interfaces>
 	</div>
 </div>
-<!-- Input to add new link to another resource -->
-<div $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-controller="addObjectController" $if(crudU)$ng-init="getTypeahead('$target$')"$endif$>$if(crudU)$
-	<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item['_label_'] for item in $if(crudU)$typeahead['$target$']$else$[]$endif$ | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', ResourceId); selected.label=''" typeahead-no-results="hasNoResults">$else$$if(crudC)$
-	<!-- hier nog input veld voor crudC -->
-	<span ng-show="hasNoResults && selected.label" class="glyphicon glyphicon-plus" ng-click="addObject(resource, '$name$', {'_id_' : selected.label}, ResourceId); selected.label='';" uib-tooltip="Create new" tooltip-trigger="mouseenter" tooltip-placement="right"></span>$endif$$endif$
-	$if(crudU)$<div ng-show="hasNoResults && selected.label" style="color:orangered; font-size:12px;">$target$ not found!</div>$endif$
+$if(verbose)$<!-- Input to add new link to another resource -->
+$endif$<div $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-controller="addObjectController">$if(crudU)$
+	<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', ResourceId); selected.label=''" typeahead-no-results="hasNoResults" ng-init="getTypeahead('$target$')">$if(crudC)$
+    <span ng-show="hasNoResults && selected.label" class="glyphicon glyphicon-plus" ng-click="addObject(resource, '$name$', {'_id_' : selected.label}, ResourceId); selected.label='';" uib-tooltip="Create new" tooltip-trigger="mouseenter" tooltip-placement="right"></span>$endif$
+    <div ng-show="hasNoResults && selected.label" style="color:orangered; font-size:12px;">$target$ not found!</div>$else$$if(crudC)$NB! Create not possible when update not allowed$endif$$endif$
 </div>
