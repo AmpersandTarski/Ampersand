@@ -138,7 +138,7 @@ class OAuthLoginController {
 				// Set sessionUser
 				$interface = new InterfaceObject('AccountForUserid');
 				$atom = new Atom($email, 'UserID');
-				$accounts = array_keys((array)$atom->getContent($interface, $interface->id));
+				$accounts = array_column((array)$atom->getContent($interface, $interface->id), '_id_');
 
 				// create new user
 				if(empty($accounts)){
@@ -150,7 +150,7 @@ class OAuthLoginController {
 					$domain = explode('@', $email)[1];
 					$interface = new InterfaceObject('DomainOrgs');
 					$atom = new Atom($domain, 'Domain');
-					$orgs = array_keys((array)$atom->getContent($interface, $interface->id));
+					$orgs = array_column((array)$atom->getContent($interface, $interface->id), '_id_');
 
 					foreach ($orgs as $org){
 						$db->editUpdate('accOrg', false, $newAccount, 'Account', $org, 'Organization');
