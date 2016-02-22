@@ -21,7 +21,7 @@ class Notifications {
 		$errorHash = hash('md5', $message);
 		
 		self::$errors[$errorHash]['message'] = $message;
-		self::$errors[$errorHash]['message'] = $code;
+		self::$errors[$errorHash]['code'] = $code;
 		self::$errors[$errorHash]['count']++;
 		self::addLog($message, 'ERROR');
 	}
