@@ -18,7 +18,7 @@ class Session {
 	private $ifcsOfActiveRoles = array(); // interfaces for active roles
 	public $rulesToMaintain = array(); // rules that are maintained by active roles 
 	
-	public static $sessionUser;
+	public static $sessionAccountId;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
@@ -149,37 +149,37 @@ class Session {
 		}
 	}
 	
-	private static function setSessionUser(){
-		// Set sessionUser
+	private static function setSessionAccount(){
+		// Set $sessionAccountId
 		if(!Config::get('loginEnabled')){
-			Session::$sessionUser = false;
+			self::$sessionAccountId = false;
 		
 		}else{
-			$ifc = new InterfaceObject('SessionUser');
+			$ifc = new InterfaceObject('SessionAccount');
 			$session = new Atom(session_id(), 'SESSION');
-			$sessionUsers = array_column((array)$session->getContent($ifc, $ifc->id), '_id_');
+			$sessionAccounts = array_column((array)$session->getContent($ifc, $ifc->id), '_id_');
 				
-			if(count($sessionUsers) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
-			if(empty($sessionUsers)){
-				Session::$sessionUser = false;
+			if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
+			if(empty($sessionAccounts)){
+				self::$sessionAccountId = false;
 			}else{
-				Session::$sessionUser = current($sessionUsers);
-				Notifications::addLog("Session user set to '$sessionUser'", 'SESSION');
+				self::$sessionAccountId = current($sessionAccounts);
+				Notifications::addLog("Session user set to '" . self::$sessionAccountId . "'", 'SESSION');
 			}
 		}		
 	}
 	
-	public static function getSessionUserId(){
+	public static function getSessionAccountId(){
 		if(!Config::get('loginEnabled')){
 			return 'SYSTEM';
 		
 		}else{
-			if(!isset(Session::$sessionUser)) Session::setSessionUser();
+			if(!isset(self::$sessionAccountId)) Session::setSessionAccount();
 			
-			if(Session::$sessionUser === false){
+			if(self::$sessionAccountId === false){
 				return $_SERVER['REMOTE_ADDR'];
 			}else{
-				return Session::$sessionUser;
+				return self::$sessionAccountId;
 			}
 		}
 	}
@@ -189,9 +189,9 @@ class Session {
 			return false;
 		
 		}else{
-			if(!isset(Session::$sessionUser)) Session::setSessionUser();
+			if(!isset(self::$sessionAccountId)) Session::setSessionAccount();
 				
-			if(Session::$sessionUser === false){
+			if(self::$sessionAccountId === false){
 				return false;
 			}else{
 				return true;
