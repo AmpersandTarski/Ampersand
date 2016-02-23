@@ -1,0 +1,18 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test1
+RELATION r[A*C]
+RELATION s[A*B]
+RELATION s[A*C]
+RELATION t[B*C]
+RELATION t[Q*C]
+RULE r = s;t
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is a simple correct script with = and ;
+            A bit harder than try1, as both s and t must be matched together
+   Result: PASS
+-}

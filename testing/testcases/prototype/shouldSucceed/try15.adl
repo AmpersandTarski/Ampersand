@@ -1,0 +1,17 @@
+CONTEXT Test IN ENGLISH
+
+PATTERN Test15
+r :: A*A
+r :: B*C
+RULE r[A*A] = r\/I
+ENDPATTERN
+
+ENDCONTEXT
+
+{- 
+   Purpose: to verify that the checker can deduce that r\/I::[A*A]
+   Result: PASS
+   Reason: Relation I takes its type from r,
+           so the checker deduces that I[A] is meant.
+   By the way, this should work for r[A*A] = r/\I as well.
+-}

@@ -1,0 +1,18 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test3
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
+RULE r = s;t
+CLASSIFY D IS A/\B
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script shows that a type conflict (between A and B) can be resolved
+            by defining an intersection type D.
+   Result: PASS
+   Reason: the type on ; is inferred as I[D]
+-}

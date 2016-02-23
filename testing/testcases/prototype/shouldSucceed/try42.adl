@@ -1,0 +1,26 @@
+CONTEXT Try42 IN ENGLISH
+
+s :: A * B [UNI]
+
+INTERFACE "Interf1" : I[ONE]
+BOX[ "Box1" : V[ONE*A];
+   (I /\  I /\ s;s~ 
+   )
+   ]
+ENDCONTEXT
+
+{-
+   Purpose: a superficial check on type deduction
+   Result: PASS
+   Reason: The type of I cannot always be determined from its context
+   The following type errors have been found in the past:
+
+prototype: !fatal 428 (module Core.AbstractSyntaxTree) Ampersand v3.0.1.1261:126
+2M
+  Cannot intersect (with operator "/\") expression
+   EDcV [ONE*A]
+   with EIsc (EDcI A,ECps (EDcD RELATION s [A*B] Nothing PRAGMA "" "" "",EFlp (E
+DcD RELATION s [A*B] Nothing PRAGMA "" "" ""))).
+
+NOTE In version v3.0.1.1261 this error occurs, but it dissapears when the expression in the box is simplified to : (I /\ s;s~ )
+-}

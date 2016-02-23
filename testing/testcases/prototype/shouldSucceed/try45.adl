@@ -1,0 +1,16 @@
+CONTEXT Try45 IN ENGLISH
+
+PATTERN Try
+CLASSIFY A ISA B
+CLASSIFY C ISA B
+CLASSIFY C ISA D
+RULE x = I[A];I[B];I[C];I[D]
+x :: A * D
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is there to test different epsilons throughout the normaliser
+   Result: PASS
+-}

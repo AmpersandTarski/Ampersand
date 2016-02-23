@@ -1,0 +1,17 @@
+﻿CONTEXT Issue163 IN ENGLISH
+
+RELATION  r[A*A]
+RELATION  s[B*B]
+
+POPULATION A CONTAINS [ 3, 6, 42 ]
+-- This example should fail, because A and B are in the same typology, however ther repersentation-types are different.
+CLASSIFY B ISA A
+REPRESENT A TYPE INTEGER
+REPRESENT B TYPE INTEGER
+
+INTERFACE Issue163 (r,s) : V[SESSION*A]
+ BOX [ ie : I
+     , r  : r
+     , s  : s
+     ]
+ENDCONTEXT

@@ -1,0 +1,23 @@
+﻿CONTEXT InterfaceTest3 IN ENGLISH
+
+r::A*C
+s::B*D
+CLASSIFY B ISA A
+
+INTERFACE T :I[B]
+BOX [ self: I
+--    , r : I[B];r
+    , s : s
+    ]
+ENDCONTEXT
+
+{-
+The type of the box is evident: it must be [B], because of the explicit type of the interface. 
+Hence, the type of `self:I` must be infered to B
+However, in Ampersand v2.2.1.1026 we get the following error message:
+
+Error(s) found:
+line 8:13, file "InterfaceTest3.adl":
+    the source and target of  I
+    are in conflict with respect to concepts A and B.
+-}

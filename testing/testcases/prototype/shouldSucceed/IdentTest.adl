@@ -1,0 +1,15 @@
+CONTEXT IdentTest1 IN DUTCH
+
+CLASSIFY Nederlander ISA Europeaan
+
+IDENT Nederlander : Nederlander(bsn)
+bsn :: Nederlander * BSN [UNI, TOT]
+  = [ ( "Piet", "12345")
+    ]  
+geboorteland :: Europeaan * Land [UNI]
+  = [ ( "John Smith" , "Engeland" )
+    ]
+RULE "een buitenlander heeft geen bsn" : -I[Nederlander] |- -(bsn;bsn~)
+{- Met deze test kunnen we aantonen dat het mogelijk is om een IDENT te zetten op een specialisatie-concept. 
+-}
+ENDCONTEXT

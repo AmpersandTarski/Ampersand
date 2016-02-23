@@ -1,0 +1,20 @@
+CONTEXT FlipPHPBug IN ENGLISH
+
+CLASSIFY Lime ISA Citrus
+
+RELATION ownsCitrus[Person*Citrus]
+
+INTERFACE Overview : I[ONE]
+BOX [ "All people" : V[ONE*Person]
+    ]
+
+INTERFACE Person (ownsCitrus) : I[Person]
+BOX [ "php error 1" : (ownsCitrus;(I[Lime];I[Citrus]));(I[Citrus];I[Citrus])~  -- Bug, gives php error
+    , "php error 2" : (ownsCitrus;I[Citrus]~)                                  -- Same, probably related
+    ]
+
+POPULATION ownsCitrus[Person*Citrus] CONTAINS
+  [ ("martijn", "lime1")
+  ]
+
+ENDCONTEXT

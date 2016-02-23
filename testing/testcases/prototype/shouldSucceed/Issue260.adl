@@ -1,0 +1,22 @@
+﻿CONTEXT Issue260 IN DUTCH
+
+RELATION r[A*B]
+REPRESENT B TYPE INTEGER
+
+POPULATION r CONTAINS
+   [( "Foo" , 2 )]
+
+ENDCONTEXT
+
+{- This tiny script is perfectly allright. It could be succesfully compiled with Ampersand v3.2.0[master:62e159f*] 
+   However, it fails when using Ampersand v3.3.0[master:91e0569]
+   It throws the following error:
+
+Error(s) found:
+Representation mismatch
+    Found: `2`,
+    as representation of an atom in concept `B`.
+    However, the representation-type of that concept is (implicitly) 
+    defined as ALPHANUMERIC. The found value does not match that type.
+  Error at symbol () in file Issue260.adl at line 7 : 15
+-}

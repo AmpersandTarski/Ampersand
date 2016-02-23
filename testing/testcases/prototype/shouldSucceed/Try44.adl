@@ -1,0 +1,15 @@
+CONTEXT Try44 IN ENGLISH
+-----------------------------------------------------------
+PATTERN "Try44"
+
+PURPOSE CONCEPT X IN ENGLISH {+Some english text-}
+PURPOSE CONCEPT X IN DUTCH {+Enige nederlandse woorden-}
+
+ENDPATTERN
+-----------------------------------------------------------
+ENDCONTEXT
+
+{-
+   Purpose: This script should succeed, because any concept can be documented in multiple languages.
+   Result: PASS
+-}

@@ -1,0 +1,31 @@
+CONTEXT Try52 IN DUTCH
+
+PATTERN Test
+RELATION r[A*B]
+RELATION r[C*D]
+ENDPATTERN
+
+INTERFACE "Overview" : I[ONE]
+BOX [ "r[A*B]" : V[ONE*A] BOX [ "" : r[A*B] ]
+    , "r[C*D]" : V[ONE*C] BOX [ "" : r[C*D] ]
+    ]
+
+INTERFACE "from A" (r[A*B]) : I[A]
+BOX [ "" : I
+    , "r[A*B]" : r[A*B]
+    ]
+
+INTERFACE "from C" (r[C*D]) : I[C]
+BOX [ "" : I
+    , "r[C*D]" : r[C*D]
+    ]
+
+ENDCONTEXT
+{-The purpose of this test is to check whether overloading works.
+The following experiment should succeed:
+compile a prototype with 
+D:>Prototype --verbose -pD:\htdocs\klad Try52.adl
+Then try to insert tuples in r[A*B] and r[C*D] and verify that they are registered in the correct place.
+
+Note that the sentinel cannot perform this test (yet?), so it must be performed by hand.
+-}

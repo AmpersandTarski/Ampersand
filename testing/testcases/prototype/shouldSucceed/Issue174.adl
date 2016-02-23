@@ -1,0 +1,13 @@
+﻿CONTEXT Issue174 IN ENGLISH
+
+bfRLIType :: BusinessFunction * RLIType [UNI]
+impactTypeOf :: Impact * RLIType
+likelihoodTypeOf :: Likelihood * RLIType
+riskTypeOf :: Risk * RLIType
+
+RULE "RLIType integrity": -- invariant
+bfRLIType |- bfRLIType;(impactTypeOf~;impactTypeOf /\ likelihoodTypeOf~;likelihoodTypeOf /\ riskTypeOf~;riskTypeOf)
+MEANING "A BusinessFunction may only use a predefined RLIType"
+VIOLATION (SRC I, TXT " attempts to use the non predefined RLIType '", TGT I, TXT "'")
+
+ENDCONTEXT

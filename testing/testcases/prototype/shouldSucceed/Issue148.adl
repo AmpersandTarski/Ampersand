@@ -1,0 +1,20 @@
+﻿CONTEXT Issue148 IN DUTCH
+
+REPRESENT Boolean TYPE BOOLEAN
+POPULATION Boolean CONTAINS [FALSE,TRUE]
+
+REPRESENT Date TYPE DATE
+POPULATION Date CONTAINS [ 2015-10-10 ]
+REPRESENT DateTime TYPE DATETIME
+POPULATION DateTime CONTAINS [ 2015-10-10T23:59:59Z
+                             , 2015-10-10T23:59:59+05:30
+                             , 2015-10-10T23:59:59-06:15
+                             , 2015-10-10T23:59Z
+                             , 2015-10-10T23:59:59.123Z
+                             ]
+
+REPRESENT Integer TYPE INTEGER
+POPULATION Integer CONTAINS [1 ,44, 3,5]
+REPRESENT Float TYPE FLOAT
+POPULATION Float   CONTAINS [1 ,5.6756 , 3.5]
+ENDCONTEXT

@@ -1,0 +1,44 @@
+﻿CONTEXT Try53 IN DUTCH
+RELATION r[A*C]
+ = [ ("1", "aap")
+   ; ("1", "noot")
+   ; ("1", "mies")
+   ]
+RELATION s[B*C]
+ = [ ("2", "noot")
+   ]
+INTERFACE X : '_SESSION'  BOX
+   [ "" : V[SESSION*A];r - V[SESSION*B];s ]
+ENDCONTEXT
+{-   ProtoDec2015
+/* case: (ECps es), with two or more elements in es.V[SESSION*B];s */
+    select
+    distinct
+           fence0.src as src, fence1.tgt as tgt
+    from (/* case: (EDcV (Sign s t))   V[ "[SESSION*B]" ] */
+          select
+          distinct
+                 fst."SESSION" as src, snd."B" as tgt
+          from "SESSION" as fst,
+               "B" as snd
+          where fst."SESSION" IS NOT NULL AND snd."B" IS NOT NULL)
+         as fence0,
+         (select distinct "B" as src, "C" as tgt from "s") as fence1
+    where fence0.tgt = fence1.src)
+-}
+{-   Proto in Ampersand v3.4.0[optimize_V;r_in_the_SQL-generator:8fd95a7*], build time: 17-Feb-16 11:30:52 West-Europa (standaardtijd)
+/* case: (EDcV _ : r), with two or more elements in es. V[SESSION*B];s */
+    select
+    distinct
+           fst."SESSION" as src, fence1.tgt as tgt
+    from (/* case: (EDcV (Sign s t))   V[ "[SESSION*B]" ] */
+          select
+          distinct
+                 fst."SESSION" as src, snd."B" as tgt
+          from "SESSION" as fst,
+               "B" as snd
+          where fst."SESSION" IS NOT NULL AND snd."B" IS NOT NULL)
+         as fence0,
+         (select distinct "B" as src, "C" as tgt from "s") as fence1
+    where fence0.tgt = fence1.src)
+-}

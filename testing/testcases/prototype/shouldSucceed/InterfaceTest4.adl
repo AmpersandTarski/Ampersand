@@ -1,0 +1,16 @@
+CONTEXT InterfaceTest4 IN DUTCH
+
+PATTERN ProefMetView
+
+RELATION r[A*B] PRAGMA "" " is door " " ingevuld"
+VIEW A : A(TXT "(", I, TXT ",", r, TXT ")")
+ENDPATTERN
+
+POPULATION r CONTAINS [ ("Champagne","Hans") ; ("Champagne","Jan") ; ("Champagne","Piet")]
+
+INTERFACE "Proefje" ( r )  : V[ONE*B]
+BOX [ B : I
+    , "rechter element : " : r~
+    ]
+
+ENDCONTEXT
