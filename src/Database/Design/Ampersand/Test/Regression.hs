@@ -80,15 +80,8 @@ doTestSet indent dir fs
     doATest = awaitForever dotheTest
       where 
          dotheTest (ti,dir,file) = 
-            do liftIO $ putStrLni $ "Start processing "++file
-               liftIO $ callCommand "pwd "
-               liftIO $ callCommand $ "cd "++dir
-               liftIO $ callCommand "dir "
-               liftIO $ callCommand $ "ls -al "++file
-               liftIO $ callCommand "ampersand --version"
-               liftIO $ putStrLni $ "End processing "++file
-               yield 0
-
+            do res <- liftIO $ testAdlfile (indent + 2) dir file ti
+               if res then yield 0 else yield 1 
     getResults :: Sink Int IO Int
     getResults = loop 0 
      where
@@ -96,19 +89,15 @@ doTestSet indent dir fs
        loop i = 
          await >>= maybe (return i) 
                          (\x -> loop $! (i+x))
-
-
-
-
-    putStrLni str = putStrLn $ (replicate indent ' ')++str
+    putStrLni str = putStrLn $ (replicate indent ' ') ++ str
     
-    
-
-
-testAdlfiles :: Int -- Number of spaces to indent (for output during testing)
-             -> FilePath -- the filepath of the directory where the tests should be done
-             -> [FilePath] -- the scripts that are undergoing the test
-             -> TestInfo --The testinfo, so it is known how to test the files
-             -> IO (Int,Int)    -- the number of files that were tested and the number of them that failed
-testAdlfiles indent path adls tinfo = 
-    do return (length adls, 0) 
+testAdlfile :: Int       -- Number of spaces to indent (for output during testing)
+             -> FilePath -- the filepath of the directory where the test should be done
+             -> FilePath -- the script that is undergoing the test
+             -> TestInfo --The testinfo, so it is known how to test the script
+             -> IO Bool  -- Indicator telling if the test passed or not
+testAdlfile indent path adl tinfo = 
+    do putStrLni $ "<fakeing test of `"++path</>adl++"`>"
+       return (True) 
+   where
+     putStrLni str = putStrLn $ (replicate indent ' ') ++ str 
