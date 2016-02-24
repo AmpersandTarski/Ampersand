@@ -10,6 +10,9 @@ cache:
         - $HOME/.cabal
         - $HOME/.stack
 
+services:
+  - mysql
+
 matrix:
   include:
     - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.3
