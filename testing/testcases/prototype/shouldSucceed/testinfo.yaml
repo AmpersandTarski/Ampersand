@@ -1,2 +1,2 @@
-command : ampersand --proto --verbose
+command : ampersand --proto --verbose --validate 
 shouldSucceed : yes
