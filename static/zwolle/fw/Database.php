@@ -18,24 +18,24 @@ class Database {
 	
 	// Prevent any outside instantiation of this object
 	private function __construct(){
-		$this->db_host = Config::get('dbHost', 'mysqlDatabase');
-		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
-		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
-		$this->db_name = Config::get('dbName', 'mysqlDatabase');
-		
-		// Connect to MYSQL database
-		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
-		if ($this->db_link->connect_error) throw new Exception($this->db_link->connect_error, 500);
-		
-		// Set sql_mode to ANSI
-		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-		
-		// Select DB
-		try{
+	    try{
+    	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
+    		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
+    		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
+    		$this->db_name = Config::get('dbName', 'mysqlDatabase');
+    		
+    		// Connect to MYSQL database
+    		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
+    		
+    		// Set sql_mode to ANSI
+    		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+    		
+    		// Select DB
 			$this->selectDB();
+			
 		}catch (Exception $e){
-			Notifications::addLog($e->getMessage(), 'DATABASE');
-			throw $e;
+		    // Convert mysqli_sql_exceptions into 500 errors
+		    throw new Exception($e->getMessage(), 500);
 		}
 	}
 	
@@ -50,30 +50,36 @@ class Database {
 	}
 	
 	public static function createDB(){
-		$DB_host = Config::get('dbHost', 'mysqlDatabase');
-		$DB_user = Config::get('dbUser', 'mysqlDatabase');
-		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
-		$DB_name = Config::get('dbName', 'mysqlDatabase');
+	    try{
+    		$DB_host = Config::get('dbHost', 'mysqlDatabase');
+    		$DB_user = Config::get('dbUser', 'mysqlDatabase');
+    		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
+    		$DB_name = Config::get('dbName', 'mysqlDatabase');
+    		
+    		// Connect to MYSQL database
+    		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
+    		
+    		// Set sql_mode to ANSI
+    		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+    		
+    		// Drop database
+    		$db_link->query("DROP DATABASE $DB_name");
+    		
+    		// Create new database
+    		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
 		
-		// Connect to MYSQL database
-		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
-		if ($db_link->connect_error) throw new Exception($db_link->connect_error, 500);
-		
-		// Set sql_mode to ANSI
-		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-		
-		$db_link->query("DROP DATABASE $DB_name");
-		
-		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
-		if ($db_link->error) throw new Exception($db_link->error, 500);
-			
+		}catch (Exception $e){
+		    // Convert mysqli_sql_exceptions into 500 errors
+		    throw new Exception($e->getMessage(), 500);
+		}
 	}
 	
 	private function selectDB(){
-		$this->db_link->select_db($this->db_name);
-		
-		if ($this->db_link->error) throw new Exception($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">Reinstall database</a>', 500);
-		
+		try{
+	        $this->db_link->select_db($this->db_name);
+		}catch(Exception $e){
+	        Notifications::addLog($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">Reinstall database</a>', 'DATABASE');
+	    }
 	}
 	
 	public function reinstallDB(){
@@ -85,7 +91,6 @@ class Database {
 		Notifications::addLog('---------- DB structure queries ------------', 'INSTALLER');
 		foreach($queries['allDBstructQueries'] as $query){
 			$this->Exe($query);
-			
 		}
 		
 		if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
@@ -116,10 +121,8 @@ class Database {
 		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
-		$result = $this->db_link->query($query);
+		$result = $this->doQuery($query);
 		Notifications::addLog($query, 'QUERY');
-
-		if ($this->db_link->error) throw new Exception("MYSQL error " . $this->db_link->errno . ": " . $this->db_link->error . " in query:" . $query, 500);
 
 		if ($result === false) return false;
 		elseif ($result === true) return true;
@@ -130,6 +133,15 @@ class Database {
 		}
 		return $arr;
 		
+	}
+	
+	private function doQuery($query){
+	    try{
+	        return $this->db_link->query($query);
+        }catch (Exception $e){
+            // Convert mysqli_sql_exceptions into 500 errors
+            throw new Exception("MYSQL error " . $e->getCode() . ": " . $e->getMessage() . " in query:" . $query, 500);
+        }
 	}
 	
 	/*
