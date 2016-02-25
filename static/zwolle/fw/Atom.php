@@ -586,8 +586,8 @@ Class Atom {
 		
 		if(!$this->atomExists()) throw new Exception ("Resource '{$this->id}[{$this->concept}]' not found", 404);
 		
-		$srcAtomId = $this->id;
-		$tgtAtomId = null;
+		$srcAtom = $this;
+		$tgtAtom = null;
 		
 		// remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
 		$path = trim($path, '/');
@@ -606,23 +606,24 @@ Class Atom {
 			if((!$ifc->crudR) && (count($pathArr) > 1)) throw new Exception ("Read not allowed for '{$ifc->id}' in path '$path'", 405); // crudR required to walk the path futher when this is not the last ifc part in the path (count > 1).
 
 			// Set tgtAtom as srcAtom, but skip the first time
-			if(!is_null($tgtAtomId)) $srcAtomId = $tgtAtomId;
+			if(!is_null($tgtAtom)) $srcAtom = $tgtAtom;
 			
 			// Set new tgtAtom
 			$tgtAtomId = array_shift($pathArr); // Returns the shifted value, or NULL if array is empty or is not an array.
 			
 			// Check if tgtAtom is part of (sub)interface
 			if(!is_null($tgtAtomId)){
-				$idEsc = $this->database->escape($srcAtomId);
+			    $tgtAtom = new Atom($tgtAtomId, $ifc->tgtConcept);
+				$idEsc = $this->database->escape($srcAtom->id);
 				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
 				$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
 				
-				if(!in_array($tgtAtomId, $tgtAtomIds)) throw new Exception ("Resource '{$tgtAtomId}[{$ifc->tgtConcept}]' not found", 404);
-			}			
+				if(!in_array($tgtAtom->id, $tgtAtomIds)) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept}]' not found", 404);
+			}else{
+			    $tgtAtom = null;
+			}
 		
 		}
-		$srcAtom = new Atom($srcAtomId, $ifc->srcConcept);
-		$tgtAtom = is_null($tgtAtomId) ? null : new Atom($tgtAtomId, $ifc->tgtConcept);
 		
 		return array('ifc' => $ifc, 'srcAtom' => $srcAtom, 'tgtAtom' => $tgtAtom, 'path' => $path);
 		
