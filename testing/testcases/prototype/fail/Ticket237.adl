@@ -1,0 +1,19 @@
+﻿CONTEXT Ticket237 IN DUTCH
+
+PATTERN Ticket237
+CLASSIFY Citrus ISA Fruit
+
+RULE I[Fruit] /\ -I[Citrus] = I[Fruit]-I[Citrus]
+ENDPATTERN
+
+PURPOSE CONTEXT Ticket237 MARKDOWN
+{+This script should produce a type error, because `I[Fruit] /\ -I[Citrus]` is ambiguous.
+It can be interpreted as `I[Fruit] /\ (V[Citrus]-I[Citrus])`  or as  `I[Fruit] /\ (V[Fruit]-I[Citrus])`
+The ambiguity can be exposed by adding the following population:
+
+    RELATION r[Fruit*Citrus]
+    POPULATION r[Fruit*Citrus] CONTAINS
+      [ ("1", "2") ; ("2", "2") ; ("3", "1") ]
+-}
+
+ENDCONTEXT

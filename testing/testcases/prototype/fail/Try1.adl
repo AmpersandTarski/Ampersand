@@ -1,0 +1,24 @@
+CONTEXT Try1 IN ENGLISH
+
+PATTERN Try1
+RELATION r[A*B]
+CLASSIFY A ISA B
+RULE r  |-  (V[A*A]-I[B]) ; r
+RULE r  |-  (V[A*B]-I[B]) ; r
+RULE r  |-  (V[B*A]-I[B]) ; r
+RULE r  |-  (V[B*B]-I[B]) ; r
+RULE r  |-         -I[B]  ; r
+ENDPATTERN
+
+ENDCONTEXT
+{- 
+   Purpose: to expose the ambiguity in the complement of I[B] (line 10).
+   Result: FAIL
+   Reason: The user should pick one of the alternatives above, each of which is acceptable.
+   
+   Message:
+   line 10:20, file "Try1.adl":
+       The complement of I[B] is ambiguous with respect to
+       concepts A and B.
+       Use (V[ <source concept> * <target concept> ]-I[B]) to disambiguate the complement.
+-}

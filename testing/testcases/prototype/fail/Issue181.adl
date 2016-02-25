@@ -1,0 +1,13 @@
+﻿CONTEXT Try53 IN ENGLISH
+
+RELATION  r[A*A]
+RELATION  s[B*B]
+
+POPULATION A CONTAINS [ 3, 6]
+-- This example should fail, because A and B are in the same typology, however ther repersentation-types are different.
+CLASSIFY B ISA A
+REPRESENT A TYPE INTEGER
+REPRESENT B TYPE FLOAT
+
+
+ENDCONTEXT

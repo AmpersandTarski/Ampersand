@@ -1,0 +1,14 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test1
+RELATION r[A*C]
+RELATION r[A*B]
+RULE r = r
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is there to ensure that we get disambiguation errors
+   Result: PASS
+-}

@@ -1,0 +1,12 @@
+CONTEXT RulenamesMustBeUnique IN ENGLISH
+
+r :: A * B
+
+-- Different rules should have different names
+RULE "rulename": I |- r;r~
+RULE "rulename": r;r~ |- I
+
+RULE "rulename": I |- r;r~
+RULE "rulename": r;r~ |- I
+
+ENDCONTEXT

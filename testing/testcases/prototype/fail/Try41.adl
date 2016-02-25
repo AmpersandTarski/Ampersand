@@ -1,0 +1,19 @@
+CONTEXT Try41 IN ENGLISH
+CLASSIFY ONE ISA A
+RELATION r[ONE*B]
+s :: A*B
+RULE s/\r
+ENDCONTEXT
+
+{-
+   Purpose: This script is meant show that ONE is not an ordinary concept.
+   Result: FAIL
+   Reason: ONE is the universal singleton concept, so:
+    1.       I[ONE]=V[ONE*ONE]
+    2.       If ONE ISA A, and we would show the atoms of A in an interface, we could see the representation of the atom that is the instance of ONE.
+             Because ONE represents the universal singleton, we do not wish to represent its contents. Ever.
+             So ONE ISA A should result in a failure.
+   Error message:
+The current error message is a syntax error. That is not the right kind of error, so we should make a ticket for that.
+   
+-}

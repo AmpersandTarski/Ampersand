@@ -1,0 +1,30 @@
+CONTEXT ARM20Test2 IN DUTCH
+--$ Ondertaand pattern geeft een beoogde fout -}
+------------------------------------------------------------
+PATTERN "ARM20Test2"
+
+critBF :: Criterium -> Bedrijfsfunctie PRAGMA "" " wordt gehanteerd binnen "
+expID :: Verwachting -> ExpectationID PRAGMA "" "staat in de business bekend als"
+
+VIEW Verwachtingen: Criterium(critBF, expID)
+--$FOUTMELDING voor bovenstaande regel:
+--!Type mismatch for the equality arising at critBF.
+--!The source of I[Verwachting] is Verwachting.
+--!The source of critBF is Criterium.
+--?Fout kan worden 'opgelost' door VIEW Verwachtingen: Verwachting(I[Verwachting];critBF, expID)
+-- samen met CLASSIFY Verwachting ISA Criterium
+
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT
+
+{-
+Error(s) found:
+in the view definition at line 11:21 in file ARM20-Test2wrong.adl:
+   The source of expID is "Verwachting".
+   Each instance of Verwachting is a Criterium.
+   Your VIEW definition does not specify how to view instances of Criterium that are not Verwachting.
+   In order to view every Criterium, you must replace expID by an expression whose source concept is equal to or more generic than Criterium.
+   
+TODO: the condensed type graph does NOT show this mistake!!!!  (observation by SJ on July 23rd, 2013). Please fix ASAP...
+-}

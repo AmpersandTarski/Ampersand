@@ -1,0 +1,66 @@
+CONTEXT Proefje IN DUTCH
+
+RELATION begintijd[Tijdsleuf*Tijdstip] [UNI,TOT]
+RELATION eindtijd[Tijdsleuf*Tijdstip] [UNI,TOT]
+CLASSIFY Tijdverantwoordingsregel ISA Tijdsleuf
+RELATION werksoort[Tijdverantwoordingsregel*Werksoort]
+CLASSIFY Roosterregel ISA Tijdsleuf
+RELATION dienst[Roosterregel*Dienstsoort]
+
+RELATION bon[Tijdsleuf*Werkbon]
+
+INTERFACE Werkbon : I[Werkbon]
+BOX [ "" : I
+    , Regels : bon~;I[Roosterregel]
+      BOX [ begintijd : begintijd 
+          , eindtijd : eindtijd
+          , dienst : dienst
+          , werksoort : werksoort  -- Deze moet worden afgekeurd, omdat de intersectie tussen  niet bestaat.
+          ]
+    ]
+    
+INTERFACE Overview : I[SESSION]
+BOX [ "Werkbonnen" : V[SESSION*Werkbon]
+    ]
+
+
+
+-- The population declarations below show that currently we can create the situation in which
+-- 'werksoort' in the interface above is not empty. This will not be a problem for this
+-- example once the type error is enforced, but there may be some unexpected other effects,
+-- as can be seen in ampersand-models/ISAtest/Strange.adl
+
+populateTijdstip :: Tijdstip*Tijdstip =
+  [ ("roosterregel1", "roosterregel1")
+  ]
+
+
+-- create a sample roosterregel
+populateRoosterregel :: Roosterregel*Roosterregel =
+  [ ("roosterregel1", "roosterregel1")
+  ]
+POPULATION bon[Tijdsleuf*Werkbon] CONTAINS
+  [ ("roosterregel1", "werkbon1")
+  ]
+POPULATION begintijd[Tijdsleuf*Tijdstip] CONTAINS
+  [ ("roosterregel1", "tijdstip1")
+  ]
+POPULATION eindtijd[Tijdsleuf*Tijdstip] CONTAINS
+  [ ("roosterregel1", "tijdstip2")
+  ]
+
+-- insert roosterregel1 as a Tijdverantwoordingsregel atom (should probably not be allowed)
+POPULATION werksoort[Tijdverantwoordingsregel*Werksoort] CONTAINS
+  [ ("roosterregel1", "werksoort1")
+  ]
+    
+ENDCONTEXT
+{- Which ticket covers this issue?
+   Purpose: to ensure that "werksoort" on line 18 gets a type error message.
+   Result: FAIL
+   Reason: the intersection between Roosterregel and Tijdverantwoordingsregel does not exist.
+           If the user wants this, (s)he must specify CLASSIFY Combisleuf IS Roosterregel /\ Tijdverantwoordingsregel
+   
+   Message:
+   (Bas, mag jij verzinnen)
+-}

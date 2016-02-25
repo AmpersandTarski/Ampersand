@@ -1,0 +1,28 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test8
+r :: A*C.
+RULE r |- r~;r
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is a simply incorrect with |- and ;
+   Result: FAIL
+   Reason: By flipping r on 5:11, source and target conflicts arise on three places...
+   Error message:
+
+   The pattern named "Test8" contains errors:
+   line 5:6, file "try8.adl":
+       Relation  r  is declared as r[A*C] on line 4:3, file "try8.adl",
+       but its source concept, A, is not compatible with C.
+
+   line 5:11, file "try8.adl":
+       Relation  r  is declared as r[A*C] on line 4:3, file "try8.adl",
+       but its source concept, A, is not compatible with C.
+
+   line 5:14, file "try8.adl":
+       Relation  r  is declared as r[A*C] on line 4:3, file "try8.adl",
+       but its source concept, A, is not compatible with C.
+-}
