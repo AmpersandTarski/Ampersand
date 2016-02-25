@@ -1,0 +1,7 @@
+@import url("Oblomilan.css");
+
+/* show name for atom with subinterface in Zoek klant op nr */
+[editing=true] .Interface[label="Zoek klant op nr"] .Interface[label=Klantnr] > .AtomList > .AtomRow[rowType=Normal] > .AtomListElt > .Atom > .AtomName {
+  display: block;
+  float: none;
+}

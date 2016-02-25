@@ -1,0 +1,10 @@
+﻿CONTEXT Issue191Test IN DUTCH
+INCLUDE "Issue191Test.xlsx"
+CLASSIFY Auto ISA Voertuig
+RELATION eigenaar [Voertuig * Persoon] [UNI,TOT]
+RELATION aantalWielen [ Auto * Getal]  [UNI,TOT]
+
+REPRESENT Getal TYPE INTEGER
+
+ENDCONTEXT  
+

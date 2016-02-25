@@ -1,0 +1,41 @@
+CONTEXT ARM20Test5 IN DUTCH
+{- Dit script geeft geen fouten in de typechecker van Ampersand v2.2.1.1074, build time: 16-Jun-13 10:37.17
+   Dit door de toevoeging van I[VerplichteVerwachting] en de regel daarover.
+
+Bij mij (Rieks) - en ik gebruik daarbij Ampersand v2.2.1.1074 - geeft onderstaand script de volgende foutmeldingen:
+
+ma 15-07-2013 -  8:27:54,78
+"C:\Ampersand\AMPprogs\ampersand.exe" "ARM20-Test5" -o".\fspec" --fspec=Latex --language=EN
+
+ampersand.exe: !fatal error 422 (module AbstractSyntaxTree.hs, Ampersand v2.2.1.1074)
+  Implication between two terms is type incompatible.
+  l: EIsc (EDcI [Criterium*Criterium],ECps (EDcD RELATION oblTAV [Verplichting*Bedrijfsfunc
+tie] Nothing PRAGMA "" "" "" [Verplichting*Bedrijfsfunctie],EFlp (EDcD RELATION critBF [Cri
+terium*Bedrijfsfunctie] Nothing PRAGMA "" "" "" [Criterium*Bedrijfsfunctie]) [Bedrijfsfunct
+ie*Criterium]) [Verplichting*Criterium]) [Verplichting*Criterium]         signature: [Verpl
+ichting*Criterium]
+  r: ECps (EDcD RELATION expTAV [Verwachting*Bedrijfsfunctie] Nothing PRAGMA "" "" "" [Verw
+achting*Bedrijfsfunctie],EFlp (EDcD RELATION critBF [Criterium*Bedrijfsfunctie] Nothing PRA
+GMA "" "" "" [Criterium*Bedrijfsfunctie]) [Bedrijfsfunctie*Criterium]) [Verwachting*Criteri
+um]       signature: [Verwachting*Criterium]
+  [Verplichting*Criterium] `compare` [Verwachting*Criterium]: CP
+
+-}
+------------------------------------------------------------
+PATTERN "ARM20Test5"
+
+critBF   :: Criterium -> Bedrijfsfunctie
+
+CLASSIFY Verplichting ISA Criterium
+oblTAV :: Verplichting * Bedrijfsfunctie [UNI] 
+
+CLASSIFY Verwachting ISA Criterium
+expTAV :: Verwachting * Bedrijfsfunctie [UNI]
+
+CLASSIFY VerplichtingVerwachting IS Verplichting /\ Verwachting
+
+RULE "ARM20Test5": I[Criterium] /\ oblTAV;critBF~ |- expTAV;critBF~
+
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

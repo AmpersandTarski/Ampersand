@@ -1,0 +1,15 @@
+﻿CONTEXT Issue152 IN ENGLISH
+
+VIEW SessionProperty: SESSION { value : I } HTML TEMPLATE "PropertyCheckbox.html" ENDVIEW
+
+-- For system bootstrapping purposes, we need a 'God'-account that has all permissions/roles.
+POPULATION Account CONTAINS [ "god" ]
+
+sessionLoginAssist :: SESSION * SESSION [PROP]
+
+INTERFACE "Login" (sessionLoginAssist): '_SESSION'[SESSION]
+ROWS[ "Please help" : sessionLoginAssist <SessionProperty>
+    , " " : sessionLoginAssist;V[SESSION*SESSION];V[SESSION*Account];(-I[Account]!'god');V[Account*Message];'There are no Accounts!!!'[Message]
+    ]
+
+ENDCONTEXT

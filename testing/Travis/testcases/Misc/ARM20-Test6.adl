@@ -1,0 +1,23 @@
+CONTEXT ARM20Test6 IN DUTCH
+{-Het onderstaande script geeft de volgende output:
+<QUOTE>
+"C:\Ampersand\AMPprogs\ampersand.exe" "ARM20-Test6" -o".\fspec" --fspec=Latex --language=EN
+
+ampersand.exe: !fatal error 167 (module Output.ToPandoc.ChapterDataAnalysis.hs, Ampersand v
+2.2.1.1079)
+  This should have become an attribute of this Class!
+</QUOTE>
+Observaties:
+1) Als je de woorden PATTERN en ENDPATTERN verwijdert, deze fout niet meer optreedt!
+2) Als je [INJ] verwijdert is de fout ook weg.
+-}
+------------------------------------------------------------
+PATTERN "ARM20-Test6"
+
+bfEigenaar :: Bedrijfsfunctie * BFeigenaar
+
+biaBF :: BIAlijst * Bedrijfsfunctie [INJ]
+
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

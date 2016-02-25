@@ -1,0 +1,6 @@
+﻿CONTEXT Issue166_2 IN ENGLISH
+
+RULE test : -'Sinterklaas'[Persoon]
+MEANING "There is no atom Sinterklaas in the concept Persoon"
+
+ENDCONTEXT

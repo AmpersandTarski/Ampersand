@@ -1,0 +1,16 @@
+CONTEXT ArchiTest4 IN ENGLISH
+{- RJ/20130308: Onderstaande regels zouden helemaal 'onafhankelijk' moeten zijn, maar dat zijn ze toch niet.
+Dit script vertaalt wel als je tenminste een van de '-I' termen vervangt door 'I' (maar dat is natuurlijk dan wel iets anders dan je semantisch had bedoeld...
+ -}
+PATTERN ArchiTest4
+
+comp :: "Business role" * "Business collaboration" PRAGMA "Business role " " is a component of Business collaboration ".
+RULE R001: I["Business collaboration"] |- comp["Business role" * "Business collaboration"]~; -I["Business role"]; comp["Business role" * "Business collaboration"]
+ MEANING "A business collaboration is composed of two or more business roles."
+
+connect :: Node * "Communication path" PRAGMA "Node " " is connected to Communication path ".
+RULE R004: I["Communication path"] |- connect[Node * "Communication path"]~; -I[Node]; connect[Node * "Communication path"]
+MEANING "A communication path connects two or more nodes."
+
+ENDPATTERN
+ENDCONTEXT

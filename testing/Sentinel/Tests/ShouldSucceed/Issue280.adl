@@ -1,0 +1,15 @@
+﻿     CONTEXT Issue280 IN ENGLISH
+     
+     RELATION in[Item*Sequence] [UNI,TOT]
+     RELATION pref[Item*SinText] [UNI]
+     RELATION spref[Sequence*SinText] [UNI]
+     RELATION post[Item*SinText] [UNI]
+     RELATION spost[Sequence*SinText] [UNI]
+     
+     RULE "Issue280":
+        (pref;V /\ in;(I-spref;spref~)) \/ (in /\ pref;-I;spref~)
+     \/
+        (post;V /\ in;(I-spost;spost~)) \/ (in /\ post;-I;spost~)
+     |- -V
+     
+     ENDCONTEXT

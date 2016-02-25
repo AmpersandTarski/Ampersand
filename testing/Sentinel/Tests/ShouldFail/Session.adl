@@ -1,0 +1,27 @@
+CONTEXT Session IN ENGLISH
+
+sessionPassword :: SESSION * Password [UNI]
+
+POPULATION sessionPassword[SESSION*Password] CONTAINS
+  [ ("SESSION_1392133017_227331", "zz")
+  ]
+
+
+INTERFACE "Edit account"(sessionPassword) FOR user : V[ONE*SESSION];'Session2345678_987654'
+BOX [ "Username"  : sessionPassword ]
+
+ENDCONTEXT
+
+{- 
+   Purpose: to produce an error message when the user specifies a SESSION atom other than '_SESSION' (line 10).
+   Result: FAIL
+   Reason: The concept SESSION is populated automatically by the session identifiers of the browser.
+   
+   Message:
+   line 6:6, file "Session.adl":
+       Session atoms must not be specified in an Ampersand script
+       Use '_SESSION' to identify the current browser session.
+   line 10:69, file "Session.adl":
+       Session atoms must not be specified in an Ampersand script
+       Use '_SESSION' to identify the current browser session.
+-}

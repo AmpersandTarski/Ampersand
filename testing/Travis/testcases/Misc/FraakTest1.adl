@@ -1,0 +1,15 @@
+CONTEXT FraakTest1 IN ENGLISH
+
+PROCESS HandleBookings
+
+	status :: Booking * Status [UNI] PRAGMA "A " " can have a certain status".	
+
+	ROLE FacilityDesk MAINTAINS acceptedCancelledOrRejectedBookings
+
+	RULE acceptedCancelledOrRejectedBookings: I |- (status;('Accepted'\/'Cancelled'\/'Rejected');status~)
+		MESSAGE "All bookings must be accepted, cancelled or rejected"
+		VIOLATION (SRC I)
+	
+ENDPROCESS
+
+ENDCONTEXT

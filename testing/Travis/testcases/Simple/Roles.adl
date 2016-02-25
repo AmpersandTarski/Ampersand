@@ -1,0 +1,29 @@
+CONTEXT Roles IN ENGLISH
+{- Simple script for explaining and testing roles -}
+
+INTERFACE All : I[ONE]
+BOX [ "one" : I[ONE] ]
+
+INTERFACE ProducerAndConsumer FOR Producer, Consumer : I[ONE]
+BOX [ "one" : V[ONE] ]
+
+INTERFACE Producer FOR Producer : I[ONE]
+BOX [ "one" : V[ONE] ]
+
+INTERFACE Consumer FOR Consumer : I[ONE]
+BOX [ "one" : V[ONE] ]
+
+
+PROCESS Test
+
+RULE ProducerSignal : V[ONE]
+
+RULE ConsumerSignal : V[ONE]
+
+ROLE Producer MAINTAINS ProducerSignal
+
+ROLE Consumer MAINTAINS ConsumerSignal
+
+ENDPROCESS
+
+ENDCONTEXT
