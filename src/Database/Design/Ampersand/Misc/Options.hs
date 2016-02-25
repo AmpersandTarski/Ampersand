@@ -235,6 +235,25 @@ options = [ (Option ['v']   ["version"]
                        ) "NAME")
                ("database name (overrules environment variable "++ envdbName ++ ", defaults to filename)")
             , Public)
+          , (Option []  ["sqlHost"]
+               (ReqArg (\nm opts -> return opts{sqlHost = if nm == ""
+                                                          then sqlHost opts
+                                                          else nm}
+                       ) "HOSTNAME")
+               ("set SQL host name (Defaults to `localhost`)")
+            , Public)
+          , (Option []  ["sqlLogin"]
+               (ReqArg (\nm opts -> return opts{sqlLogin = if nm == ""
+                                                          then sqlLogin opts
+                                                          else nm}
+                       ) "USER")
+               ("set SQL host name (Defaults to `ampersand`)")
+            , Public)
+          , (Option []  ["sqlPwd"]
+               (ReqArg (\nm opts -> return opts{sqlPwd = nm}
+                       ) "PASSWORD")
+               ("set SQL host name (Defaults to `ampersand`)")
+            , Public)
           , (Option ['x']     ["interfaces"]
                (NoArg (\opts -> return opts{allInterfaces  = True}))
                "generate interfaces."
