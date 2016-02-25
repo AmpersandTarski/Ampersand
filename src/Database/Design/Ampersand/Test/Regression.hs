@@ -52,9 +52,7 @@ doTestSet indent dir fs
               Left err -> do putStrLni $ dir </> yaml ++" could not be parsed."
                              putStrLni $ prettyPrintParseException err
                              return 1
-              Right ti -> do results <- runTests ti $$ getResults
-                             putStrLni $ "results: "++show results
-                             return results
+              Right ti -> runTests ti $$ getResults
   | otherwise =
        do putStrLni $ "Nothing to do. ("++yaml++" not present)"
           return 0
