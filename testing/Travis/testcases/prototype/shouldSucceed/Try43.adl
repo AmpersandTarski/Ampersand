@@ -1,0 +1,26 @@
+﻿CONTEXT Try43 IN ENGLISH
+
+PROCESS "Try43"
+z :: A * B
+t :: A * A
+m :: A * A
+b :: A * A
+ENDPROCESS
+
+INTERFACE "Try43"  : V[ONE*B]
+BOX
+[ 
+   "dossiers" : z~ /\ z~;(t /\ (-m \/ -b))
+]
+
+ENDCONTEXT
+
+{- This test case has originated from a bug chase in DemoLamicieCode702.
+It produced the error message:
+Prototype: !fatal 430 (module Core.AbstractSyntaxTree) Ampersand v3.0.1.1270:1271M
+  Cannot unite (with operator "\/") expression
+   EFlp (EDcD RELATION z [A*B])
+   with EUni (ECpl (EDcD RELATION m [A*A]),ECpl (EDcD RELATION b [A*A])).
+
+This bug has been fixed on Febr 9th, 2014.
+-}

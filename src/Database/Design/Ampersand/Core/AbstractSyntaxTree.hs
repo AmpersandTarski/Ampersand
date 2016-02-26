@@ -1027,12 +1027,12 @@ unsafePAtomVal2AtomValue' typ mCpt pav
      relaxXLSXInput :: Double -> Either String AAtomValue
      relaxXLSXInput = Right . AAVString typ . neat . show
        where neat :: String -> String
-             neat str 
+             neat s 
                | onlyZeroes dotAndAfter = beforeDot
-               | otherwise = str
-               where (beforeDot, dotAndAfter) = span (/= '.') str
-                     onlyZeroes str =
-                      case str of 
+               | otherwise = s
+               where (beforeDot, dotAndAfter) = span (/= '.') s
+                     onlyZeroes s =
+                      case s of 
                        [] -> True
                        '.':zeros ->  nub zeros == "0"
                        _ -> False

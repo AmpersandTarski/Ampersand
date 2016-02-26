@@ -1,0 +1,42 @@
+CONTEXT ViewAnnotationCheck IN ENGLISH
+{- Test view annotation typechecking for generalizations, failing cases are in ShouldFail/ViewAnnotationCheck.adl -}
+
+CLASSIFY Lime ISA Citrus
+CLASSIFY Orange ISA Citrus
+CLASSIFY Limorange IS Lime /\ Orange
+
+INTERFACE Overview : I[SESSION]
+BOX [ "Citrus    as Citrus"    : V[SESSION*Citrus]    <CitrusView>
+    --, "Citrus    as Orange"    : V[SESSION*Citrus]    <OrangeView>    -- should fail  
+    --, "Citrus    as Lime"      : V[SESSION*Citrus]    <LimeView>      -- should fail  
+    --, "Citrus    as Limorange" : V[SESSION*Citrus]    <LimorangeView> -- should fail  
+    , "Lime      as Citrus"    : V[SESSION*Lime]      <CitrusView>
+    --, "Lime      as Orange"    : V[SESSION*Lime]      <OrangeView>    -- should fail  
+    , "Lime      as Lime"      : V[SESSION*Lime]      <LimeView>
+    --, "Lime      as Limorange" : V[SESSION*Lime]      <LimorangeView> -- should fail  
+    , "Orange    as Citrus"    : V[SESSION*Orange]    <CitrusView>
+    , "Orange    as Orange"    : V[SESSION*Orange]    <OrangeView>
+    --, "Orange    as Lime"      : V[SESSION*Orange]    <LimeView>      -- should fail
+    --, "Orange    as Limorange" : V[SESSION*Orange]    <LimorangeView> -- should fail  
+    , "Limorange as Citrus"    : V[SESSION*Limorange] <CitrusView>
+    , "Limorange as Orange"    : V[SESSION*Limorange] <OrangeView>
+    , "Limorange as Lime"      : V[SESSION*Limorange] <LimeView>
+    , "Limorange as Limorange" : V[SESSION*Limorange] <LimorangeView>
+    ]
+VIEW CitrusView: Citrus DEFAULT { value: I }
+HTML TEMPLATE "NonexistentDummy.html"
+ENDVIEW
+
+VIEW LimeView: Lime DEFAULT { value: I }
+HTML TEMPLATE "NonexistentDummy.html"
+ENDVIEW
+
+VIEW OrangeView: Orange DEFAULT { value: I }
+HTML TEMPLATE "NonexistentDummy.html"
+ENDVIEW
+
+VIEW LimorangeView: Limorange DEFAULT { value: I }
+HTML TEMPLATE "NonexistentDummy.html"
+ENDVIEW
+
+ENDCONTEXT

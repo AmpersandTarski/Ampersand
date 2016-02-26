@@ -1,0 +1,20 @@
+CONTEXT Test IN ENGLISH
+
+INTERFACE Overview : I[ONE]
+  BOX [ l : V[ONE]
+      , l : V[ONE]
+      ]
+
+ENDCONTEXT
+
+{- 
+   Purpose: to examine the error message caused by multiple instances of the same attribute.
+   Result: FAIL
+   Reason: Attribute names in interfaces must be unique, because they are being referred to.
+   
+   Message:
+   The interface named "Overview" contains errors:
+   line 3:11, file "DoubleLabel.adl": Different attributes have the same name:
+      (Unknown origin)      "l" : V[ONE*ONE]
+      (Unknown origin)      "l" : V[ONE*ONE]
+-}

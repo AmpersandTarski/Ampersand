@@ -1,0 +1,17 @@
+﻿CONTEXT "TEST" IN ENGLISH
+
+r :: A*B =[ ("a", "b") ]
+
+INTERFACE A (r) : I[ONE]
+BOX[ "A's" : V[ONE*A]
+   BOX[ "A" : I
+      , "r" : r
+      ]
+   , "B's" : V[ONE*B]
+   BOX[ "B" : I
+      , "r~" : r~
+      ]
+   , "A details" : V[ONE*A] INTERFACE ShowA
+]
+
+ENDCONTEXT 

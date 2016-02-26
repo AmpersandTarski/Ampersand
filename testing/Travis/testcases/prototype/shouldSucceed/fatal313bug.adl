@@ -1,0 +1,12 @@
+﻿CONTEXT Bug IN ENGLISH
+
+r1 :: A*B
+r2 :: A*B
+s  :: A*C
+
+INTERFACE Piet : I[B]
+BOX[ "label" : (r1 \/ r2)~;s
+   BOX[ "label2" : I
+   ]  ]
+
+ENDCONTEXT

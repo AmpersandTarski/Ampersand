@@ -1,0 +1,236 @@
+CONTEXT DeliverySimple IN ENGLISH
+{-
+
+Compile with: 
+
+prototype DeliverySimple.adl --css=DeliverySimple.css --refresh=5 --verbose -pD:\htdocs\DeliverySimple\
+
+-}
+
+-- Relations and populations
+
+-- Client
+
+clientName :: Client -> Name =
+    [ ("Client_1"      , "Martijn")
+    ; ("Client_2"      , "Stef")
+    ]
+
+clientAddress :: Client -> Address 
+  = [ ("Client_1"      , "Jacob van der Borchstraat")
+    ; ("Client_2"      , "Dorpsstraat")
+    ]
+    
+clientCity :: Client -> City 
+  = [ ("Client_1"      , "Utrecht")
+    ; ("Client_2"      , "Enschede")
+    ]
+
+VIEW Client: Client(clientName, TXT ", ", clientAddress, TXT " in ", clientCity)
+
+
+-- Vendor
+
+vendorName :: Vendor -> Name 
+  = [ ("Vendor_1", "Rubber inc.")
+    ; ("Vendor_2", "Mario's pizzas")
+    ]
+    
+sells :: Vendor * Product 
+  = [ ("Vendor_1", "Product_1")
+    ; ("Vendor_1", "Product_2")
+    ; ("Vendor_1", "Product_3")
+    ; ("Vendor_2", "Product_4")
+    ; ("Vendor_2", "Product_5")
+    ; ("Vendor_2", "Product_3")
+    ]
+
+VIEW Vendor: Vendor(vendorName)
+    
+
+-- Product
+
+productName :: Product -> Name
+  = [ ("Product_1", "Inner tube")
+    ; ("Product_2", "Bouncing ball")
+    ; ("Product_3", "Rubber chicken")
+    ; ("Product_4", "Pizza Margherita")
+    ; ("Product_5", "Broodje Mario")
+    ]
+
+productPrice :: Product -> Price
+  = [ ("Product_1", "10,00 euro")
+    ; ("Product_2", "0,75 euro")
+    ; ("Product_3", "6,95 euro")
+    ; ("Product_4", "8,50 euro")
+    ; ("Product_5", "4,50 euro")
+    ]
+
+VIEW Product: Product(productName)
+
+
+-- Order
+
+orderedBy :: Order -> Client
+  = [ ("Order_1", "Client_2") ]
+orderedAt :: Order -> Vendor   
+  = [ ("Order_1", "Vendor_1") ]
+orderOf :: Order -> Product
+  = [ ("Order_1", "Product_1") ]
+
+VIEW Order: Order( orderOf;productName
+                 , TXT " by ", orderedBy;clientName
+                 , TXT " at ", orderedAt;vendorName
+                 )
+
+
+-- Interfaces
+
+INTERFACE Overview  : I[SESSION]
+TABS["Clients"  : V[SESSION*Client]
+   , "Vendors"  : V[SESSION*Vendor] 
+   , "Products" : V[SESSION*Product]
+   , "Orders"   : V[SESSION*Order]
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ] 
+   ]
+   
+INTERFACE Client (clientName, clientAddress, clientCity, orderReceived) FOR Client : I[Client]
+BOX [ "Name"   : clientName
+    , "Street" : clientAddress
+    , "City"   : clientCity
+    , "All orders" : orderedBy~
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ] 
+    , "Orders to be accepted by provider" : orderedBy~ /\ -(V; orderAccepted~)
+    , "Orders pending delivery" : orderedBy~ /\ (V; orderAccepted~) /\ -orderReceived~
+    , "Received orders"       : orderReceived~
+    ]
+
+INTERFACE ClientInfo (orderAccepted) FOR Vendor : I[Client]
+BOX [ "Name"   : clientName
+    , "Street" : clientAddress
+    , "City"   : clientCity
+    , "All orders" : orderedBy~
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ] 
+    , "Orders to be accepted by provider" : orderedBy~ /\ -(V; orderAccepted~)
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ] 
+    , "Orders pending delivery" : orderedBy~ /\ (V; orderAccepted~) /\ -orderReceived~
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ] 
+    , "Received orders"       : orderReceived~
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ] 
+    ]
+
+INTERFACE Vendor (vendorName, sells, productName, productPrice, orderAccepted) FOR Vendor: I[Vendor]
+
+BOX [ "Name"     : vendorName
+    , "Products" : sells
+      BOX [ "Name"  : productName       
+          , "Price" : productPrice
+          ]
+    , "Orders to be accepted" : orderedAt~ /\ -orderAccepted~
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ] 
+    , "Orders to be delivered"       : orderAccepted~ /\ -(orderAccepted~;orderReceived;V)
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ]
+    , "Past orders"       : orderAccepted~ /\ orderAccepted~;orderReceived;V
+     BOX [ product : orderOf;productName
+         , client  : orderedBy;clientName
+         , vendor  :orderedAt;vendorName
+         ]
+         
+    ]
+
+INTERFACE Product (productName, productPrice) FOR Vendor : I[Product]
+BOX [ "Name"    : productName
+    , "Price"   : productPrice
+    , "Vendors" : sells~
+    ]
+
+INTERFACE AcceptOrderByVendor (orderAccepted) FOR Vendor : I[Order] /\ -(orderAccepted;orderAccepted~)
+BOX [ "Client"  : orderedBy
+    , "Vendor"  : orderedAt
+    , "Product" : orderOf
+    , "sign here to accept" : orderAccepted
+    ]
+
+INTERFACE ViewOrderByVendor FOR Vendor : I[Order]
+BOX [ "Client"  : orderedBy
+    , "Vendor"  : orderedAt
+    , "Product" : orderOf
+    , "sign here to accept" : orderAccepted
+    ]
+
+INTERFACE OrdersForClient (orderedBy, orderedAt, orderOf, orderReceived) FOR Client : I[Order]
+BOX [ "Client"  : orderedBy
+    , "Vendor"  : orderedAt
+    , "Product" : orderOf
+    , "accepted by"  : orderAccepted
+    , "sign here when received" : orderReceived
+    ]
+
+-- Rules
+
+PROCESS Bestellen
+
+orderAccepted :: Order * Vendor [UNI] -- an order may not be accepted by multiple vendors
+--  = [ ("Order_1", "Vendor_1") ]
+
+orderReceived :: Order * Client [UNI] -- an order may not be received by multiple clients
+--  = [ ("Order_1", "Client_1") ]
+
+
+RULE orderInAssortment : orderOf |- orderedAt; sells 
+MEANING "Products ordered at a vendor must be sold by that vendor"
+MESSAGE "A product was ordered at a vendor that does not sell it"
+VIOLATION (SRC orderedAt;vendorName, TXT " does not sell ", TGT productName)
+
+RULE onlyAcceptOwn : orderAccepted |- orderedAt
+MEANING "Vendors may only accept their own orders"
+MESSAGE "A vendor has accepted an order of another vendor"
+VIOLATION (TGT vendorName, TXT " may not accept the order for a \"", SRC orderOf;productName, TXT "\" (by client ", SRC orderedBy;clientName, TXT "), which was issued to ", SRC orderedAt;vendorName )
+
+RULE onlyReceiveOwn: orderReceived |- orderedBy
+MEANING "Clients may only receive their own orders"
+MESSAGE "A client received the order of another client"
+VIOLATION (TGT clientName, TXT " may not receive the order for a \"", SRC orderOf;productName, TXT "\" (at vendor ", SRC orderedAt;vendorName, TXT "), which was ordered by ", SRC orderedBy;clientName)
+
+RULE allAccepted: I |- orderAccepted; orderAccepted~ -- == TOT
+MEANING "All orders have been accepted"
+MESSAGE "Not all orders have been accepted:"
+VIOLATION (TXT "An order for a \"", SRC orderOf;productName, TXT "\" to ", SRC orderedAt;vendorName, TXT " by ", SRC orderedBy;clientName)
+
+RULE allReceived: orderAccepted |- orderReceived; V -- [Order * Vendor]
+MEANING "All accepted orders have been received"
+MESSAGE "Not all accepted orders have been received"
+VIOLATION (TXT "An order for a \"", SRC orderOf;productName, TXT "\" to ", SRC orderedAt;vendorName, TXT " by ", SRC orderedBy;clientName)
+
+ROLE Vendor MAINTAINS allAccepted
+
+ROLE Client MAINTAINS allReceived
+
+ENDPROCESS
+
+
+ENDCONTEXT

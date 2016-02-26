@@ -1,0 +1,19 @@
+CONTEXT Try29 IN ENGLISH
+
+PATTERN Try29
+CLASSIFY Medewerker ISA Persoon
+CLASSIFY Student ISA Persoon
+studentNr :: Student -> StudentNummer
+salNr     :: Medewerker -> SalarisNummer
+
+RULE identificatie : I[Persoon] |- studentNr;studentNr~ \/ salNr;salNr~
+MEANING "Elke persoon moet een studentnummer dan wel een salarisnummer hebben"
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: A test to see if the typechecker can handle multiple ISA relations with the same root concept.
+   Result: PASS
+
+-}

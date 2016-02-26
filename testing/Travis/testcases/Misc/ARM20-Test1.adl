@@ -1,0 +1,14 @@
+CONTEXT ARM20bug IN DUTCH
+------------------------------------------------------------
+PATTERN "ARM 2.0 bug"
+
+oblBF :: Verplichting -> Bedrijfsfunctie
+expBF :: Verwachting -> Bedrijfsfunctie
+oblexp :: Verplichting * Verwachting
+
+RULE "Verplichting and expectation integrity": oblexp |- oblBF;expBF~
+VIOLATION (TXT "Verplichting '", SRC I, TXT "' is van '", SRC oblBF, TXT "' terwijl verwachting '", TGT I, TXT "' van '", TGT expBF, TXT "' is.")
+
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

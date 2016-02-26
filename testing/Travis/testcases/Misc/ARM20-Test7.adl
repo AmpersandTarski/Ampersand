@@ -1,0 +1,46 @@
+CONTEXT ARM20Test7 IN DUTCH
+{-This test script was made because of the following output:
+<QUOTE>
+Error(s) found:
+The following concepts are equal:
+Criterium, Gewetensvraag, Verplichting, and Verwachting.
+==============================
+The following concepts are equal:
+Criterium, Gewetensvraag, Verplichting, and Verwachting.
+==============================
+The following concepts are equal:
+Criterium, Gewetensvraag, Verplichting, and Verwachting.
+==============================
+The following concepts are equal:
+Criterium, Gewetensvraag, Verplichting, and Verwachting.
+</QUOTE>
+
+The new type checker features CLASSIFY statements, which solves the situation as the author intended.
+-}
+------------------------------------------------------------
+PROCESS ARM20Test7
+
+CLASSIFY Verplichting ISA Criterium -- had ook 'Businessrule' kunnen zijn
+CLASSIFY Verwachting ISA Criterium -- had ook 'Businessrule' kunnen zijn
+CLASSIFY Gewetensvraag IS Verplichting /\ Verwachting
+RULE "Gewetensvragen": I[Gewetensvraag] = I[Verplichting] /\ I[Verwachting]
+
+criterium :: Criterium * Text
+ROLE USER MAINTAINS "Criteria"
+RULE "Criteria": I[Criterium] |- criterium;criterium~
+
+oblImpact :: Verplichting * Impact
+RULE "Impacts" : I[Verplichting] |- oblImpact;oblImpact~
+
+expBelang :: Verwachting * Belang
+RULE "Belangen": I[Verwachting] |- expBelang;expBelang~
+
+ENDPROCESS
+------------------------------------------------------------
+INTERFACE Gewetensvraag FOR BFeigenaar : I[Gewetensvraag]
+BOX[ Criterium : criterium
+   , Impact : oblImpact
+   , Belang : expBelang
+   ]
+------------------------------------------------------------
+ENDCONTEXT

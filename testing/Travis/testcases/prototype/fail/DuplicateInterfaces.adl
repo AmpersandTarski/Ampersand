@@ -1,0 +1,21 @@
+CONTEXT DuplicateInterfaces IN ENGLISH
+
+-- Should yield exactly one error about multiple declarations of InterfaceA for role A, at lines 5 and 9
+
+INTERFACE InterfaceA FOR A : I[ONE]
+  BOX [ l : V[ONE]
+      ]
+
+INTERFACE InterfaceA FOR A,B : I[ONE]
+  BOX [ l : V[ONE]
+      ]
+
+INTERFACE InterfaceA FOR C : I[ONE] 
+  BOX [ l : V[ONE]
+      ]
+
+INTERFACE InterfaceB FOR A : I[ONE]
+  BOX [ l : V[ONE]
+      ]
+
+ENDCONTEXT

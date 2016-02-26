@@ -1,0 +1,21 @@
+﻿CONTEXT Issue298 IN DUTCH
+
+{- This scipt should fail to produce a prototype.
+   ruleTwo is a complex way to express the intent, which is expressed with the
+   less complex rule ruleOne.  
+   "thisShouldFail" is not in Even and is not in Odd.
+-}
+--RULE ruleOne : I[Natural] |- I[Even] \/ I[Odd]
+CLASSIFY Even ISA Natural
+CLASSIFY Odd  ISA Natural
+
+POPULATION Natural CONTAINS ["thisShouldFail" , "one" , "two"]
+POPULATION Even    CONTAINS ["two"]
+POPULATION Odd     CONTAINS ["one"]
+
+
+RULE ruleTwo : I[Natural]
+   |- ( I[Natural] - I[Even])
+   \/ ( I[Natural] - I[Odd])
+
+ENDCONTEXT

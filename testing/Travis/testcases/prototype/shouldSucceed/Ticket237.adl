@@ -1,0 +1,19 @@
+﻿CONTEXT Ticket237 IN DUTCH
+
+PATTERN Ticket237
+CLASSIFY Citrus ISA Fruit
+
+RELATION r[Fruit*Citrus]
+POPULATION r[Fruit*Citrus] CONTAINS
+  [ ("1", "2") ; ("2", "2") ; ("3", "1") ]
+
+RULE I[Fruit] /\ (V[Fruit]-I[Citrus]) = I[Fruit]-I[Citrus]
+ENDPATTERN
+
+PURPOSE CONTEXT Ticket237 MARKDOWN
+{+This script should succeed, because `I[Fruit]-I[Citrus]` must
+be interpreted as  `I[Fruit] /\ (V[Fruit]-I[Citrus])`.
+This is to prove that `I[Fruit]-I[Citrus]` may not be interpreted as `I[Fruit] /\ (V[Citrus]-I[Citrus])`
+-}
+
+ENDCONTEXT

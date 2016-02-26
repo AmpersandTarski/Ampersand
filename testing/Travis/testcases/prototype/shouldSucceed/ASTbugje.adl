@@ -1,0 +1,10 @@
+CONTEXT RAP IN ENGLISH
+
+PATTERN Gens
+IDENT Gen: Gen( gengen )
+
+gengen :: Gen->PlainConcept
+
+ENDPATTERN
+
+ENDCONTEXT

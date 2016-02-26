@@ -16,24 +16,6 @@ import Database.Design.Ampersand.Input.ADL1.CtxError
 --endswith :: String -> String -> Bool
 --endswith a b = drop (length a - length b) a == b
 
--- Returns tuple with files and subdirectories inside the given directory
---getDirectory :: FilePath -> IO ([FilePath],[FilePath])
---getDirectory path =
---    do contents <- getDirectoryContents path
---       let valid = filter (\x-> x /= "." && x /= "..") contents
---       let paths = map (path ++) valid
---       files <- filterM doesFileExist paths
---       subdirs <- filterM doesDirectoryExist paths
---       return (sort files, sort subdirs)
-
---getFiles :: String -> FilePath -> IO [FilePath]
---getFiles ext dir =
---    do (fs, ds) <- getDirectory (dir++"/")
---       let files = filter (`endswith` ext) fs
---       foldM recursive files ds
---      where recursive rs d =
---                do ms <- getFiles ext d
---                   return $ ms ++ rs
 
 
 getTestScripts :: IO [FilePath]
@@ -45,9 +27,9 @@ getTestScripts = do
 
 
 
-data DirContent = DirList [FilePath] [FilePath]
-                | DirError IOError
-data DirData = DirData FilePath DirContent
+data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
+                | DirError IOError               
+data DirData = DirData FilePath DirContent       -- path and content of a directory
 
 testAmpersandScripts :: IO ()
 testAmpersandScripts
@@ -96,6 +78,7 @@ myVisitor = addCleanup (\_ -> putStrLn "Finished.") $ loop 1
         case mr of
             Nothing     -> return ()
             Just r      -> lift (process r) >> loop (n + 1)
+    process :: DirData -> IO ()
     process (DirData path (DirError err)) = do
         putStrLn $ "I've tried to look in " ++ path ++ "."
         putStrLn $ "    There was an error: "

@@ -1,0 +1,21 @@
+CONTEXT ARMTest1 IN ENGLISH
+
+critBF :: Criterium -> Bedrijfsfunctie
+critTAV :: Criterium -> Bedrijfsfunctie
+biaVerplichting_Def :: Bedrijfsfunctie * Verplichting [INJ]
+
+CLASSIFY Verplichting ISA Criterium
+CLASSIFY ExterneVerplichting ISA Verplichting
+
+RULE "BIAlijst integriteit": -- Invariant
+biaVerplichting_Def |- biaVerplichting_Def;I[ExterneVerplichting]
+MEANING "De BIA-lijst bevat alleen externe verplichtingen."
+VIOLATION (TXT "De BIA-lijst van ", SRC I, TXT " mag alleen externe verplichtingen bevatten; ", TGT I, TXT " is dat niet.")
+
+ENDCONTEXT
+
+{- prototype.exe v3.0.1.2953.exe: !fatal 36 (module ADL1.Disambiguate) Ampersand v3.0.1.1297
+  Types of concepts are not defined here
+
+Deze foutmelding verdwijnt als de VIOLATION op regel 13 wordt verwijderd. 
+-}

@@ -1,0 +1,17 @@
+﻿CONTEXT Issue192 IN DUTCH
+
+INCLUDE "Issue192.xlsx"
+
+CLASSIFY Auto ISA Voertuig
+
+RELATION eigenaar [Voertuig * Persoon] [UNI,TOT]
+RELATION aantalWielen [ Auto * Aantal]  [UNI,TOT]
+
+--POPULATION eigenaar[Auto*Persoon] CONTAINS 
+--    [ ("wagen1", "Piet")
+--    ]
+--POPULATION aantalWielen[Auto*Aantal] CONTAINS
+--    [ ( "wagen1", "vier")]
+ 
+ENDCONTEXT  
+

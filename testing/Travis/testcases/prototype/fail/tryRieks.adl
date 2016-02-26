@@ -1,0 +1,23 @@
+CONTEXT ARM20Test5 IN DUTCH
+{- Dit script geeft fouten in de typechecker van Ampersand v2.2.1.1074, build time: 16-Jun-13 10:37.17
+   Het probleem was dat de foutmeldingen nogal cryptisch waren en zichzelf herhalen
+   Cryptisch-heid redelijk verholpen in Ampersand v2.2.1.1119:1122, build time: 04-Nov-13 22:19:22 UTC
+-}
+------------------------------------------------------------
+PATTERN "ARM20Test5"
+
+critBF   :: Criterium -> Bedrijfsfunctie
+
+SPEC Verplichting ISA Criterium
+oblTAV :: Verplichting * Bedrijfsfunctie [UNI] 
+
+SPEC Verwachting ISA Criterium
+expTAV :: Verwachting * Bedrijfsfunctie [UNI]
+
+RULE "NieuwConcept": I[VerplichteVerwachting] = I[Verplichting] /\ I[Verwachting]
+
+RULE "ARM20Test5": I[Criterium] /\ oblTAV;critBF~ |- expTAV;critBF~
+
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

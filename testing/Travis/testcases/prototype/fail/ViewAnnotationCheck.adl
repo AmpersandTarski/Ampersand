@@ -1,0 +1,33 @@
+CONTEXT ViewAnnotationCheck IN ENGLISH
+{- Failing cases for ShouldSucceed/ViewAnnotationCheck.adl (we could put these in multiple files, but the chance that only one will fail is small) -}
+
+CLASSIFY Lime ISA Citrus
+CLASSIFY Orange ISA Citrus
+CLASSIFY Limorange IS Lime /\ Orange
+
+INTERFACE Overview : I[ONE]
+BOX [ "Citrus    as Orange"    : V[ONE*Citrus]    <OrangeView>    -- should fail  
+    , "Citrus    as Lime"      : V[ONE*Citrus]    <LimeView>      -- should fail  
+    , "Citrus    as Limorange" : V[ONE*Citrus]    <LimorangeView> -- should fail  
+    , "Lime      as Orange"    : V[ONE*Lime]      <OrangeView>    -- should fail  
+    , "Lime      as Limorange" : V[ONE*Lime]      <LimorangeView> -- should fail  
+    , "Orange    as Lime"      : V[ONE*Orange]    <LimeView>      -- should fail
+    , "Orange    as Limorange" : V[ONE*Orange]    <LimorangeView> -- should fail  
+    ]
+VIEW CitrusView: Citrus DEFAULT { value: I }
+HTML TEMPLATE "NonexistentDummy.html"
+ENDVIEW
+
+VIEW LimeView: Lime DEFAULT { value: I }
+HTML TEMPLATE "NonexistentDummy.html"
+ENDVIEW
+
+VIEW OrangeView: Orange DEFAULT { value: I }
+HTML TEMPLATE "NonexistentDummy.html"
+ENDVIEW
+
+VIEW LimorangeView: Limorange DEFAULT { value: I }
+HTML TEMPLATE "NonexistentDummy.html"
+ENDVIEW
+
+ENDCONTEXT

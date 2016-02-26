@@ -1,0 +1,14 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test2
+RELATION t[Q*Y] [UNI,TOT]
+RULE t = t[B*Y]
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script shows that a type conflict occurs when t is illegally bound.
+   Result: FAIL
+   Reason: t[B*Y] is not declared
+-}

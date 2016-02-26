@@ -1,0 +1,14 @@
+﻿CONTEXT Try47 IN ENGLISH
+
+IDENT Context: Context(name[Context*ContextName])
+RELATION name[Context*ContextName] [UNI,TOT,INJ]
+
+IDENT Pattern: Pattern(name[Pattern*PatternName])
+RELATION name[Pattern*PatternName] [UNI,TOT,INJ]
+
+ENDCONTEXT
+
+{-
+   Purpose: This script tests the mechanism of matching the source of an IDENT expression to the Concept of the IDENT
+   Result: PASS
+-}

@@ -1,0 +1,31 @@
+CONTEXT Test IN ENGLISH
+
+PATTERN Test13
+r :: A*A
+r :: B*C
+RULE r = r[A*A]/\I
+RULE r = r[A*A]\/I
+RULE r = r[A*A];I
+RULE r = r[B*C];I
+RULE r = r[A*A]!I
+RULE r = r[B*C]!I
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: a superficial check on type deduction
+   Result: PASS
+   Reason: The type of I cannot always be determined from its context
+   The following type errors have been found in the past:
+
+   line 7:8, file "try13.adl"
+       Ambiguous equation  r = r[A*A] \/ I
+
+   line 10:8, file "try13.adl"
+       Ambiguous equation  r = r[A*A]!I
+
+   line 11:8, file "try13.adl"
+       Ambiguous equation  r = r[B*C]!I
+
+-}

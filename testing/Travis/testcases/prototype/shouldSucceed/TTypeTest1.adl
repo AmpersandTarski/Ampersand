@@ -1,0 +1,26 @@
+CONTEXT TtypesTest IN ENGLISH
+
+huisnummer :: NAW * Huisnummer [TOT,UNI]
+REPRESENT Huisnummer TYPE INTEGER
+straat :: NAW * Straat [TOT,UNI]
+woonplaats :: NAW *Woonplaats [TOT,UNI]
+foto :: NAW * Foto [UNI]
+REPRESENT Foto TYPE BINARY
+
+POPULATION huisnummer CONTAINS [ ("adres van Han" , 12) ]
+POPULATION straat     CONTAINS [ ("adres van Han" , "Eikenlaan") ]
+POPULATION woonplaats CONTAINS [ ("adres van Han" , "Peize") ]
+  
+
+INTERFACE Adressen FOR admin : '_SESSION'[SESSION]
+BOX ["Adressen" : V[SESSION*NAW] 
+    ]
+INTERFACE Adres  (huisnummer,straat,woonplaats) FOR admin :I[NAW] 
+BOX [ ie: I
+    , huisnummer : huisnummer
+    , straat : straat
+    , woonplaats : woonplaats
+    ]
+
+
+ENDCONTEXT

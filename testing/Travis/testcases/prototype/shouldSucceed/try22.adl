@@ -1,0 +1,15 @@
+CONTEXT Test IN ENGLISH
+
+PATTERN Test11
+r :: A*A
+r :: B*C
+RULE r = r[A*A]-I
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: a superficial check on type deduction
+   Result: PASS
+   Reason: The type of I can be determined from its context
+-}

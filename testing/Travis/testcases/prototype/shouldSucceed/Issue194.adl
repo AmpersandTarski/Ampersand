@@ -1,0 +1,13 @@
+﻿CONTEXT Issue194 IN DUTCH
+INCLUDE "Issue194.xlsx"
+CLASSIFY Auto ISA Voertuig
+RELATION eigenaar [Voertuig * Persoon] [UNI,TOT]
+RELATION aantalWielen [ Auto * Getal]  [UNI,TOT]
+
+REPRESENT Getal TYPE INTEGER
+
+RULE ThisShouldHoldForTheGivenExcelSheet 
+  : eigenaar;'Piet';eigenaar~ |- aantalWielen;'4';aantalWielen~
+
+ENDCONTEXT  
+

@@ -1,0 +1,16 @@
+CONTEXT CyclicInterfaceRef IN ENGLISH
+-- Test context that should fail to compile because of cyclic interface references
+
+INTERFACE GrandParent : I[A]
+ BOX[ label : V[A*B] INTERFACE Parent
+    ]
+
+INTERFACE Parent : I[B]
+ BOX[ label : V[B*C] INTERFACE Child
+    ]
+
+INTERFACE Child : I[C]
+ BOX[ label : V[C*A] INTERFACE GrandParent
+    ]
+
+ENDCONTEXT

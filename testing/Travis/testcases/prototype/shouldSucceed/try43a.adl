@@ -1,0 +1,11 @@
+CONTEXT Try43 IN ENGLISH
+r :: B * A [UNI]
+s :: A * C [UNI]
+t :: A * D [UNI]
+
+INTERFACE Try43  : I[ONE];V[ONE*B]
+BOX
+[ foo : r /\ r;(s;s~ /\ t;t~ )
+]
+
+ENDCONTEXT

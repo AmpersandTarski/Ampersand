@@ -1,0 +1,35 @@
+CONTEXT ArchiTest1 IN ENGLISH
+
+PATTERN ArchiTest1
+
+CONCEPT Artifact "a physical piece of information that is used or produced in a software development process, or by deployment and operation of a system. An artifact represents a concrete element in the physical world. It is typically used to model (software) products such as source files, executables, scripts, database tables, messages, documents, specifications, and model files. An instance (copy) of an artifact can be deployed on a node. The name of an artifact should preferably be the name of the file it represents, e.g. ‘order.jar’." "Archimate"
+CLASSIFY Artifact ISA "Technology concept"
+
+CONCEPT Node "a computational resource upon which artifacts may be deployed for execution. Nodes are active processing elements that execute and process artifacts, which are the representation of components and data objects. Nodes are for example used to model application servers, database servers, or client workstations. They can consist of sub-nodes representing physical devices and execution environments for artifacts. Nodes can be interconnected by communication paths. The name of a node should preferably be a noun." "Archimate"
+CLASSIFY Node ISA "Technology concept"
+
+CONCEPT Device "a physical computational resource upon which artifacts may be deployed for execution. A device is a specialisation of a node that represents a physical resource with processing capability. It is typically used to model hardware systems such as mainframes, PCs, or routers. Usually, they are part of a node together with system software. Devices may be composite, i.e., consist of sub-devices. Devices can be interconnected by networks. The name of a device should preferably be a noun referring to the type of hardware, e.g. “IBM zSeries mainframe”." "Archimate"
+CLASSIFY Device ISA "Technology concept"
+
+contain :: Node * Device PRAGMA "Node " " contains Device ".
+assign :: Artifact * Node PRAGMA "Artifact " " is deployed on node ".
+assign :: Artifact * Device PRAGMA "Artifact " " is assigned to Device ".
+RULE R006: assign[Artifact*Node] = assign[Artifact*Device];contain[Node*Device]~  -- This rule is not covered by the Archimate reference manual.
+ MEANING "An artifact is assigned to a node means that there is a device to which that artifact is assigned, which is contained by the node."
+
+ENDPATTERN
+ENDCONTEXT
+{- This script demonstrates that overloading still works if type annotations are used.
+Before March 8th 2013, this script gave (by mistake) the error message:
+
+line 17:12, file "ArchiTest1.adl":
+    Relation  assign  was not bound to precisely one of:
+     assign[Artifact*Device] on line 16:8, file "ArchiTest1.adl"
+     assign[Artifact*Node] on line 15:8, file "ArchiTest1.adl".
+
+line 17:36, file "ArchiTest1.adl":
+    Relation  assign  was not bound to precisely one of:
+     assign[Artifact*Device] on line 16:8, file "ArchiTest1.adl"
+     assign[Artifact*Node] on line 15:8, file "ArchiTest1.adl".
+
+-}

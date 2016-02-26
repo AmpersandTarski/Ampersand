@@ -1,0 +1,28 @@
+CONTEXT Proefje IN DUTCH
+
+RELATION begintijd[Tijdsleuf*Tijdstip] [UNI,TOT]
+RELATION eindtijd[Tijdsleuf*Tijdstip] [UNI,TOT]
+CLASSIFY Tijdverantwoordingsregel ISA Tijdsleuf
+RELATION werksoort[Tijdverantwoordingsregel*Werksoort]
+CLASSIFY Roosterregel ISA Tijdsleuf
+RELATION dienst[Roosterregel*Dienstsoort]
+
+RELATION bon[Tijdsleuf*Werkbon]
+
+INTERFACE Werkbon : I[Werkbon]
+BOX [ "" : I
+    , Regels : bon~;I[Roosterregel]
+      BOX [ x : werksoort  -- Deze moet worden afgekeurd, omdat de intersectie tussen  niet bestaat.
+          ]
+    ]
+
+ENDCONTEXT
+{- 
+   Purpose: to ensure that either "werksoort" on line 15, or Roosterregel on line 14 gets a type error message.
+   Result: FAIL
+   Reason: the intersection between Roosterregel and Tijdverantwoordingsregel does not exist.
+           If the user wants this, (s)he must specify CLASSIFY Combisleuf IS Roosterregel /\ Tijdverantwoordingsregel
+   
+   Message:
+   (Bas, mag jij verzinnen)
+-}

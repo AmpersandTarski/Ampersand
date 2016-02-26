@@ -1,0 +1,9 @@
+CONTEXT Try34 IN ENGLISH
+
+r :: A * B
+RULE  I[A] |- r
+
+
+{- Het spreekt voor zich dat de regel niet goed is getypeerd. Echter, ampersand versie 1072 klaagt hier niet over.... -}
+
+ENDCONTEXT 

@@ -1,0 +1,5 @@
+CONTEXT ARMTest2 IN DUTCH
+
+RULE "ARMTest": I["JaNee"] |- 'Ja' \/ 'Nee'
+
+ENDCONTEXT

@@ -1,0 +1,23 @@
+﻿CONTEXT Try24 IN ENGLISH
+
+CLASSIFY A ISA B
+r :: A * C [UNI]
+
+s :: A * D
+= [ ( "aap" , "noot")
+  ; ( "mies", "vuur")
+  ]
+
+
+{- In version 914 of ampersand (but also long before, e.g. version 699), this script generates an error:
+
+D:\data\hjo20125\ampersand>prototype -p --haskell try30.adl
+Violations of rule "TOT A::A*B":
+- [("aap","aap"),("mies","mies")]
+
+
+ERROR: No prototype generated because of rule violations.
+(Compile with --dev to generate a prototype regardless of violations)
+
+-}
+ENDCONTEXT

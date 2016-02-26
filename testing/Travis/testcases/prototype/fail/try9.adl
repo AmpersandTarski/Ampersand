@@ -1,0 +1,19 @@
+CONTEXT Test IN ENGLISH
+
+PATTERN Test9
+r :: A*B
+RULE r;V
+ENDPATTERN
+
+ENDCONTEXT
+
+{- 
+   Purpose: a superficial check whether type deduction works.
+   Result: FAIL
+   Reason: The target of  V  is ambiguous.
+   Message:
+   The pattern named "Test9" contains errors:
+   line 5:8, file "try9.adl":
+       The target of  V  is ambiguous.
+   
+-}

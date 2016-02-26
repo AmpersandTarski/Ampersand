@@ -1,0 +1,17 @@
+CONTEXT Try31 IN ENGLISH
+
+PATTERN Try31
+CLASSIFY Medewerker ISA Persoon
+CLASSIFY Student ISA Persoon
+
+RULE I[Persoon] - I[Student] |- I[Medewerker]
+MEANING "Een persoon die geen student is, is een medewerker"
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: A test to see if the typechecker can handle multiple ISA relations with the same root concept.
+   Result: PASS
+
+-}

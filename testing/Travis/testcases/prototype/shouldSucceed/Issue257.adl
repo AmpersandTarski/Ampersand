@@ -1,0 +1,30 @@
+CONTEXT Bug_257 IN ENGLISH
+
+ INTERFACE "Send Message" (sessionMsgText, sessionMsgPerson): '_SESSION'[SESSION]
+ BOX[ "Send Message" : I COLS
+      [ "To (person)": sessionMsgPerson
+      , "Message text" : sessionMsgText
+      ]
+    , "Message send requests" : V[SESSION*MsgSendRequest] COLS
+      [ "To" : msgsrPerson
+      , "Message text" : msgsrText
+      ]
+    ]
+
+ sessionMsgPerson :: SESSION * Person [UNI] -- Person to send the message to
+ sessionMsgText :: SESSION * MsgText [UNI] -- Text to be sent
+
+ --[Message Send Requests]--
+ msgsrPerson :: MsgSendRequest * Person [UNI,TOT]
+ msgsrText :: MsgSendRequest * MsgText [UNI,TOT]    REPRESENT MsgText TYPE ALPHANUMERIC
+
+ ROLE ExecEngine MAINTAINS "Create message send request"
+ RULE "Create message send request": sessionMsgPerson~;'_SESSION';sessionMsgText |- msgsrPerson~;msgsrText
+ VIOLATION (TXT "{EX}_;NewStruct_;MsgSendRequest"
+               ,TXT "_;msgsrPerson_;MsgSendRequest_;_NEW_;Person_;", SRC I
+               ,TXT "_;msgsrText_;MsgSendRequest_;_NEW_;MsgText_;", TGT I
+           ,TXT "{EX} DelPair;sessionMsgPerson;SESSION;", SRC V;'_SESSION'[SESSION], TXT ";Person;", SRC I
+           ,TXT "{EX} DelPair;sessionMsgText;SESSION;", SRC V;'_SESSION'[SESSION], TXT ";MsgText;", TGT I
+           )
+
+ ENDCONTEXT

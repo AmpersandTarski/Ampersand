@@ -1,0 +1,16 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test1
+RELATION r[A*C]
+RELATION s[A*B]
+RELATION t[B*C]
+RELATION t[Q*C]
+RULE -(V[A*C] \/ s;t)
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: The purpose of this test is to see if a complement on the top level is dealt with correctly.
+   Result: PASS
+-}

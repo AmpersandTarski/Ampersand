@@ -1,0 +1,14 @@
+CONTEXT Test IN ENGLISH
+
+PATTERN Test9
+r :: A*B
+RULE r = r;V
+ENDPATTERN
+
+ENDCONTEXT
+
+{- 
+   Purpose: a superficial check whether type deduction works.
+   Result: PASS
+   Reason: The type of  V can be deduced to [B*B].
+-}

@@ -1,0 +1,27 @@
+﻿CONTEXT Ticket441 IN DUTCH
+--------------------------------------------------------
+PATTERN "Organisaties"
+
+IDENT Organisaties: Organisatie(orgID)
+orgID :: Organisatie -> OrganisatieID
+
+IDENT OrganiekeEenheden: OrganiekeEenheid(orgID,oeID)
+oeID :: OrganiekeEenheid -> OrganiekeEenheidID
+
+ENDPATTERN
+--------------------------------------------------------
+ENDCONTEXT
+
+{- 
+   Purpose: to make sure that type checking occurs within IDENT statements.
+   Result: FAIL
+   Reason: on line 8 there is a type error.
+   
+   Message:
+Error(s) found: 
+Type error, cannot match: 
+the concept "Organisatie" (Src of orgID, line 8 : 43) 
+and concept OrganiekeEenheid given in Identity OrganiekeEenheden 
+if you think there is no type error, add an order between concepts "Organisatie" and OrganiekeEenheid. 
+Error at symbol () in file /home/sentinel/git/ampersand-models/Tests/ShouldFail/Ticket441.adl at line 8 : 1 
+-}

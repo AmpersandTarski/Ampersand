@@ -1,7 +1,7 @@
 # This file is based on the travis.yml file of stack. 
 # (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
 #
-language: c
+language: php
 sudo: false
 
 cache:
@@ -9,6 +9,9 @@ cache:
         - $HOME/.ghc
         - $HOME/.cabal
         - $HOME/.stack
+
+services:
+  - mysql
 
 matrix:
   include:

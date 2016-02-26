@@ -1,0 +1,25 @@
+﻿CONTEXT CPLbug2 IN DUTCH -- Ticket #417
+{- PURPOSE:
+This test exists to demonstrate the feature of populating concepts (as opposed to relations)
+-}
+
+heeftAlsDeelnorm :: Norm * Norm [ASY,IRF]
+PRAGMA "" " heeft/omvat "", die er een (directe) deelnorm van is"
+MEANING "Een Norm kan bestaan uit andere Normen (op een 'lager', d.w.z. meer gedetailleerd niveau)."
+
+CLASSIFY NormControl ISA Norm
+RULE NormControls: I[NormControl] = I[Norm] /\ -(heeftAlsDeelnorm; heeftAlsDeelnorm~)
+
+POPULATION heeftAlsDeelnorm CONTAINS [ ("N1", "N1.1") ]
+POPULATION heeftAlsDeelnorm CONTAINS [ ("N1", "N1.2") ]
+POPULATION heeftAlsDeelnorm CONTAINS [ ("N1.2", "N1.2a") ]
+POPULATION heeftAlsDeelnorm CONTAINS [ ("N1.2", "N1.2b") ]
+
+{- Om te voorkomen dat we de volgende foutmelding krijgen:
+Violations of rule "NormControls":
+- [("N1.1","N1.1"),("N1.2a","N1.2a"),("N1.2b","N1.2b")]
+gaan we proberen of we I[NormControl] met de violations kunnen populeren
+-}
+POPULATION NormControl CONTAINS ["N1.1", "N1.2a", "N1.2b"]
+
+ENDCONTEXT

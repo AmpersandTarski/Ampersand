@@ -1,0 +1,16 @@
+CONTEXT Try38 IN ENGLISH
+PATTERN "Try38"
+
+property :: C * C [PROP]
+
+ENDPATTERN
+ENDCONTEXT
+
+{-
+   Purpose: This script is there to ensure that the following error will be fixed: 
+<QUOTE>
+ampersand.exe: !fatal 167 (module Output.ToPandoc.ChapterDataAnalysis) Ampersand v2.2.1.121
+  This should have become an attribute of this Class!
+</QUOTE>
+   Result: PASS
+-}

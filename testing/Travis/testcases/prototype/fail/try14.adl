@@ -1,0 +1,22 @@
+CONTEXT Try14 IN ENGLISH
+
+PATTERN Try14
+r :: A*C
+s :: A*B
+q :: B*C
+RULE r = -(-s;-q)
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is meant to study the ambiguity of interpretation in expressions with complements.
+   Result: FAIL
+   An ambiguity arises in type checking. Be more specific in the expressions -s and -q.
+  You could add more types inside the expression, or write:
+  (V[A*B] - s)
+  (V[B*C] - q)
+  Error at symbol () in file try14.adl at line 7 : 14
+
+In issue #241 we have restored the law r-s = r/\-s. In order to achieve this, Bas had to tighten the ambiguity rules.
+-}

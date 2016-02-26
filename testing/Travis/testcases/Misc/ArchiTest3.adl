@@ -1,0 +1,17 @@
+CONTEXT ArchiTest3 IN ENGLISH
+
+{- RJ/20130308: Als je de tweede definitie van 'connect' weggooit (regel 11), dan doet-ie het wel.
+-- RJ/20130308: Hij doet het ook als je in RULE R004 de hele signatuur meegeeft, als volgt:
+                RULE R004: I["Communication path"] |- connect[Node * "Communication path"]~; -I[Node]; connect[Node * "Communication path"]
+-}
+
+PATTERN ArchiTest3
+
+connect :: Node * "Communicationpath" PRAGMA "Node " " is connected to Communication path ".
+connect :: Device * Network PRAGMA "Device " " is connected to network ".
+
+RULE R004: I["Communicationpath"] |- connect~; -I[Node]; connect
+MEANING "A communication path connects two or more nodes."
+
+ENDPATTERN
+ENDCONTEXT
