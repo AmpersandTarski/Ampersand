@@ -2,7 +2,7 @@ $if(verbose)$<!-- Atomic-BOOLEAN.html "$label$" : $expAdl$ :: $source$ * $target
 $endif$<div style="vertical-align:middle;">
 	$if(exprIsUni)$<div>
 		<label>
-			<input ng-model="resource['$name$']" type="checkbox"$if(!crudU)$ ng-disabled="true"$endif$ ng-change="saveItem(resource, '$name$', ResourceId)"/>
+			<input ng-model="resource['$name$']" type="checkbox"$if(!crudU)$ ng-disabled="true"$endif$ ng-change="saveItem(resource, '$name$', patchResource)"/>
 		</label>
 	</div>$else$$if(crudU)$<span>Not implemented: editable non-uni boolean</span>$else$<div ng-repeat="row in resource['$name$'] track by \$index">
 		<label>

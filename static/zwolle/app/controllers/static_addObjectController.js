@@ -5,8 +5,8 @@ AmpersandApp.controller('addObjectController', function($scope, $rootScope, Rest
 	$scope.hasNoResults = false;
 	
 	// Regular function used by Atomic-OBJECT template
-	$scope.typeaheadOnSelect = function ($item, $model, $label, obj, property, resourceId){
-		$scope.addObject(obj, property, $item, resourceId);
+	$scope.typeaheadOnSelect = function ($item, $model, $label, obj, property, patchResource){
+		$scope.addObject(obj, property, $item, patchResource);
 		$scope.hasNoResults = false;
 	};
 	

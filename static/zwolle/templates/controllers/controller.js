@@ -89,7 +89,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	}
 	
 	// Function to create a new resource and add to the colletion
-	\$scope.createResource = function (obj, ifc, prepend, requestType, resourceId){		
+	\$scope.createResource = function (obj, ifc, prepend, requestType){		
 		if(prepend === 'undefined') var prepend = false;
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
@@ -143,10 +143,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to send all patches
 	\$scope.saveResource = function(resource, requestType){
-		// Find top level resource from ifc list
-		index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
-		tlResource = \$scope.resource['$interfaceName$'][index];
-		
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
 		resource['_loading_'] = new Array();
@@ -155,15 +151,16 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 				.patch(resource['_patchesCache_'], {'requestType' : requestType, 'topLevelIfc' : '$interfaceName$'})
 				.then(function(data) {
 					// Update resource data
+					
 					if(resource['_ifcEntryResource_']){
 						resource['$interfaceName$'] = data.content;
-						tlResource = resource;
+						//tlResource = resource;
 					}
 					else resource = \$.extend(resource, data.content);
 					
 					// Update visual feedback (notifications and buttons)
 					\$rootScope.updateNotifications(data.notifications);
-					showHideButtons(tlResource, data.invariantRulesHold, data.requestType); // Show/hide buttons on top level resource
+					//showHideButtons(tlResource, data.invariantRulesHold, data.requestType); // Show/hide buttons on top level resource
 					
 					// Empty loading array
 					resource['_loading_'] = new Array();					
@@ -200,15 +197,12 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	 *********************************************************************************************/
 	
 	// Function to save item (non-array)
-	\$scope.saveItem = function(resource, ifc, resourceId){
-		index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
-		topLevelResource = \$scope.resource['$interfaceName$'][index];
-		
+	\$scope.saveItem = function(resource, ifc, patchResource){		
 		if(resource[ifc] === '') value = null;
 		else value = resource[ifc];
 		
 		// Construct path
-		pathLength = topLevelResource['_path_'].length;
+		pathLength = patchResource['_path_'].length;
 		path = resource['_path_'].substring(pathLength) + '/' + ifc;
 		
 		// Construct patch
@@ -216,14 +210,11 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
-		\$scope.patchResource(topLevelResource, patches);
+		\$scope.patchResource(patchResource, patches);
 	};
 	
 	// Function to add item to array
-	\$scope.addItem = function(resource, ifc, selected, resourceId){
-		index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
-		topLevelResource = \$scope.resource['$interfaceName$'][index];
-		
+	\$scope.addItem = function(resource, ifc, selected, patchResource){		
 		if(selected.value === undefined){
 			console.log('Value undefined');
 		}else if(selected.value !== ''){
@@ -232,7 +223,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			resource[ifc].push(selected.value);
 			
 			// Construct path
-			pathLength = topLevelResource['_path_'].length;
+			pathLength = patchResource['_path_'].length;
 			path = resource['_path_'].substring(pathLength) + '/' + ifc;
 			
 			// Construct patch
@@ -243,23 +234,20 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			selected.value = '';			
 			
 			// Patch!
-			\$scope.patchResource(topLevelResource, patches);
+			\$scope.patchResource(patchResource, patches);
 		}else{
 			console.log('Empty value selected');
 		}
 	};
 	
 	// Function to remove item from array
-	\$scope.removeItem = function(resource, ifc, key, resourceId){
-		index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
-		topLevelResource = \$scope.resource['$interfaceName$'][index];
-		
+	\$scope.removeItem = function(resource, ifc, key, patchResource){		
 		// Adapt js model
 		value = resource[ifc][key];
 		resource[ifc].splice(key, 1);
 		
 		// Construct path
-		pathLength = topLevelResource['_path_'].length;
+		pathLength = patchResource['_path_'].length;
 		path = resource['_path_'].substring(pathLength) + '/' + ifc + '/' + value;
 		
 		// Construct patch
@@ -267,7 +255,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
-		\$scope.patchResource(topLevelResource, patches);
+		\$scope.patchResource(patchResource, patches);
 	};
 	
 	
@@ -278,13 +266,10 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	 *********************************************************************************************/
 	
 	// Function to add an object to a certain interface (array) of a resource
-	\$scope.addObject = function(resource, ifc, obj, resourceId){
-		// If resourceId is undefined, the resource equals a toplevelresource
-		if(resourceId === undefined){
-			topLevelResource = resource
-		}else{
-			index = _getListIndex(\$scope.resource['$interfaceName$'], '_id_', resourceId);
-			topLevelResource = \$scope.resource['$interfaceName$'][index];
+	\$scope.addObject = function(resource, ifc, obj, patchResource){
+		// If patchResource is undefined, the patchResource equals the patchResource
+		if(patchResource === undefined){
+			patchResource = resource
 		}
 		
 		if(obj['_id_'] === undefined || obj['_id_'] == ''){
@@ -299,7 +284,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			}
 			
 			// Construct path
-			pathLength = topLevelResource['_path_'].length;
+			pathLength = patchResource['_path_'].length;
 			path = resource['_path_'].substring(pathLength) + '/' + ifc;
 			
 			// Construct patch
@@ -307,7 +292,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			$if(verbose)$console.log(patches);$endif$
 			
 			// Patch!
-			\$scope.patchResource(topLevelResource, patches);
+			\$scope.patchResource(patchResource, patches);
 		}
 	};
 	
