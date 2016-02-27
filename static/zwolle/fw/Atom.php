@@ -31,7 +31,7 @@ Class Atom {
 		
 		// View & label
 		$this->view = $this->getView($viewId);
-		$this->label = is_null($this->view) ? $this->id : implode($this->view); // no view? label = id
+		$this->label = empty($this->view) ? $this->id : implode($this->view); // empty view => label = id
 		
 		// JSON-LD attributes
 		$this->jsonld_id = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $concept . '/' . $this->id;
