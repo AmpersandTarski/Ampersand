@@ -3,15 +3,20 @@
 Class Atom {
 	private $database;
 	
-	// Ampersand attributes
 	public $id;
+	
+	/**
+	 * 
+	 * @var string Escaped identifier for use in queries
+	 */
+	public $idEsc;
+	
 	public $label;
 	public $view;
 	public $concept;
 	
 	private $newContent; // To temporarily store changed atom content 
 	
-	// JSON-LD attributes
 	private $jsonld_id;
 	private $jsonld_type;
 	
@@ -27,6 +32,7 @@ Class Atom {
 		
 		// Ampersand attributes
 		$this->id = $id;
+		$this->idEsc = $this->database->escape($this->id);
 		$this->concept = $concept;
 		
 		// View & label
@@ -105,8 +111,7 @@ Class Atom {
 	
 					// expressie segment
 				}elseif($viewSegment['segmentType'] == 'Exp'){
-					$idEsc = $this->database->escape($this->id);
-					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
+					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
 					$tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
 						
 					$txt = count($tgtAtoms) ? $tgtAtoms[0] : null;
@@ -152,8 +157,7 @@ Class Atom {
 		$options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
 		$options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
 		
-		$idEsc = $this->database->escape($this->id);
-		$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
+		$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
 		$tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
 		
 		// Check if tgtAtom is part of tgtAtoms
@@ -614,8 +618,7 @@ Class Atom {
 			// Check if tgtAtom is part of (sub)interface
 			if(!is_null($tgtAtomId)){
 			    $tgtAtom = new Atom($tgtAtomId, $ifc->tgtConcept);
-				$idEsc = $this->database->escape($srcAtom->id);
-				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
+				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '{$srcAtom->idEsc}' AND `tgt` IS NOT NULL";
 				$tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
 				
 				if(!in_array($tgtAtom->id, $tgtAtomIds)) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept}]' not found", 404);
