@@ -20,8 +20,8 @@ module Database.Design.Ampersand.Core.ParseTree (
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
-   , P_ViewDef , P_ViewSegment, ViewHtmlTemplate(..) {-, ViewTextTemplate-}
-   , P_ViewD(..) , P_ViewSegmt(..)
+   , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..) {-, ViewTextTemplate-}
+   , P_ViewD(..) , P_ViewSegmtPayLoad(..)
 
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
 
@@ -623,7 +623,7 @@ data P_ObjDef a =
      P_Obj { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
            , obj_pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
            , obj_ctx :: Term a         -- ^ this expression describes the instances of this object, related to their context.
-           , obj_crud :: Maybe P_Cruds  -- ^ string containing the CRUD actions as required by the user  
+           , obj_crud :: Maybe P_Cruds  -- ^ the CRUD actions as required by the user  
            , obj_mView :: Maybe String -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
            , obj_strs :: [[String]]    -- ^ directives that specify the interface.
@@ -668,11 +668,12 @@ data P_ViewD a =
               , vd_isDefault :: Bool        -- ^ whether or not this is the default view for the concept
               , vd_html :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --              , vd_text :: Maybe P_ViewText -- Future extension
-              , vd_ats :: [P_ViewSegmt a]   -- ^ the constituent segments of this view.
+              , vd_ats :: [P_ViewSegment a]   -- ^ the constituent segments of this view.
               } deriving (Show)
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
  p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
-
+instance Traced (P_ViewD a) where
+ origin = vd_pos
 instance Named (P_ViewD a) where
  name = vd_lbl
 instance Functor P_ViewD where fmap = fmapDefault
@@ -680,11 +681,21 @@ instance Foldable P_ViewD where foldMap = foldMapDefault
 instance Traversable P_ViewD where
  traverse fn (P_Vd a b c d e f) = P_Vd a b c d e <$> traverse (traverse fn) f
 
-type P_ViewSegment = P_ViewSegmt TermPrim
-data P_ViewSegmt a  = P_ViewExp  { vs_nr ::Integer, vs_obj :: P_ObjDef a }
-                    | P_ViewText { vs_nr ::Integer, vs_txt :: String }
-                    | P_ViewHtml { vs_nr ::Integer, vs_htm :: String }
-                      deriving (Eq, Show)
+data P_ViewSegment a = 
+     P_ViewSegment { vsm_labl :: Maybe String
+                   , vsm_org :: Origin
+                   , vsm_load :: P_ViewSegmtPayLoad a
+                   } deriving Show
+instance Traced (P_ViewSegment a) where
+  origin = vsm_org
+instance Functor P_ViewSegment where fmap = fmapDefault
+instance Foldable P_ViewSegment where foldMap = foldMapDefault
+instance Traversable P_ViewSegment where
+ traverse fn (P_ViewSegment a b c) = P_ViewSegment a b <$> traverse fn c
+data P_ViewSegmtPayLoad a  
+                    = P_ViewExp  { vs_expr :: Term a }
+                    | P_ViewText { vs_txt :: String }
+                      deriving (Show)
 
 data ViewHtmlTemplate = ViewHtmlTemplateFile String
 --              | ViewHtmlTemplateInline String -- Future extension
@@ -696,15 +707,11 @@ data ViewText = ViewTextTemplateFile String
                   deriving (Eq, Show)
 -}
 
-instance Functor P_ViewSegmt where fmap = fmapDefault
-instance Foldable P_ViewSegmt where foldMap = foldMapDefault
-instance Traversable P_ViewSegmt where
- traverse f (P_ViewExp i a) = P_ViewExp i <$> traverse f a
- traverse _ (P_ViewText i a) = pure (P_ViewText i a)
- traverse _ (P_ViewHtml i a) = pure (P_ViewHtml i a)
-
-instance Traced (P_ViewD a) where
- origin = vd_pos
+instance Functor P_ViewSegmtPayLoad where fmap = fmapDefault
+instance Foldable P_ViewSegmtPayLoad where foldMap = foldMapDefault
+instance Traversable P_ViewSegmtPayLoad where
+ traverse f (P_ViewExp a) = P_ViewExp <$> traverse f a
+ traverse _ (P_ViewText a) = pure (P_ViewText a)
 
 
 -- PPurpose is a parse-time constructor. It contains the name of the object it explains.

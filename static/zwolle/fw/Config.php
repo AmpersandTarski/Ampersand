@@ -41,6 +41,7 @@ Config::set('apiPath', 'global', '/api/v1'); // relative path to api
 
 Config::set('sessionExpirationTime', 'global', 60*60); // expiration time in seconds
 Config::set('productionEnv', 'global', false); // set environment as production deployment (or not = default)
+Config::set('debugMode', 'global', false); // set debugMode (or not = default). Impacts the way errors are returned by API
 
 Config::set('uploadPath', 'global', __DIR__ . '/../uploads'); // absolute path to folder, without trailing slash
 Config::set('allowedMimeTypes', 'global', array('application/vnd.ms-excel'

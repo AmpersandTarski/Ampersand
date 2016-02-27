@@ -17,10 +17,11 @@ class Notifications {
 	static $successes = array();
 	static $logs = array();
 	
-	public static function addError($message){
+	public static function addError($message, $code = null){
 		$errorHash = hash('md5', $message);
 		
 		self::$errors[$errorHash]['message'] = $message;
+		self::$errors[$errorHash]['code'] = $code;
 		self::$errors[$errorHash]['count']++;
 		self::addLog($message, 'ERROR');
 	}
@@ -139,7 +140,7 @@ class Notifications {
 		$all['violations'] = self::getViolations();
 		$all['infos'] = self::getInfos();
 		$all['successes'] = self::getSuccesses();
-		$all['logs'] = Config::get('productionEnv') ? array(array('type' => 'LOG', 'message' => 'Log is disabled in production environment')) : self::getLogs();
+		$all['logs'] = Config::get('debugMode') ? self::getLogs() : array(array('type' => 'LOG', 'message' => 'Log is disabled (debugMode = false)'));
 		
 		return $all;
 	}

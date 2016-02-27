@@ -192,7 +192,7 @@ onlyUserConcepts (lst:r)
      v -> v:onlyUserConcepts r
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx _
+pCtx2aCtx opts
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = lang
@@ -457,13 +457,13 @@ pCtx2aCtx _
      where tpda = disambiguate (termPrimDisAmb declMap) x
 
     typecheckViewDef :: DeclMap -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
-    typecheckViewDef declMap
+    typecheckViewDef _
        o@(P_Vd { vd_pos = orig
             , vd_lbl  = lbl   -- String
             , vd_cpt  = cpt   -- Concept
             , vd_isDefault = isDefault
             , vd_html = mHtml -- Html template
-            , vd_ats  = pvs   -- view segment
+            , vd_ats  = pvs   -- view segments
             })
      = (\vdts
         -> Vd { vdpos  = orig
@@ -473,19 +473,27 @@ pCtx2aCtx _
               , vdhtml = mHtml
               , vdats  = vdts
               })
-       <$> traverse typeCheckViewSegment pvs
+       <$> traverse typeCheckViewSegment (zip [0..] pvs)
      where
-       typeCheckViewSegment :: (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
-       typeCheckViewSegment vs
-        = case vs of 
-           P_ViewExp{} -> 
-             do (obj,b) <- typecheckObjDef declMap (vs_obj vs)
-                case toList$ findExact genLattice (lMeet c (aConcToType (source (objctx obj)))) of
-                              [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                              r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
-                                    else mustBeBound (origin obj) [(Tgt,objctx obj)]
-           P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_txt vs)
-           P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_htm vs)
+       typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
+       typeCheckViewSegment (seqNr, seg)
+        = do payload <- typecheckPayload (vsm_load seg)
+             return ViewSegment { vsmpos   = vsm_org seg
+                                , vsmlabel = vsm_labl seg
+                                , vsmSeqNr = seqNr
+                                , vsmLoad  = payload
+                                }
+         where 
+          typecheckPayload :: (P_ViewSegmtPayLoad (TermPrim, DisambPrim)) -> Guarded ViewSegmentPayLoad
+          typecheckPayload payload 
+           = case payload of
+              P_ViewExp term -> 
+                 do (viewExpr,(srcBounded,_)) <- typecheckTerm term
+                    case toList$ findExact genLattice (lMeet c (aConcToType (source viewExpr))) of
+                       [] -> mustBeOrdered o o (Src,(source viewExpr),viewExpr)
+                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft' (head r) viewExpr))
+                             else mustBeBound (origin seg) [(Tgt,viewExpr)]
+              P_ViewText str -> pure$ ViewText str
        c = pConcToType (vd_cpt o)
     
     isa :: Type -> Type -> Bool
@@ -540,22 +548,27 @@ pCtx2aCtx _
     addEpsilon s t e
      = addEpsilonLeft' s (addEpsilonRight' t e)
     pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
-    pCruds2aCruds Nothing = pure def
-    pCruds2aCruds (Just (P_Cruds org str )) 
-        = if nub us == us && all (\c -> c `elem` "cCrRuUdD") str
-          then pure Cruds { crudOrig = org
-                          , crudC    = f 'C'
-                          , crudR    = f 'R'
-                          , crudU    = f 'U'
-                          , crudD    = f 'D'
-              }
-          else Errors [mkInvalidCRUDError org str]
-         where us = map toUpper str
-               f :: Char -> Maybe Bool
-               f c 
-                 | toUpper c `elem` str = Just True
-                 | toLower c `elem` str = Just False
-                 | otherwise            = Nothing    
+    pCruds2aCruds mCrud = 
+       case mCrud of 
+         Nothing -> build (Origin "default for Cruds") ""
+         Just (P_Cruds org str ) -> if (length . nub . map toUpper) str == length str && all (\c -> c `elem` "cCrRuUdD") str
+                                    then build org str 
+                                    else Errors [mkInvalidCRUDError org str]
+      where (defC, defR, defU, defD) = defaultCrud opts
+            build org str 
+             = pure Cruds { crudOrig = org
+                          , crudC    = f 'C' defC
+                          , crudR    = f 'R' defR
+                          , crudU    = f 'U' defU
+                          , crudD    = f 'D' defD
+                          }
+               where f :: Char -> Bool -> Bool 
+                     f c def'
+                      | toUpper c `elem` str = True
+                      | toLower c `elem` str = False
+                      | otherwise            = def'
+
+
 
     pSubi2aSubi :: DeclMap
                 -> Expression -- Expression of the surrounding

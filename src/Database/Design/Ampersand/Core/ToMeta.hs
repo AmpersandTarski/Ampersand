@@ -161,15 +161,18 @@ instance MakeMeta a => MakeMeta (P_ViewD a) where
           , vd_html =           (vd_html vd) -- No need to meta the html template filename or inline html code
           , vd_ats = makeMeta f (vd_ats vd)
           }
-
-instance MakeMeta a => MakeMeta (P_ViewSegmt a) where
+instance MakeMeta a => MakeMeta (P_ViewSegment a) where
+  makeMeta f vs = P_ViewSegment
+      { vsm_labl = vsm_labl vs
+      , vsm_org  = vsm_org vs
+      , vsm_load = makeMeta f (vsm_load vs)
+      }
+instance MakeMeta a => MakeMeta (P_ViewSegmtPayLoad a) where
   makeMeta f vs
-   = case vs of 
-      P_ViewExp{}  -> P_ViewExp { vs_nr  = vs_nr vs
-                                , vs_obj = makeMeta f (vs_obj vs)
+   = case vs of
+      P_ViewExp{}  -> P_ViewExp { vs_expr = makeMeta f (vs_expr vs)
                                 }
       P_ViewText{} -> vs
-      P_ViewHtml{} -> vs
 
 instance MakeMeta P_Gen where
   makeMeta f gen

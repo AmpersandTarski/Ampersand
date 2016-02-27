@@ -18,7 +18,7 @@ class Concept {
 	public static function getConcept($concept){
 		global $allConcepts;
 		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept $concept not defined in \$allConcepts (Generics.php)", 500);
+		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept '$concept' not defined in \$allConcepts (Generics.php)", 500);
 		return $allConcepts[$concept];
 	}
 	
@@ -80,7 +80,7 @@ class Concept {
 		
 	}
 	
-	public static function createNewAtom($concept){
+	public static function createNewAtomId($concept){
 		if(strpos($concept, '_AUTOINCREMENT') !== false){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
 			$database = Database::singleton();
 			$tableInfo = Concept::getConceptTableInfo($concept);
@@ -99,6 +99,10 @@ class Concept {
 			$atomId = $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
 		}
 		return $atomId;
+	}
+	
+	public static function createNewAtom($concept){
+		return new Atom(Concept::createNewAtomId($concept), $concept);
 	}
 	
 	public static function getView($concept, $viewId = null){

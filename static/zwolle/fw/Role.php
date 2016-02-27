@@ -7,7 +7,6 @@ class Role {
 	public $active = false;
 	private $maintains = array();
 	private $interfaces = array();
-	private $editableConcepts = array();
 	
 	/*
 	 * param int $id
@@ -24,9 +23,6 @@ class Role {
 		// Rules that are maintained by this role
 		$this->maintains = (array)$roleInfo['ruleNames'];
 		
-		// Editable concepts
-		$this->editableConcepts = (array)$roleInfo['editableConcepts'];
-		
 		// Interfaces that are accessible by this role
 		foreach (InterfaceObject::getAllInterfaceObjects() as $ifc){
 			if (in_array($this->label, $ifc->interfaceRoles) || empty($ifc->interfaceRoles)) $this->interfaces[] = $ifc;
@@ -41,15 +37,11 @@ class Role {
 		return $this->interfaces;
 	}
 	
-	public function editableConcepts(){
-		return $this->editableConcepts;
-	}
-	
 	public static function getRoleInfo($roleId){		
 		foreach(Role::getAllRoles() as $arr){
 			if($arr['id'] == $roleId) return $arr;
 		}
-		throw new Exception ("Role with roleId \'$roleId\' does not exists", 404);
+		throw new Exception ("Role with id '{$roleId}' does not exists", 404);
 	}
 	
 	public static function getAllRoles(){

@@ -11,29 +11,31 @@ class Database {
 	private $trackAffectedConjuncts = true;
 	private $affectedConcepts = array(); // array with all affected Concepts during a transaction.
 	private $affectedRelations = array(); // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
+	private $invariantRulesHold = null; // boolean true/false or null if not set (i.e. no transaction has occurred)
+	private $requestType = 'feedback';
 	
 	private static $_instance = null;
 	
 	// Prevent any outside instantiation of this object
 	private function __construct(){
-		$this->db_host = Config::get('dbHost', 'mysqlDatabase');
-		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
-		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
-		$this->db_name = Config::get('dbName', 'mysqlDatabase');
-		
-		// Connect to MYSQL database
-		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
-		if ($this->db_link->connect_error) throw new Exception($this->db_link->connect_error, 500);
-		
-		// Set sql_mode to ANSI
-		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-		
-		// Select DB
-		try{
+	    try{
+    	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
+    		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
+    		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
+    		$this->db_name = Config::get('dbName', 'mysqlDatabase');
+    		
+    		// Connect to MYSQL database
+    		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
+    		
+    		// Set sql_mode to ANSI
+    		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+    		
+    		// Select DB
 			$this->selectDB();
+			
 		}catch (Exception $e){
-			Notifications::addLog($e->getMessage(), 'DATABASE');
-			throw $e;
+		    // Convert mysqli_sql_exceptions into 500 errors
+		    throw new Exception($e->getMessage(), 500);
 		}
 	}
 	
@@ -48,30 +50,36 @@ class Database {
 	}
 	
 	public static function createDB(){
-		$DB_host = Config::get('dbHost', 'mysqlDatabase');
-		$DB_user = Config::get('dbUser', 'mysqlDatabase');
-		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
-		$DB_name = Config::get('dbName', 'mysqlDatabase');
+	    try{
+    		$DB_host = Config::get('dbHost', 'mysqlDatabase');
+    		$DB_user = Config::get('dbUser', 'mysqlDatabase');
+    		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
+    		$DB_name = Config::get('dbName', 'mysqlDatabase');
+    		
+    		// Connect to MYSQL database
+    		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
+    		
+    		// Set sql_mode to ANSI
+    		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+    		
+    		// Drop database
+    		$db_link->query("DROP DATABASE $DB_name");
+    		
+    		// Create new database
+    		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
 		
-		// Connect to MYSQL database
-		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
-		if ($db_link->connect_error) throw new Exception($db_link->connect_error, 500);
-		
-		// Set sql_mode to ANSI
-		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-		
-		$db_link->query("DROP DATABASE $DB_name");
-		
-		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
-		if ($db_link->error) throw new Exception($db_link->error, 500);
-			
+		}catch (Exception $e){
+		    // Convert mysqli_sql_exceptions into 500 errors
+		    throw new Exception($e->getMessage(), 500);
+		}
 	}
 	
 	private function selectDB(){
-		$this->db_link->select_db($this->db_name);
-		
-		if ($this->db_link->error) throw new Exception($this->db_link->error . '. Please <a href="#/installer" class="alert-link">Reinstall database</a>', 500);
-		
+		try{
+	        $this->db_link->select_db($this->db_name);
+		}catch(Exception $e){
+	        Notifications::addLog($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">Reinstall database</a>', 'DATABASE');
+	    }
 	}
 	
 	public function reinstallDB(){
@@ -83,7 +91,6 @@ class Database {
 		Notifications::addLog('---------- DB structure queries ------------', 'INSTALLER');
 		foreach($queries['allDBstructQueries'] as $query){
 			$this->Exe($query);
-			
 		}
 		
 		if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
@@ -98,6 +105,10 @@ class Database {
 		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
 		
 		$this->closeTransaction('Database successfully reinstalled', true, true, false);
+		
+		if (version_compare(PHP_VERSION, '5.6', '<')) {
+		   Notifications::addError("Support for PHP version <= 5.5 will stop in the summer of 2016. Please upgrade to 5.6. Note! Ampersand framework does not support PHP 7 yet. You are on version: " . PHP_VERSION, 500);
+		}
 	}
 	
 	/*
@@ -110,10 +121,8 @@ class Database {
 		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
-		$result = $this->db_link->query($query);
+		$result = $this->doQuery($query);
 		Notifications::addLog($query, 'QUERY');
-
-		if ($this->db_link->error) throw new Exception("MYSQL error " . $this->db_link->errno . ": " . $this->db_link->error . " in query:" . $query, 500);
 
 		if ($result === false) return false;
 		elseif ($result === true) return true;
@@ -126,6 +135,15 @@ class Database {
 		
 	}
 	
+	private function doQuery($query){
+	    try{
+	        return $this->db_link->query($query);
+        }catch (Exception $e){
+            // Convert mysqli_sql_exceptions into 500 errors
+            throw new Exception("MYSQL error " . $e->getCode() . ": " . $e->getMessage() . " in query:" . $query, 500);
+        }
+	}
+	
 	/*
 	 * See:
 	 * - http://php.net/manual/en/language.types.string.php#language.types.string.parsing
@@ -133,7 +151,8 @@ class Database {
 	 * 
 	 */
 	public function escape($param){
-		return $this->db_link->real_escape_string($param);
+		if(is_null($param)) return null;
+		else return $this->db_link->real_escape_string($param);
 	}
 	
 
@@ -387,6 +406,9 @@ class Database {
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
+			// Check if stableAtom is provided (i.e. not null)
+			if(is_null($stableAtom)) throw new Exception("Cannot perform editDelete, because stable atom is null", 500);
+			
 			$stableAtom = $this->typeConversion($stableAtom, $stableConcept);
 			$modifiedAtom = $this->typeConversion($modifiedAtom, $modifiedConcept);
 			
@@ -414,15 +436,18 @@ class Database {
 			
 			// If the modifiedCol can be set to null, we do an update
 			if ($tableModifiedColumnInfo['null']){
-				$this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom)) $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc'");
+				else $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 			
 			// Elseif the stableCol can be set to null, we do an update
 			}elseif ($tableStableColumnInfo['null']){
-				$this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
+				else $this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
-				$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
+				else $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
 				
 			}
 			
@@ -508,13 +533,15 @@ class Database {
 		Hooks::callHooks('postDatabaseRollbackTransaction', get_defined_vars());
 	}
 	
-	/*
-	 * $checkAllInvariantConjuncts 
-	 * 		true: checkAllInvariantConjuncts, 
-	 * 		false: check only InvariantRules that are relevant for the interface of the current session.
-	 * 		default: true
+	/**
+	 * 
+	 * @param string $succesMessage specifies success/info message when invariants hold
+	 * @param boolean $checkAllConjucts specifies to check all (true) or only the affected conjuncts (false)
+	 * @param boolean $databaseCommit specifies to commit (true) or rollback (false) when all invariants hold
+	 * @param boolean $setNewContent specifies to set the new content of the updated $session->atom
+	 * @return boolean specifies if invariant rules hold (true) or not (false)
 	 */
-	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = false, $setNewContent = true){
+	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = null, $setNewContent = true){
 		$session = Session::singleton();
 		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
@@ -548,10 +575,13 @@ class Database {
 		
 		if($setNewContent && isset($session->atom)) $session->atom->setNewContent($session->interface); // e.g. not needed in Atom::delete() function
 		
+		// Determine if transaction should be committed or not when all invariant rules hold based on $requestType
+		if(is_null($databaseCommit)) $databaseCommit = $this->processRequestType();
+		
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
 			Notifications::addSuccess($succesMessage);
-		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && COMMIT_INV_VIOLATIONS){
+		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && $databaseCommit){
 			$this->commitTransaction();
 			Notifications::addError("Transaction committed with invariant violations");
 		}elseif($invariantRulesHold){
@@ -563,8 +593,22 @@ class Database {
 		
 		Hooks::callHooks('postDatabaseCloseTransaction', get_defined_vars());
 		
-		return $invariantRulesHold;
+		return $this->invariantRulesHold = $invariantRulesHold;
 		
+	}
+	
+	/**
+	 * Checks request type and returns boolean to determine database commit
+	 * @param string $requestType
+	 * @throws Exception when unknown request type specified (allowed: 'feedback' and 'promise')
+	 * @return boolean (true for 'promise', false for 'feedback')
+	 */
+	private function processRequestType(){
+		switch($this->requestType){
+			case 'feedback' : return false;
+			case 'promise' : return true;
+			default : throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+		}
 	}
 	
 	// TODO: onderstaande timestamp generatie opschonen. Kan de database ook zelf doen, bij insert/update/delete
@@ -582,7 +626,17 @@ class Database {
 	 * Conversion to MYSQL types
 	 */
 	public function typeConversion($value, $concept){
-		switch(Concept::getTypeRepresentation($concept)){
+		if(is_null($value)) return null;
+		
+		switch(Concept::getTypeRepresentation($concept)){				
+			case "ALPHANUMERIC" :
+			case "BIGALPHANUMERIC" :
+			case "HUGEALPHANUMERIC" :
+			case "PASSWORD" :
+			case "TYPEOFONE" :
+				return (string) $value;
+			case "BOOLEAN" :
+				return (int) $value; // booleans are stored as tinyint(1) in the database. false = 0, true = 1
 			case "DATE" :
 				$datetime = new DateTime($value);
 				return $datetime->format('Y-m-d'); // format to store in database
@@ -590,14 +644,14 @@ class Database {
 				$datetime = new DateTime($value); // $value can include timezone, e.g. 2005-08-15T15:52:01+00:00 (DATE_ATOM format)
 				$datetime->setTimezone(new DateTimeZone('UTC')); // convert to UTC to store in database
 				return $datetime->format('Y-m-d H:i:s'); // format to store in database (UTC)
+			case "FLOAT" :
+				return (float) $value;
 			case "INTEGER" :
 				return (int) $value;
-			case "BOOLEAN" :
-				return (bool) $value;
-			case "DECIMAL" :
-				return (float) $value;
-			default : 
+			case "OBJECT" :
 				return $value;
+			default :
+				throw new Exception("Unknown/unsupported representation type for concept $concept", 501);
 		}
 		
 	}
@@ -630,9 +684,21 @@ class Database {
 		return $this->affectedRelations;
 	}
 	
+	public function getInvariantRulesHold(){
+		return $this->invariantRulesHold;
+	}
+	
+	public function getRequestType(){
+		return $this->requestType;
+	}
+	
 	public function setTrackAffectedConjuncts($bool){
 		$this->trackAffectedConjuncts = $bool;
-	}	
+	}
+	
+	public function setRequestType($requestType){
+		$this->requestType = $requestType;
+	}
 	
 	
 }

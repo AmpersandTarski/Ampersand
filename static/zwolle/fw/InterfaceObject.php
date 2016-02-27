@@ -22,7 +22,6 @@ class InterfaceObject {
 	public $relationIsFlipped;
 	public $univalent;
 	public $totaal;
-	public $editable;
 	public $isProperty;
 	public $isIdent;
 	
@@ -33,6 +32,7 @@ class InterfaceObject {
 	
 	public $refInterfaceId;
 	public $isLinkTo;
+	public $isTopLevelIfc = false;
 	private $boxSubInterfaces;
 	public $subInterfaces = array();
 	
@@ -41,7 +41,10 @@ class InterfaceObject {
 	public function __construct($id, $interface = array()){
 		global $allInterfaceObjects; // from Generics.php
 		
-		if(empty($interface)) $interface = $allInterfaceObjects[$id]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
+		if(empty($interface)){
+			$interface = $allInterfaceObjects[$id]; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
+			$this->isTopLevelIfc = true;
+		}
 		
 		// Check if interface exists
 		if(empty($interface['id'])) throw new Exception ("Interface '$id' does not exists", 500);
@@ -51,7 +54,6 @@ class InterfaceObject {
 		$this->label = $interface['label'];
 		
 		$this->interfaceRoles = $interface['interfaceRoles'];
-		$this->editableConcepts = (array)$interface['editableConcepts'];
 		
 		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
 		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
@@ -65,7 +67,6 @@ class InterfaceObject {
 		// Information about the (editable) relation if applicable
 		$this->relation = $interface['relation']; 
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
-		$this->editable = (empty($interface['relation'])) ? false : $interface['relationIsEditable'];
 		$this->totaal = $interface['exprIsTot'];
 		$this->univalent = $interface['exprIsUni'];
 		$this->isProperty = $interface['exprIsProp'];
@@ -77,6 +78,8 @@ class InterfaceObject {
 		// Determine if tgtConcept is Object (true) or Scalar (false)
 		$this->tgtConceptIsObject = (Concept::getTypeRepresentation($this->tgtConcept) == "OBJECT") ? true : false;
 		
+		if($this->crudU && $this->tgtConceptIsObject) $this->editableConcepts[] = $this->tgtConcept;
+		
 		// Set attributes
 		$this->refInterfaceId = $interface['refSubInterfaceId'];
 		$this->isLinkTo = $interface['isLinkTo'];
@@ -85,7 +88,9 @@ class InterfaceObject {
 				
 		// Determine subInterfaces
 		foreach ((array)$this->boxSubInterfaces as $subInterface){
-			$this->subInterfaces[] = new InterfaceObject($subInterface['id'], $subInterface);
+			$ifc = new InterfaceObject($subInterface['id'], $subInterface);
+			$this->subInterfaces[] = $ifc;
+			$this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
 		}
 	}
 	
@@ -99,14 +104,19 @@ class InterfaceObject {
 				
 	}
 	
-	public static function getSubinterface($interface, $subinterfaceId){
-		
-		foreach((array)$interface->subInterfaces as $subinterface){
-			if($subinterface->id == $subinterfaceId) {
-				$result = $subinterface;
+	public static function getSubinterface($ifcId, $parentIfc = null){
+		// Top level interface
+		if(is_null($parentIfc)){
+			return new InterfaceObject($ifcId);
+		// Subinterface
+		}else{
+			foreach((array)$parentIfc->subInterfaces as $subinterface){
+				if($subinterface->id == $ifcId) {
+					return $subinterface;
+				}
 			}
+			return false;
 		}
-		return empty($result) ? false : $result;
 	}
 	
 	public static function getAllInterfaceObjects(){		

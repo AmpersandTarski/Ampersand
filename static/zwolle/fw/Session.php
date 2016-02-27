@@ -18,7 +18,7 @@ class Session {
 	private $ifcsOfActiveRoles = array(); // interfaces for active roles
 	public $rulesToMaintain = array(); // rules that are maintained by active roles 
 	
-	public static $sessionUser;
+	public static $sessionAccountId;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
@@ -44,6 +44,9 @@ class Session {
 			}
 
 			$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+			
+			// Add public interfaces
+			$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
 			
 		} catch (Exception $e){
 		  	throw $e;
@@ -95,7 +98,6 @@ class Session {
 		
 		// Add public interfaces
 		$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, InterfaceObject::getPublicInterfaces());
-		$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
 		
 		// If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
 		if(Config::get('loginEnabled')){
@@ -133,7 +135,8 @@ class Session {
 				
 				$interface = new InterfaceObject('SessionRoles');
 				$session = new Atom(session_id(), 'SESSION');
-				$sessionRoleLabels = array_keys((array)$session->getContent($interface, true));
+				$options = array('metaData' => false, 'navIfc' => true);
+				$sessionRoleLabels = array_column((array)$session->getContent($interface, $interface->id, null, $options), '_id_');
 				
 				foreach(Role::getAllRoleObjects() as $role){
 					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
@@ -146,37 +149,37 @@ class Session {
 		}
 	}
 	
-	private static function setSessionUser(){
-		// Set sessionUser
+	private static function setSessionAccount(){
+		// Set $sessionAccountId
 		if(!Config::get('loginEnabled')){
-			Session::$sessionUser = false;
+			self::$sessionAccountId = false;
 		
 		}else{
-			$ifc = new InterfaceObject('SessionUser');
+			$ifc = new InterfaceObject('SessionAccount');
 			$session = new Atom(session_id(), 'SESSION');
-			$sessionUsers = array_keys((array)$session->getContent($ifc, true));
+			$sessionAccounts = array_column((array)$session->getContent($ifc, $ifc->id), '_id_');
 				
-			if(count($sessionUsers) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
-			if(empty($sessionUsers)){
-				Session::$sessionUser = false;
+			if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
+			if(empty($sessionAccounts)){
+				self::$sessionAccountId = false;
 			}else{
-				Session::$sessionUser = current($sessionUsers);
-				Notifications::addLog("Session user set to '$sessionUser'", 'SESSION');
+				self::$sessionAccountId = current($sessionAccounts);
+				Notifications::addLog("Session user set to '" . self::$sessionAccountId . "'", 'SESSION');
 			}
 		}		
 	}
 	
-	public static function getSessionUserId(){
+	public static function getSessionAccountId(){
 		if(!Config::get('loginEnabled')){
 			return 'SYSTEM';
 		
 		}else{
-			if(!isset(Session::$sessionUser)) Session::setSessionUser();
+			if(!isset(self::$sessionAccountId)) Session::setSessionAccount();
 			
-			if(Session::$sessionUser === false){
+			if(self::$sessionAccountId === false){
 				return $_SERVER['REMOTE_ADDR'];
 			}else{
-				return Session::$sessionUser;
+				return self::$sessionAccountId;
 			}
 		}
 	}
@@ -186,9 +189,9 @@ class Session {
 			return false;
 		
 		}else{
-			if(!isset(Session::$sessionUser)) Session::setSessionUser();
+			if(!isset(self::$sessionAccountId)) Session::setSessionAccount();
 				
-			if(Session::$sessionUser === false){
+			if(self::$sessionAccountId === false){
 				return false;
 			}else{
 				return true;
@@ -204,7 +207,8 @@ class Session {
 			try {
 				$ifc = new InterfaceObject('SessionVars');
 				$session = new Atom(session_id(), 'SESSION');
-				return $session->getContent($ifc, false, null, false, 'num', false); // $rootElement = false => this will return a single object instead of array.
+				$options = array('metaData' => false, 'navIfc' => false);
+				return $session->getContent($ifc, $ifc->id, $session->id, $options);
 			}catch (Exception $e){
 				return false;
 			}		
@@ -232,9 +236,7 @@ class Session {
 	public function getInterfacesToReadConcept($concept){
 		$interfaces = array();
 		foreach($this->accessibleInterfaces as $interface){
-			if(($interface->srcConcept == $concept || in_array($concept, Concept::getSpecializations($interface->srcConcept))
-					&& $interface->crudR)
-			) $interfaces[] = $interface;
+			if(($interface->srcConcept == $concept || in_array($concept, Concept::getSpecializations($interface->srcConcept)))	&& $interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}

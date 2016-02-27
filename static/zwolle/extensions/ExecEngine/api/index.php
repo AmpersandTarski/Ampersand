@@ -1,14 +1,66 @@
 <?php
 
-require_once (__DIR__ . '/../../../fw/includes.php');
-require_once (__DIR__ . '/../ExecEngine.php');
-require_once (__DIR__ . '/../../../api/vendor/restler.php');
-use Luracast\Restler\Restler;
-use Luracast\Restler\Format\UploadFormat;
+register_shutdown_function('shutdown');
+function shutdown(){
+	$error = error_get_last();
+	if ($error['type'] === E_ERROR) {
+		$protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+		http_response_code(500);
+		header($protocol . ' 500 ' . $error['message']);
+		print json_encode(array('error' => 500, 'msg' => $error['message']));
+		exit;
+	}
+}
 
-$r = new Restler();
-$r->setSupportedFormats('JsonFormat', 'XmlFormat', 'HtmlFormat'); // some strange error in Restler when UploadFormat is mentioned as first parameter
-$r->addAPIClass('ExecEngineApi','');
-$r->handle();
+require_once (__DIR__ . '/../../../fw/includes.php');
+
+// Create and configure Slim app (version 2.x)
+$app = new \Slim\Slim(array(
+    'debug' => Config::get('debugMode')
+));
+
+$app->add(new \Slim\Middleware\ContentTypes());
+$app->response->headers->set('Content-Type', 'application/json');
+
+// Error handler
+$app->error(function (Exception $e) use ($app) {
+	$app->response->setStatus($e->getCode());
+	print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage()));
+});
+
+// Not found handler
+$app->notFound(function () use ($app) {
+	$app->response->setStatus(404);
+	print json_encode(array('error' => 404, 'msg' => "Not found"));
+});
+
+$app->get('/run', function () use ($app){
+	$session = Session::singleton();
+	
+	$roleIds = $app->request->params('roleIds');
+	$session->activateRoles($roleIds);
+	
+	// Check sessionRoles if allowedRolesForRunFunction is specified
+	$allowedRoles = Config::get('allowedRolesForRunFunction','execEngine');
+	if(!is_null($allowedRoles)){
+		$ok = false;
+	
+		foreach($session->getSessionRoles() as $role){
+			if(in_array($role->label, $allowedRoles)) $ok = true;
+		}
+		if(!$ok) throw new Exception("You do not have access to run the exec engine", 401);
+	}
+		
+	ExecEngine::run(true);
+	
+	$session->database->closeTransaction('Run completed',false,true,false);
+		
+	$result = array('notifications' => Notifications::getAll());
+	
+	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
+// Run app
+$app->run();
 
 ?>

@@ -17,6 +17,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , IdentitySegment(..)
  , ViewDef(..)
  , ViewSegment(..)
+ , ViewSegmentPayLoad(..)
  , A_Gen(..)
  , Interface(..)
  , getInterfaceByName
@@ -66,6 +67,7 @@ import GHC.Generics (Generic)
 import Data.Data
 import Data.Hashable
 import Data.Char (toUpper,toLower)
+import Data.List (nub)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
@@ -316,21 +318,24 @@ data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in
                   , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --                  , vdtext :: Maybe ViewText -- Future extension
                   , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
-                  } deriving (Eq,Show)
+                  } deriving (Show)
 instance Named ViewDef where
   name = vdlbl
 instance Traced ViewDef where
   origin = vdpos
-
-data ViewSegment = ViewExp { vsgmNr   :: Integer
-                           , vsgmObj  :: ObjectDef
+data ViewSegment = ViewSegment
+     { vsmpos :: Origin
+     , vsmlabel :: Maybe String
+     , vsmSeqNr :: Integer
+     , vsmLoad  :: ViewSegmentPayLoad
+     } deriving Show
+instance Traced ViewSegment where
+  origin = vsmpos
+data ViewSegmentPayLoad
+                 = ViewExp { vsgmExpr :: Expression
                            }
-                 | ViewText{ vsgmNr   :: Integer
-                           , vsgmTxt  :: String
-                           }
-                 | ViewHtml{ vsgmNr   :: Integer
-                           , vsgmHtml :: String
-                           } deriving (Eq, Show)
+                 | ViewText{ vsgmTxt  :: String
+                           }deriving (Eq, Show)
 
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
@@ -409,19 +414,11 @@ instance Named ObjectDef where
 instance Traced ObjectDef where
   origin = objpos
 data Cruds = Cruds { crudOrig :: Origin
-                   , crudC :: Maybe Bool
-                   , crudR :: Maybe Bool
-                   , crudU :: Maybe Bool
-                   , crudD :: Maybe Bool
+                   , crudC :: Bool
+                   , crudR :: Bool
+                   , crudU :: Bool
+                   , crudD :: Bool
                    } deriving (Eq, Show)
-instance Default Cruds where
-  def = Cruds { crudOrig = Origin "Dummy default Origin"
-              , crudC    = Nothing
-              , crudR    = Nothing
-              , crudU    = Nothing
-              , crudD    = Nothing
-              }
-
 data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 
                   | InterfaceRef Bool -- is LINKTO? 
                                  String 
@@ -1024,7 +1021,17 @@ unsafePAtomVal2AtomValue' typ mCpt pav
 
    where
      relaxXLSXInput :: Double -> Either String AAtomValue
-     relaxXLSXInput = Right . AAVString typ . show
+     relaxXLSXInput = Right . AAVString typ . neat . show
+       where neat :: String -> String
+             neat str 
+               | onlyZeroes dotAndAfter = beforeDot
+               | otherwise = str
+               where (beforeDot, dotAndAfter) = span (/= '.') str
+                     onlyZeroes str =
+                      case str of 
+                       [] -> True
+                       '.':zeros ->  nub zeros == "0"
+                       _ -> False
      message :: Show x => x -> Either String a
      message x = Left . intercalate "\n    " $
                  ["Representation mismatch"

@@ -36,7 +36,7 @@
 				<ul class="dropdown-menu" role="menu">
 					<li><a href="" ng-click="reload()"><span class="glyphicon glyphicon-refresh"></span> Refresh page</a></li>
 					<li><a href="#/" ng-click="destroySession()"><span class="glyphicon glyphicon-repeat"></span> Reset session</a></li>
-					<li><a href="#/installer"><span class="glyphicon glyphicon-trash"></span> Reinstall database</a></li>
+					<li><a href="#/admin/installer"><span class="glyphicon glyphicon-trash"></span> Reinstall database</a></li>
 					<li ng-if="navbar.refreshMenu" class="divider" role="presentation"></li>
 					<li ng-repeat="app in navbar.refreshMenu" ng-include="app.url"/>
 				</ul>
