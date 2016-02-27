@@ -107,7 +107,7 @@ Class Atom {
 				}elseif($viewSegment['segmentType'] == 'Exp'){
 					$idEsc = $this->database->escape($this->id);
 					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
-					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
+					$tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
 						
 					$txt = count($tgtAtoms) ? $tgtAtoms[0] : null;
 					$viewStrs[$viewSegment['label']] = $txt;
@@ -154,7 +154,7 @@ Class Atom {
 		
 		$idEsc = $this->database->escape($this->id);
 		$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
-		$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
+		$tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
 		
 		// Check if tgtAtom is part of tgtAtoms
 		if(!is_null($tgt)){
@@ -616,7 +616,7 @@ Class Atom {
 			    $tgtAtom = new Atom($tgtAtomId, $ifc->tgtConcept);
 				$idEsc = $this->database->escape($srcAtom->id);
 				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
-				$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
+				$tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
 				
 				if(!in_array($tgtAtom->id, $tgtAtomIds)) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept}]' not found", 404);
 			}else{

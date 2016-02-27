@@ -76,7 +76,7 @@ class Concept {
 		
 		// Query all atoms in table
 		$query = "SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL";
-		return $existingAtoms = array_column($database->Exe($query), $firstConceptCol); // no need to filter duplicates and NULLs
+		return $existingAtoms = array_column((array)$database->Exe($query), $firstConceptCol); // no need to filter duplicates and NULLs
 		
 	}
 	
@@ -89,7 +89,7 @@ class Concept {
 			$col = $tableInfo['cols'][0];
 			
 			$query = "SELECT MAX(`$col`) as `MAX` FROM `$table`";
-			$result = array_column($database->Exe($query), 'MAX');
+			$result = array_column((array)$database->Exe($query), 'MAX');
 			
 			if(empty($result)) $atomId = 1;
 			else $atomId = $result[0] + 1;
