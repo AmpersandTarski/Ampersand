@@ -105,37 +105,6 @@ class Concept {
 		return new Atom(Concept::createNewAtomId($concept), $concept);
 	}
 	
-	public static function getView($concept, $viewId = null){
-		global $allViews; // from Generics.php
-		
-		if(is_null($viewId)) $viewId = Concept::getDefaultViewId($concept); // Get defaultViewId
-		
-		// No view defined for this concept
-		if(is_null($viewId)){
-			return null;
-
-		// Get specified view
-		}else{
-			// Selecting all relevant views for this concept from $allViews in Generics.php
-			foreach ((array)$allViews as $view){
-				if($view['label'] == $viewId){
-					if (!($concept == $view['concept'] || in_array($concept, Concept::getSpecializations($view['concept'])))) throw new Exception("View '$viewId' is not for concept '$concept'");
-					return $view;
-				}
-			}
-		}
-		
-		// Otherwise throw exception
-		throw new Exception("View '$viewId' is not defined");
-	}
-	
-	public static function getDefaultViewId($concept){		
-		$concept = Concept::getConcept($concept);
-		
-		if(isset($concept['defaultViewId'])) return $concept['defaultViewId'];
-		else return null;
-	}
-	
 	public static function getConceptTableInfo($concept){
 		$conceptInfo = Concept::getConcept($concept);
 		
