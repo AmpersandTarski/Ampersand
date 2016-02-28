@@ -185,7 +185,7 @@ Class Atom {
 						// _sortValues_ (if subInterface is uni)
 						if($subinterface->univalent && $options['metaData']){
 							if(is_bool($subcontent)) $sortValue = $subcontent; // property
-							elseif($subinterface->tgtConceptIsObject) $sortValue = $subcontent['_label_']; // use label to sort objects
+							elseif($subinterface->tgtConceptIsObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
 							else $sortValue = $subcontent; // scalar
 							
 							$content['_sortValues_'][$subinterface->id] = $sortValue;
@@ -212,7 +212,7 @@ Class Atom {
 							// _sortValues_ (if subInterface is uni)
 							if($subinterface->univalent && $options['metaData']){
 								if(is_bool($subcontent)) $sortValue = $subcontent; // property
-								elseif($subinterface->tgtConceptIsObject) $sortValue = $subcontent['_label_']; // use label to sort objects
+								elseif($subinterface->tgtConceptIsObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
 								else $sortValue = $subcontent; // scalar
 									
 								$content['_sortValues_'][$subinterface->id] = $sortValue;
