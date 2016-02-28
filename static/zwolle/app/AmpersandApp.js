@@ -33,7 +33,6 @@ AmpersandApp.config(function(RestangularProvider) {
 AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route){
 	
 	$sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
-	$rootScope.notifications = {'errors' : []};
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
 		var roleIds = [];

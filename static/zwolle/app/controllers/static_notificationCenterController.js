@@ -3,6 +3,15 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$scope.$storage = $localStorage;
 	$scope.$sessionStorage = $sessionStorage;
 	
+	// Initialize notifications container
+	$rootScope.notifications =  { 'logs' 		: []
+								, 'violations' 	: []
+								, 'invariants' 	: []
+								, 'infos' 		: []
+								, 'successes' 	: []
+								, 'errors' 		: []
+								};
+	
 	// Function to update notifications after api response
 	$rootScope.updateNotifications = function(notifications){
 		// Overwrite
