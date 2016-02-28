@@ -42,14 +42,14 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		
 		// if srcAtom is specified as _NEW, a new atom of srcConcept is created
 	    if($srcAtom == "_NEW"){
-			$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
+			$srcAtom = $database->addAtomToConcept(Concept::createNewAtomId($srcConcept), $srcConcept);
 		}else{
 			$database->addAtomToConcept($srcAtom, $srcConcept);
 		}
 		
 		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
 		if($tgtAtom == "_NEW"){
-			$tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
+			$tgtAtom = $database->addAtomToConcept(Concept::createNewAtomId($tgtConcept), $tgtConcept);
 		}else{
 			$database->addAtomToConcept($tgtAtom, $tgtConcept);
 		}
@@ -127,7 +127,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		
 		// We start with parsing the first one or two arguments
 		$ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
-		$AtomC = Concept::createNewAtom($ConceptC);   // Default marker for atom-to-be-created.
+		$AtomC = Concept::createNewAtomId($ConceptC);   // Default marker for atom-to-be-created.
 
 		Notifications::addLog("Newstruct for concept $ConceptC", 'ExecEngine');
 		
@@ -205,7 +205,7 @@ function InsAtom($concept){
 	try{
 		$database = Database::singleton();
 		
-		$atom = Concept::createNewAtom($concept);
+		$atom = Concept::createNewAtomId($concept);
 		$database->addAtomToConcept($atom, $concept); // insert new atom in database
 		
 		return "Atom '".$atom."' added to concept '". $concept . "'";
