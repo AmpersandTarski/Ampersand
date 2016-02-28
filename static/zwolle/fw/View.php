@@ -56,7 +56,8 @@ class View {
         
         $viewStrs = array();
         foreach ($this->segments as $viewSegment){
-            $viewStrs[$viewSegment->label] = $viewSegment->getValue($atom);
+            $key = is_null($viewSegment->label) ? $viewSegment->seqNr : $viewSegment->label;
+            $viewStrs[$key] = $viewSegment->getValue($atom);
         }
         
         return $viewStrs;
@@ -149,7 +150,7 @@ class ViewSegment {
         
         $this->viewLabel = $viewLabel;
         
-        $this->seqNr = $segment['segNr'];
+        $this->seqNr = $segment['seqNr'];
         $this->label = $segment['label'];
         $this->segType = $segment['segType'];
         $this->text = $segment['text'];
