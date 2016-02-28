@@ -434,6 +434,7 @@ class Database {
 			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
 			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
 			
+			/* Complicated code to determine UPDATE or INSERT statement: see Github #169 for explanation */
 			// If the modifiedCol can be set to null, we do an update
 			if ($tableModifiedColumnInfo['null']){
 				if(is_null($modifiedAtom)) $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc'");
@@ -441,8 +442,8 @@ class Database {
 			
 			// Elseif the stableCol can be set to null, we do an update
 			}elseif ($tableStableColumnInfo['null']){
-				if(is_null($modifiedAtom)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
-				else $this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom) && !$tableStableColumnInfo['unique']) throw new Exception("Cannot perform editDelete, because modified atom is null and stable column is not unique", 500);
+				else $this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc'");
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
