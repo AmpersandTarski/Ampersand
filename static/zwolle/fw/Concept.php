@@ -59,7 +59,7 @@ class Concept {
 	}
 	
 	public static function getAllAtomObjects($concept){
-		
+	    $arr = array();
 		foreach (Concept::getAllAtomIds($concept) as $tgtAtomId){
 			$tgtAtom = new Atom($tgtAtomId, $concept);
 			$arr[] = $tgtAtom->getAtom();
