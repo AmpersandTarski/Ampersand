@@ -5,10 +5,10 @@ $endif$<div ng-repeat="(key, row) in resource['$name$']">
 		<span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(resource, '$name$', row, 'promise')" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
 		<my-nav-to-interfaces ifcs="row['_ifcs_']" resource="row['_id_']" label="row['_label_']"></my-nav-to-interfaces>
 	</div>
-</div>
-$if(verbose)$<!-- Input to add new link to another resource -->
-$endif$<div $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-controller="addObjectController">$if(crudU)$
+</div>$if(crudU)$$if(verbose)$
+<!-- Input to add new link to another resource -->$endif$
+<div $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-controller="addObjectController">
 	<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', patchResource); selected.label=''" typeahead-no-results="hasNoResults" ng-init="getTypeahead('$target$')">$if(crudC)$
     <span ng-show="hasNoResults && selected.label" class="glyphicon glyphicon-plus" ng-click="addObject(resource, '$name$', {'_id_' : selected.label}, patchResource); selected.label='';" uib-tooltip="Create new" tooltip-trigger="mouseenter" tooltip-placement="right"></span>$endif$
-    <div ng-show="hasNoResults && selected.label" style="color:orangered; font-size:12px;">$target$ not found!</div>$else$$if(crudC)$NB! Create not possible when update not allowed$endif$$endif$
-</div>
+    <div ng-show="hasNoResults && selected.label" style="color:orangered; font-size:12px;">$target$ not found!</div>
+</div>$endif$
