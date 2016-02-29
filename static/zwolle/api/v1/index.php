@@ -25,7 +25,14 @@ $app->response->headers->set('Content-Type', 'application/json');
 // Error handler
 $app->error(function (Exception $e) use ($app) {
 	$app->response->setStatus($e->getCode());
-	print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage()));
+	try{
+	    $notifications = Notifications::getAll();
+	    print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
+	}catch(Exception $b){
+	    $notifications = array('logs' => array(array('type' => 'LOG', 'message' => "Could not return logs due to exception '{$b->getMessage()}'")));
+	    print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
+	}
+	
 });
 
 // Not found handler

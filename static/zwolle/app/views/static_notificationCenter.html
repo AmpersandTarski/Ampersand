@@ -15,10 +15,21 @@
 		</div>
 		
 		<div id="errors" ng-show="$storage.notificationPrefs.switchShowErrors">
-			<uib-alert ng-repeat="error in notifications.errors" type="danger" close="closeAlert(notifications.errors, $index)">
-				<span class="glyphicon glyphicon-exclamation-sign"></span> <span ng-bind-html="error.message | unsafe"></span>
-				<span class="badge pull-right">{{error.count}}</span>
-			</uib-alert>
+			<div class="panel panel-danger" id="error-panel-{{key}}" ng-repeat="(key, error) in notifications.errors">
+				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#error-body-{{key}}">
+					<div class="text-left">
+						<span class="glyphicon glyphicon-exclamation-sign"></span> <span ng-bind-html="error.message | unsafe"></span>
+						<button type="button" class="close" data-target="#error-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<span class="badge pull-right" ng-show="error.count > 1">{{error.count}}</span>			
+					</div>
+				</div>
+				<div class="panel-body collapse" id="error-body-{{key}}">
+					<div ng-if="error.html" ng-bind-html="error.html | unsafe"></div>
+					<div ng-if="!error.html">Please contact the application administrator for more information.</div>
+				</div>
+			</div>
 		</div>
 		
 		<div id="invariants" ng-show="$storage.notificationPrefs.switchShowInvariants">

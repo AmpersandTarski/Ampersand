@@ -14,6 +14,8 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	
 	// Function to update notifications after api response
 	$rootScope.updateNotifications = function(notifications){
+		if(notifications === undefined) notifications = {};
+		
 		// Overwrite
 		$rootScope.notifications.logs = notifications.logs;
 		$rootScope.notifications.violations = notifications.violations;
@@ -35,9 +37,10 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		});
 	}
 	
-	$rootScope.addError = function(message, code, persistent){
-		code = typeof code !== 'undefined' ? code : null;
-		persistent = typeof persistent !== 'undefined' ? persistent : false;
+	$rootScope.addError = function(message, code, persistent, html){
+		code = typeof code !== undefined ? code : null;
+		persistent = typeof persistent !== undefined ? persistent : false;
+		html = typeof html !== undefined ? html : false;
 		
 		alreadyExists = false;
 		arr = $rootScope.notifications.errors;
@@ -46,10 +49,11 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 				arr[i].count += 1;
 				arr[i].code = code;
 				arr[i].persistent = persistent;
+				arr[i].html = html
 				alreadyExists = true;
 			}
 		}
-		if(!alreadyExists) $rootScope.notifications.errors.push( {'message' : message, 'code' : code, 'count' : 1, 'persistent' : persistent} );
+		if(!alreadyExists) $rootScope.notifications.errors.push( {'message' : message, 'code' : code, 'count' : 1, 'persistent' : persistent, 'html' : html} );
 	}
 	
 	$rootScope.addInfo = function(message){

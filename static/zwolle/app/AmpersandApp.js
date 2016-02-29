@@ -52,14 +52,22 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 	});
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-    	var message = (response.data || {}).msg || response.statusText;
-    	
+    	    	
     	if(response.status == 401) {
     		$rootScope.deactivateAllRoles();
     		$location.path('ext/Login'); // add: if exists, otherwise do nothing
     	}
     	
-    	$rootScope.addError(message, response.status, true);
+    	if(typeof response.data === 'object'){
+    		var message = response.data.msg || response.statusText; // if empty response message, take statusText
+    	
+    		$rootScope.updateNotifications(response.data.notifications);
+    		$rootScope.addError(message, response.status, true);
+    	}else{
+    		var message = response.status + ' ' + response.statusText;
+    		var html = response.data;
+    		$rootScope.addError(message, response.status, true, html);
+    	}
     	
     	return true; // proceed with success or error hooks of promise
     });
