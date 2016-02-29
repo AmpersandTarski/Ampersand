@@ -296,6 +296,30 @@ Class Atom {
         $patches = is_array($data) ? $data['patches'] : array();
 		$newAtom->doPatches($interface, $pathEntry, $patches);
 		
+		// Special case for file upload
+		if($interface->tgtConcept == "FileObject"){
+		     
+		    if (is_uploaded_file($_FILES['file']['tmp_name'])){
+		        $tmp_name = $_FILES['file']['tmp_name'];
+		        $new_name = time() . '_' . $_FILES['file']['name'];
+		        $absolutePath = Config::get('absolutePath') . Config::get('uploadPath') . $new_name;
+		        $relativePath = Config::get('uploadPath') . $new_name;
+		        $result = move_uploaded_file($tmp_name, $absolutePath);
+		         
+		        if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
+		        else throw new Exception ("Error in file upload", 500);
+		        
+		        // Populate filePath and originalFileName relations in database
+		        $this->database->editUpdate('filePath', false, $newAtom->id, 'FileObject', $relativePath, 'FilePath');
+		        $this->database->editUpdate('originalFileName', false, $newAtom->id, 'FileObject', $_FILES['file']['name'], 'FileName');
+		        
+		    }else{
+		        throw new Exception ("No file uploaded", 500);
+		    }
+		    
+		    
+		}
+		
 		// Close transaction
 		$this->database->closeTransaction($newAtom->concept . ' created', false, null, false);
 		

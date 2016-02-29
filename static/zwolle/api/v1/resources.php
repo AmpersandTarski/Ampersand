@@ -145,27 +145,6 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 	if(!$pathInfo['ifc']->crudC) throw new Exception ("Create not allowed for '$ifcPath'", 405);
 	if(!$pathInfo['ifc']->tgtConceptIsObject) throw new Exception ("Cannot create non-object {$pathInfo['ifc']->tgtConcept}. Use PUT or PATCH instead", 405);
 	
-	// TODO: File upload
-	/* START FILE UPLOAD (copied from old API		
-		if (is_uploaded_file($_FILES['file']['tmp_name'])){
-			$tmp_name = $_FILES['file']['tmp_name'];
-			$new_name = time() . '_' . $_FILES['file']['name'];
-			$target = Config::get('uploadPath') . '/' . $new_name;
-			$result = move_uploaded_file($tmp_name, $target);
-		
-			if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
-			else Notifications::addError("Error in file upload");
-		}else{
-			Notifications::addError('No file uploaded');
-		}
-			
-		$newAtom = $session->database->addAtomToConcept(Concept::createNewAtomId('Upload'), 'Upload');
-		$session->database->editUpdate('fileName', false, $newAtom, 'Upload', $new_name, 'FileName');
-		$session->database->editUpdate('originalFileName', false, $newAtom, 'Upload', $_FILES['file']['name'], 'FileName');
-		$session->database->commitTransaction();
-	
-	END FILE UPLOAD */
-	
 	// Perform create
 	$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
 	$content = $pathInfo['srcAtom']->create($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
