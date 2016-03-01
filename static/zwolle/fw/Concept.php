@@ -105,6 +105,13 @@ class Concept {
 		return new Atom(Concept::createNewAtomId($concept), $concept);
 	}
 	
+	public static function getDefaultViewId($concept){		
+		$concept = Concept::getConcept($concept);
+		
+		if(isset($concept['defaultViewId'])) return $concept['defaultViewId'];
+		else return null;
+	}
+	
 	public static function getConceptTableInfo($concept){
 		$conceptInfo = Concept::getConcept($concept);
 		

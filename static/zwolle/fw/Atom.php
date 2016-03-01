@@ -36,6 +36,7 @@ Class Atom {
 		$this->concept = $concept;
 		
 		// View & label
+		if(is_null($viewId)) $viewId = Concept::getDefaultViewId($this->concept); // If default viewId is specified, use it
 		if(is_null($viewId)){
 		    $this->view = null;
 		    $this->label = $this->id;
