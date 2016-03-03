@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
-    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics, safePSingleton2AAtomVal, typologies
+    , smallerConcepts, largerConcepts, genericAndSpecifics, safePSingleton2AAtomVal
     ) 
 where
 {- This file contains all functions to compute populations.

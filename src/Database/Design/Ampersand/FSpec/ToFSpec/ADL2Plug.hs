@@ -15,6 +15,103 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
 
+makeGeneratedSqlPlugs' :: Options
+              -> A_Context 
+              -> [PlugSQL]
+makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
+  where 
+    conceptTables = map makeConceptTable conceptTableParts
+    linkTables    = map makeLinkTable    linkTableParts
+    (conceptTableParts, linkTableParts) = dist (relsDefdIn context) (combine . kernels . ctxInfo $ context)
+    makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
+    makeConceptTable (cpts , dcls) = undefined
+    makeLinkTable :: Declaration -> PlugSQL
+    makeLinkTable dcl 
+         = BinSQL
+             { sqlname = unquote . name $ dcl
+             , columns = ( -- The source attribute:
+                           Att { attName = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
+                               , attExpr = srcExpr
+                               , attType = tType2SqlType . representationOf ci . source $ srcExpr
+                               , attUse  = if suitableAsKey . representationOf ci . source $ srcExpr
+                                           then ForeignKey (target srcExpr)
+                                           else PlainAttr
+                               , attNull = isTot trgExpr
+                               , attUniq = isUni trgExpr
+                               }
+                         , -- The target attribute:
+                           Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
+                               , attExpr = trgExpr
+                               , attType = tType2SqlType . representationOf ci . target $ trgExpr
+                               , attUse  = if suitableAsKey . representationOf ci . target $ trgExpr
+                                           then ForeignKey (target trgExpr)
+                                           else PlainAttr
+                               , attNull = isSur trgExpr
+                               , attUniq = isInj trgExpr
+                               }
+                          )
+             , cLkpTbl = [] --in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
+             , mLkp    = trgExpr
+          --   , sqlfpa  = NO
+             }
+    -- | when a relation r exists between two typologies, and that relation is univalent, injective and surjective,
+    --   then the concepts of both typologies may be combined into the same table. Based on this theoreme, we combine
+    --   the concepts from typologies into sets of concepts that can be implemented in a single table. 
+    --   if two lists are combined, they are concatenated such that the first list is that one of the source 
+    --   of that relation. 
+    combine :: [Typology] -> [[A_Concept]]
+    combine = f (map EDcD . relsDefdIn $ context) . map tyCpts
+      where f :: [Expression] -> [[A_Concept]] -> [[A_Concept]]
+            f [] lsts = lsts
+            f (d:ds) lsts 
+              | isUni d && isInj d && isSur d 
+                   = let (involved, notInvolved) = partition (containsSourceOrTargetOf d) lsts
+                         containsSourceOrTargetOf :: Expression -> [A_Concept] -> Bool
+                         containsSourceOrTargetOf d cpts = not . null $ concs d `isc` cpts
+                     in case involved of
+                           []   -> fatal 45 "At least one of the list should contain the source and/or target of the declaration"
+                           [x]  -> f ds lsts -- source and target of d are allready in the same list.
+                           [x,y]-> f ds ((if source d `elem` x then x++y else y++x) : notInvolved)
+                           _    -> fatal 51 "How can more than two disjunct lists of concepts contain the source and/or target of a dingle relation?"
+              | isUni d && isInj d && isTot d -- (d is not univalent, injective and surjective, but d~ is.)
+                   = f (flp d:ds) lsts
+              | otherwise 
+                   = f ds lsts
+
+    -- | dist will distribute the declarations amongst the sets of concepts. 
+    --   Preconditions: The sets of concepts are supposed to be sets of 
+    --                  concepts that are to be represented in a single table. 
+    dist :: [Declaration]   -- all declarations that are to be distributed
+         -> [[A_Concept]]   -- the sets of concepts, each one contains all concepts that will go into a single table.
+         -> ( [([A_Concept], [Declaration])]  -- tuples of a set of concepts and all declarations that can be
+                                              -- stored into that table. The order of concepts is not modified.
+            , [Declaration]  -- The declarations that cannot be stored into one of the concept tables.
+            ) 
+    dist dcls cptLists = 
+       ( [ (cpts, declsInTable cpts) | cpts <- cptLists]
+       , [ d | d <- dcls, conceptTableOf d == Nothing])
+      where
+        declsInTable cpts = [ dcl | dcl <- dcls
+                            , not . null $ maybeToList (conceptTableOf dcl) `isc` cpts ]
+        conceptTableOf :: Declaration -> Maybe A_Concept
+        conceptTableOf d =
+          case d of 
+          Isn{} -> fatal 38 "I is not expected here." -- These relations are already in the kernel
+          Vs{}  -> fatal 39 "V is not expected here" -- Vs are not implemented at all
+          Sgn{} ->
+               case (isInj d, isUni d) of
+                    (False  , False  ) -> Nothing --Will become a link-table
+                    (True   , False  ) -> Just . target $ d
+                    (False  , True   ) -> Just . source $ d
+                    (True   , True   ) ->
+                      case (isTot d, isSur d) of
+                           (False  , False  ) -> Just . target $ d
+                           (True   , False  ) -> Just . source $ d
+                           (False  , True   ) -> Just . source $ d
+                           (True   , True   ) -> Just . source $ d
+                        
+
+
 makeGeneratedSqlPlugs :: Options
               -> A_Context
               -> [Expression]
@@ -28,7 +125,7 @@ makeGeneratedSqlPlugs opts context totsurs entityDcls = gTables
         gPlugs   = makeEntityTables opts context entityDcls (relsUsedIn vsqlplugs)
         -- all plugs for relations not touched by definedplugs and gPlugs
         gLinkTables :: [PlugSQL]
-        gLinkTables = [ makeLinkTable (contextInfoOf context) dcl totsurs
+        gLinkTables = [ makeLinkTable (ctxInfo context) dcl totsurs
                       | dcl<-entityDcls
                       , Inj `notElem` properties dcl
                       , Uni `notElem` properties dcl]
@@ -301,7 +398,7 @@ makeEntityTables :: Options
                 -> [PlugSQL]
 makeEntityTables opts context allDcls exclusions
  = sortWith ((0-).length.plugAttributes)
-    (map (kernel2Plug (contextInfoOf context)) kernelsWithAttributes)
+    (map (kernel2Plug (ctxInfo context)) kernelsWithAttributes)
    where
     diagnostics
       = "\nallDcls:" ++     concat ["\n  "++showHSName r           | r<-allDcls]++
@@ -347,7 +444,7 @@ makeEntityTables opts context allDcls exclusions
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
                                   [(e,lookupC (source e),attrib e) | e <-plugMors]
           lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
-          attrib a              = rel2att (contextInfoOf context) mainkernel atts a
+          attrib a              = rel2att (ctxInfo context) mainkernel atts a
           isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]
     -- attRels contains all relations that will be attribute of a kernel.
     -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
@@ -386,7 +483,7 @@ makeUserDefinedSqlPlug :: A_Context -> ObjectDef -> PlugSQL
 makeUserDefinedSqlPlug context obj
  | null(fields obj) && isIdent(objctx obj)
     = ScalarSQL { sqlname   = unquote . name $ obj
-                , sqlColumn = rel2att (contextInfoOf context) [EDcI c] [] (EDcI c)
+                , sqlColumn = rel2att (ctxInfo context) [EDcI c] [] (EDcI c)
                 , cLkp      = c
                 }
  | null(fields obj) --TODO151210 -> assuming objctx obj is Rel{} if it is not I{}
@@ -422,7 +519,7 @@ makeUserDefinedSqlPlug context obj
      = (rels >- kernel) >- [(flp r,tp) |(r,tp)<-kernel] --note: r<-rels where r=objctx obj are ignored (objctx obj=I)
    plugMors              = kernel++attRels
    plugattributes        = [attrib r tp | (r,tp)<-plugMors]
-   attrib r tp           = (rel2att (contextInfoOf context) (map fst kernel) (map fst attRels) r){attType=tp}  --redefine sqltype
+   attrib r tp           = (rel2att (ctxInfo context) (map fst kernel) (map fst attRels) r){attType=tp}  --redefine sqltype
    conceptLookuptable    = [(target e, attrib e tp) | (e,tp)<-kernel]
    attributeLookuptable  = [(er,lookupC (source er), attrib er tp) | (er,tp)<-plugMors]
    lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']

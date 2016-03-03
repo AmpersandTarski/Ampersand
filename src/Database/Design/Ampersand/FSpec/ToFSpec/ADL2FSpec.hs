@@ -83,7 +83,6 @@ makeFSpec opts context
               , allUsedDecls = relsUsedIn context
               , allDecls     = fSpecAllDecls
               , allConcepts  = fSpecAllConcepts
-              , kernels      = kernls context
               , cptTType     = (\cpt -> representationOf contextinfo cpt)
               , fsisa        = concatMap genericAndSpecifics (gens context)
               , vpatterns    = patterns context
@@ -108,7 +107,7 @@ makeFSpec opts context
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
                                          ]
-              , contextInfo = contextinfo
+              , fcontextInfo = contextinfo
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
               , editableConcepts = editablecpts 
@@ -143,7 +142,7 @@ makeFSpec opts context
            conjConts = Set.fromList $ pairsinexpr (rc_conjunct conj)
        in  Set.toList $ vConts `Set.difference` conjConts 
 
-     contextinfo = contextInfoOf context
+     contextinfo = ctxInfo context
 
      fSpecAllConcepts = concs context
      fSpecAllDecls = relsDefdIn context

@@ -68,7 +68,7 @@ instance JSON FSpec Views where
  fromAmpersand fSpec _ = Views $ (map (fromAmpersand fSpec) 
       [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ]) --sort from spec to gen
   where
-   conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
+   conceptsFromSpecificToGeneric = concatMap (reverse . tyCpts) . kernels . fcontextInfo $ fSpec
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
   { vwJSONlabel      = vdlbl vd

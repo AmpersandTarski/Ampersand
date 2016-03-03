@@ -79,7 +79,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                                                               --   The generated relations are all generalizations and
                                                               --   one declaration for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
-                   , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
                    , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
@@ -108,7 +107,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
                    , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
                    , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
-                   , contextInfo   :: ContextInfo 
+                   , fcontextInfo   :: ContextInfo 
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    , editableConcepts :: Interface -> [A_Concept]  -- ^ All editable concepts per Interface. (See https://github.com/AmpersandTarski/ampersand/issues/211 )

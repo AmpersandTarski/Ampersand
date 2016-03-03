@@ -45,7 +45,6 @@ module Database.Design.Ampersand
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
    , (<==>),sortWith,atomValuesOf
-   , smallerConcepts, largerConcepts, rootConcepts
    -- * Functions on relations
    -- * Functions on rules
    -- * Functions on expressions:
@@ -91,6 +90,7 @@ module Database.Design.Ampersand
    , fullContents, AAtomPair, apLeft,apRight
    , Purpose(..), ExplObj(..)
    , ContextInfo,AAtomValue
+   , largerConcepts, smallerConcepts
    )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree

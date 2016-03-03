@@ -259,7 +259,6 @@ instance ShowHS FSpec where
         , wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
         , wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
         , wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fSpec)
-        , wrap ", kernels       = " indentA (\_->showHSName) (kernels fSpec)
         , wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fSpec)
         , wrap ", vviews        = " indentA (\_->showHSName) (vviews fSpec)
         , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)

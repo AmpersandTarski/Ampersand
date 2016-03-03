@@ -600,7 +600,7 @@ Based on this derivation:
   where
    singleton2SQL :: A_Concept -> PSingleton -> ValueExpr
    singleton2SQL cpt singleton = 
-     atomVal2InSQL (safePSingleton2AAtomVal (contextInfo fSpec) cpt singleton)
+     atomVal2InSQL (safePSingleton2AAtomVal (fcontextInfo fSpec) cpt singleton)
 
 atomVal2InSQL :: AAtomValue -> ValueExpr
 atomVal2InSQL val =
