@@ -33,7 +33,7 @@ class Session {
 			Concept::getConcept('SESSION');
 			
 			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-			$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
+			$expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
 			foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroyAmpersandSession($expiredSessionAtom);
 
 			// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired

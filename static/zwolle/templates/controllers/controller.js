@@ -42,7 +42,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 				.then(function(data) { // POST
 					\$rootScope.updateNotifications(data.notifications);
 					\$scope.resource['$interfaceName$'].push(Restangular.restangularizeElement(\$scope.resource, data.content, '$interfaceName$')); // Add to collection
-					showHideButtons(resource, data.invariantRulesHold, data.requestType);
+					processResponse(resource, data.invariantRulesHold, data.requestType);
 					\$location.url('/$interfaceName$/'+ data.content['_id_'], false);
 				})
 		);
@@ -100,7 +100,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 				.then(function(data){					
 					// Update visual feedback (notifications and buttons)
 					\$rootScope.updateNotifications(data.notifications);
-					showHideButtons(data.content, data.invariantRulesHold, data.requestType); // Show/hide buttons on top level resource
+					processResponse(data.content, data.invariantRulesHold, data.requestType); // Show/hide buttons on top level resource
 					
 					// Add new resource to collection/list
 					if(prepend) obj[ifc].unshift(data.content);
@@ -160,7 +160,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					
 					// Update visual feedback (notifications and buttons)
 					\$rootScope.updateNotifications(data.notifications);
-					//showHideButtons(tlResource, data.invariantRulesHold, data.requestType); // Show/hide buttons on top level resource
+					processResponse(resource, data.invariantRulesHold, data.requestType);
 					
 					// Empty loading array
 					resource['_loading_'] = new Array();					
@@ -180,8 +180,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					
 					// Update visual feedback (notifications and buttons)
 					\$rootScope.getNotifications(); // get notification again
-					// resource['_patchesCache_'] = []; // empty patches cache
-					// resource['_showButtons_'] = {'save' : false, 'cancel' : false};
+					resource['_patchesCache_'] = []; // empty patches cache
+					resource['_showButtons_'] = {'save' : false, 'cancel' : false};
 					setResourceStatus(resource, 'default'); // reset status
 					
 					// Empty loading array
@@ -359,8 +359,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		return index;
 	};
 	
-	// Show/hide save buttons
-	function showHideButtons(resource, invariantRulesHold, requestType){
+	// Process response
+	function processResponse(resource, invariantRulesHold, requestType){
 		
 		if(invariantRulesHold && requestType == 'feedback'){
 			resource['_showButtons_'] = {'save' : true, 'cancel' : true};

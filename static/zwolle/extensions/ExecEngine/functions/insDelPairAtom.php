@@ -27,7 +27,7 @@
 */
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
-	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom): ".func_num_args()." arguments", 500);
+	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function InsPair(): ".func_num_args()." arguments", 500);
 	Notifications::addLog("InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
 	try{	
 		$database = Database::singleton();
@@ -77,7 +77,7 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 */
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
-	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom): ".func_num_args()." arguments", 500);
+	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function DelPair(): ".func_num_args()." arguments", 500);
 	Notifications::addLog("DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
@@ -122,18 +122,19 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 
 */
 function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
-	Notifications::addLog("Newstruct", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
 		// We start with parsing the first one or two arguments
 		$ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
 		$AtomC = Concept::createNewAtomId($ConceptC);   // Default marker for atom-to-be-created.
+
+		Notifications::addLog("Newstruct for concept $ConceptC", 'ExecEngine');
 		
 		if (func_num_args() % 5 == 2){            // Check if name of new atom is explicitly specified
 			$AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
 		}elseif(func_num_args() % 5 != 1){       // check for valid number of arguments
-			throw new Exception("Wrong number of arguments supplied for function Newstruct($ConceptC): ".func_num_args()." arguments", 500);
+			throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
 		}
 		
 		// Then, we create a new atom of type $ConceptC
@@ -199,7 +200,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
 function InsAtom($concept){
-	if(func_num_args() != 1) throw new Exception("Wrong number of arguments supplied for function InsAtom($concept): ".func_num_args()." arguments", 500);
+	if(func_num_args() != 1) throw new Exception("Wrong number of arguments supplied for function InsAtom(): ".func_num_args()." arguments", 500);
 	Notifications::addLog("InsAtom($concept)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
@@ -222,8 +223,8 @@ function InsAtom($concept){
 */
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
 function DelAtom($concept, $atom){
-	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function DelAtom($concept, $atom): ".func_num_args()." arguments", 500);
-	Notifications::addLog("DelAtom($concept, $atom)", 'ExecEngine');
+	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function DelAtom(): ".func_num_args()." arguments", 500);
+	Notifications::addLog("DelAtom($concept,$atom)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
@@ -243,8 +244,8 @@ function DelAtom($concept, $atom){
  */
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atom>")
 function SetConcept($conceptA, $conceptB, $atom){
-	if(func_num_args() != 3) throw new Exception("Wrong number of arguments supplied for function SetConcept($conceptA, $conceptB, $atom): ".func_num_args()." arguments", 500);
-	Notifications::addLog("SetConcept($conceptA, $conceptB, $atom)", 'ExecEngine');
+	if(func_num_args() != 3) throw new Exception("Wrong number of arguments supplied for function SetConcept(): ".func_num_args()." arguments", 500);
+	Notifications::addLog("SetConcept($conceptA,$conceptB,$atom)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
@@ -263,8 +264,8 @@ function SetConcept($conceptA, $conceptB, $atom){
  */
 // Use: VIOLATION (TXT "ClearConcept;<Concept>;<atom>")
 function ClearConcept($concept, $atom){
-	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function ClearConcept($concept, $atom): ".func_num_args()." arguments", 500);
-	Notifications::addLog("ClearConcept($concept, $atom)", 'ExecEngine');
+	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function ClearConcept(): ".func_num_args()." arguments", 500);
+	Notifications::addLog("ClearConcept($concept,$atom)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 

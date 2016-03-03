@@ -3,15 +3,20 @@
 Class Atom {
 	private $database;
 	
-	// Ampersand attributes
 	public $id;
+	
+	/**
+	 * 
+	 * @var string Escaped identifier for use in queries
+	 */
+	public $idEsc;
+	
 	public $label;
 	public $view;
 	public $concept;
 	
 	private $newContent; // To temporarily store changed atom content 
 	
-	// JSON-LD attributes
 	private $jsonld_id;
 	private $jsonld_type;
 	
@@ -27,11 +32,21 @@ Class Atom {
 		
 		// Ampersand attributes
 		$this->id = $id;
+		$this->idEsc = $this->database->escape($this->id);
 		$this->concept = $concept;
 		
 		// View & label
-		$this->view = $this->getView($viewId);
-		$this->label = is_null($this->view) ? $this->id : implode($this->view); // no view? label = id
+		if(is_null($viewId)) $viewId = Concept::getDefaultViewId($this->concept); // If default viewId is specified, use it
+		if(is_null($viewId)){
+		    $this->view = null;
+		    $this->label = $this->id;
+		}else{
+		    $view = new View($viewId, $this->database);
+		    $this->view = $view->getView($this);
+		    
+		    $viewString = implode($this->view);
+		    $this->label = empty($viewString) ? $this->id : $viewString; // empty viewString => label = id
+		}
 		
 		// JSON-LD attributes
 		$this->jsonld_id = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $concept . '/' . $this->id;
@@ -81,54 +96,7 @@ Class Atom {
 		}
 		
 		return $result;
-	}
-	
-	/**
-	 * Returns components of view
-	 * @param string $viewId specifies which view to use
-	 * @throws Exception when unknown or unsupported segment type is found
-	 * @return NULL|array
-	 */
-	private function getView($viewId = null){
-		$view = Concept::getView($this->concept, $viewId);
-	
-		if(empty($view) || $this->id == ''){
-			return null;
-	
-		}else{
-			$viewStrs = array ();
-				
-			foreach ($view['segments'] as $viewSegment){
-				// text segment
-				if ($viewSegment['segmentType'] == 'Text'){
-					$viewStrs[$viewSegment['label']] = $viewSegment['Text'];
-	
-					// expressie segment
-				}elseif($viewSegment['segmentType'] == 'Exp'){
-					$idEsc = $this->database->escape($this->id);
-					$query = "SELECT DISTINCT `tgt` FROM ($viewSegment[expSQL]) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
-					$tgtAtoms = array_column($this->database->Exe($query), 'tgt');
-						
-					$txt = count($tgtAtoms) ? $tgtAtoms[0] : null;
-					$viewStrs[$viewSegment['label']] = $txt;
-	
-					// html segment
-				}elseif($viewSegment['segmentType'] == 'Html'){
-					$errorMessage = "Unsupported segmentType 'Html' in view '" . $view['label'] . "'";
-					throw new Exception($errorMessage, 501); // 501: Not implemented
-						
-					//$viewStrs[$viewSegment['label']] = $viewSegment['Html'];
-	
-					// unknown segment
-				}else{
-					$errorMessage = "Unknown segmentType '" . $viewSegment['segmentType'] . "' in view '" . $view['label'] . "'";
-					throw new Exception($errorMessage, 501); // 501: Not implemented
-				}
-			}
-			return $viewStrs;
-		}
-	}
-	
+	}	
 	
 	/**
 	 * 
@@ -152,9 +120,8 @@ Class Atom {
 		$options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
 		$options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
 		
-		$idEsc = $this->database->escape($this->id);
-		$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
-		$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
+		$query = "SELECT DISTINCT `tgt` FROM ($interface->expressionSQL) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
+		$tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
 		
 		// Check if tgtAtom is part of tgtAtoms
 		if(!is_null($tgt)){
@@ -219,7 +186,7 @@ Class Atom {
 						// _sortValues_ (if subInterface is uni)
 						if($subinterface->univalent && $options['metaData']){
 							if(is_bool($subcontent)) $sortValue = $subcontent; // property
-							elseif($subinterface->tgtConceptIsObject) $sortValue = $subcontent['_label_']; // use label to sort objects
+							elseif($subinterface->tgtConceptIsObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
 							else $sortValue = $subcontent; // scalar
 							
 							$content['_sortValues_'][$subinterface->id] = $sortValue;
@@ -246,7 +213,7 @@ Class Atom {
 							// _sortValues_ (if subInterface is uni)
 							if($subinterface->univalent && $options['metaData']){
 								if(is_bool($subcontent)) $sortValue = $subcontent; // property
-								elseif($subinterface->tgtConceptIsObject) $sortValue = $subcontent['_label_']; // use label to sort objects
+								elseif($subinterface->tgtConceptIsObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
 								else $sortValue = $subcontent; // scalar
 									
 								$content['_sortValues_'][$subinterface->id] = $sortValue;
@@ -329,6 +296,30 @@ Class Atom {
 		// Set requested state (using patches)
         $patches = is_array($data) ? $data['patches'] : array();
 		$newAtom->doPatches($interface, $pathEntry, $patches);
+		
+		// Special case for file upload
+		if($interface->tgtConcept == "FileObject"){
+		     
+		    if (is_uploaded_file($_FILES['file']['tmp_name'])){
+		        $tmp_name = $_FILES['file']['tmp_name'];
+		        $new_name = time() . '_' . $_FILES['file']['name'];
+		        $absolutePath = Config::get('absolutePath') . Config::get('uploadPath') . $new_name;
+		        $relativePath = Config::get('uploadPath') . $new_name;
+		        $result = move_uploaded_file($tmp_name, $absolutePath);
+		         
+		        if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
+		        else throw new Exception ("Error in file upload", 500);
+		        
+		        // Populate filePath and originalFileName relations in database
+		        $this->database->editUpdate('filePath', false, $newAtom->id, 'FileObject', $relativePath, 'FilePath');
+		        $this->database->editUpdate('originalFileName', false, $newAtom->id, 'FileObject', $_FILES['file']['name'], 'FileName');
+		        
+		    }else{
+		        throw new Exception ("No file uploaded", 500);
+		    }
+		    
+		    
+		}
 		
 		// Close transaction
 		$this->database->closeTransaction($newAtom->concept . ' created', false, null, false);
@@ -614,9 +605,8 @@ Class Atom {
 			// Check if tgtAtom is part of (sub)interface
 			if(!is_null($tgtAtomId)){
 			    $tgtAtom = new Atom($tgtAtomId, $ifc->tgtConcept);
-				$idEsc = $this->database->escape($srcAtom->id);
-				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '$idEsc' AND `tgt` IS NOT NULL";
-				$tgtAtomIds = array_column($this->database->Exe($query), 'tgt');
+				$query = "SELECT DISTINCT `tgt` FROM ($ifc->expressionSQL) AS `results` WHERE `src` = '{$srcAtom->idEsc}' AND `tgt` IS NOT NULL";
+				$tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
 				
 				if(!in_array($tgtAtom->id, $tgtAtomIds)) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept}]' not found", 404);
 			}else{
