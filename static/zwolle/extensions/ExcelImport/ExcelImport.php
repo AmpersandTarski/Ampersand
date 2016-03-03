@@ -109,31 +109,39 @@ class ImportExcel {
 		foreach ($data as $linenr => $values){ 
 			$totalcolumns = count($values);
 			
-			if ($linenr == 0){ // Relations:
-				for ($col = 0; $col < $totalcolumns; $col++) $relation[$col] = $values[$col];
-			}elseif ($linenr == 1){ // Concepts (and optionally: separators):
-				for ($col = 0; $col < $totalcolumns; $col++){
+			if ($linenr == 0){ // First line specifies relation names:
+				for ($col = 0; $col < $totalcolumns; $col++)
+				{	$relation[$col] = $values[$col]; // Next: check to see if there is a trailing 'flip' ('~')
+					$flipped[$col] = ( strpos($relation[$col],'~') === (strlen($relation[$col])-1) );
+					if ($flipped[$col]) $relation[$col] = substr($relation[$col],0,strlen($relation[$col])-1);
+				}
+			}elseif ($linenr == 1) // Second line specifies concepts (and optionally: separators):
+// In the Haskell importer, separators are the last character before the ']' if the concept is surrounded by such block quotes. Alternatively, you could specify a separator following such block-quotes, allowing for multiple-character separators.
+			{	for ($col = 0; $col < $totalcolumns; $col++)
 // The cell contains either 'Concept' or '[Conceptx]' where x is a separator character (e.g. ';', ',', ...)
-					if (  (strpos($values[$col], '[') === 0) // if we have a '[' at the first position
+				{	if (  (strpos($values[$col], '[') === 0) // if we have a '[' at the first position
 					   && (strrpos($values[$col], ']') === (strlen($values[$col])-1)) // and a ']' at the last position
-					   ){ // then we have a concept AND separator specification
-//					   0123456789   positions/indexes
-//					   [Concept,]   length=10, separatorpos=length-2
+					   )
+					{ // then we have a concept AND separator specification
+//						 0123456789   positions/indexes
+//						 [Concept,]   length=10, separatorpos=length-2
 						$concept[$col] = substr($values[$col], 1, strlen($values[$col])-3);
 						$separator[$col] = substr($values[$col], strlen($values[$col])-2, 1);
-					else{
-						$concept[$col] = $values[$col];
+					}else
+					{	$concept[$col] = $values[$col];
 						$separator[$col] = false;
 					}
 				}
-			}else{ // Atoms:
-				for ($col = 0; $col < $totalcolumns; $col++) $atom[$col] = $values[$col];
+			}else // All other lines specify atoms:
+			{	for ($col = 0; $col < $totalcolumns; $col++) $atom[$col] = $values[$col];
 
 				// Don't process lines that start with an empty first cell
 				if ($atom[0] == '' OR empty($atom[0])) continue;
 
-				// Check if this is an atom-create line, syntax = &atomname
-				if (strpos('&', $atom[0]) === 0){ 
+//				// Check if this is an atom-create line, syntax = &atomname
+//				if (strpos('&', $atom[0]) === 0){ 
+				// Check if this is an atom-create line, syntax = _NEW
+				if ($atom[0] === '_NEW')
 					$atom[0] = Concept::createNewAtomId($concept[0]); // Create a unique atom name
 				}
 				
@@ -153,11 +161,16 @@ class ImportExcel {
 						if ($concept[$col] == '' OR empty($concept[$col])) continue; // if no concept is specified, the contents of the cell should be ignored.
 						if ($relation[$col] == '' OR empty($relation[$col])) continue; // if no relation is specified, the contents of the cell should be ignored.
 						
-						if (strpos('&', $tgtatom) === 0){ // Check if this is an atom-create line, syntax = &atomname
-							$tgtatom = $atom[0]; // '&' copies the atom-value; useful for property-relations.
+//						if (strpos('&', $tgtatom) === 0){ // Check if this is an atom-create line, syntax = &atomname
+						if ($tgtatom) === '_NEW'){ // Check if this is an atom-create line, syntax = &atomname
+							$tgtatom = $atom[0]; // '_NEW' copies the atom-value; useful for property-relations.
 						}
 						
-						$this->insertRel($relation[$col], $atom[0], $tgtatom, $concept[0], $concept[$col]);
+						if ($flipped[$col])
+						{	$this->insertRel($relation[$col], $tgtatom, $atom[0], $concept[$col], $concept[0]);
+						}else
+						{	$this->insertRel($relation[$col], $atom[0], $tgtatom, $concept[0], $concept[$col]);
+						}
 					}
 				}
 				$atom = array();
