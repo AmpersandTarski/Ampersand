@@ -15,23 +15,24 @@ When you have a prototype running for an Ampersand context, you can import data 
 
 Let us consider a small (useless) Ampersand model, defined as follows:
 
-   rAA :: A*A [PROP]
-   rAB :: A*B [UNI]
-   rAC :: A*C
-   sAB :: A->B
-   tAD :: A*Delta
-   uBA :: B*A
+	rAA :: A*A [PROP]
+	rAB :: A*B [UNI]
+	rAC :: A*C
+	sAB :: A->B
+	tAD :: A*Delta
+	uBA :: B*A
 
 If you want to specify data elements in an Excel file in order to populate such a model, you must define so called 'blocks' that contain this data. The importer looks for such blocks throughout the Excel file (meaning that you can have blocks on different sheets - all sheets will be inspected).
 
 Here is an example of such a 'block' (note: all blocks must start in the leftmost column; if not, they are disregarded):
 
-  | [A's] |  rAA  |  rAB  |  rAC  |  rAC  |  rAC  |  sAB  |   tAD    |  uBA~ |
-  |   A   |   A   |   B   |   C   |   C   |   C   |   B   | [Delta;] |   B   |
-  | alfa1 | alfa1 | beta1 | char1 | char2 | char3 | beta2 | d1;d2;d3 | beta1 |
-  |       |  CMT  |       |       |       |       |       |          | beta2 |
-  | alfa2 |       | beta2 |       | char2 |       |       | d2 ;  d3 | beta3 |
-  | alfa3 |       |       | char4 | char3 | char2 | beta1 |   d1     |       |
+| [A's] |  rAA  |  rAB  |  rAC  |  rAC  |  rAC  |  sAB  |   tAD    |  uBA~ |
+| -- | -- | -- | -- | -- | -- | -- | -- | -- |
+|   A   |   A   |   B   |   C   |   C   |   C   |   B   | [Delta;] |   B   |
+| alfa1 | alfa1 | beta1 | char1 | char2 | char3 | beta2 | d1;d2;d3 | beta1 |
+|       |  CMT  |       |       |       |       |       |          | beta2 |
+| alfa2 |       | beta2 |       | char2 |       |       | d2 ;  d3 | beta3 |
+| alfa3 |       |       | char4 | char3 | char2 | beta1 |   d1     |       |
 
 Here is the specification of a block:
 1. A 'block' consists of 2 header rows followed by lines of data. A 'block' terminates whenever a next block starts or the end of file is reached. Empty lines are disregarded.
@@ -59,43 +60,43 @@ Data rows are interpreted as follows:
 
 This means that the example is equivalent with the following population specification (note that the cell containing 'CMT' is disregarded as it is comment):
 
-   POPULATION rAA CONTAINS [ ("alfa1"), ("alfa1") ] 
+	POPULATION rAA CONTAINS [ ("alfa1"), ("alfa1") ] 
+	
+	POPULATION rAB CONTAINS [ ("alfa1"), ("beta1") ] 
+	POPULATION rAB CONTAINS [ ("alfa2"), ("beta2") ] 
+	
+	POPULATION rAC CONTAINS [ ("alfa1"), ("char1") ] 
+	POPULATION rAC CONTAINS [ ("alfa1"), ("char2") ] 
+	POPULATION rAC CONTAINS [ ("alfa1"), ("char3") ] 
+	POPULATION rAC CONTAINS [ ("alfa2"), ("char2") ] 
+	POPULATION rAC CONTAINS [ ("alfa3"), ("char2") ] 
+	POPULATION rAC CONTAINS [ ("alfa3"), ("char3") ] 
+	POPULATION rAC CONTAINS [ ("alfa3"), ("char4") ] 
+	
+	POPULATION sAB CONTAINS [ ("alfa1"), ("beta2") ] 
+	POPULATION sAB CONTAINS [ ("alfa3"), ("beta1") ] 
+	
+	POPULATION tAD CONTAINS [ ("alfa1"), ("d1") ] 
+	POPULATION tAD CONTAINS [ ("alfa1"), ("d2") ] 
+	POPULATION tAD CONTAINS [ ("alfa1"), ("d3") ] 
+	POPULATION tAD CONTAINS [ ("alfa2"), ("d2") ] 
+	POPULATION tAD CONTAINS [ ("alfa2"), ("d3") ] 
+	POPULATION tAD CONTAINS [ ("alfa3"), ("d1") ] 
+	
+	POPULATION uBA CONTAINS [ ("beta1"), ("alfa1") ] 
+	POPULATION uBA CONTAINS [ ("beta3"), ("alfa2") ] 
 
-   POPULATION rAB CONTAINS [ ("alfa1"), ("beta1") ] 
-   POPULATION rAB CONTAINS [ ("alfa2"), ("beta2") ] 
-
-   POPULATION rAC CONTAINS [ ("alfa1"), ("char1") ] 
-   POPULATION rAC CONTAINS [ ("alfa1"), ("char2") ] 
-   POPULATION rAC CONTAINS [ ("alfa1"), ("char3") ] 
-   POPULATION rAC CONTAINS [ ("alfa2"), ("char2") ] 
-   POPULATION rAC CONTAINS [ ("alfa3"), ("char2") ] 
-   POPULATION rAC CONTAINS [ ("alfa3"), ("char3") ] 
-   POPULATION rAC CONTAINS [ ("alfa3"), ("char4") ] 
-
-   POPULATION sAB CONTAINS [ ("alfa1"), ("beta2") ] 
-   POPULATION sAB CONTAINS [ ("alfa3"), ("beta1") ] 
-
-   POPULATION tAD CONTAINS [ ("alfa1"), ("d1") ] 
-   POPULATION tAD CONTAINS [ ("alfa1"), ("d2") ] 
-   POPULATION tAD CONTAINS [ ("alfa1"), ("d3") ] 
-   POPULATION tAD CONTAINS [ ("alfa2"), ("d2") ] 
-   POPULATION tAD CONTAINS [ ("alfa2"), ("d3") ] 
-   POPULATION tAD CONTAINS [ ("alfa3"), ("d1") ] 
-
-   POPULATION uBA CONTAINS [ ("beta1"), ("alfa1") ] 
-   POPULATION uBA CONTAINS [ ("beta3"), ("alfa2") ] 
-
---[NOTES]--
-1) You need NOT know about the internals of the database to use this plugin (at least, that's the idea).
-2) You may specify formulae instead of texts. The result of the formula will be read (and converted to text) before being inserted into the database. This allows for dynamic construction of identifiers, precomputation of tables, date adaptations to the date of today, etc. Note, however, that this does not always work flawlessly. In particular, the functions `VLOOKUP` and `HLOOKUP` are known to produce errors (that we are not capable of fixing), so such functions should be avoided.
-3) If you use '_NEW' in the first column, the (dirty) identifier for the atom will be automatically generated. If you use '_NEW' in a subsequent column on the same row, this will be replaced with the (dirty) identifier for the source atom (which you can use e.g. to populate property-relations). Note that as we also support formulae, you may use those to achieve the same result (and excercise control over the actual dirty identifiers used)
-4) It is possible to store all sorts of data in the spreadsheet that will not interfere with the database population. The contents of the following cells is disregarded and can therefore be used for other purposes:
-- cells in a row whose first cell is empty.
-- cells in a column where the cell that specifies the relation name or the TGT concept is empty.
-- cells that are on other sheets than sheet 1.
-5) When you use something like 'CLASSIFY X ISA Y' in your model, and want to populate an atom 'xy', then you should populate it in the block where 'X's are populated. In this block, you can not only populate relations that have source concept X, but also relations that have source concept Y.
-6) When you use something like 'CLASSIFY X ISA Y' in your model, every atom that is an element of X must be defined (i.e.: its first appearance must be) in the block where 'X's are populated. Further down, it is allowed to add attributes to this atom in a block where 'Y's are populated
-7) When you populate a cell with a list of atoms, the separator is a single 'regular' character. Good separators include ';', ',', space, 's' (i.e. a regular character), '_', '-' etc. You cannot use a tab or multiple characters as separator.
-8) When you populate a cell with a list of atoms, the elements in the list are trimmed before being added to the population. Trimming means that leading as well as trailing whitespace etc. is removed from such elements.
+## NOTES
+1. You need NOT know about the internals of the database to use this plugin (at least, that's the idea).
+2. You may specify formulae instead of texts. The result of the formula will be read (and converted to text) before being inserted into the database. This allows for dynamic construction of identifiers, precomputation of tables, date adaptations to the date of today, etc. Note, however, that this does not always work flawlessly. In particular, the functions `VLOOKUP` and `HLOOKUP` are known to produce errors (that we are not capable of fixing), so such functions should be avoided.
+3. If you use '_NEW' in the first column, the (dirty) identifier for the atom will be automatically generated. If you use '_NEW' in a subsequent column on the same row, this will be replaced with the (dirty) identifier for the source atom (which you can use e.g. to populate property-relations). Note that as we also support formulae, you may use those to achieve the same result (and excercise control over the actual dirty identifiers used)
+4. It is possible to store all sorts of data in the spreadsheet that will not interfere with the database population. The contents of the following cells is disregarded and can therefore be used for other purposes:
+  - cells in a row whose first cell is empty.
+  - cells in a column where the cell that specifies the relation name or the TGT concept is empty.
+  - cells that are on other sheets than sheet 1.
+5. When you use something like 'CLASSIFY X ISA Y' in your model, and want to populate an atom 'xy', then you should populate it in the block where 'X's are populated. In this block, you can not only populate relations that have source concept X, but also relations that have source concept Y.
+6. When you use something like 'CLASSIFY X ISA Y' in your model, every atom that is an element of X must be defined (i.e.: its first appearance must be) in the block where 'X's are populated. Further down, it is allowed to add attributes to this atom in a block where 'Y's are populated
+7. When you populate a cell with a list of atoms, the separator is a single 'regular' character. Good separators include ';', ',', space, 's' (i.e. a regular character), '_', '-' etc. You cannot use a tab or multiple characters as separator.
+8. When you populate a cell with a list of atoms, the elements in the list are trimmed before being added to the population. Trimming means that leading as well as trailing whitespace etc. is removed from such elements.
 
 That's all, Folks!
