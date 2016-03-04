@@ -103,14 +103,14 @@ class ImportExcel {
 
 	// Output is function call: 
 	// InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)
-	private function ParseLines($data){
-		$relation = $concept = $separator = $atom = array();
+	private function ParseLines($data)
+	{	$relation = $concept = $separator = $atom = array();
 		
-		foreach ($data as $linenr => $values){ 
-			$totalcolumns = count($values);
+		foreach ($data as $linenr => $values)
+		{	$totalcolumns = count($values);
 			
-			if ($linenr == 0){ // First line specifies relation names:
-				for ($col = 0; $col < $totalcolumns; $col++)
+			if ($linenr == 0) // First line specifies relation names:
+			{	for ($col = 0; $col < $totalcolumns; $col++)
 				{	$relation[$col] = $values[$col]; // Next: check to see if there is a trailing 'flip' ('~')
 					$flipped[$col] = ( strpos($relation[$col],'~') === (strlen($relation[$col])-1) );
 					if ($flipped[$col]) $relation[$col] = substr($relation[$col],0,strlen($relation[$col])-1);
@@ -127,6 +127,7 @@ class ImportExcel {
 //						 [Concept,]   length=10, separatorpos=length-2
 						$concept[$col] = substr($values[$col], 1, strlen($values[$col])-3);
 						$separator[$col] = substr($values[$col], strlen($values[$col])-2, 1);
+						Notifications::addLog("Multiple '$concept[$col]'-atoms allowed: separator='$separator[$col]'.", 'ExcelImport');
 					}else
 					{	$concept[$col] = $values[$col];
 						$separator[$col] = false;
@@ -142,34 +143,40 @@ class ImportExcel {
 //				if (strpos('&', $atom[0]) === 0){ 
 				// Check if this is an atom-create line, syntax = _NEW
 				if ($atom[0] === '_NEW')
-					$atom[0] = Concept::createNewAtomId($concept[0]); // Create a unique atom name
+  				{	$atom[0] = Concept::createNewAtomId($concept[0]); // Create a unique atom name
+					Notifications::addLog("_NEW atom created: '$atom[0]'.", 'ExcelImport');
 				}
 				
 				// Insert $atom[0] into the DB if it does not yet exist
 				$this->addAtomToConcept($atom[0], $concept[0]);
-				for ($col = 1; $col < $totalcolumns; $col++){ // Now we transform the data info function calls:
-				    $atoms = array();
-					if ($separator[$col]){
-						$atoms = explode($separator[$col],$atom[$col]);
-					}else{
-						$atoms = $atom[$col];
+
+				for ($col = 1; $col < $totalcolumns; $col++) // Now we transform the data info function calls:
+				{	if ($atom[$col] == '' OR empty($atom[$col])) continue; // Empty cells are allowed but shouldn't do anything
+					if ($concept[$col] == '' OR empty($concept[$col])) continue; // if no concept is specified, the contents of the cell should be ignored.
+					if ($relation[$col] == '' OR empty($relation[$col])) continue; // if no relation is specified, the contents of the cell should be ignored.
+//					if (strpos('&', $tgtatom) === 0){ // Check if this is an atom-create line, syntax = &atomname
+					if ($atom[$col] === '_NEW') // Check if this is an atom-create line, syntax = &atomname
+					{	$atom[$col] = $atom[0]; // '_NEW' copies the atom-value; useful for property-relations.
 					}
-					for ($i=0; $i < count($atoms); $i++){
-						$tgtatom = $atoms[i];
+
+					$atoms = array();
+					if ($separator[$col])
+					{	$atoms = explode($separator[$col],$atom[$col]);
+					}else
+					{	$atoms[] = $atom[$col];
+					}
+					Notifications::addLog("atoms-array has length ".count($atoms), 'ExcelImport');
+					for ($i=0; $i < count($atoms); $i++)
+					{	$tgtatom = $atoms[$i];
 						$tgtatom = trim($tgtatom); // remove leading and trailing spaces, tabs, newlines, etc.
-						if ($tgtatom == '') continue; // Empty cells are allowed but shouldn't do anything
-						if ($concept[$col] == '' OR empty($concept[$col])) continue; // if no concept is specified, the contents of the cell should be ignored.
-						if ($relation[$col] == '' OR empty($relation[$col])) continue; // if no relation is specified, the contents of the cell should be ignored.
-						
-//						if (strpos('&', $tgtatom) === 0){ // Check if this is an atom-create line, syntax = &atomname
-						if ($tgtatom) === '_NEW'){ // Check if this is an atom-create line, syntax = &atomname
-							$tgtatom = $atom[0]; // '_NEW' copies the atom-value; useful for property-relations.
-						}
+						Notifications::addLog("i='$i', tgtatom='$atoms[$i]', trimmed='$tgtatom'", 'ExcelImport');
 						
 						if ($flipped[$col])
-						{	$this->insertRel($relation[$col], $tgtatom, $atom[0], $concept[$col], $concept[0]);
+						{	$this->insertRel($relation[$col],$tgtatom,$atom[0],$concept[$col],$concept[0]);
+			Notifications::addLog("flippdRel($relation[$col],$tgtatom,$atom[0],$concept[$col],$concept[0])", 'ExcelImport');
 						}else
-						{	$this->insertRel($relation[$col], $atom[0], $tgtatom, $concept[0], $concept[$col]);
+						{	$this->insertRel($relation[$col],$atom[0],$tgtatom,$concept[0],$concept[$col]);
+			Notifications::addLog("normalRel($relation[$col],$atom[0],$tgtatom,$concept[0],$concept[$col])", 'ExcelImport');
 						}
 					}
 				}
