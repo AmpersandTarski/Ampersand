@@ -17,14 +17,15 @@ import Data.List (nub,intercalate,intersect,partition,group,delete)
 
 makeGeneratedSqlPlugs' :: Options
               -> A_Context 
+              -> (Declaration -> Declaration) -- Function to add calculated properties to a declaration
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
+makeGeneratedSqlPlugs' opts context calcProps = conceptTables ++ linkTables
   where 
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
-    (conceptTableParts, linkTableParts) = dist (relsDefdIn context) (combine . kernels . ctxInfo $ context)
+    (conceptTableParts, linkTableParts) = dist calculatedDecls conceptsPerTable
     makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
     makeConceptTable (cpts , dcls) = undefined
     makeLinkTable :: Declaration -> PlugSQL
@@ -34,8 +35,8 @@ makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
              , columns = ( -- The source attribute:
                            Att { attName = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                                , attExpr = srcExpr
-                               , attType = tType2SqlType . representationOf ci . source $ srcExpr
-                               , attUse  = if suitableAsKey . representationOf ci . source $ srcExpr
+                               , attType = tType2SqlType . repr . source $ srcExpr
+                               , attUse  = if suitableAsKey . repr . source $ srcExpr
                                            then ForeignKey (target srcExpr)
                                            else PlainAttr
                                , attNull = isTot trgExpr
@@ -44,8 +45,8 @@ makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
                          , -- The target attribute:
                            Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                                , attExpr = trgExpr
-                               , attType = tType2SqlType . representationOf ci . target $ trgExpr
-                               , attUse  = if suitableAsKey . representationOf ci . target $ trgExpr
+                               , attType = tType2SqlType . repr . target $ trgExpr
+                               , attUse  = if suitableAsKey . repr . target $ trgExpr
                                            then ForeignKey (target trgExpr)
                                            else PlainAttr
                                , attNull = isSur trgExpr
@@ -56,6 +57,18 @@ makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
              , mLkp    = trgExpr
           --   , sqlfpa  = NO
              }
+      where
+       repr = representationOf (ctxInfo context)
+       --the expr for the source of r
+       srcExpr
+        | isTot dcl = EDcI (source dcl)
+        | isSur dcl = EDcI (target dcl)
+        | otherwise = let er=EDcD dcl in EDcI (source dcl) ./\. (er .:. flp er)
+       --the expr for the target of r
+       trgExpr
+        | not (isTot dcl) && isSur dcl = flp (EDcD dcl)
+        | otherwise                    = EDcD dcl
+
     -- | In some cases, concepts can be administrated in the same conceptTable. Each concept will be administrated in exactly one 
     --   conceptTable. This function returns all concepts grouped properly. 
     --   Two concepts, A and B belong in the same group iff:
@@ -65,7 +78,7 @@ makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
     --         c. All other concepts in the typology of B are more specific than B
     --      3) one of the above is true for any concept A' in the same group as A and concept B' in the same group as B.
     conceptsPerTable :: [[A_Concept]]
-    conceptsPerTable = f (map EDcD . relsDefdIn $ context) . map tyCpts . kernels . ctxInfo $ context
+    conceptsPerTable = f (map EDcD calculatedDecls) . map tyCpts . kernels . ctxInfo $ context
       where f :: [Expression] -> [[A_Concept]] -> [[A_Concept]]
             f [] lsts = lsts
             f (d:ds) lsts 
@@ -85,17 +98,16 @@ makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
                    = f (flp d:ds) lsts
               | otherwise 
                    = f ds lsts
-            smallerConcepts (gens context)
             typologies = kernels . ctxInfo $ context
-            typologyConcepts :: A_Concept -> [A_Concepts]
+            typologyConcepts :: A_Concept -> [A_Concept]
             typologyConcepts cpt = case filter (cpt `elem`) . map tyCpts $ typologies of
                                     [x] -> x
                                     _   -> fatal 87 $ name cpt ++" should be in exactly one typology" 
-            sameTypology :: [A_Concept] -> [A_Concept] -> Bool
+            sameTypology :: A_Concept -> A_Concept -> Bool
             sameTypology a b = any bothConceptsAreIn typologies
              where
                bothConceptsAreIn :: Typology -> Bool
-               bothConceptsAreIn ty = isIn ty a && isIn ty b
+               bothConceptsAreIn ty = (isIn ty a) && (isIn ty b)
                isIn :: Typology -> A_Concept -> Bool
                isIn ty cpt = cpt `elem` tyCpts ty
     -- | dist will distribute the declarations amongst the sets of concepts. 
@@ -129,7 +141,7 @@ makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
                            (True   , False  ) -> Just . source $ d
                            (False  , True   ) -> Just . source $ d
                            (True   , True   ) -> Just . source $ d
-                        
+    calculatedDecls = map calcProps $ relsDefdIn context
 
 
 makeGeneratedSqlPlugs :: Options
