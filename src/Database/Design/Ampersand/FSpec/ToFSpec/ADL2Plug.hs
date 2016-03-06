@@ -18,6 +18,8 @@ import Data.List (nub,intercalate,intersect,partition,group,delete)
 makeGeneratedSqlPlugs' :: Options
               -> A_Context 
               -> [PlugSQL]
+-- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
+--   if the set conains no concepts, a linktable is created.
 makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
   where 
     conceptTables = map makeConceptTable conceptTableParts
@@ -54,13 +56,16 @@ makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
              , mLkp    = trgExpr
           --   , sqlfpa  = NO
              }
-    -- | when a relation r exists between two typologies, and that relation is univalent, injective and surjective,
-    --   then the concepts of both typologies may be combined into the same table. Based on this theoreme, we combine
-    --   the concepts from typologies into sets of concepts that can be implemented in a single table. 
-    --   if two lists are combined, they are concatenated such that the first list is that one of the source 
-    --   of that relation. 
-    combine :: [Typology] -> [[A_Concept]]
-    combine = f (map EDcD . relsDefdIn $ context) . map tyCpts
+    -- | In some cases, concepts can be administrated in the same conceptTable. Each concept will be administrated in exactly one 
+    --   conceptTable. This function returns all concepts grouped properly. 
+    --   Two concepts, A and B belong in the same group iff:
+    --      1) They belong to the same typology or
+    --      2) a. They do no belong to the same typology and 
+    --         b. There exists an univalent, injective and surjective relation from A to B and
+    --         c. All other concepts in the typology of B are more specific than B
+    --      3) one of the above is true for any concept A' in the same group as A and concept B' in the same group as B.
+    conceptsPerTable :: [[A_Concept]]
+    conceptsPerTable = f (map EDcD . relsDefdIn $ context) . map tyCpts . kernels . ctxInfo $ context
       where f :: [Expression] -> [[A_Concept]] -> [[A_Concept]]
             f [] lsts = lsts
             f (d:ds) lsts 
@@ -71,13 +76,28 @@ makeGeneratedSqlPlugs' opts context = conceptTables ++ linkTables
                      in case involved of
                            []   -> fatal 45 "At least one of the list should contain the source and/or target of the declaration"
                            [x]  -> f ds lsts -- source and target of d are allready in the same list.
-                           [x,y]-> f ds ((if source d `elem` x then x++y else y++x) : notInvolved)
+                           [x,y] 
+                             | null ((filter (/= target d) $ typologyConcepts (target d)) >- (smallerConcepts (gens context) (source d)))
+                                -> f ds ((if source d `elem` x then x++y else y++x) : notInvolved)
+                             | otherwise -> f ds lsts
                            _    -> fatal 51 "How can more than two disjunct lists of concepts contain the source and/or target of a dingle relation?"
               | isUni d && isInj d && isTot d -- (d is not univalent, injective and surjective, but d~ is.)
                    = f (flp d:ds) lsts
               | otherwise 
                    = f ds lsts
-
+            smallerConcepts (gens context)
+            typologies = kernels . ctxInfo $ context
+            typologyConcepts :: A_Concept -> [A_Concepts]
+            typologyConcepts cpt = case filter (cpt `elem`) . map tyCpts $ typologies of
+                                    [x] -> x
+                                    _   -> fatal 87 $ name cpt ++" should be in exactly one typology" 
+            sameTypology :: [A_Concept] -> [A_Concept] -> Bool
+            sameTypology a b = any bothConceptsAreIn typologies
+             where
+               bothConceptsAreIn :: Typology -> Bool
+               bothConceptsAreIn ty = isIn ty a && isIn ty b
+               isIn :: Typology -> A_Concept -> Bool
+               isIn ty cpt = cpt `elem` tyCpts ty
     -- | dist will distribute the declarations amongst the sets of concepts. 
     --   Preconditions: The sets of concepts are supposed to be sets of 
     --                  concepts that are to be represented in a single table. 

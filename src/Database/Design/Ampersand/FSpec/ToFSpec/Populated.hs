@@ -15,8 +15,6 @@ import Data.Map hiding (null, unions,delete)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)
 import Data.List (nub,delete)
-import Database.Design.Ampersand.Classes.ConceptStructure
-import Database.Design.Ampersand.Classes.ViewPoint
   
        
        
@@ -132,16 +130,4 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
                          where 
                            av = safePSingleton2AAtomVal ci c val
 
-typologies :: A_Context -> [Typology]
-typologies context = Prelude.map mkTypology (conceptSets (concs context))
-  where
-    allGens = gens context
-    mkTypology :: [A_Concept] -> Typology
-    mkTypology cs = Typology { tyroot = rootConcepts allGens cs
-                             , tyCpts = cs
-                             } 
-    conceptSets :: [A_Concept] -> [[A_Concept]]
-    conceptSets []     = []
-    conceptSets (c:cs) = let theSet = [c] `uni` largerConcepts allGens c `uni` smallerConcepts allGens c 
-                         in theSet : conceptSets (Prelude.filter (\x -> x `notElem` theSet) cs)
     
