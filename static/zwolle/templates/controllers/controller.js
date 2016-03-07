@@ -7,11 +7,7 @@ INTERFACE "$interfaceName$" : $expAdl$ :: $source$ * $target$  ($if(!isRoot)$non
 Roles: [$roles;separator=", "$]
 Editable relations: [$editableRelations;separator=", "$] 
 $endif$*/
-AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, Restangular, \$location, \$timeout, \$localStorage, \$sessionStorage) {	
-	\$scope.loadingInterface = []; // array for promises, used by angular-busy module (loading indicator)
-	\$scope.\$localStorage = \$localStorage;
-	\$scope.\$sessionStorage = \$sessionStorage;
-	
+AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, Restangular, \$location, \$timeout) {	
 	if(typeof \$routeParams.resourceId != 'undefined') resourceId = \$routeParams.resourceId;
 	else resourceId = \$scope.\$sessionStorage.session.id;
 	
@@ -22,43 +18,30 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	 *********************************************************************************************/
 	
 	// Set requested resource
+	if(\$routeParams['new'] && '$source$' == '$target$') resourceId = '_NEW_'; // Set resourceId to special '_NEW_' value in case new resource must be created 
 	\$scope.resource = Restangular.one('resources').one('$source$', resourceId); // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
 	\$scope.resource['_path_'] = '/resources/$source$/' + resourceId;
 	\$scope.resource['_ifcEntryResource_'] = true;
-	\$scope.entryResource = \$scope.resource; // Used in templates to specify as patchOnResource
-	\$scope.resource['$interfaceName$'] = new Array();
 	
-	// Create new resource
+	// Create new resource and add data to \$scope.resource['$interfaceName$']
 	if(\$routeParams['new']){
-		if('$source$' == '$target$'){ // I[$source$] interface
-			newResource = Restangular.one('resources').one('$target$', '_NEW_');
-		}else{
-			newResource = \$scope.resource;
-		}
 		
-		// Create new resource and add data to \$scope.resource['$interfaceName$']
-		\$scope.loadingInterface.push( // shows loading indicator
-			newResource.post('$interfaceName$', {}, {requestType : \$rootScope.defaultRequestType})
-				.then(function(data) { // POST
-					\$rootScope.updateNotifications(data.notifications);
-					\$scope.resource['$interfaceName$'].push(Restangular.restangularizeElement(\$scope.resource, data.content, '$interfaceName$')); // Add to collection
-					processResponse(resource, data.invariantRulesHold, data.requestType);
-					\$location.url('/$interfaceName$/'+ data.content['_id_'], false);
-				})
-		);
+		\$scope.createResource(\$scope.resource, '$interfaceName$')
+			.then(function(data){
+				\$location.url('/$interfaceName$/'+ data.content['_id_'], false);
+			},function(reason){
+				console.log('Failed to create resource: ' + reason);
+			});
 	
 	// Get resource and add data to \$scope.resource['$interfaceName$']
-	}else{	
-		\$scope.loadingInterface.push( // shows loading indicator
-			\$scope.resource.getList('$interfaceName$', {forceList : true}).then(function(data){
-				if(\$.isEmptyObject(data.plain())){
-					\$rootScope.addInfo('No results found');
-				}else{
-					\$scope.resource['$interfaceName$'] = data;
-					\$scope.\$broadcast('interfaceDataReceived', data);
-				}
-			})
-		);
+	}else{
+		var forceList = true;
+		\$scope.getResource(\$scope.resource, '$interfaceName$', forceList)
+			.then(function(data){
+				\$scope.\$broadcast('interfaceDataReceived', data);
+			},function(reason){
+				console.log('Failed to get resource: ' + reason);
+			});	
 	}
 	
 	// Function to change location to create a new resource
@@ -71,46 +54,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	 *	CRUD functions on resources
 	 * 
 	 *********************************************************************************************/
-	
-	// Function to get a resource
-	\$scope.getResource = function (resource){
-		resource['_loading_'] = new Array();
-		resource['_loading_'].push( // shows loading indicator
-			Restangular.one(resource['_path_'])
-				.get()
-				.then(function(data){
-					// Update resource data
-					resource = data;				
-					
-					// Empty loading array
-					resource['_loading_'] = new Array();
-				})
-		);
-	}
-	
-	// Function to create a new resource and add to the colletion
-	\$scope.createResource = function (obj, ifc, prepend, requestType){		
-		if(prepend === 'undefined') var prepend = false;
-		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
-		
-		obj['_loading_'] = new Array();
-		obj['_loading_'].push( // shows loading indicator
-			Restangular.one(obj['_path_']).all(ifc)
-				.post({}, {requestType : requestType})
-				.then(function(data){					
-					// Update visual feedback (notifications and buttons)
-					\$rootScope.updateNotifications(data.notifications);
-					processResponse(data.content, data.invariantRulesHold, data.requestType); // Show/hide buttons on top level resource
-					
-					// Add new resource to collection/list
-					if(prepend) obj[ifc].unshift(data.content);
-					else obj[ifc].push(data.content);
-					
-					// Empty loading array
-					obj['_loading_'] = new Array();
-				})
-		);
-	};
 	
 	// Function to delete a resource
 	\$scope.deleteResource = function (obj, ifc, resource, requestType){
