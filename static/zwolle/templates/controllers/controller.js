@@ -240,13 +240,13 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	};
 	
 	// Function to remove an object from a certain interface (array) of a resource
-	\$scope.removeObject = function(resource, ifc, key, pathOnResource){		
+	\$scope.removeObject = function(resource, ifc, key, patchResource){		
 		// Adapt js model
 		id = resource[ifc][key]['_id_'];
 		resource[ifc].splice(key, 1);
 		
 		// Construct path
-		pathLength = pathOnResource['_path_'].length;
+		pathLength = patchResource['_path_'].length;
 		path = resource['_path_'].substring(pathLength) + '/' + ifc + '/' + id;
 		
 		// Construct patch
@@ -254,7 +254,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
-		\$scope.patchResource(pathOnResource, patches);
+		\$scope.patchResource(patchResource, patches);
 	};
 	
 	// Typeahead functionality

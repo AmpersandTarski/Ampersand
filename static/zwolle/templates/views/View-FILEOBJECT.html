@@ -10,7 +10,7 @@ $if(verbose)$<!-- View-FILEOBJECT.html "$label$" : $expAdl$ :: $source$ * $targe
 -->
 $endif$<div class="input-group">
 	<div ng-repeat="(key, row) in resource['$name$']">
-		$if(crudU)$<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, pathOnResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
+		$if(crudU)$<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
 		<a href="{{row['_view_']['filePath']}}" target="_blank">{{row['_view_']['fileName']}}</a>
 	</div>
 	$if(crudC)$<div my-showonhover-box ng-controller="uploadFileController" $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$>
