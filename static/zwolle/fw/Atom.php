@@ -31,8 +31,7 @@ Class Atom {
 		$this->database = Database::singleton();
 		
 		// Ampersand attributes
-		$this->id = $id;
-		$this->idEsc = $this->database->escape($this->id);
+		$this->setId($id);
 		$this->concept = $concept;
 		
 		// View & label
@@ -53,6 +52,16 @@ Class Atom {
 		$this->jsonld_type = Config::get('serverURL') . Config::get('apiPath') . '/concept/' . $concept;
 
 	}
+	
+	/**
+	 * 
+	 * @param string $id
+	 */
+	private function setId($id){
+	    $this->id = $id;
+		$this->idEsc = $this->database->escape($this->id);
+	}
+	
 	
 	/**
 	 * Checks if atom exists in database
@@ -284,7 +293,7 @@ Class Atom {
 		
 		// Special case for CREATE in I[Concept] interfaces
 		if($this->id === '_NEW_'){
-			$this->id = $newAtom->id;
+			$this->setId($newAtom->id);
 			$pathEntry = str_replace('_NEW_', $newAtom->id, $pathEntry);
 		}
 		
