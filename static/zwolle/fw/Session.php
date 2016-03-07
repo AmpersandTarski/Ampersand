@@ -79,20 +79,14 @@ class Session {
 		if(empty($roles)){
 			Notifications::addLog("No roles available to activate", 'SESSION');	
 		}elseif(is_null($roleIds)){
-			// TODO: insert default roles here
-			Notifications::addLog("No roles provided to activate", 'SESSION');
+			Notifications::addLog("Activate default roles", 'SESSION');
+			foreach($this->sessionRoles as &$role) $this->activateRole($role);
 		}elseif(empty($roleIds)){
 			Notifications::addLog("No roles provided to activate", 'SESSION');
 		}else{
 			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
 			foreach($this->sessionRoles as &$role){
-				if(in_array($role->id, $roleIds)){
-					$role->active = true;
-					Notifications::addLog("Role $role->id is active", 'SESSION');
-					$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
-					$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-					$this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
-				}
+				if(in_array($role->id, $roleIds)) $this->activateRole($role);
 			}
 		}
 		
@@ -110,6 +104,14 @@ class Session {
 		$this->ifcsOfActiveRoles = array_unique($this->ifcsOfActiveRoles);
 		$this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
 		$this->rulesToMaintain = array_unique($this->rulesToMaintain);
+	}
+	
+	private function activateRole(&$role){
+	    $role->active = true;
+	    Notifications::addLog("Role $role->id is active", 'SESSION');
+	    $this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
+	    $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+	    $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
 	}
 	
 	public function setInterface($interfaceId){

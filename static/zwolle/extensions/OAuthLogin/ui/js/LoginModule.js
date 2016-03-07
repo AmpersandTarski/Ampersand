@@ -23,16 +23,14 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, L
 			function(data){ // success
 				
 				$rootScope.updateNotifications(data.notifications);
+				$rootScope.deactivateAllRoles();
+				$location.path('/'); // goto home
 				
 			}, function(){ // error
 				
 			}
 		);
-		
-		$rootScope.deactivateAllRoles();
-		$location.path('/'); // goto home
 	}
-	
 });
 
 app.config(function($routeProvider) {
