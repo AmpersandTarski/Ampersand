@@ -15,6 +15,7 @@ require_once (__DIR__ . '/functions/array_column.php'); //TODO: can be removed a
 
 /* OTHER GENERIC FUNCTIONS */
 require_once (__DIR__ . '/functions/getDirectoryList.php');
+require_once (__DIR__ . '/functions/isAssoc.php');
 
 /* INCLUDES OF AMPERSAND FRAMEWORK */
 
