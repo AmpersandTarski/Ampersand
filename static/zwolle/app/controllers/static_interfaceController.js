@@ -63,11 +63,43 @@ AmpersandApp.controller('static_interfaceController', function ($scope, $rootSco
 		return deferred.promise;
 	}
 	
+	// Function to cancel edits and reset (get) resource data
+	$scope.cancelResource = function(resource){
+		var deferred = $q.defer();
+		
+		if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
+		resource['_loading_'].push( // shows loading indicator
+			Restangular.one(resource['_path_'])
+				.get()
+				.then(function(data){
+					// Update resource data
+					$.extend(resource, data);
+							
+					// Update visual feedback (notifications and buttons)
+					$rootScope.getNotifications(); // get notification again
+					initResourceMetaData(resource);
+					
+					deferred.resolve(data);
+				}, function(reason){
+					deferred.reject(reason);
+				})
+		);
+		
+		return deferred.promise;
+	};
+	
 	/**********************************************************************************************
 	 *
 	 * Helper functions
 	 *
 	 **********************************************************************************************/
+	
+	// Init/reset resource meta data
+	initResourceMetaData = function (resource){
+		resource['_showButtons_'] = {'save' : false, 'cancel' : false};
+		resource['_patchesCache_'] = [];
+		setResourceStatus(resource, 'default');
+	}
 	
 	// Process response
 	function processResponse(resource, invariantRulesHold, requestType){

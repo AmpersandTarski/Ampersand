@@ -3,7 +3,7 @@ $endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, 
 	<div class="panel-heading">
 		<div class="pull-right panel-heading-options">
 			<button type="button" class="btn btn-sm btn-warning" ng-if="resource['_showButtons_']['save']" ng-click="save(resource, 'promise')">Save</button>
-			<button type="button" class="btn btn-sm btn-danger" ng-if="resource['_showButtons_']['cancel']" ng-click="cancel(resource)">Cancel</button>
+			<button type="button" class="btn btn-sm btn-danger" ng-if="resource['_showButtons_']['cancel']" ng-click="cancelResource(resource)">Cancel</button>
 			<my-nav-to-other-interfaces ifcs="resource['_ifcs_']" resource="resource['_id_']" label="resource['_label_']"></my-nav-to-other-interfaces>
 			$if(crudD)$<button type="button" class="btn btn-sm" ng-click="deleteResource(resource)">
 				<span class="glyphicon glyphicon-trash"></span>

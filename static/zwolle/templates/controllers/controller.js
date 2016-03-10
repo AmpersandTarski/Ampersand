@@ -94,7 +94,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 				.patch(resource['_patchesCache_'], {'requestType' : requestType, 'topLevelIfc' : '$interfaceName$'})
 				.then(function(data) {
 					// Update resource data
-					
 					if(resource['_ifcEntryResource_']){
 						resource['$interfaceName$'] = data.content;
 						//tlResource = resource;
@@ -104,25 +103,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					// Update visual feedback (notifications and buttons)
 					\$rootScope.updateNotifications(data.notifications);
 					processResponse(resource, data.invariantRulesHold, data.requestType);					
-				})
-		);
-	};
-	
-	// Function to cancel edits and reset (get) resource data
-	\$scope.cancelResource = function(resource){		
-		if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
-		resource['_loading_'].push( // shows loading indicator
-			resource.get()
-				.then(function(data){
-					// Update resource data
-					resource = data;
-					// resource = \$.extend(resource, data.plain());
-					
-					// Update visual feedback (notifications and buttons)
-					\$rootScope.getNotifications(); // get notification again
-					resource['_patchesCache_'] = []; // empty patches cache
-					resource['_showButtons_'] = {'save' : false, 'cancel' : false};
-					setResourceStatus(resource, 'default'); // reset status
 				})
 		);
 	};
