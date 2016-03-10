@@ -29,9 +29,6 @@ AmpersandApp.controller('static_interfaceController', function ($scope, $rootSco
 					if(prepend) obj[ifc].unshift(data.content);
 					else obj[ifc].push(data.content);
 					
-					// Empty loading array
-					obj['_loading_'] = new Array();
-					
 					deferred.resolve(data);
 				}, function(reason){
 					deferred.reject(reason);
@@ -103,4 +100,12 @@ AmpersandApp.controller('static_interfaceController', function ($scope, $rootSco
 		// Set new status property
 		resource['_status_'][status] = true;
 	};
+	
+	$scope.noPendingPromises = function (arr){
+		if(!Array.isArray(arr)) return true; // empty array contains no pending promises
+		
+		return arr.every(function(val){
+			return val.$$state.status > 0; // promise status: 0 -> pending, 1 -> resolved, 2 -> rejected
+		});
+	}
 });

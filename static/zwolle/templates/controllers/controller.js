@@ -60,7 +60,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
 		if(confirm('Are you sure?')){
-			resource['_loading_'] = new Array();
+			if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
 			resource['_loading_'].push( // shows loading indicator
 				Restangular.one(resource['_path_'])
 					.remove({requestType : requestType})
@@ -88,7 +88,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.saveResource = function(resource, requestType){
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
 		
-		resource['_loading_'] = new Array();
+		if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
 		resource['_loading_'].push( // shows loading indicator
 			Restangular.one(resource['_path_'])
 				.patch(resource['_patchesCache_'], {'requestType' : requestType, 'topLevelIfc' : '$interfaceName$'})
@@ -103,17 +103,14 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					
 					// Update visual feedback (notifications and buttons)
 					\$rootScope.updateNotifications(data.notifications);
-					processResponse(resource, data.invariantRulesHold, data.requestType);
-					
-					// Empty loading array
-					resource['_loading_'] = new Array();					
+					processResponse(resource, data.invariantRulesHold, data.requestType);					
 				})
 		);
 	};
 	
 	// Function to cancel edits and reset (get) resource data
 	\$scope.cancelResource = function(resource){		
-		resource['_loading_'] = new Array();
+		if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
 		resource['_loading_'].push( // shows loading indicator
 			resource.get()
 				.then(function(data){
@@ -126,9 +123,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 					resource['_patchesCache_'] = []; // empty patches cache
 					resource['_showButtons_'] = {'save' : false, 'cancel' : false};
 					setResourceStatus(resource, 'default'); // reset status
-					
-					// Empty loading array
-					resource['_loading_'] = new Array();
 				})
 		);
 	};
