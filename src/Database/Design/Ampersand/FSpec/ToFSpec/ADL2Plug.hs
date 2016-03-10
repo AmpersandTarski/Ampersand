@@ -27,7 +27,39 @@ makeGeneratedSqlPlugs' opts context calcProps = conceptTables ++ linkTables
     linkTables    = map makeLinkTable    linkTableParts
     (conceptTableParts, linkTableParts) = dist calculatedDecls conceptsPerTable
     makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
-    makeConceptTable (cpts , dcls) = undefined
+    makeConceptTable (cpts , dcls) = 
+      TblSQL
+             { sqlname    = unquote . name . head $ cpts
+             , attributes = map attrib plugMors            -- Each attribute comes from a relation.
+             , cLkpTbl    = conceptLookuptable
+             , mLkpTbl    = attributeLookuptable ++ isaLookuptable
+             }
+        where
+          isaAtts = map EDcI cpts
+          atts    = map mkExpr dcls
+            where
+              mkExpr d 
+                | isSur d =       EDcD d
+                | isTot d = EFlp (EDcD d)
+          mainkernel = map EDcI kernel
+          plugMors :: [Expression]
+          plugMors = let exprs = mainkernel++atts in
+                     if (suitableAsKey . representationOf ci . target . head) exprs || True --TODO: This check might not be required here. 
+                     then exprs
+                     else -- TODO: make a nice user error of the following:
+                          fatal 360 $ "The concept `"++(name .target .head) exprs++"` would be used as primary key of its table. \n"
+                                     ++"  However, its representation ("
+                                     ++(show . representationOf ci . target . head) exprs
+                                     ++") is not suitable as a key." 
+                     
+          conceptLookuptable :: [(A_Concept,SqlAttribute)]
+          conceptLookuptable    = [(target r,attrib r) | r <-mainkernel]
+          attributeLookuptable :: [(Expression,SqlAttribute,SqlAttribute)]
+          attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
+                                  [(e,lookupC (source e),attrib e) | e <-plugMors]
+          lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
+          attrib a              = rel2att (ctxInfo context) mainkernel atts a
+          isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]
     makeLinkTable :: Declaration -> PlugSQL
     makeLinkTable dcl 
          = BinSQL
