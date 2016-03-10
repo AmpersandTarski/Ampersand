@@ -38,7 +38,7 @@ class Mutation {
 	       $database->setTrackAffectedConjuncts(false); // Don't track affected conjuncts for Mutation concept and relations;
 			
 			// New Mutation
-			$mut = $database->addAtomToConcept(Concept::createNewAtomId($mutConcept), $mutConcept);
+			$mut = $database->addAtomToConcept(Concept::createNewAtom($mutConcept));
 			
 			// Add mut info
 			$database->editUpdate('mutRelation', false, $mut, 'Mutation', $fullRelationSignature, 'Relation');

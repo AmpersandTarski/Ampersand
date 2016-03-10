@@ -185,8 +185,8 @@ class ImportExcel {
 		}
 	}
 	
-	private function addAtomToConcept($atom, $concept){
-		$this->db->addAtomToConcept($atom, $concept);
+	private function addAtomToConcept($atomId, $conceptName){
+		$this->db->addAtomToConcept(new Atom($atomId, $conceptName));
 		
 	}
 	

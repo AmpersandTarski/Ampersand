@@ -158,12 +158,16 @@ class Database {
 
 // =============================== CHANGES TO DATABASE ===========================================================
 	
-	/* Insert $newAtom into $concept
-	 * The function checks if the atom is already in the database.
+	/**
+	 * Add atom to database
+	 * @param Atom $atom
+	 * @return string
 	 */
-	// TODO: make private function
-	public function addAtomToConcept($newAtom, $concept){
-		Notifications::addLog("addAtomToConcept($newAtom, $concept)", 'DATABASE');
+	public function addAtomToConcept($atom){
+	    Notifications::addLog("addAtomToConcept({$atom->id}[{$atom->concept}])", 'DATABASE');
+	    
+	    $concept = $newAtom->concept;
+	    $newAtom = $atom->id;
 		try{
 			// this function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
@@ -341,7 +345,7 @@ class Database {
 			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
 	
 			// Ensure that the $modifiedAtom is in the concept tables for $modifiedConcept						
-			$this->addAtomToConcept($modifiedAtom, $modifiedConcept);
+			$this->addAtomToConcept(new Atom($modifiedAtom, $modifiedConcept));
 			
 			// Escape atoms for use in query
 			$modifiedAtomEsc = $this->escape($modifiedAtom); 

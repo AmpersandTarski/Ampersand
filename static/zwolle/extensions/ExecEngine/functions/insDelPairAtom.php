@@ -37,27 +37,19 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
-		// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
+		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
 		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'InsPair ignored because src and/or tgt atom is _NULL';
 		
-		// if srcAtom is specified as _NEW, a new atom of srcConcept is created
-	    if($srcAtom == "_NEW"){
-			$srcAtom = $database->addAtomToConcept(Concept::createNewAtomId($srcConcept), $srcConcept);
-		}else{
-			$database->addAtomToConcept($srcAtom, $srcConcept);
-		}
+		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
+	    if($srcAtom == "_NEW") $srcAtom = Concept::createNewAtomId($srcConcept);
 		
 		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
-		if($tgtAtom == "_NEW"){
-			$tgtAtom = $database->addAtomToConcept(Concept::createNewAtomId($tgtConcept), $tgtConcept);
-		}else{
-			$database->addAtomToConcept($tgtAtom, $tgtConcept);
-		}
+		if($tgtAtom == "_NEW"){ $tgtAtom = Concept::createNewAtomId($tgtConcept);
 		
-		$srcAtoms = explode('_AND', $srcAtom);
-		$tgtAtoms = explode('_AND', $tgtAtom);
-		foreach($srcAtoms as $a){
-			foreach($tgtAtoms as $b){
+		$srcAtomIds = explode('_AND', $srcAtom);
+		$tgtAtomIds = explode('_AND', $tgtAtom);
+		foreach($srcAtomIds as $a){
+			foreach($tgtAtomIds as $b){
 				$database->editUpdate($relation, false, $a, $srcConcept, $b, $tgtConcept, null, 'ExecEngine');
 			}
 		}
@@ -138,7 +130,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		}
 		
 		// Then, we create a new atom of type $ConceptC
-		$database->addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
+		$database->addAtomToConcept(new Atom($AtomC, $ConceptC));     // insert new atom in database
 	
 		// Next, for every relation that follows in the argument list, we create a link
 		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
@@ -206,7 +198,7 @@ function InsAtom($concept){
 		$database = Database::singleton();
 		
 		$atom = Concept::createNewAtomId($concept);
-		$database->addAtomToConcept($atom, $concept); // insert new atom in database
+		$database->addAtomToConcept(new Atom($atom, $concept)); // insert new atom in database
 		
 		return "Atom '".$atom."' added to concept '". $concept . "'";
 		

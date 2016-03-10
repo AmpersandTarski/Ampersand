@@ -38,7 +38,7 @@ class Session {
 			// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
 			$sessionAtom = new Atom($this->id, 'SESSION');
 			if (!$sessionAtom->atomExists()){ 
-				$this->database->addAtomToConcept($this->id, 'SESSION');
+				$this->database->addAtomToConcept($sessionAtom);
 				$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
 			}
 

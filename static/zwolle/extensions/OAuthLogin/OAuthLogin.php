@@ -142,7 +142,7 @@ class OAuthLoginController {
 				// create new user
 				if(empty($accounts)){
 					$newAccount = Concept::createNewAtomId('Account');
-					$db->addAtomToConcept($newAccount, 'Account');
+					$db->addAtomToConcept($newAccount);
 					$db->editUpdate('accUserid', false, $newAccount, 'Account', $email, 'UserID');
 
 					// add to Organization

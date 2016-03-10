@@ -241,7 +241,7 @@ class InterfaceObject {
 	
 	    // Perform create
 	    $newAtom = Concept::createNewAtom($this->tgtConcept);
-	    $this->database->addAtomToConcept($newAtom->id, $newAtom->concept);
+	    $this->database->addAtomToConcept($newAtom);
 	
 	    // Special case for CREATE in I[Concept] interfaces
 	    if($this->srcAtom->id === '_NEW_'){
