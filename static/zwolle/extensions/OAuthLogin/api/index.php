@@ -86,7 +86,7 @@ $app->get('/logout', function () use ($app){
 		
 	$session->database->deleteAtom(session_id(), 'SESSION');
 		
-	$session->database->closeTransaction('Logout successfull', false, true, false);
+	$session->database->closeTransaction('Logout successfull', false, true);
 		
 	$result = array('notifications' => Notifications::getAll());
 	

@@ -1,6 +1,10 @@
 <?php
 
-/** RESOURCE CALLS without INTERFACES ***************************************************************/
+/**************************************************************************************************
+ *
+ * resource calls WITHOUT interfaces
+ *
+ *************************************************************************************************/
 
 $app->get('/resources', function() use ($app) {
 	if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
@@ -45,7 +49,11 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 });
 
 
-/** RESOURCE CALLS with INTERFACES ***************************************************************/
+/**************************************************************************************************
+ *
+ * resource calls WITH interfaces
+ *
+ *************************************************************************************************/
 
 $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
 	$session = Session::singleton();
@@ -57,13 +65,9 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	$ifcPath = implode ('/', $ifcPath);
 
 	$atom = new Atom($resourceId, $resourceType);
-	$pathInfo = $atom->walkIfcPath($ifcPath);
+	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 
-	// Checks
-	if(!$pathInfo['ifc']->crudR) throw new Exception ("Read not allowed for '$ifcPath'", 405);
-
-	$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
-	$content = $pathInfo['srcAtom']->getContent($pathInfo['ifc'], $pathEntry, $pathInfo['tgtAtom']->id, $options);
+	$content = $atomOrIfc->getContent($options);
 	
 	// If force list option is provided, make sure to return an array
 	if($options['forceList'] && isAssoc($content)) $content = array($content);
@@ -80,39 +84,21 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	$session = Session::singleton();
 	
 	$roleIds = $app->request->params('roleIds');
-	$session->activateRoles($roleIds);
-	
+	$topLevelIfcId = $app->request->params('topLevelIfc');
 	$options = $app->request->params();
 	
+	$session->activateRoles($roleIds);
+	   
+	if(empty($ifcPath) && empty($topLevelIfcId)) throw new Exception ("Parameter 'topLevelIfc' is required to return data when no interface path is specified", 400);
+	
+	$ifcPath = implode ('/', $ifcPath);
+	
 	$atom = new Atom($resourceId, $resourceType);
+	$atom->topLevelIfcId = $topLevelIfcId;
+	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 	
-	if(!empty($ifcPath)){
-		$ifcPath = implode ('/', $ifcPath);
-		$pathInfo = $atom->walkIfcPath($ifcPath);
-		$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
-		
-		// Checks
-		if(is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot patch '$ifcPath'. Missing resource identifier", 405);
-		
-		// Perform patch(es)	
-		$pathInfo['tgtAtom']->patch($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
-	
-		// Get content of patched atom TODO: make sure that content is also returned when database was not committed
-		$content = $pathInfo['srcAtom']->getContent($pathInfo['ifc'], $pathEntry, $pathInfo['tgtAtom']->id, $options);
-	
-	}else{		
-		// Checks
-		if(is_null($app->request->params('topLevelIfc'))) throw new Exception ("Top level interface required, but not specified", 400);
-		
-		// Perform patch(es)
-		$atom->patch(null, '', $app->request->getBody(), $options);
-		
-		// Get content of patched atom TODO: make sure that content is also returned when database was not committed
-		$ifc = new InterfaceObject($app->request->params('topLevelIfc'));
-		$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifc->id;
-		$content = $atom->getContent($ifc, $pathEntry, null, $options);
-	
-	}
+	// Perform patch(es)
+	$content = $atomOrIfc->patch($app->request->getBody(), $options);
 	
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
@@ -136,16 +122,10 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 	$ifcPath = implode ('/', $ifcPath);
 
 	$atom = new Atom($resourceId, $resourceType);
-	$pathInfo = $atom->walkIfcPath($ifcPath);
-	
-	// Checks
-	if(!is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot create in '$ifcPath'. Path ends with resource", 405);
-	if(!$pathInfo['ifc']->crudC) throw new Exception ("Create not allowed for '$ifcPath'", 405);
-	if(!$pathInfo['ifc']->tgtConceptIsObject) throw new Exception ("Cannot create non-object {$pathInfo['ifc']->tgtConcept}. Use PUT or PATCH instead", 405);
+	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 	
 	// Perform create
-	$pathEntry = '/resources/' . $resourceType . '/' . $resourceId . '/' . $ifcPath;
-	$content = $pathInfo['srcAtom']->create($pathInfo['ifc'], $pathEntry, $app->request->getBody(), $options);
+	$content = $atomOrIfc->create($app->request->getBody(), $options);
 
 	// Return result
 	$result = array ( 'content' 			=> $content
@@ -167,16 +147,10 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
 	$ifcPath = implode ('/', $ifcPath);
 
 	$atom = new Atom($resourceId, $resourceType);
-
-	$pathInfo = $atom->walkIfcPath($ifcPath);
-
-	// Checks
-	if(is_null($pathInfo['tgtAtom'])) throw new Exception ("Cannot delete from '$ifcPath'. Missing resource identifier", 405);
-	if(!$pathInfo['ifc']->crudD) throw new Exception ("Delete not allowed for '$ifcPath'", 405);
-	if(!$pathInfo['ifc']->tgtConceptIsObject) throw new Exception ("Cannot delete non-object {$pathInfo['ifc']->tgtConcept}. Use PUT or PATCH instead", 405);
+	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 
 	// Perform delete
-	$pathInfo['tgtAtom']->delete($options);
+	$atomOrIfc->delete($options);
 
 	// Return result
 	$result = array ( 'notifications' 		=> Notifications::getAll()

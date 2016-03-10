@@ -53,7 +53,7 @@ $app->get('/run', function () use ($app){
 		
 	ExecEngine::run(true);
 	
-	$session->database->closeTransaction('Run completed',false,true,false);
+	$session->database->closeTransaction('Run completed',false,true);
 		
 	$result = array('notifications' => Notifications::getAll());
 	

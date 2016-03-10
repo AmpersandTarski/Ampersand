@@ -10,7 +10,6 @@ class Session {
 	public $database;
 	public $interface;
 	public $viewer;
-	public $atom;
 	
 	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
 	
@@ -114,19 +113,6 @@ class Session {
 	    $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
 	}
 	
-	public function setInterface($interfaceId){
-		
-		if(isset($interfaceId)) {
-			if(!$this->isAccessibleIfc($interfaceId)) throw new Exception("Interface is not accessible for active roles or accessible roles (login)", 401); // 401: Unauthorized
-			
-			$this->interface = new InterfaceObject($interfaceId);
-			Notifications::addLog("Interface '". $this->interface->label . "' selected", 'SESSION');
-				
-		}else{
-			throw new Exception('No interface specified', 404);
-		}
-	}
-	
 	public function getSessionRoles(){
 		if(isset($this->sessionRoles)){
 			return $this->sessionRoles;
@@ -135,10 +121,9 @@ class Session {
 				$sessionRoleLabels = array();
 				$sessionRoles = array();
 				
-				$interface = new InterfaceObject('SessionRoles');
 				$session = new Atom(session_id(), 'SESSION');
 				$options = array('metaData' => false, 'navIfc' => true);
-				$sessionRoleLabels = array_column((array)$session->getContent($interface, $interface->id, null, $options), '_id_');
+				$sessionRoleLabels = array_column((array)$session->ifc('SessionRoles')->getContent(null, $options), '_id_');
 				
 				foreach(Role::getAllRoleObjects() as $role){
 					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
@@ -157,9 +142,8 @@ class Session {
 			self::$sessionAccountId = false;
 		
 		}else{
-			$ifc = new InterfaceObject('SessionAccount');
 			$session = new Atom(session_id(), 'SESSION');
-			$sessionAccounts = array_column((array)$session->getContent($ifc, $ifc->id), '_id_');
+			$sessionAccounts = array_column((array)$session->ifc('SessionAccount')->getContent(), '_id_');
 				
 			if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
 			if(empty($sessionAccounts)){
@@ -207,10 +191,9 @@ class Session {
 		
 		}else{
 			try {
-				$ifc = new InterfaceObject('SessionVars');
 				$session = new Atom(session_id(), 'SESSION');
 				$options = array('metaData' => false, 'navIfc' => false);
-				return $session->getContent($ifc, $ifc->id, $session->id, $options);
+				return $session->ifc('SessionVars')->getContent($session->id, $options);
 			}catch (Exception $e){
 				return false;
 			}		

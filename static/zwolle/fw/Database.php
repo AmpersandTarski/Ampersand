@@ -104,7 +104,7 @@ class Database {
 		
 		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
 		
-		$this->closeTransaction('Database successfully reinstalled', true, true, false);
+		$this->closeTransaction('Database successfully reinstalled', true, true);
 		
 		if (version_compare(PHP_VERSION, '5.6', '<')) {
 		   Notifications::addError("Support for PHP version <= 5.5 will stop in the summer of 2016. Please upgrade to 5.6. Note! Ampersand framework does not support PHP 7 yet. You are on version: " . PHP_VERSION, 500);
@@ -539,10 +539,10 @@ class Database {
 	 * @param string $succesMessage specifies success/info message when invariants hold
 	 * @param boolean $checkAllConjucts specifies to check all (true) or only the affected conjuncts (false)
 	 * @param boolean $databaseCommit specifies to commit (true) or rollback (false) when all invariants hold
-	 * @param boolean $setNewContent specifies to set the new content of the updated $session->atom
+	 * @param Atom $atomStoreNewContent specifies to store the new content for the updated/created atom
 	 * @return boolean specifies if invariant rules hold (true) or not (false)
 	 */
-	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = null, $setNewContent = true){
+	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = null, $atomStoreNewContent = null){
 		$session = Session::singleton();
 		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
@@ -574,7 +574,7 @@ class Database {
 		unset($this->affectedConcepts, $this->affectedRelations);
 		$this->affectedConcepts = array(); $this->affectedRelations = array();
 		
-		if($setNewContent && isset($session->atom)) $session->atom->setNewContent($session->interface); // e.g. not needed in Atom::delete() function
+		if(!is_null($atomStoreNewContent)) $atomStoreNewContent->setStoredContent();
 		
 		// Determine if transaction should be committed or not when all invariant rules hold based on $requestType
 		if(is_null($databaseCommit)) $databaseCommit = $this->processRequestType();
