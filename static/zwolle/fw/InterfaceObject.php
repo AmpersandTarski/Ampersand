@@ -139,10 +139,23 @@ class InterfaceObject {
 	 * 
 	 *********************************************************************************************/
 	public function atom($atomId){
-	    // Check if tgtAtom is part of tgtAtoms of interface
-	    if(!in_array($atomId, $this->getTgtAtomIds())) throw new Exception ("Resource '{$atomId}[{$this->tgtConcept}]' not found", 404);
+	    $atom = new Atom($atomId, $this->tgtConcept, $this->viewId, $this);
 	    
-	    $this->tgtAtom = new Atom($atomId, $this->tgtConcept, $this->viewId, $this);
+	    // Check if tgtAtom is part of tgtAtoms of interface
+	    if(in_array($atomId, $this->getTgtAtomIds())) $this->tgtAtom = $atom;
+	    
+	    // Check if atom does not exist and if it may be created here
+	    elseif(!$atom->atomExists() && $this->crudC){
+	        // If interface expression is a relation, add tuple($this->srcAtom, $atom) in this relation
+	        if($this->relation) $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $atom);
+	        // Else only create atom
+	        else $this->database->addAtomToConcept($atom);
+	        
+	        $this->tgtAtom = $atom;
+	    }
+	    // Else throw exception
+	    else throw new Exception ("Resource '{$atom->id}[{$atom->concept}]' not found", 404);
+	    
 	    return $this->tgtAtom;
 	}
 	
