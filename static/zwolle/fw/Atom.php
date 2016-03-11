@@ -375,7 +375,7 @@ Class Atom {
 						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
 				}
 			}catch (Exception $e){
-				Notifications::addError($e->getMessage());
+				Notifications::addErrorException($e);
 				$errorCount++;
 			}
 		}

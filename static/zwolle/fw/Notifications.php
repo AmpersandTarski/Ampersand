@@ -23,7 +23,23 @@ class Notifications {
 		self::$errors[$errorHash]['message'] = $message;
 		self::$errors[$errorHash]['code'] = $code;
 		self::$errors[$errorHash]['count']++;
+		// Provide backtrace only for the first time of this error occurrence to safe memory
+		if(Config::get('debugMode') && self::$errors[$errorHash]['count'] <= 1) self::$errors[$errorHash]['details'] = '<pre>' . print_r(debug_backtrace(), true) . '</pre>';
 		self::addLog($message, 'ERROR');
+	}
+	
+	/**
+	 * 
+	 * @param Exception $e
+	 */
+	public static function addErrorException($e){
+	    $errorHash = hash('md5', $e->getMessage());
+	    
+	    self::$errors[$errorHash]['message'] = $e->getMessage();
+	    self::$errors[$errorHash]['code'] = $e->getCode();
+	    self::$errors[$errorHash]['count']++;
+	    if(Config::get('debugMode')) self::$errors[$errorHash]['details'] = nl2br($e->getTraceAsString());
+	    self::addLog($e->getMessage(), 'ERROR');
 	}
 	
 	public static function addInvariant($rule, $srcAtom, $tgtAtom){

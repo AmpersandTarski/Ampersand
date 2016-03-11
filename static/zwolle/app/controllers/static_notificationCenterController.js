@@ -37,10 +37,10 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		});
 	}
 	
-	$rootScope.addError = function(message, code, persistent, html){
+	$rootScope.addError = function(message, code, persistent, details){
 		code = typeof code !== undefined ? code : null;
 		persistent = typeof persistent !== undefined ? persistent : false;
-		html = typeof html !== undefined ? html : false;
+		details = typeof details !== undefined ? details : false;
 		
 		alreadyExists = false;
 		arr = $rootScope.notifications.errors;
@@ -49,11 +49,11 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 				arr[i].count += 1;
 				arr[i].code = code;
 				arr[i].persistent = persistent;
-				arr[i].html = html
+				arr[i].details = details
 				alreadyExists = true;
 			}
 		}
-		if(!alreadyExists) $rootScope.notifications.errors.push( {'message' : message, 'code' : code, 'count' : 1, 'persistent' : persistent, 'html' : html} );
+		if(!alreadyExists) $rootScope.notifications.errors.push( {'message' : message, 'code' : code, 'count' : 1, 'persistent' : persistent, 'details' : details} );
 	}
 	
 	$rootScope.addInfo = function(message){

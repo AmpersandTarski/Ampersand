@@ -63,8 +63,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     		$rootScope.addError(message, response.status, true);
     	}else{
     		var message = response.status + ' ' + response.statusText;
-    		var html = response.data;
-    		$rootScope.addError(message, response.status, true, html);
+    		var details = response.data; // html content is excepted
+    		$rootScope.addError(message, response.status, true, details);
     	}
     	
     	return true; // proceed with success or error hooks of promise

@@ -321,7 +321,7 @@ class Database {
 			
 		}catch(Exception $e){
 			// Catch exception and continue script
-			Notifications::addError($e->getMessage());
+			Notifications::addErrorException($e);
 		}
 	}
 	
@@ -501,7 +501,7 @@ class Database {
 	
 		}catch(Exception $e){
 			// Catch exception and continue script
-			Notifications::addError($e->getMessage());
+			Notifications::addErrorException($e);
 		}
 	}
 	
@@ -570,7 +570,7 @@ class Database {
 			
 		}catch(Exception $e){
 			// Catch exception and continue script
-			Notifications::addError($e->getMessage());
+			Notifications::addErrorException($e);
 		}
 
 	}
@@ -614,7 +614,7 @@ class Database {
 			Hooks::callHooks('postDatabaseDeleteAtom', get_defined_vars());
 		}catch(Exception $e){
 			// Catch exception and continue script
-			Notifications::addError($e->getMessage());
+			Notifications::addErrorException($e);
 		}
 	}
 	

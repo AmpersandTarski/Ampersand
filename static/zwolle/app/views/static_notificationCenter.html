@@ -26,8 +26,8 @@
 					</div>
 				</div>
 				<div class="panel-body collapse" id="error-body-{{key}}">
-					<div ng-if="error.html" ng-bind-html="error.html | unsafe"></div>
-					<div ng-if="!error.html">Please contact the application administrator for more information.</div>
+					<div ng-if="error.details" ng-bind-html="error.details | unsafe"></div>
+					<div ng-if="!error.details">Please contact the application administrator for more information.</div>
 				</div>
 			</div>
 		</div>
