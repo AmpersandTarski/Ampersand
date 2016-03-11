@@ -8,7 +8,8 @@ in a specific domain (called a {\em context})
 by disclosing and maintaining factual information (represented by {\em data}).
 For example, a customer relationship management (CRM) system for ECME Inc.\ should contain factual information, in order to be a reliable tool for people working for ECME.
 Its context is ECME Inc., in particular its customer base.
-Users are undoubtedly employees of ECME Inc., but each customer with access to this information is considered a user just as well.
+Everybody with access to this data is considered a user.
+One might expect the user base to consist largely of employees of ECME Inc.
 
 People use language in order to ask, to command, to state facts and in general to communicate things verbally.
 Since an information system is supposed to contain facts, we take a special interest in affirmative sentences.
