@@ -62,7 +62,7 @@ class Session {
 	
 	private function destroyAmpersandSession($sessionAtom){
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
-		$this->database->deleteAtom($sessionAtom, 'SESSION');
+		$this->database->deleteAtom(new Atom($sessionAtom, 'SESSION'));
 		$this->database->commitTransaction();
 	}
 	

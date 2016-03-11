@@ -104,7 +104,7 @@ Class Atom {
 	 */
 	public function setId($id){
 	    $this->id = $id;
-		$this->idEsc = $this->database->escape($this->id);
+		$this->idEsc = $this->database->escape($this->database->typeConversion($this));
 		
 		if(is_null($this->parentIfc)){
 		  $this->path = 'resources/' . $this->concept . '/' . $this->id;
@@ -130,8 +130,7 @@ Class Atom {
 	public function atomExists(){
 		if($this->id === '_NEW_') return true; // Return true if id is '_NEW_' (special case)
 		
-		// Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE' (relevant for all scalars)
-		return $this->database->atomExists($this->id, $this->concept);
+		return $this->database->atomExists($this);
 	}
 	
 	
@@ -332,13 +331,12 @@ Class Atom {
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 	
 	    // Perform delete
-	    $this->database->deleteAtom($this->id, $this->concept);
+	    $this->database->deleteAtom($this);
 	
 	    // Close transaction
 	    $this->database->closeTransaction($this->concept . ' deleted', false, null);
 	
 	    return;
-	
 	}
 	
 /**************************************************************************************************
@@ -410,9 +408,7 @@ Class Atom {
 
 	public function doPatchRemove(){
 	    $ifc = $this->parentIfc;
-	    $src = $this->parentIfc->srcAtom;
-	    $tgt = $this;
-	    
+	   
 	    // CRUD check
 	    if(!$ifc->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
 	    
@@ -424,13 +420,13 @@ Class Atom {
 		// Interface is a relation to an object
 		}elseif($ifc->tgtConceptIsObject){
 			
-			$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $tgt->id, $ifc->tgtConcept);
+			$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $this->parentIfc->srcAtom, $this);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
 		}elseif(!$ifc->tgtConceptIsObject){
 			if($ifc->univalent) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
 			
-			$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $src->id, $ifc->srcConcept, $tgt->id, $ifc->tgtConcept);
+			$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $this->parentIfc->srcAtom, $this);
 			
 		}else{
 			throw new Exception ("Unknown patch add. Please contact the application administrator", 500);

@@ -1,22 +1,85 @@
 <?php
 
-class Database {	
+class Database {
+    /**
+     * Contains a connection to the mysql database
+     */
 	private $db_link;
+	
+	/**
+	 * Host/server of mysql database
+	 * @var string
+	 */
 	private $db_host;
+	
+	/**
+	 * Username for mysql database
+	 * @var string
+	 */
 	private $db_user;
+	
+	/**
+	 * Password for mysql database
+	 * @var string
+	 */
 	private $db_pass;
+	
+	/**
+	 * Database name
+	 * @var string
+	 */
 	private $db_name;
 	
+	/**
+	 * Specifies transaction number (random int) when a transaction is started
+	 * @var int
+	 */
 	private $transaction;
+	
+	/**
+	 * Specifes if affected conjuncts should be registered
+	 * @var boolean
+	 */
 	private $trackAffectedConjuncts = true;
-	private $affectedConcepts = array(); // array with all affected Concepts during a transaction.
-	private $affectedRelations = array(); // array with all affected Relations during a transaction (must be fullRelationSignature! i.e. rel_<relationName>_<srcConcept>_<tgtConcept>).
-	private $invariantRulesHold = null; // boolean true/false or null if not set (i.e. no transaction has occurred)
+	
+	/**
+	 * Contains all affected Concepts during a transaction
+	 * @var array
+	 */
+	private $affectedConcepts = array();
+	
+	/**
+	 * Contains all affected relations during a transaction
+	 * Relations are specified with their 'fullRelationSignature' (i.e. 'rel_<relationName>_<srcConcept>_<tgtConcept>')
+	 * @var array
+	 */
+	private $affectedRelations = array(); // 
+	
+	/**
+	 * Specifies if invariant rules hold. Null if no transaction has occurred (yet)
+	 * @var boolean|NULL
+	 */
+	private $invariantRulesHold = null;
+	
+	/**
+	 * Specifies requested transaction type (i.e. 'feedback' or 'promise')
+	 * @var string
+	 */
 	private $requestType = 'feedback';
 	
+	/**
+	 * Contains reference to database instance (singleton pattern)
+	 * @var Database
+	 */
 	private static $_instance = null;
 	
-	// Prevent any outside instantiation of this object
+	/**
+	 * Constructor of database class
+	 * Singleton pattern: private function to prevent any outside instantiantion of this object. 
+	 * Use Database::singleton() instead
+	 * 
+	 * @throws Exception
+	 */
 	private function __construct(){
 	    try{
     	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
@@ -39,16 +102,28 @@ class Database {
 		}
 	}
 	
-	// Prevent any copy of this object
+	/**
+	 * Singleton pattern: private function to prevent any copy/clone of database instance
+	 * Use Database::singleton() instead
+	 */
 	private function __clone(){
 		
 	}
 	
+	/**
+	 * Function to return the database instance
+	 * @return Database
+	 */
 	public static function singleton(){
 		if(!is_object (self::$_instance) ) self::$_instance = new Database();
 		return self::$_instance;
 	}
 	
+	/**
+	 * Function to create new database. Drops database (and loose all data) if already exists
+	 * @throws Exception
+	 * @return void
+	 */
 	public static function createDB(){
 	    try{
     		$DB_host = Config::get('dbHost', 'mysqlDatabase');
@@ -74,6 +149,10 @@ class Database {
 		}
 	}
 	
+	/**
+	 * Function to select database
+	 * @return void
+	 */
 	private function selectDB(){
 		try{
 	        $this->db_link->select_db($this->db_name);
@@ -82,6 +161,10 @@ class Database {
 	    }
 	}
 	
+	/**
+	 * Function to reinstall database structure and load default population
+	 * @return void
+	 */
 	public function reinstallDB(){
 		$queries = file_get_contents(__DIR__ . '/../generics/mysql-installer.json');
 		$queries = json_decode($queries, true);
@@ -111,11 +194,15 @@ class Database {
 		}
 	}
 	
-	/*
-	 *  TODO: 
-	 *  Create private equivalent that is used by addAtomToConcept(), editUpdate(), editDelete() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
-	 *  The public version should be allowed to only do SELECT queries.
-	 *  This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
+	/**
+	 * Execute query on database. Function replaces reserved words by their corresponding value (e.g. _SESSION)
+	 * @param string $query
+	 * @return boolean|array
+	 * 
+	 * TODO:
+	 * Create private equivalent that is used by addAtomToConcept(), editUpdate(), editDelete() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
+	 * The public version should be allowed to only do SELECT queries.
+	 * This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
 	 */
 	public function Exe($query){
 		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
@@ -135,6 +222,12 @@ class Database {
 		
 	}
 	
+	/**
+	 * Execute query on database.
+	 * @param string $query
+	 * @return mixed
+	 * @throws Exception
+	 */
 	private function doQuery($query){
 	    try{
 	        return $this->db_link->query($query);
@@ -144,69 +237,87 @@ class Database {
         }
 	}
 	
-	/*
-	 * See:
-	 * - http://php.net/manual/en/language.types.string.php#language.types.string.parsing
-	 * - http://php.net/manual/en/mysqli.real-escape-string.php
+	/**
+	 * Function to escape identifiers for use in database queries 
+	 * @param string $escapestr
+	 * @return NULL|string
 	 * 
+	 * http://php.net/manual/en/language.types.string.php#language.types.string.parsing
+	 * http://php.net/manual/en/mysqli.real-escape-string.php
 	 */
-	public function escape($param){
-		if(is_null($param)) return null;
-		else return $this->db_link->real_escape_string($param);
+	public function escape($escapestr){
+		if(is_null($escapestr)) return null;
+		else return $this->db_link->real_escape_string($escapestr);
 	}
 	
+	/**
+	 * Check if atom exists in database
+	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
+	 * @param Atom $atom
+	 * @return boolean
+	 */
+	public function atomExists($atom){
+	    $tableInfo = Concept::getConceptTableInfo($atom->concept);
+	    $table = $tableInfo['table'];
+	    $conceptCol = $tableInfo['cols'][0];
+	
+	    $query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '{$atom->idEsc}'";
+	    $result = $this->Exe($query);
+	
+	    if(empty($result)) return false;
+	    else return true;
+	}
 
-// =============================== CHANGES TO DATABASE ===========================================================
+/**************************************************************************************************
+ *
+ * Functions to perform database transactions
+ *
+ *************************************************************************************************/
 	
 	/**
 	 * Add atom to database
 	 * @param Atom $atom
-	 * @return string
+	 * @return void
 	 */
 	public function addAtomToConcept($atom){
 	    Notifications::addLog("addAtomToConcept({$atom->id}[{$atom->concept}])", 'DATABASE');
 	    
-	    $concept = $newAtom->concept;
-	    $newAtom = $atom->id;
 		try{
-			// this function is under control of transaction check!
+			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
-
-			$newAtom = $this->typeConversion($newAtom, $concept);
 			
-			// If $newAtom is not in $concept
-			if(!$this->atomExists($newAtom, $concept)){
+			// If $atomId is not in $concept
+			if(!$this->atomExists($atom)){
+			    			    
 				// Get table properties
-				$conceptTableInfo = Concept::getConceptTableInfo($concept);
+				$conceptTableInfo = Concept::getConceptTableInfo($atom->concept);
 				$conceptTable = $conceptTableInfo['table'];
 				$conceptCols = $conceptTableInfo['cols']; // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
 				
 				// Create query string: `<col1>`, `<col2>`, etc
 				$allConceptCols = '`' . implode('`, `', $conceptCols) . '`';
 				
-				$newAtomEsc = $this->escape($newAtom);
-				// Create query string: '<newAtom>', '<newAtom', etc
-				$newAtomsArray = array_fill(0, count($conceptCols), $newAtomEsc);
-				$allValues = "'".implode("', '", $newAtomsArray)."'";
 				
-				foreach($conceptCols as $col) $str .= ", `$col` = '$newAtomEsc'";
+				// Create query string: '<newAtom>', '<newAtom', etc
+				$atomIdsArray = array_fill(0, count($conceptCols), $atom->idEsc);
+				$allValues = "'".implode("', '", $atomIdsArray)."'";
+				
+				foreach($conceptCols as $col) $str .= ", `$col` = '{$atom->idEsc}'";
 				$duplicateStatement = substr($str, 1);
 				
 				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
 						  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
 				
-				$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
+				$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 				
-				Notifications::addLog("Atom $newAtom added into concept $concept", 'DATABASE');
+				Notifications::addLog("Atom '{$atom->id}[{$atom->concept}]' added to database", 'DATABASE');
 				
 				Hooks::callHooks('postDatabaseAddAtomToConceptInsert', get_defined_vars());
 			}else{
-				Notifications::addLog("Atom $newAtom already in concept $concept", 'DATABASE');
+				Notifications::addLog("Atom '{$atom->id}[{$atom->concept}]' already exists in database", 'DATABASE');
 				
 				Hooks::callHooks('postDatabaseAddAtomToConceptSkip', get_defined_vars());
 			}
-			
-			return $newAtom;
 			
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -214,18 +325,27 @@ class Database {
 		}
 	}
 	
-	// Adding an atom[ConceptA] as member to ConceptB set. This can only be done when ConceptA and ConceptB are in the same classification tree.
-	public function atomSetConcept($conceptA, $atom, $conceptB){
-		Notifications::addLog("atomSetConcept($conceptA, $atom, $conceptB)", 'DATABASE');
+	/**
+	 * Adding an atom[ConceptA] as member to ConceptB set. 
+	 * This can only be done when concept of atom (ConceptA) and ConceptB are in the same classification tree.
+	 * @param Atom $atom
+	 * @param string $conceptB
+	 * @throws Exception
+	 * @return void
+	 */
+	public function atomSetConcept($atom, $conceptB){
+	    Notifications::addLog("atomSetConcept({$atom->id}[{$atom->concept}], $conceptB)", 'DATABASE');
+	    
+	    $conceptA = $atom->concept;
 		try{
+		    // This function is under control of transaction check!
+		    if (!isset($this->transaction)) $this->startTransaction();
+		    
 			// Check if conceptA and conceptB are in the same classification tree
-			if(!Concept::inSameClassificationTree($conceptA, $conceptB)) throw new Exception("Concepts $conceptA and $conceptB are not in the same classification tree", 500);
+			if(!Concept::inSameClassificationTree($conceptA, $conceptB)) throw new Exception("Concepts '{$conceptA}' and '{$conceptB}' are not in the same classification tree", 500);
 			
 			// Check if atom is part of conceptA
-			if(!$this->atomExists($atom, $conceptA)) throw new Exception("Atom $atom is not a member of $conceptA", 500);
-			
-			// this function is under control of transaction check!
-			if (!isset($this->transaction)) $this->startTransaction();
+			if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept}]' does not exists", 500);
 			
 			// Get table info
 			$conceptTableInfoB = Concept::getConceptTableInfo($conceptB);
@@ -233,38 +353,46 @@ class Database {
 			$conceptColsB = $conceptTableInfoB['cols']; // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
 			
 			// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-			$atomEsc = $this->escape($atom);
-			$queryString = "\"" . implode("\" = '$atomEsc', \"", $conceptColsB) . "\" = '$atomEsc'";
+			$queryString = "\"" . implode("\" = '{$atom->idEsc}', \"", $conceptColsB) . "\" = '{$atom->idEsc}'";
 			
 			$conceptTableInfoA = Concept::getConceptTableInfo($conceptA);
 			$conceptTableA = $conceptTableInfoA['table'];
 			$anyConceptColForA = current($conceptTableInfoA['cols']);
 			
 			// Perform update
-			$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"$anyConceptColForA\" = '$atomEsc'");
+			$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"$anyConceptColForA\" = '{$atom->idEsc}'");
 			
 			$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 			
-			Notifications::addLog("Atom '$atom' added as member to concept '$conceptB'", 'DATABASE');
+			Notifications::addLog("Atom '{$atom->id}[{$atom->concept}]' added as member to concept '{$conceptB}'", 'DATABASE');
 		
 		}catch(Exception $e){
 			throw $e;
 		}
 	}
 	
-	// Removing an atom as member from a Concept set. This can only be done when the concept is a specialization of another concept.
-	public function atomClearConcept($concept, $atom){
-		Notifications::addLog("atomSetConcept($conceptA, $atom, $conceptB)", 'DATABASE');
+	/**
+	 * Removing an atom as member from a Concept set. 
+	 * This can only be done when the concept is a specialization of another concept.
+	 * @param Atom $atom
+	 * @throws Exception
+	 * @return void
+	 */
+	public function atomClearConcept($atom){
+		Notifications::addLog("atomClearConcept({$atom->id}[{$atom->concept}])", 'DATABASE');
+		
 		try{
+		    // This function is under control of transaction check!
+		    if (!isset($this->transaction)) $this->startTransaction();
+		    
+		    $concept = $atom->concept;
+		    
 			// Check if concept is a specialization of another concept
 			$conceptGeneralizations = Concept::getGeneralizations($concept);
 			if(empty($conceptGeneralizations)) throw new Exception("Concept $concept has no generalizations, atom can therefore not be removed as member from this set", 500);
 				
 			// Check if atom is part of conceptA
-			if(!$this->atomExists($atom, $concept)) throw new Exception("Atom $atom is not a member of $concept", 500);
-				
-			// this function is under control of transaction check!
-			if (!isset($this->transaction)) $this->startTransaction();
+			if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept}]' does not exists", 500);
 				
 			// Get col information for $concept and its specializations
 			$cols = array();
@@ -276,63 +404,48 @@ class Database {
 			foreach(Concept::getSpecializations($concept) as $specConcept){
 				$conceptTableInfo = Concept::getConceptTableInfo($specConcept);
 				$cols[] = reset($conceptTableInfo['cols']);
-			}			
+			}
 			
 			// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-			$atomEsc = $this->escape($atom);
 			$queryString = "\"" . implode("\" = NULL, \"", $cols) . "\" = NULL";
 			
-			$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"$conceptCol\" = '$atomEsc'");
+			$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"$conceptCol\" = '{$atom->idEsc}'");
 			
 			$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 			
-			Notifications::addLog("Atom '$atom' removed as member from concept '$concept'", 'DATABASE');
+			Notifications::addLog("Atom '{$atom->id}[{$atom->concept}]' removed as member from concept '$concept'", 'DATABASE');
 			
 		}catch(Exception $e){
 			throw $e;
 		}
 	}
 	
-	/* 
-	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
-	 */
-	public function atomExists($atomId, $concept){
-		$tableInfo = Concept::getConceptTableInfo($concept);
-		$table = $tableInfo['table'];
-		$conceptCol = $tableInfo['cols'][0];
-		
-		$newAtom = $this->typeConversion($atomId, $concept);
-		
-		$atomIdEsc = $this->escape($atomId);
-		$query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '$atomIdEsc'";
-		$result = $this->Exe($query);
-		
-		if(empty($result)) return false;
-		else return true;
-	}	
-	
-	/* How to use editUpdate:
+	/**
+	 * How to use editUpdate:
 	 * r :: A * B
-	 * editUpdate(r, false, a1, A, b1, B);
-	 * editUpdate(r, true, b1, B, a1, A);
+	 * editUpdate(r, false, a1[A], b1[B]);
+	 * editUpdate(r, true, b1[B], a1[A]);
 	 * 
-	 * The $stableAtom and $stableConcept are used to identify which row must be updated.
+	 * @param string $rel
+	 * @param boolean $isFlipped
+	 * @param Atom $stableAtom
+	 * @param Atom $modifiedAtom
+	 * @param Atom $originalAtom
 	 * @param string $source specifies the source of the editUpdate command (e.g. ExecEngine). Defaults to 'User'. 
+	 * @return void
 	 * 
 	 * NOTE: if $originalAtom is provided, this means that tuple rel(stableAtom, originalAtom) is replaced by rel(stableAtom, modifiedAtom).
 	 */
-	public function editUpdate($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom = null, $source = 'User'){
-		Notifications::addLog("editUpdate($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $originalAtom)", 'DATABASE');
+	public function editUpdate($rel, $isFlipped, $stableAtom, $modifiedAtom, $originalAtom = null, $source = 'User'){	    
+	    Notifications::addLog("editUpdate('{$rel}" . ($isFlipped ? '~' : '') . "', '{$stableAtom->id}[{$stableAtom->concept}]', '{$modifiedAtom->id}[{$modifiedAtom->concept}]', '{$originalAtom->id}[{$originalAtom->concept}]')", 'DATABASE');
+	    
 		try{			
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
-			$stableAtom = $this->typeConversion($stableAtom, $stableConcept);
-			$modifiedAtom = $this->typeConversion($modifiedAtom, $modifiedConcept);
-			
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
-			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
-			$tgtConcept = $isFlipped ? $stableConcept : $modifiedConcept;
+			$srcConcept = $isFlipped ? $modifiedAtom->concept : $stableAtom->concept;
+			$tgtConcept = $isFlipped ? $stableAtom->concept : $modifiedAtom->concept;
 			$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept);
 			
 			// Get table properties
@@ -344,48 +457,42 @@ class Database {
 			$stableCol = $isFlipped ? $tgtCol : $srcCol;
 			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
 	
-			// Ensure that the $modifiedAtom is in the concept tables for $modifiedConcept						
-			$this->addAtomToConcept(new Atom($modifiedAtom, $modifiedConcept));
-			
-			// Escape atoms for use in query
-			$modifiedAtomEsc = $this->escape($modifiedAtom); 
-			$stableAtomEsc = $this->escape($stableAtom);
-			$originalAtomEsc = $this->escape($originalAtomEsc);
+			// Ensure that the stable and modified atoms exists in their concept tables
+			$this->addAtomToConcept($stableAtom);
+			$this->addAtomToConcept($modifiedAtom);
 			
 			// Get database table information
-			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol); // unique=true, null=true
-			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol); // unique=true, null=false
+			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
+			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
 			
 			/* Complicated code to determine UPDATE or INSERT statement: see Github #169 for explanation */
 			if($tableModifiedColumnInfo['unique'] && $tableStableColumnInfo['unique']){
 				// If both columns are 'unique', we have to check the 'null' possibility
-				if($tableModifiedColumnInfo['null']) $this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
-				else $this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
+				if($tableModifiedColumnInfo['null']) $this->Exe("UPDATE `$table` SET `$modifiedCol` = '{$modifiedAtom->idEsc}' WHERE `$stableCol` = '{$stableAtom->idEsc}'");
+				else $this->Exe("UPDATE `$table` SET `$stableCol` = '{$stableAtom->idEsc}' WHERE `$modifiedCol` = '{$modifiedAtom->idEsc}'");
 					
 				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			}			
 			elseif ($tableModifiedColumnInfo['unique'] && !$tableStableColumnInfo['unique']){
 			
-				$this->Exe("UPDATE `$table` SET `$stableCol` = '$stableAtomEsc' WHERE `$modifiedCol` = '$modifiedAtomEsc'");
+				$this->Exe("UPDATE `$table` SET `$stableCol` = '{$stableAtom->idEsc}' WHERE `$modifiedCol` = '{$modifiedAtom->idEsc}'");
 				
 				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			}
 			elseif (!$tableModifiedColumnInfo['unique'] && $tableStableColumnInfo['unique']){
 				
-				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '$modifiedAtomEsc' WHERE `$stableCol` = '$stableAtomEsc'");
+				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '{$modifiedAtom->idEsc}' WHERE `$stableCol` = '{$stableAtom->idEsc}'");
 				
 				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			// Otherwise, binary table, so perform a insert.
 			}else{
-				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('$stableAtomEsc', '$modifiedAtomEsc')");
+				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('{$stableAtom->idEsc}', '{$modifiedAtom->idEsc}')");
 				
 				Hooks::callHooks('postDatabaseInsert', get_defined_vars());
 				
 				// If $originalAtom is provided, delete tuple rel(stableAtom, originalAtom)
 				if (!is_null($originalAtom)) {
-					$modifiedAtom = $originalAtom;
-					$modifiedAtomEsc = $originalAtomEsc;
-					$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+					$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '{$stableAtom->idEsc}' AND `$modifiedCol` = '{$originalAtom->idEsc}'");
 					Hooks::callHooks('postDatabaseDelete', get_defined_vars());
 				}
 			}
@@ -398,27 +505,32 @@ class Database {
 		}
 	}
 	
-	/* How to use editDelete:
+	/**
+	 * How to use editDelete:
 	 * r :: A * B
-	 * editDelete(r, false, a1, A, b1, B); 
-	 * editDelete(r, true, b1, B, a1, A);
+	 * editDelete(r, false, a1[A], b1[B]);
+	 * editDelete(r, true, b1[B], a1[A]);
+	 * 
+	 * @param string $rel
+	 * @param boolean $isFlipped
+	 * @param Atom $stableAtom
+	 * @param Atom $modifiedAtom
 	 * @param string $source specifies the source of the editDelete command (e.g. ExecEngine). Defaults to 'User'. 
+	 * @throws Exception
 	 */
-	public function editDelete($rel, $isFlipped, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source = 'User'){
-		Notifications::addLog("editDelete($rel, " . var_export($isFlipped, true) . ", $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept)", 'DATABASE');
+	public function editDelete($rel, $isFlipped, $stableAtom, $modifiedAtom, $source = 'User'){	    
+		Notifications::addLog("editDelete('{$rel}" . ($isFlipped ? '~' : '') . "', '{$stableAtom->id}[{$stableAtom->concept}]', '{$modifiedAtom->id}[{$modifiedAtom->concept}]')", 'DATABASE');
+		
 		try{			
 			// This function is under control of transaction check!
-			if (!isset($this->transaction)) $this->startTransaction();
+		    if (!isset($this->transaction)) $this->startTransaction();
 			
 			// Check if stableAtom is provided (i.e. not null)
-			if(is_null($stableAtom)) throw new Exception("Cannot perform editDelete, because stable atom is null", 500);
-			
-			$stableAtom = $this->typeConversion($stableAtom, $stableConcept);
-			$modifiedAtom = $this->typeConversion($modifiedAtom, $modifiedConcept);
+			if(is_null($stableAtom->id)) throw new Exception("Cannot perform editDelete, because stable atom is null", 500);
 			
 			// Check if $rel, $srcConcept, $tgtConcept is a combination
-			$srcConcept = $isFlipped ? $modifiedConcept : $stableConcept;
-			$tgtConcept = $isFlipped ? $stableConcept : $modifiedConcept;
+			$srcConcept = $isFlipped ? $modifiedAtom->concept : $stableAtom->concept;
+			$tgtConcept = $isFlipped ? $stableAtom->concept : $modifiedAtom->concept;
 			$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept);
 			
 			// Get table properties
@@ -429,10 +541,6 @@ class Database {
 			// Determine which Col must be editited and which must be used in the WHERE statement
 			$stableCol = $isFlipped ? $tgtCol : $srcCol;
 			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
-			
-			// Escape atoms for use in query
-			$modifiedAtomEsc = $this->escape($modifiedAtom);
-			$stableAtomEsc = $this->escape($stableAtom);
 					
 			// Get database table information
 			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
@@ -441,18 +549,18 @@ class Database {
 			/* Complicated code to determine UPDATE or INSERT statement: see Github #169 for explanation */
 			// If the modifiedCol can be set to null, we do an update
 			if ($tableModifiedColumnInfo['null']){
-				if(is_null($modifiedAtom)) $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc'");
-				else $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom->id)) $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '{$stableAtom->idEsc}'");
+				else $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '{$stableAtom->idEsc}' AND `$modifiedCol` = '{$modifiedAtom->idEsc}'");
 			
 			// Elseif the stableCol can be set to null, we do an update
 			}elseif ($tableStableColumnInfo['null']){
-				if(is_null($modifiedAtom) && !$tableStableColumnInfo['unique']) throw new Exception("Cannot perform editDelete, because modified atom is null and stable column is not unique", 500);
-				else $this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '$stableAtomEsc'");
+				if(is_null($modifiedAtom->id) && !$tableStableColumnInfo['unique']) throw new Exception("Cannot perform editDelete, because modified atom is null and stable column is not unique", 500);
+				else $this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '{$stableAtom->idEsc}'");
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
-				if(is_null($modifiedAtom)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
-				else $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '$stableAtomEsc' AND `$modifiedCol` = '$modifiedAtomEsc'");
+				if(is_null($modifiedAtom->id)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
+				else $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '{$stableAtom->idEsc}' AND `$modifiedCol` = '{$modifiedAtom->idEsc}'");
 				
 			}
 			
@@ -466,41 +574,42 @@ class Database {
 		}
 
 	}
-	
-	/* Remove all occurrences of $atom in the database (all concept tables and all relation tables)
+	    
+	/**
+	 * Remove all occurrences of $atom in the database (all concept tables and all relation tables)
 	 * In tables where the atom may not be null, the entire row is removed.
 	 * TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
-	 */    
-	function deleteAtom($atom, $conceptName){
-		Notifications::addLog("deleteAtom($atom, $conceptName)", 'DATABASE');
+	 * @param Atom $atom
+	 * @return void
+	 */
+	function deleteAtom($atom){
+		Notifications::addLog("deleteAtom({$atom->id}[{$atom->concept}])", 'DATABASE');
 		try{
-			$concept = new Concept($conceptName);
-			// This function is under control of transaction check!
-			if (!isset($this->transaction)) $this->startTransaction();
+		    // This function is under control of transaction check!
+		    if (!isset($this->transaction)) $this->startTransaction();
+		    
+		    global $tableColumnInfo;
+		    
+			$concept = new Concept($atom->concept);
 			
-			$atom = $this->typeConversion($atom, $concept->name);
-			
-			global $tableColumnInfo;
-			
-			$atomEsc = $this->escape($atom);
 			foreach ($tableColumnInfo as $table => $tableInfo){
 				foreach ($tableInfo as $column => $fieldInfo) {
 					// TODO: could be optimized by doing one query per table. But deleting per column yields the same result (unlike adding)
 					if ($fieldInfo['concept'] == $concept->name || $concept->hasGeneralization($fieldInfo['concept'])) {
 						
 						// If the field can be null, we set all occurrences to null
-						if ($fieldInfo['null']) $this->Exe("UPDATE `$table` SET `$column` = NULL WHERE `$column` = '$atomEsc'");
+						if ($fieldInfo['null']) $this->Exe("UPDATE `$table` SET `$column` = NULL WHERE `$column` = '{$atom->idEsc}'");
 						
 						// Otherwise, we remove the entire row for each occurrence
 						else 
-							$this->Exe("DELETE FROM `$table` WHERE `$column` = '$atomEsc'");
+							$this->Exe("DELETE FROM `$table` WHERE `$column` = '{$atom->idEsc}'");
 					}
 				}
 			}
 			
 			$this->addAffectedConcept($concept->name); // add concept to affected concepts. Needed for conjunct evaluation.
 			
-			Notifications::addLog("Atom $atom (and all related links) deleted in database", 'DATABASE');
+			Notifications::addLog("Atom '{$atom->id}[{$atom->concept}]' (and all related links) deleted in database", 'DATABASE');
 			
 			Hooks::callHooks('postDatabaseDeleteAtom', get_defined_vars());
 		}catch(Exception $e){
@@ -509,29 +618,46 @@ class Database {
 		}
 	}
 	
-// =============================== TRANSACTIONS ===========================================================
+/**************************************************************************************************
+ *
+ * Database transaction handling
+ *
+ *************************************************************************************************/
 	
+	/**
+	 * Function to start/open a database transaction to track of all changes and be able to rollback
+	 * @return void
+	 */
 	private function startTransaction(){
 		Notifications::addLog('========================= STARTING TRANSACTION =========================', 'DATABASE');
 		$this->Exe("START TRANSACTION"); // start database transaction
 		$this->transaction = rand();
 		
 		Hooks::callHooks('postDatabaseStartTransaction', get_defined_vars());
-		
 	}
 	
-	// TODO: make private function, now also used by in Session class for session atom initiation
+	/**
+	 * Function to commit the open database transaction
+	 * @return void
+	 * 
+	 * TODO: make private function, now also used by in Session class for session atom initiation
+	 */
 	public function commitTransaction(){
 		Notifications::addLog('------------------------- COMMIT -------------------------', 'DATABASE');
-		$this->setLatestUpdateTime();
+		
 		$this->Exe("COMMIT"); // commit database transaction
 		unset($this->transaction);
 		
 		Hooks::callHooks('postDatabaseCommitTransaction', get_defined_vars());
 	}
 	
+	/**
+	 * Function to rollback changes made in the open database transaction
+	 * @return void
+	 */
 	private function rollbackTransaction(){
 		Notifications::addLog('------------------------- ROLLBACK -------------------------', 'DATABASE');
+		
 		$this->Exe("ROLLBACK"); // rollback database transaction
 		unset($this->transaction);
 		
@@ -539,7 +665,7 @@ class Database {
 	}
 	
 	/**
-	 * 
+	 * Function to request closing the open database transaction
 	 * @param string $succesMessage specifies success/info message when invariants hold
 	 * @param boolean $checkAllConjucts specifies to check all (true) or only the affected conjuncts (false)
 	 * @param boolean $databaseCommit specifies to commit (true) or rollback (false) when all invariants hold
@@ -602,6 +728,12 @@ class Database {
 		
 	}
 	
+/**************************************************************************************************
+ *
+ * Helper functions
+ *
+ *************************************************************************************************/
+	
 	/**
 	 * Checks request type and returns boolean to determine database commit
 	 * @param string $requestType
@@ -616,24 +748,18 @@ class Database {
 		}
 	}
 	
-	// TODO: onderstaande timestamp generatie opschonen. Kan de database ook zelf doen, bij insert/update/delete
-	private function setLatestUpdateTime(){
-	
-		$time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-		$microseconds = substr($time[0], 2,6); // we drop the leading "0." and trailing "00"  from the microseconds
-		$seconds =$time[1].$microseconds;
-		$date = date("j-M-Y, H:i:s.").$microseconds;
-		$this->Exe("INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')");
-	
-	}
-	
-	/*
-	 * Conversion to MYSQL types
+	/**
+	 * Convert atom to MYSQL representation
+	 * @param Atom $atom
+	 * @throws Exception
+	 * @return NULL|string|number|unknown
 	 */
-	public function typeConversion($value, $concept){
+	public function typeConversion($atom){
+	    $value = $atom->id;
+	    
 		if(is_null($value)) return null;
 		
-		switch(Concept::getTypeRepresentation($concept)){				
+		switch(Concept::getTypeRepresentation($atom->concept)){				
 			case "ALPHANUMERIC" :
 			case "BIGALPHANUMERIC" :
 			case "HUGEALPHANUMERIC" :
@@ -656,30 +782,43 @@ class Database {
 			case "OBJECT" :
 				return $value;
 			default :
-				throw new Exception("Unknown/unsupported representation type for concept $concept", 501);
+				throw new Exception("Unknown/unsupported representation type for concept '{$atom->concept}'", 501);
 		}
 		
 	}
-
-// =============================== AFFECTED CONJUNCTS ===========================================================
+    
+	/**
+	 * Mark a concept as affected within the open transaction
+	 * @param string $conceptName
+	 * @return void
+	 */
 	private function addAffectedConcept($conceptName){
 		
-		if(!in_array($conceptName, $this->affectedConcepts) && $this->trackAffectedConjuncts){
-			Notifications::addLog("Mark concept $conceptName as affected concept", 'CONJUNCTS');
+		if($this->trackAffectedConjuncts && !in_array($conceptName, $this->affectedConcepts)){
+			Notifications::addLog("Mark concept '{$conceptName}' as affected concept", 'CONJUNCTS');
 			$this->affectedConcepts[] = $conceptName; // add concept to affected concepts. Needed for conjunct evaluation.
 		}
 		
 	}
 	
+	/**
+	 * Mark a relation as affected within the open transaction
+	 * @param string $fullRelationSignature
+	 * @return void
+	 */
 	private function addAffectedRelations($fullRelationSignature){
 	
-		if(!in_array($fullRelationSignature, $this->affectedRelations) && $this->trackAffectedConjuncts){
-			Notifications::addLog("Mark relation $fullRelationSignature as affected relation", 'CONJUNCTS');
+		if($this->trackAffectedConjuncts && !in_array($fullRelationSignature, $this->affectedRelations)){
+			Notifications::addLog("Mark relation '{$fullRelationSignature}' as affected relation", 'CONJUNCTS');
 			$this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
 		}
 	}
 	
-// =============================== GETTERS SETTERS ===========================================================
+/**************************************************************************************************
+ *
+ * GETTERS and SETTERS
+ *
+ *************************************************************************************************/
 	
 	public function getAffectedConcepts(){
 		return $this->affectedConcepts;	
@@ -703,10 +842,7 @@ class Database {
 	
 	public function setRequestType($requestType){
 		$this->requestType = $requestType;
-	}
-	
-	
+	}	
 }
-
 
 ?>

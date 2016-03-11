@@ -32,17 +32,16 @@ class Mutation {
 		if(array_key_exists($fullRelationSignature, Config::get('mutationConcepts', 'MutationExtension'))){
 			Notifications::addLog("Save mutation on '$fullRelationSignature' (editUpdate)", 'Mutation');
 			
-			$mutConcept = Config::get('mutationConcepts', 'MutationExtension')[$fullRelationSignature];
 			$database = Database::singleton();
-		
-	       $database->setTrackAffectedConjuncts(false); // Don't track affected conjuncts for Mutation concept and relations;
+			$database->setTrackAffectedConjuncts(false); // Don't track affected conjuncts for Mutation concept and relations;
 			
 			// New Mutation
-			$mut = $database->addAtomToConcept(Concept::createNewAtom($mutConcept));
+			$mutConcept = Config::get('mutationConcepts', 'MutationExtension')[$fullRelationSignature];
+			$database->addAtomToConcept($mut = Concept::createNewAtom($mutConcept));
 			
 			// Add mut info
-			$database->editUpdate('mutRelation', false, $mut, 'Mutation', $fullRelationSignature, 'Relation');
-			$database->editUpdate('mutDateTime', false, $mut, 'Mutation', date(DATE_ISO8601), 'DateTime');
+			$database->editUpdate('mutRelation', false, $mut, new Atom($fullRelationSignature, 'Relation'));
+			$database->editUpdate('mutDateTime', false, $mut, new Atom(date(DATE_ISO8601), 'DateTime'));
 			
 			if($source == 'User'){
 				$account = Session::getSessionAccountId();
@@ -50,12 +49,12 @@ class Mutation {
 				$account = $source;
 			}
 			
-			$database->editUpdate('mutBy', false, $mut, 'Mutation', $account, 'Account');
-			$database->editUpdate('mutOp', false, $mut, 'Mutation', $operation, 'Operation');
-			// $database->editUpdate('mutReason', false, $mut, 'Mutation', 'zomaar', 'MutationReason'); // TODO: get reason from somewhere
-			$database->editUpdate('mutValue', false, $mut, 'Mutation', $modifiedAtom, 'MutationValue');
-			$database->editUpdate('mutStable', false, $mut, $mutConcept, $stableAtom, $stableConcept);
-			$database->editUpdate('mutPublish', false, $mut, 'Mutation', $mut, 'Mutation');
+			$database->editUpdate('mutBy', false, $mut, new Atom($account, 'Account'));
+			$database->editUpdate('mutOp', false, $mut, new Atom($operation, 'Operation'));
+			// $database->editUpdate('mutReason', false, $mut, new Atom('zomaar', 'MutationReason')); // TODO: get reason from somewhere
+			$database->editUpdate('mutValue', false, $mut, new Atom($modifiedAtom, 'MutationValue'));
+			$database->editUpdate('mutStable', false, $mut, new Atom($stableAtom, $stableConcept));
+			$database->editUpdate('mutPublish', false, $mut, $mut);
 
 	       $database->setTrackAffectedConjuncts(true); // Enable tracking of affected conjuncts again!!
 		}	

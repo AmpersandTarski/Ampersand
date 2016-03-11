@@ -250,7 +250,7 @@ class InterfaceObject {
 	    }
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
-	    if($this->relation) $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom->id, $this->srcAtom->concept, $newAtom->id, $newAtom->concept);
+	    if($this->relation) $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $newAtom);
 	    
 	    // Walk to new atom
 	    $newAtom = $this->atom($newAtom->id);
@@ -273,8 +273,8 @@ class InterfaceObject {
 	            else throw new Exception ("Error in file upload", 500);
 	
 	            // Populate filePath and originalFileName relations in database
-	            $this->database->editUpdate('filePath', false, $newAtom->id, 'FileObject', $relativePath, 'FilePath');
-	            $this->database->editUpdate('originalFileName', false, $newAtom->id, 'FileObject', $_FILES['file']['name'], 'FileName');
+	            $this->database->editUpdate('filePath', false, $newAtom, new Atom($relativePath, 'FilePath'));
+	            $this->database->editUpdate('originalFileName', false, $newAtom, new Atom($_FILES['file']['name'], 'FileName'));
 	
 	        }else{
 	            throw new Exception ("No file uploaded", 500);
@@ -332,26 +332,26 @@ class InterfaceObject {
 	        	
 	        // When true
 	        if($value){
-	            $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom->id, $this->srcConcept, $this->srcAtom->id, $this->tgtConcept);
-	            // When false or null
+	            $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $this->srcAtom);
+	        // When false or null
 	        }else{
-	            $this->database->editDelete($this->relation, $this->relationIsFlipped, $this->srcAtom->id, $this->srcConcept, $this->srcAtom->id, $this->tgtConcept);
+	            $this->database->editDelete($this->relation, $this->relationIsFlipped, $this->srcAtom, $this->srcAtom);
 	        }
 	        	
-	        // Interface is a relation to an object
+	    // Interface is a relation to an object
 	    }elseif($this->tgtConceptIsObject){
 	        throw new Exception("Cannot patch replace for object reference in interface '{$this->this}'. Use patch remove + add instead", 500);
 	
-	        // Interface is a relation to a scalar (i.e. not an object)
+	    // Interface is a relation to a scalar (i.e. not an object)
 	    }elseif(!$this->tgtConceptIsObject){
 	        	
 	        // Replace by nothing => editDelete
 	        if(is_null($value)){
-	            $this->database->editDelete($this->relation, $this->relationIsFlipped, $this->srcAtom->id, $this->srcConcept, null, $this->tgtConcept);
+	            $this->database->editDelete($this->relation, $this->relationIsFlipped, $this->srcAtom, new Atom(null, $this->tgtConcept));
 	            	
-	            // Replace by other atom => editUpdate
+	        // Replace by other atom => editUpdate
 	        }else{
-	            $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom->id, $this->srcConcept, $value, $this->tgtConcept);
+	            $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, new Atom($value, $this->tgtConcept));
 	        }
 	    }else{
 	        throw new Exception ("Unknown patch replace. Please contact the application administrator", 500);
@@ -364,29 +364,28 @@ class InterfaceObject {
 	    
 	    // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied in '{$this->path}'", 400);
-	    $value = $patch['value'];
+	    
+	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept);
 	    
 	    // Interface is property
 	    if($this->isProperty && !$this->isIdent){
 	        // Properties must be treated as a 'replace', so not handled here
 	        throw new Exception("Cannot patch add for property '{$this->path}'. Use patch replace instead", 500);
 	
-	        // Interface is a relation to an object
+	    // Interface is a relation to an object
 	    }elseif($this->tgtConceptIsObject){
-	        	
 	        // Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception
-	        if(!$this->crudC && !$this->database->atomExists($value, $this->tgtConcept)) throw new Exception ("Resource '{$value}[{$this->tgtConcept}]' does not exist and may not be created in {$this->path}", 403);
+	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept}]' does not exist and may not be created in {$this->path}", 403);
 	        	
-	        $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom->id, $this->srcConcept, $value, $this->tgtConcept);
+	        $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $tgtAtom);
 	
-	        // Interface is a relation to a scalar (i.e. not an object)
-	    }elseif(!$this->tgtConceptIsObject){
-	        	
+	    // Interface is a relation to a scalar (i.e. not an object)
+	    }elseif(!$this->tgtConceptIsObject){    	
 	        // Check: If interface is univalent, throw exception
 	        if($this->univalent) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
 	        	
-	        $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom->id, $this->srcConcept, $value, $this->tgtConcept);
-	        	
+	        $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $tgtAtom);
+	        
 	    }else{
 	        throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
 	    }

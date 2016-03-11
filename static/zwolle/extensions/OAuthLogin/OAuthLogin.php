@@ -141,9 +141,8 @@ class OAuthLoginController {
 
 				// create new user
 				if(empty($accounts)){
-					$newAccount = Concept::createNewAtomId('Account');
-					$db->addAtomToConcept($newAccount);
-					$db->editUpdate('accUserid', false, $newAccount, 'Account', $email, 'UserID');
+					$newAccount = Concept::createNewAtom('Account');
+					$db->editUpdate('accUserid', false, $newAccount, new Atom($email, 'UserID'));
 
 					// add to Organization
 					$domain = explode('@', $email)[1];
@@ -151,22 +150,25 @@ class OAuthLoginController {
 					$orgs = array_column((array)$atom->ifc('DomainOrgs')->getContent(), '_id_');
 
 					foreach ($orgs as $org){
-						$db->editUpdate('accOrg', false, $newAccount, 'Account', $org, 'Organization');
+						$db->editUpdate('accOrg', false, $newAccount, new Atom($org, 'Organization'));
 					}
 
-					$accounts[] = $newAccount;
+					$accounts[] = $newAccount->id;
 
 				}
 
 				if(count($accounts) > 1) throw new Exception("Multiple users registered with email $email", 401);
 
-				foreach ($accounts as $account){
+				foreach ($accounts as $accountId){
+				    $account = new Atom($accountId, 'Account');
+				    
 					// Set sessionAccount
-					$db->editUpdate('sessionAccount', false, session_id(), 'SESSION', $account, 'Account');
+					$db->editUpdate('sessionAccount', false, new Atom(session_id(), 'SESSION'), $account);
 
 					// Timestamps
-					$db->editUpdate('accMostRecentLogin', false, $account, 'Account', date(DATE_ISO8601), 'DateTime');
-					$db->editUpdate('accLoginTimestamps', false, $account, 'Account', date(DATE_ISO8601), 'DateTime');
+					$ts = new Atom(date(DATE_ISO8601), 'DateTime');
+					$db->editUpdate('accMostRecentLogin', false, $account, $ts);
+					$db->editUpdate('accLoginTimestamps', false, $account, $ts);
 				}
 
 				$db->closeTransaction('Login successfull', false, true);

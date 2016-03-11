@@ -83,8 +83,8 @@ $app->get('/login', function () use ($app){
 
 $app->get('/logout', function () use ($app){
 	$session = Session::singleton();
-		
-	$session->database->deleteAtom(session_id(), 'SESSION');
+	
+	$session->database->deleteAtom(new Atom(session_id(), 'SESSION'));
 		
 	$session->database->closeTransaction('Logout successfull', false, true);
 		
