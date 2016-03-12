@@ -2,7 +2,8 @@ module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
   ,makeUserDefinedSqlPlug
   ,representationOf
-  ,kernls)
+  ,kernls
+  ,typologies)
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
 import GHC.Exts (sortWith)
@@ -15,51 +16,61 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
 
-makeGeneratedSqlPlugs' :: Options
+makeGeneratedSqlPlugs :: Options
               -> A_Context 
               -> (Declaration -> Declaration) -- Function to add calculated properties to a declaration
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs' opts context calcProps = conceptTables ++ linkTables
+makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
   where 
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
     (conceptTableParts, linkTableParts) = dist calculatedDecls conceptsPerTable
+       where showCtp (cs,ds) = show (map name cs++map name ds)
+             showltp dcl     = name dcl++show (sign dcl)
     makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
-    makeConceptTable (cpts , dcls) = 
+    makeConceptTable (cpts , dcls) =
       TblSQL
              { sqlname    = unquote . name . head $ cpts
              , attributes = map attrib plugMors            -- Each attribute comes from a relation.
              , cLkpTbl    = conceptLookuptable
-             , mLkpTbl    = attributeLookuptable ++ isaLookuptable
+             , mLkpTbl    = nub (attributeLookuptable ++ isaLookuptable)
              }
         where
-          isaAtts = map EDcI cpts
-          atts    = map mkExpr dcls
+          declExprs = map mkExpr dcls
             where
               mkExpr d 
-                | isSur d =       EDcD d
-                | isTot d = EFlp (EDcD d)
-          mainkernel = map EDcI kernel
+                | isSur d = EFlp (EDcD d)
+                | isTot d =      (EDcD d)
+                | isUni d =       EDcD d
+                | otherwise = fatal 43 $ "relation `"++name d++"`. "++show (properties d)++"\n\n"++show d
+          conceptExprs = map EDcI cpts
           plugMors :: [Expression]
-          plugMors = let exprs = mainkernel++atts in
-                     if (suitableAsKey . representationOf ci . target . head) exprs || True --TODO: This check might not be required here. 
+          plugMors = let exprs = conceptExprs++declExprs 
+                         reprOfID = representationOf (ctxInfo context) . head $ cpts in
+                     if (suitableAsKey reprOfID) || True --TODO: This check might not be required here. 
                      then exprs
                      else -- TODO: make a nice user error of the following:
-                          fatal 360 $ "The concept `"++(name .target .head) exprs++"` would be used as primary key of its table. \n"
+                          fatal 360 $ "The concept `"++(name . head) cpts++"` would be used as primary key of its table. \n"
                                      ++"  However, its representation ("
-                                     ++(show . representationOf ci . target . head) exprs
+                                     ++ show reprOfID
                                      ++") is not suitable as a key." 
                      
           conceptLookuptable :: [(A_Concept,SqlAttribute)]
-          conceptLookuptable    = [(target r,attrib r) | r <-mainkernel]
+          conceptLookuptable    = [(target r,attrib r) | r <-conceptExprs]
           attributeLookuptable :: [(Expression,SqlAttribute,SqlAttribute)]
           attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
                                   [(e,lookupC (source e),attrib e) | e <-plugMors]
-          lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
-          attrib a              = rel2att (ctxInfo context) mainkernel atts a
-          isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]
+          lookupC cpt           = case [f |(c',f)<-conceptLookuptable, cpt==c'] of
+                                    []  -> fatal 70 $ "Concept `"++name cpt++"` is not in the lookuptable."
+                                         ++"\ncpts: "++show cpts
+                                         ++"\ndcls: "++show (map (\d -> name d++show (sign d)++" "++show (properties d)) dcls)
+                                         ++"\nlookupTable: "++show (map fst conceptLookuptable)
+                                    x:_ -> x
+          attrib :: Expression -> SqlAttribute
+          attrib a              = rel2att (ctxInfo context) conceptExprs declExprs a
+          isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- conceptExprs ]
     makeLinkTable :: Declaration -> PlugSQL
     makeLinkTable dcl 
          = BinSQL
@@ -110,33 +121,33 @@ makeGeneratedSqlPlugs' opts context calcProps = conceptTables ++ linkTables
     --         c. All other concepts in the typology of B are more specific than B
     --      3) one of the above is true for any concept A' in the same group as A and concept B' in the same group as B.
     conceptsPerTable :: [[A_Concept]]
-    conceptsPerTable = f (map EDcD calculatedDecls) . map tyCpts . kernels . ctxInfo $ context
+    conceptsPerTable = f (map EDcD calculatedDecls) . map tyCpts . typologies $ context
       where f :: [Expression] -> [[A_Concept]] -> [[A_Concept]]
-            f [] lsts = lsts
-            f (d:ds) lsts 
-              | isUni d && isInj d && isSur d 
-                   = let (involved, notInvolved) = partition (containsSourceOrTargetOf d) lsts
-                         containsSourceOrTargetOf :: Expression -> [A_Concept] -> Bool
-                         containsSourceOrTargetOf d cpts = not . null $ concs d `isc` cpts
-                     in case involved of
-                           []   -> fatal 45 "At least one of the list should contain the source and/or target of the declaration"
-                           [x]  -> f ds lsts -- source and target of d are allready in the same list.
-                           [x,y] 
-                             | null ((filter (/= target d) $ typologyConcepts (target d)) >- (smallerConcepts (gens context) (source d)))
-                                -> f ds ((if source d `elem` x then x++y else y++x) : notInvolved)
-                             | otherwise -> f ds lsts
-                           _    -> fatal 51 "How can more than two disjunct lists of concepts contain the source and/or target of a dingle relation?"
-              | isUni d && isInj d && isTot d -- (d is not univalent, injective and surjective, but d~ is.)
-                   = f (flp d:ds) lsts
-              | otherwise 
-                   = f ds lsts
-            typologies = kernels . ctxInfo $ context
+            f _ lsts = lsts  --TODO: Explain why we only group by typology. (could cause name conflict of relations, extra administartion, etc. etc. )
+            -- f [] lsts = lsts
+            -- f (d:ds) lsts 
+            --   | isUni d && isInj d && isSur d 
+            --        = let (involved, notInvolved) = partition (containsSourceOrTargetOf d) lsts
+            --              containsSourceOrTargetOf :: Expression -> [A_Concept] -> Bool
+            --              containsSourceOrTargetOf d cpts = not . null $ concs d `isc` cpts
+            --          in case involved of
+            --                []   -> fatal 45 "At least one of the list should contain the source and/or target of the declaration"
+            --                [x]  -> f ds lsts -- source and target of d are allready in the same list.
+            --                [x,y] 
+            --                  | null ((filter (/= target d) $ typologyConcepts (target d)) >- (smallerConcepts (gens context) (source d)))
+            --                     -> f ds ((if source d `elem` x then x++y else y++x) : notInvolved)
+            --                  | otherwise -> f ds lsts
+            --                _    -> fatal 51 "How can more than two disjunct lists of concepts contain the source and/or target of a dingle relation?"
+            --   | isUni d && isInj d && isTot d -- (d is not univalent, injective and surjective, but d~ is.)
+            --        = f (flp d:ds) lsts
+            --   | otherwise 
+            --        = f ds lsts
             typologyConcepts :: A_Concept -> [A_Concept]
-            typologyConcepts cpt = case filter (cpt `elem`) . map tyCpts $ typologies of
+            typologyConcepts cpt = case filter (cpt `elem`) . map tyCpts . typologies $ context of
                                     [x] -> x
                                     _   -> fatal 87 $ name cpt ++" should be in exactly one typology" 
             sameTypology :: A_Concept -> A_Concept -> Bool
-            sameTypology a b = any bothConceptsAreIn typologies
+            sameTypology a b = any bothConceptsAreIn (typologies context)
              where
                bothConceptsAreIn :: Typology -> Bool
                bothConceptsAreIn ty = (isIn ty a) && (isIn ty b)
@@ -176,12 +187,12 @@ makeGeneratedSqlPlugs' opts context calcProps = conceptTables ++ linkTables
     calculatedDecls = map calcProps $ relsDefdIn context
 
 
-makeGeneratedSqlPlugs :: Options
+makeGeneratedSqlPlugsOLD :: Options
               -> A_Context
               -> [Expression]
               -> [Declaration]    -- ^ relations to be saved in generated database plugs.
               -> [PlugSQL]
-makeGeneratedSqlPlugs opts context totsurs entityDcls = gTables
+makeGeneratedSqlPlugsOLD opts context totsurs entityDcls = gTables
   where
         vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
         gTables = gPlugs ++ gLinkTables
@@ -364,7 +375,7 @@ rel2att ci
    maybenull expr
     | length(map target kernel) Prelude.> length(nub(map target kernel))
        = fatal 146 $"more than one kernel attribute for the same concept:\n    expr = " ++(show expr)++
-           intercalate "\n  *** " ( "" : (map (name.target) kernel))
+           intercalate "\n  *** " ( "" : (map (name.target) kernel))++"\n\n-----------\n"++ show kernel
     | otherwise = case expr of
                    EDcD dcl
                         | (not.isTot) dcl -> True
@@ -608,3 +619,9 @@ tType2SqlType dom
      Object           -> SQLVarchar 255
      TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
 
+typologies :: A_Context -> [Typology]
+typologies context = 
+   (multiKernels . ctxInfo $ context) ++ 
+   [Typology { tyroot = [c]
+             , tyCpts = [c]
+             } | c <- concs context >- concs (gens context)]

@@ -257,7 +257,7 @@ pCtx2aCtx _
                      , ctxsql = sqldefs
                      , ctxphp = phpdefs
                      , ctxmetas = p_metas
-                     , ctxInfo = contextInfo
+                     , ctxInfo = contextInfo 
                      }
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx             -- Check whether all purposes refer to existing objects
@@ -283,7 +283,7 @@ pCtx2aCtx _
           _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
           return (CI { ctxiGens = gns
                      , representationOf = findR
-                     , kernels = map mkTypology $ f [] gns 
+                     , multiKernels = map mkTypology $ f [] gns
                      })
         where 
           gns = map pGen2aGen allGens
@@ -291,7 +291,7 @@ pCtx2aCtx _
              case gs of
                []   -> typols
                x:xs -> let (as,bs) = Lst.partition (not . null . uni (concs x)) typols
-                       in f ((concat as ++ concs x) : bs ) xs 
+                       in f ((concat as `uni` concs x) : bs ) xs 
           mkTypology cs = 
                 Typology { tyroot = filter (not . isSpecific) cs
                          , tyCpts = cs

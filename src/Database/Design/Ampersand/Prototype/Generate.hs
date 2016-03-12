@@ -384,7 +384,7 @@ generateViews fSpec =
                                      , "          " ++ showPhpStr (prettySQLQuery fSpec 33 (objctx objDef))
                                      , "      )"
                                      ]
-       conceptsFromSpecificToGeneric = concatMap (reverse . tyCpts) . kernels . fcontextInfo $ fSpec
+       conceptsFromSpecificToGeneric = concatMap (reverse . tyCpts) . ftypologies $ fSpec
        lab i = showPhpStr ("seg_"++show i)
 
 generateInterfaces :: FSpec -> [String]

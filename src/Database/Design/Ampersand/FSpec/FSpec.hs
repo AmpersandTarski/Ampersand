@@ -108,6 +108,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
                    , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
                    , fcontextInfo   :: ContextInfo 
+                   , ftypologies   :: [Typology]
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    , editableConcepts :: Interface -> [A_Concept]  -- ^ All editable concepts per Interface. (See https://github.com/AmpersandTarski/ampersand/issues/211 )
