@@ -41,9 +41,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
           declExprs = map mkExpr dcls
             where
               mkExpr d 
-                | isSur d = EFlp (EDcD d)
-                | isTot d =      (EDcD d)
                 | isUni d =       EDcD d
+                | isInj d = EFlp (EDcD d)
                 | otherwise = fatal 43 $ "relation `"++name d++"`. "++show (properties d)++"\n\n"++show d
           conceptExprs = map EDcI cpts
           plugMors :: [Expression]
