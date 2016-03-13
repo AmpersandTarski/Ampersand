@@ -322,6 +322,7 @@ data SqlAttribute = Att { attName :: String
                         , attUse ::  SqlAttributeUsage
                         , attNull :: Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
                         , attUniq :: Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
+                        , attFlipped :: Bool
                         } deriving (Eq, Show,Typeable)
 instance Named SqlAttribute where
   name = attName

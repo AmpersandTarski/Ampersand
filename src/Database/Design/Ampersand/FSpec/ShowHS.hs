@@ -153,12 +153,13 @@ instance ShowHSName SqlAttribute where
 instance ShowHS SqlAttribute where
  showHS opts indent sqAtt
    = intercalate indentA
-       [  "Att { attName = " ++ show (attName sqAtt)
-       ,      ", attExpr = " ++ showHS opts indentB (attExpr sqAtt)
-       ,      ", attType = " ++ showHS opts "" (attType sqAtt)
-       ,      ", attUse  = " ++ showHS opts "" (attUse sqAtt)
-       ,      ", attNull = " ++ show (attNull sqAtt)
-       ,      ", attUniq = " ++ show (attUniq sqAtt)
+       [  "Att { attName    = " ++ show (attName sqAtt)
+       ,      ", attExpr    = " ++ showHS opts indentB (attExpr sqAtt)
+       ,      ", attType    = " ++ showHS opts "" (attType sqAtt)
+       ,      ", attUse     = " ++ showHS opts "" (attUse sqAtt)
+       ,      ", attNull    = " ++ show (attNull sqAtt)
+       ,      ", attUniq    = " ++ show (attUniq sqAtt)
+       ,      ", attFlipped = " ++ show (attFlipped sqAtt)
        ,      "}"
        ] where indentA = indent ++"    "         -- adding the width of "Att "
                indentB = indentA++"            " -- adding the width of ", attExpr = "

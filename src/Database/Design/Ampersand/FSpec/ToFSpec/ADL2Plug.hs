@@ -89,8 +89,9 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                , attUse  = if suitableAsKey . repr . source $ srcExpr
                                            then ForeignKey (target srcExpr)
                                            else PlainAttr
-                               , attNull = isTot trgExpr
-                               , attUniq = isUni trgExpr
+                               , attNull = isTot srcExpr
+                               , attUniq = isUni srcExpr
+                               , attFlipped = isFlipped srcExpr
                                }
                          , -- The target attribute:
                            Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
@@ -101,6 +102,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                            else PlainAttr
                                , attNull = isSur trgExpr
                                , attUniq = isInj trgExpr
+                               , attFlipped = isFlipped trgExpr
                                }
                           )
              , cLkpTbl = [] --in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
@@ -231,6 +233,7 @@ rel2att ci
        , attUniq = isInj e      -- all kernel fldexprs are inj
                                 -- Therefore, a composition of kernel expr (I;kernelpath;e) will also be inj.
                                 -- It is enough to check isInj e
+       , attFlipped = isFlipped e
        }
    where
    attrName = case [nm | (r',nm)<-table, e==r'] of
@@ -306,7 +309,11 @@ rel2att ci
                                 , rs <- q, x == source (head rs), null (ls `isc` rs)]
 
 
-
+isFlipped :: Expression -> Bool
+isFlipped e = 
+  case e of
+    EFlp _ -> True
+    _      -> False
 
 
 -----------------------------------------

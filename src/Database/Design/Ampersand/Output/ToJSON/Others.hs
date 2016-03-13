@@ -19,6 +19,7 @@ data Attribute = Attribute
   , attJSONconcept   :: String
   , attJSONunique    :: Bool
   , attJSONnull      :: Bool
+  , attJSONflipped   :: Bool
   } deriving (Generic, Show)
 instance ToJSON TableColumnInfo where
   toJSON = amp2Jason
@@ -41,6 +42,7 @@ instance JSON SqlAttribute Attribute where
   , attJSONconcept   = name . target . attExpr $ att
   , attJSONunique    = attUniq $ att
   , attJSONnull      = attNull $ att
+  , attJSONflipped   = attFlipped $ att
   }
 
 
