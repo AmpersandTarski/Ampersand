@@ -18,7 +18,7 @@ module Database.Design.Ampersand
    , Expression(..)
    , Population(..)
    , FSpec(..), concDefs
-   , PlugSQL(..), SqlAttribute(..), SqlTType(..), PlugInfo(..)
+   , PlugSQL(..), SqlAttribute(..), PlugInfo(..)
    , PAclause(..)
    , Rule(..)
    , Prop(..), RuleOrigin(..)
@@ -57,7 +57,7 @@ module Database.Design.Ampersand
    , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
    , exprUni2list, exprIsc2list, exprCps2list, exprRad2list, exprPrd2list
    -- * Functions with plugs:
-   , plugAttributes, fldauto
+   , plugAttributes
    -- * Parser related stuff
    , parseADL1pExpr, CtxError
    , createFSpec

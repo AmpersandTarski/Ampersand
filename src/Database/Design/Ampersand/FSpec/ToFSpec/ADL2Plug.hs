@@ -1,8 +1,6 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
   ,makeUserDefinedSqlPlug
-  ,representationOf
-  ,kernls
   ,typologies)
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -11,7 +9,7 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.Maybe
 import Data.Char
-import Data.List (nub,intercalate,intersect,partition,group,delete)
+import Data.List (nub,intercalate)
 
 makeGeneratedSqlPlugs :: A_Context 
               -> (Declaration -> Declaration) -- Function to add calculated properties to a declaration
@@ -87,7 +85,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
              , columns = ( -- The source attribute:
                            Att { attName = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
                                , attExpr = srcExpr
-                               , attType = tType2SqlType . repr . source $ srcExpr
+                               , attType = repr . source $ srcExpr
                                , attUse  = if suitableAsKey . repr . source $ srcExpr
                                            then ForeignKey (target srcExpr)
                                            else PlainAttr
@@ -97,7 +95,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                          , -- The target attribute:
                            Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
                                , attExpr = trgExpr
-                               , attType = tType2SqlType . repr . target $ trgExpr
+                               , attType = repr . target $ trgExpr
                                , attUse  = if suitableAsKey . repr . target $ trgExpr
                                            then ForeignKey (target trgExpr)
                                            else PlainAttr
@@ -218,7 +216,7 @@ rel2att ci
         e
  = Att { attName = attrName
        , attExpr = e
-       , attType = tType2SqlType (representationOf ci (target e))
+       , attType = representationOf ci (target e)
        , attUse  =
           let f expr =
                  case expr of
@@ -307,36 +305,6 @@ rel2att ci
          f q x = q ++ [ls ++ rs | ls <- q, x == target (last ls)
                                 , rs <- q, x == source (head rs), null (ls `isc` rs)]
 
--- ^ Explanation:  rel is a relation from some kernel attribute k to f
--- ^ (attExpr k) is the relation from the plug's ID to k
--- ^ (attExpr k);rel is the relation from ID to f
-
-kernls :: A_Context -> [[A_Concept]]
-kernls context    -- Step 3: compute the kernels
- = [ largerCs++[ c | c<-kernel, c `notElem` largerCs ]              -- put the largest element up front
-   | kernel <- kernPartition (extraIsas++gens context)                -- recompute the kernels with the extra isa-pairs.
-   , let largerCs = [c | c<-kernel, null (largerConcepts (gens context) c)]   -- get the set of largest concepts (each kernel has precisely one)
-   ]
- where
-    -- | kernels are computed, starting with the set of concepts, on the basis of generalization tuples.
-    kernPartition :: [A_Gen] -> [[A_Concept]] -- ^ This function contains the recipe to derive a set of kernels from a set of isa-pairs.
-    kernPartition specialzs
-     = foldl f (group (delete ONE (concs context))) specialzs
-       where f disjuncLists g = concat haves : nohaves
-               where
-                 (haves,nohaves) = partition (not.null.intersect (concs g)) disjuncLists
-    extraIsas  -- Step 2: Maybe extra isa-pairs are needed to ensure that each kernel has precisely one largest concept
-       = concat
-         [ case [c | c<-kernel, null (largerConcepts (gens context) c)] of -- determine how many concepts in one kernel are largest
-             [_] -> []
-             rs  -> [ Isa{gengen=rootConcept, genspc=c} | c<-rs ]
-         | (rootConcept,kernel) <- zip [rc | i<-[0::Int ..]
-                                           , let rc=PlainConcept { cptnm = "rootConcept"++show i
-                                                                 }
-                                           , rc `notElem` concs context ]
-                                       (kernPartition (gens context))
-         ]
-    
 
 
 
@@ -398,26 +366,8 @@ makeUserDefinedSqlPlug context obj
    conceptLookuptable    = [(target e, attrib e tp) | (e,tp)<-kernel]
    attributeLookuptable  = [(er,lookupC (source er), attrib er tp) | (er,tp)<-plugMors]
    lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
-   sqltp :: ObjectDef -> SqlTType
+   sqltp :: ObjectDef -> TType
    sqltp _ = fatal 448 "The Sql type of a user defined plug has bitrotteted. The syntax should support a Representation."
-
-tType2SqlType :: TType -> SqlTType
-tType2SqlType dom 
- = case dom of
-     Alphanumeric     -> SQLVarchar 255
-     BigAlphanumeric  -> SQLText
-     HugeAlphanumeric -> SQLMediumText
-     Password         -> SQLVarchar 255
-     Binary           -> SQLBlob
-     BigBinary        -> SQLMediumBlob
-     HugeBinary       -> SQLLongBlob
-     Date             -> SQLDate
-     DateTime         -> SQLDateTime
-     Boolean          -> SQLBool
-     Integer          -> SQLBigInt
-     Float            -> SQLFloat
-     Object           -> SQLVarchar 255
-     TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
 
 typologies :: A_Context -> [Typology]
 typologies context = 

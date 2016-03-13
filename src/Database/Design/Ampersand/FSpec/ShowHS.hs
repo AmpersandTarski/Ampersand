@@ -168,8 +168,8 @@ instance ShowHS SqlAttributeUsage where
  showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
  showHS _ _ PlainAttr                 = "PlainAttr "
 
-instance ShowHS SqlTType where
- showHS _ indent sqltype = indent ++ show sqltype
+instance ShowHS TType where
+ showHS _ indent tt = indent ++ show tt
 
 instance ShowHSName Quad where
  showHSName q
@@ -374,7 +374,6 @@ instance ShowHS FSpec where
 
 instance ShowHS Meta where
  showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val
-
 
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
