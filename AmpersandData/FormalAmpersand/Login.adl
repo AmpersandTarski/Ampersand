@@ -17,6 +17,7 @@ MEANING "Aan elk account kan een aantal rollen zijn toegekend"
 
 CONCEPT Role "Een eigenschap waarmee kan worden bepaald welke functionaliteit toegankelijk is."
 RULE 'SystemAdmin' |- I[Role]
+POPULATION Role CONTAINS [ "SystemAdmin" ]
 
 RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
 MEANING "Het systeem onthoudt de loginnaam van elke lopende sessie, zolang die sessie leeft."
