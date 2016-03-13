@@ -36,13 +36,6 @@ largerConcepts gs cpt
  = nub$ oneLarger ++ concatMap (largerConcepts gs) oneLarger
   where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-genrhs g ]
 
--- | this function returns the most generic concepts in the class of a given concept
-rootConcepts :: [A_Gen]  -> [A_Concept] -> [A_Concept]
-rootConcepts gs cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts gs cpt ] `uni` cpts
-                                , root `notElem` [ genspc g | g@Isa{}<-gs]++[c | g@IsE{}<-gs, c<-genrhs g ]
-                                ]
-
-
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
 atomValuesOf :: ContextInfo -- the relevant info of the context
         -> [Population] 

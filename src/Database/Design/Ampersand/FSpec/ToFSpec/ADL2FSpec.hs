@@ -259,7 +259,7 @@ makeFSpec opts context
                 genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
                 | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
-                                   (makeGeneratedSqlPlugs opts context calcProps)
+                                   (makeGeneratedSqlPlugs context calcProps)
                 ]
      -- relations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
      -- WHAT -> is a BYPLUG?

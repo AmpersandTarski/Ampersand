@@ -16,19 +16,16 @@ import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
 
-makeGeneratedSqlPlugs :: Options
-              -> A_Context 
+makeGeneratedSqlPlugs :: A_Context 
               -> (Declaration -> Declaration) -- Function to add calculated properties to a declaration
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
+makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
   where 
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
     (conceptTableParts, linkTableParts) = dist calculatedDecls conceptsPerTable
-       where showCtp (cs,ds) = show (map name cs++map name ds)
-             showltp dcl     = name dcl++show (sign dcl)
     makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
     makeConceptTable (cpts , dcls) =
       TblSQL
@@ -70,6 +67,21 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
           attrib :: Expression -> SqlAttribute
           attrib a              = rel2att (ctxInfo context) conceptExprs declExprs a
           isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- conceptExprs ]
+-----------------------------------------
+--makeLinkTable
+-----------------------------------------
+-- makeLinkTable creates associations (BinSQL) between plugs that represent wide tables.
+-- Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
+--
+-- this concerns relations that are not univalent nor injective, i.e. attUniq=False for both columns
+-- Univalent relations and injective relations cannot be associations, because they are used as attributes in wide tables.
+-- REMARK -> imagine a context with only one univalent relation r::A*B.
+--           Then r can be found in a wide table plug (TblSQL) with a list of two columns [I[A],r],
+--           and not in a BinSQL with a pair of columns (I/\r;r~, r)
+--
+-- a relation r (or r~) is stored in the target attribute of this plug
+
+    -- | Make a binary sqlplug for a relation that is neither inj nor uni
     makeLinkTable :: Declaration -> PlugSQL
     makeLinkTable dcl 
          = BinSQL
@@ -120,38 +132,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
     --         c. All other concepts in the typology of B are more specific than B
     --      3) one of the above is true for any concept A' in the same group as A and concept B' in the same group as B.
     conceptsPerTable :: [[A_Concept]]
-    conceptsPerTable = f (map EDcD calculatedDecls) . map tyCpts . typologies $ context
-      where f :: [Expression] -> [[A_Concept]] -> [[A_Concept]]
-            f _ lsts = lsts  --TODO: Explain why we only group by typology. (could cause name conflict of relations, extra administartion, etc. etc. )
-            -- f [] lsts = lsts
-            -- f (d:ds) lsts 
-            --   | isUni d && isInj d && isSur d 
-            --        = let (involved, notInvolved) = partition (containsSourceOrTargetOf d) lsts
-            --              containsSourceOrTargetOf :: Expression -> [A_Concept] -> Bool
-            --              containsSourceOrTargetOf d cpts = not . null $ concs d `isc` cpts
-            --          in case involved of
-            --                []   -> fatal 45 "At least one of the list should contain the source and/or target of the declaration"
-            --                [x]  -> f ds lsts -- source and target of d are allready in the same list.
-            --                [x,y] 
-            --                  | null ((filter (/= target d) $ typologyConcepts (target d)) >- (smallerConcepts (gens context) (source d)))
-            --                     -> f ds ((if source d `elem` x then x++y else y++x) : notInvolved)
-            --                  | otherwise -> f ds lsts
-            --                _    -> fatal 51 "How can more than two disjunct lists of concepts contain the source and/or target of a dingle relation?"
-            --   | isUni d && isInj d && isTot d -- (d is not univalent, injective and surjective, but d~ is.)
-            --        = f (flp d:ds) lsts
-            --   | otherwise 
-            --        = f ds lsts
-            typologyConcepts :: A_Concept -> [A_Concept]
-            typologyConcepts cpt = case filter (cpt `elem`) . map tyCpts . typologies $ context of
-                                    [x] -> x
-                                    _   -> fatal 87 $ name cpt ++" should be in exactly one typology" 
-            sameTypology :: A_Concept -> A_Concept -> Bool
-            sameTypology a b = any bothConceptsAreIn (typologies context)
-             where
-               bothConceptsAreIn :: Typology -> Bool
-               bothConceptsAreIn ty = (isIn ty a) && (isIn ty b)
-               isIn :: Typology -> A_Concept -> Bool
-               isIn ty cpt = cpt `elem` tyCpts ty
+    conceptsPerTable = map tyCpts . typologies $ context
+
     -- | dist will distribute the declarations amongst the sets of concepts. 
     --   Preconditions: The sets of concepts are supposed to be sets of 
     --                  concepts that are to be represented in a single table. 
@@ -186,23 +168,6 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
     calculatedDecls = map calcProps $ relsDefdIn context
 
 
-makeGeneratedSqlPlugsOLD :: Options
-              -> A_Context
-              -> [Expression]
-              -> [Declaration]    -- ^ relations to be saved in generated database plugs.
-              -> [PlugSQL]
-makeGeneratedSqlPlugsOLD opts context totsurs entityDcls = gTables
-  where
-        vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
-        gTables = gPlugs ++ gLinkTables
-        gPlugs :: [PlugSQL]
-        gPlugs   = makeEntityTables opts context entityDcls (relsUsedIn vsqlplugs)
-        -- all plugs for relations not touched by definedplugs and gPlugs
-        gLinkTables :: [PlugSQL]
-        gLinkTables = [ makeLinkTable (ctxInfo context) dcl totsurs
-                      | dcl<-entityDcls
-                      , Inj `notElem` properties dcl
-                      , Uni `notElem` properties dcl]
 
 -----------------------------------------
 --makeLinkTable
