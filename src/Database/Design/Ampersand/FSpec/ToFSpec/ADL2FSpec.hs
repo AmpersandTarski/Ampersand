@@ -261,10 +261,6 @@ makeFSpec opts context
                 | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
                                    (makeGeneratedSqlPlugs context calcProps)
                 ]
-     -- relations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
-     -- WHAT -> is a BYPLUG?
-     entityRels = [ d | d<-calculatedDecls, not (decplug d)] -- The persistent relations.
-
      qlfname x = if null (namespace opts) then x else "ns"++namespace opts++x
 
      --TODO151210 -> Plug A is overbodig, want A zit al in plug r

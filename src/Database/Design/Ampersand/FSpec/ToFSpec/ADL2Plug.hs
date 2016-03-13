@@ -5,13 +5,10 @@ module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   ,kernls
   ,typologies)
 where
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
-import GHC.Exts (sortWith)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.ShowHS --for debugging
 import Data.Maybe
 import Data.Char
 import Data.List (nub,intercalate,intersect,partition,group,delete)
@@ -25,6 +22,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
   where 
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
+    calculatedDecls = map calcProps .filter (not . decplug) . relsDefdIn $ context 
     (conceptTableParts, linkTableParts) = dist calculatedDecls conceptsPerTable
     makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
     makeConceptTable (cpts , dcls) =
@@ -165,72 +163,9 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                            (True   , False  ) -> Just . source $ d
                            (False  , True   ) -> Just . source $ d
                            (True   , True   ) -> Just . source $ d
-    calculatedDecls = map calcProps $ relsDefdIn context
 
 
 
------------------------------------------
---makeLinkTable
------------------------------------------
--- makeLinkTable creates associations (BinSQL) between plugs that represent wide tables.
--- Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
---
--- this concerns relations that are not univalent nor injective, i.e. attUniq=False for both columns
--- Univalent relations and injective relations cannot be associations, because they are used as attributes in wide tables.
--- REMARK -> imagine a context with only one univalent relation r::A*B.
---           Then r can be found in a wide table plug (TblSQL) with a list of two columns [I[A],r],
---           and not in a BinSQL with a pair of columns (I/\r;r~, r)
---
--- a relation r (or r~) is stored in the target attribute of this plug
-
--- | Make a binary sqlplug for a relation that is neither inj nor uni
-makeLinkTable :: ContextInfo -> Declaration -> [Expression] -> PlugSQL
-makeLinkTable ci dcl totsurs =
-  case dcl of
-    Sgn{}
-     | isInj dcl || isUni dcl
-        -> fatal 55 $ "unexpected call of makeLinkTable("++show dcl++"), because it is injective or univalent."
-     | otherwise
-        -> BinSQL
-             { sqlname = unquote . name $ dcl
-             , columns = ( -- The source attribute:
-                           Att { attName = concat["Src" | isEndo dcl]++(unquote . name . source) trgExpr
-                               , attExpr = srcExpr
-                               , attType = tType2SqlType . representationOf ci . source $ srcExpr
-                               , attUse  = if suitableAsKey . representationOf ci . source $ srcExpr
-                                           then ForeignKey (target srcExpr)
-                                           else PlainAttr
-                               , attNull = isTot trgExpr
-                               , attUniq = isUni trgExpr
-                               }
-                         , -- The target attribute:
-                           Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
-                               , attExpr = trgExpr
-                               , attType = tType2SqlType . representationOf ci . target $ trgExpr
-                               , attUse  = if suitableAsKey . representationOf ci . target $ trgExpr
-                                           then ForeignKey (target trgExpr)
-                                           else PlainAttr
-                               , attNull = isSur trgExpr
-                               , attUniq = isInj trgExpr
-                               }
-                          )
-             , cLkpTbl = [] --in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
-             , mLkp    = trgExpr
-          --   , sqlfpa  = NO
-             }
-    _  -> fatal 90 "Do not call makeLinkTable on relations other than Sgn{}"
-   where
-    r_is_Tot = isTot dcl || dcl `elem` [ d |       EDcD d  <- totsurs]
-    r_is_Sur = isSur dcl || dcl `elem` [ d | EFlp (EDcD d) <- totsurs]
-    --the expr for the source of r
-    srcExpr
-     | r_is_Tot = EDcI (source dcl)
-     | r_is_Sur = EDcI (target dcl)
-     | otherwise = let er=EDcD dcl in EDcI (source dcl) ./\. (er .:. flp er)
-    --the expr for the target of r
-    trgExpr
-     | not r_is_Tot && r_is_Sur = flp (EDcD dcl)
-     | otherwise                = EDcD dcl
 unquote :: String -> String
 unquote str 
   | length str Prelude.< 2 = str
@@ -405,105 +340,6 @@ kernls context    -- Step 3: compute the kernels
 
 
 
------------------------------------------
---makeEntityTables  (formerly called: makeTblPlugs)
------------------------------------------
-{- makeEntityTables computes a set of plugs to obtain tables in a transactional database with minimal redundancy.
-   We call them "wide tables".
-   makeEntityTables computes entities with their attributes.
-   It is based on the principle that each concept is represented in at most one plug,
-   and each relation in at most one plug.
-   First, we determine the kernels for all plugs.
-   A kernel contains the concept table(s) for all concepts that are administered in the same entity.
-   For that, we collect all relations that are univalent, injective, and surjective (the kernel relations).
-      By the way, that includes all isa-relations, since they are univalent, injective, and surjective by definition.
-      Since isa-relations are not declared explicitly, they are generated separately.
-   If two concepts a and b are in the same entity, there is a concept g such that a isa g and b isa g.
-   Of all concepts in an entity, one most generic concept is designated as root, and is positioned in the first column of the table.
-   Secondly, we take all univalent relations that are not in the kernel, but depart from this kernel.
-   These relations serve as attributes. Code:  [a| a<-attRels, source a `elem` concs kernel]
-   Then, all these relations are made into attributes. Code: plugAttributes = [rel2att plugMors a| a<-plugMors]
-   We also define two lookup tables, one for the concepts that are stored in the kernel, and one for the attributes of these concepts.
-   For the fun of it, we sort the plugs on length, the longest first. Code:   sortWith ((0-).length.attributes)
-   By the way, parameter allRels contains all relations that are declared in context, enriched with extra properties.
-   This parameter allRels was added to makePlugs to avoid recomputation of the extra properties.
-   The parameter exclusions was added in order to exclude certain concepts and relations from the process.
--}
--- | Generate non-binary sqlplugs for relations that are at least inj or uni, but not already in some user defined sqlplug
-makeEntityTables :: Options
-                -> A_Context
-                -> [Declaration] -- ^ all relations in scope
-                -> [Declaration] -- ^ relations that should be excluded, because they wil not be implemented using generated sql plugs.
-                -> [PlugSQL]
-makeEntityTables opts context allDcls exclusions
- = sortWith ((0-).length.plugAttributes)
-    (map (kernel2Plug (ctxInfo context)) kernelsWithAttributes)
-   where
-    diagnostics
-      = "\nallDcls:" ++     concat ["\n  "++showHSName r           | r<-allDcls]++
-        "\nallDcls:" ++     concat ["\n  "++showHS opts "\n  " r  | r<-allDcls]++
-        "\nexclusions:" ++  concat ["\n  "++showHSName r           | r<-exclusions]++
-        "\nattRels:" ++     concat ["\n  "++showHS opts "    " e  | e<-attRels]++
-        "\n"
-    kernelsWithAttributes = dist attRels (kernls context) []
-      where
-        dist :: (Association attrib, Show attrib) => [attrib] -> [[A_Concept]] -> [([A_Concept], [attrib])] -> [([A_Concept], [attrib])]
-        dist []   []     result = result
-        dist atts []     _      = fatal 246 ("No kernel found for atts: "++show atts++"\n"++diagnostics)
-        dist atts (kernel:ks) result = dist otherAtts ks ([(kernel,attsOfK)] ++ result)
-           where (attsOfK,otherAtts) = partition belongsInK atts
-                 belongsInK att = source att `elem` kernel
-    -- | converts a kernel into a plug
-    kernel2Plug :: ContextInfo -> ([A_Concept],[Expression]) -> PlugSQL
-    kernel2Plug ci (kernel, attsAndIsaRels)
-     =  TblSQL
-             { sqlname    = unquote . name . head $ kernel -- ++ " !!Let op: De ISA relaties zie ik hier nergens terug!! (TODO. HJO 20131201"
-             , attributes = map attrib plugMors            -- Each attribute comes from a relation.
-             , cLkpTbl    = conceptLookuptable
-             , mLkpTbl    = attributeLookuptable ++ isaLookuptable
-             }
-        where
-          (isaAtts,atts) = partition isISA attsAndIsaRels
-            where isISA (EDcI _) = True
-                  isISA _        = False
-          mainkernel = map EDcI kernel
-          plugMors :: [Expression]
-          plugMors = let exprs = mainkernel++atts in
-                     if (suitableAsKey . representationOf ci . target . head) exprs || True --TODO: This check might not be required here. 
-                     then exprs
-                     else -- TODO: make a nice user error of the following:
-                          fatal 360 $ "The concept `"++(name .target .head) exprs++"` would be used as primary key of its table. \n"
-                                     ++"  However, its representation ("
-                                     ++(show . representationOf ci . target . head) exprs
-                                     ++") is not suitable as a key." 
-                     
-          conceptLookuptable :: [(A_Concept,SqlAttribute)]
-          conceptLookuptable    = [(target r,attrib r) | r <-mainkernel]
-          attributeLookuptable :: [(Expression,SqlAttribute,SqlAttribute)]
-          attributeLookuptable  = -- kernel attributes are always surjective from left to right. So do not flip the lookup table!
-                                  [(e,lookupC (source e),attrib e) | e <-plugMors]
-          lookupC cpt           = head [f |(c',f)<-conceptLookuptable, cpt==c']
-          attrib a              = rel2att (ctxInfo context) mainkernel atts a
-          isaLookuptable = [(e,lookupC (source e),lookupC (target e)) | e <- isaAtts ]
-    -- attRels contains all relations that will be attribute of a kernel.
-    -- The type is the largest possible type, which is the declared type, because that contains all atoms (also the atoms of subtypes) needed in the operation.
-    attRels :: [Expression]
-    attRels = mapMaybe attExprOf (allDcls>- exclusions)
-     where
-       attExprOf :: Declaration -> Maybe Expression
-       attExprOf d =
-        case d of  --make explicit what happens with each possible decl...
-          Isn{} -> Nothing -- These relations are already in the kernel
-          Vs{}  -> Nothing -- Vs are not implemented at all
-          Sgn{} ->
-               case (isInj d, isUni d, isTot d, isSur d) of
-                    (False  , False  , _      , _      ) --Will become a link-table
-                        -> Nothing
-                    (True   , False  , _      , _      )
-                        -> Just $ flp (EDcD d)
-                    (True   , True   , True   , False  ) --Equivalent to CLASSIFY s ISA t, however, it is named, so it must be stored in a plug!
-                        -> Just $ flp (EDcD d)
-                    _   -> Just $      EDcD d
 
 -----------------------------------------
 --makeUserDefinedSqlPlug
