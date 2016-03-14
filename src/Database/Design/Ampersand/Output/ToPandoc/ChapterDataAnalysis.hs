@@ -730,4 +730,9 @@ primExpr2pandocMath lang e =
              Dutch -> text "de identiteitsrelatie van "
              English -> text "the identityrelation of "
         <> math (name c)
+  (EEps c _) -> 
+            case lang of
+             Dutch -> text "de identiteitsrelatie van "
+             English -> text "the identityrelation of "
+        <> math (name c)
   _   -> fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show e)
