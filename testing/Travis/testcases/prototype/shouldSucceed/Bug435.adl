@@ -1,0 +1,10 @@
+CONTEXT Bug435 IN ENGLISH
+-- Erroneously yields violations:
+-- Violations of rule "UNI r::C*D":
+-- - [("b","b")]
+
+POPULATION r[A*B] CONTAINS [("a","b")]
+RELATION r[A*B] [UNI]
+RELATION r[C*D] [UNI]
+
+ENDCONTEXT

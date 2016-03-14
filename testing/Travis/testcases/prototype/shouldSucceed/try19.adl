@@ -1,0 +1,20 @@
+CONTEXT Try19 IN ENGLISH
+PATTERN Try19
+
+orderedBy :: Order * Client
+orderReceived :: Order * Client
+orderAccepted :: Order * Vendor
+
+RULE allReceived: orderedBy |- (orderReceived; orderReceived~ /\ -(orderAccepted; V[Vendor * Order])); orderedBy -- == TOT extended to allow hyperlinking to vendor in violation
+MEANING "All accepted orders have been received"
+
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This file illustrates the need for a "closed world assumption".
+   For practical purposes, we need to be able to say 'not'. For example:
+   For each order that has been ordered by a client, must either be a client to receive that order, or it has not (yet) been accepted by a vendor.
+   Desired Result: PASS
+-}

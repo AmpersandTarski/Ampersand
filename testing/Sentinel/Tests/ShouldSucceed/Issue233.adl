@@ -1,0 +1,26 @@
+﻿CONTEXT Diamond IN ENGLISH -- Issue233
+-- This script checks whether or not the diamond operator is functional.
+
+sum :: Sum * Integer [UNI]
+arg :: Sum * Integer
+
+IDENT "Sums are identified by their arguments": Sum (arg)
+-- In other words:
+RULE "Sums are id'd by their args": arg <> arg~ |- I[Sum]
+
+RULE "Test equivalence": arg <> arg~ = (-arg ! arg~) /\ (arg ! -arg~)
+
+POPULATION arg CONTAINS [ ("1+2", "1") ] 
+POPULATION arg CONTAINS [ ("1+2", "2") ] 
+
+POPULATION arg CONTAINS [ ("1+3", "1") ] 
+POPULATION arg CONTAINS [ ("1+3", "3") ] 
+
+POPULATION arg CONTAINS [ ("2+3", "2") ] 
+POPULATION arg CONTAINS [ ("2+3", "3") ] 
+
+POPULATION arg CONTAINS [ ("1+2+3", "1") ] 
+POPULATION arg CONTAINS [ ("1+2+3", "2") ] 
+POPULATION arg CONTAINS [ ("1+2+3", "3") ] 
+
+ENDCONTEXT

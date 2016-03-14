@@ -1,0 +1,19 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test18
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[A*Y]
+RELATION t[B*Y]
+RULE r = s;I[A];t
+CLASSIFY D IS A/\B
+-- was:  RULE I[D] = I[A]/\I[B]
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: Since try18b fails, this script is no longer ambiguous and should succeed.
+   Reason: can pick t[A*Y] because concept A is closer than concept B.
+   Result: PASS
+-}

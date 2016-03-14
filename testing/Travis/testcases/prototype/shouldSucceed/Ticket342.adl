@@ -1,0 +1,33 @@
+CONTEXT Ticket342 IN DUTCH
+META "Titel" "Taalmodel van het Georegister"
+META "Auteur" "Han Joosten"
+
+PATTERN Percelen
+
+  CONCEPT Perceel "Een geografisch begrensd stuk grond."
+
+  PURPOSE RELATION overlapt [Perceel*Perceel] 
+  {+Percelen kunnen overlap vertonen met elkaar. Van overlap tussen twee percelen is sprake als ze zowel geometrisch als in de tijd overlappend zijn.-}
+  overlapt :: Perceel * Perceel PRAGMA "Perceel " " overlapt met perceel "
+  MEANING "Een perceel kan overlap hebben met andere percelen."
+POPULATION overlapt [Perceel * Perceel] CONTAINS
+  [ ("1234", "2345")
+  ; ("2345", "6666")
+  ; ("3456", "6666")
+  ]
+
+ENDPATTERN
+
+
+--- Interfaces -----
+INTERFACE Percelen : I[ONE]
+BOX [ Percelen           : V[ONE*Perceel]
+    ]
+INTERFACE Overlap  : I[Perceel]
+BOX [ Perceel : I
+    , "Overlapt"   : overlapt 
+    , "Overlapt geflipt"  : overlapt~ 
+    , "Overlapt uni overlaptgeflipt"  : overlapt \/ (overlapt~) 
+    ]
+
+ENDCONTEXT

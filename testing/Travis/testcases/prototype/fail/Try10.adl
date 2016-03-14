@@ -1,0 +1,67 @@
+CONTEXT Try10 IN ENGLISH
+
+PURPOSE PATTERN Try10 IN ENGLISH 
+{+
+This pattern is meant to test the translation of ObjectDefs in Ampersand.
+-}
+
+PATTERN Try10
+  r :: A*A
+  s :: C*X
+  t :: A*B
+  CLASSIFY D ISA A
+  CLASSIFY D ISA C
+ENDPATTERN
+
+INTERFACE Overview : I[ONE]
+  BOX [ as : V[ONE*A]
+        BOX [ "id" : I
+            , "r"  : r
+            , r    : s
+            , t    : t  -- type is B
+              BOX [ "id" : I
+                  , s    : s
+                  , t    : t~;s
+                  ]
+            ]
+      ]
+
+ENDCONTEXT
+
+{- 
+   Purpose: to examine the error message deeply inside an interface.
+   Result: FAIL
+   Reason: on line 23 there is an error because the source of an attribute (s) does not match with its environment.
+   
+   Message:
+Error(s) found: 
+Type error in BOX 
+Cannot match: 
+- concept "C", Src of : s 
+if you think there is no type error, add an order between the mismatched concepts. 
+Error at symbol () in file /home/sentinel/git/ampersand-models/Tests/ShouldFail/Try10.adl at line 18 : 9 
+============================== 
+Cannot disambiguate: I 
+Please add a signature. 
+You may have intended one of these: 
+I[B] 
+I[C] 
+Error at symbol () in file /home/sentinel/git/ampersand-models/Tests/ShouldFail/Try10.adl at line 22 : 28 
+============================== 
+Type error in BOX 
+Cannot match: 
+- concept "C", Src of : s 
+if you think there is no type error, add an order between the mismatched concepts. 
+Error at symbol () in file /home/sentinel/git/ampersand-models/Tests/ShouldFail/Try10.adl at line 22 : 15 
+============================== 
+Ambiguous type when matching: Tgt of t~ 
+and Src of s. 
+The type can be "C" or "A" 
+None of these concepts is known to be the smallest, you may want to add an order between them. 
+Error at symbol () in file /home/sentinel/git/ampersand-models/Tests/ShouldFail/Try10.adl at line 24 : 30 
+============================== 
+Names / labels must be unique. "r", however, is used at: 
+line 19:15, file /home/sentinel/git/ampersand-models/Tests/ShouldFail/Try10.adl 
+line 20:15, file /home/sentinel/git/ampersand-models/Tests/ShouldFail/Try10.adl. 
+Error at symbol () in file /home/sentinel/git/ampersand-models/Tests/ShouldFail/Try10.adl at line 19 : 15 
+-}

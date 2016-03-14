@@ -1,0 +1,90 @@
+CONTEXT Conjuncts IN ENGLISH
+-- Test file for signal conjuncts
+
+PROCESS P
+
+ri1 :: A * X -- = [ ("Ai1", "X1") ]
+ri2 :: A * X -- = [ ("Ai2", "X1") ]
+ri3 :: A * X -- = [ ("Ai3", "X1") ]
+ri4 :: A * X --= [ ("Ai4", "X1") ]
+
+rs1 :: A * X = [ ("As1", "X1") ]
+rs2 :: A * X = [ ("As2", "X1") ]
+rs3 :: A * X = [ ("As3", "X1") ]
+rs4 :: A * X = [ ]
+
+show :: A * S = [ ("Ai1", "Concept Ai1"); ("Ai2", "Concept Ai2"); ("Ai3", "Concept Ai3"); ("Ai4", "Concept Ai4") 
+                ; ("As1", "Concept As1"); ("As2", "Concept As2"); ("As3", "Concept As3"); ("As4", "Concept As4") ]
+                
+show :: X * S = [ ("X1", "Concept X1") ]
+
+RULE signal1: -rs1 /\ -rs2
+RULE signal2: -rs2 /\ -rs3
+RULE signal3: -rs4
+RULE signal4: V[ONE]
+--RULE inv1: ri1 /\ -rs1 --shares conjunct with signal1
+--RULE inv2: ri2 /\ -rs4 --shares conjunct with signal3
+
+-- same as signal1 and signal2, but with fancy violation message
+RULE fancy1: -rs1 /\ -rs2 VIOLATION (TXT "Fancy signal-1: (", SRC show, TXT ", ", TGT show, TXT ")")
+RULE fancy2: -rs2 /\ -rs3 VIOLATION (TXT "Fancy signal-2: (", SRC show, TXT ", ", TGT show, TXT ")")
+
+ROLE role1 MAINTAINS signal1, fancy1
+ROLE role2 MAINTAINS signal2, fancy2
+ROLE role3 MAINTAINS signal3, signal4
+ENDPROCESS
+
+INTERFACE Overview (ri1,ri2,ri3,ri4,rs1,rs2,rs3,rs4)  : I[ONE]
+BOX[ "ri1"  : V[ONE*A]
+     BOX[ "A" : I
+        , "X" : ri1
+        ]
+   , "ri2"  : V[ONE*A]
+     BOX[ "A" : I
+        , "X" : ri2
+        ]
+   , "ri3"  : V[ONE*A]
+     BOX[ "A" : I
+        , "X" : ri3
+        ]
+   , "ri4"  : V[ONE*A]
+     BOX[ "A" : I
+        , "X" : ri4
+        ]
+   , "rs1"  : V[ONE*A]
+     BOX[ "A" : I
+        , "X" : rs1
+        ]
+   , "rs2"  : V[ONE*A]
+     BOX[ "A" : I
+        , "X" : rs2
+        ]
+   , "rs3"  : V[ONE*A]
+     BOX[ "A" : I
+        , "X" : rs3
+        ]
+   , "rs4"  : V[ONE*A]
+     BOX[ "A" : I
+        , "X" : rs4
+        ]
+   , "A"  : V[ONE*A]
+   , "X"  : V[ONE*X]
+   ]
+
+INTERFACE AForRole1 (rs1,rs2) FOR role1 : I[A]
+BOX [ "rs1" : rs1
+    , "rs2" : rs2
+    ] 
+
+INTERFACE AForRole2 (rs2,rs3) FOR role2 : I[A]
+BOX [ "rs2" : rs2
+    , "rs3" : rs3
+    ]
+
+INTERFACE AForRole3 (rs1,rs2,rs3) FOR role3 : I[A]
+BOX [ "rs1" : rs1
+    , "rs2" : rs2
+    , "rs3" : rs3
+    ]
+
+ENDCONTEXT

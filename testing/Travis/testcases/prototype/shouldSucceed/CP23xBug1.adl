@@ -1,0 +1,7 @@
+﻿CONTEXT CP23xBug1 IN ENGLISH
+PURPOSE CONTEXT CP23xBug1
+{+Here we state the purpose of this context-}
+
+INCLUDE "CP23xBug2.adl"
+
+ENDCONTEXT

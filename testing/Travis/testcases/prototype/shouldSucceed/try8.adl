@@ -1,0 +1,17 @@
+﻿CONTEXT Try8 IN ENGLISH
+
+PATTERN Try8
+RELATION r[A*C]
+RELATION r2[A*D] [UNI,TOT]
+RELATION s[A*B]
+RELATION t[B*C]
+CLASSIFY Q ISA B
+RULE r = s;(t /\ V[Q*C])
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: Test on proper type casting...
+   Result: PASS
+-}

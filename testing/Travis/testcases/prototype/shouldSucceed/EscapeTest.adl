@@ -1,0 +1,53 @@
+CONTEXT EscapeTest IN ENGLISH
+
+PURPOSE PATTERN EscapeTest
+{+
+This pattern tests escaping capabilities of the Prototype generator by using 
+special characters on all possible constructs.
+-}
+
+-- Special characters that may cause problems:
+
+-- php strings:         '"$\
+-- javascript strings:  '"\
+-- html:                <>&
+-- url:                 &/?%  ..
+-- in filenames:        /
+
+-- String with all characters combined: " ' \"  $ \\ < > & / ? % end"
+
+-- Results
+-- Label: ok
+-- Atom: ok, \ seems to be filtered from atoms by Ampersand
+-- Interface: / leads to problem with filenames in old generator (TODO)
+-- Concept: old Installer.php fails, so not tested yet. (TODO)
+-- Relation: can only be identifier, so no special characters (TODO: why not?) --HJO: The reason is that relations are translated into column names in the database. This would become a serious cause of nasty problems, so we forbid it. 
+
+PATTERN EscapeTest
+  identifies :: Identifier * Thing       PRAGMA "" " and " " are paired in relation identifies".
+  RULE "identification": I |- identifies;identifies~
+    MEANING IN ENGLISH "Every identifier identifies precisely one Thing"
+ENDPATTERN
+
+INTERFACE "interface ' \"  $ \\ < > &  ? % end" : I[ONE]
+  BOX [ "label ' \"  $ \\ < > & / ? % end" : V[ONE*Identifier]
+      , bs : V[ONE*Thing]
+      ]
+
+INTERFACE Id : I[Identifier]
+  BOX [ id         : I[Identifier]
+      , identifies : identifies
+      , back       : V[Identifier*ONE]
+      ]
+
+INTERFACE Th : I[Thing]
+  BOX [ id                 : I[Thing]
+      , "is identified by" : identifies~
+      , back               : V[Thing*ONE]
+      ]
+
+POPULATION identifies[Identifier*Thing] CONTAINS
+    [ ("1", "atom \' \"  $ \\ < > & / ? % end")
+    ]
+
+ENDCONTEXT

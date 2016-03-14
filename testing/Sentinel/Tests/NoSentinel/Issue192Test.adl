@@ -1,0 +1,6 @@
+CONTEXT Issue192 IN DUTCH
+INCLUDE "Issue192.xlsx"
+   CLASSIFY Auto ISA Voertuig
+   RELATION eigenaar [Voertuig * Persoon] [UNI,TOT]
+   RELATION aantalWielen [ Auto * Aantal]  [UNI,TOT]
+ENDCONTEXT

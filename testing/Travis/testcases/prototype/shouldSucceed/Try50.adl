@@ -1,0 +1,12 @@
+CONTEXT Try47 IN DUTCH
+
+PATTERN Medewerkers
+CLASSIFY S ISA G
+RELATION r[G*Iets]
+RELATION s[S*S]
+ENDPATTERN
+
+INTERFACE "Te valideren" : I[G]
+BOX [ iets : s;r ]
+
+ENDCONTEXT

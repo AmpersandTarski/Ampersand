@@ -1,0 +1,36 @@
+CONTEXT Try5 IN ENGLISH
+
+PATTERN Try5
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
+RELATION u[E*Y]
+RULE r = s;(t/\u)
+-- was:  RULE r0: I[D] = (I[A]/\I[B])/\I[E]
+--       RULE r1: I[F] = I[B]/\I[E]
+--       RULE r2: I[G] = I[A]/\I[B]
+CLASSIFY D IS (A/\B)/\E
+CLASSIFY F IS B/\E
+CLASSIFY G IS A/\B
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This is an attempt to mislead the type checker, by
+            choosing a different source and target for t and u.
+   Result: PASS
+-- Reason: t/\u are in conflict (concepts B and E), but there is an intersection type (concept F, rule r1) to resolve that.
+           Now s~ is in conflict with t/\u (A is not F), but there is an intersection type (concept D).
+           The mischievous attempt to mislead the type checker is that it must derive that A/\F=D
+
+Proof:
+   A/\F=D
+= {CLASSIFY r0: D = (A/\B)/\E}
+   A/\F=(A/\B)/\E
+= {CLASSIFY F = B/\E}
+   A/\(B/\E)=(A/\B)/\E
+= {/\ is associative}
+   True
+
+-}

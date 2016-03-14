@@ -1,0 +1,17 @@
+CONTEXT Propertytests IN ENGLISH
+-- This file aims to provide some quick, but certainly not exhaustive, tests for relational properties.
+
+RULE "All A's": I[A] = 'a1' \/ 'a2' \/ 'a3'
+
+rfxtest :: A*A [RFX] =[ ("a1", "a1"); ("a2", "a2"); ("a3", "a3") ]
+irftest :: A*A [IRF] =[ ("a1", "a2"); ("a1", "a3") ]
+symtest :: A*A [SYM] =[ ("a2", "a2"); ("a1", "a3"); ("a3", "a1") ]
+asytest :: A*A [ASY] =[ ("a1", "a3"); ("a3", "a2"); ("a2", "a1") ]
+trntest :: A*A [TRN] =[ ("a1", "a2"); ("a2", "a3"); ("a1", "a3") ]
+
+unitest :: A*A [UNI] =[ ("a1", "a3"); ("a2", "a2")]
+tottest :: A*A [TOT] =[ ("a1", "a3"); ("a2", "a2"); ("a2", "a1"); ("a3", "a1") ]
+injtest :: A*A [INJ] =[ ("a1", "a3"); ("a3", "a2")]
+surtest :: A*A [SUR] =[ ("a1", "a3"); ("a3", "a3"); ("a2", "a1"); ("a2", "a2") ]
+
+ENDCONTEXT

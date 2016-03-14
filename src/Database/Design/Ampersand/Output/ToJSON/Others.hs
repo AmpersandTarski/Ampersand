@@ -18,6 +18,7 @@ data Attribute = Attribute
   , attJSONconcept   :: String
   , attJSONunique    :: Bool
   , attJSONnull      :: Bool
+  , attJSONflipped   :: Bool
   } deriving (Generic, Show)
 instance ToJSON TableColumnInfo where
   toJSON = amp2Jason
@@ -40,6 +41,7 @@ instance JSON SqlAttribute Attribute where
   , attJSONconcept   = name . target . attExpr $ att
   , attJSONunique    = attUniq $ att
   , attJSONnull      = attNull $ att
+  , attJSONflipped   = attFlipped $ att
   }
 
 
@@ -58,7 +60,7 @@ instance JSON FSpec Views where
  fromAmpersand fSpec _ = Views $ (map (fromAmpersand fSpec) 
       [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ]) --sort from spec to gen
   where
-   conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
+   conceptsFromSpecificToGeneric = concatMap (reverse . tyCpts) . ftypologies $ fSpec
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
   { vwJSONlabel      = vdlbl vd

@@ -1,0 +1,16 @@
+CONTEXT Try34 IN ENGLISH
+
+PATTERN Try34
+CLASSIFY Verplichting ISA Criterium
+CLASSIFY Verwachting ISA Criterium
+RELATION scope[Criterium*Bedrijfsfunctie]
+
+RELATION tav[Verplichting*Bedrijfsfunctie]
+
+RELATION tav[Verwachting*Bedrijfsfunctie]
+
+RULE scope/\tav[Verplichting*Bedrijfsfunctie] |- tav[Verwachting*Bedrijfsfunctie]
+
+ENDPATTERN
+ENDCONTEXT
+{- This file gave type errors on July 11th, 2013. However, the condensed graph proved that there should be no type errors. -}

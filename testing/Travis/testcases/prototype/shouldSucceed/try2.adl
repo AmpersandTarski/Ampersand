@@ -1,0 +1,23 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test2
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
+RELATION t[Q*Y]
+RULE r = s;t[B*Y]
+CLASSIFY D IS A/\B
+-- was:  RULE I[D] = I[A]/\I[B]
+-- RULE 'THING'[A] |- t[B*Y];V[Y*A] -- there is something of A in t
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script shows that a type conflict (between A and B) can be resolved
+            by defining an intersection type D.
+            Besides, it shows that the type checker can choose the right type for 
+            subexpression t, which is t[B*Y] (line 6)
+   Result: PASS
+   Reason: the type on ; is inferred as I[D]
+-}

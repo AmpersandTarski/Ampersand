@@ -1,0 +1,14 @@
+CONTEXT Try28 IN ENGLISH
+clientName :: Client -> Name 
+clientAddress :: Client -> Address 
+
+VIEW Client: Client("klantnaam1":clientName, TXT ", ", "klantnaam2":clientAddress)
+
+{- Purpose This script demonstrates a bug where the relations in a VIEW are not taken into account in the typechecker.
+The produced message:
+ampersand: !fatal error 1601 (module ADL1.P2A_Converters, Ampersand v2.2.1.986:987M)
+  Term clientName (line 5:34, file "try28.adl") was not found in 2 bindings.
+  clientName[Client*Name]
+  clientAddress[Client*Address]
+-} 
+ENDCONTEXT

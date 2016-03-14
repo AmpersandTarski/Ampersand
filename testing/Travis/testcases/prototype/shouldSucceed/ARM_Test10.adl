@@ -1,0 +1,16 @@
+﻿CONTEXT ARM_Test10 IN DUTCH -- (project ARMisa)
+CLASSIFY Verplichting ISA Criterium
+CLASSIFY Verwachting ISA Criterium
+CLASSIFY Gewetensvraag IS Verplichting /\ Verwachting
+critText :: Criterium -> Blob
+afdekking :: Criterium * Verwachtingsverzameling [UNI]
+vvVerwachting :: Verwachtingsverzameling * Criterium
+INTERFACE "Gewetensvraag" : I[Gewetensvraag]
+BOX[ afdekking : afdekking
+BOX[ gewetensvragen: vvVerwachting;I[Gewetensvraag]
+BOX[ gewetensvraag: I
+, criterium : critText
+]
+]
+]
+ENDCONTEXT

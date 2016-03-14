@@ -19,7 +19,7 @@ import qualified Data.Map as Map
 import Data.Foldable (toList)
 import Data.Function
 import Data.Maybe
-import Data.List(nub)
+import Data.List as Lst
 import Data.Char(toUpper,toLower)
 import Data.Either
 
@@ -166,7 +166,7 @@ findDeclsLooselyTyped declMap x (Just src) (Just tgt)
    `orWhenEmpty` (findDeclsLooselyTyped declMap x (Just src) Nothing `unin` findDeclsLooselyTyped declMap x Nothing (Just tgt))
    `orWhenEmpty` findDecls' declMap x
  where isct lsta lstb = [a | a<-lsta, a `elem` lstb]
-       unin lsta lstb = nub (lsta ++ lstb)
+       unin lsta lstb = Lst.nub (lsta ++ lstb)
 findDeclsLooselyTyped declMap x Nothing Nothing = findDecls' declMap x
 findDeclsLooselyTyped declMap x (Just src) Nothing
  = [dcl | dcl <- findDecls' declMap x, name (source dcl) == name src ]
@@ -242,13 +242,8 @@ pCtx2aCtx opts
                      , ctxpats = pats
                      , ctxrs = rules
                      , ctxds = map fst declsAndPops
-                     , ctxpopus = nub (udpops
-                                     ++map snd declsAndPops
-                                     ++mp1Pops contextInfo rules
-                                     ++mp1Pops contextInfo pats
-                                     ++mp1Pops contextInfo identdefs
-                                     ++mp1Pops contextInfo viewdefs
-                                     ++mp1Pops contextInfo interfaces)
+                     , ctxpopus = Lst.nub (udpops
+                                     ++map snd declsAndPops)
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
@@ -262,6 +257,7 @@ pCtx2aCtx opts
                      , ctxsql = sqldefs
                      , ctxphp = phpdefs
                      , ctxmetas = p_metas
+                     , ctxInfo = contextInfo 
                      }
       checkOtherAtomsInSessionConcept actx
       checkPurposes actx             -- Check whether all purposes refer to existing objects
@@ -279,16 +275,34 @@ pCtx2aCtx opts
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
-    
+
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
      = do mp <- Map.fromList . concat <$> traverse findTypes (concat (onlyUserConcepts (getGroups genLattice)))
           let findR x = Map.findWithDefault Object x mp -- default representation is Object (sometimes called `ugly identifiers')
           _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
-          return (CI { ctxiGens = map pGen2aGen p_gens
+          return (CI { ctxiGens = gns
                      , representationOf = findR
+                     , multiKernels = map mkTypology $ f [] gns
                      })
-    
+        where 
+          gns = map pGen2aGen allGens
+          f typols gs = 
+             case gs of
+               []   -> typols
+               x:xs -> let (as,bs) = Lst.partition (not . null . uni (concs x)) typols
+                       in f ((concat as `uni` concs x) : bs ) xs 
+          mkTypology cs = 
+                Typology { tyroot = filter (not . isSpecific) cs
+                         , tyCpts = cs
+                         }
+             where 
+               isSpecific :: A_Concept -> Bool
+               isSpecific cpt = cpt `elem` concatMap specifics gns
+               specifics :: A_Gen -> [A_Concept]
+               specifics g = case g of
+                              Isa{} -> [genspc g]
+                              IsE{} -> genrhs g
     compareTypes f p_gen
      = sequence_ [ if (f genC == rightType) then pure () else nonMatchingRepresentTypes p_gen (f genC) rightType
                  | genC <- gen_concs p_gen ]
@@ -954,3 +968,5 @@ instance Functor TT where
 getConcept :: Association a => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
+
+

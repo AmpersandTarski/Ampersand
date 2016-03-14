@@ -112,7 +112,7 @@ fld2AttributeSpec ::SqlAttribute -> AttributeSpecNew
 fld2AttributeSpec att 
   = AttributeSpec { fsname = name att
                   , fstype = showSQL (attType att)
-                  , fsauto = fldauto att 
+                  , fsauto = False 
                   }
 attributeSpec2Str :: AttributeSpecNew -> String
 attributeSpec2Str fs = intercalate " "
@@ -386,7 +386,7 @@ generateViews fSpec =
                                ]
           )++
           [ "      )"]
-       conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
+       conceptsFromSpecificToGeneric = concatMap (reverse . tyCpts) . ftypologies $ fSpec
 
 generateInterfaces :: FSpec -> [String]
 generateInterfaces fSpec =

@@ -1,0 +1,14 @@
+CONTEXT Try51 IN DUTCH
+
+PATTERN Medewerkers
+CLASSIFY S ISA G
+RELATION r[G*Iets]
+RELATION s[S*S]
+ENDPATTERN
+
+INTERFACE "Te valideren" (r,s): I[G]
+BOX [ iets : s;r
+    , gen : r
+    ]
+
+ENDCONTEXT

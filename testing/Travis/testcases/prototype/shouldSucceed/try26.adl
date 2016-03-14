@@ -1,0 +1,16 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test26
+RELATION r[A*C]
+RELATION s[A*B]
+RELATION t[C*B]
+RELATION t[C*Q]
+RULE r = s;t~
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script tests whether flip works, after try1 was successful.
+   Result: PASS
+-}

@@ -15,9 +15,9 @@ where
 import Database.Design.Ampersand.FSpec.FSpec
        (FSpec(..), concDefs, ECArule(..), plugAttributes, lookupCpt, metaValues,AAtomValue, showValADL,showValPHP,showValSQL,A_Concept,Declaration,A_Gen)
 import Database.Design.Ampersand.FSpec.Plug
-       (PlugInfo(..), PlugSQL(..), SqlAttribute(..), SqlAttributeUsage(..), SqlTType(..),
-        Plugable(..),
-        showSQL, fldauto)
+       (PlugInfo(..), PlugSQL(..), SqlAttribute(..), SqlAttributeUsage(..),
+        Plugable(..)
+       )
 import Database.Design.Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..))

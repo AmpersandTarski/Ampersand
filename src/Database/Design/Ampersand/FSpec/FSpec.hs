@@ -24,11 +24,10 @@ module Database.Design.Ampersand.FSpec.FSpec
           , SqlAttribute(..)
           , Object(..)
           , PlugInfo(..)
-          , SqlTType(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..),AAtomValue
-          , showValADL,showValPHP,showValSQL
+          , showValADL,showValPHP,showValSQL,showSQL
           , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
           ) where
 -- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
@@ -79,7 +78,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                                                               --   The generated relations are all generalizations and
                                                               --   one declaration for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
-                   , kernels ::      [[A_Concept]]            -- ^ All concepts, grouped by their classifications
                    , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
@@ -108,7 +106,8 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
                    , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
                    , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
-                   , contextInfo   :: ContextInfo 
+                   , fcontextInfo   :: ContextInfo 
+                   , ftypologies   :: [Typology]
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    , editableConcepts :: Interface -> [A_Concept]  -- ^ All editable concepts per Interface. (See https://github.com/AmpersandTarski/ampersand/issues/211 )
@@ -319,10 +318,11 @@ data SqlAttributeUsage = TableKey Bool A_Concept  -- The SQL-attribute is the (p
 
 data SqlAttribute = Att { attName :: String
                         , attExpr :: Expression     -- ^ De target van de expressie geeft de waarden weer in de SQL-tabel-kolom.
-                        , attType :: SqlTType
+                        , attType :: TType
                         , attUse ::  SqlAttributeUsage
                         , attNull :: Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
                         , attUniq :: Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
+                        , attFlipped :: Bool
                         } deriving (Eq, Show,Typeable)
 instance Named SqlAttribute where
   name = attName
@@ -334,19 +334,21 @@ instance ConceptStructure SqlAttribute where
   concs     f = [target e' |let e'=attExpr f,isSur e']
   expressionsIn   f = expressionsIn   (attExpr f)
 
-data SqlTType = SQLFloat   -- See http://dev.mysql.com/doc/refman/5.7/en/data-types.html
-             | SQLVarchar Int
-             | SQLText
-             | SQLMediumText
-             | SQLBlob
-             | SQLMediumBlob
-             | SQLLongBlob
-             | SQLDate     -- MySQL retrieves and displays DATE values in 'YYYY-MM-DD' format
-             | SQLDateTime -- MySQL retrieves and displays DATETIME values in 'YYYY-MM-DD HH:MM:SS' format
-             | SQLBool
-             | SQLBigInt
-             | SQLSerial   -- SERIAL is an alias for BIGINT UNSIGNED NOT NULL AUTO_INCREMENT UNIQUE
-             
-             deriving (Eq,Show)
-
+showSQL :: TType -> String
+showSQL tt =
+  case tt of 
+     Alphanumeric     -> "VARCHAR(255)"
+     BigAlphanumeric  -> "TEXT"
+     HugeAlphanumeric -> "MEDIUMTEXT"
+     Password         -> "VARCHAR(255)"
+     Binary           -> "BLOB"
+     BigBinary        -> "MEDIUMBLOB"
+     HugeBinary       -> "LONGBLOB"
+     Date             -> "DATE"
+     DateTime         -> "DATETIME"
+     Boolean          -> "BOOLEAN"
+     Integer          -> "BIGINT"
+     Float            -> "FLOAT"
+     Object           -> "VARCHAR(255)"
+     TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
 

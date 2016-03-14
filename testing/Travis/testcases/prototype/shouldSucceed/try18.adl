@@ -1,0 +1,19 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test18
+RELATION r[X*Y]
+RELATION s[X*A]
+RELATION t[B*Y]
+RELATION t[Q*Y]
+RULE r = s;I[B];t
+CLASSIFY D IS A/\B
+-- was:  RULE I[D] = I[A]/\I[B]
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: This script was made a bit easier, this way it is possible to handle the script
+   Result: PASS
+    
+-}

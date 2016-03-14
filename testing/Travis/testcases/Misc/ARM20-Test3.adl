@@ -1,0 +1,26 @@
+CONTEXT ARM20Test3 IN DUTCH
+
+{-Prototype v2.2.1.2458, build time: 10-Jun-13 13:28.26 (lib: Ampersand v2.2.1.1072, build time: 10-Jun-13 13:26.08)
+---------------------------
+Generating php Object files with Ampersand
+---------------------------
+  Generating Installer.php
+  Using existing dbSettings.php.
+  Generating Generics.php
+prototype.exe: !fatal error 344 (module RelBinGenSQL, Prototype v2.2.1.2458 (lib: Ampersand
+ v2.2.1.1072))
+  No plug for expression EDcD RELATION verplichting [BIAlijst*Verplichting] Nothing PRAGMA
+"" "" "" [BIAlijst*Verplichting]
+
+Errorlevel = 1 - prototype files will not be installed
+-}
+------------------------------------------------------------
+PATTERN "ARM20Test3"
+verplichting :: BIAlijst * Verplichting [INJ]
+biaVaststellingsbesluit :: BIAlijst * JaNee [UNI]
+
+CLASSIFY Verplichting ISA Criterium -- had ook 'Businessrule' kunnen zijn
+oblImpact :: Verplichting * Impact [UNI]
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

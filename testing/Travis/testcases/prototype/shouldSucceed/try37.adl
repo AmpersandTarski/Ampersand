@@ -1,0 +1,18 @@
+CONTEXT Try37 IN ENGLISH
+
+PATTERN Try37
+CLASSIFY B IS G/\E
+CLASSIFY D IS B/\F
+CLASSIFY C ISA E
+ENDPATTERN
+
+CLASSIFY D ISA A
+CLASSIFY A ISA F
+CLASSIFY A ISA C
+
+ENDCONTEXT
+
+{-
+   Purpose: This script is there to ensure that the ordering of concepts in the same kernel is handled 
+   Result: PASS
+-}

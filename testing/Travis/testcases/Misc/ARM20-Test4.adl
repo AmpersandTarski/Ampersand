@@ -1,0 +1,29 @@
+CONTEXT ARM20Test4 IN DUTCH
+--! DEZE IS MOGELIJK AFHANKELIJK VAN ARM20Test3
+{-Prototype v2.2.1.2458, build time: 10-Jun-13 13:28.26 (lib: Ampersand v2.2.1.1072, build time: 10-Jun-13 13:26.08)
+---------------------------
+Generating php Object files with Ampersand
+---------------------------
+  Generating Installer.php
+  Using existing dbSettings.php.
+  Generating Generics.php
+prototype.exe: !fatal error 105 (module Generate, Prototype v2.2.1.2458 (lib: Ampersand v2.
+2.1.1072))
+  No table info for declaration RELATION verplichting [BIAlijst*Verplichting] Nothing PRAGM
+A "" "" ""
+
+Errorlevel = 1 - prototype files will not be installed
+-}
+------------------------------------------------------------
+PATTERN "ARM20Test4"
+verplichting :: BIAlijst * Verplichting [INJ]
+biaVaststellingsbesluit :: BIAlijst * JaNee [UNI]
+
+RULE "Integriteit van het BIA vaststellingsbesluit":
+biaVaststellingsbesluit;'Ja' |- (V[BIAlijst*Verplichting]-verplichting)!((I[Verplichting] /\ oblImpact;oblImpact~);V[Verplichting*JaNee])
+
+CLASSIFY Verplichting ISA Criterium -- had ook 'Businessrule' kunnen zijn
+oblImpact :: Verplichting * Impact [UNI]
+ENDPATTERN
+------------------------------------------------------------
+ENDCONTEXT

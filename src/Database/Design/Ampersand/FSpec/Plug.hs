@@ -6,10 +6,7 @@ module Database.Design.Ampersand.FSpec.Plug
      (Plugable(..), PlugInfo(..)
      ,SqlAttribute(..)
      ,SqlAttributeUsage(..)
-     ,SqlTType(..)
-     ,showSQL
      ,plugpath
-     ,fldauto
      ,PlugSQL(..)
      )
 where
@@ -160,26 +157,7 @@ instance Object PlugSQL where
  contextOf p@BinSQL{} = mLkp p
  contextOf p = EDcI (concept p)
 
-fldauto::SqlAttribute->Bool -- is the attribute auto increment?
-fldauto f = case attType f of
-              SQLSerial -> if not (attNull f) && attUniq f
-                           then True
-                           else fatal 171 "AutoIncrement is not allowed at this place." --TODO: build check in P2Aconverters
-              _         -> False
-              
-showSQL :: SqlTType -> String
-showSQL (SQLFloat    ) = "FLOAT"
-showSQL (SQLVarchar n) = "VARCHAR("++show n++")"
-showSQL (SQLText     ) = "TEXT"
-showSQL (SQLMediumText ) = "MEDIUMTEXT"
-showSQL (SQLBlob     ) = "BLOB"
-showSQL (SQLMediumBlob ) = "MEDIUMBLOB"
-showSQL (SQLLongBlob ) = "LONGBLOB"
-showSQL (SQLDate     ) = "DATE"
-showSQL (SQLDateTime ) = "DATETIME"
-showSQL (SQLBigInt   ) = "BIGINT"
-showSQL (SQLBool     ) = "BOOLEAN"
-showSQL (SQLSerial   ) = "SERIAL"
+         
 
 -- Every kernel attribute is a key, kernel attributes are in cLkpTbl or the column of ScalarSQL (which has one column only)
 -- isPlugIndex refers to UNIQUE key -- TODO: this is wrong

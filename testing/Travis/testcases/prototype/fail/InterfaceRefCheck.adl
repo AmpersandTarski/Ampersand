@@ -1,0 +1,28 @@
+CONTEXT InterfaceRefCheck IN ENGLISH
+{- Failing cases for ShouldSucceed/InterfaceRefCheck.adl (we could put these in multiple files, but the chance that only one will fail is small) -}
+
+CLASSIFY Lime ISA Citrus
+CLASSIFY Orange ISA Citrus
+CLASSIFY Limorange IS Lime /\ Orange
+
+INTERFACE Overview : I[ONE]
+BOX [ "Lime      as Orange"    : V[ONE*Lime]      INTERFACE Orange -- should fail  
+    , "Orange    as Lime"      : V[ONE*Orange]    INTERFACE Lime   -- should fail  
+    , "Limorange as Peach"     : V[ONE*Limorange] INTERFACE Peach  -- should fail  
+    ]
+
+INTERFACE Citrus : I[Citrus]
+BOX [ "dummy": I ]
+
+INTERFACE Orange : I[Orange]
+BOX [ "dummy": I ]
+
+INTERFACE Lime : I[Lime]
+BOX [ "dummy": I ]
+
+INTERFACE Limorange : I[Limorange]
+BOX [ "dummy": I ]
+
+INTERFACE Peach : I[Peach]
+BOX [ "dummy": I ]
+ENDCONTEXT

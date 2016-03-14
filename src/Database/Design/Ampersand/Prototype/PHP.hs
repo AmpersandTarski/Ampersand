@@ -69,7 +69,7 @@ plug2TableSpec :: PlugSQL -> TableSpec
 plug2TableSpec plug
  = ( unlines $ commentBlock (["Plug "++name plug,"","attributes:"]++map (\x->showADL (attExpr x)++"  "++(show.properties.attExpr) x) (plugAttributes plug))
    , name plug
-   , [ quote (attName f)++" " ++ showSQL (attType f) ++ (if fldauto f then " AUTO_INCREMENT" else " DEFAULT NULL")
+   , [ quote (attName f)++" " ++ showSQL (attType f) ++ " DEFAULT NULL"
      | f <- plugAttributes plug ]++
       case (plug, (head.plugAttributes) plug) of
            (BinSQL{}, _)   -> []

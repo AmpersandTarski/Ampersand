@@ -1,0 +1,17 @@
+﻿CONTEXT Test IN ENGLISH
+
+PATTERN Test25
+RELATION r[A*C]
+RELATION s[A*B]
+RELATION s[A*C]
+RELATION t[B*C]
+RELATION t[Q*C]
+RULE s;I;t = r
+ENDPATTERN
+
+ENDCONTEXT
+
+{-
+   Purpose: The purpose of this test is to see if the right declaration of t is selected.
+   Result: PASS
+-}
