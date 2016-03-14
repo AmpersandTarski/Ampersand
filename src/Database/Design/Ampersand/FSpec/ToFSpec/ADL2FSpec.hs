@@ -84,7 +84,7 @@ makeFSpec opts context
               , allDecls     = fSpecAllDecls
               , allConcepts  = fSpecAllConcepts
               , cptTType     = (\cpt -> representationOf contextinfo cpt)
-              , fsisa        = concatMap genericAndSpecifics (gens context)
+              , fsisa        = nub . concatMap genericAndSpecifics . gens $ context
               , vpatterns    = patterns context
               , vgens        = gens context
               , vIndices     = identities context
@@ -167,10 +167,10 @@ makeFSpec opts context
                      else ctxthms context
      pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)
      cDefsInThemesInScope = filter (\cd -> cdfrom cd `elem` themesInScope) (ctxcds context)
-     rulesInThemesInScope = ctxrs context `uni` concatMap ptrls pattsInThemesInScope
-     declsInThemesInScope = ctxds context `uni` concatMap ptdcs pattsInThemesInScope
+     rulesInThemesInScope = ctxrs context `uni` nub (concatMap ptrls pattsInThemesInScope)
+     declsInThemesInScope = ctxds context `uni` nub (concatMap ptdcs pattsInThemesInScope)
      concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
-     gensInThemesInScope  = ctxgs context ++ concatMap ptgns pattsInThemesInScope
+     gensInThemesInScope  = nub (ctxgs context ++ concatMap ptgns pattsInThemesInScope)
 
      initialpopsDefinedInScript = 
                    [ let dcl = popdcl (head eqclass)
