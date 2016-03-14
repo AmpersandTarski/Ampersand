@@ -14,13 +14,11 @@ data Relation = Relation
   , relJSONsignature   :: String
   , relJSONsrcConcept  :: String
   , relJSONtgtConcept  :: String
-  , relJSONsrcMin      :: Int
-  , relJSONsrcMax      :: Maybe Int
-  , relJSONtgtMin      :: Int
-  , relJSONtgtMax      :: Maybe Int
+  , relJSONuni         :: Bool
+  , relJSONtot         :: Bool
+  , relJSONinj         :: Bool
+  , relJSONsur         :: Bool
   , relJSONaffectedConjuncts :: [String]
---  , relJSONaffectedInvConjunctIds  :: [Conjunct]
---  , relJSONaffectedSigConjunctIds  :: [Conjunct]
   } deriving (Generic, Show)
 instance ToJSON Relations where
   toJSON = amp2Jason
@@ -34,11 +32,9 @@ instance JSON Declaration Relation where
          , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConcept  = name . source $ dcl 
          , relJSONtgtConcept  = name . target $ dcl
+         , relJSONuni      = isUni dcl
+         , relJSONtot      = isTot dcl
+         , relJSONinj      = isInj dcl
+         , relJSONsur      = isSur dcl
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
-         , relJSONsrcMin      = if isSur dcl then 1 else 0 
-         , relJSONsrcMax      = if isInj dcl then Just 1 else Nothing
-         , relJSONtgtMin      = if isTot dcl then 1 else 0
-         , relJSONtgtMax      = if isUni dcl then Just 1 else Nothing
---         , relJSONaffectedInvConjunctIds  = 
---         , relJSONaffectedSigConjunctIds  
          }
