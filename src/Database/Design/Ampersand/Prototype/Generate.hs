@@ -112,7 +112,7 @@ fld2AttributeSpec ::SqlAttribute -> AttributeSpecNew
 fld2AttributeSpec att 
   = AttributeSpec { fsname = name att
                   , fstype = showSQL (attType att)
-                  , fsauto = fldauto att 
+                  , fsauto = False 
                   }
 attributeSpec2Str :: AttributeSpecNew -> String
 attributeSpec2Str fs = intercalate " "
@@ -384,7 +384,7 @@ generateViews fSpec =
                                      , "          " ++ showPhpStr (prettySQLQuery fSpec 33 (objctx objDef))
                                      , "      )"
                                      ]
-       conceptsFromSpecificToGeneric = concatMap reverse (kernels fSpec)
+       conceptsFromSpecificToGeneric = concatMap (reverse . tyCpts) . ftypologies $ fSpec
        lab i = showPhpStr ("seg_"++show i)
 
 generateInterfaces :: FSpec -> [String]

@@ -1,6 +1,6 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
-    , smallerConcepts, largerConcepts, rootConcepts, genericAndSpecifics, safePSingleton2AAtomVal, typologies
+    , smallerConcepts, largerConcepts, genericAndSpecifics, safePSingleton2AAtomVal
     ) 
 where
 {- This file contains all functions to compute populations.
@@ -15,8 +15,6 @@ import Data.Map hiding (null, unions,delete)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)
 import Data.List (nub,delete)
-import Database.Design.Ampersand.Classes.ConceptStructure
-import Database.Design.Ampersand.Classes.ViewPoint
   
        
        
@@ -37,13 +35,6 @@ largerConcepts :: [A_Gen] -> A_Concept -> [A_Concept]
 largerConcepts gs cpt
  = nub$ oneLarger ++ concatMap (largerConcepts gs) oneLarger
   where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-genrhs g ]
-
--- | this function returns the most generic concepts in the class of a given concept
-rootConcepts :: [A_Gen]  -> [A_Concept] -> [A_Concept]
-rootConcepts gs cpts = [ root | root<-nub $ [ c | cpt<-cpts, c<-largerConcepts gs cpt ] `uni` cpts
-                                , root `notElem` [ genspc g | g@Isa{}<-gs]++[c | g@IsE{}<-gs, c<-genrhs g ]
-                                ]
-
 
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
 atomValuesOf :: ContextInfo -- the relevant info of the context
@@ -132,16 +123,4 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
                          where 
                            av = safePSingleton2AAtomVal ci c val
 
-typologies :: A_Context -> [Typology]
-typologies context = Prelude.map mkTypology (conceptSets (concs context))
-  where
-    allGens = gens context
-    mkTypology :: [A_Concept] -> Typology
-    mkTypology cs = Typology { tyroot = rootConcepts allGens cs
-                             , tyCpts = cs
-                             } 
-    conceptSets :: [A_Concept] -> [[A_Concept]]
-    conceptSets []     = []
-    conceptSets (c:cs) = let theSet = [c] `uni` largerConcepts allGens c `uni` smallerConcepts allGens c 
-                         in theSet : conceptSets (Prelude.filter (\x -> x `notElem` theSet) cs)
     

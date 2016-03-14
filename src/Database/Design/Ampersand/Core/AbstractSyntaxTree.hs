@@ -35,13 +35,14 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , AMeaning(..)
  , A_RoleRule(..)
  , A_RoleRelation(..)
- , Representation(..), TType(..), contextInfoOf
+ , Representation(..), TType(..)
  , unsafePAtomVal2AtomValue, safePSingleton2AAtomVal
  , Signature(..)
  , Population(..)
  , Association(..)
  , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
- , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), PAtomValue(..)
+ , AAtomPair(..), AAtomValue(..), mkAtomPair, PAtomValue(..)
+ , ContextInfo(..)
  , showValADL,showValPHP,showValSQL
   -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
   -- import directly from Database.Design.Ampersand.Core.Poset when needed
@@ -60,13 +61,12 @@ import Database.Design.Ampersand.Core.Poset (Poset(..), greatest,least,maxima,mi
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.Function
-import Data.List (intercalate)
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Data
 import Data.Hashable
 import Data.Char (toUpper,toLower)
-import Data.List (nub)
+import Data.List (nub,intercalate)
 import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
@@ -97,6 +97,7 @@ data A_Context
          , ctxsql :: [ObjectDef]     -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctxphp :: [ObjectDef]     -- ^ user defined phpplugs, taken from the Ampersand script
          , ctxmetas :: [Meta]        -- ^ used for Pandoc authors (and possibly other things)
+         , ctxInfo :: ContextInfo
          } deriving (Typeable)              --deriving (Show) -- voor debugging
 instance Show A_Context where
   showsPrec _ c = showString (ctxnm c)
@@ -847,12 +848,11 @@ class Association rel where
 data ContextInfo =
   CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
+     , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      }
-contextInfoOf :: A_Context -> ContextInfo
-contextInfoOf context
-  = CI { ctxiGens       = concatMap ptgns (ctxpats context) ++ ctxgs context
-       , representationOf = ctxreprs context
-       }
+                       
+   
+
 -- | This function is meant to convert the PSingleton inside EMp1 to an AAtomValue,
 --   after the expression has been built inside an A_Context. Only at that time
 --   the TType is known, enabling the correct transformation.
@@ -1031,8 +1031,8 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                | onlyZeroes dotAndAfter = beforeDot
                | otherwise = s
                where (beforeDot, dotAndAfter) = span (/= '.') s
-                     onlyZeroes s =
-                      case s of 
+                     onlyZeroes s' =
+                      case s' of 
                        [] -> True
                        '.':zeros ->  nub zeros == "0"
                        _ -> False
@@ -1053,7 +1053,10 @@ unsafePAtomVal2AtomValue' typ mCpt pav
      maybeRead = fmap fst . listToMaybe . reads
 
 
--- | The typology of a context is the partioning of the concepts in that context into sets such that (isa\/isa~)*;typology |- typology
+-- | The typology of a context is the partioning of the concepts in that context into 
+--   sets such that (isa\/isa~)*;typology |- typology
+--   Note, that with isa we only refer to the relations defined by CLASSIFY statements, 
+--   not named relations with the same properties ( {UNI,INJ,TOT} or {UNI,INJ,SUR} )
 data Typology = Typology { tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty, mostly one concept)
-                         , tyCpts :: [A_Concept]
+                         , tyCpts :: [A_Concept] -- all concepts, from generic to specific
                          } deriving Show

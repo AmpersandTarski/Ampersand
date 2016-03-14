@@ -18,7 +18,7 @@ module Database.Design.Ampersand
    , Expression(..)
    , Population(..)
    , FSpec(..), concDefs
-   , PlugSQL(..), SqlAttribute(..), SqlTType(..), PlugInfo(..)
+   , PlugSQL(..), SqlAttribute(..), PlugInfo(..)
    , PAclause(..)
    , Rule(..)
    , Prop(..), RuleOrigin(..)
@@ -45,7 +45,6 @@ module Database.Design.Ampersand
    , ShowHS(..), ShowHSName(..), haskellIdentifier
    -- * Functions on concepts
    , (<==>),sortWith,atomValuesOf
-   , smallerConcepts, largerConcepts, rootConcepts
    -- * Functions on relations
    -- * Functions on rules
    -- * Functions on expressions:
@@ -58,7 +57,7 @@ module Database.Design.Ampersand
    , deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
    , exprUni2list, exprIsc2list, exprCps2list, exprRad2list, exprPrd2list
    -- * Functions with plugs:
-   , plugAttributes, fldauto
+   , plugAttributes
    -- * Parser related stuff
    , parseADL1pExpr, CtxError
    , createFSpec
@@ -91,6 +90,7 @@ module Database.Design.Ampersand
    , fullContents, AAtomPair, apLeft,apRight
    , Purpose(..), ExplObj(..)
    , ContextInfo,AAtomValue
+   , largerConcepts, smallerConcepts
    )
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree

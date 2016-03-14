@@ -83,7 +83,6 @@ makeFSpec opts context
               , allUsedDecls = relsUsedIn context
               , allDecls     = fSpecAllDecls
               , allConcepts  = fSpecAllConcepts
-              , kernels      = kernls context
               , cptTType     = (\cpt -> representationOf contextinfo cpt)
               , fsisa        = concatMap genericAndSpecifics (gens context)
               , vpatterns    = patterns context
@@ -108,7 +107,8 @@ makeFSpec opts context
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
                                          ]
-              , contextInfo = contextinfo
+              , fcontextInfo = contextinfo
+              , ftypologies   = typologies context
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
               , editableConcepts = editablecpts 
@@ -143,7 +143,7 @@ makeFSpec opts context
            conjConts = Set.fromList $ pairsinexpr (rc_conjunct conj)
        in  Set.toList $ vConts `Set.difference` conjConts 
 
-     contextinfo = contextInfoOf context
+     contextinfo = ctxInfo context
 
      fSpecAllConcepts = concs context
      fSpecAllDecls = relsDefdIn context
@@ -259,12 +259,8 @@ makeFSpec opts context
                 genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
                 | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
-                                   (makeGeneratedSqlPlugs opts context totsurs entityRels)
+                                   (makeGeneratedSqlPlugs context calcProps)
                 ]
-     -- relations to be saved in generated plugs: if decplug=True, the declaration has the BYPLUG and therefore may not be saved in a database
-     -- WHAT -> is a BYPLUG?
-     entityRels = [ d | d<-calculatedDecls, not (decplug d)] -- The persistent relations.
-
      qlfname x = if null (namespace opts) then x else "ns"++namespace opts++x
 
      --TODO151210 -> Plug A is overbodig, want A zit al in plug r

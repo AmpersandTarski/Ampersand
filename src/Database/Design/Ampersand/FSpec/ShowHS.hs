@@ -153,12 +153,13 @@ instance ShowHSName SqlAttribute where
 instance ShowHS SqlAttribute where
  showHS opts indent sqAtt
    = intercalate indentA
-       [  "Att { attName = " ++ show (attName sqAtt)
-       ,      ", attExpr = " ++ showHS opts indentB (attExpr sqAtt)
-       ,      ", attType = " ++ showHS opts "" (attType sqAtt)
-       ,      ", attUse  = " ++ showHS opts "" (attUse sqAtt)
-       ,      ", attNull = " ++ show (attNull sqAtt)
-       ,      ", attUniq = " ++ show (attUniq sqAtt)
+       [  "Att { attName    = " ++ show (attName sqAtt)
+       ,      ", attExpr    = " ++ showHS opts indentB (attExpr sqAtt)
+       ,      ", attType    = " ++ showHS opts "" (attType sqAtt)
+       ,      ", attUse     = " ++ showHS opts "" (attUse sqAtt)
+       ,      ", attNull    = " ++ show (attNull sqAtt)
+       ,      ", attUniq    = " ++ show (attUniq sqAtt)
+       ,      ", attFlipped = " ++ show (attFlipped sqAtt)
        ,      "}"
        ] where indentA = indent ++"    "         -- adding the width of "Att "
                indentB = indentA++"            " -- adding the width of ", attExpr = "
@@ -168,8 +169,8 @@ instance ShowHS SqlAttributeUsage where
  showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
  showHS _ _ PlainAttr                 = "PlainAttr "
 
-instance ShowHS SqlTType where
- showHS _ indent sqltype = indent ++ show sqltype
+instance ShowHS TType where
+ showHS _ indent tt = indent ++ show tt
 
 instance ShowHSName Quad where
  showHSName q
@@ -259,7 +260,6 @@ instance ShowHS FSpec where
         , wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
         , wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
         , wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fSpec)
-        , wrap ", kernels       = " indentA (\_->showHSName) (kernels fSpec)
         , wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fSpec)
         , wrap ", vviews        = " indentA (\_->showHSName) (vviews fSpec)
         , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
@@ -375,7 +375,6 @@ instance ShowHS FSpec where
 
 instance ShowHS Meta where
  showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val
-
 
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
