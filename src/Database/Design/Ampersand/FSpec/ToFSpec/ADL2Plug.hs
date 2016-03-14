@@ -25,7 +25,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
     makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
     makeConceptTable (cpts , dcls) =
       TblSQL
-             { sqlname    = unquote . name . head $ cpts
+             { sqlname    = unquote . name $ tableKey
              , attributes = map attrib plugMors            -- Each attribute comes from a relation.
              , cLkpTbl    = conceptLookuptable
              , mLkpTbl    = nub (attributeLookuptable ++ isaLookuptable)

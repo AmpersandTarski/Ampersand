@@ -63,7 +63,7 @@ instance Language a => Language [a] where
   relsDefdIn  = nub . concatMap relsDefdIn
   udefrules   = nub . concatMap udefrules
   identities  = nub . concatMap identities
-  viewDefs    = nub . concatMap viewDefs
+  viewDefs    =       concatMap viewDefs
   gens        = nub . concatMap gens
   patterns    = nub . concatMap patterns
 
@@ -79,11 +79,11 @@ instance Language A_Context where
                          , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl
                                           , decprps_calc = Nothing -- Calculation is only done in ADL2Fspc. -- was:(foldr1 uni.map decprps_calc) cl
                                           }]
-  udefrules    context = concatMap udefrules  (ctxpats context) ++ ctxrs context
-  identities   context = concatMap identities (ctxpats context) ++ ctxks context
-  viewDefs     context = concatMap viewDefs   (ctxpats context) ++ ctxvs context
-  gens         context = concatMap gens       (ctxpats context) ++ ctxgs context
-  patterns             = ctxpats
+  udefrules    context = nub $ concatMap udefrules  (ctxpats context) ++ ctxrs context
+  identities   context = nub $ concatMap identities (ctxpats context) ++ ctxks context
+  viewDefs     context =       concatMap viewDefs   (ctxpats context) ++ ctxvs context
+  gens         context = nub $ concatMap gens       (ctxpats context) ++ ctxgs context
+  patterns             = nub . ctxpats
 
 instance Language Pattern where
   relsDefdIn pat = ptdcs pat
