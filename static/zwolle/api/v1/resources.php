@@ -24,7 +24,8 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app) {
 	if(!in_array($resourceType, $session->getEditableConcepts())) throw new Exception ("You do not have access for this call", 403);
 	
 	// Get list of all atoms for $resourceType (i.e. concept)
-	$content = Concept::getAllAtomObjects($resourceType); 
+	$concept = Concept::getConcept($resourceType);
+	$content = $concept->getAllAtomObjects(); 
 	
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
@@ -41,7 +42,7 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 
 	// Get specific resource (i.e. atom)
 	$resource = new Atom($resourceId, $resourceType);
-	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->id}[{$resource->concept}]' not found", 404);
+	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->id}[{$resource->concept->name}]' not found", 404);
 	
 	$content = $resource->getAtom();
 

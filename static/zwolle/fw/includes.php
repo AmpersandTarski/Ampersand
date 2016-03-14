@@ -27,6 +27,7 @@ require_once (__DIR__ . '/Hooks.php');
 require_once (__DIR__ . '/AngularApp.php');
 require_once (__DIR__ . '/Atom.php');
 require_once (__DIR__ . '/Concept.php');
+require_once (__DIR__ . '/Conjunct.php');
 require_once (__DIR__ . '/Database.php');
 require_once (__DIR__ . '/InterfaceObject.php');
 require_once (__DIR__ . '/Notifications.php');

@@ -15,18 +15,21 @@ class Relation {
 		$allRelations = Relation::getAllRelations();
 		
 		foreach($allRelations as $key => $relationInfo){
+		    $relSrcConcept = Concept::getConcept($relationInfo['srcConcept']);
+		    $relTgtConcept = Concept::getConcept($relationInfo['tgtConcept']);
+		    
 			// Match relationName with relation name as specified in Ampersand script.
 			// Includes support for specializations.
 			if($relationInfo['name'] == $relationName 
-					&& ($relationInfo['srcConcept'] == $srcConcept || in_array($srcConcept, Concept::getSpecializations($relationInfo['srcConcept'])))
-					&& ($relationInfo['tgtConcept'] == $tgtConcept || in_array($tgtConcept, Concept::getSpecializations($relationInfo['tgtConcept'])))
+					&& ($relSrcConcept->name == $srcConcept || $relSrcConcept->hasSpecialization($srcConcept))
+					&& ($relTgtConcept->name == $tgtConcept || $relTgtConcept->hasSpecialization($tgtConcept))
 					)
 				return $key; // return fullRelationSignature
 						
 			// Match relationName with fullRelationSignature (format: 'rel_<relationName>_<srcConcept>_<tgtConcept>')
 			if($key == $relationName 
-					&& ($relationInfo['srcConcept'] == $srcConcept || in_array($srcConcept, Concept::getSpecializations($relationInfo['srcConcept'])))
-					&& ($relationInfo['tgtConcept'] == $tgtConcept || in_array($tgtConcept, Concept::getSpecializations($relationInfo['tgtConcept'])))
+					&& ($relSrcConcept->name == $srcConcept || $relSrcConcept->hasSpecialization($srcConcept))
+					&& ($relTgtConcept->name == $tgtConcept || $relTgtConcept->hasSpecialization($tgtConcept))
 					)
 				return $key; // return fullRelationSignature
 		}
@@ -62,20 +65,40 @@ class Relation {
 		return $tableColumnInfo[$table][$column];
 	}
 	
-	public static function getAffectedSigConjunctIds($fullRelationSignature){
+	/**
+	 * 
+	 * @param string $fullRelationSignature
+	 * @throws Exception
+	 * @return Conjunct[]
+	 */
+	public static function getAffectedSigConjuncts($fullRelationSignature){
 		$allRelations = Relation::getAllRelations();
 	
 		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation \'$fullRelationSignature\' does not exists in allRelations", 500);
-	
-		return (array)$allRelations[$fullRelationSignature]['affectedSigConjunctIds'];
+		
+		$conjuncts = array();
+		foreach ((array)$allRelations[$fullRelationSignature]['affectedSigConjunctIds'] as $conjId){
+		    $conjuncts[] = Conjunct::getConjunct($conjId);
+		}
+		return $conjuncts;
 	}
 	
-	public static function getAffectedInvConjunctIds($fullRelationSignature){
+	/**
+	 * 
+	 * @param string $fullRelationSignature
+	 * @throws Exception
+	 * @return Conjunct[]
+	 */
+	public static function getAffectedInvConjuncts($fullRelationSignature){
 		$allRelations = Relation::getAllRelations();
 	
 		if(!array_key_exists($fullRelationSignature, $allRelations)) throw new Exception("Relation \'$fullRelationSignature\' does not exists in allRelations", 500);
-	
-		return (array)$allRelations[$fullRelationSignature]['affectedInvConjunctIds'];
+		
+		$conjuncts = array();
+		foreach ((array)$allRelations[$fullRelationSignature]['affectedInvConjunctIds'] as $conjId){
+		    $conjuncts[] = Conjunct::getConjunct($conjId);
+		}
+		return $conjuncts;		
 	}
 }
 

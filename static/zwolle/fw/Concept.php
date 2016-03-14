@@ -1,142 +1,314 @@
 <?php
 
 class Concept {
-	public $name;
+    /**
+     * Contains all concept definitions
+     * @var Concept[]
+     */
+    private static $allConcepts;
+    
+    /**
+     * Dependency injection of a database connection class
+     * @var Database
+     */
+    private $database;
+    
+	/**
+	 * Name (and unique identifier) of concept
+	 * @var string
+	 */
+    public $name;
 	
-	public function __construct($conceptName){
-		$this->name = $conceptName;
+	/**
+	 * Specifies technical representation of atoms of this concept (e.g. OBJECT, ALPHANUMERIC, INTERGER, BOOLEAN, etc)
+	 * @var string
+	 */
+	public $type;
+	
+	/**
+	 * Array with conjunctIds (both from signal and invariant rules) that are affected by creating or deleting an atom of this concept
+	 * @var string[]
+	 */
+	private $affectedConjunctIds = array();
+	
+	/**
+	 * Array with signal conjuncts that are affected by creating or deleting an atom of this concept
+	 * @var Conjunct[]
+	 */
+	private $affectedSigConjuncts = array();
+	
+	/**
+	 * Array with invariant conjuncts that are affected by creating or deleting an atom of this concept
+	 * @var Conjunct[]
+	 */
+	private $affectedInvConjuncts = array();
+	
+	/**
+	 * Array of concepts (name) that are specializations of this concept
+	 * @var string[]
+	 */
+	private $specializations = array();
+	
+	/**
+	 * Array of concepts (name) that are generalizations of this concept
+	 * @var string[]
+	 */
+	private $generalizations = array();
+	
+	/**
+	 * Array of interface identifiers that have this concept as src concept
+	 * @var string[]
+	 */
+	public $interfaceIds = array();
+	
+	/**
+	 * Array with all view objects that can be used for atoms of this concept
+	 * @var View[]
+	 */
+	public $views = array();
+	
+	/**
+	 * Default view object for atoms of this concept
+	 * @var View|NULL
+	 */
+	private $defaultView = null;	
+	
+	/**
+	 * Concept constructor
+	 * Private function to prevent outside instantiation of concepts. Use Concept::getConcept($conceptName)
+	 * 
+	 * @param array $conceptDef
+	 */
+	private function __construct($conceptDef){
+	    $this->database = Database::singleton(); 
+	    
+		$this->name = $conceptDef['name'];
+		$this->type = $conceptDef['type'];
+		
+		$this->affectedConjunctIds = (array)$conceptDef['affectedConjuncts'];
+		foreach($this->affectedConjunctIds as $conjId){
+		    $conj = Conjunct::getConjunct($conjId);
+		    
+		    if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
+		    elseif ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
+		    Notifications::addInfo("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule", 'UnusedConjuncts', "There are unused conjuncts defined");
+		}
+		
+		$this->specializations = (array)$conceptDef['specializations'];
+		$this->generalizations = (array)$conceptDef['generalizations'];
+		$this->interfaceIds = (array)$conceptDef['interfaces'];
+		
+		foreach($conceptDef['views'] as $viewDef){
+		    $view = View::getView($viewDef['label']);
+		    
+		    $this->views[] = $view;
+		    if($view->isDefault) $this->defaultView = $view;
+		}
+		
 	}
 	
+	public function __toString(){
+	    return $this->name;
+	}
+	
+	/**
+	 * Check if this concept is a generalization of another given concept(name)
+	 * @param string $conceptName
+	 * @return boolean
+	 */
 	public function hasSpecialization($conceptName){
-		return in_array($conceptName, Concept::getSpecializations($this->name));
+		return in_array($conceptName, $this->specializations);
 	}
 	
+	/**
+	 * Check if this concept is a specialization of another given concept(name)
+	 * @param string $conceptName
+	 * @return boolean
+	 */
 	public function hasGeneralization($conceptName){
-		return in_array($conceptName, Concept::getGeneralizations($this->name));
+		return in_array($conceptName, $this->generalizations);
 	}
 	
-	public static function getConcept($concept){
-		global $allConcepts;
-		
-		if(!array_key_exists($concept, $allConcepts)) throw new Exception("Concept '$concept' not defined in \$allConcepts (Generics.php)", 500);
-		return $allConcepts[$concept];
+	/**
+	 * Array of all concepts of which this concept is a generalization.
+	 * @return Concept[]
+	 */
+	public function getSpecializations() {
+	    $specializations = array();
+	    foreach($this->specializations as $conceptName) $specializations[$conceptName] = self::getConcept($conceptName);
+	    return $specializations;
 	}
 	
-	public static function getAllConcepts(){
-		global $allConcepts; // from Generics.php
-	
-		return $allConcepts;
+	/**
+	 * Array of all concepts of which this concept is a specialization.
+	 * @return Concept[]
+	 */
+	public function getGeneralizations(){	
+	    $generalizations = array();
+	    foreach ($this->generalizations as $conceptName) $generalizations[$conceptName] = self::getConcept($conceptName);
+	    return $generalizations;
 	}
 	
-	public static function getTypeRepresentation($concept){
-		$conceptInfo = Concept::getConcept($concept);
-		
-		if(!array_key_exists('type', $conceptInfo)) throw new Exception("Type not defined for concept $concept in \$allConcepts (Generics.php)", 500);
-		return $conceptInfo['type'];
-	}
-
-	public static function getSpecializations($concept) {		
-		$conceptInfo = Concept::getConcept($concept);
-		return $conceptInfo['specializations'];
-	}
-	
-	public static function getGeneralizations($concept){
-		Concept::getConcept($concept); // only to check if concept is defined
-		
-		$generalizations = array();
-		foreach (Concept::getAllConcepts() as $c){
-			if(in_array($concept, $c['specializations'])) $generalizations[] = $c['concept'];
-		}
-		return $generalizations;
+	/**
+	 * Checks if this concept is in same classification tree as the provided concept
+	 * @param Concept $concept
+	 * @return boolean
+	 */
+	public function inSameClassificationTree($concept){
+	    if($this->hasSpecialization($concept->name)) return true;
+	    if($this->hasGeneralization($concept->name)) return true;
+	     
+	    // else
+	    return false;
 	}
 	
-	public static function inSameClassificationTree($conceptA, $conceptB){
-		if(in_array($conceptA, Concept::getSpecializations($conceptB))) return true;
-		if(in_array($conceptB, Concept::getSpecializations($conceptA))) return true;
-		
-		// else
-		return false;
-	}
-	
-	public static function getAllAtomObjects($concept){
+	/**
+	 * Return content of all atoms for this concept
+	 * @return mixed[]
+	 */
+	public function getAllAtomObjects(){
 	    $arr = array();
-		foreach (Concept::getAllAtomIds($concept) as $tgtAtomId){
-			$tgtAtom = new Atom($tgtAtomId, $concept);
-			$arr[] = $tgtAtom->getAtom();
-		}
-		return $arr;
+	    foreach ($this->getAllAtomIds() as $tgtAtomId){
+	        $tgtAtom = new Atom($tgtAtomId, $this->name);
+	        $arr[] = $tgtAtom->getAtom();
+	    }
+	    return $arr;
 	}
 	
-	public static function getAllAtomIds($concept){
-		$database = Database::singleton();
-		
-		$conceptTableInfo = Concept::getConceptTableInfo($concept);
-		$conceptTable = $conceptTableInfo['table'];
-		$firstConceptCol = $conceptTableInfo['cols'][0]; // We can query an arbitrary concept col for checking the existence of an atom
-		
-		// Query all atoms in table
-		$query = "SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL";
-		return $existingAtoms = array_column((array)$database->Exe($query), $firstConceptCol); // no need to filter duplicates and NULLs
-		
+	/**
+	 * Return array with all atom identifiers for this concept
+	 * @return string[]
+	 */
+	public function getAllAtomIds(){	
+	    $conceptTableInfo = $this->getConceptTableInfo();
+	    $conceptTable = $conceptTableInfo['table'];
+	    $firstConceptCol = $conceptTableInfo['cols'][0]; // We can query an arbitrary concept col for checking the existence of an atom
+	
+	    // Query all atoms in table
+	    $query = "SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL";
+	    return $existingAtoms = array_column((array)$this->database->Exe($query), $firstConceptCol); // no need to filter duplicates and NULLs
+	
 	}
 	
-	public static function createNewAtomId($concept){
-		if(strpos($concept, '_AUTOINCREMENT') !== false){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
-			$database = Database::singleton();
-			$tableInfo = Concept::getConceptTableInfo($concept);
-			
-			$table = $tableInfo['table'];
-			$col = $tableInfo['cols'][0];
-			
-			$query = "SELECT MAX(`$col`) as `MAX` FROM `$table`";
-			$result = array_column((array)$database->Exe($query), 'MAX');
-			
-			if(empty($result)) $atomId = 1;
-			else $atomId = $result[0] + 1;
-				
-		}else{
-			$time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-			$atomId = $concept.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds  
-		}
-		return $atomId;
+	/**
+	 * Returns default view for this concept (or null if no default view defined)
+	 * @return View|NULL
+	 */
+	public function getDefaultView(){
+	    return $this->defaultView;
 	}
 	
-	public static function createNewAtom($concept){
-		return new Atom(Concept::createNewAtomId($concept), $concept);
+	/**
+	 * Returns array with signal conjuncts that are affected by creating or deleting an atom of this concept
+	 * @return Conjunct[]
+	 */
+	public function getAffectedSigConjuncts(){
+	    return $this->affectedSigConjuncts;
 	}
 	
-	public static function getDefaultViewId($concept){		
-		$concept = Concept::getConcept($concept);
-		
-		if(isset($concept['defaultViewId'])) return $concept['defaultViewId'];
-		else return null;
+	/**
+	 * Returns array with invariant conjuncts that are affected by creating or deleting an atom of this concept
+	 * @return Conjunct[]
+	 */
+	public function getAffectedInvConjuncts(){
+	    return $this->affectedInvConjuncts;
 	}
 	
-	public static function getConceptTableInfo($concept){
-		$conceptInfo = Concept::getConcept($concept);
-		
-		// $allConcepts[$concept]['conceptTables] is an array of tables with arrays of columns maintaining $concept.
-		// (we have an array rather than a single column because of generalizations) 
-		// TODO: still the right solution?, because generalizations/specializations are in one table
-		
-		if(empty($conceptInfo['conceptTables'][0]['table'])) throw new Exception("No database table defined for concept $concept in \$allConcepts (Generics.php)", 500);
-		if(empty($conceptInfo['conceptTables'][0]['cols'])) throw new Exception("No columns defined for concept $concept in \$allConcepts (Generics.php)", 500);
-		
-		return $conceptInfo['conceptTables'][0]; // return only first item in array, because there are never more than one.
+	/**
+	 * Returns database table info for concept
+	 * @throws Exception if no or more than 1 table is defined
+	 * @return array
+	 */
+	public function getConceptTableInfo(){
+	    global $allConcepts;
+	    $conceptInfo = $allConcepts[$this->name];
+	
+	    if(empty($conceptInfo['conceptTables'])) throw new Exception("No database table defined for concept '[{$this->name}]' in \$allConcepts (Generics.php)", 500);
+	    if(count((array)$conceptInfo['conceptTables']) > 1) throw new Exception("Concept '[{$this->name}]' is administrated in more than 1 table. This is not (yet) supported", 501);
+	
+	    // We can use the first item in the array, because of the check above
+	    return $conceptInfo['conceptTables'][0];
 	}
 	
-	public static function getAffectedSigConjuncts($concept){
-		$conceptInfo = Concept::getConcept($concept);
-		
-		return (array)$conceptInfo['affectedSigConjunctIds'];
+    /**********************************************************************************************
+     * 
+     * Static functions
+     * 
+     *********************************************************************************************/
+	
+	/**
+	 * Return concept object
+	 * @param string $conceptName
+	 * @throws Exception if concept is not defined
+	 * @return Concept
+	 */
+	public static function getConcept($conceptName){
+	    if(!array_key_exists($conceptName, $concepts = self::getAllConcepts())) throw new Exception("Concept '{$conceptName}' is not defined", 500);
+	     
+	    return $concepts[$conceptName];
 	}
 	
-	public static function getAffectedInvConjuncts($concept){
-		$conceptInfo = Concept::getConcept($concept);
-	
-		return (array)$conceptInfo['affectedInvConjunctIds'];
+	/**
+	 * Returns array with all concept objects
+	 * @return Concept[]
+	 */
+	public static function getAllConcepts(){
+	    if(!isset(self::$allConcepts)) self::setAllConcepts();
+	    
+	    return self::$allConcepts;
 	}
-
+	
+	/**
+	 * Import all concept definitions from json file and create and save Concept objects
+	 * @return void
+	 */
+	private static function setAllConcepts(){
+	    self::$allConcepts = array();
+	     
+	    // import json file
+	    $file = file_get_contents(__DIR__ . '/../generics/concepts.json');
+	    $allConceptDefs = (array)json_decode($file, true);
+	
+	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['name']] = new Concept($conceptDef);
+	}
+	
+	/**
+	 * Generate a new atom identifier for a given concept
+	 * @param string $conceptName
+	 * @return string
+	 */
+	public static function createNewAtomId($conceptName){
+	    $concept = self::getConcept($conceptName);
+	    
+	    if(strpos($conceptName, '_AUTOINCREMENT') !== false){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
+	        $tableInfo = $concept->getConceptTableInfo();
+	        	
+	        $table = $tableInfo['table'];
+	        $col = $tableInfo['cols'][0];
+	        	
+	        $query = "SELECT MAX(`$col`) as `MAX` FROM `$table`";
+	        $result = array_column((array)$this->database->Exe($query), 'MAX');
+	        	
+	        if(empty($result)) $atomId = 1;
+	        else $atomId = $result[0] + 1;
+	
+	    }else{
+	        $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
+	        $atomId = $conceptName.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds
+	    }
+	    return $atomId;
+	}	
+	
+	/**
+	 * Instantiate new Atom object in backend
+	 * NB! this does not result automatically in a database insert
+	 * 
+	 * @param string $conceptName
+	 * @return Atom
+	 */
+	public static function createNewAtom($conceptName){
+		return new Atom(Concept::createNewAtomId($conceptName), $conceptName);
+	}
 }
 
 ?>

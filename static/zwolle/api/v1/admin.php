@@ -32,17 +32,17 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 	
 	// run all conjuncts (from - to)
 	for ($i = $from; $i <= $to; $i++){
-		$conj = RuleEngine::getConjunct('conj_' . $i);
+		$conjunct = Conjunct::getConjunct('conj_' . $i);
 		$startTimeStamp = microtime(true); // true means get as float instead of string
-		RuleEngine::checkConjunct('conj_' . $i, false);
+		RuleEngine::checkConjunct($conjunct, false);
 		$endTimeStamp = microtime(true);
 	
-		$performanceArr['conj_'.$i] = array( 'id' => 'conj_' . $i
+		$performanceArr[$conjunct->id] = array( 'id' => $conjunct->id
 				, 'start' => $startTimeStamp
 				, 'end' => $endTimeStamp
 				, 'duration' => $endTimeStamp - $startTimeStamp
-				, 'invariantRules' => implode(';', $conj['invariantRuleNames'])
-				, 'signalRules' => implode(';', $conj['signalRuleNames'])
+				, 'invariantRules' => implode(';', $conjunct->invRuleNames)
+				, 'signalRules' => implode(';', $conjunct->sigRuleNames)
 		);
 	}
 	
@@ -54,8 +54,8 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			$ruleArr = array();
 			foreach(RuleEngine::getAllRules() as $rule){
 				$duration = 0;
-				foreach($rule['conjunctIds'] as $conj){
-					$duration += $performanceArr[$conj]['duration'];
+				foreach($rule['conjunctIds'] as $conjId){
+					$duration += $performanceArr[$conjId]['duration'];
 				}
 				$ruleArr[] = array('ruleName' => $rule['name']
 						, 'duration' => $duration
@@ -68,13 +68,13 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			$relArr = array();
 			foreach(Relation::getAllRelations() as $sig => $rel){
 				$duration = 0;
-				$conjuncts = array_merge($rel['affectedInvConjunctIds'], $rel['affectedSigConjunctIds']);
-				foreach($conjuncts as $conj){
-					$duration += $performanceArr[$conj]['duration'];
+				$conjunctIds = array_merge($rel['affectedInvConjunctIds'], $rel['affectedSigConjunctIds']);
+				foreach($conjunctIds as $conjId){
+					$duration += $performanceArr[$conjId]['duration'];
 				}
 				$relArr[] = array('relationSignature' => $sig
 						, 'duration' => $duration
-						, 'conjuncts' => implode(';', $conjuncts)
+						, 'conjuncts' => implode(';', $conjunctIds)
 				);
 			}
 			$content = $relArr;

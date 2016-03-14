@@ -29,7 +29,13 @@ class InterfaceObject {
 	
 	public $srcConcept;
 	public $tgtConcept;
-	public $viewId;
+	
+	/**
+	 * 
+	 * @var View
+	 */
+	public $view;
+	
 	public $tgtConceptIsObject;
 	
 	public $refInterfaceId;
@@ -98,16 +104,17 @@ class InterfaceObject {
 		$this->univalent = $interface['exprIsUni'];
 		$this->isProperty = $interface['exprIsProp'];
 		$this->isIdent = $interface['exprIsIdent'];
-		$this->srcConcept = $interface['srcConcept'];
-		    // TODO: insert check to compare $srcAtom->concept with $this->srcConcept
+		$this->srcConcept = Concept::getConcept($interface['srcConcept']);
+		    // TODO: insert check to compare $this->srcAtom->concept with $this->srcConcept
 		
-		$this->tgtConcept = $interface['tgtConcept'];
-		isset($interface['viewId']) ? $this->viewId = $interface['viewId'] : null;
+		$this->tgtConcept = Concept::getConcept($interface['tgtConcept']);
+		
+		isset($interface['viewId']) ? $this->view = View::getView($interface['viewId']) : null;
 		
 		// Determine if tgtConcept is Object (true) or Scalar (false)
-		$this->tgtConceptIsObject = (Concept::getTypeRepresentation($this->tgtConcept) == "OBJECT") ? true : false;
+		$this->tgtConceptIsObject = ($this->tgtConcept->type == "OBJECT") ? true : false;
 		
-		if($this->crudU && $this->tgtConceptIsObject) $this->editableConcepts[] = $this->tgtConcept;
+		if($this->crudU && $this->tgtConceptIsObject) $this->editableConcepts[] = $this->tgtConcept->name;
 		
 		// Set attributes
 		$this->refInterfaceId = $interface['refSubInterfaceId'];
@@ -128,9 +135,7 @@ class InterfaceObject {
 	}
 	
 	public function getInterface(){
-		
 		return $this;
-				
 	}
 	
 	/**********************************************************************************************
@@ -139,7 +144,7 @@ class InterfaceObject {
 	 * 
 	 *********************************************************************************************/
 	public function atom($atomId){
-	    $atom = new Atom($atomId, $this->tgtConcept, $this->viewId, $this);
+	    $atom = new Atom($atomId, $this->tgtConcept->name, $this);
 	    
 	    // Check if tgtAtom is part of tgtAtoms of interface
 	    if(in_array($atomId, $this->getTgtAtomIds())) $this->tgtAtom = $atom;
@@ -154,7 +159,7 @@ class InterfaceObject {
 	        $this->tgtAtom = $atom;
 	    }
 	    // Else throw exception
-	    else throw new Exception ("Resource '{$atom->id}[{$atom->concept}]' not found", 404);
+	    else throw new Exception ("Resource '{$atom->id}[{$atom->concept->name}]' not found", 404);
 	    
 	    return $this->tgtAtom;
 	}
@@ -189,7 +194,7 @@ class InterfaceObject {
 	    // Loop over target atoms
 	    foreach ($this->getTgtAtomIds() as $tgtAtomId){
 	        	
-	        $tgtAtom = new Atom($tgtAtomId, $this->tgtConcept, $this->viewId, $this);
+	        $tgtAtom = new Atom($tgtAtomId, $this->tgtConcept->name, $this);
 	        	
 	        // Object
 	        if($this->tgtConceptIsObject){
@@ -221,7 +226,7 @@ class InterfaceObject {
 	        }else{
 	            // Leaf
 	            if(empty($this->subInterfaces) && empty($this->refInterfaceId)){
-	                $content = Atom::typeConversion($tgtAtom->id, $this->tgtConcept);
+	                $content = $tgtAtom->getJsonRepresentation();
 	                	
 	                if($this->univalent) $result = $content;
 	                else $result[] = $content;
@@ -247,13 +252,13 @@ class InterfaceObject {
 	public function create($data, $options = array()){	
 	    // CRUD check
 	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
-	    if(!$this->tgtConceptIsObject) throw new Exception ("Cannot create non-object [{$this->tgtConcept}] in '{$this->path}'. Use PATCH add operation instead", 405);
+	    if(!$this->tgtConceptIsObject) throw new Exception ("Cannot create non-object [{$this->tgtConcept->name}] in '{$this->path}'. Use PATCH add operation instead", 405);
 	    
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 	
 	    // Perform create
-	    $newAtom = Concept::createNewAtom($this->tgtConcept);
+	    $newAtom = Concept::createNewAtom($this->tgtConcept->name);
 	    $this->database->addAtomToConcept($newAtom);
 	
 	    // Special case for CREATE in I[Concept] interfaces
@@ -273,7 +278,7 @@ class InterfaceObject {
 	    $newAtom->doPatches($patches);
 	
 	    // Special case for file upload. TODO: make extension with hooks
-	    if($this->tgtConcept == "FileObject"){
+	    if($this->tgtConcept->name == "FileObject"){
 	         
 	        if (is_uploaded_file($_FILES['file']['tmp_name'])){
 	            $tmp_name = $_FILES['file']['tmp_name'];
@@ -296,7 +301,7 @@ class InterfaceObject {
 	
 	    // Close transaction
 	    $atomStoreNewContent = $this->crudR ? $newAtom : null; // Get and store new content if interface is readable (crudR)
-	    $this->database->closeTransaction($newAtom->concept . ' created', false, null, $atomStoreNewContent);
+	    $this->database->closeTransaction($newAtom->concept->name . ' created', false, null, $atomStoreNewContent);
 	
 	    // Return atom content (can be null)
 	    return $newAtom->getStoredContent();
@@ -360,11 +365,11 @@ class InterfaceObject {
 	        	
 	        // Replace by nothing => editDelete
 	        if(is_null($value)){
-	            $this->database->editDelete($this->relation, $this->relationIsFlipped, $this->srcAtom, new Atom(null, $this->tgtConcept));
+	            $this->database->editDelete($this->relation, $this->relationIsFlipped, $this->srcAtom, new Atom(null, $this->tgtConcept->name));
 	            	
 	        // Replace by other atom => editUpdate
 	        }else{
-	            $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, new Atom($value, $this->tgtConcept));
+	            $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, new Atom($value, $this->tgtConcept->name));
 	        }
 	    }else{
 	        throw new Exception ("Unknown patch replace. Please contact the application administrator", 500);
@@ -378,7 +383,7 @@ class InterfaceObject {
 	    // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied in '{$this->path}'", 400);
 	    
-	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept);
+	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
 	    
 	    // Interface is property
 	    if($this->isProperty && !$this->isIdent){
@@ -388,7 +393,7 @@ class InterfaceObject {
 	    // Interface is a relation to an object
 	    }elseif($this->tgtConceptIsObject){
 	        // Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception
-	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept}]' does not exist and may not be created in {$this->path}", 403);
+	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept->name}]' does not exist and may not be created in {$this->path}", 403);
 	        	
 	        $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $tgtAtom);
 	
@@ -448,7 +453,7 @@ class InterfaceObject {
 	public static function getAllInterfacesForConcept($concept){
 		$interfaces = array();
 		foreach (InterfaceObject::getAllInterfaceObjects() as $ifc){
-			if ($ifc->srcConcept == $concept) $interfaces[$ifc->id] = $ifc;
+			if ($ifc->srcConcept->name == $concept) $interfaces[$ifc->id] = $ifc;
 		}
 		return $interfaces;
 	}

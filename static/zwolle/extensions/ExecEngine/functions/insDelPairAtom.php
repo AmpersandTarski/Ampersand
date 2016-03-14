@@ -226,7 +226,7 @@ function DelAtom($concept, $atomId){
 		
 		$atom = new Atom($atomId, $concept);
 		$database->deleteAtom($atom); // delete atom + all relations with other atoms
-		return "Atom '{$atom->id}[{$atom->concept}]' deleted";
+		return "Atom '{$atom->id}[{$atom->concept->name}]' deleted";
 	
 	}catch(Exception $e){
 		Notifications::addError('DelAtom: ' . $e->getMessage());
@@ -248,7 +248,7 @@ function SetConcept($conceptA, $conceptB, $atom){
 		
 		$atom = new Atom($atom, $conceptA);
 		$database->atomSetConcept($atom, $conceptB);
-		return "Atom '{$atom->id}[{$atom->concept}]' added as member to concept '$conceptB'";
+		return "Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '$conceptB'";
 	
 	}catch(Exception $e){
 		Notifications::addError('SetConcept: ' . $e->getMessage());
@@ -269,7 +269,7 @@ function ClearConcept($concept, $atom){
         
 		$atom = new Atom($atom, $concept);
 		$database->atomClearConcept($atom);
-		return "Atom '{$atom->id}[{$atom->concept}]' removed as member from concept '$concept'";
+		return "Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$concept'";
 
 	}catch(Exception $e){
 		Notifications::addError('ClearConcept: ' . $e->getMessage());

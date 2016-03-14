@@ -28,7 +28,7 @@ class Session {
 			
 			$this->database = Database::singleton();
 			
-			// AMPERSAND SESSION
+			// Check if 'SESSION' is defined as concept in Ampersand script
 			Concept::getConcept('SESSION');
 			
 			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
@@ -204,7 +204,7 @@ class Session {
 	public function getInterfacesForNavBar(){
 		$interfaces = array();
 		foreach($this->ifcsOfActiveRoles as $interface){
-			if(($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') && $interface->crudR) $interfaces[] = $interface;
+			if(($interface->srcConcept->name == 'SESSION' || $interface->srcConcept->name == 'ONE') && $interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
@@ -212,16 +212,17 @@ class Session {
 	public function getInterfacesToCreateAtom(){
 		$interfaces = array();
 		foreach($this->ifcsOfActiveRoles as $interface){
-			//if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
+			//if($interface->srcConcept->name != 'SESSION' && $interface->srcConcept->name != 'ONE') $interfaces[] = $interface;
 			if($interface->crudC && $interface->isIdent) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
 	
-	public function getInterfacesToReadConcept($concept){
+	public function getInterfacesToReadConcept($conceptName){
 		$interfaces = array();
 		foreach($this->accessibleInterfaces as $interface){
-			if(($interface->srcConcept == $concept || in_array($concept, Concept::getSpecializations($interface->srcConcept)))	&& $interface->crudR) $interfaces[] = $interface;
+			if(($interface->srcConcept->name == $conceptName || $interface->srcConcept->hasSpecialization($conceptName)) 
+			        && $interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}

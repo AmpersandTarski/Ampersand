@@ -3,109 +3,97 @@
 class View {
     
     /**
-     * 
-     * @var array
+     * Contains all view definitions
+     * @var View[]
      */
-    private static $allViewDefinitions; 
+    private static $allViews; 
     
     /**
-     * 
+     * Name (and unique identifier) of view
      * @var string
      */
     public $label;
     
     /**
-     * 
+     * Specifies if this view is defined as default view for $this->concept
      * @var boolean
      */
     public $isDefault;
     
     /**
-     * 
+     * Specifies the concpet for which this view can defined
      * @var string
      */
     public $concept;
     
     /**
-     * 
-     * @var array
+     * Array with view segments that are used to build the view
+     * @var ViewSegment[]
      */
     public $segments = array();
     
     
     /**
-     * 
-     * @param string $viewLabel
+     * View constructor
+     * Private function to prevent outside instantiation of views. Use View::getView($viewLabel)
+     *
+     * @param array $viewDef
      */
-    public function __construct($viewLabel, Database $db){
-        $view = self::getViewDefinition($viewLabel);
+    private function __construct($viewDef){        
+        $this->label = $viewDef['label'];
+        $this->forConcept = $viewDef['concept'];
+        $this->isDefault = $viewDef['isDefault'];
         
-        $this->label = $view['label'];
-        $this->concept = $view['concept'];
-        $this->isDefault = $view['isDefault'];
-        
-        foreach($view['segments'] as $segment){
-            $this->segments[] = new ViewSegment($segment, $this->label, $db);
+        foreach($viewDef['segments'] as $segment){
+            $this->segments[] = new ViewSegment($segment);
         }
     }
     
-    public function getView(Atom $atom){
-        // Check if view can be used by atom
-        if ($atom->concept != $this->concept
-                && !in_array($atom->concept, Concept::getSpecializations($this->concept))) throw new Exception ("Specified view is not applicable for {$atom->id}[{$atom->concept}]",500);
-        
-        $viewStrs = array();
-        foreach ($this->segments as $viewSegment){
-            $key = is_null($viewSegment->label) ? $viewSegment->seqNr : $viewSegment->label;
-            $viewStrs[$key] = $viewSegment->getValue($atom);
-        }
-        
-        return $viewStrs;
-        
+    /**********************************************************************************************
+     *
+     * Static functions
+     *
+     *********************************************************************************************/
+    
+    /**
+     * Return view object
+     * @param string $viewLabel
+     * @throws Exception if view is not defined
+     * @return View
+     */
+    public static function getView($viewLabel){
+        if(!array_key_exists($viewLabel, $views = self::getAllViews())) throw new Exception("View '{$viewLabel}' is not defined", 500);
+    
+        return $views[$viewLabel];
     }
     
     /**
-     * 
-     * @return array:
+     * Returns array with all view objects
+     * @return View[]
      */
-    private static function getAllViewDefinitions(){
-        // If self::$allRules is not set yet, import views from json file
-        if(!isset(self::$allViewDefinitions)){
-            $file = file_get_contents(__DIR__ . '/../generics/views.json');
-            self::$allViewDefinitions = (array)json_decode($file, true);
-        }
-        
-        return self::$allViewDefinitions;
+    private static function getAllViews(){
+        if(!isset(self::$allViews)) self::setAllViews();
+         
+        return self::$allViews;
     }
     
     /**
-     * 
-     * @param string $viewLabel
-     * @throws Exception when specified view does not exists
-     * @return array
+     * Import all view definitions from json file and create and save View objects 
+     * @return void
      */
-    private static function getViewDefinition($viewLabel){
-        foreach(self::getAllViewDefinitions() as $view){
-            if($view['label'] == $viewLabel) return $view;
-        }
-        
-        // If no view found and returned, throw exception
-        throw new Exception ("Specified view '{$viewLabel}' does not exists", 500);
+    private static function setAllViews(){
+        self::$allViews = array();
+    
+        // import json file
+        $file = file_get_contents(__DIR__ . '/../generics/views.json');
+        $allViewDefs = (array)json_decode($file, true);
+    
+        foreach ($allViewDefs as $viewDef) self::$allViews[$viewDef['label']] = new View($viewDef);
     }
+    
 }
 
 class ViewSegment {
-    
-    /**
-     * @var Database
-     */
-    private $db;
-    
-    /**
-     * 
-     * @var string
-     */
-    public $viewLabel;
     
     /**
      * 
@@ -144,37 +132,18 @@ class ViewSegment {
     public $expSQL;
     
 
-    
-    public function __construct($segment, $viewLabel, Database $db){
-        $this->db = $db;
-        
-        $this->viewLabel = $viewLabel;
-        
-        $this->seqNr = $segment['seqNr'];
-        $this->label = $segment['label'];
-        $this->segType = $segment['segType'];
-        $this->text = $segment['text'];
-        $this->expADL = $segment['expADL'];
-        $this->expSQL = $segment['expSQL'];
-    }
-    
-    
-    public function getValue(Atom $atom){
-        switch ($this->segType){
-            case "Text" :
-                return $this->text;
-                break;
-            case "Exp" :
-                $query = "SELECT DISTINCT `tgt` FROM ({$this->expSQL}) AS `results` WHERE `src` = '{$atom->idEsc}' AND `tgt` IS NOT NULL";
-                $tgtAtoms = array_column((array)$this->db->Exe($query), 'tgt');
-                return count($tgtAtoms) ? $tgtAtoms[0] : null;
-                break;
-            default :
-                throw new Exception("Unsupported segmentType '{$this->segType}' in view '{$this->viewLabel}' segment '{$this->seqNr}:{$this->label}'", 501); // 501: Not implemented
-                break;
-        }
-    }
-    
+    /**
+     * Constructor of view segments
+     * @param array $viewSegmentDef
+     */
+    public function __construct($viewSegmentDef){     
+        $this->seqNr = $viewSegmentDef['seqNr'];
+        $this->label = $viewSegmentDef['label'];
+        $this->segType = $viewSegmentDef['segType'];
+        $this->text = $viewSegmentDef['text'];
+        $this->expADL = $viewSegmentDef['expADL'];
+        $this->expSQL = $viewSegmentDef['expSQL'];
+    }    
 }
 
 ?>

@@ -66,35 +66,36 @@ Class Atom {
 	
 	/**
 	 * Atom constructor
-	 * @param string $id
-	 * @param string $concept
-	 * @param string $viewId
+	 * @param string $atomId
+	 * @param string $conceptName
 	 * @param InterfaceObject $ifc
 	 * @return void
 	 */
-	public function __construct($id, $concept, $viewId = null, $ifc = null){
+	public function __construct($atomId, $conceptName, $ifc = null){
 		$this->database = Database::singleton();
-		$this->parentIfc = $ifc;
-		$this->concept = $concept;
 		
-		$this->setId($id);
+		$this->parentIfc = $ifc;
+		$this->concept = Concept::getConcept($conceptName);
+		
+		$this->setId($atomId);
 		
 		// View & label
-		if(is_null($viewId)) $viewId = Concept::getDefaultViewId($this->concept); // If default viewId is specified, use it
-		if(is_null($viewId)){
+		if(!is_null($this->parentIfc)) $view = $this->parentIfc->view; // If parentIfc is set, use view as defined by interface
+		else $view = $this->concept->getDefaultView(); // Else use default view of concept (can be null)
+		
+		if(is_null($view)){
 		    $this->view = null;
 		    $this->label = $this->id;
 		}else{
-		    $view = new View($viewId, $this->database);
-		    $this->view = $view->getView($this);
+		    $this->view = $this->getAtomView($view);
 		    
 		    $viewString = implode($this->view);
 		    $this->label = empty($viewString) ? $this->id : $viewString; // empty viewString => label = id
 		}
 		
 		// JSON-LD attributes
-		$this->jsonld_id = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $concept . '/' . $this->id;
-		$this->jsonld_type = Config::get('serverURL') . Config::get('apiPath') . '/concept/' . $concept;
+		$this->jsonld_id = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $conceptName . '/' . $this->id;
+		$this->jsonld_type = Config::get('serverURL') . Config::get('apiPath') . '/concept/' . $conceptName;
 
 	}
 	
@@ -104,10 +105,10 @@ Class Atom {
 	 */
 	public function setId($id){
 	    $this->id = $id;
-		$this->idEsc = $this->database->escape($this->database->typeConversion($this));
+		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
 		
 		if(is_null($this->parentIfc)){
-		  $this->path = 'resources/' . $this->concept . '/' . $this->id;
+		  $this->path = 'resources/' . $this->concept->name . '/' . $this->id;
 		}else{
 		  $this->path = $this->parentIfc->path . '/' . $this->id;
 		}
@@ -118,7 +119,7 @@ Class Atom {
 	    $ifc = new InterfaceObject($ifcId, $subIfcs, $this);
 	    
 	    // Check if interface can be used with this atom as source
-	    if($this->concept != $ifc->srcConcept) throw new Exception ("Source concept of atom '{$this->id}[{$this->concept}]' does not match source concept [{$ifc->srcConcept}] of interface '{$ifc->path}'", 500);
+	    if($this->concept != $ifc->srcConcept) throw new Exception ("Source concept of atom '{$this->id}[{$this->concept->name}]' does not match source concept [{$ifc->srcConcept->name}] of interface '{$ifc->path}'", 500);
 	    
 	    return $ifc;
 	}
@@ -148,7 +149,7 @@ Class Atom {
 		}
 		
 		if($options['navIfc']){
-			foreach(InterfaceObject::getAllInterfacesForConcept($this->concept) as $ifc){
+			foreach(InterfaceObject::getAllInterfacesForConcept($this->concept->name) as $ifc){
 				$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->jsonld_id . '/' . $ifc->id);
 			}
 			
@@ -156,7 +157,102 @@ Class Atom {
 		}
 		
 		return $result;
-	}	
+	}
+	
+	/**
+	 * 
+	 * @param View $view
+	 * @return array
+	 */
+	private function getAtomView($view){
+	    $viewStrs = array();
+	    foreach ($view->segments as $viewSegment){
+	        $key = is_null($viewSegment->label) ? $viewSegment->seqNr : $viewSegment->label;
+	        
+	        switch ($viewSegment->segType){
+	            case "Text" :
+	                $viewStrs[$key] = $viewSegment->text;
+	                break;
+	            case "Exp" :
+	                $query = "SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
+	                $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
+	                $viewStrs[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+	                break;
+	            default :
+	                throw new Exception("Unsupported segmentType '{$viewSegment->segType}' in view '{$view->label}' segment '{$viewSegment->seqNr}:{$viewSegment->label}'", 501); // 501: Not implemented
+	                break;
+	        }
+	    }
+	    return $viewStrs;
+	}
+	
+	/**
+	 * Return json representation of Atom (identifier) according to Ampersand technical types (TTypes)
+	 * @throws Exception when technical type is not (yet) supported
+	 * @return mixed
+	 */
+	public function getJsonRepresentation(){
+	    switch($this->concept->type){
+	        case "ALPHANUMERIC" :
+	        case "BIGALPHANUMERIC" :
+	        case "HUGEALPHANUMERIC" :
+	        case "PASSWORD" :
+	        case "TYPEOFONE" :
+	            return (string) $this->id;
+	        case "BOOLEAN" :
+	            return (bool) $this->id;
+	        case "DATE" :
+	            $datetime = new DateTime($this->id);
+	            return $datetime->format('Y-m-d'); // format in ISO-8601 standard
+	        case "DATETIME" :
+	            $datetime = new DateTime($this->id, new DateTimeZone('UTC')); // datetimes are stored in UTC in database
+	            $datetime->setTimezone(new DateTimeZone(date_default_timezone_get())); // convert back to systemtime
+	            return $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
+	        case "FLOAT" :
+	            return (float) $this->id;
+	        case "INTEGER" :
+	            return (int) $this->id;
+	        case "OBJECT" :
+	            return $this->id;
+	        default :
+	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
+	    }
+	}
+	
+	/**
+	 * Return mysql representation of Atom (identifier) according to Ampersand technical types (TTypes)
+	 * @throws Exception when technical type is not (yet) supported
+	 * @return mixed
+	 */
+	public function getMysqlRepresentation(){
+	    if(is_null($this->id)) return null;
+	    
+	    switch($this->concept->type){
+	        case "ALPHANUMERIC" :
+	        case "BIGALPHANUMERIC" :
+	        case "HUGEALPHANUMERIC" :
+	        case "PASSWORD" :
+	        case "TYPEOFONE" :
+	            return (string) $this->id;
+	        case "BOOLEAN" :
+	            return (int) $this->id; // booleans are stored as tinyint(1) in the database. false = 0, true = 1
+	        case "DATE" :
+	            $datetime = new DateTime($this->id);
+	            return $datetime->format('Y-m-d'); // format to store in database
+	        case "DATETIME" :
+	            $datetime = new DateTime($this->id); // $this->id can include timezone, e.g. 2005-08-15T15:52:01+00:00 (DATE_ATOM format)
+	            $datetime->setTimezone(new DateTimeZone('UTC')); // convert to UTC to store in database
+	            return $datetime->format('Y-m-d H:i:s'); // format to store in database (UTC)
+	        case "FLOAT" :
+	            return (float) $this->id;
+	        case "INTEGER" :
+	            return (int) $this->id;
+	        case "OBJECT" :
+	            return $this->id;
+	        default :
+	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
+	    }
+	}
 
 /**************************************************************************************************
  *
@@ -212,7 +308,7 @@ Class Atom {
 	            $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->jsonld_id . '/' . $this->parentIfc->refInterfaceId);
 	        else $ifcs = array_map(function($o) {
 	            return array('id' => $o->id, 'label' => $o->label, 'url' => $this->jsonld_id . '/' . $o->id);
-	        }, $session->getInterfacesToReadConcept($this->concept));
+	        }, $session->getInterfacesToReadConcept($this->concept->name));
 	        $content['_ifcs_'] = $ifcs;
 	    }
 	    
@@ -310,7 +406,7 @@ Class Atom {
 	        
 		// Handle options
 		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
-		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
+		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept->name . ' updated';
 		
 		// Perform patches
 		$this->doPatches($patches);
@@ -325,7 +421,7 @@ Class Atom {
 	public function delete($options = array()){
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
-	    if(!$this->parentIfc->tgtConceptIsObject) throw new Exception ("Cannot delete non-object [{$this->concept}] in '{$this->path}'. Use PATCH remove operation instead", 405);
+	    if(!$this->parentIfc->tgtConceptIsObject) throw new Exception ("Cannot delete non-object [{$this->concept->name}] in '{$this->path}'. Use PATCH remove operation instead", 405);
 	     
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -334,7 +430,7 @@ Class Atom {
 	    $this->database->deleteAtom($this);
 	
 	    // Close transaction
-	    $this->database->closeTransaction($this->concept . ' deleted', false, null);
+	    $this->database->closeTransaction($this->concept->name . ' deleted', false, null);
 	
 	    return;
 	}
@@ -443,7 +539,7 @@ Class Atom {
 	public function walkIfcPath($path){
 	    $session = Session::singleton();
 	
-	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->id}[{$this->concept}]' not found", 404);
+	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->id}[{$this->concept->name}]' not found", 404);
 	    
 	    $atom = $this; // starting point
 	    
@@ -466,40 +562,6 @@ Class Atom {
 	    }
 	    
 	    return is_null($atom) ? $ifc : $atom;
-	}
-	
-	/**
-	 * Coversion of php variables to json according to Ampersand technical types (TTypes)
-	 * @param mixed $value
-	 * @param string $concept
-	 * @return mixed
-	 */
-	public static function typeConversion($value, $concept){
-		switch(Concept::getTypeRepresentation($concept)){
-			case "ALPHANUMERIC" :
-			case "BIGALPHANUMERIC" :
-			case "HUGEALPHANUMERIC" :
-			case "PASSWORD" :
-			case "TYPEOFONE" :
-				return (string) $value;
-			case "BOOLEAN" :
-				return (bool) $value;
-			case "DATE" :
-				$datetime = new DateTime($value);
-				return $datetime->format('Y-m-d'); // format in ISO-8601 standard
-			case "DATETIME" :
-				$datetime = new DateTime($value, new DateTimeZone('UTC')); // datetimes are stored in UTC in database
-				$datetime->setTimezone(new DateTimeZone(date_default_timezone_get())); // convert back to systemtime
-				return $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
-			case "FLOAT" :
-				return (float) $value;
-			case "INTEGER" :
-				return (int) $value;
-			case "OBJECT" :
-				return $value;
-			default :
-				throw new Exception("Unknown/unsupported representation type for concept $concept", 501);
-		}
 	}
 }
 ?>

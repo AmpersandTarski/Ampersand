@@ -56,14 +56,13 @@ class ExecEngine {
 				Notifications::addLog("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '" . $role->label . "'", 'ExecEngine');
 				
 				// Determine affected rules that must be checked by the exec engine
-				$affectedConjuncts = (array)RuleEngine::getAffectedInvConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations());
-				$affectedConjuncts = array_merge($affectedConjuncts, (array)RuleEngine::getAffectedSigConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations()));
+				$affectedConjuncts = RuleEngine::getAffectedInvConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations());
+				$affectedConjuncts = array_merge($affectedConjuncts, RuleEngine::getAffectedSigConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations()));
 				
 				$affectedRules = array();
-				foreach($affectedConjuncts as $conjunctId){
-					$conjunct = RuleEngine::getConjunct($conjunctId);
-					foreach ($conjunct['invariantRuleNames'] as $ruleName) $affectedRules[] = $ruleName;
-					foreach ($conjunct['signalRuleNames'] as $ruleName) $affectedRules[] = $ruleName;
+				foreach($affectedConjuncts as $conjunct){
+					foreach ($conjunct->invRuleNames as $ruleName) $affectedRules[] = $ruleName;
+					foreach ($conjunct->sigRuleNames as $ruleName) $affectedRules[] = $ruleName;
 				}
 				
 				// Check rules
