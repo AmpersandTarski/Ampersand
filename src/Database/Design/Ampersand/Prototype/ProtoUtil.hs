@@ -8,6 +8,7 @@ module Database.Design.Ampersand.Prototype.ProtoUtil
          , indentBlock,addToLast
          , indentBlockBetween,quote
          , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
+         , installComposerLibs
          ) where
  
 import Prelude hiding (putStrLn, readFile, writeFile)
@@ -17,8 +18,9 @@ import System.Directory
 import System.FilePath
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Misc.Options (verboseLn) -- TODO: verboseLn shouldn't be in Options
-import qualified Database.Design.Ampersand.Misc.Options as Opts
+import Database.Design.Ampersand.Misc.Options
+import System.Exit --(ExitCode, exitFailure, exitSuccess)
+import System.Process
 
 writePrototypeFile :: FSpec -> String -> String -> IO ()
 writePrototypeFile fSpec relFilePath content =
@@ -30,7 +32,7 @@ writePrototypeFile fSpec relFilePath content =
 
 getGenericsDir :: FSpec -> String
 getGenericsDir fSpec = 
-  Opts.dirPrototype (getOpts fSpec) </> "generics" 
+  dirPrototype (getOpts fSpec) </> "generics" 
 
 writePrototypeAppFile :: FSpec -> String -> String -> IO ()
 writePrototypeAppFile fSpec relFilePath content =
@@ -42,7 +44,7 @@ writePrototypeAppFile fSpec relFilePath content =
    
 getAppDir :: FSpec -> String
 getAppDir fSpec =
-  Opts.dirPrototype (getOpts fSpec) </> "app"
+  dirPrototype (getOpts fSpec) </> "app"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
@@ -174,3 +176,35 @@ showPhpBool b = if b then "true" else "false"
 showPhpMaybeBool :: Maybe Bool -> String
 showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
+
+
+installComposerLibs :: FSpec -> IO()
+installComposerLibs fSpec =
+  do verbose (getOpts fSpec) "  Trying to download and install Composer libraries..."
+     (exit_code, stdout, stderr) <- readCreateProcessWithExitCode myProc ""
+     case exit_code of
+       ExitSuccess   -> verboseLn (getOpts fSpec) " Succeeded."
+       ExitFailure _ -> failOutput (exit_code, stdout, stderr)
+
+   where
+     myProc :: CreateProcess
+     myProc = CreateProcess 
+       { cmdspec = ShellCommand $ "composer install --working-dir="++composerTargetPath
+       , cwd = Just composerTargetPath
+       , env = Nothing
+       , std_in = Inherit
+       , std_out = Inherit
+       , std_err = Inherit
+       , close_fds = False
+       , create_group = False
+       , delegate_ctlc = True
+       }
+     composerTargetPath = dirPrototype (getOpts fSpec)
+     failOutput (exit_code, stdout, stderr) =
+        do putStrLn $ "*Failed!*.\n Exit code: "++show exit_code++". "
+           putStrLn stdout
+           putStrLn stderr
+           putStrLn "Possible solutions to fix your prototype:"
+           putStrLn "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
+           putStrLn "  2) Make sure you have an active internet connection."
+           putStrLn "  3) If you previously built another Ampersand prototype succesfully, you could try to copy the lib directory from it into you prototype manually."

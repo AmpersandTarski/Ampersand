@@ -13,6 +13,7 @@ import Database.Design.Ampersand.Prototype.Generate    (generateGenerics)
 import Database.Design.Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
+import Database.Design.Ampersand.Prototype.ProtoUtil   (installComposerLibs)
 
 main :: IO ()
 main =
@@ -78,6 +79,7 @@ doGenProto fSpec =
               ; doGenFrontend fSpec
               ; verboseLn (getOpts fSpec) "\n"
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
+              ; installComposerLibs fSpec
               }
       else do { putStrLn "\nERROR: No prototype generated because of rule violations.\n(Compile with --dev to generate a prototype regardless of violations)"
               ; exitWith $ ExitFailure 40
