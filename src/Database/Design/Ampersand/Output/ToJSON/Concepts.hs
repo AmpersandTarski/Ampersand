@@ -11,6 +11,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Data.Maybe
+import Data.List(nub)
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept
@@ -21,6 +22,11 @@ data Concept = Concept
   , cptJSONaffectedConjuncts :: [String]
   , cptJSONinterfaces        :: [String]
   , cptJSONviews             :: [View]
+  , cptJSONconceptTable      :: TableCols
+  } deriving (Generic, Show)
+data TableCols = TableCols
+  { tclJSONname              :: String
+  , tclJSONcols              :: [String]
   } deriving (Generic, Show)
 data View = View
   { vwJSONlabel        :: String
@@ -44,6 +50,8 @@ instance ToJSON View where
   toJSON = amp2Jason
 instance ToJSON Segment where
   toJSON = amp2Jason
+instance ToJSON TableCols where
+  toJSON = amp2Jason
 instance JSON FSpec Concepts where
  fromAmpersand fSpec _ = Concepts (map (fromAmpersand fSpec) (concs fSpec))
 instance JSON A_Concept Concept where
@@ -55,6 +63,7 @@ instance JSON A_Concept Concept where
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONviews = map (fromAmpersand fSpec) . filter isForCpt . vviews $ fSpec
+  , cptJSONconceptTable = fromAmpersand fSpec cpt
   } 
   where
     hasAsSourceCpt :: Interface -> Bool
@@ -62,6 +71,21 @@ instance JSON A_Concept Concept where
     isForCpt :: ViewDef -> Bool
     isForCpt vd = vdcpt vd `elem` cpts
     cpts = cpt : largerConcepts  (vgens fSpec) cpt
+instance JSON A_Concept TableCols where
+ fromAmpersand fSpec cpt = TableCols
+  { tclJSONname    = name cptTable
+  , tclJSONcols    = case nub . map fst $ cols of
+                       [t] -> if name t == name cptTable
+                              then map (attName . snd) cols
+                              else fatal 78 $ "Table names should match: "++name t++" "++name cptTable++"." 
+                       _   -> fatal 79 $ "All concepts in a typology should be in exactly one table."
+  }
+  where
+    cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
+    cptTable = case lookupCpt fSpec $ cpt of
+      [(table,_)] -> table
+      []      -> fatal 80 $ "Concept `"++name cpt++"` not found in a table."
+      _       -> fatal 81 $ "Concept `"++name cpt++"` found in multiple tables."
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
   { vwJSONlabel        = vdlbl vd
