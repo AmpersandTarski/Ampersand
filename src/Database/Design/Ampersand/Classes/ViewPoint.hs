@@ -7,6 +7,7 @@ import Database.Design.Ampersand.Classes.Relational  (Relational(properties))
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc.Explain
 import Data.Maybe
+import Data.List(nub)
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, relations, etc.)
@@ -59,12 +60,12 @@ rulesFromIdentity identity
             }
 
 instance Language a => Language [a] where
-  relsDefdIn  = concatMap relsDefdIn
-  udefrules   = concatMap udefrules
-  identities  = concatMap identities
-  viewDefs    = concatMap viewDefs
-  gens        = concatMap gens
-  patterns    = concatMap patterns
+  relsDefdIn  = nub . concatMap relsDefdIn
+  udefrules   = nub . concatMap udefrules
+  identities  = nub . concatMap identities
+  viewDefs    = nub . concatMap viewDefs
+  gens        = nub . concatMap gens
+  patterns    = nub . concatMap patterns
 
 instance Language A_Context where
   relsDefdIn context = uniteRels (concatMap relsDefdIn (patterns context)
