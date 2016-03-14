@@ -31,13 +31,14 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
              , mLkpTbl    = nub (attributeLookuptable ++ isaLookuptable)
              }
         where
+          tableKey = head cpts
           declExprs = map mkExpr dcls
             where
               mkExpr d 
                 | isUni d =       EDcD d
                 | isInj d = EFlp (EDcD d)
                 | otherwise = fatal 43 $ "relation `"++name d++"`. "++show (properties d)++"\n\n"++show d
-          conceptExprs = map EDcI cpts
+          conceptExprs = map (\cpt -> EEps cpt (Sign tableKey cpt)) cpts
           plugMors :: [Expression]
           plugMors = let exprs = conceptExprs++declExprs 
                          reprOfID = representationOf (ctxInfo context) . head $ cpts in
@@ -89,9 +90,9 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                , attUse  = if suitableAsKey . repr . source $ srcExpr
                                            then ForeignKey (target srcExpr)
                                            else PlainAttr
-                               , attNull = isTot srcExpr
-                               , attUniq = isUni srcExpr
-                               , attFlipped = isFlipped srcExpr
+                               , attNull = isTot trgExpr
+                               , attUniq = isUni trgExpr
+                               , attFlipped = isFlipped trgExpr
                                }
                          , -- The target attribute:
                            Att { attName = concat["Tgt" | isEndo dcl]++(unquote . name . target) trgExpr
@@ -222,7 +223,7 @@ rel2att ci
        , attUse  =
           let f expr =
                  case expr of
-                    EDcI c   -> if suitableAsKey (representationOf ci c)
+                    EEps c _ -> if suitableAsKey (representationOf ci c)
                                 then TableKey ((not.maybenull) e) c
                                 else PlainAttr
                     EDcD _   -> PlainAttr
@@ -251,9 +252,9 @@ rel2att ci
                           else [(rel,mkColumnName rel++"_"++show i)|(rel,i)<-zip cl [(0::Int)..]]]
        
        mkColumnName expr = mkColumnName' False expr
-         where  mkColumnName' isFlipped (EFlp x) = mkColumnName' (not isFlipped) x
-                mkColumnName' isFlipped (EDcD d) = (if isFlipped then "src" else "tgt")++"_"++(unquote . name) d  --TODO: This has to be made more generic, to enable writing of populations from tables. (Excell spreadsheets)
-                mkColumnName' _         (EDcI c) = (unquote . name) c
+         where  mkColumnName' isFlipped' (EFlp x) = mkColumnName' (not isFlipped') x
+                mkColumnName' isFlipped' (EDcD d) = (if isFlipped' then "src" else "tgt")++"_"++(unquote . name) d  --TODO: This has to be made more generic, to enable writing of populations from tables. (Excell spreadsheets)
+                mkColumnName' _         (EEps c _) = (unquote . name) c
                 mkColumnName' _ rel = fatal 162 ( "Unexpected relation found:\n"++
                                                   intercalate "\n  "
                                                     [ "***rel:"
@@ -283,7 +284,7 @@ rel2att ci
                    EFlp (EDcD dcl)
                         | (not.isSur) dcl -> True
                         | otherwise -> (not.null) [()|k<-kernelpaths, target k==source dcl && isSur k || target k==target dcl && isTot k]
-                   EDcI _ -> False
+                   EEps{} -> (not.isTot) expr
                    _ -> fatal 152 ("Illegal Plug Expression: "++show expr ++"\n"++
                                    " ***kernel:*** \n   "++
                                    intercalate "\n   " (map show kernel)++"\n"++
