@@ -82,6 +82,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , getDefaultViewForConcept :: A_Concept -> Maybe ViewDef
+                   , getAllViewsForConcept :: A_Concept -> [ViewDef]
                    , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)

@@ -62,14 +62,12 @@ instance JSON A_Concept Concept where
   , cptJSONspecializations   = map name . smallerConcepts (vgens fSpec) $ cpt
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
-  , cptJSONviews = map (fromAmpersand fSpec) . filter isForCpt . vviews $ fSpec
+  , cptJSONviews = map (fromAmpersand fSpec) $ getAllViewsForConcept fSpec cpt
   , cptJSONconceptTable = fromAmpersand fSpec cpt
   } 
   where
     hasAsSourceCpt :: Interface -> Bool
     hasAsSourceCpt ifc = (source . objctx . ifcObj) ifc `elem` cpts
-    isForCpt :: ViewDef -> Bool
-    isForCpt vd = vdcpt vd `elem` cpts
     cpts = cpt : largerConcepts  (vgens fSpec) cpt
 instance JSON A_Concept TableCols where
  fromAmpersand fSpec cpt = TableCols
