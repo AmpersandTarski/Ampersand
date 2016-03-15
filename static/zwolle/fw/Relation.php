@@ -88,11 +88,10 @@ class Relation {
         // TODO: while old signature is used in interface object definitions, use this old one (rel_<r>_<srcConcept>_<tgtConcept>)
         $this->signature = "rel_{$this->name}_{$this->srcConcept->name}_{$this->tgtConcept->name}"; // $relationDef['signature'];
         
-        // TODO: just import when changes are made to json file (see https://github.com/AmpersandTarski/ampersand/issues/197)
-        $this->isUni = $relationDef['srcMax'] ? true : false;
-        $this->isTot = $relationDef['srcMin'] ? true : false;
-        $this->isInj = $relationDef['tgtMax'] ? true : false;
-        $this->isSur = $relationDef['tgtMin'] ? true : false;
+        $this->isUni = $relationDef['uni'];
+        $this->isTot = $relationDef['tot'];
+        $this->isInj = $relationDef['inj'];
+        $this->isSur = $relationDef['sur'];
         
         foreach((array)$relationDef['affectedConjuncts'] as $conjId){
             $conj = Conjunct::getConjunct($conjId);
