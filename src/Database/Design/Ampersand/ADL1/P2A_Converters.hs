@@ -7,7 +7,7 @@ import Database.Design.Ampersand.ADL1.Disambiguate
 import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.ADL1.Lattices -- used for type-checking
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ViewPoint
 import Database.Design.Ampersand.Classes.ConceptStructure
 import Database.Design.Ampersand.Basics

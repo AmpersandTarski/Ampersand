@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec) where
 
-import Prelude hiding (Ord(..))
+import Prelude
 import Data.Char
 import Data.List
 import Data.Maybe
@@ -10,7 +10,6 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.Poset
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.Crud
