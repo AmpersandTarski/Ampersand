@@ -1,17 +1,34 @@
 <?php
 
 class Config {
+    
+    /**
+     * Contains all config variables
+     * @var array
+     */
+    private static $configVars;
 	
+    /**
+     * Config variable getter
+     * @param string $configVar
+     * @param string $scope
+     * @return mixed|NULL
+     */
 	public static function get($configVar, $scope = 'global'){
-		if (!isset($GLOBALS[$scope][$configVar])) return null; //throw new Exception("Variable $configVar in scope $scope does not exists", 500);
+		if (!isset(self::$configVars[$scope][$configVar])) return null; //throw new Exception("Variable $configVar in scope $scope does not exists", 500);
 		
-		return $GLOBALS[$scope][$configVar];
+		return self::$configVars[$scope][$configVar];
 	}
 	
+	/**
+	 * Config variable setter
+	 * @param string $configVar
+	 * @param string $scope
+	 * @param mixed $value
+	 * @return void
+	 */
 	public static function set($configVar, $scope, $value){
-		$GLOBALS[$scope][$configVar] = $value;
-		
-		return true;
+		self::$configVars[$scope][$configVar] = $value;
 	}
 }
 
@@ -31,39 +48,39 @@ try{
 	Config::set('dbName', 'mysqlDatabase', $settings['mysqlSettings']['dbName']);
 	Config::set('dbsignalTableName', 'mysqlDatabase', $settings['mysqlSettings']['dbsignalTableName']);
 	
+	// Other default configuration
+	Config::set('serverURL', 'global', 'http://localhost/' . Config::get('contextName')); // set the base url for the application
+	Config::set('apiPath', 'global', '/api/v1'); // relative path to api
+	
+	Config::set('sessionExpirationTime', 'global', 60*60); // expiration time in seconds
+	Config::set('productionEnv', 'global', false); // set environment as production deployment (or not = default)
+	Config::set('debugMode', 'global', true); // set debugMode (or not = default). Impacts the way errors are returned by API
+	
+	Config::set('absolutePath', 'global', __DIR__ . '/../');
+	Config::set('uploadPath', 'global', 'uploads/'); // absolute path to folder, without trailing slash
+	Config::set('allowedMimeTypes', 'global', array('application/vnd.ms-excel'
+	                                               ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+	                                               ,'application/excel'
+	                                               ,'application/pdf'
+	                                               ,'text/xml'
+	                                               ));
+	
+	Config::set('loginEnabled', 'global', false); // enable/disable login functionality (requires Ampersand script, see localSettings.php)
+	
+	
+	Config::set('checkDefaultPopulation', 'transactions', true); // For debugging set to false (commits the initial population, regardless if it has invariant violations)
+	Config::set('ignoreInvariantViolations', 'transactions', false); // for debugging can be set to true (transactions will be committed regardless off invariant violations)
+	Config::set('interfaceAutoCommitChanges', 'transactions', true); // specifies whether changes in an interface are automatically commited when allowed (all invariants hold)
+	Config::set('interfaceCacheGetCalls', 'transactions', false); // specifies whether GET calls should be cached by the frontend (e.g. angular) application
+	
+	// Default CRUD rights for interfaces
+	Config::set('defaultCrudC', 'transactions', true);
+	Config::set('defaultCrudR', 'transactions', true);
+	Config::set('defaultCrudU', 'transactions', true);
+	Config::set('defaultCrudD', 'transactions', true);
+	
 }catch(Exception $e){
 	throw $e;	
 }
-
-// Other default configuration
-Config::set('serverURL', 'global', 'http://localhost/' . Config::get('contextName')); // set the base url for the application
-Config::set('apiPath', 'global', '/api/v1'); // relative path to api
-
-Config::set('sessionExpirationTime', 'global', 60*60); // expiration time in seconds
-Config::set('productionEnv', 'global', false); // set environment as production deployment (or not = default)
-Config::set('debugMode', 'global', true); // set debugMode (or not = default). Impacts the way errors are returned by API
-
-Config::set('absolutePath', 'global', __DIR__ . '/../');
-Config::set('uploadPath', 'global', 'uploads/'); // absolute path to folder, without trailing slash
-Config::set('allowedMimeTypes', 'global', array('application/vnd.ms-excel'
-	                                           ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-	                                           ,'application/excel'
-	                                           ,'application/pdf'
-	                                           ,'text/xml'
-	                                           ));
-
-Config::set('loginEnabled', 'global', false); // enable/disable login functionality (requires Ampersand script, see localSettings.php)
-
-
-Config::set('checkDefaultPopulation', 'transactions', true); // For debugging set to false (commits the initial population, regardless if it has invariant violations)
-Config::set('ignoreInvariantViolations', 'transactions', false); // for debugging can be set to true (transactions will be committed regardless off invariant violations)
-Config::set('interfaceAutoCommitChanges', 'transactions', true); // specifies whether changes in an interface are automatically commited when allowed (all invariants hold)
-Config::set('interfaceCacheGetCalls', 'transactions', false); // specifies whether GET calls should be cached by the frontend (e.g. angular) application
-
-// Default CRUD rights for interfaces
-Config::set('defaultCrudC', 'transactions', true);
-Config::set('defaultCrudR', 'transactions', true);
-Config::set('defaultCrudU', 'transactions', true);
-Config::set('defaultCrudD', 'transactions', true);
 
 ?>
