@@ -26,6 +26,12 @@ class Concept {
 	public $type;
 	
 	/**
+	 * Specifies if this concept is an object (true) or scalar (false)
+	 * @var boolean
+	 */
+	public $isObject;
+	
+	/**
 	 * Array with conjunctIds (both from signal and invariant rules) that are affected by creating or deleting an atom of this concept
 	 * @var string[]
 	 */
@@ -84,6 +90,7 @@ class Concept {
 	    
 		$this->name = $conceptDef['name'];
 		$this->type = $conceptDef['type'];
+		$this->isObject = ($this->type == "OBJECT") ? true : false;
 		
 		$this->affectedConjunctIds = (array)$conceptDef['affectedConjuncts'];
 		foreach($this->affectedConjunctIds as $conjId){

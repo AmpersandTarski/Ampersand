@@ -27,7 +27,16 @@ class InterfaceObject {
 	public $isProperty;
 	public $isIdent;
 	
+	/**
+	 * 
+	 * @var Concept
+	 */
 	public $srcConcept;
+	
+	/**
+	 * 
+	 * @var Concept
+	 */
 	public $tgtConcept;
 	
 	/**
@@ -35,8 +44,6 @@ class InterfaceObject {
 	 * @var View
 	 */
 	public $view;
-	
-	public $tgtConceptIsObject;
 	
 	public $refInterfaceId;
 	public $isLinkTo;
@@ -111,10 +118,7 @@ class InterfaceObject {
 		
 		isset($interface['viewId']) ? $this->view = View::getView($interface['viewId']) : null;
 		
-		// Determine if tgtConcept is Object (true) or Scalar (false)
-		$this->tgtConceptIsObject = ($this->tgtConcept->type == "OBJECT") ? true : false;
-		
-		if($this->crudU && $this->tgtConceptIsObject) $this->editableConcepts[] = $this->tgtConcept->name;
+		if($this->crudU && $this->tgtConcept->isObject) $this->editableConcepts[] = $this->tgtConcept->name;
 		
 		// Set attributes
 		$this->refInterfaceId = $interface['refSubInterfaceId'];
@@ -208,7 +212,7 @@ class InterfaceObject {
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
 	    
 	    // Initialize result array
-	    if($this->tgtConceptIsObject && !$this->isProperty) $result = array(); // return array if tgtConceptIsObject (except properties), even if result is empty
+	    if($this->tgtConcept->isObject && !$this->isProperty) $result = array(); // return array if tgtConcept is an object (except properties), even if result is empty
 	    elseif(!$this->univalent) $result = array(); // return array for non-univalent interfaces
 	    else $result = null; // else (i.e. properties and univalent scalars)
 	    
@@ -218,7 +222,7 @@ class InterfaceObject {
 	        $tgtAtom = new Atom($tgtAtomId, $this->tgtConcept->name, $this);
 	        	
 	        // Object
-	        if($this->tgtConceptIsObject){
+	        if($this->tgtConcept->isObject){
 	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false
 	            if($this->isProperty && !$this->isIdent && empty($this->subInterfaces) && empty($this->refInterfaceId)){
 	                $result = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
@@ -279,7 +283,7 @@ class InterfaceObject {
 	public function create($data, $options = array()){	
 	    // CRUD check
 	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
-	    if(!$this->tgtConceptIsObject) throw new Exception ("Cannot create non-object [{$this->tgtConcept->name}] in '{$this->path}'. Use PATCH add operation instead", 405);
+	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object [{$this->tgtConcept->name}] in '{$this->path}'. Use PATCH add operation instead", 405);
 	    
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -398,11 +402,11 @@ class InterfaceObject {
 	        }
 	        	
 	    // Interface is a relation to an object
-	    }elseif($this->tgtConceptIsObject){
+	    }elseif($this->tgtConcept->isObject){
 	        throw new Exception("Cannot patch replace for object reference in interface '{$this->this}'. Use patch remove + add instead", 500);
 	
 	    // Interface is a relation to a scalar (i.e. not an object)
-	    }elseif(!$this->tgtConceptIsObject){
+	    }elseif(!$this->tgtConcept->isObject){
 	        	
 	        // Replace by nothing => editDelete
 	        if(is_null($value)){
@@ -437,14 +441,14 @@ class InterfaceObject {
 	        throw new Exception("Cannot patch add for property '{$this->path}'. Use patch replace instead", 500);
 	
 	    // Interface is a relation to an object
-	    }elseif($this->tgtConceptIsObject){
+	    }elseif($this->tgtConcept->isObject){
 	        // Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception
 	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept->name}]' does not exist and may not be created in {$this->path}", 403);
 	        	
 	        $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $tgtAtom);
 	
 	    // Interface is a relation to a scalar (i.e. not an object)
-	    }elseif(!$this->tgtConceptIsObject){    	
+	    }elseif(!$this->tgtConcept->isObject){    	
 	        // Check: If interface is univalent, throw exception
 	        if($this->univalent) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
 	        	

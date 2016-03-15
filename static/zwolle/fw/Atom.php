@@ -387,7 +387,7 @@ Class Atom {
 	        // _sortValues_ (if subInterface is uni)
 	        if($subinterface->univalent && $options['metaData']){
 	            if(is_bool($subcontent)) $sortValue = $subcontent; // property
-	            elseif($subinterface->tgtConceptIsObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
+	            elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
 	            else $sortValue = $subcontent; // scalar
 	    
 	            $content['_sortValues_'][$subinterface->id] = $sortValue;
@@ -414,7 +414,7 @@ Class Atom {
 	            // _sortValues_ (if subInterface is uni)
 	            if($subinterface->univalent && $options['metaData']){
 	                if(is_bool($subcontent)) $sortValue = $subcontent; // property
-	                elseif($subinterface->tgtConceptIsObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
+	                elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
 	                else $sortValue = $subcontent; // scalar
 	    
 	                $content['_sortValues_'][$subinterface->id] = $sortValue;
@@ -493,7 +493,7 @@ Class Atom {
 	public function delete($options = array()){
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
-	    if(!$this->parentIfc->tgtConceptIsObject) throw new Exception ("Cannot delete non-object [{$this->concept->name}] in '{$this->path}'. Use PATCH remove operation instead", 405);
+	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object [{$this->concept->name}] in '{$this->path}'. Use PATCH remove operation instead", 405);
 	     
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -590,12 +590,12 @@ Class Atom {
 			throw new Exception("Cannot patch remove for property '{$ifc->path}'. Use patch replace instead", 500);
 		
 		// Interface is a relation to an object
-		}elseif($ifc->tgtConceptIsObject){
+		}elseif($ifc->tgtConcept->isObject){
 			
 			$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $this->parentIfc->srcAtom, $this);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
-		}elseif(!$ifc->tgtConceptIsObject){
+		}elseif(!$ifc->tgtConcept->isObject){
 			if($ifc->univalent) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
 			
 			$this->database->editDelete($ifc->relation, $ifc->relationIsFlipped, $this->parentIfc->srcAtom, $this);
