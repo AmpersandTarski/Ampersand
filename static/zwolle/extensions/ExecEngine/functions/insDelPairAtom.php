@@ -26,14 +26,14 @@
    VIOLATION (TXT "InsPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
+function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function InsPair(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
+	Notifications::addLog("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)", 'ExecEngine');
 	try{	
 		$database = Database::singleton();
 		
-		// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
-		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
+		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
 		
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
@@ -41,22 +41,22 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'InsPair ignored because src and/or tgt atom is _NULL';
 		
 		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
-	    if($srcAtom == "_NEW") $srcAtom = Concept::createNewAtomId($srcConcept);
+	    if($srcAtom == "_NEW") $srcAtom = Concept::createNewAtomId($srcConceptName);
 		
 		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
-		if($tgtAtom == "_NEW") $tgtAtom = Concept::createNewAtomId($tgtConcept);
+		if($tgtAtom == "_NEW") $tgtAtom = Concept::createNewAtomId($tgtConceptName);
 		
 		$srcAtomIds = explode('_AND', $srcAtom);
 		$tgtAtomIds = explode('_AND', $tgtAtom);
 		foreach($srcAtomIds as $a){
-			$src = new Atom($a, $srcConcept);
+			$src = new Atom($a, $srcConceptName);
 		    foreach($tgtAtomIds as $b){
-				$tgt = new Atom($b, $tgtConcept);
+				$tgt = new Atom($b, $tgtConceptName);
 		        $database->editUpdate($relation, false, $src, $tgt, null, 'ExecEngine');
 			}
 		}
 		
-		return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+		return "Tuple ('{$srcAtom}', '{$tgtAtom}') inserted into '{$relation->__toString()}'";
 	}catch(Exception $e){
 		Notifications::addError('InsPair: ' . $e->getMessage());
 	}
@@ -70,14 +70,14 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	VIOLATION (TXT "DelPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
+function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function DelPair(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
+	Notifications::addLog("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
-		// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
-		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
+		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
 		
 		$srcAtoms = explode('_AND', $srcAtom);
 		$tgtAtoms = explode('_AND', $tgtAtom);
@@ -85,14 +85,14 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		if(count($tgtAtoms) > 1) throw new Exception('DelPair function call has more than one tgt atom', 501); // 501: Not implemented
 		
 		foreach($srcAtoms as $a){
-		    $src = new Atom($a, $srcConcept);
+		    $src = new Atom($a, $srcConceptName);
 		    foreach($tgtAtoms as $b){
-				$tgt = new Atom($b, $tgtConcept);
-		        $database->editDelete($relation, false, $src, $tgt, 'ExecEngine');
+				$tgt = new Atom($b, $tgtConceptName);
+		        $database->editDelete($relation->signature, false, $src, $tgt, 'ExecEngine');
 			}
 		}
 		
-		return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+		return "Tuple ('{$srcAtom}', '{$tgtAtom}') deleted from '{$relation->__toString()}'";
 	}catch(Exception $e){
 		Notifications::addError('DelPair: ' . $e->getMessage());
 	}

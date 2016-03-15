@@ -99,6 +99,10 @@ Class Atom {
 
 	}
 	
+	public function __toString(){
+	    return "{$this->id}[{$this->concept->name}]";
+	}
+	
 	/**
 	 * Set identifier of atom
 	 * @param string $id
@@ -114,16 +118,6 @@ Class Atom {
 		}
 	}
 	
-	public function ifc($ifcId){
-	    $subIfcs = is_null($this->parentIfc) ? null : $this->parentIfc->boxSubInterfaces;
-	    $ifc = new InterfaceObject($ifcId, $subIfcs, $this);
-	    
-	    // Check if interface can be used with this atom as source
-	    if($this->concept != $ifc->srcConcept) throw new Exception ("Source concept of atom '{$this->id}[{$this->concept->name}]' does not match source concept [{$ifc->srcConcept->name}] of interface '{$ifc->path}'", 500);
-	    
-	    return $ifc;
-	}
-	
 	/**
 	 * Checks if atom exists in database
 	 * @return boolean
@@ -136,7 +130,7 @@ Class Atom {
 	
 	
 	/**
-	 * Returns basic information about an atom
+	 * Returns basic information about this atom
 	 * @param array $options
 	 * @return array
 	 */
@@ -160,7 +154,7 @@ Class Atom {
 	}
 	
 	/**
-	 * 
+	 * Returns view key-value pairs for this atom
 	 * @param View $view
 	 * @return array
 	 */
@@ -253,7 +247,63 @@ Class Atom {
 	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
 	    }
 	}
+	
+/**************************************************************************************************
+ *
+ * Fuctions related to chaining interfaces and atoms
+ *
+ *************************************************************************************************/
 
+	/**
+	 * Chains this atom to an interface as srcAtom 
+	 * @param string $ifcId
+	 * @throws Exception
+	 * @return InterfaceObject
+	 */
+	public function ifc($ifcId){
+	    $subIfcs = is_null($this->parentIfc) ? null : $this->parentIfc->boxSubInterfaces;
+	    $ifc = new InterfaceObject($ifcId, $subIfcs, $this);
+	     
+	    // Check if interface can be used with this atom as source
+	    if($this->concept != $ifc->srcConcept) throw new Exception ("Source concept of atom '{$this->id}[{$this->concept->name}]' does not match source concept [{$ifc->srcConcept->name}] of interface '{$ifc->path}'", 500);
+	     
+	    return $ifc;
+	}
+	
+	/**
+	 * Walks a given interface path starting with this atom as src. Returns the final InterfaceObject or target atom (depending on the last path parameter)
+	 * @param string $path (e.g. /ifc/atom/ifc/atom/ifc)
+	 * @throws Exception when path is not accessible within current session
+	 * @return Atom|InterfaceObject
+	 */
+	public function walkIfcPath($path){
+	    $session = Session::singleton();
+	
+	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->id}[{$this->concept->name}]' not found", 404);
+	     
+	    $atom = $this; // starting point
+	     
+	    $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
+	    if($path == '') return $this; // if no path is specified, return $this (atom)
+	     
+	    $pathArr = explode('/', $path);
+	    while (count($pathArr)){
+	        // Ifc
+	        $interfaceId = array_shift($pathArr); // returns the shifted value, or NULL if array is empty or is not an array.
+	        $ifc = $atom->ifc($interfaceId);
+	
+	        // Checks
+	        if($ifc->isTopLevelIfc && !$session->isAccessibleIfc($ifc->id)) throw new Exception("Interface is not accessible for active roles or accessible roles (login)", 401); // 401: Unauthorized
+	        if((!$ifc->crudR) && (count($pathArr) > 1)) throw new Exception ("Read not allowed for interface path '{$ifc->path}'", 405); // crudR required to walk the path further when this is not the last ifc part in the path (count > 1).
+	
+	        // Atom
+	        $atomId = array_shift($pathArr); // returns the shifted value, or NULL if array is empty or is not an array.
+	        $atom = is_null($atomId) ? null : $ifc->atom($atomId);
+	    }
+	     
+	    return is_null($atom) ? $ifc : $atom;
+	}
+	
 /**************************************************************************************************
  *
  * Functions to get content of atom using interfaces
@@ -262,18 +312,30 @@ Class Atom {
 	
 	/**
 	 * Store content of atom at a certain point (e.g. before database commit/rollback)
-	 * @return Atom
+	 * @return void
 	 */
 	public function setStoredContent(){
+	    Notifications::addLog("Temporary storing new concent for atom '{$this->__toString()}'");
 	    // If parentIfc is null (toplevel) switch to topLevelIfc to be able to return/store the new content
 	    $this->storedContent = is_null($this->parentIfc) ? $this->ifc($this->topLevelIfcId)->getContent() : $this->getContent();
-	    return $this;
 	}
 	
+	/**
+	 * Return the stored content
+	 * @return mixed
+	 */
 	public function getStoredContent(){
+	    Notifications::addLog("Getting temporary stored concent for atom '{$this->__toString()}'");
 	    return $this->storedContent;
 	}
 	
+	/**
+	 * Returns the content of this atom given the parentIfc object
+	 * @param array $options
+	 * @param array $recursionArr
+	 * @throws Exception
+	 * @return mixed
+	 */
 	public function getContent($options = array(), $recursionArr = array()){
 	    // CRUD check
 	    if(!$this->parentIfc->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
@@ -399,8 +461,13 @@ Class Atom {
 		
 		*/
 	}
-	
 
+	/**
+	 * Performs given patches on this atom and returns updated content
+	 * @param array $patches
+	 * @param array $options
+	 * @return mixed updated content of atom
+	 */
 	public function patch($patches, $options = array()){
 	    // CRUD check for patch is performed by Atom->doPatches() method
 	        
@@ -417,7 +484,12 @@ Class Atom {
 		return $this->getStoredContent();
 	}
 	
-	
+	/**
+	 * Function to delete an atom from Concept collection
+	 * @param array $options
+	 * @throws Exception when delete is not allowed/possible
+	 * @return void
+	 */
 	public function delete($options = array()){
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
@@ -437,12 +509,12 @@ Class Atom {
 	
 /**************************************************************************************************
  *
- * Private functions to perform patches
+ * Functions to perform patches on atom, i.e. add, replace, remove tuples in relations
  *
  *************************************************************************************************/
 	
 	/**
-	 * Performs given patches on atom
+	 * Performs given patches on atom, i.e. add, replace, remove tuples in relations
 	 * @param array $patches
 	 * @throws Exception
 	 * @return void
@@ -501,7 +573,11 @@ Class Atom {
 	    
 	}
 	
-
+    /**
+     * Remove (src,tgt) tuple from relation provided in $this->parentIfc
+     * @throws Exception
+     * @return void
+     */
 	public function doPatchRemove(){
 	    $ifc = $this->parentIfc;
 	   
@@ -528,40 +604,7 @@ Class Atom {
 			throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
 		}
 		
-	}
-	
-/**************************************************************************************************
- *
- * Helper functions
- *
- *************************************************************************************************/
-		
-	public function walkIfcPath($path){
-	    $session = Session::singleton();
-	
-	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->id}[{$this->concept->name}]' not found", 404);
-	    
-	    $atom = $this; // starting point
-	    
-	    $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
-	    if($path == '') return $this; // if no path is specified, return $this (atom)
-	    
-	    $pathArr = explode('/', $path);
-	    while (count($pathArr)){
-	        // Ifc
-	        $interfaceId = array_shift($pathArr); // returns the shifted value, or NULL if array is empty or is not an array.
-	        $ifc = $atom->ifc($interfaceId);
-	        	
-	        // Checks
-	        if($ifc->isTopLevelIfc && !$session->isAccessibleIfc($ifc->id)) throw new Exception("Interface is not accessible for active roles or accessible roles (login)", 401); // 401: Unauthorized
-	        if((!$ifc->crudR) && (count($pathArr) > 1)) throw new Exception ("Read not allowed for interface path '{$ifc->path}'", 405); // crudR required to walk the path further when this is not the last ifc part in the path (count > 1).
-	        	
-	        // Atom
-	        $atomId = array_shift($pathArr); // returns the shifted value, or NULL if array is empty or is not an array.
-	        $atom = is_null($atomId) ? null : $ifc->atom($atomId);
-	    }
-	    
-	    return is_null($atom) ? $ifc : $atom;
-	}
+	}	
 }
+
 ?>

@@ -66,13 +66,13 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			break;
 		case 'relations' :
 			$relArr = array();
-			foreach(Relation::getAllRelations() as $sig => $rel){
+			foreach(Relation::getAllRelations() as $relation){
 				$duration = 0;
-				$conjunctIds = array_merge($rel['affectedInvConjunctIds'], $rel['affectedSigConjunctIds']);
-				foreach($conjunctIds as $conjId){
-					$duration += $performanceArr[$conjId]['duration'];
+				foreach($relation->affectedConjuncts as $conjunct){
+					$duration += $performanceArr[$conjunct->id]['duration'];
+					$conjunctIds = $conjunct->id;
 				}
-				$relArr[] = array('relationSignature' => $sig
+				$relArr[] = array('relationSignature' => $relation->__toString()
 						, 'duration' => $duration
 						, 'conjuncts' => implode(';', $conjunctIds)
 				);

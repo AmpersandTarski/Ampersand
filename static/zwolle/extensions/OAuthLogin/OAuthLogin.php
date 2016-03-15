@@ -142,15 +142,17 @@ class OAuthLoginController {
 				// create new user
 				if(empty($accounts)){
 					$newAccount = Concept::createNewAtom('Account');
-					$db->editUpdate('accUserid', false, $newAccount, new Atom($email, 'UserID'));
+					$relAccUserid = Relation::getRelation('accUserid', $newAccount->concept->name, 'UserID');
+					$db->editUpdate($relAccUserid, false, $newAccount, new Atom($email, 'UserID'));
 
 					// add to Organization
 					$domain = explode('@', $email)[1];
 					$atom = new Atom($domain, 'Domain');
 					$orgs = array_column((array)$atom->ifc('DomainOrgs')->getContent(), '_id_');
-
+					
+					$relAccOrg = Relation::getRelation('accOrg', $newAccount->concept->name, 'Organization');
 					foreach ($orgs as $org){
-						$db->editUpdate('accOrg', false, $newAccount, new Atom($org, 'Organization'));
+						$db->editUpdate($relAccOrg, false, $newAccount, new Atom($org, 'Organization'));
 					}
 
 					$accounts[] = $newAccount->id;
@@ -158,17 +160,21 @@ class OAuthLoginController {
 				}
 
 				if(count($accounts) > 1) throw new Exception("Multiple users registered with email $email", 401);
-
+				
+				$relSessionAccount = Relation::getRelation('sessionAccount', 'SESSION', 'Account');
+				$relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', 'Account', 'DateTime');
+				$relAccLoginTimestamps = Relation::getRelation('accLoginTimestamps', 'Account', 'DateTime');
+				
 				foreach ($accounts as $accountId){
 				    $account = new Atom($accountId, 'Account');
 				    
 					// Set sessionAccount
-					$db->editUpdate('sessionAccount', false, new Atom(session_id(), 'SESSION'), $account);
+					$db->editUpdate($relSessionAccount, false, new Atom(session_id(), 'SESSION'), $account);
 
 					// Timestamps
 					$ts = new Atom(date(DATE_ISO8601), 'DateTime');
-					$db->editUpdate('accMostRecentLogin', false, $account, $ts);
-					$db->editUpdate('accLoginTimestamps', false, $account, $ts);
+					$db->editUpdate($relAccMostRecentLogin, false, $account, $ts);
+					$db->editUpdate($relAccLoginTimestamps, false, $account, $ts);
 				}
 
 				$db->closeTransaction('Login successfull', false, true);

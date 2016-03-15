@@ -296,7 +296,7 @@ class RuleEngine {
 	/**
 	 * 
 	 * @param Concept[] $affectedConcepts is expected to be already unique (i.e. no duplicate entries)
-	 * @param array $affectedRelations (rel_<relName>_<srcConcept>_<tgtConcept>) is expected to be already unique (i.e. no duplicate entries)	 * 
+	 * @param Relation[] $affectedRelations is expected to be already unique (i.e. no duplicate entries)	 * 
 	 * @return Conjunct[]
 	 */
 	public static function getAffectedSigConjuncts($affectedConcepts, $affectedRelations){
@@ -305,8 +305,8 @@ class RuleEngine {
 		foreach($affectedConcepts as $concept){
 			$affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedSigConjuncts());
 		}
-		foreach($affectedRelations as $fullRelationSignature){
-			$affectedConjuncts = array_merge($affectedConjuncts, Relation::getAffectedSigConjuncts($fullRelationSignature));
+		foreach($affectedRelations as $relation){
+			$affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedSigConjuncts());
 		}
 		
 		return array_unique($affectedConjuncts); // remove duplicate entries.
@@ -315,7 +315,7 @@ class RuleEngine {
 	/**
 	 * 
 	 * @param Concept[] $affectedConcepts
-	 * @param array $affectedRelations
+	 * @param Relation[] $affectedRelations
 	 * @return Conjunct[]
 	 */
 	public static function getAffectedInvConjuncts($affectedConcepts, $affectedRelations){
@@ -324,8 +324,8 @@ class RuleEngine {
 		foreach($affectedConcepts as $concept){
 			$affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedInvConjuncts());
 		}
-		foreach($affectedRelations as $fullRelationSignature){
-			$affectedConjuncts = array_merge($affectedConjuncts, Relation::getAffectedInvConjuncts($fullRelationSignature));
+		foreach($affectedRelations as $relation){
+			$affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedInvConjuncts());
 		}
 	
 		return array_unique($affectedConjuncts); // remove duplicate entries.

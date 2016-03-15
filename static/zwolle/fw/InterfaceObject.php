@@ -60,9 +60,9 @@ class InterfaceObject {
 	
 
 	/**
-	 * 
+	 * InterfaceObject constructor
 	 * @param string $id
-	 * @param unknown $interface
+	 * @param array $interface
 	 * @param Atom $srcAtom
 	 */
 	public function __construct($id, $interfaces = array(), $srcAtom = null){
@@ -98,7 +98,7 @@ class InterfaceObject {
 		$this->crudD = is_null($interface['crudD']) ? Config::get('defaultCrudD', 'transactions') : $interface['crudD'];
 		
 		// Information about the (editable) relation if applicable
-		$this->relation = $interface['relation']; 
+		$this->relation = $interface['relation'] ? Relation::getRelation($interface['relation']) : null;
 		$this->relationIsFlipped = $interface['relationIsFlipped'];
 		$this->totaal = $interface['exprIsTot'];
 		$this->univalent = $interface['exprIsUni'];
@@ -134,15 +134,18 @@ class InterfaceObject {
 		return $this->id;
 	}
 	
-	public function getInterface(){
-		return $this;
-	}
+/**************************************************************************************************
+ * 
+ * Fuctions related to chaining interfaces and atoms
+ * 
+ *************************************************************************************************/
 	
-	/**********************************************************************************************
-	 * 
-	 * Fuctions related to chaining interfaces and atoms
-	 * 
-	 *********************************************************************************************/
+	/**
+	 * * Chains an atom to this interface as tgtAtom
+	 * @param string $atomId
+	 * @throws Exception
+	 * @return Atom
+	 */
 	public function atom($atomId){
 	    $atom = new Atom($atomId, $this->tgtConcept->name, $this);
 	    
@@ -163,7 +166,18 @@ class InterfaceObject {
 	    
 	    return $this->tgtAtom;
 	}
+
+/**************************************************************************************************
+ *
+ * Functions to get content of interface
+ *
+ *************************************************************************************************/
 	
+	/**
+	 * Returns list of target atom ids given the srcAtom of this interface object
+	 * @throws Exception
+	 * @return array
+	 */
 	private function getTgtAtomIds(){
 	    $query = "SELECT DISTINCT `tgt` FROM ($this->expressionSQL) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
 	    $tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
@@ -174,6 +188,13 @@ class InterfaceObject {
 	    return (array)$tgtAtomIds;
 	}
 	
+	/**
+	 * Returns the content of this interface given the srcAtom of this interface object
+	 * @param array $options
+	 * @param array $recursionArr
+	 * @throws Exception
+	 * @return mixed
+	 */
 	public function getContent($options = array(), $recursionArr = array()){
 	    // CRUD check
 	    if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
@@ -242,6 +263,12 @@ class InterfaceObject {
 	    return $result;
 	}
 	
+/**************************************************************************************************
+ *
+ * CREATE, UPDATE, PATCH and DELETE functions
+ *
+ *************************************************************************************************/
+	
 	/**
 	 * Function to create a new Atom at the given interface.
 	 * @param array $data
@@ -291,8 +318,11 @@ class InterfaceObject {
 	            else throw new Exception ("Error in file upload", 500);
 	
 	            // Populate filePath and originalFileName relations in database
-	            $this->database->editUpdate('filePath', false, $newAtom, new Atom($relativePath, 'FilePath'));
-	            $this->database->editUpdate('originalFileName', false, $newAtom, new Atom($_FILES['file']['name'], 'FileName'));
+	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept->name, 'FilePath');
+	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept->name, 'FileName');
+	            
+	            $this->database->editUpdate($relFilePath, false, $newAtom, new Atom($relativePath, 'FilePath'));
+	            $this->database->editUpdate($relOriginalFileName, false, $newAtom, new Atom($_FILES['file']['name'], 'FileName'));
 	
 	        }else{
 	            throw new Exception ("No file uploaded", 500);
@@ -332,6 +362,17 @@ class InterfaceObject {
 	    throw new Exception ("Cannot delete from interface '{$this->path}'. Add resource identifier behind path", 405);
 	}
 	
+/**************************************************************************************************
+ *
+ * Functions to perform patches (on relations): add, replace, remove
+ *
+ *************************************************************************************************/
+	
+	/**
+	 * Replace (src,tgt) tuple by (src,tgt') in relation provided in this interface
+	 * @throws Exception
+	 * @return void
+	 */
 	public function doPatchReplace($patch){
 	    // CRUD check
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
@@ -376,6 +417,11 @@ class InterfaceObject {
 	    }
 	}
 	
+	/**
+	 * Add (src,tgt) tuple in relation provided in this interface
+	 * @throws Exception
+	 * @return void
+	 */
 	public function doPatchAdd($patch){
 	    // CRUD check
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
@@ -417,11 +463,11 @@ class InterfaceObject {
 	    throw new Exception ("Cannot patch remove from '{$this->path}'. Missing resource identifier", 405);
 	}
 	
-	/**********************************************************************************************
-	 *
-	 * Static InterfaceObject functions
-	 *
-	 *********************************************************************************************/
+/**************************************************************************************************
+ *
+ * Static InterfaceObject functions
+ *
+ *************************************************************************************************/
 	
 	public static function getSubinterface($ifcId, $parentIfc = null){
 		// Top level interface

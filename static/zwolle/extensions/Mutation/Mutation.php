@@ -40,8 +40,8 @@ class Mutation {
 			$database->addAtomToConcept($mut = Concept::createNewAtom($mutConcept));
 			
 			// Add mut info
-			$database->editUpdate('mutRelation', false, $mut, new Atom($fullRelationSignature, 'Relation'));
-			$database->editUpdate('mutDateTime', false, $mut, new Atom(date(DATE_ISO8601), 'DateTime'));
+			$database->editUpdate(Relation::getRelation('mutRelation', $mut->concept->name, 'Relation'), false, $mut, new Atom($fullRelationSignature, 'Relation'));
+			$database->editUpdate(Relation::getRelation('mutDateTime', $mut->concept->name, 'DateTime'), false, $mut, new Atom(date(DATE_ISO8601), 'DateTime'));
 			
 			if($source == 'User'){
 				$account = Session::getSessionAccountId();
@@ -49,12 +49,12 @@ class Mutation {
 				$account = $source;
 			}
 			
-			$database->editUpdate('mutBy', false, $mut, new Atom($account, 'Account'));
-			$database->editUpdate('mutOp', false, $mut, new Atom($operation, 'Operation'));
-			// $database->editUpdate('mutReason', false, $mut, new Atom('zomaar', 'MutationReason')); // TODO: get reason from somewhere
-			$database->editUpdate('mutValue', false, $mut, new Atom($modifiedAtom, 'MutationValue'));
-			$database->editUpdate('mutStable', false, $mut, new Atom($stableAtom, $stableConcept));
-			$database->editUpdate('mutPublish', false, $mut, $mut);
+			$database->editUpdate(Relation::getRelation('mutBy', $mut->concept->name, 'Account'), false, $mut, new Atom($account, 'Account'));
+			$database->editUpdate(Relation::getRelation('mutOp', $mut->concept->name, 'Operation'), false, $mut, new Atom($operation, 'Operation'));
+			// $database->editUpdate(Relation::getRelation('mutReason', $mut->concept->name, 'MutationReason'), false, $mut, new Atom('zomaar', 'MutationReason')); // TODO: get reason from somewhere
+			$database->editUpdate(Relation::getRelation('mutValue', $mut->concept->name, 'MutationValue'), false, $mut, new Atom($modifiedAtom, 'MutationValue'));
+			$database->editUpdate(Relation::getRelation('mutStable', $mut->concept->name, $stableConcept), false, $mut, new Atom($stableAtom, $stableConcept));
+			$database->editUpdate(Relation::getRelation('mutPublish', $mut->concept->name, $mut->concept->name), false, $mut, $mut);
 
 	       $database->setTrackAffectedConjuncts(true); // Enable tracking of affected conjuncts again!!
 		}	

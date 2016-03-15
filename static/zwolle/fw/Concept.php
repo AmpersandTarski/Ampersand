@@ -90,8 +90,8 @@ class Concept {
 		    $conj = Conjunct::getConjunct($conjId);
 		    
 		    if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
-		    elseif ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
-		    Notifications::addInfo("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule", 'UnusedConjuncts', "There are unused conjuncts defined");
+		    if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
+		    if (!$conj->isSigConj() && !$conj->isInvConj()) Notifications::addInfo("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule", 'UnusedConjuncts', "There are unused conjuncts defined");
 		}
 		
 		$this->specializations = (array)$conceptDef['specializations'];

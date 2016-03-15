@@ -74,16 +74,17 @@ function TransitiveClosure($r,$C,$rCopy,$rPlus){
 	OverwritePopulation($closure, $rPlus, $C);
 }
 
-function RetrievePopulation($relationName, $concept){
+function RetrievePopulation($relationName, $conceptName){
 	try{
 		$database = Database::singleton();
 		
-		$fullRelationSignature = Relation::isCombination($relationName, $concept, $concept);
-		$table = Relation::getTable($fullRelationSignature);
-		$srcCol = Relation::getSrcCol($fullRelationSignature);
-		$tgtCol = Relation::getTgtCol($fullRelationSignature);
+		$relation = Relation::getRelation($relationName, $conceptName, $conceptName);
 		
-		$query = "SELECT * FROM `$table`";
+		$tableInfo = $relation->getTableInfo();
+		$srcCol = $tableInfo['srcCol']['header'];
+		$tgtCol = $tableInfo['tgtCol']['header'];
+		
+		$query = "SELECT * FROM `{$tableInfo['tableName']}`";
 		$result = $database->Exe($query);
 		
 		// initialization of 2-dimensional array
@@ -98,22 +99,22 @@ function RetrievePopulation($relationName, $concept){
 }
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
-function OverwritePopulation($rArray, $relationName, $concept){
+function OverwritePopulation($rArray, $relationName, $conceptName){
 	try{
 		$database = Database::singleton();
 		
-		$fullRelationSignature = Relation::isCombination($relationName, $concept, $concept);
-		$table = Relation::getTable($fullRelationSignature);
-		$srcCol = Relation::getSrcCol($fullRelationSignature);
-		$tgtCol = Relation::getTgtCol($fullRelationSignature);
+		$relation = Relation::getRelation($relationName, $conceptName, $conceptName);
+		$tableInfo = $relation->getTableInfo();
+		$srcCol = $tableInfo['srcCol']['header'];
+		$tgtCol = $tableInfo['tgtCol']['header'];
 		
-		$query = "DELETE FROM $table"; // Do not use TRUNCATE statement, this causes an implicit commit
+		$query = "DELETE FROM {$tableInfo['tableName']}"; // Do not use TRUNCATE statement, this causes an implicit commit
 		$database->Exe($query);
 		
 		foreach($rArray as $src => $tgtArray){
 			foreach($tgtArray as $tgt => $bool){
 				if($bool){
-					$query = "INSERT INTO $table (`$srcCol`, `$tgtCol`) VALUES ('$src','$tgt')";
+					$query = "INSERT INTO `{$tableInfo['tableName']}` (`$srcCol`, `$tgtCol`) VALUES ('$src','$tgt')";
 					$database->Exe($query);
 				}
 			}

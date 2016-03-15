@@ -423,7 +423,7 @@ class Database {
 	 * editUpdate(r, false, a1[A], b1[B]);
 	 * editUpdate(r, true, b1[B], a1[A]);
 	 * 
-	 * @param string $rel
+	 * @param Relation $relation
 	 * @param boolean $isFlipped
 	 * @param Atom $stableAtom
 	 * @param Atom $modifiedAtom
@@ -433,68 +433,63 @@ class Database {
 	 * 
 	 * NOTE: if $originalAtom is provided, this means that tuple rel(stableAtom, originalAtom) is replaced by rel(stableAtom, modifiedAtom).
 	 */
-	public function editUpdate($rel, $isFlipped, $stableAtom, $modifiedAtom, $originalAtom = null, $source = 'User'){	    
-	    Notifications::addLog("editUpdate('{$rel}" . ($isFlipped ? '~' : '') . "', '{$stableAtom->id}[{$stableAtom->concept->name}]', '{$modifiedAtom->id}[{$modifiedAtom->concept->name}]', '{$originalAtom->id}[{$originalAtom->concept->name}]')", 'DATABASE');
+	public function editUpdate($relation, $isFlipped, $stableAtom, $modifiedAtom, $originalAtom = null, $source = 'User'){	    
+	    Notifications::addLog("editUpdate('{$relation->__toString()}" . ($isFlipped ? '~' : '') . "', '{$stableAtom->id}[{$stableAtom->concept->name}]', '{$modifiedAtom->id}[{$modifiedAtom->concept->name}]', '{$originalAtom->id}[{$originalAtom->concept->name}]')", 'DATABASE');
 	    
 		try{			
 			// This function is under control of transaction check!
 			if (!isset($this->transaction)) $this->startTransaction();
 			
-			// Check if $rel, $srcConcept, $tgtConcept is a combination
-			$srcConcept = $isFlipped ? $modifiedAtom->concept->name : $stableAtom->concept->name;
-			$tgtConcept = $isFlipped ? $stableAtom->concept->name : $modifiedAtom->concept->name;
-			$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept);
+			// Check if rel, srcConcept and tgtConcept is a combination
+			$srcConcept = $isFlipped ? $modifiedAtom->concept : $stableAtom->concept;
+			$tgtConcept = $isFlipped ? $stableAtom->concept : $modifiedAtom->concept;
+			if($relation->srcConcept != $srcConcept || $relation->tgtConcept != $tgtConcept) throw new Exception ("Provided atoms for editDelete do not match relation signature '{$relation->__toString()}'", 500);
 			
 			// Get table properties
-			$table = Relation::getTable($fullRelationSignature);
-			$srcCol = Relation::getSrcCol($fullRelationSignature);
-			$tgtCol = Relation::getTgtCol($fullRelationSignature);
+			$tableInfo = $relation->getTableInfo();
+			$table = $tableInfo['tableName'];
 			
 			// Determine which Col must be editited and which must be used in the WHERE statement
-			$stableCol = $isFlipped ? $tgtCol : $srcCol;
-			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
+			$stableCol = $isFlipped ? $tableInfo['tgtCol'] : $tableInfo['srcCol'];
+			$modifiedCol =  $isFlipped ? $tableInfo['srcCol'] : $tableInfo['tgtCol'];
 	
 			// Ensure that the stable and modified atoms exists in their concept tables
 			$this->addAtomToConcept($stableAtom);
 			$this->addAtomToConcept($modifiedAtom);
 			
-			// Get database table information
-			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
-			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
-			
 			/* Complicated code to determine UPDATE or INSERT statement: see Github #169 for explanation */
-			if($tableModifiedColumnInfo['unique'] && $tableStableColumnInfo['unique']){
+			if($modifiedCol['unique'] && $stableCol['unique']){
 				// If both columns are 'unique', we have to check the 'null' possibility
-				if($tableModifiedColumnInfo['null']) $this->Exe("UPDATE `$table` SET `$modifiedCol` = '{$modifiedAtom->idEsc}' WHERE `$stableCol` = '{$stableAtom->idEsc}'");
-				else $this->Exe("UPDATE `$table` SET `$stableCol` = '{$stableAtom->idEsc}' WHERE `$modifiedCol` = '{$modifiedAtom->idEsc}'");
+				if($modifiedCol['null']) $this->Exe("UPDATE `$table` SET `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}' WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}'");
+				else $this->Exe("UPDATE `$table` SET `{$stableCol['header']}` = '{$stableAtom->idEsc}' WHERE `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}'");
 					
 				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			}			
-			elseif ($tableModifiedColumnInfo['unique'] && !$tableStableColumnInfo['unique']){
+			elseif ($modifiedCol['unique'] && !$stableCol['unique']){
 			
-				$this->Exe("UPDATE `$table` SET `$stableCol` = '{$stableAtom->idEsc}' WHERE `$modifiedCol` = '{$modifiedAtom->idEsc}'");
+				$this->Exe("UPDATE `$table` SET `{$stableCol['header']}` = '{$stableAtom->idEsc}' WHERE `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}'");
 				
 				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			}
-			elseif (!$tableModifiedColumnInfo['unique'] && $tableStableColumnInfo['unique']){
+			elseif (!$modifiedCol['unique'] && $stableCol['unique']){
 				
-				$this->Exe("UPDATE `$table` SET `$modifiedCol` = '{$modifiedAtom->idEsc}' WHERE `$stableCol` = '{$stableAtom->idEsc}'");
+				$this->Exe("UPDATE `$table` SET `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}' WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}'");
 				
 				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
 			// Otherwise, binary table, so perform a insert.
 			}else{
-				$this->Exe("INSERT INTO `$table` (`$stableCol`, `$modifiedCol`) VALUES ('{$stableAtom->idEsc}', '{$modifiedAtom->idEsc}')");
+				$this->Exe("INSERT INTO `$table` (`{$stableCol['header']}`, `{$modifiedCol['header']}`) VALUES ('{$stableAtom->idEsc}', '{$modifiedAtom->idEsc}')");
 				
 				Hooks::callHooks('postDatabaseInsert', get_defined_vars());
 				
 				// If $originalAtom is provided, delete tuple rel(stableAtom, originalAtom)
 				if (!is_null($originalAtom)) {
-					$this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '{$stableAtom->idEsc}' AND `$modifiedCol` = '{$originalAtom->idEsc}'");
+					$this->Exe("DELETE FROM `$table` WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}' AND `{$modifiedCol['header']}` = '{$originalAtom->idEsc}'");
 					Hooks::callHooks('postDatabaseDelete', get_defined_vars());
 				}
 			}
 			
-			$this->addAffectedRelations($fullRelationSignature); // add relation to affected relations. Needed for conjunct evaluation.
+			$this->addAffectedRelations($relation); // add relation to affected relations. Needed for conjunct evaluation.
 	
 		}catch(Exception $e){
 			// Catch exception and continue script
@@ -508,15 +503,15 @@ class Database {
 	 * editDelete(r, false, a1[A], b1[B]);
 	 * editDelete(r, true, b1[B], a1[A]);
 	 * 
-	 * @param string $rel
+	 * @param Relation $relation
 	 * @param boolean $isFlipped
 	 * @param Atom $stableAtom
 	 * @param Atom $modifiedAtom
 	 * @param string $source specifies the source of the editDelete command (e.g. ExecEngine). Defaults to 'User'. 
 	 * @throws Exception
 	 */
-	public function editDelete($rel, $isFlipped, $stableAtom, $modifiedAtom, $source = 'User'){	    
-		Notifications::addLog("editDelete('{$rel}" . ($isFlipped ? '~' : '') . "', '{$stableAtom->id}[{$stableAtom->concept->name}]', '{$modifiedAtom->id}[{$modifiedAtom->concept->name}]')", 'DATABASE');
+	public function editDelete($relation, $isFlipped, $stableAtom, $modifiedAtom, $source = 'User'){	    
+		Notifications::addLog("editDelete('{$relation->__toString()}" . ($isFlipped ? '~' : '') . "', '{$stableAtom->id}[{$stableAtom->concept->name}]', '{$modifiedAtom->id}[{$modifiedAtom->concept->name}]')", 'DATABASE');
 		
 		try{			
 			// This function is under control of transaction check!
@@ -525,43 +520,38 @@ class Database {
 			// Check if stableAtom is provided (i.e. not null)
 			if(is_null($stableAtom->id)) throw new Exception("Cannot perform editDelete, because stable atom is null", 500);
 			
-			// Check if $rel, $srcConcept, $tgtConcept is a combination
-			$srcConcept = $isFlipped ? $modifiedAtom->concept->name : $stableAtom->concept->name;
-			$tgtConcept = $isFlipped ? $stableAtom->concept->name : $modifiedAtom->concept->name;
-			$fullRelationSignature = Relation::isCombination($rel, $srcConcept, $tgtConcept);
+			// Check if rel, srcConcept and tgtConcept is a combination
+			$srcConcept = $isFlipped ? $modifiedAtom->concept : $stableAtom->concept;
+			$tgtConcept = $isFlipped ? $stableAtom->concept : $modifiedAtom->concept;
+			if($relation->srcConcept != $srcConcept || $relation->tgtConcept != $tgtConcept) throw new Exception ("Provided atoms for editDelete do not match relation signature '{$relation->__toString()}'", 500);
 			
 			// Get table properties
-			$table = Relation::getTable($fullRelationSignature);
-			$srcCol = Relation::getSrcCol($fullRelationSignature);
-			$tgtCol = Relation::getTgtCol($fullRelationSignature);
+			$tableInfo = $relation->getTableInfo();
+			$table = $tableInfo['tableName'];
 			
 			// Determine which Col must be editited and which must be used in the WHERE statement
-			$stableCol = $isFlipped ? $tgtCol : $srcCol;
-			$modifiedCol =  $isFlipped ? $srcCol : $tgtCol;
-					
-			// Get database table information
-			$tableStableColumnInfo = Relation::getTableColumnInfo($table, $stableCol);
-			$tableModifiedColumnInfo = Relation::getTableColumnInfo($table, $modifiedCol);
+			$stableCol = $isFlipped ? $tableInfo['tgtCol'] : $tableInfo['srcCol'];
+			$modifiedCol =  $isFlipped ? $tableInfo['srcCol'] : $tableInfo['tgtCol'];
 			
 			/* Complicated code to determine UPDATE or INSERT statement: see Github #169 for explanation */
 			// If the modifiedCol can be set to null, we do an update
-			if ($tableModifiedColumnInfo['null']){
-				if(is_null($modifiedAtom->id)) $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '{$stableAtom->idEsc}'");
-				else $this->Exe("UPDATE `$table` SET `$modifiedCol` = NULL WHERE `$stableCol` = '{$stableAtom->idEsc}' AND `$modifiedCol` = '{$modifiedAtom->idEsc}'");
+			if ($modifiedCol['null']){
+				if(is_null($modifiedAtom->id)) $this->Exe("UPDATE `$table` SET `{$modifiedCol['header']}` = NULL WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}'");
+				else $this->Exe("UPDATE `$table` SET `{$modifiedCol['header']}` = NULL WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}' AND `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}'");
 			
 			// Elseif the stableCol can be set to null, we do an update
-			}elseif ($tableStableColumnInfo['null']){
-				if(is_null($modifiedAtom->id) && !$tableStableColumnInfo['unique']) throw new Exception("Cannot perform editDelete, because modified atom is null and stable column is not unique", 500);
-				else $this->Exe("UPDATE `$table` SET `$stableCol` = NULL WHERE `$stableCol` = '{$stableAtom->idEsc}'");
+			}elseif ($stableCol['null']){
+				if(is_null($modifiedAtom->id) && !$stableCol['unique']) throw new Exception("Cannot perform editDelete, because modified atom is null and stable column is not unique", 500);
+				else $this->Exe("UPDATE `$table` SET `{$stableCol['header']}` = NULL WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}'");
 			
 			// Otherwise, binary table, so perform a delete
 			}else{
 				if(is_null($modifiedAtom->id)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
-				else $this->Exe("DELETE FROM `$table` WHERE `$stableCol` = '{$stableAtom->idEsc}' AND `$modifiedCol` = '{$modifiedAtom->idEsc}'");
+				else $this->Exe("DELETE FROM `$table` WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}' AND `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}'");
 				
 			}
 			
-			$this->addAffectedRelations($fullRelationSignature); // add relation to affected relations. Needed for conjunct evaluation.
+			$this->addAffectedRelations($relation); // add relation to affected relations. Needed for conjunct evaluation.
 			
 			Hooks::callHooks('postDatabaseDelete', get_defined_vars());
 			
@@ -669,7 +659,7 @@ class Database {
 	 * @param Atom $atomStoreNewContent specifies to store the new content for the updated/created atom
 	 * @return boolean specifies if invariant rules hold (true) or not (false)
 	 */
-	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = null, $atomStoreNewContent = null){
+	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = null, &$atomStoreNewContent = null){
 		$session = Session::singleton();
 		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
@@ -761,14 +751,14 @@ class Database {
 	
 	/**
 	 * Mark a relation as affected within the open transaction
-	 * @param string $fullRelationSignature
+	 * @param Relation $relation
 	 * @return void
 	 */
-	private function addAffectedRelations($fullRelationSignature){
+	private function addAffectedRelations($relation){
 	
-		if($this->trackAffectedConjuncts && !in_array($fullRelationSignature, $this->affectedRelations)){
-			Notifications::addLog("Mark relation '{$fullRelationSignature}' as affected relation", 'DATABASE');
-			$this->affectedRelations[] = $fullRelationSignature; // add $fullRelationSignature to affected relations. Needed for conjunct evaluation.
+		if($this->trackAffectedConjuncts && !in_array($relation, $this->affectedRelations)){
+			Notifications::addLog("Mark relation '{$relation->__toString()}' as affected relation", 'DATABASE');
+			$this->affectedRelations[] = $relation;
 		}
 	}
 	
