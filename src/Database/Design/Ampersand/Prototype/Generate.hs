@@ -30,7 +30,7 @@ generateGenerics fSpec =
         [ generateConstants fSpec
         , generateTableInfos fSpec
         --, generateRules fSpec
-        , generateConjuncts fSpec
+        --, generateConjuncts fSpec
         , generateRoles fSpec
         , generateViews fSpec
         , generateInterfaces fSpec
@@ -238,40 +238,6 @@ generateTableInfos fSpec =
  where groupOnTable :: [(PlugSQL,SqlAttribute)] -> [(PlugSQL,[SqlAttribute])]
        groupOnTable tablesAttributes = [(t,fs) | (t:_, fs) <- map unzip . groupBy ((==) `on` fst) $ sortBy (\(x,_) (y,_) -> name x `compare` name y) tablesAttributes ]
 
-generateConjuncts :: FSpec -> [String]
-generateConjuncts fSpec =
-  [ "$allConjuncts ="
-  , "  array"
-  ] ++
-  addToLastLine ";"
-     (indent 4
-       (blockParenthesize  "(" ")" ","
-         [ [ showPhpStr (rc_id conj) ++ " =>  /* conj = " ++ showADL rExpr ++ " */"
-           , "  array ( 'signalRuleNames' => array ("++ intercalate ", " signalRuleNames ++")"
-           , "        , 'invariantRuleNames' => array ("++ intercalate ", " invRuleNames ++")"
-                      -- the name of the rules that gave rise to this conjunct
-           ] ++
-           ( if verboseP (getOpts fSpec)
-             then   ["        // Normalization steps:"]
-                  ++["        // "++ls | ls<-(showPrf showADL . cfProof (getOpts fSpec)) violExpr]
-                  ++["        // "]
-             else   [] ) ++
-           ( if development (getOpts fSpec)
-             then [ "        // Conjunct Ampersand: "++escapePhpStr (showADL rExpr) ] ++
-                  [ "        // Normalized complement (== violationsSQL): " ] ++
-                  (lines ( "        // "++(showHS (getOpts fSpec) "\n        // ") violationsExpr))
-             else [] ) ++
-           [ "        , 'violationsSQL' => "++ showPhpStr (prettySQLQuery fSpec 36 violationsExpr)
-           , "        )"
-           ]
-         | conj<-vconjs fSpec
-         , let rExpr=rc_conjunct conj
-         , let signalRuleNames = [ showPhpStr $ name r | r <- rc_orgRules conj, isFrontEndSignal r ] 
-         , let invRuleNames    = [ showPhpStr $ name r | r <- rc_orgRules conj, isFrontEndInvariant  r ]
-         , let violExpr = notCpl rExpr
-         , let violationsExpr = conjNF (getOpts fSpec) violExpr
-         ]
-     ) )
 
 -- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
 -- two abstractions to guarantee the same implementation.
