@@ -36,7 +36,7 @@ getDeclarationTableInfo fSpec decl =
                                     intercalate "\n\n" (map showPInfo [(t1,src1,trg1),(t2,src2,trg2)])
                     pinfos     -> fatal 428 $ "Multiple plugs for relation "++ show decl ++"\n" ++
                                     intercalate "\n\n" (map showPInfo pinfos)
-   Isn cpt -> fatal 39 $ "looking for concept "++name cpt++" as if it was a declaration.") 
+   Isn cpt -> fatal 39 $ "looking for concept "++name cpt++" as if it was a declaration." 
 --              let expr = EEps cpt (Sign (rootConcept fSpec cpt) cpt) in
 --              case sqlRelPlugs fSpec expr of
 --                    plugInfo:_ -> plugInfo        -- There may be multiple plugInfo's for concepts. This is not a problem.
