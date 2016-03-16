@@ -32,7 +32,7 @@ generateGenerics fSpec =
         --, generateRules fSpec
         --, generateConjuncts fSpec
         , generateRoles fSpec
-        , generateViews fSpec
+        --, generateViews fSpec
         , generateInterfaces fSpec
         ]
         
@@ -277,44 +277,6 @@ generateRoles fSpec =
              serviceOrRole Role{} = not isService
              serviceOrRole Service{} = isService 
         maintainedByRole role (role',_) = role == role'
-
-generateViews :: FSpec -> [String]
-generateViews fSpec =
-  [ "//$allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView())."
-  , "$allViews ="
-  , "  array"
-  ] ++
-  addToLastLine ";"
-    (indent 4
-      (blockParenthesize  "(" ")" ","
-         [ [ "  array ( 'label' => "++showPhpStr label
-           , "        , 'concept' => "++showPhpStr (name cpt)
-           , "        , 'isDefault' => "++showPhpBool isDefault
-           , "        , 'segments' =>" -- a labeled list of sql queries for the view expressions
-           , "            array"
-           ] ++
-           indent 14 (blockParenthesize "(" ")" "," (map genViewSeg viewSegs)) ++
-           [ "        )" ]
-         | Vd _ label cpt isDefault  _ viewSegs <- [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ] --sort from spec to gen
-         ]
-    ) )
- where genViewSeg seg =
-          [ "array ( 'label'       => " ++ showPhpStr (fromMaybe ("seg_"++show (vsmSeqNr seg)) (vsmlabel seg))
-          , "      , 'segmentType' => "++ 
-                         (case vsmLoad seg of
-                            ViewText{} -> showPhpStr "Text"
-                            ViewExp{}  -> showPhpStr "Exp"
-                         )
-          ]++ 
-          (case vsmLoad seg of
-             (ViewText str) -> ["      , 'Text'        => " ++ showPhpStr str]
-             (ViewExp expr) -> ["      // view exp: " ++ escapePhpStr (showADL expr)
-                               ,"      , 'expSQL'      =>"
-                               ,"          " ++ showPhpStr (prettySQLQuery fSpec 33 expr)
-                               ]
-          )++
-          [ "      )"]
-       conceptsFromSpecificToGeneric = concatMap (reverse . tyCpts) . ftypologies $ fSpec
 
 generateInterfaces :: FSpec -> [String]
 generateInterfaces fSpec =
