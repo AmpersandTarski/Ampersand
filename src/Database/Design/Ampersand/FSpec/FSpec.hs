@@ -258,7 +258,7 @@ data PlugSQL
            , attributes :: [SqlAttribute]                           -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
                                                                     --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
                                                                     --   the remaining attributes represent attributes.
-           , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all kernel concepts to attributes in the plug
+           , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all typology concepts to attributes in the plug
                                                                     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
            , mLkpTbl ::    [(Expression,SqlAttribute,SqlAttribute)] -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
                                                                     -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen

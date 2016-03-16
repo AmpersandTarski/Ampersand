@@ -111,20 +111,9 @@ instance Plugable PlugSQL where
 --           The first option has been implemented in instance ObjectPlugSQL i.e. fields=[], ctx=ERel r _
 instance Object PlugSQL where
  concept p = case p of
-   TblSQL{mLkpTbl = []} -> fatal 263 $ "empty lookup table for plug "++name p++"."
-   TblSQL{}             -> --TODO151210-> deze functieimplementatie zou beter moeten matchen met onderstaande beschrijving
-                            --        nu wordt aangenomen dat de source van het 1e rel in mLkpTbl de source van de plug is.
-                            --a relation between kernel concepts r::A*B is at least [UNI,INJ]
-                            --to be able to point out one concept to be the source we are looking for one without NULLs in its attribute
-                            -- i.e. there is a concept A such that
-                            --      for all kernel attribute expr (s~)::B*C[UNI,INJ]:
-                            --      s~ is total and there exists an expr::A*B[UNI,INJ,TOT,SUR] (possibly A=B => I[A][UNI,INJ,TOT,SUR])
-                            --If A is such a concept,
-                            --   and A is not B,
-                            --   and there exist an expr::A*B[UNI,INJ,TOT,SUR]
-                            --then (concept PlugSQL{}) may be A or B
-                            --REMARK -> (source p) used to be implemented as (source . attExpr . head . fields) p. That is different!
-                            head [source r |(r,_,_)<-mLkpTbl p]
+   TblSQL{} -> case cLkpTbl p of
+                 [] -> fatal 263 $ "empty lookup table for plug "++name p++"."
+                 (cpt,_):_ -> cpt --This relies on the fact that the key af any table is the first concept in the concept lookup table. 
    BinSQL{} -> source (mLkp p) --REMARK151210 -> the concept is actually ID such that I[ID]=I[source r]/\r;r~
    ScalarSQL{} -> cLkp p
 -- Usually source a==concept p. Otherwise, the attribute computation is somewhat more complicated. See ADL2FSpec for explanation about kernels.

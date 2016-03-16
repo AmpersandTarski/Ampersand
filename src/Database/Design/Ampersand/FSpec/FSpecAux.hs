@@ -36,9 +36,11 @@ getDeclarationTableInfo fSpec decl =
                                     intercalate "\n\n" (map showPInfo [(t1,src1,trg1),(t2,src2,trg2)])
                     pinfos     -> fatal 428 $ "Multiple plugs for relation "++ show decl ++"\n" ++
                                     intercalate "\n\n" (map showPInfo pinfos)
-   Isn cpt -> case sqlRelPlugs fSpec (EDcI cpt) of
-                    plugInfo:_ -> plugInfo        -- There may be multiple plugInfo's for concepts. This is not a problem.
-                    []         -> fatal 44 $ "Reference to a non-existing plug: "++show (EDcI cpt)
+   Isn cpt -> fatal 39 $ "looking for concept "++name cpt++" as if it was a declaration.") 
+--              let expr = EEps cpt (Sign (rootConcept fSpec cpt) cpt) in
+--              case sqlRelPlugs fSpec expr of
+--                    plugInfo:_ -> plugInfo        -- There may be multiple plugInfo's for concepts. This is not a problem.
+--                    []         -> fatal 44 $ "Reference to a non-existing plug: "++show (expr)
    _       -> fatal 420 "getDeclarationTableInfo must not be used on this type of declaration!"
    where
     showPInfo (tab, src, trg) = intercalate "  \n"
@@ -51,9 +53,9 @@ getDeclarationTableInfo fSpec decl =
 getConceptTableInfo :: FSpec -> A_Concept -> (PlugSQL,SqlAttribute)
 getConceptTableInfo fSpec cpt 
   = case lookupCpt fSpec cpt of
-      []    -> fatal 55 $ "No plug found for concept '"++name cpt++"'."
-      (x:_) -> x  --Any of the resulting plugs should do. 
-
+      []  -> fatal 55 $ "No plug found for concept '"++name cpt++"'."
+      [x] -> x  --Any of the resulting plugs should do. 
+      xs  -> fatal 58 $ "Only one result expected:"++show xs
 --iff proven that e is equivalent to plugexpr
 --   AND not proven that e is not equivalent to plugexpr
 --then return (fld0,fld1)
