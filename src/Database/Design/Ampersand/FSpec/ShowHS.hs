@@ -75,8 +75,8 @@ instance ShowHS PlugSQL where
                                           [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-attributes plug] ++indent++"in"
                    ,"TblSQL { sqlname    = " ++ (show.name) plug
                    ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
-                   ,"       , cLkpTbl    = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                   ,"       , mLkpTbl    = [ "++intercalate (indent++"                   , ") ["("++showHS opts "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
+                   ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                   ,"       , mLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHS opts "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
                --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
                    ,"       }"
                    ]
