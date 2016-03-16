@@ -214,44 +214,6 @@ generateTableInfos fSpec =
                affSigConjs = filterFrontEndSigConjuncts affConjs 
          ])) ++
   [ ""
-  , "$allConcepts = array"
-  ] ++
-  addToLastLine ";"
-    (indent 2 $
-       blockParenthesize "(" ")" ","
-         [ [ (showPhpStr.name) c++" => array"] ++
-           (indent 2 $
-              [ "( 'concept' => "++ (showPhpStr.name) c
-              , ", 'affectedInvConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affInvConjs) ++")"
-              , ", 'affectedSigConjunctIds' => array ("++ intercalate ", " (map (showPhpStr . rc_id) affSigConjs) ++")"
-              , ", 'conceptTables' => array" ] ++
-              (indent 3
-                (blockParenthesize "(" ")" ","
-                  [ [ "array ( 'table' => "++(showPhpStr.name) table ++
-                            ", 'cols' => array ("++ intercalate ", " (map (showPhpStr . attName) conceptAttributes) ++")" ++
-                           " )"
-                    ]
-                  -- get the concept tables (pairs of table and column names) for the concept and its generalizations and group them per table name
-                  | (table,conceptAttributes) <- groupOnTable . concatMap (lookupCpt fSpec) $ c : largerConcepts (vgens fSpec) c
-                  ])) ++
-              [ ", 'type' => '"++(show . cptTType fSpec) c++"'" ]++
-              [ ", 'specializations' => array ("++intercalate ", " (map (showPhpStr . name)(smallerConcepts (vgens fSpec) c))++")"]++
-              [ ", 'defaultViewId'   => "++(showPhpStr . vdlbl $ dfltV)
-              | Just dfltV <- [getDefaultViewForConcept fSpec c]
-              ]++
-              [ ")" ]
-           )
-         | c <- concs fSpec
-         , let 
-               affConjs = nub [ conj  
-                              | Just conjs<-[lookup c (allConjsPerConcept fSpec)]
-                              , conj<-conjs
-                              ]
-               affInvConjs = filterFrontEndInvConjuncts affConjs
-               affSigConjs = filterFrontEndSigConjuncts affConjs
-         ]
-    ) ++
-  [ ""
   , "$tableColumnInfo ="
   , "  array"
   ] ++
