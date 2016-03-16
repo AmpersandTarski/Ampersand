@@ -380,6 +380,6 @@ makeUserDefinedSqlPlug context obj
 typologies :: A_Context -> [Typology]
 typologies context = 
    (multiKernels . ctxInfo $ context) ++ 
-   [Typology { tyroot = [c]
+   [Typology { tyroot = c
              , tyCpts = [c]
              } | c <- concs context >- concs (gens context)]

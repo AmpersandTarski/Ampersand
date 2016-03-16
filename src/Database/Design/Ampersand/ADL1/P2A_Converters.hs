@@ -293,7 +293,10 @@ pCtx2aCtx opts
                x:xs -> let (as,bs) = Lst.partition (not . null . uni (concs x)) typols
                        in f ((concat as `uni` concs x) : bs ) xs 
           mkTypology cs = 
-                Typology { tyroot = filter (not . isSpecific) cs
+                Typology { tyroot = case filter (not . isSpecific) cs of
+                                     []  -> fatal 297 $ "empty typology for "++show cs++"." 
+                                     [r] -> r
+                                     xs  -> fatal 299 $ "multiple roots for "++show cs++": "++show xs++"." 
                          , tyCpts = cs
                          }
              where 

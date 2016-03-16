@@ -109,11 +109,16 @@ makeFSpec opts context
                                          ]
               , fcontextInfo = contextinfo
               , ftypologies   = typologies context
+              , rootConcept = rootConcept'
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
               , editableConcepts = editablecpts 
               }
    where           
+     rootConcept' cpt = 
+        case [t | t <- typologies context, cpt `elem` tyCpts t] of
+           [t] -> tyroot t
+           _   -> fatal 121 $ "concept "++name cpt++" should be in exactly one typology!"
      editablecpts :: Interface -> [A_Concept]
      editablecpts ifc = nub (cpts ++ concatMap (smallerConcepts (gens context)) cpts)
         where

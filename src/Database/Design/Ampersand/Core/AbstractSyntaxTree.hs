@@ -1049,6 +1049,6 @@ unsafePAtomVal2AtomValue' typ mCpt pav
 --   sets such that (isa\/isa~)*;typology |- typology
 --   Note, that with isa we only refer to the relations defined by CLASSIFY statements, 
 --   not named relations with the same properties ( {UNI,INJ,TOT} or {UNI,INJ,SUR} )
-data Typology = Typology { tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty, mostly one concept)
+data Typology = Typology { tyroot :: A_Concept -- the most generic concept in the typology 
                          , tyCpts :: [A_Concept] -- all concepts, from generic to specific
                          } deriving Show
