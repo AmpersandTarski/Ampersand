@@ -35,159 +35,153 @@ class ExecEngine {
 		}
 		
 		self::$roleName = Config::get('execEngineRoleName', 'execEngine');
-		$role = Role::getRoleByName(self::$roleName);
+		try{
+		    $role = Role::getRoleByName(self::$roleName);
+		}catch (Exception $e){
+		    Notifications::addInfo("ExecEngine extension included but role '" . self::$roleName . "' not found.");
+		    self::$doRun = false; // prevent exec engine execution
+		}
 		
 		$maxRunCount = Config::get('maxRunCount', 'execEngine');
 		self::$runCount = 0;
 		self::$autoRerun = Config::get('autoRerun', 'execEngine');
+		$rulesThatHaveViolations = array();
 		
-		if($role){
-			// Get all rules that are maintained by the ExecEngine
-			while(self::$doRun){
-				self::$doRun = false;
-				self::$runCount++;
+		// Get all rules that are maintained by the ExecEngine
+		while(self::$doRun){
+			self::$doRun = false;
+			self::$runCount++;
 
-				// Prevent infinite loop in ExecEngine reruns 				
-				if(self::$runCount > $maxRunCount){
-					Notifications::addError('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')');
-					break;
-				}
-				
-				Notifications::addLog("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '" . $role->label . "'", 'ExecEngine');
-				
-				// Determine affected rules that must be checked by the exec engine
-				$affectedConjuncts = RuleEngine::getAffectedConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations(), 'both');
-				
-				$affectedRules = array();
-				foreach($affectedConjuncts as $conjunct){
-					foreach ($conjunct->invRuleNames as $ruleName) $affectedRules[] = $ruleName;
-					foreach ($conjunct->sigRuleNames as $ruleName) $affectedRules[] = $ruleName;
-				}
-				
-				// Check rules
-				$rulesThatHaveViolations = array();
-				foreach ($role->maintains() as $ruleName){
-					if(!in_array($ruleName, $affectedRules) && !$allRules) continue; // skip this rule
-					
-					$rule = Rule::getRule($ruleName);
-					$violations = $rule->getViolations(false);
-					
-					if(count($violations)){
-						$rulesThatHaveViolations[] = $rule->id;
-						
-						// Fix violations for every rule
-						ExecEngine::fixViolations($rule, $violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
-						
-						// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)
-						if(self::$autoRerun) self::$doRun = true;
-					}
-					 
-				}
-				
-				
+			// Prevent infinite loop in ExecEngine reruns 				
+			if(self::$runCount > $maxRunCount){
+				Notifications::addError('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')');
+				break;
 			}
 			
-		}else{
-			Notifications::addInfo("ExecEngine extension included but role '" . self::$roleName . "' not found.");
+			Notifications::addLog("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '" . $role->label . "'", 'ExecEngine');
+			
+			// Determine affected rules that must be checked by the exec engine
+			$affectedConjuncts = RuleEngine::getAffectedConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations(), 'sig');
+			
+			$affectedRules = array();
+			foreach($affectedConjuncts as $conjunct) $affectedRules = array_merge($affectedRules, $conjunct->sigRuleNames);
+			
+			// Check rules
+			foreach ($role->maintains() as $ruleName){
+				if(!in_array($ruleName, $affectedRules) && !$allRules) continue; // skip this rule
+				
+				$rule = Rule::getRule($ruleName);
+				$violations = $rule->getViolations(false);
+				
+				if(count($violations)){
+					$rulesThatHaveViolations[] = $rule->id;
+					
+					// Fix violations for every rule
+					Notifications::addLog("ExecEngine fixing violations for rule '{$rule->id}'", 'ExecEngine');
+					ExecEngine::fixViolations($violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
+					Notifications::addInfo("{self::$roleName} fixed violations for rule '{$rule->id}", "ExecEngineSuccessMessage", "{self::$roleName} automatically fixed violations");
+					
+					// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)
+					if(self::$autoRerun) self::$doRun = true;
+				}
+			}	
 		}
 		
-		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------', 'ExecEngine');
-				
+		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------', 'ExecEngine');	
 	}
 	
 	/**
 	 * 
-	 * @param Rule $rule
-	 * @param unknown $violations
+	 * @param Violation[] $violations
 	 * @throws Exception
+	 * @return void
 	 */
-	public static function fixViolations($rule, $violations){
-		if(count($violations)){
-			Notifications::addLog("ExecEngine fixing violations for rule '{$rule->id}'", 'ExecEngine');
-			
-			foreach ($violations as $violation){
-				$theMessage = ExecEngine::getPairView($violation['src'], $rule->srcConcept->name, $violation['tgt'], $rule->tgtConcept->name, $rule->violationSegments);
-				
-				// This function tries to return a string with all NULL bytes, HTML and PHP tags stripped from a given str. Strip_tags() is binary safe.
-				// $theCleanMessage = strip_tags($theMessage);
-				
-				// Determine actions/functions to be taken
-				$functionsToBeCalled = explode('{EX}', $theMessage);
-				
-				// Execute actions/functions
-				foreach ($functionsToBeCalled as $functionToBeCalled) {
-					if(empty($functionToBeCalled)) continue; // skips to the next iteration if $functionToBeCalled is empty. This is the case when violation text starts with delimiter {EX}
-					
-					// Determine delimiter
-					if(substr($functionToBeCalled, 0, 2) == '_;'){
-						$delimiter = '_;';
-						$functionToBeCalled = substr($functionToBeCalled, 2);
-					}else{
-						$delimiter = ';';
-					}
-					
-					$params = explode($delimiter, $functionToBeCalled); // Split off variables
-					$params = array_map('trim', $params); // Trim all params
-					$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
-					
-					$function = array_shift($params); // First parameter is function name
-					$classMethod = (array)explode('::', $function);
-					
-					if (function_exists($function) || method_exists($classMethod[0], $classMethod[1])){
-						$successMessage = call_user_func_array($function,$params);
-						Notifications::addLog($successMessage, 'ExecEngine');
-						
-					}else{
-						$errorMessage = "Function '" . $function . "' does not exists. Create function with " . count($params) . " parameters";
-						throw new Exception($errorMessage, 500);
-					}
-				}
-			}
-			Notifications::addInfo(self::$roleName . ' fixed violations for rule: ' . $rule->id, 'ExecEngineSuccessMessage', self::$roleName . ' fixed violations');
-		}
-	}
-
-	// Almost a copy of RuleEngine::getPairView()
-	public static function getPairView($srcAtom, $srcConcept, $tgtAtom, $tgtConcept, $pairView){ 
-		$database = Database::singleton();
+	public static function fixViolations($violations){
 		
-		$pairStrs = array();
-		foreach ((array)$pairView as $segment){ 
-			// text segment		
-			if ($segment['segmentType'] == 'Text'){
-				$pairStrs[] = $segment['Text'];
+		foreach ($violations as $violation){
+		    $violation = new ExecEngineViolation($violation->rule, $violation->src->id, $violation->tgt->id);
+		    
+			$theMessage = $violation->getViolationMessage();
 			
-			// expressie segment
-			}elseif($segment['segmentType'] == 'Exp'){
-				// select starting atom depending on whether the segment uses the src of tgt atom.
-				$atom = $segment['srcOrTgt'] == 'Src' ? $srcAtom : $tgtAtom;
+			// Determine actions/functions to be taken
+			$functionsToBeCalled = explode('{EX}', $theMessage);
+			
+			// Execute actions/functions
+			foreach ($functionsToBeCalled as $functionToBeCalled) {
+				if(empty($functionToBeCalled)) continue; // skips to the next iteration if $functionToBeCalled is empty. This is the case when violation text starts with delimiter {EX}
 				
-				// quering the expression
-				$atomEsc = $database->escape($atom);
-				$query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '$atomEsc'"; // SRC of TGT kunnen door een expressie gevolgd worden
-				$rows = $database->Exe($query);
-				
-				// returning the result
-				//if(count($rows) > 1) throw new Exception('Expression of pairview results in more than one tgt atom', 501); // 501: Not implemented
-				if(count($rows) == 0) $pairStrs[] = '_NULL';
-				else{
-					$str = '';
-					foreach ($rows as $row){
-						$str .= $row['tgt'] . '_AND';
-					}
-					$str = substr($str, 0, -4); // strip the last _AND
-					$pairStrs[] = str_replace(array('{EX}','{php}'), '', $str); // prevent php interpreter by user input
+				// Determine delimiter
+				if(substr($functionToBeCalled, 0, 2) == '_;'){
+					$delimiter = '_;';
+					$functionToBeCalled = substr($functionToBeCalled, 2);
+				}else{
+					$delimiter = ';';
 				}
-				// else $pairStrs[] = str_replace(array('{EX}','{php}'), '', $rows[0]['tgt']); // prevent php interpreter by user input
-
-			// unknown segment
-			}else{
-				$errorMessage = "Unknown segmentType '" . $segment['segmentType'] . "' in pairview";
-				throw new Exception($errorMessage, 501); // 501: Not implemented
+				
+				$params = explode($delimiter, $functionToBeCalled); // Split off variables
+				$params = array_map('trim', $params); // Trim all params
+				$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
+				
+				$function = array_shift($params); // First parameter is function name
+				$classMethod = (array)explode('::', $function);
+				
+				if (function_exists($function) || method_exists($classMethod[0], $classMethod[1])){
+					$successMessage = call_user_func_array($function,$params);
+					Notifications::addLog($successMessage, 'ExecEngine');
+					
+				}else{
+					throw new Exception("Function '{$function}' does not exists. Create function with {count($params)} parameters", 500);
+				}
 			}
-		}
-		return implode($pairStrs);
+		}		
 	}
-
 }
+
+class ExecEngineViolation extends Violation {
+	
+	/**
+	 * Overwrites getViolationMessage() method from Violation class
+	 * @throws Exception when segment type is unknown
+	 * @throws Exception when segment expression return more that 1 tgt atom
+	 * @return string
+	 */
+	public function getViolationMessage(){
+	    $database = Database::singleton();
+	
+	    $strArr = array();
+	    foreach ($this->rule->violationSegments as $segment){
+	        // text segment
+	        if ($segment['segmentType'] == 'Text'){
+	            $strArr[] = $segment['Text'];
+	             
+	        // expressie segment
+	        }elseif($segment['segmentType'] == 'Exp'){
+	            // select starting atom depending on whether the segment uses the src of tgt atom.
+	            $atom = $segment['srcOrTgt'] == 'Src' ? $this->src : $this->tgt;
+	
+	            // quering the expression
+	            $query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '{$atom->idEsc}'"; // SRC of TGT kunnen door een expressie gevolgd worden
+	            $rows = $database->Exe($query);
+	
+	            // returning the result
+				if(count($rows) == 0){
+				    $strArr[] = '_NULL';
+				}else{
+				    $str = '';
+					foreach ($rows as $row) $str .= $row['tgt'] . '_AND';
+					$str = substr($str, 0, -4); // strip the last _AND
+					$strArr[] = str_replace(array('{EX}','{php}'), '', $str); // prevent php interpreter by user input. Only allowed as Text segments specified in &-script
+				}
+	
+	        // unknown segment
+	        }else{
+	            $errorMessage = "Unknown segmentType '{$segment['segmentType']}' in violationSegments of rule '{$this->rule->id}'";
+	            throw new Exception($errorMessage, 501); // 501: Not implemented
+	        }
+	    }
+	
+	    return $this->message = implode($strArr);
+	}
+}
+
 ?>

@@ -30,7 +30,7 @@ generateGenerics fSpec =
         , generateTableInfos fSpec
         --, generateRules fSpec
         --, generateConjuncts fSpec
-        , generateRoles fSpec
+        --, generateRoles fSpec
         --, generateViews fSpec
         , generateInterfaces fSpec
         ]
@@ -251,29 +251,6 @@ filterFrontEndInvConjuncts conjs = filter (\c -> any isFrontEndInvariant $ rc_or
 
 filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
 filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRules c) conjs
-  
-generateRoles :: FSpec -> [String]
-generateRoles fSpec =
-  concatMap showRoles [False,True]
-  where showRoles isService =
-          [ if isService then "$allServices =" else "$allRoles ="
-          , "  array"
-          ] ++
-          addToLastLine ";"
-            (indent 4
-              (blockParenthesize  "(" ")" ","
-                 [ [ "array ( 'id' => "++show i 
-                   , "      , 'name' => "++showPhpStr (name role)
-                   , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
-                   , "      , 'interfaces' => array ("++ intercalate ", " (map (showPhpStr . name) ((roleInterfaces fSpec) role)) ++")"
-                   , "      )" ]
-                 | (i,role) <- zip [0::Int ..] (filter serviceOrRole $ [x | (x,_) <- fRoles fSpec])
-                 ]
-            ) )
-            where
-             serviceOrRole Role{} = not isService
-             serviceOrRole Service{} = isService 
-        maintainedByRole role (role',_) = role == role'
 
 generateInterfaces :: FSpec -> [String]
 generateInterfaces fSpec =

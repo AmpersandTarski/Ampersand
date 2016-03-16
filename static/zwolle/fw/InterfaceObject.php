@@ -473,7 +473,7 @@ class InterfaceObject {
  *
  *************************************************************************************************/
 	
-	public static function getSubinterface($ifcId, $parentIfc = null){
+	public static function getInterface($ifcId, $parentIfc = null){
 		// Top level interface
 		if(is_null($parentIfc)){
 			return new InterfaceObject($ifcId);

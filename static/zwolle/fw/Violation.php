@@ -63,7 +63,7 @@ class Violation {
             if ($segment['segmentType'] == 'Text'){
                 $strArr[] = $segment['Text'];
                  
-                // expressie segment
+            // expressie segment
             }elseif($segment['segmentType'] == 'Exp'){
                 // select starting atom depending on whether the segment uses the src of tgt atom.
                 $atom = $segment['srcOrTgt'] == 'Src' ? $this->src : $this->tgt;
@@ -76,7 +76,7 @@ class Violation {
                 if(count($row) > 1) throw new Exception("Expression of pairview results in more than one tgt atom", 501); // 501: Not implemented
                 $strArr[] = $rows[0]['tgt'];
 
-                // unknown segment
+            // unknown segment
             }else{
                 $errorMessage = "Unknown segmentType '{$segment['segmentType']}' in violationSegments of rule '{$this->rule->id}'";
                 throw new Exception($errorMessage, 501); // 501: Not implemented

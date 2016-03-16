@@ -7,6 +7,7 @@ where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Prototype.ProtoUtil
 
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)
@@ -27,8 +28,8 @@ instance JSON (Role,Int) RoleJson where
   { roleJSONid         = i
   , roleJSONname       = name role
   , roleJSONmaintains  = map name . fMaintains     fSpec $ role
-  , roleJSONinterfaces = map name . roleInterfaces fSpec $ role
-  } 
+  , roleJSONinterfaces = map (escapeIdentifier . name) . roleInterfaces fSpec $ role
+  }
 
 
 

@@ -1,5 +1,6 @@
 <?php
 
+use Slim\View;
 class Concept {
     /**
      * Contains all concept definitions
@@ -68,12 +69,6 @@ class Concept {
 	public $interfaceIds = array();
 	
 	/**
-	 * Array with all view objects that can be used for atoms of this concept
-	 * @var View[]
-	 */
-	public $views = array();
-	
-	/**
 	 * Default view object for atoms of this concept
 	 * @var View|NULL
 	 */
@@ -111,12 +106,7 @@ class Concept {
 		$this->generalizations = (array)$conceptDef['generalizations'];
 		$this->interfaceIds = (array)$conceptDef['interfaces'];
 		
-		foreach($conceptDef['views'] as $viewDef){
-		    $view = View::getView($viewDef['label']);
-		    
-		    $this->views[] = $view;
-		    if($view->isDefault) $this->defaultView = $view;
-		}
+		if(!is_null($viewDef['defaultViewId'])) $this->defaultView = View::getView($viewDef['defaultViewId']);
 		
 		$this->mysqlConceptTable = new DatabaseTable($conceptDef['conceptTable']['name']);
 		foreach ($conceptDef['conceptTable']['cols'] as $colName){

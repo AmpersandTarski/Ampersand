@@ -132,11 +132,11 @@ class Session {
 				$options = array('metaData' => false, 'navIfc' => true);
 				$sessionRoleLabels = array_column((array)$session->ifc('SessionRoles')->getContent(null, $options), '_id_');
 				
-				foreach(Role::getAllRoleObjects() as $role){
+				foreach(Role::getAllRoles() as $role){
 					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
 				}
 			}else{
-				$sessionRoles = Role::getAllRoleObjects();
+				$sessionRoles = Role::getAllRoles();
 			}
 			
 			return $this->sessionRoles = $sessionRoles;
