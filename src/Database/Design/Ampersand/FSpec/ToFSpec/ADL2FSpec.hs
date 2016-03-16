@@ -243,30 +243,27 @@ makeFSpec opts context
          [vd] -> vd
          vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
      
-   -- get all views for a specific concept and all larger concepts. There must not be more than one default view. 
+   -- get all views for a specific concept and all larger concepts.
      getAllViewsForConcept' :: A_Concept -> [ViewDef]
      getAllViewsForConcept' concpt = 
-         case partition vdIsDefault . concatMap viewsOfConcept . genericToSpecific (gens context) $ concpt : largerConcepts (gens context) concpt of
-           ([],nonDefaults)    -> nonDefaults
-           ([d],nonDefaults)   -> d:nonDefaults
-           (d:ds,nonDefaults)  -> d:map makeNonDefault ds ++ nonDefaults
+              concatMap viewsOfThisConcept
+            . sortSpecific2Generic (gens context) 
+            $ concpt : largerConcepts (gens context) concpt 
+       
+     viewsOfThisConcept :: A_Concept -> [ViewDef]
+     viewsOfThisConcept cpt = filter isForConcept $ viewDefs context
        where
-           viewsOfConcept :: A_Concept -> [ViewDef]
-           viewsOfConcept cpt = filter isForConcept $ viewDefs context
-             where
-               isForConcept :: ViewDef -> Bool
-               isForConcept vd = vdcpt vd == cpt
-           makeNonDefault :: ViewDef -> ViewDef
-           makeNonDefault vd = vd{vdIsDefault = False}
-     -- Return the default view for concpt, which is either the view for concpt itself (if it has one) or the view for
-     -- concpt's smallest superconcept that has a view. Return Nothing if there is no default view.
+         isForConcept :: ViewDef -> Bool
+         isForConcept vd = vdcpt vd == cpt
+     -- Return the default view for cpt, which is either the view for cpt itself (if it has one) or the view for
+     -- cpt's smallest superconcept that has a default view. Return Nothing if there is no default view.
      getDefaultViewForConcept' :: A_Concept -> Maybe ViewDef
-     getDefaultViewForConcept' concpt =
-       case [ vd 
-            | vd@Vd{vdcpt = c, vdIsDefault = True} <- viewDefs context
-            ,  c `elem` (concpt : largerConcepts (gens context) concpt) 
-            ] of
-         []     -> Nothing
+     getDefaultViewForConcept' cpt =
+       case  filter vdIsDefault
+           . concatMap viewsOfThisConcept
+           . sortSpecific2Generic (gens context) 
+           $ cpt : largerConcepts (gens context) cpt of
+         []     -> Nothing 
          (vd:_) -> Just vd
 
      --------------
