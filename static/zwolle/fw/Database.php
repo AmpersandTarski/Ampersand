@@ -258,10 +258,9 @@ class Database {
 	 */
 	public function atomExists($atom){
 	    $tableInfo = $atom->concept->getConceptTableInfo();
-	    $table = $tableInfo['table'];
-	    $conceptCol = $tableInfo['cols'][0];
+	    $firstCol = current($tableInfo->getCols());
 	
-	    $query = "/* Check if atom exists */ SELECT `$conceptCol` FROM `$table` WHERE `$conceptCol` = '{$atom->idEsc}'";
+	    $query = "/* Check if atom exists */ SELECT `$firstCol->name` FROM `{$tableInfo->name}` WHERE `$firstCol->name` = '{$atom->idEsc}'";
 	    $result = $this->Exe($query);
 	
 	    if(empty($result)) return false;
@@ -291,18 +290,18 @@ class Database {
 			    			    
 				// Get table properties
 				$conceptTableInfo = $atom->concept->getConceptTableInfo();
-				$conceptTable = $conceptTableInfo['table'];
-				$conceptCols = $conceptTableInfo['cols']; // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
+				$conceptTable = $conceptTableInfo->name;
+				$conceptCols = $conceptTableInfo->getCols(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
 				
 				// Create query string: `<col1>`, `<col2>`, etc
-				$allConceptCols = '`' . implode('`, `', $conceptCols) . '`';
+				$allConceptCols = '`' . implode('`, `', $conceptTableInfo->getColNames()) . '`';
 				
 				
 				// Create query string: '<newAtom>', '<newAtom', etc
 				$atomIdsArray = array_fill(0, count($conceptCols), $atom->idEsc);
 				$allValues = "'".implode("', '", $atomIdsArray)."'";
 				
-				foreach($conceptCols as $col) $str .= ", `$col` = '{$atom->idEsc}'";
+				foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atom->idEsc}'";
 				$duplicateStatement = substr($str, 1);
 				
 				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
@@ -349,18 +348,18 @@ class Database {
 			
 			// Get table info
 			$conceptTableInfoB = $conceptB->getConceptTableInfo();
-			$conceptTableB = $conceptTableInfoB['table'];
-			$conceptColsB = $conceptTableInfoB['cols']; // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
+			$conceptTableB = $conceptTableInfoB->name;
+			$conceptColsB = $conceptTableInfoB->getColNames(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
 			
 			// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
 			$queryString = "\"" . implode("\" = '{$atom->idEsc}', \"", $conceptColsB) . "\" = '{$atom->idEsc}'";
 			
 			$conceptTableInfoA = $atom->concept->getConceptTableInfo();
-			$conceptTableA = $conceptTableInfoA['table'];
-			$anyConceptColForA = current($conceptTableInfoA['cols']);
+			$conceptTableA = $conceptTableInfoA->name;
+			$anyConceptColForA = current($conceptTableInfoA->getCols());
 			
 			// Perform update
-			$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"$anyConceptColForA\" = '{$atom->idEsc}'");
+			$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atom->idEsc}'");
 			
 			$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 			
@@ -392,21 +391,21 @@ class Database {
 			if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
 				
 			// Get col information for concept and its specializations
-			$cols = array();
+			$colNames = array();
 			$conceptTableInfo = $atom->concept->getConceptTableInfo();
-			$conceptTable = $conceptTableInfo['table'];
-			$conceptCol = reset($conceptTableInfo['cols']);
+			$conceptTable = $conceptTableInfo->name;
+			$conceptCol = reset($conceptTableInfo->getCols());
 			
-			$cols[] = $conceptCol;
+			$colNames[] = $conceptCol->name;
 			foreach($atom->concept->getSpecializations() as $specConcept){
 				$conceptTableInfo = $specConcept->getConceptTableInfo();
-				$cols[] = reset($conceptTableInfo['cols']);
+				$colNames[] = reset($conceptTableInfo->getColNames);
 			}
 			
 			// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-			$queryString = "\"" . implode("\" = NULL, \"", $cols) . "\" = NULL";
+			$queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
 			
-			$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"$conceptCol\" = '{$atom->idEsc}'");
+			$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atom->idEsc}'");
 			
 			$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 			
@@ -791,6 +790,98 @@ class Database {
 	public function setRequestType($requestType){
 		$this->requestType = $requestType;
 	}	
+}
+
+Class DatabaseTable {
+    /**
+     * 
+     * @var string
+     */
+    public $name;
+    
+    /**
+     * 
+     * @var array
+     */
+    private $cols = array();
+    
+    /**
+     * Constructor of Database table
+     * @param string $name
+     */
+    public function __construct($name){
+        if($name == '') throw new Exception ("Database table name is an empty string" ,500); 
+        $this->name = $name;
+    }
+    
+    /**
+     * Add database table column object to this table
+     * @param DatabaseTableCol $col
+     * return void
+     */
+    public function addCol($col){
+        $this->cols[$col->name] = $col;
+    }
+    
+    /**
+     * Get all col objects for this table
+     * @throws Exception when no columns are defined for this table
+     * @return DatabaseTableCol[]
+     */
+    public function getCols(){
+        if (empty($this->cols)) throw new Exception("No column defined for table '{$this->name}'", 500);
+        return $this->cols;
+    }
+    
+    public function getColNames(){
+        $colNames = array();
+        foreach($this->getCols() as $col) $colNames[] = $col->name;
+        return $colNames; 
+    }
+    
+    /**
+     * Return col object with given column name
+     * @param string $colName
+     * @throws Exception when col does not exists
+     * @return DatabaseTableCol[]
+     */
+    public function getCol($colName){
+        if(!array_key_exists($colName, $this->getCols())) throw new Exception ("Col '{$colName}' does not exists in table '{$this->name}'", 500);
+        return $this->getCols()[$colName];
+    }
+}
+
+Class DatabaseTableCol {
+    /**
+     * Name/header of database column
+     * @var string
+     */
+    public $name;
+    
+    /**
+     * Specifies if value in this database column can be NULL
+     * @var boolean|NULL
+     */
+    public $null;
+    
+    /**
+     * Specifies if this database column has uniquness constraint (i.e. no duplicates may exist in all rows)
+     * @var boolean|NULL
+     */
+    public $unique;
+    
+    /**
+     * Constructor of Database table column
+     * @param string $name
+     * @param boolean $null
+     * @param boolean $unique
+     */
+    public function __construct($name, $null = null, $unique = null){
+        if($name == '') throw new Exception ("Database table column name is an empty string" ,500);
+        $this->name = $name;
+        $this->null = $null;
+        $this->unique = $unique;
+    }
 }
 
 ?>

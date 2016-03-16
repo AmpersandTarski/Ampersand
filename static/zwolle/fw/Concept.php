@@ -77,7 +77,13 @@ class Concept {
 	 * Default view object for atoms of this concept
 	 * @var View|NULL
 	 */
-	private $defaultView = null;	
+	private $defaultView = null;
+
+	/**
+	 * Contains information about mysql table and columns in which this concept is administrated
+	 * @var DatabaseTable
+	 */
+	private $mysqlConceptTable;
 	
 	/**
 	 * Concept constructor
@@ -110,6 +116,11 @@ class Concept {
 		    
 		    $this->views[] = $view;
 		    if($view->isDefault) $this->defaultView = $view;
+		}
+		
+		$this->mysqlConceptTable = new DatabaseTable($conceptDef['conceptTable']['name']);
+		foreach ($conceptDef['conceptTable']['cols'] as $colName){
+		    $this->mysqlConceptTable->addCol(new DatabaseTableCol($colName));
 		}
 		
 	}
@@ -186,14 +197,12 @@ class Concept {
 	 * Return array with all atom identifiers for this concept
 	 * @return string[]
 	 */
-	public function getAllAtomIds(){	
-	    $conceptTableInfo = $this->getConceptTableInfo();
-	    $conceptTable = $conceptTableInfo['table'];
-	    $firstConceptCol = $conceptTableInfo['cols'][0]; // We can query an arbitrary concept col for checking the existence of an atom
+	public function getAllAtomIds(){
+	    $firstCol = current($this->mysqlConceptTable->getCols()); // We can query an arbitrary concept col for checking the existence of an atom
 	
 	    // Query all atoms in table
-	    $query = "SELECT DISTINCT `$firstConceptCol` FROM `$conceptTable` WHERE `$firstConceptCol` IS NOT NULL";
-	    return $existingAtoms = array_column((array)$this->database->Exe($query), $firstConceptCol); // no need to filter duplicates and NULLs
+	    $query = "SELECT DISTINCT `{$firstCol->name}` as `atom` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
+	    return $existingAtoms = array_column((array)$this->database->Exe($query), 'atom'); // no need to filter duplicates and NULLs
 	
 	}
 	
@@ -223,18 +232,11 @@ class Concept {
 	
 	/**
 	 * Returns database table info for concept
-	 * @throws Exception if no or more than 1 table is defined
-	 * @return array
+	 * @throws Exception if no database table is defined
+	 * @return DatabaseTable
 	 */
 	public function getConceptTableInfo(){
-	    global $allConcepts;
-	    $conceptInfo = $allConcepts[$this->name];
-	
-	    if(empty($conceptInfo['conceptTables'])) throw new Exception("No database table defined for concept '[{$this->name}]' in \$allConcepts (Generics.php)", 500);
-	    if(count((array)$conceptInfo['conceptTables']) > 1) throw new Exception("Concept '[{$this->name}]' is administrated in more than 1 table. This is not (yet) supported", 501);
-	
-	    // We can use the first item in the array, because of the check above
-	    return $conceptInfo['conceptTables'][0];
+	    return $this->mysqlConceptTable;
 	}
 	
     /**********************************************************************************************
@@ -287,13 +289,10 @@ class Concept {
 	public static function createNewAtomId($conceptName){
 	    $concept = self::getConcept($conceptName);
 	    
-	    if(strpos($conceptName, '_AUTOINCREMENT') !== false){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
-	        $tableInfo = $concept->getConceptTableInfo();
-	        	
-	        $table = $tableInfo['table'];
-	        $col = $tableInfo['cols'][0];
-	        	
-	        $query = "SELECT MAX(`$col`) as `MAX` FROM `$table`";
+	    if(strpos($conceptName, '_AUTOINCREMENT') !== false){ // TODO: change to type definition when Ampersand is supporting IT-TYPE	        
+	        $firstCol = current($this->mysqlConceptTable->getCols());
+	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
+	        
 	        $result = array_column((array)$this->database->Exe($query), 'MAX');
 	        	
 	        if(empty($result)) $atomId = 1;
