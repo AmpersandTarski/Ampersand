@@ -88,7 +88,7 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		    $src = new Atom($a, $srcConceptName);
 		    foreach($tgtAtoms as $b){
 				$tgt = new Atom($b, $tgtConceptName);
-		        $database->editDelete($relation->signature, false, $src, $tgt, 'ExecEngine');
+		        $database->editDelete($relation, false, $src, $tgt, 'ExecEngine');
 			}
 		}
 		
