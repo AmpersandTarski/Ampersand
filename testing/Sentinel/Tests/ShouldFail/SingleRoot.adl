@@ -5,6 +5,7 @@ If there is none, it is feasable to have & create one automatically. However, th
 We have decided to have the modeller choose a name for such a largest concept, by adding CLASSIFY statements.
 -}
 
+-- Also see issue https://github.com/AmpersandTarski/ampersand/issues/292
 CLASSIFY A ISA B
 CLASSIFY A ISA C
 
