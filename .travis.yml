@@ -75,6 +75,7 @@ script:
      cabal)
        cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0";
        cabal build;
+       cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0";
        cabal test;
        cabal check;
        cabal sdist;
