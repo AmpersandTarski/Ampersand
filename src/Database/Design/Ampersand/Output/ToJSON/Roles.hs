@@ -7,7 +7,6 @@ where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Output.ToJSON.Concepts 
 
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)

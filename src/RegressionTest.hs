@@ -4,7 +4,7 @@ import Conduit
 --import qualified Data.Conduit.List as CL
 --import qualified Data.Conduit.Binary as CB
 
-import System.FilePath ((</>),takeExtension)
+import System.FilePath ((</>))
 import Control.Monad --(filterM, forM_, foldM,when)
 import System.IO.Error (tryIOError)
 import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
