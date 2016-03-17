@@ -21,7 +21,7 @@ data Concept = Concept
   , cptJSONspecializations   :: [String]
   , cptJSONaffectedConjuncts :: [String]
   , cptJSONinterfaces        :: [String]
-  , cptJSONviews             :: [View]
+  , cptJSONdefaultViewId     :: Maybe String 
   , cptJSONconceptTable      :: TableCols
   } deriving (Generic, Show)
 data TableCols = TableCols
@@ -62,7 +62,7 @@ instance JSON A_Concept Concept where
   , cptJSONspecializations   = map name . smallerConcepts (vgens fSpec) $ cpt
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
-  , cptJSONviews = map (fromAmpersand fSpec) $ getAllViewsForConcept fSpec cpt
+  , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
   , cptJSONconceptTable = fromAmpersand fSpec cpt
   } 
   where
