@@ -13,7 +13,7 @@ import Data.Monoid
 import GHC.Exts (sortWith)
 --import Data.ByteString.Char8
 --import Data.ByteString.Lazy.Char8
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.Expression
 import Database.Design.Ampersand.Classes
