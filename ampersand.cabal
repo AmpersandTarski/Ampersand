@@ -161,7 +161,8 @@ executable ampersand
                      Database.Design.Ampersand.Output.ToJSON.Concepts,
                      Database.Design.Ampersand.Output.ToJSON.Conjuncts,
                      Database.Design.Ampersand.Output.ToJSON.Interfaces,
-                     Database.Design.Ampersand.Output.ToJSON.Others
+                     Database.Design.Ampersand.Output.ToJSON.Roles,
+                     Database.Design.Ampersand.Output.ToJSON.Views
 
 Test-Suite regression-test
   type:              exitcode-stdio-1.0
@@ -284,7 +285,8 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Output.ToJSON.Concepts,
                      Database.Design.Ampersand.Output.ToJSON.Conjuncts,
                      Database.Design.Ampersand.Output.ToJSON.Interfaces,
-                     Database.Design.Ampersand.Output.ToJSON.Others,
+                     Database.Design.Ampersand.Output.ToJSON.Views,
+                     Database.Design.Ampersand.Output.ToJSON.Roles,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,

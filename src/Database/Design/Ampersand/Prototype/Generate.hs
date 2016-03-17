@@ -267,7 +267,8 @@ generateRoles fSpec =
                    , "      , 'ruleNames'  => array ("++ intercalate ", " ((map (showPhpStr . name . snd) . filter (maintainedByRole role) . fRoleRuls) fSpec) ++")"
                    , "      , 'interfaces' => array ("++ intercalate ", " (map (showPhpStr . name) ((roleInterfaces fSpec) role)) ++")"
                    , "      )" ]
-                 | (i,role) <- zip [1::Int ..] (filter serviceOrRole $ fRoles fSpec) ]
+                 | (i,role) <- zip [0::Int ..] (filter serviceOrRole $ [x | (x,_) <- fRoles fSpec])
+                 ]
             ) )
             where
              serviceOrRole Role{} = not isService

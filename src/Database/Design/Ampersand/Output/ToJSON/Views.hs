@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-module Database.Design.Ampersand.Output.ToJSON.Others 
+module Database.Design.Ampersand.Output.ToJSON.Views 
     (Views)
 where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 

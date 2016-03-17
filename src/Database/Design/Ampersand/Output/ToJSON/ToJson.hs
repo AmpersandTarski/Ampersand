@@ -9,7 +9,8 @@ import Database.Design.Ampersand.Output.ToJSON.Rules
 import Database.Design.Ampersand.Output.ToJSON.Concepts 
 import Database.Design.Ampersand.Output.ToJSON.Conjuncts 
 import Database.Design.Ampersand.Output.ToJSON.Interfaces 
-import Database.Design.Ampersand.Output.ToJSON.Others
+import Database.Design.Ampersand.Output.ToJSON.Views
+import Database.Design.Ampersand.Output.ToJSON.Roles
 generateJSONfiles :: FSpec -> IO ()
 generateJSONfiles fSpec =
  sequence_ [ writeJSON "settings"   (fromAmpersand fSpec fSpec :: Settings)
@@ -21,6 +22,7 @@ generateJSONfiles fSpec =
            , writeJSON "conjuncts"  (fromAmpersand fSpec fSpec :: Conjuncts)
            , writeJSON "interfaces" (fromAmpersand fSpec fSpec :: Interfaces)
            , writeJSON "views"      (fromAmpersand fSpec fSpec :: Views)
+           , writeJSON "roles"      (fromAmpersand fSpec fSpec :: Roles)
            ]
 
   where 

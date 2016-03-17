@@ -65,8 +65,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
                    , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
                    , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
-                   , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles may change the population of which relation.
-                   , fRoles ::       [Role]                   -- ^ All roles mentioned in this context.
+                   , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
+                   , fMaintains ::   Role -> [Rule]
+                   , fRoles ::       [(Role,Int)]             -- ^ All roles mentioned in this context, numbered.
                    , fallRules ::    [Rule]
                    , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules

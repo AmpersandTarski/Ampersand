@@ -63,10 +63,12 @@ makeFSpec opts context
                                    | rule <- allrules
                                    , role <- maintainersOf rule
                                    ]
-              , fRoles       = nub (concatMap arRoles (ctxrrules context)++
-                                    concatMap rrRoles (ctxRRels context)++
-                                    concatMap ifcRoles (ctxifcs context)
-                                   ) 
+              , fMaintains   = fMaintains'
+              , fRoles       = zip ((sort . nub) (concatMap arRoles (ctxrrules context)++
+                                                  concatMap rrRoles (ctxRRels context )++
+                                                  concatMap ifcRoles (ctxifcs context )
+                                                 )
+                                   ) [0..] 
               , fallRules = allrules
               , vrules       = filter      isUserDefined  allrules
               , grules       = filter (not.isUserDefined) allrules
@@ -115,6 +117,11 @@ makeFSpec opts context
               , editableConcepts = editablecpts 
               }
    where           
+     fMaintains' :: Role -> [Rule]
+     fMaintains' role = nub [ rule 
+                            | rule <- allrules
+                            , role `elem` maintainersOf rule
+                            ]
      rootConcept' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
            [t] -> tyroot t

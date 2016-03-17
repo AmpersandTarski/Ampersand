@@ -251,7 +251,7 @@ instance ShowHS FSpec where
                  [(r,rel)] -> "[ ("++show r++", "++showHS opts "" rel++") ]"
                  _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
         ,      ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
-        , wrap ", fRoles        = " indentA (showHS opts)    (fRoles fSpec)
+        , wrap ", fRoles        = " indentA (showHS opts)    [rol | (rol,_) <- fRoles fSpec]
         , wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
         , wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
         , wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
