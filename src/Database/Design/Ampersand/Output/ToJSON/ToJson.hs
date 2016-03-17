@@ -20,7 +20,6 @@ generateJSONfiles fSpec =
            , writeJSON "concepts"   (fromAmpersand fSpec fSpec :: Concepts)
            , writeJSON "conjuncts"  (fromAmpersand fSpec fSpec :: Conjuncts)
            , writeJSON "interfaces" (fromAmpersand fSpec fSpec :: Interfaces)
-           , writeJSON "tables"     (fromAmpersand fSpec fSpec :: TableColumnInfos)
            , writeJSON "views"      (fromAmpersand fSpec fSpec :: Views)
            ]
 
