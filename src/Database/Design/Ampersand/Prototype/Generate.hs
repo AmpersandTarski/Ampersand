@@ -7,7 +7,6 @@ where
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Prelude hiding (writeFile,readFile,getContents,exp)
-import Data.Function
 import Data.List
 import Data.Maybe
 import Database.Design.Ampersand.FSpec.SQL
