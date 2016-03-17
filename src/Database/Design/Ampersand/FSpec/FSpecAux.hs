@@ -36,11 +36,11 @@ sqlRelPlugsNew fSpec dcl
     getRelInfos p =
       case p of 
         TblSQL{} -> catMaybes . map relInfo . mLkpTbl $ p
-        BinSQL{} -> let (src,trg) = columns p
-                        d         = case mLkp p of
-                                      EDcD x -> x
-                                      expr   -> fatal 35 $ "Unexpected expression in BinSQL: "++show expr  
-                    in [(p,d,src,trg)]
+        BinSQL{} -> let (src,trg) = columns p in
+                    case mLkp p of
+                      EDcD d        -> [(p,d,src,trg)]
+                      EFlp (EDcD d) -> [(p,d,trg,src)]
+                      expr   -> fatal 35 $ "Unexpected expression in BinSQL: "++show expr  
         ScalarSQL{} -> []
       where 
         relInfo :: (Expression,SqlAttribute,SqlAttribute) -> Maybe (PlugSQL,Declaration,SqlAttribute,SqlAttribute)
