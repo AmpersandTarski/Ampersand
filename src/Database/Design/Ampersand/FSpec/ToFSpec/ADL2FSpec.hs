@@ -425,7 +425,14 @@ makeFSpec opts context
               nm
                 | null nms = fatal 355 "impossible"
                 | otherwise = head nms
-              att = Obj (name c) (Origin "generated attribute object: step 4b") (EDcV (Sign ONE c)) (fatal 419 "No default crud in generated interface.") Nothing Nothing []
+              att = Obj { objnm    = name c
+                        , objpos   = Origin "generated attribute object: step 4b"
+                        , objctx   = EDcV (Sign ONE c)
+                        , objcrud  = fatal 419 "No default crud in generated interface."
+                        , objmView = Nothing
+                        , objmsub  = Nothing
+                        , objstrs  = []
+                        }
         ]
      ----------------------
      --END: making interfaces
