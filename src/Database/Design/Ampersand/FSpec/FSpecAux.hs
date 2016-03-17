@@ -8,6 +8,7 @@ import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms(disjNF)
 import Database.Design.Ampersand.FSpec.Plug(plugpath)
 import Database.Design.Ampersand.FSpec.FSpec
 import Data.List
+import Data.Maybe(catMaybes)
 
 --WHY bestaat sqlRelPlugs?
 -- | sqlRelPlugs levert alle mogelijkheden om een plug met twee velden te vinden waarin (primitieve) expressie e is opgeslagen.
@@ -21,10 +22,39 @@ sqlRelPlugs fSpec e
      | InternalPlug plug<-plugInfos fSpec
      , (fld0,fld1)<-sqlPlugAttributes fSpec plug e
      ]
-
+-- return table name and source and target column names for relation dcl
+getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute) 
+getDeclarationTableInfo =  sqlRelPlugsNew
+sqlRelPlugsNew :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute)
+sqlRelPlugsNew fSpec dcl 
+     = case filter thisDcl . concatMap getRelInfos $ [p | InternalPlug p<-plugInfos fSpec ] of
+                [(p,_,s,t)] -> (p,s,t)
+                []          -> fatal 32 $ "Relation not found: "++name dcl
+                _           -> fatal 33 $ "Relation found multiple times: "++name dcl
+  where
+    getRelInfos :: PlugSQL -> [(PlugSQL,Declaration,SqlAttribute,SqlAttribute) ]  
+    getRelInfos p =
+      case p of 
+        TblSQL{} -> catMaybes . map relInfo . mLkpTbl $ p
+        BinSQL{} -> let (src,trg) = columns p
+                        d         = case mLkp p of
+                                      EDcD x -> x
+                                      expr   -> fatal 35 $ "Unexpected expression in BinSQL: "++show expr  
+                    in [(p,d,src,trg)]
+        ScalarSQL{} -> []
+      where 
+        relInfo :: (Expression,SqlAttribute,SqlAttribute) -> Maybe (PlugSQL,Declaration,SqlAttribute,SqlAttribute)
+        relInfo (expr,src,trg) =
+          case expr of
+            EDcD d        -> Just (p,d,src,trg)
+            EFlp (EDcD d) -> Just (p,d,trg,src)
+            EEps _ _      -> Nothing
+            _             -> fatal 40 $ "Unexpected expression: "++show expr
+    thisDcl :: (a,Declaration,b,c) -> Bool
+    thisDcl (_,d,_,_) = d == dcl
 -- return table name and source and target column names for relation rel, or nothing if the relation is not found
-getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute)
-getDeclarationTableInfo fSpec decl =
+getDeclarationTableInfoOLD :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute)
+getDeclarationTableInfoOLD fSpec decl =
  case decl of
    Sgn{}   -> case sqlRelPlugs fSpec (EDcD decl) of
                     [plugInfo] -> plugInfo
