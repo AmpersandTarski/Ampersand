@@ -26,7 +26,7 @@ data RelTableInfo = RelTableInfo -- Contains info about where the relation is im
   { rtiJSONname    :: String
   , rtiJSONtableOf :: Maybe String -- specifies if relation is administrated in table of srcConcept (i.e. "src"), tgtConcept (i.e. "tgt") or its own n-n table (i.e. null).
   , rtiJSONsrcCol  :: TableCol
-  , rtiJSONtrgCol  :: TableCol
+  , rtiJSONtgtCol  :: TableCol
   } deriving (Generic, Show)
 data TableCol = TableCol
   { tcJSONname     :: String
@@ -61,7 +61,7 @@ instance JSON Declaration RelTableInfo where
   { rtiJSONname    = name plug
   , rtiJSONtableOf = srcOrtgt
   , rtiJSONsrcCol  = fromAmpersand fSpec srcAtt
-  , rtiJSONtrgCol  = fromAmpersand fSpec trgAtt
+  , rtiJSONtgtCol  = fromAmpersand fSpec trgAtt
   }
    where (plug,srcAtt,trgAtt) = getDeclarationTableInfo fSpec dcl
          (plugSrc,_)          = getConceptTableInfo fSpec (source dcl)
