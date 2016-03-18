@@ -105,12 +105,19 @@ class Session {
 		$this->rulesToMaintain = array_unique($this->rulesToMaintain);
 	}
 	
+	/**
+	 * 
+	 * @param Role $role
+	 */
 	private function activateRole(&$role){
 	    $role->active = true;
 	    Notifications::addLog("Role $role->id is active", 'SESSION');
 	    $this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
 	    $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-	    $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
+	    
+	    foreach($role->maintains() as $ruleName){
+	        $this->rulesToMaintain[] = Rule::getRule($ruleName);
+	    }
 	}
 	
 	public function getSessionRoles(){
@@ -134,6 +141,18 @@ class Session {
 			
 			return $this->sessionRoles = $sessionRoles;
 		}
+	}
+	
+	/**
+	 * 
+	 * @return Role[]
+	 */
+	public function getActiveRoles(){
+	    $activeRoles = array();
+	    foreach ($this->getSessionRoles() as $role){
+	        if($role->active) $activeRoles[] = $role; 
+	    }
+	    return $activeRoles;
 	}
 	
 	private static function setSessionAccount(){

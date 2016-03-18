@@ -34,7 +34,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 	for ($i = $from; $i <= $to; $i++){
 		$conjunct = Conjunct::getConjunct('conj_' . $i);
 		$startTimeStamp = microtime(true); // true means get as float instead of string
-		RuleEngine::checkConjunct($conjunct, false);
+		$conjunct->evaluateConjunct(false);
 		$endTimeStamp = microtime(true);
 	
 		$performanceArr[$conjunct->id] = array( 'id' => $conjunct->id
@@ -52,14 +52,15 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			break;
 		case 'rules' :
 			$ruleArr = array();
-			foreach(RuleEngine::getAllRules() as $rule){
+			foreach(Rule::getAllRules() as $rule){
 				$duration = 0;
-				foreach($rule['conjunctIds'] as $conjId){
-					$duration += $performanceArr[$conjId]['duration'];
+				foreach($rule->conjuncts as $conjunct){
+					$duration += $performanceArr[$conjunct->id]['duration'];
+					$conjunctIds[] = $conjunct->id;
 				}
-				$ruleArr[] = array('ruleName' => $rule['name']
+				$ruleArr[] = array('ruleName' => $rule->id
 						, 'duration' => $duration
-						, 'conjuncts' => implode(';', $rule['conjunctIds'])
+						, 'conjuncts' => implode(';', $conjunctIds)
 				);
 			}
 			$content = $ruleArr;

@@ -27,7 +27,7 @@ class ImportExcel {
 		Notifications::addLog('------------------------- END OF EXCEL IMPORT -------------------------', 'ExcelImport');
 		
 		// Close transaction => ROLLBACK or COMMIT.
-		$this->db->closeTransaction('File uploaded', false, true);
+		$this->db->closeTransaction('File uploaded', true);
 		
 		return Notifications::getAll();
 		

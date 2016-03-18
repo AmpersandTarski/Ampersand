@@ -187,7 +187,10 @@ class Database {
 		
 		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
 		
-		$this->closeTransaction('Database successfully reinstalled', true, true);
+		// Initial conjunct evaluation
+		Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts, not only those that are affected (done by closeTransaction() function)
+		
+		$this->closeTransaction('Database successfully reinstalled', true);
 		
 		if (version_compare(PHP_VERSION, '5.6', '<')) {
 		   Notifications::addError("Support for PHP version <= 5.5 will stop in the summer of 2016. Please upgrade to 5.6. Note! Ampersand framework does not support PHP 7 yet. You are on version: " . PHP_VERSION, 500);
@@ -653,39 +656,24 @@ class Database {
 	/**
 	 * Function to request closing the open database transaction
 	 * @param string $succesMessage specifies success/info message when invariants hold
-	 * @param boolean $checkAllConjucts specifies to check all (true) or only the affected conjuncts (false)
 	 * @param boolean $databaseCommit specifies to commit (true) or rollback (false) when all invariants hold
 	 * @param Atom $atomStoreNewContent specifies to store the new content for the updated/created atom
 	 * @return boolean specifies if invariant rules hold (true) or not (false)
 	 */
-	public function closeTransaction($succesMessage = 'Updated', $checkAllConjucts = true, $databaseCommit = null, &$atomStoreNewContent = null){
-		$session = Session::singleton();
-		
+	public function closeTransaction($succesMessage = 'Updated', $databaseCommit = null, &$atomStoreNewContent = null){		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
 		
 		Notifications::addLog('========================= CLOSING TRANSACTION =========================', 'DATABASE');
 		
-		if($checkAllConjucts){
-			Notifications::addLog("Check all conjuncts", 'DATABASE');
-			
-			// Evaluate all invariant conjuncts. Conjuncts are cached.
-			$invariantRulesHold = RuleEngine::checkInvariantRules();
-			
-			// Evaluate all signal conjuncts. Conjuncts are cached
-			RuleEngine::checkProcessRules();
-			
-		}else{
-			Notifications::addLog("Check all affected conjuncts", 'DATABASE');
-			
-			// Evaluate all affected invariant conjuncts. Conjuncts are cached.
-			$invariantRulesHold = RuleEngine::checkInvariantRules(RuleEngine::getAffectedInvConjuncts($this->affectedConcepts, $this->affectedRelations), true);
-			
-			// Evaluate all affected signal conjuncts. Conjuncts are cached
-			RuleEngine::checkConjuncts(RuleEngine::getAffectedSigConjuncts($this->affectedConcepts, $this->affectedRelations), true);
-			
-			// Check only those process rules that are relevant for the activate roles
-			RuleEngine::checkProcessRules($session);
-		}
+		Notifications::addLog("Check all affected conjuncts", 'DATABASE');
+		
+		
+		// Check invariant rules (we only have to check the affected invariant rules)
+		$affectedConjuncts = RuleEngine::getAffectedConjuncts($this->affectedConcepts, $this->affectedRelations, 'inv'); // Get affected invariant conjuncts
+		$invariantRulesHold = RuleEngine::checkInvariantRules($affectedConjuncts, true);
+		
+		// Check all process rules that are relevant for the activate roles
+		RuleEngine::checkProcessRules();
 		
 		unset($this->affectedConcepts, $this->affectedRelations);
 		$this->affectedConcepts = array(); $this->affectedRelations = array();

@@ -56,8 +56,7 @@ class ExecEngine {
 				Notifications::addLog("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '" . $role->label . "'", 'ExecEngine');
 				
 				// Determine affected rules that must be checked by the exec engine
-				$affectedConjuncts = RuleEngine::getAffectedInvConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations());
-				$affectedConjuncts = array_merge($affectedConjuncts, RuleEngine::getAffectedSigConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations()));
+				$affectedConjuncts = RuleEngine::getAffectedConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations(), 'both');
 				
 				$affectedRules = array();
 				foreach($affectedConjuncts as $conjunct){
@@ -70,11 +69,11 @@ class ExecEngine {
 				foreach ($role->maintains() as $ruleName){
 					if(!in_array($ruleName, $affectedRules) && !$allRules) continue; // skip this rule
 					
-					$rule = RuleEngine::getRule($ruleName);
-					$violations = RuleEngine::checkRule($rule, false);
+					$rule = Rule::getRule($ruleName);
+					$violations = $rule->getViolations(false);
 					
 					if(count($violations)){
-						$rulesThatHaveViolations[] = $rule['name'];
+						$rulesThatHaveViolations[] = $rule->id;
 						
 						// Fix violations for every rule
 						ExecEngine::fixViolations($rule, $violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
@@ -96,12 +95,18 @@ class ExecEngine {
 				
 	}
 	
+	/**
+	 * 
+	 * @param Rule $rule
+	 * @param unknown $violations
+	 * @throws Exception
+	 */
 	public static function fixViolations($rule, $violations){
 		if(count($violations)){
-			Notifications::addLog('ExecEngine fixing violations for rule: ' . $rule['name'], 'ExecEngine');
+			Notifications::addLog("ExecEngine fixing violations for rule '{$rule->id}'", 'ExecEngine');
 			
 			foreach ($violations as $violation){
-				$theMessage = ExecEngine::getPairView($violation['src'], $rule['srcConcept'], $violation['tgt'], $rule['tgtConcept'], $rule['pairView']);
+				$theMessage = ExecEngine::getPairView($violation['src'], $rule->srcConcept->name, $violation['tgt'], $rule->tgtConcept->name, $rule->violationSegments);
 				
 				// This function tries to return a string with all NULL bytes, HTML and PHP tags stripped from a given str. Strip_tags() is binary safe.
 				// $theCleanMessage = strip_tags($theMessage);
@@ -138,7 +143,7 @@ class ExecEngine {
 					}
 				}
 			}
-			Notifications::addInfo(self::$roleName . ' fixed violations for rule: ' . $rule['name'], 'ExecEngineSuccessMessage', self::$roleName . ' fixed violations');
+			Notifications::addInfo(self::$roleName . ' fixed violations for rule: ' . $rule->id, 'ExecEngineSuccessMessage', self::$roleName . ' fixed violations');
 		}
 	}
 

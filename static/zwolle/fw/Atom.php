@@ -479,7 +479,7 @@ Class Atom {
 		$this->doPatches($patches);
 		
 		// Close transaction
-		$this->database->closeTransaction($successMessage, false, null, $this);
+		$this->database->closeTransaction($successMessage, null, $this);
 		
 		return $this->getStoredContent();
 	}
@@ -502,7 +502,7 @@ Class Atom {
 	    $this->database->deleteAtom($this);
 	
 	    // Close transaction
-	    $this->database->closeTransaction($this->concept->name . ' deleted', false, null);
+	    $this->database->closeTransaction($this->concept->name . ' deleted');
 	
 	    return;
 	}

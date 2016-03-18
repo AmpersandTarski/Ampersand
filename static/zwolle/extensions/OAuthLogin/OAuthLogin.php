@@ -177,7 +177,7 @@ class OAuthLoginController {
 					$db->editUpdate($relAccLoginTimestamps, false, $account, $ts);
 				}
 
-				$db->closeTransaction('Login successfull', false, true);
+				$db->closeTransaction('Login successfull', true);
 
 			}
 		}
