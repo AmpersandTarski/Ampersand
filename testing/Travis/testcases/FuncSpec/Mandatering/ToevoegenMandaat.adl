@@ -1,0 +1,45 @@
+﻿CONTEXT ToevoegenMandaat IN DUTCH
+   INCLUDE "Mandatering.adl"
+   META "authors" "Stef Joosten Masterclass 2013"
+
+INTERFACE Overview : I[ONE]
+BOX[ "Formatieplaatsen" : V[ONE*Formatieplaats]
+   , "Organen" : V[ONE*Bestuursorgaan]
+   , "Bevoegdheden" : V[ONE*Bevoegdheid]
+   , "Besluiten" : V[ONE*Besluit]
+   , "Beperkingen" : V[ONE*Beperking]
+   ]
+
+INTERFACE Formatieplaats (formatie, krachtens, beslotenDoor, namens) FOR Bestuurder: I[Formatieplaats]
+BOX[ "Formatieplaats"      : I
+   , "Orgaan": formatie~
+   , "Verkregen mandaten": gemandateerde~
+       BOX [ mandaat : I
+           , besluit : krachtens~
+           , namens  : krachtens~; beslotenDoor
+           ]
+   , "Verleende mandaten": mandaatgever~
+       BOX [ mandaat : I
+           , namens : namens
+           , besluit : krachtens~
+             BOX [ besluit : I
+                 , door : beslotenDoor
+                 ]
+           , bevoegd : krachtens~; bevoegd
+           ]
+   ]
+
+INTERFACE Mandaat (mandaatgever) FOR Bestuurder: I[Mandaat]
+BOX[ "Mandaat"      : I
+   , "Mandaatgever": mandaatgever
+   , "gemandateerde": gemandateerde
+   , besluit : krachtens~
+   , bevoegd : krachtens~; bevoegd
+   
+   ]
+
+PROCESS ToevoegenMandaat
+ROLE Bestuurder MAINTAINS "Artikel 10:2 Awb"
+ENDPROCESS
+
+ENDCONTEXT

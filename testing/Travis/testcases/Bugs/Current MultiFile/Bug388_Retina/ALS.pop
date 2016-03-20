@@ -1,0 +1,209 @@
+CONTEXT ALS_DemoPopulation IN DUTCH
+-----------------------------------------------------------
+{- POPULATION voor concept Partij
+POPULATION partijNaam                            CONTAINS [ ("Partij_0", "PartijNaam") ]
+POPULATION partijAdres                           CONTAINS [ ("Partij_0", "Adres") ]
+-}
+-----------------------------------------------------------
+POPULATION partijNaam                            CONTAINS [ ("Partij_0", "Apenheul") ]
+POPULATION partijAdres                           CONTAINS [ ("Partij_0", "J.C. Wilslaan 21, 7313 HK Apeldoorn") ]
+
+POPULATION partijNaam                            CONTAINS [ ("Partij_1", "Apen Bewakingsdiensten B.V.") ]
+POPULATION partijAdres                           CONTAINS [ ("Partij_1", "Orlyplein 85, 1043 DS Amsterdam") ]
+-----------------------------------------------------------
+{- Population for concept 'Verwerking'
+POPULATION verwerkingNaam                        CONTAINS [ ("Proc_", "Naam") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Proc_", "Omschrijving") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Proc_", "Partij") ]
+POPULATION isDeelverwerkingVan                   CONTAINS [ ("Proc_", "Verwerking") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Proc_", "Doel") ] -- meerdere doelen toegestaan
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Proc_", "BetrokkeneCategorie") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Proc_", "GegevensCategorie") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Proc_", "OntvangerCategorie") ]
+POPULATION verwerkingOntvanger                   CONTAINS [ ("Proc_", "Partij") ]
+POPULATION verwerkingGegevensDoorgiftenBuitenEU  CONTAINS [ ("Proc_", "DoorgifteBuitenEU") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Proc_", "SpecificatieSamenvatting") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Proc_", "Bewaartermijn") ]
+
+--Population for concept 'Service'; N.B.: Service ISA Verwerking
+POPULATION svcVerzameltPersoonsgegevensType~         CONTAINS [ ("PersoonsgegevensType", "Service") ]
+POPULATION svcVerwerktPersoonsgegevensType~          CONTAINS [ ("PersoonsgegevensType", "Service") ]
+POPULATION svcVerstuurtBerichtSoort~                    CONTAINS [ ("BerichtSoort_0", "Service") ]
+POPULATION svcOntvangtBerichtSoort~                    CONTAINS [ ("BerichtSoort_0", "Service") ]
+-}
+-----------------------------------------------------------
+POPULATION verwerkingNaam                        CONTAINS [ ("Vw_ALS", "ALS") ]
+POPULATION verwerkingOmschrijving                CONTAINS [ ("Vw_ALS", "Het detecteren van de locatie van gorilla's en het publiceren ervan op bezoekerszuilen") ]
+POPULATION verwerkingsVerantwoordelijke          CONTAINS [ ("Vw_ALS", "Partij_0") ]
+POPULATION verwerkingsDoel                       CONTAINS [ ("Vw_ALS", "Doel_1") ]
+POPULATION verwerkingBetrokkenenCategorie        CONTAINS [ ("Vw_ALS", "Apen") ]
+POPULATION verwerkingGegevensCategorie           CONTAINS [ ("Vw_ALS", "Fysieke kenmerken") ]
+POPULATION verwerkingOntvangerCategorie          CONTAINS [ ("Vw_ALS", "Bezoekers") ]
+POPULATION verwerkingOntvanger                   CONTAINS [ ("Vw_ALS", "Partij_1") ]
+POPULATION verwerkingSpecificatieSamenvatting    CONTAINS [ ("Vw_ALS", "Door middel van cameras wordt gedetecteerd waar zich apen bevinden. Op beeldschermen rond het apenverblijf wordt vervolgens getoond waar zich apen bevinden.") ]
+POPULATION verwerkingBewaartermijn               CONTAINS [ ("Vw_ALS", "1 dag") ]
+-----------------------------------------------------------
+{- Population for concept 'Service'
+POPULATION svcNaam                          CONTAINS [ ("Service_0", "Naam") ]
+POPULATION svcOmschrijving                  CONTAINS [ ("Service_0", "Omschrijving") ]
+POPULATION svcSpecificatieSamenvatting      CONTAINS [ ("Service_0", "SpecificatieSamenvatting") ]
+POPULATION isDeelsvcVanVerwerking           CONTAINS [ ("Service_0", "Verwerking") ]
+POPULATION isDeelsvcVan                     CONTAINS [ ("Service_0", "Service") ]
+POPULATION svcVerantwoordelijke             CONTAINS [ ("Service_0", "Partij") ]zin van de Wbp"
+POPULATION svcBewerker                      CONTAINS [ ("Service_0", "Partij") ]
+POPULATION svcVerzamelDoel                  CONTAINS [ ("Service_0", "Doel") ]
+POPULATION svcVerwerkingsDoel               CONTAINS [ ("Service_0", "Doel") ]
+POPULATION svcVerzameltPersoonsgegevensType CONTAINS [ ("Service_0", "PersoonsgegevensType") ]
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Service_0", "PersoonsgegevensType") ]
+POPULATION svcVerstuurtBerichtSoort         CONTAINS [ ("Service_0", "BerichtSoort") ]
+POPULATION svcOntvangtBerichtSoort          CONTAINS [ ("Service_0", "BerichtSoort") ]
+-}
+-----------------------------------------------------------
+POPULATION svcNaam                          CONTAINS [ ("Svc_ADB", "Apenheul Database Service") ]
+POPULATION svcOmschrijving                  CONTAINS [ ("Svc_ADB", "Het opslaan van alle data die gerelateerd is aan verwerkingen van de Apenheul") ]
+POPULATION svcSpecificatieSamenvatting      CONTAINS [ ("Svc_ADB", "Het opslaan en vervolgens ontsluiten van gegevens (ook persoonsgegevens) ten behoeve van services die deel uitmaken van verwerkingen van de Apenheul. Het gaat onder meer om camera beelden van apen, anotaties daarbij, e.d.") ]
+POPULATION isDeelsvcVanVerwerking           CONTAINS [ ("Svc_ADB", "Vw_ALS") ]
+POPULATION svcVerantwoordelijke             CONTAINS [ ("Svc_ADB", "Partij_0") ]
+POPULATION svcVerwerkingsDoel               CONTAINS [ ("Svc_ADB", "Doel_1a") ]
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_ADB", "HiResVideo") ]
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_ADB", "Aap Identifier") ]
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_ADB", "Aap Locatie") ]
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_ADB", "Aap Gezicht") ]
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_ADB", "LoResVideo") ]
+POPULATION svcOntvangtBerichtSoort          CONTAINS [ ("Svc_ADB", "BS_HiResVideo") ]
+POPULATION svcOntvangtBerichtSoort          CONTAINS [ ("Svc_ADB", "BS_Annotaties") ]
+POPULATION svcOntvangtBerichtSoort          CONTAINS [ ("Svc_ADB", "BS_AnonVideo") ]
+POPULATION svcVerstuurtBerichtSoort         CONTAINS [ ("Svc_ADB", "BS_HiResVideo") ]
+POPULATION svcVerstuurtBerichtSoort         CONTAINS [ ("Svc_ADB", "BS_AapLocatie") ]
+
+POPULATION svcNaam                          CONTAINS [ ("Svc_Camera", "Camera Service") ]
+POPULATION svcOmschrijving                  CONTAINS [ ("Svc_Camera", "Het op hoge resolutie opnemen van beelden van het gorilla eiland en deze in de AMS repository doen opslaan") ]
+POPULATION svcVerantwoordelijke             CONTAINS [ ("Svc_Camera", "Partij_0") ]
+POPULATION isDeelsvcVanVerwerking           CONTAINS [ ("Svc_Camera", "Vw_ALS") ]
+POPULATION svcVerwerkingsDoel               CONTAINS [ ("Svc_Camera", "Doel_1b") ]
+POPULATION svcVerzameltPersoonsgegevensType CONTAINS [ ("Svc_Camera", "HiResVideo") ]
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Camera", "HiResVideo") ] -- verzemelen |- verwerken
+POPULATION svcSpecificatieSamenvatting      CONTAINS [ ("Svc_Camera", "Door middel van verschillende camera's die zijn gericht op het gorilla eiland van de Apenheul wordt beeldmateriaal (zowel lage als hoge resolutie) opgenomen en opgeslagen.") ]
+POPULATION svcVerstuurtBerichtSoort         CONTAINS [ ("Svc_Camera", "BS_HiResVideo") ]
+
+POPULATION svcNaam                          CONTAINS [ ("Svc_Annotatie", "Annotatie Service") ]
+POPULATION svcOmschrijving                  CONTAINS [ ("Svc_Annotatie", "Het annoteren van beeldmateriaal met identifiers van apen en andere kenmerken") ]
+POPULATION svcSpecificatieSamenvatting      CONTAINS [ ("Svc_Annotatie", "Aan het beschikbare laag- en hoogresolute beeldmateriaal worden kenmerken gekoppeld (annoteren), zoals identifiers aan de hand waarvan apen kunnen worden geidentificeerd, ten behoeve van verdere svc.") ]
+POPULATION svcVerantwoordelijke             CONTAINS [ ("Svc_Annotatie", "Partij_0") ]
+POPULATION isDeelsvcVanVerwerking           CONTAINS [ ("Svc_Annotatie", "Vw_ALS") ]
+POPULATION svcVerwerkingsDoel               CONTAINS [ ("Svc_Annotatie", "Doel_1c") ] -- meerdere doelen toegestaan
+POPULATION svcVerzameltPersoonsgegevensType CONTAINS [ ("Svc_Annotatie", "Aap Identifier") ] 
+POPULATION svcVerzameltPersoonsgegevensType CONTAINS [ ("Svc_Annotatie", "Aap Locatie") ] 
+POPULATION svcVerzameltPersoonsgegevensType CONTAINS [ ("Svc_Annotatie", "Aap Gezicht") ] 
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Annotatie", "Aap Identifier") ] 
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Annotatie", "Aap Locatie") ] 
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Annotatie", "Aap Gezicht") ] 
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Annotatie", "HiResVideo") ]
+POPULATION svcOntvangtBerichtSoort          CONTAINS [ ("Svc_Annotatie", "BS_HiResVideo") ]
+POPULATION svcVerstuurtBerichtSoort         CONTAINS [ ("Svc_Annotatie", "BS_Annotaties") ]
+
+POPULATION svcNaam                          CONTAINS [ ("Svc_Anonimisatie", "Anonimisatie Service") ]
+POPULATION svcOmschrijving                  CONTAINS [ ("Svc_Anonimisatie", "Het anonimiseren van HI-RES naar LO-RES beeldmateriaal en het anonimiseren van de erbij horende annotaties") ]
+POPULATION svcSpecificatieSamenvatting      CONTAINS [ ("Svc_Anonimisatie", "Aan het beschikbare laag- en hoogresolute beeldmateriaal worden kenmerken gekoppeld (annoteren), zoals identifiers aan de hand waarvan apen kunnen worden geidentificeerd, ten behoeve van verdere svc.") ]
+POPULATION svcVerantwoordelijke             CONTAINS [ ("Svc_Anonimisatie", "Partij_0") ]
+POPULATION isDeelsvcVanVerwerking           CONTAINS [ ("Svc_Anonimisatie", "Vw_ALS") ]
+POPULATION svcVerwerkingsDoel               CONTAINS [ ("Svc_Anonimisatie", "Doel_1d") ] -- meerdere doelen toegestaan
+POPULATION svcVerzameltPersoonsgegevensType CONTAINS [ ("Svc_Anonimisatie", "LoResVideo") ] 
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Anonimisatie", "LoResVideo") ]
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Anonimisatie", "Aap Identifier") ] 
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Anonimisatie", "Aap Locatie") ] 
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Anonimisatie", "Aap Gezicht") ] 
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Anonimisatie", "HiResVideo") ]
+POPULATION svcOntvangtBerichtSoort          CONTAINS [ ("Svc_Anonimisatie", "BS_HiResVideo") ]
+POPULATION svcVerstuurtBerichtSoort         CONTAINS [ ("Svc_Anonimisatie", "BS_AnonVideo") ]
+
+POPULATION svcNaam                          CONTAINS [ ("Svc_Bezoekerskaart", "Bezoekerskaart Service") ]
+POPULATION svcOmschrijving                  CONTAINS [ ("Svc_Bezoekerskaart", "Het tonen, op een kaart, van de locatie van apen") ]
+POPULATION svcSpecificatieSamenvatting      CONTAINS [ ("Svc_Bezoekerskaart", "Door middel van de annotaties van beeldmateriaal kan worden vastgesteld welke aap zich op welke locatie op de kaart van het gorilla eiland bevindt. Per aap wordt dit op de bezoekerszuilen weergegeven.") ]
+POPULATION svcVerantwoordelijke             CONTAINS [ ("Svc_Bezoekerskaart", "Partij_0") ]
+POPULATION isDeelsvcVanVerwerking           CONTAINS [ ("Svc_Bezoekerskaart", "Vw_ALS") ]
+POPULATION svcVerwerkingsDoel               CONTAINS [ ("Svc_Bezoekerskaart", "Doel_1e") ] -- meerdere doelen toegestaan
+POPULATION svcVerwerktPersoonsgegevensType  CONTAINS [ ("Svc_Bezoekerskaart", "Aap Locatie") ]
+POPULATION svcOntvangtBerichtSoort          CONTAINS [ ("Svc_Bezoekerskaart", "BS_AapLocatie") ]
+-----------------------------------------------------------
+{- Population for concept 'Doel'
+POPULATION doelID              CONTAINS [ ("Doel_", "DoelID") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_", "Partij") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_", "Omschrijving") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_0", "PersoonsgegevensType") ]
+-}
+-----------------------------------------------------------
+POPULATION doelID              CONTAINS [ ("Doel_1", "Bezoekers naar apen leiden") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1", "Bezoekers naar apen leiden") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1a", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1a", "Opslaan van al dan niet geannoteerde video's betreffende het gorilla eiland") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1a", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1a", "Opslaan van al dan niet geannoteerde video's betreffende het gorilla eiland") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1a", "HiResVideo") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1a", "Aap Identifier") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1a", "Aap Locatie") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1a", "Aap Gezicht") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1a", "LoResVideo") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1b", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1b", "Hoogresoluut beeldmateriaal verzamelen") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1b", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1b", "Verzamelen van hoogresoluut beeldmateriaal binnen het gorilla eiland.") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1b", "HiResVideo") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1c", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1c", "Annoteren van de hoogresoluut beeldmateriaal van het gorilla eiland.") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1c", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1c", "Annoteren van de hoogresoluut beeldmateriaal van het gorilla eiland.") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1c", "HiResVideo") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1c", "Aap Identifier") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1c", "Aap Locatie") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1c", "Aap Gezicht") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1d", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1d", "Converteren en anonimiseren van beelden en annotaties.") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1d", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1d", "Converteren van hoogresoluut naar laagresoluut beeldmateriaal en het anonimiseren van de bijbehorende annotaties.") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1d", "HiResVideo") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1d", "Aap Identifier") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1d", "Aap Locatie") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1d", "Aap Gezicht") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1d", "LoResVideo") ]
+
+POPULATION isSubdoelVan        CONTAINS [ ("Doel_1e", "Doel_1") ]
+POPULATION doelID              CONTAINS [ ("Doel_1e", "Tonen van de locaties van apen op de bezoekerszuilen.") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_1e", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_1e", "Tonen van de locaties van apen op de bezoekerszuilen.") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1e", "Aap Locatie") ]
+POPULATION doelGegevensType    CONTAINS [ ("Doel_1e", "LoResVideo") ]
+
+POPULATION doelID              CONTAINS [ ("Doel_2", "Gedrag van apen monitoren") ]
+POPULATION gerechtvaardigdDoor CONTAINS [ ("Doel_2", "Partij_0") ]
+POPULATION doelOmschrijving    CONTAINS [ ("Doel_2", "Gedrag van apen monitoren") ]
+-----------------------------------------------------------
+{- Population for concept 'BerichtSoort'
+POPULATION berichtSoortNaam         CONTAINS [ ("BerichtSoort_0", "BerichtSoortNaam") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BerichtSoort_0", "PersoonsgegevensType") ]
+POPULATION svcVerstuurtBerichtSoort~       CONTAINS [ ("BerichtSoort_0", "Service") ]
+POPULATION svcOntvangtBerichtSoort~       CONTAINS [ ("BerichtSoort_0", "Service") ]
+-}
+-----------------------------------------------------------
+POPULATION berichtSoortNaam         CONTAINS [ ("BS_HiResVideo", "HiResVideo") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_HiResVideo", "HiResVideo") ]
+
+POPULATION berichtSoortNaam         CONTAINS [ ("BS_Annotaties", "Annotaties") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_Annotaties", "HiResVideo") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_Annotaties", "Aap Identifier") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_Annotaties", "Aap Locatie") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_Annotaties", "Aap Gezicht") ]
+
+POPULATION berichtSoortNaam         CONTAINS [ ("BS_AapLocatie", "AapLocatie") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_AapLocatie", "Aap Locatie") ]
+
+POPULATION berichtSoortNaam         CONTAINS [ ("BS_AnonVideo", "AnonVideo") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_AnonVideo", "LoResVideo") ]
+POPULATION berichtSoortGegevensType CONTAINS [ ("BS_AnonVideo", "Aap Locatie") ]
+-----------------------------------------------------------
+ENDCONTEXT
