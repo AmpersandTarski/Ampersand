@@ -40,8 +40,8 @@ class Mutation {
 			$database->addAtomToConcept($mut = Concept::createNewAtom($mutConcept));
 			
 			// Add mut info
-			$database->editUpdate(Relation::getRelation('mutRelation', $mut->concept->name, 'Relation'), false, $mut, new Atom($fullRelationSignature, 'Relation'));
-			$database->editUpdate(Relation::getRelation('mutDateTime', $mut->concept->name, 'DateTime'), false, $mut, new Atom(date(DATE_ISO8601), 'DateTime'));
+			Relation::getRelation('mutRelation', $mut->concept->name, 'Relation')->addLink($mut, new Atom($fullRelationSignature, 'Relation'), false, 'MutationExtension');
+			Relation::getRelation('mutDateTime', $mut->concept->name, 'DateTime')->addLink($mut, new Atom(date(DATE_ISO8601), 'DateTime'), false, 'MutationExtension');
 			
 			if($source == 'User'){
 				$account = Session::getSessionAccountId();
@@ -49,12 +49,12 @@ class Mutation {
 				$account = $source;
 			}
 			
-			$database->editUpdate(Relation::getRelation('mutBy', $mut->concept->name, 'Account'), false, $mut, new Atom($account, 'Account'));
-			$database->editUpdate(Relation::getRelation('mutOp', $mut->concept->name, 'Operation'), false, $mut, new Atom($operation, 'Operation'));
-			// $database->editUpdate(Relation::getRelation('mutReason', $mut->concept->name, 'MutationReason'), false, $mut, new Atom('zomaar', 'MutationReason')); // TODO: get reason from somewhere
-			$database->editUpdate(Relation::getRelation('mutValue', $mut->concept->name, 'MutationValue'), false, $mut, new Atom($modifiedAtom, 'MutationValue'));
-			$database->editUpdate(Relation::getRelation('mutStable', $mut->concept->name, $stableConcept), false, $mut, new Atom($stableAtom, $stableConcept));
-			$database->editUpdate(Relation::getRelation('mutPublish', $mut->concept->name, $mut->concept->name), false, $mut, $mut);
+			Relation::getRelation('mutBy', $mut->concept->name, 'Account')->addLink($mut, new Atom($account, 'Account'), false, 'MutationExtension');
+			Relation::getRelation('mutOp', $mut->concept->name, 'Operation')->addLink($mut, new Atom($operation, 'Operation'), false, 'MutationExtension');
+			// Relation::getRelation('mutReason', $mut->concept->name, 'MutationReason')->addLink($mut, new Atom('zomaar', 'MutationReason'), false, 'MutationExtension'); // TODO: get reason from somewhere
+			Relation::getRelation('mutValue', $mut->concept->name, 'MutationValue')->addLink($mut, new Atom($modifiedAtom, 'MutationValue'), false, 'MutationExtension');
+			Relation::getRelation('mutStable', $mut->concept->name, $stableConcept)->addLink($mut, new Atom($stableAtom, $stableConcept), false, 'MutationExtension');
+			Relation::getRelation('mutPublish', $mut->concept->name, $mut->concept->name)->addLink($mut, $mut, false, 'MutationExtension');
 
 	       $database->setTrackAffectedConjuncts(true); // Enable tracking of affected conjuncts again!!
 		}	

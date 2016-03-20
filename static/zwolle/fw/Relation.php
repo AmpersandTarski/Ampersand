@@ -10,6 +10,12 @@ class Relation {
     
     /**
      * 
+     * @var Database
+     */
+    private $db;
+    
+    /**
+     * 
      * @var string
      */
     public $signature;
@@ -74,12 +80,19 @@ class Relation {
     private $affectedInvConjuncts = array();
     
     /**
+     * 
+     * @var RelationTable
+     */
+    private $mysqlTable;
+    
+    /**
      * Relation constructor
      * Private function to prevent outside instantiation of Relations. Use Relation::getRelation($relationSignature)
      *
      * @param array $relationDef
      */
     public function __construct($relationDef){
+        $this->db = Database::singleton();
         
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConcept']);
@@ -102,6 +115,15 @@ class Relation {
             if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
             if (!$conj->isSigConj() && !$conj->isInvConj()) Notifications::addInfo("Affected conjunct '{$conj->id}' (specified for relation '{$this->__toString()}') is not part of an invariant or signal rule", 'UnusedConjuncts', "There are unused conjuncts defined");
         }
+        
+        // Specify mysql table information
+        $this->mysqlTable = new RelationTable($relationDef['mysqlTable']['name'], $relationDef['mysqlTable']['tableOf']);
+        
+        $srcCol = $relationDef['mysqlTable']['srcCol'];
+        $tgtCol = $relationDef['mysqlTable']['tgtCol'];
+        
+        $this->mysqlTable->addSrcCol(new DatabaseTableCol($srcCol['name'], $srcCol['null'], $srcCol['unique']));
+        $this->mysqlTable->addTgtCol(new DatabaseTableCol($tgtCol['name'], $tgtCol['null'], $tgtCol['unique']));
     }
     
     public function __toString(){
@@ -125,38 +147,81 @@ class Relation {
     }
     
     /**
-     * Returns information about database table and columns where this Relation is stored
-     * @throws Exception when table information is not available
-     * @return array
+     * 
+     * @return RelationTable
      */
-    public function getTableInfo(){
-        global $allRelations;
-        global $tableColumnInfo;
-
-        $oldRelSignature = "rel_{$this->name}_{$this->srcConcept->name}_{$this->tgtConcept->name}";
+    public function getMysqlTable(){
+        return $this->mysqlTable;
+    }
+    
+    /**
+     * How to use Relation::addLink() to add link (a1,b1) into r:
+	 * r :: A * B
+	 * addLink(a1[A], b1[B], false);
+	 * addLink(b1[B], a1[A], true);
+	 * 
+     * @param Atom $leftAtom
+     * @param Atom $rightAtom
+     * @param boolean $isFlipped
+     * @param string $source specifies who calls this function (e.g. 'User' or 'ExecEngine')
+     * @return void
+     */
+    public function addLink($leftAtom, $rightAtom, $isFlipped = false, $source = 'User'){
+        try{
+            Notifications::addLog("Insert link ({$leftAtom->__toString()},{$rightAtom->__toString()}) into relation '{$this->__toString()}{($isFlipped ? '~' : '')}'", 'DATABASE');
+             
+            // Determine src and tgt atom based on $isFlipped
+            $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
+            $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
+            
+            // Checks
+            if($this->srcConcept != $srcAtom->concept || $this->tgtConcept != $tgtAtom->concept) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because concepts don't match relation signature", 500);
+            if(is_null($srcAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because src atom is not specified", 500);
+            if(is_null($tgtAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because tgt atom is not specified", 500);
+            
+            // Ensure that atoms exists in their concept tables
+            $this->db->addAtomToConcept($srcAtom);
+            $this->db->addAtomToConcept($tgtAtom);
+            
+            // Insert link in relation table
+            $this->db->addLink($this, $srcAtom, $tgtAtom);
         
-        $tableName = $allRelations[$oldRelSignature]['table'];
-        $srcColName = $allRelations[$oldRelSignature]['srcCol'];
-        $tgtColName = $allRelations[$oldRelSignature]['tgtCol'];
-        
-        if(!array_key_exists($tableName, $tableColumnInfo)) throw new Exception("Table '{$table}' does not exists in tableColumnInfo", 500);
-        if(!array_key_exists($srcColName, $tableColumnInfo[$tableName])) throw new Exception("Column '{$srcColName}' does not exists in table '{$tableName}'", 500);
-        if(!array_key_exists($tgtColName, $tableColumnInfo[$tableName])) throw new Exception("Column '{$tgtColName}' does not exists in table '{$tableName}'", 500);
-        
-        $srcCol = array('header' => $srcColName
-                        ,'unique' => $tableColumnInfo[$tableName][$srcColName]['unique']
-                        ,'null' => $tableColumnInfo[$tableName][$srcColName]['null']
-                        );
-        
-        $tgtCol = array('header' => $tgtColName
-                        ,'unique' => $tableColumnInfo[$tableName][$tgtColName]['unique']
-                        ,'null' => $tableColumnInfo[$tableName][$tgtColName]['null']
-        );
-        
-        return array('tableName' => $tableName
-                    ,'srcCol' => $srcCol
-                    ,'tgtCol' => $tgtCol
-                    );
+        }catch(Exception $e){
+            // Catch exception and continue script
+            Notifications::addErrorException($e);
+        }
+    }
+    
+    /**
+     * How to use Relation::deleteLink() to delete link (a1,b1) from r:
+	 * r :: A * B
+	 * deleteLink(a1[A], b1[B], false);
+	 * deleteLink(b1[B], a1[A], true);
+	 * 
+     * @param Atom $leftAtom
+     * @param Atom $rightAtom
+     * @param boolean $isFlipped
+     * @param string $source specifies who calls this function (e.g. 'User' or 'ExecEngine')
+     * @return void
+     */
+    public function deleteLink($leftAtom, $rightAtom, $isFlipped = false, $source = 'User'){
+        try{
+            Notifications::addLog("Delete link ({$leftAtom->__toString()},{$rightAtom->__toString()}) from relation '{$this->__toString()}{($isFlipped ? '~' : '')}'", 'DATABASE');
+             
+            // Determine src and tgt atom based on $isFlipped
+            $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
+            $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
+             
+            // Checks
+            if($this->srcConcept != $srcAtom->concept || $this->tgtConcept != $tgtAtom->concept) throw new Exception ("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$this->__toString()}', because concepts don't match relation signature", 500);
+            
+            // Delete link from relation table
+            $this->db->deleteLink($this, $srcAtom, $tgtAtom);
+    
+        }catch(Exception $e){
+            // Catch exception and continue script
+            Notifications::addErrorException($e);
+        }
     }
 
     
