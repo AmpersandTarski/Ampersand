@@ -4,7 +4,6 @@ where
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.FSpec
-import Data.Maybe(catMaybes)
 
 -- return table name and source and target column names for relation dcl
 getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute) 

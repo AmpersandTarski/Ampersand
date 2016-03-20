@@ -38,7 +38,6 @@ module Database.Design.Ampersand
    , getInterfaceByName
    , SubInterface(..)
    , Object(..)
-   , Plugable(..)
    , Motivated(..)
    , Traced(..)
    , Language(..)
