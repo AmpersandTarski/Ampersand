@@ -126,9 +126,9 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
          EDcI c     -> fromList [(a,[a]) | a <- aVals c]
          EEps i _   -> fromList [(a,[a]) | a <- aVals i]
          EDcV sgn   -> fromList [(s, cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
-         EMp1 val c -> fromList $ if name c == "SESSION" -- prevent populating SESSION
-                                  then []
-                                  else [(av,[av])]
+         EMp1 val c -> fromList $ if av `elem` aVals c  -- the expression may not add to the population, but should return the element if it is in the concept.
+                                  then [(av,[av])]
+                                  else []
                          where 
                            av = safePSingleton2AAtomVal ci c val
 
