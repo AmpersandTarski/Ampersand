@@ -276,7 +276,9 @@ makeFSpec opts context
      --------------
      --making plugs
      --------------
-     vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
+     vsqlplugs = case ctxsql context of
+                   []  -> []
+                   _   -> fatal 281 "User defined plugs have heavily bitrotted." --REMARK -> no optimization like try2specific, because these plugs are user defined
      definedplugs = map InternalPlug vsqlplugs
                  ++ map ExternalPlug (ctxphp context)
      allplugs = definedplugs ++      -- all plugs defined by the user

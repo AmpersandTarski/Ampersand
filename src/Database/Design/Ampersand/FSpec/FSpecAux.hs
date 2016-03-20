@@ -10,30 +10,14 @@ import Data.Maybe(catMaybes)
 getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute) 
 getDeclarationTableInfo fSpec dcl 
      = case filter thisDcl . concatMap getRelInfos $ [p | InternalPlug p<-plugInfos fSpec ] of
-                [(p,_,s,t)] -> (p,s,t)
+                [(p,store)] -> (p,rsSrcAtt store,rsTrgAtt store)
                 []          -> fatal 32 $ "Relation not found: "++name dcl
                 _           -> fatal 33 $ "Relation found multiple times: "++name dcl
   where
-    getRelInfos :: PlugSQL -> [(PlugSQL,Declaration,SqlAttribute,SqlAttribute) ]  
-    getRelInfos p =
-      case p of 
-        TblSQL{} -> catMaybes . map relInfo . mLkpTbl $ p
-        BinSQL{} -> let (src,trg) = columns p in
-                    case mLkp p of
-                      EDcD d        -> [(p,d,src,trg)]
-                      EFlp (EDcD d) -> [(p,d,trg,src)]
-                      expr   -> fatal 35 $ "Unexpected expression in BinSQL: "++show expr  
-        ScalarSQL{} -> []
-      where 
-        relInfo :: (Expression,SqlAttribute,SqlAttribute) -> Maybe (PlugSQL,Declaration,SqlAttribute,SqlAttribute)
-        relInfo (expr,src,trg) =
-          case expr of
-            EDcD d        -> Just (p,d,src,trg)
-            EFlp (EDcD d) -> Just (p,d,trg,src)
-            EEps _ _      -> Nothing
-            _             -> fatal 40 $ "Unexpected expression: "++show expr
-    thisDcl :: (a,Declaration,b,c) -> Bool
-    thisDcl (_,d,_,_) = d == dcl
+    getRelInfos :: PlugSQL -> [(PlugSQL,RelStore)]
+    getRelInfos p = zip (repeat p) (dLkpTbl p)  
+    thisDcl :: (a,RelStore) -> Bool
+    thisDcl (_,store) = rsDcl store == dcl
 -- return table name and source and target column names for relation rel, or nothing if the relation is not found
 
 getConceptTableInfo :: FSpec -> A_Concept -> (PlugSQL,SqlAttribute)

@@ -76,8 +76,11 @@ instance ShowHS PlugSQL where
                    ,"TblSQL { sqlname    = " ++ (show.name) plug
                    ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
                    ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                   ,"       , mLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHS opts "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
-               --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
+                   ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
+                                                      [ "RelStore "++showHSName (rsDcl store)++" "
+                                                                   ++showHSName (rsSrcAtt store)++" "
+                                                                   ++showHSName (rsTrgAtt store)++" "
+                                                      | store<-dLkpTbl plug] ++ "]"
                    ,"       }"
                    ]
        BinSQL{} -> intercalate indent

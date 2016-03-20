@@ -7,7 +7,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.FSpec(getConceptTableFor)
+import Database.Design.Ampersand.FSpec.FSpec(getConceptTableFor, RelStore(..))
 import Data.Maybe
 import Data.Either
 import Database.Design.Ampersand.Graphic.ClassDiagram
@@ -116,9 +116,10 @@ tdAnalysis fSpec =
       [ OOClass{ clName = sqlname table
                , clcpt  = primKey table
                , clAtts = case table of
-                            TblSQL{attributes=attribs, cLkpTbl=kernelLookupTbl, mLkpTbl=t} -> 
-                              let kernelAtts = map snd $ kernelLookupTbl -- extract kernel attributes from kernel lookup table
-                              in  map (ooAttr kernelAtts . lookInFor t . attExpr) attribs
+                            TblSQL{} -> 
+                              let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
+                              in  map (ooAttr kernelAtts) kernelAtts
+                                ++map (ooAttr kernelAtts) (map rsTrgAtt $ dLkpTbl table) 
                             BinSQL{columns=(a,b)}      ->
                               [ OOAttr { attNm       = attName a
                                        , attTyp      = (name.target.attExpr) a
@@ -136,10 +137,6 @@ tdAnalysis fSpec =
       , length (plugAttributes table) > 1
       ]
 
-   lookInFor [] _ = fatal 191 "Expression not found!"
-   lookInFor ((expr,_,t):xs) a
-              | expr == a = t
-              | otherwise = lookInFor xs a
    tables = [ pSql | InternalPlug pSql <- plugInfos fSpec, not (isScalar pSql)]
       where isScalar ScalarSQL{} = True
             isScalar _           = False

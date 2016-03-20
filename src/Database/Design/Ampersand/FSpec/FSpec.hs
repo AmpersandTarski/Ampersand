@@ -20,6 +20,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , Activity(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
+          , RelStore(..)
           , metaValues
           , SqlAttribute(..)
           , Object(..)
@@ -261,8 +262,9 @@ data PlugSQL
                                                                     --   the remaining attributes represent attributes.
            , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all typology concepts to attributes in the plug
                                                                     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-           , mLkpTbl ::    [(Expression,SqlAttribute,SqlAttribute)] -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
+           , xLkpTbl ::    [(Expression,SqlAttribute,SqlAttribute)] -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
                                                                     -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+           , dLkpTbl ::   [RelStore]
            }
    -- | stores one relation r in two ordered columns
    --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
@@ -275,6 +277,7 @@ data PlugSQL
                                                    --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
                                                    --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
            , mLkp :: Expression -- the relation links concepts implemented by this plug
+           , dLkp :: RelStore
            }
  -- |stores one concept c in one column
  --  i.e. a SqlAttribute -> c
@@ -286,6 +289,7 @@ data PlugSQL
            , cLkp ::      A_Concept -- the concept implemented by this plug
            }
    deriving (Show, Typeable)
+
 instance Named PlugSQL where
   name = sqlname
 instance Eq PlugSQL where
@@ -314,6 +318,13 @@ getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
                                (t,_):_ -> name t -- in case there are more, we use the first one
 
+-- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
+data RelStore 
+  = RelStore
+     { rsDcl       :: Declaration
+     , rsSrcAtt    :: SqlAttribute
+     , rsTrgAtt    :: SqlAttribute
+     } deriving (Show, Typeable)
 data SqlAttributeUsage = TableKey Bool A_Concept  -- The SQL-attribute is the (primary) key of the table. (The boolean tells whether or not it is primary)
                        | ForeignKey A_Concept  -- The SQL-attribute is a reference (containing the primary key value of) a TblSQL
                        | PlainAttr             -- None of the above
