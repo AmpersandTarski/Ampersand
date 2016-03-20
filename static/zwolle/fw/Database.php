@@ -203,7 +203,7 @@ class Database {
 	 * @return boolean|array
 	 * 
 	 * TODO:
-	 * Create private equivalent that is used by addAtomToConcept(), editUpdate(), editDelete() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
+	 * Create private equivalent that is used by addAtomToConcept(), addLink(), deleteLink() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
 	 * The public version should be allowed to only do SELECT queries.
 	 * This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
 	 */
@@ -420,148 +420,66 @@ class Database {
 	}
 	
 	/**
-	 * How to use editUpdate:
-	 * r :: A * B
-	 * editUpdate(r, false, a1[A], b1[B]);
-	 * editUpdate(r, true, b1[B], a1[A]);
-	 * 
+	 * Add link (srcAtom,tgtAtom) into database table for relation r
 	 * @param Relation $relation
-	 * @param boolean $isFlipped
-	 * @param Atom $stableAtom
-	 * @param Atom $modifiedAtom
-	 * @param Atom $originalAtom
-	 * @param string $source specifies the source of the editUpdate command (e.g. ExecEngine). Defaults to 'User'. 
-	 * @return void
-	 * 
-	 * NOTE: if $originalAtom is provided, this means that tuple rel(stableAtom, originalAtom) is replaced by rel(stableAtom, modifiedAtom).
+	 * @param Atom $srcAtom
+	 * @param Atom $tgtAtom
 	 */
-	public function editUpdate($relation, $isFlipped, $stableAtom, $modifiedAtom, $originalAtom = null, $source = 'User'){	    
-	    Notifications::addLog("editUpdate('{$relation->__toString()}" . ($isFlipped ? '~' : '') . "', '{$stableAtom->id}[{$stableAtom->concept->name}]', '{$modifiedAtom->id}[{$modifiedAtom->concept->name}]', '{$originalAtom->id}[{$originalAtom->concept->name}]')", 'DATABASE');
+	public function addLink($relation, $srcAtom, $tgtAtom){
+	    // This function is under control of transaction check!
+	    if (!isset($this->transaction)) $this->startTransaction();
 	    
-		try{			
-			// This function is under control of transaction check!
-			if (!isset($this->transaction)) $this->startTransaction();
-			
-			// Check if rel, srcConcept and tgtConcept is a combination
-			$srcConcept = $isFlipped ? $modifiedAtom->concept : $stableAtom->concept;
-			$tgtConcept = $isFlipped ? $stableAtom->concept : $modifiedAtom->concept;
-			if($relation->srcConcept != $srcConcept || $relation->tgtConcept != $tgtConcept) throw new Exception ("Provided atoms for editDelete do not match relation signature '{$relation->__toString()}'", 500);
-			
-			// Get table properties
-			$tableInfo = $relation->getTableInfo();
-			$table = $tableInfo['tableName'];
-			
-			// Determine which Col must be editited and which must be used in the WHERE statement
-			$stableCol = $isFlipped ? $tableInfo['tgtCol'] : $tableInfo['srcCol'];
-			$modifiedCol =  $isFlipped ? $tableInfo['srcCol'] : $tableInfo['tgtCol'];
-	
-			// Ensure that the stable and modified atoms exists in their concept tables
-			$this->addAtomToConcept($stableAtom);
-			$this->addAtomToConcept($modifiedAtom);
-			
-			/* Complicated code to determine UPDATE or INSERT statement: see Github #169 for explanation */
-			if($modifiedCol['unique'] && $stableCol['unique']){
-				// If both columns are 'unique', we have to check the 'null' possibility
-				if($modifiedCol['null']) $this->Exe("UPDATE `$table` SET `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}' WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}'");
-				else $this->Exe("UPDATE `$table` SET `{$stableCol['header']}` = '{$stableAtom->idEsc}' WHERE `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}'");
-					
-				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
-			}			
-			elseif ($modifiedCol['unique'] && !$stableCol['unique']){
-			
-				$this->Exe("UPDATE `$table` SET `{$stableCol['header']}` = '{$stableAtom->idEsc}' WHERE `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}'");
-				
-				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
-			}
-			elseif (!$modifiedCol['unique'] && $stableCol['unique']){
-				
-				$this->Exe("UPDATE `$table` SET `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}' WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}'");
-				
-				Hooks::callHooks('postDatabaseUpdate', get_defined_vars());
-			// Otherwise, binary table, so perform a insert.
-			}else{
-				$this->Exe("INSERT INTO `$table` (`{$stableCol['header']}`, `{$modifiedCol['header']}`) VALUES ('{$stableAtom->idEsc}', '{$modifiedAtom->idEsc}')");
-				
-				Hooks::callHooks('postDatabaseInsert', get_defined_vars());
-				
-				// If $originalAtom is provided, delete tuple rel(stableAtom, originalAtom)
-				if (!is_null($originalAtom)) {
-					$this->Exe("DELETE FROM `$table` WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}' AND `{$modifiedCol['header']}` = '{$originalAtom->idEsc}'");
-					Hooks::callHooks('postDatabaseDelete', get_defined_vars());
-				}
-			}
-			
-			$this->addAffectedRelations($relation); // add relation to affected relations. Needed for conjunct evaluation.
-	
-		}catch(Exception $e){
-			// Catch exception and continue script
-			Notifications::addErrorException($e);
-		}
+	    $relTable = $relation->getMysqlTable();
+	    
+	    switch ($relTable->tableOf){
+	        case null : // Relation is administrated in n-n table
+	            $this->Exe("INSERT INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtom->idEsc}', '{$tgtAtom->idEsc}')");
+	            break;
+	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
+	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
+	            break;
+	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
+	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            break;
+	        default :
+	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
+	    }
+	    $this->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
 	
 	/**
-	 * How to use editDelete:
-	 * r :: A * B
-	 * editDelete(r, false, a1[A], b1[B]);
-	 * editDelete(r, true, b1[B], a1[A]);
-	 * 
+	 * Delete link (srcAtom,tgtAtom) into database table for relation r
 	 * @param Relation $relation
-	 * @param boolean $isFlipped
-	 * @param Atom $stableAtom
-	 * @param Atom $modifiedAtom
-	 * @param string $source specifies the source of the editDelete command (e.g. ExecEngine). Defaults to 'User'. 
-	 * @throws Exception
+	 * @param Atom $srcAtom
+	 * @param Atom $tgtAtom
 	 */
-	public function editDelete($relation, $isFlipped, $stableAtom, $modifiedAtom, $source = 'User'){	    
-		Notifications::addLog("editDelete('{$relation->__toString()}" . ($isFlipped ? '~' : '') . "', '{$stableAtom->id}[{$stableAtom->concept->name}]', '{$modifiedAtom->id}[{$modifiedAtom->concept->name}]')", 'DATABASE');
-		
-		try{			
-			// This function is under control of transaction check!
-		    if (!isset($this->transaction)) $this->startTransaction();
-			
-			// Check if stableAtom is provided (i.e. not null)
-			if(is_null($stableAtom->id)) throw new Exception("Cannot perform editDelete, because stable atom is null", 500);
-			
-			// Check if rel, srcConcept and tgtConcept is a combination
-			$srcConcept = $isFlipped ? $modifiedAtom->concept : $stableAtom->concept;
-			$tgtConcept = $isFlipped ? $stableAtom->concept : $modifiedAtom->concept;
-			if($relation->srcConcept != $srcConcept || $relation->tgtConcept != $tgtConcept) throw new Exception ("Provided atoms for editDelete do not match relation signature '{$relation->__toString()}'", 500);
-			
-			// Get table properties
-			$tableInfo = $relation->getTableInfo();
-			$table = $tableInfo['tableName'];
-			
-			// Determine which Col must be editited and which must be used in the WHERE statement
-			$stableCol = $isFlipped ? $tableInfo['tgtCol'] : $tableInfo['srcCol'];
-			$modifiedCol =  $isFlipped ? $tableInfo['srcCol'] : $tableInfo['tgtCol'];
-			
-			/* Complicated code to determine UPDATE or INSERT statement: see Github #169 for explanation */
-			// If the modifiedCol can be set to null, we do an update
-			if ($modifiedCol['null']){
-				if(is_null($modifiedAtom->id)) $this->Exe("UPDATE `$table` SET `{$modifiedCol['header']}` = NULL WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}'");
-				else $this->Exe("UPDATE `$table` SET `{$modifiedCol['header']}` = NULL WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}' AND `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}'");
-			
-			// Elseif the stableCol can be set to null, we do an update
-			}elseif ($stableCol['null']){
-				if(is_null($modifiedAtom->id) && !$stableCol['unique']) throw new Exception("Cannot perform editDelete, because modified atom is null and stable column is not unique", 500);
-				else $this->Exe("UPDATE `$table` SET `{$stableCol['header']}` = NULL WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}'");
-			
-			// Otherwise, binary table, so perform a delete
-			}else{
-				if(is_null($modifiedAtom->id)) throw new Exception("Cannot perform editDelete, because modified atom is null", 500);
-				else $this->Exe("DELETE FROM `$table` WHERE `{$stableCol['header']}` = '{$stableAtom->idEsc}' AND `{$modifiedCol['header']}` = '{$modifiedAtom->idEsc}'");
-				
-			}
-			
-			$this->addAffectedRelations($relation); // add relation to affected relations. Needed for conjunct evaluation.
-			
-			Hooks::callHooks('postDatabaseDelete', get_defined_vars());
-			
-		}catch(Exception $e){
-			// Catch exception and continue script
-			Notifications::addErrorException($e);
-		}
-
+	public function deleteLink($relation, $srcAtom, $tgtAtom){
+	    // This function is under control of transaction check!
+	    if (!isset($this->transaction)) $this->startTransaction();
+	     
+	    $relTable = $relation->getMysqlTable();
+	     
+	    switch ($relTable->tableOf){
+	        case null : // Relation is administrated in n-n table
+	            if(is_null($srcAtom->id) || is_null($tgtAtom->id)) throw new Exception ("Cannot delete from relation table '{$relTable->name}', because srcAtom or tgtAtom is null", 500);
+	            $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            break;
+	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
+	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({},{}) from relation '{}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+	            if(is_null($srcAtom->id)) throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
+	            
+	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
+	            break;
+	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
+	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({},{}) from relation '{}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+	            if(is_null($tgtAtom->id)) throw new Exception ("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
+	            
+	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            break;
+	        default :
+	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
+	    }
+	    $this->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
 	    
 	/**
@@ -836,6 +754,86 @@ Class DatabaseTable {
     public function getCol($colName){
         if(!array_key_exists($colName, $this->getCols())) throw new Exception ("Col '{$colName}' does not exists in table '{$this->name}'", 500);
         return $this->getCols()[$colName];
+    }
+}
+
+Class RelationTable extends DatabaseTable {
+    
+    /**
+     * 
+     * @var DatabaseTableCol
+     */
+    private $srcCol = null;
+    
+    /**
+     * 
+     * @var DatabaseTableCol
+     */
+    private $tgtCol = null;
+    
+    /**
+     * Specifies if this relation is administrated in the table of the src concept ('src'), the tgt concept ('tgt') or its own n-n table (null)
+     * @var string
+     */
+    public $tableOf;
+    
+    /**
+     * Constructor of RelationTable
+     * @param string $name
+     * @param string|null $tableOf ('src', 'tgt' or null)
+     */
+    public function __construct($name, $tableOf){
+        parent::__construct($name);
+        
+        switch ($tableOf){
+            case 'src':
+            case 'tgt':
+            case null :
+                $this->tableOf = $tableOf;
+                break;
+            default :
+                throw new Exception ("Unknown tableOf value '{$tableOf}' specified for RelationTable {$this->name}", 500);
+        }
+    }
+    
+    /**
+     * 
+     * @param DatabaseTableCol $col
+     * @return void
+     */
+    public function addSrcCol($col){
+        $this->srcCol = $col;
+        $this->cols[$col->name] = $col;
+    }
+    
+    /**
+     *
+     * @param DatabaseTableCol $col
+     * @return void
+     */
+    public function addTgtCol($col){
+        $this->tgtCol = $col;
+        $this->cols[$col->name] = $col;
+    }
+    
+    /**
+     * 
+     * @throws Exception when src column is not defined
+     * @return DatabaseTableCol
+     */
+    public function srcCol(){
+        if(is_null($this->srcCol)) throw new Exception ("Src column for RelationTable {$this->name} not defined", 500);
+        return $this->srcCol;
+    }
+    
+    /**
+     * 
+     * @throws Exception when tgt column is not defined
+     * @return DatabaseTableCol
+     */
+    public function tgtCol(){
+        if(is_null($this->tgtCol)) throw new Exception ("Tgt column for RelationTable {$this->name} not defined", 500);
+        return $this->tgtCol;
     }
 }
 

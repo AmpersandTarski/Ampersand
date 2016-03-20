@@ -159,7 +159,7 @@ class InterfaceObject {
 	    // Check if atom does not exist and if it may be created here
 	    elseif(!$atom->atomExists() && $this->crudC){
 	        // If interface expression is a relation, add tuple($this->srcAtom, $atom) in this relation
-	        if($this->relation) $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $atom);
+	        if($this->relation) $this->relation->addLink($this->srcAtom, $atom, $this->relationIsFlipped);
 	        // Else only create atom
 	        else $this->database->addAtomToConcept($atom);
 	        
@@ -299,7 +299,7 @@ class InterfaceObject {
 	    }
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
-	    if($this->relation) $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $newAtom);
+	    if($this->relation) $this->relation->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
 	    
 	    // Walk to new atom
 	    $newAtom = $this->atom($newAtom->id);
@@ -325,8 +325,8 @@ class InterfaceObject {
 	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept->name, 'FilePath');
 	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept->name, 'FileName');
 	            
-	            $this->database->editUpdate($relFilePath, false, $newAtom, new Atom($relativePath, 'FilePath'));
-	            $this->database->editUpdate($relOriginalFileName, false, $newAtom, new Atom($_FILES['file']['name'], 'FileName'));
+	            $relFilePath->addLink($newAtom, new Atom($relativePath, 'FilePath'));
+	            $relOriginalFileName->addLink($newAtom, new Atom($_FILES['file']['name'], 'FileName'));
 	
 	        }else{
 	            throw new Exception ("No file uploaded", 500);
@@ -394,12 +394,9 @@ class InterfaceObject {
 	        if(!(is_bool($value) || is_null($value))) throw new Exception("Interface '{$this->path}' is property, boolean expected, non-boolean provided");
 	        	
 	        // When true
-	        if($value){
-	            $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $this->srcAtom);
+	        if($value) $this->relation->addLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
 	        // When false or null
-	        }else{
-	            $this->database->editDelete($this->relation, $this->relationIsFlipped, $this->srcAtom, $this->srcAtom);
-	        }
+	        else $this->relation->deleteLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
 	        	
 	    // Interface is a relation to an object
 	    }elseif($this->tgtConcept->isObject){
@@ -407,15 +404,12 @@ class InterfaceObject {
 	
 	    // Interface is a relation to a scalar (i.e. not an object)
 	    }elseif(!$this->tgtConcept->isObject){
-	        	
-	        // Replace by nothing => editDelete
-	        if(is_null($value)){
-	            $this->database->editDelete($this->relation, $this->relationIsFlipped, $this->srcAtom, new Atom(null, $this->tgtConcept->name));
-	            	
-	        // Replace by other atom => editUpdate
-	        }else{
-	            $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, new Atom($value, $this->tgtConcept->name));
-	        }
+	        
+	        // Replace by nothing => deleteLink
+	        if(is_null($value)) $this->relation->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept->name), $this->relationIsFlipped);
+	        // Replace by other atom => addLink
+	        else $this->relation->addLink($this->srcAtom, new Atom($value, $this->tgtConcept->name), $this->relationIsFlipped);
+	        
 	    }else{
 	        throw new Exception ("Unknown patch replace. Please contact the application administrator", 500);
 	    }
@@ -445,14 +439,14 @@ class InterfaceObject {
 	        // Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception
 	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept->name}]' does not exist and may not be created in {$this->path}", 403);
 	        	
-	        $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $tgtAtom);
+	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 	
 	    // Interface is a relation to a scalar (i.e. not an object)
 	    }elseif(!$this->tgtConcept->isObject){    	
 	        // Check: If interface is univalent, throw exception
 	        if($this->univalent) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
 	        	
-	        $this->database->editUpdate($this->relation, $this->relationIsFlipped, $this->srcAtom, $tgtAtom);
+	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 	        
 	    }else{
 	        throw new Exception ("Unknown patch add. Please contact the application administrator", 500);

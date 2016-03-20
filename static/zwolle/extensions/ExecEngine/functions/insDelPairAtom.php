@@ -52,7 +52,7 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 			$src = new Atom($a, $srcConceptName);
 		    foreach($tgtAtomIds as $b){
 				$tgt = new Atom($b, $tgtConceptName);
-		        $database->editUpdate($relation, false, $src, $tgt, null, 'ExecEngine');
+				$relation->addLink($src, $tgt, false, 'ExecEngine');
 			}
 		}
 		
@@ -73,9 +73,7 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function DelPair(): ".func_num_args()." arguments", 500);
 	Notifications::addLog("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)", 'ExecEngine');
-	try{
-		$database = Database::singleton();
-		
+	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
 		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
 		
@@ -88,7 +86,7 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		    $src = new Atom($a, $srcConceptName);
 		    foreach($tgtAtoms as $b){
 				$tgt = new Atom($b, $tgtConceptName);
-		        $database->editDelete($relation, false, $src, $tgt, 'ExecEngine');
+		        $relation->deleteLink($src, $tgt, false, 'ExecEngine');
 			}
 		}
 		
