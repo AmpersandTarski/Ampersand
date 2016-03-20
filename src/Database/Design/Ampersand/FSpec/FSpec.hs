@@ -279,15 +279,6 @@ data PlugSQL
            , mLkp :: Expression -- the relation links concepts implemented by this plug
            , dLkp :: RelStore
            }
- -- |stores one concept c in one column
- --  i.e. a SqlAttribute -> c
- --  with tblcontents = [[Just x] |(x,_)<-contents c].
- --  Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. attExpr=I[c]
- | ScalarSQL
-           { sqlname ::   String
-           , sqlColumn :: SqlAttribute
-           , cLkp ::      A_Concept -- the concept implemented by this plug
-           }
    deriving (Show, Typeable)
 
 instance Named PlugSQL where
@@ -303,14 +294,12 @@ plugAttributes :: PlugSQL->[SqlAttribute]
 plugAttributes plug = case plug of
     TblSQL{}    -> attributes plug
     BinSQL{}    -> [fst(columns plug),snd(columns plug)]
-    ScalarSQL{} -> [sqlColumn plug]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
 lookupCpt :: FSpec -> A_Concept -> [(PlugSQL,SqlAttribute)]
 lookupCpt fSpec cpt = [(plug,att) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]++
-                      [(plug,att) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]++
-                      [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
+                      [(plug,att) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]
 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
 getConceptTableFor :: FSpec -> A_Concept -> String

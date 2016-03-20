@@ -137,9 +137,7 @@ tdAnalysis fSpec =
       , length (plugAttributes table) > 1
       ]
 
-   tables = [ pSql | InternalPlug pSql <- plugInfos fSpec, not (isScalar pSql)]
-      where isScalar ScalarSQL{} = True
-            isScalar _           = False
+   tables = [ pSql | InternalPlug pSql <- plugInfos fSpec]
    roots :: [A_Concept]
    roots = (catMaybes.map primKey) tables
    primKey :: PlugSQL -> Maybe A_Concept

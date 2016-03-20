@@ -535,7 +535,6 @@ instance Rename PlugSQL where
 tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug
    = case plug of
-     ScalarSQL{} -> [[Just x] | x<-atomValuesOf ci ps (cLkp plug)]
      BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)

@@ -93,13 +93,6 @@ instance ShowHS PlugSQL where
                --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
                    ,"       }"
                    ]
-       ScalarSQL{} -> intercalate indent
-                   ["ScalarSQL { sqlname   = "++ (show.name) plug
-                   ,"          , sqlColumn = "++ showHS opts (indent++"                     ") (sqlColumn plug)
-                   ,"          , cLkp      = "++ showHSName (cLkp plug)
-               --    ,"          , sqlfpa    = "++ showHS opts "" (fpa plug)
-                   ,"          }"
-                   ]
 
 instance ShowHSName (ECArule) where
  showHSName r = "ecaRule"++show (ecaNum r)
