@@ -117,10 +117,6 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMa
          EDcI c     -> fromList [(a,[a]) | a <- aVals c]
          EEps i _   -> fromList [(a,[a]) | a <- aVals i]
          EDcV sgn   -> fromList [(s, cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
-         EMp1 val c -> fromList $ if name c == "SESSION" -- prevent populating SESSION
-                                  then []
-                                  else [(av,[av])]
-                         where 
-                           av = safePSingleton2AAtomVal ci c val
+         EMp1 _ _   -> mempty
 
     
