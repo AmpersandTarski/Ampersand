@@ -163,6 +163,7 @@ class Concept {
 	 * @return boolean
 	 */
 	public function inSameClassificationTree($concept){
+	    if($this->name == $concept->name) return true;
 	    if($this->hasSpecialization($concept->name)) return true;
 	    if($this->hasGeneralization($concept->name)) return true;
 	     

@@ -27,7 +27,7 @@ generateGenerics fSpec =
     genericsPhpContent =
       intercalate [""]
         [ generateConstants fSpec
-        , generateTableInfos fSpec
+        --, generateTableInfos fSpec
         --, generateRules fSpec
         --, generateConjuncts fSpec
         --, generateRoles fSpec
@@ -188,30 +188,6 @@ generateAllDefPopQueries fSpec = theSQLstatements
                     Nothing -> "NULL"
                     Just val -> showValPHP val
                  | att <- record ]
-
-generateTableInfos :: FSpec -> [String]
-generateTableInfos fSpec =
-  [ "$tableColumnInfo ="
-  , "  array"
-  ] ++
-  addToLastLine ";"
-    (indent 4
-       (blockParenthesize "(" ")" ","
-         [ [ (showPhpStr.name) plug++" =>"
-           , "  array"
-           ] ++
-           indent 4
-              (blockParenthesize "(" ")" ","
-                [ [ (showPhpStr.attName) attribute++ " => array ( 'concept' => "++(showPhpStr.name.target.attExpr) attribute++
-                                                               ", 'unique' => " ++(showPhpBool.attUniq)            attribute++
-                                                               ", 'null' => "  ++ (showPhpBool.attNull)            attribute++
-                                                               ")"
-                  ]
-                | attribute <- plugAttributes plug]
-              )
-         | InternalPlug plug <- plugInfos fSpec
-         ]
-     )  )
 
 -- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
 -- two abstractions to guarantee the same implementation.

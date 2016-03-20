@@ -495,28 +495,34 @@ class Database {
 		    // This function is under control of transaction check!
 		    if (!isset($this->transaction)) $this->startTransaction();
 		    
-		    global $tableColumnInfo;
-		    
 			$concept = Concept::getConcept($atom->concept->name);
 			
-			foreach ($tableColumnInfo as $table => $tableInfo){
-				foreach ($tableInfo as $column => $fieldInfo) {
-					// TODO: could be optimized by doing one query per table. But deleting per column yields the same result (unlike adding)
-					if ($fieldInfo['concept'] == $concept->name || $concept->hasGeneralization($fieldInfo['concept'])) {
-						
-						// If the field can be null, we set all occurrences to null
-						if ($fieldInfo['null']) $this->Exe("UPDATE `$table` SET `$column` = NULL WHERE `$column` = '{$atom->idEsc}'");
-						
-						// Otherwise, we remove the entire row for each occurrence
-						else 
-							$this->Exe("DELETE FROM `$table` WHERE `$column` = '{$atom->idEsc}'");
-					}
-				}
-			}
-			
+			// Delete atom from concept table
+			$conceptTable = $concept->getConceptTableInfo();
+			$query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atom->idEsc}' LIMIT 1";
+			$this->Exe($query);
 			$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 			
-			Notifications::addLog("Atom '{$atom->id}[{$atom->concept->name}]' (and all related links) deleted in database", 'DATABASE');
+			// Delete atom from relation tables where atom is mentioned as src or tgt atom
+			foreach (Relation::getAllRelations() as $relation){
+			    if(($tableName = $relation->getMysqlTable()->name) == $conceptTable->name) continue; // Skip this relation, row in table is already deleted
+			    
+			    $cols = array();
+			    if($relation->srcConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->srcCol();
+			    if($relation->tgtConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->tgtCol();
+			    
+			    foreach($cols as $col){			        
+			        // If column may be set to null, update
+			        if($col->null) $query = "UPDATE `{$tableName}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atom->idEsc}'";
+			        // Else, we remove the entire row (cascades delete for TOT and SUR relations)
+			        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atom->idEsc}'";
+			        
+			        $this->Exe($query);
+			        $this->addAffectedRelations($relation);
+			    }
+			}
+			
+			Notifications::addLog("Atom '{$atom->__toString()}' (and all related links) deleted in database", 'DATABASE');
 			
 			Hooks::callHooks('postDatabaseDeleteAtom', get_defined_vars());
 		}catch(Exception $e){
@@ -739,6 +745,10 @@ Class DatabaseTable {
         return $this->cols;
     }
     
+    /**
+     * Returns names of all table cols
+     * @return string[]
+     */
     public function getColNames(){
         $colNames = array();
         foreach($this->getCols() as $col) $colNames[] = $col->name;
@@ -754,6 +764,14 @@ Class DatabaseTable {
     public function getCol($colName){
         if(!array_key_exists($colName, $this->getCols())) throw new Exception ("Col '{$colName}' does not exists in table '{$this->name}'", 500);
         return $this->getCols()[$colName];
+    }
+    
+    /**
+     * Return first registered col object
+     * @return DatabaseTableCol
+     */
+    public function getFirstCol(){
+        return current($this->getCols());
     }
 }
 

@@ -268,7 +268,7 @@ class Relation {
      * Returns array with all Relation objects
      * @return Relation[]
      */
-    private static function getAllRelations(){
+    public static function getAllRelations(){
         if(!isset(self::$allRelations)) self::setAllRelations();
          
         return self::$allRelations;
