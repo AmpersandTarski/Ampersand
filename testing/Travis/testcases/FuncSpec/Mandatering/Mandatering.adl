@@ -1,0 +1,241 @@
+﻿CONTEXT Mandatering IN DUTCH LATEX
+   META "authors" "Groep Ampersand Masterclass 2013"
+   PURPOSE PATTERN Mandaten
+{+
+Dit hoofdstuk beschrijft de taal zoals die in Afdeling 10:1.1. Awb wordt gebruikt om het mandateren te regelen.
+Waar mogelijk verwijst de tekst naar de bron, zodat de lezer afwijkingen die hij of zij constateert kan traceren.
+Daar waar de tekst afwijkt van de bron is die bron uiteraard meer gezaghebbend dan deze tekst.
+
+Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
+-}
+
+   PATTERN Mandaten
+   CONCEPT Mandaat "Een mandaat is de bevoegdheid om in naam van een bestuursorgaan besluiten te nemen." "Artikel 10:1 Awb"
+
+   CONCEPT Formatieplaats "Een formatieplaats is een plek in een organisatie die ingevuld kan worden in dienstverband door een natuurlijke persoon."
+
+   PURPOSE CONCEPT Formatieplaats
+{+
+De wet en regelgeving noemt ambtenaren bij functie, zoals ``De directeur-generaal Jeugd en Sanctietoepassing van het Ministerie van Veiligheid en Justitie''.
+De naam van de persoon die deze functie vervult, bijvoorbeeld ``E.M. ten Hoorn Boer'' blijft veelal uit zicht in deze regelgeving.
+Door de formatieplaats te noemen in plaats van de persoon kan een eventuele opvolger van deze ambtenaar het werk eenvoudig overnemen en
+de consequenties van besluiten van zijn voorganger op zich nemen.
+Om deze reden gebruiken we het concept ``Formatieplaats'' in plaats van ``Ambtenaar''.
+-}
+
+   CONCEPT Besluit "Onder besluit wordt verstaan: een schriftelijke beslissing van een bestuursorgaan, inhoudende een publiekrechtelijke rechtshandeling." "Artikel 1:3 lid 1 Awb"
+   CONCEPT Beschikking  "Onder beschikking wordt verstaan: een besluit dat niet van algemene strekking is, met inbegrip van de afwijzing van een aanvraag daarvan." "Artikel 1:3 lid 2 Awb"
+   PURPOSE CONCEPT Besluit REF "Artikel 1:3 lid 1 Awb"
+{+
+De wet maakt onderscheid tussen besluiten en beschikkingen.
+Beide zijn gedefinieerd in de Awb.
+-}
+
+   PURPOSE RELATION bevoegdheid[Bestuursorgaan*Bevoegdheid] REF "Artikel 1:3 lid 4 Awb"
+{+De Awb spreekt van ``een bevoegdheid van een bestuursorgaan.''.
+Kennelijk kan een bestuursorgaan bevoegdheden hebben.
+-}
+   RELATION bevoegdheid[Bestuursorgaan*Bevoegdheid]
+   PRAGMA "" " heeft " " als bevoegdheid"
+   MEANING "De uitspraak ``Bestuursorgaan $b$ heeft $x$ als bevoegdheid.'' behoort tot de gemeenschappelijke taal."
+
+   -- POPULATION toegevoegd op 20 maart door Stef Joosten
+   POPULATION bevoegdheid[Bestuursorgaan*Bevoegdheid] CONTAINS
+     [ ("Ministerie van Veiligheid en Justitie", "benoemen van directeuren van ZBO's")
+     ; ("DJI", "budget toekennen")
+     ; ("DJI", "personeel ontslaan")
+     ]
+  
+   PURPOSE RELATION beslotenDoor[Besluit*Bestuursorgaan] REF "Artikel 1:3 lid 1 Awb"
+{+In de Awb worden beslissingen consequent door bestuursorganen genomen.
+-}
+   RELATION beslotenDoor[Besluit*Bestuursorgaan]
+   PRAGMA "" " is genomen door "
+   MEANING "De uitspraak ``Besluit $b$ is genomen door (bestuursorgaan) $o$.'' behoort tot de gemeenschappelijke taal."
+
+   RELATION formatie[Bestuursorgaan*Formatieplaats] [SUR,INJ]
+   PRAGMA "" " heeft de " " in dienst"
+   MEANING "De uitspraak ``Bestuursorgaan $b$ heeft de (formatieplaats) $a$ in dienst.'' behoort tot de gemeenschappelijke taal."
+   
+     -- POPULATION toegevoegd op 02 april door Patrick en Arjan    
+     --      en aanvulling door Erik Gubler op 03-04-2013
+   POPULATION formatie[Bestuursorgaan*Formatieplaats] CONTAINS
+    [ ("Ministerie van Veiligheid en Justitie", "minister")
+    ; ("DJI", "hoofddirecteur")
+    ; ("Dienst Vervoer en Ondersteuning", "hoofden van dienst")
+    ; ("DJI", "DJI - de directeur sector Forensische Zorg")
+    ; ("DJI", "DJI - directeur sector Justitiële Jeugdinrichtingen")
+    ; ("DJI", "DJI - directeuren sector Gevangeniswezen")
+    ; ("Ministerie van Veiligheid en Justitie", "koningin")
+    ]
+
+-- RELATION toegevoegd op 02 april door Patrick en Arjan
+
+   PURPOSE RELATION ondermandaatgever[Mandaatnemer*Formatieplaats] REF "Nota behorende tot de mandaatregeling Bergen 2007"
+   {+Er is sprake van ondermandaat als de gemandateerde een aan hem ondergeschikte ambtenaar machtigt om de gemandateerde bevoegdheid uit te oefenen.
+   -}
+
+   RELATION ondermandaatgever[Mandaatnemer*Formatieplaats]
+   PRAGMA "" " machtigt door middel van ondermandaat "
+   MEANING "De zin ``Mandaatnemer $m$ machtigt door middel van ondermandaat (formatieplaats) $a$.'' behoort tot de gemeenschappelijke taal."
+
+   -- POPULATION ondermandaatgever[Mandaatnemer*Formatieplaats] 
+-- POPULATION later toe te voegen
+
+
+   RELATION bevoegd[Besluit*Formatieplaats]
+   PRAGMA "" " is genomen door " " binnen de grenzen van zijn bevoegdheid"
+   -- POPULATION RELATION bevoegd[Besluit*Formatieplaats] toe te voegen door Erik Gubler en Geraldson Martina
+   POPULATION bevoegd[Besluit*Formatieplaats] CONTAINS
+    [ ("inkoop van Forensische zorg in een particuliere setting met als grensbedrag € 50.000.000","DJI - de directeur sector Forensische Zorg")
+    ; ("subsidiëring dan wel inkoop van justitiële jeugdplaatsen in een particuliere setting, met als grensbedrag € 50.000.000", "DJI - directeur sector Justitiële Jeugdinrichtingen")
+    ; ("het verrichten van handelingen en het nemen van besluiten voortvloeiend uit de verkrijging en besteding van ESF-gelden", "DJI - directeuren sector Gevangeniswezen")
+    ]
+
+
+   RULE "Artikel 10:2 Awb" : (beslotenDoor;formatie/\bevoegd);gemandateerde~;mandaatgever |- beslotenDoor;formatie
+   MEANING "Een door de gemandateerde binnen de grenzen van zijn bevoegdheid genomen besluit geldt als een besluit van de mandaatgever."
+
+   PURPOSE RULE "Artikel 10:2 Awb" REF "Artikel 10:2 Awb"
+{+
+-}
+   PURPOSE RELATION namens[Mandaat*Bestuursorgaan] REF "Artikel 10:10 Awb"
+{+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen.
+Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen.
+   -}
+   RELATION namens[Mandaat*Bestuursorgaan] [UNI,TOT]  -- ontleend aan Artikel 10:10 Awb
+   PRAGMA "" " is verleend in naam van "
+   MEANING "De zin ``Mandaat $m$ is verleend in naam van bestuursorgaan $b$.'' behoort tot de gemeenschappelijke taal."
+   -- POPULATION namens[Mandaat*Bestuursorgaan] toe te voegen door Chris Haveman en Henk Boer
+   -- POPULATION toegevoegd op 29 maart door Roger Hage en Sebastiaan Hobers om errors te vermijden
+   --            Echte waarden voor Mandaat moeten nog worden ingevoerd         
+   POPULATION namens[Mandaat*Bestuursorgaan] CONTAINS
+     [ ("Mandaat A", "Ministerie van Veiligheid en Justitie")
+     ; ("Mandaat B","DJI")
+     ; ("Mandaat C", "DJI")
+     ]
+
+   PURPOSE RELATION mandaatgever[Mandaat*Formatieplaats] REF "Artikelen 10:6-9 Awb"
+{+De Awb spreekt van een mandaatgever: de ambtenaar die (een deel van) zijn bevoegdheden mandateert aan ondergeschikte ambtenaren.
+-}
+   RELATION mandaatgever[Mandaat*Formatieplaats]
+   PRAGMA "" " is verleend door "
+   MEANING "De zin ``Mandaat $m$ is verleend door (mandaatgever) $a$.'' behoort tot de gemeenschappelijke taal."
+   -- POPULATION mandaatgever[Mandaat*Formatieplaats] toe te voegen door Maarten Bernards, Marcus Krab en Natali ?epackic
+
+   POPULATION mandaatgever[Mandaat*Formatieplaats] CONTAINS
+   [ ("Mandaat A", "koningin")
+   ; ("Mandaat B", "minister")
+   ; ("Mandaat C", "minister")
+   ]
+
+
+   PURPOSE RELATION gemandateerde[Mandaat*Formatieplaats] REF "Artikel 10:2 Awb"
+{+De Awb spreekt van een gemandateerde: de ambtenaar die bevoegdheden krijgt van hogerhand.
+-}
+   RELATION gemandateerde[Mandaat*Formatieplaats]
+   PRAGMA "" " is verleend aan "
+   MEANING "De uitspraak ``Mandaat $m$ is verleend aan (gemandateerde) $g$.'' behoort tot de gemeenschappelijke taal."
+   -- POPULATION gemandateerde[Mandaat*Formatieplaats] toe te voegen door George de Vries en Tim Ruijters
+   -- Toegevoegd op 3 april door George de Vries en Tim Ruijters 
+   POPULATION gemandateerde[Mandaat*Formatieplaats] CONTAINS
+     [ ("Mandaat A", "minister")
+     ; ("Mandaat B", "hoofddirecteur")
+     ; ("Mandaat C", "DJI - directeuren sector Gevangeniswezen")
+     ]
+   PURPOSE RELATION krachtens[Besluit*Mandaat] REF "Artikel 10:10 Awb"
+{+De Awb gebruikt het woord ``krachtens'' om aan te geven dat een besluit is genomen op basis van een een mandaat.
+-}
+   RELATION krachtens[Besluit*Mandaat]
+   PRAGMA "" " is krachtens " " genomen"
+   MEANING "De uitspraak ``Besluit $b$ is krachtens (mandaat) $m$ genomen.'' behoort tot de gemeenschappelijke taal."
+   -- POPULATION krachtens[Besluit*Mandaat] toe te voegen door Gurbinder Singh Garcha en Han Veldhuis
+
+  -- RULE toegevoegd door Erik Gubler, 03-04-2013, 10:50
+  RULE "Artikel 10:10 Awb" : krachtens;namens |- beslotenDoor
+  MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
+  PURPOSE RULE "Artikel 10:10 Awb" REF "Artikel 10:10 Awb"
+{+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. -}
+
+
+   -- bevoegdheid hernoemd naar mandaatbevoegdheid omdat bevoegdheid al bestaat
+   PURPOSE RELATION mandaatbevoegdheid[Mandaat*Bevoegdheid] REF "Artikel 10:6 lid 1 Awb"
+{+Een bevoegdheid is in de Awb het object (lijdend voorwerp) van mandatering.
+De wetstekst spreekt van ``de gemandateerde bevoegdheid''.
+Kennelijk bestaat er voor elk mandaat een bevoegdheid die gemandateerd wordt.
+In de gemeenschappelijke taal wordt het woordje ``tot'' gebruikt om deze bevoegdheid aan te duiden.
+-}
+   RELATION mandaatbevoegdheid[Mandaat*Bevoegdheid] [TOT]
+   PRAGMA "" " tot "
+   MEANING "De frase ``een mandaat tot $b$'' behoort tot de gemeenschappelijke taal en duidt de bevoegdheid ($b$) aan die wordt gemandateerd."
+   -- POPULATION mandaatbevoegdheid[Mandaat*Bevoegdheid] toe te voegen door Roger Hage en Sebastiaan Hobers
+   -- POPULATION toegevoegd op 29 maart         
+   POPULATION mandaatbevoegdheid[Mandaat*Bevoegdheid] CONTAINS
+     [ ( "Mandaat A", "benoemen van directeuren van ZBO's")
+     ; ( "Mandaat B", "budget toekennen")
+     ; ( "Mandaat C", "personeel ontslaan")
+     ]
+
+   PURPOSE RELATION beperking[Mandaat*Beperking] REF "Artikel 10:2 Awb"
+{+De Awb spreekt van ``een door de gemandateerde binnen de grenzen van zijn bevoegdheid genomen besluit''.
+Dit impliceert dat er beperkingen kunnen gelden voor een mandaat.
+-}
+   RELATION beperking[Mandaat*Beperking]
+   PRAGMA "" " geldt ten aanzien van aangelegenheden die " " betreffen"
+   MEANING "De uitspraak ``Mandaat $m$ geldt ten aanzien van aangelegenheden die (beperking) $b$ betreffen.'' behoort tot de gemeenschappelijke taal."
+
+   PURPOSE RELATION voorbehouden[Bevoegdheid*Formatieplaats] REF "Artikel 4 Mandaatregeling hoofddirecteur DJI 2013"
+{+De Mandaatregeling hoofddirecteur DJI 2013 spreekt van ``bevoegdheden die voorbehouden blijven aan een bepaalde ambtenaar.''.
+Dit impliceert dat deze bevoegdheden niet kunnen worden ondergemandateerd.
+-}
+   RELATION voorbehouden[Bevoegdheid*Formatieplaats]
+   PRAGMA "" " is voorbehouden aan "
+   MEANING "De uitspraak ``Bevoegdheid $b$ s voorbehouden aan (formatieplaats) $a$.'' behoort tot de gemeenschappelijke taal."
+
+   PURPOSE RELATION grond[Bevoegdheid*Titel]
+{+Bevoegdheden hebben een wettige grondslag.
+Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bevoegdheid op is gebaseerd.
+-}
+   RELATION grond[Bevoegdheid*Titel] [TOT]
+   PRAGMA "" " op grond van "
+   MEANING "De frase ``bevoegd op grond van (titel) $t$'' behoort tot de gemeenschappelijke taal en duidt de wettige grondslag aan van de bedoelde bevoegdheid."
+          -- POPULATION toegevoegd op 29 maart door Roger Hage en Sebastiaan Hobers om error te vermijden
+          --            Echte waarden voor Titel moeten nog worden ingevoerd         
+   POPULATION grond[Bevoegdheid*Titel] CONTAINS
+     [ ( "benoemen van directeuren van ZBO's", "Art X1")
+     ; ( "budget toekennen", "Art X2")
+     ; ( "personeel ontslaan", "Art X3")
+     ]
+
+   onder :: Formatieplaats * Formatieplaats
+   PRAGMA "" " valt onder de verantwoordelijkheid van "
+   MEANING "De uitspraak ``Formatieplaats $a$ valt onder de verantwoordelijkheid van $b$.'' behoort tot de gemeenschappelijke taal."
+
+   RULE onder |- formatie~;formatie
+   MEANING "Een formatieplaats (ambtenaar) kan alleen onder de verantwoordelijkheid van een andere vallen wanneer zij tot hetzelfde bestuursorgaan behoren."
+
+   -- RULE toegevoegd op 31 maart door Roger Hage en Sebastiaan Hobers 
+   RULE mandaatvoorbehouden : mandaatbevoegdheid;voorbehouden |- gemandateerde
+   MEANING "Een bevoegdheid die is gemandateerd is alleen voorbehouden (deze bevoegdheden niet kunnen worden ondergemandateerd) aan elke ambtenaar die deze bevoegdheid van hogerhand heeft gekregen."
+
+   -- RULE toegevoegd op 3 april door George de Vries en Tim Ruijters.
+   RULE onder |- -I
+   MEANING "Een formatieplaats mag niet onder de verantwoordelijkheid van zichzelf vallen."
+
+   -- RULE toegevoegd op 4 april door George de Vries en Tim Ruijters.
+   RULE onder /\ onder~ |- -V
+   MEANING "Wanneer formatieplaats a onder de verantwoordelijkheid van b valt, dan mag b niet onder de verantwoordelijkheid van a vallen."
+
+-- RULE toegevoegd op 4 april door Maarten Bernards en Natali Zepackic en Marcus Krab.
+          RULE mandaatgever /\ gemandateerde  |- -V
+          MEANING "Een mandaat mag niet door een mandaatgever aan zichzelf verleend worden."
+
+
+   -- RULE nog uit te werken door George de Vries en Tim Ruijters.
+   -- RULE "Artikel 10:4 Awb" : krachtens;namens |- beslotenDoor
+   -- MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
+   -- PURPOSE RULE "Artikel 10:10 Awb" REF "Artikel 10:10 Awb"
+
+
+   ENDPATTERN
+ENDCONTEXT

@@ -1,0 +1,45 @@
+CONTEXT Strange IN ENGLISH
+{-
+This example features a Lemon and an Orange that both have the same name "strangeFruit",
+which causes Ampersand to treat them as a single atom: if you modify the name in the 
+Orange interface, it will also have been changed in the the Lemon interface and vice versa.
+
+For more information, see issue #68
+-}
+
+CONCEPT Fruit "Most general concept"
+CLASSIFY Orange ISA Citrus
+CLASSIFY Lemon ISA Citrus
+
+name :: Citrus*Name = 
+  [ ("orange1", "Inky") 
+  ; ("lemon1", "Pinky")
+  ; ("strangeFruit", "Clyde")
+  ]
+
+ownsOranges :: Person*Orange =
+  [ ("martijn", "orange1")
+  ; ("martijn", "strangeFruit")
+  ]
+
+ownsLemons :: Person*Lemon =
+  [ ("martijn", "lemon1")
+  ; ("martijn", "strangeFruit")
+  ]
+
+INTERFACE Overview FOR Dummy : I[SESSION]
+BOX [ "All oranges" : V[SESSION*Orange]
+    , "All lemons" : V[SESSION*Lemon]
+    ]
+
+INTERFACE Orange(name) : I[Orange]
+BOX [ "I" : I
+    , "name" : name
+    ]
+
+INTERFACE Lemon(name) : I[Lemon]
+BOX [ "I" : I
+    , "name" : name
+    ]
+
+ENDCONTEXT

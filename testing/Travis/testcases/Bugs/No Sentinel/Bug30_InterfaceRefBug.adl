@@ -1,0 +1,28 @@
+CONTEXT Bug30_InterfaceRefBug IN ENGLISH
+{- Context that shows a problem with interface refs in the new front-end.
+   Interface objects "inline", "ref", and "buggyRef" should be equivalent, but "buggyRef" shows no atoms.
+-}
+
+fruits :: A * Fruit = [ ("a1", "Lime");  ("a1", "Limorange");  ("a1", "Nectarine")
+                      ; ("a2", "Banana"); ("a2", "Blueberry")
+                      ]
+                      
+trees :: A * Tree =   [ ("a1", "Fern"); ("a1", "Willow")
+                      ; ("a2", "Fern"); ("a2", "Spruce")
+                      ]
+
+dummy :: SESSION * SESSION
+
+INTERFACE Buggy FOR Dummy : I[SESSION]
+BOX [ "inline"   : V[SESSION*A] BOX [ "Atom" : I[A] ]
+    , "ref"      : V[SESSION*A] INTERFACE Ref
+    , "buggyRef" : I[SESSION]   INTERFACE BuggyRef
+    ]
+    
+INTERFACE Ref : I[A]
+BOX [ "Atom" : I[A] ]
+
+INTERFACE BuggyRef : V[SESSION*A]
+BOX [ "Atom" : I[A] ]
+
+ENDCONTEXT
