@@ -45,7 +45,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                     where 
                       tryInsert :: Either A_Concept Declaration -> Int -> [(Either A_Concept Declaration,String)] -> [(Either A_Concept Declaration,String)]
                       tryInsert x n names =
-                        let nm = (either name name x) ++ (if n == 0 then "" else show n)
+                        let nm = (either name name x) ++ (if n == 0 then "" else "_"++show n)
                         in if map toLower nm `elem` map (map toLower . snd) names -- case insencitive compare, because SQL needs that.
                            then tryInsert x (n+1) names
                            else (x,nm):names

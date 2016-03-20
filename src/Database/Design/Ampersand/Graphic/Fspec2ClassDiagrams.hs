@@ -182,6 +182,7 @@ tdAnalysis fSpec =
        relOf f =
          let expr = attExpr f in
          case expr of
+           EDcI{} -> Nothing
            EEps{} -> Nothing
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
