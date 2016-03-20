@@ -9,10 +9,10 @@ CONTEXT RETINA IN DUTCH
 - moet de registratie van de gegevens in veel gevallen melden.
 -}
 -----------------------------------------------------------
-INCLUDE "WBP-Glossary.adl"
-INCLUDE "WBP-Ontologie.adl"
-INCLUDE "SystemStuff.adl"
-INCLUDE "RuntimeStuff.adl"
+INCLUDE "WBP-Glossary.partialadl"
+INCLUDE "WBP-Ontologie.partialadl"
+INCLUDE "SystemStuff.partialadl"
+INCLUDE "RuntimeStuff.partialadl"
 
 INCLUDE "IFC-Developer.ifc"
 INCLUDE "IFC-Demo.ifc"

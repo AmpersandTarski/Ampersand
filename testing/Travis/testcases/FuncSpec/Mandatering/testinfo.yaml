@@ -1,2 +1,0 @@
-command : ampersand -fl --verbose
-shouldSucceed : yes
