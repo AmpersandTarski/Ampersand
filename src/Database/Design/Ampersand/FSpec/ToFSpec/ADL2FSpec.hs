@@ -535,7 +535,10 @@ instance Rename PlugSQL where
 tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug
    = case plug of
-     BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
+     BinSQL{}    -> let expr = case dLkpTbl plug of
+                                 [store] -> EDcD (rsDcl store)
+                                 ss       -> fatal 540 $ "Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss)
+                    in [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps expr]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --attributes are assumed to be in the order kernel+other,

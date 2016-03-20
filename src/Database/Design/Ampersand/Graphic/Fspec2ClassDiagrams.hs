@@ -7,7 +7,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.FSpec(getConceptTableFor, RelStore(..))
+import Database.Design.Ampersand.FSpec.FSpec(getConceptTableFor)
 import Data.Maybe
 import Data.Either
 import Database.Design.Ampersand.Graphic.ClassDiagram
@@ -130,7 +130,6 @@ tdAnalysis fSpec =
                                        , attOptional = False
                                        }
                               ]
-                            _     -> fatal 166 "Unexpected type of table!"
                , clMths = []
                }
       | table <- tables
@@ -180,7 +179,6 @@ tdAnalysis fSpec =
                                , assmdcl = Nothing
                                }
                      ]
-           _  -> fatal 195 "Unexpected type of table"
        relOf f =
          let expr = attExpr f in
          case expr of

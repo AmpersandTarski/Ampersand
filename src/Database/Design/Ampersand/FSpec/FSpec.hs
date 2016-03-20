@@ -262,8 +262,6 @@ data PlugSQL
                                                                     --   the remaining attributes represent attributes.
            , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all typology concepts to attributes in the plug
                                                                     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-           , xLkpTbl ::    [(Expression,SqlAttribute,SqlAttribute)] -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
-                                                                    -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
            , dLkpTbl ::   [RelStore]
            }
    -- | stores one relation r in two ordered columns
@@ -273,11 +271,8 @@ data PlugSQL
    --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
  | BinSQL  { sqlname :: String
            , columns :: (SqlAttribute,SqlAttribute)
-           , cLkpTbl :: [(A_Concept,SqlAttribute)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
-                                                   --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
-                                                   --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
-           , mLkp :: Expression -- the relation links concepts implemented by this plug
-           , dLkp :: RelStore
+           , cLkpTbl :: [(A_Concept,SqlAttribute)] 
+           , dLkpTbl :: [RelStore]
            }
    deriving (Show, Typeable)
 

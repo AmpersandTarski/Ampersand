@@ -27,7 +27,6 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
              { sqlname    = unquote . name $ tableKey
              , attributes = map cptAttrib cpts ++ map dclAttrib dcls
              , cLkpTbl    = conceptLookuptable
-             , xLkpTbl    = map tmpToOldStruct dclLookuptable
              , dLkpTbl    = dclLookuptable
              }
         where
@@ -52,8 +51,6 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                            else (x,nm):names
 
 
-          tmpToOldStruct :: RelStore -> (Expression, SqlAttribute, SqlAttribute)
-          tmpToOldStruct x = (EDcD . rsDcl $ x, rsSrcAtt x, rsTrgAtt x)
           tableKey = head cpts
           isStoredFlipped :: Declaration -> Bool
           isStoredFlipped d 
@@ -136,8 +133,13 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
              { sqlname = unquote . name $ dcl
              , columns = (srcAtt,trgAtt)
              , cLkpTbl = [] --TODO: in case of TOT or SUR you might use a binary plug to lookup a concept (don't forget to nub)
-             , mLkp    = trgExpr
-             , dLkp    = if isFlipped trgExpr
+                            --given that dcl cannot be (UNI or INJ) (because then dcl would be in a TblSQL plug)
+                            --if dcl is TOT, then the concept (source dcl) is stored in this plug
+                            --if dcl is SUR, then the concept (target dcl) is stored in this plug
+             , dLkpTbl = [theRelStore]
+             }
+      where
+       theRelStore =  if isFlipped trgExpr
                          then RelStore
                                { rsDcl       = dcl
                                , rsSrcAtt    = trgAtt
@@ -148,8 +150,6 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                , rsSrcAtt    = srcAtt
                                , rsTrgAtt    = trgAtt
                                }
-             }
-      where
        --the expr for the source of r
        srcExpr
         | isTot dcl = EDcI (source dcl)

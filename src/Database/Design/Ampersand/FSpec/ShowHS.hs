@@ -89,7 +89,11 @@ instance ShowHS PlugSQL where
                    ,"BinSQL { sqlname = " ++ (show.name) plug
                    ,"       , columns = ("++showHSName (fst (columns plug))++ ", " ++showHSName (snd (columns plug))++")"
                    ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                   ,"       , mLkp = "++showHS opts "" (mLkp plug)
+                   ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
+                                                      [ "RelStore "++showHSName (rsDcl store)++" "
+                                                                   ++showHSName (rsSrcAtt store)++" "
+                                                                   ++showHSName (rsTrgAtt store)++" "
+                                                      | store<-dLkpTbl plug] ++ "]"
                --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
                    ,"       }"
                    ]

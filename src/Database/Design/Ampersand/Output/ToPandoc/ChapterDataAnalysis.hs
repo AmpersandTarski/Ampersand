@@ -284,17 +284,15 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                   )
                <> showAttributes (plugAttributes tbl)
              InternalPlug bin@BinSQL{}
-               -> para
-                       (case fsLang fSpec of
-                         Dutch
-                           ->  "Dit is een koppeltabel, die "
-                            <> primExpr2pandocMath (fsLang fSpec) (mLkp bin)
-                            <> " implementeert. De tabel bestaat uit de volgende kolommen:"
-
-                         English
-                           ->  "This is a link-table, implementing "
-                            <> primExpr2pandocMath (fsLang fSpec) (mLkp bin)
-                            <> ". It contains the following columns:"
+               -> para (   (text.l) (NL "Dit is een koppeltabel, die "
+                                    ,EN "This is a link-table, implementing ")
+                        <> primExpr2pandocMath (fsLang fSpec) 
+                                               (case dLkpTbl bin of
+                                                  [store] -> EDcD (rsDcl store)
+                                                  ss       -> fatal 540 $ "Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss)
+                                               )
+                        <> (text.l) (NL " implementeert. De tabel bestaat uit de volgende kolommen:"
+                                    ,EN ". It contains the following columns:")
                        )
                      <> showAttributes (plugAttributes bin)
 
