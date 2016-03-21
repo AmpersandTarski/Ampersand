@@ -143,7 +143,7 @@ Class Atom {
 		}
 		
 		if($options['navIfc']){
-			foreach(InterfaceObject::getAllInterfacesForConcept($this->concept->name) as $ifc){
+			foreach($this->concept->getInterfaces() as $ifc){
 				$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->jsonld_id . '/' . $ifc->id);
 			}
 			
@@ -261,13 +261,13 @@ Class Atom {
 	 * @return InterfaceObject
 	 */
 	public function ifc($ifcId){
-	    $subIfcs = is_null($this->parentIfc) ? null : $this->parentIfc->boxSubInterfaces;
-	    $ifc = new InterfaceObject($ifcId, $subIfcs, $this);
+	    if(is_null($this->parentIfc)) $ifc = InterfaceObject::getInterface($ifcId);
+	    else $ifc = $this->parentIfc->getSubInterface($ifcId);
+	    
+	    $clone = clone $ifc;
+	    $clone->setSrcAtom($this);
 	     
-	    // Check if interface can be used with this atom as source
-	    if($this->concept != $ifc->srcConcept) throw new Exception ("Source concept of atom '{$this->id}[{$this->concept->name}]' does not match source concept [{$ifc->srcConcept->name}] of interface '{$ifc->path}'", 500);
-	     
-	    return $ifc;
+	    return $clone;
 	}
 	
 	/**
@@ -385,7 +385,7 @@ Class Atom {
 	        $content[$subinterface->id] = $subcontent;
 	    
 	        // _sortValues_ (if subInterface is uni)
-	        if($subinterface->univalent && $options['metaData']){
+	        if($subinterface->isUni && $options['metaData']){
 	            if(is_bool($subcontent)) $sortValue = $subcontent; // property
 	            elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
 	            else $sortValue = $subcontent; // scalar
@@ -402,7 +402,7 @@ Class Atom {
 	        // Add target atom to $recursionArr to prevent infinite loops
 	        if($options['inclLinktoData']) $recursionArr[$this->parentIfc->refInterfaceId][] = $this->id;
 	    
-	        $refInterface = new InterfaceObject($this->refInterfaceId, null);
+	        $refInterface = InterfaceObject::getInterface($this->parentIfc->refInterfaceId);
 	         
 	        foreach($refInterface->subInterfaces as $subinterface){
 	            // Skip subinterface if not given read rights
@@ -412,7 +412,7 @@ Class Atom {
 	            $content[$subinterface->id] = $subcontent;
 	             
 	            // _sortValues_ (if subInterface is uni)
-	            if($subinterface->univalent && $options['metaData']){
+	            if($subinterface->isUni && $options['metaData']){
 	                if(is_bool($subcontent)) $sortValue = $subcontent; // property
 	                elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
 	                else $sortValue = $subcontent; // scalar
@@ -585,7 +585,7 @@ Class Atom {
 	    if(!$ifc->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
 	    
 		// Interface is property
-		if($ifc->isProperty && !$ifc->isIdent){
+		if($ifc->isProp && !$ifc->isIdent){
 			// Properties must be treated as a 'replace', so not handled here
 			throw new Exception("Cannot patch remove for property '{$ifc->path}'. Use patch replace instead", 500);
 		
@@ -596,7 +596,7 @@ Class Atom {
 		
 		// Interface is a relation to a scalar (i.e. not an object)
 		}elseif(!$ifc->tgtConcept->isObject){
-			if($ifc->univalent) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
+			if($ifc->isUni) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
 			
 			$ifc->relation->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 			

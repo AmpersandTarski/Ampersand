@@ -20,11 +20,12 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app) {
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
 	
+	$concept = Concept::getConcept($resourceType);
+	
 	// Checks
-	if(!in_array($resourceType, $session->getEditableConcepts())) throw new Exception ("You do not have access for this call", 403);
+	if(!$session->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
 	
 	// Get list of all atoms for $resourceType (i.e. concept)
-	$concept = Concept::getConcept($resourceType);
 	$content = $concept->getAllAtomObjects(); 
 	
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -36,12 +37,13 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
-
+    
+	$resource = new Atom($resourceId, $resourceType);
+	
 	// Checks
-	if(!in_array($resourceType, $session->getEditableConcepts())) throw new Exception ("You do not have access for this call", 403);
+	if(!$session->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
 
 	// Get specific resource (i.e. atom)
-	$resource = new Atom($resourceId, $resourceType);
 	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->id}[{$resource->concept->name}]' not found", 404);
 	
 	$content = $resource->getAtom();

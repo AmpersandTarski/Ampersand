@@ -1,31 +1,121 @@
 <?php
 
 class InterfaceObject {
-	
+    /**
+     * Contains all interface definitions
+     * @var InterfaceObject[]
+     */
 	private static $allInterfaces; // contains all interface objects
+	
+	/**
+	 * Dependency injection of a database connection class
+	 * @var Database
+	 */
 	private $database;
 	
-	public $id;			// Interface id (i.e. safe name) to use in framework
-	public $path;
-	public $label;		// Interface name to show in UI
+	/**
+	 * Interface id (i.e. safe name) to use in framework
+	 * @var string
+	 */
+	public $id;
 	
-	public $interfaceRoles = array();
+	/**
+	 * 
+	 * @var string
+	 */
+	public $path;
+	
+	/**
+	 * Interface name to show in UI
+	 * @var string
+	 */
+	public $label;
+	
+	/**
+	 * Specifies is this interface object is a toplevel interface (true) or subinterface (false)
+	 * @var boolean
+	 */
+	public $isTopLevelIfc = false;
+	
+	/**
+	 * Roles that have access to this interface
+	 * Only applies to top level interface objects
+	 * @var string[]
+	 */
+	public $ifcRoleNames = array();
+	
+	/**
+	 * Array with concepts for which all atoms may be get with the api
+	 * This applies to all concepts that are used as target of a (sub)interface expression that may be updated (crudU)
+	 * @var Concept[]
+	 */
 	public $editableConcepts = array();
 	
-	public $invariantConjuctsIds;
-	public $signalConjunctsIds;
-	
+	/**
+	 * 
+	 * @var boolean
+	 */
 	public $crudC;
+	
+	/**
+	 * 
+	 * @var boolean
+	 */
 	public $crudR;
+	
+	/**
+	 * 
+	 * @var boolean
+	 */
 	public $crudU;
+	
+	/**
+	 * 
+	 * @var boolean
+	 */
 	public $crudD;
 	
-	public $relation; 
+	/**
+	 * 
+	 * @var Relation|null
+	 */
+	public $relation;
+	
+	/**
+	 * 
+	 * @var boolean|null
+	 */
 	public $relationIsFlipped;
-	public $univalent;
-	public $totaal;
-	public $isProperty;
+	
+	/**
+	 * 
+	 * @var boolean
+	 */
+	public $isUni;
+	
+	/**
+	 * 
+	 * @var boolean
+	 */
+	public $isTot;
+	
+	/**
+	 * 
+	 * @var boolean
+	 */
+	public $isProp;
+	
+	/**
+	 * 
+	 * @var boolean
+	 */
 	public $isIdent;
+	
+	/**
+	 * 
+	 * @var string
+	 */
+	public $query;
 	
 	/**
 	 * 
@@ -45,97 +135,108 @@ class InterfaceObject {
 	 */
 	public $view;
 	
+	/**
+	 * 
+	 * @var string
+	 */
 	public $refInterfaceId;
+	
+	/**
+	 * 
+	 * @var boolean
+	 */
 	public $isLinkTo;
-	public $isTopLevelIfc = false;
-	public $boxSubInterfaces;
+	
+	/**
+	 * 
+	 * @var InterfaceObject[]
+	 */
 	public $subInterfaces = array();
 	
-	public $expressionSQL;
+	/**
+	 * 
+	 * @var Atom
+	 */
+	public $srcAtom = null;
 	
 	/**
 	 * 
 	 * @var Atom
 	 */
-	public $srcAtom;
-	
-	/**
-	 * 
-	 * @var Atom
-	 */
-	public $tgtAtom;
+	public $tgtAtom = null;
 	
 
 	/**
 	 * InterfaceObject constructor
-	 * @param string $id
-	 * @param array $interface
-	 * @param Atom $srcAtom
+	 * @param array $ifcDef
 	 */
-	public function __construct($id, $interfaces = array(), $srcAtom = null){
+	public function __construct($ifcDef){
 		$this->database = Database::singleton();
+				
+		// Set attributes from $ifcDef
+		$this->id = $ifcDef['id'];
+		$this->label = $ifcDef['label'];
 		
-		if(empty($interfaces)){
-		    global $allInterfaceObjects; // from Generics.php
-			$interfaces = $allInterfaceObjects; // if no $interface is provided, use toplevel interfaces from $allInterfaceObjects
-			$this->isTopLevelIfc = true;
-		}
+		$this->view = is_null($ifcDef['viewId']) ? null : View::getView($ifcDef['viewId']);
 		
-		// Check if interface exists
-		foreach ($interfaces as $ifc){
-		    if($ifc['id'] == $id) $interface = $ifc;
-		}
-		if(!isset($interface)) throw new Exception ("Interface '$id' does not exists", 500);
-		
-		// Set attributes of interface
-		$this->id = $interface['id'];
-		$this->srcAtom = $srcAtom;
-		$this->path = is_null($this->srcAtom) ? $this->id : $this->srcAtom->path . '/' . $this->id;
-		$this->label = $interface['label'];
-		
-		$this->interfaceRoles = $interface['interfaceRoles'];
-		
-		$this->invariantConjuctsIds = $interface['invConjunctIds']; // only applicable for Top-level interfaces
-		$this->signalConjunctsIds = $interface['sigConjunctIds']; // only applicable for Top-level interfaces
-		
-		// CRUD rights
-		$this->crudC = is_null($interface['crudC']) ? Config::get('defaultCrudC', 'transactions') : $interface['crudC'];
-		$this->crudR = is_null($interface['crudR']) ? Config::get('defaultCrudR', 'transactions') : $interface['crudR'];
-		$this->crudU = is_null($interface['crudU']) ? Config::get('defaultCrudU', 'transactions') : $interface['crudU'];
-		$this->crudD = is_null($interface['crudD']) ? Config::get('defaultCrudD', 'transactions') : $interface['crudD'];
+		$this->path = $this->id;
 		
 		// Information about the (editable) relation if applicable
-		$this->relation = $interface['relation'] ? Relation::getRelation($interface['relation']) : null;
-		$this->relationIsFlipped = $interface['relationIsFlipped'];
-		$this->totaal = $interface['exprIsTot'];
-		$this->univalent = $interface['exprIsUni'];
-		$this->isProperty = $interface['exprIsProp'];
-		$this->isIdent = $interface['exprIsIdent'];
-		$this->srcConcept = Concept::getConcept($interface['srcConcept']);
-		    // TODO: insert check to compare $this->srcAtom->concept with $this->srcConcept
+		$this->relation = is_null($ifcDef['relation']) ? null : Relation::getRelation($ifcDef['relation']);
+		$this->relationIsFlipped = $ifcDef['relationIsFlipped'];
 		
-		$this->tgtConcept = Concept::getConcept($interface['tgtConcept']);
+		// Interface expression information
+		$this->srcConcept = Concept::getConcept($ifcDef['expr']['srcConcept']);
+		$this->tgtConcept = Concept::getConcept($ifcDef['expr']['tgtConcept']);
+		$this->isUni = $ifcDef['expr']['isUni'];
+		$this->isTot = $ifcDef['expr']['isTot'];
+		$this->isProp = $ifcDef['expr']['isProp'];
+		$this->isIdent = $ifcDef['expr']['isIdent'];
+		$this->query = $ifcDef['expr']['query'];
 		
-		isset($interface['viewId']) ? $this->view = View::getView($interface['viewId']) : null;
+		// CRUD rights
+		$this->crudC = $ifcDef['crud']['create'];
+		$this->crudR = $ifcDef['crud']['read'];
+		$this->crudU = $ifcDef['crud']['update'];
+		$this->crudD = $ifcDef['crud']['delete'];
+		if($this->crudU && $this->tgtConcept->isObject) $this->editableConcepts[] = $this->tgtConcept;
 		
-		if($this->crudU && $this->tgtConcept->isObject) $this->editableConcepts[] = $this->tgtConcept->name;
-		
-		// Set attributes
-		$this->refInterfaceId = $interface['refSubInterfaceId'];
-		$this->isLinkTo = $interface['isLinkTo'];
-		$this->boxSubInterfaces = $interface['boxSubInterfaces'];
-		$this->expressionSQL = $interface['expressionSQL'];
-				
-		// Determine subInterfaces
-		foreach ((array)$this->boxSubInterfaces as $subInterface){
-			$ifc = new InterfaceObject($subInterface['id'], $this->boxSubInterfaces);
-			$this->subInterfaces[] = $ifc;
-			$this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
+		// Subinterfacing
+		if(!is_null($ifcDef['subinterfaces'])){
+		    // Reference to top level interface
+		    $this->refInterfaceId = $ifcDef['subinterfaces']['refSubInterfaceId'];
+		    $this->isLinkTo = $ifcDef['subinterfaces']['refIsLinTo'];
+		    
+		    // Inline subinterface definitions
+		    foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef){
+		        $ifc = new InterfaceObject($subIfcDef);
+		        $this->subInterfaces[$ifc->id] = $ifc;
+		        $this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
+		    }
 		}
 	}
 	
 	public function __toString() {
 		return $this->id;
+	}
+	
+	/**
+	 * 
+	 * @param Atom $atom
+	 */
+	public function setSrcAtom($atom){
+	    // Check if atom can be used as source for this interface
+	    if($atom->concept != $this->srcConcept) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept [{$this->srcConcept->name}] of interface '{$this->path}'", 500);
+	    
+	    $this->srcAtom = $atom;
+	    $this->path = $this->srcAtom->path . '/' . $this->id;
+	    
+	}
+	
+	public function getSubinterface($ifcId){
+	    if(!array_key_exists($ifcId, $this->subInterfaces)) throw new Exception("Subinterface '{$ifcId}' does not exists in interface '{$this->path}'", 500);
+	
+	    return $this->subInterfaces[$ifcId];
 	}
 	
 /**************************************************************************************************
@@ -183,11 +284,11 @@ class InterfaceObject {
 	 * @return array
 	 */
 	private function getTgtAtomIds(){
-	    $query = "SELECT DISTINCT `tgt` FROM ($this->expressionSQL) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
+	    $query = "SELECT DISTINCT `tgt` FROM ({$this->query}) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
 	    $tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
 
 	    // Integrity check
-	    if($this->univalent && (count($tgtAtomIds) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
+	    if($this->isUni && (count($tgtAtomIds) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
 	    
 	    return (array)$tgtAtomIds;
 	}
@@ -212,8 +313,8 @@ class InterfaceObject {
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
 	    
 	    // Initialize result array
-	    if($this->tgtConcept->isObject && !$this->isProperty) $result = array(); // return array if tgtConcept is an object (except properties), even if result is empty
-	    elseif(!$this->univalent) $result = array(); // return array for non-univalent interfaces
+	    if($this->tgtConcept->isObject && !$this->isProp) $result = array(); // return array if tgtConcept is an object (except properties), even if result is empty
+	    elseif(!$this->isUni) $result = array(); // return array for non-univalent interfaces
 	    else $result = null; // else (i.e. properties and univalent scalars)
 	    
 	    // Loop over target atoms
@@ -224,7 +325,7 @@ class InterfaceObject {
 	        // Object
 	        if($this->tgtConcept->isObject){
 	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false
-	            if($this->isProperty && !$this->isIdent && empty($this->subInterfaces) && empty($this->refInterfaceId)){
+	            if($this->isProp && !$this->isIdent && empty($this->subInterfaces) && empty($this->refInterfaceId)){
 	                $result = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
 	    
 	            // Regular object, with or without subinterfaces
@@ -234,11 +335,11 @@ class InterfaceObject {
 	                // Add target atom to result array
 	                switch($options['arrayType']){
 	                    case 'num' :
-	                        // if($this->univalent) $result = $content; else $result[] = $content;
+	                        // if($this->isUni) $result = $content; else $result[] = $content;
 	                        $result[] = $content;
 	                        break;
 	                    case 'assoc' :
-	                        // if($this->univalent) $result = $content; else $result[$tgtAtom->id] = $content;
+	                        // if($this->isUni) $result = $content; else $result[$tgtAtom->id] = $content;
 	                        $result[$tgtAtom->id] = $content;
 	                        break;
 	                    default :
@@ -253,7 +354,7 @@ class InterfaceObject {
 	            if(empty($this->subInterfaces) && empty($this->refInterfaceId)){
 	                $content = $tgtAtom->getJsonRepresentation();
 	                	
-	                if($this->univalent) $result = $content;
+	                if($this->isUni) $result = $content;
 	                else $result[] = $content;
 	                	
 	            // Tree
@@ -382,14 +483,14 @@ class InterfaceObject {
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
 	
 	    // PatchReplace only works for UNI expressions. Otherwise, use patch remove and patch add
-	    if(!$this->univalent) throw new Exception("Cannot patch replace for non-univalent interface '{$this->path}'. Use patch remove + add instead", 500);
+	    if(!$this->isUni) throw new Exception("Cannot patch replace for non-univalent interface '{$this->path}'. Use patch remove + add instead", 500);
 	    
 	    // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch replace. No 'value' specfied for patch with path '{$this->path}'", 400);
 	    $value = $patch['value'];
 	
 	    // Interface is property
-	    if($this->isProperty && !$this->isIdent){
+	    if($this->isProp && !$this->isIdent){
 	        // Throw error when patch value is something else then true, false or null
 	        if(!(is_bool($value) || is_null($value))) throw new Exception("Interface '{$this->path}' is property, boolean expected, non-boolean provided");
 	        	
@@ -430,7 +531,7 @@ class InterfaceObject {
 	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
 	    
 	    // Interface is property
-	    if($this->isProperty && !$this->isIdent){
+	    if($this->isProp && !$this->isIdent){
 	        // Properties must be treated as a 'replace', so not handled here
 	        throw new Exception("Cannot patch add for property '{$this->path}'. Use patch replace instead", 500);
 	
@@ -444,7 +545,7 @@ class InterfaceObject {
 	    // Interface is a relation to a scalar (i.e. not an object)
 	    }elseif(!$this->tgtConcept->isObject){    	
 	        // Check: If interface is univalent, throw exception
-	        if($this->univalent) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
+	        if($this->isUni) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
 	        	
 	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 	        
@@ -467,47 +568,61 @@ class InterfaceObject {
  *
  *************************************************************************************************/
 	
-	public static function getInterface($ifcId, $parentIfc = null){
-		// Top level interface
-		if(is_null($parentIfc)){
-			return new InterfaceObject($ifcId);
-		// Subinterface
-		}else{
-			foreach((array)$parentIfc->subInterfaces as $subinterface){
-				if($subinterface->id == $ifcId) {
-					return $subinterface;
-				}
-			}
-			return false;
-		}
-	}
-	
-	public static function getAllInterfaceObjects(){		
-		if(!isset(self::$allInterfaces)){
-			global $allInterfaceObjects; // from Generics.php
+	/**
+	 * Returns toplevel interface object
+	 * @param string $ifcId
+	 * @throws Exception when interface does not exists
+	 * @return InterfaceObject
+	 */
+	public static function getInterface($ifcId){
+		if(!array_key_exists($ifcId, $interfaces = self::getAllInterfaces())) throw new Exception("Interface '{$ifcId}' is not defined", 500);
 		
-			foreach ($allInterfaceObjects as $interfaceId => $interface){
-				$ifc = new InterfaceObject($interfaceId);
-				self::$allInterfaces[$ifc->id] = $ifc;
-			}
-		}
-		return self::$allInterfaces;
+		return $interfaces[$ifcId];
 	}
 	
-	public static function getAllInterfacesForConcept($concept){
-		$interfaces = array();
-		foreach (InterfaceObject::getAllInterfaceObjects() as $ifc){
-			if ($ifc->srcConcept->name == $concept) $interfaces[$ifc->id] = $ifc;
-		}
-		return $interfaces;
+	/**
+	 * Returns all toplevel interface objects
+	 * @return InterfaceObject[]
+	 */
+	public static function getAllInterfaces(){
+	    if(!isset(self::$allInterfaces)) self::setAllInterfaces();
+	    
+	    return self::$allInterfaces;   
 	}
 	
+	/**
+	 * Returns all toplevel interface objects that are not assigned to a role
+	 * @return InterfaceObject[]
+	 */
 	public static function getPublicInterfaces(){
-		$interfaces = array();
-		foreach(InterfaceObject::getAllInterfaceObjects() as $ifc){
-			if (empty($ifc->interfaceRoles)) $interfaces[$ifc->id] = $ifc;
-		}
-		return $interfaces;
+	    $interfaces = array();
+	    foreach(InterfaceObject::getAllInterfaces() as $ifc){
+	        if (empty($ifc->ifcRoleNames)) $interfaces[$ifc->id] = $ifc;
+	    }
+	    return $interfaces;
+	}
+	
+	/**
+	 * Import all interface object definitions from json file and create and save InterfaceObject objects
+	 * @return void
+	 */
+	private static function setAllInterfaces(){
+	    self::$allInterfaces = array();
+	    
+	    // import json file
+	    $file = file_get_contents(__DIR__ . '/../generics/interfaces.json');
+	    $allInterfaceDefs = (array)json_decode($file, true);
+	    
+	    
+	    foreach ($allInterfaceDefs as $ifcDef){
+	        $ifc = new InterfaceObject($ifcDef['ifcObject']);
+	        
+	        // Set additional information about this toplevel interface object
+	        $ifc->isTopLevelIfc = true; // Specify as top level ifc
+	        $ifc->ifcRoleNames = $ifcDef['interfaceRoles'];
+	        
+	        self::$allInterfaces[$ifc->id] = $ifc;
+	    }
 	}
 }
 

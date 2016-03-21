@@ -32,7 +32,7 @@ generateGenerics fSpec =
         --, generateConjuncts fSpec
         --, generateRoles fSpec
         --, generateViews fSpec
-        , generateInterfaces fSpec
+        --, generateInterfaces fSpec
         ]
         
 generateConstants :: FSpec -> [String]

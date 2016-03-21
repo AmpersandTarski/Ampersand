@@ -13,6 +13,10 @@ class Session {
 	
 	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
 	
+	/**
+	 * 
+	 * @var InterfaceObject[]
+	 */
 	private $accessibleInterfaces = array(); // when login enabled: all interfaces for sessionRoles, otherwise: interfaces for active roles
 	private $ifcsOfActiveRoles = array(); // interfaces for active roles
 	public $rulesToMaintain = array(); // rules that are maintained by active roles 
@@ -246,10 +250,17 @@ class Session {
 		return $interfaces;
 	}
 	
-	public function getEditableConcepts(){
-		$editableConcepts = array();
-		foreach($this->accessibleInterfaces as $ifc) $editableConcepts = array_merge($editableConcepts, $ifc->editableConcepts);
-		return $editableConcepts;
+	/**
+	 * 
+	 * @param Concept $concept
+	 * @return boolean
+	 */
+	public function isEditableConcept($concept){
+		foreach($this->accessibleInterfaces as $ifc) 
+		    if (in_array($concept, $ifc->editableConcepts)) return true;
+		
+		// Else
+		return false;
 	}
 	
 	public function isAccessibleIfc($interfaceId){

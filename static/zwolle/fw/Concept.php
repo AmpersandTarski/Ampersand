@@ -230,6 +230,19 @@ class Concept {
 	    return $this->mysqlConceptTable;
 	}
 	
+	/**
+	 * 
+	 * @return InterfaceObject[]
+	 */
+	public function getInterfaces(){
+	    $interfaces = array();
+	    foreach ($this->interfaceIds as $ifcId){
+	        $ifc = InterfaceObject::getInterface($ifcId);
+	        $interfaces[$ifc->id] = $ifc;
+	    }
+	    return $interfaces;
+	}
+	
     /**********************************************************************************************
      * 
      * Static functions
