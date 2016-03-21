@@ -28,7 +28,7 @@ data JSONObjectDef = JSONObjectDef
   , ifcJSONNormalizationSteps :: [String] -- Not used in frontend. Just informative for analisys
   , ifcJSONrelation           :: Maybe String
   , ifcJSONrelationIsFlipped  :: Maybe Bool
-  , ifcJSONcrud               :: JSONcrud
+  , ifcJSONcrud               :: JSONCruds
   , ifcJSONexpr               :: JSONexpr
   , ifcJSONsubinterfaces      :: Maybe JSONSubInterface
   } deriving (Generic, Show)
@@ -37,12 +37,9 @@ data JSONSubInterface = JSONSubInterface
   , subJSONifcObjects         :: Maybe [JSONObjectDef]
   , subJSONrefSubInterfaceId  :: Maybe String
   , subJSONrefIsLinTo         :: Maybe Bool
-  , subJSONcrudC              :: Bool
-  , subJSONcrudR              :: Bool
-  , subJSONcrudU              :: Bool
-  , subJSONcrudD              :: Bool
+  , subJSONcrud               :: Maybe JSONCruds
   } deriving (Generic, Show)
-data JSONcrud = JSONcrud
+data JSONCruds = JSONCruds
   { crudJSONread              :: Bool
   , crudJSONcreate            :: Bool
   , crudJSONupdate            :: Bool
@@ -66,7 +63,7 @@ instance ToJSON JSONInterface where
   toJSON = amp2Jason
 instance ToJSON JSONObjectDef where
   toJSON = amp2Jason
-instance ToJSON JSONcrud where
+instance ToJSON JSONCruds where
   toJSON = amp2Jason
 instance ToJSON JSONexpr where
   toJSON = amp2Jason
@@ -74,43 +71,37 @@ instance ToJSON JSONexpr where
 instance JSON FSpec Interfaces where
  fromAmpersand fSpec _ = Interfaces (map (fromAmpersand fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 
-instance JSON ([Declaration], SubInterface) JSONSubInterface where
- fromAmpersand fSpec (editableRels, sub) = 
+instance JSON SubInterface JSONSubInterface where
+ fromAmpersand fSpec sub = 
    case sub of 
      Box _ cl objs         -> JSONSubInterface
        { subJSONboxClass           = cl
-       , subJSONifcObjects         = Just . map (fromAmpersand fSpec) . zip (repeat editableRels) $ objs
+       , subJSONifcObjects         = Just . map (fromAmpersand fSpec) $ objs
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinTo         = Nothing
-       , subJSONcrudC              = True
-       , subJSONcrudR              = True
-       , subJSONcrudU              = True
-       , subJSONcrudD              = True
+       , subJSONcrud               = Nothing
        }
      InterfaceRef isLink nm cr -> JSONSubInterface
        { subJSONboxClass           = Nothing
        , subJSONifcObjects         = Nothing
        , subJSONrefSubInterfaceId  = Just nm
        , subJSONrefIsLinTo         = Just isLink
-       , subJSONcrudC              = crudC cr
-       , subJSONcrudR              = crudR cr
-       , subJSONcrudU              = crudU cr
-       , subJSONcrudD              = crudD cr
+       , subJSONcrud               = Just (fromAmpersand fSpec cr)
        }
  
 instance JSON Interface JSONInterface where
  fromAmpersand fSpec interface = JSONInterface
   { ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
-  , ifcJSONifcObject          = fromAmpersand fSpec (ifcParams interface, ifcObj interface)
+  , ifcJSONifcObject          = fromAmpersand fSpec (ifcObj interface)
   }
 
-instance JSON ObjectDef JSONcrud where
- fromAmpersand fSpec object = JSONcrud
-  { crudJSONread              = crudR . objcrud $ object
-  , crudJSONcreate            = crudC . objcrud $ object
-  , crudJSONupdate            = crudU . objcrud $ object
-  , crudJSONdelete            = crudU . objcrud $ object
+instance JSON Cruds JSONCruds where
+ fromAmpersand _ crud = JSONCruds
+  { crudJSONread              = crudR crud
+  , crudJSONcreate            = crudC crud
+  , crudJSONupdate            = crudU crud
+  , crudJSONdelete            = crudU crud
   }
   
 instance JSON ObjectDef JSONexpr where
@@ -125,32 +116,29 @@ instance JSON ObjectDef JSONexpr where
   }
   where
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
-    (srcConcept, tgtConcept, mEditableDecl) =
+    (srcConcept, tgtConcept) =
       case getExpressionRelation normalizedInterfaceExp of
-        Just (src, decl, tgt, isFlipped) ->
-          (src, tgt, Just (decl, isFlipped))
-        Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
+        Just (src, _ , tgt, _) ->
+          (src, tgt)
+        Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
-instance JSON ([Declaration], ObjectDef) JSONObjectDef where
- fromAmpersand fSpec (editableRels, object) = JSONObjectDef
+instance JSON ObjectDef JSONObjectDef where
+ fromAmpersand fSpec object = JSONObjectDef
   { ifcJSONid                 = escapeIdentifier . name $ object
   , ifcJSONlabel              = name object
-  , ifcJSONviewId             = case getDefaultViewForConcept fSpec tgtConcept of
-                                 Just Vd{vdlbl=vId} -> Just vId
-                                 Nothing            -> Nothing
+  , ifcJSONviewId             = fmap vdlbl (getDefaultViewForConcept fSpec tgtConcept)
   , ifcJSONNormalizationSteps = showPrf showADL.cfProof (getOpts fSpec).objctx $ object 
   , ifcJSONrelation           = fmap (showHSName . fst) mEditableDecl
   , ifcJSONrelationIsFlipped  = fmap               snd  mEditableDecl
-  , ifcJSONcrud               = fromAmpersand fSpec object
+  , ifcJSONcrud               = fromAmpersand fSpec (objcrud object)
   , ifcJSONexpr               = fromAmpersand fSpec object
-  , ifcJSONsubinterfaces      = fmap (fromAmpersand fSpec . builder) (objmsub object)
+  , ifcJSONsubinterfaces      = fmap (fromAmpersand fSpec) (objmsub object)
   }
   where
-    builder s = (editableRels,s)
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
-    (srcConcept, tgtConcept, mEditableDecl) =
+    (tgtConcept, mEditableDecl) =
       case getExpressionRelation normalizedInterfaceExp of
-        Just (src, decl, tgt, isFlipped) ->
-          (src, tgt, Just (decl, isFlipped))
-        Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
+        Just (_ , decl, tgt, isFlipped) ->
+          (tgt, Just (decl, isFlipped))
+        Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
     
