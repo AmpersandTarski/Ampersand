@@ -1,6 +1,5 @@
 module Database.Design.Ampersand.Prototype.Generate 
-  (generateGenerics
-  , generateDBstructQueries, generateAllDefPopQueries
+  (generateDBstructQueries, generateAllDefPopQueries
   )
 where
 
@@ -8,39 +7,10 @@ import Database.Design.Ampersand
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.List
-import Data.Maybe
-import Database.Design.Ampersand.FSpec.SQL
-import Database.Design.Ampersand.FSpec.FSpecAux
-import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.Basics (fatal)
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 
--- Generate Generics.php
-generateGenerics :: FSpec -> IO ()
-generateGenerics fSpec =
- do { let filecontent = genPhp "Generate.hs" "Generics.php" genericsPhpContent
---  ; verboseLn (getOpts fSpec) filecontent
-    ; writePrototypeFile fSpec "Generics.php" filecontent
-    }
- where    
-    genericsPhpContent :: [String]
-    genericsPhpContent =
-      intercalate [""]
-        [ generateConstants fSpec
-        --, generateTableInfos fSpec
-        --, generateRules fSpec
-        --, generateConjuncts fSpec
-        --, generateRoles fSpec
-        --, generateViews fSpec
-        --, generateInterfaces fSpec
-        ]
         
-generateConstants :: FSpec -> [String]
-generateConstants fSpec =
-  [ "$isDev = "++showPhpBool (development opts)++";"
-  ]
-  where opts = getOpts fSpec
-  
 generateDBstructQueries :: FSpec -> [String]
 generateDBstructQueries fSpec = theSQLstatements
   where
@@ -189,140 +159,6 @@ generateAllDefPopQueries fSpec = theSQLstatements
                     Just val -> showValPHP val
                  | att <- record ]
 
--- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
--- two abstractions to guarantee the same implementation.
-isFrontEndInvariant :: Rule -> Bool
-isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
-
-isFrontEndSignal :: Rule -> Bool
-isFrontEndSignal r = isSignal r
-
--- NOTE that results from filterFrontEndInvConjuncts and filterFrontEndSigConjuncts may overlap (conjunct appearing in both invariants and signals)
--- and that because of extra condition in isFrontEndInvariant (not (ruleIsInvariantUniOrInj r)), some parameter conjuncts may not be returned
--- as either inv or sig conjuncts (i.e. conjuncts that appear only in uni or inj rules) 
-filterFrontEndInvConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndInvConjuncts conjs = filter (\c -> any isFrontEndInvariant $ rc_orgRules c) conjs
-
-filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRules c) conjs
-
-generateInterfaces :: FSpec -> [String]
-generateInterfaces fSpec =
-  [ "$allInterfaceObjects ="
-  , "  array"
-  ] ++
-  addToLastLine ";"
-     (indent 4
-       (blockParenthesize  "(" ")" ","
-         (map (generateInterface fSpec) (interfaceS fSpec ++ interfaceG fSpec))
-     ) )
-
-generateInterface :: FSpec -> Interface -> [String]
-generateInterface fSpec interface =
-  let roleStr = case ifcRoles interface of []    -> " for all roles"
-                                           rolez -> " for role"++ (if length rolez == 1 then "" else "s") ++" " ++ intercalate ", " (map name (ifcRoles interface))
-      arrayKey = escapeIdentifier $ name interface
-  in  ["// Top-level interface " ++ name interface ++ roleStr  ++ ":"
-      , showPhpStr arrayKey ++ " => " 
-      ] ++
-  indent 2 (genInterfaceObjects fSpec (ifcParams interface) (Just $ topLevelFields) 1 (ifcObj interface))
-  where topLevelFields = -- for the top-level interface object we add the following fields (saves us from adding an extra interface node to the php data structure)
-          [ "      , 'interfaceRoles' => array (" ++ intercalate ", " (map (showPhpStr.name) $ ifcRoles interface) ++")" 
-          , "      , 'invConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ invConjuncts) ++")"
-          , "      , 'sigConjunctIds' => array ("++intercalate ", " (map (showPhpStr . rc_id) $ sigConjuncts) ++")"
-          , "      , 'editableConcepts' => array ("++ intercalate ", " (map (showPhpStr . name) ((editableConcepts fSpec) interface)) ++")"
-          ]
-        invConjuncts = [ c | c <- ifcControls interface, any isFrontEndInvariant $ rc_orgRules c ] -- NOTE: these two
-        sigConjuncts = [ c | c <- ifcControls interface, any isFrontEndSignal    $ rc_orgRules c ] --       may overlap
-
-genInterfaceObjects :: FSpec -> [Declaration] -> Maybe [String] -> Int -> ObjectDef -> [String]
-genInterfaceObjects fSpec editableRels mTopLevelFields depth object =
-     [ "array ( 'name'  => "++ showPhpStr (name object)
-     , "      , 'id'    => " ++ show (escapeIdentifier $ name object) -- only for new front-end
-     , "      , 'label' => " ++ showPhpStr (name object)              -- only for new front-end
-     ]
-  ++ maybe [] (\viewId -> ["      , 'viewId' => " ++ showPhpStr viewId]) mViewId 
-  ++ (if verboseP (getOpts fSpec)  -- previously, this included the condition        objctx object /= normalizedInterfaceExp
-      then    ["      // Normalization steps:"]
-           ++ ["      // "++ls | ls<-(showPrf showADL.cfProof (getOpts fSpec).objctx) object] -- let's hope that none of the names in the relation contains a newline
-           ++ ["      //"]
-      else    []
-     )
-  ++ ["      // Normalized interface expression (== expressionSQL): "++escapePhpStr (showADL normalizedInterfaceExp) ]
-  ++ ["      // normalizedInterfaceExp = " ++ show normalizedInterfaceExp | development (getOpts fSpec) ]
-             -- escape for the pathological case that one of the names in the relation contains a newline
-  ++ fromMaybe [] mTopLevelFields -- declare extra fields if this is a top level interface object
-  ++ case mEditableDecl of
-           Just (decl, isFlipped) ->
-             [ "      , 'relation' => "++showPhpStr (showHSName decl) ++ " // this interface represents a declared relation"
-             , "      , 'relationIsEditable' => "++ showPhpBool (decl `elem` editableRels) 
-             , "      , 'relationIsFlipped' => "++showPhpBool isFlipped ] ++
-             if isFlipped 
-             then [ "      , 'min' => "++ if isSur decl then "'One'" else "'Zero'"
-                  , "      , 'max' => "++ if isInj decl then "'One'" else "'Many'" ]
-             else [ "      , 'min' => "++ if isTot decl then "'One'" else "'Zero'" 
-                  , "      , 'max' => "++ if isUni decl then "'One'" else "'Many'" ] 
-           Nothing ->
-             [ "      , 'relation' => '' // this interface expression does not represent a declared relation"
-             , "      , 'relationIsFlipped' => ''"
-             ] 
-  ++ [ "      , 'srcConcept'    => "++showPhpStr (name srcConcept) -- NOTE: these are src and tgt of the expression, not necessarily the relation (if there is one), 
-     , "      , 'tgtConcept'    => "++showPhpStr (name tgtConcept) -- which may be flipped.
-     , "      , 'crudC'         => "++ (showPhpBool . crudC . objcrud $ object)
-     , "      , 'crudR'         => "++ (showPhpBool . crudR . objcrud $ object)
-     , "      , 'crudU'         => "++ (showPhpBool . crudU . objcrud $ object)
-     , "      , 'crudD'         => "++ (showPhpBool . crudD . objcrud $ object)
-     , "      , 'exprIsUni'     => " ++ showPhpBool (isUni normalizedInterfaceExp) -- We could encode these by creating min/max also for non-editable,
-     , "      , 'exprIsTot'     => " ++ showPhpBool (isTot normalizedInterfaceExp) -- but this is more in line with the new front-end templates.
-     , "      , 'exprIsProp'    => " ++ showPhpBool (isProp normalizedInterfaceExp) 
-     , "      , 'exprIsIdent'   => " ++ showPhpBool (isIdent normalizedInterfaceExp) 
-     , "      , 'expressionSQL' => " ++ showPhpStr (prettySQLQuery fSpec (22+14*depth) normalizedInterfaceExp)
-     ] 
-  ++ generateMSubInterface fSpec editableRels depth (objmsub object)
-  ++ [ "      )"
-     ]
- where mViewId = case objmView object of
-                   Just vId -> Just vId
-                   Nothing  -> case getDefaultViewForConcept fSpec tgtConcept of
-                                 Just Vd{vdlbl=vId} -> Just vId
-                                 Nothing            -> Nothing
-       normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
-       (srcConcept, tgtConcept, mEditableDecl) =
-         case getExpressionRelation normalizedInterfaceExp of
-           Just (src, decl, tgt, isFlipped) ->
-             (src, tgt, Just (decl, isFlipped))
-           Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
-
-generateMSubInterface :: FSpec -> [Declaration] -> Int -> Maybe SubInterface -> [String]
-generateMSubInterface fSpec editableRels depth subIntf =
-  case subIntf of
-    Nothing -> [ "      // No subinterfaces" ]
-    Just (InterfaceRef isLink nm _)
-            -> [ "      // InterfaceRef"
-         --      , "      , 'refSubInterface' => " ++ showPhpStr nm
-               , "      , 'refSubInterfaceId' => " ++ showPhpStr (escapeIdentifier nm) -- only for new front-end
-               , "      , 'isLinkTo' => "++ show isLink
-               ]
-    Just (Box _ cl objects)
-            -> [ "      // Box" ++ (maybe "" (\c -> "<"++c++">") cl)
-               , "      , 'boxSubInterfaces' =>"
-               , "          array"
-               ] ++
-               indent 12
-                 (blockParenthesize "(" ")" ","
-                   (map (genInterfaceObjects fSpec editableRels Nothing (depth + 1)) objects))
-
--- utils
-
--- generatorModule is the Haskell module responsible for generation, makes it easy to track the origin of the php code
-genPhp :: String -> String -> [String] -> String
-genPhp generatorModule moduleName contentLines = unlines $
-  [ "<?php"
-  , "// module "++moduleName++" generated by "++generatorModule
-  , "// "++ampersandVersionStr
-  ] ++ replicate 2 "" ++ contentLines ++
-  [ "?>"
-  ]
 showAsValue :: String -> String
 showAsValue str = "'"++f str++"'"
   where f :: String -> String
