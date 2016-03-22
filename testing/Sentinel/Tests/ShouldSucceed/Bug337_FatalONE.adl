@@ -1,0 +1,8 @@
+CONTEXT Bug IN ENGLISH
+
+PROCESS Developer
+RULE "Triviality" : I[ONE] = I[ONE]
+ROLE Developer MAINTAINS "Triviality"
+ENDPROCESS
+
+ENDCONTEXT

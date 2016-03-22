@@ -1,0 +1,133 @@
+CONTEXT Limorange IN ENGLISH
+PURPOSE CONTEXT Limorange {+ Simple context for testing edit operations on specilizations -}
+
+CONCEPT Fruit "Most general concept"
+
+CLASSIFY Nectarine ISA Fruit
+CLASSIFY Citrus ISA Fruit
+CLASSIFY Orange ISA Citrus
+CLASSIFY Lime ISA Citrus
+CLASSIFY Limorange IS Lime /\ Orange
+CLASSIFY Lemon ISA Citrus
+
+RELATION ownsNectarines[Person*Nectarine]
+RELATION ownsOranges[Person*Orange]
+RELATION ownsLimes[Person*Lime]
+RELATION ownsCitrus[Person*Citrus]
+RELATION citrusOwnedBy[Citrus*Person] -- for testing flip edit
+
+RELATION ownsLimoranges[Person*Limorange]
+
+RELATION limeProperties[Lime*LimeProperty] -- for testing editing in nested interface
+
+INTERFACE Overview FOR Dummy : I[SESSION]
+BOX [ "All people" : V[SESSION*Person]
+    , "All fruit" : V[SESSION*Fruit]
+    , "All citrus fruit" : V[SESSION*Citrus]
+    , "All lemons" : V[SESSION*Lemon]
+    , "All oranges" : V[SESSION*Orange]
+    , "All limes" : V[SESSION*Lime]
+    , "All limoranges" : V[SESSION*Limorange]
+    , "All nectarines" : V[SESSION*Nectarine]
+    ]
+
+INTERFACE Person (ownsNectarines,ownsOranges,ownsLimes, ownsCitrus, citrusOwnedBy, ownsLimoranges) : I[Person]
+BOX [ "Person atom" : I
+    , "ownsNectarines"  : ownsNectarines
+    , "ownsOranges"  : ownsOranges
+    , "ownsLimes"  : ownsLimes
+        INTERFACE Lime
+    , "ownsLimoranges" : ownsLimoranges
+    , "ownsCitrus" : ownsCitrus
+    , "ownsCitrus;I[Lime]" : ownsCitrus;I[Lime]
+    , "ownsCitrus;I[Orange]" : ownsCitrus;I[Orange]
+    , "ownsCitrus;I[Orange];I[Lime]" : ownsCitrus;I[Orange];I[Lime]                     -- Person*Limorange
+    , "ownsCitrus;I[Orange];I[Lime];I[Citrus]" : ownsCitrus;I[Orange];I[Lime];I[Citrus] -- Person*Limorange
+    , "ownsCitrus;(I[Lime];I[Orange])~;I[Citrus]" : ownsCitrus;(I[Lime];I[Orange])~;I[Citrus] -- Person*Limorange (for testing flipEpsilons)
+    , "ownsCitrus;I[Orange];I[Lime];I[Citrus];I[Lemon]" : ownsCitrus;I[Orange];I[Lime];I[Citrus];I[Lemon] -- not editable
+    , "(I[Citrus];I[Orange];citrusOwnedBy)~" : (I[Citrus];I[Orange];citrusOwnedBy)~
+    , "(I [Orange];citrusOwnedBy)~" : (I[Orange];citrusOwnedBy)~
+    , "(citrusOwnedBy~);I[Orange]" : (citrusOwnedBy~);I[Orange]
+    , "ownsLimes;I[Orange]" : ownsLimes;I[Orange]
+    ]
+
+INTERFACE Lime (limeProperties) : I[Lime]
+BOX [ "Lime atom" : I
+    , "limeProperties" : limeProperties
+    ]
+
+POPULATION ownsNectarines[Person*Nectarine] CONTAINS
+  [ ("martijn", "nectarine1")
+  ; ("martijn", "nectarine2")
+  ; ("martijn", "nectarine3")
+  ]
+
+POPULATION ownsOranges[Person*Orange] CONTAINS
+  [ ("martijn", "orange1")
+  ; ("martijn", "orange2") 
+  ; ("martijn", "limorange1") 
+  ]
+
+POPULATION ownsLimes[Person*Lime] CONTAINS
+  [ ("martijn", "lime1")
+  ; ("martijn", "limorange1") 
+  ]
+
+POPULATION ownsCitrus[Person*Citrus] CONTAINS
+  [ ("martijn", "lime1")
+  ; ("martijn", "orange1")
+  ; ("martijn", "orange2")
+  ; ("martijn", "limorange1") 
+  ]
+
+POPULATION ownsLimoranges[Person*Limorange] CONTAINS
+  [ ("martijn", "limorange1") 
+  ]
+
+
+POPULATION limeProperties[Lime*LimeProperty] CONTAINS
+  [ ("lime1", "large")
+  ; ("lime1", "green")
+  ]
+
+{- 
+-- Using a single identifier 'owns' for all fruits doesn't work: each owns[Person*X] seems to contain all fruits, not just X
+-- Update: this may work now, after overloading has been fixed
+RELATION owns[Person*Nectarine]
+RELATION owns[Person*Orange]
+RELATION owns[Person*Lime]
+
+INTERFACE Overview : I[SESSION]
+BOX [ "All people" : V[SESSION*Person]
+    , "All fruit" : V[SESSION*Fruit]
+    , "All citrus fruit" : V[SESSION*Citrus]
+    , "All oranges" : V[SESSION*Orange]
+    , "All limes" : V[SESSION*Lime]
+    , "All limoranges" : V[SESSION*Limorange]
+    , "All nectarines" : V[SESSION*Nectarine]
+    ]
+
+INTERFACE Person (owns[Person*Nectarine]) : I[Person]
+BOX [ "Atom" : I
+    , "Nectarines owned" : owns[Person*Nectarine]
+    , "Oranges owned"    : owns[Person*Orange]
+    , "Limes owned"      : owns[Person*Lime]
+    ]
+
+POPULATION owns[Person*Nectarine] CONTAINS
+  [ ("martijn", "nectarine1")
+  ; ("martijn", "nectarine2")
+  ; ("martijn", "nectarine3")
+  ]
+
+POPULATION owns[Person*Orange] CONTAINS
+  [ ("martijn", "orange1")
+  ; ("martijn", "orange2") 
+  ]
+
+POPULATION owns[Person*Lime] CONTAINS
+  [ ("martijn", "lime1")
+  ]
+-}
+
+ENDCONTEXT

@@ -1,0 +1,68 @@
+CONTEXT ISAtest1 IN DUTCH
+
+PROCESS ISAtest1
+
+--[Criteria]--
+bfNaam :: Bedrijfsfunctie * Naam [UNI]
+MEANING "Een bedrijfsfunctie heeft een naam"
+critBF :: Criterium -> Bedrijfsfunctie
+MEANING "Dit criterium wordt gehanteerd door (de eigenaar van) een zekere bedrijfsfunctie"
+critTAV :: Criterium -> Bedrijfsfunctie -- tav wie de bf-eigenaar het criterium hanteert
+MEANING "Dit criterium wordt (door diens eigenaar) gehanteerd ten aanzien van een zekere bedrijfsfunctie"
+critText :: Criterium -> Text -- text van het criterium
+MEANING "Een criterium wordt verwoord middels een tekst"
+
+--[Verplichtingen en verwachtingen]--
+
+CLASSIFY Verplichting  ISA Criterium
+CLASSIFY Verwachting   ISA Criterium
+CLASSIFY Gewetensvraag IS  Verplichting /\ Verwachting
+
+CLASSIFY ExterneVerplichting ISA Verplichting
+RULE "Externe verplichtingen": I[ExterneVerplichting] = I[Verplichting] - I[Verwachting] 
+CLASSIFY ExterneVerwachting ISA Verwachting
+RULE "Externe verwachtingen":  I[ExterneVerwachting] = I[Verwachting] - I[Verplichting]
+
+RULE "Gewetensvragen1": I[Criterium] /\ critBF;critTAV~ |- I[Gewetensvraag]
+RULE "Gewetensvragen2": I[Gewetensvraag] |- I[Criterium] /\ critBF;critTAV~
+
+RULE "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I[Verplichting] \/ I[Verwachting]
+
+ENDPROCESS
+------------------------------------------------------------
+INTERFACE "Overzicht" FOR Developer, ExecEngine : I[ONE]
+BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
+   , "Criteria"               : V[ONE*Criterium]
+   , "Verplichtingen"         : V[ONE*Verplichting]
+   , "Externe verplichtingen" : V[ONE*ExterneVerplichting]
+   , "Verwachtingen"          : V[ONE*Verwachting]
+   , "Externe verwachtingen"  : V[ONE*ExterneVerwachting]
+   , "Gewetensvragen"         : V[ONE*Gewetensvraag]
+   ]
+
+--[Bedrijfsfuncties]---------------------------------------
+INTERFACE "Bedrijfsfunctie" -- I[Bedrijfsfunctie]
+   ( bfNaam
+   ) FOR Developer        : I[Bedrijfsfunctie]
+BOX[ "Naam"               : bfNaam
+   , "Obl TAV"            : critBF~;I[Verplichting];critTAV
+   , "ExtObl TAV"         : critBF~;I[ExterneVerplichting];critTAV
+   , "Exp TAV"            : critBF~;I[Verwachting];critTAV
+   , "ExtExp TAV"         : critBF~;I[ExterneVerwachting];critTAV
+   , "Gewetensvragen TAV" : critBF~;I[Gewetensvraag];critTAV
+   ]
+
+INTERFACE "Criterium" (critBF, critTAV, critText) : I[Criterium]
+BOX[ "Criterium"   : critText
+   , "Van (BF)"    : critBF
+   , "Tav (BF)"    : critTAV
+   ]
+
+INTERFACE "Verplichting" (critBF, critTAV, critText) : I[Verplichting] INTERFACE "Criterium"
+INTERFACE "ExterneVerplichting" (critBF, critTAV, critText) : I[ExterneVerplichting] INTERFACE "Criterium"
+INTERFACE "Verwachting" (critBF, critTAV, critText) : I[Verwachting] INTERFACE "Criterium"
+INTERFACE "ExterneVerwachting" (critBF, critTAV, critText) : I[ExterneVerwachting] INTERFACE "Criterium"
+INTERFACE "Gewetensvraag" (critBF, critTAV, critText) : I[Gewetensvraag] INTERFACE "Criterium"
+
+------------------------------------------------------------
+ENDCONTEXT

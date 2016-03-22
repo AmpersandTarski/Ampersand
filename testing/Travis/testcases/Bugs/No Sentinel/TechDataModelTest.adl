@@ -1,0 +1,19 @@
+CONTEXT TechDataModelTest IN ENGLISH
+
+-- Kernel concepts should not get type Bool
+
+SPEC B ISA A
+
+CONCEPT E "testconcept E" -- disconnected concept, should not appear in technical data model
+
+RELATION r1[B*C] [SUR,UNI,INJ]
+RELATION r2[A*C] [SUR,UNI,INJ]
+RELATION r3[A*D]
+
+RELATION r5[X*B] -- should not point at sugar cube B, but at its root A
+
+-- No table should be shown for X and D, as wide tables with one column are basically scalars
+-- (fixing this will also remove disconnected concepts like E)
+
+RELATION x[X*X] -- creates sugar cube for X in old version, as assocs point to concept 'X' but corresponding class has sql name 'X1'
+ENDCONTEXT

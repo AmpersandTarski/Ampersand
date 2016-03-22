@@ -1,0 +1,25 @@
+CONTEXT RETINA IN DUTCH
+{-Als organisaties persoonsgegevens willen verwerken, moeten zij aan een aantal eisen van de Wet bescherming persoonsgegevens (Wbp) voldoen. De organisatie:
+- mag persoonsgegevens alleen verzamelen en verwerken als daar een goede reden voor is. Of als de betrokken burger toestemming heeft gegeven voor het gebruik van de gegevens;
+- mag niet meer gegevens verwerken dan strikt noodzakelijk is voor het uiteindelijke doel;
+- mag de gegevens niet gebruiken voor andere doelen dan waarvoor ze zijn verzameld;
+- moet de betrokken burger laten weten wat de organisatie met de gegevens gaat doen;
+- mag de gegevens niet langer bewaren dan noodzakelijk;
+- moet passende technische en organisatorische maatregelen treffen om de gegevens te beschermen;
+- moet de registratie van de gegevens in veel gevallen melden.
+-}
+-----------------------------------------------------------
+INCLUDE "WBP-Glossary.partialadl"
+INCLUDE "WBP-Ontologie.partialadl"
+INCLUDE "SystemStuff.partialadl"
+INCLUDE "RuntimeStuff.partialadl"
+
+INCLUDE "IFC-Developer.ifc"
+INCLUDE "IFC-Demo.ifc"
+
+INCLUDE "ALS.pop" -- Apen Localisatie Systeem
+--INCLUDE "AMS.pop" -- Apen Monitoring Systeem
+-----------------------------------------------------------
+META "authors" "Rieks Joosten\\\\rieks.joosten@tno.nl"
+-----------------------------------------------------------
+ENDCONTEXT
