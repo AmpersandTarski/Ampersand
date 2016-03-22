@@ -22,7 +22,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
     calculatedDecls = map calcProps .filter (not . decplug) . relsDefdIn $ context 
     (conceptTableParts, linkTableParts) = dist calculatedDecls conceptsPerTable
     makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
-    makeConceptTable (cpts , dcls) =
+    makeConceptTable (cpts , dcls) = 
       TblSQL
              { sqlname    = unquote . name $ tableKey
              , attributes = map cptAttrib cpts ++ map dclAttrib dcls
@@ -53,10 +53,9 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
 
           tableKey = head cpts
           isStoredFlipped :: Declaration -> Bool
-          isStoredFlipped d 
-            | isUni d = False
-            | isInj d = True
-            | otherwise = fatal 52 $ "relation `"++name d++"` cannot be stored in this table. "++show (properties d)++"\n\n"++show d
+          isStoredFlipped d
+            = snd . fromMaybe ftl . wayToStore $ d
+              where ftl = fatal 52 $ "relation `"++name d++"` cannot be stored in this table. "++show (properties d)++"\n\n"++show d
           conceptLookuptable :: [(A_Concept,SqlAttribute)]
           conceptLookuptable    = [(cpt,cptAttrib cpt) | cpt <-cpts]
           dclLookuptable :: [RelStore]
@@ -207,23 +206,31 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
       where
         declsInTable cpts = [ dcl | dcl <- dcls
                             , not . null $ maybeToList (conceptTableOf dcl) `isc` cpts ]
-        conceptTableOf :: Declaration -> Maybe A_Concept
-        conceptTableOf d =
-          case d of 
-          Isn{} -> fatal 38 "I is not expected here." -- These relations are already in the kernel
-          Vs{}  -> fatal 39 "V is not expected here" -- Vs are not implemented at all
-          Sgn{} ->
-               case (isInj d, isUni d) of
-                    (False  , False  ) -> Nothing --Will become a link-table
-                    (True   , False  ) -> Just . target $ d
-                    (False  , True   ) -> Just . source $ d
-                    (True   , True   ) ->
-                      case (isTot d, isSur d) of
-                           (False  , False  ) -> Just . target $ d
-                           (True   , False  ) -> Just . source $ d
-                           (False  , True   ) -> Just . source $ d
-                           (True   , True   ) -> Just . source $ d
+        
+conceptTableOf :: Declaration -> Maybe A_Concept
+conceptTableOf d = fmap fst $ wayToStore d
 
+-- | this function tells in what concepttable a given declaration is to be stored. If stored
+--   in a concept table, it returns the concept and a boolean, telling wether or not the relation
+--   is stored flipped.
+wayToStore :: Declaration -> Maybe (A_Concept,Bool)
+wayToStore d =
+  case d of 
+  Isn{} -> fatal 38 "I is not expected here." -- These relations are already in the kernel
+  Vs{}  -> fatal 39 "V is not expected here" -- Vs are not implemented at all
+  Sgn{} ->
+       case (isInj d, isUni d) of
+            (False  , False  ) -> Nothing --Will become a link-table
+            (True   , False  ) -> Just flipped
+            (False  , True   ) -> Just plain
+            (True   , True   ) ->
+              case (isTot d, isSur d) of
+                   (False  , False  ) -> Just flipped
+                   (True   , False  ) -> Just plain
+                   (False  , True   ) -> Just plain
+                   (True   , True   ) -> Just plain
+  where plain  = (source d,False)
+        flipped = (target d, True)
 
 
 unquote :: String -> String
