@@ -1,0 +1,15 @@
+CONTEXT Bugs IN ENGLISH
+
+rel :: A*B []
+  = [ ("a1", "b1"); ("a1", "b2"); ("a2", "b1"); ("a2", "b2")]
+
+INTERFACE Accounts : V[ONE*B]
+BOX [ bug : 'b1' ]
+
+PROCESS Bugs
+  ROLE tester MAINTAINS singletonBug1, singletonBug2
+  RULE singletonBug1 : 'b1'[B]         -- fixed: yields b1b1
+  RULE singletonBug2 : rel; 'b1' -- fixed: yields a1b1 a2b1
+ENDPROCESS
+
+ENDCONTEXT

@@ -32,10 +32,6 @@ generateAmpersandOutput fSpec =
     ; when (genFPAExcel (getOpts fSpec)) $ doGenFPAExcel fSpec
     ; when (genPOPExcel (getOpts fSpec)) $ doGenPopsXLSX fSpec
     ; when (proofs (getOpts fSpec))      $ doGenProofs   fSpec
-    --; Prelude.putStrLn $ "Declared rules:\n" ++ show (map showADL $ vrules fSpec)
-    --; Prelude.putStrLn $ "Generated rules:\n" ++ show (map showADL $ grules fSpec)
-    --; Prelude.putStrLn $ "Violations:\n" ++ show (violations fSpec)
-    ; verboseLn (getOpts fSpec) "Done."
     }
 
 doGenADL :: FSpec -> IO()

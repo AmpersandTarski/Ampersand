@@ -143,7 +143,7 @@ class OAuthLoginController {
 				if(empty($accounts)){
 					$newAccount = Concept::createNewAtom('Account');
 					$relAccUserid = Relation::getRelation('accUserid', $newAccount->concept->name, 'UserID');
-					$db->editUpdate($relAccUserid, false, $newAccount, new Atom($email, 'UserID'));
+					$relAccUserid->addLink($newAccount, new Atom($email, 'UserID'), false, 'OAuthLoginExtension');
 
 					// add to Organization
 					$domain = explode('@', $email)[1];
@@ -152,7 +152,7 @@ class OAuthLoginController {
 					
 					$relAccOrg = Relation::getRelation('accOrg', $newAccount->concept->name, 'Organization');
 					foreach ($orgs as $org){
-						$db->editUpdate($relAccOrg, false, $newAccount, new Atom($org, 'Organization'));
+						$relAccOrg->addLink($newAccount, new Atom($org, 'Organization'), false, 'OAuthLoginExtension');
 					}
 
 					$accounts[] = $newAccount->id;
@@ -169,12 +169,12 @@ class OAuthLoginController {
 				    $account = new Atom($accountId, 'Account');
 				    
 					// Set sessionAccount
-					$db->editUpdate($relSessionAccount, false, new Atom(session_id(), 'SESSION'), $account);
+					$relSessionAccount->addLink(new Atom(session_id(), 'SESSION'), $account, false, 'OAuthLoginExtension');
 
 					// Timestamps
 					$ts = new Atom(date(DATE_ISO8601), 'DateTime');
-					$db->editUpdate($relAccMostRecentLogin, false, $account, $ts);
-					$db->editUpdate($relAccLoginTimestamps, false, $account, $ts);
+					$relAccMostRecentLogin->addLink($account, $ts, false, 'OAuthLoginExtension');
+					$relAccLoginTimestamps->addLink($account, $ts, false, 'OAuthLoginExtension');
 				}
 
 				$db->closeTransaction('Login successfull', true);

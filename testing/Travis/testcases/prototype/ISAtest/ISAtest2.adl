@@ -1,0 +1,242 @@
+CONTEXT ARMISATEST IN DUTCH
+
+PROCESS ARMISATEST
+--[Bedrijfsfuncties]--
+-- KEY BedrijfsfunctieNaam: Bedrijfsfunctie(bfNaam)
+IDENT BedrijfsfunctieIdent: Bedrijfsfunctie(bfNaam) -- lokaal in de DB
+VIEW  BedrijfsfunctieIdent: Bedrijfsfunctie(bfNaam) -- interfaces
+bfNaam :: Bedrijfsfunctie -> BFNaam
+
+--[Criteria]--
+-- KEY CriteriumID: Criterium(critID)
+IDENT CriteriumIdent: Criterium(critBF, critID) -- lokaal in de DB
+VIEW  CriteriumIdent: Criterium(critBF, TXT ":", critID) -- lokaal in de DB
+critID :: Criterium -> CriteriumID
+critBF :: Criterium -> Bedrijfsfunctie
+critTAV :: Criterium -> Bedrijfsfunctie
+critText :: Criterium -> Text
+
+--[Verplichtingen en verwachtingen]--
+
+CLASSIFY Verplichting  ISA Criterium
+CLASSIFY Verwachting   ISA Criterium
+CLASSIFY Gewetensvraag IS  Verplichting /\ Verwachting
+
+CLASSIFY ExterneVerplichting ISA Verplichting
+RULE "Externe verplichtingen": I[ExterneVerplichting] = I[Verplichting] - I[Verwachting] 
+CLASSIFY ExterneVerwachting ISA Verwachting
+RULE "Externe verwachtingen":  I[ExterneVerwachting] = I[Verwachting] - I[Verplichting]
+
+RULE "Gewetensvragen1": I[Criterium] /\ critBF;critTAV~ |- I[Gewetensvraag]
+RULE "Gewetensvragen2": I[Gewetensvraag] |- I[Criterium] /\ critBF;critTAV~
+
+RULE "Verbod op niet-gekarakteriseerde criteria": I[Criterium] |- I[Verplichting] \/ I[Verwachting]
+
+--[BIA-lijst]--
+
+biaVerplichting_Def :: Bedrijfsfunctie * ExterneVerplichting [INJ]
+ROLE Developer MAINTAINS "BIA-lijst bijhouden"
+RULE "BIA-lijst bijhouden": biaVerplichting_Def = (critBF~;I[ExterneVerplichting] /\ -I;critTAV~)
+
+--[Afdekkingen]--
+afdekking :: Verplichting * Verwachtingsverzameling [UNI]
+
+RULE "Afdekkingen zijn verwachtingsverzamelingen": afdekking |- vvVerplichting~
+
+--KEY VerwachtingsverzamelingID: Verwachtingsverzameling(vvBF_Def, TXT ":", vvID)
+IDENT VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBF_Def, vvID) -- lokaal in de DB
+VIEW VerwachtingsverzamelingIdent: Verwachtingsverzameling(vvBF_Def, TXT ":", vvID) -- Interfaces
+vvID :: Verwachtingsverzameling -> VVID
+vvVerplichting :: Verwachtingsverzameling -> Verplichting
+vvVerwachting :: Verwachtingsverzameling * Verwachting
+
+RULE "Integriteit van verwachtingsverzamelingen": vvVerplichting~;vvVerwachting |- critBF;critBF~
+
+vvBF_Def :: Verwachtingsverzameling * Bedrijfsfunctie [UNI] -- nodig voor KEY/VIEWs van VV's
+ROLE ExecEngine MAINTAINS insvvBF_Def
+RULE insvvBF_Def: vvVerplichting;critBF |- vvBF_Def
+VIOLATION (TXT "{EX} InsPair vvBF_Def;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
+ROLE ExecEngine MAINTAINS delvvBF_Def
+RULE delvvBF_Def: vvBF_Def |- vvVerplichting;critBF
+VIOLATION (TXT "{EX} DelPair vvBF_Def;Verwachtingsverzameling;", SRC I, TXT ";Bedrijfsfunctie;", TGT I)
+
+ENDPROCESS
+------------------------------------------------------------
+INTERFACE "Overzicht" FOR Developer, ExecEngine : I[ONE]
+BOX[ "Bedrijfsfuncties"       : V[ONE*Bedrijfsfunctie]
+   , "Criteria"               : V[ONE*Criterium]
+   , "Verplichtingen"         : V[ONE*Verplichting]
+   , "Externe verplichtingen" : V[ONE*ExterneVerplichting]
+   , "Verwachtingen"          : V[ONE*Verwachting]
+   , "Externe verwachtingen"  : V[ONE*ExterneVerwachting]
+   , "Gewetensvragen"         : V[ONE*Gewetensvraag]
+   , "Verwachtingsvz'n"       : V[ONE*Verwachtingsverzameling]
+   ]
+
+--[Bedrijfsfuncties]---------------------------------------
+
+INTERFACE "Bedrijfsfunctie" -- I[Bedrijfsfunctie]
+   ( bfNaam
+   ) FOR Developer : I[Bedrijfsfunctie]
+BOX[ "ID" : I
+   , "Naam" : bfNaam
+   , "Heeft een relatie met" : critBF~;critTAV /\ -I[Bedrijfsfunctie]
+   ]
+
+INTERFACE "BIA-lijst" -- I[Bedrijfsfunctie]
+   ( critBF
+   , biaVerplichting_Def
+     , critID
+     , critText
+     , critTAV
+   ) FOR Developer : I[Bedrijfsfunctie]
+BOX[ "Algemeen" : I
+   , "Nieuwe verplichtingen" : nieuweVerplichting
+      BOX[ "Verplichting" : I[Verplichting]
+         , "ID"           : critID
+         , "Criterium"    : critText
+         , "T.a.v."       : critTAV
+         ]
+   , "Externe verplichtingen"  : biaVerplichting_Def -- De constructie I;relatie dient om te voorkomen dat er geedit wordt
+   BOX[ "Verplichting" : I[ExterneVerplichting]
+      , "Criterium"    : I;critText
+      , "T.a.v."       : I;critTAV
+      ]
+   ]
+
+
+PROCESS "{EE} BIA-lijst interface"
+nieuweVerplichting :: Bedrijfsfunctie * Verplichting -- in deze relatie worden nieuwe verplichtingen aangemaakt.
+
+ROLE ExecEngine MAINTAINS "nieuwe BIA verplichtingen"
+RULE "nieuwe BIA verplichtingen": nieuweVerplichting |- -V
+-- bij de 'v'tjes moet 'ExterneVerplichting' staan in plaats van 'Verplichting', hoewel dat laatste ook zou moeten kunnen...
+--                                  vvvvvvvvvvvv
+VIOLATION (TXT "{EX} InsPair;critBF;Verplichting;", TGT I, TXT ";Bedrijfsfunctie;", SRC I
+--        ,TXT "{EX} InsPair;obl;Criterium;", TGT I, TXT ";Criterium;", TGT I
+          ,TXT "{EX} DelPair;nieuweVerplichting;Bedrijfsfunctie;", SRC I, TXT ";Verplichting;", TGT I
+          )
+
+ENDPROCESS
+
+--[Verplichtingen]-----------------------------------------
+
+INTERFACE "Verplichting" -- I[Verplichting]
+   ( critID
+   , critTAV
+   , critText
+   , afdekking
+   , vvVerplichting
+   ) FOR Developer : I[Verplichting]
+BOX[ "ID" : I
+   BOX[ "ID"          : I
+      , "Van (BF)"    : critBF
+      , "Tav (BF)"    : critTAV
+      , "Naam"        : critID
+      , "Criterium"   : critText
+      ] 
+   , "Afdekking": afdekking
+   BOX[ "vvID" : I
+      , "bestaande uit:": vvVerwachting[Verwachtingsverzameling*Verwachting]
+      BOX[ gewetensvragen: I[Gewetensvraag]
+         BOX[ gewetensvraag: I
+            , criterium    : critText
+            ]
+         , verwachtingen : I[ExterneVerwachting]
+         BOX[ "externe verwachtingen": I
+            , criterium    : critText
+            ]
+         ]
+      ]
+   ]
+
+--[Verwachtingsverzamelingen en gewetensvragen]------------
+
+INTERFACE "Verwachtingsverzameling" -- I[Verwachtingsverzameling]
+   ( vvID
+   , vvVerplichting
+     , critID
+     , critText
+     , critTAV
+     , afdekking
+   , vvVerwachting
+     , critID
+     , critText
+     , critTAV
+   , afdekking
+   ) FOR Developer  : I[Verwachtingsverzameling]
+BOX[ Verwachtingsverzameling : I
+   BOX[ "ID" : I
+      , "Verplichting" : vvVerplichting
+      BOX[ "ID"          : I[Verplichting]
+         , "Van (BF)"    : critBF
+         , "Tav (BF)"    : critTAV
+         , "Naam"        : critID
+         , "Criterium"   : critText
+         ] 
+      ]
+   , gewetensvragen: vvVerwachting;I[Gewetensvraag]
+   BOX[ gewetensvraag: I
+      , criterium    : critText
+      ]
+   , verwachtingen : vvVerwachting;I[ExterneVerwachting]
+   BOX[ "externe verwachtingen": I
+      , criterium    : critText
+      , "Tav"        : critTAV
+      ]
+   ]
+
+INTERFACE "Gewetensvraag" -- I[Gewetensvraag]
+   ( critID
+   , critBF
+   , critTAV
+   , critText
+   , afdekking
+   , vvVerplichting
+   ) FOR Developer : I[Gewetensvraag]
+BOX[ "Gewetensvraag": I
+   BOX[ "ID"        : I
+       
+      , "Criterium" : critText
+      , "Van"       : critBF
+      , "Tav"       : critTAV
+      ]
+   , afdekking    : afdekking
+   BOX[ gewetensvragen: vvVerwachting;I[Gewetensvraag]
+      BOX[ gewetensvraag: I
+         , criterium    : critText
+         ]
+      , verwachtingen : vvVerwachting;I[ExterneVerwachting]
+      BOX[ "externe verwachtingen": I
+         , criterium    : critText
+         , "Tav"        : critTAV
+         ]
+      ]
+   , "in afdekking" : vvVerwachting~;(I /\ afdekking~;afdekking)
+   ]
+
+--[Verwachtingen]------------------------------------------
+
+INTERFACE "Verwachting" -- I[Verwachting]
+   ( critID
+   , critTAV
+   , critText
+   , afdekking
+   , vvVerwachting
+   ) FOR Developer : I[Verwachting]
+BOX[ "ID" : I
+   BOX[ "ID"          : I
+      , "Van (BF)"    : critBF
+      , "Aan (BF)"    : critTAV
+      , "Naam"        : critID
+      , "Criterium"   : critText
+      ] 
+   , "Zit in afdekking van": vvVerwachting~;afdekking~
+   , "Zit in verwachtingsverzameling van" : vvVerwachting~;(vvVerplichting/\-afdekking~)
+   BOX[ "Gewetensvragen": I[Gewetensvraag]
+      , "Externe verplichtingen" : I[ExterneVerplichting]
+      ]
+   ]
+
+------------------------------------------------------------
+ENDCONTEXT

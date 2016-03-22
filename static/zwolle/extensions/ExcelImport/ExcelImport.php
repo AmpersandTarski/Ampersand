@@ -192,7 +192,7 @@ class ImportExcel {
 	
 	private function insertRel($relationName, $srcAtom, $tgtAtom, $srcConcept, $tgtConcept){
 	    $relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
-		$this->db->editUpdate($relation, false, new Atom($srcAtom, $srcConcept), new Atom($tgtAtom, $tgtConcept));
+	    $relation->addLink(new Atom($srcAtom, $srcConcept), new Atom($tgtAtom, $tgtConcept));
 	}
 }
 

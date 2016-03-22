@@ -79,17 +79,16 @@ function RetrievePopulation($relationName, $conceptName){
 		$database = Database::singleton();
 		
 		$relation = Relation::getRelation($relationName, $conceptName, $conceptName);
+		$relationTable = $relation->getMysqlTable();
+		$srcCol = $relationTable->srcCol();
+		$tgtCol = $relationTable->tgtCol();
 		
-		$tableInfo = $relation->getTableInfo();
-		$srcCol = $tableInfo['srcCol']['header'];
-		$tgtCol = $tableInfo['tgtCol']['header'];
-		
-		$query = "SELECT * FROM `{$tableInfo['tableName']}`";
+		$query = "SELECT * FROM `{$relationTable->name}`";
 		$result = $database->Exe($query);
 		
 		// initialization of 2-dimensional array
 		foreach($result as $row){
-			$array[$row[$srcCol]][$row[$tgtCol]] = !is_null($row[$tgtCol]);
+			$array[$row[$srcCol->name]][$row[$tgtCol->name]] = !is_null($row[$tgtCol->name]);
 		}
 		
 		return (array)$array;
@@ -104,17 +103,17 @@ function OverwritePopulation($rArray, $relationName, $conceptName){
 		$database = Database::singleton();
 		
 		$relation = Relation::getRelation($relationName, $conceptName, $conceptName);
-		$tableInfo = $relation->getTableInfo();
-		$srcCol = $tableInfo['srcCol']['header'];
-		$tgtCol = $tableInfo['tgtCol']['header'];
+		$relationTable = $relation->getMysqlTable();
+		$srcCol = $relationTable->srcCol();
+		$tgtCol = $relationTable->tgtCol();
 		
-		$query = "DELETE FROM {$tableInfo['tableName']}"; // Do not use TRUNCATE statement, this causes an implicit commit
+		$query = "DELETE FROM `{$relationTable->name}`"; // Do not use TRUNCATE statement, this causes an implicit commit
 		$database->Exe($query);
 		
 		foreach($rArray as $src => $tgtArray){
 			foreach($tgtArray as $tgt => $bool){
 				if($bool){
-					$query = "INSERT INTO `{$tableInfo['tableName']}` (`$srcCol`, `$tgtCol`) VALUES ('$src','$tgt')";
+					$query = "INSERT INTO `{$relationTable->name}` (`{$srcCol->name}`, `{$tgtCol->name}`) VALUES ('$src','$tgt')";
 					$database->Exe($query);
 				}
 			}

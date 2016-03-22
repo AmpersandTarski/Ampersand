@@ -1,6 +1,5 @@
 <?php
 
-use Slim\View;
 class Concept {
     /**
      * Contains all concept definitions
@@ -106,7 +105,7 @@ class Concept {
 		$this->generalizations = (array)$conceptDef['generalizations'];
 		$this->interfaceIds = (array)$conceptDef['interfaces'];
 		
-		if(!is_null($viewDef['defaultViewId'])) $this->defaultView = View::getView($viewDef['defaultViewId']);
+		if(!is_null($conceptDef['defaultViewId'])) $this->defaultView = View::getView($conceptDef['defaultViewId']);
 		
 		$this->mysqlConceptTable = new DatabaseTable($conceptDef['conceptTable']['name']);
 		foreach ($conceptDef['conceptTable']['cols'] as $colName){
@@ -163,6 +162,7 @@ class Concept {
 	 * @return boolean
 	 */
 	public function inSameClassificationTree($concept){
+	    if($this->name == $concept->name) return true;
 	    if($this->hasSpecialization($concept->name)) return true;
 	    if($this->hasGeneralization($concept->name)) return true;
 	     
@@ -227,6 +227,19 @@ class Concept {
 	 */
 	public function getConceptTableInfo(){
 	    return $this->mysqlConceptTable;
+	}
+	
+	/**
+	 * 
+	 * @return InterfaceObject[]
+	 */
+	public function getInterfaces(){
+	    $interfaces = array();
+	    foreach ($this->interfaceIds as $ifcId){
+	        $ifc = InterfaceObject::getInterface($ifcId);
+	        $interfaces[$ifc->id] = $ifc;
+	    }
+	    return $interfaces;
 	}
 	
     /**********************************************************************************************

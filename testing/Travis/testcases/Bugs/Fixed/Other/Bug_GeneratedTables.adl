@@ -1,0 +1,18 @@
+CONTEXT Bugs IN ENGLISH
+
+r2 :: A*C [UNI,SUR]
+    
+r1 :: A*B [UNI]
+
+-- The created tables are 
+--      A          B          C
+-- ____________   __________  ____
+-- |A |r2| r1 |   |B |fillB|  |C |
+-- |--+--+----|   |--|-----|  |--|
+-- |a1|c1|NULL|   |b1| b1  |  |c1|
+-- |----------|   |--|-----|  |--|
+--
+-- Seems buggy. Why is the concept table of C not a column in A?
+-- It may contain duplicates, but some concept tables also contain duplicates (which may instead be the bug here)
+
+ENDCONTEXT

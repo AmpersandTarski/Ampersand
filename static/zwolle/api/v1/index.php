@@ -14,6 +14,14 @@ function shutdown(){
 
 require_once (__DIR__ . '/../../fw/includes.php');
 
+// Code to add special http response codes that are not supported by Slim
+class NewResponse extends \Slim\Http\Response {
+    public static function addResponseCode($code, $message){
+        parent::$messages[$code] = "{$code} {$message}";
+    }
+}
+NewResponse::addResponseCode(440, "Login Timeout");
+
 // Create and configure Slim app (version 2.x)
 $app = new \Slim\Slim(array(
     'debug' => Config::get('debugMode')

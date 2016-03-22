@@ -11,8 +11,18 @@ class Session {
 	public $interface;
 	public $viewer;
 	
+	/**
+	 * Specifies if session is expired
+	 * @var boolean
+	 */
+	private $isExpired = false;
+	
 	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
 	
+	/**
+	 * 
+	 * @var InterfaceObject[]
+	 */
 	private $accessibleInterfaces = array(); // when login enabled: all interfaces for sessionRoles, otherwise: interfaces for active roles
 	private $ifcsOfActiveRoles = array(); // interfaces for active roles
 	public $rulesToMaintain = array(); // rules that are maintained by active roles 
@@ -22,34 +32,35 @@ class Session {
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
 	// prevent any outside instantiation of this object
-	private function __construct(){		
-		try {
-			$this->id = session_id();
-			
-			$this->database = Database::singleton();
-			
-			// Check if 'SESSION' is defined as concept in Ampersand script
-			Concept::getConcept('SESSION');
-			
-			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-			$expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
-			foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroyAmpersandSession($expiredSessionAtom);
-
-			// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
-			$sessionAtom = new Atom($this->id, 'SESSION');
-			if (!$sessionAtom->atomExists()){ 
-				$this->database->addAtomToConcept($sessionAtom);
-				$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
-			}
-
-			$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
-			
-			// Add public interfaces
-			$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
-			
-		} catch (Exception $e){
-		  	throw $e;
+	private function __construct(){
+		$this->id = session_id();
+		
+		$this->database = Database::singleton();
+		
+		// Check if 'SESSION' is defined as concept in Ampersand script
+		Concept::getConcept('SESSION');
+		
+		// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
+		$expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
+		foreach ($expiredSessionsAtoms as $expiredSessionAtom){
+		    if($expiredSessionAtom == $this->id) $this->isExpired = true; 
+		    $this->destroyAmpersandSession($expiredSessionAtom);
 		}
+		
+		// Throw exception when session is expired AND login functionality is enabled 
+		if($this->isExpired && Config::get('loginEnabled')) throw new Exception ("Your session has expired, please login again", 440); // 440 Login Timeout -> is redirected by frontend to login page
+
+		// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
+		$sessionAtom = new Atom($this->id, 'SESSION');
+		if (!$sessionAtom->atomExists()){ 
+			$this->database->addAtomToConcept($sessionAtom);
+			$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
+		}
+
+		$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+		
+		// Add public interfaces
+		$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
 	}
 	
 	// Prevent any copy of this object
@@ -246,10 +257,17 @@ class Session {
 		return $interfaces;
 	}
 	
-	public function getEditableConcepts(){
-		$editableConcepts = array();
-		foreach($this->accessibleInterfaces as $ifc) $editableConcepts = array_merge($editableConcepts, $ifc->editableConcepts);
-		return $editableConcepts;
+	/**
+	 * 
+	 * @param Concept $concept
+	 * @return boolean
+	 */
+	public function isEditableConcept($concept){
+		foreach($this->accessibleInterfaces as $ifc) 
+		    if (in_array($concept, $ifc->editableConcepts)) return true;
+		
+		// Else
+		return false;
 	}
 	
 	public function isAccessibleIfc($interfaceId){

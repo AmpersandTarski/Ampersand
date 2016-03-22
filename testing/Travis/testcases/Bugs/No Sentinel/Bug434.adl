@@ -1,0 +1,32 @@
+CONTEXT Bug434 IN DUTCH
+
+-- Exposes a bug when inserting in specialized relations.
+-- To reproduce: Go to interface Test: Edit, Insert new atom 'r' beneath 'r1', and Save. Aftwards, 'r' will not be listed.
+
+CLASSIFY Dienst ISA Periode
+CLASSIFY Tijdregistratie ISA Periode
+
+RELATION dag[Dienst*Dagverantwoording] [UNI]  PRAGMA "" " is onderdeel van dagverantwoording " "" -- [UNI,TOT]
+RELATION dag[Tijdregistratie*Dagverantwoording] [UNI] PRAGMA "" " is op " " ingevuld"
+
+POPULATION dag[Dienst*Dagverantwoording]  CONTAINS
+  [ ("r1","DV1")
+  ]
+
+POPULATION dag[Tijdregistratie*Dagverantwoording] CONTAINS
+  [ ("s1","DV1")
+  ; ("","DV2") -- add a '' tuple, so we get failure on inserting one tuple in dag[Dienst*Dagverantwoording] (otherwise we have to insert two tuples)
+  ]            -- Having '' atoms seems to mess up Ampersand a bit as '' also shows up in interface Test, but that's okay for this test.
+
+
+RELATION dummy[Tijdregistratie*X] [TOT] -- force uniqueness on Periode column, but without having totality on dag[Dienst*Dagverantwoording]
+POPULATION dummy[Tijdregistratie*X] CONTAINS
+  [ ("s1","X")
+  ; ("","X")
+  ]
+
+INTERFACE Test (dag[Dienst*Dagverantwoording]) : V[ONE*Dagverantwoording]
+BOX [ dag : dag[Dienst*Dagverantwoording]~
+    ]
+
+ENDCONTEXT

@@ -1,0 +1,5 @@
+﻿CONTEXT Bug_InjectiveFunction_Fatal152 IN ENGLISH
+
+r :: A * B [UNI,TOT,INJ]
+
+ENDCONTEXT

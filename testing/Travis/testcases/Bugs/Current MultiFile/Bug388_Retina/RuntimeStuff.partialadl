@@ -1,0 +1,61 @@
+CONTEXT RuntimeStuff IN DUTCH
+------------------------------------------------------------
+PROCESS RuntimeStuff
+
+runtimeVerzamelendeService :: Persoonsgegeven * Service [UNI,TOT]
+PRAGMA "" " is verzameld door een instantie van "
+PURPOSE RELATION runtimeVerzamelendeService  REF "Artikel 7 Wbp"
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Om dit te kunnen doen moet voor elk persoonsgegeven de service geidentificeerd kunnen worden waarvan een instantie het persoonsgegeven heeft verzameld.-}
+
+runtimeVerwerkendeService :: Persoonsgegeven * Service
+PRAGMA "" " is verwerkt door een instantie van "
+PURPOSE RELATION runtimeVerwerkendeService REF "Artikel 2 lid 1; artikel 1 sub e, g Wbp"
+{+De Wbp is van toepassing op de geheel of gedeeltelijk geautomatiseerde VERWERKING (uit artikel 2 eerste lid Wbp). In deze wet en de daarop berustende bepalingen wordt verstaan onder 
+b) VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens;
+e) BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen.
+g) DERDE: ieder, niet zijnde de BETROKKENE, de VERANTWOORDELIJKE, de BEWERKER, of enig persoon die onder rechtstreeks gezag van de VERANTWOORDELIJKE of de BEWERKER gemachtigd is om PERSOONSGEGEVENs te verwerken.
+-}
+
+RULE "Verzameldoelen": runtimeVerzamelendeService |- verzamelDoel;svcVerwerkingsDoel~
+MEANING "Elk persoonsgegeven dat is verzameld door een service is verzameld voor een verwerkingsdoel zoals gespecificeerd voor die service."
+MESSAGE ""
+VIOLATION (TXT "Persoonsgegeven ", SRC I, TXT " is verzameld in runtime service '", TGT I, TXT "' zonder dat hiervoor een verzameldoel bestaat")
+ROLE User MAINTAINS "Verzameldoelen"
+
+RULE "Verwerkingsdoelen": runtimeVerwerkendeService |- verzamelDoel;verenigbaarMet;svcVerwerkingsDoel~;I[Service]
+MEANING "PERSOONSGEGEVENs mogen alleen worden verwerkt op een wijze die verenigbaar is met de doeleinden waarvoor ze zijn verkregen (Art 9 eerste lid Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Persoonsgegeven ", SRC I, TXT " is verwerkt in runtime service '", TGT I, TXT "' zonder dat het verwerkingsdoel van de service verenigbaar is met de doeleinden waarvoor het persoonsgegeven is verkregen")
+ROLE User MAINTAINS "Verwerkingsdoelen"
+PURPOSE RULE "Verwerkingsdoelen" REF "Artikel 9 eerste lid Wbp"
+{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.-}
+
+runtimeDoel :: SvcInstantie * RuntimeDoel
+
+RULE "Service instantie doel": 
+I[SvcInstantie] |- runtimeDoel;runtimeDoel~
+MEANING "Elke service instantie dient tenminste een runtime doel"
+VIOLATION (TXT "Aan runtime service '", SRC I, TXT "' moet een runtime doel zijn toegekend")
+ROLE User MAINTAINS "Service instantie doel"
+
+RULE "Service instantie doel integriteit": 
+runtimeDoel;typeOf[RuntimeDoel*Doel] |- typeOf[SvcInstantie*Service];svcVerwerkingsDoel
+MEANING "Elk runtime doel van een service instantie moet van een soort zijn waartoe de service dient"
+VIOLATION (TXT "Runtime service '", SRC I, TXT "' heeft geen doel dat een verwerkingsdoel is van '", SRC typeOf[SvcInstantie*Service], TXT "'")
+
+verstuurdNaar :: Bericht * SvcInstantie [UNI,TOT]
+verstuurdDoor :: Bericht * SvcInstantie [UNI,TOT]
+gegevenInBericht :: Persoonsgegeven * Bericht
+
+RULE "Runtime verwerkingen hebben een doel":
+I[SvcInstantie] |- runtimeDoel;typeOf[RuntimeDoel*Doel];typeOf[RuntimeDoel*Doel]~;runtimeDoel~
+MEANING "Elke runtime verwerking dient een doel (Art 9 eerste lid Wbp)"
+MESSAGE ""
+VIOLATION (TXT "Runtime verwerking '", SRC I, TXT "' dient geen doel en mag daarom niet plaatsvinden.")
+ROLE User MAINTAINS "Runtime verwerkingen hebben een doel"
+PURPOSE RULE "Runtime verwerkingen hebben een doel" REF "Artikel 9 eerste lid Wbp"
+{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.-}
+
+ENDPROCESS
+------------------------------------------------------------
+ENDCONTEXT

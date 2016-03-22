@@ -1,0 +1,156 @@
+CONTEXT DemoInterfacing IN DUTCH
+--[Overzicht]-----------------------------------------------
+INTERFACE Overzicht FOR User : I[ONE]
+BOX[ "Verwerkingen"            : V[ONE*Verwerking]
+   , "Services"                : V[ONE*Service]
+   , "Doelen"                  : V[ONE*Doel]
+   , "Partijen"                : V[ONE*Partij]
+   , "BerichtSoorten"          : V[ONE*BerichtSoort]
+   , "PersoonsgegevensTypes"   : V[ONE*PersoonsgegevensType]
+   ]
+--[Verwerkingen]--------------------------------------------
+INTERFACE Verwerking
+(verwerkingNaam, verwerkingOmschrijving, verwerkingSpecificatieSamenvatting, verwerkingsVerantwoordelijke, verwerkingBewerker, 
+verwerkingsDoel, 
+isDeelverwerkingVan, isDeelsvcVanVerwerking
+--verwerkingBetrokkenenCategorie, verwerkingGegevensCategorie, verwerkingOntvangerCategorie, verwerkingOntvanger,
+--verwerkingGegevensDoorgiftenBuitenEU, verwerkingBewaartermijn
+) FOR User : I[Verwerking]
+BOX[ "Verwerking" : I
+   , "Naam" : verwerkingNaam
+   , "Omschrijving" : verwerkingOmschrijving
+   , "Specificatie samenvatting" : verwerkingSpecificatieSamenvatting
+   , "Verantwoordelijke" : verwerkingsVerantwoordelijke
+   , "Bewerker" : verwerkingBewerker
+   , "Verwerkingsdoel" : verwerkingsDoel
+   , "Bestaat uit" : I
+   BOX[ "Andere verwerkingen" : isDeelverwerkingVan~
+      , "Services" : isDeelsvcVanVerwerking~
+      ]
+{-
+   , "Categorien van" : I
+   BOX [ "Betrokkenen" : verwerkingBetrokkenenCategorie
+       , "Gegevens" : verwerkingGegevensCategorie
+       , "Ontvangers" : verwerkingOntvangerCategorie
+       ]
+-}
+   ]
+------------------------------------------------------------
+INTERFACE "Service"
+( svcNaam, svcOmschrijving, svcSpecificatieSamenvatting
+, isDeelsvcVanVerwerking, isDeelsvcVan
+, svcVerantwoordelijke, svcBewerker
+, svcVerzamelDoel, svcVerwerkingsDoel
+, svcVerzameltPersoonsgegevensType, svcVerwerktPersoonsgegevensType
+, svcVerstuurtBerichtSoort, svcOntvangtBerichtSoort
+) FOR User : I[Service]
+BOX[ "Service" : I
+   , "svcNaam" : svcNaam
+   , "svcOmschrijving" : svcOmschrijving
+   , "svcSpecificatieSamenvatting" : svcSpecificatieSamenvatting
+   , "isDeelsvcVanVerwerking" : isDeelsvcVanVerwerking
+   , "isDeelsvcVan" : isDeelsvcVan
+   , "svcVerantwoordelijke" :  svcVerantwoordelijke
+   , "svcBewerker" : svcBewerker
+   , "svcVerzamelDoel" :  svcVerzamelDoel
+   , "svcVerwerkingsDoel" : svcVerwerkingsDoel
+   , "svcVerzameltPersoonsgegevensType" :  svcVerzameltPersoonsgegevensType
+   , "svcVerwerktPersoonsgegevensType" :  svcVerwerktPersoonsgegevensType
+   , "svcVerstuurtBerichtSoort" :  svcVerstuurtBerichtSoort
+   , "svcOntvangtBerichtSoort" :  svcOntvangtBerichtSoort
+   ]
+------------------------------------------------------------
+--[Doelen]--------------------------------------------------
+INTERFACE "Doel" (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet, verzamelDoel, svcVerzamelDoel, verwerkingsDoel, svcVerwerkingsDoel)
+FOR User : I[Doel]
+BOX[ "Doel" : I
+   , "doelID" : doelID
+   , "gerechtvaardigdDoor" : gerechtvaardigdDoor
+   , "doelOmschrijving" : doelOmschrijving
+   , "doelWettelijkeGrondslag" : doelWettelijkeGrondslag
+   , "isSubdoelVan" : isSubdoelVan
+   , "heeft als subdoelen" : isSubdoelVan~
+   , "doelGegevensType" : doelGegevensType
+   , "verenigbaarMet" : verenigbaarMet
+   , "verzamelDoel" : verzamelDoel~
+   , "svcVerzamelDoel" : svcVerzamelDoel~
+   , "verwerkingsDoel" : verwerkingsDoel~
+   , "svcVerwerkingsDoel" : svcVerwerkingsDoel~
+   ]
+------------------------------------------------------------
+INTERFACE "Doe1" (doelID, gerechtvaardigdDoor, doelOmschrijving, doelWettelijkeGrondslag, isSubdoelVan, doelGegevensType, verenigbaarMet, verzamelDoel, svcVerzamelDoel, verwerkingsDoel, svcVerwerkingsDoel)
+FOR User : I[DoelID];doelID~
+BOX[ "Doel" : I
+   , "doelID" : doelID
+   , "gerechtvaardigdDoor" : gerechtvaardigdDoor
+   , "doelOmschrijving" : doelOmschrijving
+   , "doelWettelijkeGrondslag" : doelWettelijkeGrondslag
+   , "isSubdoelVan" : isSubdoelVan
+   , "heeft als subdoelen" : isSubdoelVan~
+   , "doelGegevensType" : doelGegevensType
+   , "verenigbaarMet" : verenigbaarMet
+   , "verzamelDoel" : verzamelDoel~
+   , "svcVerzamelDoel" : svcVerzamelDoel~
+   , "verwerkingsDoel" : verwerkingsDoel~
+   , "svcVerwerkingsDoel" : svcVerwerkingsDoel~
+   ]
+------------------------------------------------------------
+--[Partijen]------------------------------------------------
+INTERFACE "Partij" (partijNaam, partijAdres, verwerkingsVerantwoordelijke, verwerkingBewerker, verwerkingOntvanger, gerechtvaardigdDoor, doelID)
+FOR User : I[Partij]
+BOX[ "Partij" : I
+   , "partijNaam" : partijNaam
+   , "partijAdres" : partijAdres
+   , "Verantwoordelijke voor" : verwerkingsVerantwoordelijke~
+   , "Bewerker voor" : verwerkingBewerker~
+   , "Ontvangt gegevens van service" : verwerkingOntvanger~
+   , "Gestelde Doelen" : gerechtvaardigdDoor~;doelID
+   ]
+------------------------------------------------------------
+--[Berichtsoorten]------------------------------------------
+INTERFACE "BerichtSoort" 
+(berichtSoortNaam, berichtSoortGegevensType, svcOntvangtBerichtSoort, svcVerstuurtBerichtSoort
+--, typeOf[Bericht*BerichtSoort]
+) FOR User : I[BerichtSoort]
+BOX[ "BerichtSoort" : I
+   , "berichtSoortNaam" : berichtSoortNaam
+   , "berichtSoortGegevensType" : berichtSoortGegevensType
+   , "svcOntvangtBerichtSoort" : svcOntvangtBerichtSoort~
+   , "svcVerstuurtBerichtSoort" : svcVerstuurtBerichtSoort~
+-- , "berichten" : typeOf~
+   ]
+------------------------------------------------------------
+--[Berichten]-----------------------------------------------
+INTERFACE "Bericht" (typeOf[Bericht*BerichtSoort], verstuurdNaar, verstuurdDoor, berichtSoortGegevensType)
+FOR User : I[Bericht]
+BOX[ "Bericht" : I
+   , "Bericht type" : typeOf
+   , "verstuurdNaar" : verstuurdNaar
+   , "verstuurdDoor" : verstuurdDoor
+   , "bevat persoonsgegeven(s)" : gegevenInBericht~
+   ]
+------------------------------------------------------------
+--[Persoonsgegevens]----------------------------------------
+INTERFACE "Persoonsgegeven" (persoonsgegevensType, persoonsgegevensWaarde, betrokkene, verzamelDoel, gegevenInBericht, runtimeVerzamelendeService, runtimeVerwerkendeService)
+FOR User : I[Persoonsgegeven]
+BOX[ "Persoonsgegeven" : I
+   , "Type" : persoonsgegevensType
+   , "Waarde" : persoonsgegevensWaarde
+   , "betrokkene" : betrokkene
+   , "verzamelDoel" : verzamelDoel
+   , "gegevenInBericht" : gegevenInBericht
+   , "runtimeVerzamelendeService" : runtimeVerzamelendeService
+   , "runtimeVerwerkendeService" : runtimeVerwerkendeService
+   ]
+------------------------------------------------------------
+--[PersoonsgegevensTypes]-----------------------------------
+INTERFACE "PersoonsgegevensType" (svcVerzameltPersoonsgegevensType, svcVerwerktPersoonsgegevensType)
+FOR User : I[PersoonsgegevensType]
+BOX[ "persoonsgegevensType" : I
+   , "svcVerzameltPersoonsgegevensType" : svcVerzameltPersoonsgegevensType~
+   , "svcVerwerktPersoonsgegevensType" : svcVerwerktPersoonsgegevensType~
+   , "Benodigd bij doel" : doelGegevensType~
+   , "Zit in berichten van het type" : berichtSoortGegevensType~
+   ]
+------------------------------------------------------------
+ENDCONTEXT
