@@ -11,6 +11,12 @@ class Session {
 	public $interface;
 	public $viewer;
 	
+	/**
+	 * Specifies if session is expired
+	 * @var boolean
+	 */
+	private $isExpired = false;
+	
 	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
 	
 	/**
@@ -37,7 +43,13 @@ class Session {
 			
 			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
 			$expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
-			foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroyAmpersandSession($expiredSessionAtom);
+			foreach ($expiredSessionsAtoms as $expiredSessionAtom){
+			    if($expiredSessionAtom == $this->id) $this->isExpired = true; 
+			    $this->destroyAmpersandSession($expiredSessionAtom);
+			}
+			
+			// Throw exception when session is expired AND login functionality is enabled 
+			if($this->isExpired && Config::get('loginEnabled')) throw new Exception ("Your session has expired, please login again", 440); // 440 Login Timeout -> is redirected by frontend to login page
 
 			// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
 			$sessionAtom = new Atom($this->id, 'SESSION');
