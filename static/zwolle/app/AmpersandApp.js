@@ -52,8 +52,9 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 	});
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-    	    	
-    	if(response.status == 401) {
+    	
+    	// 401: Unauthorized, 440: Login Timeout
+    	if(response.status == 401 || response.status == 440) {
     		$rootScope.deactivateAllRoles();
     		$location.path('ext/Login'); // add: if exists, otherwise do nothing
     	}
