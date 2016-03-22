@@ -45,7 +45,6 @@ class ExecEngine {
 		$maxRunCount = Config::get('maxRunCount', 'execEngine');
 		self::$runCount = 0;
 		self::$autoRerun = Config::get('autoRerun', 'execEngine');
-		$rulesThatHaveViolations = array();
 		
 		// Get all rules that are maintained by the ExecEngine
 		while(self::$doRun){
@@ -54,7 +53,7 @@ class ExecEngine {
 
 			// Prevent infinite loop in ExecEngine reruns 				
 			if(self::$runCount > $maxRunCount){
-				Notifications::addError('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')');
+				Notifications::addError('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', (array)$rulesThatHaveViolations). ')');
 				break;
 			}
 			
@@ -67,6 +66,7 @@ class ExecEngine {
 			foreach($affectedConjuncts as $conjunct) $affectedRules = array_merge($affectedRules, $conjunct->sigRuleNames);
 			
 			// Check rules
+			$rulesThatHaveViolations = array();
 			foreach ($role->maintains() as $ruleName){
 				if(!in_array($ruleName, $affectedRules) && !$allRules) continue; // skip this rule
 				
