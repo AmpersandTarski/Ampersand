@@ -7,11 +7,13 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 	$session->activateRoles($roleIds);
 	
 	// top level interfaces
+	$top = array();
 	foreach ($session->getInterfacesForNavBar() as $ifc){
 		$top[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
 	}
 	
 	// new interfaces
+	$new = array();
 	foreach ($session->getInterfacesToCreateAtom() as $ifc){
 		$new[] = array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
 	}
