@@ -71,7 +71,7 @@ instance ShowHS PlugSQL where
    = case plug of
        TblSQL{} -> intercalate indent
                    ["let " ++ intercalate (indent++"    ")
-                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-attributes plug] ++indent++"in"
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-plugAttributes plug] ++indent++"in"
                    ,"TblSQL { sqlname    = " ++ (show.name) plug
                    ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
                    ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
@@ -83,11 +83,9 @@ instance ShowHS PlugSQL where
                    ,"       }"
                    ]
        BinSQL{} -> intercalate indent
-                   ["let " ++ showHSName (fst (columns plug))++indent++"     = "++showHS opts (indent++"       ") (fst (columns plug))
-                           ++ (indent++"    ") ++ showHSName (snd (columns plug))++indent++"     = "++showHS opts (indent++"       ") (snd (columns plug))
-                           ++indent++"in"
+                   ["let " ++ intercalate (indent++"    ")
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-plugAttributes plug] ++indent++"in"
                    ,"BinSQL { sqlname = " ++ (show.name) plug
-                   ,"       , columns = ("++showHSName (fst (columns plug))++ ", " ++showHSName (snd (columns plug))++")"
                    ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
                    ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
                                                       [ "RelStore "++showHSName (rsDcl store)++" "

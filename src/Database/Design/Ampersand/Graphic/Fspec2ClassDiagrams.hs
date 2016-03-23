@@ -120,16 +120,13 @@ tdAnalysis fSpec =
                               let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
                               in  map (ooAttr kernelAtts) kernelAtts
                                 ++map (ooAttr kernelAtts) (map rsTrgAtt $ dLkpTbl table) 
-                            BinSQL{columns=(a,b)}      ->
-                              [ OOAttr { attNm       = attName a
-                                       , attTyp      = (name.target.attExpr) a
-                                       , attOptional = False
-                                       }
-                              , OOAttr { attNm       = attName b
-                                       , attTyp      = (name.target.attExpr) b
-                                       , attOptional = False
-                                       }
-                              ]
+                            BinSQL{}      ->
+                              map mkOOattr (plugAttributes table)
+                                where mkOOattr a =
+                                        OOAttr { attNm       = attName a
+                                               , attTyp      = (name.target.attExpr) a
+                                               , attOptional = False
+                                               }
                , clMths = []
                }
       | table <- tables
@@ -159,26 +156,17 @@ tdAnalysis fSpec =
        relsOf t =
          case t of
            TblSQL{} -> map (mkRel t) (catMaybes (map relOf (attributes t)))
-           BinSQL{columns=(a,b)} ->
-                     [ OOAssoc { assSrc = sqlname t
-                               , assSrcPort = attName a
-                               , asslhm = Mult MinZero MaxMany
-                               , asslhr = ""
-                               , assTgt = getConceptTableFor fSpec . target . attExpr $ a
-                               , assrhm = Mult MinOne MaxOne
-                               , assrhr = ""
-                               , assmdcl = Nothing
-                               }
-                     , OOAssoc { assSrc = sqlname t
-                               , assSrcPort = attName b
-                               , asslhm = Mult MinZero MaxMany
-                               , asslhr = ""
-                               , assTgt = getConceptTableFor fSpec . target . attExpr $ b
-                               , assrhm = Mult MinOne MaxOne
-                               , assrhr = ""
-                               , assmdcl = Nothing
-                               }
-                     ]
+           BinSQL{} -> map mkOOAssoc (plugAttributes t)
+                        where mkOOAssoc a =
+                                OOAssoc { assSrc = sqlname t
+                                        , assSrcPort = attName a
+                                        , asslhm = Mult MinZero MaxMany
+                                        , asslhr = ""
+                                        , assTgt = getConceptTableFor fSpec . target . attExpr $ a
+                                        , assrhm = Mult MinOne MaxOne
+                                        , assrhr = ""
+                                        , assmdcl = Nothing
+                                        }
        relOf f =
          let expr = attExpr f in
          case expr of

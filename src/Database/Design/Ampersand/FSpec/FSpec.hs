@@ -270,7 +270,6 @@ data PlugSQL
    --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
    --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
  | BinSQL  { sqlname :: String
-           , columns :: (SqlAttribute,SqlAttribute)
            , cLkpTbl :: [(A_Concept,SqlAttribute)] 
            , dLkpTbl :: [RelStore]
            }
@@ -288,7 +287,11 @@ instance Ord PlugSQL where
 plugAttributes :: PlugSQL->[SqlAttribute]
 plugAttributes plug = case plug of
     TblSQL{}    -> attributes plug
-    BinSQL{}    -> [fst(columns plug),snd(columns plug)]
+    BinSQL{}    -> let store = case dLkpTbl plug of
+                         [x] -> x
+                         _   -> fatal 292 $ "Declaration lookup table of a binary table should contain exactly one element:\n" ++
+                                            show (dLkpTbl plug)
+                   in [rsSrcAtt store,rsTrgAtt store]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
