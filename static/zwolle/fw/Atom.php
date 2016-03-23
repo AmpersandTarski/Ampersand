@@ -20,6 +20,12 @@ Class Atom {
 	public $idEsc;
 	
 	/**
+	 * Url to this atom (i.e. <serverUrl>/<apiPath>/resource/<conceptName>/<atomId>)
+	 * @var string
+	 */
+	public $url;
+	
+	/**
 	 * Specifies path (interface + atom) from which this atom is instantiated
 	 * @var string
 	 */
@@ -61,9 +67,6 @@ Class Atom {
 	 */
 	private $storedContent = null;
 	
-	private $jsonld_id;
-	private $jsonld_type;
-	
 	/**
 	 * Atom constructor
 	 * @param string $atomId
@@ -94,8 +97,7 @@ Class Atom {
 		}
 		
 		// JSON-LD attributes
-		$this->jsonld_id = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $conceptName . '/' . $this->id;
-		$this->jsonld_type = Config::get('serverURL') . Config::get('apiPath') . '/concept/' . $conceptName;
+		$this->url = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $this->concept->name . '/' . $this->id;
 
 	}
 	
@@ -137,14 +139,9 @@ Class Atom {
 	public function getAtom($options = array()){
 		$result = array('_id_' => $this->id, '_label_' => $this->label, '_view_' => $this->view);
 		
-		if($options['jsonld']){
-			$result['@id'] = $this->jsonld_id;
-			$result['@type'] = $this->jsonld_type;
-		}
-		
 		if($options['navIfc']){
 			foreach($this->concept->getInterfaces() as $ifc){
-				$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->jsonld_id . '/' . $ifc->id);
+				$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->url . '/' . $ifc->id);
 			}
 			
 			$result['_ifcs_'] = $ifcs;
@@ -352,11 +349,6 @@ Class Atom {
 	                    , '_label_' => $this->label
 	                    , '_view_' => $this->view
 	                    );
-	    
-	    if($options['jsonld']){
-	        $content['@id'] = $this->jsonld_id;
-	        $content['@type'] = $this->jsonld_type;
-	    }
 	     
 	    // Meta data
 	    if($options['metaData']){
@@ -367,9 +359,9 @@ Class Atom {
 	    if($options['navIfc']){
 	        $ifcs = array();
 	        if($this->parentIfc->isLinkTo && $session->isAccessibleIfc($this->parentIfc->refInterfaceId))
-	            $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->jsonld_id . '/' . $this->parentIfc->refInterfaceId);
+	            $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
 	        else $ifcs = array_map(function($o) {
-	            return array('id' => $o->id, 'label' => $o->label, 'url' => $this->jsonld_id . '/' . $o->id);
+	            return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
 	        }, $session->getInterfacesToReadConcept($this->concept->name));
 	        $content['_ifcs_'] = $ifcs;
 	    }
