@@ -36,7 +36,6 @@ class AngularApp {
 		$this->addHtmlLine('<meta http-equiv="Cache-Control" content="no-store"/>');
 
 		// initSessionId
-		session_start();
 		$this->addHtmlLine('<script type="text/javascript">var initSessionId = \'' . session_id() . '\';</script>');
 
 		// JQuery
