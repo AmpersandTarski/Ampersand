@@ -89,4 +89,30 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 	
 });
 
+$app->get('/admin/report/relations', function () use ($app){
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+    
+    $content = array();
+    foreach(Relation::getAllRelations() as $relation){
+        $relArr = array();
+        
+        $relArr['signature'] = $relation->signature;
+        
+        $relArr['constraints'] .= $relation->isUni ? "[UNI]" : "";
+        $relArr['constraints'] .= $relation->isTot ? "[TOT]" : "";
+        $relArr['constraints'] .= $relation->isInj ? "[INJ]" : "";
+        $relArr['constraints'] .= $relation->isSur ? "[SUR]" : "";
+        if(empty($relArr['constraints'])) $relArr['constraints'] = "no constraints";
+        
+        $relArr['affectedConjuncts'] = array();
+        foreach($relation->affectedConjuncts as $conjunct){
+            foreach ($conjunct->invRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['invRules'][] = $ruleName;
+            foreach ($conjunct->sigRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['sigRules'][] = $ruleName;
+        }
+        $content[] = $relArr;
+    }
+    
+    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
 ?>
