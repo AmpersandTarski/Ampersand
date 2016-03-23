@@ -106,6 +106,7 @@ $app->get('/admin/report/relations', function () use ($app){
         
         $relArr['affectedConjuncts'] = array();
         foreach($relation->affectedConjuncts as $conjunct){
+            $relArr['affectedConjuncts'][$conjunct->id] = array();
             foreach ($conjunct->invRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['invRules'][] = $ruleName;
             foreach ($conjunct->sigRuleNames as $ruleName) $relArr['affectedConjuncts'][$conjunct->id]['sigRules'][] = $ruleName;
         }
