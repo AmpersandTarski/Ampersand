@@ -202,6 +202,9 @@ class InterfaceObject {
 		$this->crudD = $ifcDef['crud']['delete'];
 		if($this->crudU && $this->tgtConcept->isObject) $this->editableConcepts[] = $this->tgtConcept;
 		
+		// Interface expression must equal (editable) relation when crudU is specified
+		if($this->crudU && is_null($this->relation)) Notifications::addInfo("{$this->path}", "CrudUcheck", "Update rigths (CRUD) specified while interface expression is not an editable relation for (sub)interfaces:");
+		    
 		// Subinterfacing
 		if(!is_null($ifcDef['subinterfaces'])){
 		    // Subinterfacing is not supported/possible for tgt concepts with a scalar representation type (i.e. non-objects)
