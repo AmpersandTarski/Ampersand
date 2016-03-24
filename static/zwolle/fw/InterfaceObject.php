@@ -261,6 +261,13 @@ class InterfaceObject {
 	    return $this->subInterfaces[$ifcId];
 	}
 	
+	public function getSubinterfaceByLabel($ifcLabel){
+	    foreach ($this->subInterfaces as $ifc)
+	        if($ifc->label == $ifcLabel) return $ifc;
+	    
+	    throw new Exception("Subinterface '{$ifcLabel}' does not exists in interface '{$this->path}'", 500);
+	}
+	
 /**************************************************************************************************
  * 
  * Fuctions related to chaining interfaces and atoms
@@ -600,6 +607,14 @@ class InterfaceObject {
 		if(!array_key_exists($ifcId, $interfaces = self::getAllInterfaces())) throw new Exception("Interface '{$ifcId}' is not defined", 500);
 		
 		return $interfaces[$ifcId];
+	}
+	
+	
+	public static function getInterfaceByLabel($ifcLabel){
+	    foreach(self::getAllInterfaces() as $interface)
+	        if($interface->label == $ifcLabel) return $interface;
+	    
+	    throw new Exception("Interface with label '{$ifcLabel}' is not defined", 500);
 	}
 	
 	/**

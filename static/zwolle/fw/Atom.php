@@ -136,6 +136,7 @@ Class Atom {
 	 */
 	public function addAtom(){
 	    $this->database->addAtomToConcept($this);
+	    return $this;
 	}
 	
 	
