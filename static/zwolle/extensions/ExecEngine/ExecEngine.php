@@ -79,7 +79,7 @@ class ExecEngine {
 					// Fix violations for every rule
 					Notifications::addLog("ExecEngine fixing violations for rule '{$rule->id}'", 'ExecEngine');
 					ExecEngine::fixViolations($violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
-					Notifications::addInfo("{self::$roleName} fixed violations for rule '{$rule->id}", "ExecEngineSuccessMessage", "{self::$roleName} automatically fixed violations");
+					Notifications::addInfo("{$role->label} fixed violations for rule '{$rule->id}", "ExecEngineSuccessMessage", "{$role->label} automatically fixed violations");
 					
 					// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)
 					if(self::$autoRerun) self::$doRun = true;
