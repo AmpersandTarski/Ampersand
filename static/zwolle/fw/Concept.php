@@ -119,6 +119,14 @@ class Concept {
 	}
 	
 	/**
+	 * Specifies if concept representation is integer
+	 * @return boolean
+	 */
+	public function isInteger(){
+	    return $this->type == "INTEGER";
+	}
+	
+	/**
 	 * Check if this concept is a generalization of another given concept(name)
 	 * @param string $conceptName
 	 * @return boolean
@@ -247,7 +255,7 @@ class Concept {
 	 * @return string
 	 */
 	public function createNewAtomId(){
-	    if(strpos($conceptName, '_AI') !== false && $this->isInteger()){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
+	    if(strpos($this->name, '_AI') !== false && $this->isInteger()){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
 	        $firstCol = current($this->mysqlConceptTable->getCols());
 	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
 	         
