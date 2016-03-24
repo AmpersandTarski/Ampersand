@@ -130,6 +130,14 @@ Class Atom {
 		return $this->database->atomExists($this);
 	}
 	
+	/**
+	 * Add atom to concept in database
+	 * @return void
+	 */
+	public function addAtom(){
+	    $this->database->addAtomToConcept($this);
+	}
+	
 	
 	/**
 	 * Returns basic information about this atom

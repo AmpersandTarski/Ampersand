@@ -180,8 +180,8 @@ class Relation {
             if(is_null($tgtAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because tgt atom is not specified", 500);
             
             // Ensure that atoms exists in their concept tables
-            $this->db->addAtomToConcept($srcAtom);
-            $this->db->addAtomToConcept($tgtAtom);
+            $srcAtom->addAtom();
+            $tgtAtom->addAtom();
             
             // Insert link in relation table
             $this->db->addLink($this, $srcAtom, $tgtAtom);

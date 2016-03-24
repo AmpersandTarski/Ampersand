@@ -284,7 +284,7 @@ class InterfaceObject {
 	        // If interface expression is a relation, add tuple($this->srcAtom, $atom) in this relation
 	        if($this->relation) $this->relation->addLink($this->srcAtom, $atom, $this->relationIsFlipped);
 	        // Else only create atom
-	        else $this->database->addAtomToConcept($atom);
+	        else $atom->addAtom();
 	        
 	        $this->tgtAtom = $atom;
 	    }
@@ -413,7 +413,7 @@ class InterfaceObject {
 	
 	    // Perform create
 	    $newAtom = $this->tgtConcept->createNewAtom();
-	    $this->database->addAtomToConcept($newAtom);
+	    $newAtom->addAtom();
 	
 	    // Special case for CREATE in I[Concept] interfaces
 	    if($this->srcAtom->id === '_NEW_'){

@@ -37,7 +37,7 @@ class Mutation {
 			
 			// New Mutation
 			$mutConcept = Concept::getConcept(Config::get('mutationConcepts', 'MutationExtension')[$fullRelationSignature]);
-			$database->addAtomToConcept($mut = $mutConcept->createNewAtom());
+			$mut = $mutConcept->createNewAtom();
 			
 			// Add mut info
 			Relation::getRelation('mutRelation', $mut->concept->name, 'Relation')->addLink($mut, new Atom($fullRelationSignature, 'Relation'), false, 'MutationExtension');
