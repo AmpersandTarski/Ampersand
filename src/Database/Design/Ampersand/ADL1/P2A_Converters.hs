@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, ImplicitParams #-}
 -- unfortunately not in GHC yet, try to add this line when at GHC 8.0: {-# ApplicativeDo #-}
 module Database.Design.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
@@ -22,6 +22,7 @@ import Data.Maybe
 import Data.List as Lst
 import Data.Char(toUpper,toLower)
 import Data.Either
+import GHC.Stack
 
 data Type = UserConcept String
           | BuiltIn TType
@@ -58,9 +59,13 @@ getAsConcept o v = case typeOrConcept v of
                      Right x -> unexpectedType o x
                      Left  x -> return x
 
-mustBeConceptBecauseMath :: Type -> A_Concept
+userList :: [Type] -> [A_Concept]
+userList = lefts . fmap typeOrConcept
+
+mustBeConceptBecauseMath :: (?loc :: CallStack) => Type -> A_Concept
 mustBeConceptBecauseMath tp
- = let fatalV = fatal 54 "A concept turned out to be a built-in type."
+ = let fatalV :: (?loc :: CallStack) => a
+       fatalV = fatal 54 ("A concept turned out to be a built-in type.")
    in case getAsConcept fatalV tp of
         Checked v -> v
         _ -> fatalV
@@ -185,11 +190,7 @@ findDeclsTyped :: DeclMap -> String -> Signature -> [Declaration]
 findDeclsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls declMap x))
 
 onlyUserConcepts :: [[Type]] -> [[A_Concept]]
-onlyUserConcepts [] = []
-onlyUserConcepts (lst:r)
-  = case lefts (map typeOrConcept lst) of
-     [] -> onlyUserConcepts r
-     v -> v:onlyUserConcepts r
+onlyUserConcepts = fmap userList
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts
@@ -399,17 +400,17 @@ pCtx2aCtx opts
              , genspc = pCpt2aCpt (gen_spc pg)
              }
 
-    castSign :: Type -> Type -> Signature
-    castSign a b = Sign (mustBeConceptBecauseMath a) (mustBeConceptBecauseMath b)
+    castSign :: (?loc :: CallStack) => A_Concept -> A_Concept -> Signature
+    castSign a b = Sign a b
 
-    leastConcept :: A_Concept -> Type -> A_Concept
+    leastConcept :: A_Concept -> A_Concept -> A_Concept
     leastConcept c str
-     = case (aConcToType c `elem` leastConcepts, str `elem` leastConcepts) of
+     = case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
          (True, _) -> c
-         (_, True) -> mustBeConceptBecauseMath str
+         (_, True) -> str
          (_, _)    -> fatal 178 ("Either "++name c++" or "++show str++" should be a subset of the other." )
        where
-         leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` (Atom str))
+         leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` (Atom (aConcToType str)))
 
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
@@ -506,15 +507,17 @@ pCtx2aCtx opts
            = case payload of
               P_ViewExp term -> 
                  do (viewExpr,(srcBounded,_)) <- typecheckTerm term
-                    case toList$ findExact genLattice (lMeet c (aConcToType (source viewExpr))) of
+                    case userList$toList$ findExact genLattice (fl_Type$ lMeet c (source viewExpr)) of
                        [] -> mustBeOrdered o o (Src,(source viewExpr),viewExpr)
-                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft' (head r) viewExpr))
+                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft (head r) viewExpr))
                              else mustBeBound (origin seg) [(Tgt,viewExpr)]
               P_ViewText str -> pure$ ViewText str
-       c = pConcToType (vd_cpt o)
+       c = mustBeConceptBecauseMath (pConcToType (vd_cpt o))
     
     isa :: Type -> Type -> Bool
     isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
+    isaC :: A_Concept -> A_Concept -> Bool
+    isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
     
     typecheckObjDef :: DeclMap -> (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
     typecheckObjDef declMap
@@ -556,14 +559,14 @@ pCtx2aCtx opts
                , objmsub = s
                , objstrs = ostrs
                }, sr)
-    addEpsilonLeft',addEpsilonRight' :: Type -> Expression -> Expression -- TODO: why use primes here?
-    addEpsilonLeft' a e
-     = if a==aConcToType (source e) then e else EEps (leastConcept (source e) a) (castSign a (aConcToType (source e))) .:. e
-    addEpsilonRight' a e
-     = if a==aConcToType (target e) then e else e .:. EEps (leastConcept (target e) a) (castSign (aConcToType (target e)) a)
-    addEpsilon :: Type -> Type -> Expression -> Expression
+    addEpsilonLeft,addEpsilonRight :: A_Concept -> Expression -> Expression
+    addEpsilonLeft a e
+     = if a==source e then e else EEps (leastConcept (source e) a) (castSign a (source e)) .:. e
+    addEpsilonRight a e
+     = if a==target e then e else e .:. EEps (leastConcept (target e) a) (castSign (target e) a)
+    addEpsilon :: A_Concept -> A_Concept -> Expression -> Expression
     addEpsilon s t e
-     = addEpsilonLeft' s (addEpsilonRight' t e)
+     = addEpsilonLeft s (addEpsilonRight t e)
     pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
     pCruds2aCruds mCrud = 
        case mCrud of 
@@ -610,19 +613,17 @@ pCtx2aCtx opts
                 l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
-                case toList$ findExact genLattice (lMeet (aConcToType$ target objExpr) (aConcToType . source . objctx $ ojd)) of
+                case userList$toList$ findExact genLattice (fl_Type $ lMeet (target objExpr) (source . objctx $ ojd)) of
                     [] -> mustBeOrderedLst x [(source (objctx ojd),Src, ojd)]
-                    (r:_) -> pure (ojd{objctx=addEpsilonLeft' r (objctx ojd)})
+                    (r:_) -> pure (ojd{objctx=addEpsilonLeft r (objctx ojd)})
               else mustBeBound (origin ojd) [(Src,objctx ojd),(Tgt,objExpr)]
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr
-          expTargetStr = aConcToType expTarget
           ifcSource = source ifcExpr
-          ifcSourceStr = aConcToType ifcSource
-          refIsCompatible = expTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` expTargetStr
+          refIsCompatible = expTarget `isaC` ifcSource || ifcSource `isaC` expTarget
       in  if refIsCompatible 
-          then pure $ addEpsilonRight' ifcSourceStr objExpr 
+          then pure $ addEpsilonRight ifcSource objExpr 
           else Errors [mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef ]
     lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
     lookupDisambIfcObj declMap ifcId =
@@ -702,33 +703,34 @@ pCtx2aCtx opts
           = mustBeBound o [(p,e) | (False,p,e)<-[(b1,side1,fst e1),(b2,side2,fst e2)]]
          wrap (expr1,expr2) (cpt,True) ((_,b1), (_,b2))
           = pure (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
-            where lrDecide side e = case side of Src -> addEpsilonLeft' cpt e; Tgt -> addEpsilonRight' cpt e
+            where lrDecide side e = case side of Src -> addEpsilonLeft cpt e; Tgt -> addEpsilonRight cpt e
       deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
- 
+    deriv1 :: Origin -> TT (SrcOrTgt, (Expression, Bool)) -> Guarded (A_Concept, Bool)
     deriv1 o x'
      = case x' of
         (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
-             if (b1 && b2) || (getConcept p1 e1 == getConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType lJoin (p1, e1) (p2, e2)
+             if (b1 && b2) || (getAConcept p1 e1 == getAConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType lJoin (p1, e1) (p2, e2)
              else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
         (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
              (\x -> (fst x,b1)) <$> getAndCheckType lJoin (p1, True, e1) (p2, b2, e2)
         (UNI (p1,(e1,b1)) (p2,(e2,b2))) ->
              (\x -> (fst x,b1 && b2)) <$> getAndCheckType lJoin (p1, b1, e1) (p2, b2, e2)
         (ISC (p1,(e1,b1)) (p2,(e2,b2))) ->
-             (\(x,r) -> (x, (b1 && Set.member (getConcept p1 e1) r) || (b2 && Set.member (getConcept p2 e2) r) || (b1 && b2))
+             (\(x,r) -> (x, (b1 && elem (getAConcept p1 e1) r) || (b2 && elem (getAConcept p2 e2) r) || (b1 && b2))
              ) <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
      where
       getExactType flf (p1,e1) (p2,e2)
-       = case toList$ findExact genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of
+       = case userList$toList$ findExact genLattice (fl_Type$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
           r  -> pure$ head r
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case toList$ findSubsets genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
+       = case fmap (userList . toList)$toList$ findSubsets genLattice (fl_Type$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
-          [r] -> case (b1 || Set.member (getConcept p1 e1) r,b2 || Set.member (getConcept p2 e2) r ) of
-                   (True,True) -> pure (head (Set.toList r),r)
+          [r@(h:_)]
+              -> case (b1 || elem (getAConcept p1 e1) r,b2 || elem (getAConcept p2 e2) r ) of
+                   (True,True) -> pure (h,r)
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
-          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map Set.toList lst)
+          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (lst)
     termPrimDisAmb :: DeclMap -> TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb declMap x
      = (x, case x of
@@ -847,7 +849,7 @@ pCtx2aCtx opts
               do o <- pObjDefDisamb2aObjDef declMap ojd
                  case toList$ findExact genLattice $ aConcToType (source $ objctx o) `lJoin` aConcToType conc of
                           [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
-                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (aConcToType conc) (objctx o)}
+                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft conc (objctx o)}
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg o x) lst
@@ -928,6 +930,10 @@ pMarkup2aMarkup defLanguage defFormat
 lJoin,lMeet :: a -> a -> FreeLattice a
 lJoin a b = Join (Atom a) (Atom b)
 lMeet a b = Meet (Atom a) (Atom b)
+
+fl_Type :: FreeLattice (A_Concept) -> FreeLattice Type
+fl_Type = fmap aConcToType
+
 -- intended for finding the right expression on terms like (Src,fst)
 resolve :: t -> (SrcOrTgt, t -> (t1, (t2, t2))) -> (SrcOrTgt, (t1, t2))
 resolve es (p,f)
@@ -968,6 +974,9 @@ instance Functor TT where
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
   
+getAConcept :: Association a => SrcOrTgt -> a -> A_Concept
+getAConcept Src = source
+getAConcept Tgt = target
 getConcept :: Association a => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
