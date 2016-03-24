@@ -203,7 +203,7 @@ class InterfaceObject {
 		if($this->crudU && $this->tgtConcept->isObject) $this->editableConcepts[] = $this->tgtConcept;
 		
 		// Interface expression must equal (editable) relation when crudU is specified
-		if($this->crudU && is_null($this->relation)) Notifications::addInfo("{$this->path}", "CrudUcheck", "Update rigths (CRUD) specified while interface expression is not an editable relation for (sub)interfaces:");
+		if($this->crudU && is_null($this->relation)) Notifications::addInfo("{$this->path}", "CrudUcheck", "Update rights (crUd) specified while interface expression is not an editable relation for (sub)interfaces:");
 		    
 		// Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318
 		if(!is_null($this->relation) && $this->crudU && !$this->tgtConcept->isObject && $this->isUni){
