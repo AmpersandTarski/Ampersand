@@ -23,7 +23,6 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		
 		// refresh navbar + notifications
 		$rootScope.refreshNavBar();
-		$rootScope.getNotifications();
 	}
 	
 	$rootScope.deactivateAllRoles = function(){
@@ -81,6 +80,9 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					if($scope.$storage.cacheGetCalls === undefined){
 						$scope.$storage.cacheGetCalls = $scope.defaultSettings.cacheGetCalls;
 					}
+					
+					// Update notifications
+					$rootScope.updateNotifications(data.notifications);
 				}, function(error){
 					// on error
 				})
