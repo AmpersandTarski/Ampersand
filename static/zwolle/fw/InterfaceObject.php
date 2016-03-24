@@ -169,8 +169,9 @@ class InterfaceObject {
 	/**
 	 * InterfaceObject constructor
 	 * @param array $ifcDef
+	 * @param string $pathEntry
 	 */
-	public function __construct($ifcDef){
+	public function __construct($ifcDef, $pathEntry = null){
 		$this->database = Database::singleton();
 				
 		// Set attributes from $ifcDef
@@ -179,7 +180,7 @@ class InterfaceObject {
 		
 		$this->view = is_null($ifcDef['viewId']) ? null : View::getView($ifcDef['viewId']);
 		
-		$this->path = $this->id;
+		$this->path = is_null($pathEntry) ? $this->id : "{$pathEntry}/{$this->id}";
 		
 		// Information about the (editable) relation if applicable
 		$this->relation = is_null($ifcDef['relation']) ? null : Relation::getRelation($ifcDef['relation']);
@@ -203,13 +204,16 @@ class InterfaceObject {
 		
 		// Subinterfacing
 		if(!is_null($ifcDef['subinterfaces'])){
+		    // Subinterfacing is not supported/possible for tgt concepts with a scalar representation type (i.e. non-objects)
+		    if(!$this->tgtConcept->isObject) throw new Exception ("Subinterfacing is not supported for concepts with a scalar representation type (i.e. non-objects). (Sub)Interface '{$this->path}' with target {$this->tgtConcept->__toString()} (type:{$this->tgtConcept->type}) has subinterfaces specified", 501);
+		    
 		    // Reference to top level interface
 		    $this->refInterfaceId = $ifcDef['subinterfaces']['refSubInterfaceId'];
 		    $this->isLinkTo = $ifcDef['subinterfaces']['refIsLinTo'];
 		    
 		    // Inline subinterface definitions
 		    foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef){
-		        $ifc = new InterfaceObject($subIfcDef);
+		        $ifc = new InterfaceObject($subIfcDef, $this->path);
 		        $this->subInterfaces[$ifc->id] = $ifc;
 		        $this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
 		    }
