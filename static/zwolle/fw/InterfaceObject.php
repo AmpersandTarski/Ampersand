@@ -205,6 +205,21 @@ class InterfaceObject {
 		// Interface expression must equal (editable) relation when crudU is specified
 		if($this->crudU && is_null($this->relation)) Notifications::addInfo("{$this->path}", "CrudUcheck", "Update rigths (CRUD) specified while interface expression is not an editable relation for (sub)interfaces:");
 		    
+		// Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318
+		if(!is_null($this->relation) && $this->crudU && !$this->tgtConcept->isObject && $this->isUni){
+		    // Only applies to editable relations
+		    // Only applies to crudU, because issue is with patchReplace, not with add/remove
+		    // Only applies to scalar, because objects don't use patchReplace, but Remove and Add
+		    // Only if interface expression (not! the relation) is univalent, because else a add/remove option is used in the UI
+		    
+		    if((!$this->relationIsFlipped && $this->relation->getMysqlTable()->tableOf == 'tgt')
+		            || ($this->relationIsFlipped && $this->relation->getMysqlTable()->tableOf == 'src'))
+		        Notifications::addInfo("Interface '{$this->path}' - {$this->relation->__toString()}" . ($this->relationIsFlipped ? '~' : '') . " administrated in table of '{$this->relation->getMysqlTable()->tableOf}'"
+		                              , "patchReplaceIssue"
+		                              , "Unsupported edit functionality due to combination of factors for (sub)interfaces:");
+		}
+		    
+		
 		// Subinterfacing
 		if(!is_null($ifcDef['subinterfaces'])){
 		    // Subinterfacing is not supported/possible for tgt concepts with a scalar representation type (i.e. non-objects)

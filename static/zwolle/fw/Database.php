@@ -465,16 +465,24 @@ class Database {
 	            $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
 	            break;
 	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
-	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({},{}) from relation '{}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
-	            if(is_null($srcAtom->id)) throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
+	            // if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
-	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
+	            // Source atom can be used in WHERE statement
+	            if(!is_null($srcAtom->id)) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
+	            // Target can be used in WHERE statement, because tgtCol is unique
+	            elseif($relTable->tgtCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            // Else update cannot be performed, because of missing target
+	            else throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
 	            break;
 	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
-	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({},{}) from relation '{}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
-	            if(is_null($tgtAtom->id)) throw new Exception ("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
+	            // if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
-	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            // Target atom can be used in WHERE statement
+	            if(!is_null(($tgtAtom->id))) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            // Source can be used in WHERE statement, because srcCol is unique
+	            elseif($relTable->srcCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
+	            // Else update cannot be performed, because of missing target
+	            else throw new Exception ("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
 	            break;
 	        default :
 	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
