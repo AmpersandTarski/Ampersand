@@ -36,8 +36,8 @@ class Mutation {
 			$database->setTrackAffectedConjuncts(false); // Don't track affected conjuncts for Mutation concept and relations;
 			
 			// New Mutation
-			$mutConcept = Config::get('mutationConcepts', 'MutationExtension')[$fullRelationSignature];
-			$database->addAtomToConcept($mut = Concept::createNewAtom($mutConcept));
+			$mutConcept = Concept::getConcept(Config::get('mutationConcepts', 'MutationExtension')[$fullRelationSignature]);
+			$database->addAtomToConcept($mut = $mutConcept->createNewAtom());
 			
 			// Add mut info
 			Relation::getRelation('mutRelation', $mut->concept->name, 'Relation')->addLink($mut, new Atom($fullRelationSignature, 'Relation'), false, 'MutationExtension');

@@ -242,6 +242,37 @@ class Concept {
 	    return $interfaces;
 	}
 	
+	/**
+	 * Generate a new atom identifier for this concept
+	 * @return string
+	 */
+	public function createNewAtomId(){
+	    if(strpos($conceptName, '_AI') !== false && $this->isInteger()){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
+	        $firstCol = current($this->mysqlConceptTable->getCols());
+	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
+	         
+	        $result = array_column((array)$this->database->Exe($query), 'MAX');
+	
+	        if(empty($result)) $atomId = 1;
+	        else $atomId = $result[0] + 1;
+	
+	    }else{
+	        $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
+	        $atomId = $this->name.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds
+	    }
+	    return $atomId;
+	}
+	
+	/**
+	 * Instantiate new Atom object in backend
+	 * NB! this does not result automatically in a database insert
+	 *
+	 * @return Atom
+	 */
+	public function createNewAtom(){
+	    return new Atom($this->createNewAtomId(), $this->name);
+	}
+	
     /**********************************************************************************************
      * 
      * Static functions
@@ -282,41 +313,6 @@ class Concept {
 	    $allConceptDefs = (array)json_decode($file, true);
 	
 	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['name']] = new Concept($conceptDef);
-	}
-	
-	/**
-	 * Generate a new atom identifier for a given concept
-	 * @param string $conceptName
-	 * @return string
-	 */
-	public static function createNewAtomId($conceptName){
-	    $concept = self::getConcept($conceptName);
-	    
-	    if(strpos($conceptName, '_AUTOINCREMENT') !== false){ // TODO: change to type definition when Ampersand is supporting IT-TYPE	        
-	        $firstCol = current($this->mysqlConceptTable->getCols());
-	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
-	        
-	        $result = array_column((array)$this->database->Exe($query), 'MAX');
-	        	
-	        if(empty($result)) $atomId = 1;
-	        else $atomId = $result[0] + 1;
-	
-	    }else{
-	        $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-	        $atomId = $conceptName.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds
-	    }
-	    return $atomId;
-	}	
-	
-	/**
-	 * Instantiate new Atom object in backend
-	 * NB! this does not result automatically in a database insert
-	 * 
-	 * @param string $conceptName
-	 * @return Atom
-	 */
-	public static function createNewAtom($conceptName){
-		return new Atom(Concept::createNewAtomId($conceptName), $conceptName);
 	}
 }
 

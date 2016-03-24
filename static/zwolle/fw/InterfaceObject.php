@@ -412,7 +412,7 @@ class InterfaceObject {
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 	
 	    // Perform create
-	    $newAtom = Concept::createNewAtom($this->tgtConcept->name);
+	    $newAtom = $this->tgtConcept->createNewAtom();
 	    $this->database->addAtomToConcept($newAtom);
 	
 	    // Special case for CREATE in I[Concept] interfaces

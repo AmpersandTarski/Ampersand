@@ -41,10 +41,12 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'InsPair ignored because src and/or tgt atom is _NULL';
 		
 		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
-	    if($srcAtom == "_NEW") $srcAtom = Concept::createNewAtomId($srcConceptName);
+		$srcConcept = Concept::getConcept($srcConceptName);
+	    if($srcAtom == "_NEW") $srcAtom = $srcConcept->createNewAtomId();
 		
 		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
-		if($tgtAtom == "_NEW") $tgtAtom = Concept::createNewAtomId($tgtConceptName);
+	    $tgtConcept = Concept::getConcept($tgtConceptName);
+		if($tgtAtom == "_NEW") $tgtAtom = $tgtConcept->createNewAtomId();
 		
 		$srcAtomIds = explode('_AND', $srcAtom);
 		$tgtAtomIds = explode('_AND', $tgtAtom);
@@ -121,7 +123,8 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		
 		// We start with parsing the first one or two arguments
 		$ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
-		$AtomC = Concept::createNewAtomId($ConceptC);   // Default marker for atom-to-be-created.
+		$c = Concept::getConcept($ConceptC);
+		$AtomC = $c->createNewAtomId();   // Default marker for atom-to-be-created.
 
 		Notifications::addLog("Newstruct for concept $ConceptC", 'ExecEngine');
 		
@@ -193,16 +196,16 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 }
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
-function InsAtom($concept){
+function InsAtom($conceptName){
 	if(func_num_args() != 1) throw new Exception("Wrong number of arguments supplied for function InsAtom(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("InsAtom($concept)", 'ExecEngine');
+	Notifications::addLog("InsAtom($conceptName)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
-		$atom = Concept::createNewAtomId($concept);
-		$database->addAtomToConcept(new Atom($atom, $concept)); // insert new atom in database
+		$concept = Concept::getConcept($conceptName);
+		$database->addAtomToConcept($atom = $concept->createNewAtom()); // insert new atom in database
 		
-		return "Atom '".$atom."' added to concept '". $concept . "'";
+		return "Atom '{$atom->__toString()}' created and added to database";
 		
 	}catch(Exception $e){
 		Notifications::addError('InsAtom: ' . $e->getMessage());

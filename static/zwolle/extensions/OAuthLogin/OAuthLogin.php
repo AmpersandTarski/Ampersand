@@ -141,7 +141,8 @@ class OAuthLoginController {
 
 				// create new user
 				if(empty($accounts)){
-					$newAccount = Concept::createNewAtom('Account');
+				    $accountConcept = Concept::getConcept('Account')
+					$newAccount = $accountConcept->createNewAtom();
 					$relAccUserid = Relation::getRelation('accUserid', $newAccount->concept->name, 'UserID');
 					$relAccUserid->addLink($newAccount, new Atom($email, 'UserID'), false, 'OAuthLoginExtension');
 
