@@ -20,9 +20,9 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
     calculatedDecls = map calcProps .filter (not . decplug) . relsDefdIn $ context 
-    (conceptTableParts, linkTableParts) = dist calculatedDecls conceptsPerTable
-    makeConceptTable :: ([A_Concept], [Declaration]) -> PlugSQL
-    makeConceptTable (cpts , dcls) = 
+    (conceptTableParts, linkTableParts) = dist calculatedDecls (typologies context)
+    makeConceptTable :: (Typology, [Declaration]) -> PlugSQL
+    makeConceptTable (typ , dcls) = 
       TblSQL
              { sqlname    = unquote . name $ tableKey
              , attributes = map cptAttrib cpts ++ map dclAttrib dcls
@@ -30,6 +30,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
              , dLkpTbl    = dclLookuptable
              }
         where
+          cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
           -- | Make sure each attribute in the table has a unique name. Take into account that sql 
           --   is not case sensitive about names of coloums. 
           colNameMap :: [ (Either A_Concept Declaration, String) ]
@@ -51,7 +52,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                            else (x,nm):names
 
 
-          tableKey = head cpts
+          tableKey = tyroot typ
           isStoredFlipped :: Declaration -> Bool
           isStoredFlipped d
             = snd . fromMaybe ftl . wayToStore $ d
@@ -183,33 +184,21 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                     , attFlipped = isFlipped trgExpr
                     }
 
-
-    -- | In some cases, concepts can be administrated in the same conceptTable. Each concept will be administrated in exactly one 
-    --   conceptTable. This function returns all concepts grouped properly. 
-    --   Two concepts, A and B belong in the same group iff:
-    --      1) They belong to the same typology or
-    --      2) a. They do no belong to the same typology and 
-    --         b. There exists an univalent, injective and surjective relation from A to B and
-    --         c. All other concepts in the typology of B are more specific than B
-    --      3) one of the above is true for any concept A' in the same group as A and concept B' in the same group as B.
-    conceptsPerTable :: [[A_Concept]]
-    conceptsPerTable = map tyCpts . typologies $ context
-
     -- | dist will distribute the declarations amongst the sets of concepts. 
     --   Preconditions: The sets of concepts are supposed to be sets of 
     --                  concepts that are to be represented in a single table. 
     dist :: [Declaration]   -- all declarations that are to be distributed
-         -> [[A_Concept]]   -- the sets of concepts, each one contains all concepts that will go into a single table.
-         -> ( [([A_Concept], [Declaration])]  -- tuples of a set of concepts and all declarations that can be
+         -> [Typology]   -- the sets of concepts, each one contains all concepts that will go into a single table.
+         -> ( [(Typology, [Declaration])]  -- tuples of a set of concepts and all declarations that can be
                                               -- stored into that table. The order of concepts is not modified.
             , [Declaration]  -- The declarations that cannot be stored into one of the concept tables.
             ) 
     dist dcls cptLists = 
-       ( [ (cpts, declsInTable cpts) | cpts <- cptLists]
+       ( [ (t, declsInTable t) | t <- cptLists]
        , [ d | d <- dcls, conceptTableOf d == Nothing])
       where
-        declsInTable cpts = [ dcl | dcl <- dcls
-                            , not . null $ maybeToList (conceptTableOf dcl) `isc` cpts ]
+        declsInTable typ = [ dcl | dcl <- dcls
+                            , not . null $ maybeToList (conceptTableOf dcl) `isc` tyCpts typ ]
         
 conceptTableOf :: Declaration -> Maybe A_Concept
 conceptTableOf d = fmap fst $ wayToStore d

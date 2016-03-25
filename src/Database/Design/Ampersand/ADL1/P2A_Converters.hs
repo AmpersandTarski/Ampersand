@@ -10,6 +10,7 @@ import Database.Design.Ampersand.ADL1.Lattices -- used for type-checking
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ViewPoint
 import Database.Design.Ampersand.Classes.ConceptStructure
+import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Control.Monad (join)
@@ -284,21 +285,30 @@ pCtx2aCtx opts
           _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
           return (CI { ctxiGens = gns
                      , representationOf = findR
-                     , multiKernels = map mkTypology $ f [] gns
+                     , multiKernels = map mkTypology $ f [] (map concs gns)
                      })
         where 
           gns = map pGen2aGen allGens
+          f :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
           f typols gs = 
              case gs of
                []   -> typols
-               x:xs -> let (as,bs) = Lst.partition (not . null . uni (concs x)) typols
-                       in f ((concat as `uni` concs x) : bs ) xs 
+               x:xs -> f (t:typols) rest
+                 where 
+                    (t,rest) = g x xs 
+                    g a as = case partition (hasConceptsOf a) as of
+                              (_,[])   -> (a,as)
+                              (hs',hs) -> g (foldr uni a hs) hs'
+                    hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
+                    hasConceptsOf a = null . isc a
+                          
+          mkTypology :: [A_Concept] -> Typology
           mkTypology cs = 
                 Typology { tyroot = case filter (not . isSpecific) cs of
                                      []  -> fatal 297 $ "empty typology for "++show cs++"." 
                                      [r] -> r
                                      xs  -> fatal 299 $ "multiple roots for "++show cs++": "++show xs++"." 
-                         , tyCpts = cs
+                         , tyCpts = reverse . sortSpecific2Generic gns $ cs
                          }
              where 
                isSpecific :: A_Concept -> Bool

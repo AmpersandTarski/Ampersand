@@ -8,7 +8,7 @@ import Database.Design.Ampersand.Output.ToJSON.JSONutils
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Output.ToJSON.Concepts 
-
+import Data.Maybe
 
 data Views = Views [View] deriving (Generic, Show)
 data View = View
@@ -22,10 +22,10 @@ instance ToJSON View where
 instance ToJSON Views where
   toJSON = amp2Jason
 instance JSON FSpec Views where
- fromAmpersand fSpec _ = Views $ (map (fromAmpersand fSpec) 
-      [ v | c<-conceptsFromSpecificToGeneric, v <- vviews fSpec, vdcpt v==c ]) --sort from spec to gen
-  where
-   conceptsFromSpecificToGeneric = concatMap (reverse . tyCpts) . ftypologies $ fSpec
+ fromAmpersand fSpec _ = Views . map (fromAmpersand fSpec) 
+                               . catMaybes 
+                               . map (getDefaultViewForConcept fSpec) 
+                               . allConcepts $ fSpec
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
   { vwJSONlabel      = vdlbl vd
