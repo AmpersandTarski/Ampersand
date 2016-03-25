@@ -61,7 +61,7 @@ primitives expr =
     (EBrk e)     -> primitives e
     EDcD{}       -> [expr]
     EDcI{}       -> [expr]
-    EEps{}       -> [expr]  -- This implies that concs (primitives e) will also contain the intersection concept.
+    EEps{}       -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
 

@@ -24,7 +24,7 @@ class ConceptStructure a where
   relsMentionedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
   relsMentionedIn = nub . map prim2rel . primsMentionedIn
   primsMentionedIn :: a -> [Expression]
-  primsMentionedIn = nub . concatMap primitives . expressionsIn -- yields V, I, declarations, Epsilon, and Mp1 expressions.
+  primsMentionedIn = nub . concatMap primitives . expressionsIn
   expressionsIn :: a -> [Expression] -- ^ The set of all expressions within data structure a
   
 prim2rel :: Expression -> Declaration
@@ -98,7 +98,7 @@ instance ConceptStructure Expression where
   concs (EEps i sgn) = nub (i:concs sgn)
   concs (EDcV   sgn) = concs sgn
   concs (EMp1 _ c  ) = [c]
-  concs e            = concs (primitives e) -- note that `primitives` must produce all of the above, or else concs (primitives e) is wrong.
+  concs e            = concs (primitives e)
   expressionsIn e = [e]
 
 instance ConceptStructure A_Concept where
