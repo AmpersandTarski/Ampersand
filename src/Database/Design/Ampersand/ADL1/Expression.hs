@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Database.Design.Ampersand.ADL1.Expression (
                        subst
-                      ,primitives,isPrimitive,isMp1, isEEps
+                      ,primitives,isMp1, isEEps
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
@@ -39,6 +39,7 @@ subst (decl,expr) = subs
        subs e@EDcV{}     = e
        subs e@EMp1{}     = e
 
+
 primitives :: Expression -> [Expression]
 primitives expr =
   case expr of
@@ -63,16 +64,6 @@ primitives expr =
     EEps{}       -> [expr]  -- This implies that concs (primitives e) will also contain the intersection concept.
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
-
-isPrimitive :: Expression -> Bool
-isPrimitive expr =
-  case expr of
-    EDcD{}       -> True
-    EDcI{}       -> True
-    EEps{}       -> True
-    EDcV{}       -> True
-    EMp1{}       -> True
-    _            -> False
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.

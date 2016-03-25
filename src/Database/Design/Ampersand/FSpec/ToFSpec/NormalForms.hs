@@ -1299,11 +1299,8 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM _      (ECps (l,EUni (q,s))) _                   = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
   nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")
   nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
--- The following two rules have been changed on March 25th, 2016 to fix Github issues #256 and #345.
--- An extra condition `not (isPrimitive r)` has been added.
--- An exception is made for primitive expressions, because surjectivity and totality are not enforced automatically (as opposed to Inj and Uni).
-  nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l && not (isPrimitive r) = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
-  nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l && not (isPrimitive r) = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
+  nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
+  nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
   nM posCpl (ECps (l,r))           rs                 = (t .:. f, steps++steps', fEqu [equ',equ''])
                                                           where (t,steps, equ')  = nM posCpl l []
                                                                 (f,steps',equ'') = nM posCpl r (l:rs)
