@@ -75,19 +75,19 @@ data TableSpecNew
 data AttributeSpecNew
   = AttributeSpec { fsname :: String
                   , fstype :: String
-                  , fsauto :: Bool
+                  , fsDbNull :: Bool
                   }
 fld2AttributeSpec ::SqlAttribute -> AttributeSpecNew
 fld2AttributeSpec att 
   = AttributeSpec { fsname = name att
                   , fstype = showSQL (attType att)
-                  , fsauto = False 
+                  , fsDbNull = attDBNull att 
                   }
 attributeSpec2Str :: AttributeSpecNew -> String
 attributeSpec2Str fs = intercalate " "
                         [ show (fsname fs)
                         , fstype fs
-                        , if fsauto fs then " AUTO_INCREMENT" else " DEFAULT NULL"
+                        , if fsDbNull fs then " DEFAULT NULL" else ""
                         ] 
 plug2TableSpec :: PlugSQL -> TableSpecNew
 plug2TableSpec plug 

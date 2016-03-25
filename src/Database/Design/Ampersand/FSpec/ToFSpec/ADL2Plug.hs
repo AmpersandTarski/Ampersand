@@ -82,17 +82,19 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
           cptAttrib cpt = Att { attName = case lookup (Left cpt) colNameMap of
                                             Nothing -> fatal 99 $ "No name found for `"++name cpt++"`. "
                                             Just nm -> nm
-                              , attExpr = if cpt == tableKey
-                                          then EDcI cpt
-                                          else EEps cpt (Sign tableKey cpt)
+                              , attExpr = expr
                               , attType = repr cpt
                               , attUse  = if cpt == tableKey
                                           then TableKey True cpt
                                           else PlainAttr
-                              , attNull = cpt /= tableKey
+                              , attNull   = not . isTot $ expr
+                              , attDBNull = cpt /= tableKey 
                               , attUniq = True
                               , attFlipped = False
                               }
+                where expr = if cpt == tableKey
+                             then EDcI cpt
+                             else EEps cpt (Sign tableKey cpt)
           dclAttrib :: Declaration -> SqlAttribute
           dclAttrib dcl = Att { attName = case lookup (Right dcl) colNameMap of
                                             Nothing -> fatal 113 $ "No name found for `"++name dcl++"`. "
@@ -103,6 +105,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                           then ForeignKey (target dclAttExpression)
                                           else PlainAttr
                               , attNull = not . isTot $ keyToTargetExpr
+                              , attDBNull = True -- to prevent database errors. Ampersand checks for itself. 
                               , attUniq = isInj keyToTargetExpr
                               , attFlipped = isStoredFlipped dcl
                               }
@@ -164,6 +167,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                 then ForeignKey (target srcExpr)
                                 else PlainAttr
                     , attNull = isTot trgExpr
+                    , attDBNull = True  -- to prevent database errors. Ampersand checks for itself. 
                     , attUniq = isUni trgExpr
                     , attFlipped = isFlipped trgExpr
                     }
@@ -174,6 +178,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                 then ForeignKey (target trgExpr)
                                 else PlainAttr
                     , attNull = isSur trgExpr
+                    , attDBNull = True  -- to prevent database errors. Ampersand checks for itself. 
                     , attUniq = isInj trgExpr
                     , attFlipped = isFlipped trgExpr
                     }
