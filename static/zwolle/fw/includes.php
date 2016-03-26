@@ -1,5 +1,17 @@
 <?php
 
+register_shutdown_function('shutdown');
+function shutdown(){
+    $error = error_get_last();
+    if ($error['type'] === E_ERROR) {
+        $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
+        http_response_code(500);
+        header($protocol . ' 500 ' . $error['message']);
+        print json_encode(array('error' => 500, 'msg' => $error['message'] . " in " . $error['file'] . ":" . $error['line']));
+        exit;
+    }
+}
+
 if (version_compare(PHP_VERSION, '5.4.0', '<')) {
 	throw new Exception("PHP version >= 5.4 required. You are on " . PHP_VERSION, 500);
 }

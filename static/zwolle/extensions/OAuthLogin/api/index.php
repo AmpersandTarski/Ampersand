@@ -1,17 +1,5 @@
 <?php
 
-register_shutdown_function('shutdown');
-function shutdown(){
-	$error = error_get_last();
-	if ($error['type'] === E_ERROR) {
-		$protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
-		http_response_code(500);
-		header($protocol . ' 500 ' . $error['message']);
-		print json_encode(array('error' => 500, 'msg' => $error['message']));
-		exit;
-	}
-}
-
 require_once (__DIR__ . '/../../../fw/includes.php');
 
 // Create and configure Slim app (version 2.x)
