@@ -312,11 +312,7 @@ pCtx2aCtx opts
                          }
              where 
                isSpecific :: A_Concept -> Bool
-               isSpecific cpt = cpt `elem` concatMap specifics gns
-               specifics :: A_Gen -> [A_Concept]
-               specifics g = case g of
-                              Isa{} -> [genspc g]
-                              IsE{} -> genrhs g
+               isSpecific cpt = cpt `elem` map genspc gns
     compareTypes f p_gen
      = sequence_ [ if (f genC == rightType) then pure () else nonMatchingRepresentTypes p_gen (f genC) rightType
                  | genC <- gen_concs p_gen ]
