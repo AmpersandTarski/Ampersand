@@ -51,21 +51,16 @@ $app->post('/import', function () use ($app){
 		if(!$ok) throw new Exception("You do not have access to import excel files", 401);
 	}
 	
-	$invariantRulesHold = null;
 	if (is_uploaded_file($_FILES['file']['tmp_name'])){
-		// Parse
-		$parser = new ExcelImport();
-		$parser->ParseFile($_FILES['file']['tmp_name']);
-		
-		// Close transaction => ROLLBACK or COMMIT.
-		$invariantRulesHold = $session->database->closeTransaction('File uploaded', true);
-		
+		// Parse:
+		$parser = new ImportExcel($_FILES['file']['tmp_name']);
+		$result = $parser->ParseFile();
 		unlink($_FILES['file']['tmp_name']);
 	}else{
 	    Notifications::addError('No file uploaded');
 	}
 	
-	$result = array('notifications' => Notifications::getAll(), 'files' => $_FILES, '$invariantRulesHold' => $invariantRulesHold);
+	$result = array('notifications' => $result, 'files' => $_FILES);
 	
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
