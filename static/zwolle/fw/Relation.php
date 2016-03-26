@@ -122,8 +122,8 @@ class Relation {
         $srcCol = $relationDef['mysqlTable']['srcCol'];
         $tgtCol = $relationDef['mysqlTable']['tgtCol'];
         
-        $this->mysqlTable->addSrcCol(new DatabaseTableCol($srcCol['name'], $srcCol['null'], $srcCol['unique']));
-        $this->mysqlTable->addTgtCol(new DatabaseTableCol($tgtCol['name'], $tgtCol['null'], $tgtCol['unique']));
+        $this->mysqlTable->addSrcCol(new DatabaseTableCol($srcCol['name'], $srcCol['dbNull'], $srcCol['unique']));
+        $this->mysqlTable->addTgtCol(new DatabaseTableCol($tgtCol['name'], $tgtCol['dbNull'], $tgtCol['unique']));
     }
     
     public function __toString(){

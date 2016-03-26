@@ -465,7 +465,7 @@ class Database {
 	            $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
 	            break;
 	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
-	            // if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
 	            // Source atom can be used in WHERE statement
 	            if(!is_null($srcAtom->id)) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
@@ -475,7 +475,7 @@ class Database {
 	            else throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
 	            break;
 	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
-	            // if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
 	            // Target atom can be used in WHERE statement
 	            if(!is_null(($tgtAtom->id))) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
