@@ -99,8 +99,7 @@ class ExcelImport {
 	        }
 	    }
 	    
-	    $row = 2;
-	    while ($row <= $highestrow){
+	    for ($row = 2; $row <= $highestrow; $row++){
 	        $firstCol = (string)$worksheet->getCell('A'.$row)->getCalculatedValue();
 	        if($firstCol == '') continue; // Skip this row
 	        elseif($firstCol == '_NEW'){
@@ -117,9 +116,10 @@ class ExcelImport {
 	            
 	            if(is_null($header[$columnletter])) continue; // skip this column.
 	            
-	            $cell = $worksheet->getCell($columnletter . $row);
-	             
+	            $cell = $worksheet->getCell($columnletter . $row); 
 	            $cellvalue = (string)$cell->getCalculatedValue();
+	            
+	            if($cellvalue == '') continue; // skip if not value provided	            
 	             
 	            // overwrite $cellvalue in case of datetime
 	            // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
@@ -130,7 +130,6 @@ class ExcelImport {
 	            
 	            $header[$columnletter]->relation->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
 	        }
-	        $row++;
 	    }
 	}
 	
@@ -228,7 +227,7 @@ class ExcelImport {
 					
 					// Determine relations for all cols except col 0
 					if($col > 0){
-    					if($relations[$col] == ''){
+    					if($relations[$col] == '' || $concept[$col] == ''){
     					    $relations[$col] = null;
     					}elseif(substr($relations[$col], -1) == '~'){ // Relation is flipped is last character is a tilde (~)
     					    $relations[$col] = Relation::getRelation(substr($relations[$col], 0, -1), $concept[$col]->name, $concept[0]->name);
