@@ -88,7 +88,8 @@ class Database {
     		$this->db_name = Config::get('dbName', 'mysqlDatabase');
     		
     		// Connect to MYSQL database
-    		$this->db_link = new mysqli($this->db_host, $this->db_user, $this->db_pass);
+    		$this->db_link = mysqli_init();
+    		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
     		
     		// Set sql_mode to ANSI
     		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
@@ -310,6 +311,9 @@ class Database {
 				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
 						  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
 				
+				// Check if query resulted in an affected row
+				if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No record inserted in Database::addAtomToConcept({$atom->__toString()})", 500);
+				
 				$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 				
 				Notifications::addLog("Atom '{$atom->id}[{$atom->concept->name}]' added to database", 'DATABASE');
@@ -364,6 +368,9 @@ class Database {
 			// Perform update
 			$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atom->idEsc}'");
 			
+			// Check if query resulted in an affected row
+			if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomSetConcept({$atom->__toString()}, {$conceptBName})", 500);
+			
 			$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 			
 			Notifications::addLog("Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '[{$conceptB->name}]'", 'DATABASE');
@@ -410,6 +417,9 @@ class Database {
 			
 			$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atom->idEsc}'");
 			
+			// Check if query resulted in an affected row
+			if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomClearConcept({$atom->__toString()})", 500);
+			
 			$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 			
 			Notifications::addLog("Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$atom->concept->name'", 'DATABASE');
@@ -444,6 +454,9 @@ class Database {
 	        default :
 	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
 	    }
+	    // Check if query resulted in an affected row
+	    if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::addLink({$relation->__toString()},{$srcAtom->__toString()},{$tgtAtom->__toString()})", 500);
+	    
 	    $this->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
 	
@@ -487,6 +500,9 @@ class Database {
 	        default :
 	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
 	    }
+	    // Check if query resulted in an affected row
+	    if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::deleteLink({$relation->__toString()},{$srcAtom->__toString()},{$tgtAtom->__toString()})", 500);
+	    
 	    $this->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
 	    
@@ -509,6 +525,10 @@ class Database {
 			$conceptTable = $concept->getConceptTableInfo();
 			$query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atom->idEsc}' LIMIT 1";
 			$this->Exe($query);
+			
+			// Check if query resulted in an affected row
+			if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records deleted in Database::deleteAtom({$atom->__toString()})", 500);
+			
 			$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 			
 			// Delete atom from relation tables where atom is mentioned as src or tgt atom
