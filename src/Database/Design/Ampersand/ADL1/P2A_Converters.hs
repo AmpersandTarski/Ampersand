@@ -283,9 +283,10 @@ pCtx2aCtx opts
      = do mp <- Map.fromList . concat <$> traverse findTypes (concat (onlyUserConcepts (getGroups genLattice)))
           let findR x = Map.findWithDefault Object x mp -- default representation is Object (sometimes called `ugly identifiers')
           _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
+          multitypologies <- traverse mkTypology $ f [] (map concs gns)
           return (CI { ctxiGens = gns
                      , representationOf = findR
-                     , multiKernels = map mkTypology $ f [] (map concs gns)
+                     , multiKernels = multitypologies
                      })
         where 
           gns = map pGen2aGen allGens
@@ -302,17 +303,20 @@ pCtx2aCtx opts
                     hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
                     hasConceptsOf a = null . isc a
                           
-          mkTypology :: [A_Concept] -> Typology
+          mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 
-                Typology { tyroot = case filter (not . isSpecific) cs of
-                                     []  -> fatal 297 $ "empty typology for "++show cs++"." 
-                                     [r] -> r
-                                     xs  -> fatal 299 $ "multiple roots for "++show cs++": "++show xs++"." 
-                         , tyCpts = reverse . sortSpecific2Generic gns $ cs
-                         }
+            case filter (not . isSpecific) cs of
+               []  -> fatal 297 $ "empty typology for "++show cs++"." 
+               [r] -> pure $ 
+                          Typology { tyroot = r
+                                   , tyCpts = reverse . sortSpecific2Generic gns $ cs
+                                   }
+               rs  -> mkMultipleRootsError rs $ filter isInvolved gns
              where 
                isSpecific :: A_Concept -> Bool
                isSpecific cpt = cpt `elem` map genspc gns
+               isInvolved :: A_Gen -> Bool
+               isInvolved gn = not . null $ concs gn `isc` cs
     compareTypes f p_gen
      = sequence_ [ if (f genC == rightType) then pure () else nonMatchingRepresentTypes p_gen (f genC) rightType
                  | genC <- gen_concs p_gen ]
@@ -397,14 +401,16 @@ pCtx2aCtx opts
                                  })
           ) <$> traverse (pAtomPair2aAtomPair contextInfo dcl) (dec_popu pd)
     pGen2aGen :: P_Gen -> A_Gen
-    pGen2aGen pg@PGen{}
-       = Isa{gengen = pCpt2aCpt (gen_gen pg)
-            ,genspc = pCpt2aCpt (gen_spc pg)
-            }
-    pGen2aGen pg@P_Cy{}
-       = IsE { genrhs = map pCpt2aCpt (gen_rhs pg)
-             , genspc = pCpt2aCpt (gen_spc pg)
-             }
+    pGen2aGen pg =
+      case pg of
+        PGen{} -> Isa{ genpos = origin pg
+                     , gengen = pCpt2aCpt (gen_gen pg)
+                     , genspc = pCpt2aCpt (gen_spc pg)
+                     }
+        P_Cy{} -> IsE{ genpos = origin pg
+                     , genrhs = map pCpt2aCpt (gen_rhs pg)
+                     , genspc = pCpt2aCpt (gen_spc pg)
+                     }
 
     castSign :: (?loc :: CallStack) => A_Concept -> A_Concept -> Signature
     castSign a b = Sign a b

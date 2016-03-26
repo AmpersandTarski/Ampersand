@@ -15,6 +15,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkInvalidCRUDError
   , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
   , mkTypeMismatchError
+  , mkMultipleRootsError
   , Guarded(..) -- ^ If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   , multipleRepresentTypes, nonMatchingRepresentTypes
@@ -95,7 +96,22 @@ multipleRepresentTypes o h tps
  = Errors [CTXE o$ "The Concept "++showADL h++" was shown to be representable as too many types: "++
                    intercalate ", " (map showADL tps)
                    ++"\n  It should be representable as at most one type"]
-
+mkMultipleRootsError :: [A_Concept] -> [A_Gen] -> Guarded a
+mkMultipleRootsError roots gs
+ = Errors [CTXE o msg]
+    where 
+      o = case gs of
+           [] -> fatal 103 "mkMultipleRootsError called with no A_Gen."
+           g:_ -> origin g
+      msg = intercalate "\n" $
+             [ "A typology must have at most one root concept."
+             , "The following CLASSIFY statements define a typology with multiple root concepts: "
+             ] ++
+             [ "  - "++showADL x++" at "++showFullOrig (origin x) | x<-gs]++
+             [ "Parhaps you could add the following statements:"]++
+             [ "  CLASSIFY "++name cpt++" ISA "++show rootName    | cpt<-roots]
+          
+       where rootName = intercalate "_Or_" . map name $ roots 
 nonMatchingRepresentTypes :: (Traced a1, Show a2, Show a3) => a1 -> a2 -> a3 -> Guarded a
 nonMatchingRepresentTypes genStmt wrongType rightType
  = Errors [CTXE (origin genStmt)$ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "++show wrongType++" is not the same as "++show rightType]

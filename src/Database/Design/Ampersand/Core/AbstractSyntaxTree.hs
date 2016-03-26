@@ -338,12 +338,16 @@ data ViewSegmentPayLoad
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
 --   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
-data A_Gen = Isa { genspc :: A_Concept      -- ^ specific concept
+data A_Gen = Isa { genpos :: Origin
+                 , genspc :: A_Concept      -- ^ specific concept
                  , gengen :: A_Concept      -- ^ generic concept
                  }
-           | IsE { genspc :: A_Concept      -- ^ specific concept
+           | IsE { genpos :: Origin
+                 , genspc :: A_Concept      -- ^ specific concept
                  , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  } deriving (Typeable, Eq)
+instance Traced A_Gen where
+  origin = genpos
 instance Unique A_Gen where
   showUnique a =
     case a of
