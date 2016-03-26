@@ -189,7 +189,7 @@ installComposerLibs fSpec =
    where
      myProc :: CreateProcess
      myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --working-dir="++composerTargetPath
+       { cmdspec = ShellCommand $ "composer install --prefer-dist --profile --working-dir="++composerTargetPath
        , cwd = Just composerTargetPath
        , env = Nothing
        , std_in = Inherit
