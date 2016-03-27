@@ -111,8 +111,8 @@ Class Atom {
 	 */
 	public function setId($id){
 	    // Check for allowed characters for atoms with object representation. See issue https://github.com/AmpersandTarski/ampersand/issues/316
-	    // Allowed characters are: 'alphanumeric' and '_'
-	    if($this->concept->isObject && !preg_match("#^[a-zA-Z0-9\_]+$#", $id)) throw new Exception ("Only alphanumeric characters and an underscore are allowed for object representations. Atom '{$id}[{$this->concept->name}]' (ttype: {$this->concept->type}) does not comply to this constraint", 500);
+	    // Allowed characters are: alphanumeric, spaces and '_'
+	    if($this->concept->isObject && !preg_match("#^[a-zA-Z0-9\_ ]+$#", $id)) throw new Exception ("Only alphanumeric characters and an underscore are allowed for object representations. Atom '{$id}[{$this->concept->name}]' (ttype: {$this->concept->type}) does not comply to this constraint", 500);
 	    
 	    $this->id = $id;
 		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
