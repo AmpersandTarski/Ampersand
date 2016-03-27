@@ -3,9 +3,9 @@ app.requires[app.requires.length] = 'LoginModule'; // add ur.file module to depe
 
 var LoginModule = angular.module('LoginModule', ['ngRoute', 'restangular']);
 
-LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, LoginRestangular){
+LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, Restangular){
 	
-	LoginRestangular.one('login').get().then(
+	Restangular.one('oauthlogin/login').get().then(
 		function(data){ // success
 			$scope.idps = data.identityProviders;
 			$rootScope.updateNotifications(data.notifications);
@@ -14,12 +14,11 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, L
 		
 		}
 	);
-		
 	
-}).controller('LoginExtLogoutController', function($scope, $rootScope, LoginRestangular, $location){
+}).controller('LoginExtLogoutController', function($scope, $rootScope, Restangular, $location){
 	
 	$scope.logout = function(){
-		LoginRestangular.one('logout').get().then(
+		Restangular.one('oauthlogin/logout').get().then(
 			function(data){ // success
 				
 				$rootScope.updateNotifications(data.notifications);
@@ -41,11 +40,4 @@ app.config(function($routeProvider) {
 			,	templateUrl: 'extensions/OAuthLogin/ui/views/Login.html'
 			,	interfaceLabel: 'Login'
 			})
-});
-
-//Restangular service for the ExecEngine
-LoginModule.factory('LoginRestangular', function(Restangular) {
-	return Restangular.withConfig(function(RestangularConfigurer) {
-		RestangularConfigurer.setBaseUrl('extensions/OAuthLogin/api');
-	});
 });

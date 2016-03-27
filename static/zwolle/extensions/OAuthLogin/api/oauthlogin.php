@@ -1,28 +1,7 @@
 <?php
 
-require_once (__DIR__ . '/../../../fw/includes.php');
-
-// Create and configure Slim app (version 2.x)
-$app = new \Slim\Slim(array(
-    'debug' => Config::get('debugMode')
-));
-
-$app->add(new \Slim\Middleware\ContentTypes());
-$app->response->headers->set('Content-Type', 'application/json');
-
-// Error handler
-$app->error(function (Exception $e) use ($app) {
-	$app->response->setStatus($e->getCode());
-	print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage()));
-});
-
-// Not found handler
-$app->notFound(function () use ($app) {
-	$app->response->setStatus(404);
-	print json_encode(array('error' => 404, 'msg' => "Not found"));
-});
-
-$app->get('/login', function () use ($app){
+// Path to API is 'api/v1/oauthlogin/login'
+$app->get('/oauthlogin/login', function () use ($app){
 	$session = Session::singleton();
 	
 	$idps = array();
@@ -69,7 +48,8 @@ $app->get('/login', function () use ($app){
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/logout', function () use ($app){
+// Path to API is 'api/v1/oauthlogin/logout'
+$app->get('/oauthlogin/logout', function () use ($app){
 	$session = Session::singleton();
 	
 	$session->database->deleteAtom(new Atom(session_id(), 'SESSION'));
@@ -81,18 +61,17 @@ $app->get('/logout', function () use ($app){
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->get('/callback/google', function () use ($app){
+// Path to API is 'api/v1/oauthlogin/callback/google'
+$app->get('/oauthlogin/callback/google', function () use ($app){
 	$code = $app->request->params('code');
 	OAuthLoginController::callback($code, 'google');
 });
 
-$app->get('/callback/linkedin', function () use ($app){
+// Path to API is 'api/v1/oauthlogin/callback/linkedin'
+$app->get('/oauthlogin/callback/linkedin', function () use ($app){
 	// TODO: add check $state variable, to prevent CSPF attack
 	$code = $app->request->params('code');
 	OAuthLoginController::callback($code, 'linkedin');
 });
-
-// Run app
-$app->run();
 
 ?>

@@ -42,6 +42,8 @@ include (__DIR__ . '/admin.php'); // API calls starting with '/admin/'
 include (__DIR__ . '/sessions.php'); // API calls starting with '/sessions/'
 include (__DIR__ . '/interfaces.php'); // API calls starting with '/interfaces/'
 
+foreach((array)$GLOBALS['api']['files'] as $apiFile) include_once ($apiFile); // include api path added by extensions
+
 // Run app
 $app->run();
 	
