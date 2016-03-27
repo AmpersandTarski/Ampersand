@@ -22,6 +22,7 @@ RULE sameTable : srcAtt;table = tgtAtt;table
 RULE sameRecord : fst;rec = snd;rec
 RULE inRelation : in = (l;val~;fst~/\r;val~;snd~) ; (fst;att;srcAtt~/\snd;att;tgtAtt~)
 RULE identifyField : rec;rec~/\att;att~ |- I[Field]
+MEANING "Each field is identified uniquely by the combination of a record and an attribute."
 RULE inTable : in = rec~;att;table
 ENDPATTERN
 
