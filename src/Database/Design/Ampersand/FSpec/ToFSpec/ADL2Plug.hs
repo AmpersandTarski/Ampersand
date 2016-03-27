@@ -218,7 +218,7 @@ wayToStore d =
             (False  , True   ) -> Just plain
             (True   , True   ) ->
               case (isTot d, isSur d) of
-                   (False  , False  ) -> Just flipped
+                   (False  , False  ) -> Just plain 
                    (True   , False  ) -> Just plain
                    (False  , True   ) -> Just plain
                    (True   , True   ) -> Just plain
