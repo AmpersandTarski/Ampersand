@@ -125,6 +125,7 @@ executable ampersand
                      Database.Design.Ampersand.Output,
                      Database.Design.Ampersand.Output.FSpec2Excel,
                      Database.Design.Ampersand.Output.FSpec2Pandoc,
+                     Database.Design.Ampersand.Output.FSpec2SQL,
                      Database.Design.Ampersand.Output.PandocAux,
                      Database.Design.Ampersand.Output.Population2Xlsx,
                      Database.Design.Ampersand.Output.PredLogic,

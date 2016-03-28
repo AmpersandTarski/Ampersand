@@ -12,7 +12,7 @@ module Database.Design.Ampersand.FSpec
    )
 where
 import Database.Design.Ampersand.FSpec.FSpec
-       (FSpec(..), concDefs, ECArule(..), plugAttributes, lookupCpt, metaValues,AAtomValue, showValADL,showValPHP,showValSQL,A_Concept,Declaration,A_Gen
+       (FSpec(..), concDefs, ECArule(..), plugAttributes, lookupCpt, metaValues,AAtomValue, showValADL,showValPHP,showValSQL,showSQL,A_Concept,Declaration,A_Gen
        ,PlugInfo(..), PlugSQL(..), SqlAttribute(..), SqlAttributeUsage(..),RelStore(..))
 
 import Database.Design.Ampersand.FSpec.ShowHS
