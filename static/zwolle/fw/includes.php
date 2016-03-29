@@ -12,6 +12,9 @@ function shutdown(){
     }
 }
 
+// PHP SESSION : Start a new, or resume the existing, PHP session
+session_start();
+
 if (version_compare(PHP_VERSION, '5.4.0', '<')) {
 	throw new Exception("PHP version >= 5.4 required. You are on " . PHP_VERSION, 500);
 }

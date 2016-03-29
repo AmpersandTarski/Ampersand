@@ -44,12 +44,13 @@ class Mutation {
 			Relation::getRelation('mutDateTime', $mut->concept->name, 'DateTime')->addLink($mut, new Atom(date(DATE_ISO8601), 'DateTime'), false, 'MutationExtension');
 			
 			if($source == 'User'){
-				$account = Session::getSessionAccountId();
+			    $session = Session::singleton();
+				$accountId = $session->getSessionAccountId();
 			}else{
-				$account = $source;
+				$accountId = $source;
 			}
 			
-			Relation::getRelation('mutBy', $mut->concept->name, 'Account')->addLink($mut, new Atom($account, 'Account'), false, 'MutationExtension');
+			Relation::getRelation('mutBy', $mut->concept->name, 'Account')->addLink($mut, new Atom($accountId, 'Account'), false, 'MutationExtension');
 			Relation::getRelation('mutOp', $mut->concept->name, 'Operation')->addLink($mut, new Atom($operation, 'Operation'), false, 'MutationExtension');
 			// Relation::getRelation('mutReason', $mut->concept->name, 'MutationReason')->addLink($mut, new Atom('zomaar', 'MutationReason'), false, 'MutationExtension'); // TODO: get reason from somewhere
 			Relation::getRelation('mutValue', $mut->concept->name, 'MutationValue')->addLink($mut, new Atom($modifiedAtom, 'MutationValue'), false, 'MutationExtension');
