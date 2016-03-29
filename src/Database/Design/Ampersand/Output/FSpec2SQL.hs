@@ -5,8 +5,8 @@ import Database.Design.Ampersand.Prototype.Generate
   (generateDBstructQueries, generateAllDefPopQueries
   )
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Basics (fatal,name)
+import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.SQL
 import Data.List
 
 dumpSQLqueries :: FSpec -> String
@@ -15,9 +15,22 @@ dumpSQLqueries fSpec = intercalate "\n" $
                        ++generateDBstructQueries fSpec
                        ++header "Initial population queries"
                        ++generateAllDefPopQueries fSpec
-
+                       ++header "Violations of conjuncts"
+                       ++concatMap showConjunct (vconjs fSpec)
+                       ++header "Queries per declaration"
+                       ++concatMap showDecl (allDecls fSpec)
     
    where
+     showConjunct :: Conjunct -> [String]
+     showConjunct conj 
+        = header (rc_id conj)
+        ++(lines . prettySQLQuery fSpec 0 . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj)
+        ++[""]
+     showDecl :: Declaration -> [String]
+     showDecl decl 
+        = header (showADL decl)
+        ++(lines . prettySQLQuery fSpec 0 $ decl)
+        ++[""]
      header :: String -> [String]
      header title = 
          [ ""

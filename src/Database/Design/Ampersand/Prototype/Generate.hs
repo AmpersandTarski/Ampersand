@@ -22,7 +22,7 @@ generateDBstructQueries fSpec = theSQLstatements
        ]
     createTableStatements :: [String]
     createTableStatements = 
-      map concat
+      map unlines
       [ [ "CREATE TABLE "++ show "__SessionTimeout__"
         , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
         , "   , "++show "lastAccess"++" BIGINT NOT NULL"
@@ -49,7 +49,7 @@ generateDBstructQueries fSpec = theSQLstatements
         tableSpec2Queries :: TableSpecNew -> [String]
         tableSpec2Queries ts = 
          -- [ "DROP TABLE "++show (tsName ts)] ++
-          [ concat $  
+          [ unlines $  
                    ( tsCmnt ts ++ 
                      ["CREATE TABLE "++show (tsName ts)] 
                      ++ (map (uncurry (++)) 
@@ -124,7 +124,7 @@ generateAllDefPopQueries fSpec = theSQLstatements
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
-     = [concat $ 
+     = [unlines $ 
             [ "INSERT INTO "++show (getTableName signalTableSpec)
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
@@ -144,7 +144,7 @@ generateAllDefPopQueries fSpec = theSQLstatements
           = case tableContents fSpec plug of
              []  -> []
              tblRecords 
-                 -> [concat $ 
+                 -> [unlines $ 
                        [ "INSERT INTO "++show (name plug)
                        , "   ("++intercalate ", " (map (show . attName) (plugAttributes plug))++") "
                        ] ++ lines
