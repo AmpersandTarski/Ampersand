@@ -31,6 +31,10 @@ class Logger {
         }
     }
     
+    public static function getUserLogger(){
+        return \Ampersand\Logger::getLogger('USERLOG');
+    }
+    
 }
 
 ?>
