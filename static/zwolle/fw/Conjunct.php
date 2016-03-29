@@ -1,6 +1,5 @@
 <?php
 
-use Ampersand;
 Class Conjunct {
     
     /**

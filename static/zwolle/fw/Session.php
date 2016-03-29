@@ -183,7 +183,6 @@ class Session {
 	}
 	
 	private function setSessionAccount(){
-		// Set $sessionAccountId
 		if(!Config::get('loginEnabled')){
 			$this->sessionAccountId = false;
 		
@@ -223,7 +222,7 @@ class Session {
 		}else{
 			if(!isset($this->sessionAccountId)) $this->setSessionAccount();
 				
-			if($this->$sessionAccountId === false){
+			if($this->sessionAccountId === false){
 				return false;
 			}else{
 				return true;
