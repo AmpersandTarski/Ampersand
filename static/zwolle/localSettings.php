@@ -1,11 +1,18 @@
 <?php
 define ('LOCALSETTINGS_VERSION', 1.2);
 
-error_reporting(E_ALL & ~E_NOTICE);
-ini_set("display_errors", false);
 date_default_timezone_set('Europe/Amsterdam');
 
-// Config::set('debugMode', 'global', false); // default = true
+/**************************************************************************************************
+ * LOGGING functionality
+ *************************************************************************************************/
+    error_reporting(E_ALL & ~E_NOTICE);
+    ini_set("display_errors", false);
+    // Config::set('debugMode', 'global', false); // default = true
+    $genHandlers[] = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
+    $genHandlers[] = new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG);
+    Config::set('genericHandlers', 'logger', $genHandlers);
+
 
 /************ Server URL config ********************/
 // Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>

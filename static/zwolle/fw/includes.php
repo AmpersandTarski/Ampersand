@@ -30,6 +30,7 @@ require_once (__DIR__ . '/functions/getDirectoryList.php');
 require_once (__DIR__ . '/functions/isAssoc.php');
 
 /* INCLUDES OF AMPERSAND FRAMEWORK */
+require_once (__DIR__ . '/Logger.php');
 require_once (__DIR__ . '/Config.php');
 require_once (__DIR__ . '/Hooks.php');
 

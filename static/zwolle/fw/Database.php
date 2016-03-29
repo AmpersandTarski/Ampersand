@@ -2,6 +2,12 @@
 
 class Database {
     /**
+     * 
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
+    
+    /**
      * Contains a connection to the mysql database
      */
 	private $db_link;
@@ -81,6 +87,8 @@ class Database {
 	 * @throws Exception
 	 */
 	private function __construct(){
+	    $this->logger = Ampersand\Logger::getLogger('DATABASE');
+	    
 	    try{
     	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
     		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
@@ -213,7 +221,7 @@ class Database {
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
 		$result = $this->doQuery($query);
-		Notifications::addLog($query, 'QUERY');
+		$this->logger->addDebug($query);
 
 		if ($result === false) return false;
 		elseif ($result === true) return true;
