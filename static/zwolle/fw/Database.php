@@ -345,41 +345,37 @@ class Database {
 	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptBName})");
 	    
 	    $conceptB = Concept::getConcept($conceptBName);
-		try{
-		    // This function is under control of transaction check!
-		    if (!isset($this->transaction)) $this->startTransaction();
-		    
-			// Check if conceptA and conceptB are in the same classification tree
-			if(!$atom->concept->inSameClassificationTree($conceptB)) throw new Exception("Concepts '[{$atom->concept->name}]' and '[{$conceptB->name}]' are not in the same classification tree", 500);
-			
-			// Check if atom is part of conceptA
-			if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
-			
-			// Get table info
-			$conceptTableInfoB = $conceptB->getConceptTableInfo();
-			$conceptTableB = $conceptTableInfoB->name;
-			$conceptColsB = $conceptTableInfoB->getColNames(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
-			
-			// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-			$queryString = "\"" . implode("\" = '{$atom->idEsc}', \"", $conceptColsB) . "\" = '{$atom->idEsc}'";
-			
-			$conceptTableInfoA = $atom->concept->getConceptTableInfo();
-			$conceptTableA = $conceptTableInfoA->name;
-			$anyConceptColForA = current($conceptTableInfoA->getCols());
-			
-			// Perform update
-			$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atom->idEsc}'");
-			
-			// Check if query resulted in an affected row
-			if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomSetConcept({$atom->__toString()}, {$conceptBName})", 500);
-			
-			$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
-			
-			$this->logger->debug("Atom '{$atom->__toString()}' added as member to concept '{$conceptB->__toString()}'");
+	    
+	    // This function is under control of transaction check!
+	    if (!isset($this->transaction)) $this->startTransaction();
+	    
+		// Check if conceptA and conceptB are in the same classification tree
+		if(!$atom->concept->inSameClassificationTree($conceptB)) throw new Exception("Concepts '[{$atom->concept->name}]' and '[{$conceptB->name}]' are not in the same classification tree", 500);
 		
-		}catch(Exception $e){
-			throw $e;
-		}
+		// Check if atom is part of conceptA
+		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
+		
+		// Get table info
+		$conceptTableInfoB = $conceptB->getConceptTableInfo();
+		$conceptTableB = $conceptTableInfoB->name;
+		$conceptColsB = $conceptTableInfoB->getColNames(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
+		
+		// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
+		$queryString = "\"" . implode("\" = '{$atom->idEsc}', \"", $conceptColsB) . "\" = '{$atom->idEsc}'";
+		
+		$conceptTableInfoA = $atom->concept->getConceptTableInfo();
+		$conceptTableA = $conceptTableInfoA->name;
+		$anyConceptColForA = current($conceptTableInfoA->getCols());
+		
+		// Perform update
+		$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atom->idEsc}'");
+		
+		// Check if query resulted in an affected row
+		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomSetConcept({$atom->__toString()}, {$conceptBName})", 500);
+		
+		$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
+		
+		$this->logger->debug("Atom '{$atom->__toString()}' added as member to concept '{$conceptB->__toString()}'");
 	}
 	
 	/**
@@ -392,43 +388,38 @@ class Database {
 	public function atomClearConcept($atom){
 		$this->logger->debug("atomClearConcept({$atom->__toString()})");
 		
-		try{
-		    // This function is under control of transaction check!
-		    if (!isset($this->transaction)) $this->startTransaction();
-		    
-			// Check if concept is a specialization of another concept
-			if(empty($atom->concept->getGeneralizations())) throw new Exception("Concept '[{$atom->concept->name}]' has no generalizations, atom can therefore not be removed as member from this set", 500);
-				
-			// Check if atom is part of conceptA
-			if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
-				
-			// Get col information for concept and its specializations
-			$colNames = array();
-			$conceptTableInfo = $atom->concept->getConceptTableInfo();
-			$conceptTable = $conceptTableInfo->name;
-			$conceptCol = reset($conceptTableInfo->getCols());
+	    // This function is under control of transaction check!
+	    if (!isset($this->transaction)) $this->startTransaction();
+	    
+		// Check if concept is a specialization of another concept
+		if(empty($atom->concept->getGeneralizations())) throw new Exception("Concept '[{$atom->concept->name}]' has no generalizations, atom can therefore not be removed as member from this set", 500);
 			
-			$colNames[] = $conceptCol->name;
-			foreach($atom->concept->getSpecializations() as $specConcept){
-				$conceptTableInfo = $specConcept->getConceptTableInfo();
-				$colNames[] = reset($conceptTableInfo->getColNames);
-			}
+		// Check if atom is part of conceptA
+		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
 			
-			// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-			$queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
-			
-			$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atom->idEsc}'");
-			
-			// Check if query resulted in an affected row
-			if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomClearConcept({$atom->__toString()})", 500);
-			
-			$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
-			
-			$this->logger->debug("Atom '{$atom->__toString()}' removed as member from concept '{$atom->concept->__toString()}'");
-			
-		}catch(Exception $e){
-			throw $e;
+		// Get col information for concept and its specializations
+		$colNames = array();
+		$conceptTableInfo = $atom->concept->getConceptTableInfo();
+		$conceptTable = $conceptTableInfo->name;
+		$conceptCol = reset($conceptTableInfo->getCols());
+		
+		$colNames[] = $conceptCol->name;
+		foreach($atom->concept->getSpecializations() as $specConcept){
+			$conceptTableInfo = $specConcept->getConceptTableInfo();
+			$colNames[] = reset($conceptTableInfo->getColNames);
 		}
+		
+		// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
+		$queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
+		
+		$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atom->idEsc}'");
+		
+		// Check if query resulted in an affected row
+		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomClearConcept({$atom->__toString()})", 500);
+		
+		$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
+		
+		$this->logger->debug("Atom '{$atom->__toString()}' removed as member from concept '{$atom->concept->__toString()}'");
 	}
 	
 	/**
