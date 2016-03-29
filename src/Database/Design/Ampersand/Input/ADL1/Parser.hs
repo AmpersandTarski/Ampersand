@@ -387,7 +387,7 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pLabel
                       <*> pConceptOneRef
                       <*> pIsThere (pKey "DEFAULT")
-                      <*> (pBraces ((P_ViewExp fatl <$> pViewObj) `sepBy` pComma)) `opt` []
+                      <*> (pBraces ((pViewSegment False) `sepBy` pComma)) `opt` []
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
     where mkViewDef pos nm cpt isDef ats html =
@@ -396,25 +396,26 @@ pFancyViewDef  = mkViewDef <$> currPos
                  , vd_cpt = cpt
                  , vd_isDefault = isDef
                  , vd_html = html
-                 , vd_ats = numbered ats
+                 , vd_ats = ats
                  }
-          fatl = fatal 363 "Numbering of segment goes wrong."
-          numbered xs = map numbr (zip [1..] xs)
-              where numbr (i,x)= x{vs_nr=i}
-          --- ViewObjList ::= ViewObj (',' ViewObj)*
-          --- ViewObj ::= Label Term
-          pViewObj :: AmpParser P_ObjectDef
-          pViewObj = P_Obj <$> pLabel
-                           <*> currPos
-                           <*> pTerm
-                           <*> return Nothing
-                           <*> return Nothing
-                           <*> return Nothing
-                           <*> return []
-
+          --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
           --- HtmlView ::= 'HTML' 'TEMPLATE' String
           pHtmlView :: AmpParser ViewHtmlTemplate
           pHtmlView = ViewHtmlTemplateFile <$ pKey "HTML" <* pKey "TEMPLATE" <*> pString
+--- ViewSegmentLoad ::= Term | 'TXT' String
+pViewSegmentLoad :: AmpParser (P_ViewSegmtPayLoad TermPrim)           
+pViewSegmentLoad = P_ViewExp  <$> pTerm
+               <|> P_ViewText <$ pKey "TXT" <*> pString
+            
+--- ViewSegment ::= Label ViewSegmentLoad
+pViewSegment :: Bool -> AmpParser (P_ViewSegment  TermPrim)
+pViewSegment labelIsOptional
+       = build <$> currPos
+               <*> (if labelIsOptional then pMaybe (try pLabel) else (Just <$> (try pLabel)))
+               <*> pViewSegmentLoad
+   where build :: Origin -> Maybe String -> P_ViewSegmtPayLoad TermPrim -> P_ViewSegment TermPrim
+         build pos lab x =
+            P_ViewSegment lab pos x
 
 --- ViewDefLegacy ::= 'VIEW' LabelProps ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
@@ -424,23 +425,8 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pConceptOneRef
                       <*> return True
                       <*> return Nothing
-                      <*> pParens(ats <$> pViewSegment `sepBy1` pComma)
-    --TODO: Numbering should not happen in the parser
-    where ats xs = [ case viewSeg of
-                         P_ViewExp _ x  -> if null (obj_nm x) then P_ViewExp i $ x{obj_nm="seg_"++show i}
-                                                              else P_ViewExp i x
-                         P_ViewText _ x -> P_ViewText i x
-                         P_ViewHtml _ x -> P_ViewHtml i x
+                      <*> pParens((pViewSegment True) `sepBy1` pComma)
 
-                    | (i,viewSeg) <- zip [(1::Integer)..] xs]
-                    -- counter is used to name anonymous segments (may skip numbers because text/html segments are also counted)
-          --- ViewSegmentList ::= ViewSegment (',' ViewSegment)*
-          --- ViewSegment ::= Attr | 'TXT' String | 'PRIMHTML' String
-          pViewSegment :: AmpParser P_ViewSegment
-          pViewSegment = P_ViewExp  fat <$> pAtt <|>
-                         P_ViewText fat <$ pKey "TXT" <*> pString <|>
-                         P_ViewHtml fat <$ pKey "PRIMHTML" <*> pString
-               where fat = fatal 399 "numbering is done a little later."
 
 --- Interface ::= 'INTERFACE' ADLid 'CLASS'? (Conid | String) Params? InterfaceArgs? Roles? ':' Term (ADLid | Conid)? SubInterface
 pInterface :: AmpParser P_Interface

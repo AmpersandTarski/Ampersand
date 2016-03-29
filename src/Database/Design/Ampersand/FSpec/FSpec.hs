@@ -20,6 +20,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , Activity(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
+          , RelStore(..)
           , metaValues
           , SqlAttribute(..)
           , Object(..)
@@ -65,8 +66,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
                    , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
                    , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
-                   , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles may change the population of which relation.
-                   , fRoles ::       [Role]                   -- ^ All roles mentioned in this context.
+                   , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
+                   , fMaintains ::   Role -> [Rule]
+                   , fRoles ::       [(Role,Int)]             -- ^ All roles mentioned in this context, numbered.
                    , fallRules ::    [Rule]
                    , vrules ::       [Rule]                   -- ^ All user defined rules that apply in the entire FSpec
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
@@ -82,6 +84,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
                    , vviews ::       [ViewDef]                -- ^ All views that apply in the entire FSpec
                    , getDefaultViewForConcept :: A_Concept -> Maybe ViewDef
+                   , getAllViewsForConcept :: A_Concept -> [ViewDef]
                    , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
@@ -108,6 +111,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
                    , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]
+                   , rootConcept :: A_Concept -> A_Concept
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    , editableConcepts :: Interface -> [A_Concept]  -- ^ All editable concepts per Interface. (See https://github.com/AmpersandTarski/ampersand/issues/211 )
@@ -256,10 +260,9 @@ data PlugSQL
            , attributes :: [SqlAttribute]                           -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
                                                                     --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
                                                                     --   the remaining attributes represent attributes.
-           , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all kernel concepts to attributes in the plug
+           , cLkpTbl ::    [(A_Concept,SqlAttribute)]               -- ^ lookup table that links all typology concepts to attributes in the plug
                                                                     -- cLkpTbl is een lijst concepten die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
-           , mLkpTbl ::    [(Expression,SqlAttribute,SqlAttribute)] -- ^ lookup table that links concepts to column names in the plug (kernel+attRels)
-                                                                    -- mLkpTbl is een lijst met relaties die in deze plug opgeslagen zitten, en hoe je ze eruit kunt halen
+           , dLkpTbl ::   [RelStore]
            }
    -- | stores one relation r in two ordered columns
    --   i.e. a tuple of SqlAttribute -> (source r,target r) with (attExpr=I/\r;r~, attExpr=r)
@@ -267,22 +270,11 @@ data PlugSQL
    --   with tblcontents = [[Just x,Just y] |(x,y)<-contents r].
    --   Typical for BinSQL is that it has exactly two columns that are not unique and may not contain NULL values
  | BinSQL  { sqlname :: String
-           , columns :: (SqlAttribute,SqlAttribute)
-           , cLkpTbl :: [(A_Concept,SqlAttribute)] --given that mLkp cannot be (UNI or INJ) (because then r would be in a TblSQL plug)
-                                                   --if mLkp is TOT, then the concept (source mLkp) is stored in this plug
-                                                   --if mLkp is SUR, then the concept (target mLkp) is stored in this plug
-           , mLkp :: Expression -- the relation links concepts implemented by this plug
-           }
- -- |stores one concept c in one column
- --  i.e. a SqlAttribute -> c
- --  with tblcontents = [[Just x] |(x,_)<-contents c].
- --  Typical for ScalarSQL is that it has exactly one column that is unique and may not contain NULL values i.e. attExpr=I[c]
- | ScalarSQL
-           { sqlname ::   String
-           , sqlColumn :: SqlAttribute
-           , cLkp ::      A_Concept -- the concept implemented by this plug
+           , cLkpTbl :: [(A_Concept,SqlAttribute)] 
+           , dLkpTbl :: [RelStore]
            }
    deriving (Show, Typeable)
+
 instance Named PlugSQL where
   name = sqlname
 instance Eq PlugSQL where
@@ -295,15 +287,17 @@ instance Ord PlugSQL where
 plugAttributes :: PlugSQL->[SqlAttribute]
 plugAttributes plug = case plug of
     TblSQL{}    -> attributes plug
-    BinSQL{}    -> [fst(columns plug),snd(columns plug)]
-    ScalarSQL{} -> [sqlColumn plug]
+    BinSQL{}    -> let store = case dLkpTbl plug of
+                         [x] -> x
+                         _   -> fatal 292 $ "Declaration lookup table of a binary table should contain exactly one element:\n" ++
+                                            show (dLkpTbl plug)
+                   in [rsSrcAtt store,rsTrgAtt store]
 
 -- | This returns all column/table pairs that serve as a concept table for cpt. When adding/removing atoms, all of these
 -- columns need to be updated
 lookupCpt :: FSpec -> A_Concept -> [(PlugSQL,SqlAttribute)]
 lookupCpt fSpec cpt = [(plug,att) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]++
-                      [(plug,att) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]++
-                      [(plug,sqlColumn plug) |InternalPlug plug@ScalarSQL{}<-plugInfos fSpec, cLkp plug==cpt]
+                      [(plug,att) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]
 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
 getConceptTableFor :: FSpec -> A_Concept -> String
@@ -311,6 +305,13 @@ getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
                                (t,_):_ -> name t -- in case there are more, we use the first one
 
+-- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
+data RelStore 
+  = RelStore
+     { rsDcl       :: Declaration
+     , rsSrcAtt    :: SqlAttribute
+     , rsTrgAtt    :: SqlAttribute
+     } deriving (Show, Typeable)
 data SqlAttributeUsage = TableKey Bool A_Concept  -- The SQL-attribute is the (primary) key of the table. (The boolean tells whether or not it is primary)
                        | ForeignKey A_Concept  -- The SQL-attribute is a reference (containing the primary key value of) a TblSQL
                        | PlainAttr             -- None of the above
@@ -321,6 +322,7 @@ data SqlAttribute = Att { attName :: String
                         , attType :: TType
                         , attUse ::  SqlAttributeUsage
                         , attNull :: Bool           -- ^ True if there can be NULL-values in the SQL-attribute (intended for data dictionary of DB-implementation)
+                        , attDBNull :: Bool       -- True for all fields, to disable strict checking by the database itself. 
                         , attUniq :: Bool           -- ^ True if all values in the SQL-attribute are unique? (intended for data dictionary of DB-implementation)
                         , attFlipped :: Bool
                         } deriving (Eq, Show,Typeable)

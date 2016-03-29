@@ -10,7 +10,7 @@ AmpersandApp.config(function($routeProvider) {
 			,	interfaceLabel: 'Home'
 			})
 		// installer page
-		.when('/installer',
+		.when('/admin/installer',
 			{	controller: 'static_installerController'
 			,	templateUrl: 'app/views/static_installer.html'
 			,	interfaceLabel: 'Installer'
@@ -30,10 +30,9 @@ AmpersandApp.config(function(RestangularProvider) {
     
 });
 
-AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location){
+AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route){
 	
 	$sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
-	$rootScope.notifications = {'errors' : []};
 		
 	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
 		var roleIds = [];
@@ -53,14 +52,21 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 	});
 	
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-    	var message = ((response.data || {}).error || {}).message || response.statusText;
     	
-    	if(response.status == 401) {
+    	// 401: Unauthorized, 440: Login Timeout
+    	if(response.status == 401 || response.status == 440) {
     		$rootScope.deactivateAllRoles();
-    		$location.path('ext/Login'); // add: if exists, otherwise do nothing
+    		$location.path(''); // TODO: redirect to login page (if exists)
     	}
     	
-    	$rootScope.addError( response.status + ' ' + message);
+    	if(typeof response.data === 'object'){
+    		var message = response.data.msg || response.statusText; // if empty response message, take statusText
+    		$rootScope.addError(message, response.status, true);
+    	}else{
+    		var message = response.status + ' ' + response.statusText;
+    		var details = response.data; // html content is excepted
+    		$rootScope.addError(message, response.status, true, details);
+    	}
     	
     	return true; // proceed with success or error hooks of promise
     });
@@ -68,6 +74,20 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     $rootScope.getCurrentDateTime = function (){
 		return (new Date);
 	}
+    
+    // Add feature to $location.url() function to be able to prevent reloading page (set reload param to false)
+    var original = $location.url;
+    $location.url = function (url, reload) {
+        if (reload === false) {
+            var lastRoute = $route.current;
+            var un = $rootScope.$on('$locationChangeSuccess', function () {
+                $route.current = lastRoute;
+                un();
+            });
+        }
+        return original.apply($location, [url]);
+    };
+    
 	
 });
 
@@ -80,28 +100,17 @@ AmpersandApp.value('cgBusyDefaults',{
 	  // wrapperClass: 'my-class my-class2'
 	});
 
-AmpersandApp.directive('myShowonhoverRow', function (){
+AmpersandApp.directive('myShowonhoverBox', function (){
 	return {
 		link : function(scope, element, attrs) {
-			element.hide(); // default hide
-			
-			element.closest('.row-content').bind('mouseenter', function() {
-				element.show();
-			});
-			element.closest('.row-content').bind('mouseleave', function() {
-				element.hide();
-			});
-		}
-	}
-}).directive('myShowonhoverBox', function (){
-	return {
-		link : function(scope, element, attrs) {
-			element.hide(); // default hide
+			if(!element.closest('.box').hasClass('my-showonhover-box-show')) element.hide(); // default hide
 			
 			element.closest('.box').bind('mouseenter', function() {
+				element.closest('.box').addClass('my-showonhover-box-show');
 				element.show();
 			});
 			element.closest('.box').bind('mouseleave', function() {
+				element.closest('.box').removeClass('my-showonhover-box-show');
 				element.hide();
 			});
 		}

@@ -36,7 +36,6 @@ class AngularApp {
 		$this->addHtmlLine('<meta http-equiv="Cache-Control" content="no-store"/>');
 
 		// initSessionId
-		session_start();
 		$this->addHtmlLine('<script type="text/javascript">var initSessionId = \'' . session_id() . '\';</script>');
 
 		// JQuery
@@ -93,8 +92,6 @@ class AngularApp {
 		// datetimepicker
 		$this->addHtmlLine('<script src="app/lib/ui-bootstrap/datetimepicker/datetimepicker.js"></script>');
 		$this->addHtmlLine('<link href="app/lib/ui-bootstrap/datetimepicker/datetimepicker.css" rel="stylesheet" media="screen" type="text/css">');
-
-		$this->addHtmlLine('<script src="app/lib/json-patch/json-patch-duplex.min.js"></script>');
 
 		/*
 		 ********** CSS *********************************

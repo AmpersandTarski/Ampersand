@@ -74,21 +74,21 @@ function TransitiveClosure($r,$C,$rCopy,$rPlus){
 	OverwritePopulation($closure, $rPlus, $C);
 }
 
-function RetrievePopulation($relationName, $concept){
+function RetrievePopulation($relationName, $conceptName){
 	try{
 		$database = Database::singleton();
 		
-		$fullRelationSignature = Relation::isCombination($relationName, $concept, $concept);
-		$table = Relation::getTable($fullRelationSignature);
-		$srcCol = Relation::getSrcCol($fullRelationSignature);
-		$tgtCol = Relation::getTgtCol($fullRelationSignature);
+		$relation = Relation::getRelation($relationName, $conceptName, $conceptName);
+		$relationTable = $relation->getMysqlTable();
+		$srcCol = $relationTable->srcCol();
+		$tgtCol = $relationTable->tgtCol();
 		
-		$query = "SELECT * FROM `$table`";
+		$query = "SELECT * FROM `{$relationTable->name}`";
 		$result = $database->Exe($query);
 		
 		// initialization of 2-dimensional array
 		foreach($result as $row){
-			$array[$row[$srcCol]][$row[$tgtCol]] = !is_null($row[$tgtCol]);
+			$array[$row[$srcCol->name]][$row[$tgtCol->name]] = !is_null($row[$tgtCol->name]);
 		}
 		
 		return (array)$array;
@@ -98,22 +98,22 @@ function RetrievePopulation($relationName, $concept){
 }
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
-function OverwritePopulation($rArray, $relationName, $concept){
+function OverwritePopulation($rArray, $relationName, $conceptName){
 	try{
 		$database = Database::singleton();
 		
-		$fullRelationSignature = Relation::isCombination($relationName, $concept, $concept);
-		$table = Relation::getTable($fullRelationSignature);
-		$srcCol = Relation::getSrcCol($fullRelationSignature);
-		$tgtCol = Relation::getTgtCol($fullRelationSignature);
+		$relation = Relation::getRelation($relationName, $conceptName, $conceptName);
+		$relationTable = $relation->getMysqlTable();
+		$srcCol = $relationTable->srcCol();
+		$tgtCol = $relationTable->tgtCol();
 		
-		$query = "DELETE FROM $table"; // Do not use TRUNCATE statement, this causes an implicit commit
+		$query = "DELETE FROM `{$relationTable->name}`"; // Do not use TRUNCATE statement, this causes an implicit commit
 		$database->Exe($query);
 		
 		foreach($rArray as $src => $tgtArray){
 			foreach($tgtArray as $tgt => $bool){
 				if($bool){
-					$query = "INSERT INTO $table (`$srcCol`, `$tgtCol`) VALUES ('$src','$tgt')";
+					$query = "INSERT INTO `{$relationTable->name}` (`{$srcCol->name}`, `{$tgtCol->name}`) VALUES ('$src','$tgt')";
 					$database->Exe($query);
 				}
 			}

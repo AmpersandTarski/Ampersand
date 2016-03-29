@@ -4,6 +4,9 @@
 AngularApp::addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
 $GLOBALS['navBar']['roleMenu'][] = array ('url' => 'extensions/OAuthLogin/ui/views/MenuItem.html');
 
+// API
+$GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';
+
 class OAuthLoginController {
 
 	private $token_url;
@@ -105,6 +108,86 @@ class OAuthLoginController {
 	public function getData(){
 		if(!isset($this->dataObj)) return false;
 		else return $this->dataObj;
+	}
+	
+	public static function callback($code, $idp){
+		$identityProviders = Config::get('identityProviders', 'OAuthLogin');
+
+		if(empty($code)) throw new Exception("Oops. Someting went wrong during login. Please try again", 401);
+
+		$session = Session::singleton();
+		$db = Database::singleton();
+
+		if(!isset($identityProviders[$idp])) throw new Exception("Unknown identity provider", 500);
+
+		$client_id 		= $identityProviders[$idp]['clientId'];
+		$client_secret 	= $identityProviders[$idp]['clientSecret'];
+		$redirect_uri 	= $identityProviders[$idp]['redirectUrl'];
+		$token_url 		= $identityProviders[$idp]['tokenUrl'];
+		$api_url 		= $identityProviders[$idp]['apiUrl'];
+		$emailField		= $identityProviders[$idp]['emailField'];
+
+		// instantiate authController
+		$authController = new OAuthLoginController($client_id,$client_secret,$redirect_uri,$token_url);
+
+		// request token
+		if($authController->requestToken($code)){
+			// request data
+			if($authController->requestData($api_url)){
+
+				// Verify email/role here
+				$email = $authController->getData()->$emailField;
+
+				// Set sessionUser
+				$atom = new Atom($email, 'UserID');
+				$accounts = array_column((array)$atom->ifc('AccountForUserid')->getContent(), '_id_');
+
+				// create new user
+				if(empty($accounts)){
+				    $accountConcept = Concept::getConcept('Account');
+					$newAccount = $accountConcept->createNewAtom();
+					$relAccUserid = Relation::getRelation('accUserid', $newAccount->concept->name, 'UserID');
+					$relAccUserid->addLink($newAccount, new Atom($email, 'UserID'), false, 'OAuthLoginExtension');
+
+					// add to Organization
+					$domain = explode('@', $email)[1];
+					$atom = new Atom($domain, 'Domain');
+					$orgs = array_column((array)$atom->ifc('DomainOrgs')->getContent(), '_id_');
+					
+					$relAccOrg = Relation::getRelation('accOrg', $newAccount->concept->name, 'Organization');
+					foreach ($orgs as $org){
+						$relAccOrg->addLink($newAccount, new Atom($org, 'Organization'), false, 'OAuthLoginExtension');
+					}
+
+					$accounts[] = $newAccount->id;
+
+				}
+
+				if(count($accounts) > 1) throw new Exception("Multiple users registered with email $email", 401);
+				
+				$relSessionAccount = Relation::getRelation('sessionAccount', 'SESSION', 'Account');
+				$relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', 'Account', 'DateTime');
+				$relAccLoginTimestamps = Relation::getRelation('accLoginTimestamps', 'Account', 'DateTime');
+				
+				foreach ($accounts as $accountId){
+				    $account = new Atom($accountId, 'Account');
+				    
+					// Set sessionAccount
+					$relSessionAccount->addLink(new Atom(session_id(), 'SESSION'), $account, false, 'OAuthLoginExtension');
+
+					// Timestamps
+					$ts = new Atom(date(DATE_ISO8601), 'DateTime');
+					$relAccMostRecentLogin->addLink($account, $ts, false, 'OAuthLoginExtension');
+					$relAccLoginTimestamps->addLink($account, $ts, false, 'OAuthLoginExtension');
+				}
+
+				$db->closeTransaction('Login successfull', true);
+
+			}
+		}
+
+		header('Location: '. Config::get('serverURL'));
+		exit;
 	}
 }
 ?>

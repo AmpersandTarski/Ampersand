@@ -18,44 +18,43 @@ import Database.Design.Ampersand.Classes
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
   { ifcJSONinterfaceRoles     :: [String]
-  , ifcJSONinvConjunctIds     :: [String]
-  , ifcJSONsigConjunctIds     :: [String]
-  , ifcJSONeditableConcepts   :: [String]
-  , ifcJSONeditableRelations  :: [String]
-  , ifcJSONobject             :: JSONObjectDef
+  , ifcJSONboxClass           :: Maybe String
+  , ifcJSONifcObject          :: JSONObjectDef
   } deriving (Generic, Show)
 data JSONObjectDef = JSONObjectDef
-  { ifcJSONname             :: String
-  , ifcJSONid             :: String
-  , ifcJSONlabel             :: String
+  { ifcJSONid                 :: String
+  , ifcJSONlabel              :: String
   , ifcJSONviewId             :: Maybe String
   , ifcJSONNormalizationSteps :: [String] -- Not used in frontend. Just informative for analisys
   , ifcJSONrelation           :: Maybe String
-  , ifcJSONrelationIsEditable :: Maybe Bool
   , ifcJSONrelationIsFlipped  :: Maybe Bool
-  , ifcJSONsrcConcept         :: String
-  , ifcJSONtgtConcept         :: String
-  , ifcJSONcrudC              :: Maybe Bool
-  , ifcJSONcrudR              :: Maybe Bool
-  , ifcJSONcrudU              :: Maybe Bool
-  , ifcJSONcrudD              :: Maybe Bool
-  , ifcJSONexprIsUni          :: Bool
-  , ifcJSONexprIsTot          :: Bool
-  , ifcJSONexprIsProp         :: Bool
-  , ifcJSONexprIsIdent        :: Bool
-  , ifcJSONexpressionSQL      :: String
-  , ifcJSONboxSubInterfaces   :: Maybe JSONSubInterface
+  , ifcJSONcrud               :: JSONCruds
+  , ifcJSONexpr               :: JSONexpr
+  , ifcJSONsubinterfaces      :: Maybe JSONSubInterface
   } deriving (Generic, Show)
 data JSONSubInterface = JSONSubInterface
   { subJSONboxClass           :: Maybe String
-  , subJSONboxSubInterfaces   :: Maybe [JSONObjectDef]
+  , subJSONifcObjects         :: Maybe [JSONObjectDef]
   , subJSONrefSubInterfaceId  :: Maybe String
   , subJSONrefIsLinTo         :: Maybe Bool
-  , subJSONcrudC              :: Maybe Bool
-  , subJSONcrudR              :: Maybe Bool
-  , subJSONcrudU              :: Maybe Bool
-  , subJSONcrudD              :: Maybe Bool
+  , subJSONcrud               :: Maybe JSONCruds
   } deriving (Generic, Show)
+data JSONCruds = JSONCruds
+  { crudJSONread              :: Bool
+  , crudJSONcreate            :: Bool
+  , crudJSONupdate            :: Bool
+  , crudJSONdelete            :: Bool
+  } deriving (Generic, Show)
+data JSONexpr = JSONexpr
+  { exprJSONsrcConcept        :: String
+  , exprJSONtgtConcept        :: String
+  , exprJSONisUni             :: Bool
+  , exprJSONisTot             :: Bool
+  , exprJSONisProp            :: Bool
+  , exprJSONisIdent           :: Bool
+  , exprJSONquery             :: String
+  } deriving (Generic, Show)
+
 instance ToJSON JSONSubInterface where
   toJSON = amp2Jason
 instance ToJSON Interfaces where
@@ -64,75 +63,82 @@ instance ToJSON JSONInterface where
   toJSON = amp2Jason
 instance ToJSON JSONObjectDef where
   toJSON = amp2Jason
+instance ToJSON JSONCruds where
+  toJSON = amp2Jason
+instance ToJSON JSONexpr where
+  toJSON = amp2Jason
+  
 instance JSON FSpec Interfaces where
  fromAmpersand fSpec _ = Interfaces (map (fromAmpersand fSpec) (interfaceS fSpec ++ interfaceG fSpec))
-instance JSON ([Declaration], SubInterface) JSONSubInterface where
- fromAmpersand fSpec (editableRels, sub) = 
+
+instance JSON SubInterface JSONSubInterface where
+ fromAmpersand fSpec sub = 
    case sub of 
      Box _ cl objs         -> JSONSubInterface
-       { subJSONboxClass   = cl
-       , subJSONboxSubInterfaces   = Just . map (fromAmpersand fSpec) . zip (repeat editableRels) $ objs
+       { subJSONboxClass           = cl
+       , subJSONifcObjects         = Just . map (fromAmpersand fSpec) $ objs
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinTo         = Nothing
-       , subJSONcrudC              = Nothing
-       , subJSONcrudR              = Nothing
-       , subJSONcrudU              = Nothing
-       , subJSONcrudD              = Nothing
+       , subJSONcrud               = Nothing
        }
      InterfaceRef isLink nm cr -> JSONSubInterface
        { subJSONboxClass           = Nothing
-       , subJSONboxSubInterfaces   = Nothing
+       , subJSONifcObjects         = Nothing
        , subJSONrefSubInterfaceId  = Just nm
        , subJSONrefIsLinTo         = Just isLink
-       , subJSONcrudC              = crudC cr
-       , subJSONcrudR              = crudR cr
-       , subJSONcrudU              = crudU cr
-       , subJSONcrudD              = crudD cr
+       , subJSONcrud               = Just (fromAmpersand fSpec cr)
        }
  
 instance JSON Interface JSONInterface where
  fromAmpersand fSpec interface = JSONInterface
   { ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
-  , ifcJSONinvConjunctIds     = map rc_id $ invConjuncts
-  , ifcJSONsigConjunctIds     = map rc_id $ sigConjuncts
-  , ifcJSONeditableConcepts   = map name . editableConcepts fSpec $ interface
-  , ifcJSONeditableRelations  = map showHSName . ifcParams $ interface
-  , ifcJSONobject             = fromAmpersand fSpec (ifcParams interface, ifcObj interface)
+  , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
+  , ifcJSONifcObject          = fromAmpersand fSpec (ifcObj interface)
+  }
+
+instance JSON Cruds JSONCruds where
+ fromAmpersand _ crud = JSONCruds
+  { crudJSONread              = crudR crud
+  , crudJSONcreate            = crudC crud
+  , crudJSONupdate            = crudU crud
+  , crudJSONdelete            = crudU crud
+  }
+  
+instance JSON ObjectDef JSONexpr where
+ fromAmpersand fSpec object = JSONexpr
+  { exprJSONsrcConcept        = name srcConcept
+  , exprJSONtgtConcept        = name tgtConcept
+  , exprJSONisUni             = isUni normalizedInterfaceExp
+  , exprJSONisTot             = isTot normalizedInterfaceExp
+  , exprJSONisProp            = isProp normalizedInterfaceExp
+  , exprJSONisIdent           = isIdent normalizedInterfaceExp
+  , exprJSONquery             = prettySQLQuery fSpec 0 normalizedInterfaceExp
   }
   where
-   invConjuncts = [ c | c <- ifcControls interface, any (not . ruleIsInvariantUniOrInj) $ rc_orgRules c ] -- NOTE: these two
-   sigConjuncts = [ c | c <- ifcControls interface, any        isSignal                 $ rc_orgRules c ] --       may overlap
-instance JSON ([Declaration], ObjectDef) JSONObjectDef where
- fromAmpersand fSpec (editableRels, object) = JSONObjectDef
-  { ifcJSONname               = name object
-  , ifcJSONid                 = show . escapeIdentifier . name $ object
+    normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
+    (srcConcept, tgtConcept) =
+      case getExpressionRelation normalizedInterfaceExp of
+        Just (src, _ , tgt, _) ->
+          (src, tgt)
+        Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
+ 
+instance JSON ObjectDef JSONObjectDef where
+ fromAmpersand fSpec object = JSONObjectDef
+  { ifcJSONid                 = escapeIdentifier . name $ object
   , ifcJSONlabel              = name object
-  , ifcJSONviewId             = case getDefaultViewForConcept fSpec tgtConcept of
-                                 Just Vd{vdlbl=vId} -> Just vId
-                                 Nothing            -> Nothing
+  , ifcJSONviewId             = fmap vdlbl (getDefaultViewForConcept fSpec tgtConcept)
   , ifcJSONNormalizationSteps = showPrf showADL.cfProof (getOpts fSpec).objctx $ object 
   , ifcJSONrelation           = fmap (showHSName . fst) mEditableDecl
-  , ifcJSONrelationIsEditable = fmap ((flip elem) editableRels . fst) mEditableDecl
   , ifcJSONrelationIsFlipped  = fmap               snd  mEditableDecl
-  , ifcJSONsrcConcept         = name srcConcept
-  , ifcJSONtgtConcept         = name tgtConcept
-  , ifcJSONcrudC              = crudC . objcrud $ object
-  , ifcJSONcrudR              = crudR . objcrud $ object
-  , ifcJSONcrudU              = crudU . objcrud $ object
-  , ifcJSONcrudD              = crudD . objcrud $ object
-  , ifcJSONexprIsUni          = isUni normalizedInterfaceExp
-  , ifcJSONexprIsTot          = isTot normalizedInterfaceExp
-  , ifcJSONexprIsProp         = isProp normalizedInterfaceExp
-  , ifcJSONexprIsIdent        = isIdent normalizedInterfaceExp
-  , ifcJSONexpressionSQL      = prettySQLQuery fSpec 0 normalizedInterfaceExp
-  , ifcJSONboxSubInterfaces   = fmap (fromAmpersand fSpec . builder) (objmsub object)
+  , ifcJSONcrud               = fromAmpersand fSpec (objcrud object)
+  , ifcJSONexpr               = fromAmpersand fSpec object
+  , ifcJSONsubinterfaces      = fmap (fromAmpersand fSpec) (objmsub object)
   }
   where
-    builder s = (editableRels,s)
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
-    (srcConcept, tgtConcept, mEditableDecl) =
+    (tgtConcept, mEditableDecl) =
       case getExpressionRelation normalizedInterfaceExp of
-        Just (src, decl, tgt, isFlipped) ->
-          (src, tgt, Just (decl, isFlipped))
-        Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
+        Just (_ , decl, tgt, isFlipped) ->
+          (tgt, Just (decl, isFlipped))
+        Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
     

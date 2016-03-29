@@ -13,11 +13,13 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
   , mkInvalidCRUDError
-  , mkMultipleRepresentationsForConceptError, mkIncompatibleAtomValueError
+  , mkMultipleRepresentTypesError, nonMatchingRepresentTypes
+  , mkMultipleTypesInTypologyError
+  , mkIncompatibleAtomValueError
   , mkTypeMismatchError
+  , mkMultipleRootsError
   , Guarded(..) -- ^ If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
-  , multipleRepresentTypes, nonMatchingRepresentTypes
   )
 -- SJC: I consider it ill practice to export any CtxError constructors
 -- Reason: All error messages should pass through the CtxError module
@@ -32,7 +34,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
 -- import Data.Traversable
-import Data.List  (intercalate,nub)
+import Data.List  (intercalate)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
@@ -90,12 +92,47 @@ unexpectedType o x = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showAD
 --   where res = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showADL x<>"\n  expecting "<>getADLType_a res]
 -- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
 
-multipleRepresentTypes :: (ShowADL a1, ShowADL a2) => Origin -> a1 -> [a2] -> Guarded a
-multipleRepresentTypes o h tps
- = Errors [CTXE o$ "The Concept "++showADL h++" was shown to be representable as too many types: "++
-                   intercalate ", " (map showADL tps)
-                   ++"\n  It should be representable as at most one type"]
-
+mkMultipleRepresentTypesError :: A_Concept -> [(TType,Origin)] -> Guarded a
+mkMultipleRepresentTypesError cpt rs
+ = Errors [CTXE o msg]
+    where 
+      o = case rs of
+           []  -> fatal 97 "Call of mkMultipleRepresentTypesError with no Representations"
+           (_,x):_ -> x
+      msg = intercalate "\n" $
+             [ "The Concept "++showADL cpt++" was shown to be representable with multiple types."
+             , "The following TYPEs are defined for it:"
+             ]++
+             [ "  - "++show t++" at "++showFullOrig orig | (t,orig)<-rs]
+mkMultipleTypesInTypologyError :: [(A_Concept,TType,[Origin])] -> Guarded a
+mkMultipleTypesInTypologyError tripls 
+ = Errors [CTXE o msg]
+    where
+      o = case tripls of
+            (_,_,(x:_)):_ -> x
+            _  -> fatal 112 "No origin in list."
+      msg = intercalate "\n" $
+             [ "Concepts in the same typology must have the same TYPE."
+             , "The following concepts are in the same typology, but not all"
+             , "of them have the same TYPE:"
+             ]++
+             [ "  - REPRESENT "++name c++" TYPE "++show t++" at "++showFullOrig orig | (c,t,origs) <- tripls, orig <- origs]
+mkMultipleRootsError :: [A_Concept] -> [A_Gen] -> Guarded a
+mkMultipleRootsError roots gs
+ = Errors [CTXE o msg]
+    where 
+      o = case gs of
+           [] -> fatal 103 "mkMultipleRootsError called with no A_Gen."
+           g:_ -> origin g
+      msg = intercalate "\n" $
+             [ "A typology must have at most one root concept."
+             , "The following CLASSIFY statements define a typology with multiple root concepts: "
+             ] ++
+             [ "  - "++showADL x++" at "++showFullOrig (origin x) | x<-gs]++
+             [ "Parhaps you could add the following statements:"]++
+             [ "  CLASSIFY "++name cpt++" ISA "++show rootName    | cpt<-roots]
+          
+       where rootName = intercalate "_Or_" . map name $ roots 
 nonMatchingRepresentTypes :: (Traced a1, Show a2, Show a3) => a1 -> a2 -> a3 -> Guarded a
 nonMatchingRepresentTypes genStmt wrongType rightType
  = Errors [CTXE (origin genStmt)$ "A CLASSIFY statement is only allowed between Concepts that are represented by the same type, but "++show wrongType++" is not the same as "++show rightType]
@@ -187,16 +224,6 @@ mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs =
   CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++
                       concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)
-
-mkMultipleRepresentationsForConceptError :: String -> [Representation] -> CtxError
-mkMultipleRepresentationsForConceptError cpt rs =
-  case rs of
-    _:r:_
-      -> CTXE (origin r)
-          $ "Multiple representations for concept "++show cpt++". ("
-               ++(intercalate ", " . map show . nub . map reprdom) rs ++
-                  concatMap (("\n    "++ ) . show . origin ) rs
-    _ -> fatal 142 "There are no multiple representations."
 
 mkInvalidCRUDError :: Origin -> String -> CtxError
 mkInvalidCRUDError o str = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `"++str++"`."

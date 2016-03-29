@@ -1,0 +1,19 @@
+$if(verbose)$<!-- View-FILEOBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$ ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
+<!-- Requires & statement: 
+  CONCEPT FileObject ""
+    IDENT FileObjectName 	: FileObject (filePath)
+    VIEW FileObject 		: FileObject DEFAULT {filePath : filePath, fileName : originalFileName} HTML TEMPLATE "View-FILEOBJECT.html" ENDVIEW
+    filePath          		:: FileObject -> FilePath
+      REPRESENT FilePath TYPE ALPHANUMERIC
+    originalFileName  		:: FileObject -> FileName
+      REPRESENT FileName TYPE ALPHANUMERIC
+-->
+$endif$<div class="input-group">
+	<div ng-repeat="(key, row) in resource['$name$']">
+		$if(crudU)$<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
+		<a href="{{row['_view_']['filePath']}}" target="_blank">{{row['_view_']['fileName']}}</a>
+	</div>
+	$if(crudC)$<div my-showonhover-box ng-controller="uploadFileController" $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$>
+		<input class="form-control input-sm" type="file" nv-file-select uploader="FileUploader" options="{'url' : 'api/v1/' + resource['_path_'] + '/$name$', resource : resource, ifc : '$name$'}"/>
+	</div>$endif$
+</div>

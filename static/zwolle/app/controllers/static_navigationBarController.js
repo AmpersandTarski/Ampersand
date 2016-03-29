@@ -23,7 +23,6 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 		
 		// refresh navbar + notifications
 		$rootScope.refreshNavBar();
-		$rootScope.getNotifications();
 	}
 	
 	$rootScope.deactivateAllRoles = function(){
@@ -35,7 +34,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$rootScope.getActiveRoleIds = function(){
 		var roleIds = [];
-		angular.forEach($scope.sessionStorage.sessionRoles, function(role) {
+		angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
 			if (role.active == true) {
 				roleIds.push(role.id);
 			}
@@ -58,7 +57,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$rootScope.refreshNavBar = function(){
 		$rootScope.loadingNavBar = new Array();
 		$rootScope.loadingNavBar.push(
-			Restangular.one('navbar')
+			Restangular.one('sessions', $scope.$sessionStorage.session.id).one('navbar')
 				.get()
 				.then(function(data){
 					$rootScope.navbar = data;
@@ -81,6 +80,9 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					if($scope.$storage.cacheGetCalls === undefined){
 						$scope.$storage.cacheGetCalls = $scope.defaultSettings.cacheGetCalls;
 					}
+					
+					// Update notifications
+					$rootScope.updateNotifications(data.notifications);
 				}, function(error){
 					// on error
 				})
@@ -88,7 +90,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	};
 	
 	$scope.destroySession = function(){
-		session = Restangular.one('session', $scope.$sessionStorage.session.id);
+		session = Restangular.one('sessions', $scope.$sessionStorage.session.id);
 		session.remove().then(function(data){
 			$rootScope.updateNotifications(data.notifications);
 			

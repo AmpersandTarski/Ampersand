@@ -76,7 +76,7 @@ instance GenericPopulations FSpec where
   ++[ Comment " ", Comment $ "[Conjuncts]--: (count="++(show.length.vconjs) fSpec++")"]
   ++   concatMap (generics fSpec) (vconjs fSpec)
   ++[ Comment " ", Comment $ "[Roles]--: (count="++(show.length.fRoles) fSpec++")"]
-  ++   concatMap (generics fSpec) (fRoles fSpec)
+  ++   concatMap (generics fSpec) [role | (role,_) <- fRoles fSpec]
     )
   where
     allSqlPlugs = [plug | InternalPlug plug <- plugInfos fSpec]

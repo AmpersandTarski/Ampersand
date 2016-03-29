@@ -81,9 +81,17 @@ instance ConceptStructure IdentityDef where
   expressionsIn identity = expressionsIn             [objDef | IdentityExp objDef <- identityAts identity]
 
 instance ConceptStructure ViewDef where
-  concs       vd = [vdcpt vd] `uni` concs [objDef | ViewExp _ objDef <- vdats vd]
-  expressionsIn vd = expressionsIn        [objDef | ViewExp _ objDef <- vdats vd]
+  concs         vd = [vdcpt vd] `uni` concs (vdats vd)
+  expressionsIn vd = expressionsIn (vdats vd)
 
+instance ConceptStructure ViewSegment where
+  concs  = concs . vsmLoad
+  expressionsIn = expressionsIn . vsmLoad
+instance ConceptStructure ViewSegmentPayLoad where
+  concs  (ViewExp e) = concs e
+  concs  _           = []
+  expressionsIn (ViewExp e) = [e]
+  expressionsIn _           = []
 instance ConceptStructure Expression where
   concs (EDcD d    ) = concs d
   concs (EDcI c    ) = [c]

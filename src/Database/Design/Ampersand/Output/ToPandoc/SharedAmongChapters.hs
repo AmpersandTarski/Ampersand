@@ -39,7 +39,7 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , sortWith)
 where
 import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta,sortWith)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta)
 import Database.Design.Ampersand.ADL1 hiding (Meta)
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec

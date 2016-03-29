@@ -44,7 +44,6 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                        else Nothing
            BinSQL{} -> -- trace ("## Warning: Handling of link-tables isn't correct yet. Therefor, sheet`"++name plug++"` doesn't contain proper info") $
                        Just $ headers ++ content
-           ScalarSQL{} -> Nothing
          where
            headers :: [[Cell]]
            headers = transpose (Prelude.map f (zip (True : repeat False) (plugAttributes plug))) 
@@ -57,7 +56,6 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                                           case plug of
                                             TblSQL{}    -> name att
                                             BinSQL{}    -> name plug
-                                            ScalarSQL{} -> fatal 57 "ScalarSQL not expected here"
                          , Just $ name .target . attExpr $ att ]
                    cleanUpRelName :: String -> String
                    --TODO: This is a not-so-nice way to get the relationname from the fieldname.

@@ -132,8 +132,6 @@ fspec2Workbook fSpec =
                    (Dutch  , InternalPlug p@TblSQL{})    -> "Tabel met "++(show.length.attributes) p++" attributen."
                    (English, InternalPlug   BinSQL{})    -> "Link table"
                    (Dutch  , InternalPlug   BinSQL{})    -> "Koppel tabel"
-                   (English, InternalPlug   ScalarSQL{}) -> "Enumeration tabel"
-                   (Dutch  , InternalPlug   ScalarSQL{}) -> "Toegestane waarden tabel"
                 )
        ]
     showDetailsOfPlug _ = Nothing

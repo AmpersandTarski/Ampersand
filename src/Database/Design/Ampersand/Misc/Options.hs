@@ -36,7 +36,6 @@ data Options = Options { showVersion :: Bool
                        , allInterfaces :: Bool
                        , dbName :: String
                        , namespace :: String
-                       , autoRefresh :: Maybe Int
                        , testRule :: Maybe String
                        , customCssFile :: Maybe FilePath
                                                    --class Populated a where populate::a->b->a
@@ -46,6 +45,7 @@ data Options = Options { showVersion :: Bool
                        , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
+                       , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
                        , dirOutput :: String -- the directory to generate the output in.
                        , outputfile :: String -- the file to generate the output in.
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
@@ -78,6 +78,7 @@ data Options = Options { showVersion :: Bool
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
+                       , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        }
 
@@ -131,7 +132,6 @@ getOptions =
                       , genPrototype     = False
                       , allInterfaces    = False
                       , namespace        = ""
-                      , autoRefresh      = Nothing
                       , testRule         = Nothing
                       , customCssFile    = Nothing
                       , genFSpec         = False
@@ -140,6 +140,7 @@ getOptions =
                       , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
+                      , sqlDump          = False
                       , crowfoot         = False
                       , blackWhite       = False
                       , doubleEdges      = True
@@ -169,6 +170,7 @@ getOptions =
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
+                      , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       }
       -- Here we thread startOptions through all supplied option actions
@@ -297,15 +299,6 @@ options = [ (Option ['v']   ["version"]
                        ) "FORMAT")
                ("generate a functional specification document in specified format (FORMAT="++allFSpecFormats++").")
             , Public)
-          , (Option []        ["refresh"]
-               (OptArg (\r opts -> return
-                            opts{autoRefresh = Just (case r of
-                                                       Just str | [(i,"")] <- reads str -> i
-                                                       _                                -> 5
-                                                     )}
-                       ) "INTERVAL")
-               "Experimental auto-refresh feature"
-            , Hidden)
           , (Option []        ["testRule"]
                (ReqArg (\ruleName opts -> return opts{ testRule = Just ruleName }
                        ) "RULE")
@@ -326,6 +319,10 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["haskell"]
                (NoArg (\opts -> return opts{haskell = True}))
                "generate internal data structure, written in Haskell (for debugging)."
+            , Hidden)
+          , (Option []        ["sqldump"]
+               (NoArg (\opts -> return opts{sqlDump = True}))
+               "generate a dump of SQL statements (for debugging)."
             , Hidden)
           , (Option []        ["crowfoot"]
                (NoArg (\opts -> return opts{crowfoot = True}))
@@ -409,17 +406,27 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{metaTablesHaveUnderscore = True}))
                "Separate the extra tables used with ast-tables or generic-tables by letting them have underscores"
             , Hidden)
-          , (Option []   ["no-static-files"]
+          , (Option []        ["no-static-files"]
                (NoArg  (\opts -> return opts{genStaticFiles = False}))
                "Do not generate static files into the prototype directory"
             , Public)
+          , (Option []        ["crud-defaults"]
+               (ReqArg (\crudString opts -> let c = 'c' `notElem` crudString
+                                                r = 'r' `notElem` crudString
+                                                u = 'u' `notElem` crudString
+                                                d = 'd' `notElem` crudString
+                                            in return opts{defaultCrud = (c,r,u,d)}
+                       ) "CRUD"
+               )
+               "Temporary switch to learn about the semantics of crud in interface expressions."
+            , Hidden)
           , (Option []        ["oldNormalizer"]
                (NoArg (\opts -> return opts{oldNormalizer = True}))
-               "use the old normalizer at your own risk."
+               "Use the old normalizer at your own risk."
             , Hidden)
           , (Option []        ["newNormalizer"]
                (NoArg (\opts -> return opts{oldNormalizer = False}))
-               "use the new normalizer at your own risk." -- :-)
+               "Use the new normalizer at your own risk." -- :-)
             , Hidden)
           ]
 

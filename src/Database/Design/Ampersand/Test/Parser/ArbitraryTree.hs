@@ -23,6 +23,9 @@ safeStr = listOf printable
 safeStr1 :: Gen String
 safeStr1 = listOf1 printable
 
+maybeSafeStr :: Gen (Maybe String)
+maybeSafeStr = oneof [Just <$> safeStr, return Nothing]
+
 -- Genrates a valid ADL identifier
 identifier :: Gen String
 identifier = suchThat str2 noKeyword
@@ -274,7 +277,6 @@ instance Arbitrary P_Interface where
                       <*> listOf relationRef <*> args <*> listOf arbitrary
                       <*> sized objTermPrim <*> arbitrary <*> safeStr
                    where args = listOf $ listOf1 safeStr
-                         maybeSafeStr = oneof [Just <$> safeStr, return Nothing]
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
     arbitrary = sized genObj
@@ -289,22 +291,19 @@ instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized objTermPrim
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary =
-        oneof [P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> return True <*> return Nothing <*> listOf1 arbitrary,
-               P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> arbitrary <*> arbitrary <*> listOf1 (P_ViewExp <$> arbitrary <*> arbitrary)]
+    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
+                    <*> arbitrary <*> arbitrary <*> listOf1 arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeStr
 
-instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
+instance Arbitrary a => Arbitrary (P_ViewSegment a) where
+    arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 
+instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
     arbitrary =
-        oneof [
-            P_ViewExp  <$> arbitrary <*> arbitrary,
-            P_ViewText <$> arbitrary <*> safeStr,
-            P_ViewHtml <$> arbitrary <*> safeStr
-        ]
+        oneof [ P_ViewExp  <$> sized(genTerm 1) -- only accepts pTerm, no pRule.
+              , P_ViewText <$> safeStr
+              ]
 
 instance Arbitrary PPurpose where
     arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeStr1

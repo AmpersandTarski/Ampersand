@@ -6,13 +6,7 @@ All generated config and ampersand model files will be placed in this folder. Th
 * interfaces.json
 * mysql-installer.json
 * relations.json
+* roles.json
 * rules.json
 * settings.json
-* tables.json
 * views.json
-
-The following files are still in use, but will be phased out and replaced by json files specified above (see ticket #197 and #198):
-* Generics.php (contains ampersand model, needed by the framework)
-* dbSettings.php
-* InstallerDBstruct.php
-* InstallerDefPop.php

@@ -26,43 +26,39 @@
    VIOLATION (TXT "InsPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
+function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function InsPair(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
+	Notifications::addLog("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)", 'ExecEngine');
 	try{	
 		$database = Database::singleton();
 		
-		// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
-		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
+		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
 		
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
-		// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
+		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
 		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'InsPair ignored because src and/or tgt atom is _NULL';
 		
-		// if srcAtom is specified as _NEW, a new atom of srcConcept is created
-	    if($srcAtom == "_NEW"){
-			$srcAtom = $database->addAtomToConcept(Concept::createNewAtom($srcConcept), $srcConcept);
-		}else{
-			$database->addAtomToConcept($srcAtom, $srcConcept);
-		}
+		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
+		$srcConcept = Concept::getConcept($srcConceptName);
+	    if($srcAtom == "_NEW") $srcAtom = $srcConcept->createNewAtomId();
 		
 		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
-		if($tgtAtom == "_NEW"){
-			$tgtAtom = $database->addAtomToConcept(Concept::createNewAtom($tgtConcept), $tgtConcept);
-		}else{
-			$database->addAtomToConcept($tgtAtom, $tgtConcept);
-		}
+	    $tgtConcept = Concept::getConcept($tgtConceptName);
+		if($tgtAtom == "_NEW") $tgtAtom = $tgtConcept->createNewAtomId();
 		
-		$srcAtoms = explode('_AND', $srcAtom);
-		$tgtAtoms = explode('_AND', $tgtAtom);
-		foreach($srcAtoms as $a){
-			foreach($tgtAtoms as $b){
-				$database->editUpdate($relation, false, $a, $srcConcept, $b, $tgtConcept, null, 'ExecEngine');
+		$srcAtomIds = explode('_AND', $srcAtom);
+		$tgtAtomIds = explode('_AND', $tgtAtom);
+		foreach($srcAtomIds as $a){
+			$src = new Atom($a, $srcConceptName);
+		    foreach($tgtAtomIds as $b){
+				$tgt = new Atom($b, $tgtConceptName);
+				$relation->addLink($src, $tgt, false, 'ExecEngine');
 			}
 		}
 		
-		return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') inserted into '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+		return "Tuple ('{$srcAtom}', '{$tgtAtom}') inserted into '{$relation->__toString()}'";
 	}catch(Exception $e){
 		Notifications::addError('InsPair: ' . $e->getMessage());
 	}
@@ -76,14 +72,12 @@ function InsPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 	VIOLATION (TXT "DelPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
+function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function DelPair(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom)", 'ExecEngine');
-	try{
-		$database = Database::singleton();
-		
-		// Check if relation signature exists: $relationName[$srcConcept*$tgtConcept]
-		$relation = Relation::isCombination($relationName, $srcConcept, $tgtConcept);
+	Notifications::addLog("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)", 'ExecEngine');
+	try{		
+		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
+		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
 		
 		$srcAtoms = explode('_AND', $srcAtom);
 		$tgtAtoms = explode('_AND', $tgtAtom);
@@ -91,12 +85,14 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 		if(count($tgtAtoms) > 1) throw new Exception('DelPair function call has more than one tgt atom', 501); // 501: Not implemented
 		
 		foreach($srcAtoms as $a){
-			foreach($tgtAtoms as $b){
-				$database->editDelete($relation, false, $a, $srcConcept, $b, $tgtConcept, 'ExecEngine');
+		    $src = new Atom($a, $srcConceptName);
+		    foreach($tgtAtoms as $b){
+				$tgt = new Atom($b, $tgtConceptName);
+		        $relation->deleteLink($src, $tgt, false, 'ExecEngine');
 			}
 		}
 		
-		return 'Tuple ('.$srcAtom.' - '.$tgtAtom.') deleted from '.$relationName.'['.$srcConcept.'*'.$tgtConcept.']';
+		return "Tuple ('{$srcAtom}', '{$tgtAtom}') deleted from '{$relation->__toString()}'";
 	}catch(Exception $e){
 		Notifications::addError('DelPair: ' . $e->getMessage());
 	}
@@ -122,13 +118,15 @@ function DelPair($relationName,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom){
 
 */
 function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
-	Notifications::addLog("Newstruct", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
 		// We start with parsing the first one or two arguments
 		$ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
-		$AtomC = Concept::createNewAtom($ConceptC);   // Default marker for atom-to-be-created.
+		$c = Concept::getConcept($ConceptC);
+		$AtomC = $c->createNewAtomId();   // Default marker for atom-to-be-created.
+
+		Notifications::addLog("Newstruct for concept $ConceptC", 'ExecEngine');
 		
 		if (func_num_args() % 5 == 2){            // Check if name of new atom is explicitly specified
 			$AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
@@ -137,7 +135,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		}
 		
 		// Then, we create a new atom of type $ConceptC
-		$database->addAtomToConcept($AtomC, $ConceptC);     // insert new atom in database
+		$database->addAtomToConcept(new Atom($AtomC, $ConceptC));     // insert new atom in database
 	
 		// Next, for every relation that follows in the argument list, we create a link
 		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
@@ -198,16 +196,16 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 }
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
-function InsAtom($concept){
+function InsAtom($conceptName){
 	if(func_num_args() != 1) throw new Exception("Wrong number of arguments supplied for function InsAtom(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("InsAtom($concept)", 'ExecEngine');
+	Notifications::addLog("InsAtom($conceptName)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
-		$atom = Concept::createNewAtom($concept);
-		$database->addAtomToConcept($atom, $concept); // insert new atom in database
+		$concept = Concept::getConcept($conceptName);
+		$database->addAtomToConcept($atom = $concept->createNewAtom()); // insert new atom in database
 		
-		return "Atom '".$atom."' added to concept '". $concept . "'";
+		return "Atom '{$atom->__toString()}' created and added to database";
 		
 	}catch(Exception $e){
 		Notifications::addError('InsAtom: ' . $e->getMessage());
@@ -221,14 +219,15 @@ function InsAtom($concept){
 	VIOLATION (TXT "DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
 */
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
-function DelAtom($concept, $atom){
+function DelAtom($concept, $atomId){
 	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function DelAtom(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("DelAtom($concept, $atom)", 'ExecEngine');
+	Notifications::addLog("DelAtom($concept,$atomId)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
-		$database->deleteAtom($atom, $concept); // delete atom + all relations with other atoms
-		return "Atom '".$atom."' deleted from concept '". $concept . "'";
+		$atom = new Atom($atomId, $concept);
+		$database->deleteAtom($atom); // delete atom + all relations with other atoms
+		return "Atom '{$atom->id}[{$atom->concept->name}]' deleted";
 	
 	}catch(Exception $e){
 		Notifications::addError('DelAtom: ' . $e->getMessage());
@@ -244,12 +243,13 @@ function DelAtom($concept, $atom){
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atom>")
 function SetConcept($conceptA, $conceptB, $atom){
 	if(func_num_args() != 3) throw new Exception("Wrong number of arguments supplied for function SetConcept(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("SetConcept($conceptA, $conceptB, $atom)", 'ExecEngine');
+	Notifications::addLog("SetConcept($conceptA,$conceptB,$atom)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
 		
-		$database->atomSetConcept($conceptA, $atom, $conceptB);
-		return "Atom '$atom' added as member to concept '$conceptB'";
+		$atom = new Atom($atom, $conceptA);
+		$database->atomSetConcept($atom, $conceptB);
+		return "Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '$conceptB'";
 	
 	}catch(Exception $e){
 		Notifications::addError('SetConcept: ' . $e->getMessage());
@@ -264,12 +264,13 @@ function SetConcept($conceptA, $conceptB, $atom){
 // Use: VIOLATION (TXT "ClearConcept;<Concept>;<atom>")
 function ClearConcept($concept, $atom){
 	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function ClearConcept(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("ClearConcept($concept, $atom)", 'ExecEngine');
+	Notifications::addLog("ClearConcept($concept,$atom)", 'ExecEngine');
 	try{
 		$database = Database::singleton();
-
-		$database->atomClearConcept($concept, $atom);
-		return "Atom '$atom' removed as member from concept '$concept'";
+        
+		$atom = new Atom($atom, $concept);
+		$database->atomClearConcept($atom);
+		return "Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$concept'";
 
 	}catch(Exception $e){
 		Notifications::addError('ClearConcept: ' . $e->getMessage());

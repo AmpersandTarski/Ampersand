@@ -10,44 +10,57 @@ class Session {
 	public $database;
 	public $interface;
 	public $viewer;
-	public $atom;
+	
+	/**
+	 * Specifies if session is expired
+	 * @var boolean
+	 */
+	private $isExpired = false;
 	
 	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
 	
+	/**
+	 * 
+	 * @var InterfaceObject[]
+	 */
 	private $accessibleInterfaces = array(); // when login enabled: all interfaces for sessionRoles, otherwise: interfaces for active roles
 	private $ifcsOfActiveRoles = array(); // interfaces for active roles
 	public $rulesToMaintain = array(); // rules that are maintained by active roles 
 	
-	public static $sessionUser;
+	public static $sessionAccountId;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
 	// prevent any outside instantiation of this object
-	private function __construct(){		
-		try {
-			$this->id = session_id();
-			
-			$this->database = Database::singleton();
-			
-			// AMPERSAND SESSION
-			Concept::getConcept('SESSION');
-			
-			// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-			$expiredSessionsAtoms = array_column($this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
-			foreach ($expiredSessionsAtoms as $expiredSessionAtom) $this->destroyAmpersandSession($expiredSessionAtom);
-
-			// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
-			$sessionAtom = new Atom($this->id, 'SESSION');
-			if (!$sessionAtom->atomExists()){ 
-				$this->database->addAtomToConcept($this->id, 'SESSION');
-				$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
-			}
-
-			$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
-			
-		} catch (Exception $e){
-		  	throw $e;
+	private function __construct(){
+		$this->id = session_id();
+		
+		$this->database = Database::singleton();
+		
+		// Check if 'SESSION' is defined as concept in Ampersand script
+		Concept::getConcept('SESSION');
+		
+		// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
+		$expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
+		foreach ($expiredSessionsAtoms as $expiredSessionAtom){
+		    if($expiredSessionAtom == $this->id) $this->isExpired = true; 
+		    $this->destroyAmpersandSession($expiredSessionAtom);
 		}
+		
+		// Throw exception when session is expired AND login functionality is enabled 
+		if($this->isExpired && Config::get('loginEnabled')) throw new Exception ("Your session has expired, please login again", 440); // 440 Login Timeout -> is redirected by frontend to login page
+
+		// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
+		$sessionAtom = new Atom($this->id, 'SESSION');
+		if (!$sessionAtom->atomExists()){ 
+			$sessionAtom->addAtom();
+			$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
+		}
+
+		$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+		
+		// Add public interfaces
+		$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
 	}
 	
 	// Prevent any copy of this object
@@ -60,7 +73,7 @@ class Session {
 	
 	private function destroyAmpersandSession($sessionAtom){
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
-		$this->database->deleteAtom($sessionAtom, 'SESSION');
+		$this->database->deleteAtom(new Atom($sessionAtom, 'SESSION'));
 		$this->database->commitTransaction();
 	}
 	
@@ -76,26 +89,19 @@ class Session {
 		if(empty($roles)){
 			Notifications::addLog("No roles available to activate", 'SESSION');	
 		}elseif(is_null($roleIds)){
-			// TODO: insert default roles here
-			Notifications::addLog("No roles provided to activate", 'SESSION');
+			Notifications::addLog("Activate default roles", 'SESSION');
+			foreach($this->sessionRoles as &$role) $this->activateRole($role);
 		}elseif(empty($roleIds)){
 			Notifications::addLog("No roles provided to activate", 'SESSION');
 		}else{
 			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
 			foreach($this->sessionRoles as &$role){
-				if(in_array($role->id, $roleIds)){
-					$role->active = true;
-					Notifications::addLog("Role $role->id is active", 'SESSION');
-					$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
-					$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-					$this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
-				}
+				if(in_array($role->id, $roleIds)) $this->activateRole($role);
 			}
 		}
 		
 		// Add public interfaces
 		$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, InterfaceObject::getPublicInterfaces());
-		$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
 		
 		// If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
 		if(Config::get('loginEnabled')){
@@ -110,17 +116,19 @@ class Session {
 		$this->rulesToMaintain = array_unique($this->rulesToMaintain);
 	}
 	
-	public function setInterface($interfaceId){
-		
-		if(isset($interfaceId)) {
-			if(!$this->isAccessibleIfc($interfaceId)) throw new Exception("Interface is not accessible for active roles or accessible roles (login)", 401); // 401: Unauthorized
-			
-			$this->interface = new InterfaceObject($interfaceId);
-			Notifications::addLog("Interface '". $this->interface->label . "' selected", 'SESSION');
-				
-		}else{
-			throw new Exception('No interface specified', 404);
-		}
+	/**
+	 * 
+	 * @param Role $role
+	 */
+	private function activateRole(&$role){
+	    $role->active = true;
+	    Notifications::addLog("Role $role->id is active", 'SESSION');
+	    $this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
+	    $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+	    
+	    foreach($role->maintains() as $ruleName){
+	        $this->rulesToMaintain[] = Rule::getRule($ruleName);
+	    }
 	}
 	
 	public function getSessionRoles(){
@@ -131,52 +139,63 @@ class Session {
 				$sessionRoleLabels = array();
 				$sessionRoles = array();
 				
-				$interface = new InterfaceObject('SessionRoles');
 				$session = new Atom(session_id(), 'SESSION');
-				$sessionRoleLabels = array_keys((array)$session->getContent($interface, true));
+				$options = array('metaData' => false, 'navIfc' => true);
+				$sessionRoleLabels = array_column((array)$session->ifc('SessionRoles')->getContent(null, $options), '_id_');
 				
-				foreach(Role::getAllRoleObjects() as $role){
+				foreach(Role::getAllRoles() as $role){
 					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
 				}
 			}else{
-				$sessionRoles = Role::getAllRoleObjects();
+				$sessionRoles = Role::getAllRoles();
 			}
 			
 			return $this->sessionRoles = $sessionRoles;
 		}
 	}
 	
-	private static function setSessionUser(){
-		// Set sessionUser
+	/**
+	 * 
+	 * @return Role[]
+	 */
+	public function getActiveRoles(){
+	    $activeRoles = array();
+	    foreach ($this->getSessionRoles() as $role){
+	        if($role->active) $activeRoles[] = $role; 
+	    }
+	    return $activeRoles;
+	}
+	
+	private static function setSessionAccount(){
+		// Set $sessionAccountId
 		if(!Config::get('loginEnabled')){
-			Session::$sessionUser = false;
+			self::$sessionAccountId = false;
 		
 		}else{
-			$ifc = new InterfaceObject('SessionUser');
 			$session = new Atom(session_id(), 'SESSION');
-			$sessionUsers = array_keys((array)$session->getContent($ifc, true));
+			$sessionAccounts = array_column((array)$session->ifc('SessionAccount')->getContent(), '_id_');
 				
-			if(count($sessionUsers) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
-			if(empty($sessionUsers)){
-				Session::$sessionUser = false;
+			if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
+			if(empty($sessionAccounts)){
+				self::$sessionAccountId = false;
 			}else{
-				Session::$sessionUser = current($sessionUsers);
-				Notifications::addLog("Session user set to '$sessionUser'", 'SESSION');
+				self::$sessionAccountId = current($sessionAccounts);
+				Notifications::addLog("Session user set to '" . self::$sessionAccountId . "'", 'SESSION');
 			}
 		}		
 	}
 	
-	public static function getSessionUserId(){
+	public static function getSessionAccountId(){
 		if(!Config::get('loginEnabled')){
 			return 'SYSTEM';
 		
 		}else{
-			if(!isset(Session::$sessionUser)) Session::setSessionUser();
+			if(!isset(self::$sessionAccountId)) Session::setSessionAccount();
 			
-			if(Session::$sessionUser === false){
+			if(self::$sessionAccountId === false){
 				return $_SERVER['REMOTE_ADDR'];
 			}else{
-				return Session::$sessionUser;
+				return self::$sessionAccountId;
 			}
 		}
 	}
@@ -186,9 +205,9 @@ class Session {
 			return false;
 		
 		}else{
-			if(!isset(Session::$sessionUser)) Session::setSessionUser();
+			if(!isset(self::$sessionAccountId)) Session::setSessionAccount();
 				
-			if(Session::$sessionUser === false){
+			if(self::$sessionAccountId === false){
 				return false;
 			}else{
 				return true;
@@ -202,9 +221,9 @@ class Session {
 		
 		}else{
 			try {
-				$ifc = new InterfaceObject('SessionVars');
 				$session = new Atom(session_id(), 'SESSION');
-				return $session->getContent($ifc, false, null, false, 'num', false); // $rootElement = false => this will return a single object instead of array.
+				$options = array('metaData' => false, 'navIfc' => false);
+				return $session->ifc('SessionVars')->getContent($session->id, $options);
 			}catch (Exception $e){
 				return false;
 			}		
@@ -215,7 +234,7 @@ class Session {
 	public function getInterfacesForNavBar(){
 		$interfaces = array();
 		foreach($this->ifcsOfActiveRoles as $interface){
-			if(($interface->srcConcept == 'SESSION' || $interface->srcConcept == 'ONE') && $interface->crudR) $interfaces[] = $interface;
+			if(($interface->srcConcept->name == 'SESSION' || $interface->srcConcept->name == 'ONE') && $interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
@@ -223,26 +242,32 @@ class Session {
 	public function getInterfacesToCreateAtom(){
 		$interfaces = array();
 		foreach($this->ifcsOfActiveRoles as $interface){
-			//if($interface->srcConcept != 'SESSION' && $interface->srcConcept != 'ONE') $interfaces[] = $interface;
+			//if($interface->srcConcept->name != 'SESSION' && $interface->srcConcept->name != 'ONE') $interfaces[] = $interface;
 			if($interface->crudC && $interface->isIdent) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
 	
-	public function getInterfacesToReadConcept($concept){
+	public function getInterfacesToReadConcept($conceptName){
 		$interfaces = array();
 		foreach($this->accessibleInterfaces as $interface){
-			if(($interface->srcConcept == $concept || in_array($concept, Concept::getSpecializations($interface->srcConcept))
-					&& $interface->crudR)
-			) $interfaces[] = $interface;
+			if(($interface->srcConcept->name == $conceptName || $interface->srcConcept->hasSpecialization($conceptName)) 
+			        && $interface->crudR) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
 	
-	public function getEditableConcepts(){
-		$editableConcepts = array();
-		foreach($this->accessibleInterfaces as $ifc) $editableConcepts = array_merge($editableConcepts, $ifc->editableConcepts);
-		return $editableConcepts;
+	/**
+	 * 
+	 * @param Concept $concept
+	 * @return boolean
+	 */
+	public function isEditableConcept($concept){
+		foreach($this->accessibleInterfaces as $ifc) 
+		    if (in_array($concept, $ifc->editableConcepts)) return true;
+		
+		// Else
+		return false;
 	}
 	
 	public function isAccessibleIfc($interfaceId){

@@ -95,7 +95,7 @@ clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStrLn "Generating new frontend.." 
+ do { putStrLn "Generating frontend.." 
     ; copyIncludes fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
@@ -159,10 +159,10 @@ data FEObject = FEObject { objName :: String
                          , objSource :: A_Concept
                          , objTarget :: A_Concept
                          , objIsEditable :: Bool
-                         , objCrudC :: Maybe Bool
-                         , objCrudR :: Maybe Bool
-                         , objCrudU :: Maybe Bool
-                         , objCrudD :: Maybe Bool
+                         , objCrudC :: Bool
+                         , objCrudR :: Bool
+                         , objCrudU :: Bool
+                         , objCrudD :: Bool
                          , exprIsUni :: Bool
                          , exprIsTot :: Bool
                          , exprIsProp :: Bool
@@ -228,7 +228,7 @@ buildInterface fSpec allIfcs ifc =
                   ; mSpecificTemplatePath <-
                           case mView of
                             Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
-                              -> return $ Just ("views" </> fName, [ viewAttr | ViewExp _ Obj{objnm=viewAttr} <- viewSegs])
+                              -> return $ Just ("views" </> fName, mapMaybe vsmlabel viewSegs)
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
                              do { let templatePath = "views" </> "Atomic-" ++ (escapeIdentifier $ name tgt) ++ ".html"
