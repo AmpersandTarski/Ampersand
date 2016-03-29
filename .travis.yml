@@ -5,7 +5,8 @@ language: php
 sudo: false
 
 php:
-  - '7.0'
+  - '5.6'
+  
 cache:
     directories:
         - $HOME/.ghc
