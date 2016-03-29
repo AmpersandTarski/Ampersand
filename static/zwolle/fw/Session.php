@@ -42,8 +42,12 @@ class Session {
 	
 	// prevent any outside instantiation of this object
 	private function __construct(){
+	    $this->logger = \Ampersand\Logger::getLogger('FW');
+		
 	    $this->id = session_id();
 	    $this->sessionAtom = new Atom($this->id, 'SESSION');
+		
+		$this->logger->debug("Session id: {$this->id}");
 		
 		$this->database = Database::singleton();
 		
@@ -97,12 +101,12 @@ class Session {
 	public function activateRoles($roleIds = null){
 		$roles = $this->getSessionRoles();
 		if(empty($roles)){
-			Notifications::addLog("No roles available to activate", 'SESSION');	
+			$this->logger->debug("No roles available to activate");	
 		}elseif(is_null($roleIds)){
-			Notifications::addLog("Activate default roles", 'SESSION');
+			$this->logger->debug("Activate default roles");
 			foreach($this->sessionRoles as &$role) $this->activateRole($role);
 		}elseif(empty($roleIds)){
-			Notifications::addLog("No roles provided to activate", 'SESSION');
+			$this->logger->debug("No roles provided to activate");
 		}else{
 			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
 			foreach($this->sessionRoles as &$role){
@@ -133,13 +137,14 @@ class Session {
 	 */
 	private function activateRole(&$role){
 	    $role->active = true;
-	    Notifications::addLog("Role $role->id is active", 'SESSION');
 	    $this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
 	    $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
 	    
 	    foreach($role->maintains() as $ruleName){
 	        $this->rulesToMaintain[] = Rule::getRule($ruleName);
 	    }
+	    
+	    $this->logger->info("Role '{$role->id}' is activated");
 	}
 	
 	public function getSessionRoles(){
@@ -191,7 +196,7 @@ class Session {
 				$this->sessionAccountId = false;
 			}else{
 				$this->sessionAccountId = current($sessionAccounts);
-				Notifications::addLog("Session user set to '" . $this->sessionAccountId . "'", 'SESSION');
+				$this->logger->debug("Session user set to '{$this->sessionAccountId}'");
 			}
 		}		
 	}

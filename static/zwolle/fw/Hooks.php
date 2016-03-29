@@ -6,7 +6,7 @@ Class Hooks {
 	
 	public static function callHooks($hookpoint, $hookpointParams){
 		
-		Notifications::addLog("Hook $hookpoint called", 'Hooks');
+		\Ampersand\Logger::getLogger('HOOKS')->debug("Hook '{$hookpoint}' called");
 		
 		foreach (Hooks::getHooks($hookpoint) as $hook){
 			// Determine funtioncall
@@ -21,7 +21,7 @@ Class Hooks {
 			}
 			
 			$log = $callback . '(' . implode(', ', $callBackParams) . ')';
-			Notifications::addLog("Call hook $log", 'Hooks');
+			\Ampersand\Logger::getLogger('HOOKS')->debug("Call hook {$log}");
 			
 			call_user_func_array ($callback, $callBackParams);
 			
@@ -52,7 +52,7 @@ Class Hooks {
 		$log .= $hook['function'] . '(';
 		$log .= implode(', ', $hook['params']) . ')'; 
 		
-		Notifications::addLog("Hook $log added to $hookpoint", 'Hooks');
+		\Ampersand\Logger::getLogger('HOOKS')->debug("Hook '{$log}' added to '{$hookpoint}'");
 		
 	}
 }

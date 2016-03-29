@@ -8,6 +8,12 @@ class Concept {
     private static $allConcepts;
     
     /**
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
+    
+    /**
      * Dependency injection of a database connection class
      * @var Database
      */
@@ -86,7 +92,8 @@ class Concept {
 	 * @param array $conceptDef
 	 */
 	private function __construct($conceptDef){
-	    $this->database = Database::singleton(); 
+	    $this->database = Database::singleton();
+	    $this->logger = \Ampersand\Logger::getLogger('FW');
 	    
 		$this->name = $conceptDef['name'];
 		$this->type = $conceptDef['type'];
@@ -98,7 +105,7 @@ class Concept {
 		    
 		    if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
 		    if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
-		    if (!$conj->isSigConj() && !$conj->isInvConj()) Notifications::addInfo("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule", 'UnusedConjuncts', "There are unused conjuncts defined");
+		    if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->notice("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule");
 		}
 		
 		$this->specializations = (array)$conceptDef['specializations'];

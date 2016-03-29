@@ -1,5 +1,6 @@
 <?php
 
+use Ampersand;
 Class Conjunct {
     
     /**
@@ -7,6 +8,12 @@ Class Conjunct {
      * @var Conjunct[]
      */
     private static $allConjuncts;
+    
+    /**
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
     
     /**
      * 
@@ -45,6 +52,8 @@ Class Conjunct {
      * @param array $conjDef
      */
     private function __construct($conjDef){
+        $this->logger = \Ampersand\Logger::getLogger('FW');
+        
         $this->id = $conjDef['Id'];
         $this->query = $conjDef['violationsSQL'];
         $this->invRuleNames = (array)$conjDef['invariantRuleNames'];
@@ -82,12 +91,12 @@ Class Conjunct {
      * @return array[] array(array('src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
      */
     public function evaluateConjunct($cacheConjuncts = true){
-        Notifications::addLog("Checking conjunct '{$this->id}' cache:" . var_export($cacheConjuncts, true), 'RuleEngine');
+        $this->logger->debug("Checking conjunct '{$this->id}' cache:" . var_export($cacheConjuncts, true));
         try{
             	
             // If conjunct is already evaluated and conjunctCach may be used -> return violations
             if(isset($this->conjunctViolations) && $cacheConjuncts){
-                Notifications::addLog("Conjunct is already evaluated, getting violations from cache", 'RuleEngine');
+                $this->logger->debug("Conjunct is already evaluated, getting violations from cache");
                 return $this->conjunctViolations;
                 	
                 // Otherwise evaluate conjunct, cache and return violations
@@ -103,14 +112,14 @@ Class Conjunct {
                 if($cacheConjuncts) $this->conjunctViolations = $violations;
     
                 if(count($violations) == 0){
-                    Notifications::addLog("Conjunct '{$this->id}' holds", 'RuleEngine');
+                    $this->logger->debug("Conjunct '{$this->id}' holds");
                     	
                     // Remove "old" conjunct violations from database
                     $query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '{$this->id}'";
                     $db->Exe($query);
                     	
                 }else{
-                    Notifications::addLog("Conjunct '{$this->id}' broken, updating violations in database", 'RuleEngine');
+                    $this->logger->debug("Conjunct '{$this->id}' broken, updating violations in database");
                     
                     // Remove "old" conjunct violations from database
                     $query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '{$this->id}'";
@@ -127,7 +136,7 @@ Class Conjunct {
             }
             	
         }catch (Exception $e){
-            Notifications::addError("While checking conjunct '{$this->id}': " . $e->getMessage());
+            \Ampersand\Logger::getUserLogger()->error("While checking conjunct '{$this->id}': " . $e->getMessage());
         }
     }
     

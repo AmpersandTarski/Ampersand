@@ -15,6 +15,12 @@ class Relation {
     private $db;
     
     /**
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
+    
+    /**
      * 
      * @var string
      */
@@ -93,6 +99,7 @@ class Relation {
      */
     public function __construct($relationDef){
         $this->db = Database::singleton();
+        $this->logger = \Ampersand\Logger::getLogger('FW');
         
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConcept']);
@@ -113,7 +120,7 @@ class Relation {
         
             if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
             if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
-            if (!$conj->isSigConj() && !$conj->isInvConj()) Notifications::addInfo("Affected conjunct '{$conj->id}' (specified for relation '{$this->__toString()}') is not part of an invariant or signal rule", 'UnusedConjuncts', "There are unused conjuncts defined");
+            if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->notice("Affected conjunct '{$conj->id}' (specified for relation '{$this->__toString()}') is not part of an invariant or signal rule");
         }
         
         // Specify mysql table information
@@ -168,7 +175,7 @@ class Relation {
      */
     public function addLink($leftAtom, $rightAtom, $isFlipped = false, $source = 'User'){
         try{
-            Notifications::addLog("Insert link ({$leftAtom->__toString()},{$rightAtom->__toString()}) into relation '{$this->__toString()}{($isFlipped ? '~' : '')}'", 'DATABASE');
+            $this->logger->debug("Insert link ({$leftAtom->__toString()},{$rightAtom->__toString()}) into relation '{$this->__toString()}{($isFlipped ? '~' : '')}'");
              
             // Determine src and tgt atom based on $isFlipped
             $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
@@ -188,7 +195,7 @@ class Relation {
         
         }catch(Exception $e){
             // Catch exception and continue script
-            Notifications::addErrorException($e);
+            \Ampersand\Logger::getUserLogger()->error($e);
         }
     }
     
@@ -206,7 +213,7 @@ class Relation {
      */
     public function deleteLink($leftAtom, $rightAtom, $isFlipped = false, $source = 'User'){
         try{
-            Notifications::addLog("Delete link ({$leftAtom->__toString()},{$rightAtom->__toString()}) from relation '{$this->__toString()}{($isFlipped ? '~' : '')}'", 'DATABASE');
+            $this->logger->debug("Delete link ({$leftAtom->__toString()},{$rightAtom->__toString()}) from relation '{$this->__toString()}{($isFlipped ? '~' : '')}'");
              
             // Determine src and tgt atom based on $isFlipped
             $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
@@ -220,7 +227,7 @@ class Relation {
     
         }catch(Exception $e){
             // Catch exception and continue script
-            Notifications::addErrorException($e);
+            \Ampersand\Logger::getUserLogger()->error($e);
         }
     }
 
