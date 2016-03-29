@@ -166,7 +166,7 @@ class Database {
 		try{
 	        $this->db_link->select_db($this->db_name);
 		}catch(Exception $e){
-	        Notifications::addLog($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">Reinstall database</a>', 'DATABASE');
+	        \Ampersand\Logger::getUserLogger()->error($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">Reinstall database</a>');
 	    }
 	}
 	
@@ -178,23 +178,23 @@ class Database {
 		$queries = file_get_contents(__DIR__ . '/../generics/mysql-installer.json');
 		$queries = json_decode($queries, true);
 		
-		Notifications::addLog('========= INSTALLER ==========', 'INSTALLER');
+		$this->logger->info("Start database reinstall");
 		
-		Notifications::addLog('---------- DB structure queries ------------', 'INSTALLER');
+		$this->logger->info("Execute database structure queries");
 		foreach($queries['allDBstructQueries'] as $query){
 			$this->Exe($query);
 		}
 		
 		if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
 		
-		Notifications::addLog('---------- DB population queries -----------', 'INSTALLER');
+		$this->logger->info("Execute database population queries");
 		foreach($queries['allDefPopQueries'] as $query){
 			$this->Exe($query);
 		}
 		
 		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
 		
-		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
+		$this->logger->info("Database reinstalled");
 		
 		// Initial conjunct evaluation
 		Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts, not only those that are affected (done by closeTransaction() function)
@@ -202,7 +202,7 @@ class Database {
 		$this->closeTransaction('Database successfully reinstalled', true);
 		
 		if (version_compare(PHP_VERSION, '5.6', '<')) {
-		   Notifications::addError("Support for PHP version <= 5.5 will stop in the summer of 2016. Please upgrade to 5.6. Note! Ampersand framework does not support PHP 7 yet. You are on version: " . PHP_VERSION, 500);
+		   \Ampersand\Logger::getUserLogger()->warning("Support for PHP version <= 5.5 will stop in the summer of 2016. Please upgrade to 5.6. Note! Ampersand framework does not support PHP 7 yet. You are on version: " . PHP_VERSION, 500);
 		}
 	}
 	
@@ -221,7 +221,7 @@ class Database {
 		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
 		$result = $this->doQuery($query);
-		$this->logger->addDebug($query);
+		$this->logger->debug($query);
 
 		if ($result === false) return false;
 		elseif ($result === true) return true;
@@ -291,51 +291,45 @@ class Database {
 	 * @return void
 	 */
 	public function addAtomToConcept($atom){
-	    Notifications::addLog("addAtomToConcept({$atom->id}[{$atom->concept->name}])", 'DATABASE');
+	    $this->logger->debug("addAtomToConcept({$atom->__toString()})");
 	    
-		try{
-			// This function is under control of transaction check!
-			if (!isset($this->transaction)) $this->startTransaction();
+		// This function is under control of transaction check!
+		if (!isset($this->transaction)) $this->startTransaction();
+		
+		// If $atomId is not in $concept
+		if(!$this->atomExists($atom)){
+		    			    
+			// Get table properties
+			$conceptTableInfo = $atom->concept->getConceptTableInfo();
+			$conceptTable = $conceptTableInfo->name;
+			$conceptCols = $conceptTableInfo->getCols(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
 			
-			// If $atomId is not in $concept
-			if(!$this->atomExists($atom)){
-			    			    
-				// Get table properties
-				$conceptTableInfo = $atom->concept->getConceptTableInfo();
-				$conceptTable = $conceptTableInfo->name;
-				$conceptCols = $conceptTableInfo->getCols(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
-				
-				// Create query string: `<col1>`, `<col2>`, etc
-				$allConceptCols = '`' . implode('`, `', $conceptTableInfo->getColNames()) . '`';
-				
-				
-				// Create query string: '<newAtom>', '<newAtom', etc
-				$atomIdsArray = array_fill(0, count($conceptCols), $atom->idEsc);
-				$allValues = "'".implode("', '", $atomIdsArray)."'";
-				
-				foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atom->idEsc}'";
-				$duplicateStatement = substr($str, 1);
-				
-				$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
-						  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
-				
-				// Check if query resulted in an affected row
-				if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No record inserted in Database::addAtomToConcept({$atom->__toString()})", 500);
-				
-				$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
-				
-				Notifications::addLog("Atom '{$atom->id}[{$atom->concept->name}]' added to database", 'DATABASE');
-				
-				Hooks::callHooks('postDatabaseAddAtomToConceptInsert', get_defined_vars());
-			}else{
-				Notifications::addLog("Atom '{$atom->id}[{$atom->concept->name}]' already exists in database", 'DATABASE');
-				
-				Hooks::callHooks('postDatabaseAddAtomToConceptSkip', get_defined_vars());
-			}
+			// Create query string: `<col1>`, `<col2>`, etc
+			$allConceptCols = '`' . implode('`, `', $conceptTableInfo->getColNames()) . '`';
 			
-		}catch(Exception $e){
-			// Catch exception and continue script
-			Notifications::addErrorException($e);
+			
+			// Create query string: '<newAtom>', '<newAtom', etc
+			$atomIdsArray = array_fill(0, count($conceptCols), $atom->idEsc);
+			$allValues = "'".implode("', '", $atomIdsArray)."'";
+			
+			foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atom->idEsc}'";
+			$duplicateStatement = substr($str, 1);
+			
+			$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
+					  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
+			
+			// Check if query resulted in an affected row
+			if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No record inserted in Database::addAtomToConcept({$atom->__toString()})", 500);
+			
+			$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
+			
+			$this->logger->debug("Atom '{$atom->__toString()}' added to database");
+			
+			Hooks::callHooks('postDatabaseAddAtomToConceptInsert', get_defined_vars());
+		}else{
+			$this->logger->debug("Atom '{$atom->__toString()}' already exists in database");
+			
+			Hooks::callHooks('postDatabaseAddAtomToConceptSkip', get_defined_vars());
 		}
 	}
 	
@@ -348,7 +342,7 @@ class Database {
 	 * @return void
 	 */
 	public function atomSetConcept($atom, $conceptBName){
-	    Notifications::addLog("atomSetConcept({$atom->id}[{$atom->concept->name}], $conceptBName)", 'DATABASE');
+	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptBName})");
 	    
 	    $conceptB = Concept::getConcept($conceptBName);
 		try{
@@ -381,7 +375,7 @@ class Database {
 			
 			$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 			
-			Notifications::addLog("Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '[{$conceptB->name}]'", 'DATABASE');
+			$this->logger->debug("Atom '{$atom->__toString()}' added as member to concept '{$conceptB->__toString()}'");
 		
 		}catch(Exception $e){
 			throw $e;
@@ -396,7 +390,7 @@ class Database {
 	 * @return void
 	 */
 	public function atomClearConcept($atom){
-		Notifications::addLog("atomClearConcept({$atom->id}[{$atom->concept->name}])", 'DATABASE');
+		$this->logger->debug("atomClearConcept({$atom->__toString()})");
 		
 		try{
 		    // This function is under control of transaction check!
@@ -430,7 +424,7 @@ class Database {
 			
 			$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 			
-			Notifications::addLog("Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$atom->concept->name'", 'DATABASE');
+			$this->logger->debug("Atom '{$atom->__toString()}' removed as member from concept '{$atom->concept->__toString()}'");
 			
 		}catch(Exception $e){
 			throw $e;
@@ -522,49 +516,45 @@ class Database {
 	 * @return void
 	 */
 	function deleteAtom($atom){
-		Notifications::addLog("deleteAtom({$atom->id}[{$atom->concept->name}])", 'DATABASE');
-		try{
-		    // This function is under control of transaction check!
-		    if (!isset($this->transaction)) $this->startTransaction();
+		$this->logger->debug("deleteAtom({$atom->__toString()})");
+		
+	    // This function is under control of transaction check!
+	    if (!isset($this->transaction)) $this->startTransaction();
+	    
+		$concept = Concept::getConcept($atom->concept->name);
+		
+		// Delete atom from concept table
+		$conceptTable = $concept->getConceptTableInfo();
+		$query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atom->idEsc}' LIMIT 1";
+		$this->Exe($query);
+		
+		// Check if query resulted in an affected row
+		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records deleted in Database::deleteAtom({$atom->__toString()})", 500);
+		
+		$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
+		
+		// Delete atom from relation tables where atom is mentioned as src or tgt atom
+		foreach (Relation::getAllRelations() as $relation){
+		    if(($tableName = $relation->getMysqlTable()->name) == $conceptTable->name) continue; // Skip this relation, row in table is already deleted
 		    
-			$concept = Concept::getConcept($atom->concept->name);
-			
-			// Delete atom from concept table
-			$conceptTable = $concept->getConceptTableInfo();
-			$query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atom->idEsc}' LIMIT 1";
-			$this->Exe($query);
-			
-			// Check if query resulted in an affected row
-			if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records deleted in Database::deleteAtom({$atom->__toString()})", 500);
-			
-			$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
-			
-			// Delete atom from relation tables where atom is mentioned as src or tgt atom
-			foreach (Relation::getAllRelations() as $relation){
-			    if(($tableName = $relation->getMysqlTable()->name) == $conceptTable->name) continue; // Skip this relation, row in table is already deleted
-			    
-			    $cols = array();
-			    if($relation->srcConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->srcCol();
-			    if($relation->tgtConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->tgtCol();
-			    
-			    foreach($cols as $col){			        
-			        // If column may be set to null, update
-			        if($col->null) $query = "UPDATE `{$tableName}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atom->idEsc}'";
-			        // Else, we remove the entire row (cascades delete for TOT and SUR relations)
-			        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atom->idEsc}'";
-			        
-			        $this->Exe($query);
-			        $this->addAffectedRelations($relation);
-			    }
-			}
-			
-			Notifications::addLog("Atom '{$atom->__toString()}' (and all related links) deleted in database", 'DATABASE');
-			
-			Hooks::callHooks('postDatabaseDeleteAtom', get_defined_vars());
-		}catch(Exception $e){
-			// Catch exception and continue script
-			Notifications::addErrorException($e);
+		    $cols = array();
+		    if($relation->srcConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->srcCol();
+		    if($relation->tgtConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->tgtCol();
+		    
+		    foreach($cols as $col){			        
+		        // If column may be set to null, update
+		        if($col->null) $query = "UPDATE `{$tableName}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atom->idEsc}'";
+		        // Else, we remove the entire row (cascades delete for TOT and SUR relations)
+		        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atom->idEsc}'";
+		        
+		        $this->Exe($query);
+		        $this->addAffectedRelations($relation);
+		    }
 		}
+		
+		$this->logger->debug("Atom '{$atom->__toString()}' (and all related links) deleted in database");
+		
+		Hooks::callHooks('postDatabaseDeleteAtom', get_defined_vars());
 	}
 	
 /**************************************************************************************************
@@ -578,7 +568,7 @@ class Database {
 	 * @return void
 	 */
 	private function startTransaction(){
-		Notifications::addLog('========================= STARTING TRANSACTION =========================', 'DATABASE');
+		$this->logger->info("Starting database transaction");
 		$this->Exe("START TRANSACTION"); // start database transaction
 		$this->transaction = rand();
 		
@@ -592,7 +582,7 @@ class Database {
 	 * TODO: make private function, now also used by in Session class for session atom initiation
 	 */
 	public function commitTransaction(){
-		Notifications::addLog('------------------------- COMMIT -------------------------', 'DATABASE');
+		$this->logger->info("Commit database transaction");
 		
 		$this->Exe("COMMIT"); // commit database transaction
 		unset($this->transaction);
@@ -605,7 +595,7 @@ class Database {
 	 * @return void
 	 */
 	private function rollbackTransaction(){
-		Notifications::addLog('------------------------- ROLLBACK -------------------------', 'DATABASE');
+		$this->logger->info("Rollback database transaction");
 		
 		$this->Exe("ROLLBACK"); // rollback database transaction
 		unset($this->transaction);
@@ -623,10 +613,9 @@ class Database {
 	public function closeTransaction($succesMessage = 'Updated', $databaseCommit = null, &$atomStoreNewContent = null){		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
 		
-		Notifications::addLog('========================= CLOSING TRANSACTION =========================', 'DATABASE');
+		$this->logger->info("Closing database transaction");
 		
-		Notifications::addLog("Check all affected conjuncts", 'DATABASE');
-		
+		$this->logger->info("Checking all affected conjuncts");
 		
 		// Check invariant rules (we only have to check the affected invariant rules)
 		$affectedConjuncts = RuleEngine::getAffectedConjuncts($this->affectedConcepts, $this->affectedRelations, 'inv'); // Get affected invariant conjuncts
@@ -648,11 +637,12 @@ class Database {
 			Notifications::addSuccess($succesMessage);
 		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && $databaseCommit){
 			$this->commitTransaction();
-			Notifications::addError("Transaction committed with invariant violations");
+			\Ampersand\Logger::getUserLogger()->warning("Transaction committed with invariant violations");
 		}elseif($invariantRulesHold){
-			$this->rollbackTransaction(); // rollback database transaction
-			Notifications::addInfo($succesMessage);
+		    $this->logger->info("Invariant rules hold, but no database commit requested");
+		    $this->rollbackTransaction(); // rollback database transaction			
 		}else{
+		    $this->logger->info("Invariant rules do not hold");
 			$this->rollbackTransaction(); // rollback database transaction
 		}
 		
@@ -670,7 +660,6 @@ class Database {
 	
 	/**
 	 * Checks request type and returns boolean to determine database commit
-	 * @param string $requestType
 	 * @throws Exception when unknown request type specified (allowed: 'feedback' and 'promise')
 	 * @return boolean (true for 'promise', false for 'feedback')
 	 */
@@ -690,7 +679,7 @@ class Database {
 	private function addAffectedConcept($concept){
 		
 		if($this->trackAffectedConjuncts && !in_array($concept, $this->affectedConcepts)){
-			Notifications::addLog("Mark concept '{$concept->name}' as affected concept", 'DATABASE');
+			$this->logger->debug("Mark concept '{$concept->__toString()}' as affected concept");
 			$this->affectedConcepts[] = $concept; // add concept to affected concepts. Needed for conjunct evaluation.
 		}
 		
@@ -704,7 +693,7 @@ class Database {
 	private function addAffectedRelations($relation){
 	
 		if($this->trackAffectedConjuncts && !in_array($relation, $this->affectedRelations)){
-			Notifications::addLog("Mark relation '{$relation->__toString()}' as affected relation", 'DATABASE');
+			$this->logger->debug("Mark relation '{$relation->__toString()}' as affected relation");
 			$this->affectedRelations[] = $relation;
 		}
 	}
