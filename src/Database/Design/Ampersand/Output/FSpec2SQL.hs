@@ -24,8 +24,13 @@ dumpSQLqueries fSpec = intercalate "\n" $
      showConjunct :: Conjunct -> [String]
      showConjunct conj 
         = header (rc_id conj)
+        ++["Rules for this conjunc:"]
+        ++map showRule (rc_orgRules conj)
         ++(lines . prettySQLQuery fSpec 0 . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj)
         ++[""]
+        where
+          showRule r 
+            = "  - "++name r++": "++showADL r
      showDecl :: Declaration -> [String]
      showDecl decl 
         = header (showADL decl)

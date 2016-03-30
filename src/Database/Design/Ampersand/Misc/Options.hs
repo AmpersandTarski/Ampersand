@@ -322,8 +322,8 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           , (Option []        ["sqldump"]
                (NoArg (\opts -> return opts{sqlDump = True}))
-               "generate a dump of SQL statements (for debugging)."
-            , Hidden)
+               "generate a dump of SQL queries (for debugging)."
+            , Public)
           , (Option []        ["crowfoot"]
                (NoArg (\opts -> return opts{crowfoot = True}))
                "generate crowfoot notation in graphics."
