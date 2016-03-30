@@ -6,17 +6,17 @@
 
 function CreateCvrURLText()
 {	$url = Config::get('url', 'msg_validation');
-    Notifications::addLog('Using URL for filling in response: '.$url,'MESSAGING');
+    \Ampersand\Logger::getLogger('EXECENGINE')->debug("Using URL for filling in response: {$url}");
 	return($url);
 }
 
 function CreateCvrMsgTitle($Nonce)
-{ 	Notifications::addLog('Created a challenge message for CEPValidation using ['.$Nonce,'MESSAGING');
-	return('Validation code: '.$Nonce);
+{ 	\Ampersand\Logger::getLogger('EXECENGINE')->debug("Created a challenge message for CEPValidation using [{$Nonce}");
+	return("Validation code: {$Nonce}");
 }
 
 function CreateCvrMsgText($Nonce)
-{ 	return('Please enter the following number in the application: '.$Nonce);
+{ 	return("Please enter the following number in the application: {$Nonce}");
 }
 
 
