@@ -8,6 +8,7 @@ Config::set('defaultAutoHideSuccesses', 'notifications', true);
 Config::set('defaultShowErrors', 'notifications', true);
 Config::set('defaultShowInvariants', 'notifications', true);
 
+// TODO: move notifications functions to new logger class
 class Notifications {
 	
 	static $errors = array();
@@ -15,8 +16,12 @@ class Notifications {
 	static $violations = array();
 	static $infos = array();	
 	static $successes = array();
-	static $logs = array();
 	
+	/**
+	 * DEPRECATED FUNCTION
+	 * @param unknown $message
+	 * @param string $code
+	 */
 	public static function addError($message, $code = null){
 		$errorHash = hash('md5', $message);
 		
@@ -29,7 +34,7 @@ class Notifications {
 	}
 	
 	/**
-	 * 
+	 * DEPRECATED FUNCTION
 	 * @param Exception $e
 	 */
 	public static function addErrorException($e){
@@ -109,8 +114,13 @@ class Notifications {
 		
 	}
 	
+	/**
+	 * DEPRECATED FUNCTION
+	 * @param string $message
+	 * @param string $type
+	 */
 	public static function addLog($message, $type = 'LOG'){
-		self::$logs[] = array('timestamp' => microtime(true), 'type' => $type, 'message' => $message);
+		
 	}
 	
 	public static function getErrors(){
@@ -128,9 +138,6 @@ class Notifications {
 	public static function getSuccesses(){
 		return array_values(self::$successes);
 	}
-	public static function getLogs(){
-		return self::$logs;
-	}
 	
 	public static function getAll(){
 		$all['errors'] = self::getErrors();
@@ -138,7 +145,6 @@ class Notifications {
 		$all['violations'] = self::getViolations();
 		$all['infos'] = self::getInfos();
 		$all['successes'] = self::getSuccesses();
-		$all['logs'] = Config::get('productionEnv') ? array(array('type' => 'LOG', 'message' => 'Log is disabled (productionEnv = true)')) : self::getLogs();
 		
 		return $all;
 	}

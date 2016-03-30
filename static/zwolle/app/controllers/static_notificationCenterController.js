@@ -4,8 +4,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$scope.$sessionStorage = $sessionStorage;
 	
 	// Initialize notifications container
-	$rootScope.notifications =  { 'logs' 		: []
-								, 'violations' 	: []
+	$rootScope.notifications =  { 'violations' 	: []
 								, 'invariants' 	: []
 								, 'infos' 		: []
 								, 'successes' 	: []
@@ -17,7 +16,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		if(notifications === undefined) notifications = {};
 		
 		// Overwrite
-		$rootScope.notifications.logs = notifications.logs;
 		$rootScope.notifications.violations = notifications.violations;
 		$rootScope.notifications.invariants = notifications.invariants;
 		$rootScope.notifications.infos = notifications.infos;
@@ -31,10 +29,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		    	$rootScope.notifications.successes = [];
 		    }, 3000);
 		}
-		
-		angular.forEach(notifications.logs, function(log) {
-			if($scope.$storage.logWindowPrefs.showLogTypes[log.type] == undefined) $scope.$storage.logWindowPrefs.showLogTypes[log.type] = true;
-		});
 	}
 	
 	$rootScope.addError = function(message, code, persistent, details){
