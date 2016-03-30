@@ -19,6 +19,31 @@ class Notifications {
 	static $successes = array();
 	
 	/**
+	 * Add notifications for user (e.g. catched exceptions)
+	 * @param int $level
+	 * @param string $message
+	 */
+	public static function addNotification($level, $message){
+	    switch($level){
+	        case 200 : // Info
+	            self::addInfo($message);
+	            break;
+	        case 250 : // Notice
+	        case 300 : // Warning
+	            self::addWarning($message);
+	            break;
+	        case 400 : // Error
+	        case 500 : // Critical
+	        case 550 : // Alert
+	        case 600 : // Emergency
+	            self::addError($message);
+	            break;
+	        default :
+	            throw new Exception("Unsupported notification level: {$level}", 500);
+	    }
+	}
+	
+	/**
 	 * DEPRECATED FUNCTION
 	 * @param unknown $message
 	 * @param string $code

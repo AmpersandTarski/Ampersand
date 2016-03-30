@@ -75,16 +75,8 @@ class Logger {
 class NotificationHandler extends \Monolog\Handler\AbstractProcessingHandler
 {
     protected function write(array $record){
-        \Notifications::addError("{$record['formatted']} | level: {$record['level']}");
-        /*switch($record['channel']){
-            case "" :
-        }*/
-        //'channel' => $record['channel'],
-        //'level' => $record['level'],
-        //'message' => $record['formatted'],
-        //'time' => $record['datetime']->format('U')
+        \Notifications::addNotification($record['level'], $record['formatted']);
     }
-
 }
 
 ?>
