@@ -92,30 +92,10 @@ class Notifications {
 	/**
 	 * Add info notification for user 
 	 * @param string $message
-	 * @param string $id
-	 * @param string $aggregatedMessage
-	 * @return string
-	 * TODO: make private function
+	 * @return void
 	 */
-	public static function addInfo($message, $id = null, $aggregatedMessage = null){
-	
-	    if(isset($id)){ // ID can be integer, but also string
-	        self::$infos[$id]['rows'][] = $message;
-	        self::$infos[$id]['count'] = count(self::$infos[$id]['rows']);
-	        if(!is_null($aggregatedMessage)) self::$infos[$id]['message'] = $aggregatedMessage;
-	        	
-	        self::addLog(self::$infos[$id]['message'] .' - ' . $message, 'INFO');
-	        	
-	        return $id;
-	    }else{
-	        self::$infos[]['message'] = $message;
-	        	
-	        self::addLog($message, 'INFO');
-	        	
-	        end(self::$infos); // pointer to end of array (i.e. new  inserted element)
-	        return key(self::$infos); // return key of current element
-	    }
-	
+	private static function addInfo($message){
+	    self::$infos[] = array('message' => $message);
 	}
 	
 	/**
