@@ -30,7 +30,6 @@ class Mutation {
 	
 	private static function saveMutation($operation, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source){
 		if(array_key_exists($fullRelationSignature, Config::get('mutationConcepts', 'MutationExtension'))){
-			Notifications::addLog("Save mutation on '$fullRelationSignature' (editUpdate)", 'Mutation');
 			
 			$database = Database::singleton();
 			$database->setTrackAffectedConjuncts(false); // Don't track affected conjuncts for Mutation concept and relations;
@@ -61,7 +60,5 @@ class Mutation {
 		}	
 	}
 }
-
-Notifications::addLog('Mutation extensions included', 'Mutation');
 
 ?>
