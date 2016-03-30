@@ -13,6 +13,7 @@ class Notifications {
 	
 	static $errors = array();
 	static $invariants = array();
+	static $warnings = array();
 	static $violations = array();
 	static $infos = array();	
 	static $successes = array();
@@ -45,6 +46,18 @@ class Notifications {
 	    self::$errors[$errorHash]['count']++;
 	    if(Config::get('debugMode')) self::$errors[$errorHash]['details'] = nl2br($e->getTraceAsString());
 	    self::addLog($e->getMessage(), 'ERROR');
+	}
+	
+	/**
+	 * Add warning message for user
+	 * @param string $message
+	 * @param int $code
+	 */
+	private static function addWarning($message){
+	    $hash = hash('md5', $message);
+	    
+	    self::$warnings[$hash]['message'] = $message;
+	    self::$warnings[$hash]['count']++;
 	}
 	
 	/**
@@ -126,6 +139,9 @@ class Notifications {
 	public static function getErrors(){
 		return array_values(self::$errors);
 	}
+	public static function getWarnings(){
+	    return array_values(self::$warnings);
+	}
 	public static function getInvariants(){
 		return array_values(self::$invariants);
 	}
@@ -142,6 +158,7 @@ class Notifications {
 	public static function getAll(){
 		$all['errors'] = self::getErrors();
 		$all['invariants'] = self::getInvariants();
+		$all['warnings'] = self::getWarnings();
 		$all['violations'] = self::getViolations();
 		$all['infos'] = self::getInfos();
 		$all['successes'] = self::getSuccesses();
