@@ -453,7 +453,7 @@ class InterfaceObject {
 	            $relativePath = Config::get('uploadPath') . $new_name;
 	            $result = move_uploaded_file($tmp_name, $absolutePath);
 	             
-	            if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
+	            if($result) \Ampersand\Logger::getUserLogger()->notice("File '{$new_name}' uploaded");
 	            else throw new Exception ("Error in file upload", 500);
 	
 	            // Populate filePath and originalFileName relations in database

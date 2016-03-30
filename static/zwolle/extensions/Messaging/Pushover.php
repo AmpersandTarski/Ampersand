@@ -96,7 +96,7 @@ class PushoverNotifications {
 		if(!$notification->send()) {
 			Notifications::addError("Pushover - Error in sending a notification to '$userKey'");
 		}else{
-			Notifications::addSuccess('Pushover message sent.');
+			\Ampersand\Logger::getUserLogger()->notice("Pushover message sent.");
 		}
 		
 	}

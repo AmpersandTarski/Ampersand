@@ -122,8 +122,8 @@ class SMSNotifications {
 		// Send the message to the destination(s)
 		$sms->sendSms($message);
 	
-		if ($sms->getResponseCode() =="01") 
-	    { Notifications::addSuccess('SMS message sent.');
+		if ($sms->getResponseCode() =="01") {
+		    \Ampersand\Logger::getUserLogger()->notice("SMS message sent.");
 	    } else
 	    { Notifications::addError('SMS error: ' . $sms->getResponseMessage());
 	    }

@@ -121,7 +121,7 @@ class EmailNotifications {
 		if(!$mail->Send()){
 			Notifications::addError('Mailer Error: ' . $mail->ErrorInfo);
 		}else{
-			Notifications::addSuccess('Email message sent.');
+			\Ampersand\Logger::getUserLogger()->notice("Email message sent.");
 		}
 
 	}

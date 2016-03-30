@@ -85,9 +85,8 @@ class Notifications {
 	 * Add success notification for user
 	 * @param string $message
 	 * @return void
-	 * TODO: make private function
 	 */
-	public static function addSuccess($message){
+	private static function addSuccess($message){
 	    self::$successes[] = array('message' => $message);
 	}
 	

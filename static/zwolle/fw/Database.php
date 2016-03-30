@@ -625,7 +625,7 @@ class Database {
 		
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
-			Notifications::addSuccess($succesMessage);
+			\Ampersand\Logger::getUserLogger()->notice($succesMessage);
 		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && $databaseCommit){
 			$this->commitTransaction();
 			\Ampersand\Logger::getUserLogger()->warning("Transaction committed with invariant violations");
