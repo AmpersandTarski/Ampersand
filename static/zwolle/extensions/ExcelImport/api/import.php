@@ -24,7 +24,7 @@ $app->post('/excelimport/import', function () use ($app){
 		$result = $parser->ParseFile();
 		unlink($_FILES['file']['tmp_name']);
 	}else{
-	    Notifications::addError('No file uploaded');
+	    \Ampersand\Logger::getUserLogger()->error("No file uploaded");
 	}
 	
 	$result = array('notifications' => $result, 'files' => $_FILES);

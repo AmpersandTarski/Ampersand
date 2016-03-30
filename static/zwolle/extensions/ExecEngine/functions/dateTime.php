@@ -43,7 +43,7 @@ VIOLATION (TXT "{EX} DateDifferencePlusOne" -- Result = 1 + MAX(0, (RentalEndDat
 function DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate){
 	Notifications::addLog("DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)", 'ExecEngine');
 	$datediff = strtotime($latestDate) - strtotime($earliestDate);
-	if ($datediff < 0) Notifications::addError("DateDifferencePlusOne: first arg (earliestDate) must be smaller than second arg (latestDate).");
+	if ($datediff < 0) \Ampersand\Logger::getUserLogger()->error("DateDifferencePlusOne: first arg (earliestDate) must be smaller than second arg (latestDate).");
 	
 	$result = 1 + max(0, floor($datediff/(60*60*24)));
 	InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
@@ -62,7 +62,7 @@ VIOLATION (TXT "{EX} DateDifference"
 function DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate){
 	Notifications::addLog("DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)", 'ExecEngine');
 	$datediff = strtotime($lastDate) - strtotime($firstDate);
-	if ($datediff < 0) Notifications::addError("DateDifference: first arg (earliestDate) must be smaller than second arg (latestDate).");
+	if ($datediff < 0) \Ampersand\Logger::getUserLogger()->error("DateDifference: first arg (earliestDate) must be smaller than second arg (latestDate).");
 	
 	$result = max(0, floor($datediff/(60*60*24)));
 	InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
@@ -102,8 +102,8 @@ function DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDat
 // VIOLATION (TXT "{EX} datimeEQL;DateTime;" SRC I, TXT ";", TGT I)
 function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom){
 	Notifications::addLog("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)", 'ExecEngine');
-	if (($dt1 = strtotime($srcAtom)) === false) Notifications::addError("datimeEQL: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-	if (($dt2 = strtotime($tgtAtom)) === false) Notifications::addError("datimeEQL: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+	if (($dt1 = strtotime($srcAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeEQL: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+	if (($dt2 = strtotime($tgtAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeEQL: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	
 	if ($dt1 == $dt2){
 		InsPair($eqlRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
@@ -120,8 +120,8 @@ function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom){
 // VIOLATION (TXT "{EX} datimeNEQ;DateTime;" SRC I, TXT ";", TGT I)
 function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom){ 	
 	Notifications::addLog("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)", 'ExecEngine');
-	if (($dt1 = strtotime($srcAtom)) === false) Notifications::addError("datimeNEQ: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-	if (($dt2 = strtotime($tgtAtom)) === false) Notifications::addError("datimeNEQ: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+	if (($dt1 = strtotime($srcAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeNEQ: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+	if (($dt2 = strtotime($tgtAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeNEQ: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	
 	if ($dt1 != $dt2){
 		InsPair($neqRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
@@ -135,8 +135,8 @@ function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom){
 // VIOLATION (TXT "{EX} datimeLT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom){
 	Notifications::addLog("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)", 'ExecEngine');
-	if (($dt1 = strtotime($srcAtom)) === false) Notifications::addError("datimeLT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-	if (($dt2 = strtotime($tgtAtom)) === false) Notifications::addError("datimeLT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+	if (($dt1 = strtotime($srcAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeLT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+	if (($dt2 = strtotime($tgtAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeLT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	if ($dt1 == $dt2) return;
 	
 	if ($dt1 < $dt2){
@@ -152,8 +152,8 @@ function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom){
 // VIOLATION (TXT "{EX} datimeGT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom){
 	Notifications::addLog("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)", 'ExecEngine');
-	if (($dt1 = strtotime($srcAtom)) === false) Notifications::addError("datimeGT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-	if (($dt2 = strtotime($tgtAtom)) === false) Notifications::addError("datimeGT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+	if (($dt1 = strtotime($srcAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeGT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+	if (($dt2 = strtotime($tgtAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeGT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	if ($dt1 == $dt2) return;
 	
 	if ($dt1 > $dt2){

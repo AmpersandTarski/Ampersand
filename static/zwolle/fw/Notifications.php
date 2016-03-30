@@ -56,9 +56,8 @@ class Notifications {
 	 * Add error notification for user
 	 * @param string $message
 	 * @return void
-	 * TODO: make private function
 	 */
-	public static function addError($message){
+	private static function addError($message){
 		$errorHash = hash('md5', $message);
 		
 		self::$errors[$errorHash]['message'] = $message;

@@ -92,7 +92,7 @@ class PushalotNotifications {
 			'Source'=>'Ampersand prototype'
 		));
 	        if(!$success) {
-			Notifications::addError("Pushalot error '$notification->getError()' sending notification to '$userKey'");
+			\Ampersand\Logger::getUserLogger()->error("Pushalot error '$notification->getError()' sending notification to '$userKey'");
 		}else{
 			\Ampersand\Logger::getUserLogger()->notice("Pushalot message sent.");
 		}

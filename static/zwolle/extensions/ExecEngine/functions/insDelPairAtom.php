@@ -60,7 +60,7 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		
 		return "Tuple ('{$srcAtom}', '{$tgtAtom}') inserted into '{$relation->__toString()}'";
 	}catch(Exception $e){
-		Notifications::addError('InsPair: ' . $e->getMessage());
+		\Ampersand\Logger::getUserLogger()->error('InsPair: ' . $e->getMessage());
 	}
 }
 
@@ -94,7 +94,7 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		
 		return "Tuple ('{$srcAtom}', '{$tgtAtom}') deleted from '{$relation->__toString()}'";
 	}catch(Exception $e){
-		Notifications::addError('DelPair: ' . $e->getMessage());
+		\Ampersand\Logger::getUserLogger()->error('DelPair: ' . $e->getMessage());
 	}
 }
 
@@ -191,7 +191,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		return "New structure '". $AtomC . "' created";
 	
 	}catch(Exception $e){
-		Notifications::addError('NewStruct: ' . $e->getMessage());
+		\Ampersand\Logger::getUserLogger()->error('NewStruct: ' . $e->getMessage());
 	}
 }
 
@@ -208,7 +208,7 @@ function InsAtom($conceptName){
 		return "Atom '{$atom->__toString()}' created and added to database";
 		
 	}catch(Exception $e){
-		Notifications::addError('InsAtom: ' . $e->getMessage());
+		\Ampersand\Logger::getUserLogger()->error('InsAtom: ' . $e->getMessage());
 	}
 	
 }
@@ -230,7 +230,7 @@ function DelAtom($concept, $atomId){
 		return "Atom '{$atom->id}[{$atom->concept->name}]' deleted";
 	
 	}catch(Exception $e){
-		Notifications::addError('DelAtom: ' . $e->getMessage());
+		\Ampersand\Logger::getUserLogger()->error('DelAtom: ' . $e->getMessage());
 	}
 	
 }
@@ -252,7 +252,7 @@ function SetConcept($conceptA, $conceptB, $atom){
 		return "Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '$conceptB'";
 	
 	}catch(Exception $e){
-		Notifications::addError('SetConcept: ' . $e->getMessage());
+		\Ampersand\Logger::getUserLogger()->error('SetConcept: ' . $e->getMessage());
 	}
 }
 
@@ -273,7 +273,7 @@ function ClearConcept($concept, $atom){
 		return "Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$concept'";
 
 	}catch(Exception $e){
-		Notifications::addError('ClearConcept: ' . $e->getMessage());
+		\Ampersand\Logger::getUserLogger()->error('ClearConcept: ' . $e->getMessage());
 	}
 }
 ?>

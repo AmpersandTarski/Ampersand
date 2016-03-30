@@ -125,7 +125,7 @@ class SMSNotifications {
 		if ($sms->getResponseCode() =="01") {
 		    \Ampersand\Logger::getUserLogger()->notice("SMS message sent.");
 	    } else
-	    { Notifications::addError('SMS error: ' . $sms->getResponseMessage());
+	    { \Ampersand\Logger::getUserLogger()->error('SMS error: ' . $sms->getResponseMessage());
 	    }
 		Notifications::addLog("SMS Response: " . $sms->getResponseMessage(), 'MESSAGING');
 		Notifications::addLog("SMS Balance: " . $sms->getCreditBalance(), 'MESSAGING');

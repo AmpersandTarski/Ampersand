@@ -119,7 +119,7 @@ class EmailNotifications {
 		$mail->WordWrap = 50;			// Set word wrap to 50 characters
 		
 		if(!$mail->Send()){
-			Notifications::addError('Mailer Error: ' . $mail->ErrorInfo);
+			\Ampersand\Logger::getUserLogger()->error('Mailer Error: ' . $mail->ErrorInfo);
 		}else{
 			\Ampersand\Logger::getUserLogger()->notice("Email message sent.");
 		}

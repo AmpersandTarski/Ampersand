@@ -56,7 +56,7 @@ class ExecEngine {
 
 			// Prevent infinite loop in ExecEngine reruns 				
 			if(self::$runCount > $maxRunCount){
-				Notifications::addError('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', (array)$rulesThatHaveViolations). ')');
+				\Ampersand\Logger::getUserLogger()->error('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', (array)$rulesThatHaveViolations). ')');
 				break;
 			}
 			
