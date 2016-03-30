@@ -23,14 +23,13 @@ class EmailNotifications {
 	private static $notifications = array();
 	
 	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Email[execEnginePushNotificationOnCommit'
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[execEnginePushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 
 		if($userKeys == '_NULL') $userKeys = array(null);
 		else $userKeys = explode('_AND', $userKeys);
@@ -39,14 +38,13 @@ class EmailNotifications {
 	}
 	
 	public static function pushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Email[pushNotificationOnCommit'
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[pushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		
 		foreach($userKeys as $userKey){
 			if(!is_null($userKey)) self::$notifications[] = array('userKey' => $userKey, 'message' => $message, 'title' => $title, 'url' => $url, 'urltitle' => $urltitle);
@@ -61,30 +59,29 @@ class EmailNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		Notifications::addLog('Email[pushNotificationCache]','MESSAGING');
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[pushNotificationCache]');
 		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url'], $notification['urltitle']);
 	}
 
 	public static function clearNotificationCache(){
-		Notifications::addLog('Email[clearNotificationCache]','MESSAGING');
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[clearNotificationCache]');
 		self::$notifications = array();
 	}
 
 	private static function pushNotification($emailAddr, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Email[pushNotification'
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[pushNotification'
 		                     .']; $emailAddr=['.$emailAddr
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		// adapted from http://phpmailer.worxware.com/?pg=examplebgmail
 		$config = Config::get('sendEmailConfig', 'msg_email');
 		$from = $config['from'];
 		$username = $config['username'];
 		$password = $config['password'];
-		Notifications::addLog('Email.php - Username = '.$username,'MESSAGING');
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email.php - Username = '.$username);
 
 		$mail = new PHPMailer;
 	
@@ -112,7 +109,7 @@ class EmailNotifications {
            } else {
               $message = $message.'<a'.$urltitle.'</a>';
            }
-		Notifications::addLog('Email message refactored to: ['.$message.']','MESSAGING');
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email message refactored to: ['.$message.']');
         }
 		$mail->Body    = $message;
 		

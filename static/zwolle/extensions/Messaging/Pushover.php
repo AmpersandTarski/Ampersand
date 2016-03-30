@@ -23,14 +23,13 @@ class PushoverNotifications {
 	private static $notifications = array();
 	
 	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushover[execEnginePushNotificationOnCommit'
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushover[execEnginePushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 
 		if($userKeys == '_NULL') $userKeys = array(null);
 		else $userKeys = explode('_AND', $userKeys);
@@ -39,14 +38,13 @@ class PushoverNotifications {
 	}
 	
 	public static function pushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushover[pushNotificationOnCommit'
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushover[pushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		
 		foreach($userKeys as $userKey){
 			if(!is_null($userKey)) self::$notifications[] = array('userKey' => $userKey, 'message' => $message, 'title' => $title, 'url' => $url, 'urltitle' => $urltitle);
@@ -61,24 +59,23 @@ class PushoverNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		Notifications::addLog('Pushover[pushNotificationCache]','MESSAGING');
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushover[pushNotificationCache]');
 		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url'], $notification['urltitle']);
 	}
 
 	public static function clearNotificationCache(){
-		Notifications::addLog('Pushover[clearNotificationCache]','MESSAGING');
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushover[clearNotificationCache]');
 		self::$notifications = array();
 	}
 
 	private static function pushNotification($userKey, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushover[pushNotification'
+		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushover[pushNotification'
 							 .']; $userKey=['.$userKey
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		$notification = new Pushover();
 		
 		$token = Config::get('applicationToken', 'msg_pushover');
