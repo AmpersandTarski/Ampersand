@@ -9,9 +9,17 @@ date_default_timezone_set('Europe/Amsterdam');
     error_reporting(E_ALL & ~E_NOTICE);
     ini_set("display_errors", false);
     // Config::set('debugMode', 'global', false); // default = true
-    $genHandlers[] = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
-    $genHandlers[] = new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG);
-    Config::set('genericHandlers', 'logger', $genHandlers);
+    
+    // Log file handler
+    $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
+    $fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
+    \Ampersand\Logger::registerGenericHandler($fileHandler);
+    
+    // Chrome debugger
+    \Ampersand\Logger::registerGenericHandler(new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG));
+    
+    // User log handler
+    \Ampersand\Logger::registerHandlerForChannel('USERLOG', new \Ampersand\NotificationHandler(\Monolog\Logger::INFO));
 
 
 /************ Server URL config ********************/
