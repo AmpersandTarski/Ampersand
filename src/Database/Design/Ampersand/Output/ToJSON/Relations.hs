@@ -31,7 +31,6 @@ data RelTableInfo = RelTableInfo -- Contains info about where the relation is im
 data TableCol = TableCol
   { tcJSONname     :: String
   , tcJSONnull     :: Bool
-  , tcJSONdbNull   :: Bool
   , tcJSONunique   :: Bool
   } deriving (Generic, Show)
 instance ToJSON Relations where
@@ -74,8 +73,7 @@ instance JSON Declaration RelTableInfo where
 instance JSON SqlAttribute TableCol where
  fromAmpersand _ att = TableCol
   { tcJSONname   = attName att
-  , tcJSONnull   = attNull att
-  , tcJSONdbNull = attDBNull att
+  , tcJSONnull   = attDBNull att
   , tcJSONunique = attUniq att
   }
 
