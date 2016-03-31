@@ -97,15 +97,6 @@ class Notifications {
 	private static function addInfo($message){
 	    self::$infos[] = array('message' => $message);
 	}
-	
-	/**
-	 * DEPRECATED FUNCTION
-	 * @param string $message
-	 * @param string $type
-	 */
-	public static function addLog($message, $type = 'LOG'){
-	
-	}
 
 /**************************************************************************************************
  * 
