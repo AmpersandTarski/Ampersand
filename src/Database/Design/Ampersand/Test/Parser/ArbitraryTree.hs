@@ -274,7 +274,7 @@ instance Arbitrary PAtomValue where
               (_:cs)  -> stringConstraints cs
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
-                      <*> listOf relationRef <*> args <*> listOf arbitrary
+                      <*> args <*> listOf arbitrary
                       <*> sized objTermPrim <*> arbitrary <*> safeStr
                    where args = listOf $ listOf1 safeStr
 
