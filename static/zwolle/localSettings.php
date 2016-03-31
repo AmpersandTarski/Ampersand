@@ -15,8 +15,10 @@ date_default_timezone_set('Europe/Amsterdam');
     $fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
     \Ampersand\Logger::registerGenericHandler($fileHandler);
     
-    // Chrome debugger
-    \Ampersand\Logger::registerGenericHandler(new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG));
+    // Browsers debuggers
+    //$browserHandler = new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Google Chrome
+    //$browserHandler = new \Monolog\Handler\FirePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Firebug in Mozilla Firefox
+    //\Ampersand\Logger::registerGenericHandler($browserHandler);
     
     // User log handler
     \Ampersand\Logger::registerHandlerForChannel('USERLOG', new \Ampersand\NotificationHandler(\Monolog\Logger::INFO));
