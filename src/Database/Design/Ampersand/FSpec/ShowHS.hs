@@ -353,7 +353,6 @@ instance ShowHS FSpec where
           ++ indent++"    "++showAtomsOfConcept x |x<-sortBy (comparing showHSName) (allConcepts fSpec)]++"\n"
     )
         where indentA = indent ++"                       "
-              indentB = indent ++"             "
               showAtomsOfConcept c =
                            "-- atoms: [ "++ intercalate indentC strs++"]"
                   where
