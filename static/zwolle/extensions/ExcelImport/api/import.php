@@ -20,7 +20,7 @@ $app->post('/excelimport/import', function () use ($app){
 	
 	if (is_uploaded_file($_FILES['file']['tmp_name'])){
 		// Parse:
-		$parser = new ImportExcel($_FILES['file']['tmp_name']);
+		$parser = new ExcelImport($_FILES['file']['tmp_name']);
 		$result = $parser->ParseFile();
 		unlink($_FILES['file']['tmp_name']);
 	}else{
