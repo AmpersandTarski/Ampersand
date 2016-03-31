@@ -187,6 +187,9 @@ class Database {
 			$this->Exe($query);
 		}
 		
+		// Ininiate new session
+		Session::singleton();
+		
 		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
 		
 		Notifications::addLog('========= END OF INSTALLER ==========', 'INSTALLER');
