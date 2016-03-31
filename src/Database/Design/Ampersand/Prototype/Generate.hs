@@ -3,11 +3,11 @@ module Database.Design.Ampersand.Prototype.Generate
   )
 where
 
-import Database.Design.Ampersand
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.List
-import Database.Design.Ampersand.Basics (fatal)
+import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 
         
@@ -21,7 +21,7 @@ generateDBstructQueries fSpec = theSQLstatements
        ]
     createTableStatements :: [String]
     createTableStatements = 
-      map concat
+      map unlines
       [ [ "CREATE TABLE "++ show "__SessionTimeout__"
         , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
         , "   , "++show "lastAccess"++" BIGINT NOT NULL"
@@ -48,7 +48,7 @@ generateDBstructQueries fSpec = theSQLstatements
         tableSpec2Queries :: TableSpecNew -> [String]
         tableSpec2Queries ts = 
          -- [ "DROP TABLE "++show (tsName ts)] ++
-          [ concat $  
+          [ unlines $  
                    ( tsCmnt ts ++ 
                      ["CREATE TABLE "++show (tsName ts)] 
                      ++ (map (uncurry (++)) 
@@ -97,11 +97,9 @@ plug2TableSpec plug
      , tsflds = plugAttributes plug
      , tsKey  = case (plug, (head.plugAttributes) plug) of
                  (BinSQL{}, _)   -> []
-                 (_,    primFld) ->
+                 (TblSQL{}, primFld) ->
                       case attUse primFld of
-                         TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
-                                                ++ "KEY ("++(show . attName) primFld++")"
-                                        ]
+                         TableKey isPrim _ -> if isPrim then ["PRIMARY " ++ "KEY ("++(show . attName) primFld++")"] else []
                          ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                          PlainAttr     -> []
      , tsEngn = "InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
@@ -123,7 +121,7 @@ generateAllDefPopQueries fSpec = theSQLstatements
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
-     = [concat $ 
+     = [unlines $ 
             [ "INSERT INTO "++show (getTableName signalTableSpec)
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
@@ -143,7 +141,7 @@ generateAllDefPopQueries fSpec = theSQLstatements
           = case tableContents fSpec plug of
              []  -> []
              tblRecords 
-                 -> [concat $ 
+                 -> [unlines $ 
                        [ "INSERT INTO "++show (name plug)
                        , "   ("++intercalate ", " (map (show . attName) (plugAttributes plug))++") "
                        ] ++ lines

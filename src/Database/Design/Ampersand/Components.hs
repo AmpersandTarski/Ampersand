@@ -27,6 +27,7 @@ generateAmpersandOutput :: FSpec -> IO ()
 generateAmpersandOutput fSpec =
  do { when (genUML (getOpts fSpec))      $ doGenUML      fSpec
     ; when (haskell (getOpts fSpec))     $ doGenHaskell  fSpec
+    ; when (sqlDump (getOpts fSpec))     $ doGenSQLdump  fSpec
     ; when (export2adl (getOpts fSpec))  $ doGenADL      fSpec
     ; when (genFSpec (getOpts fSpec))    $ doGenDocument fSpec
     ; when (genFPAExcel (getOpts fSpec)) $ doGenFPAExcel fSpec
@@ -62,6 +63,13 @@ doGenHaskell fSpec =
     ; verboseLn (getOpts fSpec) $ "Haskell written into " ++ outputFile ++ "."
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".hs"
+doGenSQLdump :: FSpec -> IO()
+doGenSQLdump fSpec =
+ do { verboseLn (getOpts fSpec) $ "Generating SQL queries dumpfile for "++name fSpec
+    ; writeFile outputFile (dumpSQLqueries fSpec)
+    ; verboseLn (getOpts fSpec) $ "SQL queries dumpfile written into " ++ outputFile ++ "."
+    }
+ where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".sqlDump"
 
 doGenUML :: FSpec -> IO()
 doGenUML fSpec =

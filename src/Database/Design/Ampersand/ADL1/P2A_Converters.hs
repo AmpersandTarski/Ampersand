@@ -51,10 +51,6 @@ aConcToType :: A_Concept -> Type
 aConcToType ONE = BuiltIn TypeOfOne
 aConcToType p = UserConcept (name p)
 
-getAsType :: Origin -> Type -> Guarded (Maybe TType)
-getAsType o v = case typeOrConcept v of
-                  Right x -> return x
-                  Left  x -> unexpectedType o x
 getAsConcept :: Origin -> Type -> Guarded A_Concept
 getAsConcept o v = case typeOrConcept v of
                      Right x -> unexpectedType o x
@@ -272,29 +268,80 @@ pCtx2aCtx opts
       uniqueNames (ctxifcs   actx)   --                          and interfaces.
       return actx
   where
-    concGroups = getGroups genLatticeIncomplete :: [[Type]]
+    concGroups = (\x -> trace (show x) x) $
+                 getGroups genLatticeIncomplete :: [[Type]]
     deflangCtxt = lang -- take the default language from the top-level context
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
-
+    allReprs = p_representations++concatMap pt_Reprs p_patterns
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do mp <- Map.fromList . concat <$> traverse findTypes (concat (onlyUserConcepts (getGroups genLattice)))
-          let findR x = Map.findWithDefault Object x mp -- default representation is Object (sometimes called `ugly identifiers')
-          _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
-          multitypologies <- traverse mkTypology $ f [] (map concs gns)
+     = do let connectedConcepts = connect [] (map concs gns)
+          typeMap <- mkTypeMap connectedConcepts allReprs
+          let findR :: A_Concept -> TType
+              findR cpt = case lookup cpt typeMap of
+                            Nothing -> Object -- default representation is Object (sometimes called `ugly identifiers')
+                            Just t  -> t
+          multitypologies <- traverse mkTypology $ connectedConcepts
           return (CI { ctxiGens = gns
                      , representationOf = findR
                      , multiKernels = multitypologies
                      })
         where 
           gns = map pGen2aGen allGens
-          f :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
-          f typols gs = 
+          -- | function that creates a lookup table of concepts with a representation. 
+          --   it is checked that concepts in the same conceptgroup share a common TType. 
+          mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept , TType)]
+          mkTypeMap groups reprs 
+            = f <$> traverse typeOfGroup groups
+                <*> traverse typeOfSingle (conceptsOfReprs >- conceptsOfGroups)
+            where 
+              f :: [[(A_Concept,TType)]] -> [Maybe (A_Concept,TType,[Origin])] -> [(A_Concept , TType)]
+              f typesOfGroups typesOfOthers
+                  = concat typesOfGroups ++ map stripOrigin (catMaybes typesOfOthers)
+              stripOrigin ::  (A_Concept,TType,[Origin]) -> (A_Concept,TType)
+              stripOrigin (cpt,t,_) = (cpt,t)
+              reprTrios :: [(A_Concept,TType,Origin)]
+              reprTrios = nub $ concatMap toReprs reprs
+                where toReprs :: Representation -> [(A_Concept,TType,Origin)]
+                      toReprs r = [ (castConcept str,reprdom r,reprpos r) | str <- reprcpts r]
+              conceptsOfGroups :: [A_Concept]
+              conceptsOfGroups = nub (concat groups)
+              conceptsOfReprs :: [A_Concept]
+              conceptsOfReprs = nub $ map fstOf3 reprTrios
+                 where fstOf3 (cpt,_,_)=cpt
+              typeOfSingle :: A_Concept -> Guarded (Maybe (A_Concept,TType,[Origin]))
+              typeOfSingle cpt 
+                = case filter ofCpt reprTrios of
+                   [] -> pure Nothing
+                   rs -> case nub (map getTType rs) of
+                           []  -> fatal 325 "Impossible empty list."
+                           [t] -> pure ( Just (cpt,t, map getOrigin rs))
+                           _   -> mkMultipleRepresentTypesError cpt lst
+                                     where lst = [(t,o) | (_,t,o) <- rs]
+                where ofCpt :: (A_Concept,TType,Origin) -> Bool
+                      ofCpt (cpt',_,_) =  cpt == cpt'
+                      getOrigin :: (A_Concept,TType,Origin) -> Origin
+                      getOrigin (_,_,o) = o
+              getTType :: (a,TType,b) -> TType
+              getTType (_,t,_) = t
+              typeOfGroup :: [A_Concept] -> Guarded [(A_Concept,TType)]
+              typeOfGroup grp 
+                = do singleTypes <- traverse typeOfSingle grp
+                     let typeList = catMaybes singleTypes
+                     case nub (map getTType typeList) of
+                       []  -> pure $ []
+                       [t] -> pure $ [(cpt,t) | cpt <- grp]
+                       _  -> mkMultipleTypesInTypologyError typeList
+
+
+
+          connect :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
+          connect typols gs = 
              case gs of
                []   -> typols
-               x:xs -> f (t:typols) rest
+               x:xs -> connect (t:typols) rest
                  where 
                     (t,rest) = g x xs 
                     g a as = case partition (hasConceptsOf a) as of
@@ -317,19 +364,18 @@ pCtx2aCtx opts
                isSpecific cpt = cpt `elem` map genspc gns
                isInvolved :: A_Gen -> Bool
                isInvolved gn = not . null $ concs gn `isc` cs
-    compareTypes f p_gen
-     = sequence_ [ if (f genC == rightType) then pure () else nonMatchingRepresentTypes p_gen (f genC) rightType
-                 | genC <- gen_concs p_gen ]
-     where rightType = f (gen_spc p_gen)
+
     
-    findTypes :: A_Concept -> Guarded [(A_Concept, TType)]
-    findTypes h
+{-
+    findType :: A_Concept -> Guarded (Maybe (A_Concept, TType))
+    findType h
      = case (map toList)$ toList$ findSubsets genLattice (lJoin (aConcToType h) RepresentSeparator) of
-           [] -> pure$ [] -- use default
+           [] -> pure$ Nothing -- use default
            o@[[r]] -> representAs <$> getAsType (fatal 293 (show o++", A custom type found for "++show h++" turned out to be above the RepresentSeparator, which is wrong")) r
            lst' -> multipleRepresentTypes OriginUnknown h (concatMap (take 1 . lefts . map typeOrConcept) lst')
      where representAs Nothing = fatal 304 "Something turned out to be representable as the RepresentSeparator, which should never happen" -- []
-           representAs (Just v) = [(h,v)]
+           representAs (Just v) = Just (h,v)
+-}  
     p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
     p_interfaceAndDisambObjs declMap = [ (ifc, disambiguate (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces ]
     
@@ -339,6 +385,7 @@ pCtx2aCtx opts
     genRules = [ ( Set.singleton (pConcToType (gen_spc x)), Set.fromList (map pConcToType (gen_concs x)))
                | x <- allGens
                ]
+
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
                | x <- p_representations++concatMap pt_Reprs p_patterns

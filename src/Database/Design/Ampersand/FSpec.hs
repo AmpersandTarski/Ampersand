@@ -1,5 +1,6 @@
 module Database.Design.Ampersand.FSpec
-   ( module Database.Design.Ampersand.FSpec.FSpec
+   ( module Database.Design.Ampersand.Basics
+   , module Database.Design.Ampersand.FSpec.FSpec
    , module Database.Design.Ampersand.FSpec.ShowHS
    , module Database.Design.Ampersand.FSpec.ShowADL
    , module Database.Design.Ampersand.FSpec.ShowECA
@@ -12,9 +13,10 @@ module Database.Design.Ampersand.FSpec
    )
 where
 import Database.Design.Ampersand.FSpec.FSpec
-       (FSpec(..), concDefs, ECArule(..), plugAttributes, lookupCpt, metaValues,AAtomValue, showValADL,showValPHP,showValSQL,A_Concept,Declaration,A_Gen
-       ,PlugInfo(..), PlugSQL(..), SqlAttribute(..), SqlAttributeUsage(..),RelStore(..))
+       (FSpec(..), concDefs, ECArule(..), plugAttributes, lookupCpt, metaValues,AAtomValue, showValADL,showValPHP,showValSQL,showSQL,A_Concept,Declaration,A_Gen
+       ,PlugInfo(..), PlugSQL(..), SqlAttribute(..), SqlAttributeUsage(..),RelStore(..), )
 
+import Database.Design.Ampersand.Basics      (fatal,Collection(..),Named(..))
 import Database.Design.Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..))

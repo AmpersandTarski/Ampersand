@@ -95,6 +95,9 @@ class Database {
     		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
     		$this->db_name = Config::get('dbName', 'mysqlDatabase');
     		
+    		// Enable mysqli errors to be thrown as Exceptions
+    		mysqli_report(MYSQLI_REPORT_ERROR);
+    		
     		// Connect to MYSQL database
     		$this->db_link = mysqli_init();
     		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
@@ -191,6 +194,9 @@ class Database {
 		foreach($queries['allDefPopQueries'] as $query){
 			$this->Exe($query);
 		}
+		
+		// Ininiate new session
+		Session::singleton();
 		
 		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
 		

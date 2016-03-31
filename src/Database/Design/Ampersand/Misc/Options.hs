@@ -45,6 +45,7 @@ data Options = Options { showVersion :: Bool
                        , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
+                       , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
                        , dirOutput :: String -- the directory to generate the output in.
                        , outputfile :: String -- the file to generate the output in.
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
@@ -139,6 +140,7 @@ getOptions =
                       , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
+                      , sqlDump          = False
                       , crowfoot         = False
                       , blackWhite       = False
                       , doubleEdges      = True
@@ -318,6 +320,10 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{haskell = True}))
                "generate internal data structure, written in Haskell (for debugging)."
             , Hidden)
+          , (Option []        ["sqldump"]
+               (NoArg (\opts -> return opts{sqlDump = True}))
+               "generate a dump of SQL queries (for debugging)."
+            , Public)
           , (Option []        ["crowfoot"]
                (NoArg (\opts -> return opts{crowfoot = True}))
                "generate crowfoot notation in graphics."
