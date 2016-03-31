@@ -1,13 +1,5 @@
 <?php
 
-// Default notification settings
-Config::set('defaultShowViolations', 'notifications', true);
-Config::set('defaultShowInfos', 'notifications', false);
-Config::set('defaultShowSuccesses', 'notifications', true);
-Config::set('defaultAutoHideSuccesses', 'notifications', true);
-Config::set('defaultShowErrors', 'notifications', true);
-Config::set('defaultShowInvariants', 'notifications', true);
-
 class Notifications {
 	
 	private static $errors = array();
