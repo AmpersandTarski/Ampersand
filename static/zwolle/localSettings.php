@@ -1,5 +1,5 @@
 <?php
-define ('LOCALSETTINGS_VERSION', 1.2);
+define ('LOCALSETTINGS_VERSION', 1.3);
 
 date_default_timezone_set('Europe/Amsterdam');
 

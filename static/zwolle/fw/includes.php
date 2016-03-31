@@ -55,7 +55,7 @@ require_once (__DIR__ . '/Violation.php');
 require_once (__DIR__ . '/../localSettings.php');
 
 // Check version of localSettings.php
-$requiredVersion = 1.2;
+$requiredVersion = 1.3;
 if(!defined('LOCALSETTINGS_VERSION') || $requiredVersion > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to v" . number_format ($requiredVersion, 1) . " or higher", 500);
 
 \Ampersand\Logger::getLogger('FW')->addDebug("###### SCRIPT START #########################");
