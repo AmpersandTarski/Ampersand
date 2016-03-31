@@ -18,11 +18,19 @@ class ExcelImport {
 	 * @var string
 	 */
     public $file;
+    
+	/**
+	 *
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	private $logger;
 
 	/**
 	 * Constructor
 	 */
-	function __construct(){}
+	function __construct(){
+	    $this->logger = \Ampersand\Logger::getLogger('EXCELIMPORT');
+	}
 	
 	/**
 	 * @param string $filename
@@ -31,11 +39,11 @@ class ExcelImport {
 	public function ParseFile($filename){
 	    $this->file = $filename;
 		
-		Notifications::addLog('------------------------- EXCEL IMPORT STARTED -------------------------', 'ExcelImport');
+		$this->logger->info("Excel import started: parsing file {$this->file}");
 				
 		$this->ProcessFileContent();
 		
-		Notifications::addLog('------------------------- END OF EXCEL IMPORT -------------------------', 'ExcelImport');
+		$this->logger->info("Excel import completed");
 		
 	}
 	
@@ -53,7 +61,7 @@ class ExcelImport {
 		        $ifc = InterfaceObject::getInterfaceByLabel($worksheet->getTitle());
 		        $parseWithIfc = true;
 		    }catch (Exception $e){
-		        Notifications::addLog("No interface found with name as title of worksheet '{$worksheet->getTitle()}'", 'ExcelImport');
+		        $this->logger->warning("No interface found with name as title of worksheet '{$worksheet->getTitle()}'. Parsing file without interface");
 		        $parseWithIfc = false;
 		    }
 		    
