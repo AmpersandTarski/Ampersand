@@ -151,14 +151,13 @@ data FEInterface = FEInterface { ifcName :: String
                                , ifcLabel :: String
                                , _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
-                               , _ifcRoles :: [Role], _ifcEditableRels :: [Declaration], _ifcObj :: FEObject
+                               , _ifcRoles :: [Role],  _ifcObj :: FEObject
                                } deriving (Typeable, Data)
 
 data FEObject = FEObject { objName :: String
                          , objExp :: Expression
                          , objSource :: A_Concept
                          , objTarget :: A_Concept
-                         , objIsEditable :: Bool
                          , objCrudC :: Bool
                          , objCrudR :: Bool
                          , objCrudU :: Bool
@@ -183,12 +182,6 @@ data NavInterface = NavInterface { navIfcName :: String
                                  , navIfcRoles :: [Role]
                                  } deriving (Show, Data, Typeable)
 
-flatten :: FEObject -> [FEObject]
-flatten obj = obj : concatMap flatten subObjs
-  where subObjs = case atomicOrBox obj of
-                    FEAtomic{}                 -> []
-                    FEBox{ ifcSubObjs = objs } -> objs 
-
 buildInterfaces :: FSpec -> IO [FEInterface]
 buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
   where
@@ -197,8 +190,7 @@ buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
             
 buildInterface :: FSpec -> [Interface] -> Interface -> IO FEInterface
 buildInterface fSpec allIfcs ifc =
- do { let editableRels = ifcParams ifc
-    ; obj <- buildObject editableRels (ifcObj ifc)
+ do { obj <- buildObject (ifcObj ifc)
     ; return 
         FEInterface { ifcName = escapeIdentifier $ name ifc
                     , ifcLabel = name ifc
@@ -207,21 +199,20 @@ buildInterface fSpec allIfcs ifc =
                     , _ifcSource = objSource obj
                     , _ifcTarget = objTarget obj
                     , _ifcRoles = ifcRoles ifc
-                    , _ifcEditableRels = editableRels
                     , _ifcObj = obj
                     }
     -- NOTE: due to Amperand's interface data structure, expression, source, and target are taken from the root object. 
     --       (name comes from interface, but is equal to object name)
     } 
   where    
-    buildObject :: [Declaration] -> ObjectDef -> IO FEObject
-    buildObject editableRels object =
+    buildObject :: ObjectDef -> IO FEObject
+    buildObject object =
      do { let iExp = conjNF (getOpts fSpec) $ objctx object
               
-        ; (aOrB, iExp', isEditable, src, tgt) <-
+        ; (aOrB, iExp', src, tgt) <-
             case objmsub object of
               Nothing                  ->
-               do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
+               do { let (src, tgt) = getSrcTgt iExp
                   ; let mView = case objmView object of
                                   Just nm -> Just $ lookupView fSpec nm
                                   Nothing -> getDefaultViewForConcept fSpec tgt
@@ -236,15 +227,15 @@ buildInterface fSpec allIfcs ifc =
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
-                           , iExp, isEditable, src, tgt)
+                           , iExp, src, tgt)
                   }
               Just (Box _ mCl objects) -> 
-               do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
-                  ; subObjs <- mapM (buildObject editableRels) objects
+               do { let (src, tgt) = getSrcTgt iExp
+                  ; subObjs <- mapM buildObject objects
                   ; return (FEBox { objMClass  = mCl
                                   , ifcSubObjs = subObjs
                                   }
-                           , iExp, isEditable, src, tgt)
+                           , iExp, src, tgt)
                   }
               Just (InterfaceRef isLink nm _)   -> 
                 case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
@@ -252,17 +243,16 @@ buildInterface fSpec allIfcs ifc =
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                   [i]     -> 
                         if isLink
-                        then do { let (isEditable, src, tgt) = getIsEditableSrcTgt iExp
+                        then do { let (src, tgt) = getSrcTgt iExp
                                 ; let templatePath = "views" </> "View-LINKTO.html"
                                 ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
-                                         , iExp, isEditable, src, tgt)
+                                         , iExp, src, tgt)
                                 }
-                        else do { let editableRels' = editableRels `intersect` ifcParams i
-                                ; refObj <- buildObject editableRels' (ifcObj i)
+                        else do { refObj <- buildObject  (ifcObj i)
                                 ; let comp = ECps (iExp, objExp refObj) 
                                       -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
-                                      (isEditable, src, tgt) = getIsEditableSrcTgt comp
-                                ; return (atomicOrBox refObj, comp, isEditable, src, tgt)
+                                      (src, tgt) = getSrcTgt comp
+                                ; return (atomicOrBox refObj, comp, src, tgt)
                                 } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
 
         ; let navIfcs = [ NavInterface { navIfcName  = name nIfc
@@ -276,7 +266,6 @@ buildInterface fSpec allIfcs ifc =
                            , objExp = iExp'
                            , objSource = src
                            , objTarget = tgt
-                           , objIsEditable = isEditable
                            , objCrudC = crudC . objcrud $ object
                            , objCrudR = crudR . objcrud $ object
                            , objCrudU = crudU . objcrud $ object
@@ -289,10 +278,10 @@ buildInterface fSpec allIfcs ifc =
                            , atomicOrBox = aOrB
                            }
         }
-      where getIsEditableSrcTgt expr = 
+      where getSrcTgt expr = 
               case getExpressionRelation expr of
-                Nothing                          -> (False,                    source expr, target expr)
-                Just (declSrc, decl, declTgt, _) -> (decl `elem` editableRels, declSrc,     declTgt    ) 
+                Nothing                          -> (source expr, target expr)
+                Just (declSrc, _ , declTgt, _) -> (declSrc,     declTgt    ) 
                                                    -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
 
 ------ Generate RouteProvider.js
@@ -326,7 +315,6 @@ genView_Interface fSpec interf =
                        setAttribute "contextName"         (addSlashes $ fsName fSpec)
                      . setAttribute "isTopLevel"          ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"               (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableRelations"   (map (show . escapeIdentifier . name) . _ifcEditableRels $ interf) -- show name, since StringTemplate does not elegantly allow to quote and separate
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "interfaceName"       (ifcName  interf)
                      . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
@@ -354,8 +342,7 @@ data SubObjectAttr = SubObjAttr { subObjName :: String
 genView_Object :: FSpec -> Int -> FEObject -> IO [String]
 genView_Object fSpec depth obj =
   let atomicAndBoxAttrs :: StringTemplate String -> StringTemplate String
-      atomicAndBoxAttrs = setAttribute "isEditable" (objIsEditable obj)
-                        . setAttribute "exprIsUni"  (exprIsUni obj)
+      atomicAndBoxAttrs = setAttribute "exprIsUni"  (exprIsUni obj)
                         . setAttribute "exprIsTot"  (exprIsTot obj)
                         . setAttribute "name"       (escapeIdentifier . objName $ obj)
                         . setAttribute "label"      (objName obj) -- no escaping for labels in templates needed
@@ -441,29 +428,12 @@ genController_Interfaces fSpec ifcs =
 genController_Interface :: FSpec -> FEInterface -> IO ()
 genController_Interface fSpec interf =
  do { -- verboseLn (getOpts fSpec) $ "\nGenerate controller for " ++ show iName
-    ; let allObjs = flatten (_ifcObj interf)
-          allEditableObjects = nub . map objTarget $  
-                                         ( filter (targetIsObject ) 
-                                         . filter (isAtomic . atomicOrBox)
-                                         . filter objIsEditable $ allObjs)
-          targetIsObject o = (cptTType fSpec . objTarget) o == Object
-          isAtomic FEAtomic{} = True
-          isAtomic _ = False                              
-          containsEditable          = any objIsEditable allObjs
-          containsEditableObjects    = (not . null) allEditableObjects
-          containsDATE              = any (\o -> (cptTType fSpec) (objTarget o) == Date && objIsEditable o) allObjs
-          
     ; let controlerTemplateName = "controllers/controller.js"
     ; template <- readTemplate fSpec controlerTemplateName
     ; let contents = renderTemplate template $
                        setAttribute "contextName"              (fsName fSpec)
                      . setAttribute "isRoot"                   ((name . source . _ifcExp $ interf) `elem` ["ONE", "SESSION"])
                      . setAttribute "roles"                    (map show . _ifcRoles $ interf) -- show string, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableRelations"        (map (show . escapeIdentifier . name) . _ifcEditableRels $ interf) -- show name, since StringTemplate does not elegantly allow to quote and separate
-                     . setAttribute "editableObjects"          (map (escapeIdentifier . name) allEditableObjects)
-                     . setAttribute "containsDATE"             containsDATE
-                     . setAttribute "containsEditable"         containsEditable
-                     . setAttribute "containsEditableObjects"  containsEditableObjects
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (ifcName interf)
                      . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed

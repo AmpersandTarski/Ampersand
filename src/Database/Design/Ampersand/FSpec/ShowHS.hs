@@ -594,7 +594,6 @@ instance ShowHS Interface where
  showHS opts indent ifc
   = intercalate indent
         [ "Ifc { ifcClass = " ++ show (ifcClass ifc) 
-        , wrap "    , ifcParams = " (indent++"                  ") (showHS opts) (ifcParams ifc)
         , "    , ifcArgs   = " ++ show(ifcArgs ifc)
         , "    , ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)

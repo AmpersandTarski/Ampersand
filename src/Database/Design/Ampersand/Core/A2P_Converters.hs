@@ -126,7 +126,6 @@ aInterface2pInterface :: Interface -> P_Interface
 aInterface2pInterface ifc =
  P_Ifc { ifc_Name   = name ifc
        , ifc_Class  = ifcClass ifc
-       , ifc_Params = map aDeclaration2pNamedRel (ifcParams ifc)
        , ifc_Args   = ifcArgs ifc
        , ifc_Roles  = ifcRoles ifc
        , ifc_Obj    = aObjectDef2pObjectDef (ifcObj ifc)

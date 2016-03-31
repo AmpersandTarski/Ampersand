@@ -433,17 +433,15 @@ pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       <*>
                      (pKey "INTERFACE" *> pADLid)                  <*>
                      pMaybe (pKey "CLASS" *> (pConid <|> pString)) <*> -- the class is an upper-case identifier or a quoted string
-                     optList pParams                               <*> -- a list of expressions, which say which relations are editable within this service.
                      optList pArgs                                 <*> -- either  Prel _ nm or  PNamedRel _ nm sgn
                      optList pRoles                                <*>
                      (pColon *> pTerm)                             <*> -- the expression of the interface object
                      pMaybe pCruds                                 <*> -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                      pSubInterface
-    where lbl :: Origin -> String -> Maybe String -> [P_NamedRel] -> [[String]] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> P_SubInterface -> P_Interface
-          lbl p nm iclass params args roles term mCrud sub
+    where lbl :: Origin -> String -> Maybe String  -> [[String]] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> P_SubInterface -> P_Interface
+          lbl p nm iclass args roles term mCrud sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Class  = iclass
-                     , ifc_Params = params
                      , ifc_Args   = args
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_Obj { obj_nm   = nm
@@ -457,8 +455,6 @@ pInterface = lbl <$> currPos                                       <*>
                      , ifc_Pos    = p
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
                      }
-          --- Params ::= '(' NamedRel ')'
-          pParams = pParens(pNamedRel `sepBy1` pComma)
           --- InterfaceArgs ::= '{' ADLidListList '}'
           pArgs   = pBraces(many1 pADLid `sepBy1` pComma)
           --- Roles ::= 'FOR' RoleList

@@ -114,7 +114,6 @@ makeFSpec opts context
               , rootConcept = rootConcept'
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
-              , editableConcepts = editablecpts 
               }
    where           
      fMaintains' :: Role -> [Rule]
@@ -126,20 +125,6 @@ makeFSpec opts context
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
            [t] -> tyroot t
            _   -> fatal 121 $ "concept "++name cpt++" should be in exactly one typology!"
-     editablecpts :: Interface -> [A_Concept]
-     editablecpts ifc = nub (cpts ++ concatMap (smallerConcepts (gens context)) cpts)
-        where
-          cpts = editables (ifcObj ifc)
-          editables :: ObjectDef -> [A_Concept]
-          editables obj = 
-             case objmsub obj of
-               Nothing       -> case objctx obj of
-                                  EDcD rel -> f target rel
-                                  EFlp (EDcD rel) -> f source rel
-                                  _ -> []
-               Just (InterfaceRef _ _ _) -> []
-               Just (Box _ _ objs)     -> foldr (uni) [] (map editables objs)
-          f sORt dcl = [sORt dcl | dcl `elem` ifcParams ifc]
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
@@ -164,8 +149,8 @@ makeFSpec opts context
        where
           enrichIfc :: Interface -> Interface
           enrichIfc ifc
-           = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
-                , ifcControls = makeIfcControls (ifcParams ifc) allConjs
+           = ifc{ ifcEcas = fst . assembleECAs opts context $ []
+                , ifcControls = makeIfcControls [] allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
      fSpecRoleInterfaces role = filter (forThisRole role) fSpecAllInterfaces
@@ -381,7 +366,6 @@ makeFSpec opts context
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
         [Ifc { ifcClass    = Nothing
-             , ifcParams   = params
              , ifcArgs     = []
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
@@ -410,7 +394,6 @@ makeFSpec opts context
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
       = [Ifc { ifcClass    = ifcClass ifcc
-             , ifcParams   = ifcParams ifcc
              , ifcArgs     = ifcArgs   ifcc
              , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"

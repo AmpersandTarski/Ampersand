@@ -189,7 +189,6 @@ instance MakeMeta P_Interface where
   makeMeta f ifc
    = P_Ifc { ifc_Name   =            (ifc_Name ifc)
            , ifc_Class  =            (ifc_Class ifc)
-           , ifc_Params = makeMeta f (ifc_Params ifc)
            , ifc_Args   =            (ifc_Args ifc)
            , ifc_Roles  =            (ifc_Roles ifc)
            , ifc_Obj    = makeMeta f (ifc_Obj ifc)

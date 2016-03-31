@@ -59,11 +59,11 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       ) <>
       docCrudMatrix ifc <>
       (plain . strong . text) "Interfacestructuur:" <>
-      docInterfaceObjects (ifcParams ifc) (ifcRoles ifc) [] (ifcObj ifc)
+      docInterfaceObjects (ifcRoles ifc) [] (ifcObj ifc)
       where interfaceFP = fpaInterface ifc
 
-    docInterfaceObjects :: [Declaration] -> [Role] -> [Int] -> ObjectDef -> Blocks
-    docInterfaceObjects editableRels roles hierarchy object =
+    docInterfaceObjects :: [Role] -> [Int] -> ObjectDef -> Blocks
+    docInterfaceObjects roles hierarchy object =
       case hierarchy of
         [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (target iExp) ++ "."
               -- TODO: unclear what we want to do here. Probably want to hide "ONE". Do we need to take multiplicites into account? (e.g. waarden)  
@@ -75,7 +75,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
             interfaceObjDoc :: Blocks
             interfaceObjDoc =
               mconcat $
-                [ plainText  $ fieldDescr ++ quoteName (target iExp) ++ ". (" ++ (if isEditable then "" else "niet ") ++ "editable)"              
+                [ plainText  $ fieldDescr ++ quoteName (target iExp) ++"."
                 ] ++
                 
                 case navigationDocs of
@@ -102,9 +102,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
                                                        else ("Een lijst van 0 of meer velden van type ", "Elk veld")
                     props = intercalate "," $ [ "INJ" | isInj iExp] ++ [ "SUR" | isSur iExp] ++ [ "TOT" | isTot iExp] ++ [ "UNI" | isUni iExp]
                     
-                    (expressionRelM, isEditable) = case getExpressionRelation iExp of
-                                                     Just e@(_,d,_,_) -> (Just e, d `elem` editableRels)
-                                                     Nothing          -> (Nothing, False)
+                    (expressionRelM) = getExpressionRelation iExp
                     
                     navigationDocs = [ plainText $ quoteName navIfc ++ " (voor " ++ showRoles sharedRoles ++ ")" 
                                      | navIfc <- regularInterfaces
@@ -115,14 +113,14 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
 
             iExp = conjNF (getOpts fSpec) $ objctx object
                     
-            subInterfaceDocs = docMSubInterface editableRels roles hierarchy (objmsub object)
+            subInterfaceDocs = docMSubInterface roles hierarchy (objmsub object)
 
-    docMSubInterface :: [Declaration] -> [Role] -> [Int] -> Maybe SubInterface -> [Blocks]
-    docMSubInterface editableRels roles hierarchy subIfc =
+    docMSubInterface :: [Role] -> [Int] -> Maybe SubInterface -> [Blocks]
+    docMSubInterface roles hierarchy subIfc =
       case subIfc of
         Nothing                -> []
         Just (InterfaceRef isLink nm _) -> [ plainText $ (if isLink then "LINKTO " else "")++"REF "++nm ] -- TODO: handle InterfaceRef
-        Just (Box _ _ objects) -> [ docInterfaceObjects editableRels roles (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
+        Just (Box _ _ objects) -> [ docInterfaceObjects roles (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
 
     docCrudMatrix :: Interface -> Blocks
     docCrudMatrix ifc = mconcat

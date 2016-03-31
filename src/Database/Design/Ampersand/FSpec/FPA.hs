@@ -75,7 +75,7 @@ fpaInterface ifc =
               Ifc{ifcClass=Just "OF"} -> OF
               
               -- code for interfaces without CLASS comes from old FPA.hs
-              _ | (not.null.ifcParams)  ifc -> IF  -- In case there are editable relations, this must be an import function.
+              _ | (fatal 78 "TODO: fix to see if the interface contains editalbe fields")  ifc -> IF  -- In case there are editable relations, this must be an import function.
                 | (isUni.objctx.ifcObj) ifc -> OF  -- If there is max one atom, this is a simple function.
                 | otherwise                 -> UF  -- Otherwise, it is a UF
     in FP tp nm cmplxty

@@ -807,8 +807,7 @@ pCtx2aCtx opts
 
     pIfc2aIfc :: DeclMap -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc declMap
-              (P_Ifc { ifc_Params = tps
-                    , ifc_Class = iclass
+             (P_Ifc { ifc_Class = iclass
                     , ifc_Args = args
                     , ifc_Roles = rols
                     , ifc_Obj = _
@@ -816,9 +815,8 @@ pCtx2aCtx opts
                     -- , ifc_Name = nm
                     , ifc_Prp = prp
                     }, objDisamb)
-        = (\ tps' obj'
-             -> Ifc { ifcParams = tps'
-                    , ifcClass = iclass
+        = (\ obj'
+             -> Ifc { ifcClass = iclass
                     , ifcArgs = args
                     , ifcRoles = rols
                     , ifcObj = obj'
@@ -826,8 +824,7 @@ pCtx2aCtx opts
                     , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
                     , ifcPos = orig
                     , ifcPrp = prp
-                    }) <$> traverse (namedRel2Decl declMap) tps
-                       <*> pObjDefDisamb2aObjDef declMap objDisamb
+                    }) <$> pObjDefDisamb2aObjDef declMap objDisamb
 
     pRoleRelation2aRoleRelation :: DeclMap -> P_RoleRelation -> Guarded A_RoleRelation
     pRoleRelation2aRoleRelation declMap prr
