@@ -14,6 +14,12 @@ class InterfaceObject {
 	private $database;
 	
 	/**
+	 *
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	private $logger;
+	
+	/**
 	 * Interface id (i.e. safe name) to use in framework
 	 * @var string
 	 */
@@ -173,6 +179,7 @@ class InterfaceObject {
 	 */
 	public function __construct($ifcDef, $pathEntry = null){
 		$this->database = Database::singleton();
+		$this->logger = \Ampersand\Logger::getLogger('FW');
 				
 		// Set attributes from $ifcDef
 		$this->id = $ifcDef['id'];
@@ -203,7 +210,7 @@ class InterfaceObject {
 		if($this->crudU && $this->tgtConcept->isObject) $this->editableConcepts[] = $this->tgtConcept;
 		
 		// Interface expression must equal (editable) relation when crudU is specified
-		if($this->crudU && is_null($this->relation)) Notifications::addInfo("{$this->path}", "CrudUcheck", "Update rights (crUd) specified while interface expression is not an editable relation for (sub)interfaces:");
+		if($this->crudU && is_null($this->relation)) $this->logger->warning("Update rights (crUd) specified while interface expression is not an editable relation for (sub)interface: {$this->path}");
 		    
 		// Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318
 		if(!is_null($this->relation) && $this->crudU && !$this->tgtConcept->isObject && $this->isUni){
@@ -214,9 +221,7 @@ class InterfaceObject {
 		    
 		    if((!$this->relationIsFlipped && $this->relation->getMysqlTable()->tableOf == 'tgt')
 		            || ($this->relationIsFlipped && $this->relation->getMysqlTable()->tableOf == 'src'))
-		        Notifications::addInfo("Interface '{$this->path}' - {$this->relation->__toString()}" . ($this->relationIsFlipped ? '~' : '') . " administrated in table of '{$this->relation->getMysqlTable()->tableOf}'"
-		                              , "patchReplaceIssue"
-		                              , "Unsupported edit functionality due to combination of factors for (sub)interfaces:");
+		        $this->logger->warning("Unsupported edit functionality due to combination of factors for (sub)interface: '{$this->path}' - {$this->relation->__toString()}" . ($this->relationIsFlipped ? '~' : '') . " administrated in table of '{$this->relation->getMysqlTable()->tableOf}'");
 		}
 		    
 		
@@ -448,7 +453,7 @@ class InterfaceObject {
 	            $relativePath = Config::get('uploadPath') . $new_name;
 	            $result = move_uploaded_file($tmp_name, $absolutePath);
 	             
-	            if($result) Notifications::addSuccess("File '".$new_name."' uploaded");
+	            if($result) \Ampersand\Logger::getUserLogger()->notice("File '{$new_name}' uploaded");
 	            else throw new Exception ("Error in file upload", 500);
 	
 	            // Populate filePath and originalFileName relations in database

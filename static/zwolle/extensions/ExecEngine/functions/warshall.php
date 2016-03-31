@@ -31,14 +31,14 @@
 
 function TransitiveClosure($r,$C,$rCopy,$rPlus){
 	if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)", 'ExecEngine');
+	\Ampersand\Logger::getLogger('EXECENGINE')->debug("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)");
 	
 	$warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
 	$execEngineRunCount = ExecEngine::$runCount;
 
 	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
 		if($warshallRunCount == $execEngineRunCount){
-			Notifications::addLog("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)", 'ExecEngine');
+			\Ampersand\Logger::getLogger('EXECENGINE')->debug("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)");
 			return;  // this is the case if we have executed this function already in this transaction
 		}		
 	}

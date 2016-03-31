@@ -28,9 +28,9 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 					 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions'))
 					 ,'notifications' => Notifications::getAll()
 					 ,'session' => array ( 'id' => $session->id
-					 , 'loggedIn' => Session::sessionUserLoggedIn())
+					 , 'loggedIn' => $session->sessionUserLoggedIn())
 					 ,'sessionRoles' => array_values($session->getSessionRoles()) // return numeric array
-					 ,'sessionVars' => Session::getSessionVars()
+					 ,'sessionVars' => $session->getSessionVars()
 					 );
 	
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

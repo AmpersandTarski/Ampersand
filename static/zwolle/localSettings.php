@@ -1,11 +1,28 @@
 <?php
 define ('LOCALSETTINGS_VERSION', 1.2);
 
-error_reporting(E_ALL & ~E_NOTICE);
-ini_set("display_errors", false);
 date_default_timezone_set('Europe/Amsterdam');
 
-// Config::set('debugMode', 'global', false); // default = true
+/**************************************************************************************************
+ * LOGGING functionality
+ *************************************************************************************************/
+    error_reporting(E_ALL & ~E_NOTICE);
+    ini_set("display_errors", false);
+    // Config::set('debugMode', 'global', false); // default = true
+    
+    // Log file handler
+    $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
+    $fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
+    \Ampersand\Logger::registerGenericHandler($fileHandler);
+    
+    // Browsers debuggers
+    //$browserHandler = new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Google Chrome
+    //$browserHandler = new \Monolog\Handler\FirePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Firebug in Mozilla Firefox
+    //\Ampersand\Logger::registerGenericHandler($browserHandler);
+    
+    // User log handler
+    \Ampersand\Logger::registerHandlerForChannel('USERLOG', new \Ampersand\NotificationHandler(\Monolog\Logger::INFO));
+
 
 /************ Server URL config ********************/
 // Config::set('serverURL', 'global', 'http://www.yourdomain.nl'); // defaults to http://localhost/<ampersand context name>

@@ -25,8 +25,7 @@ $app->error(function (Exception $e) use ($app) {
 	    $notifications = Notifications::getAll();
 	    print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
 	}catch(Exception $b){
-	    $notifications = array('logs' => array(array('type' => 'LOG', 'message' => "Could not return logs due to exception '{$b->getMessage()}'")));
-	    print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
+	    print json_encode(array('error' => $b->getCode(), 'msg' => $b->getMessage(), 'notifications' => array()));
 	}
 	
 });

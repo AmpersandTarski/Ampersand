@@ -8,6 +8,12 @@ Class Atom {
 	private $database;
 	
 	/**
+	 *
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	private $logger;
+	
+	/**
 	 * Ampersand identifier of the atom
 	 * @var string
 	 */
@@ -76,6 +82,7 @@ Class Atom {
 	 */
 	public function __construct($atomId, $conceptName, $ifc = null){
 		$this->database = Database::singleton();
+		$this->logger = \Ampersand\Logger::getLogger('FW');
 		
 		$this->parentIfc = $ifc;
 		$this->concept = Concept::getConcept($conceptName);
@@ -325,7 +332,7 @@ Class Atom {
 	 * @return void
 	 */
 	public function setStoredContent(){
-	    Notifications::addLog("Temporary storing new concent for atom '{$this->__toString()}'");
+	    $this->logger->debug("Caching new concent for atom '{$this->__toString()}'");
 	    // If parentIfc is null (toplevel) switch to topLevelIfc to be able to return/store the new content
 	    $this->storedContent = is_null($this->parentIfc) ? $this->ifc($this->topLevelIfcId)->getContent() : $this->getContent();
 	}
@@ -335,7 +342,7 @@ Class Atom {
 	 * @return mixed
 	 */
 	public function getStoredContent(){
-	    Notifications::addLog("Getting temporary stored concent for atom '{$this->__toString()}'");
+	    $this->logger->debug("Getting cached concent for atom '{$this->__toString()}'");
 	    return $this->storedContent;
 	}
 	
@@ -548,7 +555,7 @@ Class Atom {
 						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
 				}
 			}catch (Exception $e){
-				Notifications::addErrorException($e);
+				$this->logger->error($e);
 				$errorCount++;
 			}
 		}
@@ -557,7 +564,7 @@ Class Atom {
 			$successMessage .= " WITH ERRORS";
 			$totalPatches = count($patches);
 			$processed = $totalPatches - $errorCount;
-			Notifications::addInfo("{$processed}/{$totalPatches} patches processed. {$errorCount} errors.");
+			\Ampersand\Logger::getUserLogger()->warning("{$processed}/{$totalPatches} patches processed. {$errorCount} errors.");
 		}
 	}
 	

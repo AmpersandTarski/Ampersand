@@ -10,6 +10,7 @@
 	},
     "require": {
     	"slim/slim": "2.*",
-    	"mikemccabe/json-patch-php": "dev-master"
+    	"mikemccabe/json-patch-php": "dev-master",
+		"monolog/monolog": "^1.18"
     }
 }

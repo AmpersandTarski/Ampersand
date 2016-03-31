@@ -26,22 +26,23 @@ class ExecEngine {
 	
 	public static function run($allRules = false){
 		$database = Database::singleton();
+		$logger = \Ampersand\Logger::getLogger('EXECENGINE');
 		
-		Notifications::addLog('------------------------- EXEC ENGINE STARTED -------------------------', 'ExecEngine');
+		$logger->info("ExecEngine run started");
 		
 		// Load the execEngine functions (security hazard :P)
 		$files = getDirectoryList(__DIR__ . '/functions');
 		foreach ($files as $file){
 			if (substr($file,-3) !== 'php') continue;
-			require_once __DIR__.'/functions/'.$file;
-			Notifications::addLog('Included file: '.__DIR__ .'/functions/'.$file, 'ExecEngine');
+			require_once $path = __DIR__ . '/functions/' . $file;
+			$logger->debug("Included file: {$path}");
 		}
 		
 		self::$roleName = Config::get('execEngineRoleName', 'execEngine');
 		try{
 		    $role = Role::getRoleByName(self::$roleName);
 		}catch (Exception $e){
-		    Notifications::addInfo("ExecEngine extension included but role '" . self::$roleName . "' not found.");
+		    $logger->warning("ExecEngine extension included but role '" . self::$roleName . "' not used/defined in &-script.");
 		    self::$doRun = false; // prevent exec engine execution
 		}
 		
@@ -56,11 +57,11 @@ class ExecEngine {
 
 			// Prevent infinite loop in ExecEngine reruns 				
 			if(self::$runCount > $maxRunCount){
-				Notifications::addError('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', (array)$rulesThatHaveViolations). ')');
+				\Ampersand\Logger::getUserLogger()->error('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', (array)$rulesThatHaveViolations). ')');
 				break;
 			}
 			
-			Notifications::addLog("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '" . $role->label . "'", 'ExecEngine');
+			$logger->debug("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '{$role->label}'");
 			
 			// Determine affected rules that must be checked by the exec engine
 			$affectedConjuncts = RuleEngine::getAffectedConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations(), 'sig');
@@ -80,9 +81,9 @@ class ExecEngine {
 					$rulesThatHaveViolations[] = $rule->id;
 					
 					// Fix violations for every rule
-					Notifications::addLog("ExecEngine fixing violations for rule '{$rule->id}'", 'ExecEngine');
+					$logger->debug("ExecEngine fixing violations for rule '{$rule->id}'");
 					ExecEngine::fixViolations($violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
-					Notifications::addInfo("{$role->label} fixed violations for rule '{$rule->id}", "ExecEngineSuccessMessage", "{$role->label} automatically fixed violations");
+					$logger->notice("Fixed violations for rule '{$rule->__toString()}");
 					
 					// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)
 					if(self::$autoRerun) self::$doRun = true;
@@ -90,7 +91,7 @@ class ExecEngine {
 			}	
 		}
 		
-		Notifications::addLog('------------------------- END OF EXEC ENGINE -------------------------', 'ExecEngine');	
+		$logger->info("ExecEngine run completed");	
 	}
 	
 	/**
@@ -129,9 +130,7 @@ class ExecEngine {
 				$classMethod = (array)explode('::', $function);
 				
 				if (function_exists($function) || method_exists($classMethod[0], $classMethod[1])){
-					$successMessage = call_user_func_array($function,$params);
-					Notifications::addLog($successMessage, 'ExecEngine');
-					
+					call_user_func_array($function,$params);					
 				}else{
 					throw new Exception("Function '{$function}' does not exists. Create function with {count($params)} parameters", 500);
 				}

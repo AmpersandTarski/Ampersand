@@ -2,14 +2,12 @@
 
 // VIOLATION (TXT "{EX} LogText;" all sorts of texts, including contents of relations etc. can be logged
 function LogText($logtext, $logclass='Log')
-{	Notifications::addLog($logtext, $logclass);
-	return;
+{	\Ampersand\Logger::getLogger($logclass)->debug($logtext);
 }
 
 // VIOLATION (TXT "{EX} LogViolation;", SRC I, TXT ";", TGT I
 function LogViolation($srcAtom,$tgtAtom)
-{	Notifications::addLog("Violation: ($srcAtom,$tgtAtom)", 'VIOLATION');
-	return;
+{	\Ampersand\Logger::getLogger('EXECENGINE')->debug("Violation: ({$srcAtom},{$tgtAtom})");
 }
 
 ?>

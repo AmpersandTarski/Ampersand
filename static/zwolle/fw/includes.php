@@ -12,6 +12,9 @@ function shutdown(){
     }
 }
 
+// PHP SESSION : Start a new, or resume the existing, PHP session
+session_start();
+
 if (version_compare(PHP_VERSION, '5.4.0', '<')) {
 	throw new Exception("PHP version >= 5.4 required. You are on " . PHP_VERSION, 500);
 }
@@ -30,6 +33,7 @@ require_once (__DIR__ . '/functions/getDirectoryList.php');
 require_once (__DIR__ . '/functions/isAssoc.php');
 
 /* INCLUDES OF AMPERSAND FRAMEWORK */
+require_once (__DIR__ . '/Logger.php');
 require_once (__DIR__ . '/Config.php');
 require_once (__DIR__ . '/Hooks.php');
 
@@ -53,5 +57,7 @@ require_once (__DIR__ . '/../localSettings.php');
 // Check version of localSettings.php
 $requiredVersion = 1.2;
 if(!defined('LOCALSETTINGS_VERSION') || $requiredVersion > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to v" . number_format ($requiredVersion, 1) . " or higher", 500);
+
+\Ampersand\Logger::getLogger('FW')->addDebug("###### SCRIPT START #########################");
 
 ?>

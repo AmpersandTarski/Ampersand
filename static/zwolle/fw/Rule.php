@@ -7,6 +7,12 @@ class Rule {
      * @var Rule[]
      */
     private static $allRules;
+    
+    /**
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
 
     /**
      * 
@@ -88,6 +94,8 @@ class Rule {
      * @param boolean $type
     */
     private function __construct($ruleDef, $type = null){
+        $this->logger = \Ampersand\Logger::getLogger('FW');
+        
         $this->id = $ruleDef['name'];
         
         $this->origin = $ruleDef['origin'];
@@ -137,7 +145,7 @@ class Rule {
      * @return Violation[]
      */
     private function checkRule($cacheConjuncts = true){
-        Notifications::addLog("Checking rule '{$this->id}'", 'RuleEngine');
+        $this->logger->debug("Checking rule '{$this->id}'");
          
         try{
             $violations = array();
@@ -148,7 +156,7 @@ class Rule {
                     $violations[] = new Violation($this, $violation['src'], $violation['tgt']);
             	
             // If no violations => rule holds
-            if(empty($violations)) Notifications::addInfo("Rule '{$this->id}' holds", 'RuleEngineRulesThatHold', 'Rules that hold');
+            if(empty($violations)) $this->logger->debug("Rule '{$this->id}' holds");
             
             // Cache violations when requested
             if($cacheConjuncts) $this->violations = $violations;
@@ -156,7 +164,7 @@ class Rule {
             return $violations;
             
         }catch (Exception $e){
-            Notifications::addError("While evaluating rule '{$this->id}': ".$e->getMessage());
+            \Ampersand\Logger::getUserLogger()->error("While evaluating rule '{$this->id}': {$e->getMessage()}");
         }
     }
     

@@ -9,12 +9,11 @@ class RuleEngine {
      * @return boolean
      */
     public static function checkInvariantRules($conjuncts, $cacheConjuncts = true){
+        $logger = \Ampersand\Logger::getLogger('FW');
         $invariantRulesHold = true;
     
         // check invariant rules
-        Notifications::addLog('------------------------- CHECKING INVARIANT RULES -------------------------', 'RuleEngine');
-        Notifications::addLog("-- For provided conjuncts: " . implode(', ', array_column($conjuncts, 'id')), 'RuleEngine');
-        Notifications::addLog('--------------------------------------------------------------------------', 'RuleEngine');
+        $logger->debug("Checking invariant rules for provided conjuncts: " . implode(', ', array_column($conjuncts, 'id')));
         
         foreach ($conjuncts as $conjunct){
             if($conjunct->isInvConj()){
@@ -24,7 +23,7 @@ class RuleEngine {
                     foreach ($conjunct->invRuleNames as $ruleName) Notifications::addInvariant(new Violation(Rule::getRule($ruleName), $violation['src'], $violation['tgt']));
                 }
             }else{
-                Notifications::addInfo("Skipping provided conjunct '{$conjunct->id}', because this is not an invariant conjunct");
+                $logger->error("Conjunct '{$conjunct->id}' provided to be checked for invariant violations, but this is not an invariant conjunct");
             }
         }
         return $invariantRulesHold;
@@ -36,11 +35,10 @@ class RuleEngine {
 	 * @return void
 	 */
 	public static function checkProcessRules($cacheConjuncts = true){
-		$session = Session::singleton();
+	    $logger = \Ampersand\Logger::getLogger('FW');
+	    $session = Session::singleton();
 		
-		Notifications::addLog('------------------------- CHECKING PROCESS RULES -------------------------', 'RuleEngine');
-		Notifications::addLog("-- For active roles: " . implode(', ', array_column($session->getActiveRoles(), 'label')), 'RuleEngine');
-		Notifications::addLog('--------------------------------------------------------------------------', 'RuleEngine');
+		$logger->debug("Checking process rules for active roles: " . implode(', ', array_column($session->getActiveRoles(), 'label')));
 		
 		foreach ($session->rulesToMaintain as $rule){
 			$violations = $rule->getViolations($cacheConjuncts);
@@ -83,6 +81,7 @@ class RuleEngine {
 	 * @return Violation[]
 	 */
 	public static function getProcessViolationsFromDB(){
+	    $logger = \Ampersand\Logger::getLogger('FW');
 	    $session = Session::singleton();
 	    $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 	    
@@ -105,7 +104,7 @@ class RuleEngine {
     	        }
     	    }
     	}else{
-    	    Notifications::addLog("No conjuncts to check (it can be that this role does not maintain any rule)", 'RuleEngine');
+    	    $logger->debug("No conjuncts to check (it can be that this role does not maintain any rule)");
     	}
     	return $violations;
 	}

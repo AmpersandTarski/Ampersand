@@ -1,12 +1,21 @@
 <?php
 
-// PHP SESSION : Start a new, or resume the existing, PHP session
-session_start();
-Notifications::addLog('Session id: ' . session_id(), 'SESSION');
-
 class Session {
 	
+    /**
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $logger;
+    
 	public $id;
+	
+	/**
+	 * 
+	 * @var Atom
+	 */
+	public $sessionAtom;
+	
 	public $database;
 	public $interface;
 	public $viewer;
@@ -27,13 +36,18 @@ class Session {
 	private $ifcsOfActiveRoles = array(); // interfaces for active roles
 	public $rulesToMaintain = array(); // rules that are maintained by active roles 
 	
-	public static $sessionAccountId;
+	private $sessionAccountId;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
 	// prevent any outside instantiation of this object
 	private function __construct(){
-		$this->id = session_id();
+	    $this->logger = \Ampersand\Logger::getLogger('FW');
+		
+	    $this->id = session_id();
+	    $this->sessionAtom = new Atom($this->id, 'SESSION');
+		
+		$this->logger->debug("Session id: {$this->id}");
 		
 		$this->database = Database::singleton();
 		
@@ -87,12 +101,12 @@ class Session {
 	public function activateRoles($roleIds = null){
 		$roles = $this->getSessionRoles();
 		if(empty($roles)){
-			Notifications::addLog("No roles available to activate", 'SESSION');	
+			$this->logger->debug("No roles available to activate");	
 		}elseif(is_null($roleIds)){
-			Notifications::addLog("Activate default roles", 'SESSION');
+			$this->logger->debug("Activate default roles");
 			foreach($this->sessionRoles as &$role) $this->activateRole($role);
 		}elseif(empty($roleIds)){
-			Notifications::addLog("No roles provided to activate", 'SESSION');
+			$this->logger->debug("No roles provided to activate");
 		}else{
 			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
 			foreach($this->sessionRoles as &$role){
@@ -119,16 +133,18 @@ class Session {
 	/**
 	 * 
 	 * @param Role $role
+	 * @return void
 	 */
 	private function activateRole(&$role){
 	    $role->active = true;
-	    Notifications::addLog("Role $role->id is active", 'SESSION');
 	    $this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
 	    $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
 	    
 	    foreach($role->maintains() as $ruleName){
 	        $this->rulesToMaintain[] = Rule::getRule($ruleName);
 	    }
+	    
+	    $this->logger->info("Role '{$role->id}' is activated");
 	}
 	
 	public function getSessionRoles(){
@@ -141,7 +157,7 @@ class Session {
 				
 				$session = new Atom(session_id(), 'SESSION');
 				$options = array('metaData' => false, 'navIfc' => true);
-				$sessionRoleLabels = array_column((array)$session->ifc('SessionRoles')->getContent(null, $options), '_id_');
+				$sessionRoleLabels = array_column((array)$session->ifc('SessionRoles')->getContent($options), '_id_');
 				
 				foreach(Role::getAllRoles() as $role){
 					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
@@ -166,10 +182,9 @@ class Session {
 	    return $activeRoles;
 	}
 	
-	private static function setSessionAccount(){
-		// Set $sessionAccountId
+	private function setSessionAccount(){
 		if(!Config::get('loginEnabled')){
-			self::$sessionAccountId = false;
+			$this->sessionAccountId = false;
 		
 		}else{
 			$session = new Atom(session_id(), 'SESSION');
@@ -177,37 +192,37 @@ class Session {
 				
 			if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
 			if(empty($sessionAccounts)){
-				self::$sessionAccountId = false;
+				$this->sessionAccountId = false;
 			}else{
-				self::$sessionAccountId = current($sessionAccounts);
-				Notifications::addLog("Session user set to '" . self::$sessionAccountId . "'", 'SESSION');
+				$this->sessionAccountId = current($sessionAccounts);
+				$this->logger->debug("Session user set to '{$this->sessionAccountId}'");
 			}
 		}		
 	}
 	
-	public static function getSessionAccountId(){
+	public function getSessionAccountId(){
 		if(!Config::get('loginEnabled')){
 			return 'SYSTEM';
 		
 		}else{
-			if(!isset(self::$sessionAccountId)) Session::setSessionAccount();
+			if(!isset($this->sessionAccountId)) $this->setSessionAccount();
 			
-			if(self::$sessionAccountId === false){
+			if($this->sessionAccountId === false){
 				return $_SERVER['REMOTE_ADDR'];
 			}else{
-				return self::$sessionAccountId;
+				return $this->sessionAccountId;
 			}
 		}
 	}
 	
-	public static function sessionUserLoggedIn(){
+	public function sessionUserLoggedIn(){
 		if(!Config::get('loginEnabled')){
 			return false;
 		
 		}else{
-			if(!isset(self::$sessionAccountId)) Session::setSessionAccount();
+			if(!isset($this->sessionAccountId)) $this->setSessionAccount();
 				
-			if(self::$sessionAccountId === false){
+			if($this->sessionAccountId === false){
 				return false;
 			}else{
 				return true;
@@ -215,15 +230,14 @@ class Session {
 		}
 	}
 	
-	public static function getSessionVars(){
+	public function getSessionVars(){
 		if(!Config::get('loginEnabled')){
 			return false;
 		
 		}else{
 			try {
-				$session = new Atom(session_id(), 'SESSION');
 				$options = array('metaData' => false, 'navIfc' => false);
-				return $session->ifc('SessionVars')->getContent($session->id, $options);
+				return $this->sessionAtom->ifc('SessionVars')->getContent($options);
 			}catch (Exception $e){
 				return false;
 			}		
