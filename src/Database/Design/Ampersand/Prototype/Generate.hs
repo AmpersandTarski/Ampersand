@@ -97,11 +97,9 @@ plug2TableSpec plug
      , tsflds = plugAttributes plug
      , tsKey  = case (plug, (head.plugAttributes) plug) of
                  (BinSQL{}, _)   -> []
-                 (_,    primFld) ->
+                 (TblSQL{}, primFld) ->
                       case attUse primFld of
-                         TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
-                                                ++ "KEY ("++(show . attName) primFld++")"
-                                        ]
+                         TableKey isPrim _ -> if isPrim then ["PRIMARY " ++ "KEY ("++(show . attName) primFld++")"] else []
                          ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                          PlainAttr     -> []
      , tsEngn = "InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN"
