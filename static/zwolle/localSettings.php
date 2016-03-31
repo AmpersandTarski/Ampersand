@@ -12,7 +12,7 @@ date_default_timezone_set('Europe/Amsterdam');
     
     // Log file handler
     $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
-    $fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
+    //$fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
     \Ampersand\Logger::registerGenericHandler($fileHandler);
     
     // Browsers debuggers
