@@ -1,30 +1,18 @@
 <div class="container-fluid">
-	<div id="notificationCenter" ng-controller="static_notificationCenterController">		
-		<div id="infos" ng-show="$storage.notificationPrefs.switchShowInfos">			
-			<div class="panel panel-info" id="info-panel-{{key}}" ng-repeat="(key, val) in notifications.infos">
-				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#info-list-{{key}}">
-					<div class="text-left">
-						<span class="glyphicon glyphicon-info-sign"></span><span> {{val.message}}</span>
-						<span class="badge pull-right">{{val.rows.length}}</span>				
-					</div>
-				</div>
-				<ul class="list-group collapse" id="info-list-{{key}}">
-					<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
-				</ul>
+	<div id="notificationCenter" ng-controller="static_notificationCenterController">
+		
+		<div id="infos" ng-show="$storage.notificationPrefs.switchShowInfos">
+			<div class="alert alert-info alert-dismissible" role="alert" ng-repeat="info in notifications.infos">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<span class="glyphicon glyphicon-info-sign"></span><span> {{info.message}}</span>
 			</div>
 		</div>
 		
-		<div id="warnings" ng-show="$storage.notificationPrefs.switchShowWarnings">			
-			<div class="panel panel-warning" id="warning-panel-{{key}}" ng-repeat="(key, val) in notifications.warnings">
-				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#warning-list-{{key}}">
-					<div class="text-left">
-						<span class="glyphicon glyphicon-warning-sign"></span><span> {{val.message}}</span>
-						<span class="badge pull-right">{{val.rows.length}}</span>				
-					</div>
-				</div>
-				<ul class="list-group collapse" id="warning-list-{{key}}">
-					<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
-				</ul>
+		<div id="warnings" ng-show="$storage.notificationPrefs.switchShowWarnings">
+			<div class="alert alert-warning alert-dismissible" role="alert" ng-repeat="warning in notifications.warnings">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<span class="glyphicon glyphicon-warning-sign"></span><span> {{warning.message}}</span>
+				<span class="badge pull-right">{{warning.count}}</span>
 			</div>
 		</div>
 		
@@ -86,19 +74,10 @@
 		</div>
 		
 		<!-- Success notifications must be last in notifications center because of position:absolute -->
-		<div id="successes" ng-show="$storage.notificationPrefs.switchShowSuccesses">			
-			<div class="panel panel-success" id="success-panel-{{key}}" ng-repeat="(key, val) in notifications.successes">
-				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#success-list-{{key}}">
-					<div class="text-left">
-						<span class="glyphicon glyphicon-ok-sign"></span><span> {{val.message}}</span>
-						<button type="button" class="close" data-target="#success-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss">
-							<span aria-hidden="true">&times;</span>
-						</button>				
-					</div>
-				</div>
-				<ul class="list-group collapse" id="success-list-{{key}}">
-					<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
-				</ul>
+		<div id="successes" ng-show="$storage.notificationPrefs.switchShowSuccesses">
+			<div class="alert alert-success alert-dismissible" role="alert" ng-repeat="success in notifications.successes">
+				<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+				<span class="glyphicon glyphicon-ok-sign"></span><span> {{success.message}}</span>
 			</div>
 		</div>
 	</div>
