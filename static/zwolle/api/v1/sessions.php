@@ -43,7 +43,7 @@ $app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app)
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
 	
-	foreach(RuleEngine::getProcessViolationsFromDB() as $violation) Notifications::addSignal($violation);
+	foreach(RuleEngine::getSignalViolationsFromDB() as $violation) Notifications::addSignal($violation);
 	
 	$content = Notifications::getAll();
 	

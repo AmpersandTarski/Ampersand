@@ -16,7 +16,7 @@
 			<li class="dropdown" uib-tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="left">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-bullhorn"></span></a>
 				<ul class="dropdown-menu" role="menu" ng-click="$event.stopPropagation();">
-					<li><switch ng-model="$storage.notificationPrefs.switchShowViolations"> Show process violations</switch></li>
+					<li><switch ng-model="$storage.notificationPrefs.switchShowSignals"> Show signal violations</switch></li>
 					<li><switch ng-model="$storage.notificationPrefs.switchShowInvariants"> Show invariant violations</switch></li>
 					<li><switch ng-model="$storage.notificationPrefs.switchShowSuccesses"> Show success messages</switch></li>
 					<li><switch ng-model="$storage.notificationPrefs.switchAutoHideSuccesses"> Auto hide success messages</switch></li>

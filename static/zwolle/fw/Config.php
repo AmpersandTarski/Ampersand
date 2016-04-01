@@ -80,7 +80,7 @@ try{
 	Config::set('defaultCrudD', 'transactions', true);
 	
 	// Default notification settings
-	Config::set('defaultShowViolations', 'notifications', true);
+	Config::set('defaultShowSignals', 'notifications', true);
 	Config::set('defaultShowInfos', 'notifications', false);
 	Config::set('defaultShowSuccesses', 'notifications', true);
 	Config::set('defaultAutoHideSuccesses', 'notifications', true);

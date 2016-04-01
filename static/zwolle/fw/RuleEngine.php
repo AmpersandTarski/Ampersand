@@ -80,7 +80,7 @@ class RuleEngine {
 	 * 
 	 * @return Violation[]
 	 */
-	public static function getProcessViolationsFromDB(){
+	public static function getSignalViolationsFromDB(){
 	    $logger = \Ampersand\Logger::getLogger('FW');
 	    $session = Session::singleton();
 	    $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');

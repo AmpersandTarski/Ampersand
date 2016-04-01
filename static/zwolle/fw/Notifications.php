@@ -130,12 +130,12 @@ class Notifications {
 	                , 'infos' => array_values(self::$infos)
 	                , 'successes' => array_values(self::$successes)
 	                , 'invariants' => array_values(self::$invariants)
-	                , 'violations' => array_values(self::$signals)
+	                , 'signals' => array_values(self::$signals)
 	                );
 	}
 	
 	public static function getDefaultSettings(){
-		return array('switchShowViolations' 	=> Config::get('defaultShowViolations', 'notifications')
+		return array('switchShowSignals' 	    => Config::get('defaultShowSignals', 'notifications')
 					,'switchShowInfos'			=> Config::get('defaultShowInfos', 'notifications')
 					,'switchShowSuccesses'		=> Config::get('defaultShowSuccesses', 'notifications')
 					,'switchAutoHideSuccesses'	=> Config::get('defaultAutoHideSuccesses', 'notifications')

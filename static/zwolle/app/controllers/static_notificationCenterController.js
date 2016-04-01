@@ -4,7 +4,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$scope.$sessionStorage = $sessionStorage;
 	
 	// Initialize notifications container
-	$rootScope.notifications =  { 'violations' 	: []
+	$rootScope.notifications =  { 'signals' 	: []
 								, 'invariants' 	: []
 								, 'infos' 		: []
 								, 'successes' 	: []
@@ -16,7 +16,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		if(notifications === undefined) notifications = {};
 		
 		// Overwrite
-		$rootScope.notifications.violations = notifications.violations;
+		$rootScope.notifications.signals = notifications.signals;
 		$rootScope.notifications.invariants = notifications.invariants;
 		$rootScope.notifications.infos = notifications.infos;
 		
@@ -69,7 +69,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		});
 	}
 	
-	// Hide success-, error-, info- and invariant violation messages (not process rule violations) upon route change
+	// Hide success-, error-, info- and invariant violation messages (not signals) upon route change
 	$scope.$on("$routeChangeSuccess", function(){
 		$rootScope.notifications.successes = [];
 		$rootScope.notifications.errors = $rootScope.notifications.errors.filter(function (error){

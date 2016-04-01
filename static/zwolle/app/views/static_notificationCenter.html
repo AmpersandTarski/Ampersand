@@ -48,8 +48,8 @@
 			</div>
 		</div>
 					
-		<div id="violations" ng-show="$storage.notificationPrefs.switchShowViolations">
-			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.violations">
+		<div id="signals" ng-show="$storage.notificationPrefs.switchShowSignals">
+			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.signals">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
 					<div class="text-left">
 						<span class="glyphicon glyphicon-bell"></span><span> {{val.ruleMessage}}</span>
