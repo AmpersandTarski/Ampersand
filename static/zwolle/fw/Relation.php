@@ -196,7 +196,7 @@ class Relation {
         
         }catch(Exception $e){
             // Catch exception and continue script
-            \Ampersand\Logger::getUserLogger()->error($e);
+            \Ampersand\Logger::getUserLogger()->error($e->getMessage());
         }
     }
     
@@ -229,7 +229,7 @@ class Relation {
     
         }catch(Exception $e){
             // Catch exception and continue script
-            \Ampersand\Logger::getUserLogger()->error($e);
+            \Ampersand\Logger::getUserLogger()->error($e->getMessage());
         }
     }
 
