@@ -174,30 +174,24 @@ class Relation {
      * @return void
      */
     public function addLink($leftAtom, $rightAtom, $isFlipped = false, $source = 'User'){
-        try{
-            $this->logger->debug("Insert link ({$leftAtom->__toString()},{$rightAtom->__toString()}) into relation '{$this->__toString()}{($isFlipped ? '~' : '')}'");
-             
-            // Determine src and tgt atom based on $isFlipped
-            $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
-            $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
-            
-            // Checks
-            if($this->srcConcept != $srcAtom->concept && !in_array($srcAtom->concept, $this->srcConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
-            if($this->tgtConcept != $tgtAtom->concept && !in_array($tgtAtom->concept, $this->tgtConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
-            if(is_null($srcAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because src atom is not specified", 500);
-            if(is_null($tgtAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because tgt atom is not specified", 500);
-            
-            // Ensure that atoms exists in their concept tables
-            $srcAtom->addAtom();
-            $tgtAtom->addAtom();
-            
-            // Insert link in relation table
-            $this->db->addLink($this, $srcAtom, $tgtAtom);
+        $this->logger->debug("Insert link ({$leftAtom->__toString()},{$rightAtom->__toString()}) into relation '{$this->__toString()}{($isFlipped ? '~' : '')}'");
+         
+        // Determine src and tgt atom based on $isFlipped
+        $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
+        $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
         
-        }catch(Exception $e){
-            // Catch exception and continue script
-            \Ampersand\Logger::getUserLogger()->error($e->getMessage());
-        }
+        // Checks
+        if($this->srcConcept != $srcAtom->concept && !in_array($srcAtom->concept, $this->srcConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
+        if($this->tgtConcept != $tgtAtom->concept && !in_array($tgtAtom->concept, $this->tgtConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
+        if(is_null($srcAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because src atom is not specified", 500);
+        if(is_null($tgtAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because tgt atom is not specified", 500);
+        
+        // Ensure that atoms exists in their concept tables
+        $srcAtom->addAtom();
+        $tgtAtom->addAtom();
+        
+        // Insert link in relation table
+        $this->db->addLink($this, $srcAtom, $tgtAtom);
     }
     
     /**
@@ -213,24 +207,18 @@ class Relation {
      * @return void
      */
     public function deleteLink($leftAtom, $rightAtom, $isFlipped = false, $source = 'User'){
-        try{
-            $this->logger->debug("Delete link ({$leftAtom->__toString()},{$rightAtom->__toString()}) from relation '{$this->__toString()}{($isFlipped ? '~' : '')}'");
-             
-            // Determine src and tgt atom based on $isFlipped
-            $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
-            $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
-             
-            // Checks
-            if($this->srcConcept != $srcAtom->concept && !in_array($srcAtom->concept, $this->srcConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
-            if($this->tgtConcept != $tgtAtom->concept && !in_array($tgtAtom->concept, $this->tgtConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
-            
-            // Delete link from relation table
-            $this->db->deleteLink($this, $srcAtom, $tgtAtom);
-    
-        }catch(Exception $e){
-            // Catch exception and continue script
-            \Ampersand\Logger::getUserLogger()->error($e->getMessage());
-        }
+        $this->logger->debug("Delete link ({$leftAtom->__toString()},{$rightAtom->__toString()}) from relation '{$this->__toString()}{($isFlipped ? '~' : '')}'");
+         
+        // Determine src and tgt atom based on $isFlipped
+        $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
+        $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
+         
+        // Checks
+        if($this->srcConcept != $srcAtom->concept && !in_array($srcAtom->concept, $this->srcConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
+        if($this->tgtConcept != $tgtAtom->concept && !in_array($tgtAtom->concept, $this->tgtConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
+        
+        // Delete link from relation table
+        $this->db->deleteLink($this, $srcAtom, $tgtAtom);
     }
 
     

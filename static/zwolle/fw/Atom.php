@@ -555,7 +555,7 @@ Class Atom {
 						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
 				}
 			}catch (Exception $e){
-				$this->logger->error($e->getMessage());
+				\Ampersand\Logger::getUserLogger()->error($e->getMessage());
 				$errorCount++;
 			}
 		}
