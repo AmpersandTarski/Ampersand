@@ -30,6 +30,7 @@ class Notifications {
 	            break;
 	        case 250 : // Notice
 	            self::addSuccess($message);
+	            break;
 	        case 300 : // Warning
 	            self::addWarning($message);
 	            break;
