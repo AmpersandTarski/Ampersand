@@ -169,7 +169,7 @@ class Database {
 		try{
 	        $this->db_link->select_db($this->db_name);
 		}catch(Exception $e){
-	        \Ampersand\Logger::getUserLogger()->error($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">Reinstall database</a>');
+	        throw new Exception($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">install database</a>', 500);
 	    }
 	}
 	
