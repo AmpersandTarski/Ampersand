@@ -55,9 +55,6 @@ class Notifications {
 		self::$errors[$errorHash]['message'] = $message;
 		self::$errors[$errorHash]['count']++;
 		
-	    // Provide backtrace in debug mode (only first time)
-		if(Config::get('debugMode') && self::$errors[$errorHash]['count'] <= 1) 
-		    self::$errors[$errorHash]['details'] = '<pre>' . print_r(debug_backtrace(), true) . '</pre>';
 	}
 	
 	/**
