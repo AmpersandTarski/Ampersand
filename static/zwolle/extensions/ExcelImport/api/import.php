@@ -20,8 +20,8 @@ $app->post('/excelimport/import', function () use ($app){
 	
 	if (is_uploaded_file($_FILES['file']['tmp_name'])){
 		// Parse:
-		$parser = new ExcelImport($_FILES['file']['tmp_name']);
-		$result = $parser->ParseFile();
+		$parser = new ExcelImport();
+		$result = $parser->ParseFile($_FILES['file']['tmp_name']);
 		unlink($_FILES['file']['tmp_name']);
 	}else{
 	    \Ampersand\Logger::getUserLogger()->error("No file uploaded");
