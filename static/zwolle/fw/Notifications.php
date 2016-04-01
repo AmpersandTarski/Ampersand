@@ -140,6 +140,7 @@ class Notifications {
 					,'switchShowSuccesses'		=> Config::get('defaultShowSuccesses', 'notifications')
 					,'switchAutoHideSuccesses'	=> Config::get('defaultAutoHideSuccesses', 'notifications')
 					,'switchShowErrors'			=> Config::get('defaultShowErrors', 'notifications')
+		            ,'switchShowWarnings'       => Config::get('defaultShowWarnings', 'notifications')
 					,'switchShowInvariants'		=> Config::get('defaultShowInvariants', 'notifications')
 					);
 	}

@@ -14,6 +14,20 @@
 			</div>
 		</div>
 		
+		<div id="warnings" ng-show="$storage.notificationPrefs.switchShowWarnings">			
+			<div class="panel panel-warning" id="warning-panel-{{key}}" ng-repeat="(key, val) in notifications.warnings">
+				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#warning-list-{{key}}">
+					<div class="text-left">
+						<span class="glyphicon glyphicon-warning-sign"></span><span> {{val.message}}</span>
+						<span class="badge pull-right">{{val.rows.length}}</span>				
+					</div>
+				</div>
+				<ul class="list-group collapse" id="warning-list-{{key}}">
+					<li class="list-group-item" ng-repeat="row in val.rows track by $index">{{row}}</li>
+				</ul>
+			</div>
+		</div>
+		
 		<div id="errors" ng-show="$storage.notificationPrefs.switchShowErrors">
 			<div class="panel panel-danger" id="error-panel-{{key}}" ng-repeat="(key, error) in notifications.errors">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#error-body-{{key}}">

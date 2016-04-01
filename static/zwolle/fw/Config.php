@@ -81,7 +81,8 @@ try{
 	
 	// Default notification settings
 	Config::set('defaultShowSignals', 'notifications', true);
-	Config::set('defaultShowInfos', 'notifications', false);
+	Config::set('defaultShowInfos', 'notifications', true);
+	Config::set('defaultShowWarnings', 'notifications', true);
 	Config::set('defaultShowSuccesses', 'notifications', true);
 	Config::set('defaultAutoHideSuccesses', 'notifications', true);
 	Config::set('defaultShowErrors', 'notifications', true);
