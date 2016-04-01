@@ -182,7 +182,8 @@ class Relation {
             $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
             
             // Checks
-            if($this->srcConcept != $srcAtom->concept || $this->tgtConcept != $tgtAtom->concept) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because concepts don't match relation signature", 500);
+            if($this->srcConcept != $srcAtom->concept && !in_array($srcAtom->concept, $this->srcConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
+            if($this->tgtConcept != $tgtAtom->concept && !in_array($tgtAtom->concept, $this->tgtConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
             if(is_null($srcAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because src atom is not specified", 500);
             if(is_null($tgtAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because tgt atom is not specified", 500);
             
