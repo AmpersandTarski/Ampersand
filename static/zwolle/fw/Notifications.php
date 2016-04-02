@@ -103,7 +103,7 @@ class Notifications {
 		self::$invariants[$hash]['ruleMessage'] = $violation->rule->getViolationMessage();
 		self::$invariants[$hash]['tuples'][] = array('violationMessage' => ($violationMessage = $violation->getViolationMessage()));
 		
-		\Ampersand\Logger::getLogger('INVARIANT')->info($violationMessage);
+		\Ampersand\Logger::getLogger('INVARIANT')->info("'{$violationMessage}' RULE: '{$violation->rule->__toString()}'");
 	}
 	
     /**
@@ -116,7 +116,7 @@ class Notifications {
 		self::$signals[$ruleHash]['ruleMessage'] = $violation->rule->getViolationMessage();
 		self::$signals[$ruleHash]['tuples'][] = array('violationMessage' => ($violationMessage = $violation->getViolationMessage())
 		                                                ,'links' => $violation->getLinks());
-		\Ampersand\Logger::getLogger('SIGNAL')->info($violationMessage);
+		\Ampersand\Logger::getLogger('SIGNAL')->info("'{$violationMessage}' RULE: '{$violation->rule->__toString()}'");
 	}
 	
 /**************************************************************************************************
