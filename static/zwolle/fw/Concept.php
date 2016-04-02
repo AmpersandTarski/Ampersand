@@ -1,5 +1,19 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+
+/**
+ * 
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class Concept {
     /**
      * Contains all concept definitions
@@ -93,7 +107,7 @@ class Concept {
 	 */
 	private function __construct($conceptDef){
 	    $this->database = Database::singleton();
-	    $this->logger = \Ampersand\Logger::getLogger('FW');
+	    $this->logger = Logger::getLogger('FW');
 	    
 		$this->name = $conceptDef['name'];
 		$this->type = $conceptDef['type'];
@@ -207,7 +221,7 @@ class Concept {
 	
 	    // Query all atoms in table
 	    $query = "SELECT DISTINCT `{$firstCol->name}` as `atom` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
-	    return $existingAtoms = array_column((array)$this->database->Exe($query), 'atom'); // no need to filter duplicates and NULLs
+	    return array_column((array)$this->database->Exe($query), 'atom'); // no need to filter duplicates and NULLs
 	
 	}
 	
@@ -262,7 +276,7 @@ class Concept {
 	 * @return string
 	 */
 	public function createNewAtomId(){
-	    if(strpos($this->name, '_AI') !== false && $this->isInteger()){ // TODO: change to type definition when Ampersand is supporting IT-TYPE
+	    if(strpos($this->name, '_AI') !== false && $this->isInteger()){
 	        $firstCol = current($this->mysqlConceptTable->getCols());
 	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
 	         

@@ -1,7 +1,17 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
 namespace Ampersand;
 
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class Logger {
     
     /**
@@ -50,7 +60,7 @@ class Logger {
      * @return \Monolog\Logger
      */
     public static function getUserLogger(){
-        return \Ampersand\Logger::getLogger('USERLOG');
+        return Logger::getLogger('USERLOG');
     }
     
     /**
@@ -75,7 +85,7 @@ class Logger {
 class NotificationHandler extends \Monolog\Handler\AbstractProcessingHandler
 {
     protected function write(array $record){
-        \Notifications::addNotification($record['level'], $record['message']);
+        Notifications::addNotification($record['level'], $record['message']);
     }
 }
 

@@ -1,9 +1,16 @@
 <?php
 
+namespace Ampersand\Extension\Messaging;
+
+use Ampersand\Hooks;
+use Ampersand\Config;
+use Ampersand\Logger;
+use MessageBird;
+
 require_once (__DIR__ . '/lib/class.MessageBird.php');
 
 // Define hooks
-$hook = array( 'class' => 'SMSNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\SMSNotifications'
 			 , 'function' => 'pushNotificationCache'
 			 , 'filename' => 'SMS.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -11,7 +18,7 @@ $hook = array( 'class' => 'SMSNotifications'
 			 );
 Hooks::addHook('postDatabaseCommitTransaction', $hook);
 
-$hook = array( 'class' => 'SMSNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\SMSNotifications'
 			 , 'function' => 'clearNotificationCache'
 			 , 'filename' => 'SMS.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -23,7 +30,7 @@ class SMSNotifications {
 	private static $notifications = array();
 	
 	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('SMS[execEnginePushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('SMS[execEnginePushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
@@ -38,7 +45,7 @@ class SMSNotifications {
 	}
 	
 	public static function pushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('SMS[pushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('SMS[pushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
@@ -59,17 +66,17 @@ class SMSNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('SMS[pushNotificationCache]');
+		Logger::getLogger('MESSAGING')->debug('SMS[pushNotificationCache]');
 		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url'], $notification['urltitle']);
 	}
 
 	public static function clearNotificationCache(){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('SMS[clearNotificationCache]');
+		Logger::getLogger('MESSAGING')->debug('SMS[clearNotificationCache]');
 		self::$notifications = array();
 	}
 
 	private static function pushNotification($SMSAddr,$message, $title=null, $url=null, $urltitle=null){
-			\Ampersand\Logger::getLogger('MESSAGING')->debug('UNTESTED !!! SMS[pushNotification'
+			Logger::getLogger('MESSAGING')->debug('UNTESTED !!! SMS[pushNotification'
 			                     .']; $SMSAddr=['.$SMSAddr
 			                     .']; $message=['.$message
 			                     .']; $title=['.$title
@@ -88,7 +95,7 @@ class SMSNotifications {
 		$password = $config['password'];
 		$sender = $config['sender'];
 	
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Username = '.$username);
+		Logger::getLogger('MESSAGING')->debug('Username = '.$username);
 		
 		// Set the Messagebird username and password, and create an instance of the MessageBird class
 		$sms = new MessageBird($username, $password);
@@ -113,19 +120,19 @@ class SMSNotifications {
 		// $sms->setDlrUrl('http://www.example.com/dlr_url.php');
 		
 		// If $test is TRUE, then the message is not actually sent or scheduled, and there will be no credits deducted.
-	       \Ampersand\Logger::getLogger('MESSAGING')->debug("SMS testing is set to TRUE (messages are not actually sent)");
+	       Logger::getLogger('MESSAGING')->debug("SMS testing is set to TRUE (messages are not actually sent)");
 		   $sms->setTest(true);
 		
 		// Send the message to the destination(s)
 		$sms->sendSms($message);
 	
 		if ($sms->getResponseCode() =="01") {
-		    \Ampersand\Logger::getUserLogger()->notice("SMS message sent.");
+		    Logger::getUserLogger()->notice("SMS message sent.");
 	    } else
-	    { \Ampersand\Logger::getUserLogger()->error('SMS error: ' . $sms->getResponseMessage());
+	    { Logger::getUserLogger()->error('SMS error: ' . $sms->getResponseMessage());
 	    }
-		\Ampersand\Logger::getLogger('MESSAGING')->debug("SMS Response: " . $sms->getResponseMessage());
-		\Ampersand\Logger::getLogger('MESSAGING')->debug("SMS Balance: " . $sms->getCreditBalance());
+		Logger::getLogger('MESSAGING')->debug("SMS Response: " . $sms->getResponseMessage());
+		Logger::getLogger('MESSAGING')->debug("SMS Balance: " . $sms->getCreditBalance());
 	}
 }
 ?>

@@ -1,5 +1,19 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class Rule {
 
     /**
@@ -94,7 +108,7 @@ class Rule {
      * @param boolean $type
     */
     private function __construct($ruleDef, $type = null){
-        $this->logger = \Ampersand\Logger::getLogger('FW');
+        $this->logger = Logger::getLogger('FW');
         
         $this->id = $ruleDef['name'];
         
@@ -164,7 +178,7 @@ class Rule {
             return $violations;
             
         }catch (Exception $e){
-            \Ampersand\Logger::getUserLogger()->error("While evaluating rule '{$this->id}': {$e->getMessage()}");
+            Logger::getUserLogger()->error("While evaluating rule '{$this->id}': {$e->getMessage()}");
         }
     }
     

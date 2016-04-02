@@ -1,5 +1,17 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class AngularApp {
 
 	private $html;

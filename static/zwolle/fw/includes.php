@@ -1,7 +1,10 @@
 <?php
 
-register_shutdown_function('shutdown');
-function shutdown(){
+namespace Ampersand;
+
+use Exception;
+
+register_shutdown_function(function (){
     $error = error_get_last();
     if ($error['type'] === E_ERROR) {
         $protocol = (isset($_SERVER['SERVER_PROTOCOL']) ? $_SERVER['SERVER_PROTOCOL'] : 'HTTP/1.0');
@@ -10,7 +13,7 @@ function shutdown(){
         print json_encode(array('error' => 500, 'msg' => $error['message'] . " in " . $error['file'] . ":" . $error['line']));
         exit;
     }
-}
+});
 
 // PHP SESSION : Start a new, or resume the existing, PHP session
 session_start();
@@ -55,9 +58,9 @@ require_once (__DIR__ . '/Violation.php');
 require_once (__DIR__ . '/../localSettings.php');
 
 // Check version of localSettings.php
-$requiredVersion = 1.3;
+$requiredVersion = 1.4;
 if(!defined('LOCALSETTINGS_VERSION') || $requiredVersion > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to v" . number_format ($requiredVersion, 1) . " or higher", 500);
 
-\Ampersand\Logger::getLogger('FW')->addDebug("###### SCRIPT START #########################");
+Logger::getLogger('FW')->addDebug("###### SCRIPT START #########################");
 
 ?>

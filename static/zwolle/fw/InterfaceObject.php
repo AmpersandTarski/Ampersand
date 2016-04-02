@@ -1,5 +1,19 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class InterfaceObject {
     /**
      * Contains all interface definitions
@@ -179,7 +193,7 @@ class InterfaceObject {
 	 */
 	public function __construct($ifcDef, $pathEntry = null){
 		$this->database = Database::singleton();
-		$this->logger = \Ampersand\Logger::getLogger('FW');
+		$this->logger = Logger::getLogger('FW');
 				
 		// Set attributes from $ifcDef
 		$this->id = $ifcDef['id'];
@@ -338,8 +352,6 @@ class InterfaceObject {
 	    // CRUD check
 	    if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
 	    
-	    $session = Session::singleton();
-	    
 	    // Default options
 	    $options['arrayType'] = isset($options['arrayType']) ? $options['arrayType'] : 'num';
 	    $options['metaData'] = isset($options['metaData']) ? filter_var($options['metaData'], FILTER_VALIDATE_BOOLEAN) : true;
@@ -453,7 +465,7 @@ class InterfaceObject {
 	            $relativePath = Config::get('uploadPath') . $new_name;
 	            $result = move_uploaded_file($tmp_name, $absolutePath);
 	             
-	            if($result) \Ampersand\Logger::getUserLogger()->notice("File '{$new_name}' uploaded");
+	            if($result) Logger::getUserLogger()->notice("File '{$new_name}' uploaded");
 	            else throw new Exception ("Error in file upload", 500);
 	
 	            // Populate filePath and originalFileName relations in database

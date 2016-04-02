@@ -28,17 +28,21 @@
    4) Rather than defining/computing rStar (for r*), you may use the expression (I \/ rPlus)
 */
 
+use Ampersand\Logger;
+use Ampersand\Extension\ExecEngine\ExecEngine;
+use Ampersand\Database;
+use Ampersand\Relation;
 
 function TransitiveClosure($r,$C,$rCopy,$rPlus){
 	if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)");
+	Logger::getLogger('EXECENGINE')->debug("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)");
 	
 	$warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
 	$execEngineRunCount = ExecEngine::$runCount;
 
 	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
 		if($warshallRunCount == $execEngineRunCount){
-			\Ampersand\Logger::getLogger('EXECENGINE')->debug("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)");
+			Logger::getLogger('EXECENGINE')->debug("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)");
 			return;  // this is the case if we have executed this function already in this transaction
 		}		
 	}
@@ -87,11 +91,12 @@ function RetrievePopulation($relationName, $conceptName){
 		$result = $database->Exe($query);
 		
 		// initialization of 2-dimensional array
+		$array = array();
 		foreach($result as $row){
 			$array[$row[$srcCol->name]][$row[$tgtCol->name]] = !is_null($row[$tgtCol->name]);
 		}
 		
-		return (array)$array;
+		return $array;
 	}catch(Exception $e){
 		throw new Exception('RetrievePopulation: ' . $e->getMessage(), 500);
 	}

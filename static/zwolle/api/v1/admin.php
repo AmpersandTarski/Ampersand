@@ -1,5 +1,15 @@
 <?php
 
+use Ampersand\Config;
+use Ampersand\Database;
+use Ampersand\Session;
+use Ampersand\Notifications;
+use Ampersand\Conjunct;
+use Ampersand\Rule;
+use Ampersand\Relation;
+
+global $app;
+
 $app->get('/admin/installer', function () use ($app){
 	if(Config::get('productionEnv')) throw new Exception ("Database reinstall not allowed in production environment", 403);
 
@@ -54,6 +64,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			$ruleArr = array();
 			foreach(Rule::getAllRules() as $rule){
 				$duration = 0;
+				$conjunctIds = array();
 				foreach($rule->conjuncts as $conjunct){
 					$duration += $performanceArr[$conjunct->id]['duration'];
 					$conjunctIds[] = $conjunct->id;
@@ -67,6 +78,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			break;
 		case 'relations' :
 			$relArr = array();
+			$conjunctIds = array();
 			foreach(Relation::getAllRelations() as $relation){
 				$duration = 0;
 				foreach($relation->affectedConjuncts as $conjunct){

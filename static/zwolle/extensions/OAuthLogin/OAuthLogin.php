@@ -1,5 +1,16 @@
 <?php
 
+namespace Ampersand\Extension\OAuthLogin;
+
+use Exception;
+use Ampersand\AngularApp;
+use Ampersand\Config;
+use Ampersand\Session;
+use Ampersand\Database;
+use Ampersand\Atom;
+use Ampersand\Concept;
+use Ampersand\Relation;
+
 // UI
 AngularApp::addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
 $GLOBALS['navBar']['roleMenu'][] = array ('url' => 'extensions/OAuthLogin/ui/views/MenuItem.html');
@@ -115,7 +126,7 @@ class OAuthLoginController {
 
 		if(empty($code)) throw new Exception("Oops. Someting went wrong during login. Please try again", 401);
 
-		$session = Session::singleton();
+		Session::singleton();
 		$db = Database::singleton();
 
 		if(!isset($identityProviders[$idp])) throw new Exception("Unknown identity provider", 500);

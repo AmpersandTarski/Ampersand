@@ -1,9 +1,16 @@
 <?php
 
+namespace Ampersand\Extension\Messaging;
+
+use Ampersand\Hooks;
+use Ampersand\Config;
+use Ampersand\Logger;
+use PHPMailer;
+
 require_once (__DIR__ . '/lib/class.phpmailer.php');
 
 // Define hooks
-$hook = array( 'class' => 'EmailNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\EmailNotifications'
 			 , 'function' => 'pushNotificationCache'
 			 , 'filename' => 'Email.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -11,7 +18,7 @@ $hook = array( 'class' => 'EmailNotifications'
 			 );
 Hooks::addHook('postDatabaseCommitTransaction', $hook);
 
-$hook = array( 'class' => 'EmailNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\EmailNotifications'
 			 , 'function' => 'clearNotificationCache'
 			 , 'filename' => 'Email.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -23,7 +30,7 @@ class EmailNotifications {
 	private static $notifications = array();
 	
 	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[execEnginePushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('Email[execEnginePushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
@@ -38,7 +45,7 @@ class EmailNotifications {
 	}
 	
 	public static function pushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[pushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('Email[pushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
@@ -59,17 +66,17 @@ class EmailNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[pushNotificationCache]');
+		Logger::getLogger('MESSAGING')->debug('Email[pushNotificationCache]');
 		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url'], $notification['urltitle']);
 	}
 
 	public static function clearNotificationCache(){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[clearNotificationCache]');
+		Logger::getLogger('MESSAGING')->debug('Email[clearNotificationCache]');
 		self::$notifications = array();
 	}
 
 	private static function pushNotification($emailAddr, $message, $title=null, $url=null, $urltitle=null){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email[pushNotification'
+		Logger::getLogger('MESSAGING')->debug('Email[pushNotification'
 		                     .']; $emailAddr=['.$emailAddr
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
@@ -81,7 +88,7 @@ class EmailNotifications {
 		$from = $config['from'];
 		$username = $config['username'];
 		$password = $config['password'];
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email.php - Username = '.$username);
+		Logger::getLogger('MESSAGING')->debug('Email.php - Username = '.$username);
 
 		$mail = new PHPMailer;
 	
@@ -109,16 +116,16 @@ class EmailNotifications {
            } else {
               $message = $message.'<a'.$urltitle.'</a>';
            }
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Email message refactored to: ['.$message.']');
+		Logger::getLogger('MESSAGING')->debug('Email message refactored to: ['.$message.']');
         }
 		$mail->Body    = $message;
 		
 		$mail->WordWrap = 50;			// Set word wrap to 50 characters
 		
 		if(!$mail->Send()){
-			\Ampersand\Logger::getUserLogger()->error('Mailer Error: ' . $mail->ErrorInfo);
+			Logger::getUserLogger()->error('Mailer Error: ' . $mail->ErrorInfo);
 		}else{
-			\Ampersand\Logger::getUserLogger()->notice("Email message sent.");
+			Logger::getUserLogger()->notice("Email message sent.");
 		}
 
 	}

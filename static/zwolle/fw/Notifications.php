@@ -1,5 +1,19 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class Notifications {
 	
 	private static $errors = array();
@@ -17,7 +31,7 @@ class Notifications {
 	
 	/**
 	 * Add notifications from userlog  user (e.g. catched exceptions)
-	 * DON't use this function in code. Log via userlogger instead => \Ampersand\Logger::getUserLogger()->...
+	 * DON't use this function in code. Log via userlogger instead => Logger::getUserLogger()->...
 	 * @param int $level
 	 * @param string $message
 	 * @return void
@@ -103,7 +117,7 @@ class Notifications {
 		self::$invariants[$hash]['ruleMessage'] = $violation->rule->getViolationMessage();
 		self::$invariants[$hash]['tuples'][] = array('violationMessage' => ($violationMessage = $violation->getViolationMessage()));
 		
-		\Ampersand\Logger::getLogger('INVARIANT')->info("'{$violationMessage}' RULE: '{$violation->rule->__toString()}'");
+		Logger::getLogger('INVARIANT')->info("'{$violationMessage}' RULE: '{$violation->rule->__toString()}'");
 	}
 	
     /**
@@ -116,7 +130,7 @@ class Notifications {
 		self::$signals[$ruleHash]['ruleMessage'] = $violation->rule->getViolationMessage();
 		self::$signals[$ruleHash]['tuples'][] = array('violationMessage' => ($violationMessage = $violation->getViolationMessage())
 		                                                ,'links' => $violation->getLinks());
-		\Ampersand\Logger::getLogger('SIGNAL')->info("'{$violationMessage}' RULE: '{$violation->rule->__toString()}'");
+		Logger::getLogger('SIGNAL')->info("'{$violationMessage}' RULE: '{$violation->rule->__toString()}'");
 	}
 	
 /**************************************************************************************************

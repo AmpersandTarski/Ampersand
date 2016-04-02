@@ -1,6 +1,20 @@
 <?php
 
-Class Conjunct {
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
+class Conjunct {
     
     /**
      * Contains all conjunct definitions
@@ -51,7 +65,7 @@ Class Conjunct {
      * @param array $conjDef
      */
     private function __construct($conjDef){
-        $this->logger = \Ampersand\Logger::getLogger('FW');
+        $this->logger = Logger::getLogger('FW');
         
         $this->id = $conjDef['Id'];
         $this->query = $conjDef['violationsSQL'];
@@ -126,6 +140,7 @@ Class Conjunct {
                     	
                     // Add new conjunct violation to database
                     $query = "INSERT IGNORE INTO `$dbsignalTableName` (`conjId`, `src`, `tgt`) VALUES ";
+                    $values = array();
                     foreach ($violations as $violation) $values[] = "('{$this->id}', '".$violation['src']."', '".$violation['tgt']."')";
                     $query .= implode(',', $values);
                     $db->Exe($query);
@@ -135,7 +150,7 @@ Class Conjunct {
             }
             	
         }catch (Exception $e){
-            \Ampersand\Logger::getUserLogger()->error("While checking conjunct '{$this->id}': " . $e->getMessage());
+            Logger::getUserLogger()->error("While checking conjunct '{$this->id}': " . $e->getMessage());
         }
     }
     

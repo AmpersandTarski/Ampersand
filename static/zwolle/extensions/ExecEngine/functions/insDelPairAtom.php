@@ -18,6 +18,12 @@
        }
 */
 
+use Ampersand\Logger;
+use Ampersand\Database;
+use Ampersand\Relation;
+use Ampersand\Concept;
+use Ampersand\Atom;
+
 /*
    Example of rule that automatically inserts pairs into a relation (analogous stuff holds for DelPair):
    ROLE ExecEngine MAINTAINS "New Customers"
@@ -28,10 +34,8 @@
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function InsPair(): ".func_num_args()." arguments", 500);
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
-	try{	
-		$database = Database::singleton();
-		
+	Logger::getLogger('EXECENGINE')->debug("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
+	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
 		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
 		
@@ -58,9 +62,9 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 			}
 		}
 		
-		\Ampersand\Logger::getLogger('EXECENGINE')->debug("Tuple ('{$srcAtom}', '{$tgtAtom}') inserted into '{$relation->__toString()}'");
+		Logger::getLogger('EXECENGINE')->debug("Tuple ('{$srcAtom}', '{$tgtAtom}') inserted into '{$relation->__toString()}'");
 	}catch(Exception $e){
-		\Ampersand\Logger::getUserLogger()->error('InsPair: ' . $e->getMessage());
+		Logger::getUserLogger()->error('InsPair: ' . $e->getMessage());
 	}
 }
 
@@ -74,7 +78,7 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function DelPair(): ".func_num_args()." arguments", 500);
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
+	Logger::getLogger('EXECENGINE')->debug("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
 	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
 		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
@@ -92,9 +96,9 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 			}
 		}
 		
-		\Ampersand\Logger::getLogger('EXECENGINE')->debug("Tuple ('{$srcAtom}', '{$tgtAtom}') deleted from '{$relation->__toString()}'");
+		Logger::getLogger('EXECENGINE')->debug("Tuple ('{$srcAtom}', '{$tgtAtom}') deleted from '{$relation->__toString()}'");
 	}catch(Exception $e){
-		\Ampersand\Logger::getUserLogger()->error('DelPair: ' . $e->getMessage());
+		Logger::getUserLogger()->error('DelPair: ' . $e->getMessage());
 	}
 }
 
@@ -126,7 +130,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		$c = Concept::getConcept($ConceptC);
 		$AtomC = $c->createNewAtomId();   // Default marker for atom-to-be-created.
 
-		\Ampersand\Logger::getLogger('EXECENGINE')->debug("Newstruct for concept $ConceptC");
+		Logger::getLogger('EXECENGINE')->debug("Newstruct for concept $ConceptC");
 		
 		if (func_num_args() % 5 == 2){            // Check if name of new atom is explicitly specified
 			$AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
@@ -150,7 +154,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 			
 			// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
 			if($srcAtom == '_NULL' or $tgtAtom == '_NULL') {
-				\Ampersand\Logger::getLogger('EXECENGINE')->debug("Skipping insPair $relation, because source and tgt are null");
+				Logger::getLogger('EXECENGINE')->debug("Skipping insPair $relation, because source and tgt are null");
 				continue; 
 			}
 			
@@ -188,27 +192,27 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 			// Any logging is done by InsPair:
 			InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
 		}
-		\Ampersand\Logger::getLogger('EXECENGINE')->debug("New structure '". $AtomC . "' created");
+		Logger::getLogger('EXECENGINE')->debug("New structure '". $AtomC . "' created");
 	
 	}catch(Exception $e){
-		\Ampersand\Logger::getUserLogger()->error('NewStruct: ' . $e->getMessage());
+		Logger::getUserLogger()->error('NewStruct: ' . $e->getMessage());
 	}
 }
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
 function InsAtom($conceptName){
 	if(func_num_args() != 1) throw new Exception("Wrong number of arguments supplied for function InsAtom(): ".func_num_args()." arguments", 500);
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("InsAtom($conceptName)");
+	Logger::getLogger('EXECENGINE')->debug("InsAtom($conceptName)");
 	try{
 		$database = Database::singleton();
 		
 		$concept = Concept::getConcept($conceptName);
 		$database->addAtomToConcept($atom = $concept->createNewAtom()); // insert new atom in database
 		
-		\Ampersand\Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' created and added to database");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' created and added to database");
 		
 	}catch(Exception $e){
-		\Ampersand\Logger::getUserLogger()->error('InsAtom: ' . $e->getMessage());
+		Logger::getUserLogger()->error('InsAtom: ' . $e->getMessage());
 	}
 	
 }
@@ -221,16 +225,16 @@ function InsAtom($conceptName){
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
 function DelAtom($concept, $atomId){
 	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function DelAtom(): ".func_num_args()." arguments", 500);
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("DelAtom($concept,$atomId)");
+	Logger::getLogger('EXECENGINE')->debug("DelAtom($concept,$atomId)");
 	try{
 		$database = Database::singleton();
 		
 		$atom = new Atom($atomId, $concept);
 		$database->deleteAtom($atom); // delete atom + all relations with other atoms
-		\Ampersand\Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' deleted");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' deleted");
 	
 	}catch(Exception $e){
-		\Ampersand\Logger::getUserLogger()->error('DelAtom: ' . $e->getMessage());
+		Logger::getUserLogger()->error('DelAtom: ' . $e->getMessage());
 	}
 	
 }
@@ -243,16 +247,16 @@ function DelAtom($concept, $atomId){
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atom>")
 function SetConcept($conceptA, $conceptB, $atom){
 	if(func_num_args() != 3) throw new Exception("Wrong number of arguments supplied for function SetConcept(): ".func_num_args()." arguments", 500);
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("SetConcept($conceptA,$conceptB,$atom)");
+	Logger::getLogger('EXECENGINE')->debug("SetConcept($conceptA,$conceptB,$atom)");
 	try{
 		$database = Database::singleton();
 		
 		$atom = new Atom($atom, $conceptA);
 		$database->atomSetConcept($atom, $conceptB);
-		\Ampersand\Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '$conceptB'");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '$conceptB'");
 	
 	}catch(Exception $e){
-		\Ampersand\Logger::getUserLogger()->error('SetConcept: ' . $e->getMessage());
+		Logger::getUserLogger()->error('SetConcept: ' . $e->getMessage());
 	}
 }
 
@@ -264,16 +268,16 @@ function SetConcept($conceptA, $conceptB, $atom){
 // Use: VIOLATION (TXT "ClearConcept;<Concept>;<atom>")
 function ClearConcept($concept, $atom){
 	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function ClearConcept(): ".func_num_args()." arguments", 500);
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("ClearConcept($concept,$atom)");
+	Logger::getLogger('EXECENGINE')->debug("ClearConcept($concept,$atom)");
 	try{
 		$database = Database::singleton();
         
 		$atom = new Atom($atom, $concept);
 		$database->atomClearConcept($atom);
-		\Ampersand\Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$concept'");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$concept'");
 
 	}catch(Exception $e){
-		\Ampersand\Logger::getUserLogger()->error('ClearConcept: ' . $e->getMessage());
+		Logger::getUserLogger()->error('ClearConcept: ' . $e->getMessage());
 	}
 }
 ?>

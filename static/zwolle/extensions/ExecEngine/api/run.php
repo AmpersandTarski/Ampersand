@@ -1,5 +1,12 @@
 <?php
 
+use Ampersand\Config;
+use Ampersand\Extension\ExecEngine\ExecEngine;
+use Ampersand\Notifications;
+use Ampersand\Session;
+
+global $app;
+
 // Path to API is 'api/v1/execengine/import'
 $app->get('/execengine/run', function () use ($app){
 	$session = Session::singleton();

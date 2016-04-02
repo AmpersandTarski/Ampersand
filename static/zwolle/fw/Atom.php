@@ -1,6 +1,22 @@
 <?php
 
-Class Atom {
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+use DateTime;
+use DateTimeZone;
+
+/**
+ * 
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
+class Atom {
     /**
      * Dependency injection of a database connection class
      * @var Database
@@ -82,7 +98,7 @@ Class Atom {
 	 */
 	public function __construct($atomId, $conceptName, $ifc = null){
 		$this->database = Database::singleton();
-		$this->logger = \Ampersand\Logger::getLogger('FW');
+		$this->logger = Logger::getLogger('FW');
 		
 		$this->parentIfc = $ifc;
 		$this->concept = Concept::getConcept($conceptName);
@@ -160,6 +176,7 @@ Class Atom {
 		$result = array('_id_' => $this->id, '_label_' => $this->label, '_view_' => $this->view);
 		
 		if($options['navIfc']){
+		    $ifcs = array();
 			foreach($this->concept->getInterfaces() as $ifc){
 				$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->url . '/' . $ifc->id);
 			}
@@ -555,16 +572,15 @@ Class Atom {
 						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
 				}
 			}catch (Exception $e){
-				\Ampersand\Logger::getUserLogger()->error($e->getMessage());
+				Logger::getUserLogger()->error($e->getMessage());
 				$errorCount++;
 			}
 		}
 		
 		if($errorCount){
-			$successMessage .= " WITH ERRORS";
 			$totalPatches = count($patches);
 			$processed = $totalPatches - $errorCount;
-			\Ampersand\Logger::getUserLogger()->warning("{$processed}/{$totalPatches} patches processed. {$errorCount} errors.");
+			Logger::getUserLogger()->warning("{$processed}/{$totalPatches} patches processed. {$errorCount} errors.");
 		}
 	}
 	

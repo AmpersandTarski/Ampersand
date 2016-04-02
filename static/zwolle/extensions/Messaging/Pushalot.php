@@ -1,9 +1,17 @@
 <?php
 
+namespace Ampersand\Extension\Messaging;
+
+use Exception;
+use Ampersand\Hooks;
+use Ampersand\Config;
+use Ampersand\Logger;
+use Pushalot;
+
 require_once (__DIR__ . '/lib/pushalot_api.php');
 
 // Define hooks
-$hook = array( 'class' => 'PushalotNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\PushalotNotifications'
 			 , 'function' => 'pushNotificationCache'
 			 , 'filename' => 'Pushalot.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -11,7 +19,7 @@ $hook = array( 'class' => 'PushalotNotifications'
 			 );
 Hooks::addHook('postDatabaseCommitTransaction', $hook);
 
-$hook = array( 'class' => 'PushalotNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\PushalotNotifications'
 			 , 'function' => 'clearNotificationCache'
 			 , 'filename' => 'Pushalot.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -23,7 +31,7 @@ class PushalotNotifications {
 	private static $notifications = array();
 	
 	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushalot[execEnginePushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('Pushalot[execEnginePushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
@@ -38,7 +46,7 @@ class PushalotNotifications {
 	}
 	
 	public static function pushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushalot[pushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('Pushalot[pushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
@@ -59,17 +67,17 @@ class PushalotNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushalot[pushNotificationCache]');
+		Logger::getLogger('MESSAGING')->debug('Pushalot[pushNotificationCache]');
 		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url'], $notification['urltitle']);
 	}
 
 	public static function clearNotificationCache(){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushalot[clearNotificationCache]');
+		Logger::getLogger('MESSAGING')->debug('Pushalot[clearNotificationCache]');
 		self::$notifications = array();
 	}
 
 	private static function pushNotification($userKey, $message, $title=null, $url=null, $urltitle=null){
-		\Ampersand\Logger::getLogger('MESSAGING')->debug('Pushalot - $userKey=['.$userKey
+		Logger::getLogger('MESSAGING')->debug('Pushalot - $userKey=['.$userKey
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
@@ -89,9 +97,9 @@ class PushalotNotifications {
 			'Source'=>'Ampersand prototype'
 		));
 	        if(!$success) {
-			\Ampersand\Logger::getUserLogger()->error("Pushalot error '$notification->getError()' sending notification to '$userKey'");
+			Logger::getUserLogger()->error("Pushalot error '$notification->getError()' sending notification to '$userKey'");
 		}else{
-			\Ampersand\Logger::getUserLogger()->notice("Pushalot message sent.");
+			Logger::getUserLogger()->notice("Pushalot message sent.");
 		}
 
 	}

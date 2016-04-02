@@ -1,5 +1,20 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+use mysqli;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class Database {
     /**
      * 
@@ -87,7 +102,7 @@ class Database {
 	 * @throws Exception
 	 */
 	private function __construct(){
-	    $this->logger = Ampersand\Logger::getLogger('DATABASE');
+	    $this->logger = Logger::getLogger('DATABASE');
 	    
 	    try{
     	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
@@ -208,7 +223,7 @@ class Database {
 		$this->closeTransaction('Database successfully reinstalled', true);
 		
 		if (version_compare(PHP_VERSION, '5.6', '<')) {
-		   \Ampersand\Logger::getUserLogger()->warning("Support for PHP version <= 5.5 will stop in the summer of 2016. Please upgrade to 5.6. Note! Ampersand framework does not support PHP 7 yet. You are on version: " . PHP_VERSION, 500);
+		   Logger::getUserLogger()->warning("Support for PHP version <= 5.5 will stop in the summer of 2016. Please upgrade to 5.6. Note! Ampersand framework does not support PHP 7 yet. You are on version: " . PHP_VERSION, 500);
 		}
 	}
 	
@@ -370,7 +385,6 @@ class Database {
 		$queryString = "\"" . implode("\" = '{$atom->idEsc}', \"", $conceptColsB) . "\" = '{$atom->idEsc}'";
 		
 		$conceptTableInfoA = $atom->concept->getConceptTableInfo();
-		$conceptTableA = $conceptTableInfoA->name;
 		$anyConceptColForA = current($conceptTableInfoA->getCols());
 		
 		// Perform update
@@ -631,10 +645,10 @@ class Database {
 		
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
-			\Ampersand\Logger::getUserLogger()->notice($succesMessage);
+			Logger::getUserLogger()->notice($succesMessage);
 		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && $databaseCommit){
 			$this->commitTransaction();
-			\Ampersand\Logger::getUserLogger()->warning("Transaction committed with invariant violations");
+			Logger::getUserLogger()->warning("Transaction committed with invariant violations");
 		}elseif($invariantRulesHold){
 		    $this->logger->info("Invariant rules hold, but no database commit requested");
 		    $this->rollbackTransaction(); // rollback database transaction			
@@ -664,7 +678,7 @@ class Database {
 		switch($this->requestType){
 			case 'feedback' : return false;
 			case 'promise' : return true;
-			default : throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
+			default : throw new Exception("Unkown request type '$this->requestType'. Supported are: 'feedback', 'promise'", 500);
 		}
 	}
     

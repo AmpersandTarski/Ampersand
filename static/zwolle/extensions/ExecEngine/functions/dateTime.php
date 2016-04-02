@@ -4,7 +4,10 @@
 The date and time formats that can be used are pretty much arbitrary. A precise description is given at:
    http://www.php.net/manual/en/datetime.formats.date.php
    http://www.php.net/manual/en/datetime.formats.time.php
-*/ 
+*/
+
+use Ampersand\Logger; 
+
 /* sessionToday :: SESSION * Date -- or whatever the DateTime concept is called
    ROLE ExecEngine MAINTAINS "Initialize today's date"
    RULE "Initialize today's date": I[SESSION] |- sessionToday;sessionToday~
@@ -14,21 +17,21 @@ The date and time formats that can be used are pretty much arbitrary. A precise 
    Default is 'd-m-Y' -> e.g: "01-01-2015", other examples include time, like 'd-m-Y G:i:s' -> e.g.: "01-01-2015 1:00:00"
 */
 function SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec='d-m-Y'){
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)");
+	Logger::getLogger('EXECENGINE')->debug("SetToday($relation,$srcConcept,$srcAtom,$dateConcept,$formatSpec)");
 	$curdate = date($formatSpec);
 	InsPair($relation,$srcConcept,$srcAtom,$dateConcept,$curdate);
 	
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("Today's date set to {$curdate}");
+	Logger::getLogger('EXECENGINE')->debug("Today's date set to {$curdate}");
 }
 
 
 // VIOLATION (TXT "{EX} datimeStdFormat;standardizeDateTime;DateTime;", SRC I, TXT ";DateTimeStdFormat;", TGT I)
 function datimeStdFormat($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec){
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("datimeStdFormat($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec)");
+	Logger::getLogger('EXECENGINE')->debug("datimeStdFormat($relation,$DateConcept,$srcAtom,$StdFormatConcept,$formatSpec)");
 	$date = new DateTime($srcAtom);
 	InsPair($relation,$DateConcept,$srcAtom,$StdFormatConcept,$date->format($formatSpec));
 	
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("Date format $srcAtom changed to {$data->format($formatSpec)}");
+	Logger::getLogger('EXECENGINE')->debug("Date format $srcAtom changed to {$date->format($formatSpec)}");
 }
 
 
@@ -40,14 +43,14 @@ VIOLATION (TXT "{EX} DateDifferencePlusOne" -- Result = 1 + MAX(0, (RentalEndDat
           )
 */
 function DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate){
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)");
+	Logger::getLogger('EXECENGINE')->debug("DateDifferencePlusOne($relation,$srcConcept,$srcAtom,$integerConcept,$earliestDate,$latestDate)");
 	$datediff = strtotime($latestDate) - strtotime($earliestDate);
-	if ($datediff < 0) \Ampersand\Logger::getUserLogger()->error("DateDifferencePlusOne: first arg (earliestDate) must be smaller than second arg (latestDate).");
+	if ($datediff < 0) Logger::getUserLogger()->error("DateDifferencePlusOne: first arg (earliestDate) must be smaller than second arg (latestDate).");
 	
 	$result = 1 + max(0, floor($datediff/(60*60*24)));
 	InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
 	
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("Date difference + 1 calculated for $latestDate - $earliestDate");
+	Logger::getLogger('EXECENGINE')->debug("Date difference + 1 calculated for $latestDate - $earliestDate");
 }
 
 
@@ -59,14 +62,14 @@ VIOLATION (TXT "{EX} DateDifference"
           )
 */
 function DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate){
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)");
+	Logger::getLogger('EXECENGINE')->debug("DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDate,$lastDate)");
 	$datediff = strtotime($lastDate) - strtotime($firstDate);
-	if ($datediff < 0) \Ampersand\Logger::getUserLogger()->error("DateDifference: first arg (earliestDate) must be smaller than second arg (latestDate).");
+	if ($datediff < 0) Logger::getUserLogger()->error("DateDifference: first arg (earliestDate) must be smaller than second arg (latestDate).");
 	
 	$result = max(0, floor($datediff/(60*60*24)));
 	InsPair($relation,$srcConcept,$srcAtom,$integerConcept,$result);
 	
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("Date difference calculated for $latestDate - $earliestDate");
+	Logger::getLogger('EXECENGINE')->debug("Date difference calculated for $lastDate - $firstDate");
 }
 
 
@@ -100,9 +103,9 @@ function DateDifference($relation,$srcConcept,$srcAtom,$integerConcept,$firstDat
 */
 // VIOLATION (TXT "{EX} datimeEQL;DateTime;" SRC I, TXT ";", TGT I)
 function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom){
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
-	if (($dt1 = strtotime($srcAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeEQL: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-	if (($dt2 = strtotime($tgtAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeEQL: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+	Logger::getLogger('EXECENGINE')->debug("datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom)");
+	if (($dt1 = strtotime($srcAtom)) === false) Logger::getUserLogger()->error("datimeEQL: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+	if (($dt2 = strtotime($tgtAtom)) === false) Logger::getUserLogger()->error("datimeEQL: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	
 	if ($dt1 == $dt2){
 		InsPair($eqlRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
@@ -117,9 +120,9 @@ function datimeEQL($eqlRelation,$DateConcept,$srcAtom,$tgtAtom){
 
 // VIOLATION (TXT "{EX} datimeNEQ;DateTime;" SRC I, TXT ";", TGT I)
 function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom){ 	
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
-	if (($dt1 = strtotime($srcAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeNEQ: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-	if (($dt2 = strtotime($tgtAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeNEQ: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+	Logger::getLogger('EXECENGINE')->debug("datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom)");
+	if (($dt1 = strtotime($srcAtom)) === false) Logger::getUserLogger()->error("datimeNEQ: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+	if (($dt2 = strtotime($tgtAtom)) === false) Logger::getUserLogger()->error("datimeNEQ: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	
 	if ($dt1 != $dt2){
 		InsPair($neqRelation,$DateConcept,$srcAtom,$DateConcept,$tgtAtom);
@@ -130,9 +133,9 @@ function datimeNEQ($neqRelation,$DateConcept,$srcAtom,$tgtAtom){
 
 // VIOLATION (TXT "{EX} datimeLT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom){
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)");
-	if (($dt1 = strtotime($srcAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeLT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-	if (($dt2 = strtotime($tgtAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeLT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+	Logger::getLogger('EXECENGINE')->debug("datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom)");
+	if (($dt1 = strtotime($srcAtom)) === false) Logger::getUserLogger()->error("datimeLT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+	if (($dt2 = strtotime($tgtAtom)) === false) Logger::getUserLogger()->error("datimeLT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	if ($dt1 == $dt2) return;
 	
 	if ($dt1 < $dt2){
@@ -145,9 +148,9 @@ function datimeLT($ltRelation,$DateConcept,$srcAtom,$tgtAtom){
 
 // VIOLATION (TXT "{EX} datimeGT;DateTime;" SRC I, TXT ";", TGT I)
 function datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom){
-	\Ampersand\Logger::getLogger('EXECENGINE')->debug("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)");
-	if (($dt1 = strtotime($srcAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeGT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
-	if (($dt2 = strtotime($tgtAtom)) === false) \Ampersand\Logger::getUserLogger()->error("datimeGT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
+	Logger::getLogger('EXECENGINE')->debug("datimeGT($gtRelation,$DateConcept,$srcAtom,$tgtAtom)");
+	if (($dt1 = strtotime($srcAtom)) === false) Logger::getUserLogger()->error("datimeGT: Illegal date $dt1 specified in srcAtom (3rd arg): $srcAtom");
+	if (($dt2 = strtotime($tgtAtom)) === false) Logger::getUserLogger()->error("datimeGT: Illegal date $dt2 specified in tgtAtom (4th arg): $tgtAtom");
 	if ($dt1 == $dt2) return;
 	
 	if ($dt1 > $dt2){

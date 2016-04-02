@@ -1,5 +1,19 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class Relation {
     
     /**
@@ -99,7 +113,7 @@ class Relation {
      */
     public function __construct($relationDef){
         $this->db = Database::singleton();
-        $this->logger = \Ampersand\Logger::getLogger('FW');
+        $this->logger = Logger::getLogger('FW');
         
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConcept']);
@@ -183,8 +197,8 @@ class Relation {
         // Checks
         if($this->srcConcept != $srcAtom->concept && !in_array($srcAtom->concept, $this->srcConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
         if($this->tgtConcept != $tgtAtom->concept && !in_array($tgtAtom->concept, $this->tgtConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
-        if(is_null($srcAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because src atom is not specified", 500);
-        if(is_null($tgtAtom->id)) throw new Exception ("Cannot insert link in relation '{$r->__toString()}', because tgt atom is not specified", 500);
+        if(is_null($srcAtom->id)) throw new Exception ("Cannot insert link in relation '{$this->__toString()}', because src atom is not specified", 500);
+        if(is_null($tgtAtom->id)) throw new Exception ("Cannot insert link in relation '{$this->__toString()}', because tgt atom is not specified", 500);
         
         // Ensure that atoms exists in their concept tables
         $srcAtom->addAtom();

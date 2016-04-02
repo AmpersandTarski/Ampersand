@@ -1,12 +1,24 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class Config {
     
     /**
      * Contains all config variables
      * @var array
      */
-    private static $configVars;
+    private static $configVars = array();
 	
     /**
      * Config variable getter

@@ -1,4 +1,19 @@
 <?php
+
+namespace Ampersand\Extension\ExcelImport;
+
+use Exception;
+use Ampersand\AngularApp;
+use Ampersand\Atom;
+use Ampersand\Concept;
+use Ampersand\Config;
+use Ampersand\InterfaceObject;
+use Ampersand\Relation;
+use Ampersand\Logger;
+use PHPExcel_Cell;
+use PHPExcel_Shared_Date;
+use PHPExcel_IOFactory;
+
 require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
 
 // UI
@@ -29,7 +44,7 @@ class ExcelImport {
 	 * Constructor
 	 */
 	function __construct(){
-	    $this->logger = \Ampersand\Logger::getLogger('EXCELIMPORT');
+	    $this->logger = Logger::getLogger('EXCELIMPORT');
 	}
 	
 	/**
@@ -205,7 +220,7 @@ class ExcelImport {
 	 * @param array $lines
 	 */
 	private function ParseLines($lines){
-	    $relations = $concept = $separator = array();
+	    $relations = $concept = $separator = $flipped = array();
 		
 		foreach ($lines as $linenr => $line){
 		    $totalcolumns = count($line);

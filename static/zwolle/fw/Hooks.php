@@ -1,12 +1,24 @@
 <?php
 
-Class Hooks {
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
+class Hooks {
 	
 	private static $hooks = array();
 	
 	public static function callHooks($hookpoint, $hookpointParams){
 		
-		\Ampersand\Logger::getLogger('HOOKS')->debug("Hook '{$hookpoint}' called");
+		Logger::getLogger('HOOKS')->debug("Hook '{$hookpoint}' called");
 		
 		foreach (Hooks::getHooks($hookpoint) as $hook){
 			// Determine funtioncall
@@ -21,7 +33,7 @@ Class Hooks {
 			}
 			
 			$log = $callback . '(' . implode(', ', $callBackParams) . ')';
-			\Ampersand\Logger::getLogger('HOOKS')->debug("Call hook {$log}");
+			Logger::getLogger('HOOKS')->debug("Call hook {$log}");
 			
 			call_user_func_array ($callback, $callBackParams);
 			
@@ -46,13 +58,13 @@ Class Hooks {
 	 */
 	public static function addHook($hookpoint, $hook){
 		
-		Hooks::$hooks[$hookpoint][] = $hook;
+		self::$hooks[$hookpoint][] = $hook;
 		
 		if($hook['class']) $log = $hook['class'] . '::';
 		$log .= $hook['function'] . '(';
 		$log .= implode(', ', $hook['params']) . ')'; 
 		
-		\Ampersand\Logger::getLogger('HOOKS')->debug("Hook '{$log}' added to '{$hookpoint}'");
+		Logger::getLogger('HOOKS')->debug("Hook '{$log}' added to '{$hookpoint}'");
 		
 	}
 }

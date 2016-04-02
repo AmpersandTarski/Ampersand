@@ -1,5 +1,12 @@
 <?php
 
+use Ampersand\Session;
+use Ampersand\Config;
+use Ampersand\Logger;
+use Ampersand\Extension\ExcelImport\ExcelImport;
+
+global $app;
+
 // Path to API is 'api/v1/excelimport/import'
 $app->post('/excelimport/import', function () use ($app){
 	$session = Session::singleton();
@@ -24,7 +31,7 @@ $app->post('/excelimport/import', function () use ($app){
 		$result = $parser->ParseFile($_FILES['file']['tmp_name']);
 		unlink($_FILES['file']['tmp_name']);
 	}else{
-	    \Ampersand\Logger::getUserLogger()->error("No file uploaded");
+	    Logger::getUserLogger()->error("No file uploaded");
 	}
 	
 	$result = array('notifications' => $result, 'files' => $_FILES);

@@ -1,4 +1,7 @@
 <?php
+
+use Ampersand\AngularApp;
+
 try{
 	require_once (__DIR__ . '/fw/includes.php');
 

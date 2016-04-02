@@ -1,5 +1,13 @@
 <?php
 
+use Ampersand\Config;
+use Ampersand\Concept;
+use Ampersand\Session;
+use Ampersand\Atom;
+use Ampersand\Notifications;
+
+global $app;
+
 /**************************************************************************************************
  *
  * resource calls WITHOUT interfaces

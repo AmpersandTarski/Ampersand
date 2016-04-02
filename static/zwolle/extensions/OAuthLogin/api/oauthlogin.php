@@ -1,8 +1,16 @@
 <?php
 
+use Ampersand\Session;
+use Ampersand\Config;
+use Ampersand\Notifications;
+use Ampersand\Atom;
+use Ampersand\Extension\OAuthLogin\OAuthLoginController;
+
+global $app;
+
 // Path to API is 'api/v1/oauthlogin/login'
 $app->get('/oauthlogin/login', function () use ($app){
-	$session = Session::singleton();
+	Session::singleton();
 	
 	$idps = array();
 	$identityProviders = Config::get('identityProviders', 'OAuthLogin');

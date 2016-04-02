@@ -1,11 +1,21 @@
 <?php
 
+namespace Ampersand\Extension\Mutation;
+
+use Ampersand\Hooks;
+use Ampersand\Config;
+use Ampersand\Database;
+use Ampersand\Concept;
+use Ampersand\Relation;
+use Ampersand\Session;
+use Ampersand\Atom;
+
 // Define hooks
-$updateHook = array('class' => 'Mutation', 'function' => 'mutUpdate', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation', 
+$updateHook = array('class' => '\Ampersand\Extension\Mutation\Mutation', 'function' => 'mutUpdate', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation', 
 		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
-$insertHook = array('class' => 'Mutation', 'function' => 'mutInsert', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
+$insertHook = array('class' => '\Ampersand\Extension\Mutation\Mutation', 'function' => 'mutInsert', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
 		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
-$deleteHook = array('class' => 'Mutation', 'function' => 'mutDelete', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
+$deleteHook = array('class' => '\Ampersand\Extension\Mutation\Mutation', 'function' => 'mutDelete', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
 		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
 Hooks::addHook('postDatabaseUpdate', $updateHook);
 Hooks::addHook('postDatabaseInsert', $insertHook);

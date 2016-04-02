@@ -1,8 +1,22 @@
 <?php
+
+namespace Ampersand\Extension\ExecEngine;
+
+use Exception;
+use Ampersand\Hooks;
+use Ampersand\Database;
+use Ampersand\AngularApp;
+use Ampersand\Config;
+use Ampersand\Role;
+use Ampersand\Logger;
+use Ampersand\Rule;
+use Ampersand\RuleEngine;
+use Ampersand\Violation;
+
 // Define hooks
-$hook1 = array('class' => 'ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());
+$hook1 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());
 Hooks::addHook('preDatabaseCloseTransaction', $hook1);
-$hook2 = array('class' => 'ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array(true));
+$hook2 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array(true));
 Hooks::addHook('postDatabaseReinstallDB', $hook2);
 
 // UI
@@ -26,7 +40,7 @@ class ExecEngine {
 	
 	public static function run($allRules = false){
 		$database = Database::singleton();
-		$logger = \Ampersand\Logger::getLogger('EXECENGINE');
+		$logger = Logger::getLogger('EXECENGINE');
 		
 		$logger->info("ExecEngine run started");
 		
@@ -51,13 +65,14 @@ class ExecEngine {
 		self::$autoRerun = Config::get('autoRerun', 'execEngine');
 		
 		// Get all rules that are maintained by the ExecEngine
+		$rulesThatHaveViolations = array();
 		while(self::$doRun){
 			self::$doRun = false;
 			self::$runCount++;
 
 			// Prevent infinite loop in ExecEngine reruns 				
 			if(self::$runCount > $maxRunCount){
-				\Ampersand\Logger::getUserLogger()->error('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', (array)$rulesThatHaveViolations). ')');
+				Logger::getUserLogger()->error('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')');
 				break;
 			}
 			
@@ -82,7 +97,7 @@ class ExecEngine {
 					
 					// Fix violations for every rule
 					$logger->debug("ExecEngine fixing violations for rule '{$rule->id}'");
-					ExecEngine::fixViolations($violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
+					self::fixViolations($violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
 					$logger->notice("Fixed violations for rule '{$rule->__toString()}");
 					
 					// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)

@@ -1,5 +1,19 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+use Exception;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class Session {
 	
     /**
@@ -42,7 +56,7 @@ class Session {
 	
 	// prevent any outside instantiation of this object
 	private function __construct(){
-	    $this->logger = \Ampersand\Logger::getLogger('FW');
+	    $this->logger = Logger::getLogger('FW');
 		
 	    $this->id = session_id();
 	    $this->sessionAtom = new Atom($this->id, 'SESSION');

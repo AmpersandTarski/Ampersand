@@ -1,5 +1,17 @@
 <?php
 
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand;
+
+/**
+ *
+ * @author Michiel Stornebrink (https://github.com/Michiel-s)
+ *
+ */
 class RuleEngine {
     
     /**
@@ -9,7 +21,7 @@ class RuleEngine {
      * @return boolean
      */
     public static function checkInvariantRules($conjuncts, $cacheConjuncts = true){
-        $logger = \Ampersand\Logger::getLogger('FW');
+        $logger = Logger::getLogger('FW');
         $invariantRulesHold = true;
     
         // check invariant rules
@@ -35,7 +47,7 @@ class RuleEngine {
 	 * @return void
 	 */
 	public static function checkProcessRules($cacheConjuncts = true){
-	    $logger = \Ampersand\Logger::getLogger('FW');
+	    $logger = Logger::getLogger('FW');
 	    $session = Session::singleton();
 		
 		$logger->debug("Checking process rules for active roles: " . implode(', ', array_column($session->getActiveRoles(), 'label')));
@@ -81,7 +93,7 @@ class RuleEngine {
 	 * @return Violation[]
 	 */
 	public static function getSignalViolationsFromDB(){
-	    $logger = \Ampersand\Logger::getLogger('FW');
+	    $logger = Logger::getLogger('FW');
 	    $session = Session::singleton();
 	    $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 	    
