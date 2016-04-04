@@ -190,7 +190,7 @@ class Conjunct {
         self::$allConjuncts = array();
     
         // import json file
-        $file = file_get_contents(__DIR__ . '/../generics/conjuncts.json');
+        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'conjuncts.json');
         $allConjDefs = (array)json_decode($file, true);
     
         foreach ($allConjDefs as $conjDef) self::$allConjuncts[$conjDef['Id']] = new Conjunct($conjDef);

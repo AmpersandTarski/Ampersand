@@ -3,7 +3,7 @@
 use Ampersand\Config;
 use Ampersand\Notifications;
 
-require_once (__DIR__ . '/../../fw/includes.php');
+require_once (__DIR__ . '/../../src/bootstrap.php');
 
 // Code to add special http response codes that are not supported by Slim
 class NewResponse extends \Slim\Http\Response {

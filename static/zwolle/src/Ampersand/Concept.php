@@ -338,7 +338,7 @@ class Concept {
 	    self::$allConcepts = array();
 	     
 	    // import json file
-	    $file = file_get_contents(__DIR__ . '/../generics/concepts.json');
+	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'concepts.json');
 	    $allConceptDefs = (array)json_decode($file, true);
 	
 	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['name']] = new Concept($conceptDef);

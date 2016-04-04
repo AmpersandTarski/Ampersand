@@ -99,65 +99,12 @@ class View {
         self::$allViews = array();
     
         // import json file
-        $file = file_get_contents(__DIR__ . '/../generics/views.json');
+        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'views.json');
         $allViewDefs = (array)json_decode($file, true);
     
         foreach ($allViewDefs as $viewDef) self::$allViews[$viewDef['label']] = new View($viewDef);
     }
     
-}
-
-class ViewSegment {
-    
-    /**
-     * 
-     * @var int
-     */
-    public $seqNr;
-    
-    /**
-     * 
-     * @var string
-     */
-    public $label;
-    
-    /**
-     * 
-     * @var string
-     */
-    public $segType;
-    
-    /**
-     * 
-     * @var string
-     */
-    public $text;
-    
-    /**
-     * 
-     * @var string
-     */
-    public $expADL;
-    
-    /**
-     * 
-     * @var string
-     */
-    public $expSQL;
-    
-
-    /**
-     * Constructor of view segments
-     * @param array $viewSegmentDef
-     */
-    public function __construct($viewSegmentDef){     
-        $this->seqNr = $viewSegmentDef['seqNr'];
-        $this->label = $viewSegmentDef['label'];
-        $this->segType = $viewSegmentDef['segType'];
-        $this->text = $viewSegmentDef['text'];
-        $this->expADL = $viewSegmentDef['expADL'];
-        $this->expSQL = $viewSegmentDef['expSQL'];
-    }    
 }
 
 ?>

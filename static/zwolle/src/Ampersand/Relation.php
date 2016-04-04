@@ -293,7 +293,7 @@ class Relation {
         self::$allRelations = array();
     
         // import json file
-        $file = file_get_contents(__DIR__ . '/../generics/relations.json');
+        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'relations.json');
         $allRelationDefs = (array)json_decode($file, true);
     
         foreach ($allRelationDefs as $relationDef){

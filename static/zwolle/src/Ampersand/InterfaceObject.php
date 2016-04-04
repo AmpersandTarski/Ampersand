@@ -664,7 +664,7 @@ class InterfaceObject {
 	    self::$allInterfaces = array();
 	    
 	    // import json file
-	    $file = file_get_contents(__DIR__ . '/../generics/interfaces.json');
+	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'interfaces.json');
 	    $allInterfaceDefs = (array)json_decode($file, true);
 	    
 	    

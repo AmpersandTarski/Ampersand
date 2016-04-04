@@ -82,11 +82,4 @@ class Logger {
     
 }
 
-class NotificationHandler extends \Monolog\Handler\AbstractProcessingHandler
-{
-    protected function write(array $record){
-        Notifications::addNotification($record['level'], $record['message']);
-    }
-}
-
 ?>

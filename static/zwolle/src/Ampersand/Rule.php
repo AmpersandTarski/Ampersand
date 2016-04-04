@@ -253,7 +253,7 @@ class Rule {
         self::$allRules = array();
 
         // import json file
-        $file = file_get_contents(__DIR__ . '/../generics/rules.json');
+        $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'rules.json');
         $allRuleDefs = (array)json_decode($file, true);
         
         // Signal rules
