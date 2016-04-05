@@ -4,11 +4,11 @@ namespace Ampersand\Extension\Mutation;
 
 use Ampersand\Hooks;
 use Ampersand\Config;
-use Ampersand\Database;
-use Ampersand\Concept;
-use Ampersand\Relation;
+use Ampersand\Database\Database;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Relation;
 use Ampersand\Session;
-use Ampersand\Atom;
+use Ampersand\Core\Atom;
 
 // Define hooks
 $updateHook = array('class' => '\Ampersand\Extension\Mutation\Mutation', 'function' => 'mutUpdate', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation', 

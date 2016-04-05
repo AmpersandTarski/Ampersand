@@ -62,6 +62,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     	if(typeof response.data === 'object'){
     		var message = response.data.msg || response.statusText; // if empty response message, take statusText
     		$rootScope.addError(message, response.status, true);
+    		
+    		if(response.data.notifications !== undefined) $rootScope.updateNotifications(response.data.notifications); 
     	}else{
     		var message = response.status + ' ' + response.statusText;
     		var details = response.data; // html content is excepted

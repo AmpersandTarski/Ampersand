@@ -1,10 +1,10 @@
 <?php
 
 use Ampersand\Config;
-use Ampersand\Concept;
+use Ampersand\Core\Concept;
 use Ampersand\Session;
-use Ampersand\Atom;
-use Ampersand\Notifications;
+use Ampersand\Core\Atom;
+use Ampersand\Log\Notifications;
 
 global $app;
 

@@ -1,4 +1,7 @@
 <?php
+
+// TODO: This file can be deleted when php version 5.5+ is enforced (also delete ref from composer.json file) 
+
 /**
  * This file is part of the array_column library
  *

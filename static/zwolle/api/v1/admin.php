@@ -1,12 +1,12 @@
 <?php
 
 use Ampersand\Config;
-use Ampersand\Database;
+use Ampersand\Database\Database;
 use Ampersand\Session;
-use Ampersand\Notifications;
-use Ampersand\Conjunct;
-use Ampersand\Rule;
-use Ampersand\Relation;
+use Ampersand\Log\Notifications;
+use Ampersand\Rule\Conjunct;
+use Ampersand\Rule\Rule;
+use Ampersand\Core\Relation;
 
 global $app;
 

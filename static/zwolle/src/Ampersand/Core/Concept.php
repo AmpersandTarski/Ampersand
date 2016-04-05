@@ -5,9 +5,18 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Core;
 
 use Exception;
+use Ampersand\Database\Database;
+use Ampersand\Database\DatabaseTable;
+use Ampersand\Database\DatabaseTableCol;
+use Ampersand\Interfacing\InterfaceObject;
+use Ampersand\Interfacing\View;
+use Ampersand\Log\Logger;
+use Ampersand\Rule\Conjunct;
+use Ampersand\Core\Atom;
+use Ampersand\Config;
 
 /**
  * 
@@ -338,7 +347,7 @@ class Concept {
 	    self::$allConcepts = array();
 	     
 	    // import json file
-	    $file = file_get_contents(__DIR__ . '/../generics/concepts.json');
+	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'concepts.json');
 	    $allConceptDefs = (array)json_decode($file, true);
 	
 	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['name']] = new Concept($conceptDef);

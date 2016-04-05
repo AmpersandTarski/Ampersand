@@ -7,6 +7,8 @@
 
 namespace Ampersand;
 
+use Ampersand\Log\Logger;
+
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)

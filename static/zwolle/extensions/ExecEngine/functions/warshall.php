@@ -28,10 +28,10 @@
    4) Rather than defining/computing rStar (for r*), you may use the expression (I \/ rPlus)
 */
 
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Extension\ExecEngine\ExecEngine;
-use Ampersand\Database;
-use Ampersand\Relation;
+use Ampersand\Database\Database;
+use Ampersand\Core\Relation;
 
 function TransitiveClosure($r,$C,$rCopy,$rPlus){
 	if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);

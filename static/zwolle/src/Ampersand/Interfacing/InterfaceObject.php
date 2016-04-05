@@ -5,9 +5,16 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Interfacing;
 
 use Exception;
+use Ampersand\Database\Database;
+use Ampersand\Log\Logger;
+use Ampersand\Core\Relation;
+use Ampersand\Core\Concept;
+use Ampersand\Interfacing\View;
+use Ampersand\Core\Atom;
+use Ampersand\Config;
 
 /**
  *
@@ -664,7 +671,7 @@ class InterfaceObject {
 	    self::$allInterfaces = array();
 	    
 	    // import json file
-	    $file = file_get_contents(__DIR__ . '/../generics/interfaces.json');
+	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'interfaces.json');
 	    $allInterfaceDefs = (array)json_decode($file, true);
 	    
 	    

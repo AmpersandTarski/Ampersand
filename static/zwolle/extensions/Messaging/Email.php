@@ -4,7 +4,7 @@ namespace Ampersand\Extension\Messaging;
 
 use Ampersand\Hooks;
 use Ampersand\Config;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use PHPMailer;
 
 require_once (__DIR__ . '/lib/class.phpmailer.php');

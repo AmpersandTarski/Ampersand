@@ -5,10 +5,18 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Database;
 
 use Exception;
 use mysqli;
+use Ampersand\Log\Logger;
+use Ampersand\Config;
+use Ampersand\Session;
+use Ampersand\Hooks;
+use Ampersand\Rule\Conjunct;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Relation;
+use Ampersand\Rule\RuleEngine;
 
 /**
  *
@@ -111,21 +119,27 @@ class Database {
     		$this->db_name = Config::get('dbName', 'mysqlDatabase');
     		
     		// Enable mysqli errors to be thrown as Exceptions
-    		mysqli_report(MYSQLI_REPORT_ERROR);
+    		mysqli_report(MYSQLI_REPORT_STRICT);
     		
     		// Connect to MYSQL database
     		$this->db_link = mysqli_init();
-    		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+    		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
     		
     		// Set sql_mode to ANSI
     		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-    		
-    		// Select DB
-			$this->selectDB();
 			
 		}catch (Exception $e){
 		    // Convert mysqli_sql_exceptions into 500 errors
-		    throw new Exception($e->getMessage(), 500);
+		    if(!Config::get('productionEnv')){
+    		    switch ($e->getCode()){
+    		        case 1049 :
+    		            Logger::getUserLogger()->error('Please <a href="#/admin/installer" class="alert-link">install database</a>');
+    		        default : 
+    		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
+    		    }
+		    }else{
+		        throw new Exception("Cannot connect to database", 500);
+		    }
 		}
 	}
 	
@@ -165,7 +179,7 @@ class Database {
     		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
     		
     		// Drop database
-    		$db_link->query("DROP DATABASE $DB_name");
+    		$db_link->query("DROP DATABASE IF EXISTS $DB_name");
     		
     		// Create new database
     		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
@@ -177,23 +191,11 @@ class Database {
 	}
 	
 	/**
-	 * Function to select database
-	 * @return void
-	 */
-	private function selectDB(){
-		try{
-	        $this->db_link->select_db($this->db_name);
-		}catch(Exception $e){
-	        throw new Exception($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">install database</a>', 500);
-	    }
-	}
-	
-	/**
 	 * Function to reinstall database structure and load default population
 	 * @return void
 	 */
 	public function reinstallDB(){
-		$queries = file_get_contents(__DIR__ . '/../generics/mysql-installer.json');
+		$queries = file_get_contents(Config::get('pathToGeneratedFiles') . 'mysql-installer.json');
 		$queries = json_decode($queries, true);
 		
 		$this->logger->info("Start database reinstall");
@@ -211,7 +213,7 @@ class Database {
 		}
 		
 		// Ininiate new session
-		Session::singleton();
+		Session::reInit();
 		
 		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
 		
@@ -738,190 +740,6 @@ class Database {
 	public function setRequestType($requestType){
 		$this->requestType = $requestType;
 	}	
-}
-
-Class DatabaseTable {
-    /**
-     * 
-     * @var string
-     */
-    public $name;
-    
-    /**
-     * 
-     * @var array
-     */
-    private $cols = array();
-    
-    /**
-     * Constructor of Database table
-     * @param string $name
-     */
-    public function __construct($name){
-        if($name == '') throw new Exception ("Database table name is an empty string" ,500); 
-        $this->name = $name;
-    }
-    
-    /**
-     * Add database table column object to this table
-     * @param DatabaseTableCol $col
-     * return void
-     */
-    public function addCol($col){
-        $this->cols[$col->name] = $col;
-    }
-    
-    /**
-     * Get all col objects for this table
-     * @throws Exception when no columns are defined for this table
-     * @return DatabaseTableCol[]
-     */
-    public function getCols(){
-        if (empty($this->cols)) throw new Exception("No column defined for table '{$this->name}'", 500);
-        return $this->cols;
-    }
-    
-    /**
-     * Returns names of all table cols
-     * @return string[]
-     */
-    public function getColNames(){
-        $colNames = array();
-        foreach($this->getCols() as $col) $colNames[] = $col->name;
-        return $colNames; 
-    }
-    
-    /**
-     * Return col object with given column name
-     * @param string $colName
-     * @throws Exception when col does not exists
-     * @return DatabaseTableCol[]
-     */
-    public function getCol($colName){
-        if(!array_key_exists($colName, $this->getCols())) throw new Exception ("Col '{$colName}' does not exists in table '{$this->name}'", 500);
-        return $this->getCols()[$colName];
-    }
-    
-    /**
-     * Return first registered col object
-     * @return DatabaseTableCol
-     */
-    public function getFirstCol(){
-        return current($this->getCols());
-    }
-}
-
-Class RelationTable extends DatabaseTable {
-    
-    /**
-     * 
-     * @var DatabaseTableCol
-     */
-    private $srcCol = null;
-    
-    /**
-     * 
-     * @var DatabaseTableCol
-     */
-    private $tgtCol = null;
-    
-    /**
-     * Specifies if this relation is administrated in the table of the src concept ('src'), the tgt concept ('tgt') or its own n-n table (null)
-     * @var string
-     */
-    public $tableOf;
-    
-    /**
-     * Constructor of RelationTable
-     * @param string $name
-     * @param string|null $tableOf ('src', 'tgt' or null)
-     */
-    public function __construct($name, $tableOf){
-        parent::__construct($name);
-        
-        switch ($tableOf){
-            case 'src':
-            case 'tgt':
-            case null :
-                $this->tableOf = $tableOf;
-                break;
-            default :
-                throw new Exception ("Unknown tableOf value '{$tableOf}' specified for RelationTable {$this->name}", 500);
-        }
-    }
-    
-    /**
-     * 
-     * @param DatabaseTableCol $col
-     * @return void
-     */
-    public function addSrcCol($col){
-        $this->srcCol = $col;
-        $this->cols[$col->name] = $col;
-    }
-    
-    /**
-     *
-     * @param DatabaseTableCol $col
-     * @return void
-     */
-    public function addTgtCol($col){
-        $this->tgtCol = $col;
-        $this->cols[$col->name] = $col;
-    }
-    
-    /**
-     * 
-     * @throws Exception when src column is not defined
-     * @return DatabaseTableCol
-     */
-    public function srcCol(){
-        if(is_null($this->srcCol)) throw new Exception ("Src column for RelationTable {$this->name} not defined", 500);
-        return $this->srcCol;
-    }
-    
-    /**
-     * 
-     * @throws Exception when tgt column is not defined
-     * @return DatabaseTableCol
-     */
-    public function tgtCol(){
-        if(is_null($this->tgtCol)) throw new Exception ("Tgt column for RelationTable {$this->name} not defined", 500);
-        return $this->tgtCol;
-    }
-}
-
-Class DatabaseTableCol {
-    /**
-     * Name/header of database column
-     * @var string
-     */
-    public $name;
-    
-    /**
-     * Specifies if value in this database column can be NULL
-     * @var boolean|NULL
-     */
-    public $null;
-    
-    /**
-     * Specifies if this database column has uniquness constraint (i.e. no duplicates may exist in all rows)
-     * @var boolean|NULL
-     */
-    public $unique;
-    
-    /**
-     * Constructor of Database table column
-     * @param string $name
-     * @param boolean $null
-     * @param boolean $unique
-     */
-    public function __construct($name, $null = null, $unique = null){
-        if($name == '') throw new Exception ("Database table column name is an empty string" ,500);
-        $this->name = $name;
-        $this->null = $null;
-        $this->unique = $unique;
-    }
 }
 
 ?>

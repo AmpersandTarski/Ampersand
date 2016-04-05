@@ -5,9 +5,12 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Rule;
 
 use Exception;
+use Ampersand\Database\Database;
+use Ampersand\Core\Atom;
+use Ampersand\Session;
 
 /**
  *
@@ -18,7 +21,7 @@ class Violation {
 
     /**
      * Rule to which this violation belongs to
-     * @var Rule
+     * @var Rule\Rule
      */
     public $rule;
 
@@ -48,14 +51,14 @@ class Violation {
 
     /**
      * Constructor of violation
-     * @param Rule $rule
+     * @param Rule\Rule $rule
      * @param string $srcAtom
      * @param string $tgtAtom
      */
     public function __construct($rule, $srcAtomId, $tgtAtomId){
         $this->rule = $rule;
         $this->src = new Atom($srcAtomId, $rule->srcConcept->name);
-        $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept->name);;
+        $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept->name);
     }
 
     public function __toString(){
@@ -87,7 +90,7 @@ class Violation {
                 $rows = $database->Exe($query);
 
                 // returning the result
-                if(count($row) > 1) throw new Exception("Expression of pairview results in more than one tgt atom", 501); // 501: Not implemented
+                if(count($rows) > 1) throw new Exception("Expression of pairview results in more than one tgt atom", 501); // 501: Not implemented
                 $strArr[] = $rows[0]['tgt'];
 
             // unknown segment

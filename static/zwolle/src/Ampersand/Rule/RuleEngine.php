@@ -5,7 +5,12 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Rule;
+
+use Ampersand\Log\Logger;
+use Ampersand\Log\Notifications;
+use Ampersand\Session;
+use Ampersand\Config;
 
 /**
  *

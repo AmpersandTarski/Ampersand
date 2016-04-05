@@ -1,10 +1,10 @@
 <?php
 
-use Ampersand\Logger;
-use Ampersand\NotificationHandler;
+use Ampersand\Log\Logger;
+use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
 
-define ('LOCALSETTINGS_VERSION', 1.4);
+define ('LOCALSETTINGS_VERSION', 1.5);
 
 date_default_timezone_set('Europe/Amsterdam');
 

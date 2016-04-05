@@ -8,6 +8,7 @@
 namespace Ampersand;
 
 use Exception;
+use Ampersand\Interfacing\InterfaceObject;
 
 /**
  *
@@ -135,7 +136,7 @@ class Role {
 	    self::$allRoles = array();
 	
 	    // import json file
-	    $file = file_get_contents(__DIR__ . '/../generics/roles.json');
+	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'roles.json');
 	    $allRoleDefs = (array)json_decode($file, true);
 	    
 	    foreach ($allRoleDefs as $roleDef) self::$allRoles[$roleDef['name']] = new Role($roleDef);

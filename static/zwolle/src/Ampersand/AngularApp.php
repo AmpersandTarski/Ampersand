@@ -7,6 +7,8 @@
 
 namespace Ampersand;
 
+use Ampersand\Log\Logger;
+
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
@@ -15,10 +17,19 @@ namespace Ampersand;
 class AngularApp {
 
 	private $html;
+	
+	/**
+	 * 
+	 * @var \Psr\Log\LoggerInterface
+	 */
+	private $logger;
+	
 	private static $cssFiles = array();
 	private static $jsFiles = array();
 
 	public function __construct(){
+	    $this->logger = Logger::getLogger('FW');
+	    $this->logger->debug("## BUILD ANGULAR APP ##################################################");
 		$this->buildHtml();
 	}
 
@@ -110,7 +121,7 @@ class AngularApp {
 		 *
 		*/
 		// CSS files from app directory
-		$files = getDirectoryList(__DIR__ . '/../app/css');
+		$files = getDirectoryList(Config::get('pathToAppFolder') . 'css');
 		$cssFiles = array();
 		foreach ((array)$files as $file){
 			if (substr($file,-3) !== 'css') continue;
@@ -132,14 +143,14 @@ class AngularApp {
 		$this->addHtmlLine('<script src="app/RouteProvider.js"></script>');
 
 		// AngularApp controler files (both static and generated)
-		$files = getDirectoryList(__DIR__ . '/../app/controllers');
+		$files = getDirectoryList(Config::get('pathToAppFolder') . 'controllers');
 		foreach ((array)$files as $file){
 			if (substr($file,-2) !== 'js') continue;
 			$this->addHtmlLine('<script src="app/controllers/'.$file.'"></script>');
 		}
 
 		// Javascript files
-		$files = getDirectoryList(__DIR__ . '/../app/js');
+		$files = getDirectoryList(Config::get('pathToAppFolder') . 'js');
 		foreach ((array)$files as $file){
 			if (substr($file,-2) !== 'js') continue;
 			$this->addHtmlLine('<script src="app/js/'.$file.'"></script>');
@@ -152,7 +163,7 @@ class AngularApp {
 
 		$this->addHtmlLine('<body>');
 
-		$this->addHtmlLine(file_get_contents(__DIR__ . '/../app/AmpersandApp.html'));
+		$this->addHtmlLine(file_get_contents(Config::get('pathToAppFolder') . 'AmpersandApp.html'));
 
 		$this->addHtmlLine('</body>');
 

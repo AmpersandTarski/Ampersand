@@ -18,11 +18,11 @@
        }
 */
 
-use Ampersand\Logger;
-use Ampersand\Database;
-use Ampersand\Relation;
-use Ampersand\Concept;
-use Ampersand\Atom;
+use Ampersand\Log\Logger;
+use Ampersand\Database\Database;
+use Ampersand\Core\Relation;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Atom;
 
 /*
    Example of rule that automatically inserts pairs into a relation (analogous stuff holds for DelPair):

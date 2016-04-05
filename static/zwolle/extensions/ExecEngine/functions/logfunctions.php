@@ -1,6 +1,6 @@
 <?php // Functions for easier logging/debugging in Ampersand script
 
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 
 // VIOLATION (TXT "{EX} LogText;" all sorts of texts, including contents of relations etc. can be logged
 function LogText($logtext, $logclass='Log')

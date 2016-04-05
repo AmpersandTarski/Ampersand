@@ -4,14 +4,14 @@ namespace Ampersand\Extension\ExecEngine;
 
 use Exception;
 use Ampersand\Hooks;
-use Ampersand\Database;
+use Ampersand\Database\Database;
 use Ampersand\AngularApp;
 use Ampersand\Config;
 use Ampersand\Role;
-use Ampersand\Logger;
-use Ampersand\Rule;
-use Ampersand\RuleEngine;
-use Ampersand\Violation;
+use Ampersand\Log\Logger;
+use Ampersand\Rule\Rule;
+use Ampersand\Rule\RuleEngine;
+use Ampersand\Rule\Violation;
 
 // Define hooks
 $hook1 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());

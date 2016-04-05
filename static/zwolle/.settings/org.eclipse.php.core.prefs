@@ -1,2 +1,4 @@
 eclipse.preferences.version=1
-include_path=0;/Frontend Ampersand FW
+include_path=
+phpVersion=php5.6
+use_asp_tags_as_php=false

@@ -5,9 +5,11 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Log;
 
 use Exception;
+use Ampersand\Log\Logger;
+use Ampersand\Config;
 
 /**
  *
@@ -109,7 +111,7 @@ class Notifications {
  *************************************************************************************************/
 	/**
 	 * 
-	 * @param Violation $violation
+	 * @param Rule\Violation $violation
 	 */
 	public static function addInvariant($violation){
 		$hash = hash('md5', $violation->rule->id);
@@ -122,7 +124,7 @@ class Notifications {
 	
     /**
      * 
-     * @param Violation $violation
+     * @param Rule\Violation $violation
      */
 	public static function addSignal($violation){
 		$ruleHash = hash('md5', $violation->rule->id);

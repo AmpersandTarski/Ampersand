@@ -2,8 +2,8 @@
 
 use Ampersand\Session;
 use Ampersand\Config;
-use Ampersand\Notifications;
-use Ampersand\Atom;
+use Ampersand\Log\Notifications;
+use Ampersand\Core\Atom;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
 
 global $app;
