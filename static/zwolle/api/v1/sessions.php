@@ -3,7 +3,7 @@
 use Ampersand\Session;
 use Ampersand\Notifications;
 use Ampersand\Config;
-use Ampersand\RuleEngine;
+use Ampersand\Rule\RuleEngine;
 
 global $app;
 

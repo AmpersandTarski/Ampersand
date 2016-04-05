@@ -13,10 +13,10 @@ use Ampersand\Logger;
 use Ampersand\Config;
 use Ampersand\Session;
 use Ampersand\Hooks;
-use Ampersand\Conjunct;
+use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
-use Ampersand\RuleEngine;
+use Ampersand\Rule\RuleEngine;
 
 /**
  *

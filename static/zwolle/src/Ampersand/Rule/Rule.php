@@ -5,10 +5,12 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Rule;
 
 use Exception;
 use Ampersand\Core\Concept;
+use Ampersand\Logger;
+use Ampersand\Config;
 
 /**
  *

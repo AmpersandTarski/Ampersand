@@ -12,6 +12,9 @@ use Ampersand\Database\Database;
 use Ampersand\Database\DatabaseTableCol;
 use Ampersand\Database\RelationTable;
 use Ampersand\Core\Concept;
+use Ampersand\Rule\Conjunct;
+use Ampersand\Logger;
+use Ampersand\Config;
 
 /**
  *

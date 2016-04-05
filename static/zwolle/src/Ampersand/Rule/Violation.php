@@ -5,11 +5,12 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Rule;
 
 use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Core\Atom;
+use Ampersand\Session;
 
 /**
  *
@@ -20,7 +21,7 @@ class Violation {
 
     /**
      * Rule to which this violation belongs to
-     * @var Rule
+     * @var Rule\Rule
      */
     public $rule;
 
@@ -50,14 +51,14 @@ class Violation {
 
     /**
      * Constructor of violation
-     * @param Rule $rule
+     * @param Rule\Rule $rule
      * @param string $srcAtom
      * @param string $tgtAtom
      */
     public function __construct($rule, $srcAtomId, $tgtAtomId){
         $this->rule = $rule;
         $this->src = new Atom($srcAtomId, $rule->srcConcept->name);
-        $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept->name);;
+        $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept->name);
     }
 
     public function __toString(){
