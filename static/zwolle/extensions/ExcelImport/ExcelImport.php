@@ -7,7 +7,7 @@ use Ampersand\AngularApp;
 use Ampersand\Atom;
 use Ampersand\Concept;
 use Ampersand\Config;
-use Ampersand\InterfaceObject;
+use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Relation;
 use Ampersand\Logger;
 use PHPExcel_Cell;

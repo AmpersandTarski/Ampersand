@@ -1,8 +1,7 @@
 <?php
 
 use Ampersand\Config;
-use Ampersand\Session;
-use Ampersand\InterfaceObject;
+use Ampersand\Interfacing\InterfaceObject;
 
 global $app;
 

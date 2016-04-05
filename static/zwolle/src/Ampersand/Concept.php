@@ -11,6 +11,8 @@ use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Database\DatabaseTable;
 use Ampersand\Database\DatabaseTableCol;
+use Ampersand\Interfacing\InterfaceObject;
+use Ampersand\Interfacing\View;
 
 /**
  * 

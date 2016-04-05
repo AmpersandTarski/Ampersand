@@ -5,9 +5,11 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Interfacing;
 
 use Exception;
+use Ampersand\Interfacing\ViewSegment;
+use Ampersand\Config;
 
 /**
  *

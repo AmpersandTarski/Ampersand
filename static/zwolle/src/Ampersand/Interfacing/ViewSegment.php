@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Interfacing;
 
 /**
  *
