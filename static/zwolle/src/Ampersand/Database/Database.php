@@ -119,21 +119,27 @@ class Database {
     		$this->db_name = Config::get('dbName', 'mysqlDatabase');
     		
     		// Enable mysqli errors to be thrown as Exceptions
-    		mysqli_report(MYSQLI_REPORT_ERROR);
+    		mysqli_report(MYSQLI_REPORT_STRICT);
     		
     		// Connect to MYSQL database
     		$this->db_link = mysqli_init();
-    		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+    		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
     		
     		// Set sql_mode to ANSI
     		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-    		
-    		// Select DB
-			$this->selectDB();
 			
 		}catch (Exception $e){
 		    // Convert mysqli_sql_exceptions into 500 errors
-		    throw new Exception($e->getMessage(), 500);
+		    if(!Config::get('productionEnv')){
+    		    switch ($e->getCode()){
+    		        case 1049 :
+    		            Logger::getUserLogger()->error('Please <a href="#/admin/installer" class="alert-link">install database</a>');
+    		        default : 
+    		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
+    		    }
+		    }else{
+		        throw new Exception("Cannot connect to database", 500);
+		    }
 		}
 	}
 	
@@ -173,7 +179,7 @@ class Database {
     		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
     		
     		// Drop database
-    		$db_link->query("DROP DATABASE $DB_name");
+    		$db_link->query("DROP DATABASE IF EXISTS $DB_name");
     		
     		// Create new database
     		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
@@ -182,18 +188,6 @@ class Database {
 		    // Convert mysqli_sql_exceptions into 500 errors
 		    throw new Exception($e->getMessage(), 500);
 		}
-	}
-	
-	/**
-	 * Function to select database
-	 * @return void
-	 */
-	private function selectDB(){
-		try{
-	        $this->db_link->select_db($this->db_name);
-		}catch(Exception $e){
-	        throw new Exception($this->db_link->error . '. Please <a href="#/admin/installer" class="alert-link">install database</a>', 500);
-	    }
 	}
 	
 	/**

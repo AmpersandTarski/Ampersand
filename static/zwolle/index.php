@@ -2,9 +2,8 @@
 
 use Ampersand\AngularApp;
 
-require_once (__DIR__ . '/src/bootstrap.php');
-
 try{
+    require_once (__DIR__ . '/src/bootstrap.php');
 	print new AngularApp();
 	
 }catch(Exception $e){
