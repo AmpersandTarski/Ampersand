@@ -87,7 +87,7 @@ attributeSpec2Str :: AttributeSpecNew -> String
 attributeSpec2Str fs = intercalate " "
                         [ show (fsname fs)
                         , fstype fs
-                        , if fsDbNull fs then " DEFAULT NULL" else ""
+                        , if fsDbNull fs then " DEFAULT NULL" else " NOT NULL"
                         ] 
 plug2TableSpec :: PlugSQL -> TableSpecNew
 plug2TableSpec plug 

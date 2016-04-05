@@ -169,7 +169,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                 then ForeignKey (target srcExpr)
                                 else PlainAttr
                     , attNull = isTot trgExpr
-                    , attDBNull = True  -- to prevent database errors. Ampersand checks for itself. 
+                    , attDBNull = False  -- false for link tables
                     , attUniq = isUni trgExpr
                     , attFlipped = isFlipped trgExpr
                     }
@@ -180,7 +180,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                 then ForeignKey (target trgExpr)
                                 else PlainAttr
                     , attNull = isSur trgExpr
-                    , attDBNull = True  -- to prevent database errors. Ampersand checks for itself. 
+                    , attDBNull = False  -- false for link tables
                     , attUniq = isInj trgExpr
                     , attFlipped = isFlipped trgExpr
                     }

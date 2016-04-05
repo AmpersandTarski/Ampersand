@@ -525,7 +525,7 @@ class Database {
 	 * Remove all occurrences of $atom in the database (all concept tables and all relation tables)
 	 * In tables where the atom may not be null, the entire row is removed.
 	 * TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
-	 * @param Atom $atom
+	 * @param \Ampersand\Core\Atom $atom
 	 * @return void
 	 */
 	function deleteAtom($atom){
@@ -554,9 +554,11 @@ class Database {
 		    if($relation->srcConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->srcCol();
 		    if($relation->tgtConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->tgtCol();
 		    
-		    foreach($cols as $col){			        
-		        // If column may be set to null, update
-		        if($col->null) $query = "UPDATE `{$tableName}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atom->idEsc}'";
+		    foreach($cols as $col){
+		        // If n-n table, remove row
+		        if(is_null($relation->getMysqlTable()->tableOf)) $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atom->idEsc}'";
+		        // Elseif column may be set to null, update
+		        elseif($col->null) $query = "UPDATE `{$tableName}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atom->idEsc}'";
 		        // Else, we remove the entire row (cascades delete for TOT and SUR relations)
 		        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atom->idEsc}'";
 		        
