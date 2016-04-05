@@ -219,7 +219,7 @@ class Database {
 		}
 		
 		// Ininiate new session
-		Session::singleton();
+		Session::reInit();
 		
 		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
 		

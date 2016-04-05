@@ -100,6 +100,10 @@ class Session {
 		return self::$_instance;
 	}
 	
+	public static function reInit(){
+	    return self::$_instance = new Session();
+	}
+	
 	private function destroyAmpersandSession($sessionAtom){
 		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
 		$this->database->deleteAtom(new Atom($sessionAtom, 'SESSION'));
