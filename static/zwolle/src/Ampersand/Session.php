@@ -90,7 +90,7 @@ class Session {
     		$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
     		
     		// Add public interfaces
-    		$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, InterfaceObject::getPublicInterfaces());
+    		$this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
 	    }catch (Exception $e){
 	        Logger::getUserLogger()->error("Session not initialized: {$e->getMessage()}");
 	    }
