@@ -5,6 +5,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
 use Ampersand\Log\Notifications;
+use Ampersand\Interfacing\InterfaceObject;
 
 global $app;
 
@@ -106,6 +107,10 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	
 	$atom = new Atom($resourceId, $resourceType);
 	$atom->topLevelIfcId = $topLevelIfcId;
+	
+	// Create atom if not exists and crudC is allowed
+	if(!$atom->atomExists() && InterfaceObject::getInterface($topLevelIfcId)->crudC) $atom->addAtom();
+	
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 	
 	// Perform patch(es)
