@@ -8,7 +8,7 @@ use Ampersand\Database\Database;
 use Ampersand\AngularApp;
 use Ampersand\Config;
 use Ampersand\Role;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Rule\Rule;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Rule\Violation;

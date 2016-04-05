@@ -2,7 +2,7 @@
 
 use Ampersand\Config;
 use Ampersand\Extension\ExecEngine\ExecEngine;
-use Ampersand\Notifications;
+use Ampersand\Log\Notifications;
 use Ampersand\Session;
 
 global $app;

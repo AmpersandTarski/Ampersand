@@ -18,7 +18,7 @@
        }
 */
 
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;

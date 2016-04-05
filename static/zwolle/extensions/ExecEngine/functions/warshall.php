@@ -28,7 +28,7 @@
    4) Rather than defining/computing rStar (for r*), you may use the expression (I \/ rPlus)
 */
 
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Extension\ExecEngine\ExecEngine;
 use Ampersand\Database\Database;
 use Ampersand\Core\Relation;

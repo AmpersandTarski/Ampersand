@@ -1,7 +1,7 @@
 <?php
 
 use Ampersand\Config;
-use Ampersand\Notifications;
+use Ampersand\Log\Notifications;
 
 require_once (__DIR__ . '/../../src/bootstrap.php');
 

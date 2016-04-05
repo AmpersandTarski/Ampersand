@@ -9,7 +9,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Config;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Relation;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use PHPExcel_Cell;
 use PHPExcel_Shared_Date;
 use PHPExcel_IOFactory;

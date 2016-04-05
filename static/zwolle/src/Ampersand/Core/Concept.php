@@ -13,7 +13,7 @@ use Ampersand\Database\DatabaseTable;
 use Ampersand\Database\DatabaseTableCol;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Interfacing\View;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Atom;
 use Ampersand\Config;

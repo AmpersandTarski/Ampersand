@@ -13,7 +13,7 @@ use DateTimeZone;
 use Ampersand\Database\Database;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Config;
 use Ampersand\Session;
 

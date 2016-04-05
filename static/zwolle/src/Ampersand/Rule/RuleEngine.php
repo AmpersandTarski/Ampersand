@@ -7,8 +7,8 @@
 
 namespace Ampersand\Rule;
 
-use Ampersand\Logger;
-use Ampersand\Notifications;
+use Ampersand\Log\Logger;
+use Ampersand\Log\Notifications;
 use Ampersand\Session;
 use Ampersand\Config;
 

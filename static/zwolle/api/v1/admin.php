@@ -3,7 +3,7 @@
 use Ampersand\Config;
 use Ampersand\Database\Database;
 use Ampersand\Session;
-use Ampersand\Notifications;
+use Ampersand\Log\Notifications;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;

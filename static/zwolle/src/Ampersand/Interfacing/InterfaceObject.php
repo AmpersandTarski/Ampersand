@@ -9,7 +9,7 @@ namespace Ampersand\Interfacing;
 
 use Exception;
 use Ampersand\Database\Database;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;
 use Ampersand\Interfacing\View;

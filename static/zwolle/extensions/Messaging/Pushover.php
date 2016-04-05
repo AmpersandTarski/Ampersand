@@ -5,7 +5,7 @@ namespace Ampersand\Extension\Messaging;
 use Exception;
 use Ampersand\Hooks;
 use Ampersand\Config;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Pushover;
 
 require_once (__DIR__ . '/lib/php-pushover.php');

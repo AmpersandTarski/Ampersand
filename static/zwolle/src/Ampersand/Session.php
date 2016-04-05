@@ -13,6 +13,7 @@ use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
 use Ampersand\Rule\Rule;
+use Ampersand\Log\Logger;
 
 /**
  *

@@ -5,9 +5,10 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Log;
 
 use Monolog\Handler\AbstractProcessingHandler;
+use Ampersand\Log\Notifications;
 
 /**
  *

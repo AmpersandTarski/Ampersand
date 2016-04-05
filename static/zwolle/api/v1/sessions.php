@@ -1,7 +1,7 @@
 <?php
 
 use Ampersand\Session;
-use Ampersand\Notifications;
+use Ampersand\Log\Notifications;
 use Ampersand\Config;
 use Ampersand\Rule\RuleEngine;
 

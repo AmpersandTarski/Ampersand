@@ -2,7 +2,7 @@
 
 use Ampersand\Session;
 use Ampersand\Config;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Extension\ExcelImport\ExcelImport;
 
 global $app;

@@ -5,9 +5,11 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Log;
 
 use Exception;
+use Ampersand\Log\Logger;
+use Ampersand\Config;
 
 /**
  *

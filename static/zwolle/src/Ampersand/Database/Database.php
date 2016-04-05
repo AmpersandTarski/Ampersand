@@ -9,7 +9,7 @@ namespace Ampersand\Database;
 
 use Exception;
 use mysqli;
-use Ampersand\Logger;
+use Ampersand\Log\Logger;
 use Ampersand\Config;
 use Ampersand\Session;
 use Ampersand\Hooks;

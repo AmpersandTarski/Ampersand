@@ -4,7 +4,7 @@ use Ampersand\Config;
 use Ampersand\Core\Concept;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
-use Ampersand\Notifications;
+use Ampersand\Log\Notifications;
 
 global $app;
 
