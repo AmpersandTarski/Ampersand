@@ -117,7 +117,7 @@ class Violation {
         foreach ($session->getInterfacesToReadConcept($this->tgt->concept->name) as $interface){
             $links[] = "#/{$interface->id}/{$this->tgt->id}";
         }
-        $links = array_unique($links);
+        return array_unique($links);
     }
 }
 
