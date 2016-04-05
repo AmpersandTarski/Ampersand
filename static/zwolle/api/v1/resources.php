@@ -1,9 +1,9 @@
 <?php
 
 use Ampersand\Config;
-use Ampersand\Concept;
+use Ampersand\Core\Concept;
 use Ampersand\Session;
-use Ampersand\Atom;
+use Ampersand\Core\Atom;
 use Ampersand\Notifications;
 
 global $app;

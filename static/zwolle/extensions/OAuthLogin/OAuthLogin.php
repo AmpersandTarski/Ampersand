@@ -7,9 +7,9 @@ use Ampersand\AngularApp;
 use Ampersand\Config;
 use Ampersand\Session;
 use Ampersand\Database\Database;
-use Ampersand\Atom;
-use Ampersand\Concept;
-use Ampersand\Relation;
+use Ampersand\Core\Atom;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Relation;
 
 // UI
 AngularApp::addJS('extensions/OAuthLogin/ui/js/LoginModule.js');

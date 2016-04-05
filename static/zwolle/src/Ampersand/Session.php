@@ -10,6 +10,8 @@ namespace Ampersand;
 use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Interfacing\InterfaceObject;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Atom;
 
 /**
  *

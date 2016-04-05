@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Core;
 
 use Exception;
 use Ampersand\Database\Database;
@@ -13,6 +13,10 @@ use Ampersand\Database\DatabaseTable;
 use Ampersand\Database\DatabaseTableCol;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Interfacing\View;
+use Ampersand\Logger;
+use Ampersand\Conjunct;
+use Ampersand\Core\Atom;
+use Ampersand\Config;
 
 /**
  * 

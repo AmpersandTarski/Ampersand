@@ -14,8 +14,8 @@ use Ampersand\Config;
 use Ampersand\Session;
 use Ampersand\Hooks;
 use Ampersand\Conjunct;
-use Ampersand\Concept;
-use Ampersand\Relation;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Relation;
 use Ampersand\RuleEngine;
 
 /**

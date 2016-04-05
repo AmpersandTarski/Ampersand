@@ -10,10 +10,10 @@ namespace Ampersand\Interfacing;
 use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Logger;
-use Ampersand\Relation;
-use Ampersand\Concept;
+use Ampersand\Core\Relation;
+use Ampersand\Core\Concept;
 use Ampersand\Interfacing\View;
-use Ampersand\Atom;
+use Ampersand\Core\Atom;
 use Ampersand\Config;
 
 /**

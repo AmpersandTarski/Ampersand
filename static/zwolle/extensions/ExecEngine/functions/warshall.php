@@ -31,7 +31,7 @@
 use Ampersand\Logger;
 use Ampersand\Extension\ExecEngine\ExecEngine;
 use Ampersand\Database\Database;
-use Ampersand\Relation;
+use Ampersand\Core\Relation;
 
 function TransitiveClosure($r,$C,$rCopy,$rPlus){
 	if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);

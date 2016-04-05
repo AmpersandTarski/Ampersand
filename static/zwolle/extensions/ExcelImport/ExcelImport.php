@@ -4,11 +4,11 @@ namespace Ampersand\Extension\ExcelImport;
 
 use Exception;
 use Ampersand\AngularApp;
-use Ampersand\Atom;
-use Ampersand\Concept;
+use Ampersand\Core\Atom;
+use Ampersand\Core\Concept;
 use Ampersand\Config;
 use Ampersand\Interfacing\InterfaceObject;
-use Ampersand\Relation;
+use Ampersand\Core\Relation;
 use Ampersand\Logger;
 use PHPExcel_Cell;
 use PHPExcel_Shared_Date;

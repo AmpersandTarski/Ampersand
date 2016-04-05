@@ -5,12 +5,13 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Core;
 
 use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Database\DatabaseTableCol;
 use Ampersand\Database\RelationTable;
+use Ampersand\Core\Concept;
 
 /**
  *

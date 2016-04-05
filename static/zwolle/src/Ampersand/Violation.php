@@ -9,6 +9,7 @@ namespace Ampersand;
 
 use Exception;
 use Ampersand\Database\Database;
+use Ampersand\Core\Atom;
 
 /**
  *

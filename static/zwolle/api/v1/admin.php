@@ -6,7 +6,7 @@ use Ampersand\Session;
 use Ampersand\Notifications;
 use Ampersand\Conjunct;
 use Ampersand\Rule;
-use Ampersand\Relation;
+use Ampersand\Core\Relation;
 
 global $app;
 
