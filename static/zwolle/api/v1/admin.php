@@ -1,7 +1,7 @@
 <?php
 
 use Ampersand\Config;
-use Ampersand\Database;
+use Ampersand\Database\Database;
 use Ampersand\Session;
 use Ampersand\Notifications;
 use Ampersand\Conjunct;

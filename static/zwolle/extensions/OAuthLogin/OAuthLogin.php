@@ -6,7 +6,7 @@ use Exception;
 use Ampersand\AngularApp;
 use Ampersand\Config;
 use Ampersand\Session;
-use Ampersand\Database;
+use Ampersand\Database\Database;
 use Ampersand\Atom;
 use Ampersand\Concept;
 use Ampersand\Relation;

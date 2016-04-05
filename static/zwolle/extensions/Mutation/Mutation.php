@@ -4,7 +4,7 @@ namespace Ampersand\Extension\Mutation;
 
 use Ampersand\Hooks;
 use Ampersand\Config;
-use Ampersand\Database;
+use Ampersand\Database\Database;
 use Ampersand\Concept;
 use Ampersand\Relation;
 use Ampersand\Session;

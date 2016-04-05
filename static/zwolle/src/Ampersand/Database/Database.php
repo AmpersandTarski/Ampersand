@@ -5,10 +5,18 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Database;
 
 use Exception;
 use mysqli;
+use Ampersand\Logger;
+use Ampersand\Config;
+use Ampersand\Session;
+use Ampersand\Hooks;
+use Ampersand\Conjunct;
+use Ampersand\Concept;
+use Ampersand\Relation;
+use Ampersand\RuleEngine;
 
 /**
  *

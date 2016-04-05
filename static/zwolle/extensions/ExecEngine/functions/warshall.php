@@ -30,7 +30,7 @@
 
 use Ampersand\Logger;
 use Ampersand\Extension\ExecEngine\ExecEngine;
-use Ampersand\Database;
+use Ampersand\Database\Database;
 use Ampersand\Relation;
 
 function TransitiveClosure($r,$C,$rCopy,$rPlus){

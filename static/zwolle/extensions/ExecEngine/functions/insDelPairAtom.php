@@ -19,7 +19,7 @@
 */
 
 use Ampersand\Logger;
-use Ampersand\Database;
+use Ampersand\Database\Database;
 use Ampersand\Relation;
 use Ampersand\Concept;
 use Ampersand\Atom;

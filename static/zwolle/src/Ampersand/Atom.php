@@ -10,6 +10,7 @@ namespace Ampersand;
 use Exception;
 use DateTime;
 use DateTimeZone;
+use Ampersand\Database\Database;
 
 /**
  * 

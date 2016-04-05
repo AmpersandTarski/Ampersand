@@ -8,6 +8,7 @@
 namespace Ampersand;
 
 use Exception;
+use Ampersand\Database\Database;
 
 /**
  *

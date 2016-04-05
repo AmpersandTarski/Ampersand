@@ -4,7 +4,7 @@ namespace Ampersand\Extension\ExecEngine;
 
 use Exception;
 use Ampersand\Hooks;
-use Ampersand\Database;
+use Ampersand\Database\Database;
 use Ampersand\AngularApp;
 use Ampersand\Config;
 use Ampersand\Role;
