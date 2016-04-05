@@ -88,7 +88,7 @@ class Violation {
                 $rows = $database->Exe($query);
 
                 // returning the result
-                if(count($row) > 1) throw new Exception("Expression of pairview results in more than one tgt atom", 501); // 501: Not implemented
+                if(count($rows) > 1) throw new Exception("Expression of pairview results in more than one tgt atom", 501); // 501: Not implemented
                 $strArr[] = $rows[0]['tgt'];
 
             // unknown segment
