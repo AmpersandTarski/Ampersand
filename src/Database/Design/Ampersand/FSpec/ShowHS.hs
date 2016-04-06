@@ -581,13 +581,25 @@ instance ShowHSName ObjectDef where
 instance ShowHS ObjectDef where
  showHS opts indent r
   = intercalate indent
-        ["Obj{ objnm   = " ++ show(objnm r)
-        ,"   , objpos  = " ++ showHS opts "" (objpos r)
-        ,"   , objctx  = " ++ showHS opts (indent++"               ") (objctx r)
-        ,"   , objmsub = " ++ showHS opts (indent++"                    ") (objmsub r)
-        ,"   , objstrs = " ++ show(objstrs r)
+        ["Obj{ objnm    = " ++ show(objnm r)
+        ,"   , objpos   = " ++ showHS opts "" (objpos r)
+        ,"   , objctx   = " ++ showHS opts (indent++"                ") (objctx r)
+        ,"   , objcrud  = " ++ showHS opts (indent++"                ") (objcrud r)
+        ,"   , objmView = " ++ show(objmView r)
+        ,"   , objmsub  = " ++ showHS opts (indent++"                ") (objmsub r)
+        ,"   , objstrs  = " ++ show(objstrs r)
         ]++indent++"   }"
 
+instance ShowHS Cruds where
+ showHS opts indent x 
+  = intercalate indent
+      ["Cruds { crudOrig = "++ showHS opts "" (crudOrig x)
+      ,"      , crudC    = "++ show (crudC x)
+      ,"      , crudR    = "++ show (crudR x)
+      ,"      , crudU    = "++ show (crudU x)
+      ,"      , crudD    = "++ show (crudD x)
+      ,"      }"
+      ]  
 instance ShowHSName Interface where
  showHSName obj = haskellIdentifier ("ifc_"++name obj)
 
