@@ -70,7 +70,7 @@ class Conjunct {
     private function __construct($conjDef){
         $this->logger = Logger::getLogger('FW');
         
-        $this->id = $conjDef['Id'];
+        $this->id = $conjDef['id'];
         $this->query = $conjDef['violationsSQL'];
         $this->invRuleNames = (array)$conjDef['invariantRuleNames'];
         $this->sigRuleNames = (array)$conjDef['signalRuleNames'];
@@ -196,7 +196,7 @@ class Conjunct {
         $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'conjuncts.json');
         $allConjDefs = (array)json_decode($file, true);
     
-        foreach ($allConjDefs as $conjDef) self::$allConjuncts[$conjDef['Id']] = new Conjunct($conjDef);
+        foreach ($allConjDefs as $conjDef) self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
     }
     
     /**
