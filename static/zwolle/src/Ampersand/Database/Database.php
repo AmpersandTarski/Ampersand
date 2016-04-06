@@ -167,21 +167,32 @@ class Database {
 	 */
 	public static function createDB(){
 	    try{
+	        $logger = Logger::getLogger('DATABASE');
+	        
     		$DB_host = Config::get('dbHost', 'mysqlDatabase');
     		$DB_user = Config::get('dbUser', 'mysqlDatabase');
     		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
     		$DB_name = Config::get('dbName', 'mysqlDatabase');
     		
+    		// Enable mysqli errors to be thrown as Exceptions
+    		mysqli_report(MYSQLI_REPORT_ALL);
+    		
+    		$db_link = mysqli_init();
+    		
     		// Connect to MYSQL database
-    		$db_link = new mysqli($DB_host, $DB_user, $DB_pass);
+    		$logger->info("Connecting to host: '{$DB_host}'");
+    		$db_link->real_connect($DB_host, $DB_user, $DB_pass);
     		
     		// Set sql_mode to ANSI
+    		$logger->info("Setting session sql_mode to 'ANSI,TRADITIONAL'");
     		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
     		
     		// Drop database
+    		$logger->info("Drop database if exists: '{$DB_name}'");
     		$db_link->query("DROP DATABASE IF EXISTS $DB_name");
     		
     		// Create new database
+    		$logger->info("Create new database: '{$DB_name}'");
     		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
 		
 		}catch (Exception $e){
