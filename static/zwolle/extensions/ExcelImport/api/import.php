@@ -4,6 +4,8 @@ use Ampersand\Session;
 use Ampersand\Config;
 use Ampersand\Log\Logger;
 use Ampersand\Extension\ExcelImport\ExcelImport;
+use Ampersand\Log\Notifications;
+use Ampersand\Database\Database;
 
 global $app;
 
@@ -28,13 +30,16 @@ $app->post('/excelimport/import', function () use ($app){
 	if (is_uploaded_file($_FILES['file']['tmp_name'])){
 		// Parse:
 		$parser = new ExcelImport();
-		$result = $parser->ParseFile($_FILES['file']['tmp_name']);
+		$parser->ParseFile($_FILES['file']['tmp_name']);
+		
+		Database::singleton()->closeTransaction("File {$_FILES['file']['tmp_name']} imported successfully", true);
+		
 		unlink($_FILES['file']['tmp_name']);
 	}else{
 	    Logger::getUserLogger()->error("No file uploaded");
 	}
 	
-	$result = array('notifications' => $result, 'files' => $_FILES);
+	$result = array('notifications' => Notifications::getAll(), 'files' => $_FILES);
 	
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
