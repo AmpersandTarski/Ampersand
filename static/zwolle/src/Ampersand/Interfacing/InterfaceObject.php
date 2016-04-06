@@ -201,7 +201,7 @@ class InterfaceObject {
 	public function __construct($ifcDef, $pathEntry = null){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
-				
+		
 		// Set attributes from $ifcDef
 		$this->id = $ifcDef['id'];
 		$this->label = $ifcDef['label'];
@@ -281,17 +281,22 @@ class InterfaceObject {
 	    
 	}
 	
-	public function getSubinterface($ifcId){
-	    if(!array_key_exists($ifcId, $this->subInterfaces)) throw new Exception("Subinterface '{$ifcId}' does not exists in interface '{$this->path}'", 500);
+	public function getSubinterface($ifcId){	    
+	    if(!array_key_exists($ifcId, $subifcs = $this->getSubinterfaces())) throw new Exception("Subinterface '{$ifcId}' does not exists in interface '{$this->path}'", 500);
 	
-	    return $this->subInterfaces[$ifcId];
+	    return $subifcs[$ifcId];
 	}
 	
 	public function getSubinterfaceByLabel($ifcLabel){
-	    foreach ($this->subInterfaces as $ifc)
+	    foreach ($this->getSubinterfaces() as $ifc)
 	        if($ifc->label == $ifcLabel) return $ifc;
 	    
 	    throw new Exception("Subinterface '{$ifcLabel}' does not exists in interface '{$this->path}'", 500);
+	}
+	
+	private function getSubinterfaces(){
+	    if(is_null($this->refInterfaceId)) return $this->subInterfaces;
+	    else return self::getInterface($this->refInterfaceId)->getSubinterfaces();
 	}
 	
 /**************************************************************************************************
@@ -378,7 +383,7 @@ class InterfaceObject {
 	        // Object
 	        if($this->tgtConcept->isObject){
 	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false
-	            if($this->isProp && !$this->isIdent && empty($this->subInterfaces) && empty($this->refInterfaceId)){
+	            if($this->isProp && !$this->isIdent && empty($this->getSubinterfaces())){
 	                $result = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
 	    
 	            // Regular object, with or without subinterfaces
@@ -404,7 +409,7 @@ class InterfaceObject {
 	        // Scalar
 	        }else{
 	            // Leaf
-	            if(empty($this->subInterfaces) && empty($this->refInterfaceId)){
+	            if(empty($this->getSubinterfaces())){
 	                $content = $tgtAtom->getJsonRepresentation();
 	                	
 	                if($this->isUni) $result = $content;

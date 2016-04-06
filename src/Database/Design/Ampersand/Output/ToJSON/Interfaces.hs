@@ -84,7 +84,7 @@ instance JSON SubInterface JSONSubInterface where
      InterfaceRef isLink nm cr -> JSONSubInterface
        { subJSONboxClass           = Nothing
        , subJSONifcObjects         = Nothing
-       , subJSONrefSubInterfaceId  = Just nm
+       , subJSONrefSubInterfaceId  = Just (escapeIdentifier nm)
        , subJSONrefIsLinTo         = Just isLink
        , subJSONcrud               = Just (fromAmpersand fSpec cr)
        }

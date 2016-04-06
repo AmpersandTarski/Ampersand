@@ -302,7 +302,7 @@ class Atom {
 	 */
 	public function ifc($ifcId){
 	    if(is_null($this->parentIfc)) $ifc = InterfaceObject::getInterface($ifcId);
-	    else $ifc = $this->parentIfc->getSubInterface($ifcId);
+	    else $ifc = $this->parentIfc->getSubinterface($ifcId);
 	    
 	    $clone = clone $ifc;
 	    $clone->setSrcAtom($this);
@@ -430,7 +430,7 @@ class Atom {
 	    }
 	    
 	    // Include content for subinterfaces that refer to other interface (e.g. "label" : expr [LINKTO] INTERFACE <refInterface>)
-	    if(!empty($this->parentIfc->refInterfaceId)
+	    if(!is_null($this->parentIfc->refInterfaceId)
 	            && (!$this->parentIfc->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
 	            && (!in_array($this->id, (array)$recursionArr[$this->parentIfc->refInterfaceId]))) // Prevent infinite loops
 	    {
