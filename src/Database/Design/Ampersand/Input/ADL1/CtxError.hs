@@ -247,7 +247,7 @@ mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
 mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
 mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
   CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++
-                      concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
+                      concat ["\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")"
                              | vd <- viewDefs ]
 
 mkIncompatibleViewError :: (Named b,Named c) => P_ObjDef a -> String -> b -> c -> CtxError

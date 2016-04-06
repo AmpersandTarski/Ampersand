@@ -544,7 +544,7 @@ instance ShowHSName ViewDef where
 
 instance ShowHS ViewDef where
  showHS opts indent vd
-  = "Vd ("++showHS opts "" (vdpos vd)++") "++show (vdlbl vd)++" "++showHSName (vdcpt vd)
+  = "Vd ("++showHS opts "" (vdpos vd)++") "++show (name vd)++" "++showHSName (vdcpt vd)
     ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS opts indent) $ vdats vd)++indent++"  ]"
 
 instance ShowHS ViewSegment where

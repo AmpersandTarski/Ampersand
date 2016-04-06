@@ -230,10 +230,10 @@ makeFSpec opts context
   -- Lookup view by id in fSpec.
      lookupView' :: String -> ViewDef
      lookupView'  viewId =
-       case filter (\v -> vdlbl v == viewId) $ viewDefs context of
+       case filter (\v -> name v == viewId) $ viewDefs context of
          []   -> fatal 174 $ "Undeclared view " ++ show viewId ++ "." -- Will be caught by static analysis
          [vd] -> vd
-         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
+         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map name vds) -- Will be caught by static analysis
      
    -- get all views for a specific concept and all larger concepts.
      getAllViewsForConcept' :: A_Concept -> [ViewDef]

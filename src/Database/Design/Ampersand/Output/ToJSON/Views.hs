@@ -28,7 +28,7 @@ instance JSON FSpec Views where
                                . allConcepts $ fSpec
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
-  { vwJSONlabel      = vdlbl vd
+  { vwJSONlabel      = name vd
   , vwJSONconcept    = name . vdcpt $ vd
   , vwJSONisDefault  = vdIsDefault vd
   , vwJSONsegments   = map (fromAmpersand fSpec) . vdats $ vd

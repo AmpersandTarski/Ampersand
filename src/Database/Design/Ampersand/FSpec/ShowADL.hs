@@ -176,7 +176,7 @@ instance ShowADL IdentitySegment where
 
 instance ShowADL ViewDef where
  showADL vd
-  = "VIEW "++vdlbl vd
+  = "VIEW "++name vd
           ++ ": " ++name (vdcpt vd)
           ++ "(" ++intercalate ", " (map showADL $ vdats vd) ++ ")"
      --TODO: Make this output the more generic FancyViewDef 

@@ -126,7 +126,7 @@ instance JSON ObjectDef JSONObjectDef where
  fromAmpersand fSpec object = JSONObjectDef
   { ifcJSONid                 = escapeIdentifier . name $ object
   , ifcJSONlabel              = name object
-  , ifcJSONviewId             = fmap vdlbl (getDefaultViewForConcept fSpec tgtConcept)
+  , ifcJSONviewId             = fmap name (getDefaultViewForConcept fSpec tgtConcept)
   , ifcJSONNormalizationSteps = showPrf showADL.cfProof (getOpts fSpec).objctx $ object 
   , ifcJSONrelation           = fmap (showHSName . fst) mEditableDecl
   , ifcJSONrelationIsFlipped  = fmap               snd  mEditableDecl

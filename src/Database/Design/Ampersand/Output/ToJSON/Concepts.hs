@@ -86,7 +86,7 @@ instance JSON A_Concept TableCols where
       _       -> fatal 81 $ "Concept `"++name cpt++"` found in multiple tables."
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
-  { vwJSONlabel        = vdlbl vd
+  { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
   , vwJSONsegments     = map (fromAmpersand fSpec) . vdats $ vd
