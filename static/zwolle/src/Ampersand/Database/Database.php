@@ -119,7 +119,7 @@ class Database {
     		$this->db_name = Config::get('dbName', 'mysqlDatabase');
     		
     		// Enable mysqli errors to be thrown as Exceptions
-    		mysqli_report(MYSQLI_REPORT_STRICT);
+    		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
     		
     		// Connect to MYSQL database
     		$this->db_link = mysqli_init();
@@ -175,7 +175,7 @@ class Database {
     		$DB_name = Config::get('dbName', 'mysqlDatabase');
     		
     		// Enable mysqli errors to be thrown as Exceptions
-    		mysqli_report(MYSQLI_REPORT_ALL);
+    		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
     		
     		$db_link = mysqli_init();
     		
