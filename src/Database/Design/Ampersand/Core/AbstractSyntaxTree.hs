@@ -405,7 +405,7 @@ data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object d
                      , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
                      , objctx ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
                      , objcrud ::  Cruds -- ^ CRUD as defined by the user 
-                     , objmView :: Maybe String   -- ^ The view that should be used for this object
+                     , objmView :: Maybe String   -- ^ The view that should be used instead of the default view for this object
                      , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
                      , objstrs ::  [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
@@ -764,6 +764,8 @@ getExpressionRelation expr = case getRelation expr of
     getRelation :: Expression -> Maybe (A_Concept, Maybe Declaration, A_Concept, Bool)
     getRelation (ECps (e, EDcI{})) = getRelation e
     getRelation (ECps (EDcI{}, e)) = getRelation e
+    getRelation (ECps (e, EEps{})) = getRelation e
+    getRelation (ECps (EEps{}, e)) = getRelation e
     getRelation (ECps (e1, e2))
       = case (getRelation e1, getRelation e2) of --note: target e1==source e2
          (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) -> if i1==target e1 && i2==source e2 then Just (i1, Nothing, i2, False) else -- i1==i2
