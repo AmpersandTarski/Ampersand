@@ -49,7 +49,6 @@ data JSONexpr = JSONexpr
   , exprJSONtgtConcept        :: String
   , exprJSONisUni             :: Bool
   , exprJSONisTot             :: Bool
-  , exprJSONisProp            :: Bool
   , exprJSONisIdent           :: Bool
   , exprJSONquery             :: String
   } deriving (Generic, Show)
@@ -109,7 +108,6 @@ instance JSON ObjectDef JSONexpr where
   , exprJSONtgtConcept        = name tgtConcept
   , exprJSONisUni             = isUni normalizedInterfaceExp
   , exprJSONisTot             = isTot normalizedInterfaceExp
-  , exprJSONisProp            = isProp normalizedInterfaceExp
   , exprJSONisIdent           = isIdent normalizedInterfaceExp
   , exprJSONquery             = prettySQLQuery fSpec 0 normalizedInterfaceExp
   }
