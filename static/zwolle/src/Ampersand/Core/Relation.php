@@ -90,6 +90,12 @@ class Relation {
     
     /**
      * 
+     * @var boolean
+     */
+    public $isProp;
+    
+    /**
+     * 
      * @var Conjunct[]
      */
     public $affectedConjuncts = array();
@@ -132,6 +138,7 @@ class Relation {
         $this->isTot = $relationDef['tot'];
         $this->isInj = $relationDef['inj'];
         $this->isSur = $relationDef['sur'];
+        $this->isProp = $relationDef['prop'];
         
         foreach((array)$relationDef['affectedConjuncts'] as $conjId){
             $conj = Conjunct::getConjunct($conjId);
