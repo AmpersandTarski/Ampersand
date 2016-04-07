@@ -128,13 +128,15 @@ instance JSON ObjectDef JSONObjectDef where
   , ifcJSONlabel              = name object
   , ifcJSONviewId             = fmap name viewToUse
   , ifcJSONNormalizationSteps = showPrf showADL.cfProof (getOpts fSpec).objctx $ object 
-  , ifcJSONrelation           = fmap (showHSName . fst) mEditableDecl
-  , ifcJSONrelationIsFlipped  = fmap               snd  mEditableDecl
+  , ifcJSONrelation           = fmap (showDcl . fst) mEditableDecl
+  , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
   , ifcJSONcrud               = fromAmpersand fSpec (objcrud object)
   , ifcJSONexpr               = fromAmpersand fSpec object
   , ifcJSONsubinterfaces      = fmap (fromAmpersand fSpec) (objmsub object)
   }
   where
+    showDcl :: Declaration -> String
+    showDcl dcl = name dcl ++ (show . sign) dcl
     viewToUse = case objmView object of
                  Just nm -> Just $ lookupView fSpec nm
                  Nothing -> getDefaultViewForConcept fSpec tgtConcept
