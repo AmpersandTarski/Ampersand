@@ -23,9 +23,7 @@ instance ToJSON Views where
   toJSON = amp2Jason
 instance JSON FSpec Views where
  fromAmpersand fSpec _ = Views . map (fromAmpersand fSpec) 
-                               . catMaybes 
-                               . map (getDefaultViewForConcept fSpec) 
-                               . allConcepts $ fSpec
+                               . vviews $ fSpec
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
   { vwJSONlabel      = name vd
