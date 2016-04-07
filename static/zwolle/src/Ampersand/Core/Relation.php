@@ -126,8 +126,7 @@ class Relation {
         $this->srcConcept = Concept::getConcept($relationDef['srcConcept']);
         $this->tgtConcept = Concept::getConcept($relationDef['tgtConcept']);
         
-        // TODO: while old signature is used in interface object definitions, use this old one (rel_<r>_<srcConcept>_<tgtConcept>)
-        $this->signature = "rel_{$this->name}_{$this->srcConcept->name}_{$this->tgtConcept->name}"; // $relationDef['signature'];
+        $this->signature = $relationDef['signature'];
         
         $this->isUni = $relationDef['uni'];
         $this->isTot = $relationDef['tot'];
