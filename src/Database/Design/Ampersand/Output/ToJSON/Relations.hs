@@ -19,6 +19,7 @@ data Relation = Relation
   , relJSONtot         :: Bool
   , relJSONinj         :: Bool
   , relJSONsur         :: Bool
+  , relJSONprop        :: Bool
   , relJSONaffectedConjuncts :: [String]
   , relJSONmysqlTable  :: RelTableInfo
   } deriving (Generic, Show)
@@ -53,6 +54,7 @@ instance JSON Declaration Relation where
          , relJSONtot      = isTot dcl
          , relJSONinj      = isInj dcl
          , relJSONsur      = isSur dcl
+         , relJSONprop     = isProp dcl
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
          , relJSONmysqlTable = fromAmpersand fSpec dcl
          }
