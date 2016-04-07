@@ -109,17 +109,17 @@ instance JSON ObjectDef JSONexpr where
   , exprJSONtgtConcept        = name tgtConcept
   , exprJSONisUni             = isUni normalizedInterfaceExp
   , exprJSONisTot             = isTot normalizedInterfaceExp
-  , exprJSONisProp            = maybe False isProp mdcl
+  , exprJSONisProp            = isProp normalizedInterfaceExp
   , exprJSONisIdent           = isIdent normalizedInterfaceExp
   , exprJSONquery             = prettySQLQuery fSpec 0 normalizedInterfaceExp
   }
   where
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
-    (srcConcept, mdcl,tgtConcept) =
+    (srcConcept, tgtConcept) =
       case getExpressionRelation normalizedInterfaceExp of
-        Just (src, dcl , tgt, _) ->
-          (src, Just dcl, tgt)
-        Nothing -> (source normalizedInterfaceExp, Nothing, target normalizedInterfaceExp) -- fall back to typechecker type
+        Just (src, _ , tgt, _) ->
+          (src, tgt)
+        Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
 instance JSON ObjectDef JSONObjectDef where
  fromAmpersand fSpec object = JSONObjectDef
