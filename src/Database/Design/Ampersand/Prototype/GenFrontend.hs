@@ -164,7 +164,7 @@ data FEObject = FEObject { objName :: String
                          , objCrudD :: Bool
                          , exprIsUni :: Bool
                          , exprIsTot :: Bool
-                         , exprIsProp :: Bool
+                         , relIsProp  :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
                          , exprIsIdent :: Bool
                          , objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox
@@ -209,10 +209,10 @@ buildInterface fSpec allIfcs ifc =
     buildObject object =
      do { let iExp = conjNF (getOpts fSpec) $ objctx object
               
-        ; (aOrB, iExp', src, tgt) <-
+        ; (aOrB, iExp', src, tgt, mDecl) <-
             case objmsub object of
               Nothing                  ->
-               do { let (src, tgt) = getSrcTgt iExp
+               do { let (src, mDecl, tgt) = getSrcDclTgt iExp
                   ; let mView = case objmView object of
                                   Just nm -> Just $ lookupView fSpec nm
                                   Nothing -> getDefaultViewForConcept fSpec tgt
@@ -227,15 +227,15 @@ buildInterface fSpec allIfcs ifc =
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
-                           , iExp, src, tgt)
+                           , iExp, src, tgt, mDecl)
                   }
               Just (Box _ mCl objects) -> 
-               do { let (src, tgt) = getSrcTgt iExp
+               do { let (src, mDecl, tgt) = getSrcDclTgt iExp
                   ; subObjs <- mapM buildObject objects
                   ; return (FEBox { objMClass  = mCl
                                   , ifcSubObjs = subObjs
                                   }
-                           , iExp, src, tgt)
+                           , iExp, src, tgt, mDecl)
                   }
               Just (InterfaceRef isLink nm _)   -> 
                 case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
@@ -243,16 +243,16 @@ buildInterface fSpec allIfcs ifc =
                   (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
                   [i]     -> 
                         if isLink
-                        then do { let (src, tgt) = getSrcTgt iExp
+                        then do { let (src, mDecl, tgt) = getSrcDclTgt iExp
                                 ; let templatePath = "views" </> "View-LINKTO.html"
                                 ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
-                                         , iExp, src, tgt)
+                                         , iExp, src, tgt, mDecl)
                                 }
                         else do { refObj <- buildObject  (ifcObj i)
                                 ; let comp = ECps (iExp, objExp refObj) 
                                       -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
-                                      (src, tgt) = getSrcTgt comp
-                                ; return (atomicOrBox refObj, comp, src, tgt)
+                                      (src, mDecl, tgt) = getSrcDclTgt comp
+                                ; return (atomicOrBox refObj, comp, src, tgt, mDecl)
                                 } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
 
         ; let navIfcs = [ NavInterface { navIfcName  = name nIfc
@@ -272,16 +272,18 @@ buildInterface fSpec allIfcs ifc =
                            , objCrudD = crudD . objcrud $ object
                            , exprIsUni = isUni iExp'
                            , exprIsTot = isTot iExp'
-                           , exprIsProp = isProp iExp'
+                           , relIsProp  = case mDecl of
+                                            Nothing  -> False
+                                            Just dcl -> isProp dcl
                            , exprIsIdent = isIdent iExp'
                            , objNavInterfaces = navIfcs
                            , atomicOrBox = aOrB
                            }
         }
-      where getSrcTgt expr = 
+      where getSrcDclTgt expr = 
               case getExpressionRelation expr of
-                Nothing                          -> (source expr, target expr)
-                Just (declSrc, _ , declTgt, _) -> (declSrc,     declTgt    ) 
+                Nothing                          -> (source expr, Nothing  , target expr)
+                Just (declSrc, decl, declTgt, _) -> (declSrc    , Just decl, declTgt    ) 
                                                    -- if the expression is a relation, use the (possibly narrowed type) from getExpressionRelation
 
 ------ Generate RouteProvider.js
@@ -406,7 +408,7 @@ genView_Object fSpec depth obj =
             }
         getTemplateForObject :: IO(FilePath)
         getTemplateForObject 
-           | exprIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
+           | relIsProp obj && (not . exprIsIdent) obj  -- special 'checkbox-like' template for propery relations
                        = return $  templatePath </> "View-PROPERTY"++".html"
            | otherwise = getTemplateForConcept (objTarget obj)
         getTemplateForConcept :: A_Concept -> IO(FilePath)
