@@ -263,14 +263,11 @@ instance Pretty TType where
     pretty = text . show
       
 instance Pretty P_Interface where
-    pretty (P_Ifc name klass args roles obj _ _) =
-        text "INTERFACE" <+> maybeQuote name <+> class_
+    pretty (P_Ifc name args roles obj _ _) =
+        text "INTERFACE" <+> maybeQuote name 
                <+> labelArgs args <+> iroles
                <+> text ":" <~\> obj_ctx obj <~> obj_msub obj
-                 where class_ = case klass of
-                                     Nothing  -> empty
-                                     Just str -> text "CLASS" <+> quoteConcept str
-                       iroles = if null roles then empty
+                 where iroles = if null roles then empty
                                 else text "FOR" <+> listOf roles
 
 instance Pretty a => Pretty (P_ObjDef a) where

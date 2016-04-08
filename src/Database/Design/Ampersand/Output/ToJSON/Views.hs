@@ -8,7 +8,6 @@ import Database.Design.Ampersand.Output.ToJSON.JSONutils
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Output.ToJSON.Concepts 
-import Data.Maybe
 
 data Views = Views [View] deriving (Generic, Show)
 data View = View

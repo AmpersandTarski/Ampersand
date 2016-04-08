@@ -360,8 +360,7 @@ instance Show A_Gen where
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
 
-data Interface = Ifc { ifcClass ::    Maybe String
-                     , ifcArgs ::     [[String]]
+data Interface = Ifc { ifcArgs ::     [[String]]
                      , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcEcas ::     [ECArule]     -- All ECArules that are needed to perform computations for maintaining rules

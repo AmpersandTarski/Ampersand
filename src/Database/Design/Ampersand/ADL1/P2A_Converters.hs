@@ -807,17 +807,14 @@ pCtx2aCtx opts
 
     pIfc2aIfc :: DeclMap -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc declMap
-             (P_Ifc { ifc_Class = iclass
-                    , ifc_Args = args
+             (P_Ifc { ifc_Args = args
                     , ifc_Roles = rols
                     , ifc_Obj = _
                     , ifc_Pos = orig
-                    -- , ifc_Name = nm
                     , ifc_Prp = prp
                     }, objDisamb)
         = (\ obj'
-             -> Ifc { ifcClass = iclass
-                    , ifcArgs = args
+             -> Ifc { ifcArgs = args
                     , ifcRoles = rols
                     , ifcObj = obj'
                     , ifcEcas = []      -- to be enriched in Adl2fSpec with ECA-rules

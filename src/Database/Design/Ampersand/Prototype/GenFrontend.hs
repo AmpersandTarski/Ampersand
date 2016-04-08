@@ -149,7 +149,6 @@ copyIncludes fSpec =
 -- NOTE: _ disables 'not used' warning for fields
 data FEInterface = FEInterface { ifcName :: String
                                , ifcLabel :: String
-                               , _ifcMClass :: Maybe String 
                                , _ifcExp :: Expression, _ifcSource :: A_Concept, _ifcTarget :: A_Concept
                                , _ifcRoles :: [Role],  _ifcObj :: FEObject
                                } deriving (Typeable, Data)
@@ -194,7 +193,6 @@ buildInterface fSpec allIfcs ifc =
     ; return 
         FEInterface { ifcName = escapeIdentifier $ name ifc
                     , ifcLabel = name ifc
-                    , _ifcMClass = ifcClass ifc
                     , _ifcExp = objExp obj
                     , _ifcSource = objSource obj
                     , _ifcTarget = objTarget obj
