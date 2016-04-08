@@ -431,8 +431,8 @@ instance Traced (P_SubIfc a) where
 instance Functor P_ObjDef where fmap = fmapDefault
 instance Foldable P_ObjDef where foldMap = foldMapDefault
 instance Traversable P_ObjDef where
- traverse f (P_Obj nm pos ctx mCrud mView msub strs)
-  = (\ctx' msub'->(P_Obj nm pos ctx' mCrud mView msub' strs)) <$>
+ traverse f (P_Obj nm pos ctx mCrud mView msub)
+  = (\ctx' msub'->(P_Obj nm pos ctx' mCrud mView msub')) <$>
      traverse f ctx <*> traverse (traverse f) msub
 
 instance Traced TermPrim where
@@ -587,7 +587,6 @@ instance Traced P_Population where
 
 data P_Interface =
      P_Ifc { ifc_Name :: String           -- ^ the name of the interface
-           , ifc_Args :: [[String]]       -- ^ a list of arguments for code generation.
            , ifc_Roles :: [Role]        -- ^ a list of roles that may use this interface
            , ifc_Obj :: P_ObjectDef       -- ^ the context expression (mostly: I[c])
            , ifc_Pos :: Origin
@@ -624,7 +623,6 @@ data P_ObjDef a =
            , obj_crud :: Maybe P_Cruds  -- ^ the CRUD actions as required by the user  
            , obj_mView :: Maybe String -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
-           , obj_strs :: [[String]]    -- ^ directives that specify the interface.
            }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
 instance Eq (P_ObjDef a) where od==od' = origin od==origin od'
 instance Named (P_ObjDef a) where

@@ -147,9 +147,9 @@ instance Disambiguatable P_ObjDef where
                         mCrud
                         v
                         d -- (potential) subobject
-                        f)
+                        )
                         env -- from the environment, only the source is important
-   = (P_Obj a b c' mCrud v d' f, Cnstr (sourceConstraintsOf env2) [] -- only source information should be relevant
+   = (P_Obj a b c' mCrud v d', Cnstr (sourceConstraintsOf env2) [] -- only source information should be relevant
      )
     where
      (d', env1)

@@ -125,7 +125,6 @@ aGen2pGen gen =
 aInterface2pInterface :: Interface -> P_Interface
 aInterface2pInterface ifc =
  P_Ifc { ifc_Name   = name ifc
-       , ifc_Args   = ifcArgs ifc
        , ifc_Roles  = ifcRoles ifc
        , ifc_Obj    = aObjectDef2pObjectDef (ifcObj ifc)
        , ifc_Pos    = ifcPos ifc
@@ -176,7 +175,6 @@ aObjectDef2pObjectDef oDef =
        , obj_ctx   = aExpression2pTermPrim (objctx oDef)
        , obj_mView = objmView oDef
        , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
-       , obj_strs  = objstrs oDef
        }
 
 aExpression2pTermPrim :: Expression -> Term TermPrim

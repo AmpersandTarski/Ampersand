@@ -23,9 +23,6 @@ safeStr = listOf printable
 safeStr1 :: Gen String
 safeStr1 = listOf1 printable
 
-maybeSafeStr :: Gen (Maybe String)
-maybeSafeStr = oneof [Just <$> safeStr, return Nothing]
-
 -- Genrates a valid ADL identifier
 identifier :: Gen String
 identifier = suchThat str2 noKeyword
@@ -62,9 +59,8 @@ genObj = makeObj arbitrary genIfc (return Nothing)
 
 makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
 makeObj genPrim ifcGen genView n =
-        P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc <*> args
-              where args = listOf $ listOf1 identifier
-                    term = Prim <$> genPrim
+        P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc
+              where term = Prim <$> genPrim
                     ifc  = if n == 0 then return Nothing
                            else Just <$> ifcGen (n`div`2)
 
@@ -273,10 +269,9 @@ instance Arbitrary PAtomValue where
               ['\\']  -> False -- If the last character is an escape, the double quote ending the string would not be seen as such.
               (_:cs)  -> stringConstraints cs
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
-                      <*> args <*> listOf arbitrary
+    arbitrary = P_Ifc <$> safeStr1
+                      <*> listOf arbitrary
                       <*> sized objTermPrim <*> arbitrary <*> safeStr
-                   where args = listOf $ listOf1 safeStr
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
     arbitrary = sized genObj

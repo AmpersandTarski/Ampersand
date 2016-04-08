@@ -354,7 +354,7 @@ makeFSpec opts context
                      , objcrud = fatal 351 "No default crud in generated interface"
                      , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
-                     , objstrs = [] }
+                     }
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
             -- Each expression list represents a path from the origin of a box to the attribute.
@@ -365,14 +365,13 @@ makeFSpec opts context
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
-        [Ifc { ifcArgs     = []
-             , ifcObj      = Obj { objnm   = name c
+        [Ifc { ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
                                  , objcrud = fatal 371 "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
-                                 , objstrs = [] }
+                                 }
              , ifcEcas     = fst (assembleECAs opts context params)
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
@@ -392,14 +391,13 @@ makeFSpec opts context
      --end otherwise: default theme
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
-      = [Ifc { ifcArgs     = ifcArgs   ifcc
-             , ifcObj      = Obj { objnm   = nm
+      = [Ifc { ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
                                  , objcrud = fatal 400 "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
-                                 , objstrs = [] }
+                                 }
              , ifcEcas     = ifcEcas     ifcc
              , ifcControls = ifcControls ifcc
              , ifcPos      = ifcPos      ifcc
@@ -421,7 +419,6 @@ makeFSpec opts context
                         , objcrud  = fatal 419 "No default crud in generated interface."
                         , objmView = Nothing
                         , objmsub  = Nothing
-                        , objstrs  = []
                         }
         ]
      ----------------------

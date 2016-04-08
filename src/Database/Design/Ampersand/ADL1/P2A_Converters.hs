@@ -586,7 +586,6 @@ pCtx2aCtx opts
          , obj_crud = mCrud
          , obj_mView = mView
          , obj_msub = subs
-         , obj_strs = ostrs
          })
      = do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
           crud <- pCruds2aCruds mCrud
@@ -616,7 +615,6 @@ pCtx2aCtx opts
                , objcrud = crud
                , objmView = mView
                , objmsub = s
-               , objstrs = ostrs
                }, sr)
     addEpsilonLeft,addEpsilonRight :: A_Concept -> Expression -> Expression
     addEpsilonLeft a e
@@ -807,15 +805,13 @@ pCtx2aCtx opts
 
     pIfc2aIfc :: DeclMap -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc declMap
-             (P_Ifc { ifc_Args = args
-                    , ifc_Roles = rols
+             (P_Ifc { ifc_Roles = rols
                     , ifc_Obj = _
                     , ifc_Pos = orig
                     , ifc_Prp = prp
                     }, objDisamb)
         = (\ obj'
-             -> Ifc { ifcArgs = args
-                    , ifcRoles = rols
+             -> Ifc { ifcRoles = rols
                     , ifcObj = obj'
                     , ifcEcas = []      -- to be enriched in Adl2fSpec with ECA-rules
                     , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked

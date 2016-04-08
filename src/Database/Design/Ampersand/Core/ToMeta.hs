@@ -188,7 +188,6 @@ instance MakeMeta P_Gen where
 instance MakeMeta P_Interface where
   makeMeta f ifc
    = P_Ifc { ifc_Name   =            (ifc_Name ifc)
-           , ifc_Args   =            (ifc_Args ifc)
            , ifc_Roles  =            (ifc_Roles ifc)
            , ifc_Obj    = makeMeta f (ifc_Obj ifc)
            , ifc_Pos    = makeMeta f (ifc_Pos ifc)
@@ -254,7 +253,6 @@ instance MakeMeta a => MakeMeta (P_ObjDef a) where
            , obj_crud =            (obj_crud obj)
            , obj_mView =           (obj_mView obj)
            , obj_msub = makeMeta f (obj_msub obj)
-           , obj_strs =            (obj_strs obj)
            }
 
 instance MakeMeta a => MakeMeta (P_SubIfc a) where

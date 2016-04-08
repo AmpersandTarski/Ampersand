@@ -360,8 +360,7 @@ instance Show A_Gen where
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
 
-data Interface = Ifc { ifcArgs ::     [[String]]
-                     , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
+data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcEcas ::     [ECArule]     -- All ECArules that are needed to perform computations for maintaining rules
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
@@ -406,7 +405,6 @@ data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object d
                      , objcrud ::  Cruds -- ^ CRUD as defined by the user 
                      , objmView :: Maybe String   -- ^ The view that should be used for this object
                      , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
-                     , objstrs ::  [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
 instance Named ObjectDef where
   name   = objnm

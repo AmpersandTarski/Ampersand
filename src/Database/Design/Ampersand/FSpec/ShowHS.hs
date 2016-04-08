@@ -587,7 +587,6 @@ instance ShowHS ObjectDef where
         ,"   , objcrud  = " ++ showHS opts (indent++"                ") (objcrud r)
         ,"   , objmView = " ++ show(objmView r)
         ,"   , objmsub  = " ++ showHS opts (indent++"                ") (objmsub r)
-        ,"   , objstrs  = " ++ show(objstrs r)
         ]++indent++"   }"
 
 instance ShowHS Cruds where
@@ -606,8 +605,7 @@ instance ShowHSName Interface where
 instance ShowHS Interface where
  showHS opts indent ifc
   = intercalate indent
-        [ "Ifc { ifcArgs   = " ++ show(ifcArgs ifc)
-        , "    , ifcRoles  = " ++ show(ifcRoles ifc)
+        [ "Ifc { ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
         , "    , ifcEcas   = " ++ showHS opts (indent++"                 ") (ifcEcas ifc)
         , wrap "    , ifcControls = " (indent++"                  ") (\_->showHSName) (ifcControls ifc)

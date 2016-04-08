@@ -97,8 +97,8 @@ labelArgs args = if null args || all null args
                  then empty
                  else braces $ listOfLists args
 
-prettyLabel :: String -> [[String]] -> Doc
-prettyLabel nm strs = maybeQuote nm <+> labelArgs strs
+prettyLabel :: String -> Doc
+prettyLabel = maybeQuote
 
 instance Pretty P_Context where
     pretty (PCtx nm _ lang markup thms pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops sql php metas) =
@@ -263,16 +263,16 @@ instance Pretty TType where
     pretty = text . show
       
 instance Pretty P_Interface where
-    pretty (P_Ifc name args roles obj _ _) =
+    pretty (P_Ifc name roles obj _ _) =
         text "INTERFACE" <+> maybeQuote name 
-               <+> labelArgs args <+> iroles
+               <+> iroles
                <+> text ":" <~\> obj_ctx obj <~> obj_msub obj
                  where iroles = if null roles then empty
                                 else text "FOR" <+> listOf roles
 
 instance Pretty a => Pretty (P_ObjDef a) where
-    pretty (P_Obj nm _ ctx mCrud mView msub strs) =
-        prettyLabel nm strs <+> text ":"
+    pretty (P_Obj nm _ ctx mCrud mView msub) =
+        prettyLabel nm <+> text ":"
                  <~> ctx <+> crud mCrud <+> view mView <~> msub
         where crud Nothing = empty
               crud (Just cruds) = pretty cruds
@@ -292,10 +292,10 @@ instance Pretty a => Pretty (P_IdentDf a) where
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
 instance Pretty a => Pretty (P_IdentSegmnt a) where
-    pretty (P_IdentExp (P_Obj nm _ ctx _ mView _ strs)) =
+    pretty (P_IdentExp (P_Obj nm _ ctx _ mView _)) =
               if null nm
               then pretty ctx -- no label
-              else prettyLabel nm strs <> text ":" <~> ctx <+> view mView
+              else prettyLabel nm <> text ":" <~> ctx <+> view mView
         where view Nothing  = empty
               view (Just v) = pretty v
 

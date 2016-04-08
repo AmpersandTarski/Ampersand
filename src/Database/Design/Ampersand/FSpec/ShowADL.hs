@@ -48,7 +48,6 @@ instance ShowADL ObjectDef where
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
                                [ showstr (name o)++
-                                  (if null (objstrs o) then "" else " {"++intercalate ", " [showstr (unwords ss) | ss<-objstrs o]++"}")++
                                   " : "++showADL (objctx o)++
                                   recur (ind++"      ") (objmsub o)
                                | o<-objs
@@ -160,7 +159,6 @@ instance ShowADL P_RoleRule where
 instance ShowADL Interface where
  showADL ifc
   = "INTERFACE "++showstr(name ifc)
-          ++(if null (ifcArgs ifc) then "" else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
           ++(if null (ifcRoles ifc) then "" else " FOR "++intercalate ", " (map name (ifcRoles ifc)))
           ++showADL (ifcObj ifc)
 

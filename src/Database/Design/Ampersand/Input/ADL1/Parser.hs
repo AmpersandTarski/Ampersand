@@ -417,7 +417,7 @@ pViewSegment labelIsOptional
          build pos lab x =
             P_ViewSegment lab pos x
 
---- ViewDefLegacy ::= 'VIEW' LabelProps ConceptOneRef '(' ViewSegmentList ')'
+--- ViewDefLegacy ::= 'VIEW' Label ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
 pViewDefLegacy = P_Vd <$> currPos
                       <*  pKey "VIEW"
@@ -428,20 +428,18 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pParens((pViewSegment True) `sepBy1` pComma)
 
 
---- Interface ::= 'INTERFACE' ADLid Params? InterfaceArgs? Roles? ':' Term (ADLid | Conid)? SubInterface
+--- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       <*>
                      (pKey "INTERFACE" *> pADLid)                  <*>
                      optList pParams                               <*> -- a list of expressions, which say which relations are editable within this service.
-                     optList pArgs                                 <*> -- either  Prel _ nm or  PNamedRel _ nm sgn
                      optList pRoles                                <*>
                      (pColon *> pTerm)                             <*> -- the expression of the interface object
                      pMaybe pCruds                                 <*> -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                      pSubInterface
-    where lbl :: Origin -> String ->  [P_NamedRel] -> [[String]] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> P_SubInterface -> P_Interface
-          lbl p nm params args roles term mCrud sub
+    where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> P_SubInterface -> P_Interface
+          lbl p nm params roles term mCrud sub
              = P_Ifc { ifc_Name   = nm
-                     , ifc_Args   = args
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_Obj { obj_nm   = nm
                                           , obj_pos  = p
@@ -449,15 +447,12 @@ pInterface = lbl <$> currPos                                       <*>
                                           , obj_crud = mCrud
                                           , obj_mView = Nothing
                                           , obj_msub = Just sub
-                                          , obj_strs = args
                                           }
                      , ifc_Pos    = p
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
                      }
           --- Params ::= '(' NamedRel ')'
           pParams = pParens(pNamedRel `sepBy1` pComma)
-          --- InterfaceArgs ::= '{' ADLidListList '}'
-          pArgs   = pBraces(many1 pADLid `sepBy1` pComma)
           --- Roles ::= 'FOR' RoleList
           pRoles  = pKey "FOR" *> (pRole False) `sepBy1` pComma
 
@@ -474,17 +469,17 @@ pSubInterface = P_Box          <$> currPos <*> pBoxKey <*> pBox
               <|> Just <$> pKey "COLS"
               <|> Just <$> pKey "TABS"
 
---- ObjDef ::= LabelProps Term ('<' Conid '>')? SubInterface?
+--- ObjDef ::= Label Term ('<' Conid '>')? SubInterface?
 --- ObjDefList ::= ObjDef (',' ObjDef)*
 pObjDef :: AmpParser P_ObjectDef
 pObjDef = obj <$> currPos
-              <*> pLabelProps
+              <*> pLabel
               <*> pTerm            -- the context expression (for example: I[c])
               <*> pMaybe pCruds
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj pos (nm, args) ctx mCrud mView msub =
-                 P_Obj nm pos ctx mCrud mView msub args
+         where obj pos nm ctx mCrud mView msub =
+                 P_Obj nm pos ctx mCrud mView msub
 --- Cruds ::= ADLid | Conid
 pCruds :: AmpParser P_Cruds
 pCruds = P_Cruds <$> currPos 
@@ -692,11 +687,11 @@ value2PAtomValue o v = case v of
          VDateTime x    -> ScriptDateTime o x
          VDate x        -> ScriptDate o x
 
---- Attr ::= LabelProps? Term
+--- Attr ::= Label? Term
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
-pAtt = rebuild <$> currPos <*> try pLabelProps `opt` ("",[]) <*> try pTerm
-  where rebuild pos (nm, strs) ctx = P_Obj nm pos ctx mCrud mView msub strs
+pAtt = rebuild <$> currPos <*> try pLabel `opt` "" <*> try pTerm
+  where rebuild pos nm ctx = P_Obj nm pos ctx mCrud mView msub
         mCrud = Nothing
         mView = Nothing
         msub = Nothing
@@ -724,16 +719,6 @@ pConceptRef = PCpt <$> pConceptName
 --- ConceptOneRef ::= 'ONE' | ConceptRef
 pConceptOneRef :: AmpParser P_Concept
 pConceptOneRef = (P_Singleton <$ pKey "ONE") <|> pConceptRef
-
---  (SJ) Why does a label have (optional) strings?
---  (GM) This is a binding mechanism for implementation specific properties, such as SQL/PHP plug,PHP web app,etc.
---  (SJ April 15th, 2013) Since KEY has been replaced by IDENT and VIEW, there is a variant with props  (pLabelProps) and one without (pLabel).
---- LabelProps ::= ADLid ('{' ADLidListList '}')? ':'
-pLabelProps :: AmpParser (String, [[String]])
-pLabelProps = (,) <$> pADLid
-                  <*> optList pArgs
-                  <*  posOf pColon
-              where pArgs = pBraces $ many1 pADLid `sepBy1` pComma
 
 --- Label ::= ADLid ':'
 pLabel :: AmpParser String
