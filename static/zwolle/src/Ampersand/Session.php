@@ -294,7 +294,9 @@ class Session {
 		$interfaces = array();
 		foreach($this->accessibleInterfaces as $interface){
 			if(($interface->srcConcept->name == $conceptName || $interface->srcConcept->hasSpecialization($conceptName)) 
-			        && $interface->crudR) $interfaces[] = $interface;
+			        && $interface->crudR
+			        && (!$interface->crudC or ($interface->crudU or $interface->crudD))
+			        ) $interfaces[] = $interface;
 		}
 		return $interfaces;
 	}
