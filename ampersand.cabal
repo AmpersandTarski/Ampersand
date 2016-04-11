@@ -151,7 +151,6 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
                      Database.Design.Ampersand.Prototype.ProtoUtil,
-                     Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand,
                      Database.Design.Ampersand.Output.ToJSON.MySQLInstaller,
