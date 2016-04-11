@@ -99,7 +99,7 @@ instance JSON Cruds JSONCruds where
   { crudJSONread              = crudR crud
   , crudJSONcreate            = crudC crud
   , crudJSONupdate            = crudU crud
-  , crudJSONdelete            = crudU crud
+  , crudJSONdelete            = crudD crud
   }
   
 instance JSON ObjectDef JSONexpr where
