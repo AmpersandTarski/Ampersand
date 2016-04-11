@@ -890,7 +890,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
              BigAlphanumeric  -> Right (AAVString typ str)
              HugeAlphanumeric -> Right (AAVString typ str)
              Password         -> Right (AAVString typ str)
-             Object           -> objectStringRestriction str
+             Object           -> Right (AAVString typ str)
              _                -> case mval of
                                    Nothing -> message str
                                    Just x -> unsafePAtomVal2AtomValue typ mCpt x
@@ -909,7 +909,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
              Integer          -> message str
              Float            -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> objectStringRestriction str
+             Object           -> Right (AAVString typ str)
       XlsxString _ str
          -> case typ of
              Alphanumeric     -> Right (AAVString typ str)
@@ -941,7 +941,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                                    Just r  -> Right (AAVFloat typ r)
                                    Nothing -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> objectStringRestriction str
+             Object           -> Right (AAVString typ str)
       ScriptInt _ i
          -> case typ of
              Alphanumeric     -> message i
@@ -1016,20 +1016,6 @@ unsafePAtomVal2AtomValue' typ mCpt pav
             else message x
 
    where
-     objectStringRestriction :: String -> Either String AAtomValue
-     objectStringRestriction str 
-       = case filter isInvalid str of
-           [] -> Right (AAVString typ str)
-           xs -> Left . intercalate "\n    " $
-                  [ "Invalid value for "++show typ 
-                  , "Found: `"++show str++"`,"
-                  , case nub xs of
-                      [x] -> "The character `"++[x]++"` is not allowed."
-                      cs  -> "These characters are not allowed: "++show cs
-                  ]
-     isInvalid :: Char -> Bool
-     isInvalid chr = chr `notElem` (['a'..'z']++['A'..'Z']++['0'..'9']++['_','-',' '])
-
      relaxXLSXInput :: Double -> Either String AAtomValue
      relaxXLSXInput = Right . AAVString typ . neat . show
        where neat :: String -> String
