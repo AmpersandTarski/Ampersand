@@ -26,7 +26,7 @@ dumpSQLqueries fSpec = intercalate "\n" $
         = header (rc_id conj)
         ++["Rules for this conjunc:"]
         ++map showRule (rc_orgRules conj)
-        ++(lines . prettySQLQuery fSpec 0 . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj)
+        ++(lines . prettySQLQuery True fSpec 0 . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj)
         ++[""]
         where
           showRule r 
@@ -34,7 +34,7 @@ dumpSQLqueries fSpec = intercalate "\n" $
      showDecl :: Declaration -> [String]
      showDecl decl 
         = header (showADL decl)
-        ++(lines . prettySQLQuery fSpec 0 $ decl)
+        ++(lines . prettySQLQuery True fSpec 0 $ decl)
         ++[""]
      header :: String -> [String]
      header title = 

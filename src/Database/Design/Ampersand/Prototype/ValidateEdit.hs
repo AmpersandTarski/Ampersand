@@ -106,7 +106,7 @@ getSqlConceptTable fSpec c =
 
 getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [(String,String)])
 getSqlRelationTable fSpec d =
- do { let query = prettySQLQuery fSpec 0 d
+ do { let query = prettySQLQuery False fSpec 0 d
  
     --; putStrLn $ "Query for decl " ++ name d ++ ":" ++ query 
     ; pairs <- performQuery (getOpts fSpec) tempDbName query

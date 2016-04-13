@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.SQL
-  ( prettySQLQuery)
+  ( prettySQLQuery )
   
 where
 import Language.SQL.SimpleSQL.Syntax
@@ -17,19 +17,23 @@ import Data.Maybe
 
 class SQLAble a where
   -- | prettyprint and indent it with spaces
-  prettySQLQuery :: FSpec -> Int -> a -> String
+  prettySQLQuery 
+        :: Bool   -- Do we want comments in the output?
+        -> FSpec  -- The context
+        -> Int    -- Amount of indentation
+        -> a      
+        -> String 
   makeANice :: (a -> BinQueryExpr) -> Int -> a -> String
   makeANice f i =
     intercalate (if i == 0 then "\n " else "\n"++replicate i ' ') .  lines . 
        prettyQueryExpr theDialect . toSQL . f   
     
 instance SQLAble Expression where  
-  prettySQLQuery = makeANice . selectExpr 
+  prettySQLQuery withComment fSpec = makeANice (strip withComment . selectExpr fSpec)
 instance SQLAble Declaration where
-  prettySQLQuery = makeANice . selectDeclaration
+  prettySQLQuery withComment fSpec = makeANice (strip withComment . selectDeclaration fSpec)
   
      
-
 sourceAlias, targetAlias :: Name
 sourceAlias = (Name "src") 
 targetAlias = (Name "tgt")
@@ -701,6 +705,18 @@ data BinQueryExpr = BSE  { bseSrc :: ValueExpr       -- ^ source attribute and t
                          }
                   | BQEComment [Comment] BinQueryExpr
                                
+strip :: Bool -> BinQueryExpr -> BinQueryExpr
+strip withComment bqe 
+  = if withComment 
+    then bqe
+    else case bqe of
+          BSE{} -> bqe
+          BCQE{} -> BCQE { bcqeOper = bcqeOper bqe
+                         , bcqe0    = strip withComment (bcqe0 bqe)
+                         , bcqe1    = strip withComment (bcqe1 bqe)
+                         }
+          BQEComment _ x -> strip withComment x 
+
                         
 toSQL :: BinQueryExpr -> QueryExpr
 toSQL bqe 
