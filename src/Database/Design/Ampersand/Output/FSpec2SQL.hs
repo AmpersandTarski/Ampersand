@@ -12,7 +12,7 @@ import Data.List
 dumpSQLqueries :: FSpec -> String
 dumpSQLqueries fSpec = intercalate "\n" $ 
                          header "Database structure queries"
-                       ++generateDBstructQueries fSpec
+                       ++generateDBstructQueries fSpec True
                        ++header "Initial population queries"
                        ++generateAllDefPopQueries fSpec
                        ++header "Violations of conjuncts"

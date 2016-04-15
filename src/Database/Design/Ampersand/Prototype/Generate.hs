@@ -11,8 +11,8 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 
         
-generateDBstructQueries :: FSpec -> [String]
-generateDBstructQueries fSpec = theSQLstatements
+generateDBstructQueries :: FSpec -> Bool -> [String]
+generateDBstructQueries fSpec withComment = theSQLstatements
   where
     theSQLstatements :: [String]
     theSQLstatements =
@@ -49,7 +49,7 @@ generateDBstructQueries fSpec = theSQLstatements
         tableSpec2Queries ts = 
          -- [ "DROP TABLE "++show (tsName ts)] ++
           [ unlines $  
-                   ( tsCmnt ts ++ 
+                   ( (if withComment then tsCmnt ts else [] )++ 
                      ["CREATE TABLE "++show (tsName ts)] 
                      ++ (map (uncurry (++)) 
                             (zip (" ( ": repeat " , " ) 
@@ -92,7 +92,15 @@ attributeSpec2Str fs = intercalate " "
 plug2TableSpec :: PlugSQL -> TableSpecNew
 plug2TableSpec plug 
   = TableSpec 
-     { tsCmnt = commentBlockSQL (["Plug "++name plug,"","attributes:"]++map (\x->showADL (attExpr x)++"  "++(show.properties.attExpr) x) (plugAttributes plug))
+     { tsCmnt = commentBlockSQL $
+                   ["Plug "++name plug
+                   ,""
+                   ,"attributes:"
+                   ]++ concat
+                   [ [showADL (attExpr x)
+                     , "  "++(show.properties.attExpr) x ]
+                   | x <- plugAttributes plug
+                   ]
      , tsName = name plug
      , tsflds = plugAttributes plug
      , tsKey  = case (plug, (head.plugAttributes) plug) of
