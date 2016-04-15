@@ -235,9 +235,6 @@ class Database {
 		
 		$this->closeTransaction('Database successfully reinstalled', true);
 		
-		if (version_compare(PHP_VERSION, '5.6', '<')) {
-		   Logger::getUserLogger()->warning("Support for PHP version <= 5.5 will stop in the summer of 2016. Please upgrade to 5.6. Note! Ampersand framework does not support PHP 7 yet. You are on version: " . PHP_VERSION, 500);
-		}
 	}
 	
 	/**

@@ -1,8 +1,7 @@
 module Database.Design.Ampersand.Prototype.PHP 
-         ( executePHPStr, executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP, setSqlModePHP
-         , evaluateExpSQL, performQuery
-         , createTablesPHP, populateTablesPHP, populateTablesWithInitialPopsPHP, plug2TableSpec
-         , dropplug, historyTableSpec, sessionTableSpec, signalTableSpec, TableSpec, getTableName) where
+         ( evaluateExpSQL, executePHPStr, sqlServerConnectPHP, createTempDbPHP, showPHP
+         , setSqlModePHP, createTablesPHP, populateTablesPHP
+         , signalTableSpec, getTableName) where
 
 import Prelude hiding (exp,putStrLn)
 import Control.Exception
@@ -148,9 +147,6 @@ populateTablesWithInitialPopsPHP fSpec =
      where
         valuechain record = intercalate ", " [case att of Nothing -> "NULL" ; Just val -> showValPHP val | att<-record]
 
-
-dropplug :: PlugSQL -> String
-dropplug plug = "DROP TABLE "++quote (name plug)++""
 
 sqlServerConnectPHP :: FSpec -> [String]
 sqlServerConnectPHP fSpec =

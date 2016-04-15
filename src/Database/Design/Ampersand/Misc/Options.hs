@@ -30,7 +30,6 @@ data Options = Options { showVersion :: Bool
                        , verboseP :: Bool
                        , development :: Bool
                        , validateSQL :: Bool
-                       , validateEdit :: Maybe String -- Nothing means no edit validation
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
                        , allInterfaces :: Bool
@@ -128,7 +127,6 @@ getOptions =
                       , verboseP         = False
                       , development      = False
                       , validateSQL      = False
-                      , validateEdit     = Nothing
                       , genPrototype     = False
                       , allInterfaces    = False
                       , namespace        = ""
@@ -218,11 +216,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []      ["validate"]
                (NoArg (\opts -> return opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"
-            , Hidden)
-          , (Option []  ["validateEdit"]
-               (ReqArg (\nm opts -> return opts{validateEdit = Just nm}
-                       ) "NAME")
-               ("Compare results of applying edit operations in NAME.scr to population in NAME.before with population in NAME.after")
             , Hidden)
           , (Option ['p']     ["proto"]
                (OptArg (\nm opts -> return opts {dirPrototype = fromMaybe (dirPrototype opts) nm

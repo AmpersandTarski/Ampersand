@@ -4,7 +4,7 @@ module Database.Design.Ampersand.Prototype.Installer
 
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.ProtoUtil
-import Database.Design.Ampersand.Prototype.PHP
+import Database.Design.Ampersand.Prototype.PHP(setSqlModePHP,createTablesPHP,populateTablesPHP)
 
 installerDBstruct :: FSpec -> String
 installerDBstruct fSpec = unlines $

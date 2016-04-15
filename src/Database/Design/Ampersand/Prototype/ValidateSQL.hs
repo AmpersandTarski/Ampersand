@@ -8,7 +8,7 @@ import System.IO hiding (hPutStr,hGetContents)
 import Database.Design.Ampersand hiding (putStr, origin)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Prototype.Installer
-import Database.Design.Ampersand.Prototype.PHP
+import Database.Design.Ampersand.Prototype.PHP(evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
 
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
