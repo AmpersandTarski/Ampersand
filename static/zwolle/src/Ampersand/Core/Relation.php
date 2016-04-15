@@ -247,7 +247,16 @@ class Relation {
         // Delete link from relation table
         $this->db->deleteLink($this, $srcAtom, $tgtAtom);
     }
-
+    
+    /**
+     * Return array with all links (pair of Atoms) in this relation
+     * @return array[]
+     */
+    public function getAllLinks(){    
+        // Query all atoms in table
+        $query = "SELECT `{$this->mysqlTable->srcCol()->name}` as `src`, `{$this->mysqlTable->tgtCol()->name}` as `tgt` FROM `{$this->mysqlTable->name}`";
+        return (array)$this->db->Exe($query);
+    }
     
     /**********************************************************************************************
      *

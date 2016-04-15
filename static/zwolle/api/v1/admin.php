@@ -7,6 +7,8 @@ use Ampersand\Log\Notifications;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
+use Ampersand\Core\Atom;
+use Ampersand\Core\Concept;
 
 global $app;
 
@@ -27,6 +29,61 @@ $app->get('/admin/installer', function () use ($app){
 
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
+});
+
+$app->get('/admin/export/all', function () use ($app){
+    if(Config::get('productionEnv')) throw new Exception ("Export not allowed in production environment", 403);
+    
+    $allAtoms = array();
+    foreach (Concept::getAllConcepts() as $concept){
+        $allAtoms[$concept->name] = $concept->getAllAtomIds();
+    }
+    
+    $allLinks = array();
+    foreach (Relation::getAllRelations() as $rel){
+        $allLinks[$rel->signature] = $rel->getAllLinks();
+    }
+    
+    $strFileContent = '<?php' . PHP_EOL
+                     .'$allAtoms = ' . var_export($allAtoms, true) . ';' . PHP_EOL
+                     .'$allLinks = ' . var_export($allLinks, true) . ';' .PHP_EOL
+                     .'?>';
+    
+    file_put_contents(Config::get('logPath') . "/export-" . date('Y-m-d_H-i-s') . ".php", $strFileContent);
+});
+
+$app->get('/admin/import', function () use ($app){
+    if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
+
+    $file = $app->request->params('file'); if(is_null($file)) throw new Exception("Import file not specified",500);
+    
+    $database = Database::singleton();
+    
+    include_once $file;
+    
+    // check if all concepts and relations are defined
+    foreach((array)$allAtoms as $cpt => $atoms) if(!empty($atoms)) Concept::getConcept($cpt);
+    foreach((array)$allLinks as $rel => $links) if(!empty($links)) Relation::getRelation($rel);
+    
+    foreach((array)$allAtoms as $cpt => $atoms){        
+        foreach($atoms as $atomId){
+            $atom = new Atom($atomId, $cpt);
+            $atom->addAtom();
+        }
+    }
+    
+    foreach ((array)$allLinks as $rel => $links){
+        if(!empty($links)) $relation = Relation::getRelation($rel);
+        
+        foreach($links as $link){
+            if(is_null($link['src']) || is_null($link['tgt'])) continue; // skip
+            
+            $relation->addLink(new Atom($link['src'], $relation->srcConcept->name), new Atom($link['tgt'], $relation->tgtConcept->name));
+        }
+    }
+    
+    $database->closeTransaction("Imported successfully", true);
+    
 });
 
 

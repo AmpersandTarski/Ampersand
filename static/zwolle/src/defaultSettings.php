@@ -31,6 +31,7 @@ try{
 
     Config::set('absolutePath', 'global', __DIR__ . '/../');
     Config::set('uploadPath', 'global', 'uploads/'); // absolute path to folder, without trailing slash
+    Config::set('logPath', 'global', __DIR__ . '/../log');
     Config::set('allowedMimeTypes', 'global', array('application/vnd.ms-excel'
             ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ,'application/excel'
