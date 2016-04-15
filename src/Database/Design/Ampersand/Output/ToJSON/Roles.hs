@@ -8,7 +8,6 @@ import Database.Design.Ampersand.Output.ToJSON.JSONutils
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Database.Design.Ampersand.Prototype.ProtoUtil
 
-
 data Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson
   { roleJSONid         :: Int
