@@ -6,7 +6,6 @@ module Database.Design.Ampersand.Output.ToJSON.Rules
 where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand
 import Data.Maybe
 
@@ -84,7 +83,7 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
                            PairViewExp _ _ e         -> Just . show . target $ e
   , pvsJSONexpSQL      = case pvs of
                            PairViewText{} -> Nothing
-                           PairViewExp _ _ e         -> Just . prettySQLQuery False fSpec 0 $ e
+                           PairViewExp _ _ e         -> Just . sqlQuery fSpec $ e
   } 
  
   

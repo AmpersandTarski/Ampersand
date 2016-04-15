@@ -10,9 +10,6 @@ import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
 import Database.Design.Ampersand.FSpec.ShowADL
-import Database.Design.Ampersand.FSpec.SQL
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
 
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
@@ -109,7 +106,7 @@ instance JSON ObjectDef JSONexpr where
   , exprJSONisUni             = isUni normalizedInterfaceExp
   , exprJSONisTot             = isTot normalizedInterfaceExp
   , exprJSONisIdent           = isIdent normalizedInterfaceExp
-  , exprJSONquery             = prettySQLQuery False fSpec 0 normalizedInterfaceExp
+  , exprJSONquery             = sqlQuery fSpec normalizedInterfaceExp
   }
   where
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object

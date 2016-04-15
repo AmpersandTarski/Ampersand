@@ -5,6 +5,9 @@ module Database.Design.Ampersand.Output.ToJSON.JSONutils
   (writeJSONFile, JSON(..), ToJSON(..)
   , module Database.Design.Ampersand.FSpec.FSpec
   , module Database.Design.Ampersand.Misc
+  , module Database.Design.Ampersand.FSpec.SQL
+  , module Database.Design.Ampersand.Basics
+  , module Database.Design.Ampersand.Classes
   , ampersandVersionStr
   , module GHC.Generics
   
@@ -14,8 +17,11 @@ import Data.Aeson
 import Data.Aeson.Types
 import Data.List
 import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.FSpec.SQL (sqlQuery)
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes
 import System.FilePath
 import System.Directory
 import qualified Data.ByteString.Lazy as BS

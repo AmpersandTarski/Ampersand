@@ -12,15 +12,8 @@ import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 
         
 generateDBstructQueries :: FSpec -> Bool -> [String]
-generateDBstructQueries fSpec withComment = theSQLstatements
-  where
-    theSQLstatements :: [String]
-    theSQLstatements =
-       createTableStatements ++
-       [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
-       ]
-    createTableStatements :: [String]
-    createTableStatements = 
+generateDBstructQueries fSpec withComment 
+  = (if withComment then id else map (unwords . words)) $ 
       map unlines
       [ [ "CREATE TABLE "++ show "__SessionTimeout__"
         , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
@@ -42,7 +35,9 @@ generateDBstructQueries fSpec withComment = theSQLstatements
         , "   ) ENGINE="++dbEngine
         ]
       ] ++ 
-      ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])
+      ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])++
+      [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+      ]
      
       where 
         tableSpec2Queries :: TableSpecNew -> [String]
@@ -118,14 +113,13 @@ commentBlockSQL xs =
    map (\cmmnt -> "/* "++cmmnt++" */") $ hbar ++ xs ++ hbar
   where hbar = [replicate (maximum . map length $ xs) '-']
   
-generateAllDefPopQueries :: FSpec -> [String]
-generateAllDefPopQueries fSpec = theSQLstatements
-  where
-    theSQLstatements
-      = fillSignalTable (initialConjunctSignals fSpec) ++
+generateAllDefPopQueries :: FSpec -> Bool -> [String]
+generateAllDefPopQueries fSpec withComment 
+  = (if withComment then id else map (unwords . words)) $ 
+        fillSignalTable (initialConjunctSignals fSpec) ++
         populateTablesWithPops
         
-
+  where
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
     fillSignalTable [] = []
     fillSignalTable conjSignals 

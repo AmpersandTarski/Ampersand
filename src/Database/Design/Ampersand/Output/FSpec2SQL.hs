@@ -14,7 +14,7 @@ dumpSQLqueries fSpec = intercalate "\n" $
                          header "Database structure queries"
                        ++generateDBstructQueries fSpec True
                        ++header "Initial population queries"
-                       ++generateAllDefPopQueries fSpec
+                       ++generateAllDefPopQueries fSpec True
                        ++header "Violations of conjuncts"
                        ++concatMap showConjunct (vconjs fSpec)
                        ++header "Queries per declaration"
@@ -26,7 +26,7 @@ dumpSQLqueries fSpec = intercalate "\n" $
         = header (rc_id conj)
         ++["Rules for this conjunc:"]
         ++map showRule (rc_orgRules conj)
-        ++(lines . prettySQLQuery True fSpec 0 . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj)
+        ++(lines . prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj)
         ++[""]
         where
           showRule r 
@@ -34,7 +34,7 @@ dumpSQLqueries fSpec = intercalate "\n" $
      showDecl :: Declaration -> [String]
      showDecl decl 
         = header (showADL decl)
-        ++(lines . prettySQLQuery True fSpec 0 $ decl)
+        ++(lines . prettySQLQuery 2 fSpec $ decl)
         ++[""]
      header :: String -> [String]
      header title = 

@@ -538,7 +538,7 @@ instance GenericPopulations (PairView Expression) where
                                 Tgt -> target (pvsExp pvs)
                               ))] 
           ,Pop "expSQL" "PairViewSegment" "MySQLQuery"
-               [(dirtyId pvs, prettySQLQuery False fSpec 0 (pvsExp pvs))] 
+               [(dirtyId pvs, sqlQuery fSpec (pvsExp pvs))] 
           ]
 
 instance MetaPopulations Rule where
@@ -602,7 +602,7 @@ instance GenericPopulations Conjunct where
   , Pop "invariantRuleNames" "Conjunct" "Rule" 
          [(dirtyId conj,dirtyId r) | r <- rc_orgRules conj, isFrontEndInvariant  r]
   , Pop "violationsSQL" "Conjunct" "MySQLQuery" 
-         [(dirtyId conj , prettySQLQuery False fSpec 0 (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
+         [(dirtyId conj , sqlQuery fSpec (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
           )]
   ] 
 
