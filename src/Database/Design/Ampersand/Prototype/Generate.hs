@@ -36,8 +36,7 @@ generateDBstructQueries fSpec withComment
       ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])++
       [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
       ]
-     
-      where 
+   where 
         tableSpec2Queries :: TableSpec -> [String]
         tableSpec2Queries ts = 
             (if withComment then tsCmnt ts else [] )
