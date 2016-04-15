@@ -1,16 +1,9 @@
 {
-	"repositories": [
-        {
-            "type": "vcs",
-            "url": "https://github.com/mikemccabe/json-patch-php"
-        }
-    ],
     "config": {
 		"vendor-dir" : "lib"
 	},
     "require": {
     	"slim/slim": "2.*",
-    	"mikemccabe/json-patch-php": "dev-master",
 		"monolog/monolog": "^1.18"
     },
     "autoload": {

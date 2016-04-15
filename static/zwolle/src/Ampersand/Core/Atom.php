@@ -483,18 +483,6 @@ class Atom {
 	 */
 	public function update($data, $options){
 		throw new Exception ("Not yet implemented", 501);
-	   
-		/* Old code, needs refactoring 
-		 
-		// Get current state of atom
-		$before = $this->getContent($this->id, $options);
-	
-		// Determine differences between current state ($before) and requested state ($data)
-		$patches = mikemccabe\JsonPatch\JsonPatch::diff($before, $data);
-	
-		return $this->doPatches($patches);
-		
-		*/
 	}
 
 	/**
