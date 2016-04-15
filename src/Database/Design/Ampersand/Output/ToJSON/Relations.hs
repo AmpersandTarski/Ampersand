@@ -6,7 +6,6 @@ where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Database.Design.Ampersand.FSpec.FSpecAux
-import Database.Design.Ampersand
 import Data.Maybe
 
 data Relations = Relations [Relation]deriving (Generic, Show)

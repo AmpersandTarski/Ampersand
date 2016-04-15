@@ -14,77 +14,71 @@ import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 generateDBstructQueries :: FSpec -> Bool -> [String]
 generateDBstructQueries fSpec withComment 
   = (if withComment then id else map (unwords . words)) $ 
-      map unlines
-      [ [ "CREATE TABLE "++ show "__SessionTimeout__"
-        , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
-        , "   , "++show "lastAccess"++" BIGINT NOT NULL"
-        , "   ) ENGINE="++dbEngine
-        ]
-      , [ "CREATE TABLE "++ show "__History__"
-        , "   ( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
-        , "   , "++show "Date"++" VARCHAR(255) DEFAULT NULL"
-        , "   ) ENGINE="++dbEngine
-        ]
-      , [ "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++")"
-        , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
-        ]
-      , [ "CREATE TABLE "++ show "__all_signals__"
-        , "   ( "++show "conjId"++" VARCHAR(255) NOT NULL"
-        , "   , "++show "src"++" VARCHAR(255) NOT NULL"
-        , "   , "++show "tgt"++" VARCHAR(255) NOT NULL"
-        , "   ) ENGINE="++dbEngine
-        ]
+      [ "CREATE TABLE "++ show "__SessionTimeout__"
+      , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
+      , "   , "++show "lastAccess"++" BIGINT NOT NULL"
+      , "   ) ENGINE="++dbEngine
+      , ""
+      , "CREATE TABLE "++ show "__History__"
+      , "   ( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
+      , "   , "++show "Date"++" VARCHAR(255) DEFAULT NULL"
+      , "   ) ENGINE="++dbEngine
+      , ""
+      , "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++")"
+      , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
+      , ""
+      , "CREATE TABLE "++ show "__all_signals__"
+      , "   ( "++show "conjId"++" VARCHAR(255) NOT NULL"
+      , "   , "++show "src"++" VARCHAR(255) NOT NULL"
+      , "   , "++show "tgt"++" VARCHAR(255) NOT NULL"
+      , "   ) ENGINE="++dbEngine
       ] ++ 
       ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])++
       [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
       ]
      
       where 
-        tableSpec2Queries :: TableSpecNew -> [String]
+        tableSpec2Queries :: TableSpec -> [String]
         tableSpec2Queries ts = 
-         -- [ "DROP TABLE "++show (tsName ts)] ++
-          [ unlines $  
-                   ( (if withComment then tsCmnt ts else [] )++ 
-                     ["CREATE TABLE "++show (tsName ts)] 
-                     ++ (map (uncurry (++)) 
-                            (zip (" ( ": repeat " , " ) 
-                                 (  map fld2sql (tsflds ts)
-                                 ++ tsKey ts
-                                 )
-                            )
-                        )
-                     ++ [" , "++show "ts_insertupdate"++" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]
-                     ++ [" ) ENGINE="++dbEngine]
-                   )
-          ]
+            (if withComment then tsCmnt ts else [] )
+          ++["CREATE TABLE "++show (tsName ts)] 
+          ++(map (uncurry (++)) 
+                (zip (" ( ": repeat " , " ) 
+                     (  map fld2sql (tsflds ts)
+                     ++ tsKey ts
+                     )
+                )
+            )
+          ++[" , "++show "ts_insertupdate"++" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]
+          ++[" ) ENGINE="++dbEngine]
         fld2sql :: SqlAttribute -> String
         fld2sql = attributeSpec2Str . fld2AttributeSpec
 
-data TableSpecNew 
+data TableSpec
   = TableSpec { tsCmnt :: [String]
               , tsName :: String
               , tsflds :: [SqlAttribute]
               , tsKey ::  [String]
               , tsEngn :: String
               }
-data AttributeSpecNew
+data AttributeSpec
   = AttributeSpec { fsname :: String
                   , fstype :: String
                   , fsDbNull :: Bool
                   }
-fld2AttributeSpec ::SqlAttribute -> AttributeSpecNew
+fld2AttributeSpec ::SqlAttribute -> AttributeSpec
 fld2AttributeSpec att 
   = AttributeSpec { fsname = name att
                   , fstype = showSQL (attType att)
                   , fsDbNull = attDBNull att 
                   }
-attributeSpec2Str :: AttributeSpecNew -> String
+attributeSpec2Str :: AttributeSpec -> String
 attributeSpec2Str fs = intercalate " "
                         [ show (fsname fs)
                         , fstype fs
                         , if fsDbNull fs then " DEFAULT NULL" else " NOT NULL"
                         ] 
-plug2TableSpec :: PlugSQL -> TableSpecNew
+plug2TableSpec :: PlugSQL -> TableSpec
 plug2TableSpec plug 
   = TableSpec 
      { tsCmnt = commentBlockSQL $

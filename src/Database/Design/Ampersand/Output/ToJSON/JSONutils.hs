@@ -8,7 +8,6 @@ module Database.Design.Ampersand.Output.ToJSON.JSONutils
   , module Database.Design.Ampersand.FSpec.SQL
   , module Database.Design.Ampersand.Basics
   , module Database.Design.Ampersand.Classes
-  , ampersandVersionStr
   , module GHC.Generics
   
    )
@@ -19,7 +18,6 @@ import Data.List
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.SQL (sqlQuery)
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import System.FilePath
