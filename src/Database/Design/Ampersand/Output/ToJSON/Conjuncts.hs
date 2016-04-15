@@ -30,7 +30,7 @@ instance JSON Conjunct JSONConjunct where
   { cnjJSONid                  = rc_id conj
   , cnjJSONsignalRuleNames     = map name . filter isSignal . rc_orgRules $ conj
   , cnjJSONinvariantRuleNames  = map name . filter (not . isSignal) . filter (not . ruleIsInvariantUniOrInj) . rc_orgRules $ conj
-  , cnjJSONviolationsSQL       = prettySQLQuery fSpec 0 . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj
+  , cnjJSONviolationsSQL       = prettySQLQuery False fSpec 0 . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj
   , cnjJSONnormalizationSteps  
      = if verboseP (getOpts fSpec)
        then Just . showPrf showADL . cfProof (getOpts fSpec) . notCpl . rc_conjunct $ conj

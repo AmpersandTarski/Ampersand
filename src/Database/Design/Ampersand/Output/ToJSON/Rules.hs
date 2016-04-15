@@ -84,7 +84,7 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
                            PairViewExp _ _ e         -> Just . show . target $ e
   , pvsJSONexpSQL      = case pvs of
                            PairViewText{} -> Nothing
-                           PairViewExp _ _ e         -> Just . prettySQLQuery fSpec 0 $ e
+                           PairViewExp _ _ e         -> Just . prettySQLQuery False fSpec 0 $ e
   } 
  
   

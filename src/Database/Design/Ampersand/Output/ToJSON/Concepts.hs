@@ -103,7 +103,7 @@ instance JSON ViewSegment Segment where
                        ViewExp expr -> Just . showADL $ expr
                        _            -> Nothing
   , segJSONexpSQL  = case vsmLoad seg of
-                       ViewExp expr -> Just $ prettySQLQuery fSpec 0 expr
+                       ViewExp expr -> Just $ prettySQLQuery False fSpec 0 expr
                        _            -> Nothing
   , segJSONtext    = case vsmLoad seg of
                        ViewText str -> Just str

@@ -109,7 +109,7 @@ instance JSON ObjectDef JSONexpr where
   , exprJSONisUni             = isUni normalizedInterfaceExp
   , exprJSONisTot             = isTot normalizedInterfaceExp
   , exprJSONisIdent           = isIdent normalizedInterfaceExp
-  , exprJSONquery             = prettySQLQuery fSpec 0 normalizedInterfaceExp
+  , exprJSONquery             = prettySQLQuery False fSpec 0 normalizedInterfaceExp
   }
   where
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
