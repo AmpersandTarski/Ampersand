@@ -9,8 +9,7 @@ module Database.Design.Ampersand.Output.ToJSON.JSONutils
   , module Database.Design.Ampersand.Basics
   , module Database.Design.Ampersand.Classes
   , module GHC.Generics
-  
-   )
+  )
 where
 import Data.Aeson
 import Data.Aeson.Types
