@@ -21,8 +21,7 @@ main =
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
     else do gFSpec <- createFSpec opts
             case gFSpec of
-              Errors err    -> do putStrLn "Error(s) found:"
-                                  mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
+              Errors err    -> do mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
                                   exitWith $ ExitFailure 10
               Checked fSpec -> do generateAmpersandOutput fSpec
                                   generateProtoStuff      fSpec

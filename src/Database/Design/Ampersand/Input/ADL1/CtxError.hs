@@ -386,7 +386,7 @@ whenError a@(Checked _) _ = a
 
 
 showErr :: CtxError -> String
-showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o
+showErr (CTXE o s) = showFullOrig o ++ "\n  " ++ s
 showErr (PE msg)   = messageString msg
 
 showFullOrig :: Origin -> String
