@@ -183,8 +183,8 @@ installComposerLibs fSpec =
   do verbose (getOpts fSpec) "  Trying to download and install Composer libraries..."
      (exit_code, stdout, stderr) <- readCreateProcessWithExitCode myProc ""
      case exit_code of
-       ExitSuccess   -> do verboseLn (getOpts fSpec) " Succeeded."
-                           verboseLn (getOpts fSpec) (show (length stdout))
+       ExitSuccess   -> do verboseLn (getOpts fSpec) $
+                             " Succeeded." ++ (if null stdout then " (stdout is empty)" else "") 
                            verboseLn (getOpts fSpec) stdout
        ExitFailure _ -> failOutput (exit_code, stdout, stderr)
 
