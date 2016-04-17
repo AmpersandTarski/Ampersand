@@ -13,31 +13,34 @@ import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
         
 generateDBstructQueries :: FSpec -> Bool -> [String]
 generateDBstructQueries fSpec withComment 
-  = (if withComment then id else singleton . unwords . concatMap words) $ 
-      [ "CREATE TABLE "++ show "__SessionTimeout__"
-      , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
-      , "   , "++show "lastAccess"++" BIGINT NOT NULL"
-      , "   ) ENGINE="++dbEngine
-      , ""
-      , "CREATE TABLE "++ show "__History__"
-      , "   ( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
-      , "   , "++show "Date"++" VARCHAR(255) DEFAULT NULL"
-      , "   ) ENGINE="++dbEngine
-      , ""
-      , "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++")"
-      , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
-      , ""
-      , "CREATE TABLE "++ show "__all_signals__"
-      , "   ( "++show "conjId"++" VARCHAR(255) NOT NULL"
-      , "   , "++show "src"++" VARCHAR(255) NOT NULL"
-      , "   , "++show "tgt"++" VARCHAR(255) NOT NULL"
-      , "   ) ENGINE="++dbEngine
-      ] ++ 
-      ( concatMap tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec])++
-      [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+  = (if withComment 
+     then intercalate [""]
+     else map (unwords . concatMap words)
+    ) $ 
+      [ [ "CREATE TABLE "++ show "__SessionTimeout__"
+        , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
+        , "   , "++show "lastAccess"++" BIGINT NOT NULL"
+        , "   ) ENGINE="++dbEngine
+        ]
+      , [ "CREATE TABLE "++ show "__History__"
+        , "   ( "++show "Seconds"++" VARCHAR(255) DEFAULT NULL"
+        , "   , "++show "Date"++" VARCHAR(255) DEFAULT NULL"
+        , "   ) ENGINE="++dbEngine
+        ]
+      , [ "INSERT INTO "++show "__History__"++" ("++show "Seconds"++","++show "Date"++")"
+        , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
+        ]
+      , [ "CREATE TABLE "++ show "__all_signals__"
+        , "   ( "++show "conjId"++" VARCHAR(255) NOT NULL"
+        , "   , "++show "src"++" VARCHAR(255) NOT NULL"
+        , "   , "++show "tgt"++" VARCHAR(255) NOT NULL"
+        , "   ) ENGINE="++dbEngine
+        ] 
+      ]++
+      map tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec]++
+      [ ["SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]
       ]
    where 
-        singleton a = [a]
         tableSpec2Queries :: TableSpec -> [String]
         tableSpec2Queries ts = 
             (if withComment then tsCmnt ts else [] )
