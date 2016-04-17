@@ -17,11 +17,14 @@ printable = suchThat arbitrary isValid
 
 -- Generates a simple string of ascii characters
 safeStr :: Gen String
-safeStr = listOf printable
+safeStr = listOf printable `suchThat` noEsc
 
 -- Generates a simple non-empty string of ascii characters
 safeStr1 :: Gen String
-safeStr1 = listOf1 printable
+safeStr1 = listOf1 printable `suchThat` noEsc
+
+noEsc :: String -> Bool
+noEsc = all (/= '\\')
 
 -- Genrates a valid ADL identifier
 identifier :: Gen String
