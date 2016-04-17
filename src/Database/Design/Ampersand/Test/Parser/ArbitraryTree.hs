@@ -259,14 +259,12 @@ instance Arbitrary PAtomValue where
        ]
      where stringConstraints :: String -> Bool
            stringConstraints str =
-             case str of
-              [] -> True
-              ('\\':cs) 
-                 -> case cs of
-                     []     -> False -- If the last character is an escape, the double quote ending the string would not be seen as such.
-                     (c:cs') -> c `elem` specialEscapedChars && stringConstraints cs'
-              (c:cs) -> c `notElem` specialEscapedChars && stringConstraints cs
-           specialEscapedChars = ['\'', '"']
+             case readLitChar str of
+              [(c,cs)] -> if c `elem` ['\'', '"', '\\'] 
+                          then False
+                          else stringConstraints cs
+              _ -> True  -- end of string
+
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1
                       <*> listOf arbitrary
