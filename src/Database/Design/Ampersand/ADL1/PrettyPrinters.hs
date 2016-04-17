@@ -46,9 +46,6 @@ quote = text.show
 --              escapeSlash = escape "\\"
 --              escape x = replace x ("\\" ++ x)
 
-quoteAll :: [String] -> [Doc]
-quoteAll = map quote
-
 quotePurpose :: String -> Doc
 quotePurpose p = text "{+" </> escapeExpl p </> text "-}"
         where escapeExpl = text.escapeCommentStart.escapeLineComment.escapeExplEnd
@@ -81,9 +78,6 @@ commas = encloseSep empty empty comma
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
 
-listOfLists :: [[String]] -> Doc
-listOfLists xs = commas $ map (hsep.quoteAll) xs
-
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
 
@@ -91,11 +85,6 @@ separate d xs = encloseSep empty empty (text d) $ map pretty xs
 -- Example to test: AmpersandData\FormalAmpersand\AST.adl
 takeQuote :: String -> String
 takeQuote = replace "\"" ""
-
-labelArgs :: [[String]] -> Doc
-labelArgs args = if null args || all null args
-                 then empty
-                 else braces $ listOfLists args
 
 prettyLabel :: String -> Doc
 prettyLabel = maybeQuote

@@ -261,13 +261,12 @@ instance Arbitrary PAtomValue where
            stringConstraints str =
              case str of
               [] -> True
-              ('\\':_) -> False -- om van het geneuzel af te zijn.
-              ('\'':_) -> False -- This string would cause problems as a Singleton in an Expresson
-              ('\\':'\'':cs) -> stringConstraints cs
-              ('\\':'"':cs) -> stringConstraints cs
-              ('"':_) -> False -- This string would cause problems as a Singleton in an Expresson
-              ['\\']  -> False -- If the last character is an escape, the double quote ending the string would not be seen as such.
-              (_:cs)  -> stringConstraints cs
+              ('\\':cs) 
+                 -> case cs of
+                     []     -> False -- If the last character is an escape, the double quote ending the string would not be seen as such.
+                     (c:cs') -> c `elem` specialEscapedChars && stringConstraints cs'
+              (c:cs) -> c `notElem` specialEscapedChars && stringConstraints cs
+           specialEscapedChars = ['\'', '"']
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1
                       <*> listOf arbitrary
