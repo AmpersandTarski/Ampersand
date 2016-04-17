@@ -14,6 +14,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
   , mkInvalidCRUDError
   , mkMultipleRepresentTypesError, nonMatchingRepresentTypes
+  , mkEndoPropertyError
   , mkMultipleTypesInTypologyError
   , mkIncompatibleAtomValueError
   , mkTypeMismatchError
@@ -219,6 +220,19 @@ mkDanglingRefError entity ref orig =
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
 mkUndeclaredError entity objDef ref =
   CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
+
+mkEndoPropertyError :: Origin -> [Prop] -> CtxError
+mkEndoPropertyError orig ps =
+  CTXE orig msg
+  where 
+    msg = intercalate "\n" $
+       case ps of
+         []  -> fatal 227 $ "What property is causing this error???"
+         [p] -> ["Property "++show p++" can only be used for relations where"
+                ,"  source and target are equal."]
+         _   -> ["Properties "++showAnd++" can only be used for relations where"
+                ,"  source and target are equal."]
+     where showAnd = intercalate ", " (map show . init $ ps)++" and "++(show . last) ps
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs =

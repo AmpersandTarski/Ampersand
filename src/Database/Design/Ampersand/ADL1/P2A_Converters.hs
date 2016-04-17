@@ -429,7 +429,7 @@ pCtx2aCtx opts
     pDecl2aDecl patNm contextInfo defLanguage defFormat pd
      = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
            dcl = Sgn { decnm   = dec_nm pd
-                     , decsgn  = pSign2aSign (dec_sign pd)
+                     , decsgn  = decSign
                      , decprps = dec_prps pd
                      , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
                      , decprL  = prL
@@ -441,12 +441,23 @@ pCtx2aCtx opts
                      , decpat  = patNm
                      , decplug = dec_plug pd
                      }
-       in (\aps -> (dcl,ARelPopu { popdcl = dcl
-                                 , popps = aps
+       in checkEndoProps >> 
+          (\aps -> (dcl,ARelPopu { popdcl = dcl
+                                 , popps  = aps
                                  , popsrc = source dcl
                                  , poptgt = target dcl
                                  })
           ) <$> traverse (pAtomPair2aAtomPair contextInfo dcl) (dec_popu pd)
+     where
+      decSign = pSign2aSign (dec_sign pd)
+      checkEndoProps :: Guarded ()
+      checkEndoProps
+        | dclIsEndo  = pure ()
+        | null endos = pure ()
+        | otherwise  = Errors [mkEndoPropertyError (origin pd) endos]
+        where dclIsEndo = source decSign == target decSign
+              endos = [Prop,Sym,Asy,Trn,Rfx,Irf] `isc` dec_prps pd
+              
     pGen2aGen :: P_Gen -> A_Gen
     pGen2aGen pg =
       case pg of
