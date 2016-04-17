@@ -13,7 +13,7 @@ import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
         
 generateDBstructQueries :: FSpec -> Bool -> [String]
 generateDBstructQueries fSpec withComment 
-  = (if withComment then id else map (unwords . words)) $ 
+  = (if withComment then id else singleton . unwords . concatMap words) $ 
       [ "CREATE TABLE "++ show "__SessionTimeout__"
       , "   ( "++show "SESSION"++" VARCHAR(255) UNIQUE NOT NULL"
       , "   , "++show "lastAccess"++" BIGINT NOT NULL"
@@ -37,6 +37,7 @@ generateDBstructQueries fSpec withComment
       [ "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"
       ]
    where 
+        singleton a = [a]
         tableSpec2Queries :: TableSpec -> [String]
         tableSpec2Queries ts = 
             (if withComment then tsCmnt ts else [] )
