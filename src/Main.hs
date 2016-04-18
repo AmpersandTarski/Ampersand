@@ -5,7 +5,7 @@ import Data.List
 import Data.Function (on)
 import System.Exit
 import Prelude hiding (putStr,readFile,writeFile)
-import Database.Design.Ampersand.Prototype.ObjBinGen   (writeStaticFiles)
+import Database.Design.Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand
 import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)

@@ -1,5 +1,5 @@
 {-# LANGUAGE CPP #-}
-module Database.Design.Ampersand.Prototype.ObjBinGen (writeStaticFiles) where
+module Database.Design.Ampersand.Prototype.WriteStaticFiles (writeStaticFiles) where
 
 import Control.Monad
 import System.FilePath
