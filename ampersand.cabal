@@ -147,7 +147,6 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.GenBericht,
                      Database.Design.Ampersand.Prototype.GenFrontend,
                      Database.Design.Ampersand.Prototype.Generate,
-                     Database.Design.Ampersand.Prototype.Installer,
                      Database.Design.Ampersand.Prototype.ObjBinGen,
                      Database.Design.Ampersand.Prototype.PHP,
                      Database.Design.Ampersand.Prototype.ProtoUtil,
