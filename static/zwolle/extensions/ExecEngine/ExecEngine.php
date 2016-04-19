@@ -76,7 +76,7 @@ class ExecEngine {
 				break;
 			}
 			
-			$logger->debug("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '{$role->label}'");
+			$logger->notice("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '{$role->label}'");
 			
 			// Determine affected rules that must be checked by the exec engine
 			$affectedConjuncts = RuleEngine::getAffectedConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations(), 'sig');
