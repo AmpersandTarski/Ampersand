@@ -138,10 +138,10 @@ class ExecEngine {
 				}
 				
 				$params = explode($delimiter, $functionToBeCalled); // Split off variables
-				$params = array_map('trim', $params); // Trim all params
+				//$params = array_map('trim', $params); // Trim all params // Commented out, because atoms can have spaces in them
 				$params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
 				
-				$function = array_shift($params); // First parameter is function name
+				$function = trim(array_shift($params)); // First parameter is function name
 				$classMethod = (array)explode('::', $function);
 				
 				if (function_exists($function) || method_exists($classMethod[0], $classMethod[1])){
