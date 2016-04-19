@@ -144,7 +144,7 @@ class Conjunct {
                     // Add new conjunct violation to database
                     $query = "INSERT IGNORE INTO `$dbsignalTableName` (`conjId`, `src`, `tgt`) VALUES ";
                     $values = array();
-                    foreach ($violations as $violation) $values[] = "('{$this->id}', '".$violation['src']."', '".$violation['tgt']."')";
+                    foreach ($violations as $violation) $values[] = "('{$this->id}', '".$db->escape($violation['src'])."', '".$db->escape($violation['tgt'])."')";
                     $query .= implode(',', $values);
                     $db->Exe($query);
                 }
