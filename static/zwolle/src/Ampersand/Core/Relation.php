@@ -267,19 +267,24 @@ class Relation {
     /**
      * Return Relation object
      * @param string $relationSignature
+     * @param string $srcConceptName
+     * @param string $tgtConceptName
      * @throws Exception if Relation is not defined
      * @return Relation
      */
     public static function getRelation($relationSignature, $srcConceptName = null, $tgtConceptName = null){
         $relations = self::getAllRelations();
         
+        if(!is_null($srcConceptName)) $srcConcept = Concept::getConcept($srcConceptName);
+        if(!is_null($tgtConceptName)) $tgtConcept = Concept::getConcept($tgtConceptName);
+        
         // If relation can be found by its fullRelationSignature return the relation
         if(array_key_exists($relationSignature, $relations)){
             $relation = $relations[$relationSignature];
             
             // If srcConceptName and tgtConceptName are provided, check that they match the found relation
-            if(!is_null($srcConceptName) && !in_array($srcConceptName, $relation->srcConcept->getGeneralizationsIncl())) throw new Exception("Provided src concept [{$srcConceptName}] does not match the found relation '{$relation->__toString()}'", 500);  
-            if(!is_null($tgtConceptName) && !in_array($tgtConceptName, $relation->tgtConcept->getGeneralizationsIncl())) throw new Exception("Provided tgt concept [{$tgtConceptName}] does not match the found relation '{$relation->__toString()}'", 500);
+            if(!is_null($srcConceptName) && !in_array($srcConcept, $relation->srcConcept->getGeneralizationsIncl())) throw new Exception("Provided src concept [{$srcConceptName}] does not match the found relation '{$relation->__toString()}'", 500);  
+            if(!is_null($tgtConceptName) && !in_array($tgtConcept, $relation->tgtConcept->getGeneralizationsIncl())) throw new Exception("Provided tgt concept [{$tgtConceptName}] does not match the found relation '{$relation->__toString()}'", 500);
             
             return $relation;
         }
@@ -288,8 +293,8 @@ class Relation {
         if(!is_null($srcConceptName) && !is_null($tgtConceptName)){
             foreach ($relations as $relation){
                 if($relation->name == $relationSignature 
-                        && in_array($srcConceptName, $relation->srcConcept->getGeneralizationsIncl())
-                        && in_array($tgtConceptName, $relation->tgtConcept->getGeneralizationsIncl())
+                        && in_array($srcConcept, $relation->srcConcept->getGeneralizationsIncl())
+                        && in_array($tgtConcept, $relation->tgtConcept->getGeneralizationsIncl())
                   ) return $relation;
             }
         }
