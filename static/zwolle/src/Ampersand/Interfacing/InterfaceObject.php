@@ -316,7 +316,7 @@ class InterfaceObject {
 	    $atom = new Atom($atomId, $this->tgtConcept->name, $this);
 	    
 	    // Check if tgtAtom is part of tgtAtoms of interface
-	    if(in_array($atomId, $this->getTgtAtomIds())) $this->tgtAtom = $atom;
+	    if(in_array($atom->idEsc, $this->getTgtAtomIds())) $this->tgtAtom = $atom;
 	    
 	    // Check if atom does not exist and if it may be created here
 	    elseif(!$atom->atomExists() && $this->crudC){
@@ -328,7 +328,7 @@ class InterfaceObject {
 	        $this->tgtAtom = $atom;
 	    }
 	    // Else throw exception
-	    else throw new Exception ("Resource '{$atom->id}[{$atom->concept->name}]' not found", 404);
+	    else throw new Exception ("Resource '{$atom->__toString()}' not found", 404);
 	    
 	    return $this->tgtAtom;
 	}
@@ -394,12 +394,10 @@ class InterfaceObject {
 	                // Add target atom to result array
 	                switch($options['arrayType']){
 	                    case 'num' :
-	                        // if($this->isUni) $result = $content; else $result[] = $content;
 	                        $result[] = $content;
 	                        break;
 	                    case 'assoc' :
-	                        // if($this->isUni) $result = $content; else $result[$tgtAtom->id] = $content;
-	                        $result[$tgtAtom->id] = $content;
+	                        $result[$tgtAtom->getJsonRepresentation()] = $content;
 	                        break;
 	                    default :
 	                        throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
@@ -455,7 +453,7 @@ class InterfaceObject {
 	    // Special case for CREATE in I[Concept] interfaces
 	    if($this->srcAtom->id === '_NEW_'){
 	        $this->srcAtom->setId($newAtom->id);
-	        $this->path = str_replace('_NEW_', $newAtom->id, $this->path);
+	        $this->path = str_replace('_NEW_', $newAtom->getJsonRepresentation(), $this->path);
 	    }
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
@@ -597,7 +595,7 @@ class InterfaceObject {
 	    // Interface is a relation to an object
 	    }elseif($this->tgtConcept->isObject){
 	        // Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception
-	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept->name}]' does not exist and may not be created in {$this->path}", 403);
+	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->__toString()}' does not exist and may not be created in {$this->path}", 403);
 	        	
 	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 	

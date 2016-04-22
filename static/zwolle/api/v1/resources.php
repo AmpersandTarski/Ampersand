@@ -53,7 +53,7 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 	if(!$session->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
 
 	// Get specific resource (i.e. atom)
-	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->id}[{$resource->concept->name}]' not found", 404);
+	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->__toString()}' not found", 404);
 	
 	$content = $resource->getAtom();
 

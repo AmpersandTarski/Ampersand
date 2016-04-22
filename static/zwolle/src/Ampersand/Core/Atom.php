@@ -126,7 +126,7 @@ class Atom {
 		}
 		
 		// JSON-LD attributes
-		$this->url = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $this->concept->name . '/' . $this->id;
+		$this->url = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $this->concept->name . '/' . $this->getJsonRepresentation();
 
 	}
 	
@@ -139,17 +139,16 @@ class Atom {
 	 * @param string $id
 	 */
 	public function setId($id){
-	    // Check for allowed characters for atoms with object representation. See issue https://github.com/AmpersandTarski/ampersand/issues/316
-	    // Allowed characters are: alphanumeric, spaces, '_' and '-'
-	    if($this->concept->isObject && !preg_match("#^[a-zA-Z0-9\_\- ]+$#", $id)) throw new Exception ("Only alphanumeric characters, underscores, hyphens and spaces are allowed for object representations. Atom '{$id}[{$this->concept->name}]' (ttype: {$this->concept->type}) does not comply to this constraint", 500);
+	    // Decode url encoding for objects
+	    $this->id = $this->concept->isObject ? urldecode($id) : $id;
 	    
-	    $this->id = $id;
+	    // Escape id for database queries
 		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
 		
 		if(is_null($this->parentIfc)){
-		  $this->path = 'resources/' . $this->concept->name . '/' . $this->id;
+		  $this->path = 'resources/' . $this->concept->name . '/' . $this->getJsonRepresentation();
 		}else{
-		  $this->path = $this->parentIfc->path . '/' . $this->id;
+		  $this->path = $this->parentIfc->path . '/' . $this->getJsonRepresentation();
 		}
 	}
 	
@@ -179,7 +178,7 @@ class Atom {
 	 * @return array
 	 */
 	public function getAtom($options = array()){
-		$result = array('_id_' => $this->id, '_label_' => $this->label, '_view_' => $this->view);
+		$result = array('_id_' => $this->getJsonRepresentation(), '_label_' => $this->label, '_view_' => $this->view);
 		
 		if($options['navIfc']){
 		    $ifcs = array();
@@ -247,7 +246,7 @@ class Atom {
 	        case "INTEGER" :
 	            return (int) $this->id;
 	        case "OBJECT" :
-	            return $this->id;
+	            return rawurlencode($this->id);
 	        default :
 	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
 	    }
@@ -319,7 +318,7 @@ class Atom {
 	public function walkIfcPath($path){
 	    $session = Session::singleton();
 	
-	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->id}[{$this->concept->name}]' not found", 404);
+	    if(!$this->atomExists()) throw new Exception ("Resource '$this->__toString()' not found", 404);
 	     
 	    $atom = $this; // starting point
 	     
@@ -388,7 +387,7 @@ class Atom {
 	    $options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
 	    
-	    $content = array( '_id_' => $this->id
+	    $content = array( '_id_' => $this->getJsonRepresentation()
 	                    , '_label_' => $this->label
 	                    , '_view_' => $this->view
 	                    );
@@ -516,7 +515,7 @@ class Atom {
 	public function delete($options = array()){
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
-	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object [{$this->concept->name}] in '{$this->path}'. Use PATCH remove operation instead", 405);
+	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object '{$this->__toString()}' in '{$this->path}'. Use PATCH remove operation instead", 405);
 	     
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
