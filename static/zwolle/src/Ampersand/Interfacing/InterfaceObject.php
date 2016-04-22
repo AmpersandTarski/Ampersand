@@ -316,7 +316,7 @@ class InterfaceObject {
 	    $atom = new Atom($atomId, $this->tgtConcept->name, $this);
 	    
 	    // Check if tgtAtom is part of tgtAtoms of interface
-	    if(in_array($atomId, $this->getTgtAtomIds())) $this->tgtAtom = $atom;
+	    if(in_array($atom->idEsc, $this->getTgtAtomIds())) $this->tgtAtom = $atom;
 	    
 	    // Check if atom does not exist and if it may be created here
 	    elseif(!$atom->atomExists() && $this->crudC){
@@ -394,12 +394,10 @@ class InterfaceObject {
 	                // Add target atom to result array
 	                switch($options['arrayType']){
 	                    case 'num' :
-	                        // if($this->isUni) $result = $content; else $result[] = $content;
 	                        $result[] = $content;
 	                        break;
 	                    case 'assoc' :
-	                        // if($this->isUni) $result = $content; else $result[$tgtAtom->id] = $content;
-	                        $result[$tgtAtom->id] = $content;
+	                        $result[$tgtAtom->getJsonRepresentation()] = $content;
 	                        break;
 	                    default :
 	                        throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
@@ -455,7 +453,7 @@ class InterfaceObject {
 	    // Special case for CREATE in I[Concept] interfaces
 	    if($this->srcAtom->id === '_NEW_'){
 	        $this->srcAtom->setId($newAtom->id);
-	        $this->path = str_replace('_NEW_', $newAtom->id, $this->path);
+	        $this->path = str_replace('_NEW_', $newAtom->getJsonRepresentation(), $this->path);
 	    }
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation

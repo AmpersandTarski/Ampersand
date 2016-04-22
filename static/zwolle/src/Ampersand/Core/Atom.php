@@ -126,7 +126,7 @@ class Atom {
 		}
 		
 		// JSON-LD attributes
-		$this->url = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $this->concept->name . '/' . $this->id;
+		$this->url = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $this->concept->name . '/' . $this->getJsonRepresentation();
 
 	}
 	
@@ -147,9 +147,9 @@ class Atom {
 		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
 		
 		if(is_null($this->parentIfc)){
-		  $this->path = 'resources/' . $this->concept->name . '/' . $this->id;
+		  $this->path = 'resources/' . $this->concept->name . '/' . $this->getJsonRepresentation();
 		}else{
-		  $this->path = $this->parentIfc->path . '/' . $this->id;
+		  $this->path = $this->parentIfc->path . '/' . $this->getJsonRepresentation();
 		}
 	}
 	
@@ -179,7 +179,7 @@ class Atom {
 	 * @return array
 	 */
 	public function getAtom($options = array()){
-		$result = array('_id_' => $this->id, '_label_' => $this->label, '_view_' => $this->view);
+		$result = array('_id_' => $this->getJsonRepresentation(), '_label_' => $this->label, '_view_' => $this->view);
 		
 		if($options['navIfc']){
 		    $ifcs = array();
@@ -388,7 +388,7 @@ class Atom {
 	    $options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
 	    
-	    $content = array( '_id_' => $this->id
+	    $content = array( '_id_' => $this->getJsonRepresentation()
 	                    , '_label_' => $this->label
 	                    , '_view_' => $this->view
 	                    );
