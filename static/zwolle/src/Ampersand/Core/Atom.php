@@ -140,6 +140,8 @@ class Atom {
 	 */
 	public function setId($id){
 	    $this->id = $id;
+	    
+	    // Escape id for database queries
 		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
 		
 		if(is_null($this->parentIfc)){
