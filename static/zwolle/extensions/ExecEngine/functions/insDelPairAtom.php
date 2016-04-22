@@ -83,6 +83,11 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
 		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
 		
+		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
+		
+		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
+		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'DelPair ignored because src and/or tgt atom is _NULL';
+		
 		$srcAtoms = explode('_AND', $srcAtom);
 		$tgtAtoms = explode('_AND', $tgtAtom);
 		if(count($srcAtoms) > 1) throw new Exception('DelPair function call has more than one src atom', 501); // 501: Not implemented
