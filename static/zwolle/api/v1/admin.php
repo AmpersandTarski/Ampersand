@@ -92,7 +92,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 	
 	// Defaults
 	$groupBy = $app->request->params('groupBy'); if(is_null($groupBy)) $groupBy = 'conjuncts';
-	$from = $app->request->params('from'); if(is_null($groupBy)) $from = 0;
+	$from = $app->request->params('from'); if(is_null($from)) $from = 0;
 	$to = $app->request->params('to'); if(is_null($to)) $to = 10;
 	
 	$performanceArr = array();
@@ -105,9 +105,9 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 		$endTimeStamp = microtime(true);
 	
 		$performanceArr[$conjunct->id] = array( 'id' => $conjunct->id
-				, 'start' => $startTimeStamp
-				, 'end' => $endTimeStamp
-				, 'duration' => $endTimeStamp - $startTimeStamp
+				, 'start' => round($startTimeStamp, 6)
+				, 'end' => round($endTimeStamp, 6)
+				, 'duration' => round($endTimeStamp - $startTimeStamp, 6)
 				, 'invariantRules' => implode(';', $conjunct->invRuleNames)
 				, 'signalRules' => implode(';', $conjunct->sigRuleNames)
 		);
