@@ -208,8 +208,8 @@ class Relation {
         $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
         
         // Checks
-        if($this->srcConcept != $srcAtom->concept && !in_array($srcAtom->concept, $this->srcConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
-        if($this->tgtConcept != $tgtAtom->concept && !in_array($tgtAtom->concept, $this->tgtConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
+        if(!in_array($srcAtom->concept, $this->srcConcept->getSpecializationsIncl())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
+        if(!in_array($tgtAtom->concept, $this->tgtConcept->getSpecializationsIncl())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
         if(is_null($srcAtom->id)) throw new Exception ("Cannot insert link in relation '{$this->__toString()}', because src atom is not specified", 500);
         if(is_null($tgtAtom->id)) throw new Exception ("Cannot insert link in relation '{$this->__toString()}', because tgt atom is not specified", 500);
         
@@ -241,8 +241,8 @@ class Relation {
         $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
          
         // Checks
-        if($this->srcConcept != $srcAtom->concept && !in_array($srcAtom->concept, $this->srcConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
-        if($this->tgtConcept != $tgtAtom->concept && !in_array($tgtAtom->concept, $this->tgtConcept->getSpecializations())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
+        if(!in_array($srcAtom->concept, $this->srcConcept->getSpecializationsIncl())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
+        if(!in_array($tgtAtom->concept, $this->tgtConcept->getSpecializationsIncl())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
         
         // Delete link from relation table
         $this->db->deleteLink($this, $srcAtom, $tgtAtom);
@@ -278,8 +278,8 @@ class Relation {
             $relation = $relations[$relationSignature];
             
             // If srcConceptName and tgtConceptName are provided, check that they match the found relation
-            if(!is_null($srcConceptName) && $relation->srcConcept->name != $srcConceptName) throw new Exception("Provided src concept [{$srcConceptName}] does not match the found relation '{$relation->__toString()}'", 500);  
-            if(!is_null($tgtConceptName) && $relation->tgtConcept->name != $tgtConceptName) throw new Exception("Provided tgt concept [{$tgtConceptName}] does not match the found relation '{$relation->__toString()}'", 500);
+            if(!is_null($srcConceptName) && !in_array($srcConceptName, $relation->srcConcept->getGeneralizationsIncl())) throw new Exception("Provided src concept [{$srcConceptName}] does not match the found relation '{$relation->__toString()}'", 500);  
+            if(!is_null($tgtConceptName) && !in_array($tgtConceptName, $relation->tgtConcept->getGeneralizationsIncl())) throw new Exception("Provided tgt concept [{$tgtConceptName}] does not match the found relation '{$relation->__toString()}'", 500);
             
             return $relation;
         }
@@ -288,8 +288,9 @@ class Relation {
         if(!is_null($srcConceptName) && !is_null($tgtConceptName)){
             foreach ($relations as $relation){
                 if($relation->name == $relationSignature 
-                        && $relation->srcConcept->name == $srcConceptName
-                        && $relation->tgtConcept->name == $tgtConceptName) return $relation;
+                        && in_array($srcConceptName, $relation->srcConcept->getGeneralizationsIncl())
+                        && in_array($tgtConceptName, $relation->tgtConcept->getGeneralizationsIncl())
+                  ) return $relation;
             }
         }
         

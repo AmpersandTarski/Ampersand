@@ -178,19 +178,39 @@ class Concept {
 	 * Array of all concepts of which this concept is a generalization.
 	 * @return Concept[]
 	 */
-	public function getSpecializations() {
+	public function getSpecializations(){
 	    $specializations = array();
 	    foreach($this->specializations as $conceptName) $specializations[$conceptName] = self::getConcept($conceptName);
 	    return $specializations;
 	}
 	
 	/**
-	 * Array of all concepts of which this concept is a specialization.
+	 * Array of all concepts of which this concept is a specialization (exluding the concept itself).
 	 * @return Concept[]
 	 */
 	public function getGeneralizations(){	
 	    $generalizations = array();
 	    foreach ($this->generalizations as $conceptName) $generalizations[$conceptName] = self::getConcept($conceptName);
+	    return $generalizations;
+	}
+	
+	/**
+	 * Array of all concepts of which this concept is a generalization including the concept itself.
+	 * @return Concept[]
+	 */
+	public function getSpecializationsIncl(){
+	    $specializations = $this->getSpecializations();
+	    $specializations[] = $this;
+	    return $specializations;
+	}
+	
+	/**
+	 * Array of all concepts of which this concept is a specialization including the concept itself.
+	 * @return Concept[]
+	 */
+	public function getGeneralizationsIncl(){
+	    $generalizations = $this->getGeneralizations();
+	    $generalizations[] = $this;
 	    return $generalizations;
 	}
 	
