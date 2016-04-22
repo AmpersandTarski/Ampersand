@@ -96,9 +96,9 @@ class ExecEngine {
 					$rulesThatHaveViolations[] = $rule->id;
 					
 					// Fix violations for every rule
-					$logger->debug("ExecEngine fixing violations for rule '{$rule->id}'");
+					$logger->notice("ExecEngine fixing violations for rule '{$rule->id}'");
 					self::fixViolations($violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
-					$logger->notice("Fixed violations for rule '{$rule->__toString()}");
+					$logger->debug("Fixed violations for rule '{$rule->__toString()}'");
 					
 					// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)
 					if(self::$autoRerun) self::$doRun = true;
