@@ -139,7 +139,8 @@ class Atom {
 	 * @param string $id
 	 */
 	public function setId($id){
-	    $this->id = $id;
+	    // Decode url encoding for objects
+	    $this->id = $this->concept->isObject ? urldecode($id) : $id;
 	    
 	    // Escape id for database queries
 		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
@@ -245,7 +246,7 @@ class Atom {
 	        case "INTEGER" :
 	            return (int) $this->id;
 	        case "OBJECT" :
-	            return $this->id;
+	            return rawurlencode($this->id);
 	        default :
 	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
 	    }
