@@ -231,7 +231,7 @@ function DelAtom($concept, $atomId){
 		
 		$atom = new Atom($atomId, $concept);
 		$database->deleteAtom($atom); // delete atom + all relations with other atoms
-		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' deleted");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' deleted");
 	
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('DelAtom: ' . $e->getMessage());
@@ -253,7 +253,7 @@ function SetConcept($conceptA, $conceptB, $atom){
 		
 		$atom = new Atom($atom, $conceptA);
 		$database->atomSetConcept($atom, $conceptB);
-		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '$conceptB'");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' added as member to concept '$conceptB'");
 	
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('SetConcept: ' . $e->getMessage());
@@ -274,7 +274,7 @@ function ClearConcept($concept, $atom){
         
 		$atom = new Atom($atom, $concept);
 		$database->atomClearConcept($atom);
-		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$concept'");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' removed as member from concept '$concept'");
 
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('ClearConcept: ' . $e->getMessage());

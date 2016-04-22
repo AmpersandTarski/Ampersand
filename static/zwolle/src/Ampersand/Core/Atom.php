@@ -319,7 +319,7 @@ class Atom {
 	public function walkIfcPath($path){
 	    $session = Session::singleton();
 	
-	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->id}[{$this->concept->name}]' not found", 404);
+	    if(!$this->atomExists()) throw new Exception ("Resource '$this->__toString()' not found", 404);
 	     
 	    $atom = $this; // starting point
 	     
@@ -516,7 +516,7 @@ class Atom {
 	public function delete($options = array()){
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
-	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object [{$this->concept->name}] in '{$this->path}'. Use PATCH remove operation instead", 405);
+	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object '{$this->__toString()}' in '{$this->path}'. Use PATCH remove operation instead", 405);
 	     
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);

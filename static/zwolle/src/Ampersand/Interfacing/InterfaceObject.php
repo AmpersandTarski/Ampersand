@@ -328,7 +328,7 @@ class InterfaceObject {
 	        $this->tgtAtom = $atom;
 	    }
 	    // Else throw exception
-	    else throw new Exception ("Resource '{$atom->id}[{$atom->concept->name}]' not found", 404);
+	    else throw new Exception ("Resource '{$atom->__toString()}' not found", 404);
 	    
 	    return $this->tgtAtom;
 	}
@@ -597,7 +597,7 @@ class InterfaceObject {
 	    // Interface is a relation to an object
 	    }elseif($this->tgtConcept->isObject){
 	        // Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception
-	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->id}[{$tgtAtom->concept->name}]' does not exist and may not be created in {$this->path}", 403);
+	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->__toString()}' does not exist and may not be created in {$this->path}", 403);
 	        	
 	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 	
