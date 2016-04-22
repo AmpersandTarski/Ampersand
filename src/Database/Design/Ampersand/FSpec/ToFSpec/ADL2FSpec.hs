@@ -270,7 +270,7 @@ makeFSpec opts context
                 genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
                 | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
-                                   (makeGeneratedSqlPlugs context calcProps)
+                                   (makeGeneratedSqlPlugs opts context calcProps)
                 ]
      qlfname x = if null (namespace opts) then x else "ns"++namespace opts++x
 

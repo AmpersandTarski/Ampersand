@@ -77,6 +77,7 @@ data Options = Options { showVersion :: Bool
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
+                       , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
                        }
@@ -168,6 +169,7 @@ getOptions =
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
+                      , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       }
@@ -249,6 +251,10 @@ options = [ (Option ['v']   ["version"]
                        ) "PASSWORD")
                ("set SQL host name (Defaults to `ampersand`)")
             , Public)
+          , (Option []        ["sql-bin-tables"]
+               (NoArg (\opts -> return opts{sqlBinTables = True}))
+               "generate binary tables only in SQL database."
+            , Hidden)
           , (Option ['x']     ["interfaces"]
                (NoArg (\opts -> return opts{allInterfaces  = True}))
                "generate interfaces."

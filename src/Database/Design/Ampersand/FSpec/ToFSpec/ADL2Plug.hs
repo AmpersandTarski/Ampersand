@@ -6,15 +6,16 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.Misc
 import Data.Maybe
 import Data.Char
 
-makeGeneratedSqlPlugs :: A_Context 
+makeGeneratedSqlPlugs :: Options -> A_Context 
               -> (Declaration -> Declaration) -- Function to add calculated properties to a declaration
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
+makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
   where 
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
@@ -201,8 +202,10 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
         declsInTable typ = [ dcl | dcl <- dcls
                             , not . null $ maybeToList (conceptTableOf dcl) `isc` tyCpts typ ]
         
-conceptTableOf :: Declaration -> Maybe A_Concept
-conceptTableOf d = fmap fst $ wayToStore d
+        conceptTableOf :: Declaration -> Maybe A_Concept
+        conceptTableOf d = if sqlBinTables opts
+                           then Nothing
+                           else fmap fst $ wayToStore d
 
 -- | this function tells in what concepttable a given declaration is to be stored. If stored
 --   in a concept table, it returns the concept and a boolean, telling wether or not the relation
