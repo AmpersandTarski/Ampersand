@@ -15,6 +15,4 @@ runAmpersand opts file =
            case gFSpec of
               Errors err    -> return (file,err)
               --TODO: Do something with the fSpec
-              Checked _     -> do --generateAmpersandOutput fSpec
-                                  --generateProtoStuff      fSpec
-                                  return (file,[])
+              Checked _     -> do return (file,[])

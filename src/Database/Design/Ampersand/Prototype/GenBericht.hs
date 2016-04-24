@@ -7,8 +7,13 @@ import Text.CSV
 import System.FilePath
 import System.Directory
 import Control.Monad
-import Database.Design.Ampersand
-import Database.Design.Ampersand.Basics (fatal)
+import Database.Design.Ampersand.Basics
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.Core.ParseTree
+import Database.Design.Ampersand.Misc
+
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?
 
@@ -48,7 +53,7 @@ doGenBericht fSpec =
                Entity { entName = name objDef
                       , depth = dpth
                       , cardinality  = card $ objctx objDef
-                      , definition   = def $ objctx objDef
+                      , definition   = defin $ objctx objDef
                       , refType      = name (target $ objctx objDef)
                       , associations =
                           case objmsub objDef of
@@ -58,9 +63,9 @@ doGenBericht fSpec =
                       }
             where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
 
-                  def rel = case concDefs fSpec (target rel) of
-                                Cd {cddef=def'} : _ | def' /= "" -> def'
-                                _                                -> "** NO DEFINITION **"
+                  defin rel = case concDefs fSpec (target rel) of
+                                  Cd {cddef=def'} : _ | def' /= "" -> def'
+                                  _                                -> "** NO DEFINITION **"
 
                   objsForInterfaceNamed :: String -> [ObjectDef]
                   objsForInterfaceNamed nm =
@@ -74,8 +79,8 @@ allEntitiesToCSV entities = ["Naam", "Card.", "Definitie", "Type"] :
                             intercalate [["","","",""]] (map entityToCSV  entities)
 
 entityToCSV :: Entity -> CSV
-entityToCSV (Entity nm dpth card def refTp props) =
-  [ concat (replicate dpth ". ") ++ nm, card, def, refTp] : concatMap entityToCSV props
+entityToCSV (Entity nm dpth card defin refTp props) =
+  [ concat (replicate dpth ". ") ++ nm, card, defin, refTp] : concatMap entityToCSV props
 
 -- Utils
 
@@ -130,10 +135,10 @@ genGegevensWB entities = gegevensWB_Header ++
         mkAnchor entityName = "<a name=\"abie-"++escapeNonAlphaNum entityName++"\" id=\"abie-"++escapeNonAlphaNum entityName++"\"> </a>\n"
 
       wbElement_Element :: String -> Entity -> String
-      wbElement_Element parentConcept (Entity _ _ card def refTp _) =
+      wbElement_Element parentConcept (Entity _ _ card defin refTp _) =
         "        <tr class=\"property-abie-"++escapeNonAlphaNum parentConcept++"\">\n" ++
-        "          <td class=\"property_term\" title=\""++def++"\">"++def++"</td>\n" ++
-        -- NOTE: don't want def twice here
+        "          <td class=\"property_term\" title=\""++defin++"\">"++defin++"</td>\n" ++
+        -- NOTE: don't want defin twice here
         "          <div class=\"info d1e110\"></div><td class=\"cardinality\">"++card++"</td>\n" ++
         "          <td class=\"representationterm\">" ++ mkLink entities refTp refTp ++ "</a></td>\n" ++
         -- TODO: leave out <a> if this is not a defined data type
@@ -204,13 +209,13 @@ genBerichtDef entities =
     ]
 
   berichtDef_ElementLine :: Entity -> String
-  berichtDef_ElementLine (Entity entNm depth card def refTp props) =
+  berichtDef_ElementLine (Entity entNm depth card defin refTp props) =
     "        <tr>\n" ++
-    "          <td class=\"bold\" title=\""++def++"\""++padding++">\n" ++
+    "          <td class=\"bold\" title=\""++defin++"\""++padding++">\n" ++
     "            " ++ mkLink entities refTp entNm ++
     "          </td>\n" ++
     "          <td>"++card++"</td>\n" ++
-    "          <td>"++def++"</td>\n" ++
+    "          <td>"++defin++"</td>\n" ++
     "        </tr>\n" ++
     concatMap berichtDef_ElementLine props
    where padding = if depth > 0  then " style=\"padding-left:"++show (depth*25)++"px\"" else ""

@@ -4,7 +4,7 @@ module Database.Design.Ampersand.Prototype.WriteStaticFiles (writeStaticFiles) w
 import System.FilePath
 import System.Directory
 import qualified Data.ByteString.Char8 as BS
-import Database.Design.Ampersand (Options(..),verboseLn)
+import Database.Design.Ampersand.Misc (Options(..),verboseLn)
 import Prelude hiding (writeFile,readFile,getContents)
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 import qualified Data.Conduit.List as CL

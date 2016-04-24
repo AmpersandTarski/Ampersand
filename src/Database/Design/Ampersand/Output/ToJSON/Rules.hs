@@ -6,7 +6,7 @@ module Database.Design.Ampersand.Output.ToJSON.Rules
 where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand
+import Database.Design.Ampersand.FSpec
 import Data.Maybe
 
 data Rules = Rules
