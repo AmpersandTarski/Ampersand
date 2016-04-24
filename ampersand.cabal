@@ -60,7 +60,6 @@ executable ampersand
                      zlib == 0.6.*
 
   other-modules:
-                     Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,
