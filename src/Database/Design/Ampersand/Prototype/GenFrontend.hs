@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs) where
 
-import Prelude hiding (putStrLn,readFile)
+import Prelude hiding (putStr,putStrLn,readFile)
 import Control.Monad
 import Data.Data
 import Data.List
@@ -95,12 +95,13 @@ clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStrLn "Generating frontend.." 
+ do { putStr "Generating frontend.." 
     ; copyIncludes fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genView_Interfaces fSpec feInterfaces
     ; genController_Interfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
+    ; putStrLn "..done."
     }
 
 copyIncludes :: FSpec -> IO ()

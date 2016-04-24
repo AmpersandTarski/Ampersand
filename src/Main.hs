@@ -37,12 +37,27 @@ generateProtoStuff fSpec
       do { when (genPrototype (getOpts fSpec)) $ doGenProto fSpec
          ; when (genBericht (getOpts fSpec))   $ doGenBericht fSpec
          ; case testRule (getOpts fSpec) of
-             Just ruleName -> ruleTest fSpec ruleName
+             Just ruleName -> ruleTest ruleName
              Nothing       -> return ()
     ; when ((not . null . allViolations) fSpec && (development . getOpts) fSpec ) $
         verboseLn (getOpts fSpec) "\nWARNING: There are rule violations (see above). The database might be invalid."
     ; verboseLn (getOpts fSpec) "Done."  -- if there are violations, but we generated anyway (ie. with --dev), issue a warning
     }
+  where
+    ruleTest :: String -> IO ()
+    ruleTest ruleName =
+     case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
+       [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
+       (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+                      ; putStrLn $ showContents rule
+                      ; let rExpr = rrexp rule
+                      ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
+                      ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                      ; putStrLn $ showContents ruleComplement
+                      }
+     where showContents rule = "[" ++ intercalate ", " pairs ++ "]"
+             where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 
+                           | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
 
 doGenProto :: FSpec -> IO ()
 doGenProto fSpec =
@@ -88,16 +103,4 @@ doGenProto fSpec =
          ++"\n  Violations : " ++ showprs viols
          | (conj, viols) <- conjViols
          ]
-ruleTest :: FSpec -> String -> IO ()
-ruleTest fSpec ruleName =
- case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
-   [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-   (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
-                  ; putStrLn $ showContents rule
-                  ; let rExpr = rrexp rule
-                  ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
-                  ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
-                  ; putStrLn $ showContents ruleComplement
-                  }
- where showContents rule = let pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" | (r,vs) <- allViolations fSpec, r == rule, v <- vs]
-                           in  "[" ++ intercalate ", " pairs ++ "]"
+                           
