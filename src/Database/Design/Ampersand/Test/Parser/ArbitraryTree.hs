@@ -17,11 +17,14 @@ printable = suchThat arbitrary isValid
 
 -- Generates a simple string of ascii characters
 safeStr :: Gen String
-safeStr = listOf printable
+safeStr = listOf printable `suchThat` noEsc
 
 -- Generates a simple non-empty string of ascii characters
 safeStr1 :: Gen String
-safeStr1 = listOf1 printable
+safeStr1 = listOf1 printable `suchThat` noEsc
+
+noEsc :: String -> Bool
+noEsc = all (/= '\\')
 
 -- Genrates a valid ADL identifier
 identifier :: Gen String
@@ -59,9 +62,8 @@ genObj = makeObj arbitrary genIfc (return Nothing)
 
 makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
 makeObj genPrim ifcGen genView n =
-        P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc <*> args
-              where args = listOf $ listOf1 identifier
-                    term = Prim <$> genPrim
+        P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc
+              where term = Prim <$> genPrim
                     ifc  = if n == 0 then return Nothing
                            else Just <$> ifcGen (n`div`2)
 
@@ -260,21 +262,16 @@ instance Arbitrary PAtomValue where
        ]
      where stringConstraints :: String -> Bool
            stringConstraints str =
-             case str of
-              [] -> True
-              ('\\':_) -> False -- om van het geneuzel af te zijn.
-              ('\'':_) -> False -- This string would cause problems as a Singleton in an Expresson
-              ('\\':'\'':cs) -> stringConstraints cs
-              ('\\':'"':cs) -> stringConstraints cs
-              ('"':_) -> False -- This string would cause problems as a Singleton in an Expresson
-              ['\\']  -> False -- If the last character is an escape, the double quote ending the string would not be seen as such.
-              (_:cs)  -> stringConstraints cs
+             case readLitChar str of
+              [(c,cs)] -> if c `elem` ['\'', '"', '\\'] 
+                          then False
+                          else stringConstraints cs
+              _ -> True  -- end of string
+
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
-                      <*> listOf relationRef <*> args <*> listOf arbitrary
+    arbitrary = P_Ifc <$> safeStr1
+                      <*> listOf arbitrary
                       <*> sized objTermPrim <*> arbitrary <*> safeStr
-                   where args = listOf $ listOf1 safeStr
-                         maybeSafeStr = oneof [Just <$> safeStr, return Nothing]
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
     arbitrary = sized genObj
@@ -289,22 +286,19 @@ instance Arbitrary P_IdentSegment where
     arbitrary = P_IdentExp <$> sized objTermPrim
 
 instance Arbitrary a => Arbitrary (P_ViewD a) where
-    arbitrary =
-        oneof [P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> return True <*> return Nothing <*> listOf1 arbitrary,
-               P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
-                    <*> arbitrary <*> arbitrary <*> listOf1 (P_ViewExp <$> arbitrary <*> arbitrary)]
+    arbitrary = P_Vd <$> arbitrary <*> safeStr <*> genConceptOne
+                    <*> arbitrary <*> arbitrary <*> listOf1 arbitrary
 
 instance Arbitrary ViewHtmlTemplate where
     arbitrary = ViewHtmlTemplateFile <$> safeStr
 
-instance Arbitrary a => Arbitrary (P_ViewSegmt a) where
+instance Arbitrary a => Arbitrary (P_ViewSegment a) where
+    arbitrary = P_ViewSegment <$> (Just <$> safeStr) <*> arbitrary <*> arbitrary 
+instance Arbitrary a => Arbitrary (P_ViewSegmtPayLoad a) where
     arbitrary =
-        oneof [
-            P_ViewExp  <$> arbitrary <*> arbitrary,
-            P_ViewText <$> arbitrary <*> safeStr,
-            P_ViewHtml <$> arbitrary <*> safeStr
-        ]
+        oneof [ P_ViewExp  <$> sized(genTerm 1) -- only accepts pTerm, no pRule.
+              , P_ViewText <$> safeStr
+              ]
 
 instance Arbitrary PPurpose where
     arbitrary = PRef2 <$> arbitrary <*> arbitrary <*> arbitrary <*> listOf safeStr1

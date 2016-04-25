@@ -1,6 +1,7 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
-    , smallerConcepts, largerConcepts, genericAndSpecifics, safePSingleton2AAtomVal
+    , smallerConcepts, largerConcepts, sortSpecific2Generic
+    , genericAndSpecifics, safePSingleton2AAtomVal
     ) 
 where
 {- This file contains all functions to compute populations.
@@ -36,6 +37,14 @@ largerConcepts gs cpt
  = nub$ oneLarger ++ concatMap (largerConcepts gs) oneLarger
   where oneLarger  = delete cpt. nub $[ gengen g | g@Isa{}<-gs, genspc g==cpt ]++[ c | g@IsE{}<-gs, genspc g==cpt, c<-genrhs g ]
 
+-- | This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the 
+--   list, if a is more specific than b, a will be to the left of b in the resulting list.
+sortSpecific2Generic :: [A_Gen] -> [A_Concept] -> [A_Concept]
+sortSpecific2Generic gens cps = go [] cps
+  where go xs [] = xs
+        go xs (y:ys)
+          | null (smallerConcepts gens y `isc` ys) = go (xs++[y]) ys
+          | otherwise                              = go xs (ys++[y])
 -- | This function returns the atoms of a concept (like fullContents does for relation-like things.)
 atomValuesOf :: ContextInfo -- the relevant info of the context
         -> [Population] 

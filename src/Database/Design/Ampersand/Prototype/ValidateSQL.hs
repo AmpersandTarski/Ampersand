@@ -5,11 +5,10 @@ import Data.List
 import Control.Monad
 import System.Exit
 import System.IO hiding (hPutStr,hGetContents)
-import Database.Design.Ampersand hiding (putStr, origin)
+import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Prototype.Installer
-import Database.Design.Ampersand.Prototype.PHP
-
+import Database.Design.Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
+import Database.Design.Ampersand.ADL1.Expression (notCpl)
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
@@ -79,8 +78,8 @@ getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
 
 getAllViewExps :: FSpec -> [ValidationExp]
 getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
- where getViewExps view = [ (objctx objDef, "view "++show (name view))
-                          | ViewExp _ objDef <- vdats view ]
+ where getViewExps view = [ (expr, "view "++show (name view))
+                          | ViewExp expr <- map vsmLoad (vdats view) ]
 
 type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we

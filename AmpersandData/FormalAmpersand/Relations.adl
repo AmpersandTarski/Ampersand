@@ -18,7 +18,7 @@ VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , tg
 
 RELATION src[Signature*Concept] [UNI,TOT]
 MEANING "The source of a signature."
-ROLE Ampersand MAINTAINS "TOT src::Signature*Concept", "TOT tgt::Signature*Concept"
+ROLE Ampersand MAINTAINS "TOT src[Signature*Concept]", "TOT tgt[Signature*Concept]"
 RELATION tgt[Signature*Concept] [UNI,TOT]
 MEANING "The target of a signature."
 

@@ -1,7 +1,7 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec) where
 
-import Prelude hiding (Ord(..))
+import Prelude
 import Data.Char
 import Data.List
 import Data.Maybe
@@ -10,7 +10,6 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.Poset
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.Crud
@@ -64,10 +63,12 @@ makeFSpec opts context
                                    | rule <- allrules
                                    , role <- maintainersOf rule
                                    ]
-              , fRoles       = nub (concatMap arRoles (ctxrrules context)++
-                                    concatMap rrRoles (ctxRRels context)++
-                                    concatMap ifcRoles (ctxifcs context)
-                                   ) 
+              , fMaintains   = fMaintains'
+              , fRoles       = zip ((sort . nub) (concatMap arRoles (ctxrrules context)++
+                                                  concatMap rrRoles (ctxRRels context )++
+                                                  concatMap ifcRoles (ctxifcs context )
+                                                 )
+                                   ) [0..] 
               , fallRules = allrules
               , vrules       = filter      isUserDefined  allrules
               , grules       = filter (not.isUserDefined) allrules
@@ -91,6 +92,7 @@ makeFSpec opts context
               , vviews       = viewDefs context
               , lookupView   = lookupView'
               , getDefaultViewForConcept = getDefaultViewForConcept'
+              , getAllViewsForConcept = getAllViewsForConcept'
               , conceptDefs  = ctxcds context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
@@ -109,25 +111,20 @@ makeFSpec opts context
                                          ]
               , fcontextInfo = contextinfo
               , ftypologies   = typologies context
+              , rootConcept = rootConcept'
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
-              , editableConcepts = editablecpts 
               }
    where           
-     editablecpts :: Interface -> [A_Concept]
-     editablecpts ifc = nub (cpts ++ concatMap (smallerConcepts (gens context)) cpts)
-        where
-          cpts = editables (ifcObj ifc)
-          editables :: ObjectDef -> [A_Concept]
-          editables obj = 
-             case objmsub obj of
-               Nothing       -> case objctx obj of
-                                  EDcD rel -> f target rel
-                                  EFlp (EDcD rel) -> f source rel
-                                  _ -> []
-               Just (InterfaceRef _ _ _) -> []
-               Just (Box _ _ objs)     -> foldr (uni) [] (map editables objs)
-          f sORt dcl = [sORt dcl | dcl `elem` ifcParams ifc]
+     fMaintains' :: Role -> [Rule]
+     fMaintains' role = nub [ rule 
+                            | rule <- allrules
+                            , role `elem` maintainersOf rule
+                            ]
+     rootConcept' cpt = 
+        case [t | t <- typologies context, cpt `elem` tyCpts t] of
+           [t] -> tyroot t
+           _   -> fatal 121 $ "concept "++name cpt++" should be in exactly one typology!"
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
@@ -152,8 +149,8 @@ makeFSpec opts context
        where
           enrichIfc :: Interface -> Interface
           enrichIfc ifc
-           = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
-                , ifcControls = makeIfcControls (ifcParams ifc) allConjs
+           = ifc{ ifcEcas = fst . assembleECAs opts context $ []
+                , ifcControls = makeIfcControls [] allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
      fSpecRoleInterfaces role = filter (forThisRole role) fSpecAllInterfaces
@@ -233,33 +230,47 @@ makeFSpec opts context
   -- Lookup view by id in fSpec.
      lookupView' :: String -> ViewDef
      lookupView'  viewId =
-       case filter (\v -> vdlbl v == viewId) $ viewDefs context of
+       case filter (\v -> name v == viewId) $ viewDefs context of
          []   -> fatal 174 $ "Undeclared view " ++ show viewId ++ "." -- Will be caught by static analysis
          [vd] -> vd
-         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
+         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map name vds) -- Will be caught by static analysis
      
-     -- Return the default view for concpt, which is either the view for concpt itself (if it has one) or the view for
-     -- concpt's smallest superconcept that has a view. Return Nothing if there is no default view.
+   -- get all views for a specific concept and all larger concepts.
+     getAllViewsForConcept' :: A_Concept -> [ViewDef]
+     getAllViewsForConcept' concpt = 
+              concatMap viewsOfThisConcept
+            . sortSpecific2Generic (gens context) 
+            $ concpt : largerConcepts (gens context) concpt 
+       
+     viewsOfThisConcept :: A_Concept -> [ViewDef]
+     viewsOfThisConcept cpt = filter isForConcept $ viewDefs context
+       where
+         isForConcept :: ViewDef -> Bool
+         isForConcept vd = vdcpt vd == cpt
+     -- Return the default view for cpt, which is either the view for cpt itself (if it has one) or the view for
+     -- cpt's smallest superconcept that has a default view. Return Nothing if there is no default view.
      getDefaultViewForConcept' :: A_Concept -> Maybe ViewDef
-     getDefaultViewForConcept' concpt =
-       case [ vd 
-            | vd@Vd{vdcpt = c, vdIsDefault = True} <- viewDefs context
-            ,  c `elem` (concpt : largerConcepts (gens context) concpt) 
-            ] of
-         []     -> Nothing
+     getDefaultViewForConcept' cpt =
+       case  filter vdIsDefault
+           . concatMap viewsOfThisConcept
+           . sortSpecific2Generic (gens context) 
+           $ cpt : largerConcepts (gens context) cpt of
+         []     -> Nothing 
          (vd:_) -> Just vd
 
      --------------
      --making plugs
      --------------
-     vsqlplugs = [ (makeUserDefinedSqlPlug context p) | p<-ctxsql context] --REMARK -> no optimization like try2specific, because these plugs are user defined
+     vsqlplugs = case ctxsql context of
+                   []  -> []
+                   _   -> fatal 281 "User defined plugs have heavily bitrotted." --REMARK -> no optimization like try2specific, because these plugs are user defined
      definedplugs = map InternalPlug vsqlplugs
                  ++ map ExternalPlug (ctxphp context)
      allplugs = definedplugs ++      -- all plugs defined by the user
                 genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
                 | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
-                                   (makeGeneratedSqlPlugs context calcProps)
+                                   (makeGeneratedSqlPlugs opts context calcProps)
                 ]
      qlfname x = if null (namespace opts) then x else "ns"++namespace opts++x
 
@@ -340,10 +351,10 @@ makeFSpec opts context
              = [ Obj { objnm   = showADL t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objctx  = t
-                     , objcrud = def
+                     , objcrud = fatal 351 "No default crud in generated interface"
                      , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
-                     , objstrs = [] }
+                     }
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
             -- Each expression list represents a path from the origin of a box to the attribute.
@@ -354,16 +365,13 @@ makeFSpec opts context
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
-        [Ifc { ifcClass    = Nothing
-             , ifcParams   = params
-             , ifcArgs     = []
-             , ifcObj      = Obj { objnm   = name c
+        [Ifc { ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
-                                 , objcrud = def
+                                 , objcrud = fatal 371 "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
-                                 , objstrs = [] }
+                                 }
              , ifcEcas     = fst (assembleECAs opts context params)
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
@@ -383,16 +391,13 @@ makeFSpec opts context
      --end otherwise: default theme
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
-      = [Ifc { ifcClass    = ifcClass ifcc
-             , ifcParams   = ifcParams ifcc
-             , ifcArgs     = ifcArgs   ifcc
-             , ifcObj      = Obj { objnm   = nm
+      = [Ifc { ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
-                                 , objcrud = def
+                                 , objcrud = fatal 400 "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
-                                 , objstrs = [] }
+                                 }
              , ifcEcas     = ifcEcas     ifcc
              , ifcControls = ifcControls ifcc
              , ifcPos      = ifcPos      ifcc
@@ -408,7 +413,13 @@ makeFSpec opts context
               nm
                 | null nms = fatal 355 "impossible"
                 | otherwise = head nms
-              att = Obj (name c) (Origin "generated attribute object: step 4b") (EDcV (Sign ONE c)) def Nothing Nothing []
+              att = Obj { objnm    = name c
+                        , objpos   = Origin "generated attribute object: step 4b"
+                        , objctx   = EDcV (Sign ONE c)
+                        , objcrud  = fatal 419 "No default crud in generated interface."
+                        , objmView = Nothing
+                        , objmsub  = Nothing
+                        }
         ]
      ----------------------
      --END: making interfaces
@@ -502,8 +513,10 @@ instance Rename PlugSQL where
 tblcontents :: ContextInfo -> [Population] -> PlugSQL -> [[Maybe AAtomValue]]
 tblcontents ci ps plug
    = case plug of
-     ScalarSQL{} -> [[Just x] | x<-atomValuesOf ci ps (cLkp plug)]
-     BinSQL{}    -> [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps (mLkp plug)]
+     BinSQL{}    -> let expr = case dLkpTbl plug of
+                                 [store] -> EDcD (rsDcl store)
+                                 ss       -> fatal 540 $ "Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss)
+                    in [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps expr]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
  --attributes are assumed to be in the order kernel+other,

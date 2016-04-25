@@ -46,9 +46,6 @@ quote = text.show
 --              escapeSlash = escape "\\"
 --              escape x = replace x ("\\" ++ x)
 
-quoteAll :: [String] -> [Doc]
-quoteAll = map quote
-
 quotePurpose :: String -> Doc
 quotePurpose p = text "{+" </> escapeExpl p </> text "-}"
         where escapeExpl = text.escapeCommentStart.escapeLineComment.escapeExplEnd
@@ -81,9 +78,6 @@ commas = encloseSep empty empty comma
 listOf :: Pretty a => [a] -> Doc
 listOf = commas . map pretty
 
-listOfLists :: [[String]] -> Doc
-listOfLists xs = commas $ map (hsep.quoteAll) xs
-
 separate :: Pretty a => String -> [a] -> Doc
 separate d xs = encloseSep empty empty (text d) $ map pretty xs
 
@@ -92,13 +86,8 @@ separate d xs = encloseSep empty empty (text d) $ map pretty xs
 takeQuote :: String -> String
 takeQuote = replace "\"" ""
 
-labelArgs :: [[String]] -> Doc
-labelArgs args = if null args || all null args
-                 then empty
-                 else braces $ listOfLists args
-
-prettyLabel :: String -> [[String]] -> Doc
-prettyLabel nm strs = maybeQuote nm <+> labelArgs strs
+prettyLabel :: String -> Doc
+prettyLabel = maybeQuote
 
 instance Pretty P_Context where
     pretty (PCtx nm _ lang markup thms pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops sql php metas) =
@@ -263,21 +252,16 @@ instance Pretty TType where
     pretty = text . show
       
 instance Pretty P_Interface where
-    pretty (P_Ifc name klass prms args roles obj _ _) =
-        text "INTERFACE" <+> maybeQuote name <+> class_
-               <+> params <+> labelArgs args <+> iroles
+    pretty (P_Ifc name roles obj _ _) =
+        text "INTERFACE" <+> maybeQuote name 
+               <+> iroles
                <+> text ":" <~\> obj_ctx obj <~> obj_msub obj
-                 where class_ = case klass of
-                                     Nothing  -> empty
-                                     Just str -> text "CLASS" <+> quoteConcept str
-                       params = if null prms then empty
-                                else parens $ listOf prms
-                       iroles = if null roles then empty
+                 where iroles = if null roles then empty
                                 else text "FOR" <+> listOf roles
 
 instance Pretty a => Pretty (P_ObjDef a) where
-    pretty (P_Obj nm _ ctx mCrud mView msub strs) =
-        prettyLabel nm strs <+> text ":"
+    pretty (P_Obj nm _ ctx mCrud mView msub) =
+        prettyLabel nm <+> text ":"
                  <~> ctx <+> crud mCrud <+> view mView <~> msub
         where crud Nothing = empty
               crud (Just cruds) = pretty cruds
@@ -297,10 +281,10 @@ instance Pretty a => Pretty (P_IdentDf a) where
         text "IDENT" <+> maybeQuote lbl <+> text ":" <~> cpt <+> parens (listOf ats)
 
 instance Pretty a => Pretty (P_IdentSegmnt a) where
-    pretty (P_IdentExp (P_Obj nm _ ctx _ mView _ strs)) =
+    pretty (P_IdentExp (P_Obj nm _ ctx _ mView _)) =
               if null nm
               then pretty ctx -- no label
-              else prettyLabel nm strs <> text ":" <~> ctx <+> view mView
+              else prettyLabel nm <> text ":" <~> ctx <+> view mView
         where view Nothing  = empty
               view (Just v) = pretty v
 
@@ -315,12 +299,15 @@ instance Pretty a => Pretty (P_ViewD a) where
 
 instance Pretty ViewHtmlTemplate where
     pretty (ViewHtmlTemplateFile str) = text "HTML" <+> text "TEMPLATE" <+> quote str
-
-instance Pretty a => Pretty (P_ViewSegmt a) where
-    pretty (P_ViewExp _ (P_Obj nm _ ctx _ _ _ _))
-                              = maybeQuote nm <+> text ":" <~> ctx
-    pretty (P_ViewText _ txt) = text "TXT" <+> quote txt
-    pretty (P_ViewHtml _ htm) = text "PRIMHTML" <+> quote htm
+instance Pretty a => Pretty (P_ViewSegment a) where
+    pretty (P_ViewSegment mlab _ pl)
+        = ( case mlab of 
+             Nothing  -> empty
+             Just str -> maybeQuote str <+> text ":" 
+          ) <~> pretty pl
+instance Pretty a => Pretty (P_ViewSegmtPayLoad a) where
+    pretty (P_ViewExp expr) = pretty expr
+    pretty (P_ViewText txt) = text "TXT" <+> quote txt
                         
 instance Pretty PPurpose where
     pretty (PRef2 _ obj markup refIds) =

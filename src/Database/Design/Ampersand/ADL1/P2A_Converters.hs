@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
-{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE LambdaCase, ImplicitParams #-}
 -- unfortunately not in GHC yet, try to add this line when at GHC 8.0: {-# ApplicativeDo #-}
 module Database.Design.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
@@ -7,9 +7,10 @@ import Database.Design.Ampersand.ADL1.Disambiguate
 import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import Database.Design.Ampersand.Input.ADL1.CtxError
 import Database.Design.Ampersand.ADL1.Lattices -- used for type-checking
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Classes.ViewPoint
 import Database.Design.Ampersand.Classes.ConceptStructure
+import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Control.Monad (join)
@@ -22,6 +23,7 @@ import Data.Maybe
 import Data.List as Lst
 import Data.Char(toUpper,toLower)
 import Data.Either
+import GHC.Stack
 
 data Type = UserConcept String
           | BuiltIn TType
@@ -49,18 +51,18 @@ aConcToType :: A_Concept -> Type
 aConcToType ONE = BuiltIn TypeOfOne
 aConcToType p = UserConcept (name p)
 
-getAsType :: Origin -> Type -> Guarded (Maybe TType)
-getAsType o v = case typeOrConcept v of
-                  Right x -> return x
-                  Left  x -> unexpectedType o x
 getAsConcept :: Origin -> Type -> Guarded A_Concept
 getAsConcept o v = case typeOrConcept v of
                      Right x -> unexpectedType o x
                      Left  x -> return x
 
-mustBeConceptBecauseMath :: Type -> A_Concept
+userList :: [Type] -> [A_Concept]
+userList = lefts . fmap typeOrConcept
+
+mustBeConceptBecauseMath :: (?loc :: CallStack) => Type -> A_Concept
 mustBeConceptBecauseMath tp
- = let fatalV = fatal 54 "A concept turned out to be a built-in type."
+ = let fatalV :: (?loc :: CallStack) => a
+       fatalV = fatal 54 ("A concept turned out to be a built-in type.")
    in case getAsConcept fatalV tp of
         Checked v -> v
         _ -> fatalV
@@ -185,14 +187,10 @@ findDeclsTyped :: DeclMap -> String -> Signature -> [Declaration]
 findDeclsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls declMap x))
 
 onlyUserConcepts :: [[Type]] -> [[A_Concept]]
-onlyUserConcepts [] = []
-onlyUserConcepts (lst:r)
-  = case lefts (map typeOrConcept lst) of
-     [] -> onlyUserConcepts r
-     v -> v:onlyUserConcepts r
+onlyUserConcepts = fmap userList
 
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
-pCtx2aCtx _
+pCtx2aCtx opts
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
       , ctx_lang   = lang
@@ -270,52 +268,114 @@ pCtx2aCtx _
       uniqueNames (ctxifcs   actx)   --                          and interfaces.
       return actx
   where
-    concGroups = getGroups genLatticeIncomplete :: [[Type]]
+    concGroups = (\x -> trace (show x) x) $
+                 getGroups genLatticeIncomplete :: [[Type]]
     deflangCtxt = lang -- take the default language from the top-level context
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
-
+    allReprs = p_representations++concatMap pt_Reprs p_patterns
     g_contextInfo :: Guarded ContextInfo
     g_contextInfo
-     = do mp <- Map.fromList . concat <$> traverse findTypes (concat (onlyUserConcepts (getGroups genLattice)))
-          let findR x = Map.findWithDefault Object x mp -- default representation is Object (sometimes called `ugly identifiers')
-          _ <- traverse (compareTypes (findR . pCpt2aCpt)) allGens
+     = do let connectedConcepts = connect [] (map concs gns)
+          typeMap <- mkTypeMap connectedConcepts allReprs
+          let findR :: A_Concept -> TType
+              findR cpt = case lookup cpt typeMap of
+                            Nothing -> Object -- default representation is Object (sometimes called `ugly identifiers')
+                            Just t  -> t
+          multitypologies <- traverse mkTypology $ connectedConcepts
           return (CI { ctxiGens = gns
                      , representationOf = findR
-                     , multiKernels = map mkTypology $ f [] gns
+                     , multiKernels = multitypologies
                      })
         where 
           gns = map pGen2aGen allGens
-          f typols gs = 
+          -- | function that creates a lookup table of concepts with a representation. 
+          --   it is checked that concepts in the same conceptgroup share a common TType. 
+          mkTypeMap :: [[A_Concept]] -> [Representation] -> Guarded [(A_Concept , TType)]
+          mkTypeMap groups reprs 
+            = f <$> traverse typeOfGroup groups
+                <*> traverse typeOfSingle (conceptsOfReprs >- conceptsOfGroups)
+            where 
+              f :: [[(A_Concept,TType)]] -> [Maybe (A_Concept,TType,[Origin])] -> [(A_Concept , TType)]
+              f typesOfGroups typesOfOthers
+                  = concat typesOfGroups ++ map stripOrigin (catMaybes typesOfOthers)
+              stripOrigin ::  (A_Concept,TType,[Origin]) -> (A_Concept,TType)
+              stripOrigin (cpt,t,_) = (cpt,t)
+              reprTrios :: [(A_Concept,TType,Origin)]
+              reprTrios = nub $ concatMap toReprs reprs
+                where toReprs :: Representation -> [(A_Concept,TType,Origin)]
+                      toReprs r = [ (castConcept str,reprdom r,reprpos r) | str <- reprcpts r]
+              conceptsOfGroups :: [A_Concept]
+              conceptsOfGroups = nub (concat groups)
+              conceptsOfReprs :: [A_Concept]
+              conceptsOfReprs = nub $ map fstOf3 reprTrios
+                 where fstOf3 (cpt,_,_)=cpt
+              typeOfSingle :: A_Concept -> Guarded (Maybe (A_Concept,TType,[Origin]))
+              typeOfSingle cpt 
+                = case filter ofCpt reprTrios of
+                   [] -> pure Nothing
+                   rs -> case nub (map getTType rs) of
+                           []  -> fatal 325 "Impossible empty list."
+                           [t] -> pure ( Just (cpt,t, map getOrigin rs))
+                           _   -> mkMultipleRepresentTypesError cpt lst
+                                     where lst = [(t,o) | (_,t,o) <- rs]
+                where ofCpt :: (A_Concept,TType,Origin) -> Bool
+                      ofCpt (cpt',_,_) =  cpt == cpt'
+                      getOrigin :: (A_Concept,TType,Origin) -> Origin
+                      getOrigin (_,_,o) = o
+              getTType :: (a,TType,b) -> TType
+              getTType (_,t,_) = t
+              typeOfGroup :: [A_Concept] -> Guarded [(A_Concept,TType)]
+              typeOfGroup grp 
+                = do singleTypes <- traverse typeOfSingle grp
+                     let typeList = catMaybes singleTypes
+                     case nub (map getTType typeList) of
+                       []  -> pure $ []
+                       [t] -> pure $ [(cpt,t) | cpt <- grp]
+                       _  -> mkMultipleTypesInTypologyError typeList
+
+
+
+          connect :: [[A_Concept]] -> [[A_Concept]] -> [[A_Concept]]
+          connect typols gs = 
              case gs of
                []   -> typols
-               x:xs -> let (as,bs) = Lst.partition (not . null . uni (concs x)) typols
-                       in f ((concat as `uni` concs x) : bs ) xs 
+               x:xs -> connect (t:typols) rest
+                 where 
+                    (t,rest) = g x xs 
+                    g a as = case partition (hasConceptsOf a) as of
+                              (_,[])   -> (a,as)
+                              (hs',hs) -> g (foldr uni a hs) hs'
+                    hasConceptsOf :: [A_Concept] -> [A_Concept] -> Bool
+                    hasConceptsOf a = null . isc a
+                          
+          mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 
-                Typology { tyroot = filter (not . isSpecific) cs
-                         , tyCpts = cs
-                         }
+            case filter (not . isSpecific) cs of
+               []  -> fatal 297 $ "empty typology for "++show cs++"." 
+               [r] -> pure $ 
+                          Typology { tyroot = r
+                                   , tyCpts = reverse . sortSpecific2Generic gns $ cs
+                                   }
+               rs  -> mkMultipleRootsError rs $ filter isInvolved gns
              where 
                isSpecific :: A_Concept -> Bool
-               isSpecific cpt = cpt `elem` concatMap specifics gns
-               specifics :: A_Gen -> [A_Concept]
-               specifics g = case g of
-                              Isa{} -> [genspc g]
-                              IsE{} -> genrhs g
-    compareTypes f p_gen
-     = sequence_ [ if (f genC == rightType) then pure () else nonMatchingRepresentTypes p_gen (f genC) rightType
-                 | genC <- gen_concs p_gen ]
-     where rightType = f (gen_spc p_gen)
+               isSpecific cpt = cpt `elem` map genspc gns
+               isInvolved :: A_Gen -> Bool
+               isInvolved gn = not . null $ concs gn `isc` cs
+
     
-    findTypes :: A_Concept -> Guarded [(A_Concept, TType)]
-    findTypes h
+{-
+    findType :: A_Concept -> Guarded (Maybe (A_Concept, TType))
+    findType h
      = case (map toList)$ toList$ findSubsets genLattice (lJoin (aConcToType h) RepresentSeparator) of
-           [] -> pure$ [] -- use default
+           [] -> pure$ Nothing -- use default
            o@[[r]] -> representAs <$> getAsType (fatal 293 (show o++", A custom type found for "++show h++" turned out to be above the RepresentSeparator, which is wrong")) r
            lst' -> multipleRepresentTypes OriginUnknown h (concatMap (take 1 . lefts . map typeOrConcept) lst')
      where representAs Nothing = fatal 304 "Something turned out to be representable as the RepresentSeparator, which should never happen" -- []
-           representAs (Just v) = [(h,v)]
+           representAs (Just v) = Just (h,v)
+-}  
     p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
     p_interfaceAndDisambObjs declMap = [ (ifc, disambiguate (termPrimDisAmb declMap) $ ifc_Obj ifc) | ifc <- p_interfaces ]
     
@@ -325,6 +385,7 @@ pCtx2aCtx _
     genRules = [ ( Set.singleton (pConcToType (gen_spc x)), Set.fromList (map pConcToType (gen_concs x)))
                | x <- allGens
                ]
+
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
                | x <- p_representations++concatMap pt_Reprs p_patterns
@@ -368,7 +429,7 @@ pCtx2aCtx _
     pDecl2aDecl patNm contextInfo defLanguage defFormat pd
      = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
            dcl = Sgn { decnm   = dec_nm pd
-                     , decsgn  = pSign2aSign (dec_sign pd)
+                     , decsgn  = decSign
                      , decprps = dec_prps pd
                      , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
                      , decprL  = prL
@@ -380,33 +441,46 @@ pCtx2aCtx _
                      , decpat  = patNm
                      , decplug = dec_plug pd
                      }
-       in (\aps -> (dcl,ARelPopu { popdcl = dcl
-                                 , popps = aps
+       in checkEndoProps >> 
+          (\aps -> (dcl,ARelPopu { popdcl = dcl
+                                 , popps  = aps
                                  , popsrc = source dcl
                                  , poptgt = target dcl
                                  })
           ) <$> traverse (pAtomPair2aAtomPair contextInfo dcl) (dec_popu pd)
+     where
+      decSign = pSign2aSign (dec_sign pd)
+      checkEndoProps :: Guarded ()
+      checkEndoProps
+        | dclIsEndo  = pure ()
+        | null endos = pure ()
+        | otherwise  = Errors [mkEndoPropertyError (origin pd) endos]
+        where dclIsEndo = source decSign == target decSign
+              endos = [Prop,Sym,Asy,Trn,Rfx,Irf] `isc` dec_prps pd
+              
     pGen2aGen :: P_Gen -> A_Gen
-    pGen2aGen pg@PGen{}
-       = Isa{gengen = pCpt2aCpt (gen_gen pg)
-            ,genspc = pCpt2aCpt (gen_spc pg)
-            }
-    pGen2aGen pg@P_Cy{}
-       = IsE { genrhs = map pCpt2aCpt (gen_rhs pg)
-             , genspc = pCpt2aCpt (gen_spc pg)
-             }
+    pGen2aGen pg =
+      case pg of
+        PGen{} -> Isa{ genpos = origin pg
+                     , gengen = pCpt2aCpt (gen_gen pg)
+                     , genspc = pCpt2aCpt (gen_spc pg)
+                     }
+        P_Cy{} -> IsE{ genpos = origin pg
+                     , genrhs = map pCpt2aCpt (gen_rhs pg)
+                     , genspc = pCpt2aCpt (gen_spc pg)
+                     }
 
-    castSign :: Type -> Type -> Signature
-    castSign a b = Sign (mustBeConceptBecauseMath a) (mustBeConceptBecauseMath b)
+    castSign :: (?loc :: CallStack) => A_Concept -> A_Concept -> Signature
+    castSign a b = Sign a b
 
-    leastConcept :: A_Concept -> Type -> A_Concept
+    leastConcept :: A_Concept -> A_Concept -> A_Concept
     leastConcept c str
-     = case (aConcToType c `elem` leastConcepts, str `elem` leastConcepts) of
+     = case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
          (True, _) -> c
-         (_, True) -> mustBeConceptBecauseMath str
+         (_, True) -> str
          (_, _)    -> fatal 178 ("Either "++name c++" or "++show str++" should be a subset of the other." )
        where
-         leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` (Atom str))
+         leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` (Atom (aConcToType str)))
 
     castConcept :: String -> A_Concept
     castConcept "ONE" = ONE
@@ -471,13 +545,13 @@ pCtx2aCtx _
      where tpda = disambiguate (termPrimDisAmb declMap) x
 
     typecheckViewDef :: DeclMap -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
-    typecheckViewDef declMap
+    typecheckViewDef _
        o@(P_Vd { vd_pos = orig
             , vd_lbl  = lbl   -- String
             , vd_cpt  = cpt   -- Concept
             , vd_isDefault = isDefault
             , vd_html = mHtml -- Html template
-            , vd_ats  = pvs   -- view segment
+            , vd_ats  = pvs   -- view segments
             })
      = (\vdts
         -> Vd { vdpos  = orig
@@ -487,23 +561,33 @@ pCtx2aCtx _
               , vdhtml = mHtml
               , vdats  = vdts
               })
-       <$> traverse typeCheckViewSegment pvs
+       <$> traverse typeCheckViewSegment (zip [0..] pvs)
      where
-       typeCheckViewSegment :: (P_ViewSegmt (TermPrim, DisambPrim)) -> Guarded ViewSegment
-       typeCheckViewSegment vs
-        = case vs of 
-           P_ViewExp{} -> 
-             do (obj,b) <- typecheckObjDef declMap (vs_obj vs)
-                case toList$ findExact genLattice (lMeet c (aConcToType (source (objctx obj)))) of
-                              [] -> mustBeOrdered o o (Src,(source (objctx obj)),obj)
-                              r  -> if b || c `elem` r then pure (ViewExp (vs_nr vs) obj{objctx = addEpsilonLeft' (head r) (objctx obj)})
-                                    else mustBeBound (origin obj) [(Tgt,objctx obj)]
-           P_ViewText{} -> pure$ ViewText (vs_nr vs) (vs_txt vs)
-           P_ViewHtml{} -> pure$ ViewHtml (vs_nr vs) (vs_htm vs)
-       c = pConcToType (vd_cpt o)
+       typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
+       typeCheckViewSegment (seqNr, seg)
+        = do payload <- typecheckPayload (vsm_load seg)
+             return ViewSegment { vsmpos   = vsm_org seg
+                                , vsmlabel = vsm_labl seg
+                                , vsmSeqNr = seqNr
+                                , vsmLoad  = payload
+                                }
+         where 
+          typecheckPayload :: (P_ViewSegmtPayLoad (TermPrim, DisambPrim)) -> Guarded ViewSegmentPayLoad
+          typecheckPayload payload 
+           = case payload of
+              P_ViewExp term -> 
+                 do (viewExpr,(srcBounded,_)) <- typecheckTerm term
+                    case userList$toList$ findExact genLattice (fl_Type$ lMeet c (source viewExpr)) of
+                       [] -> mustBeOrdered o o (Src,(source viewExpr),viewExpr)
+                       r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft (head r) viewExpr))
+                             else mustBeBound (origin seg) [(Tgt,viewExpr)]
+              P_ViewText str -> pure$ ViewText str
+       c = mustBeConceptBecauseMath (pConcToType (vd_cpt o))
     
     isa :: Type -> Type -> Bool
     isa c1 c2 = c1 `elem` findExact genLattice (Atom c1 `Meet` Atom c2) -- shouldn't this Atom be called a Concept? SJC: Answer: we're using the constructor "Atom" in the lattice sense, not in the relation-algebra sense. c1 and c2 are indeed Concepts here
+    isaC :: A_Concept -> A_Concept -> Bool
+    isaC c1 c2 = aConcToType c1 `elem` findExact genLattice (Atom (aConcToType c1) `Meet` Atom (aConcToType c2))
     
     typecheckObjDef :: DeclMap -> (P_ObjDef (TermPrim, DisambPrim)) -> Guarded (ObjectDef, Bool)
     typecheckObjDef declMap
@@ -513,7 +597,6 @@ pCtx2aCtx _
          , obj_crud = mCrud
          , obj_mView = mView
          , obj_msub = subs
-         , obj_strs = ostrs
          })
      = do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
           crud <- pCruds2aCruds mCrud
@@ -543,33 +626,37 @@ pCtx2aCtx _
                , objcrud = crud
                , objmView = mView
                , objmsub = s
-               , objstrs = ostrs
                }, sr)
-    addEpsilonLeft',addEpsilonRight' :: Type -> Expression -> Expression -- TODO: why use primes here?
-    addEpsilonLeft' a e
-     = if a==aConcToType (source e) then e else EEps (leastConcept (source e) a) (castSign a (aConcToType (source e))) .:. e
-    addEpsilonRight' a e
-     = if a==aConcToType (target e) then e else e .:. EEps (leastConcept (target e) a) (castSign (aConcToType (target e)) a)
-    addEpsilon :: Type -> Type -> Expression -> Expression
+    addEpsilonLeft,addEpsilonRight :: A_Concept -> Expression -> Expression
+    addEpsilonLeft a e
+     = if a==source e then e else EEps (leastConcept (source e) a) (castSign a (source e)) .:. e
+    addEpsilonRight a e
+     = if a==target e then e else e .:. EEps (leastConcept (target e) a) (castSign (target e) a)
+    addEpsilon :: A_Concept -> A_Concept -> Expression -> Expression
     addEpsilon s t e
-     = addEpsilonLeft' s (addEpsilonRight' t e)
+     = addEpsilonLeft s (addEpsilonRight t e)
     pCruds2aCruds :: Maybe P_Cruds -> Guarded Cruds
-    pCruds2aCruds Nothing = pure def
-    pCruds2aCruds (Just (P_Cruds org str )) 
-        = if Lst.nub us == us && all (\c -> c `elem` "cCrRuUdD") str
-          then pure Cruds { crudOrig = org
-                          , crudC    = f 'C'
-                          , crudR    = f 'R'
-                          , crudU    = f 'U'
-                          , crudD    = f 'D'
-              }
-          else Errors [mkInvalidCRUDError org str]
-         where us = map toUpper str
-               f :: Char -> Maybe Bool
-               f c 
-                 | toUpper c `elem` str = Just True
-                 | toLower c `elem` str = Just False
-                 | otherwise            = Nothing    
+    pCruds2aCruds mCrud = 
+       case mCrud of 
+         Nothing -> build (Origin "default for Cruds") ""
+         Just (P_Cruds org str ) -> if (length . nub . map toUpper) str == length str && all (\c -> c `elem` "cCrRuUdD") str
+                                    then build org str 
+                                    else Errors [mkInvalidCRUDError org str]
+      where (defC, defR, defU, defD) = defaultCrud opts
+            build org str 
+             = pure Cruds { crudOrig = org
+                          , crudC    = f 'C' defC
+                          , crudR    = f 'R' defR
+                          , crudU    = f 'U' defU
+                          , crudD    = f 'D' defD
+                          }
+               where f :: Char -> Bool -> Bool 
+                     f c def'
+                      | toUpper c `elem` str = True
+                      | toLower c `elem` str = False
+                      | otherwise            = def'
+
+
 
     pSubi2aSubi :: DeclMap
                 -> Expression -- Expression of the surrounding
@@ -594,19 +681,17 @@ pCtx2aCtx _
                 l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
-                case toList$ findExact genLattice (lMeet (aConcToType$ target objExpr) (aConcToType . source . objctx $ ojd)) of
+                case userList$toList$ findExact genLattice (fl_Type $ lMeet (target objExpr) (source . objctx $ ojd)) of
                     [] -> mustBeOrderedLst x [(source (objctx ojd),Src, ojd)]
-                    (r:_) -> pure (ojd{objctx=addEpsilonLeft' r (objctx ojd)})
+                    (r:_) -> pure (ojd{objctx=addEpsilonLeft r (objctx ojd)})
               else mustBeBound (origin ojd) [(Src,objctx ojd),(Tgt,objExpr)]
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr
-          expTargetStr = aConcToType expTarget
           ifcSource = source ifcExpr
-          ifcSourceStr = aConcToType ifcSource
-          refIsCompatible = expTargetStr `isa` ifcSourceStr || ifcSourceStr `isa` expTargetStr
+          refIsCompatible = expTarget `isaC` ifcSource || ifcSource `isaC` expTarget
       in  if refIsCompatible 
-          then pure $ addEpsilonRight' ifcSourceStr objExpr 
+          then pure $ addEpsilonRight ifcSource objExpr 
           else Errors [mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef ]
     lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
     lookupDisambIfcObj declMap ifcId =
@@ -686,33 +771,34 @@ pCtx2aCtx _
           = mustBeBound o [(p,e) | (False,p,e)<-[(b1,side1,fst e1),(b2,side2,fst e2)]]
          wrap (expr1,expr2) (cpt,True) ((_,b1), (_,b2))
           = pure (cbn (lrDecide side1 expr1) (lrDecide side2 expr2), (b1, b2))
-            where lrDecide side e = case side of Src -> addEpsilonLeft' cpt e; Tgt -> addEpsilonRight' cpt e
+            where lrDecide side e = case side of Src -> addEpsilonLeft cpt e; Tgt -> addEpsilonRight cpt e
       deriv (t1,t2) es = (,) <$> deriv1 o (fmap (resolve es) t1) <*> deriv1 o (fmap (resolve es) t2)
- 
+    deriv1 :: Origin -> TT (SrcOrTgt, (Expression, Bool)) -> Guarded (A_Concept, Bool)
     deriv1 o x'
      = case x' of
         (MBE a@(p1,(e1,b1)) b@(p2,(e2,b2))) ->
-             if (b1 && b2) || (getConcept p1 e1 == getConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType lJoin (p1, e1) (p2, e2)
+             if (b1 && b2) || (getAConcept p1 e1 == getAConcept p2 e2) then (\x -> (x,b1||b2)) <$> getExactType lJoin (p1, e1) (p2, e2)
              else mustBeBound o [(p,e) | (p,(e,False))<-[a,b]]
         (MBG (p1,(e1,b1)) (p2,(e2,b2))) ->
              (\x -> (fst x,b1)) <$> getAndCheckType lJoin (p1, True, e1) (p2, b2, e2)
         (UNI (p1,(e1,b1)) (p2,(e2,b2))) ->
              (\x -> (fst x,b1 && b2)) <$> getAndCheckType lJoin (p1, b1, e1) (p2, b2, e2)
         (ISC (p1,(e1,b1)) (p2,(e2,b2))) ->
-             (\(x,r) -> (x, (b1 && Set.member (getConcept p1 e1) r) || (b2 && Set.member (getConcept p2 e2) r) || (b1 && b2))
+             (\(x,r) -> (x, (b1 && elem (getAConcept p1 e1) r) || (b2 && elem (getAConcept p2 e2) r) || (b1 && b2))
              ) <$> getAndCheckType lMeet (p1, b1, e1) (p2, b2, e2)
      where
       getExactType flf (p1,e1) (p2,e2)
-       = case toList$ findExact genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of
+       = case userList$toList$ findExact genLattice (fl_Type$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
           r  -> pure$ head r
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case toList$ findSubsets genLattice (flf (getConcept p1 e1) (getConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this is more specific
+       = case fmap (userList . toList)$toList$ findSubsets genLattice (fl_Type$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
-          [r] -> case (b1 || Set.member (getConcept p1 e1) r,b2 || Set.member (getConcept p2 e2) r ) of
-                   (True,True) -> pure (head (Set.toList r),r)
+          [r@(h:_)]
+              -> case (b1 || elem (getAConcept p1 e1) r,b2 || elem (getAConcept p2 e2) r ) of
+                   (True,True) -> pure (h,r)
                    (a,b) -> mustBeBound o [(p,e) | (False,p,e)<-[(a,p1,e1),(b,p2,e2)]]
-          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (map Set.toList lst)
+          lst -> mustBeOrderedConcLst o (p1,e1) (p2,e2) (lst)
     termPrimDisAmb :: DeclMap -> TermPrim -> (TermPrim, DisambPrim)
     termPrimDisAmb declMap x
      = (x, case x of
@@ -730,27 +816,19 @@ pCtx2aCtx _
 
     pIfc2aIfc :: DeclMap -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc declMap
-              (P_Ifc { ifc_Params = tps
-                    , ifc_Class = iclass
-                    , ifc_Args = args
-                    , ifc_Roles = rols
+             (P_Ifc { ifc_Roles = rols
                     , ifc_Obj = _
                     , ifc_Pos = orig
-                    -- , ifc_Name = nm
                     , ifc_Prp = prp
                     }, objDisamb)
-        = (\ tps' obj'
-             -> Ifc { ifcParams = tps'
-                    , ifcClass = iclass
-                    , ifcArgs = args
-                    , ifcRoles = rols
+        = (\ obj'
+             -> Ifc { ifcRoles = rols
                     , ifcObj = obj'
                     , ifcEcas = []      -- to be enriched in Adl2fSpec with ECA-rules
                     , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
                     , ifcPos = orig
                     , ifcPrp = prp
-                    }) <$> traverse (namedRel2Decl declMap) tps
-                       <*> pObjDefDisamb2aObjDef declMap objDisamb
+                    }) <$> pObjDefDisamb2aObjDef declMap objDisamb
 
     pRoleRelation2aRoleRelation :: DeclMap -> P_RoleRelation -> Guarded A_RoleRelation
     pRoleRelation2aRoleRelation declMap prr
@@ -831,7 +909,7 @@ pCtx2aCtx _
               do o <- pObjDefDisamb2aObjDef declMap ojd
                  case toList$ findExact genLattice $ aConcToType (source $ objctx o) `lJoin` aConcToType conc of
                           [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
-                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft' (aConcToType conc) (objctx o)}
+                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft conc (objctx o)}
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg o x) lst
@@ -912,6 +990,10 @@ pMarkup2aMarkup defLanguage defFormat
 lJoin,lMeet :: a -> a -> FreeLattice a
 lJoin a b = Join (Atom a) (Atom b)
 lMeet a b = Meet (Atom a) (Atom b)
+
+fl_Type :: FreeLattice (A_Concept) -> FreeLattice Type
+fl_Type = fmap aConcToType
+
 -- intended for finding the right expression on terms like (Src,fst)
 resolve :: t -> (SrcOrTgt, t -> (t1, (t2, t2))) -> (SrcOrTgt, (t1, t2))
 resolve es (p,f)
@@ -952,6 +1034,9 @@ instance Functor TT where
   fmap f (MBE a b) = MBE (f a) (f b)
   fmap f (MBG a b) = MBG (f a) (f b)
   
+getAConcept :: Association a => SrcOrTgt -> a -> A_Concept
+getAConcept Src = source
+getAConcept Tgt = target
 getConcept :: Association a => SrcOrTgt -> a -> Type
 getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target

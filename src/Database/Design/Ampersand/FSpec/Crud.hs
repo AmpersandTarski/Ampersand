@@ -87,7 +87,7 @@ getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterf
   where editableTarget expr = 
           case getExpressionRelation expr of
             Nothing                                                              -> []
-            Just (declSrc, decl, declTgt, isFlipped) | decl `elem` ifcParams ifc -> [(decl, if isFlipped then declSrc else declTgt)]
+            Just (declSrc, decl, declTgt, isFlipped) | decl `elem` [] -> [(decl, if isFlipped then declSrc else declTgt)]
                                                      | otherwise                 -> []
 
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]

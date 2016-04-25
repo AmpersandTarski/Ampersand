@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.4.0
+version:        3.5.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -33,6 +33,9 @@ executable ampersand
                      aeson-pretty == 0.7.*,
                      base >= 4.7 && < 5.0,
                      bytestring == 0.10.*,
+                     conduit,
+                     conduit-extra,
+                     conduit-combinators,
                      containers == 0.5.*,
                      csv == 0.1.*,
                      data-default >=0.5 && <0.6,
@@ -53,11 +56,10 @@ executable ampersand
                      text == 1.2.*,
                      time == 1.5.*,
                      utf8-string == 1.0.*,
-                     xlsx == 0.2.*,
+                     xlsx == 0.2.1.1,
                      zlib == 0.6.*
 
   other-modules:
-                     Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,
@@ -82,9 +84,6 @@ executable ampersand
                      Database.Design.Ampersand.Core.A2P_Converters,
                      Database.Design.Ampersand.Core.AbstractSyntaxTree,
                      Database.Design.Ampersand.Core.ParseTree,
-                     Database.Design.Ampersand.Core.Poset,
-                     Database.Design.Ampersand.Core.Poset.Instances,
-                     Database.Design.Ampersand.Core.Poset.Internal,
                      Database.Design.Ampersand.Core.ToMeta,
                      Database.Design.Ampersand.FSpec,
                      Database.Design.Ampersand.FSpec.Crud,
@@ -93,7 +92,6 @@ executable ampersand
                      Database.Design.Ampersand.FSpec.FSpecAux,
                      Database.Design.Ampersand.FSpec.GenerateUML,
                      Database.Design.Ampersand.FSpec.Motivations,
-                     Database.Design.Ampersand.FSpec.Plug,
                      Database.Design.Ampersand.FSpec.SQL,
                      Database.Design.Ampersand.FSpec.ShowADL,
                      Database.Design.Ampersand.FSpec.ShowECA,
@@ -129,6 +127,7 @@ executable ampersand
                      Database.Design.Ampersand.Output,
                      Database.Design.Ampersand.Output.FSpec2Excel,
                      Database.Design.Ampersand.Output.FSpec2Pandoc,
+                     Database.Design.Ampersand.Output.FSpec2SQL,
                      Database.Design.Ampersand.Output.PandocAux,
                      Database.Design.Ampersand.Output.Population2Xlsx,
                      Database.Design.Ampersand.Output.PredLogic,
@@ -150,11 +149,9 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.GenBericht,
                      Database.Design.Ampersand.Prototype.GenFrontend,
                      Database.Design.Ampersand.Prototype.Generate,
-                     Database.Design.Ampersand.Prototype.Installer,
-                     Database.Design.Ampersand.Prototype.ObjBinGen,
+                     Database.Design.Ampersand.Prototype.WriteStaticFiles,
                      Database.Design.Ampersand.Prototype.PHP,
                      Database.Design.Ampersand.Prototype.ProtoUtil,
-                     Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
                      Paths_ampersand,
                      Database.Design.Ampersand.Output.ToJSON.MySQLInstaller,
@@ -164,7 +161,8 @@ executable ampersand
                      Database.Design.Ampersand.Output.ToJSON.Concepts,
                      Database.Design.Ampersand.Output.ToJSON.Conjuncts,
                      Database.Design.Ampersand.Output.ToJSON.Interfaces,
-                     Database.Design.Ampersand.Output.ToJSON.Others
+                     Database.Design.Ampersand.Output.ToJSON.Roles,
+                     Database.Design.Ampersand.Output.ToJSON.Views
 
 Test-Suite regression-test
   type:              exitcode-stdio-1.0
@@ -204,15 +202,11 @@ Test-Suite regression-test
                      Database.Design.Ampersand.Classes.ViewPoint,
                      Database.Design.Ampersand.Core.AbstractSyntaxTree,
                      Database.Design.Ampersand.Core.ParseTree,
-                     Database.Design.Ampersand.Core.Poset,
-                     Database.Design.Ampersand.Core.Poset.Instances,
-                     Database.Design.Ampersand.Core.Poset.Internal,
                      Database.Design.Ampersand.Core.ToMeta,
                      Database.Design.Ampersand.FSpec.Crud,
                      Database.Design.Ampersand.FSpec.FSpec,
                      Database.Design.Ampersand.FSpec.FSpecAux,
                      Database.Design.Ampersand.FSpec.Motivations,
-                     Database.Design.Ampersand.FSpec.Plug,
                      Database.Design.Ampersand.FSpec.SQL,
                      Database.Design.Ampersand.FSpec.ShowADL,
                      Database.Design.Ampersand.FSpec.ShowECA,
@@ -268,7 +262,7 @@ Test-Suite ampersand-test
                      transformers == 0.4.*,
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
-                     xlsx == 0.2.*,
+                     xlsx == 0.2.1.1,
                      zlib == 0.6.*
   other-modules:
                      Database.Design.Ampersand.Misc.Options,
@@ -290,7 +284,8 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Output.ToJSON.Concepts,
                      Database.Design.Ampersand.Output.ToJSON.Conjuncts,
                      Database.Design.Ampersand.Output.ToJSON.Interfaces,
-                     Database.Design.Ampersand.Output.ToJSON.Others,
+                     Database.Design.Ampersand.Output.ToJSON.Views,
+                     Database.Design.Ampersand.Output.ToJSON.Roles,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,
@@ -313,15 +308,11 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Classes.ViewPoint,
                      Database.Design.Ampersand.Core.AbstractSyntaxTree,
                      Database.Design.Ampersand.Core.ParseTree,
-                     Database.Design.Ampersand.Core.Poset,
-                     Database.Design.Ampersand.Core.Poset.Instances,
-                     Database.Design.Ampersand.Core.Poset.Internal,
                      Database.Design.Ampersand.Core.ToMeta,
                      Database.Design.Ampersand.FSpec.Crud,
                      Database.Design.Ampersand.FSpec.FSpec,
                      Database.Design.Ampersand.FSpec.FSpecAux,
                      Database.Design.Ampersand.FSpec.Motivations,
-                     Database.Design.Ampersand.FSpec.Plug,
                      Database.Design.Ampersand.FSpec.SQL,
                      Database.Design.Ampersand.FSpec.ShowADL,
                      Database.Design.Ampersand.FSpec.ShowECA,

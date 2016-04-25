@@ -206,6 +206,16 @@ fieldset {
 	min-width			: 35px;
 }
 
+.bigalphanumeric:hover, .hugealphanumeric:hover {
+	border-width		: 1px;
+	border-style		: solid;
+	border-color		: lightgray;
+	padding				: 5px 10px 5px 10px; 
+	font-size			: 12px;
+	margin-bottom		: 5px;
+	width				: 100%;
+}
+
 /********* FORMS, INPUTS, ETC **************/
 input .ng-invalid .ng-dirty {
 	border				: 2px solid red;

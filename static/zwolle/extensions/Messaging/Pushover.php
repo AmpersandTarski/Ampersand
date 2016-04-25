@@ -1,9 +1,17 @@
 <?php
 
+namespace Ampersand\Extension\Messaging;
+
+use Exception;
+use Ampersand\Hooks;
+use Ampersand\Config;
+use Ampersand\Log\Logger;
+use Pushover;
+
 require_once (__DIR__ . '/lib/php-pushover.php');
 
 // Define hooks
-$hook = array( 'class' => 'PushoverNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\PushoverNotifications'
 			 , 'function' => 'pushNotificationCache'
 			 , 'filename' => 'Pushover.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -11,7 +19,7 @@ $hook = array( 'class' => 'PushoverNotifications'
 			 );
 Hooks::addHook('postDatabaseCommitTransaction', $hook);
 
-$hook = array( 'class' => 'PushoverNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\PushoverNotifications'
 			 , 'function' => 'clearNotificationCache'
 			 , 'filename' => 'Pushover.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -23,14 +31,13 @@ class PushoverNotifications {
 	private static $notifications = array();
 	
 	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushover[execEnginePushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('Pushover[execEnginePushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 
 		if($userKeys == '_NULL') $userKeys = array(null);
 		else $userKeys = explode('_AND', $userKeys);
@@ -39,14 +46,13 @@ class PushoverNotifications {
 	}
 	
 	public static function pushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushover[pushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('Pushover[pushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		
 		foreach($userKeys as $userKey){
 			if(!is_null($userKey)) self::$notifications[] = array('userKey' => $userKey, 'message' => $message, 'title' => $title, 'url' => $url, 'urltitle' => $urltitle);
@@ -61,24 +67,23 @@ class PushoverNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		Notifications::addLog('Pushover[pushNotificationCache]','MESSAGING');
+		Logger::getLogger('MESSAGING')->debug('Pushover[pushNotificationCache]');
 		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url'], $notification['urltitle']);
 	}
 
 	public static function clearNotificationCache(){
-		Notifications::addLog('Pushover[clearNotificationCache]','MESSAGING');
+		Logger::getLogger('MESSAGING')->debug('Pushover[clearNotificationCache]');
 		self::$notifications = array();
 	}
 
 	private static function pushNotification($userKey, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushover[pushNotification'
+		Logger::getLogger('MESSAGING')->debug('Pushover[pushNotification'
 							 .']; $userKey=['.$userKey
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		$notification = new Pushover();
 		
 		$token = Config::get('applicationToken', 'msg_pushover');
@@ -94,9 +99,9 @@ class PushoverNotifications {
 		$notification->setUrlTitle($urltitle);
 		
 		if(!$notification->send()) {
-			Notifications::addError("Pushover - Error in sending a notification to '$userKey'");
+			Logger::getUserLogger()->error("Pushover - Error in sending a notification to '$userKey'");
 		}else{
-			Notifications::addSuccess('Pushover message sent.');
+			Logger::getUserLogger()->notice("Pushover message sent.");
 		}
 		
 	}

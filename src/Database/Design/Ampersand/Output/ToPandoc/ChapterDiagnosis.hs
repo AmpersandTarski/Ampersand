@@ -65,11 +65,11 @@ chpDiagnosis fSpec
                           )  
                           -- Header row:
                           (  (plain.str.l) (NL "Regel", EN "Rule")
-                           : map (plain.str.name) (fRoles fSpec)
+                           : map (plain.str.name.fst) (fRoles fSpec)
                           )
                           -- Content rows:
                           [  (plain.str.name) rul
-                            :[f rol rul | rol<-fRoles fSpec] 
+                            :[f rol rul | (rol,_)<-fRoles fSpec] 
                           | rul<-sigs 
                           ]
                   )

@@ -116,33 +116,24 @@ tdAnalysis fSpec =
       [ OOClass{ clName = sqlname table
                , clcpt  = primKey table
                , clAtts = case table of
-                            TblSQL{attributes=attribs, cLkpTbl=kernelLookupTbl, mLkpTbl=t} -> 
-                              let kernelAtts = map snd $ kernelLookupTbl -- extract kernel attributes from kernel lookup table
-                              in  map (ooAttr kernelAtts . lookInFor t . attExpr) attribs
-                            BinSQL{columns=(a,b)}      ->
-                              [ OOAttr { attNm       = attName a
-                                       , attTyp      = (name.target.attExpr) a
-                                       , attOptional = False
-                                       }
-                              , OOAttr { attNm       = attName b
-                                       , attTyp      = (name.target.attExpr) b
-                                       , attOptional = False
-                                       }
-                              ]
-                            _     -> fatal 166 "Unexpected type of table!"
+                            TblSQL{} -> 
+                              let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
+                              in  map (ooAttr kernelAtts) kernelAtts
+                                ++map (ooAttr kernelAtts) (map rsTrgAtt $ dLkpTbl table) 
+                            BinSQL{}      ->
+                              map mkOOattr (plugAttributes table)
+                                where mkOOattr a =
+                                        OOAttr { attNm       = attName a
+                                               , attTyp      = (name.target.attExpr) a
+                                               , attOptional = False
+                                               }
                , clMths = []
                }
       | table <- tables
       , length (plugAttributes table) > 1
       ]
 
-   lookInFor [] _ = fatal 191 "Expression not found!"
-   lookInFor ((expr,_,t):xs) a
-              | expr == a = t
-              | otherwise = lookInFor xs a
-   tables = [ pSql | InternalPlug pSql <- plugInfos fSpec, not (isScalar pSql)]
-      where isScalar ScalarSQL{} = True
-            isScalar _           = False
+   tables = [ pSql | InternalPlug pSql <- plugInfos fSpec]
    roots :: [A_Concept]
    roots = (catMaybes.map primKey) tables
    primKey :: PlugSQL -> Maybe A_Concept
@@ -165,31 +156,22 @@ tdAnalysis fSpec =
        relsOf t =
          case t of
            TblSQL{} -> map (mkRel t) (catMaybes (map relOf (attributes t)))
-           BinSQL{columns=(a,b)} ->
-                     [ OOAssoc { assSrc = sqlname t
-                               , assSrcPort = attName a
-                               , asslhm = Mult MinZero MaxMany
-                               , asslhr = ""
-                               , assTgt = getConceptTableFor fSpec . target . attExpr $ a
-                               , assrhm = Mult MinOne MaxOne
-                               , assrhr = ""
-                               , assmdcl = Nothing
-                               }
-                     , OOAssoc { assSrc = sqlname t
-                               , assSrcPort = attName b
-                               , asslhm = Mult MinZero MaxMany
-                               , asslhr = ""
-                               , assTgt = getConceptTableFor fSpec . target . attExpr $ b
-                               , assrhm = Mult MinOne MaxOne
-                               , assrhr = ""
-                               , assmdcl = Nothing
-                               }
-                     ]
-           _  -> fatal 195 "Unexpected type of table"
+           BinSQL{} -> map mkOOAssoc (plugAttributes t)
+                        where mkOOAssoc a =
+                                OOAssoc { assSrc = sqlname t
+                                        , assSrcPort = attName a
+                                        , asslhm = Mult MinZero MaxMany
+                                        , asslhr = ""
+                                        , assTgt = getConceptTableFor fSpec . target . attExpr $ a
+                                        , assrhm = Mult MinOne MaxOne
+                                        , assrhr = ""
+                                        , assmdcl = Nothing
+                                        }
        relOf f =
          let expr = attExpr f in
          case expr of
            EDcI{} -> Nothing
+           EEps{} -> Nothing
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
            _ -> fatal 200 ("Unexpected expression: "++show expr)

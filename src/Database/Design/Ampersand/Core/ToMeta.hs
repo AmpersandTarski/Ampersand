@@ -161,15 +161,18 @@ instance MakeMeta a => MakeMeta (P_ViewD a) where
           , vd_html =           (vd_html vd) -- No need to meta the html template filename or inline html code
           , vd_ats = makeMeta f (vd_ats vd)
           }
-
-instance MakeMeta a => MakeMeta (P_ViewSegmt a) where
+instance MakeMeta a => MakeMeta (P_ViewSegment a) where
+  makeMeta f vs = P_ViewSegment
+      { vsm_labl = vsm_labl vs
+      , vsm_org  = vsm_org vs
+      , vsm_load = makeMeta f (vsm_load vs)
+      }
+instance MakeMeta a => MakeMeta (P_ViewSegmtPayLoad a) where
   makeMeta f vs
-   = case vs of 
-      P_ViewExp{}  -> P_ViewExp { vs_nr  = vs_nr vs
-                                , vs_obj = makeMeta f (vs_obj vs)
+   = case vs of
+      P_ViewExp{}  -> P_ViewExp { vs_expr = makeMeta f (vs_expr vs)
                                 }
       P_ViewText{} -> vs
-      P_ViewHtml{} -> vs
 
 instance MakeMeta P_Gen where
   makeMeta f gen
@@ -185,9 +188,6 @@ instance MakeMeta P_Gen where
 instance MakeMeta P_Interface where
   makeMeta f ifc
    = P_Ifc { ifc_Name   =            (ifc_Name ifc)
-           , ifc_Class  =            (ifc_Class ifc)
-           , ifc_Params = makeMeta f (ifc_Params ifc)
-           , ifc_Args   =            (ifc_Args ifc)
            , ifc_Roles  =            (ifc_Roles ifc)
            , ifc_Obj    = makeMeta f (ifc_Obj ifc)
            , ifc_Pos    = makeMeta f (ifc_Pos ifc)
@@ -253,7 +253,6 @@ instance MakeMeta a => MakeMeta (P_ObjDef a) where
            , obj_crud =            (obj_crud obj)
            , obj_mView =           (obj_mView obj)
            , obj_msub = makeMeta f (obj_msub obj)
-           , obj_strs =            (obj_strs obj)
            }
 
 instance MakeMeta a => MakeMeta (P_SubIfc a) where

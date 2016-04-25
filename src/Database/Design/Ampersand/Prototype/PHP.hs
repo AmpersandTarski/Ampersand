@@ -1,20 +1,22 @@
 module Database.Design.Ampersand.Prototype.PHP 
-         ( executePHPStr, executePHP, showPHP, sqlServerConnectPHP, createTempDbPHP, setSqlModePHP
-         , evaluateExpSQL, performQuery
-         , createTablesPHP, populateTablesPHP, populateTablesWithInitialPopsPHP, plug2TableSpec
-         , dropplug, historyTableSpec, sessionTableSpec, signalTableSpec, TableSpec, getTableName) where
+         ( evaluateExpSQL, executePHPStr, sqlServerConnectPHP, createTempDbPHP, showPHP
+         , setSqlModePHP, createTablesPHP, populateTablesPHP
+         , signalTableSpec, getTableName) where
 
-import Prelude hiding (exp)
+import Prelude hiding (exp,putStrLn)
 import Control.Exception
 import Control.Monad
 import Data.List
 import System.Process
 import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
-import Database.Design.Ampersand hiding (putStr, origin)
 import Database.Design.Ampersand.Prototype.ProtoUtil
 import Database.Design.Ampersand.FSpec.SQL
-import Database.Design.Ampersand.Basics (fatal)
+import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.Basics hiding (putStrLn)
+import Database.Design.Ampersand.Misc
+import Database.Design.Ampersand.Classes
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 
 createTablesPHP :: FSpec -> [String]
 createTablesPHP fSpec =
@@ -146,9 +148,6 @@ populateTablesWithInitialPopsPHP fSpec =
         valuechain record = intercalate ", " [case att of Nothing -> "NULL" ; Just val -> showValPHP val | att<-record]
 
 
-dropplug :: PlugSQL -> String
-dropplug plug = "DROP TABLE "++quote (name plug)++""
-
 sqlServerConnectPHP :: FSpec -> [String]
 sqlServerConnectPHP fSpec =
   [ "// Try to connect to the database"
@@ -194,7 +193,7 @@ evaluateExpSQL :: FSpec -> String -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
   fmap sort (performQuery (getOpts fSpec) dbNm violationsQuery)
  where violationsExpr = conjNF (getOpts fSpec) exp
-       violationsQuery = prettySQLQuery fSpec 26 violationsExpr
+       violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 
 performQuery :: Options -> String -> String -> IO [(String,String)]
 performQuery opts dbNm queryStr =

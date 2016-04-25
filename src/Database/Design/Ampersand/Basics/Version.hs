@@ -25,6 +25,7 @@ fatal lineNr msg
        showCS [] = "fatal without a call site (check Version.hs to add a call site)\n"
        indent l = "             " ++ l
        showCallSite (f, loc) = f ++ ", called at " ++ showSrcLoc loc
+{-# NOINLINE fatal #-}
 
 -- | String, containing the Ampersand version, including the build timestamp.
 ampersandVersionStr :: String

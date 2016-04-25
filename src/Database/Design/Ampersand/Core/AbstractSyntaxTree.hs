@@ -17,6 +17,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , IdentitySegment(..)
  , ViewDef(..)
  , ViewSegment(..)
+ , ViewSegmentPayLoad(..)
  , A_Gen(..)
  , Interface(..)
  , getInterfaceByName
@@ -44,9 +45,6 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , AAtomPair(..), AAtomValue(..), mkAtomPair, PAtomValue(..)
  , ContextInfo(..)
  , showValADL,showValPHP,showValSQL
-  -- (Poset.<=) is not exported because it requires hiding/qualifying the Prelude.<= or Poset.<= too much
-  -- import directly from Database.Design.Ampersand.Core.Poset when needed
- , (<==>),greatest,least,maxima,minima,sortWith
  , showSign
  , aMarkup2String
  , module Database.Design.Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
@@ -57,7 +55,6 @@ import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
                                                 , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..), PSingleton, makePSingleton
                                                 )
-import Database.Design.Ampersand.Core.Poset (Poset(..), greatest,least,maxima,minima,sortWith)
 import Database.Design.Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.Function
@@ -318,32 +315,39 @@ data ViewDef = Vd { vdpos :: Origin          -- ^ position of this definition in
                   , vdhtml :: Maybe ViewHtmlTemplate -- ^ the html template for this view (not required since we may have other kinds of views as well in the future)
 --                  , vdtext :: Maybe ViewText -- Future extension
                   , vdats :: [ViewSegment]   -- ^ the constituent attributes (i.e. name/expression pairs) of this view.
-                  } deriving (Eq,Show)
+                  } deriving (Show)
 instance Named ViewDef where
   name = vdlbl
 instance Traced ViewDef where
   origin = vdpos
-
-data ViewSegment = ViewExp { vsgmNr   :: Integer
-                           , vsgmObj  :: ObjectDef
+data ViewSegment = ViewSegment
+     { vsmpos :: Origin
+     , vsmlabel :: Maybe String
+     , vsmSeqNr :: Integer
+     , vsmLoad  :: ViewSegmentPayLoad
+     } deriving Show
+instance Traced ViewSegment where
+  origin = vsmpos
+data ViewSegmentPayLoad
+                 = ViewExp { vsgmExpr :: Expression
                            }
-                 | ViewText{ vsgmNr   :: Integer
-                           , vsgmTxt  :: String
-                           }
-                 | ViewHtml{ vsgmNr   :: Integer
-                           , vsgmHtml :: String
-                           } deriving (Eq, Show)
+                 | ViewText{ vsgmTxt  :: String
+                           }deriving (Eq, Show)
 
 
 -- | data structure A_Gen contains the CLASSIFY statements from an Ampersand script
 --   CLASSIFY Employee ISA Person   translates to Isa (C "Person") (C "Employee")
 --   CLASSIFY Workingstudent IS Employee/\Student   translates to IsE orig (C "Workingstudent") [C "Employee",C "Student"]
-data A_Gen = Isa { genspc :: A_Concept      -- ^ specific concept
+data A_Gen = Isa { genpos :: Origin
+                 , genspc :: A_Concept      -- ^ specific concept
                  , gengen :: A_Concept      -- ^ generic concept
                  }
-           | IsE { genspc :: A_Concept      -- ^ specific concept
+           | IsE { genpos :: Origin
+                 , genspc :: A_Concept      -- ^ specific concept
                  , genrhs :: [A_Concept]    -- ^ concepts of which the conjunction is equivalent to the specific concept
                  } deriving (Typeable, Eq)
+instance Traced A_Gen where
+  origin = genpos
 instance Unique A_Gen where
   showUnique a =
     case a of
@@ -356,10 +360,7 @@ instance Show A_Gen where
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
 
-data Interface = Ifc { ifcParams ::   [Declaration] -- all relations that can be edited in this interface
-                     , ifcClass ::    Maybe String
-                     , ifcArgs ::     [[String]]
-                     , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
+data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcEcas ::     [ECArule]     -- All ECArules that are needed to perform computations for maintaining rules
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
@@ -404,26 +405,17 @@ data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object d
                      , objcrud ::  Cruds -- ^ CRUD as defined by the user 
                      , objmView :: Maybe String   -- ^ The view that should be used for this object
                      , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
-                     , objstrs ::  [[String]]     -- ^ directives that specify the interface.
                      } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
 instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
   origin = objpos
 data Cruds = Cruds { crudOrig :: Origin
-                   , crudC :: Maybe Bool
-                   , crudR :: Maybe Bool
-                   , crudU :: Maybe Bool
-                   , crudD :: Maybe Bool
+                   , crudC :: Bool
+                   , crudR :: Bool
+                   , crudU :: Bool
+                   , crudD :: Bool
                    } deriving (Eq, Show)
-instance Default Cruds where
-  def = Cruds { crudOrig = Origin "Dummy default Origin"
-              , crudC    = Nothing
-              , crudR    = Nothing
-              , crudU    = Nothing
-              , crudD    = Nothing
-              }
-
 data SubInterface = Box A_Concept (Maybe String) [ObjectDef] 
                   | InterfaceRef Bool -- is LINKTO? 
                                  String 
@@ -757,7 +749,7 @@ showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 
 -- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
--- we use are the concepts in the outermost epsilon, or the source/target concept of the relation, in absence of epsilons.
+-- we use are the concepts in the innermost epsilon, or the source/target concept of the relation, in absence of epsilons.
 -- This is used to determine the type of the atoms provided by the outside world through interfaces.
 getExpressionRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
 getExpressionRelation expr = case getRelation expr of
@@ -1057,6 +1049,6 @@ unsafePAtomVal2AtomValue' typ mCpt pav
 --   sets such that (isa\/isa~)*;typology |- typology
 --   Note, that with isa we only refer to the relations defined by CLASSIFY statements, 
 --   not named relations with the same properties ( {UNI,INJ,TOT} or {UNI,INJ,SUR} )
-data Typology = Typology { tyroot :: [A_Concept] -- the most generic concepts in the typology (allways non-empty, mostly one concept)
+data Typology = Typology { tyroot :: A_Concept -- the most generic concept in the typology 
                          , tyCpts :: [A_Concept] -- all concepts, from generic to specific
                          } deriving Show

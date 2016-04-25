@@ -3,7 +3,6 @@ module Database.Design.Ampersand.FSpec.FPA (FPA(..), FP(..), FPType(..), ShowLan
 
 import Database.Design.Ampersand.Misc (Lang(..))
 import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.Basics
 import Data.Maybe
@@ -69,15 +68,7 @@ fpaInterface :: Interface -> FP
 fpaInterface ifc = 
    let nm = name ifc
        cmplxty = depth2Cmplxty $ getDepth $ ifcObj ifc
-       tp = case ifc of
-              Ifc{ifcClass=Just "IF"} -> IF
-              Ifc{ifcClass=Just "UF"} -> UF
-              Ifc{ifcClass=Just "OF"} -> OF
-              
-              -- code for interfaces without CLASS comes from old FPA.hs
-              _ | (not.null.ifcParams)  ifc -> IF  -- In case there are editable relations, this must be an import function.
-                | (isUni.objctx.ifcObj) ifc -> OF  -- If there is max one atom, this is a simple function.
-                | otherwise                 -> UF  -- Otherwise, it is a UF
+       tp = fatal 78 $ "TODO: fix to see if the interface contains editalbe fields"
     in FP tp nm cmplxty
   where depth2Cmplxty :: Int -> Complexity
         depth2Cmplxty d | d <= 1    = Eenvoudig

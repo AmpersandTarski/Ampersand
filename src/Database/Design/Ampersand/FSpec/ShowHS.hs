@@ -5,7 +5,6 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Text.Pandoc hiding (Meta)
 import Data.Char                  (isAlphaNum)
 import Database.Design.Ampersand.Basics hiding (indent)
-import Database.Design.Ampersand.FSpec.Plug
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
 --import Database.Design.Ampersand.FSpec.FPA   (fpa)
@@ -72,31 +71,29 @@ instance ShowHS PlugSQL where
    = case plug of
        TblSQL{} -> intercalate indent
                    ["let " ++ intercalate (indent++"    ")
-                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-attributes plug] ++indent++"in"
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-plugAttributes plug] ++indent++"in"
                    ,"TblSQL { sqlname    = " ++ (show.name) plug
                    ,"       , attributes = ["++intercalate ", " (map showHSName (attributes plug))++"]"
-                   ,"       , cLkpTbl    = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                   ,"       , mLkpTbl    = [ "++intercalate (indent++"                   , ") ["("++showHS opts "" r++", "++showHSName ms++", "++showHSName mt++")" | (r,ms,mt)<-mLkpTbl plug] ++ "]"
-               --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
+                   ,"       , cLkpTbl    = [ "++intercalate (indent++"                      , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
+                   ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
+                                                      [ "RelStore "++showHSName (rsDcl store)++" "
+                                                                   ++showHSName (rsSrcAtt store)++" "
+                                                                   ++showHSName (rsTrgAtt store)++" "
+                                                      | store<-dLkpTbl plug] ++ "]"
                    ,"       }"
                    ]
        BinSQL{} -> intercalate indent
-                   ["let " ++ showHSName (fst (columns plug))++indent++"     = "++showHS opts (indent++"       ") (fst (columns plug))
-                           ++ (indent++"    ") ++ showHSName (snd (columns plug))++indent++"     = "++showHS opts (indent++"       ") (snd (columns plug))
-                           ++indent++"in"
+                   ["let " ++ intercalate (indent++"    ")
+                                          [showHSName f++indent++"     = "++showHS opts (indent++"       ") f | f<-plugAttributes plug] ++indent++"in"
                    ,"BinSQL { sqlname = " ++ (show.name) plug
-                   ,"       , columns = ("++showHSName (fst (columns plug))++ ", " ++showHSName (snd (columns plug))++")"
                    ,"       , cLkpTbl = [ "++intercalate (indent++"                   , ") ["("++showHSName c++", "++showHSName cn++")" | (c,cn)<-cLkpTbl plug] ++ "]"
-                   ,"       , mLkp = "++showHS opts "" (mLkp plug)
+                   ,"       , dLkpTbl    = [ "++intercalate (indent++"                      , ") 
+                                                      [ "RelStore "++showHSName (rsDcl store)++" "
+                                                                   ++showHSName (rsSrcAtt store)++" "
+                                                                   ++showHSName (rsTrgAtt store)++" "
+                                                      | store<-dLkpTbl plug] ++ "]"
                --    ,"       , sqlfpa  = " ++ showHS opts "" (fpa plug)
                    ,"       }"
-                   ]
-       ScalarSQL{} -> intercalate indent
-                   ["ScalarSQL { sqlname   = "++ (show.name) plug
-                   ,"          , sqlColumn = "++ showHS opts (indent++"                     ") (sqlColumn plug)
-                   ,"          , cLkp      = "++ showHSName (cLkp plug)
-               --    ,"          , sqlfpa    = "++ showHS opts "" (fpa plug)
-                   ,"          }"
                    ]
 
 instance ShowHSName (ECArule) where
@@ -158,6 +155,7 @@ instance ShowHS SqlAttribute where
        ,      ", attType    = " ++ showHS opts "" (attType sqAtt)
        ,      ", attUse     = " ++ showHS opts "" (attUse sqAtt)
        ,      ", attNull    = " ++ show (attNull sqAtt)
+       ,      ", attDBNull    = " ++ show (attDBNull sqAtt)
        ,      ", attUniq    = " ++ show (attUniq sqAtt)
        ,      ", attFlipped = " ++ show (attFlipped sqAtt)
        ,      "}"
@@ -251,7 +249,7 @@ instance ShowHS FSpec where
                  [(r,rel)] -> "[ ("++show r++", "++showHS opts "" rel++") ]"
                  _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
         ,      ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
-        , wrap ", fRoles        = " indentA (showHS opts)    (fRoles fSpec)
+        , wrap ", fRoles        = " indentA (showHS opts)    [rol | (rol,_) <- fRoles fSpec]
         , wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
         , wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
         , wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
@@ -546,16 +544,20 @@ instance ShowHSName ViewDef where
 
 instance ShowHS ViewDef where
  showHS opts indent vd
-  = "Vd ("++showHS opts "" (vdpos vd)++") "++show (vdlbl vd)++" "++showHSName (vdcpt vd)
+  = "Vd ("++showHS opts "" (vdpos vd)++") "++show (name vd)++" "++showHSName (vdcpt vd)
     ++indent++"  [ "++intercalate (indent++"  , ") (map (showHS opts indent) $ vdats vd)++indent++"  ]"
 
---instance ShowHSName ViewSegment where
+instance ShowHS ViewSegment where
+  showHS opts indent vs =
+    "ViewSegment "++showHS opts indent (origin vs) ++ " "
+                  ++showHS opts indent (vsmlabel vs)
+                  ++" "++show (vsmSeqNr vs)++" "
+                  ++showHS opts indent (vsmLoad vs)
 -- showHSName vd = haskellIdentifier ("vdef_"++name vd)
 
-instance ShowHS ViewSegment where
- showHS _     _     (ViewText i str)    = "ViewText "++show i ++show str
- showHS _     _     (ViewHtml i str)    = "ViewHtml "++show i ++show str
- showHS opts indent (ViewExp  i objDef) = "ViewExp " ++show i ++showHS opts (indent++"            ") objDef
+instance ShowHS ViewSegmentPayLoad where
+ showHS _     _     (ViewText str)  = "ViewText "++show str
+ showHS opts indent (ViewExp  expr) = showHS opts (indent++"            ") expr
 
 instance ShowHS Population where
  showHS _ indent pop
@@ -579,23 +581,31 @@ instance ShowHSName ObjectDef where
 instance ShowHS ObjectDef where
  showHS opts indent r
   = intercalate indent
-        ["Obj{ objnm   = " ++ show(objnm r)
-        ,"   , objpos  = " ++ showHS opts "" (objpos r)
-        ,"   , objctx  = " ++ showHS opts (indent++"               ") (objctx r)
-        ,"   , objmsub = " ++ showHS opts (indent++"                    ") (objmsub r)
-        ,"   , objstrs = " ++ show(objstrs r)
+        ["Obj{ objnm    = " ++ show(objnm r)
+        ,"   , objpos   = " ++ showHS opts "" (objpos r)
+        ,"   , objctx   = " ++ showHS opts (indent++"                ") (objctx r)
+        ,"   , objcrud  = " ++ showHS opts (indent++"                ") (objcrud r)
+        ,"   , objmView = " ++ show(objmView r)
+        ,"   , objmsub  = " ++ showHS opts (indent++"                ") (objmsub r)
         ]++indent++"   }"
 
+instance ShowHS Cruds where
+ showHS opts indent x 
+  = intercalate indent
+      ["Cruds { crudOrig = "++ showHS opts "" (crudOrig x)
+      ,"      , crudC    = "++ show (crudC x)
+      ,"      , crudR    = "++ show (crudR x)
+      ,"      , crudU    = "++ show (crudU x)
+      ,"      , crudD    = "++ show (crudD x)
+      ,"      }"
+      ]  
 instance ShowHSName Interface where
  showHSName obj = haskellIdentifier ("ifc_"++name obj)
 
 instance ShowHS Interface where
  showHS opts indent ifc
   = intercalate indent
-        [ "Ifc { ifcClass = " ++ show (ifcClass ifc) 
-        , wrap "    , ifcParams = " (indent++"                  ") (showHS opts) (ifcParams ifc)
-        , "    , ifcArgs   = " ++ show(ifcArgs ifc)
-        , "    , ifcRoles  = " ++ show(ifcRoles ifc)
+        [ "Ifc { ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
         , "    , ifcEcas   = " ++ showHS opts (indent++"                 ") (ifcEcas ifc)
         , wrap "    , ifcControls = " (indent++"                  ") (\_->showHSName) (ifcControls ifc)

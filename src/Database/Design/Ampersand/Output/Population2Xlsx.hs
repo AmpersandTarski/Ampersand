@@ -3,7 +3,6 @@ module Database.Design.Ampersand.Output.Population2Xlsx
   (fSpec2PopulationXlsx)
 where
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import qualified Data.Map as M
 import Codec.Xlsx
@@ -44,7 +43,6 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                        else Nothing
            BinSQL{} -> -- trace ("## Warning: Handling of link-tables isn't correct yet. Therefor, sheet`"++name plug++"` doesn't contain proper info") $
                        Just $ headers ++ content
-           ScalarSQL{} -> Nothing
          where
            headers :: [[Cell]]
            headers = transpose (Prelude.map f (zip (True : repeat False) (plugAttributes plug))) 
@@ -57,7 +55,6 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                                           case plug of
                                             TblSQL{}    -> name att
                                             BinSQL{}    -> name plug
-                                            ScalarSQL{} -> fatal 57 "ScalarSQL not expected here"
                          , Just $ name .target . attExpr $ att ]
                    cleanUpRelName :: String -> String
                    --TODO: This is a not-so-nice way to get the relationname from the fieldname.

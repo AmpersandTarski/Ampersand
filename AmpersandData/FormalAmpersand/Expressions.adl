@@ -5,12 +5,12 @@ INCLUDE "Atoms.adl"
 
 PROCESS "Expression definitions"
     RELATION patterns[Context*Pattern]
-    RELATION src[Term*Concept]
-    RELATION tgt[Term*Concept]
-    RELATION lhs[BinaryTerm*Term]
-    RELATION rhs[BinaryTerm*Term]
-    RELATION bind[Term*Relation]
-    RELATION term[Rule*Term]
+    RELATION src[Expression*Concept]
+    RELATION tgt[Expression*Concept]
+    RELATION lhs[BinaryTerm*Expression]
+    RELATION rhs[BinaryTerm*Expression]
+    RELATION bind[Expression*Relation]
+    RELATION term[Rule*Expression]
     RELATION rrexp[Rule*ExpressionID]
 
     VIEW Equivalence        : Equivalence(TXT "RULE ", first, TXT " = ", second)

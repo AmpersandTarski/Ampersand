@@ -1,12 +1,12 @@
-$if(verbose)$<!-- Atomic-BOOLEAN.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(!isEditable)$not $endif$editable) -->
-$endif$<div style="text-align:center; vertical-align:middle;">
-	$if(exprIsUni)$<div class="checkbox">
+$if(verbose)$<!-- Atomic-BOOLEAN.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
+$endif$<div style="vertical-align:middle;">
+	$if(exprIsUni)$<div>
 		<label>
-			<input ng-model="val['$name$']" type="checkbox"$if(!isEditable)$ ng-disabled="true"$endif$ ng-change="put(ResourceId)"/>
+			<input ng-model="resource['$name$']" type="checkbox"$if(!crudU)$ ng-disabled="true"$endif$ ng-change="saveItem(resource, '$name$', patchResource)"/>
 		</label>
-	</div>$else$<div class="checkbox" ng-repeat="row in val['$name$'] track by \$index">
+	</div>$else$$if(crudU)$<span>Not implemented: editable non-uni boolean</span>$else$<div ng-repeat="row in resource['$name$'] track by \$index">
 		<label>
-			<input ng-model="val['$name$'][\$index]" type="checkbox" ng-disabled="true"/>
+			<input ng-model="resource['$name$'][\$index]" type="checkbox" ng-disabled="true"/>
 		</label>
-	</div>$endif$
+	</div>$endif$$endif$
 </div>

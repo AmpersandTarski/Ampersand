@@ -1,11 +1,21 @@
 <?php
 
+namespace Ampersand\Extension\Mutation;
+
+use Ampersand\Hooks;
+use Ampersand\Config;
+use Ampersand\Database\Database;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Relation;
+use Ampersand\Session;
+use Ampersand\Core\Atom;
+
 // Define hooks
-$updateHook = array('class' => 'Mutation', 'function' => 'mutUpdate', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation', 
+$updateHook = array('class' => '\Ampersand\Extension\Mutation\Mutation', 'function' => 'mutUpdate', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation', 
 		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
-$insertHook = array('class' => 'Mutation', 'function' => 'mutInsert', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
+$insertHook = array('class' => '\Ampersand\Extension\Mutation\Mutation', 'function' => 'mutInsert', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
 		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
-$deleteHook = array('class' => 'Mutation', 'function' => 'mutDelete', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
+$deleteHook = array('class' => '\Ampersand\Extension\Mutation\Mutation', 'function' => 'mutDelete', 'filename' => 'Mutation.php', 'filepath' => 'extensions/Mutation',
 		'params' => array('$fullRelationSignature', '$stableAtom', '$stableConcept', '$modifiedAtom', '$modifiedConcept', '$source'));
 Hooks::addHook('postDatabaseUpdate', $updateHook);
 Hooks::addHook('postDatabaseInsert', $insertHook);
@@ -30,38 +40,35 @@ class Mutation {
 	
 	private static function saveMutation($operation, $fullRelationSignature, $stableAtom, $stableConcept, $modifiedAtom, $modifiedConcept, $source){
 		if(array_key_exists($fullRelationSignature, Config::get('mutationConcepts', 'MutationExtension'))){
-			Notifications::addLog("Save mutation on '$fullRelationSignature' (editUpdate)", 'Mutation');
 			
-			$mutConcept = Config::get('mutationConcepts', 'MutationExtension')[$fullRelationSignature];
 			$database = Database::singleton();
-		
-	$database->setTrackAffectedConjuncts(false); // Don't track affected conjuncts for Mutation concept and relations;
+			$database->setTrackAffectedConjuncts(false); // Don't track affected conjuncts for Mutation concept and relations;
 			
 			// New Mutation
-			$mut = $database->addAtomToConcept(Concept::createNewAtom($mutConcept), $mutConcept);
+			$mutConcept = Concept::getConcept(Config::get('mutationConcepts', 'MutationExtension')[$fullRelationSignature]);
+			$mut = $mutConcept->createNewAtom();
 			
 			// Add mut info
-			$database->editUpdate('mutRelation', false, $mut, 'Mutation', $fullRelationSignature, 'Relation');
-			$database->editUpdate('mutDateTime', false, $mut, 'Mutation', date(DATE_ISO8601), 'DateTime');
+			Relation::getRelation('mutRelation', $mut->concept->name, 'Relation')->addLink($mut, new Atom($fullRelationSignature, 'Relation'), false, 'MutationExtension');
+			Relation::getRelation('mutDateTime', $mut->concept->name, 'DateTime')->addLink($mut, new Atom(date(DATE_ISO8601), 'DateTime'), false, 'MutationExtension');
 			
 			if($source == 'User'){
-				$user = Session::getSessionUserId();
+			    $session = Session::singleton();
+				$accountId = $session->getSessionAccountId();
 			}else{
-				$user = $source;
+				$accountId = $source;
 			}
 			
-			$database->editUpdate('mutBy', false, $mut, 'Mutation', $user, 'User');
-			$database->editUpdate('mutOp', false, $mut, 'Mutation', $operation, 'Operation');
-			// $database->editUpdate('mutReason', false, $mut, 'Mutation', 'zomaar', 'MutationReason'); // TODO: get reason from somewhere
-			$database->editUpdate('mutValue', false, $mut, 'Mutation', $modifiedAtom, 'MutationValue');
-			$database->editUpdate('mutStable', false, $mut, $mutConcept, $stableAtom, $stableConcept);
-			$database->editUpdate('mutPublish', false, $mut, 'Mutation', $mut, 'Mutation');
+			Relation::getRelation('mutBy', $mut->concept->name, 'Account')->addLink($mut, new Atom($accountId, 'Account'), false, 'MutationExtension');
+			Relation::getRelation('mutOp', $mut->concept->name, 'Operation')->addLink($mut, new Atom($operation, 'Operation'), false, 'MutationExtension');
+			// Relation::getRelation('mutReason', $mut->concept->name, 'MutationReason')->addLink($mut, new Atom('zomaar', 'MutationReason'), false, 'MutationExtension'); // TODO: get reason from somewhere
+			Relation::getRelation('mutValue', $mut->concept->name, 'MutationValue')->addLink($mut, new Atom($modifiedAtom, 'MutationValue'), false, 'MutationExtension');
+			Relation::getRelation('mutStable', $mut->concept->name, $stableConcept)->addLink($mut, new Atom($stableAtom, $stableConcept), false, 'MutationExtension');
+			Relation::getRelation('mutPublish', $mut->concept->name, $mut->concept->name)->addLink($mut, $mut, false, 'MutationExtension');
 
-	$database->setTrackAffectedConjuncts(true); // Enable tracking of affected conjuncts again!!
+	       $database->setTrackAffectedConjuncts(true); // Enable tracking of affected conjuncts again!!
 		}	
 	}
 }
-
-Notifications::addLog('Mutation extensions included', 'Mutation');
 
 ?>

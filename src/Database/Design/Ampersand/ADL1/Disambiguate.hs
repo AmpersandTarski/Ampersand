@@ -1,7 +1,7 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (sortWith, maxima, greatest)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics (fatal)
 --import Control.Applicative
 --import Data.Traversable
@@ -126,10 +126,12 @@ instance Disambiguatable P_ViewD where
                           )
    where constraints = Cnstr [MustBe (pCpt2aCpt c)] []
 
-instance Disambiguatable P_ViewSegmt where
-  disambInfo (P_ViewText nr a) _ = (P_ViewText nr a,noConstraints)
-  disambInfo (P_ViewHtml nr a) _ = (P_ViewHtml nr a,noConstraints)
-  disambInfo (P_ViewExp nr a) i = (P_ViewExp nr a',r)
+instance Disambiguatable P_ViewSegment where
+  disambInfo (P_ViewSegment a b c) i = (P_ViewSegment a b c', r)
+    where (c', r) = disambInfo c i
+instance Disambiguatable P_ViewSegmtPayLoad where
+  disambInfo (P_ViewText a) _ = (P_ViewText a,noConstraints)
+  disambInfo (P_ViewExp a) i = (P_ViewExp a',r)
     where (a',r) = disambInfo a i
 
 instance Disambiguatable P_SubIfc where
@@ -145,9 +147,9 @@ instance Disambiguatable P_ObjDef where
                         mCrud
                         v
                         d -- (potential) subobject
-                        f)
+                        )
                         env -- from the environment, only the source is important
-   = (P_Obj a b c' mCrud v d' f, Cnstr (sourceConstraintsOf env2) [] -- only source information should be relevant
+   = (P_Obj a b c' mCrud v d', Cnstr (sourceConstraintsOf env2) [] -- only source information should be relevant
      )
     where
      (d', env1)

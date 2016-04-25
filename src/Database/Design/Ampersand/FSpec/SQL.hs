@@ -1,5 +1,5 @@
 module Database.Design.Ampersand.FSpec.SQL
-  ( prettySQLQuery)
+  ( prettySQLQuery,sqlQuery )
   
 where
 import Language.SQL.SimpleSQL.Syntax
@@ -16,20 +16,29 @@ import Data.List
 import Data.Maybe
 
 class SQLAble a where
-  -- | prettyprint and indent it with spaces
-  prettySQLQuery :: FSpec -> Int -> a -> String
-  makeANice :: (a -> BinQueryExpr) -> Int -> a -> String
-  makeANice f i =
-    intercalate (if i == 0 then " " else "\n"++replicate i ' ') .  lines . 
-       prettyQueryExpr theDialect . toSQL . f   
-    
+  -- | prettyprint SQL query incuding comments and indent it with spaces
+  prettySQLQuery 
+        :: Int    -- Amount of indentation
+        -> FSpec  -- The context
+        -> a      
+        -> String 
+  prettySQLQuery i fSpec x =
+    intercalate ("\n"++replicate i ' ') .  lines . 
+      prettyQueryExpr theDialect . toSQL . 
+      stripComment $ getBinQueryExpr fSpec x
+   
+  -- | show SQL query without comments and not prettyprinted
+  sqlQuery :: FSpec -> a -> String
+  sqlQuery fSpec x =
+    unwords . words . 
+    prettyQueryExpr theDialect . toSQL $ 
+    getBinQueryExpr fSpec x
+  getBinQueryExpr ::  FSpec -> a -> BinQueryExpr
 instance SQLAble Expression where  
-  prettySQLQuery = makeANice . selectExpr 
+  getBinQueryExpr = selectExpr
 instance SQLAble Declaration where
-  prettySQLQuery = makeANice . selectDeclaration
-  
+  getBinQueryExpr = selectDeclaration
      
-
 sourceAlias, targetAlias :: Name
 sourceAlias = (Name "src") 
 targetAlias = (Name "tgt")
@@ -701,6 +710,16 @@ data BinQueryExpr = BSE  { bseSrc :: ValueExpr       -- ^ source attribute and t
                          }
                   | BQEComment [Comment] BinQueryExpr
                                
+stripComment :: BinQueryExpr -> BinQueryExpr
+stripComment bqe 
+  = case bqe of
+       BSE{} -> bqe
+       BCQE{} -> BCQE { bcqeOper = bcqeOper bqe
+                      , bcqe0    = stripComment (bcqe0 bqe)
+                      , bcqe1    = stripComment (bcqe1 bqe)
+                      }
+       BQEComment _ x -> stripComment x 
+
                         
 toSQL :: BinQueryExpr -> QueryExpr
 toSQL bqe 
