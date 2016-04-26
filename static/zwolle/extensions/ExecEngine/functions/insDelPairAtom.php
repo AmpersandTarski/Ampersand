@@ -150,9 +150,9 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
 			
 			$relation   = func_get_arg($i);
-			$srcConcept = func_get_arg($i+1);
+			$srcConcept = Concept::getConcept(func_get_arg($i+1));
 			$srcAtom    = func_get_arg($i+2);
-			$tgtConcept = func_get_arg($i+3);
+			$tgtConcept = Concept::getConcept(func_get_arg($i+3));
 			$tgtAtom    = func_get_arg($i+4);
 			
 			if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
@@ -190,7 +190,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 			}
 			
 			// Any logging is done by InsPair:
-			InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
+			InsPair($relation,$srcConcept->name,$srcAtom,$tgtConcept->name,$tgtAtom);
 		}
 		Logger::getLogger('EXECENGINE')->debug("New structure '". $AtomC . "' created");
 	
