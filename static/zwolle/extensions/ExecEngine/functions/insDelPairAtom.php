@@ -158,11 +158,11 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 			if (!($srcAtomId == '_NEW' or $tgtAtomId == '_NEW')) throw new Exception("NewStruct: relation '{$relation}' requires that atom '{$srcAtomId}' or '{$tgtAtomId}' must be '_NEW'", 500);
 			
 			// NewStruct requires that concept $srcConcept or $tgtConcept must be concept $c
-			if (!in_array($srcConcept, $c->getSpecializationsIncl()) && !in_array($tgtConcept, $c->getSpecializationsIncl())) throw new Exception("NewStruct: relation '{$relation}' requires that src or tgt concept must be '{$c}' (or any of its specializations)", 500);
+			if (!in_array($srcConcept, $c->getGeneralizationsIncl()) && !in_array($tgtConcept, $c->getGeneralizationsIncl())) throw new Exception("NewStruct: relation '{$relation}' requires that src or tgt concept must be '{$c}' (or any of its generalizations)", 500);
 		
 			// Replace atom by the newstruct atom if _NEW is used
-			if(in_array($srcConcept, $c->getSpecializationsIncl()) && $srcAtomId == '_NEW') $srcAtomId = $atom->id;
-			if(in_array($tgtConcept, $c->getSpecializationsIncl()) && $tgtAtomId == '_NEW') $tgtAtomId = $atom->id;
+			if(in_array($srcConcept, $c->getGeneralizationsIncl()) && $srcAtomId == '_NEW') $srcAtomId = $atom->id;
+			if(in_array($tgtConcept, $c->getGeneralizationsIncl()) && $tgtAtomId == '_NEW') $tgtAtomId = $atom->id;
 			
 			// Any logging is done by InsPair
 			InsPair($relation,$srcConcept->name,$srcAtomId,$tgtConcept->name,$tgtAtomId);
