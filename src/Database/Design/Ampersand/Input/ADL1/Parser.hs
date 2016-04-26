@@ -430,13 +430,13 @@ pViewDefLegacy = P_Vd <$> currPos
 
 --- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: AmpParser P_Interface
-pInterface = lbl <$> currPos                                       <*>
-                     (pKey "INTERFACE" *> pADLid)                  <*>
-                     optList pParams                               <*> -- a list of expressions, which say which relations are editable within this service.
-                     optList pRoles                                <*>
-                     (pColon *> pTerm)                             <*> -- the expression of the interface object
-                     pMaybe pCruds                                 <*> -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
-                     pMaybe pSubInterface
+pInterface = lbl <$> currPos                                       
+                 <*> (pKey "INTERFACE" *> pADLid)
+                 <*> optList pParams
+                 <*> optList pRoles 
+                 <*> (pColon *> pTerm)          -- the expression of the interface object
+                 <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
+                 <*> pMaybe pSubInterface
     where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe P_SubInterface -> P_Interface
           lbl p nm params roles term mCrud msub
              = P_Ifc { ifc_Name   = nm
