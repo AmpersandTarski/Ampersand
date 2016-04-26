@@ -146,8 +146,9 @@ AmpersandApp.directive('myShowonhoverBox', function (){
 	
 	return {
 		  restrict		: 'E'
-		, scope 		: {ifcs : '=', resource : '=', label : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+		, scope 		: {ifcs : '=', resource : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
 		, templateUrl	: 'app/views/partials/my_nav_to_interfaces.html'
+		, transclude	: true
 	};
 }).directive('myNavToOtherInterfaces', function(){
 	
