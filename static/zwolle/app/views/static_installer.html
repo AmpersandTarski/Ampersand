@@ -1,18 +1,22 @@
 <div class="container-fluid" id="Interface">
-	<div class="jumbotron">
-		<h1>Installer</h1>
-		<p>This action will reinstall the database and delete all content.</p>
-		<p>If provided, the initial database population will be installed.</p>
-	    <div ng-if="!installing && !installed">
-	      <a class="btn btn-danger btn-lg" ng-click="install()" role="button">Reinstall database</a>
-	    </div>
-	    <div ng-if="installing && !installed">
-	      <span class="btn btn-warning btn-lg" role="button">Installing database</span>
-	      &nbsp;&nbsp;
-	      <img ng-src="app/images/loading.gif" alt="Installing..." style="height:2.5em">
-	    </div>
-	    <div ng-if="installed">
-	      <a class="btn btn-success btn-lg" ng-click="install()" role="button">Database reinstalled</a>
-	    </div>
-	</div>
+    <div class="jumbotron">
+        <h1>Installer</h1>
+        <p>This action will reinstall the database and delete all content.</p>
+        <p>If provided, the initial database population will be installed.</p>
+        <div class="btn-group">
+            <button type="button" ng-click="install(true)" class="btn btn-lg" ng-class="{'btn-danger' : (!installing && !installed), 'btn-warning' : installing, 'btn-success' : installed}" ng-disabled="installing">
+                <span ng-if="!installed && ! installing">Reinstall database  </span>
+                <span ng-if="installing">Database installing  </span>
+                <span ng-if="installed">Database reinstalled  </span>
+                <img ng-if="installing" ng-src="app/images/loading.gif" style="height:20px;"/>
+            </button>
+            <button type="button" class="btn btn-lg dropdown-toggle" ng-class="{'btn-danger' : (!installing && !installed), 'btn-warning' : installing, 'btn-success' : installed}" ng-disabled="installing" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu">
+                <li><a href="" ng-click="install(true)">Reinstall database</a></li>
+                <li><a href="" ng-click="install(false)">Reinstall database (without default population)</a></li>
+            </ul>
+        </div>
+    </div>
 </div>
