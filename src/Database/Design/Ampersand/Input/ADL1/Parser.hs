@@ -428,7 +428,7 @@ pViewDefLegacy = P_Vd <$> currPos
                       <*> pParens((pViewSegment True) `sepBy1` pComma)
 
 
---- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface
+--- Interface ::= 'INTERFACE' ADLid Params? Roles? ':' Term (ADLid | Conid)? SubInterface?
 pInterface :: AmpParser P_Interface
 pInterface = lbl <$> currPos                                       <*>
                      (pKey "INTERFACE" *> pADLid)                  <*>
@@ -436,9 +436,9 @@ pInterface = lbl <$> currPos                                       <*>
                      optList pRoles                                <*>
                      (pColon *> pTerm)                             <*> -- the expression of the interface object
                      pMaybe pCruds                                 <*> -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
-                     pSubInterface
-    where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> P_SubInterface -> P_Interface
-          lbl p nm params roles term mCrud sub
+                     pMaybe pSubInterface
+    where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe P_SubInterface -> P_Interface
+          lbl p nm params roles term mCrud msub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_Obj { obj_nm   = nm
@@ -446,7 +446,7 @@ pInterface = lbl <$> currPos                                       <*>
                                           , obj_ctx  = term
                                           , obj_crud = mCrud
                                           , obj_mView = Nothing
-                                          , obj_msub = Just sub
+                                          , obj_msub = msub
                                           }
                      , ifc_Pos    = p
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
