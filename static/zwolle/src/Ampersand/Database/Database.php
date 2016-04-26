@@ -203,9 +203,10 @@ class Database {
 	
 	/**
 	 * Function to reinstall database structure and load default population
+	 * @param boolean $loadDefaultPop specifies whether or not to install the default population
 	 * @return void
 	 */
-	public function reinstallDB(){
+	public function reinstallDB($installDefaultPop = true){
 		$queries = file_get_contents(Config::get('pathToGeneratedFiles') . 'mysql-installer.json');
 		$queries = json_decode($queries, true);
 		
@@ -216,12 +217,16 @@ class Database {
 			$this->Exe($query);
 		}
 		
-		if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
-		
-		$this->logger->info("Execute database population queries");
-		foreach($queries['allDefPopQueries'] as $query){
-			$this->Exe($query);
-		}
+        if($installDefaultPop){
+            $this->logger->info("Install default population");
+		    if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
+            
+            foreach($queries['allDefPopQueries'] as $query){
+                $this->Exe($query);
+            }
+        }else{
+            $this->logger->info("Skip default population");
+        }
 		
 		// Ininiate new session
 		Session::reInit();
