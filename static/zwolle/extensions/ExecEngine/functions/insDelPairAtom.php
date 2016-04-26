@@ -157,37 +157,16 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 			
 			if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 			
+			// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW
+			// Note: when populating a [PROP] relation, both atoms can be new
+			if (!($srcAtom == '_NEW' or $tgtAtom == '_NEW')) throw new Exception("NewStruct: relation '{$relation}' requires that atom '{$srcAtom}' or '{$tgtAtom}' must be '_NEW'", 500);
 			
-			// populate relation r1, first checking for allowed syntax:		
-			if (!($srcAtom == '_NEW' or $tgtAtom == '_NEW')){ // Note: when populating a [PROP] relation, both atoms can be new
-				// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW
-				throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW", 500);
-			}
+			// NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC
+			if (!in_array($srcConcept, $c->getSpecializationsIncl()) && !in_array($tgtConcept, $c->getSpecializationsIncl())) throw new Exception("NewStruct: relation '{$relation}' requires that src or tgt concept must be '{$c}' (or any of its specializations)", 500);
 		
-			if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)){
-				// NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC
-				throw new Exception("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC", 500);
-			}
-		
-			if ($srcConcept == $ConceptC){
-				if ($srcAtom == '_NEW'){
-					$srcAtom = $AtomC;
-	/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
-				}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-					// NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)
-					throw new Exception("NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
-				}
-			}
-		
-			if ($tgtConcept == $ConceptC){  
-				if ($tgtAtom == '_NEW'){  
-					$tgtAtom = $AtomC;
-	/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
-				}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-					// NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)
-					throw new Exception("NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
-				}
-			}
+			// Replace atom by the newstruct atom if _NEW is used
+			if(in_array($srcConcept, $c->getSpecializationsIncl()) && $srcAtom == '_NEW') $srcAtom = $AtomC;
+			if(in_array($tgtConcept, $c->getSpecializationsIncl()) && $tgtAtom == '_NEW') $tgtAtom = $AtomC;
 			
 			// Any logging is done by InsPair:
 			InsPair($relation,$srcConcept->name,$srcAtom,$tgtConcept->name,$tgtAtom);
