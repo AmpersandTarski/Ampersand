@@ -8,6 +8,7 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeBound
   , GetOneGuarded(..), uniqueNames
   , TypeAware(..), unexpectedType
+  , mkErrorReadingINCLUDE
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
@@ -34,7 +35,7 @@ where
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
--- import Data.Traversable
+import Data.Maybe
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
@@ -92,6 +93,13 @@ unexpectedType o x = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showAD
 -- unexpectedType o x = res
 --   where res = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showADL x<>"\n  expecting "<>getADLType_a res]
 -- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
+mkErrorReadingINCLUDE :: Maybe Origin -> FilePath -> String -> Guarded a
+mkErrorReadingINCLUDE mo file str
+ = Errors [CTXE (fromMaybe (Origin "command line argument") mo) msg]
+    where 
+      msg = intercalate "\n    " $
+             [ "While looking for file '"++file++"':" 
+             ]++lines str
 
 mkMultipleRepresentTypesError :: A_Concept -> [(TType,Origin)] -> Guarded a
 mkMultipleRepresentTypesError cpt rs
