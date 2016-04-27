@@ -288,8 +288,8 @@ class ExcelImport {
 					if ($cell == '') continue; // If cell is empty, it is skipped
 					elseif ($cell == '_NEW') $rightAtoms[] = $leftAtom; // If the cell contains '_NEW', the same atom as the $leftAtom is used. Useful for property-relations
 					elseif($separator[$col]){
-					    $atomsIds = explode($separator[$col],$cell);
-					    foreach($atomsIds as $atomId) $rightAtoms[] = new Atom($atomId, $concept[$col]->name);
+					    $atomsIds = explode($separator[$col],$cell); // atomnames may have surrounding whitespace
+					    foreach($atomsIds as $atomId) $rightAtoms[] = new Atom(trim($atomId), $concept[$col]->name);
 					}else{
 					    $rightAtoms[] = new Atom($line[$col], $concept[$col]->name);
 					}
