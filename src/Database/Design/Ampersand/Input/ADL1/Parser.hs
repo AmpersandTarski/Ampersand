@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleContexts #-}
 module Database.Design.Ampersand.Input.ADL1.Parser
     ( AmpParser
+    , Include(..)
     , pContext
     , pPopulations
     , pTerm
@@ -21,7 +22,7 @@ pPopulations = many1 pPopulation
 
 --- Context ::= 'CONTEXT' ConceptName LanguageRef TextMarkup? ContextElement* 'ENDCONTEXT'
 -- | Parses a context
-pContext :: AmpParser (P_Context, [String]) -- ^ The result is the parsed context and a list of include filenames
+pContext :: AmpParser (P_Context, [Include]) -- ^ The result is the parsed context and a list of include filenames
 pContext  = rebuild <$> posOf (pKey "CONTEXT")
                     <*> pConceptName
                     <*> pLanguageRef
@@ -29,7 +30,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                     <*> many pContextElement
                     <*  pKey "ENDCONTEXT"
   where
-    rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [String])
+    rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
     rebuild    pos       nm        lang          fmt                   ces
      = (PCtx{ ctx_nm     = nm
             , ctx_pos    = [pos]
@@ -98,11 +99,15 @@ data ContextElement = CMeta Meta
                     | CPrp PPurpose
                     | CPop P_Population
                     | CThm [String]    -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
-                    | CIncl String     -- an INCLUDE statement
+                    | CIncl Include    -- an INCLUDE statement
 
+data Include = Include Origin FilePath
 --- IncludeStatement ::= 'INCLUDE' String
-pIncludeStatement :: AmpParser String
-pIncludeStatement = pKey "INCLUDE" *> pString
+pIncludeStatement :: AmpParser Include
+pIncludeStatement = 
+      Include <$> currPos
+              <*  pKey "INCLUDE" 
+              <*> pString
 
 --- LanguageRef ::= 'IN' ('DUTCH' | 'ENGLISH')
 pLanguageRef :: AmpParser Lang
