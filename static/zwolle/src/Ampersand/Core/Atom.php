@@ -79,7 +79,7 @@ class Atom {
 	
 	/**
 	 * Specifies the concept of which this atom is an instance
-	 * @var string
+	 * @var Concept
 	 */
 	public $concept;
 	
