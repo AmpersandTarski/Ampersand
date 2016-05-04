@@ -379,11 +379,11 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{test = True}))
                "Used for test purposes only."
             , Hidden)
-          , (Option []        ["ast-tables"]
+          , (Option []        ["meta-tables"]
                (NoArg (\opts -> return opts{genASTTables = True}))
                "When set, generate the meta-tables of AST into the prototype"
             , Hidden)
-          , (Option []        ["ast-file"]
+          , (Option []        ["meta-file"]
                (NoArg (\opts -> return opts{genASTFile = True}))
                "Generate the meta-population in AST format and output it to an .adl file"
             , Hidden)
