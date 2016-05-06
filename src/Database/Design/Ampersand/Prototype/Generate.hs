@@ -112,9 +112,8 @@ commentBlockSQL xs =
   
 generateAllDefPopQueries :: FSpec -> Bool -> [String]
 generateAllDefPopQueries fSpec withComment 
-  = (if withComment then id else map (unwords . words)) $ 
-        fillSignalTable (initialConjunctSignals fSpec) ++
-        populateTablesWithPops
+  = fillSignalTable (initialConjunctSignals fSpec) ++
+    populateTablesWithPops
         
   where
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [String]
@@ -124,7 +123,7 @@ generateAllDefPopQueries fSpec withComment
             [ "INSERT INTO "++show (getTableName signalTableSpec)
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
-              ( "VALUES " ++ intercalate "\n     , " 
+              ( "VALUES " ++ intercalate " , " 
                   [ "(" ++intercalate ", " (map showAsValue [rc_id conj, showValPHP (apLeft p), showValPHP (apRight p)])++ ")" 
                   | (conj, viols) <- conjSignals
                   , p <- viols
@@ -144,7 +143,7 @@ generateAllDefPopQueries fSpec withComment
                        [ "INSERT INTO "++show (name plug)
                        , "   ("++intercalate ", " (map (show . attName) (plugAttributes plug))++") "
                        ] ++ lines
-                         ( "VALUES " ++ intercalate "\n     , " 
+                         ( "VALUES " ++ intercalate " , " 
                           [ "(" ++valuechain md++ ")" | md<-tblRecords]
                          )
                     ]
