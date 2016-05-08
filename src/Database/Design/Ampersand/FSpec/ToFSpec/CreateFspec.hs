@@ -12,7 +12,6 @@ import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
-import Database.Design.Ampersand.Core.ToMeta
 import Control.Monad
 
 -- | create an FSpec, based on the provided command-line options.
@@ -38,7 +37,7 @@ createFSpec opts =
          -> do rapP_Ctx <- parseMeta opts -- the P_Context of the
                let populationPctx       = join ( grind <$> pCtx2Fspec uCtx)
                    populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
-                   metaPopulatedRapPctx = toMeta opts <$> populatedRapPctx
+                   metaPopulatedRapPctx = populatedRapPctx
                    allCombinedPctx      = merge.sequenceA $ [uCtx, metaPopulatedRapPctx]
                return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
 
