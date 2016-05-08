@@ -131,15 +131,15 @@ instance MetaPopulations A_Concept where
    [ Comment " "
    , Comment $ " Concept `"++name cpt++"` "
    , Pop "ttype" "Concept" "TType"
-             [(dirtyId cpt,dirtyId ((cptTType fSpec) cpt))] 
+             [(dirtyId cpt, dirtyId ((cptTType fSpec) cpt))] 
+   , Pop "name" "Concept" "Identifier"
+             [(dirtyId cpt, dirtyId cpt)]
    ]++
    case cpt of
      PlainConcept{} ->
       [ Comment $ " Concept `"++name cpt++"` "
       , Pop "concs" "Context" "Concept"
              [(dirtyId fSpec,dirtyId cpt)]
-      , Pop "name" "Concept" "Identifier"
-             [(dirtyId cpt, dirtyId cpt)]
 --      , Pop "conceptColumn" "Concept" "SqlAttribute"
 --             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
 --      , Pop "cptdf" "Concept" "ConceptDefinition"
@@ -147,7 +147,8 @@ instance MetaPopulations A_Concept where
       , Pop "cptpurpose" "Concept" "Purpose"
              [(dirtyId cpt,(show.showADL) x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
-     ONE -> []
+     ONE -> 
+      [ ]
   where
     largerConcs = largerConcepts (vgens fSpec) cpt++[cpt]
     tablesAndAttributes = nub . concatMap (lookupCpt fSpec) $ largerConcs
@@ -238,7 +239,18 @@ instance MetaPopulations Declaration where
       , Pop "decpurpose" "Relation" "Purpose"
              [(dirtyId dcl, (show.showADL) x) | x <- explanations dcl]
       ]
-     Isn ONE -> [Comment "No population for the declaration ONE" ]
+     Isn ONE -> 
+      [ Comment " "
+      , Comment $ " Relation `I[ONE]` "
+      , Pop "context" "Relation" "Context"
+             [(dirtyId dcl,dirtyId fSpec)]
+      , Pop "name" "Relation" "Identifier"
+             [(dirtyId dcl, (show.name) dcl)]
+      , Pop "source" "Relation" "Concept"
+             [(dirtyId dcl,dirtyId (source dcl))]
+      , Pop "target" "Relation" "Concept"
+             [(dirtyId dcl,dirtyId (target dcl))]
+      ]
      Isn{} -> 
       [ Comment " "
       , Comment $ " Relation `I["++name (source dcl)++"]`"

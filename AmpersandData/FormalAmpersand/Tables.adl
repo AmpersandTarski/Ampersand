@@ -1,6 +1,6 @@
 ﻿CONTEXT AST IN ENGLISH
 INCLUDE "Atoms.adl"
-INCLUDE "Tables.xlsx"
+--INCLUDE "Tables.xlsx"
 
 
 PATTERN "Kernel Tables"
