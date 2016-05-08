@@ -276,9 +276,9 @@ instance MetaPopulations Expression where
   case expr of 
     EBrk e -> metaPops fSpec e
     _      ->
-      [ Pop "src" "Term" "Concept"
+      [ Pop "src" "Expression" "Concept"
              [(dirtyId expr, dirtyId (source expr))]
-      , Pop "tgt" "Term" "Concept"
+      , Pop "tgt" "Expression" "Concept"
              [(dirtyId expr, dirtyId (target expr))]
       ]++
       ( case expr of
@@ -298,7 +298,7 @@ instance MetaPopulations Expression where
             (EFlp e)     -> makeUnaryTerm  Converse   e
             (ECpl e)     -> makeUnaryTerm  UnaryMinus e
             (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
-            (EDcD dcl)   -> [Pop "bind" "Term" "Relation" [(dirtyId expr,dirtyId dcl)]
+            (EDcD dcl)   -> [Pop "bind" "Expression" "Relation" [(dirtyId expr,dirtyId dcl)]
                             ]
 --            EDcI{}       -> 
 --            EEps{}       -> 
@@ -310,13 +310,13 @@ instance MetaPopulations Expression where
   where
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
     makeBinaryTerm op lhs rhs = 
-      [ Pop "lhs"  "BinaryTerm" "Term"
+      [ Pop "lhs"  "BinaryTerm" "Expression"
              [(dirtyId expr,dirtyId lhs)]
-      , Pop "rhs"  "BinaryTerm" "Term"
+      , Pop "rhs"  "BinaryTerm" "Expression"
              [(dirtyId expr,dirtyId rhs)]
       , Pop "first"  "BinaryTerm" "Expression"
              [(dirtyId expr,dirtyId lhs)]
-      , Pop "second" "BinaryTerm" "Expreseeion"
+      , Pop "second" "BinaryTerm" "Expression"
              [(dirtyId expr,dirtyId rhs)]
       , Pop "operator"  "BinaryTerm" "Operator"
              [(dirtyId expr,dirtyId op)]
