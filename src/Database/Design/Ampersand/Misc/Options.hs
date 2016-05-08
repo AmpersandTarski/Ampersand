@@ -70,7 +70,6 @@ data Options = Options { showVersion :: Bool
                        , test :: Bool
                        , genASTTables :: Bool -- When set, generate the meta-tables of AST into the prototype
                        , genASTFile :: Bool  -- When set, the standard RAP is 'merged' into the generated prototype.(experimental)
-                       , metaTablesHaveUnderscore :: Bool -- Separate the extra tables used with ASTTables or GenericTables by letting them have underscores
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
@@ -160,7 +159,6 @@ getOptions =
                       , test             = False
                       , genASTTables     = False
                       , genASTFile       = False
-                      , metaTablesHaveUnderscore = False
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
@@ -386,10 +384,6 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["meta-file"]
                (NoArg (\opts -> return opts{genASTFile = True}))
                "Generate the meta-population in AST format and output it to an .adl file"
-            , Hidden)
-          , (Option []        ["meta-tables-have-underscore"]
-               (NoArg (\opts -> return opts{metaTablesHaveUnderscore = True}))
-               "Separate the extra tables used with ast-tables or generic-tables by letting them have underscores"
             , Hidden)
           , (Option []        ["no-static-files"]
                (NoArg  (\opts -> return opts{genStaticFiles = False}))
