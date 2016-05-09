@@ -455,6 +455,7 @@ instance AdlId ConceptDef
 instance AdlId Declaration
 instance AdlId Prop
 instance AdlId Expression
+  where dirtyId = show . show . hash . camelCase . uniqueShow False  -- Need to hash, because otherwise too long (>255)
 instance AdlId BinOp
 instance AdlId UnaryOp
 instance AdlId FSpec
