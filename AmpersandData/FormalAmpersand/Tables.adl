@@ -157,7 +157,7 @@ MEANING "The source concept of an n-to-m relation is the concept of the source a
 VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC srcAtt, TXT ";Concept;", SRC srcAtt;concept
           , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";PlugInfo;", SRC srcAtt;table
           , TXT "{EX} DelAtom;SqlAttribute;", SRC srcAtt
-          , TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;;", SRC srcAtt
+          , TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC srcAtt
           )
 RULE "clear table for n-to-m relations (target)" :
       ((I-prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt;concept |- target
@@ -165,7 +165,7 @@ MEANING "The target concept of an n-to-m relation is the concept of the target a
 VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC tgtAtt, TXT ";Concept;", SRC tgtAtt;concept
           , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";PlugInfo;", SRC tgtAtt;table
           , TXT "{EX} DelAtom;SqlAttribute;", SRC tgtAtt
-          , TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;;", SRC tgtAtt
+          , TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC tgtAtt
           )
 RULE "remove BinSQL" : I[BinSQL] |- table~;table
 MEANING "Every BinSQL has two attributes."
