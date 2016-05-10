@@ -1,6 +1,40 @@
 CONTEXT "AST Interface" IN ENGLISH
 
-INTERFACE Ampersand FOR Ampersand : I[SESSION];'_SESSION'
+INTERFACE Ampersand FOR Ampersand : '_SESSION';V[SESSION*Context]
+BOX <SHCOLS>
+    [ "Context" : I
+    , "name" : name[Context*ContextIdentifier]
+    ]
+INTERFACE "Context" FOR Ampersand : I[Context] BOX
+    [ --"name"  : name[Context*ContextIdentifier]
+      "owner" : owner[Context*Account]
+    , "valid~" : valid[Rule*Context]~
+    , "usedPatterns" : usedPatterns[Context*Pattern]
+    , "patterns" : patterns[Context*Pattern]
+    , "gens" : gens[Context*Gen]
+    , "concs" : concs[Context*Concept]
+    , "relations" : relations[Context*Relation]
+    , "context~" : context[Relation*Context]~
+    ]
+
+INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
+    [ concept : I
+    , name    : name
+    , ttype   : ttype
+    , "source~" : source~
+    , "target~" : target~
+    , "gengen~" : gengen~
+    , "genspc~" : genspc~
+    , "rootConcept~" : rootConcept~
+    , "src of expression~" : src[Expression*Concept]~
+    , "tgt of expression~" : tgt[Expression*Concept]~
+    , "src of sign~" : src[Signature*Concept]~
+    , "tgt of sign~" : tgt[Signature*Concept]~
+    , "concept~" : concept~
+    , "conceptAttribute" : conceptAttribute
+    , "in" : in[Concept*Plug]
+    ]
+{-
 TABS[ Context : V[SESSION*Context]
     COLS ["name" : name[Context*ContextIdentifier]
          , patterns : usedPatterns
@@ -41,7 +75,29 @@ TABS[ Context : V[SESSION*Context]
          ]
 --    , "All plugs" : V[ONE*Context];
     ]
+-}
 
+INTERFACE Expression FOR Ampersand : I[Expression]
+BOX [ expression: I[Expression]
+    , first : first 
+    , operator : operator
+    , second : second
+    , lhs : lhs
+    , rhs : rhs
+    , arg : arg
+    , "src" : src
+    , "tgt" : tgt
+    , "rrexp~" : rrexp[Rule*Expression]
+    , bind  : bind
+    , term  : term
+    ]
+INTERFACE Signature FOR Ampersand : I[Signature]
+BOX [ Signature: I[Signature]
+    , src : src
+    , tgt : tgt
+    , "sign~ (Relation)" : sign[Relation*Signature]~
+    , "sign~ (Rule)" : sign[Rule*Signature]~
+    ] 
 INTERFACE Atoms FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Atom" : I
@@ -77,12 +133,22 @@ BOX [ gengen : gengen
 
 INTERFACE Relation FOR Ampersand : I[Relation]
 BOX [ name    : name
+    , "relations~" : relations~
     , sign    : sign
     , decprL  : decprL
     , decprM  : decprM
     , decprR  : decprR
+    , "prop" : prop
+    , decprps : decprps
+    , context : context
     , meaning : decmean
+    , source : source
+    , target : target
+    , srcAtt : srcAtt
+    , tgtAtt : tgtAtt
     , purpose : decpurpose
     , population: in~
+    , "declarations~" : declarations~
+    , "relsInPlug~"  : relsInPlug~
     ]
 ENDCONTEXT

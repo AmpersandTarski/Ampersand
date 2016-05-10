@@ -30,7 +30,7 @@ PATTERN Context
     MEANING "A concept, mentioned anywhere in a context."
     RELATION gens[Context*Gen]
     MEANING "The user-defined generalization rules in a context."
-    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
+    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations FIX: Compare with context[Relation*Context]
 ENDPATTERN
 
 ENDCONTEXT
