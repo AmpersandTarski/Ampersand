@@ -296,15 +296,16 @@ class Atom {
 	/**
 	 * Chains this atom to an interface as srcAtom 
 	 * @param string $ifcId
+     * @param boolean $isRef specifies if $ifcId is reference to toplevel interface 
 	 * @throws Exception
 	 * @return InterfaceObject
 	 */
-	public function ifc($ifcId){
-	    if(is_null($this->parentIfc)) $ifc = InterfaceObject::getInterface($ifcId);
+	public function ifc($ifcId, $isRef = false){
+	    if(is_null($this->parentIfc) || $isRef) $ifc = InterfaceObject::getInterface($ifcId);
 	    else $ifc = $this->parentIfc->getSubinterface($ifcId);
 	    
 	    $clone = clone $ifc;
-	    $clone->setSrcAtom($this);
+	    $clone->setSrcAtom($this, $isRef);
 	     
 	    return $clone;
 	}

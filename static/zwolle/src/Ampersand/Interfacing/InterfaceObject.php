@@ -280,13 +280,14 @@ class InterfaceObject {
 	/**
 	 * 
 	 * @param Atom $atom
+     * @param boolean $isRef specifies if $this interface is used as reference in another subinterface
 	 */
-	public function setSrcAtom($atom){
+	public function setSrcAtom($atom, $isRef = false){
 	    // Check if atom can be used as source for this interface
 	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept [{$this->srcConcept->name}] or any of its generalizations. Interface path: '{$this->path}'", 500);
 	    
 	    $this->srcAtom = $atom;
-	    $this->path = $this->srcAtom->path . '/' . $this->id;
+	    $this->path = $isRef ? $this->srcAtom->path : $this->srcAtom->path . '/' . $this->id;
 	    
 	}
 	
