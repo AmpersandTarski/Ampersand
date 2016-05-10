@@ -429,34 +429,6 @@ class Atom {
 	        }
 	    }
 	    
-	    // Include content for subinterfaces that refer to other interface (e.g. "label" : expr [LINKTO] INTERFACE <refInterface>)
-	    if(!is_null($this->parentIfc->refInterfaceId)
-	            && (!$this->parentIfc->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
-	            && (!in_array($this->id, (array)$recursionArr[$this->parentIfc->refInterfaceId]))) // Prevent infinite loops
-	    {
-	        // Add target atom to $recursionArr to prevent infinite loops
-	        if($options['inclLinktoData']) $recursionArr[$this->parentIfc->refInterfaceId][] = $this->id;
-	    
-	        $refInterface = InterfaceObject::getInterface($this->parentIfc->refInterfaceId);
-	         
-	        foreach($refInterface->subInterfaces as $subinterface){
-	            // Skip subinterface if not given read rights
-	            if(!$subinterface->crudR) continue;
-	    
-	            $subcontent = $this->ifc($subinterface->id)->getContent($options, $recursionArr);
-	            $content[$subinterface->id] = $subcontent;
-	             
-	            // _sortValues_ (if subInterface is uni)
-	            if($subinterface->isUni && $options['metaData']){
-	                if(is_bool($subcontent)) $sortValue = $subcontent; // property
-	                elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
-	                else $sortValue = $subcontent; // scalar
-	    
-	                $content['_sortValues_'][$subinterface->id] = $sortValue;
-	            }
-	        }
-	    }
-	    
 	    return $content;
 			
 	}
