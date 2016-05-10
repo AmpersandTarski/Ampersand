@@ -268,6 +268,14 @@ class InterfaceObject {
 	public function isProp(){
 	    return is_null($this->relation) ? false : $this->relation->isProp;
 	}
+    
+    /**
+	 * Returns if interface is a reference to another interface
+	 * @return boolean
+	 */
+    public function isRef(){
+        return !is_null($this->refInterfaceId);
+    }
 	
 	/**
 	 * 
