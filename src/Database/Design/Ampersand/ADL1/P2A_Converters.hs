@@ -920,7 +920,7 @@ pCtx2aCtx opts
           case toList$ (findSubsets genLattice (lJoin (aConcToType (source e)) (getConcept s t))) of
                           [] -> mustBeOrdered o (Src, (origin (fmap fst x)), e) (s,t)
                           lst -> if b || and (map (aConcToType (source e) `elem`) lst)
-                                 then pure (PairViewExp orig s e)
+                                 then pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))
                                  else mustBeBound (origin (fmap fst x)) [(Src, e)]
     pPurp2aPurp :: DeclMap -> PPurpose -> Guarded Purpose
     pPurp2aPurp declMap
