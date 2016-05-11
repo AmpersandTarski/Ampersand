@@ -210,7 +210,7 @@ instance MetaPopulations Signature where
 
 instance MetaPopulations Declaration where
  metaPops fSpec dcl =
-   case dcl of
+   (case dcl of
      Sgn{} ->
       [ Comment " "
       , Comment $ " Relation `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
@@ -272,6 +272,8 @@ instance MetaPopulations Declaration where
              [(dirtyId dcl,dirtyId (target dcl))]
       ]
      Vs{}  -> fatal 158 "Vs is not implemented yet"
+   )++
+   metaPops fSpec (sign dcl)
    where
      (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec dcl  -- type: (PlugSQL,SqlAttribute,SqlAttribute)
 
