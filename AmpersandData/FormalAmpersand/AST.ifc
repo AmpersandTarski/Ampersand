@@ -6,16 +6,54 @@ BOX <SHCOLS>
     , "name" : name[Context*ContextIdentifier]
     ]
 INTERFACE "Context" FOR Ampersand : I[Context] BOX
-    [ --"name"  : name[Context*ContextIdentifier]
-      "owner" : owner[Context*Account]
+    [ "name"  : name[Context*ContextIdentifier]
+    , "versionInfo" : versionInfo
+    , "dbName" : dbName
+    , "owner" : owner[Context*Account]
     , "valid~" : valid[Rule*Context]~
     , "usedPatterns" : usedPatterns[Context*Pattern]
     , "patterns" : patterns[Context*Pattern]
     , "gens" : gens[Context*Gen]
     , "concs" : concs[Context*Concept]
-    , "relations" : relations[Context*Relation]
-    , "context~" : context[Relation*Context]~
+    , "relations" : relations[Context*Relation] LINKTO INTERFACE "Relation"
+    , "context~" : context[Relation*Context]~  LINKTO INTERFACE "Relation"
+    , "allRoles" : allRoles[Context*Role]
+    , "allConjuncts" : allConjuncts[Context*Conjunct]
+    , "allRules" : allRules[Context*Rule]
     ]
+    
+INTERFACE Pattern FOR Ampersand : I[Pattern]
+BOX [ Pattern : name[Pattern*PatternIdentifier]
+    , "usedPatterns~" : usedPatterns[Context*Pattern]~
+    , "patterns~" : patterns[Context*Pattern]~
+    , "declarations" : declarations[Pattern*Relation]  LINKTO INTERFACE "Relation"
+    , "rules"  : rules[Pattern*Rule]
+    , "purpose" : purpose[Pattern*Purpose]
+    ]
+INTERFACE "Rule" FOR Ampersand : I[Rule]
+BOX [ "name" : name[Rule*RuleID]
+    , "valid" : valid[Rule*Context]
+    , "allRules~" : allRules[Context*Rule]~
+    , "signalRuleNames~" : signalRuleNames[Conjunct*Rule]~
+    , "invariantRuleNames~" : invariantRuleNames[Conjunct*Rule]~
+    , "rules~"  : rules[Pattern*Rule]~
+    , "maintains~ (Role)" : maintains[Role*Rule]~
+    , "rrexp (Expression)" : rrexp[Rule*Expression]
+    , "rrexp (ExpressionID)" : rrexp[Rule*ExpressionID]
+    , "tgtConcept" : tgtConcept[Rule*Concept]
+    , "srcConcept" : srcConcept[Rule*Concept]
+    , "term" : term[Rule*Expression]
+    , "sign" : sign[Rule*Signature]
+    , "maintains~ (Plug)" : maintains[Plug*Rule]~
+    , "origin" : origin[Rule*Origin]
+    , "rrviols" : rrviols
+    , "pairView" : pairView
+    , "message" : message
+    , "conjunctIds" : conjunctIds
+    , "rrmean" : rrmean
+    , "rrpurpose" : rrpurpose
+    ]
+    
 
 INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
@@ -84,7 +122,7 @@ BOX [ expression: I[Expression]
     , second : second
     , lhs : lhs
     , rhs : rhs
-    , arg : arg
+    , arg : arg[UnaryTerm*Expression]
     , "src" : src
     , "tgt" : tgt
     , "rrexp~" : rrexp[Rule*Expression]
@@ -93,10 +131,10 @@ BOX [ expression: I[Expression]
     ]
 INTERFACE Signature FOR Ampersand : I[Signature]
 BOX [ Signature: I[Signature]
-    , src : src
-    , tgt : tgt
-    , "sign~ (Relation)" : sign[Relation*Signature]~
-    , "sign~ (Rule)" : sign[Rule*Signature]~
+    , src : src[Signature*Concept] LINKTO INTERFACE "Concept"
+    , tgt : tgt[Signature*Concept] LINKTO INTERFACE "Concept"
+    , "sign~ (Relation)" : sign[Relation*Signature]~ LINKTO INTERFACE "Relation"
+    , "sign~ (Rule)" : sign[Rule*Signature]~ LINKTO INTERFACE "Rule"
     ] 
 INTERFACE Atoms FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Atoms : V[SESSION*Atom]
@@ -120,35 +158,48 @@ TABS[ Atoms : V[SESSION*Atom]
     ]
     
 
-
-INTERFACE Pattern FOR Ampersand : I[Pattern]
-BOX [ Pattern : name[Pattern*PatternIdentifier]
-    ]
+INTERFACE PropertyRule FOR Ampersand : I[PropertyRule]
+BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
+	, "decprps~" : decprps[Relation*PropertyRule]~  LINKTO INTERFACE "Relation"
+	]
+	 
 
 
 INTERFACE Gen FOR Ampersand : I[Gen]
-BOX [ gengen : gengen
-    , genspc : genspc
+BOX [ "gens~" : gens~
+    , "gengen" : gengen
+    , "genspc" : genspc
     ]
 
 INTERFACE Relation FOR Ampersand : I[Relation]
-BOX [ name    : name
-    , "relations~" : relations~
-    , sign    : sign
-    , decprL  : decprL
-    , decprM  : decprM
-    , decprR  : decprR
-    , "prop" : prop
-    , decprps : decprps
-    , context : context
-    , meaning : decmean
-    , source : source
-    , target : target
-    , srcAtt : srcAtt
-    , tgtAtt : tgtAtt
-    , purpose : decpurpose
-    , population: in~
-    , "declarations~" : declarations~
-    , "relsInPlug~"  : relsInPlug~
+BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*ConjunctID]
+	, "affectedSigConjunctIds" : affectedSigConjunctIds[Relation*ConjunctID]
+	, "context" : context[Relation*Context]
+	, "decmean" : decmean[Relation*Meaning]
+	, "decprL" : decprL[Relation*String]
+	, "decprM" : decprM[Relation*String]
+	, "decprR" : decprR[Relation*String]
+	, "decprps" : decprps[Relation*PropertyRule]
+	, "decpurpose" : decpurpose[Relation*Purpose]
+	, "name" : name[Relation*Identifier]
+	, "prop" : prop[Relation*Property]
+	, "sign" : sign[Relation*Signature]
+	, "source" : source[Relation*Concept]
+	, "srcAtt" : srcAtt[Relation*SqlAttribute]
+	, "target" : target[Relation*Concept]
+	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
+	, "bind~" : bind[Expression*Relation]~
+	, "declarations~" : declarations[Pattern*Relation]~
+	, "in~" : in[Pair*Relation]~
+	      BOX <SHCOLS>
+	        [ l : l
+	        , r : r
+	        ]
+	, "relations~" : relations[Context*Relation]~
+	, "relsInPlug~" : relsInPlug[Plug*Relation]~
     ]
 ENDCONTEXT
+
+
+
+
