@@ -325,7 +325,7 @@ class InterfaceObject {
 	    $atom = new Atom($atomId, $this->tgtConcept->name, $this);
 	    
 	    // Check if tgtAtom is part of tgtAtoms of interface
-	    if(in_array($atom->idEsc, $this->getTgtAtomIds())) $this->tgtAtom = $atom;
+	    if(in_array($atom->idEsc, array_column($this->getTgtAtoms(),'tgt'))) $this->tgtAtom = $atom;
 	    
 	    // Check if atom does not exist and if it may be created here
 	    elseif(!$atom->atomExists() && $this->crudC){
@@ -353,14 +353,14 @@ class InterfaceObject {
 	 * @throws Exception
 	 * @return array
 	 */
-	private function getTgtAtomIds(){
-	    $query = "SELECT DISTINCT `tgt` FROM ({$this->query}) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
-	    $tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
+	private function getTgtAtoms(){
+	    $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
+	    $tgtAtoms = (array)$this->database->Exe($query);
 
 	    // Integrity check
-	    if($this->isUni && (count($tgtAtomIds) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
+	    if($this->isUni && (count($tgtAtoms) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
 	    
-	    return (array)$tgtAtomIds;
+	    return $tgtAtoms;
 	}
 	
 	/**
@@ -388,9 +388,8 @@ class InterfaceObject {
 	    else $result = null; // else (i.e. properties and univalent scalars)
 	    
 	    // Loop over target atoms
-	    foreach ($this->getTgtAtomIds() as $tgtAtomId){
-            
-            $tgtAtom = new Atom($tgtAtomId, $this->tgtConcept->name, $this);
+	    foreach ($this->getTgtAtoms() as $row){            
+            $tgtAtom = new Atom($row['tgt'], $this->tgtConcept->name, $this);
             
             // Reference to other interface
             if(!is_null($this->refInterfaceId)
@@ -402,8 +401,8 @@ class InterfaceObject {
                 // Skip ref interface if not given read rights to prevent Exception
     	        if(!$ifc->crudR) break; // breaks foreach loop
                 
-                foreach($ifc->getTgtAtomIds() as $refTgtAtomId){
-                    $refTgtAtom = new Atom($refTgtAtomId, $ifc->tgtConcept->name, $ifc);
+                foreach($ifc->getTgtAtoms() as $k){
+                    $refTgtAtom = new Atom($k['tgt'], $ifc->tgtConcept->name, $ifc);
                     
                     // Add target atom to $recursionArr to prevent infinite loops
         	        if($options['inclLinktoData']) $recursionArr[$this->refInterfaceId][] = $refTgtAtom->id;
