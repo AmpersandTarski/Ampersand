@@ -3,6 +3,10 @@ html {
 	min-height			: 100%;
 }
 
+body {
+    font-size           : 12px;
+}
+
 /********* HEADER *****************/
 
 #header {
