@@ -188,7 +188,7 @@ class Session {
 				$sessionRoleLabels = array_column((array)$session->ifc('SessionRoles')->getContent($options), '_id_');
 				
 				foreach(Role::getAllRoles() as $role){
-					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
+					if(in_array(rawurlencode($role->label), $sessionRoleLabels)) $sessionRoles[] = $role; // rawurlencode because $sessionRoleLabels are urlencoded from getContent() above
 				}
 			}else{
 				$sessionRoles = Role::getAllRoles();
