@@ -121,8 +121,11 @@ checkInterfaceCycles ctx = if null interfaceCycles then return () else Errors $ 
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
             getDeepIfcRefs obj = case objmsub obj of
                                    Nothing                  -> []
-                                   Just (InterfaceRef isLinkto nm _) -> [nm | not isLinkto]
-                                   Just (Box _ _ objs)      -> concatMap getDeepIfcRefs objs
+                                   Just si -> case si of 
+                                               InterfaceRefXXX{} -> if siIsLink si
+                                                                 then []
+                                                                 else [siIfcId si]
+                                               Box{}          -> concatMap getDeepIfcRefs (siObjs si)
             lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                    [ifc] -> ifc
                                    _     -> fatal 124 "Interface lookup returned zero or more than one result"
@@ -674,11 +677,20 @@ pCtx2aCtx opts
                                          Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
                   cs <- pCruds2aCruds (si_crud x)
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-                  return (objExprEps,InterfaceRef (si_isLink x) ifcId cs)
+                  return (objExprEps,InterfaceRefXXX{ siIsLink = si_isLink x
+                                                 , siIfcId  = ifcId
+                                                 , siCruds  = cs
+                                                 }
+                         )
          P_Box{}
            -> case si_box x of
                 []  -> const undefined <$> (hasNone x :: Guarded SubInterface) -- error
-                l   -> (\lst -> (objExpr,Box (target objExpr) (si_class x) lst)) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l <* uniqueNames l
+                l   -> (\lst -> (objExpr,Box { siConcept = target objExpr
+                                             , siMClass  = si_class x
+                                             , siObjs    = lst
+                                             }
+                                )
+                       ) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (fl_Type $ lMeet (target objExpr) (source . objctx $ ojd)) of

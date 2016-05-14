@@ -67,21 +67,21 @@ instance JSON FSpec Interfaces where
  fromAmpersand fSpec _ = Interfaces (map (fromAmpersand fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 
 instance JSON SubInterface JSONSubInterface where
- fromAmpersand fSpec sub = 
-   case sub of 
-     Box _ cl objs         -> JSONSubInterface
-       { subJSONboxClass           = cl
-       , subJSONifcObjects         = Just . map (fromAmpersand fSpec) $ objs
+ fromAmpersand fSpec si = 
+   case si of 
+     Box{} -> JSONSubInterface
+       { subJSONboxClass           = siMClass si
+       , subJSONifcObjects         = Just . map (fromAmpersand fSpec) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinTo         = Nothing
        , subJSONcrud               = Nothing
        }
-     InterfaceRef isLink nm cr -> JSONSubInterface
+     InterfaceRefXXX{} -> JSONSubInterface
        { subJSONboxClass           = Nothing
        , subJSONifcObjects         = Nothing
-       , subJSONrefSubInterfaceId  = Just (escapeIdentifier nm)
-       , subJSONrefIsLinTo         = Just isLink
-       , subJSONcrud               = Just (fromAmpersand fSpec cr)
+       , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
+       , subJSONrefIsLinTo         = Just . siIsLink $ si
+       , subJSONcrud               = Just . fromAmpersand fSpec . siCruds $ si
        }
  
 instance JSON Interface JSONInterface where

@@ -228,31 +228,33 @@ buildInterface fSpec allIfcs ifc =
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
                            , iExp, src, tgt, mDecl)
                   }
-              Just (Box _ mCl objects) -> 
-               do { let (src, mDecl, tgt) = getSrcDclTgt iExp
-                  ; subObjs <- mapM buildObject objects
-                  ; return (FEBox { objMClass  = mCl
-                                  , ifcSubObjs = subObjs
-                                  }
-                           , iExp, src, tgt, mDecl)
-                  }
-              Just (InterfaceRef isLink nm _)   -> 
-                case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
-                  []      -> fatal 44 $ "Referenced interface " ++ nm ++ " missing"
-                  (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ nm
-                  [i]     -> 
-                        if isLink
-                        then do { let (src, mDecl, tgt) = getSrcDclTgt iExp
-                                ; let templatePath = "views" </> "View-LINKTO.html"
-                                ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
-                                         , iExp, src, tgt, mDecl)
-                                }
-                        else do { refObj <- buildObject  (ifcObj i)
-                                ; let comp = ECps (iExp, objExp refObj) 
-                                      -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
-                                      (src, mDecl, tgt) = getSrcDclTgt comp
-                                ; return (atomicOrBox refObj, comp, src, tgt, mDecl)
-                                } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
+              Just si ->
+                case si of
+                  Box{} -> 
+                   do { let (src, mDecl, tgt) = getSrcDclTgt iExp
+                      ; subObjs <- mapM buildObject (siObjs si)
+                      ; return (FEBox { objMClass  = siMClass si
+                                      , ifcSubObjs = subObjs
+                                      }
+                               , iExp, src, tgt, mDecl)
+                      }
+                  InterfaceRefXXX{} -> 
+                   case filter (\rIfc -> name rIfc == siIfcId si) $ allIfcs of -- Follow interface ref
+                     []      -> fatal 44 $ "Referenced interface " ++ siIfcId si ++ " missing"
+                     (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ siIfcId si
+                     [i]     -> 
+                           if siIsLink si
+                           then do { let (src, mDecl, tgt) = getSrcDclTgt iExp
+                                   ; let templatePath = "views" </> "View-LINKTO.html"
+                                   ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
+                                            , iExp, src, tgt, mDecl)
+                                   }
+                           else do { refObj <- buildObject  (ifcObj i)
+                                   ; let comp = ECps (iExp, objExp refObj) 
+                                         -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
+                                         (src, mDecl, tgt) = getSrcDclTgt comp
+                                   ; return (atomicOrBox refObj, comp, src, tgt, mDecl)
+                                   } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
 
         ; let navIfcs = [ NavInterface { navIfcName  = name nIfc
                                        , navIfcRoles = ifcRoles nIfc `intersect` ifcRoles ifc -- only consider interfaces that share roles with the one we're building

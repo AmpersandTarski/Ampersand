@@ -43,7 +43,7 @@ instance ShowADL ObjectDef where
                recur "\n  " (objmsub obj)
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
-        recur ind (Just (InterfaceRef isLink nm cruds)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm++showADL cruds
+        recur ind (Just (InterfaceRefXXX isLink nm cruds)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm++showADL cruds
         recur ind (Just (Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
@@ -54,7 +54,7 @@ instance ShowADL ObjectDef where
                                ]++
            ind++"     ]"
         showClass Nothing = ""
-        showClass (Just cl) = "<" ++ cl ++ ">" -- TODO: parser cannot handle these class annotations yet
+        showClass (Just cl) = "<" ++ cl ++ ">" 
 instance ShowADL Cruds where
  showADL x = " "++f crudC 'C'++f crudR 'R'++f crudU 'U'++f crudD 'D'
    where
