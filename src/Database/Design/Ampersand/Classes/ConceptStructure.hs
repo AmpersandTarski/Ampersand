@@ -126,10 +126,10 @@ instance ConceptStructure ObjectDef where
 instance ConceptStructure SubInterface where
   concs si = case si of
               Box{} -> concs (siObjs si)
-              InterfaceRefXXX{} -> []
+              InterfaceRef{} -> []
   expressionsIn si = case si of
               Box{} -> expressionsIn (siObjs si)
-              InterfaceRefXXX{} -> []
+              InterfaceRef{} -> []
 
 instance ConceptStructure Pattern where
   concs pat = foldr uni []

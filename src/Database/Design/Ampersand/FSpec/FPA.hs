@@ -78,7 +78,7 @@ fpaInterface ifc =
         getDepth Obj{objmsub=Nothing} = 0
         getDepth Obj{objmsub=Just si}
           = case si of 
-             InterfaceRefXXX{} -> 1
+             InterfaceRef{} -> 1
              Box{}          -> 1 + maximum (map getDepth (siObjs si))
 
 class ShowLang a where

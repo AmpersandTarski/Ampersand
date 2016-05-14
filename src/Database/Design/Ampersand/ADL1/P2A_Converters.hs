@@ -122,7 +122,7 @@ checkInterfaceCycles ctx = if null interfaceCycles then return () else Errors $ 
             getDeepIfcRefs obj = case objmsub obj of
                                    Nothing                  -> []
                                    Just si -> case si of 
-                                               InterfaceRefXXX{} -> if siIsLink si
+                                               InterfaceRef{} -> if siIsLink si
                                                                  then []
                                                                  else [siIfcId si]
                                                Box{}          -> concatMap getDeepIfcRefs (siObjs si)
@@ -677,7 +677,7 @@ pCtx2aCtx opts
                                          Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
                   cs <- pCruds2aCruds (si_crud x)
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-                  return (objExprEps,InterfaceRefXXX{ siIsLink = si_isLink x
+                  return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
                                                  , siIfcId  = ifcId
                                                  , siCruds  = cs
                                                  }

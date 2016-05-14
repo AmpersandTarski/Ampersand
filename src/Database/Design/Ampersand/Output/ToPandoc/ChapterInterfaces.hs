@@ -120,7 +120,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
         Nothing -> []
         Just si ->
           case si of
-           InterfaceRefXXX{} -> 
+           InterfaceRef{} -> 
              [ plainText $ (if siIsLink si then "LINKTO " else "")++"REF "++siIfcId si ] -- TODO: handle InterfaceRef
            Box{} -> 
              [ docInterfaceObjects roles (hierarchy ++[i]) obj | (obj,i) <- zip (siObjs si) [1..] ]

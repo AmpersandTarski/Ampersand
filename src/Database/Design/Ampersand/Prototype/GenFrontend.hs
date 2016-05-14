@@ -238,7 +238,7 @@ buildInterface fSpec allIfcs ifc =
                                       }
                                , iExp, src, tgt, mDecl)
                       }
-                  InterfaceRefXXX{} -> 
+                  InterfaceRef{} -> 
                    case filter (\rIfc -> name rIfc == siIfcId si) $ allIfcs of -- Follow interface ref
                      []      -> fatal 44 $ "Referenced interface " ++ siIfcId si ++ " missing"
                      (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ siIfcId si

@@ -76,7 +76,7 @@ instance JSON SubInterface JSONSubInterface where
        , subJSONrefIsLinTo         = Nothing
        , subJSONcrud               = Nothing
        }
-     InterfaceRefXXX{} -> JSONSubInterface
+     InterfaceRef{} -> JSONSubInterface
        { subJSONboxClass           = Nothing
        , subJSONifcObjects         = Nothing
        , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si

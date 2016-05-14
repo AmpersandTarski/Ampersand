@@ -61,7 +61,7 @@ doGenBericht fSpec =
                             Just si 
                               -> case si of
                                   Box{} -> map (genEntity_ObjDef (dpth+1)) (siObjs si)
-                                  InterfaceRefXXX{} -> map (genEntity_ObjDef (dpth+1)) . objsForInterfaceNamed . siIfcId $ si
+                                  InterfaceRef{} -> map (genEntity_ObjDef (dpth+1)) . objsForInterfaceNamed . siIfcId $ si
                       }
             where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
 

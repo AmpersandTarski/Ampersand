@@ -386,7 +386,7 @@ objAts :: ObjectDef -> [ObjectDef]
 objAts obj
   = case objmsub obj of
      Nothing       -> []
-     Just InterfaceRefXXX{} -> []
+     Just InterfaceRef{} -> []
      Just b@Box{}    -> siObjs b
 
 class Object a where
@@ -420,7 +420,7 @@ data SubInterface = Box { siConcept :: A_Concept
                         , siMClass  :: Maybe String
                         , siObjs    :: [ObjectDef] 
                         }
-                  | InterfaceRefXXX 
+                  | InterfaceRef 
                         { siIsLink :: Bool
                         , siIfcId  :: String  --id of the interface that is refferenced to
                         , siCruds  :: Cruds
