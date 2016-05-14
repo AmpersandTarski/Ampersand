@@ -367,10 +367,11 @@ class InterfaceObject {
 	 * Returns the content of this interface given the srcAtom of this interface object
 	 * @param array $options
 	 * @param array $recursionArr
+     * @param int $depth specifies the number subinterface levels to get the content for
 	 * @throws Exception
 	 * @return mixed
 	 */
-	public function getContent($options = array(), $recursionArr = array()){
+	public function getContent($options = array(), $recursionArr = array(), $depth = null){
 	    // CRUD check
 	    if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
 	    
@@ -379,6 +380,7 @@ class InterfaceObject {
 	    $options['metaData'] = isset($options['metaData']) ? filter_var($options['metaData'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
+        if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
 	    
 	    // Initialize result array
 	    if($this->tgtConcept->isObject && !$this->isProp()) $result = array(); // return array if tgtConcept is an object (except properties), even if result is empty
@@ -393,7 +395,7 @@ class InterfaceObject {
             // Reference to other interface
             if(!is_null($this->refInterfaceId)
                 && (!$this->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
-                && (!in_array($tgtAtom->id, (array)$recursionArr[$this->refInterfaceId]))){ // Prevent infinite loops
+                && (!is_null($depth) || !in_array($tgtAtom->id, (array)$recursionArr[$this->refInterfaceId]))){ // Prevent infinite loops
                 
                 $ifc = $tgtAtom->ifc($this->refInterfaceId, true);
                 
@@ -406,7 +408,7 @@ class InterfaceObject {
                     // Add target atom to $recursionArr to prevent infinite loops
         	        if($options['inclLinktoData']) $recursionArr[$this->refInterfaceId][] = $refTgtAtom->id;
                     
-                    $content = $refTgtAtom->getContent($options, $recursionArr);
+                    $content = $refTgtAtom->getContent($options, $recursionArr, $depth);
                     
                     // Add target atom to result array
                     switch($options['arrayType']){
@@ -430,7 +432,7 @@ class InterfaceObject {
     	    
     	            // Regular object, with or without subinterfaces
     	            }else{
-    	                $content = $tgtAtom->getContent($options, $recursionArr);
+    	                $content = $tgtAtom->getContent($options, $recursionArr, $depth);
     	                	
     	                // Add target atom to result array
     	                switch($options['arrayType']){

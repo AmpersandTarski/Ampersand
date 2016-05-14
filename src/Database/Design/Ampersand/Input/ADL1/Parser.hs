@@ -441,16 +441,17 @@ pInterface = lbl <$> currPos
                  <*> optList pRoles 
                  <*> (pColon *> pTerm)          -- the expression of the interface object
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
+                 <*> pMaybe (pChevrons pConid)  -- The view that should be used for this object
                  <*> pMaybe pSubInterface
-    where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe P_SubInterface -> P_Interface
-          lbl p nm params roles term mCrud msub
+    where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> Maybe P_SubInterface -> P_Interface
+          lbl p nm params roles ctx mCrud mView msub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_Obj { obj_nm   = nm
                                           , obj_pos  = p
-                                          , obj_ctx  = term
+                                          , obj_ctx  = ctx
                                           , obj_crud = mCrud
-                                          , obj_mView = Nothing
+                                          , obj_mView = mView
                                           , obj_msub = msub
                                           }
                      , ifc_Pos    = p
@@ -484,7 +485,13 @@ pObjDef = obj <$> currPos
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
          where obj pos nm ctx mCrud mView msub =
-                 P_Obj nm pos ctx mCrud mView msub
+                 P_Obj { obj_nm   = nm
+                       , obj_pos  = pos
+                       , obj_ctx  = ctx
+                       , obj_crud = mCrud
+                       , obj_mView = mView
+                       , obj_msub = msub
+                       }
 --- Cruds ::= ADLid | Conid
 pCruds :: AmpParser P_Cruds
 pCruds = P_Cruds <$> currPos 
@@ -696,10 +703,13 @@ value2PAtomValue o v = case v of
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
 pAtt = rebuild <$> currPos <*> try pLabel `opt` "" <*> try pTerm
-  where rebuild pos nm ctx = P_Obj nm pos ctx mCrud mView msub
-        mCrud = Nothing
-        mView = Nothing
-        msub = Nothing
+  where rebuild pos nm ctx = P_Obj { obj_nm   = nm
+                                   , obj_pos  = pos
+                                   , obj_ctx  = ctx
+                                   , obj_crud = Nothing
+                                   , obj_mView = Nothing
+                                   , obj_msub = Nothing
+                                   }
 
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Signature?

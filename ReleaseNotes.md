@@ -1,6 +1,9 @@
 # Release notes of Ampersand
 
 ## v3.5.1
+  * More consisten use of views in interface definitions: Issue #416
+  * Re-enabled output format for --fSpec=asciidoc
+  * Added depth parameter in API resources call (?depth=<int>). This provides functionality to specify the depth of subinterfaces for which the content must be returned and is especially usefull for recursive (sub)interfaces using the LINKTO statement.
   * Added this release notes file. 
   * Bug fixes: Issue #413 
 
