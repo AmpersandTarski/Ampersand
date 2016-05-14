@@ -614,7 +614,7 @@ instance ShowHS Interface where
         ]++indent++"    }"
 
 instance ShowHS SubInterface where
- showHS _     _      (InterfaceRef isLink n cs) = "InterfaceRef "++show isLink ++" "++show n++" "++show cs
+ showHS _     _     (InterfaceRef isLink n cs) = "InterfaceRef "++show isLink ++" "++show n++" "++show cs
  showHS opts indent (Box x cl objs) = "Box ("++showHS opts indent x++") ("++showHS opts indent cl++")"++indent++"     ("++showHS opts (indent++"     ") objs++")"
 
 instance ShowHS Expression where

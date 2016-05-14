@@ -75,9 +75,11 @@ fpaInterface ifc =
                         | d == 2    = Gemiddeld
                         | otherwise = Moeilijk 
 
-        getDepth Obj{objmsub=Nothing}             = 0
-        getDepth Obj{objmsub=Just InterfaceRef{}} = 1 -- TODO: shouldn't we follow the ref? (this def. is from old FPA.hs)
-        getDepth Obj{objmsub=Just (Box _ _ objs)}   = 1 + maximum (map getDepth objs)
+        getDepth Obj{objmsub=Nothing} = 0
+        getDepth Obj{objmsub=Just si}
+          = case si of 
+             InterfaceRef{} -> 1
+             Box{}          -> 1 + maximum (map getDepth (siObjs si))
 
 class ShowLang a where
   showLang :: Lang -> a -> String

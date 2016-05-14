@@ -54,7 +54,7 @@ instance ShowADL ObjectDef where
                                ]++
            ind++"     ]"
         showClass Nothing = ""
-        showClass (Just cl) = "<" ++ cl ++ ">" -- TODO: parser cannot handle these class annotations yet
+        showClass (Just cl) = "<" ++ cl ++ ">" 
 instance ShowADL Cruds where
  showADL x = " "++f crudC 'C'++f crudR 'R'++f crudU 'U'++f crudD 'D'
    where
