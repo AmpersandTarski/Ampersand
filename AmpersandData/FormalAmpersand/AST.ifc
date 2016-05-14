@@ -198,6 +198,21 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*ConjunctID]
 	, "relations~" : relations[Context*Relation]~
 	, "relsInPlug~" : relsInPlug[Plug*Relation]~
     ]
+
+INTERFACE TblSQL FOR Ampersand : I[TblSQL]
+BOX [ "rootConcept" : rootConcept[TblSQL*Concept]
+    , "key" : key[TblSQL*SqlAttribute]
+    , "reprType" : reprType[TblSQL*TType]
+    ]       
+INTERFACE SqlAttribute FOR Ampersand : I[SqlAttribute]
+BOX [ "table" : table
+    , "key~" : key~
+    , "conceptAttribute~" : conceptAttribute~
+    , "concept" : concept
+    , "tgtAtt~" : tgtAtt~
+    , "srcAtt~" : srcAtt~
+    ]
+
 ENDCONTEXT
 
 
