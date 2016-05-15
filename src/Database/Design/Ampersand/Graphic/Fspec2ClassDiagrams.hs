@@ -95,7 +95,7 @@ cdAnalysis fSpec =
              , assrhr = name d
              , assmdcl = Just d
              }
-   attribDcls = [ d | d <- allDcls, Aut `notElem` properties d, isUni d || isInj d ]
+   attribDcls = [ d | d <- allDcls, isUni d || isInj d ]
    attribs = [ if isInj d then flp (EDcD d) else EDcD d | d<-attribDcls ]
    ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.
    roots = map (source.head) ooClasses

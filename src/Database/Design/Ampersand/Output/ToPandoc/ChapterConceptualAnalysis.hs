@@ -129,7 +129,6 @@ chpConceptualAnalysis lev fSpec = (
     ukadj Trn = "transitive"
     ukadj Rfx = "reflexive"
     ukadj Irf = "irreflexive"
-    ukadj Aut = "automatically computed"
     ukadj Prop = "symmetric and antisymmetric"
   nladjs d = case [Uni,Tot]>-properties d of
                [] -> commaNL "en" (map nladj (properties d>-[Uni,Tot]))++" functie"
@@ -144,7 +143,6 @@ chpConceptualAnalysis lev fSpec = (
     nladj Trn = "transitieve"
     nladj Rfx = "reflexieve"
     nladj Irf = "irreflexieve"
-    nladj Aut = "automatisch berekende"
     nladj Prop  = "symmetrische en antisymmetrische"
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
