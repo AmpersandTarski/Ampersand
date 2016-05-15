@@ -67,10 +67,6 @@ instance MetaPopulations FSpec where
            [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "dbName" "Context" "DatabaseName"
            [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
---    , Pop "concs" "Context" "Concept"
---           [(dirtyId fSpec, show "SESSION"), (dirtyId fSpec, show "ONE")]
---    , Pop "name"   "Context" "ContextIdentifier"
---           [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "allRoles" "Context" "Role"
            [(dirtyId fSpec, show "SystemAdmin")]
     , Pop "name"   "Role" "RoleName"
@@ -82,8 +78,6 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).concs)    fSpec)
---  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
---  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
   ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.vrels) fSpec++")"]
@@ -92,10 +86,10 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (allExprs  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.fallRules) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).fallRules)    fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Conjunts: (count="++(show.length.allConjuncts) fSpec++")"]
+  ++   concatMap (metaPops fSpec) (allConjuncts fSpec)
   ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length) allSqlPlugs++")"]
   ++   concatMap (metaPops fSpec) allSqlPlugs
---  ++[ Comment " ", Comment $ "[Initial pairs]--: (count="++(show.length.allLinks) fSpec++")"]
---  ++   concatMap (metaPops fSpec) (allLinks fSpec)
   )
   where
     allSqlPlugs = sortBy (comparing name) [plug | InternalPlug plug <- plugInfos fSpec]
@@ -154,6 +148,14 @@ instance MetaPopulations A_Concept where
   where
     largerConcs = largerConcepts (vgens fSpec) cpt++[cpt]
     tablesAndAttributes = nub . concatMap (lookupCpt fSpec) $ largerConcs
+
+instance MetaPopulations Conjunct where
+  metaPops fSpec conj =
+    [ Comment $ " Conjunct `"++rc_id conj++"` "
+    , Pop "allConjuncts" "Context" "Conjunct"
+             [(dirtyId fSpec,dirtyId conj)]
+     
+    ] 
 
 instance MetaPopulations PlugSQL where
   metaPops fSpec plug =
@@ -390,6 +392,10 @@ instance MetaPopulations Rule where
              [(dirtyId rul, (dirtyId.target.rrexp) rul)]
       , Pop "conjunctIds"  "Rule" "ConjunctID"
              [(dirtyId rul, dirtyId conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
+      , Pop "signalRuleNames" "Conjunct" "Rule"
+             [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs, isSignal rul]
+      , Pop "invariantRuleNames" "Conjunct" "Rule"
+             [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs, (not.isSignal) rul]
       , Pop "rrexp"  "Rule" "Expression"
              [(dirtyId rul, dirtyId (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
