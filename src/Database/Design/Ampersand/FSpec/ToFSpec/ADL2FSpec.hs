@@ -432,30 +432,32 @@ makeFSpec opts context
         while maintaining all invariants.
         -}
      makeActivity :: Rule -> Activity
-     makeActivity rul
-         = let s = Act{ actRule   = rul
-                      , actTrig   = decls
-                      , actAffect = nub [ d' | (d,_,d')<-clos2 affectPairs, d `elem` decls]
-                      , actQuads  = invQs
-                      , actEcas   = [eca | eca<-allVecas, eDcl (ecaTriggr eca) `elem` decls]
-                      , actPurp   = [Expl { explPos = OriginUnknown
-                                          , explObj = ExplRule (name rul)
-                                          , explMarkup = A_Markup { amLang   = Dutch
-                                                                  , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
-                                                                  }
-                                          , explUserdefd = False
-                                          , explRefIds = ["Regel "++name rul]
-                                          }
-                                    ,Expl { explPos = OriginUnknown
-                                          , explObj = ExplRule (name rul)
-                                          , explMarkup = A_Markup { amLang   = English
-                                                                  , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
-                                                                  }
-                                          , explUserdefd = False
-                                          , explRefIds = ["Regel "++name rul]
-                                          }
+     makeActivity rul 
+         = -- Trace added to demonstrate that this function takes VERY long.
+           (\x -> trace ("trace: makeActivity for rule `"++name rul++"`") x) 
+           Act{ actRule   = rul
+              , actTrig   = decls
+              , actAffect = nub [ d' | (d,_,d')<-clos2 affectPairs, d `elem` decls]
+              , actQuads  = invQs
+              , actEcas   = [eca | eca<-allVecas, eDcl (ecaTriggr eca) `elem` decls]
+              , actPurp   = [Expl { explPos = OriginUnknown
+                                  , explObj = ExplRule (name rul)
+                                  , explMarkup = A_Markup { amLang   = Dutch
+                                                          , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
+                                                          }
+                                  , explUserdefd = False
+                                  , explRefIds = ["Regel "++name rul]
+                                  }
+                            ,Expl { explPos = OriginUnknown
+                                  , explObj = ExplRule (name rul)
+                                  , explMarkup = A_Markup { amLang   = English
+                                                          , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
+                                                          }
+                                  , explUserdefd = False
+                                  , explRefIds = ["Regel "++name rul]
+                                  }
                                     ]
-                      } in s
+              } 
          where
         -- relations that may be affected by an edit action within the transaction
              decls        = relsUsedIn rul
