@@ -32,7 +32,7 @@ clAnalysis fSpec =
                         , clMths = []
                         }
     attrs c    = [ makeAttr att 
-                 | plug<-lookup' c, att<-tail (plugAttributes plug), not (inKernel att), source (attExpr att)==c]
+                 | att<-tail (plugAttributes (getConceptTableFor fSpec c)), not (inKernel att), source (attExpr att)==c]
     makeAttr :: SqlAttribute -> CdAttribute
     makeAttr att 
               = OOAttr { attNm       = attName att
@@ -41,9 +41,7 @@ clAnalysis fSpec =
                        }
     inKernel :: SqlAttribute -> Bool
     inKernel att = null([Uni,Inj,Sur]>-properties (attExpr att)) && not (isPropty att)
-    lookup' :: A_Concept -> [PlugSQL]
-    lookup' c = [getConceptTableFor fSpec c] -- [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
-    isPropty att = null([Sym,Asy]>-properties (attExpr att))
+    isPropty att = isProp (attExpr att)
 
 -- | This function, cdAnalysis, generates a conceptual data model.
 -- It creates a class diagram in which generalizations and specializations remain distinct entity types.
@@ -68,10 +66,9 @@ cdAnalysis fSpec =
  where
    ooAttr :: Expression -> CdAttribute
    ooAttr r = OOAttr { attNm = (name . head . relsMentionedIn) r
-                     , attTyp = if isPropty r then "Bool" else (name.target) r
+                     , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
-   isPropty r = null([Sym,Asy]>-properties r)
    topLevelDcls = vrels fSpec \\
                   (concatMap relsDefdIn (vpatterns fSpec))
    allDcls = topLevelDcls `uni`
@@ -81,7 +78,7 @@ cdAnalysis fSpec =
              ]
    assocsAndAggrs = [ decl2assocOrAggr d
                     | d <- allDcls
-                    , not.isPropty $ d
+                    , not.isProp $ d
                {- SJ 20150416: the following restriction prevents printing attribute-relations to empty boxes.
                -}
                     , d `notElem` attribDcls  ||
@@ -151,8 +148,8 @@ tdAnalysis fSpec =
    ooAttr :: [SqlAttribute] -> SqlAttribute -> CdAttribute
    ooAttr kernelAtts f =
      OOAttr { attNm = attName f
-            , attTyp = if null([Sym,Asy]>-properties (attExpr f)) && (f `notElem` kernelAtts)
-                       then "Bool"
+            , attTyp = if isProp (attExpr f) && (f `notElem` kernelAtts)
+                       then "Prop"
                        else (name.target.attExpr) f
             , attOptional = attNull f
             }
