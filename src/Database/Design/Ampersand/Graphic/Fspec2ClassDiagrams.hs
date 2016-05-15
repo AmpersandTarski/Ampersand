@@ -17,23 +17,32 @@ import Database.Design.Ampersand.Graphic.ClassDiagram
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
     OOclassdiagram { cdName  = "classification_"++name fSpec
-                   , classes = [ OOClass { clName = name c
-                                         , clcpt  = Just c
-                                         , clAtts = attrs c
-                                         , clMths = []
-                                         } | c<-cpts]
+                   , classes = map classOf . concs . gensInScope $ fSpec
                    , assocs  = []
                    , aggrs   = []
-                   , geners  = map OOGener (gensInScope fSpec)
-                   , ooCpts  = concs fSpec
+                   , geners  = map OOGener . gensInScope $ fSpec
+                   , ooCpts  = concs $ fSpec
                    }
 
  where
-    cpts       = concs (gensInScope fSpec)
-    attrs c    = [ OOAttr (attName att) (if isPropty att then "Bool" else  (name.target.attExpr) att) (attNull att)
+    classOf :: A_Concept -> Class
+    classOf c = OOClass { clName = name c
+                        , clcpt  = Just c
+                        , clAtts = attrs c
+                        , clMths = []
+                        }
+    attrs c    = [ makeAttr att 
                  | plug<-lookup' c, att<-tail (plugAttributes plug), not (inKernel att), source (attExpr att)==c]
-                 where inKernel att = null([Uni,Inj,Sur]>-properties (attExpr att)) && not (isPropty att)
-    lookup' c = [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
+    makeAttr :: SqlAttribute -> CdAttribute
+    makeAttr att 
+              = OOAttr { attNm       = attName att
+                       , attTyp      = if isPropty att then "Prop" else (name.target.attExpr) att
+                       , attOptional = attNull att
+                       }
+    inKernel :: SqlAttribute -> Bool
+    inKernel att = null([Uni,Inj,Sur]>-properties (attExpr att)) && not (isPropty att)
+    lookup' :: A_Concept -> [PlugSQL]
+    lookup' c = [getConceptTableFor fSpec c] -- [plug |InternalPlug plug@TblSQL{}<-plugInfos fSpec , (c',_)<-cLkpTbl plug, c'==c]
     isPropty att = null([Sym,Asy]>-properties (attExpr att))
 
 -- | This function, cdAnalysis, generates a conceptual data model.
@@ -162,7 +171,7 @@ tdAnalysis fSpec =
                                         , assSrcPort = attName a
                                         , asslhm = Mult MinZero MaxMany
                                         , asslhr = ""
-                                        , assTgt = getConceptTableFor fSpec . target . attExpr $ a
+                                        , assTgt = name . getConceptTableFor fSpec . target . attExpr $ a
                                         , assrhm = Mult MinOne MaxOne
                                         , assrhr = ""
                                         , assmdcl = Nothing
@@ -181,7 +190,7 @@ tdAnalysis fSpec =
                     , assSrcPort = attName f
                     , asslhm = (mults.flp) expr
                     , asslhr = attName f
-                    , assTgt = getConceptTableFor fSpec (target expr)
+                    , assTgt = name . getConceptTableFor fSpec . target $ expr
                     , assrhm = mults expr
                     , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
                     , assmdcl = Nothing
