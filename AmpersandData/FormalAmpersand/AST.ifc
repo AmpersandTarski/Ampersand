@@ -59,8 +59,8 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
     , name    : name
     , ttype   : ttype
-    , "source~" : source~
-    , "target~" : target~
+    , "source~" : source~ LINKTO INTERFACE Relation
+    , "target~" : target~ LINKTO INTERFACE Relation
     , "gengen~" : gengen~
     , "genspc~" : genspc~
     , "rootConcept~" : rootConcept~

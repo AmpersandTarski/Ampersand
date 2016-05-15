@@ -22,7 +22,7 @@ instance ToJSON JSONConjunct where
 instance ToJSON Conjuncts where
   toJSON = amp2Jason
 instance JSON FSpec Conjuncts where
- fromAmpersand fSpec _ = Conjuncts (map (fromAmpersand fSpec) (vconjs fSpec))
+ fromAmpersand fSpec _ = Conjuncts (map (fromAmpersand fSpec) (allConjuncts fSpec))
 instance JSON Conjunct JSONConjunct where
  fromAmpersand fSpec conj = JSONConjunct
   { cnjJSONid                  = rc_id conj

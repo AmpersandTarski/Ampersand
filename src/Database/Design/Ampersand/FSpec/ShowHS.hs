@@ -262,7 +262,7 @@ instance ShowHS FSpec where
         , wrap ", vviews        = " indentA (\_->showHSName) (vviews fSpec)
         , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
         , wrap ", fsisa         = " indentA (\_->showHSName) (fsisa fSpec)
-        , wrap ", vconjs        = " indentA (\_->showHSName) (vconjs fSpec)
+        , wrap ", allConjuncts        = " indentA (\_->showHSName) (allConjuncts fSpec)
         , wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
         , wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
         ,      ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)
@@ -322,9 +322,9 @@ instance ShowHS FSpec where
      "\n -- *** Generated rules (total: "++(show.length.grules) fSpec++" rules) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-grules     fSpec ]++"\n"
     )++
-    (if null (vconjs fSpec ) then "" else
-     "\n -- *** Conjuncts (total: "++(show.length.vconjs) fSpec++" conjuncts) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vconjs     fSpec ]++"\n"
+    (if null (allConjuncts fSpec ) then "" else
+     "\n -- *** Conjuncts (total: "++(show.length.allConjuncts) fSpec++" conjuncts) ***: "++
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-allConjuncts     fSpec ]++"\n"
     )++
     (if null (vquads fSpec ) then "" else
      "\n -- *** Quads (total: "++(show.length.vquads) fSpec++" quads) ***: "++
