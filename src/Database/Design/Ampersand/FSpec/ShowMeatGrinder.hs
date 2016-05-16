@@ -78,8 +78,8 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).concs)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allSigns fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.allDecls) fSpec++")"]
-  ++   concatMap (metaPops fSpec) (allDecls fSpec ++ [ Isn c | c<-concs fSpec])
+  ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.vrels) fSpec++")"]
+  ++   concatMap (metaPops fSpec) (vrels fSpec ++ [ Isn c | c<-concs fSpec])
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allExprs  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.fallRules) fSpec++")"]

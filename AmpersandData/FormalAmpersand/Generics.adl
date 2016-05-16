@@ -32,7 +32,7 @@ MEANING "When an atom in a concept is edited (created, updated or deleted), a (s
 --[Rules]--
 --IDENT Rules: Rule(ruleContext,ruleID)
 RELATION allRules[Context*Rule] [SUR,INJ] -- Rule is part of context
-RELATION name[Rule*RuleID] [UNI,TOT] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
+RELATION name[Rule*RuleID] [UNI,TOT,SUR] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
 RELATION ruleAdl[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[BusinessFunction]'
 RELATION origin[Rule*Origin] [TOT] -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
 RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'

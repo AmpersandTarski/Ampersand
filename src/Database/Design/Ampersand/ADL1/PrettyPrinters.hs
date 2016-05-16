@@ -377,7 +377,6 @@ instance Pretty Prop where
                 Trn -> "TRN"
                 Rfx -> "RFX"
                 Irf -> "IRF"
-                Aut -> "AUT"
                 Prop -> "PROP"
 
 instance Pretty PAtomPair where

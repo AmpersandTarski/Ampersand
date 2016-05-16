@@ -255,7 +255,6 @@ instance ShowHS FSpec where
         , wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
         , wrap ", fallRules     = " indentA (\_->showHSName) (fallRules fSpec)
         , wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fSpec)
-        , wrap ", allDecls      = " indentA (\_->showHSName) (allDecls fSpec)
         , wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
         , wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fSpec)
         , wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fSpec)
@@ -301,10 +300,10 @@ instance ShowHS FSpec where
      "\n -- *** Generated interfaces (total: "++(show.length.interfaceG) fSpec++" interfaces) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-interfaceG fSpec ]++"\n"
     )++
-    (let ds fs = allDecls fs `uni` allUsedDecls fs `uni` vrels fSpec `uni` (nub . map qDcl . vquads) fs in
-     if null (ds fSpec)     then "" else
-     "\n -- *** Declared relations (in total: "++(show.length.ds) fSpec++" relations) ***: "++
-     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-ds fSpec]++"\n"
+    (let ds = vrels fSpec `uni` allUsedDecls fSpec `uni` (nub . map qDcl . vquads) fSpec in
+     if null ds then "" else
+     "\n -- *** Declared relations (in total: "++(show.length) ds++" relations) ***: "++
+     concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-ds]++"\n"
     ) ++
     (if null (vIndices fSpec)     then "" else
      "\n -- *** Indices (total: "++(show.length.vIndices) fSpec++" indices) ***: "++
@@ -705,7 +704,6 @@ instance ShowHSName Prop where
  showHSName Trn = "Trn"
  showHSName Rfx = "Rfx"
  showHSName Irf = "Irf"
- showHSName Aut = "Aut"
  showHSName Prop = "Prop"
 
 instance ShowHS Prop where

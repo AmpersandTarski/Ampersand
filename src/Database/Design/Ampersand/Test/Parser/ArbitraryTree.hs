@@ -349,4 +349,4 @@ instance Arbitrary PandocFormat where
     arbitrary = elements [HTML, ReST, LaTeX, Markdown]
 
 instance Arbitrary Prop where
-    arbitrary = elements [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut, Prop]
+    arbitrary = elements [minBound..]

@@ -34,7 +34,7 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; let expectedConceptTables  = [ (c,map showValSQL atoms) | ACptPopu c atoms <- afterPops ]
             ; let expectedRelationTables = [ (d,map showValsSQL pairs) | ARelPopu{popdcl=d,popps=pairs} <- afterPops ]
             ; let actualConcepts = [ c | c<- concs fSpec, c /= ONE, name c /= "SESSION" ] -- TODO: are these the right concepts and decls?
-            ; let actualRelations = allDecls fSpec            --
+            ; let actualRelations = vrels fSpec            --
             ; actualConceptTables <- mapM (getSqlConceptTable fSpec) actualConcepts
             ; actualRelationTables <- mapM (getSqlRelationTable fSpec) actualRelations
             ; let commonConcepts = getCommons expectedConceptTables actualConceptTables

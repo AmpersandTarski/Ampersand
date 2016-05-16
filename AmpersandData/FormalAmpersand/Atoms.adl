@@ -11,9 +11,9 @@ PROCESS Atoms
     RULE "Identifiability of concepts": name;name~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
-    RELATION in[Pair*Relation] [UNI] -- TOT is maintained by the exec-engine
-    RELATION l[Pair*Atom] [UNI,TOT]  -- SUR is maintained by the exec-engine
-    RELATION r[Pair*Atom] [UNI,TOT]  -- SUR is maintained by the exec-engine
+    RELATION in[Pair*Relation] [UNI,TOT] -- TOT is maintained by the exec-engine
+    RELATION l[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
+    RELATION r[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
 ENDPROCESS
 
 PROCESS "Compute populations"
@@ -26,12 +26,14 @@ PROCESS "Compute populations"
     RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
     VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
-    ROLE ExecEngine MAINTAINS "TOT in", "SUR l and r"
+    ROLE ExecEngine MAINTAINS "TOT in", "TOT in[Pair*Relation]"
     RULE "TOT in" : I[Pair] |- in;in~
     VIOLATION ( TXT "{EX} DelPair;l;Pair;", SRC I, TXT ";Atom;", TGT in
               , TXT "{EX} DelPair;r;Pair;", SRC I, TXT ";Atom;", TGT in
               , TXT "{EX} DelAtom;Pair;", SRC I
               )
+
+    ROLE ExecEngine MAINTAINS "SUR l and r", "SUR l[Pair*Atom]", "SUR r[Pair*Atom]"
     RULE "SUR l and r" : I[Atom] |- l~;l \/ r~;r
     VIOLATION ( TXT "{EX} DelAtom;Atom;", SRC I
               )
