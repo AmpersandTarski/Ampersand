@@ -49,7 +49,7 @@ chpConceptualAnalysis lev fSpec = (
                    <> header (lev+3) "Declared relations"
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
-      <> definitionList (map caRelation [d | d@Sgn{}<-allDecls fSpec])
+      <> definitionList (map caRelation [d | d@Sgn{}<-vrels fSpec])
      
   pictures = concatMap patPicts (vpatterns fSpec)
   -----------------------------------------------------

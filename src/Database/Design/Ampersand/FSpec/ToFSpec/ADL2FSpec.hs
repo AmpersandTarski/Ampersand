@@ -81,7 +81,6 @@ makeFSpec opts context
               , vquads       = allQuads
               , vEcas        = allVecas
               , allUsedDecls = relsUsedIn context
-              , allDecls     = calculatedDecls --HJO, 20160516: was: fSpecAllDecls waarom niet de calculated variant gebruiken???
               , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
               , cptTType     = (\cpt -> representationOf contextinfo cpt)
