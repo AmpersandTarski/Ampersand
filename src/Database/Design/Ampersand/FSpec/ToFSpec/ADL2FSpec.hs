@@ -80,9 +80,8 @@ makeFSpec opts context
               , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
               , vEcas        = allVecas
-              , vrels        = calculatedDecls
               , allUsedDecls = relsUsedIn context
-              , allDecls     = fSpecAllDecls
+              , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
               , cptTType     = (\cpt -> representationOf contextinfo cpt)
               , fsisa        = nub . concatMap genericAndSpecifics . gens $ context
@@ -96,7 +95,7 @@ makeFSpec opts context
               , conceptDefs  = ctxcds context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
-              , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
+              , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
@@ -104,14 +103,14 @@ makeFSpec opts context
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context
-              , allSigns     = nub $ map sign fSpecAllDecls ++ map sign (expressionsIn context)
+              , allSigns     = nub $ map sign calculatedDecls ++ map sign (expressionsIn context)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
                                          ]
               , fcontextInfo = contextinfo
               , ftypologies   = typologies context
-              , rootConcept = rootConcept'
+              , typologyOf = typologyOf'
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
               }
@@ -121,9 +120,9 @@ makeFSpec opts context
                             | rule <- allrules
                             , role `elem` maintainersOf rule
                             ]
-     rootConcept' cpt = 
+     typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
-           [t] -> tyroot t
+           [t] -> t
            _   -> fatal 121 $ "concept "++name cpt++" should be in exactly one typology!"
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
@@ -143,7 +142,6 @@ makeFSpec opts context
      contextinfo = ctxInfo context
 
      fSpecAllConcepts = concs context
-     fSpecAllDecls = relsDefdIn context
      fSpecAllInterfaces :: [Interface]
      fSpecAllInterfaces = map enrichIfc (ctxifcs context)
        where
@@ -206,13 +204,13 @@ makeFSpec opts context
          Identity     -> False
      allActivities :: [Activity]
      allActivities = map makeActivity (filter isSignal allrules)
-     allVecas = {-preEmpt opts . -} fst (assembleECAs opts context fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+     allVecas = {-preEmpt opts . -} fst (assembleECAs opts context calculatedDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
      -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
      calcProps :: Declaration -> Declaration
      calcProps d = d{decprps_calc = Just calculated}
          where calculated = decprps d `uni` [Tot | d `elem` totals]
                                       `uni` [Sur | d `elem` surjectives]
-     calculatedDecls = map calcProps fSpecAllDecls
+     calculatedDecls = map calcProps (relsDefdIn context)
   -- determine relations that are total (as many as possible, but not necessarily all)
      totals      = [ d |       EDcD d  <- totsurs ]
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
@@ -322,12 +320,12 @@ makeFSpec opts context
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-     cRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isTot d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isTot d) && isSur d, not$decplug d]
+     cRels = [     EDcD d  | d@Sgn{}<-calculatedDecls, isTot d, not$decplug d]++
+             [flp (EDcD d) | d@Sgn{}<-calculatedDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-     dRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isInj d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isInj d) && isUni d, not$decplug d]
+     dRels = [     EDcD d  | d@Sgn{}<-calculatedDecls, isInj d, not$decplug d]++
+             [flp (EDcD d) | d@Sgn{}<-calculatedDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!

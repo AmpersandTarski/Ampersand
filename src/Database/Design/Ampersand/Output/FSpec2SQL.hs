@@ -18,7 +18,7 @@ dumpSQLqueries fSpec = intercalate "\n" $
                        ++header "Violations of conjuncts"
                        ++concatMap showConjunct (vconjs fSpec)
                        ++header "Queries per declaration"
-                       ++concatMap showDecl (allDecls fSpec)
+                       ++concatMap showDecl (vrels fSpec)
     
    where
      showConjunct :: Conjunct -> [String]
