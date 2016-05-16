@@ -23,6 +23,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , RelStore(..)
           , metaValues
           , SqlAttribute(..)
+          , Typology(..)
           , Object(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)
@@ -110,7 +111,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
                    , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]
-                   , rootConcept :: A_Concept -> A_Concept
+                   , typologyOf :: A_Concept -> Typology
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    } deriving Typeable

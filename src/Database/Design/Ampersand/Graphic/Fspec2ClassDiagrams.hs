@@ -7,7 +7,7 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.FSpec(getConceptTableFor)
+import Database.Design.Ampersand.FSpec.FSpec(getConceptTableFor,Typology(..))
 import Data.Maybe
 import Data.Either
 import Database.Design.Ampersand.Graphic.ClassDiagram
@@ -50,47 +50,81 @@ clAnalysis fSpec =
 cdAnalysis :: FSpec -> ClassDiag
 cdAnalysis fSpec =
   OOclassdiagram { cdName  = "logical_"++name fSpec
-                 , classes =
-                     [ OOClass{ clName = name root
-                              , clcpt  = Just root
-                              , clAtts = map ooAttr ooClass
-                              , clMths = []
-                              }
-                     | ooClass <- ooClasses, let root=source (head ooClass)]
+                 , classes = map buildClass 
+                           . filter cptIsShown
+                           . allConcepts $ fSpec
                  , assocs  = lefts assocsAndAggrs
                  , aggrs   = rights assocsAndAggrs
                  , geners  = map OOGener (gensInScope fSpec)
-                 , ooCpts  = roots
+                 , ooCpts  = filter cptIsShown
+                           . allConcepts $ fSpec
                  }
 
  where
+   buildClass :: A_Concept -> Class
+   buildClass root 
+     = case classOf root of
+         Nothing -> fatal 67 $ "Concept is not a class: `"++name root++"`."
+         Just exprs ->
+           OOClass { clName = name root
+                   , clcpt  = Just root
+                   , clAtts = map ooAttr exprs
+                   , clMths = []
+                   }
+   cptIsShown :: A_Concept -> Bool
+   cptIsShown cpt = isInScope cpt && hasClass cpt
+     where 
+      isInScope _ = True 
+      hasClass = isJust . classOf
+   classOf :: A_Concept -> Maybe [Expression]
+   classOf cpt = 
+     case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
+        []   -> Nothing
+        [es] -> Just es
+        _    -> fatal 82 "Only one list of expressions is expected here"
+     where
+      isOfCpt :: [Expression] -> Bool
+      isOfCpt []    = fatal 85 "List must not be empty!"
+      isOfCpt (e:_) = source e == cpt
+      attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
+
+   dclIsInScope :: Declaration -> Bool
+   dclIsInScope dcl =
+      dcl `elem` (topLevelDcls `uni` pattInScopeDcls)
+     where   
+       topLevelDcls = vrels fSpec \\ (concatMap relsDefdIn . vpatterns $ fSpec)
+       pattInScopeDcls = nub . concatMap dclsInPat . pattsInScope $ fSpec
+          where 
+            dclsInPat :: Pattern -> [Declaration]
+            dclsInPat p = relsDefdIn p `uni` relsMentionedIn p
    ooAttr :: Expression -> CdAttribute
    ooAttr r = OOAttr { attNm = (name . head . relsMentionedIn) r
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
-   topLevelDcls = vrels fSpec \\
-                  (concatMap relsDefdIn (vpatterns fSpec))
-   allDcls = topLevelDcls `uni`
-             [ d -- restricted to those themes that must be printed.
-             | d@Sgn{} <- nub . concat $
-                            [relsDefdIn p ++ relsMentionedIn p  | p <- pattsInScope fSpec ] 
-             ]
-   assocsAndAggrs = [ decl2assocOrAggr d
-                    | d <- allDcls
-                    , not.isProp $ d
-               {- SJ 20150416: the following restriction prevents printing attribute-relations to empty boxes.
-               -}
-                    , d `notElem` attribDcls  ||
-                      ( source d `elem` nodeConcepts && target d `elem` nodeConcepts && source d/= target d )
-                    ] where family c = [c] ++ specializationsOf fSpec c ++ generalizationsOf fSpec c
-                            nodeConcepts = concatMap family roots
+   allDcls = filter dclIsInScope . vrels $ fSpec
+   assocsAndAggrs = map decl2assocOrAggr 
+                  . filter dclIsShown $ allDcls
+     where
+       dclIsShown :: Declaration -> Bool
+       dclIsShown d = 
+          (  (not . isProp) d
+          && (   (d `notElem` attribDcls)
+              || (   source d `elem` nodeConcepts
+                  && target d `elem` nodeConcepts
+                  && source d /= target d
+                 )
+             )      
+          )   
+          where nodeConcepts = concatMap (tyCpts . typologyOf fSpec)
+                             . filter cptIsShown
+                             . allConcepts $ fSpec
                             
 
    -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
 --   decl2assocOrAggr :: Declaration -> Either Association Aggregation
-   --decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
-   --decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
+--   decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
+--   decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
    decl2assocOrAggr d | otherwise          = Left $
      OOAssoc { assSrc = name $ source d
              , assSrcPort = name d
@@ -102,9 +136,7 @@ cdAnalysis fSpec =
              , assmdcl = Just d
              }
    attribDcls = [ d | d <- allDcls, isUni d || isInj d ]
-   attribs = [ if isInj d then flp (EDcD d) else EDcD d | d<-attribDcls ]
-   ooClasses = eqCl source attribs      -- an equivalence class wrt source yields the attributes that constitute an OO-class.
-   roots = map (source.head) ooClasses
+    
 
 -- | This function generates a technical data model.
 -- It is based on the plugs that are calculated.

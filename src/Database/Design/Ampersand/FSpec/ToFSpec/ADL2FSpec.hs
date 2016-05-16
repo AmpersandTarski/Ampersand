@@ -110,7 +110,7 @@ makeFSpec opts context
                                          ]
               , fcontextInfo = contextinfo
               , ftypologies   = typologies context
-              , rootConcept = rootConcept'
+              , typologyOf = typologyOf'
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
               }
@@ -120,9 +120,9 @@ makeFSpec opts context
                             | rule <- allrules
                             , role `elem` maintainersOf rule
                             ]
-     rootConcept' cpt = 
+     typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
-           [t] -> tyroot t
+           [t] -> t
            _   -> fatal 121 $ "concept "++name cpt++" should be in exactly one typology!"
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
