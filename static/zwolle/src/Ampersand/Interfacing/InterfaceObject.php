@@ -137,6 +137,11 @@ class InterfaceObject {
 	 * @var string
 	 */
 	public $query;
+    
+    /**
+     * @var string|null $parentIfcCol the label/name of the columm of this ifc in the parent ifc data if applicable (i.e. same table)
+     */
+    public $parentIfcCol = null;
 	
 	/**
 	 * 
@@ -215,6 +220,7 @@ class InterfaceObject {
 		$this->isTot = $ifcDef['expr']['isTot'];
 		$this->isIdent = $ifcDef['expr']['isIdent'];
 		$this->query = $ifcDef['expr']['query'];
+        if(isset($ifcDef['expr']['parentIfcCol'])) $this->parentIfcCol = $ifcDef['expr']['parentIfcCol'];
 		
 		// CRUD rights
 		$this->crudC = $ifcDef['crud']['create'];
