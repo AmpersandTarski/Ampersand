@@ -117,9 +117,13 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
     docMSubInterface :: [Role] -> [Int] -> Maybe SubInterface -> [Blocks]
     docMSubInterface roles hierarchy subIfc =
       case subIfc of
-        Nothing                -> []
-        Just (InterfaceRef isLink nm _) -> [ plainText $ (if isLink then "LINKTO " else "")++"REF "++nm ] -- TODO: handle InterfaceRef
-        Just (Box _ _ objects) -> [ docInterfaceObjects roles (hierarchy ++[i]) obj | (obj,i) <- zip objects [1..] ]
+        Nothing -> []
+        Just si ->
+          case si of
+           InterfaceRef{} -> 
+             [ plainText $ (if siIsLink si then "LINKTO " else "")++"REF "++siIfcId si ] -- TODO: handle InterfaceRef
+           Box{} -> 
+             [ docInterfaceObjects roles (hierarchy ++[i]) obj | (obj,i) <- zip (siObjs si) [1..] ]
 
     docCrudMatrix :: Interface -> Blocks
     docCrudMatrix ifc = mconcat

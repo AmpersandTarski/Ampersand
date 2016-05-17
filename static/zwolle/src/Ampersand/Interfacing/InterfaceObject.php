@@ -268,17 +268,26 @@ class InterfaceObject {
 	public function isProp(){
 	    return is_null($this->relation) ? false : $this->relation->isProp;
 	}
+    
+    /**
+	 * Returns if interface is a reference to another interface
+	 * @return boolean
+	 */
+    public function isRef(){
+        return !is_null($this->refInterfaceId);
+    }
 	
 	/**
 	 * 
 	 * @param Atom $atom
+     * @param boolean $isRef specifies if $this interface is used as reference in another subinterface
 	 */
-	public function setSrcAtom($atom){
+	public function setSrcAtom($atom, $isRef = false){
 	    // Check if atom can be used as source for this interface
 	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept [{$this->srcConcept->name}] or any of its generalizations. Interface path: '{$this->path}'", 500);
 	    
 	    $this->srcAtom = $atom;
-	    $this->path = $this->srcAtom->path . '/' . $this->id;
+	    $this->path = $isRef ? $this->srcAtom->path : $this->srcAtom->path . '/' . $this->id;
 	    
 	}
 	
@@ -358,10 +367,11 @@ class InterfaceObject {
 	 * Returns the content of this interface given the srcAtom of this interface object
 	 * @param array $options
 	 * @param array $recursionArr
+     * @param int $depth specifies the number subinterface levels to get the content for
 	 * @throws Exception
 	 * @return mixed
 	 */
-	public function getContent($options = array(), $recursionArr = array()){
+	public function getContent($options = array(), $recursionArr = array(), $depth = null){
 	    // CRUD check
 	    if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
 	    
@@ -370,6 +380,7 @@ class InterfaceObject {
 	    $options['metaData'] = isset($options['metaData']) ? filter_var($options['metaData'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
+        if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
 	    
 	    // Initialize result array
 	    if($this->tgtConcept->isObject && !$this->isProp()) $result = array(); // return array if tgtConcept is an object (except properties), even if result is empty
@@ -378,47 +389,80 @@ class InterfaceObject {
 	    
 	    // Loop over target atoms
 	    foreach ($this->getTgtAtomIds() as $tgtAtomId){
-	        	
-	        $tgtAtom = new Atom($tgtAtomId, $this->tgtConcept->name, $this);
-	        	
-	        // Object
-	        if($this->tgtConcept->isObject){
-	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false
-	            if($this->isProp() && !$this->isIdent && empty($this->getSubinterfaces())){
-	                $result = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
-	    
-	            // Regular object, with or without subinterfaces
-	            }else{
-	                $content = $tgtAtom->getContent($options, $recursionArr);
-	                	
-	                // Add target atom to result array
-	                switch($options['arrayType']){
-	                    case 'num' :
-	                        $result[] = $content;
-	                        break;
-	                    case 'assoc' :
-	                        $result[$tgtAtom->getJsonRepresentation()] = $content;
-	                        break;
-	                    default :
-	                        throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
-	                }
-	                	
-	            }
-	    
-	        // Scalar
-	        }else{
-	            // Leaf
-	            if(empty($this->getSubinterfaces())){
-	                $content = $tgtAtom->getJsonRepresentation();
-	                	
-	                if($this->isUni) $result = $content;
-	                else $result[] = $content;
-	                	
-	            // Tree
-	            }else{
-	                throw new Exception("Scalar cannot have a subinterface (box) defined: '{$this->path}'", 500);
-	            }
-	        }
+            
+            $tgtAtom = new Atom($tgtAtomId, $this->tgtConcept->name, $this);
+            
+            // Reference to other interface
+            if(!is_null($this->refInterfaceId)
+                && (!$this->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
+                && (!is_null($depth) || !in_array($tgtAtom->id, (array)$recursionArr[$this->refInterfaceId]))){ // Prevent infinite loops
+                
+                $ifc = $tgtAtom->ifc($this->refInterfaceId, true);
+                
+                // Skip ref interface if not given read rights to prevent Exception
+    	        if(!$ifc->crudR) break; // breaks foreach loop
+                
+                foreach($ifc->getTgtAtomIds() as $refTgtAtomId){
+                    $refTgtAtom = new Atom($refTgtAtomId, $ifc->tgtConcept->name, $ifc);
+                    
+                    // Add target atom to $recursionArr to prevent infinite loops
+        	        if($options['inclLinktoData']) $recursionArr[$this->refInterfaceId][] = $refTgtAtom->id;
+                    
+                    $content = $refTgtAtom->getContent($options, $recursionArr, $depth);
+                    
+                    // Add target atom to result array
+                    switch($options['arrayType']){
+                        case 'num' :
+                            $result[] = $content;
+                            break;
+                        case 'assoc' :
+                            $result[$refTgtAtom->getJsonRepresentation()] = $content;
+                            break;
+                        default :
+                            throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
+                    }
+                }
+            }else{
+	        		
+    	        // Object
+    	        if($this->tgtConcept->isObject){
+    	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false
+    	            if($this->isProp() && !$this->isIdent && empty($this->getSubinterfaces())){
+    	                $result = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
+    	    
+    	            // Regular object, with or without subinterfaces
+    	            }else{
+    	                $content = $tgtAtom->getContent($options, $recursionArr, $depth);
+    	                	
+    	                // Add target atom to result array
+    	                switch($options['arrayType']){
+    	                    case 'num' :
+    	                        $result[] = $content;
+    	                        break;
+    	                    case 'assoc' :
+    	                        $result[$tgtAtom->getJsonRepresentation()] = $content;
+    	                        break;
+    	                    default :
+    	                        throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
+    	                }
+    	                	
+    	            }
+    	    
+    	        // Scalar
+    	        }else{
+    	            // Leaf
+    	            if(empty($this->getSubinterfaces())){
+    	                $content = $tgtAtom->getJsonRepresentation();
+    	                	
+    	                if($this->isUni) $result = $content;
+    	                else $result[] = $content;
+    	                	
+    	            // Tree
+    	            }else{
+    	                throw new Exception("Scalar cannot have a subinterface (box) defined: '{$this->path}'", 500);
+    	            }
+    	        }
+            }
 	    }
 	    
 	    // Return result

@@ -79,7 +79,7 @@ class Atom {
 	
 	/**
 	 * Specifies the concept of which this atom is an instance
-	 * @var string
+	 * @var Concept
 	 */
 	public $concept;
 	
@@ -148,7 +148,7 @@ class Atom {
 		if(is_null($this->parentIfc)){
 		  $this->path = 'resources/' . $this->concept->name . '/' . $this->getJsonRepresentation();
 		}else{
-		  $this->path = $this->parentIfc->path . '/' . $this->getJsonRepresentation();
+		  $this->path = $this->parentIfc->isRef() ? $this->parentIfc->path : $this->parentIfc->path . '/' . $this->getJsonRepresentation();
 		}
 	}
 	
@@ -296,15 +296,16 @@ class Atom {
 	/**
 	 * Chains this atom to an interface as srcAtom 
 	 * @param string $ifcId
+     * @param boolean $isRef specifies if $ifcId is reference to toplevel interface 
 	 * @throws Exception
 	 * @return InterfaceObject
 	 */
-	public function ifc($ifcId){
-	    if(is_null($this->parentIfc)) $ifc = InterfaceObject::getInterface($ifcId);
+	public function ifc($ifcId, $isRef = false){
+	    if(is_null($this->parentIfc) || $isRef) $ifc = InterfaceObject::getInterface($ifcId);
 	    else $ifc = $this->parentIfc->getSubinterface($ifcId);
 	    
 	    $clone = clone $ifc;
-	    $clone->setSrcAtom($this);
+	    $clone->setSrcAtom($this, $isRef);
 	     
 	    return $clone;
 	}
@@ -372,10 +373,11 @@ class Atom {
 	 * Returns the content of this atom given the parentIfc object
 	 * @param array $options
 	 * @param array $recursionArr
+     * @param int $depth specifies the number subinterface levels to get the content for
 	 * @throws Exception
 	 * @return mixed
 	 */
-	public function getContent($options = array(), $recursionArr = array()){
+	public function getContent($options = array(), $recursionArr = array(), $depth = null){
 	    // CRUD check
 	    if(!$this->parentIfc->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
 	    
@@ -386,6 +388,7 @@ class Atom {
 	    $options['metaData'] = isset($options['metaData']) ? filter_var($options['metaData'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
+        if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
 	    
 	    $content = array( '_id_' => $this->getJsonRepresentation()
 	                    , '_label_' => $this->label
@@ -408,53 +411,30 @@ class Atom {
 	        $content['_ifcs_'] = $ifcs;
 	    }
 	    
-	    
-	    // Subinterfaces
-	    foreach($this->parentIfc->subInterfaces as $subinterface){
-	        // Skip subinterface if not given read rights
-	        if(!$subinterface->crudR) continue;
-	         
-	        $subcontent = $this->ifc($subinterface->id)->getContent($options, $recursionArr);
-	        
-	        $content[$subinterface->id] = $subcontent;
-	    
-	        // _sortValues_ (if subInterface is uni)
-	        if($subinterface->isUni && $options['metaData']){
-	            if(is_bool($subcontent)) $sortValue = $subcontent; // property
-	            elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
-	            else $sortValue = $subcontent; // scalar
-	    
-	            $content['_sortValues_'][$subinterface->id] = $sortValue;
-	        }
-	    }
-	    
-	    // Include content for subinterfaces that refer to other interface (e.g. "label" : expr [LINKTO] INTERFACE <refInterface>)
-	    if(!is_null($this->parentIfc->refInterfaceId)
-	            && (!$this->parentIfc->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
-	            && (!in_array($this->id, (array)$recursionArr[$this->parentIfc->refInterfaceId]))) // Prevent infinite loops
-	    {
-	        // Add target atom to $recursionArr to prevent infinite loops
-	        if($options['inclLinktoData']) $recursionArr[$this->parentIfc->refInterfaceId][] = $this->id;
-	    
-	        $refInterface = InterfaceObject::getInterface($this->parentIfc->refInterfaceId);
-	         
-	        foreach($refInterface->subInterfaces as $subinterface){
-	            // Skip subinterface if not given read rights
-	            if(!$subinterface->crudR) continue;
-	    
-	            $subcontent = $this->ifc($subinterface->id)->getContent($options, $recursionArr);
-	            $content[$subinterface->id] = $subcontent;
-	             
-	            // _sortValues_ (if subInterface is uni)
-	            if($subinterface->isUni && $options['metaData']){
-	                if(is_bool($subcontent)) $sortValue = $subcontent; // property
-	                elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
-	                else $sortValue = $subcontent; // scalar
-	    
-	                $content['_sortValues_'][$subinterface->id] = $sortValue;
-	            }
-	        }
-	    }
+        // Get content of subinterfaces if depth is not provided or max depth not yet reached
+        if(is_null($depth) || $depth > 0) {
+    	    // Decrease depth by 1
+            if(!is_null($depth)) $depth--;
+            
+            // Subinterfaces
+    	    foreach($this->parentIfc->subInterfaces as $subinterface){
+    	        // Skip subinterface if not given read rights
+    	        if(!$subinterface->crudR) continue;
+    	         
+    	        $subcontent = $this->ifc($subinterface->id)->getContent($options, $recursionArr, $depth);
+    	        
+    	        $content[$subinterface->id] = $subcontent;
+    	    
+    	        // _sortValues_ (if subInterface is uni)
+    	        if($subinterface->isUni && $options['metaData']){
+    	            if(is_bool($subcontent)) $sortValue = $subcontent; // property
+    	            elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
+    	            else $sortValue = $subcontent; // scalar
+    	    
+    	            $content['_sortValues_'][$subinterface->id] = $sortValue;
+    	        }
+    	    }
+        }
 	    
 	    return $content;
 			

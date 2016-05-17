@@ -26,8 +26,17 @@ AmpersandApp.controller('ExcelImportController', function ($scope, $rootScope, F
         // console.info('onSuccessItem', fileItem, response, status, headers);
     };
     
-    $rootScope.uploader.onErrorItem = function(item, response, status, headers){    	
-    	$rootScope.addError(response.msg, status, true);    	
+    $rootScope.uploader.onErrorItem = function(item, response, status, headers){
+        if(typeof response === 'object'){
+            var message = response.msg || 'Error while importing';
+            $rootScope.addError(message, status, true);
+            
+            if(response.notifications !== undefined) $rootScope.updateNotifications(response.notifications); 
+        }else{
+            var message = status + ' Error while importing';
+            var details = response; // html content is excepted
+            $rootScope.addError(message, status, true, details);
+        }
     };
     
 });

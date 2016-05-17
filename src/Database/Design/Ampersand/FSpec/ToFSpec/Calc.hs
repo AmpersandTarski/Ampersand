@@ -56,7 +56,7 @@ head (a:_) = a
 --   --     visible r  = r `elem` vis
 --        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (relsUsedIn rule) `isc` vis)]
 --   --     qs         = vquads fSpec
---   --     (ecaRs, _) = assembleECAs fSpec (allDecls fSpec)
+--   --     (ecaRs, _) = assembleECAs fSpec (vrels fSpec)
 ----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2FSpec.hs, maar is daar ANDERS(!)...
 ----        editable _               = False
 ----        editMph (ERel r@Rel{} _) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2FSpec.hs, maar is daar ANDERS(!)...
@@ -489,7 +489,7 @@ assembleECAs options context editables
                       (codeBlock . ("\n     "++) . showECA "\n     ".ecaRule) ruleNr
                     )
           )
-        | rel <- editables -- allDecls fSpec ++ [ Isn c | c<-concs fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
+        | rel <- editables -- vrels fSpec ++ [ Isn c | c<-concs fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
  --       , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qConjuncts
         , let EDcD delt = delta (sign rel)                -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
         , ev<-[Ins,Del]

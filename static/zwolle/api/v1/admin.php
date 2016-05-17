@@ -62,7 +62,7 @@ $app->get('/admin/import', function () use ($app){
     
     $database = Database::singleton();
     
-    include_once $file;
+    include_once (Config::get('logPath') . "/{$file}");
     
     // check if all concepts and relations are defined
     foreach((array)$allAtoms as $cpt => $atoms) if(!empty($atoms)) Concept::getConcept($cpt);
@@ -85,7 +85,11 @@ $app->get('/admin/import', function () use ($app){
         }
     }
     
-    $database->closeTransaction("Imported successfully", true);
+    $database->closeTransaction("Imported successfully", true);	
+    
+    $content = Notifications::getAll(); // Return all notifications
+    
+    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
     
 });
 

@@ -176,7 +176,7 @@ writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
               pandocWriter :: WriterOptions -> Pandoc -> String
               pandocWriter =
                 case fspecFormat (getOpts fSpec) of
-                  Fasciidoc -> fatal 145 "No current support for asciidoc"
+                  Fasciidoc -> writeAsciiDoc
                   FPandoc   -> writeNative
                   Fcontext  -> writeConTeXt
                   Fdocbook  -> writeDocbook

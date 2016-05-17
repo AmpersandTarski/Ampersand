@@ -28,7 +28,6 @@ consequent r
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all relations is provided, in order to generate shorter names if possible.
 rulefromProp :: Prop -> Declaration -> Maybe Rule
-rulefromProp Aut _ = Nothing
 rulefromProp prp d@Sgn{} =
   Just $ 
      Ru { rrnm  = show prp++" "++showDcl
@@ -63,7 +62,6 @@ rulefromProp prp d@Sgn{} =
                      Trn-> r .:. r .|-. r
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
-                     Aut -> fatal 78 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                      Prop -> fatal 78 "Prop should have been converted by the parser"
         explain prop = [ explang lang | lang <-[English,Dutch]]
           where 
@@ -79,7 +77,6 @@ rulefromProp prp d@Sgn{} =
                     Sur-> showDcl++" is "++"surjective"
                     Inj-> showDcl++" is "++"injective"
                     Tot-> showDcl++" is "++"total"
-                    Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                     Prop -> fatal 90 "Prop should have been converted by the parser"
             f Dutch =
                   case prop of
@@ -92,7 +89,6 @@ rulefromProp prp d@Sgn{} =
                     Sur-> showDcl++" is "++"surjectief"
                     Inj-> showDcl++" is "++"injectief"
                     Tot-> showDcl++" is "++"totaal"
-                    Aut -> fatal 103 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                     Prop -> fatal 103 "Prop should have been converted by pattern the parser"
          
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
@@ -111,7 +107,6 @@ rulefromProp prp d@Sgn{} =
                     Inj-> "Each " ++t++" may only have one "++s++"" ++" in the relation "++name d
                     Tot ->"Every "++s++" must have a "      ++t++"" ++" in the relation "++name d
                     Sur ->"Every "++t++" must have a "      ++s++"" ++" in the relation "++name d
-                    Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                     Prop -> fatal 90 "Prop should have been converted by the parser"
             f Dutch =
                   case prop of
@@ -124,7 +119,6 @@ rulefromProp prp d@Sgn{} =
                     Inj-> "Elke "++t++" mag slechts één "++s++   " hebben" ++" in de relatie "++name d
                     Tot-> "Elke "++s++" dient één "      ++t++" te hebben" ++" in de relatie "++name d
                     Sur-> "Elke "++t++" dient een "      ++s++" te hebben" ++" in de relatie "++name d
-                    Aut -> fatal 103 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                     Prop -> fatal 103 "Prop should have been converted by pattern the parser"
 
 rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined relations."
