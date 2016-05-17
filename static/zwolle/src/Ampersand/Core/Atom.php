@@ -95,19 +95,26 @@ class Atom {
 	 */
 	private $storedContent = null;
 	
+    /**
+     * @var array|null $qData The row data (from database query) from which this atom is created
+     */
+    private $qData = null;
+    
 	/**
 	 * Atom constructor
 	 * @param string $atomId
 	 * @param string $conceptName
 	 * @param InterfaceObject $ifc
+     * @param array|null $qData the row data (from database query) from which this atom is created
 	 * @return void
 	 */
-	public function __construct($atomId, $conceptName, $ifc = null){
+	public function __construct($atomId, $conceptName, $ifc = null, $qData = null){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
 		$this->parentIfc = $ifc;
 		$this->concept = Concept::getConcept($conceptName);
+        $this->qData = $qData;
 		
 		$this->setId($atomId);
 		
@@ -218,6 +225,15 @@ class Atom {
 	    }
 	    return $viewStrs;
 	}
+    
+    public function getQueryData($colName = null){
+        // TODO: add checks
+        if(is_null($colName)){
+            return $this->qData;
+        }else{
+            return $this->qData[$colName];
+        }
+    }
 	
 	/**
 	 * Return json representation of Atom (identifier) according to Ampersand technical types (TTypes)
