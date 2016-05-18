@@ -1,5 +1,6 @@
 module Database.Design.Ampersand.FSpec.SQL
-  ( prettySQLQuery,sqlQuery )
+  ( prettySQLQuery               , sqlQuery
+  , prettySQLQueryWithPlaceholder, sqlQueryWithPlaceholder )
   
 where
 import Language.SQL.SimpleSQL.Syntax
@@ -16,24 +17,58 @@ import Data.List
 import Data.Maybe
 
 class SQLAble a where
-  -- | prettyprint SQL query incuding comments and indent it with spaces
-  prettySQLQuery 
-        :: Int    -- Amount of indentation
-        -> FSpec  -- The context
-        -> a      
-        -> String 
-  prettySQLQuery i fSpec x =
-    intercalate ("\n"++replicate i ' ') .  lines . 
-      prettyQueryExpr theDialect . toSQL . 
-      stripComment $ getBinQueryExpr fSpec x
+
    
   -- | show SQL query without comments and not prettyprinted
-  sqlQuery :: FSpec -> a -> String
-  sqlQuery fSpec x =
-    unwords . words . 
-    prettyQueryExpr theDialect . toSQL $ 
-    getBinQueryExpr fSpec x
+  sqlQuery, sqlQueryWithPlaceholder :: FSpec -> a -> String
+  sqlQuery                 = doNonPretty getBinQueryExpr
+  sqlQueryWithPlaceholder  = doNonPretty getBinQueryExprPlaceholder
+
+  doNonPretty :: (FSpec -> a -> BinQueryExpr) -> FSpec -> a -> String
+  doNonPretty fun fSpec 
+    =  unwords . words 
+     . prettyQueryExpr theDialect . toSQL
+     . stripComment
+     . fun fSpec
+
+  prettySQLQuery, prettySQLQueryWithPlaceholder 
+          :: Int    -- Amount of indentation
+          -> FSpec  -- The context
+          -> a      
+          -> String 
+  prettySQLQueryWithPlaceholder = doPretty getBinQueryExprPlaceholder
+  prettySQLQuery                = doPretty getBinQueryExpr
+  doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> String
+  doPretty fun i fSpec 
+    =  intercalate ("\n"++replicate i ' ') 
+     . lines
+     . prettyQueryExpr theDialect 
+     . toSQL
+     . fun fSpec
+  
+
   getBinQueryExpr ::  FSpec -> a -> BinQueryExpr
+  getBinQueryExprPlaceholder :: FSpec -> a -> BinQueryExpr
+  getBinQueryExprPlaceholder fSpec = insertPlaceholder . getBinQueryExpr fSpec 
+    where 
+      insertPlaceholder :: BinQueryExpr -> BinQueryExpr
+      insertPlaceholder bqe 
+        = case bqe of
+            BSE{} -> case bseSrc bqe of
+                       Iden [_] 
+                          -> BSE { bseSrc = bseSrc bqe
+                                 , bseTrg = bseTrg bqe
+                                 , bseTbl = bseTbl bqe
+                                 , bseWhr = case bseWhr bqe of
+                                             Nothing -> fatal 55 "Not expected: Empty where clause."
+                                             Just whr -> Just $
+                                                          conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (Iden[Name "{SRC_PLACEHOLDER}"])
+                                                                      , whr]
+                                 }
+                       _ -> bqe
+            BCQE{} -> bqe
+            BQEComment _ x -> insertPlaceholder x
+
 instance SQLAble Expression where  
   getBinQueryExpr = selectExpr
 instance SQLAble Declaration where
@@ -414,7 +449,7 @@ nonSpecialSelectExpr fSpec expr=
                                      where (plug,att) = getConceptTableInfo fSpec s
                      (ptgt,ftgt) = (QName (name plug), QName (name att))
                                      where (plug,att) = getConceptTableInfo fSpec t
-                 in BQEComment [BlockComment $ "case: (EDcV (Sign s t))   V[ \""++show (Sign s t)++"\" ]"] $
+                 in BQEComment [BlockComment $ "case: (EDcV (Sign s t))   V"++show (Sign s t)++""] $
                     case (s,t) of
                      (ONE, ONE) -> one
                      (_  , ONE) -> BSE { bseSrc = Iden [psrc, fsrc]

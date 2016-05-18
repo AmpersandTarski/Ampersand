@@ -30,12 +30,15 @@ dumpSQLqueries fSpec = intercalate "\n" $
           showObjDef :: ObjectDef -> [String]
           showObjDef obj
             = (header . showADL . objctx) obj
-            ++(lines . prettySQLQuery 2 fSpec . objctx) obj
+            ++(lines . prettySQLQueryWithPlaceholder 2 fSpec . objctx) obj
             ++case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
           showSubInterface :: SubInterface -> [String]
-          showSubInterface = concatMap showObjDef . siObjs
+          showSubInterface sub = 
+            case sub of 
+              Box{} -> concatMap showObjDef . siObjs $ sub
+              InterfaceRef{} -> []
 
      showConjunct :: Conjunct -> [String]
      showConjunct conj 
