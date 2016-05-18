@@ -369,7 +369,7 @@ class InterfaceObject {
 	 */
 	private function getTgtAtoms(){
         if(strpos($this->query, '_SRCATOM') !== false){
-            $query = str_replace('_SRCATOM', $this->srcAtom->idEsc, $this->query);
+            $query = str_replace('_SRCATOM', "'" . $this->srcAtom->idEsc . "'", $this->query);
         }else{
             $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
         }
