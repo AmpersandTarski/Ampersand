@@ -107,6 +107,12 @@ class Concept {
 	 * @var DatabaseTable
 	 */
 	private $mysqlConceptTable;
+    
+    /**
+     * @var Atom[] $atomCache array with atoms that exist in the concept (within database transaction)
+     * used to prevent unnecessary queries to check if atom is already in database
+     */
+    private $atomCache = array();
 	
 	/**
 	 * Concept constructor
@@ -330,6 +336,22 @@ class Concept {
 	public function createNewAtom(){
 	    return new Atom($this->createNewAtomId(), $this->name);
 	}
+    
+    /**
+     * @param Atom $atom check if atom exists in concept atom cache
+     * @return boolean
+     */
+    public function inAtomCache($atom){
+        return in_array($atom, $this->atomCache);
+    }
+    
+    /**
+     * @param Atom $atom atom to add to concept atom cache
+     * @return void
+     */
+    public function addToAtomCache($atom){
+        $this->atomCache[] = $atom;
+    }
 	
     /**********************************************************************************************
      * 
