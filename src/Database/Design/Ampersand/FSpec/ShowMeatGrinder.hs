@@ -54,8 +54,6 @@ content fSpec = unlines
     [ ""
     , "ENDCONTEXT"
     ])
-    , Comment " ", Comment $ "[Relations]--: (count="++(show.length.vrels) fSpec++")" ]
-  ++   concatMap (generics fSpec) (vrels fSpec)
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
