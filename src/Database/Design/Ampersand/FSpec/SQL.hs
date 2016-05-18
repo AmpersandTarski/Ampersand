@@ -54,16 +54,16 @@ class SQLAble a where
       insertPlaceholder :: BinQueryExpr -> BinQueryExpr
       insertPlaceholder bqe 
         = case bqe of
-            BSE{} -> case bseSrc bqe of
-                       Iden [_] 
+            BSE{} -> case (bseSrc bqe,bseWhr bqe) of
+                       (_        , Nothing)
+                          -> BQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE" ] bqe -- TODO: Verify if this is correct
+                       (Iden [_] , Just whr) 
                           -> BSE { bseSrc = bseSrc bqe
                                  , bseTrg = bseTrg bqe
                                  , bseTbl = bseTbl bqe
-                                 , bseWhr = case bseWhr bqe of
-                                             Nothing -> fatal 55 "Not expected: Empty where clause."
-                                             Just whr -> Just $
-                                                          conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (Iden[Name "{SRC_PLACEHOLDER}"])
-                                                                      , whr]
+                                 , bseWhr = Just $ conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (Iden[Name "{SRC_PLACEHOLDER}"])
+                                                               , whr]
+
                                  }
                        _ -> bqe
             BCQE{} -> bqe
@@ -684,7 +684,7 @@ selectDeclaration fSpec dcl =
          = BSE { bseSrc = Iden [QName (name s)]
                , bseTrg = Iden [QName (name t)]
                , bseTbl = [TRSimple [QName (name plug)]]
-               , bseWhr = if mayContainNulls plug
+               , bseWhr = if True -- mayContainNulls plug 
                           then Just . conjunctSQL . map notNull $
                                 [Iden [QName (name c)] | c<-nub [s,t]]
                           else Nothing
