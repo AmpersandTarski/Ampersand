@@ -61,7 +61,7 @@ class SQLAble a where
                           -> BSE { bseSrc = bseSrc bqe
                                  , bseTrg = bseTrg bqe
                                  , bseTbl = bseTbl bqe
-                                 , bseWhr = Just $ conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (Iden[Name "{SRC_PLACEHOLDER}"])
+                                 , bseWhr = Just $ conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (Iden[Name "_SRCATOM"])
                                                                , whr]
 
                                  }
