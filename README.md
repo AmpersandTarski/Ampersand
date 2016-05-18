@@ -1,4 +1,7 @@
-# Ampersand [![Build Status](https://travis-ci.org/AmpersandTarski/Ampersand.svg?branch=master)](https://travis-ci.org/AmpersandTarski/Ampersand)
+# Ampersand 
+
+[![Build Status](https://travis-ci.org/AmpersandTarski/Ampersand.svg?branch=master)](https://travis-ci.org/AmpersandTarski/Ampersand)
+[![Release](https://img.shields.io/github/release/AmpersandTarski/Ampersand.svg)](https://github.com/AmpersandTarski/Ampersand/releases)
 
 ## Recent activity 
 [![Throughput Graph](https://graphs.waffle.io/AmpersandTarski/Ampersand/throughput.svg)](https://waffle.io/AmpersandTarski/Ampersand/metrics)

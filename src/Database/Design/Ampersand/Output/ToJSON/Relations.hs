@@ -42,7 +42,7 @@ instance ToJSON RelTableInfo where
 instance ToJSON TableCol where
   toJSON = amp2Jason
 instance JSON FSpec Relations where
- fromAmpersand fSpec _ = Relations (map (fromAmpersand fSpec) (allDecls fSpec))
+ fromAmpersand fSpec _ = Relations (map (fromAmpersand fSpec) (vrels fSpec))
 instance JSON Declaration Relation where
  fromAmpersand fSpec dcl = Relation 
          { relJSONname       = name dcl

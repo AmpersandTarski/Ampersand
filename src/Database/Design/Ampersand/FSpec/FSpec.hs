@@ -23,7 +23,11 @@ module Database.Design.Ampersand.FSpec.FSpec
           , RelStore(..)
           , metaValues
           , SqlAttribute(..)
+          , Typology(..)
+          , Interface(..)
           , Object(..)
+          , ObjectDef(..)
+          , SubInterface(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
@@ -75,7 +79,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , invariants ::   [Rule]                   -- ^ All invariant rules
                    , signals ::      [Rule]                   -- ^ All signal rules
                    , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
-                   , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
                    , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
                                                               --   one declaration for each signal.
@@ -111,7 +114,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
                    , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]
-                   , rootConcept :: A_Concept -> A_Concept
+                   , typologyOf :: A_Concept -> Typology
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    } deriving Typeable
@@ -299,10 +302,10 @@ lookupCpt fSpec cpt = [(plug,att) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, 
                       [(plug,att) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]
 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
-getConceptTableFor :: FSpec -> A_Concept -> String
+getConceptTableFor :: FSpec -> A_Concept -> PlugSQL
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
-                               (t,_):_ -> name t -- in case there are more, we use the first one
+                               (t,_):_ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
 data RelStore 

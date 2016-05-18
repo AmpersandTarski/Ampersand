@@ -5,7 +5,6 @@ import Database.Design.Ampersand.Prototype.Generate
   (generateDBstructQueries, generateAllDefPopQueries
   )
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.SQL
 import Data.List
 
@@ -18,9 +17,29 @@ dumpSQLqueries fSpec = intercalate "\n" $
                        ++header "Violations of conjuncts"
                        ++concatMap showConjunct (vconjs fSpec)
                        ++header "Queries per declaration"
-                       ++concatMap showDecl (allDecls fSpec)
+                       ++concatMap showDecl (vrels fSpec)
+                       ++header "Queries of interfaces"
+                       ++concatMap showInterface (interfaceS fSpec ++ interfaceG fSpec)
     
    where
+     showInterface :: Interface -> [String]
+     showInterface ifc 
+        = header ("INTERFACE: "++name ifc)
+        ++(map ((++) "  ") . showObjDef . ifcObj) ifc
+        where 
+          showObjDef :: ObjectDef -> [String]
+          showObjDef obj
+            = (header . showADL . objctx) obj
+            ++(lines . prettySQLQueryWithPlaceholder 2 fSpec . objctx) obj
+            ++case objmsub obj of
+                 Nothing  -> []
+                 Just sub -> showSubInterface sub
+          showSubInterface :: SubInterface -> [String]
+          showSubInterface sub = 
+            case sub of 
+              Box{} -> concatMap showObjDef . siObjs $ sub
+              InterfaceRef{} -> []
+
      showConjunct :: Conjunct -> [String]
      showConjunct conj 
         = header (rc_id conj)

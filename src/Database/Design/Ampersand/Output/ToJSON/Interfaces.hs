@@ -48,6 +48,7 @@ data JSONexpr = JSONexpr
   , exprJSONisTot             :: Bool
   , exprJSONisIdent           :: Bool
   , exprJSONquery             :: String
+  , exprJSONqueryWithPlaceholder :: String
   } deriving (Generic, Show)
 
 instance ToJSON JSONSubInterface where
@@ -67,21 +68,21 @@ instance JSON FSpec Interfaces where
  fromAmpersand fSpec _ = Interfaces (map (fromAmpersand fSpec) (interfaceS fSpec ++ interfaceG fSpec))
 
 instance JSON SubInterface JSONSubInterface where
- fromAmpersand fSpec sub = 
-   case sub of 
-     Box _ cl objs         -> JSONSubInterface
-       { subJSONboxClass           = cl
-       , subJSONifcObjects         = Just . map (fromAmpersand fSpec) $ objs
+ fromAmpersand fSpec si = 
+   case si of 
+     Box{} -> JSONSubInterface
+       { subJSONboxClass           = siMClass si
+       , subJSONifcObjects         = Just . map (fromAmpersand fSpec) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinTo         = Nothing
        , subJSONcrud               = Nothing
        }
-     InterfaceRef isLink nm cr -> JSONSubInterface
+     InterfaceRef{} -> JSONSubInterface
        { subJSONboxClass           = Nothing
        , subJSONifcObjects         = Nothing
-       , subJSONrefSubInterfaceId  = Just (escapeIdentifier nm)
-       , subJSONrefIsLinTo         = Just isLink
-       , subJSONcrud               = Just (fromAmpersand fSpec cr)
+       , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
+       , subJSONrefIsLinTo         = Just . siIsLink $ si
+       , subJSONcrud               = Just . fromAmpersand fSpec . siCruds $ si
        }
  
 instance JSON Interface JSONInterface where
@@ -107,6 +108,7 @@ instance JSON ObjectDef JSONexpr where
   , exprJSONisTot             = isTot normalizedInterfaceExp
   , exprJSONisIdent           = isIdent normalizedInterfaceExp
   , exprJSONquery             = sqlQuery fSpec normalizedInterfaceExp
+  , exprJSONqueryWithPlaceholder = sqlQueryWithPlaceholder fSpec normalizedInterfaceExp
   }
   where
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
