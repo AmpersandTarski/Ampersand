@@ -331,42 +331,34 @@ class Database {
 	    
 		// This function is under control of transaction check!
 		if (!isset($this->transaction)) $this->startTransaction();
+	    			    
+		// Get table properties
+		$conceptTableInfo = $atom->concept->getConceptTableInfo();
+		$conceptTable = $conceptTableInfo->name;
+		$conceptCols = $conceptTableInfo->getCols(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
 		
-		// If $atomId is not in $concept
-		if(!$this->atomExists($atom)){
-		    			    
-			// Get table properties
-			$conceptTableInfo = $atom->concept->getConceptTableInfo();
-			$conceptTable = $conceptTableInfo->name;
-			$conceptCols = $conceptTableInfo->getCols(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
-			
-			// Create query string: `<col1>`, `<col2>`, etc
-			$allConceptCols = '`' . implode('`, `', $conceptTableInfo->getColNames()) . '`';
-			
-			
-			// Create query string: '<newAtom>', '<newAtom', etc
-			$atomIdsArray = array_fill(0, count($conceptCols), $atom->idEsc);
-			$allValues = "'".implode("', '", $atomIdsArray)."'";
-			
-			foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atom->idEsc}'";
-			$duplicateStatement = substr($str, 1);
-			
-			$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
-					  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
-			
-			// Check if query resulted in an affected row
-			if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No record inserted in Database::addAtomToConcept({$atom->__toString()})", 500);
-			
-			$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
-			
-			$this->logger->debug("Atom '{$atom->__toString()}' added to database");
-			
-			Hooks::callHooks('postDatabaseAddAtomToConceptInsert', get_defined_vars());
-		}else{
-			$this->logger->debug("Atom '{$atom->__toString()}' already exists in database");
-			
-			Hooks::callHooks('postDatabaseAddAtomToConceptSkip', get_defined_vars());
-		}
+		// Create query string: `<col1>`, `<col2>`, etc
+		$allConceptCols = '`' . implode('`, `', $conceptTableInfo->getColNames()) . '`';
+		
+		
+		// Create query string: '<newAtom>', '<newAtom', etc
+		$atomIdsArray = array_fill(0, count($conceptCols), $atom->idEsc);
+		$allValues = "'".implode("', '", $atomIdsArray)."'";
+		
+		foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atom->idEsc}'";
+		$duplicateStatement = substr($str, 1);
+		
+		$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
+				  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
+		
+		// Check if query resulted in an affected row
+		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No record inserted in Database::addAtomToConcept({$atom->__toString()})", 500);
+		
+		$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
+		
+		$this->logger->debug("Atom '{$atom->__toString()}' added to database");
+		
+		Hooks::callHooks('postDatabaseAddAtomToConceptInsert', get_defined_vars());
 	}
 	
 	/**

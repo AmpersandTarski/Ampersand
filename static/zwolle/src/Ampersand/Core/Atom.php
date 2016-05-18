@@ -164,9 +164,16 @@ class Atom {
 	 * @return boolean
 	 */
 	public function atomExists(){
-		if($this->id === '_NEW_') return true; // Return true if id is '_NEW_' (special case)
-		
-		return $this->database->atomExists($this);
+        if($this->concept->inAtomCache($this)){
+            return true;
+        }elseif($atom->id === '_NEW_'){
+            return true; // Return true if id is '_NEW_' (special case)
+        }elseif($this->database->atomExists($this)){
+            $this->concept->addToAtomCache($this);
+    		return true;
+        }else{
+            return false;
+        }
 	}
 	
 	/**
@@ -174,7 +181,12 @@ class Atom {
 	 * @return void
 	 */
 	public function addAtom(){
-	    $this->database->addAtomToConcept($this);
+        if($this->atomExists()){
+            $this->logger->debug("Atom '{$this->__toString()}' already exists in database");
+        }else{
+            $this->database->addAtomToConcept($this);
+            $this->concept->addToAtomCache($this);
+        }
 	    return $this;
 	}
 	
