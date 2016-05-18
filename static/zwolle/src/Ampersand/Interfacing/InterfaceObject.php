@@ -219,7 +219,13 @@ class InterfaceObject {
 		$this->isUni = $ifcDef['expr']['isUni'];
 		$this->isTot = $ifcDef['expr']['isTot'];
 		$this->isIdent = $ifcDef['expr']['isIdent'];
-		$this->query = $ifcDef['expr']['query'];
+        
+        // Interface expression query
+        // check for _SRCATOM because not all queries have this placeholder yet
+        // TODO: remove check when queryWithPlaceholder is complete for all interface queries
+        if(strpos($ifcDef['expr']['queryWithPlaceholder'], '_SRCATOM') !== false) $this->query = $ifcDef['expr']['queryWithPlaceholder'];
+		else $this->query = $ifcDef['expr']['query'];
+        
         if(isset($ifcDef['expr']['parentIfcCol'])) $this->parentIfcCol = $ifcDef['expr']['parentIfcCol'];
 		
 		// CRUD rights
@@ -362,8 +368,8 @@ class InterfaceObject {
 	 * @return Atom[] [description]
 	 */
 	private function getTgtAtoms(){
-        if(substr($this->query, 0, 8) == "{CUSTOM}"){
-            $query = substr(str_replace('{SRC}', $this->srcAtom->idEsc, $this->query), 8);
+        if(strpos($this->query, '_SRCATOM') !== false){
+            $query = str_replace('_SRCATOM', $this->srcAtom->idEsc, $this->query);
         }else{
             $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
         }
