@@ -24,6 +24,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , metaValues
           , SqlAttribute(..)
           , Typology(..)
+          , Interface(..)
           , Object(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)

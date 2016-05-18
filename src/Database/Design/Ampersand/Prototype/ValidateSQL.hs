@@ -8,7 +8,6 @@ import System.IO hiding (hPutStr,hGetContents)
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
-import Database.Design.Ampersand.ADL1.Expression (notCpl)
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
