@@ -24,7 +24,10 @@ module Database.Design.Ampersand.FSpec.FSpec
           , metaValues
           , SqlAttribute(..)
           , Typology(..)
+          , Interface(..)
           , Object(..)
+          , ObjectDef(..)
+          , SubInterface(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl

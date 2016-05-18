@@ -48,6 +48,7 @@ data JSONexpr = JSONexpr
   , exprJSONisTot             :: Bool
   , exprJSONisIdent           :: Bool
   , exprJSONquery             :: String
+  , exprJSONqueryWithPlaceholder :: String
   } deriving (Generic, Show)
 
 instance ToJSON JSONSubInterface where
@@ -107,6 +108,7 @@ instance JSON ObjectDef JSONexpr where
   , exprJSONisTot             = isTot normalizedInterfaceExp
   , exprJSONisIdent           = isIdent normalizedInterfaceExp
   , exprJSONquery             = sqlQuery fSpec normalizedInterfaceExp
+  , exprJSONqueryWithPlaceholder = sqlQueryWithPlaceholder fSpec normalizedInterfaceExp
   }
   where
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
