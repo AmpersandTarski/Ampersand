@@ -362,7 +362,11 @@ class InterfaceObject {
 	 * @return Atom[] [description]
 	 */
 	private function getTgtAtoms(){
-	    $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
+        if(substr($this->query, 0, 8) == "{CUSTOM}"){
+            $query = substr(str_replace('{SRC}', $this->srcAtom->idEsc, $this->query), 8);
+        }else{
+            $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
+        }
 	    $data = (array)$this->database->Exe($query);
 
 	    // Integrity check
