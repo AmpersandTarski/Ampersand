@@ -1,7 +1,7 @@
 # Release notes of Ampersand
 
 ## current development 
-  * 
+  * SQL query performance improvement: [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426)
   
 ## v3.5.1 (17 may 2016)
   * Minor enhancement of generation of Logical Data Model
