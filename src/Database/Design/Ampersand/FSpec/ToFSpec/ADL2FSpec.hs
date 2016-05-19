@@ -525,7 +525,7 @@ tblcontents ci ps plug
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
        case attributes plug of 
          []   -> fatal 593 "no attributes in plug."
-         f:fs -> transpose
+         f:fs -> (nub.transpose)
                  ( map Just cAtoms
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
