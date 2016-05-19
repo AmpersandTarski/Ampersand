@@ -54,16 +54,16 @@ class SQLAble a where
       insertPlaceholder :: BinQueryExpr -> BinQueryExpr
       insertPlaceholder bqe 
         = case bqe of
-            BSE{} -> case bseSrc bqe of
-                       Iden [_] 
+            BSE{} -> case (bseSrc bqe,bseWhr bqe) of
+                       (_        , Nothing)
+                          -> BQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE" ] bqe -- TODO: Verify if this is correct
+                       (Iden [_] , Just whr) 
                           -> BSE { bseSrc = bseSrc bqe
                                  , bseTrg = bseTrg bqe
                                  , bseTbl = bseTbl bqe
-                                 , bseWhr = case bseWhr bqe of
-                                             Nothing -> fatal 55 "Not expected: Empty where clause."
-                                             Just whr -> Just $
-                                                          conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (Iden[Name "{SRC_PLACEHOLDER}"])
-                                                                      , whr]
+                                 , bseWhr = Just $ conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (Iden[Name "{SRC_PLACEHOLDER}"])
+                                                               , whr]
+
                                  }
                        _ -> bqe
             BCQE{} -> bqe
@@ -684,7 +684,7 @@ selectDeclaration fSpec dcl =
          = BSE { bseSrc = Iden [QName (name s)]
                , bseTrg = Iden [QName (name t)]
                , bseTbl = [TRSimple [QName (name plug)]]
-               , bseWhr = if mayContainNulls plug
+               , bseWhr = if True -- mayContainNulls plug 
                           then Just . conjunctSQL . map notNull $
                                 [Iden [QName (name c)] | c<-nub [s,t]]
                           else Nothing
@@ -748,14 +748,31 @@ data BinQueryExpr = BSE  { bseSrc :: ValueExpr       -- ^ source attribute and t
 stripComment :: BinQueryExpr -> BinQueryExpr
 stripComment bqe 
   = case bqe of
-       BSE{} -> bqe
+       BSE{} -> BSE { bseSrc = bseSrc bqe
+                    , bseTrg = bseTrg bqe
+                    , bseTbl = map stripCommentTableRef . bseTbl $ bqe
+                    , bseWhr = bseWhr bqe
+                    }
        BCQE{} -> BCQE { bcqeOper = bcqeOper bqe
                       , bcqe0    = stripComment (bcqe0 bqe)
                       , bcqe1    = stripComment (bcqe1 bqe)
                       }
        BQEComment _ x -> stripComment x 
-
-                        
+stripCommentTableRef :: TableRef -> TableRef
+stripCommentTableRef tr =
+  case tr of
+    TRSimple _ -> tr 
+    TRJoin tr1 b jt tr2 x -> TRJoin (stripCommentTableRef tr1) b jt (stripCommentTableRef tr2) x 
+    TRParens tr1 -> TRParens (stripCommentTableRef tr1)
+    TRAlias tr1 x -> TRAlias (stripCommentTableRef tr1) x
+    TRQueryExpr qe -> TRQueryExpr (stripCommentQueryExpr qe)
+    TRFunction _ _ -> tr 
+    TRLateral tr1 -> TRLateral (stripCommentTableRef tr1)
+stripCommentQueryExpr :: QueryExpr -> QueryExpr
+stripCommentQueryExpr qe = 
+   case qe of
+     QEComment _ qe1 -> stripCommentQueryExpr qe1
+     _               -> qe
 toSQL :: BinQueryExpr -> QueryExpr
 toSQL bqe 
  = case bqe of
