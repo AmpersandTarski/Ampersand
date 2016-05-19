@@ -61,7 +61,7 @@ class SQLAble a where
                           -> BSE { bseSrc = bseSrc bqe
                                  , bseTrg = bseTrg bqe
                                  , bseTbl = bseTbl bqe
-                                 , bseWhr = Just $ conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (Iden[Name "'_SRCATOM'"])
+                                 , bseWhr = Just $ conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (StringLit "_SRCATOM")
                                                                , whr]
 
                                  }
@@ -684,14 +684,9 @@ selectDeclaration fSpec dcl =
          = BSE { bseSrc = Iden [QName (name s)]
                , bseTrg = Iden [QName (name t)]
                , bseTbl = [TRSimple [QName (name plug)]]
-               , bseWhr = if True -- mayContainNulls plug 
-                          then Just . conjunctSQL . map notNull $
+               , bseWhr = Just . conjunctSQL . map notNull $
                                 [Iden [QName (name c)] | c<-nub [s,t]]
-                          else Nothing
                }
-      where mayContainNulls TblSQL{} = True
-            mayContainNulls _        = False
-
 
 isNotIn :: ValueExpr -> QueryExpr -> ValueExpr
 isNotIn value = In False value . InQueryExpr 
@@ -771,7 +766,7 @@ stripCommentTableRef tr =
 stripCommentQueryExpr :: QueryExpr -> QueryExpr
 stripCommentQueryExpr qe = 
    case qe of
-     QEComment _ qe1 -> stripCommentQueryExpr qe1
+     QEComment _ qe' -> stripCommentQueryExpr qe'
      _               -> qe
 toSQL :: BinQueryExpr -> QueryExpr
 toSQL bqe 
