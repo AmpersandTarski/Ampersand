@@ -9,8 +9,7 @@ PROCESS "Expression definitions"
     RELATION tgt[Expression*Concept]
     RELATION bind[Expression*Relation]
     RELATION term[Rule*Expression]
-    RELATION rrexp[Rule*ExpressionID]
-
+    
     VIEW Equivalence        : Equivalence(TXT "RULE ", first, TXT " = ", second)
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first, TXT " |- ", second)
     VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
@@ -30,7 +29,7 @@ PROCESS "Expression definitions"
 
 
     CONCEPT Rule ""
-    RELATION rrexp[Rule*Expression] [UNI]
+    RELATION term[Rule*Expression] [UNI,TOT]
 
     CONCEPT Operator ""
     CONCEPT BinaryTerm ""

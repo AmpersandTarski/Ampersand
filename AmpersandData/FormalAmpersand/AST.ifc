@@ -39,8 +39,7 @@ BOX [ "name" : name[Rule*RuleID]
     , "invariantRuleNames~" : invariantRuleNames[Conjunct*Rule]~
     , "rules~"  : rules[Pattern*Rule]~
     , "maintains~ (Role)" : maintains[Role*Rule]~
-    , "rrexp (Expression)" : rrexp[Rule*Expression]
-    , "rrexp (ExpressionID)" : rrexp[Rule*ExpressionID]
+    , "term (Expression)" : term[Rule*Expression]
     , "tgtConcept" : tgtConcept[Rule*Concept]
     , "srcConcept" : srcConcept[Rule*Concept]
     , "term" : term[Rule*Expression]
@@ -107,7 +106,7 @@ TABS[ Context : V[SESSION*Context]
     , "Rules" : V[SESSION*Rule]
     COLS [ name : name
          , signature : sign
-         , Expression : rrexp[Rule*Expression]
+         , Expression : term[Rule*Expression]
          , Meaning : rrmean
          , Purpose : rrpurpose
          , Property : declaredthrough
@@ -122,9 +121,8 @@ BOX [ expression: I[Expression]
     , operator : operator
     , second : second LINKTO INTERFACE Expression
     , arg : arg[UnaryTerm*Expression]
-    , "rrexp~" : rrexp[Rule*Expression]
+    , term : term[Rule*Expression]
     , bind  : bind
-    , term  : term
     ]
 INTERFACE Signature FOR Ampersand : I[Signature]
 BOX [ Signature: I[Signature]

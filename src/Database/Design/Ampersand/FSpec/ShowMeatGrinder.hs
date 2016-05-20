@@ -390,7 +390,7 @@ instance MetaPopulations Rule where
              [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs, isSignal rul]
       , Pop "invariantRuleNames" "Conjunct" "Rule"
              [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs, (not.isSignal) rul]
-      , Pop "rrexp"  "Rule" "Expression"
+      , Pop "term"  "Rule" "Expression"
              [(dirtyId rul, dirtyId (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
              [(dirtyId rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]

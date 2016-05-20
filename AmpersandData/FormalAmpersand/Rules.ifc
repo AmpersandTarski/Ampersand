@@ -31,7 +31,7 @@ TABS[ atoms : V[SESSION*Atom]
     , rules : V[SESSION*Rule]
       COLS [ name : name
            , signature : sign
-           , expression : rrexp
+           , term : term[Rule*Expression]
            , meaning : rrmean
            , purpose : rrpurpose
            ]
