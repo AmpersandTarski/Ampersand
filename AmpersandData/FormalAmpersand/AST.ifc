@@ -30,6 +30,7 @@ BOX [ Pattern : name[Pattern*PatternIdentifier]
     , "rules"  : rules[Pattern*Rule]
     , "purpose" : purpose[Pattern*Purpose]
     ]
+
 INTERFACE "Rule" FOR Ampersand : I[Rule]
 BOX [ "name" : name[Rule*RuleID]
     , "valid" : valid[Rule*Context]
@@ -120,8 +121,6 @@ BOX [ expression: I[Expression]
     , first : first 
     , operator : operator
     , second : second
-    , lhs : lhs
-    , rhs : rhs
     , arg : arg[UnaryTerm*Expression]
     , "src" : src
     , "tgt" : tgt
