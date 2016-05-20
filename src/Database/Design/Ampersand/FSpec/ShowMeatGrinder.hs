@@ -181,7 +181,7 @@ instance MetaPopulations PlugSQL where
 
 instance MetaPopulations (PlugSQL,SqlAttribute) where
   metaPops _ (plug,att) =
-      [ Pop "table" "SqlAttribute" "PlugInfo"
+      [ Pop "table" "SqlAttribute" "SQLPlug"
                  [(dirtyId (plug,att), dirtyId plug) ]
       , Pop "concept" "SqlAttribute" "Concept"
                  [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]

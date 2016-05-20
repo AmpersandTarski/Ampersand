@@ -21,6 +21,7 @@ ROLE ExecEngine MAINTAINS "TOT conceptAttribute (new)", "TOT conceptAttribute (d
 
 CLASSIFY TblSQL ISA SQLPlug
 CLASSIFY BinSQL ISA SQLPlug
+CLASSIFY SQLPlug ISA Plug
 
 RELATION rootConcept[TblSQL*Concept] [UNI]
 
