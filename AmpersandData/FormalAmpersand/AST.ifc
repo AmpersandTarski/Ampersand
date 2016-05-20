@@ -118,12 +118,10 @@ TABS[ Context : V[SESSION*Context]
 
 INTERFACE Expression FOR Ampersand : I[Expression]
 BOX [ expression: I[Expression]
-    , first : first 
+    , first : first LINKTO INTERFACE Expression
     , operator : operator
-    , second : second
+    , second : second LINKTO INTERFACE Expression
     , arg : arg[UnaryTerm*Expression]
-    , "src" : src
-    , "tgt" : tgt
     , "rrexp~" : rrexp[Rule*Expression]
     , bind  : bind
     , term  : term
