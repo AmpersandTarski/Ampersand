@@ -1,15 +1,15 @@
 ﻿CONTEXT AST IN ENGLISH LATEX
 INCLUDE "TryTables.adl"
 
-PURPOSE CONCEPT PlugInfo
+PURPOSE CONCEPT SQLPlug
 {+Ampersand uses tables to store population in a relational database.
-They are called "PlugInfo".
+They are called "SQLPlug".
 The challenge is to translate a partial order of concepts together with a set of binary relations
 to a tabular structure that corresponds to a relational database.
 -}
-CONCEPT PlugInfo "A PlugInfo is either a TblSQL or a BinSQL."
+CONCEPT SQLPlug "AnSQLPlug SQLPlug is either a TblSQL or a BinSQL."
 PURPOSE CONCEPT TblSQL
-{+Ampersand translates the partial order of concepts to a TblSQL, which is a specific form of PlugInfo.
+{+Ampersand translates the partial order of concepts to a TblSQL, which is a specific form of SQLPlug.
 Relations that are either univalent or injective store its population in the same tables.
 -}
 CONCEPT TblSQL "A TblSQL is a table structure, meant to store the populations of one or more concepts and zero or more relations."
@@ -69,15 +69,15 @@ PURPOSE RULE "Del TblSQL"
 {+The application removes a TblSQL when a concept ceases to exist.
 -}
 
-PURPOSE RELATION table[SqlAttribute*PlugInfo]
-{+The application keeps register of the attributes of every PlugInfo in the relation table.
+PURPOSE RELATION table[SqlAttribute*SQLPlug]
+{+The application keeps register of the attributes of every SQLPlug in the relation table.
 In this way, the administration contains sufficient information to generate database tables if so desired.
 -}
-RELATION table[SqlAttribute*PlugInfo] [UNI]
-MEANING "Each SqlAttribute is a column in precisely one PlugInfo."
+RELATION table[SqlAttribute*SQLPlug] [UNI]
+MEANING "Each SqlAttribute is a column in precisely one SQLPlug."
 
 PURPOSE RULE "Assign attributes to tables"
-{+When SqlAttributes come into existence, they must be assigned to a PlugInfo.
+{+When SqlAttributes come into existence, they must be assigned to a SQLPlug.
 -}
 PURPOSE RULE "Remove attributes from tables"
 {+Consequently, when an SqlAttribute ceases to exist, its assignment to the table must be undone.
@@ -88,7 +88,7 @@ PURPOSE RELATION key[TblSQL*SqlAttribute]
 Its atoms can be used to identify an entire row in the TblSQL
 -}
 RELATION key[TblSQL*SqlAttribute] [UNI,TOT]
-MEANING "Each PlugInfo has one field designated to contain atom keys."
+MEANING "Each SQLPlug has one field designated to contain atom keys."
 
 PURPOSE RULE "Insert key of a TblSQL"
 {+If the root concept of a TblSQL changes, it is necessary to change its key along.
@@ -147,15 +147,15 @@ MEANING "The target attribute of a univalent relation is created in the same tab
 VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;_NEW"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", SRC target
-          , TXT ";table;SqlAttribute;_NEW;PlugInfo;", TGT I
+          , TXT ";table;SqlAttribute;_NEW;SQLPlug;", TGT I
           )
 RULE "clean srcAtt for univalent relations" : (I/\prop;'UNI';prop~);srcAtt |- source;conceptAttribute
 MEANING "The source attribute of a univalent relation is the concept-table of its source concept."
 VIOLATION ( TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
 RULE "clean tgtAtt for univalent relations" : (I/\prop;'UNI';prop~);tgtAtt;table |- srcAtt;table
 MEANING "The target attribute of a univalent relation is removed from the table in which its source attribute resides."
-VIOLATION ( TXT "{EX} DelAtom;PlugInfo;", TGT I
-          , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";PlugInfo;", TGT I
+VIOLATION ( TXT "{EX} DelAtom;SQLPlug;", TGT I
+          , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";SQLPlug;", TGT I
           , TXT "{EX} DelPair;concept;SqlAttribute;", SRC tgtAtt, TXT ";Concept;", SRC target
           , TXT "{EX} DelAtom;SqlAttribute;", SRC tgtAtt
           , TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC tgtAtt
@@ -189,15 +189,15 @@ MEANING "The target attribute of a univalent relation is created in the same tab
 VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";srcAtt;Relation;", SRC I, TXT ";SqlAttribute;_NEW"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", SRC source
-          , TXT ";table;SqlAttribute;_NEW;PlugInfo;", TGT I
+          , TXT ";table;SqlAttribute;_NEW;SQLPlug;", TGT I
           )
 RULE "clean tgtAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt |- target;conceptAttribute
 MEANING "The target attribute of a univalent relation is the concept-table of its target concept."
 VIOLATION ( TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
 RULE "clean srcAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);srcAtt;table |- tgtAtt;table
 MEANING "The target attribute of a univalent relation is removed from the table in which its source attribute resides."
-VIOLATION ( TXT "{EX} DelAtom;PlugInfo;", TGT I
-          , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";PlugInfo;", TGT I
+VIOLATION ( TXT "{EX} DelAtom;SQLPlug;", TGT I
+          , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";SQLPlug;", TGT I
           , TXT "{EX} DelPair;concept;SqlAttribute;", SRC srcAtt, TXT ";Concept;", SRC source
           , TXT "{EX} DelAtom;SqlAttribute;", SRC srcAtt
           , TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC srcAtt
@@ -228,7 +228,7 @@ VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           )
 RULE "new BinSQL" :
      srcAtt~;((I[Relation]-prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt |- table;I[BinSQL];table~
-MEANING "Every relation has a pluginfo in which to store its population."
+MEANING "Every relation has an SQLPlug in which to store its population."
 VIOLATION ( TXT "{EX} NewStruct;BinSQL"
           , TXT ";table;SqlAttribute;", SRC I, TXT ";BinSQL;_NEW"
           , TXT ";table;SqlAttribute;", TGT I, TXT ";BinSQL;_NEW"
@@ -242,7 +242,7 @@ RULE "clear table for n-to-m relations (source)" :
      ((I-prop;'INJ';prop~)-prop;'UNI';prop~);srcAtt;concept |- source
 MEANING "The source concept of an n-to-m relation is the concept of the source attribute of that relation."
 VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC srcAtt, TXT ";Concept;", SRC srcAtt;concept
-          , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";PlugInfo;", SRC srcAtt;table
+          , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";SQLPlug;", SRC srcAtt;table
           , TXT "{EX} DelAtom;SqlAttribute;", SRC srcAtt
           , TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;;", SRC srcAtt
           )
@@ -250,7 +250,7 @@ RULE "clear table for n-to-m relations (target)" :
       ((I-prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt;concept |- target
 MEANING "The target concept of an n-to-m relation is the concept of the target attribute of that relation."
 VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC tgtAtt, TXT ";Concept;", SRC tgtAtt;concept
-          , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";PlugInfo;", SRC tgtAtt;table
+          , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";SQLPlug;", SRC tgtAtt;table
           , TXT "{EX} DelAtom;SqlAttribute;", SRC tgtAtt
           , TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;;", SRC tgtAtt
           )
