@@ -86,11 +86,9 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).fallRules)    fSpec)
   ++[ Comment " ", Comment $ "PATTERN Conjunts: (count="++(show.length.allConjuncts) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allConjuncts fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length) allSqlPlugs++")"]
-  ++   concatMap (metaPops fSpec) allSqlPlugs
+  ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
+  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
   )
-  where
-    allSqlPlugs = sortBy (comparing name) [plug | InternalPlug plug <- plugInfos fSpec]
 
 instance MetaPopulations Pattern where
  metaPops fSpec pat =
@@ -155,14 +153,31 @@ instance MetaPopulations Conjunct where
      
     ] 
 
+instance MetaPopulations PlugInfo where
+ metaPops fSpec plug = 
+      [ Comment $ " Plug `"++name plug++"` "
+      , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
+      , Pop "in" "Concept" "Plug"                 
+             [(dirtyId cpt,dirtyId plug)| cpt <- concs plug]  
+      , Pop "relsInPlug" "Plug" "Relation"
+             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
+      ]++
+      (case plug of
+         InternalPlug plugSQL   -> metaPops fSpec plugSQL
+         ExternalPlug _ -> fatal 167 "ExternalPlug is not implemented in the meatgrinder. "
+      )      
+
 instance MetaPopulations PlugSQL where
   metaPops fSpec plug =
-  --    [ Pop "context" "PlugInfo" "Context"
-  --             [(dirtyId plug, dirtyId fSpec)]
-  --    , Pop "key" "PlugInfo" "SqlAttribute"
-  --             [(dirtyId plug, dirtyId (plug, head . plugAttributes $ plug))]
-  --    ] ++ 
-      concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
+    case plug of 
+       TblSQL{} ->
+         [ Pop "rootConcept" "TblSQL" "Concept"
+               [(dirtyId plug, dirtyId . target . attExpr . head . plugAttributes $ plug)]
+         , Pop "key" "TblSQL" "SqlAttribute"
+               [(dirtyId plug, dirtyId(plug,head . plugAttributes $ plug))]
+         ] ++ 
+         concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
+       BinSQL{} -> []  
 
 instance MetaPopulations (PlugSQL,SqlAttribute) where
   metaPops _ (plug,att) =
@@ -405,17 +420,6 @@ instance MetaPopulations Rule where
              [(dirtyId dcl, dirtyId rul) | Just(_,dcl) <- [rrdcl rul]]
       ]
 
-
-
-instance MetaPopulations PlugInfo where
- metaPops _ plug = 
-      [ Comment $ " Plug `"++name plug++"` "
-      , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
-      , Pop "in" "Concept" "Plug"                 
-             [(dirtyId cpt,dirtyId plug)| cpt <- concs plug]  
---      , Pop "relsMentionedIn" "Plug" "Relation"
---             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
-      ]      
 
 instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
