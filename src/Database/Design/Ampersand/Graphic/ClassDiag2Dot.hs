@@ -149,7 +149,7 @@ classdiagram2dot opts cd
                   }
 
 -------------------------------
---        GENERALIZATIONS:   --       -- Ampersand statements such as "SPEC Dolphin ISA Animal" are called generalization.
+--        GENERALIZATIONS:   --       -- Ampersand statements such as "CLASSIFY Dolphin ISA Animal" are called generalization.
 --                           --       -- Generalizations are represented by a red arrow with a (larger) open triangle as arrowhead
 -------------------------------
        generalization2edges :: Generalization -> [DotEdge String]
