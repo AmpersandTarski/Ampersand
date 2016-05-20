@@ -26,6 +26,7 @@ import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Data.Char hiding(isSymbol)
 import Data.Set (member, fromList)
+import Data.List (nub)
 import Database.Design.Ampersand.Basics (fatal)
 import Database.Design.Ampersand.Misc
 import Data.Time.Calendar
@@ -48,15 +49,15 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 , "RULE", "MESSAGE", "VIOLATION", "TXT", "SRC", "TGT"
                 , "I", "V", "ONE"
                 , "ROLE", "MAINTAINS"
-                -- Keywords for -statement
+                -- Keywords for purposes
                 , "PURPOSE", "REF"
                 , "REST", "HTML", "LATEX", "MARKDOWN"
-                -- Keywords for -statement
+                -- Keywords for interfaces
                 , "INTERFACE", "FOR", "LINKTO"
                 , "BOX", "ROWS", "TABS", "COLS"
-                -- Keywords for -statement
+                -- Keywords for identitys
                 , "IDENT"
-                -- Keywords for view-statement
+                -- Keywords for views
                 , "VIEW", "ENDVIEW", "DEFAULT"
                 , "TEMPLATE", "HTML"
                 -- Keywords for generalisations:
