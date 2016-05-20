@@ -1,6 +1,7 @@
 ﻿CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "AST.ifc"
+INCLUDE "MinimalAST.xlsx" -- Contains minimal population. Anything discarded from it must break an invariant
 INCLUDE "Contexts.adl"
 INCLUDE "Relations.adl"
 INCLUDE "Rules.adl"

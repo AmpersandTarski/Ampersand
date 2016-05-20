@@ -326,11 +326,7 @@ instance MetaPopulations Expression where
   where
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
     makeBinaryTerm op lhs rhs = 
-      [ Pop "lhs"  "BinaryTerm" "Expression"
-             [(dirtyId expr,dirtyId lhs)]
-      , Pop "rhs"  "BinaryTerm" "Expression"
-             [(dirtyId expr,dirtyId rhs)]
-      , Pop "first"  "BinaryTerm" "Expression"
+      [ Pop "first"  "BinaryTerm" "Expression"
              [(dirtyId expr,dirtyId lhs)]
       , Pop "second" "BinaryTerm" "Expression"
              [(dirtyId expr,dirtyId rhs)]
