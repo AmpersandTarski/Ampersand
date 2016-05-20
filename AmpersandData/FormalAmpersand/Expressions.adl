@@ -7,8 +7,6 @@ PROCESS "Expression definitions"
     RELATION patterns[Context*Pattern]
     RELATION src[Expression*Concept]
     RELATION tgt[Expression*Concept]
-    RELATION lhs[BinaryTerm*Expression]
-    RELATION rhs[BinaryTerm*Expression]
     RELATION bind[Expression*Relation]
     RELATION term[Rule*Expression]
     RELATION rrexp[Rule*ExpressionID]
