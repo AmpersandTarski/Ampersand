@@ -1,5 +1,6 @@
 module Database.Design.Ampersand.FSpec.SQL
-  ( prettySQLQuery               , sqlQuery
+  ( placeHolderSQL
+  , prettySQLQuery               , sqlQuery
   , prettySQLQueryWithPlaceholder, sqlQueryWithPlaceholder )
   
 where
