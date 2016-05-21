@@ -16,6 +16,9 @@ import Database.Design.Ampersand.Misc
 import Data.List
 import Data.Maybe
 
+placeHolderSQL :: String
+placeHolderSQL = "_SRCATOM"
+
 class SQLAble a where
 
    
@@ -55,20 +58,30 @@ class SQLAble a where
       insertPlaceholder bqe 
         = case bqe of
             BSE{} -> case (bseSrc bqe,bseWhr bqe) of
-                       (_        , Nothing)
-                          -> BQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE" ] bqe -- TODO: Verify if this is correct
-                       (Iden [_] , Just whr) 
-                          -> BSE { bseSrc = bseSrc bqe
-                                 , bseTrg = bseTrg bqe
-                                 , bseTbl = bseTbl bqe
-                                 , bseWhr = Just $ conjunctSQL [ BinOp (bseSrc bqe) [Name "="] (StringLit "_SRCATOM")
-                                                               , whr]
-
-                                 }
-                       _ -> bqe
-            BCQE{} -> bqe
+                       (Iden [_] , _ ) 
+                            -> bqeWithPlaceholder
+                       (Iden [_,a], _ )
+                         | a == sourceAlias
+                            -> bqeWithPlaceholder
+                         | otherwise -> bqeWithoutPlaceholder
+                       _ -> bqeWithoutPlaceholder
+            BCQE{} -> BCQE { bcqeOper = bcqeOper bqe
+                           , bcqe0 = insertPlaceholder . bcqe0 $ bqe
+                           , bcqe1 = bqe
+                           }
             BQEComment _ x -> insertPlaceholder x
-
+        where 
+          bqeWithoutPlaceholder = BQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
+          bqeWithPlaceholder = 
+             BSE { bseSrc = bseSrc bqe
+                 , bseTrg = bseTrg bqe
+                 , bseTbl = bseTbl bqe
+                 , bseWhr = Just $
+                             case bseWhr bqe of
+                              Nothing  -> placeHolder
+                              Just whr -> conjunctSQL [ placeHolder, whr ]
+                 }
+          placeHolder = BinOp (bseSrc bqe) [Name "="] (StringLit placeHolderSQL) 
 instance SQLAble Expression where  
   getBinQueryExpr = selectExpr
 instance SQLAble Declaration where
