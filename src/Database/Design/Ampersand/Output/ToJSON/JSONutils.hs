@@ -44,7 +44,7 @@ ampersandDefault :: Data.Aeson.Types.Options
 ampersandDefault = defaultOptions {fieldLabelModifier = stripLabel}
   where stripLabel str 
           = case filter (isPrefixOf pfx) (tails str) of
-                [] -> fatal 71 $ "Label at Haskall side must contain `JSON`: "++str
+                [] -> fatal 71 $ "Label at Haskell side must contain `JSON`: "++str
                 xs -> snd . splitAt (length pfx) . head $ xs
              where pfx = "JSON"    
   

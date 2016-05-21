@@ -26,6 +26,7 @@ import Database.Design.Ampersand.Input.ADL1.LexerMonad
 import Database.Design.Ampersand.Input.ADL1.LexerMessage
 import Data.Char hiding(isSymbol)
 import Data.Set (member, fromList)
+import Data.List (nub)
 import Database.Design.Ampersand.Basics (fatal)
 import Database.Design.Ampersand.Misc
 import Data.Time.Calendar
@@ -34,32 +35,45 @@ import Numeric
 
 -- | Retrieves a list of keywords accepted by the ampersand language
 keywords :: [String] -- ^ The keywords
-keywords      = [ "INCLUDE"
-                , "CONTEXT", "ENDCONTEXT", "EXTENDS", "THEMES"
-                , "META"
+keywords  = nub [ "CONTEXT", "ENDCONTEXT"
+                , "IN", "ENGLISH", "DUTCH"
+                , "INCLUDE"
+                , "META", "THEMES"
                 , "PATTERN", "ENDPATTERN"
-                , "PROCESS", "ENDPROCESS"
-                , "INTERFACE", "FOR", "BOX", "ROWS", "TABS", "COLS", "INITIAL", "SQLPLUG", "PHPPLUG"
-                , "REPRESENT", "TYPE", "LINKTO"
+                , "CONCEPT"
+                -- Keywords for Relation-statements
+                , "RELATION", "PRAGMA", "MEANING"
+                , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP"
                 , "POPULATION", "CONTAINS"
-                , "UNI", "INJ", "SUR", "TOT", "SYM", "ASY", "TRN", "RFX", "IRF", "PROP", "ALWAYS"
-                , "RULE", "MESSAGE", "VIOLATION", "SRC", "TGT", "TEST"
-                , "RELATION", "MEANING", "CONCEPT", "IDENT"
-                , "VIEW", "ENDVIEW", "DEFAULT", "TXT", "PRIMHTML", "TEMPLATE"
-                , "IMPORT", "SPEC", "ISA", "IS", "I", "V"
-                , "CLASSIFY"
-                , "PRAGMA", "PURPOSE", "IN", "REF", "ENGLISH", "DUTCH"
+                -- Keywords for rules
+                , "RULE", "MESSAGE", "VIOLATION", "TXT", "SRC", "TGT"
+                , "I", "V", "ONE"
+                , "ROLE", "MAINTAINS"
+                -- Keywords for purposes
+                , "PURPOSE", "REF"
                 , "REST", "HTML", "LATEX", "MARKDOWN"
-                , "ONE"
-                , "BYPLUG"
-                , "ROLE", "SERVICE", "EDITS", "MAINTAINS"
+                -- Keywords for interfaces
+                , "INTERFACE", "FOR", "LINKTO"
+                , "BOX", "ROWS", "TABS", "COLS"
+                -- Keywords for identitys
+                , "IDENT"
+                -- Keywords for views
+                , "VIEW", "ENDVIEW", "DEFAULT"
+                , "TEMPLATE", "HTML"
+                -- Keywords for generalisations:
+                , "CLASSIFY", "ISA", "IS"
                 -- Keywords for TType:
+                , "REPRESENT", "TYPE"
                 , "ALPHANUMERIC", "BIGALPHANUMERIC", "HUGEALPHANUMERIC", "PASSWORD"
                 , "BINARY", "BIGBINARY", "HUGEBINARY"
                 , "DATE", "DATETIME", "BOOLEAN", "INTEGER", "FLOAT", "AUTOINCREMENT"
                 -- Keywords for values of atoms:
                 , "TRUE", "FALSE" --for booleans
-                ]
+                -- Experimental stuff:
+                , "BYPLUG", "SQLPLUG", "PHPPLUG"
+                , "SERVICE", "EDITS"
+                -- Depreciated keywords:
+                , "SPEC", "PROCESS", "ENDPROCESS"]
 
 -- | Retrieves a list of operators accepted by the ampersand language
 operators :: [String] -- ^ The operators

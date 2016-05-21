@@ -155,7 +155,7 @@ class Atom {
 		if(is_null($this->parentIfc)){
 		  $this->path = 'resources/' . $this->concept->name . '/' . $this->getJsonRepresentation();
 		}else{
-		  $this->path = $this->parentIfc->isRef() ? $this->parentIfc->path : $this->parentIfc->path . '/' . $this->getJsonRepresentation();
+		  $this->path = $this->parentIfc->path . '/' . $this->getJsonRepresentation();
 		}
 	}
 	

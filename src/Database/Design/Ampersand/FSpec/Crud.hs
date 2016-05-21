@@ -96,7 +96,8 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
           expr : case subObj of 
                    Nothing                -> []
                    Just si -> case si of
-                               InterfaceRef{} ->
+                               InterfaceRef{siIsLink = True} -> []
+                               InterfaceRef{siIsLink = False} ->
                                   case filter (\rIfc -> name rIfc == siIfcId si) $ allIfcs of -- Follow interface ref
                                     []      -> fatal 65 $ "Referenced interface " ++ siIfcId si ++ " missing"
                                     (_:_:_) -> fatal 66 $ "Multiple declarations of referenced interface " ++ siIfcId si
