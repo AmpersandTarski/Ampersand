@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## current development 
+  * Bug fix: minor issue with SQL query [Issue #436](https://github.com/AmpersandTarski/Ampersand/issues/436)
   * Bug fix: Nontermination of functional document generator. [Issue #231](https://github.com/AmpersandTarski/Ampersand/issues/231)
   * SQL query performance improvement: [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426)
   
