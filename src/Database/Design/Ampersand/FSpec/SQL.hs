@@ -381,15 +381,15 @@ nonSpecialSelectExpr fSpec expr=
 
                              (Nothing, Nothing) -> 
                                   -- This must be the special case: ...;V[A*B];V[B*C];....
-                      --           Just . SubQueryExpr SqExists . toSQL 
-                      --            . BQEComment [BlockComment "Case: ...;V[A*B];V[B*C];...."]
-                      --            . selectExpr fSpec . EDcI . target . fenceExpr $ i
+                                 Just . SubQueryExpr SqExists . toSQL 
+                                  . BQEComment [BlockComment "Case: ...;V[A*B];V[B*C];...."]
+                                  . selectExpr fSpec . EDcI . target . fenceExpr $ i
                                        
 
-                                  fatal 286 $ intercalate "\n  " $
-                                     ["Can this happen? Here is a case to analyse: (i = "++show i++")"
-                                     , "expr: "++showADL expr
-                                     ]++map show (zip (map (stringOfName . fenceName) [firstNr..]) es)
+                      --            fatal 286 $ intercalate "\n  " $
+                      --               ["Can this happen? Here is a case to analyse: (i = "++show i++")"
+                      --               , "expr: "++showADL expr
+                      --               ]++map show (zip (map (stringOfName . fenceName) [firstNr..]) es)
                           where
                             noConstraint str = Just $ BinOp x [Name "="] x
                                      where
