@@ -145,11 +145,8 @@ class Atom {
 	    // Escape id for database queries
 		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
 		
-		if(is_null($this->parentIfc)){
-		  $this->path = 'resources/' . $this->concept->name . '/' . $this->getJsonRepresentation();
-		}else{
-		  $this->path = $this->parentIfc->path . '/' . $this->getJsonRepresentation();
-		}
+        $this->path = is_null($this->parentIfc) ? 'resources/' . $this->concept->name : $this->parentIfc->path;
+        $this->path .= '/' . $this->getJsonRepresentation();
 	}
 	
 	/**
@@ -296,16 +293,16 @@ class Atom {
 	/**
 	 * Chains this atom to an interface as srcAtom 
 	 * @param string $ifcId
-     * @param boolean $isRef specifies if $ifcId is reference to toplevel interface 
 	 * @throws Exception
 	 * @return InterfaceObject
 	 */
-	public function ifc($ifcId, $isRef = false){
-	    if(is_null($this->parentIfc) || $isRef) $ifc = InterfaceObject::getInterface($ifcId);
+	public function ifc($ifcId){
+	    if(is_null($this->parentIfc)) $ifc = InterfaceObject::getInterface($ifcId);
+        elseif($this->parentIfc->isRef()) $ifc = InterfaceObject::getInterface($ifcId);
 	    else $ifc = $this->parentIfc->getSubinterface($ifcId);
 	    
 	    $clone = clone $ifc;
-	    $clone->setSrcAtom($this, $isRef);
+	    $clone->setSrcAtom($this);
 	     
 	    return $clone;
 	}

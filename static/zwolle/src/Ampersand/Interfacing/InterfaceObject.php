@@ -280,15 +280,14 @@ class InterfaceObject {
 	/**
 	 * 
 	 * @param Atom $atom
-     * @param boolean $isRef specifies if $this interface is used as reference in another subinterface
+     * @return void
 	 */
-	public function setSrcAtom($atom, $isRef = false){
+	public function setSrcAtom($atom){
 	    // Check if atom can be used as source for this interface
 	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept [{$this->srcConcept->name}] or any of its generalizations. Interface path: '{$this->path}'", 500);
 	    
 	    $this->srcAtom = $atom;
-	    $this->path = $isRef ? $this->srcAtom->path : $this->srcAtom->path . '/' . $this->id;
-	    
+	    $this->path = $this->srcAtom->path . '/' . $this->id;
 	}
 	
 	public function getSubinterface($ifcId){	    
@@ -305,7 +304,7 @@ class InterfaceObject {
 	}
 	
 	private function getSubinterfaces(){
-	    if(is_null($this->refInterfaceId)) return $this->subInterfaces;
+	    if(!$this->isRef()) return $this->subInterfaces;
 	    else return self::getInterface($this->refInterfaceId)->getSubinterfaces();
 	}
 	
@@ -393,11 +392,11 @@ class InterfaceObject {
             $tgtAtom = new Atom($tgtAtomId, $this->tgtConcept->name, $this);
             
             // Reference to other interface
-            if(!is_null($this->refInterfaceId)
+            if($this->isRef()
                 && (!$this->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
                 && (!is_null($depth) || !in_array($tgtAtom->id, (array)$recursionArr[$this->refInterfaceId]))){ // Prevent infinite loops
                 
-                $ifc = $tgtAtom->ifc($this->refInterfaceId, true);
+                $ifc = $tgtAtom->ifc($this->refInterfaceId);
                 
                 // Skip ref interface if not given read rights to prevent Exception
     	        if(!$ifc->crudR) break; // breaks foreach loop
