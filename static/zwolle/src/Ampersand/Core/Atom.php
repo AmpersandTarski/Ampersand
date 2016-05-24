@@ -226,9 +226,13 @@ class Atom {
 	                $viewStrs[$key] = $viewSegment->text;
 	                break;
 	            case "Exp" :
-	                $query = "SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
-	                $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
-	                $viewStrs[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+                    if(!is_null($viewSegment->parentIfcCol)){
+                        $viewStrs[$key] = $this->getQueryData($viewSegment->parentIfcCol);
+                    }else{
+	                    $query = "SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
+	                    $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
+	                    $viewStrs[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+                    }
 	                break;
 	            default :
 	                throw new Exception("Unsupported segmentType '{$viewSegment->segType}' in view '{$view->label}' segment '{$viewSegment->seqNr}:{$viewSegment->label}'", 501); // 501: Not implemented

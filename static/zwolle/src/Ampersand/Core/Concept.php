@@ -239,9 +239,13 @@ class Concept {
 	 * @return mixed[]
 	 */
 	public function getAllAtomObjects(){
-	    $arr = array();
-	    foreach ($this->getAllAtomIds() as $tgtAtomId){
-	        $tgtAtom = new Atom($tgtAtomId, $this->name);
+        // Query all atoms in table
+        $firstCol = current($this->mysqlConceptTable->getCols()); // We can query an arbitrary concept col for checking the existence of an atom
+	    $query = "SELECT DISTINCT *, `{$firstCol->name}` as `atomId` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
+        
+        $arr = array();
+	    foreach ((array)$this->database->Exe($query) as $row){
+	        $tgtAtom = new Atom($row['atomId'], $this->name, null, $row);
 	        $arr[] = $tgtAtom->getAtom();
 	    }
 	    return $arr;
