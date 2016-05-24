@@ -239,10 +239,11 @@ class Atom {
 	}
     
     public function getQueryData($colName = null){
-        // TODO: add checks
+        if(is_null($this->qData)) throw new Exception("No query data available for atom '{$this->__toString()}'", 500);
         if(is_null($colName)){
             return $this->qData;
         }else{
+            if(!array_key_exists($colName, $this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 500);
             return $this->qData[$colName];
         }
     }
