@@ -364,21 +364,36 @@ class InterfaceObject {
     }
     
 	/**
-	 * Returns list of target atom ids given the srcAtom of this interface object
+	 * Returns list of target atoms given the srcAtom for this interface
 	 * @throws Exception
 	 * @return Atom[] [description]
 	 */
 	private function getTgtAtoms(){
-	    // Integrity check
-	    if($this->isUni && (count($data) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
         
         $tgtAtoms = array();
-        foreach ($data as $row) {
-            $tgtAtoms[] = new Atom($row['tgt'], $this->tgtConcept->name, $this, $row);
+        try {
+            // Try to get tgt atom from srcAtom query data (in case of uni relation in same table)
+            $tgt = $this->srcAtom->getQueryData($this->id);
+            $tgtAtoms[] = new Atom($tgt, $this->tgtConcept->name, $this);
+            
+        }catch (Exception $e) {
+            // Column not defined, perform sub interface query
+            if($e->getCode() == 1001){
+                $data = (array)$this->database->Exe($this->getQuery($this->srcAtom));
+                
+                // Integrity check
+                if($this->isUni && (count($data) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
+                
+                foreach ($data as $row) {
+                    $tgtAtoms[] = new Atom($row['tgt'], $this->tgtConcept->name, $this, $row);
+                }
+            }else{
+                throw $e;
+            }
         }
-	    
-	    return $tgtAtoms;
-	}
+        
+        return $tgtAtoms;
+    }
 	
 	/**
 	 * Returns the content of this interface given the srcAtom of this interface object
@@ -403,17 +418,9 @@ class InterfaceObject {
 	    if($this->tgtConcept->isObject && !$this->isProp()) $result = array(); // return array if tgtConcept is an object (except properties), even if result is empty
 	    elseif(!$this->isUni) $result = array(); // return array for non-univalent interfaces
 	    else $result = null; // else (i.e. properties and univalent scalars)
-	    
-        // Target atom from row data of srcAtom
-        if($this->parentIfcCol){
-            $tgtAtoms = array(new Atom($this->srcAtom->getQueryData($this->parentIfcCol), $this->tgtConcept->name, $this));
-        // Else get target atoms
-        }else{
-            $tgtAtoms = $this->getTgtAtoms();
-        }
         
-	    // Loop over target atoms
-	    foreach ($tgtAtoms as $tgtAtom){
+        // Loop over target atoms
+        foreach ($this->getTgtAtoms() as $tgtAtom){
             
             // Reference to other interface
             if(!is_null($this->refInterfaceId)
