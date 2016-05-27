@@ -60,7 +60,7 @@ class Atom {
 	public $path;
 	
 	/**
-	 *Specifies the interface from which this atom is instantiated
+	 * Specifies the interface from which this atom is instantiated
 	 * @var InterfaceObject
 	 */
 	private $parentIfc;
