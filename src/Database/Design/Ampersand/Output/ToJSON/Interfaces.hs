@@ -112,7 +112,7 @@ instance JSON ObjectDef JSONexpr where
   , exprJSONqueryWithPlaceholder = if hasPlaceholder then Just query else Nothing 
   }
   where
-    query = sqlQueryWithPlaceholder fSpec normalizedInterfaceExp
+    query = broadQueryWithPlaceholder fSpec object{objctx=normalizedInterfaceExp}
     hasPlaceholder = (quo ++ placeHolderSQL ++ quo) `isInfixOf` query
       where quo = ['\'']
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object

@@ -15,7 +15,7 @@ import Data.Aeson
 import Data.Aeson.Types
 import Data.List
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL)
+import Database.Design.Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder)
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
