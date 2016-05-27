@@ -932,7 +932,7 @@ broadQuery fSpec obj = extendWithCols . toSQL . getBinQueryExprPlaceholder fSpec
                                queryExpr{qeSelectList=qeSelectList queryExpr++extraCols (init ns)}
                       _     -> queryExpr
         QEComment c queryExpr' -> QEComment c (extendWithCols queryExpr')
-        CombineQueryExpr{} -> QEComment [BlockComment "Maybe this query could be optimized (see issue #217)"]
+        CombineQueryExpr{} -> QEComment [BlockComment "Maybe this query could be optimized (see issue #217)."]
                               queryExpr 
         _                  -> fatal 912 "Unexpected combinator"
 
@@ -943,7 +943,15 @@ broadQuery fSpec obj = extendWithCols . toSQL . getBinQueryExprPlaceholder fSpec
         makeCol col = 
           case attThatisInTableOf (target . objctx $ obj) col of
             Nothing  -> Nothing 
-            Just att -> Just (Iden (tableName++[QName (name att)]), Just . QName . objnm $ col)
+            Just att -> Just ( Iden (tableName++[QName (name att)])
+                             , Just ( QName $ -- The name is not sufficient for two reasons:
+                                              --   1) the columname must be unique. For that reasin, it is prefixed:
+                                              "ifc_"++ 
+                                              --   2) It must be injective. Because SQL deletes trailing spaces,
+                                              --      we have to cope with that:
+                                              escapeIdentifier (name col)
+                                    )
+                             )
         
     theColsThatAreAvailable :: [ObjectDef]
     theColsThatAreAvailable =
