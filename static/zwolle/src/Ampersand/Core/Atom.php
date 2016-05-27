@@ -242,7 +242,7 @@ class Atom {
 	}
     
     public function getQueryData($colName = null){
-        if(is_null($this->qData)) throw new Exception("No query data available for atom '{$this->__toString()}'", 500);
+        if(is_null($this->qData)) throw new Exception("No query data available for atom '{$this->__toString()}'", 1001);
         if(is_null($colName)){
             return $this->qData;
         }else{

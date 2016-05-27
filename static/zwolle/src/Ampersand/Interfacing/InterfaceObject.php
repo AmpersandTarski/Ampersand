@@ -380,7 +380,7 @@ class InterfaceObject {
             
         }catch (Exception $e) {
             // Column not defined, perform sub interface query
-            if($e->getCode() == 1001){
+            if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
                 $data = (array)$this->database->Exe($this->getQuery($this->srcAtom));
                 
                 // Integrity check
