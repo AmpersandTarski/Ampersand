@@ -228,6 +228,7 @@ class Atom {
 	            case "Exp" :
                     if(!is_null($viewSegment->parentIfcCol)){
                         $viewStrs[$key] = $this->getQueryData($viewSegment->parentIfcCol);
+                        $this->logger->debug("#217 One query saved due to reusing data from source atom");
                     }else{
 	                    $query = "SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
 	                    $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
