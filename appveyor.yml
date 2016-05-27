@@ -13,7 +13,8 @@ build: off
 before_build:
 - curl -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
 - 7z x stack.zip stack.exe
-- sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
+# We don't have submodules, so the following line is commented out:
+# - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
 # Appveyor doesn't clone recursively.
 - git submodule update --init --recursive
 
