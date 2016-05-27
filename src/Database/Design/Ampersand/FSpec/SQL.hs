@@ -932,7 +932,8 @@ broadQuery fSpec obj = extendWithCols . toSQL . getBinQueryExprPlaceholder fSpec
                                queryExpr{qeSelectList=qeSelectList queryExpr++extraCols (init ns)}
                       _     -> queryExpr
         QEComment c queryExpr' -> QEComment c (extendWithCols queryExpr')
-        CombineQueryExpr{} -> fatal 911 "Unexpected CombineQueryExpr"
+        CombineQueryExpr{} -> QEComment [BlockComment "Maybe this query could be optimized (see issue #217)"]
+                              queryExpr 
         _                  -> fatal 912 "Unexpected combinator"
 
     extraCols :: [Name] -> [(ValueExpr, Maybe Name)]
