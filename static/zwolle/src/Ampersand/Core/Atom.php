@@ -247,8 +247,10 @@ class Atom {
         if(is_null($colName)){
             return $this->qData;
         }else{
-            if(!array_key_exists($colName, $this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 500);
-            return $this->qData[$colName];
+            // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
+            $col = 'ifc_' . $colName;
+            if(!array_key_exists($col, $this->qData)) throw new Exception("Column '{$col}' not defined in query data of atom '{$this->__toString()}'", 1001);
+            return $this->qData[$col];
         }
     }
 	
