@@ -2,7 +2,8 @@
 
 ## current development 
   * Bug fix: Nontermination of functional document generator. [Issue #231](https://github.com/AmpersandTarski/Ampersand/issues/231)
-  * SQL query performance improvement: [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426)
+  * SQL query performance improvements: [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426) and 
+    [Issue #217](https://github.com/AmpersandTarski/Ampersand/issues/217)
   
 ## v3.5.1 (17 may 2016)
   * Minor enhancement of generation of Logical Data Model
