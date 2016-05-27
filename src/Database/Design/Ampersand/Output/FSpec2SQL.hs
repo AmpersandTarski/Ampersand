@@ -36,6 +36,8 @@ dumpSQLqueries fSpec = intercalate "\n" $
             ++case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
+            ++header "Broad query of above stuff"     
+            ++(lines . prettyBroadQueryWithPlaceholder 2 fSpec $ obj)
           showSubInterface :: SubInterface -> [String]
           showSubInterface sub = 
             case sub of 

@@ -1,7 +1,8 @@
 module Database.Design.Ampersand.FSpec.SQL
   ( placeHolderSQL
   , prettySQLQuery               , sqlQuery
-  , prettySQLQueryWithPlaceholder, sqlQueryWithPlaceholder )
+  , prettySQLQueryWithPlaceholder, sqlQueryWithPlaceholder 
+  , prettyBroadQueryWithPlaceholder,broadQueryWithPlaceholder)
   
 where
 import Language.SQL.SimpleSQL.Syntax
@@ -19,6 +20,19 @@ import Data.Maybe
 
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"
+
+
+broadQueryWithPlaceholder :: FSpec -> ObjectDef -> String
+broadQueryWithPlaceholder fSpec
+  = unwords . words 
+     . prettyQueryExpr theDialect
+     . broadQuery fSpec 
+prettyBroadQueryWithPlaceholder :: Int -> FSpec -> ObjectDef -> String
+prettyBroadQueryWithPlaceholder i fSpec
+    =  intercalate ("\n"++replicate i ' ') 
+     . lines
+     . prettyQueryExpr theDialect 
+     . broadQuery fSpec
 
 class SQLAble a where
 
@@ -900,4 +914,62 @@ one = BQEComment [BlockComment "Just ONE"]
 
 theDialect :: Dialect 
 theDialect = MySQL  -- maybe in the future other dialects will be supported. This depends on package `simple-sql-parser`
+
+broadQuery :: FSpec -> ObjectDef -> QueryExpr
+broadQuery fSpec obj = extendWithCols . toSQL . getBinQueryExprPlaceholder fSpec . objctx $ obj
+  where 
+    extendWithCols :: QueryExpr -> QueryExpr
+    extendWithCols queryExpr =
+      case queryExpr of
+        Select{} -> case qeSelectList queryExpr of
+                      -- Now we are looking for a very specific match, to 
+                      -- find the name of the broad table, as it is in the 
+                      -- binary query:
+                      --    A list of exactly two names, where the second element contains the 
+                      --    tableName followed by exacly one name that contains the columName
+                      --    the tableName could consist of multiple 'Name's:  
+                      [_,(Iden ns@(_:_) ,_)] -> 
+                               queryExpr{qeSelectList=qeSelectList queryExpr++extraCols (init ns)}
+                      _     -> queryExpr
+        QEComment c queryExpr' -> QEComment c (extendWithCols queryExpr')
+        CombineQueryExpr{} -> fatal 911 "Unexpected CombineQueryExpr"
+        _                  -> fatal 912 "Unexpected combinator"
+
+    extraCols :: [Name] -> [(ValueExpr, Maybe Name)]
+    extraCols tableName = mapMaybe makeCol theColsThatAreAvailable
+      where 
+        makeCol :: ObjectDef -> Maybe (ValueExpr, Maybe Name)
+        makeCol col = 
+          case attThatisInTableOf (target . objctx $ obj) col of
+            Nothing  -> Nothing 
+            Just att -> Just (Iden (tableName++[QName (name att)]), Just . QName . objnm $ col)
+        
+    theColsThatAreAvailable :: [ObjectDef]
+    theColsThatAreAvailable =
+       case objmsub obj of
+        Nothing -> []
+        Just si -> 
+          case si of 
+            InterfaceRef{} -> []
+            Box{} -> filter isEligible (siObjs si)
+    isEligible = isJust . attThatisInTableOf (target . objctx $ obj)
+      
+    attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
+    attThatisInTableOf cpt od = 
+          case theDcl of
+            Nothing -> Nothing
+            Just (p,att) -> if plug == p
+                            then Just att
+                            else Nothing
+         where
+            (plug, _ ) = getConceptTableInfo fSpec cpt
+            theDcl :: Maybe (PlugSQL, SqlAttribute)
+            theDcl = case objctx od of
+                       EFlp (EDcD d) -> let (p, s, _) = getDeclarationTableInfo fSpec d
+                                        in Just (p, s)
+                       EDcD d        -> let (p, _, t) = getDeclarationTableInfo fSpec d
+                                        in Just (p, t)
+                       EDcI c        -> Just $ getConceptTableInfo fSpec c
+                       _             -> Nothing
+           
 
