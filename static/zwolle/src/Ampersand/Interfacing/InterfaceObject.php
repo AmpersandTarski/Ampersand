@@ -361,6 +361,7 @@ class InterfaceObject {
         }else{
             $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$srcAtom->idEsc}' AND `tgt` IS NOT NULL";
         }
+        return $query;
     }
     
 	/**
