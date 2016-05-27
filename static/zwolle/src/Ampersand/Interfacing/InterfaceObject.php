@@ -137,11 +137,6 @@ class InterfaceObject {
 	 * @var string
 	 */
 	public $query;
-    
-    /**
-     * @var string|null $parentIfcCol the label/name of the columm of this ifc in the parent ifc data if applicable (i.e. same table)
-     */
-    public $parentIfcCol = null;
 	
 	/**
 	 * 
@@ -219,14 +214,7 @@ class InterfaceObject {
 		$this->isUni = $ifcDef['expr']['isUni'];
 		$this->isTot = $ifcDef['expr']['isTot'];
 		$this->isIdent = $ifcDef['expr']['isIdent'];
-        
-        // Interface expression query
-        // check for _SRCATOM because not all queries have this placeholder yet
-        // TODO: remove check when queryWithPlaceholder is complete for all interface queries
-        if(strpos($ifcDef['expr']['queryWithPlaceholder'], '_SRCATOM') !== false) $this->query = $ifcDef['expr']['queryWithPlaceholder'];
-		else $this->query = $ifcDef['expr']['query'];
-        
-        if(isset($ifcDef['expr']['parentIfcCol'])) $this->parentIfcCol = $ifcDef['expr']['parentIfcCol'];
+		$this->query = $ifcDef['expr']['query'];
 		
 		// CRUD rights
 		$this->crudC = $ifcDef['crud']['create'];
