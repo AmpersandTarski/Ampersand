@@ -9,7 +9,6 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
 import Database.Design.Ampersand.FSpec.ShowADL
-import Data.List (isInfixOf)
 
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
@@ -47,8 +46,7 @@ data JSONexpr = JSONexpr
   , exprJSONisUni             :: Bool
   , exprJSONisTot             :: Bool
   , exprJSONisIdent           :: Bool
-  , exprJSONquery             :: Maybe String
-  , exprJSONqueryWithPlaceholder :: Maybe String
+  , exprJSONquery             :: String
   } deriving (Generic, Show)
 
 instance ToJSON JSONSubInterface where
@@ -107,13 +105,10 @@ instance JSON ObjectDef JSONexpr where
   , exprJSONisUni             = isUni normalizedInterfaceExp
   , exprJSONisTot             = isTot normalizedInterfaceExp
   , exprJSONisIdent           = isIdent normalizedInterfaceExp
-  , exprJSONquery                = if hasPlaceholder then Nothing else Just query
-  , exprJSONqueryWithPlaceholder = if hasPlaceholder then Just query else Nothing 
+  , exprJSONquery             = query
   }
   where
     query = broadQueryWithPlaceholder fSpec object{objctx=normalizedInterfaceExp}
-    hasPlaceholder = (quo ++ placeHolderSQL ++ quo) `isInfixOf` query
-      where quo = ['\'']
     normalizedInterfaceExp = conjNF (getOpts fSpec) $ objctx object
     (srcConcept, tgtConcept) =
       case getExpressionRelation normalizedInterfaceExp of
