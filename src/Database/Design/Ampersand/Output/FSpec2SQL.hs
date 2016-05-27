@@ -1,6 +1,7 @@
 module Database.Design.Ampersand.Output.FSpec2SQL
   (dumpSQLqueries)
 where
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateAllDefPopQueries
   )
@@ -10,7 +11,8 @@ import Data.List
 
 dumpSQLqueries :: FSpec -> String
 dumpSQLqueries fSpec = intercalate "\n" $ 
-                         header "Database structure queries"
+                         header ampersandVersionStr
+                       ++header "Database structure queries"
                        ++generateDBstructQueries fSpec True
                        ++header "Initial population queries"
                        ++generateAllDefPopQueries fSpec True
