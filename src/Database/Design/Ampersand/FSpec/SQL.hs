@@ -89,8 +89,8 @@ instance SQLAble Declaration where
   getBinQueryExpr = selectDeclaration
      
 sourceAlias, targetAlias :: Name
-sourceAlias = (Name "src") 
-targetAlias = (Name "tgt")
+sourceAlias = Name "src" 
+targetAlias = Name "tgt"
 selectExpr :: FSpec    -- current context
         -> Expression  -- expression to be translated
         -> BinQueryExpr   -- resulting info for the binary SQL expression
@@ -283,7 +283,7 @@ nonSpecialSelectExpr fSpec expr=
                                            BSE{}   -> x
                                            _       -> BSE { bseSrc = Iden [sourceAlias]
                                                           , bseTrg = Iden [targetAlias]
-                                                          , bseTbl = [TRQueryExpr (toSQL (x)) `as` Name "someDummyNameBecauseMySQLNeedsOne" ]
+                                                          , bseTbl = [TRQueryExpr (toSQL x) `as` Name "someDummyNameBecauseMySQLNeedsOne" ]
                                                           , bseWhr = Nothing
                                                           }
                                        makeIntersectSelectExpr :: [Expression] -> BinQueryExpr
@@ -292,7 +292,7 @@ nonSpecialSelectExpr fSpec expr=
                                           []  -> fatal 126 "makeIntersectSelectExpr must not be used on empty list"
                                           [e] -> e
                                           es  -> -- Note: We now have at least two subexpressions
-                                                 BQEComment [BlockComment "`intersect` does not work in MySQL, so this statement is generated:"] $
+                                                 BQEComment [BlockComment "`intersect` does not work in MySQL, so this statement is generated:"]
                                                  BSE { bseSrc = Iden[iSect 0,sourceAlias]
                                                      , bseTrg = Iden[iSect 0,targetAlias]
                                                      , bseTbl = map tableRef (zip [0..] es)
@@ -854,17 +854,17 @@ as ve a = -- TRAlias ve (Alias a Nothing)
    withAlias = TRAlias ve (Alias a Nothing)
     
 notNull :: ValueExpr -> ValueExpr
-notNull ve = PostfixOp [Name "IS NOT NULL"] ve                         
+notNull = PostfixOp [Name "IS NOT NULL"]
 isNull  :: ValueExpr -> ValueExpr
-isNull ve = PostfixOp [Name "IS NULL"] ve
+isNull = PostfixOp [Name "IS NULL"]
 emptySet :: BinQueryExpr
-emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"] $
+emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"]
            BSE { 
                -- select 1 as src, 1 as trg from (select 1) dummy where false
                  bseSrc = Iden [a]
                , bseTrg = Iden [a]
                , bseTbl = [TRQueryExpr (QEComment [BlockComment "Select nothing..."] 
-                                       (Select { qeSetQuantifier = SQDefault
+                                        Select { qeSetQuantifier = SQDefault
                                                , qeSelectList = [(NumLit "1", Just a)]
                                                , qeFrom = []
                                                , qeWhere = Nothing
@@ -873,18 +873,19 @@ emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"] $
                                                , qeOrderBy = []
                                                , qeOffset = Nothing
                                                , qeFetchFirst = Nothing
-                                               })) `as` Name "nothing"]
+                                               }
+                                       ) `as` Name "nothing"]
                , bseWhr = Just (BinOp (Iden [a]) [Name "<>"] (NumLit "1"))
                }
             where a = Name "a"
 
 
 one :: BinQueryExpr
-one = BQEComment [BlockComment "Just ONE"] $
+one = BQEComment [BlockComment "Just ONE"]
       BSE {  -- select distinct 1 as src, 1 as tgt from (select 1) as a
             bseSrc = NumLit "1"
           , bseTrg = NumLit "1"
-          , bseTbl = [(TRQueryExpr  Select { qeSetQuantifier = SQDefault
+          , bseTbl = [ TRQueryExpr Select { qeSetQuantifier = SQDefault
                                           , qeSelectList = [(NumLit "1", Nothing)]
                                           , qeFrom = []
                                           , qeWhere = Nothing
@@ -893,7 +894,7 @@ one = BQEComment [BlockComment "Just ONE"] $
                                           , qeOrderBy = []
                                           , qeOffset = Nothing
                                           , qeFetchFirst = Nothing
-                                          }) `as` Name "ONE" ]
+                                          } `as` Name "ONE" ]
           , bseWhr = Nothing
           }
 
