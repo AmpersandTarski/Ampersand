@@ -21,7 +21,6 @@ import Data.Maybe
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"
 
-
 broadQueryWithPlaceholder :: FSpec -> ObjectDef -> String
 broadQueryWithPlaceholder fSpec
   = unwords . words 
@@ -35,8 +34,6 @@ prettyBroadQueryWithPlaceholder i fSpec
      . broadQuery fSpec
 
 class SQLAble a where
-
-   
   -- | show SQL query without comments and not prettyprinted
   sqlQuery, sqlQueryWithPlaceholder :: FSpec -> a -> String
   sqlQuery                 = doNonPretty getBinQueryExpr
@@ -64,7 +61,6 @@ class SQLAble a where
      . toSQL
      . fun fSpec
   
-
   getBinQueryExpr ::  FSpec -> a -> BinQueryExpr
   getBinQueryExprPlaceholder :: FSpec -> a -> BinQueryExpr
   getBinQueryExprPlaceholder fSpec = insertPlaceholder . getBinQueryExpr fSpec 
@@ -90,6 +86,8 @@ class SQLAble a where
           bqeWithPlaceholder = 
              BSE { bseSrc = bseSrc bqe
                  , bseTrg = bseTrg bqe
+                 , bseSr' = bseSr' bqe
+                 , bseTr' = bseTr' bqe
                  , bseTbl = bseTbl bqe
                  , bseWhr = Just $
                              case bseWhr bqe of
@@ -130,7 +128,11 @@ maybeSpecialCase fSpec expr =
                               [ BlockComment $ "Optimized case for: "++name r++showSign r++" [TOT]."
                               , BlockComment $ "   "++showADL expr++" ("++show (sign expr)++")"
                               ] $ 
-                                 let aAtt = Iden [sqlAttConcept fSpec a]
+                                 let col = Col { cTable = []
+                                               , cCol   = [sqlAttConcept fSpec a]
+                                               , cAlias = []
+                                               , cSpecial = Nothing}
+                                     aAtt = col2ValueExpr col
                                      whereClause = 
                                        conjunctSQL [ aAtt `isNotIn` selectSource (selectExpr fSpec (EDcD r))
                                                    , notNull aAtt
@@ -138,6 +140,8 @@ maybeSpecialCase fSpec expr =
                                  in    
                                    BSE { bseSrc = aAtt
                                        , bseTrg = aAtt
+                                       , bseSr' = col
+                                       , bseTr' = col
                                        , bseTbl = [sqlConceptTable fSpec a `as` Name "notIns"]
                                        , bseWhr = Just whereClause
                                        }
@@ -157,8 +161,18 @@ maybeSpecialCase fSpec expr =
                                                       [ isNull (Iden[table2,sourceAlias])
                                                       , isNull (Iden[table2,targetAlias])
                                                       ]
+                                      col1 = Col { cTable = []
+                                                 , cCol   = [table1]
+                                                 , cAlias = [sourceAlias]
+                                                 , cSpecial = Nothing}
+                                      col2 = Col { cTable = []
+                                                 , cCol   = [table1]
+                                                 , cAlias = [targetAlias]
+                                                 , cSpecial = Nothing}
                                   in BSE { bseSrc = Iden [table1 ,sourceAlias]
                                          , bseTrg = Iden [table1 ,targetAlias]
+                                         , bseSr' = col1
+                                         , bseTr' = col2
                                          , bseTbl = [TRJoin 
                                                        (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
                                                        False -- Needs to be false in MySql
@@ -183,12 +197,22 @@ maybeSpecialCase fSpec expr =
                                    ]
                               ] $ let table1 = Name "t1"
                                       table2 = Name "t2"
+                                      col1 = Col { cTable = []
+                                                 , cCol   = [table1]
+                                                 , cAlias = [sourceAlias]
+                                                 , cSpecial = Nothing}
+                                      col2 = Col { cTable = []
+                                                 , cCol   = [table1]
+                                                 , cAlias = [targetAlias]
+                                                 , cSpecial = Nothing}
                                       whereClause = Just . disjunctSQL $
                                                       [ isNull (Iden[table2,sourceAlias])
                                                       , isNull (Iden[table2,targetAlias])
                                                       ]
                                   in BSE { bseSrc = Iden [table1 ,sourceAlias]
                                          , bseTrg = Iden [table1 ,targetAlias]
+                                         , bseSr' = col1
+                                         , bseTr' = col2
                                          , bseTbl = [TRJoin 
                                                        (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
                                                        False -- Needs to be false in MySql
@@ -252,6 +276,8 @@ nonSpecialSelectExpr fSpec expr=
                                  Just singleton -> selectExpr fSpec (EMp1 singleton (source expr))
                           ts  ->    BSE { bseSrc = theSrc
                                         , bseTrg = theTrg
+                                        , bseSr' = theSr'
+                                        , bseTr' = theTr'
                                         , bseTbl = theTbl
                                         , bseWhr = case catMaybes [mandatoryTuple,forbiddenTuples,theWhr] of
                                                     [] -> Nothing
@@ -285,6 +311,8 @@ nonSpecialSelectExpr fSpec expr=
 
                                        theSrc = bseSrc (makeSelectable sResult)
                                        theTrg = bseTrg (makeSelectable sResult)
+                                       theSr' = bseSr' (makeSelectable sResult)
+                                       theTr' = bseTr' (makeSelectable sResult)
                                        theTbl = bseTbl (makeSelectable sResult)
                                        theWhr = case makeSelectable sResult of
                                                   e@BSE{}      -> bseWhr e
@@ -297,6 +325,14 @@ nonSpecialSelectExpr fSpec expr=
                                            BSE{}   -> x
                                            _       -> BSE { bseSrc = Iden [sourceAlias]
                                                           , bseTrg = Iden [targetAlias]
+                                                          , bseSr' = Col { cTable = []
+                                                                         , cCol   = []
+                                                                         , cAlias = [sourceAlias]
+                                                                         , cSpecial = Nothing}
+                                                          , bseTr' = Col { cTable = []
+                                                                         , cCol   = []
+                                                                         , cAlias = [targetAlias]
+                                                                         , cSpecial = Nothing}
                                                           , bseTbl = [TRQueryExpr (toSQL x) `as` Name "someDummyNameBecauseMySQLNeedsOne" ]
                                                           , bseWhr = Nothing
                                                           }
@@ -309,6 +345,14 @@ nonSpecialSelectExpr fSpec expr=
                                                  BQEComment [BlockComment "`intersect` does not work in MySQL, so this statement is generated:"]
                                                  BSE { bseSrc = Iden[iSect 0,sourceAlias]
                                                      , bseTrg = Iden[iSect 0,targetAlias]
+                                                     , bseSr' = Col { cTable = [iSect 0]
+                                                                    , cCol   = []
+                                                                    , cAlias = [sourceAlias]
+                                                                    , cSpecial = Nothing}
+                                                     , bseTr' = Col { cTable = [iSect 0]
+                                                                    , cCol   = []
+                                                                    , cAlias = [targetAlias]
+                                                                    , cSpecial = Nothing}
                                                      , bseTbl = map tableRef (zip [0..] es)
                                                      , bseWhr = Just . conjunctSQL . concatMap constraintsOfTailExpression $ 
                                                                    [1..length (tail es)]     
@@ -434,13 +478,31 @@ nonSpecialSelectExpr fSpec expr=
                              
                              
                           
-                in BQEComment [BlockComment $ "case: (ECps es), with two or more elements in es."++showADL expr] $
+                in BQEComment [BlockComment $ "case: (ECps es), with two or more elements in es."++showADL expr]
                    BSE { bseSrc = if source (head es) == ONE -- the first expression is V[ONE*someConcept]
                                   then NumLit "1"
                                   else Iden [fenceName firstNr,sourceAlias]
                        , bseTrg = if target (last es) == ONE -- the last expression is V[someConcept*ONE]
                                   then NumLit "1"
                                   else Iden [fenceName lastNr, targetAlias]
+                       , bseSr' = if source (head es) == ONE -- the first expression is V[ONE*someConcept]
+                                  then Col { cTable = []
+                                           , cCol   = []
+                                           , cAlias = []
+                                           , cSpecial = Just $ NumLit "1"}
+                                  else Col { cTable = [fenceName firstNr]
+                                           , cCol   = []
+                                           , cAlias = [sourceAlias]
+                                           , cSpecial = Nothing}
+                       , bseTr' = if target (last es) == ONE -- the last expression is V[someConcept*ONE]
+                                  then Col { cTable = []
+                                           , cCol   = []
+                                           , cAlias = []
+                                           , cSpecial = Just $ NumLit "1"}
+                                  else Col { cTable = [fenceName lastNr]
+                                           , cCol   = []
+                                           , cAlias = [targetAlias]
+                                           , cSpecial = Nothing}
                        , bseTbl = catMaybes fences
                        , bseWhr = case catMaybes polesConstraints of
                                     [] -> Nothing
@@ -453,11 +515,21 @@ nonSpecialSelectExpr fSpec expr=
                         case se of 
                          BSE{}  -> BSE { bseSrc = bseTrg se
                                        , bseTrg = bseSrc se
+                                       , bseSr' = bseTr' se
+                                       , bseTr' = bseSr' se
                                        , bseTbl = bseTbl se
                                        , bseWhr = bseWhr se
                                        }
                          BCQE{} -> BSE { bseSrc = Iden [targetAlias]
                                        , bseTrg = Iden [sourceAlias]
+                                       , bseSr' = Col { cTable = []
+                                                      , cCol   = []
+                                                      , cAlias = [targetAlias]
+                                                      , cSpecial = Nothing}
+                                       , bseTr' = Col { cTable = []
+                                                      , cCol   = []
+                                                      , cAlias = [sourceAlias]
+                                                      , cSpecial = Nothing}
                                        , bseTbl = [toTableRef se `as` Name "flipped"] -- MySQL requires you to label the "sub query" instead of just leaving it like many other implementations.
                                        , bseWhr = Nothing
                                        }
@@ -466,9 +538,17 @@ nonSpecialSelectExpr fSpec expr=
                                     BQEComment (_:c') fe -> BQEComment (c++c') fe
                                     _ -> fatal 309 "A flipped expression will always start with the comment `Flipped: ..."
     (EMp1 val c) -> let cAtt = Iden [sqlAttConcept fSpec c]
-                    in BQEComment [BlockComment "case: EMp1 val c"] $
+                    in BQEComment [BlockComment "case: EMp1 val c"]
                          BSE { bseSrc = cAtt
                              , bseTrg = cAtt
+                             , bseSr' = Col { cTable = []
+                                            , cCol   = [sqlAttConcept fSpec c]
+                                            , cAlias = [sourceAlias]
+                                            , cSpecial = Nothing}
+                             , bseTr' = Col { cTable = []
+                                            , cCol   = [sqlAttConcept fSpec c]
+                                            , cAlias = [targetAlias]
+                                            , cSpecial = Nothing}
                              , bseTbl = [sqlConceptTable fSpec c]
                              , bseWhr = Just $ BinOp cAtt [Name "="] (singleton2SQL c val)
                              } 
@@ -482,17 +562,41 @@ nonSpecialSelectExpr fSpec expr=
                      (ONE, ONE) -> one
                      (_  , ONE) -> BSE { bseSrc = Iden [psrc, fsrc]
                                        , bseTrg = NumLit "1"
+                                       , bseSr' = Col { cTable = [psrc]
+                                                      , cCol   = [fsrc]
+                                                      , cAlias = []
+                                                      , cSpecial = Nothing}
+                                       , bseTr' = Col { cTable = []
+                                                      , cCol   = []
+                                                      , cAlias = []
+                                                      , cSpecial = Just $ NumLit "1"}
                                        , bseTbl = [TRSimple [psrc]]
                                        , bseWhr = Just (notNull (Iden [psrc, fsrc]))
                                                               
                                        }
                      (ONE, _  ) -> BSE { bseSrc = NumLit "1"
                                        , bseTrg = Iden [ptgt, ftgt]
+                                       , bseSr' = Col { cTable = []
+                                                      , cCol   = []
+                                                      , cAlias = []
+                                                      , cSpecial = Just $ NumLit "1"}
+                                       , bseTr' = Col { cTable = [ptgt]
+                                                      , cCol   = [ftgt]
+                                                      , cAlias = []
+                                                      , cSpecial = Nothing}
                                        , bseTbl = [TRSimple [ptgt]]
                                        , bseWhr = Just (notNull (Iden [ptgt, ftgt]))
                                        }
                      _     -> BSE { bseSrc = Iden [first, fsrc]
                                   , bseTrg = Iden [secnd, ftgt]
+                                  , bseSr' = Col { cTable = [first]
+                                                 , cCol   = [fsrc]
+                                                 , cAlias = []
+                                                 , cSpecial = Nothing}
+                                  , bseTr' = Col { cTable = [secnd]
+                                                 , cCol   = [ftgt]
+                                                 , cAlias = []
+                                                 , cSpecial = Nothing}
                                   , bseTbl = [TRSimple [psrc] `as` first
                                              ,TRSimple [ptgt] `as` secnd]
                                   , bseWhr = Just $ conjunctSQL
@@ -502,18 +606,33 @@ nonSpecialSelectExpr fSpec expr=
                                   first = Name "fst"
                                   secnd = Name "snd"
     
-    (EDcI c)             -> case c of
-                              ONE ->   BQEComment [BlockComment "I[ONE]"] $
-                                       BSE { bseSrc = NumLit "1"
+    (EDcI c)             -> BQEComment [BlockComment $ "I["++name c++"]"] $
+                             case c of
+                              ONE ->   BSE { bseSrc = NumLit "1"
                                            , bseTrg = NumLit "1"
+                                           , bseSr' = Col { cTable = []
+                                                          , cCol   = []
+                                                          , cAlias = []
+                                                          , cSpecial = Just $ NumLit "1"}
+                                           , bseTr' = Col { cTable = []
+                                                          , cCol   = []
+                                                          , cAlias = []
+                                                          , cSpecial = Just $ NumLit "1"}
                                            , bseTbl = []
                                            , bseWhr = Nothing
                                            }
                               PlainConcept{} -> 
                                  let cAtt = Iden [sqlAttConcept fSpec c]
-                                 in    BQEComment [BlockComment $ "I["++name c++"]"] $
-                                       BSE { bseSrc = cAtt
+                                 in    BSE { bseSrc = cAtt
                                            , bseTrg = cAtt
+                                           , bseSr' = Col { cTable = []
+                                                          , cCol   = [sqlAttConcept fSpec c]
+                                                          , cAlias = []
+                                                          , cSpecial = Nothing}
+                                           , bseTr' = Col { cTable = []
+                                                          , cCol   = [sqlAttConcept fSpec c]
+                                                          , cAlias = []
+                                                          , cSpecial = Nothing}
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Just (notNull cAtt)
                                            }
@@ -524,15 +643,31 @@ nonSpecialSelectExpr fSpec expr=
                          case c of -- select the population of the most specific concept, which is the source.
                               ONE ->   BSE { bseSrc = NumLit "1"
                                            , bseTrg = NumLit "1"
+                                           , bseSr' = Col { cTable = []
+                                                          , cCol   = []
+                                                          , cAlias = []
+                                                          , cSpecial = Just $ NumLit "1"}
+                                           , bseTr' = Col { cTable = []
+                                                          , cCol   = []
+                                                          , cAlias = []
+                                                          , cSpecial = Just $ NumLit "1"}
                                            , bseTbl = []
                                            , bseWhr = Nothing
                                            }
                               PlainConcept{} -> 
-                                 let cAtt = sqlAttConcept fSpec c
-                                 in    BSE { bseSrc = Iden [cAtt]
-                                           , bseTrg = Iden [cAtt]
+                                 let cAtt = Iden [sqlAttConcept fSpec c]
+                                 in    BSE { bseSrc = cAtt
+                                           , bseTrg = cAtt
+                                           , bseSr' = Col { cTable = []
+                                                          , cCol   = [sqlAttConcept fSpec c]
+                                                          , cAlias = []
+                                                          , cSpecial = Nothing}
+                                           , bseTr' = Col { cTable = []
+                                                          , cCol   = [sqlAttConcept fSpec c]
+                                                          , cAlias = []
+                                                          , cSpecial = Nothing}
                                            , bseTbl = [sqlConceptTable fSpec c]
-                                           , bseWhr = Just (notNull (Iden [cAtt]))
+                                           , bseWhr = Just (notNull cAtt)
                                            }
     (EDcD d)             -> selectDeclaration fSpec d
 
@@ -542,9 +677,17 @@ nonSpecialSelectExpr fSpec expr=
       -> case e of
            EDcV _        -> emptySet
            EDcI ONE      -> fatal 254 "EDcI ONE must not be seen at this place."
-           EDcI c        -> BQEComment [BlockComment $ "case: ECpl (EDcI "++name c++")"] $
+           EDcI c        -> BQEComment [BlockComment $ "case: ECpl (EDcI "++name c++")"]
                              BSE { bseSrc = Iden [QName "concept0", concpt]
                                  , bseTrg = Iden [QName "concept1", concpt]
+                                 , bseSr' = Col { cTable = [QName "concept0"]
+                                                , cCol   = [concpt]
+                                                , cAlias = []
+                                                , cSpecial = Nothing}
+                                 , bseTr' = Col { cTable = [QName "concept1"]
+                                                , cCol   = [concpt]
+                                                , cAlias = []
+                                                , cSpecial = Nothing}
                                  , bseTbl = [sqlConceptTable fSpec c `as` QName "concept0"
                                             ,sqlConceptTable fSpec c `as` QName "concept1"
                                             ]
@@ -554,9 +697,17 @@ nonSpecialSelectExpr fSpec expr=
                                                  )
                                  }
                              where concpt = sqlAttConcept fSpec c
-           _ | otherwise       -> BQEComment (map BlockComment [ "case: ECpl e", "ECpl ( \""++showADL e++"\" )"]) $
+           _ | otherwise       -> BQEComment (map BlockComment [ "case: ECpl e", "ECpl ( \""++showADL e++"\" )"])
                                   BSE { bseSrc = Iden [closedWorldName,sourceAlias]
                                       , bseTrg = Iden [closedWorldName,targetAlias]
+                                      , bseSr' = Col { cTable = [closedWorldName]
+                                                     , cCol   = [sourceAlias]
+                                                     , cAlias = []
+                                                     , cSpecial = Nothing}
+                                      , bseTr' = Col { cTable = [closedWorldName]
+                                                     , cCol   = [targetAlias]
+                                                     , cAlias = []
+                                                     , cSpecial = Nothing}
                                       , bseTbl = [(toTableRef . selectExpr fSpec) theClosedWorldExpression `as` closedWorldName]
                                       , bseWhr = Just $ selectNotExists 
                                                           (toTableRef (selectExpr fSpec e) `as` posName) 
@@ -621,6 +772,14 @@ Based on this derivation:
               | otherwise
                   = BSE { bseSrc = Iden [ resLeft, mainSrc]
                         , bseTrg = Iden [ resRight, mainTgt]
+                        , bseSr' = Col { cTable = [resLeft]
+                                       , cCol   = [mainSrc]
+                                       , cAlias = []
+                                       , cSpecial = Nothing}
+                        , bseTr' = Col { cTable = [resRight]
+                                       , cCol   = [mainTgt]
+                                       , cAlias = []
+                                       , cSpecial = Nothing}
                         , bseTbl = [sqlConceptTable fSpec (target l) `as` resLeft
                                   ,sqlConceptTable fSpec (target r) `as` resRight]
                         , bseWhr = Just . VEComment [BlockComment $ "Left hand side: "++showADL l] $ 
@@ -702,15 +861,33 @@ selectDeclaration fSpec dcl =
                   trg=Iden [Name "vsnd", sqlAttConcept fSpec (target sgn)]
               in BSE { bseSrc = src
                      , bseTrg = trg
+                     , bseSr' = Col { cTable = [Name "vfst"]
+                                    , cCol   = [sqlAttConcept fSpec (source sgn)]
+                                    , cAlias = []
+                                    , cSpecial = Nothing}
+                     , bseTr' = Col { cTable = [Name "vsnd"]
+                                    , cCol   = [sqlAttConcept fSpec (target sgn)]
+                                    , cAlias = []
+                                    , cSpecial = Nothing}
                      , bseTbl = [sqlConceptTable fSpec (source sgn) `as` Name "vfst"
                                 ,sqlConceptTable fSpec (target sgn) `as` Name "vsnd"]
-                     , bseWhr = Just (conjunctSQL (map notNull [src,trg]))
+                     , bseWhr = Just . conjunctSQL . map notNull $
+                                  [ Iden [Name "vfst", sqlAttConcept fSpec (source sgn)]
+                                  , Iden [Name "vsnd", sqlAttConcept fSpec (target sgn)]]
                      }
    where
      leafCode :: (PlugSQL,SqlAttribute,SqlAttribute) -> BinQueryExpr
      leafCode (plug,s,t) 
          = BSE { bseSrc = Iden [QName (name s)]
                , bseTrg = Iden [QName (name t)]
+               , bseSr' = Col { cTable = []
+                              , cCol   = [QName (name s)]
+                              , cAlias = []
+                              , cSpecial = Nothing}
+               , bseTr' = Col { cTable = []
+                              , cCol   = [QName (name t)]
+                              , cAlias = []
+                              , cSpecial = Nothing}
                , bseTbl = [TRSimple [QName (name plug)]]
                , bseWhr = Just . conjunctSQL . map notNull $
                                 [Iden [QName (name c)] | c<-nub [s,t]]
@@ -759,6 +936,8 @@ selectExists tbl whr =
 -- | a (local) data structure to hold SQL info for binary expressions
 data BinQueryExpr = BSE  { bseSrc :: ValueExpr       -- ^ source attribute and table
                          , bseTrg :: ValueExpr       -- ^ target attribute and table
+                         , bseSr' :: Col
+                         , bseTr' :: Col
                          , bseTbl :: [TableRef]      -- ^ tables
                          , bseWhr :: Maybe ValueExpr -- ^ the (optional) WHERE clause
                          }
@@ -767,12 +946,27 @@ data BinQueryExpr = BSE  { bseSrc :: ValueExpr       -- ^ source attribute and t
                          , bcqe1 ::    BinQueryExpr  -- ^ Right expression
                          }
                   | BQEComment [Comment] BinQueryExpr
-                               
+data Col = Col { cTable :: [Name]
+               , cCol   :: [Name]
+               , cAlias :: [Name]
+               , cSpecial :: Maybe ValueExpr 
+               }  
+col2ValueExpr :: Col -> ValueExpr
+col2ValueExpr col = 
+  case cSpecial col of 
+    Nothing -> Iden x
+    Just ve  
+      | null x    -> ve
+      | otherwise -> fatal 826 "cSpecial should only be used in special cases, e.g. with ONE"
+  where
+    x = cTable col++cCol col++cAlias col
 stripComment :: BinQueryExpr -> BinQueryExpr
 stripComment bqe 
   = case bqe of
        BSE{} -> BSE { bseSrc = bseSrc bqe
                     , bseTrg = bseTrg bqe
+                    , bseSr' = bseSr' bqe
+                    , bseTr' = bseTr' bqe
                     , bseTbl = map stripCommentTableRef . bseTbl $ bqe
                     , bseWhr = bseWhr bqe
                     }
@@ -877,6 +1071,14 @@ emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"]
                -- select 1 as src, 1 as trg from (select 1) dummy where false
                  bseSrc = Iden [a]
                , bseTrg = Iden [a]
+               , bseSr' = Col { cTable = []
+                              , cCol   = [a]
+                              , cAlias = []
+                              , cSpecial = Nothing}
+               , bseTr' = Col { cTable = []
+                              , cCol   = [a]
+                              , cAlias = []
+                              , cSpecial = Nothing}
                , bseTbl = [TRQueryExpr (QEComment [BlockComment "Select nothing..."] 
                                         Select { qeSetQuantifier = SQDefault
                                                , qeSelectList = [(NumLit "1", Just a)]
@@ -899,6 +1101,14 @@ one = BQEComment [BlockComment "Just ONE"]
       BSE {  -- select distinct 1 as src, 1 as tgt from (select 1) as a
             bseSrc = NumLit "1"
           , bseTrg = NumLit "1"
+          , bseSr' = Col { cTable = []
+                         , cCol   = []
+                         , cAlias = []
+                         , cSpecial = Just $ NumLit "1"}
+          , bseTr' = Col { cTable = []
+                         , cCol   = []
+                         , cAlias = []
+                         , cSpecial = Just $ NumLit "1"}
           , bseTbl = [ TRQueryExpr Select { qeSetQuantifier = SQDefault
                                           , qeSelectList = [(NumLit "1", Nothing)]
                                           , qeFrom = []
@@ -916,12 +1126,49 @@ theDialect :: Dialect
 theDialect = MySQL  -- maybe in the future other dialects will be supported. This depends on package `simple-sql-parser`
 
 broadQuery :: FSpec -> ObjectDef -> QueryExpr
-broadQuery fSpec obj = extendWithCols . toSQL . getBinQueryExprPlaceholder fSpec . objctx $ obj
-  where 
-    extendWithCols :: QueryExpr -> QueryExpr
-    extendWithCols queryExpr =
-      case queryExpr of
-        Select{} -> case qeSelectList queryExpr of
+broadQuery fSpec obj = 
+  -- The idea is to fetch all columns that are available in the same Plug as the conceptTable of the 
+  -- target of the object's context-expression. This dramatically reduces the number of queries required,
+  -- and hence will boost performance at runtime. 
+  --
+  -- So here is the plan:. 
+  --   a) The ObjectDef has a contextExpression. A BinQueryExpr can be built using selectExpr. 
+  --   b) For all expressions in the subinterface, when they are in the same table as the conceptTable of 
+  --     the target of the contextExpression, we want to fetch them in this single query.
+  --   c) We know the table that is used to get the tgt of the result of a) This could be some intermediate table!
+  --   d) we know the conceptTable of the target concept of the expression. 
+  --There are the following cases to consider:
+  -- 1) There is no subinterface, or the subinterface contains no expressions to consider
+  -- 2) The only expression to consider is I[<target of contextExpression>]
+  -- 3) The plug used to fetch the contextExpression is the same plug as the conceptTable of the target of that expression.
+  -- 4) None of the above
+  case objmsub obj of
+   Nothing                -> toSQL baseBinExpr
+   Just InterfaceRef{}    -> toSQL baseBinExpr
+   Just Box{siObjs=sObjs} -> 
+                    case filter isInConceptTable sObjs of
+                       [] -> toSQL baseBinExpr
+       --                xs -> extendWithCols2 xs $ baseBinExpr
+                       xs -> extendWithCols xs (toSQL baseBinExpr)
+ where  
+  baseBinExpr = getBinQueryExprPlaceholder fSpec . objctx $ obj
+
+  extendWithCols2 :: [ObjectDef] -> BinQueryExpr -> QueryExpr
+  extendWithCols2 [] bqe = toSQL bqe
+  extendWithCols2 objs bqe = toSQL bqe 
+     --     BSE  { bseSrc :: ValueExpr       -- ^ source attribute and table
+     --          , bseTrg :: ValueExpr       -- ^ target attribute and table
+     --          , bseTbl :: [TableRef]      -- ^ tables
+     --          , bseWhr :: Maybe ValueExpr -- ^ the (optional) WHERE clause
+     --          }    
+
+  extendWithCols :: [ObjectDef] -> QueryExpr -> QueryExpr
+  extendWithCols objs queryExpr =
+      case (objs, queryExpr) of
+        ([],_)
+           -> queryExpr
+        (_,Select{})
+           -> case qeSelectList queryExpr of
                       -- Now we are looking for a very specific match, to 
                       -- find the name of the broad table, as it is in the 
                       -- binary query:
@@ -929,15 +1176,35 @@ broadQuery fSpec obj = extendWithCols . toSQL . getBinQueryExprPlaceholder fSpec
                       --    tableName followed by exacly one name that contains the columName
                       --    the tableName could consist of multiple 'Name's:  
                       [_,(Iden ns@(_:_) ,_)] -> 
-                               queryExpr{qeSelectList=qeSelectList queryExpr++extraCols (init ns)}
-                      _     -> queryExpr
-        QEComment c queryExpr' -> QEComment c (extendWithCols queryExpr')
-        CombineQueryExpr{} -> QEComment [BlockComment "Maybe this query could be optimized (see issue #217)."]
-                              queryExpr 
-        _                  -> fatal 912 "Unexpected combinator"
+                        Select 
+                          { qeSetQuantifier = qeSetQuantifier queryExpr
+                          , qeSelectList    = qeSelectList    queryExpr++extraCols (fromMaybe (init ns) tableName)
+                          , qeFrom          = fFrom  (qeFrom  queryExpr)
+                          , qeWhere         = fWhere (qeWhere queryExpr)
+                          , qeGroupBy       = qeGroupBy       queryExpr
+                          , qeHaving        = qeHaving        queryExpr
+                          , qeOrderBy       = qeOrderBy       queryExpr
+                          , qeOffset        = qeOffset        queryExpr
+                          , qeFetchFirst    = qeFetchFirst    queryExpr
+                          }
+                      _  -> queryExpr
+            where
+              (fFrom,fWhere,tableName) =
+                -- In the case that the expression of 'obj' is univalent, it is possible that
+                -- the concepttable of 'target (objctx obj)' is not the one that is expanded. 
+                -- In that case, that concepttable has to be joined into the query. To do so,
+                -- the from and the where clause has to be modified. also, the tableName is nonstandard.
+                (id,id,Nothing)          
+        (_,QEComment c queryExpr')
+           -> QEComment c (extendWithCols objs queryExpr')
+        (_,CombineQueryExpr{})
+           -> QEComment [BlockComment "Maybe this query could be optimized (see issue #217)."]
+                        queryExpr 
+        _  -> fatal 912 "Unexpected combinator"
 
+   where
     extraCols :: [Name] -> [(ValueExpr, Maybe Name)]
-    extraCols tableName = mapMaybe makeCol theColsThatAreAvailable
+    extraCols tableName = mapMaybe makeCol objs
       where 
         makeCol :: ObjectDef -> Maybe (ValueExpr, Maybe Name)
         makeCol col = 
@@ -953,18 +1220,11 @@ broadQuery fSpec obj = extendWithCols . toSQL . getBinQueryExprPlaceholder fSpec
                                     )
                              )
         
-    theColsThatAreAvailable :: [ObjectDef]
-    theColsThatAreAvailable =
-       case objmsub obj of
-        Nothing -> []
-        Just si -> 
-          case si of 
-            InterfaceRef{} -> []
-            Box{} -> filter isEligible (siObjs si)
-    isEligible = isJust . attThatisInTableOf (target . objctx $ obj)
+  isInConceptTable :: ObjectDef -> Bool
+  isInConceptTable = isJust . attThatisInTableOf (target . objctx $ obj)
       
-    attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
-    attThatisInTableOf cpt od = 
+  attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
+  attThatisInTableOf cpt od = 
           case theDcl of
             Nothing -> Nothing
             Just (p,att) -> if plug == p
