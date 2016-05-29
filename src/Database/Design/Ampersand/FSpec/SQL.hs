@@ -938,8 +938,7 @@ sqlConcept :: FSpec -> A_Concept -> Name
 sqlConcept fSpec = QName . name . sqlConceptPlug fSpec
 -- sqlConcept yields the plug that contains all atoms of A_Concept c. Since there may be more of them, the first one is returned.
 sqlConceptPlug :: FSpec -> A_Concept -> PlugSQL
-sqlConceptPlug fSpec c | c==ONE = fatal 583 "A_Concept ONE may not be represented in SQL."
-                       | otherwise
+sqlConceptPlug fSpec c 
              = case lookupCpt fSpec c of
                  []   ->  fatal 585 $ "A_Concept \""++show c++"\" does not occur in fSpec." 
                  (plug,_):_ -> plug
