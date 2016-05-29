@@ -1056,73 +1056,76 @@ broadQuery fSpec obj =
    Just Box{siObjs=sObjs} -> 
                     case filter isInConceptTable sObjs of
                        [] -> toSQL baseBinExpr
-       --                xs -> extendWithCols2 xs $ baseBinExpr
-                       xs -> extendWithCols xs (toSQL baseBinExpr)
+                       xs -> extendWithCols xs baseBinExpr
+       --                xs -> extendWithCols xs (toSQL baseBinExpr)
  where  
   baseBinExpr = getBinQueryExprPlaceholder fSpec . objctx $ obj
 
-  extendWithCols2 :: [ObjectDef] -> BinQueryExpr -> QueryExpr
-  extendWithCols2 [] bqe = toSQL bqe
-  extendWithCols2 objs bqe = toSQL bqe 
+  extendWithCols :: [ObjectDef] -> BinQueryExpr -> QueryExpr
+  extendWithCols objs bqe 
+    | null objs = plainQE
+    | otherwise =
+        case bqe of
+          BSE{}  -> plainQE { qeSelectList = newSelectList
+                            , qeFrom       = newFrom
+                            , qeWhere      = newWhere
+                            }
+           where
+            (newSelectList,newFrom,newWhere) =
+              case qeFrom plainQE of
+                [TRSimple [n]] 
+                  -> if n == sqlConcept fSpec tableCpt
+                     then ( qeSelectList plainQE ++ map (makeCol Nothing) objs
+                          , qeFrom plainQE
+                          , qeWhere plainQE
+                          )
+                     else subThings
+                _ -> subThings
+          BCQE{} -> plainQE { qeSelectList = newSelectList
+                            , qeFrom       = newFrom
+                            , qeWhere      = newWhere
+                            }
+           where
+            (newSelectList,newFrom,newWhere) = subThings
+          BQEComment _ x -> extendWithCols objs x 
+   where 
+     plainQE = toSQL bqe
+     makeCol :: Maybe Name -> ObjectDef -> (ValueExpr, Maybe Name)
+     makeCol tableName col =
+       case attThatisInTableOf (target . objctx $ obj) col of
+            Nothing  -> fatal 1104 $ "this is unexpected behaviour. "++show col  
+            Just att -> ( Iden ( case tableName of
+                                   Nothing -> [QName (name att)]
+                                   Just tab -> [tab,QName (name att)]
+                               )
+                        , Just ( QName $ -- The name is not sufficient for two reasons:
+                                         --   1) the columname must be unique. For that reason, it is prefixed:
+                                         "ifc_"++ 
+                                         --   2) It must be injective. Because SQL deletes trailing spaces,
+                                         --      we have to cope with that:
+                                         escapeIdentifier (name col)
+                               )
+                        )
+     subThings :: ( [(ValueExpr, Maybe Name)]
+                  , [TableRef]
+                  , Maybe ValueExpr
+                  )
+     subThings = ( [ (Iden [org,sourceAlias] , Just sourceAlias)
+                   , (Iden [org,targetAlias] , Just targetAlias)
+                   ]++ map (makeCol . Just $ ct) objs
+                 , [ TRQueryExpr plainQE `as` org
+                   , sqlConceptTable fSpec tableCpt `as` ct
+                   ]
+                 , Just (BinOp (Iden [org, targetAlias])
+                                  [Name "="]
+                               (Iden [ct, sqlAttConcept fSpec tableCpt])
+                        )
+                 )
+       where 
+         org = Name "org"
+         ct  = Name "cptTbl"
+     tableCpt = source . objctx . head $ objs
 
-  extendWithCols :: [ObjectDef] -> QueryExpr -> QueryExpr
-  extendWithCols objs queryExpr =
-      case (objs, queryExpr) of
-        ([],_)
-           -> queryExpr
-        (_,Select{})
-           -> case qeSelectList queryExpr of
-                      -- Now we are looking for a very specific match, to 
-                      -- find the name of the broad table, as it is in the 
-                      -- binary query:
-                      --    A list of exactly two names, where the second element contains the 
-                      --    tableName followed by exacly one name that contains the columName
-                      --    the tableName could consist of multiple 'Name's:  
-                      [_,(Iden ns@(_:_) ,_)] -> 
-                        Select 
-                          { qeSetQuantifier = qeSetQuantifier queryExpr
-                          , qeSelectList    = qeSelectList    queryExpr++extraCols (fromMaybe (init ns) tableName)
-                          , qeFrom          = fFrom  (qeFrom  queryExpr)
-                          , qeWhere         = fWhere (qeWhere queryExpr)
-                          , qeGroupBy       = qeGroupBy       queryExpr
-                          , qeHaving        = qeHaving        queryExpr
-                          , qeOrderBy       = qeOrderBy       queryExpr
-                          , qeOffset        = qeOffset        queryExpr
-                          , qeFetchFirst    = qeFetchFirst    queryExpr
-                          }
-                      _  -> queryExpr
-            where
-              (fFrom,fWhere,tableName) =
-                -- In the case that the expression of 'obj' is univalent, it is possible that
-                -- the concepttable of 'target (objctx obj)' is not the one that is expanded. 
-                -- In that case, that concepttable has to be joined into the query. To do so,
-                -- the from and the where clause has to be modified. also, the tableName is nonstandard.
-                (id,id,Nothing)          
-        (_,QEComment c queryExpr')
-           -> QEComment c (extendWithCols objs queryExpr')
-        (_,CombineQueryExpr{})
-           -> QEComment [BlockComment "Maybe this query could be optimized (see issue #217)."]
-                        queryExpr 
-        _  -> fatal 912 "Unexpected combinator"
-
-   where
-    extraCols :: [Name] -> [(ValueExpr, Maybe Name)]
-    extraCols tableName = mapMaybe makeCol objs
-      where 
-        makeCol :: ObjectDef -> Maybe (ValueExpr, Maybe Name)
-        makeCol col = 
-          case attThatisInTableOf (target . objctx $ obj) col of
-            Nothing  -> Nothing 
-            Just att -> Just ( Iden (tableName++[QName (name att)])
-                             , Just ( QName $ -- The name is not sufficient for two reasons:
-                                              --   1) the columname must be unique. For that reasin, it is prefixed:
-                                              "ifc_"++ 
-                                              --   2) It must be injective. Because SQL deletes trailing spaces,
-                                              --      we have to cope with that:
-                                              escapeIdentifier (name col)
-                                    )
-                             )
-        
   isInConceptTable :: ObjectDef -> Bool
   isInConceptTable = isJust . attThatisInTableOf (target . objctx $ obj)
       
