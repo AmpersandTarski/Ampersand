@@ -1,6 +1,6 @@
 ﻿CONTEXT Issue152 IN ENGLISH
 
-VIEW SessionProperty: SESSION { value : I } HTML TEMPLATE "PropertyCheckbox.html" ENDVIEW
+VIEW SessionProperty: SESSION { value : I }  ENDVIEW
 
 -- For system bootstrapping purposes, we need a 'God'-account that has all permissions/roles.
 POPULATION Account CONTAINS [ "god" ]

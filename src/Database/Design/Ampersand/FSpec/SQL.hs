@@ -425,34 +425,24 @@ nonSpecialSelectExpr fSpec expr=
                              -- the SQL statement. Check the code of fenceTable for more details
                              (Just _ , Nothing) -> 
                                   case fenceExpr (i+1) of 
-                                    EDcV _    -> noConstraint  "..;EDcV"
-                                    EMp1 a c  -> Just (BinOp (Iden [fenceName i,targetAlias])
-                                                             [Name "="]
-                                                             (singleton2SQL c a))
-                                    (ECpl (EMp1 a c)) 
-                                              -> Just (BinOp (Iden [fenceName i,targetAlias])
-                                                             [Name "<>"]
-                                                             (singleton2SQL c a))
+                                    EDcV _    -> Nothing
                                     _         -> fatal 251 "there is no reason for having no fenceTable!"
                              (Nothing, Just _ ) ->
                                   case fenceExpr i of 
-                                    EDcV _    -> noConstraint  "EDcV;.."
-                                    EMp1 a c  -> Just (BinOp (singleton2SQL c a)
-                                                             [Name "="]
-                                                             (Iden [fenceName (i+1) ,sourceAlias]))
-                                    (ECpl (EMp1 a c)) 
-                                              -> Just (BinOp (singleton2SQL c a)
-                                                             [Name "<>"]
-                                                             (Iden [fenceName (i+1) ,sourceAlias]))
+                                    EDcV _    -> Nothing
                                     _         -> fatal 258 "there is no reason for having no fenceTable!"
 
                              (Nothing, Nothing) -> 
-                                  -- This can be the case that EDcV and EMp1 are neighbour fences. 
-                                  fatal 286 $ intercalate "\n  " $
-                                     ["Can this happen? Here is a case to analyse: (i = "++show i++")"
-                                     , "expr: "++showADL expr
-                                     ]++
-                                     zipWith (curry show) (map (stringOfName . fenceName) [firstNr ..]) es
+                                  -- This must be the special case: ...;V[A*B];V[B*C];....
+                                 Just . SubQueryExpr SqExists . toSQL 
+                                  . BQEComment [BlockComment "Case: ...;V[A*B];V[B*C];...."]
+                                  . selectExpr fSpec . EDcI . target . fenceExpr $ i
+                                       
+
+                      --            fatal 286 $ intercalate "\n  " $
+                      --               ["Can this happen? Here is a case to analyse: (i = "++show i++")"
+                      --               , "expr: "++showADL expr
+                      --               ]++map show (zip (map (stringOfName . fenceName) [firstNr..]) es)
                           where
                             noConstraint str = Just $ BinOp x [Name "="] x
                                      where
