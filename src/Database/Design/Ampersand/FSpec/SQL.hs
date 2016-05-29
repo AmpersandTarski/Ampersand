@@ -175,8 +175,8 @@ maybeSpecialCase fSpec expr =
                                                        ) 
                                                     ]
                                          , bseWhr = Just . disjunctSQL $
-                                                      [ isNull (Iden[sourceAlias])
-                                                      , isNull (Iden[targetAlias])
+                                                      [ isNull (Iden[table2,sourceAlias])
+                                                      , isNull (Iden[table2,targetAlias])
                                                       ]
                                          }
     EIsc (expr1 , EFlp (ECpl expr2))
