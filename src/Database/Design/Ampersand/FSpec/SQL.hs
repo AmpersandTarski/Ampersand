@@ -190,12 +190,11 @@ maybeSpecialCase fSpec expr =
                                    ]
                               ] $ let table1 = Name "t1"
                                       table2 = Name "t2"
-                                      joined = Name "joinedTable"
-                                      col1 = Col { cTable = [joined]
+                                      col1 = Col { cTable = [table1]
                                                  , cCol   = [sourceAlias]
                                                  , cAlias = []
                                                  , cSpecial = Nothing}
-                                      col2 = Col { cTable = [joined]
+                                      col2 = Col { cTable = [table1]
                                                  , cCol   = [targetAlias]
                                                  , cAlias = []
                                                  , cSpecial = Nothing}
@@ -210,11 +209,11 @@ maybeSpecialCase fSpec expr =
                                                            [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,sourceAlias])
                                                            , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,targetAlias])
                                                            ]
-                                                       ) `as` joined
+                                                       )
                                                     ]
                                          , bseWhr = Just . disjunctSQL $
-                                                      [ isNull (Iden[sourceAlias])
-                                                      , isNull (Iden[targetAlias])
+                                                      [ isNull (Iden[table2,sourceAlias])
+                                                      , isNull (Iden[table2,targetAlias])
                                                       ]
                                          }
     _ -> Nothing 
