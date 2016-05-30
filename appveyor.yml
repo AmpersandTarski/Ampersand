@@ -7,16 +7,19 @@
 # Disable the standard build process which would use MSBuild:
 build: off
 
+cache:
+- "c:\\sr" # stack root, short paths == fewer problems
+clone_folder: "c:\\stack"
+environment:
+  global:
+    STACK_ROOT: "c:\\sr"
+
 # obtain the stack executable, and also perform a small hack which
 # converts ssh-based git submodules to https-based ones, that 
 # can be cloned without needing to mess about with ssh keys.
 before_build:
-- curl -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
+- curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
 - 7z x stack.zip stack.exe
-# We don't have submodules, so the following line is commented out:
-# - sed -i 's/git@github.com:/https:\/\/github.com\//' .gitmodules
-# Appveyor doesn't clone recursively.
-- git submodule update --init --recursive
 
 # prevent AppVeyor from building when it sees a new tag (later
 # in this script we end up making a new tag when we push a release)
@@ -26,7 +29,7 @@ skip_tags: true
 # ampersand.exe file that we will mark as an artifact
 build_script:
 # Suppress output from stack setup, as there is a lot and it's not necessary.
-- stack setup --no-terminal > nul
+- stack setup # --no-terminal > nul
 - stack build --only-snapshot --no-terminal
 - stack --local-bin-path . install ampersand
 # Set a magical environment variable
