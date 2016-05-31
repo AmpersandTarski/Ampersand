@@ -110,8 +110,8 @@ commentBlockSQL xs =
    map (\cmmnt -> "/* "++cmmnt++" */") $ hbar ++ xs ++ hbar
   where hbar = [replicate (maximum . map length $ xs) '-']
   
-generateAllDefPopQueries :: FSpec -> Bool -> [String]
-generateAllDefPopQueries fSpec withComment 
+generateAllDefPopQueries :: FSpec -> [String]
+generateAllDefPopQueries fSpec 
   = fillSignalTable (initialConjunctSignals fSpec) ++
     populateTablesWithPops
         

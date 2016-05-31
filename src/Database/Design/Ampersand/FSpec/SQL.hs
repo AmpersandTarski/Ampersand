@@ -437,19 +437,7 @@ nonSpecialSelectExpr fSpec expr=
                                  Just . SubQueryExpr SqExists . toSQL 
                                   . BQEComment [BlockComment "Case: ...;V[A*B];V[B*C];...."]
                                   . selectExpr fSpec . EDcI . target . fenceExpr $ i
-                                       
 
-                      --            fatal 286 $ intercalate "\n  " $
-                      --               ["Can this happen? Here is a case to analyse: (i = "++show i++")"
-                      --               , "expr: "++showADL expr
-                      --               ]++map show (zip (map (stringOfName . fenceName) [firstNr..]) es)
-                          where
-                            noConstraint str = Just $ BinOp x [Name "="] x
-                                     where
-                                       x = StringLit ("pole"++show i++"_"++str)                       
-                             
-                             
-                          
                 in BQEComment [BlockComment $ "case: (ECps es), with two or more elements in es."++showADL expr]
                    BSE { bseSrc = if source (head es) == ONE -- the first expression is V[ONE*someConcept]
                                   then theONESingleton

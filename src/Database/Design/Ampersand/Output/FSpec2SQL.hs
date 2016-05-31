@@ -15,7 +15,7 @@ dumpSQLqueries fSpec = intercalate "\n" $
                        ++header "Database structure queries"
                        ++generateDBstructQueries fSpec True
                        ++header "Initial population queries"
-                       ++generateAllDefPopQueries fSpec True
+                       ++generateAllDefPopQueries fSpec
                        ++header "Violations of conjuncts"
                        ++concatMap showConjunct (vconjs fSpec)
                        ++header "Queries per declaration"
