@@ -1054,10 +1054,7 @@ broadQuery fSpec obj =
     | null objs = plainQE
     | otherwise =
         case bqe of
-          BSE{}  -> plainQE { qeSelectList = newSelectList
-                            , qeFrom       = newFrom
-                            , qeWhere      = newWhere
-                            }
+          BSE{}  -> newSelect (newSelectList,newFrom,newWhere)
            where
             (newSelectList,newFrom,newWhere) =
               case qeFrom plainQE of
@@ -1069,14 +1066,20 @@ broadQuery fSpec obj =
                           )
                      else subThings
                 _ -> subThings
-          BCQE{} -> plainQE { qeSelectList = newSelectList
-                            , qeFrom       = newFrom
-                            , qeWhere      = newWhere
-                            }
-           where
-            (newSelectList,newFrom,newWhere) = subThings
+          BCQE{} -> newSelect subThings
           BQEComment _ x -> extendWithCols objs x 
    where 
+     newSelect (sl,f,w) =
+        Select { qeSetQuantifier = Distinct
+               , qeSelectList    = sl
+               , qeFrom          = f
+               , qeWhere         = w
+               , qeGroupBy       = []
+               , qeHaving        = Nothing
+               , qeOrderBy       = []
+               , qeOffset        = Nothing
+               , qeFetchFirst    = Nothing
+               }
      plainQE = toSQL bqe
      makeCol :: Maybe Name -> ObjectDef -> (ValueExpr, Maybe Name)
      makeCol tableName col =
