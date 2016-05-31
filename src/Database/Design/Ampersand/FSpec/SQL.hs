@@ -78,7 +78,7 @@ class SQLAble a where
                        _ -> bqeWithoutPlaceholder
             BCQE{} -> BCQE { bcqeOper = bcqeOper bqe
                            , bcqe0 = insertPlaceholder . bcqe0 $ bqe
-                           , bcqe1 = bqe
+                           , bcqe1 = insertPlaceholder . bcqe1 $ bqe
                            }
             BQEComment _ x -> insertPlaceholder x
         where 
