@@ -467,6 +467,11 @@ nonSpecialSelectExpr fSpec expr=
                                        , bseTbl = bseTbl se
                                        , bseWhr = bseWhr se
                                        }
+                         BCQE { bcqeOper = Union }
+                               -> BCQE { bcqeOper = Union 
+                                       , bcqe0    = flipped (bcqe0 se)
+                                       , bcqe1    = flipped (bcqe1 se)
+                                       }
                          BCQE{} -> BSE { bseSrc = Col { cTable = [fTable]
                                                       , cCol   = [targetAlias]
                                                       , cAlias = []
