@@ -140,7 +140,7 @@ class Atom {
 	 */
 	public function setId($id){
 	    // Decode url encoding for objects
-	    $this->id = $this->concept->isObject ? urldecode($id) : $id;
+	    $this->id = $this->concept->isObject ? rawurldecode($id) : $id;
 	    
 	    // Escape id for database queries
 		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
