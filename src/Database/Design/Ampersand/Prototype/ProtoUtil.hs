@@ -12,7 +12,6 @@ module Database.Design.Ampersand.Prototype.ProtoUtil
          ) where
  
 import Prelude hiding (putStrLn, readFile, writeFile)
-import Data.Char
 import Data.List
 import System.Directory
 import System.FilePath
@@ -139,14 +138,6 @@ phpIndent i
  | i < 0     = " " --space instead of \n
  | otherwise = '\n':replicate i ' '
 
--- Create an identifier that does not start with a digit and consists only of upper/lowercase ascii letters, underscores, and digits.
--- This function is injective.
-escapeIdentifier :: String -> String
-escapeIdentifier ""      = "_EMPTY_"
-escapeIdentifier (c0:cs) = encode False c0 ++ concatMap (encode True) cs
-  where encode allowNum c | isAsciiLower c || isAsciiUpper c || allowNum && isDigit c = [c]
-                          | c == '_'  = "__" -- shorthand for '_' to improve readability
-                          | otherwise = "_" ++ show (ord c) ++ "_"
 
 addSlashes :: String -> String
 addSlashes ('\'': cs) = "\\'"++addSlashes cs

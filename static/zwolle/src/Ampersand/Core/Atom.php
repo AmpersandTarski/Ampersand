@@ -60,7 +60,7 @@ class Atom {
 	public $path;
 	
 	/**
-	 *Specifies the interface from which this atom is instantiated
+	 * Specifies the interface from which this atom is instantiated
 	 * @var InterfaceObject
 	 */
 	private $parentIfc;
@@ -95,19 +95,26 @@ class Atom {
 	 */
 	private $storedContent = null;
 	
+    /**
+     * @var array|null $qData The row data (from database query) from which this atom is created
+     */
+    private $qData = null;
+    
 	/**
 	 * Atom constructor
 	 * @param string $atomId
 	 * @param string $conceptName
 	 * @param InterfaceObject $ifc
+     * @param array|null $qData the row data (from database query) from which this atom is created
 	 * @return void
 	 */
-	public function __construct($atomId, $conceptName, $ifc = null){
+	public function __construct($atomId, $conceptName, $ifc = null, $qData = null){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
 		$this->parentIfc = $ifc;
 		$this->concept = Concept::getConcept($conceptName);
+        $this->qData = $qData;
 		
 		$this->setId($atomId);
 		
@@ -140,16 +147,13 @@ class Atom {
 	 */
 	public function setId($id){
 	    // Decode url encoding for objects
-	    $this->id = $this->concept->isObject ? urldecode($id) : $id;
+	    $this->id = $this->concept->isObject ? rawurldecode($id) : $id;
 	    
 	    // Escape id for database queries
 		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
 		
-		if(is_null($this->parentIfc)){
-		  $this->path = 'resources/' . $this->concept->name . '/' . $this->getJsonRepresentation();
-		}else{
-		  $this->path = $this->parentIfc->path . '/' . $this->getJsonRepresentation();
-		}
+        $this->path = is_null($this->parentIfc) ? 'resources/' . $this->concept->name : $this->parentIfc->path;
+        $this->path .= '/' . $this->getJsonRepresentation();
 	}
 	
 	/**
@@ -157,9 +161,17 @@ class Atom {
 	 * @return boolean
 	 */
 	public function atomExists(){
-		if($this->id === '_NEW_') return true; // Return true if id is '_NEW_' (special case)
-		
-		return $this->database->atomExists($this);
+        if($this->concept->inAtomCache($this)){
+            $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
+            return true;
+        }elseif($this->id === '_NEW'){
+            return true; // Return true if id is '_NEW' (special case)
+        }elseif($this->database->atomExists($this)){
+            $this->concept->addToAtomCache($this);
+    		return true;
+        }else{
+            return false;
+        }
 	}
 	
 	/**
@@ -167,7 +179,12 @@ class Atom {
 	 * @return void
 	 */
 	public function addAtom(){
-	    $this->database->addAtomToConcept($this);
+        if($this->atomExists()){
+            $this->logger->debug("Atom '{$this->__toString()}' already exists in database");
+        }else{
+            $this->database->addAtomToConcept($this);
+            $this->concept->addToAtomCache($this);
+        }
 	    return $this;
 	}
 	
@@ -207,9 +224,14 @@ class Atom {
 	                $viewStrs[$key] = $viewSegment->text;
 	                break;
 	            case "Exp" :
-	                $query = "SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
-	                $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
-	                $viewStrs[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+                    if(!is_null($viewSegment->parentIfcCol)){
+                        $viewStrs[$key] = $this->getQueryData($viewSegment->parentIfcCol);
+                        $this->logger->debug("#217 One query saved due to reusing data from source atom");
+                    }else{
+	                    $query = "SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
+	                    $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
+	                    $viewStrs[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+                    }
 	                break;
 	            default :
 	                throw new Exception("Unsupported segmentType '{$viewSegment->segType}' in view '{$view->label}' segment '{$viewSegment->seqNr}:{$viewSegment->label}'", 501); // 501: Not implemented
@@ -218,6 +240,18 @@ class Atom {
 	    }
 	    return $viewStrs;
 	}
+    
+    public function getQueryData($colName = null){
+        if(is_null($this->qData)) throw new Exception("No query data available for atom '{$this->__toString()}'", 1001);
+        if(is_null($colName)){
+            return $this->qData;
+        }else{
+            // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
+            $col = 'ifc_' . $colName;
+            if(!array_key_exists($col, $this->qData)) throw new Exception("Column '{$col}' not defined in query data of atom '{$this->__toString()}'", 1001);
+            return $this->qData[$col];
+        }
+    }
 	
 	/**
 	 * Return json representation of Atom (identifier) according to Ampersand technical types (TTypes)
@@ -296,16 +330,16 @@ class Atom {
 	/**
 	 * Chains this atom to an interface as srcAtom 
 	 * @param string $ifcId
-     * @param boolean $isRef specifies if $ifcId is reference to toplevel interface 
 	 * @throws Exception
 	 * @return InterfaceObject
 	 */
-	public function ifc($ifcId, $isRef = false){
-	    if(is_null($this->parentIfc) || $isRef) $ifc = InterfaceObject::getInterface($ifcId);
+	public function ifc($ifcId){
+	    if(is_null($this->parentIfc)) $ifc = InterfaceObject::getInterface($ifcId);
+        elseif($this->parentIfc->isRef()) $ifc = InterfaceObject::getInterface($ifcId);
 	    else $ifc = $this->parentIfc->getSubinterface($ifcId);
 	    
 	    $clone = clone $ifc;
-	    $clone->setSrcAtom($this, $isRef);
+	    $clone->setSrcAtom($this);
 	     
 	    return $clone;
 	}
@@ -319,7 +353,7 @@ class Atom {
 	public function walkIfcPath($path){
 	    $session = Session::singleton();
 	
-	    if(!$this->atomExists()) throw new Exception ("Resource '$this->__toString()' not found", 404);
+	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->__toString()}' not found", 404);
 	     
 	    $atom = $this; // starting point
 	     
@@ -586,7 +620,7 @@ class Atom {
 	    if(!$ifc->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
 	    
 		// Interface is property
-		if($ifc->isProp() && !$ifc->isIdent){
+		if($ifc->isProp()){
 			// Properties must be treated as a 'replace', so not handled here
 			throw new Exception("Cannot patch remove for property '{$ifc->path}'. Use patch replace instead", 500);
 		

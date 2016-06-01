@@ -1,6 +1,7 @@
 module Database.Design.Ampersand.Output.FSpec2SQL
   (dumpSQLqueries)
 where
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateAllDefPopQueries
   )
@@ -10,10 +11,11 @@ import Data.List
 
 dumpSQLqueries :: FSpec -> String
 dumpSQLqueries fSpec = intercalate "\n" $ 
-                         header "Database structure queries"
+                         header ampersandVersionStr
+                       ++header "Database structure queries"
                        ++generateDBstructQueries fSpec True
                        ++header "Initial population queries"
-                       ++generateAllDefPopQueries fSpec True
+                       ++generateAllDefPopQueries fSpec
                        ++header "Violations of conjuncts"
                        ++concatMap showConjunct (allConjuncts fSpec)
                        ++header "Queries per declaration"
@@ -34,6 +36,8 @@ dumpSQLqueries fSpec = intercalate "\n" $
             ++case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
+            ++header "Broad query of above stuff"     
+            ++(lines . prettyBroadQueryWithPlaceholder 2 fSpec $ obj)
           showSubInterface :: SubInterface -> [String]
           showSubInterface sub = 
             case sub of 

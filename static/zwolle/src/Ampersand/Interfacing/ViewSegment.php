@@ -49,6 +49,11 @@ class ViewSegment {
      * @var string
      */
     public $expSQL;
+    
+    /**
+     * @var string|null $parentIfcCol the label/name of the columm of view concept if applicable (i.e. same table)
+     */
+    public $parentIfcCol = null;
 
 
     /**
@@ -62,6 +67,7 @@ class ViewSegment {
         $this->text = $viewSegmentDef['text'];
         $this->expADL = $viewSegmentDef['expADL'];
         $this->expSQL = $viewSegmentDef['expSQL'];
+        if(isset($viewSegmentDef['parentIfcCol'])) $this->parentIfcCol = $viewSegmentDef['parentIfcCol'];
     }
 }
 
