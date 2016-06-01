@@ -353,7 +353,7 @@ class Atom {
 	public function walkIfcPath($path){
 	    $session = Session::singleton();
 	
-	    if(!$this->atomExists()) throw new Exception ("Resource '$this->__toString()' not found", 404);
+	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->__toString()}' not found", 404);
 	     
 	    $atom = $this; // starting point
 	     
