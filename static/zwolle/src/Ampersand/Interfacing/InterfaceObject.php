@@ -266,7 +266,7 @@ class InterfaceObject {
 	 * @return boolean
 	 */
 	public function isProp(){
-	    return is_null($this->relation) ? false : $this->relation->isProp;
+	    return is_null($this->relation) ? false : ($this->relation->isProp && !$this->isIdent);
 	}
     
     /**
@@ -416,10 +416,11 @@ class InterfaceObject {
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
         if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
 	    
-	    // Initialize result array
-	    if($this->tgtConcept->isObject && !$this->isProp()) $result = array(); // return array if tgtConcept is an object (except properties), even if result is empty
-	    elseif(!$this->isUni) $result = array(); // return array for non-univalent interfaces
-	    else $result = null; // else (i.e. properties and univalent scalars)
+	    // Initialize result
+        if($this->isProp() && empty($this->getSubinterfaces())) $result = false; // leaf properties are false by default (overwritten when tgt atom found)
+	    elseif($this->tgtConcept->isObject) $result = array(); // array if tgtConcept is an object, even if result is empty
+	    elseif(!$this->isUni) $result = array(); // array for non-univalent interfaces
+	    else $result = null; // else (i.e. univalent scalars)
         
         // Loop over target atoms
         foreach ($this->getTgtAtoms() as $tgtAtom){
@@ -457,9 +458,9 @@ class InterfaceObject {
 	        		
     	        // Object
     	        if($this->tgtConcept->isObject){
-    	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false
-    	            if($this->isProp() && !$this->isIdent && empty($this->getSubinterfaces())){
-    	                $result = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
+    	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false (false by default, see init above)
+    	            if($this->isProp() && empty($this->getSubinterfaces())){
+    	                $result = true; // convert into true
     	    
     	            // Regular object, with or without subinterfaces
     	            }else{
@@ -622,7 +623,7 @@ class InterfaceObject {
 	    $value = $patch['value'];
 	
 	    // Interface is property
-	    if($this->isProp() && !$this->isIdent){
+	    if($this->isProp()){
 	        // Throw error when patch value is something else then true, false or null
 	        if(!(is_bool($value) || is_null($value))) throw new Exception("Interface '{$this->path}' is property, boolean expected, non-boolean provided");
 	        	
@@ -663,7 +664,7 @@ class InterfaceObject {
 	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
 	    
 	    // Interface is property
-	    if($this->isProp() && !$this->isIdent){
+	    if($this->isProp()){
 	        // Properties must be treated as a 'replace', so not handled here
 	        throw new Exception("Cannot patch add for property '{$this->path}'. Use patch replace instead", 500);
 	

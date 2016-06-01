@@ -620,7 +620,7 @@ class Atom {
 	    if(!$ifc->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
 	    
 		// Interface is property
-		if($ifc->isProp() && !$ifc->isIdent){
+		if($ifc->isProp()){
 			// Properties must be treated as a 'replace', so not handled here
 			throw new Exception("Cannot patch remove for property '{$ifc->path}'. Use patch replace instead", 500);
 		
