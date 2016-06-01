@@ -266,7 +266,7 @@ class InterfaceObject {
 	 * @return boolean
 	 */
 	public function isProp(){
-	    return is_null($this->relation) ? false : $this->relation->isProp;
+	    return is_null($this->relation) ? false : ($this->relation->isProp && !$this->isIdent);
 	}
     
     /**
@@ -324,7 +324,9 @@ class InterfaceObject {
 	    $atom = new Atom($atomId, $this->tgtConcept->name, $this);
 	    
 	    // Check if tgtAtom is part of tgtAtoms of interface
-	    if(in_array($atom->idEsc, $this->getTgtAtomIds())) $this->tgtAtom = $atom;
+        if(array_reduce($this->getTgtAtoms(), function($carry, $tgtAtom) use ($atom){
+            return $carry || ($tgtAtom->id == $atom->id);
+        }, false)) $this->tgtAtom = $atom;
 	    
 	    // Check if atom does not exist and if it may be created here
 	    elseif(!$atom->atomExists() && $this->crudC){
@@ -347,20 +349,53 @@ class InterfaceObject {
  *
  *************************************************************************************************/
 	
+    /**
+     * Returns query to get target atoms for this interface
+     * @param Atom $srcAtom atom to take as source atom for this interface expression query
+     * @return string
+     */
+    private function getQuery($srcAtom){
+        if(strpos($this->query, '_SRCATOM') !== false){
+            $query = str_replace('_SRCATOM', $srcAtom->idEsc, $this->query);
+            $this->logger->debug("#426 Faster query because subquery saved by _SRCATOM placeholder");
+        }else{
+            $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$srcAtom->idEsc}' AND `tgt` IS NOT NULL";
+        }
+        return $query;
+    }
+    
 	/**
-	 * Returns list of target atom ids given the srcAtom of this interface object
+	 * Returns list of target atoms given the srcAtom for this interface
 	 * @throws Exception
-	 * @return array
+	 * @return Atom[] [description]
 	 */
-	private function getTgtAtomIds(){
-	    $query = "SELECT DISTINCT `tgt` FROM ({$this->query}) AS `results` WHERE `src` = '{$this->srcAtom->idEsc}' AND `tgt` IS NOT NULL";
-	    $tgtAtomIds = array_column((array)$this->database->Exe($query), 'tgt');
-
-	    // Integrity check
-	    if($this->isUni && (count($tgtAtomIds) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
-	    
-	    return (array)$tgtAtomIds;
-	}
+	private function getTgtAtoms(){
+        
+        $tgtAtoms = array();
+        try {
+            // Try to get tgt atom from srcAtom query data (in case of uni relation in same table)
+            $tgt = $this->srcAtom->getQueryData($this->id);
+            $this->logger->debug("#217 One query saved due to reusing data from source atom");
+            if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept->name, $this);
+            
+        }catch (Exception $e) {
+            // Column not defined, perform sub interface query
+            if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
+                $data = (array)$this->database->Exe($this->getQuery($this->srcAtom));
+                
+                // Integrity check
+                if($this->isUni && (count($data) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
+                
+                foreach ($data as $row) {
+                    $tgtAtoms[] = new Atom($row['tgt'], $this->tgtConcept->name, $this, $row);
+                }
+            }else{
+                throw $e;
+            }
+        }
+        
+        return $tgtAtoms;
+    }
 	
 	/**
 	 * Returns the content of this interface given the srcAtom of this interface object
@@ -381,15 +416,14 @@ class InterfaceObject {
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
         if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
 	    
-	    // Initialize result array
-	    if($this->tgtConcept->isObject && !$this->isProp()) $result = array(); // return array if tgtConcept is an object (except properties), even if result is empty
-	    elseif(!$this->isUni) $result = array(); // return array for non-univalent interfaces
-	    else $result = null; // else (i.e. properties and univalent scalars)
-	    
-	    // Loop over target atoms
-	    foreach ($this->getTgtAtomIds() as $tgtAtomId){
-            
-            $tgtAtom = new Atom($tgtAtomId, $this->tgtConcept->name, $this);
+	    // Initialize result
+        if($this->isProp() && empty($this->getSubinterfaces())) $result = false; // leaf properties are false by default (overwritten when tgt atom found)
+	    elseif($this->tgtConcept->isObject) $result = array(); // array if tgtConcept is an object, even if result is empty
+	    elseif(!$this->isUni) $result = array(); // array for non-univalent interfaces
+	    else $result = null; // else (i.e. univalent scalars)
+        
+        // Loop over target atoms
+        foreach ($this->getTgtAtoms() as $tgtAtom){
             
             // Reference to other interface
             if($this->isRef()
@@ -401,8 +435,7 @@ class InterfaceObject {
                 // Skip ref interface if not given read rights to prevent Exception
     	        if(!$ifc->crudR) break; // breaks foreach loop
                 
-                foreach($ifc->getTgtAtomIds() as $refTgtAtomId){
-                    $refTgtAtom = new Atom($refTgtAtomId, $ifc->tgtConcept->name, $ifc);
+                foreach($ifc->getTgtAtoms() as $refTgtAtom){
                     
                     // Add target atom to $recursionArr to prevent infinite loops
         	        if($options['inclLinktoData']) $recursionArr[$this->refInterfaceId][] = $refTgtAtom->id;
@@ -425,9 +458,9 @@ class InterfaceObject {
 	        		
     	        // Object
     	        if($this->tgtConcept->isObject){
-    	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false
-    	            if($this->isProp() && !$this->isIdent && empty($this->getSubinterfaces())){
-    	                $result = !is_null($tgtAtom->id); // convert NULL into false and everything else in true
+    	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false (false by default, see init above)
+    	            if($this->isProp() && empty($this->getSubinterfaces())){
+    	                $result = true; // convert into true
     	    
     	            // Regular object, with or without subinterfaces
     	            }else{
@@ -494,9 +527,9 @@ class InterfaceObject {
 	    $newAtom->addAtom();
 	
 	    // Special case for CREATE in I[Concept] interfaces
-	    if($this->srcAtom->id === '_NEW_'){
+	    if($this->srcAtom->id === '_NEW'){
 	        $this->srcAtom->setId($newAtom->id);
-	        $this->path = str_replace('_NEW_', $newAtom->getJsonRepresentation(), $this->path);
+	        $this->path = str_replace('_NEW', $newAtom->getJsonRepresentation(), $this->path);
 	    }
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
@@ -590,7 +623,7 @@ class InterfaceObject {
 	    $value = $patch['value'];
 	
 	    // Interface is property
-	    if($this->isProp() && !$this->isIdent){
+	    if($this->isProp()){
 	        // Throw error when patch value is something else then true, false or null
 	        if(!(is_bool($value) || is_null($value))) throw new Exception("Interface '{$this->path}' is property, boolean expected, non-boolean provided");
 	        	
@@ -631,7 +664,7 @@ class InterfaceObject {
 	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
 	    
 	    // Interface is property
-	    if($this->isProp() && !$this->isIdent){
+	    if($this->isProp()){
 	        // Properties must be treated as a 'replace', so not handled here
 	        throw new Exception("Cannot patch add for property '{$this->path}'. Use patch replace instead", 500);
 	

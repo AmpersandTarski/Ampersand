@@ -179,7 +179,7 @@ class Conjunct {
      * Returns array with all conjunct objects
      * @return Conjunct[]
      */
-    private static function getAllConjuncts(){
+    public static function getAllConjuncts(){
         if(!isset(self::$allConjuncts)) self::setAllConjuncts();
          
         return self::$allConjuncts;

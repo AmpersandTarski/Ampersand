@@ -182,7 +182,8 @@ function InsAtom($conceptName){
 		$database = Database::singleton();
 		
 		$concept = Concept::getConcept($conceptName);
-		$database->addAtomToConcept($atom = $concept->createNewAtom()); // insert new atom in database
+        $atom = $concept->createNewAtom();
+		$atom->addAtom(); // insert new atom in database
 		
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' created and added to database");
 		
