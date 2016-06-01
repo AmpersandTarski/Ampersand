@@ -164,8 +164,8 @@ class Atom {
         if($this->concept->inAtomCache($this)){
             $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
             return true;
-        }elseif($atom->id === '_NEW_'){
-            return true; // Return true if id is '_NEW_' (special case)
+        }elseif($atom->id === '_NEW'){
+            return true; // Return true if id is '_NEW' (special case)
         }elseif($this->database->atomExists($this)){
             $this->concept->addToAtomCache($this);
     		return true;

@@ -527,9 +527,9 @@ class InterfaceObject {
 	    $newAtom->addAtom();
 	
 	    // Special case for CREATE in I[Concept] interfaces
-	    if($this->srcAtom->id === '_NEW_'){
+	    if($this->srcAtom->id === '_NEW'){
 	        $this->srcAtom->setId($newAtom->id);
-	        $this->path = str_replace('_NEW_', $newAtom->getJsonRepresentation(), $this->path);
+	        $this->path = str_replace('_NEW', $newAtom->getJsonRepresentation(), $this->path);
 	    }
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
