@@ -553,7 +553,7 @@ class Database {
 		
 		// Delete atom from relation tables where atom is mentioned as src or tgt atom
 		foreach (Relation::getAllRelations() as $relation){
-		    $tableName = $relation->getMysqlTable()->name);
+		    $tableName = $relation->getMysqlTable()->name;
 		    
 		    $cols = array();
 		    if($relation->srcConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->srcCol();
