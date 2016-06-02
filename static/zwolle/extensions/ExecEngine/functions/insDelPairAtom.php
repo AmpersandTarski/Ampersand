@@ -42,7 +42,10 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
 		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') Logger::getLogger('EXECENGINE')->debug("InsPair ignored because src and/or tgt atom is _NULL");
+		if($srcAtom == '_NULL' or $tgtAtom == '_NULL'){
+            Logger::getLogger('EXECENGINE')->debug("InsPair ignored because src and/or tgt atom is _NULL");
+            return;
+        }
 		
 		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
 		$srcConcept = Concept::getConcept($srcConceptName);
@@ -86,7 +89,10 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
 		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') Logger::getLogger('EXECENGINE')->debug("DelPair ignored because src and/or tgt atom is _NULL");
+		if($srcAtom == '_NULL' or $tgtAtom == '_NULL'){
+            Logger::getLogger('EXECENGINE')->debug("DelPair ignored because src and/or tgt atom is _NULL");
+            return;
+        }
 		
 		$srcAtoms = explode('_AND', $srcAtom);
 		$tgtAtoms = explode('_AND', $tgtAtom);
