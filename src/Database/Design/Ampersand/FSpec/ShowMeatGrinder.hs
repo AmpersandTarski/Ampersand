@@ -49,7 +49,7 @@ content fSpec = unlines
     , "-}"
     , ""
     , "CONTEXT FormalAmpersand IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
-    ++ (concat.intersperse  []) (map (lines . showADL ) (metaPops fSpec fSpec))
+    ++ intercalate [] (map (lines . showADL ) (metaPops fSpec fSpec))
     ++
     [ ""
     , "ENDCONTEXT"
@@ -123,7 +123,7 @@ instance MetaPopulations A_Concept where
    [ Comment " "
    , Comment $ " Concept `"++name cpt++"` "
    , Pop "ttype" "Concept" "TType"
-             [(dirtyId cpt, dirtyId ((cptTType fSpec) cpt))] 
+             [(dirtyId cpt, dirtyId (cptTType fSpec cpt))] 
    , Pop "name" "Concept" "Identifier"
              [(dirtyId cpt, dirtyId cpt)]
    ]++
@@ -258,7 +258,7 @@ instance MetaPopulations Declaration where
       ]
      Isn ONE -> 
       [ Comment " "
-      , Comment $ " Relation `I[ONE]` "
+      , Comment " Relation `I[ONE]` "
       , Pop "context" "Relation" "Context"
              [(dirtyId dcl,dirtyId fSpec)]
       , Pop "name" "Relation" "Identifier"
@@ -470,7 +470,7 @@ instance AdlId Pattern
 instance AdlId PlugInfo
 instance AdlId PlugSQL
 instance AdlId (PlugSQL,SqlAttribute)
-  where dirtyId (plug,att) = concatDirtyIdStrings $ [dirtyId plug, (show.camelCase.attName) att]
+  where dirtyId (plug,att) = concatDirtyIdStrings [dirtyId plug, (show.camelCase.attName) att]
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Role
@@ -524,13 +524,13 @@ isFrontEndInvariant :: Rule -> Bool
 isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
 
 isFrontEndSignal :: Rule -> Bool
-isFrontEndSignal r = isSignal r
+isFrontEndSignal = isSignal
 
 -- NOTE that results from filterFrontEndInvConjuncts and filterFrontEndSigConjuncts may overlap (conjunct appearing in both invariants and signals)
 -- and that because of extra condition in isFrontEndInvariant (not (ruleIsInvariantUniOrInj r)), some parameter conjuncts may not be returned
 -- as either inv or sig conjuncts (i.e. conjuncts that appear only in uni or inj rules) 
 filterFrontEndInvConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndInvConjuncts conjs = filter (\c -> any isFrontEndInvariant $ rc_orgRules c) conjs
+filterFrontEndInvConjuncts = filter (any isFrontEndInvariant . rc_orgRules)
 
 filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRules c) conjs
+filterFrontEndSigConjuncts = filter (any isFrontEndSignal . rc_orgRules)
