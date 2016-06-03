@@ -15,7 +15,6 @@ import Database.Design.Ampersand.FSpec.SQL
 import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Basics hiding (putStrLn)
 import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 
 createTablesPHP :: FSpec -> [String]

@@ -34,6 +34,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , Language(..),AAtomValue
           , showValADL,showValPHP,showValSQL,showSQL
           , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
+          , module Database.Design.Ampersand.Classes
           ) where
 -- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
 --       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
