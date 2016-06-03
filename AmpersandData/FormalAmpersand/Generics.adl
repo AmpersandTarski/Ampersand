@@ -76,8 +76,8 @@ RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 --[Conjuncts]--
 RELATION allConjuncts[Context*Conjunct] [SUR,INJ]
-RELATION originatesFrom[Conjunct*Rule] [TOT,UNI] -- rule where the conjunct originates from.
-RELATION conjunct[Conjunct*Expression] [TOT,UNI]
+RELATION originatesFrom[Conjunct*Rule] [TOT] -- rule where the conjunct originates from.
+RELATION conjunct[Conjunct*Expression] [TOT]
 
 --[Roles]--
 
