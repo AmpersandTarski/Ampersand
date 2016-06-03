@@ -1035,7 +1035,7 @@ broadQuery fSpec obj =
    Nothing                -> toSQL baseBinExpr
    Just InterfaceRef{}    -> toSQL baseBinExpr
    Just Box{siObjs=sObjs} -> 
-                    case filter isInConceptTable sObjs of
+                    case filter isInBroadQuery sObjs of
                        [] -> toSQL baseBinExpr
                        xs -> extendWithCols xs baseBinExpr
        --                xs -> extendWithCols xs (toSQL baseBinExpr)
@@ -1110,8 +1110,11 @@ broadQuery fSpec obj =
          ct  = Name "cptTbl"
      tableCpt = source . objctx . head $ objs
 
-  isInConceptTable :: ObjectDef -> Bool
-  isInConceptTable = isJust . attThatisInTableOf (target . objctx $ obj)
+  isInBroadQuery :: ObjectDef -> Bool
+  isInBroadQuery sObj = 
+     and [ isUni . objctx $ sObj 
+         , isJust . attThatisInTableOf (target . objctx $ obj) $ sObj
+         ]
       
   attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
   attThatisInTableOf cpt od = 

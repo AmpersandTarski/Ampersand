@@ -7,7 +7,6 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.List
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 
         

@@ -20,7 +20,6 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Classes.ConceptStructure
 
 
 makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)

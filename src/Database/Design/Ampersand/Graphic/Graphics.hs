@@ -5,7 +5,6 @@ module Database.Design.Ampersand.Graphic.Graphics
 import Data.GraphViz
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.Switchboard
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
