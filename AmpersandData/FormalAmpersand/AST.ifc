@@ -35,8 +35,7 @@ INTERFACE "Rule" FOR Ampersand : I[Rule]
 BOX [ "name" : name[Rule*RuleID]
     , "valid" : valid[Rule*Context]
     , "allRules~" : allRules[Context*Rule]~
-    , "signalRuleNames~" : signalRuleNames[Conjunct*Rule]~
-    , "invariantRuleNames~" : invariantRuleNames[Conjunct*Rule]~
+    , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
     , "rules~"  : rules[Pattern*Rule]~
     , "maintains~ (Role)" : maintains[Role*Rule]~
     , "term (Expression)" : term[Rule*Expression]
@@ -54,7 +53,11 @@ BOX [ "name" : name[Rule*RuleID]
     , "rrpurpose" : rrpurpose
     ]
     
-
+INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
+    [ "ID" : I
+    , "originatesFrom" : originatesFrom[Conjunct*Rule]
+    , "conjunct"       : conjunct[Conjunct*Expression]
+    ]
 INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
     , name    : name

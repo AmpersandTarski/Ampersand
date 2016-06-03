@@ -83,7 +83,7 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (allExprs  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.fallRules) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).fallRules)    fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Conjunts: (count="++(show.length.allConjuncts) fSpec++")"]
+  ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allConjuncts fSpec)
   ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
@@ -149,7 +149,10 @@ instance MetaPopulations Conjunct where
     [ Comment $ " Conjunct `"++rc_id conj++"` "
     , Pop "allConjuncts" "Context" "Conjunct"
              [(dirtyId fSpec,dirtyId conj)]
-     
+    , Pop "originatesFrom" "Conjunct" "Rule"
+             [(dirtyId conj, dirtyId rul) | rul <- rc_orgRules conj]
+    , Pop "conjunct" "Conjunct" "Expression"
+             [(dirtyId conj, dirtyId (rc_conjunct conj))]
     ] 
 
 instance MetaPopulations PlugInfo where
@@ -400,10 +403,8 @@ instance MetaPopulations Rule where
              [(dirtyId rul, (dirtyId.target.rrexp) rul)]
       , Pop "conjunctIds"  "Rule" "ConjunctID"
              [(dirtyId rul, dirtyId conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
-      , Pop "signalRuleNames" "Conjunct" "Rule"
-             [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs, isSignal rul]
-      , Pop "invariantRuleNames" "Conjunct" "Rule"
-             [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs, (not.isSignal) rul]
+      , Pop "originatesFrom" "Conjunct" "Rule"
+             [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "term"  "Rule" "Expression"
              [(dirtyId rul, dirtyId (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"

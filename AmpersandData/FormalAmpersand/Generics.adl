@@ -76,14 +76,8 @@ RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 --[Conjuncts]--
 RELATION allConjuncts[Context*Conjunct] [SUR,INJ]
-RELATION signalRuleNames[Conjunct*Rule] -- e.g. 'Activation of Managed BFControls' -- this is a signal rule
-RELATION invariantRuleNames[Conjunct*Rule] -- similar, for invariant rules.
-RELATION violationsSQL[Conjunct*MySQLQuery] -- e.g. '/* case: (EIsc lst\\\'@(_:_:_))
---                                       nhIsDashboard /\\\\ -I[NormHierarchy] ([NormHierarchy*NormHierarchy]) */
---                                    SELECT DISTINCT isect0.`NormHierarchy` AS `src`, isect0.`tgt_nhIsDashboard` AS `tgt`
---                                    FROM ( SELECT `NormHierarchy`, `tgt_nhIsDashboard`
---                                           FROM `NormHierarchy` WHERE `NormHierarchy` IS NOT NULL  AND  `tgt_nhIsDashboard` IS NOT NULL) AS isect0
---                                    WHERE isect0.NormHierarchy <> isect0.`tgt_nhIsDashboard` AND isect0.NormHierarchy IS NOT NULL AND isect0.`tgt_nhIsDashboard` IS NOT NULL'
+RELATION originatesFrom[Conjunct*Rule] [TOT,UNI] -- rule where the conjunct originates from.
+RELATION conjunct[Conjunct*Expression] [TOT,UNI]
 
 --[Roles]--
 
