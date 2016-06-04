@@ -13,11 +13,11 @@ VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", SRC I
           )
 RULE "TOT conceptAttribute (del)" : conceptAttribute;conceptAttribute~ |- I[Concept]
-VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC conceptAttribute, TXT ";Concept;", SRC I
+VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC conceptAttribute, TXT ";Concept;", SRC I  HJO20160604: @Stef, hoe weet je zeker dat die vooraf bestaat??
           , TXT "{EX} DelPair;conceptAttribute;Concept;", SRC I, TXT ";SqlAttribute;", SRC conceptAttribute
           , TXT "{EX} DelAtom;SqlAttribute;", SRC I
           )
-ROLE ExecEngine MAINTAINS "TOT conceptAttribute (new)", "TOT conceptAttribute (del)"
+ROLE ExecEngineBuggy MAINTAINS "TOT conceptAttribute (new)", "TOT conceptAttribute (del)"
 
 CLASSIFY TblSQL ISA SQLPlug
 CLASSIFY BinSQL ISA SQLPlug
