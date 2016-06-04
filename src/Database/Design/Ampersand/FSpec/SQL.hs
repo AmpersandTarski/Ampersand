@@ -942,13 +942,16 @@ stringOfName _          = fatal 659 "This kind of a Name wasn't used before in A
 
 conjunctSQL :: [ValueExpr] -> ValueExpr
 conjunctSQL [] = fatal 57 "nothing to `AND`."
-conjunctSQL [ve] = ve
-conjunctSQL (ve:ves) = BinOp ve [Name "AND"] (conjunctSQL ves)
+conjunctSQL [ve] = bracketsSQL ve
+conjunctSQL (ve:ves) = BinOp (bracketsSQL ve) [Name "AND"] (conjunctSQL ves)
 
 disjunctSQL :: [ValueExpr] -> ValueExpr
 disjunctSQL [] = fatal 57 "nothing to `OR`."
-disjunctSQL [ve] = ve
-disjunctSQL (ve:ves) = BinOp ve [Name "OR"] (conjunctSQL ves)
+disjunctSQL [ve] = bracketsSQL ve
+disjunctSQL (ve:ves) = BinOp (bracketsSQL ve) [Name "OR"] (conjunctSQL ves)
+
+bracketsSQL :: ValueExpr -> ValueExpr
+bracketsSQL = Parens
 
 as :: TableRef -> Name -> TableRef
 as ve a = -- TRAlias ve (Alias a Nothing)
@@ -1112,9 +1115,8 @@ broadQuery fSpec obj =
 
   isInBroadQuery :: ObjectDef -> Bool
   isInBroadQuery sObj = 
-     and [ isUni . objctx $ sObj 
-         , isJust . attThatisInTableOf (target . objctx $ obj) $ sObj
-         ]
+     (isUni . objctx $ sObj) && 
+     (isJust . attThatisInTableOf (target . objctx $ obj) $ sObj)
       
   attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
   attThatisInTableOf cpt od = 
