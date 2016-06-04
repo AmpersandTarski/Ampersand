@@ -6,6 +6,7 @@
   * Bug fix: Nontermination of functional document generator. [Issue #231](https://github.com/AmpersandTarski/Ampersand/issues/231)
   * SQL query performance improvements: [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426) and 
     [Issue #217](https://github.com/AmpersandTarski/Ampersand/issues/217)
+  * Back end performance: Postpone calculation of view and label for Atoms untill really needed (e.g. in interfaces)
   
 ## v3.5.1 (17 may 2016)
   * Minor enhancement of generation of Logical Data Model

@@ -69,13 +69,13 @@ class Atom {
 	 * Label of atom to be displayed in user interfaces
 	 * @var string
 	 */
-	public $label;
+	private $label;
 	
 	/**
 	 * Array of attributes of this atom to be used by the user interface frontend templates
 	 * @var array
 	 */
-	public $view;
+	private $view;
 	
 	/**
 	 * Specifies the concept of which this atom is an instance
@@ -117,20 +117,6 @@ class Atom {
         $this->qData = $qData;
 		
 		$this->setId($atomId);
-		
-		// View & label
-		if(!is_null($this->parentIfc)) $view = $this->parentIfc->view; // If parentIfc is set, use view as defined by interface
-		else $view = $this->concept->getDefaultView(); // Else use default view of concept (can be null)
-		
-		if(is_null($view)){
-		    $this->view = null;
-		    $this->label = $this->id;
-		}else{
-		    $this->view = $this->getAtomView($view);
-		    
-		    $viewString = implode($this->view);
-		    $this->label = empty($viewString) ? $this->id : $viewString; // empty viewString => label = id
-		}
 		
 		// JSON-LD attributes
 		$this->url = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $this->concept->name . '/' . $this->getJsonRepresentation();
@@ -195,7 +181,7 @@ class Atom {
 	 * @return array
 	 */
 	public function getAtom($options = array()){
-		$result = array('_id_' => $this->getJsonRepresentation(), '_label_' => $this->label, '_view_' => $this->view);
+		$result = array('_id_' => $this->getJsonRepresentation(), '_label_' => $this->getLabel(), '_view_' => $this->getView());
 		
 		if($options['navIfc']){
 		    $ifcs = array();
@@ -208,37 +194,62 @@ class Atom {
 		
 		return $result;
 	}
+    
+    /**
+     * Returns label (from view or atom id) for this atom
+     * @return string
+     */
+    public function getLabel(){
+        if(!isset($this->label)){
+            $view = $this->getView();
+            $this->label = empty($view) ? $this->id : implode($view); // empty view => label = id
+        }
+        return $this->label;
+    }
 	
 	/**
-	 * Returns view key-value pairs for this atom
-	 * @param View $view
+	 * Returns view array of key-value pairs for this atom
 	 * @return array
 	 */
-	private function getAtomView($view){
-	    $viewStrs = array();
-	    foreach ($view->segments as $viewSegment){
-	        $key = is_null($viewSegment->label) ? $viewSegment->seqNr : $viewSegment->label;
-	        
-	        switch ($viewSegment->segType){
-	            case "Text" :
-	                $viewStrs[$key] = $viewSegment->text;
-	                break;
-	            case "Exp" :
-                    if(!is_null($viewSegment->parentIfcCol)){
-                        $viewStrs[$key] = $this->getQueryData($viewSegment->parentIfcCol);
-                        $this->logger->debug("#217 One query saved due to reusing data from source atom");
-                    }else{
-	                    $query = "SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
-	                    $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
-	                    $viewStrs[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+	private function getView(){
+        $this->logger->debug("Get view for atom '{$this->__toString()}'");
+        
+        // If view is not already set
+        if(!isset($this->view)){
+            $this->view = array();
+            
+            // If parentIfc is set, use view as defined by interface (can be null)
+            if(isset($this->parentIfc)) $viewDef = $this->parentIfc->view;
+            // Else use default view of concept (can be null)
+            else $viewDef = $this->concept->getDefaultView();
+            
+            // If there is a view definition
+            if(!is_null($viewDef)){
+                foreach ($viewDef->segments as $viewSegment){
+                    $key = is_null($viewSegment->label) ? $viewSegment->seqNr : $viewSegment->label;
+                    
+                    switch ($viewSegment->segType){
+                        case "Text" :
+                            $this->view[$key] = $viewSegment->text;
+                            break;
+                        case "Exp" :
+                            if(!is_null($viewSegment->parentIfcCol)){
+                                $this->view[$key] = $this->getQueryData($viewSegment->parentIfcCol);
+                                $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");
+                            }else{
+                                $query = "/* VIEW <{$viewDef->label}:{$key}> */ SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
+                                $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
+                                $this->view[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+                            }
+                            break;
+                        default :
+                            throw new Exception("Unsupported segmentType '{$viewSegment->segType}' in VIEW <{$viewDef->label}:{$key}>", 501); // 501: Not implemented
+                            break;
                     }
-	                break;
-	            default :
-	                throw new Exception("Unsupported segmentType '{$viewSegment->segType}' in view '{$view->label}' segment '{$viewSegment->seqNr}:{$viewSegment->label}'", 501); // 501: Not implemented
-	                break;
-	        }
-	    }
-	    return $viewStrs;
+                }
+            }
+        }
+        return $this->view;
 	}
     
     public function getQueryData($colName = null){
@@ -425,8 +436,8 @@ class Atom {
         if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
 	    
 	    $content = array( '_id_' => $this->getJsonRepresentation()
-	                    , '_label_' => $this->label
-	                    , '_view_' => $this->view
+	                    , '_label_' => $this->getLabel()
+	                    , '_view_' => $this->getView()
 	                    );
 	     
 	    // Meta data
