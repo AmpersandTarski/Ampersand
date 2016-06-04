@@ -401,7 +401,7 @@ instance MetaPopulations Rule where
              [(dirtyId rul, (dirtyId.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept"
              [(dirtyId rul, (dirtyId.target.rrexp) rul)]
-      , Pop "conjunctIds"  "Rule" "ConjunctID"
+      , Pop "conjunctIds"  "Rule" "Conjunct"
              [(dirtyId rul, dirtyId conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "originatesFrom" "Conjunct" "Rule"
              [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]

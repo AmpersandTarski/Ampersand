@@ -125,7 +125,8 @@ BOX [ expression: I[Expression]
     , second : second LINKTO INTERFACE Expression
     , arg : arg[UnaryTerm*Expression]
     , term : term[Rule*Expression]
-    , bind  : bind
+    , bind  : bind LINKTO INTERFACE Expression
+    , singleton : singleton LINKTO INTERFACE Expression
     ]
 INTERFACE Signature FOR Ampersand : I[Signature]
 BOX [ Signature: I[Signature]
@@ -170,8 +171,8 @@ BOX [ "gens~" : gens~
     ]
 
 INTERFACE Relation FOR Ampersand : I[Relation]
-BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*ConjunctID]
-	, "affectedSigConjunctIds" : affectedSigConjunctIds[Relation*ConjunctID]
+BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
+	, "affectedSigConjunctIds" : affectedSigConjunctIds[Relation*Conjunct]
 	, "context" : context[Relation*Context]
 	, "decmean" : decmean[Relation*Meaning]
 	, "decprL" : decprL[Relation*String]

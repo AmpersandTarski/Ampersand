@@ -42,6 +42,10 @@ PROCESS "Expression definitions"
     CLASSIFY UnaryTerm ISA Expression
     RELATION arg[UnaryTerm*Expression] [UNI]
 
+    CONCEPT Atom ""
+    CLASSIFY Atom ISA Expression
+    RELATION singleton[Atom*Expression] [UNI]
+    
     CLASSIFY Equivalence ISA Rule
     CLASSIFY Inclusion   ISA Rule
     CLASSIFY Truth       ISA Rule
