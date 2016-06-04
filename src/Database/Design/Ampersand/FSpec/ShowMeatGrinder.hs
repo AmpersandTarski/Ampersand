@@ -331,14 +331,24 @@ instance MetaPopulations Expression where
             (EFlp e)     -> makeUnaryTerm  Converse   e
             (ECpl e)     -> makeUnaryTerm  UnaryMinus e
             (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
-            (EDcD dcl)   -> [Pop "bind" "Expression" "Relation" [(dirtyId expr,dirtyId dcl)]
+            (EDcD dcl)   -> [Pop "bind" "Expression" "Relation" 
+                              [(dirtyId expr,dirtyId dcl)]
                             ]
---            EDcI{}       -> 
---            EEps{}       -> 
---            EDcV{}       -> 
---            EMp1{}       -> 
-            _            -> [Comment $ "TODO(in instance MetaPopulations Expression): "++showADL expr]
--- TODO: Work on the rest of the expressions (get rid of the statement above) 
+            (EDcI cpt)   -> [Pop "bind" "Expression" "Relation" 
+                              [(dirtyId expr,dirtyId (Isn cpt))]
+                            ]
+            EEps{}       -> []
+            (EDcV sgn)   -> [Pop "userSrc"  (show "V") "Concept" 
+                              [(dirtyId expr,dirtyId (source sgn))]
+                            ,Pop "userTrg"  (show "V") "Concept" 
+                              [(dirtyId expr,dirtyId (target sgn))]
+                            ]
+            (EMp1 v c)   -> [ --TODO! 
+                              --  Pop "singleton" "Atom" "Expression" 
+                              --    [(dirtyId expr,dirtyId (c,v))]
+                              -- ,Pop "pop" "Atom" "Concept"
+                              --    [(dirtyId (c,v),dirtyId c)]
+                            ]
        ) 
   where
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
@@ -472,6 +482,7 @@ instance AdlId PlugSQL
 instance AdlId (PlugSQL,SqlAttribute)
   where dirtyId (plug,att) = concatDirtyIdStrings [dirtyId plug, (show.camelCase.attName) att]
 instance AdlId Purpose
+instance AdlId (A_Concept,PSingleton)
 instance AdlId Rule
 instance AdlId Role
 instance AdlId Signature

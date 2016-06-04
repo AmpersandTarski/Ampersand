@@ -46,6 +46,11 @@ PROCESS "Expression definitions"
     CLASSIFY Atom ISA Expression
     RELATION singleton[Atom*Expression] [UNI]
     
+    CONCEPT "V" "The cartesian product."
+    CLASSIFY "V" ISA Expression
+    RELATION userSrc["V"*Concept] [UNI]
+    RELATION userTrg["V"*Concept] [UNI]
+    
     CLASSIFY Equivalence ISA Rule
     CLASSIFY Inclusion   ISA Rule
     CLASSIFY Truth       ISA Rule
