@@ -42,6 +42,12 @@ class Concept {
      */
     private $database;
     
+    /**
+     * Definition from which Concept object is created
+     * @var array
+     */
+    private $def;
+    
 	/**
 	 * Name (and unique identifier) of concept
 	 * @var string
@@ -124,6 +130,8 @@ class Concept {
 	    $this->database = Database::singleton();
 	    $this->logger = Logger::getLogger('FW');
 	    
+        $this->def = $conceptDef;
+        
 		$this->name = $conceptDef['name'];
 		$this->type = $conceptDef['type'];
 		$this->isObject = ($this->type == "OBJECT") ? true : false;
@@ -240,8 +248,11 @@ class Concept {
 	 */
 	public function getAllAtomObjects(){
         // Query all atoms in table
-        $firstCol = current($this->mysqlConceptTable->getCols()); // We can query an arbitrary concept col for checking the existence of an atom
-	    $query = "SELECT DISTINCT *, `{$firstCol->name}` as `atomId` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
+        if(isset($this->def['allAtomsQuery'])) $query = $this->def['allAtomsQuery'];
+        else{
+            $firstCol = current($this->mysqlConceptTable->getCols()); // We can query an arbitrary concept col for checking the existence of an atom
+	        $query = "SELECT DISTINCT `{$firstCol->name}` as `atomId` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
+        }
         
         $arr = array();
 	    foreach ((array)$this->database->Exe($query) as $row){

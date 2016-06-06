@@ -233,13 +233,20 @@ class Atom {
                             $this->view[$key] = $viewSegment->text;
                             break;
                         case "Exp" :
-                            if(!is_null($viewSegment->parentIfcCol)){
-                                $this->view[$key] = $this->getQueryData($viewSegment->parentIfcCol);
-                                $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");
-                            }else{
-                                $query = "/* VIEW <{$viewDef->label}:{$key}> */ SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
-                                $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
-                                $this->view[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+                            try {
+                                // Try to get view segment from atom query data
+                                $this->view[$key] = $this->getQueryData('view_' . $key); // column is prefixed with view_
+                                $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");                                
+                            
+                            }catch (Exception $e) {
+                                // Column not defined, perform query
+                                if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
+                                    $query = "/* VIEW <{$viewDef->label}:{$key}> */ SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
+                                    $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
+                                    $this->view[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+                                }else{
+                                    throw $e;
+                                }
                             }
                             break;
                         default :
@@ -258,9 +265,9 @@ class Atom {
             return $this->qData;
         }else{
             // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
-            $col = 'ifc_' . $colName;
-            if(!array_key_exists($col, $this->qData)) throw new Exception("Column '{$col}' not defined in query data of atom '{$this->__toString()}'", 1001);
-            return $this->qData[$col];
+            $colName;
+            if(!array_key_exists($colName, $this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
+            return $this->qData[$colName];
         }
     }
 	
