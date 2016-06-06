@@ -941,14 +941,14 @@ stringOfName (UQName s) =  s
 stringOfName _          = fatal 659 "This kind of a Name wasn't used before in Ampersand. "
 
 conjunctSQL :: [ValueExpr] -> ValueExpr
-conjunctSQL [] = fatal 57 "nothing to `AND`."
+conjunctSQL [] = fatal 57 "nothing to `and`."
 conjunctSQL [ve] = bracketsSQL ve
-conjunctSQL (ve:ves) = BinOp (bracketsSQL ve) [Name "AND"] (conjunctSQL ves)
+conjunctSQL (ve:ves) = BinOp (bracketsSQL ve) [Name "and"] (conjunctSQL ves)
 
 disjunctSQL :: [ValueExpr] -> ValueExpr
-disjunctSQL [] = fatal 57 "nothing to `OR`."
+disjunctSQL [] = fatal 57 "nothing to `or`."
 disjunctSQL [ve] = bracketsSQL ve
-disjunctSQL (ve:ves) = BinOp (bracketsSQL ve) [Name "OR"] (conjunctSQL ves)
+disjunctSQL (ve:ves) = BinOp (bracketsSQL ve) [Name "or"] (conjunctSQL ves)
 
 bracketsSQL :: ValueExpr -> ValueExpr
 bracketsSQL = Parens
@@ -963,9 +963,9 @@ as ve a = -- TRAlias ve (Alias a Nothing)
    withAlias = TRAlias ve (Alias a Nothing)
     
 notNull :: ValueExpr -> ValueExpr
-notNull = PostfixOp [Name "IS NOT NULL"]
+notNull = PostfixOp [Name "is not null"]
 isNull  :: ValueExpr -> ValueExpr
-isNull = PostfixOp [Name "IS NULL"]
+isNull = PostfixOp [Name "is null"]
 emptySet :: BinQueryExpr
 emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"]
            BSE { 
