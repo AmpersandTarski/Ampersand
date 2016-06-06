@@ -13,7 +13,6 @@ import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.FSpec.ArchiAnalyze
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
-import Database.Design.Ampersand.Core.ToMeta
 import Control.Monad
 
 -- | create an FSpec, based on the provided command-line options.
@@ -32,7 +31,7 @@ import Control.Monad
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
-  do userP_Ctx <- parseADL opts (Left (fileName opts)) -- the P_Context of the user's sourceFile
+  do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      genFiles userP_Ctx >> genTables userP_Ctx
    where
     genFiles :: Guarded P_Context -> IO(Guarded ())
@@ -40,31 +39,21 @@ createFSpec opts =
       = case pCtx2Fspec uCtx of
           Errors es -> return(Errors es)
           Checked uFspec
-            ->   when (genASTFile      opts) (doGenMetaFile AST      uFspec)  -- for the meatgrinder
-              >> when (genGenericsFile opts) (doGenMetaFile Generics uFspec)  -- for JSON-based communication to the front-end
+            ->   when (genASTFile opts) (doGenMetaFile uFspec)
               >> return (Checked ())
 
     genTables :: Guarded P_Context -> IO(Guarded FSpec)
-    genTables uCtx= case whatTablesToCreateExtra of
-       Nothing
+    genTables uCtx= case genASTTables opts of
+       False
          -> return (pCtx2Fspec uCtx)
-       Just mType
-         -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the
-               let populationPctx       = join ( grind mType <$> pCtx2Fspec uCtx)
+       True
+         -> do rapP_Ctx <- parseMeta opts -- the P_Context of the
+               let populationPctx       = join ( grind <$> pCtx2Fspec uCtx)
                    populatedRapPctx     = (merge.sequenceA) [rapP_Ctx,populationPctx]
-                   metaPopulatedRapPctx = toMeta opts <$> populatedRapPctx
+                   metaPopulatedRapPctx = populatedRapPctx
                    allCombinedPctx      = (merge.sequenceA) [uCtx, metaPopulatedRapPctx]
                return (pCtx2Fspec allCombinedPctx) -- the RAP specification that is populated with the user's 'things' is returned.
 
-    whatTablesToCreateExtra :: Maybe MetaType
-    whatTablesToCreateExtra
-       | genASTTables opts     = Just AST        -- for the meatgrinder
-       | genGenericTables opts = Just Generics   -- for JSON-based communication to the front-end
-       | otherwise             = Nothing
-
-    getFormalFile :: MetaType -> IO(Guarded P_Context)
-    getFormalFile mType
-     = do parseADL opts (Right mType)
 
 
     toFspec :: A_Context -> Guarded FSpec
@@ -76,10 +65,10 @@ createFSpec opts =
       where
        f []     = fatal 77 $ "merge must not be applied to an empty list"
        f (c:cs) = foldr mergeContexts c cs
-    grind :: MetaType -> FSpec -> Guarded P_Context
-    grind mType fSpec
+    grind :: FSpec -> Guarded P_Context
+    grind fSpec
       = fmap fstIfNoIncludes $ parseCtx f c
-      where (f,c) = makeMetaPopulationFile mType fSpec
+      where (f,c) = makeMetaPopulationFile fSpec
             fstIfNoIncludes (a,includes)
              = case includes of
                [] -> a
@@ -87,11 +76,11 @@ createFSpec opts =
 
 
 
-doGenMetaFile :: MetaType -> FSpec -> IO()
-doGenMetaFile mType fSpec =
- do { verboseLn (getOpts fSpec) $ "Generating "++show mType++" meta file for "++name fSpec
+doGenMetaFile :: FSpec -> IO()
+doGenMetaFile fSpec =
+ do { verboseLn (getOpts fSpec) $ "Generating meta file for "++name fSpec
     ; writeFile outputFile contents
-    ; verboseLn (getOpts fSpec) $ show mType++" written into " ++ outputFile ++ ""
+    ; verboseLn (getOpts fSpec) $ "Meatgrinder output written into " ++ outputFile ++ ""
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) $ fpath
-       (fpath,contents) = makeMetaPopulationFile mType fSpec
+       (fpath,contents) = makeMetaPopulationFile fSpec

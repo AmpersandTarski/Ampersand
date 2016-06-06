@@ -3,7 +3,7 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Database.Design.Ampersand.Input.Parsing (
-    parseADL, parseADL1pExpr, parseRule, parseCtx, runParser
+    parseADL,parseMeta , parseADL1pExpr, parseRule, parseCtx, runParser
 ) where
 
 import Control.Applicative
@@ -27,16 +27,18 @@ import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileCo
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line
-         -> Either FilePath MetaType   -- ^ The path of the file to be parsed OR the MetaType. In the latter case, the files will be taken from `allStaticFiles`
+         -> FilePath   -- ^ The path of the file to be parsed
          -> IO (Guarded P_Context)     -- ^ The resulting context
-parseADL opts thingToParse =
+parseADL opts fp = parseThing opts (fp,Nothing) False
+parseMeta :: Options -> IO (Guarded P_Context)
+parseMeta opts = parseThing opts ("AST.adl",Just $ Origin "Formal Ampersand specification") True -- This is the top file from FormalAmpersand. 
+
+parseThing :: Options -> SingleFileToParse -> Bool -> IO (Guarded P_Context) 
+parseThing opts mainFile useAllStaticFiles =
   whenCheckedIO (parseSingleADL opts useAllStaticFiles mainFile) $ \(ctxt, includes) ->
     whenCheckedIO (parseADLs opts useAllStaticFiles [fst mainFile] includes) $ \ctxts ->
       return $ Checked $ foldl mergeContexts ctxt ctxts
- where (mainFile, useAllStaticFiles) = case thingToParse of
-                                         Left fp        -> ((fp            ,Nothing),False)
-                                         Right Generics -> (("Generics.adl",Nothing),True )  -- for JSON-based communication to the front-end
-                                         Right AST      -> (("AST.adl"     ,Nothing),True )  -- for the meatgrinder
+
 -- | Parses several ADL files
 parseADLs :: Options                    -- ^ The options given through the command line
           -> Bool                       -- ^ True iff the file is from FormalAmpersand files in `allStaticFiles`

@@ -3,7 +3,6 @@ module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FSpecFormat(..)
         , helpNVersionTexts
-        ,MetaType(..)
         )
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
@@ -72,9 +71,6 @@ data Options = Options { showVersion :: Bool
                        , test :: Bool
                        , genASTTables :: Bool -- When set, generate the meta-tables of AST into the prototype
                        , genASTFile :: Bool  -- When set, the standard RAP is 'merged' into the generated prototype.(experimental)
-                       , genGenericsFile :: Bool  -- Generate the meta-population in generics format and output it to an .adl file
-                       , genGenericTables :: Bool -- When set, generate the meta-tables of generics into the prototype
-                       , metaTablesHaveUnderscore :: Bool -- Separate the extra tables used with ASTTables or GenericTables by letting them have underscores
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
@@ -163,11 +159,8 @@ getOptions =
                       , baseName         = takeBaseName fName
                       , export2adl       = False
                       , test             = False
-                      , genGenericTables = False
-                      , genGenericsFile  = False
                       , genASTTables     = False
                       , genASTFile       = False
-                      , metaTablesHaveUnderscore = False
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
@@ -186,7 +179,6 @@ getOptions =
       return opts
 
 data DisplayMode = Public | Hidden deriving Eq
-data MetaType = Generics | AST deriving (Show)
 
 data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
 allFSpecFormats :: String
@@ -391,25 +383,13 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{test = True}))
                "Used for test purposes only."
             , Hidden)
-          , (Option []        ["ast-tables"]
+          , (Option []        ["meta-tables"]
                (NoArg (\opts -> return opts{genASTTables = True}))
                "When set, generate the meta-tables of AST into the prototype"
             , Hidden)
-          , (Option []        ["ast-file"]
+          , (Option []        ["meta-file"]
                (NoArg (\opts -> return opts{genASTFile = True}))
                "Generate the meta-population in AST format and output it to an .adl file"
-            , Hidden)
-          , (Option []        ["generic-tables"]
-               (NoArg (\opts -> return opts{genGenericTables = True}))
-               "Generate the meta-tables of generics into the prototype"
-            , Hidden)
-          , (Option []        ["generic-file"]
-               (NoArg (\opts -> return opts{genGenericsFile = True}))
-               "Generate the meta-population in Generics format and output it to an .adl file"
-            , Hidden)
-          , (Option []        ["meta-tables-have-underscore"]
-               (NoArg (\opts -> return opts{metaTablesHaveUnderscore = True}))
-               "Separate the extra tables used with ast-tables or generic-tables by letting them have underscores"
             , Hidden)
           , (Option []        ["no-static-files"]
                (NoArg  (\opts -> return opts{genStaticFiles = False}))

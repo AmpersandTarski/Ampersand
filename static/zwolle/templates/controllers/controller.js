@@ -17,7 +17,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	 *********************************************************************************************/
 	
 	// Set requested resource
-	if(\$routeParams['new'] && '$source$' == '$target$') resourceId = '_NEW_'; // Set resourceId to special '_NEW_' value in case new resource must be created 
+	if(\$routeParams['new'] && '$source$' == '$target$') resourceId = '_NEW'; // Set resourceId to special '_NEW' value in case new resource must be created 
 	\$scope.resource = Restangular.one('resources').one('$source$', resourceId); // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
 	\$scope.resource['_path_'] = '/resources/$source$/' + resourceId;
 	\$scope.resource['_ifcEntryResource_'] = true;

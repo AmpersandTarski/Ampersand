@@ -15,7 +15,7 @@ import Data.Aeson
 import Data.Aeson.Types
 import Data.List
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.SQL (sqlQuery)
+import Database.Design.Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder)
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
@@ -44,7 +44,7 @@ ampersandDefault :: Data.Aeson.Types.Options
 ampersandDefault = defaultOptions {fieldLabelModifier = stripLabel}
   where stripLabel str 
           = case filter (isPrefixOf pfx) (tails str) of
-                [] -> fatal 71 $ "Label at Haskall side must contain `JSON`: "++str
+                [] -> fatal 71 $ "Label at Haskell side must contain `JSON`: "++str
                 xs -> snd . splitAt (length pfx) . head $ xs
              where pfx = "JSON"    
   

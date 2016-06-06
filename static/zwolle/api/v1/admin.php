@@ -194,4 +194,18 @@ $app->get('/admin/report/relations', function () use ($app){
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
+
+$app->get('/admin/report/conjuncts', function () use ($app){
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+    
+    $content = array();
+    foreach(Conjunct::getAllConjuncts() as $conj){        
+        if($conj->isInvConj()) $content['invConjuncts'][] = $conj->__toString();
+        if($conj->isSigConj()) $content['sigConjuncts'][] = $conj->__toString();
+        if(!$conj->isInvConj() && !$conj->isSigConj()) $content['unused'][] = $conj->__toString();
+    }
+    
+    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
 ?>

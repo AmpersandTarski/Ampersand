@@ -31,7 +31,6 @@ import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
 import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
 import Database.Design.Ampersand.Prototype.ProtoUtil   (installComposerLibs)
-import Database.Design.Ampersand.ADL1.Expression (notCpl)
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.

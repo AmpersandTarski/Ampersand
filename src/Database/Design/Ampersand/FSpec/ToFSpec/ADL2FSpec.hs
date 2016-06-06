@@ -74,7 +74,7 @@ makeFSpec opts context
               , grules       = filter (not.isUserDefined) allrules
               , invariants   = filter (not.isSignal)      allrules
               , signals      = filter      isSignal       allrules
-              , vconjs       = allConjs
+              , allConjuncts       = allConjs
               , allConjsPerRule = fSpecAllConjsPerRule
               , allConjsPerDecl = fSpecAllConjsPerDecl
               , allConjsPerConcept = fSpecAllConjsPerConcept
@@ -525,7 +525,7 @@ tblcontents ci ps plug
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
        case attributes plug of 
          []   -> fatal 593 "no attributes in plug."
-         f:fs -> transpose
+         f:fs -> (nub.transpose)
                  ( map Just cAtoms
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
@@ -539,7 +539,12 @@ tblcontents ci ps plug
                     = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
-                       _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                       ps' -> trace ("Plug: "++name plug) $
+                             trace ("Attibutes: "++(show . map name)(f:fs)) $
+                             trace ("Atoms: "++(intercalate "\n       " . map show) cAtoms) $
+                             trace ("Pairs: "++(intercalate "\n       " . map showADL) pairs) $
+                             trace ("ps'  : "++(intercalate "\n       " . map showADL) ps') $
+                             fatal 428 ("(this could happen when using --dev flag, when there are violations, or if you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)\n"++
                                "Looking for: '"++showValADL a++"'.\n"++
                                "Multiple values in one attribute. \n"
                                )

@@ -101,7 +101,7 @@ class Violation {
         }
 
         // If empty array of strings (i.e. no violation segments defined), use default violation representation: '<srcAtom>,<tgtAtom>'
-        $this->message = empty($strArr) ? "{$this->src->label},{$this->tgt->label}" : implode($strArr);
+        $this->message = empty($strArr) ? "{$this->src->getLabel()},{$this->tgt->getLabel()}" : implode($strArr);
 
         return $this->message;
     }

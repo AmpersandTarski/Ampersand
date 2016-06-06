@@ -1,6 +1,7 @@
 <?php
 
 use Ampersand\Config;
+use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 
 require_once (__DIR__ . '/../../src/bootstrap.php');
@@ -25,9 +26,11 @@ $app->response->headers->set('Content-Type', 'application/json');
 $app->error(function (Exception $e) use ($app) {
 	$app->response->setStatus($e->getCode());
 	try{
+        Logger::getLogger("API")->error($e->getMessage());
 	    $notifications = Notifications::getAll();
 	    print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
 	}catch(Exception $b){
+        Logger::getLogger("API")->error($b->getMessage());
 	    print json_encode(array('error' => $b->getCode(), 'msg' => $b->getMessage(), 'notifications' => array()));
 	}
 	

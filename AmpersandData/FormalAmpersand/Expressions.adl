@@ -7,20 +7,17 @@ PROCESS "Expression definitions"
     RELATION patterns[Context*Pattern]
     RELATION src[Expression*Concept]
     RELATION tgt[Expression*Concept]
-    RELATION lhs[BinaryTerm*Expression]
-    RELATION rhs[BinaryTerm*Expression]
     RELATION bind[Expression*Relation]
     RELATION term[Rule*Expression]
-    RELATION rrexp[Rule*ExpressionID]
-
+    
     VIEW Equivalence        : Equivalence(TXT "RULE ", first, TXT " = ", second)
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first, TXT " |- ", second)
     VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
     VIEW Relation           : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
-    VIEW UnaryMinus         : UnaryMinus(TXT "-", arg)
-    VIEW Converse           : Converse  (arg, TXT "~")
-    VIEW KleeneStar         : KleeneStar(arg, TXT "*")
-    VIEW KleenePlus         : KleenePlus(arg, TXT "+")
+    VIEW UnaryMinus         : UnaryMinus(TXT "-", arg[UnaryTerm*Expression])
+    VIEW Converse           : Converse  (arg[UnaryTerm*Expression], TXT "~")
+    VIEW KleeneStar         : KleeneStar(arg[UnaryTerm*Expression], TXT "*")
+    VIEW KleenePlus         : KleenePlus(arg[UnaryTerm*Expression], TXT "+")
     VIEW Intersection       : Intersection      (TXT "(", first, TXT "/\\", second, TXT ")")
     VIEW Union              : Union             (TXT "(", first, TXT "\\/", second, TXT ")")
     VIEW Minus              : Minus             (TXT "(", first, TXT  "-" , second, TXT ")")
@@ -32,7 +29,7 @@ PROCESS "Expression definitions"
 
 
     CONCEPT Rule ""
-    RELATION rrexp[Rule*Expression] [UNI]
+    RELATION term[Rule*Expression] [UNI,TOT]
 
     CONCEPT Operator ""
     CONCEPT BinaryTerm ""
@@ -45,6 +42,15 @@ PROCESS "Expression definitions"
     CLASSIFY UnaryTerm ISA Expression
     RELATION arg[UnaryTerm*Expression] [UNI]
 
+    CONCEPT Atom ""
+    CLASSIFY Atom ISA Expression
+    RELATION singleton[Atom*Expression] [UNI]
+    
+    CONCEPT "V" "The cartesian product."
+    CLASSIFY "V" ISA Expression
+    RELATION userSrc["V"*Concept] [UNI]
+    RELATION userTrg["V"*Concept] [UNI]
+    
     CLASSIFY Equivalence ISA Rule
     CLASSIFY Inclusion   ISA Rule
     CLASSIFY Truth       ISA Rule

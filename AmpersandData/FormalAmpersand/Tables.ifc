@@ -4,8 +4,8 @@ INCLUDE "Tables.xlsx"
 
 
 
-INTERFACE PlugInfo (table, key, concept): I[TblSQL] CRUD
-BOX [ PlugInfo : I
+INTERFACE SQLPlug (table, key, concept): I[TblSQL] CRUD
+BOX [ SQLPlug : I
     , attributes : table~
       BOX [ SqlAttribute : I
           , concept : concept
@@ -16,7 +16,7 @@ BOX [ PlugInfo : I
 INTERFACE SqlAttribute (concept): I[SqlAttribute] CRUD
 BOX [ SqlAttribute : I
     , concept  : concept
-    , pluginfo : table
+    , sqlPlug : table
     ]
 
 REPRESENT Atom TYPE ALPHANUMERIC
@@ -46,9 +46,9 @@ TABS[ relations : V[SESSION*Relation] CRUD
            , conceptAttribute : conceptAttribute
            , atoms        : pop~
            ]
-    , pluginfos : V[SESSION*PlugInfo] CRUD
+    , "SQL plugs" : V[SESSION*SQLPlug] CRUD
       BOX<SCOLS>
-           [ PlugInfo : I
+           [ SQLPlug : I
            , "table~"  : table~ COLS [rel : srcAtt~\/tgtAtt~ , attr : I , c : concept ]
            ]
     , pairs : V[SESSION*Pair] CRUD

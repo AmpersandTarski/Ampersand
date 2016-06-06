@@ -5,7 +5,6 @@ import Text.XML.SpreadsheetML.Types
 import Text.XML.SpreadsheetML.Writer (showSpreadsheet)
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.FSpec.FPA
 import Database.Design.Ampersand.Basics
 import Data.Maybe
