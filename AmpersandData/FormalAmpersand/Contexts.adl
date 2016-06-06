@@ -24,13 +24,13 @@ PATTERN Context
     RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ,SUR]
     MEANING "The name of a context."
     RELATION valid[Rule*Context]
-    RELATION usedPatterns[Context*Pattern]
+    RELATION patterns[Context*Pattern]
     MEANING "The patterns in a context."
     RELATION concs[Context*Concept]
     MEANING "A concept, mentioned anywhere in a context."
     RELATION gens[Context*Gen]
     MEANING "The user-defined generalization rules in a context."
-    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations
+    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations FIX: Compare with context[Relation*Context]
 ENDPATTERN
 
 ENDCONTEXT

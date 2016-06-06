@@ -2,7 +2,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 module Database.Design.Ampersand.FSpec.ShowMeatGrinder
-  (makeMetaPopulationFile,MetaType(..))
+  (makeMetaPopulationFile)
 where
 
 import Data.List
@@ -14,26 +14,25 @@ import Data.Typeable
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.FSpecAux
 import Database.Design.Ampersand.FSpec.Motivations
-import Database.Design.Ampersand.FSpec.SQL
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 
 
-makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
-makeMetaPopulationFile mType fSpec
-  = ("MetaPopulationFile"++show mType++".adl", content popKind mType fSpec)
-    where popKind = case mType of
-                      Generics -> generics fSpec
-                      AST      -> metaPops fSpec 
+makeMetaPopulationFile :: FSpec -> (FilePath,String)
+makeMetaPopulationFile fSpec
+  = ("MetaPopulationFile.adl", content fSpec)
 
 {-SJ 2015-11-06 Strange that the function 'content' generates text.
 I would have expected a P-structure (of even an A-structure) instead.
-Is there a reason? -}
-content :: (FSpec -> [Pop]) -> MetaType -> FSpec -> String
-content popKind mType fSpec = unlines
+Is there a reason? 
+Answer: HJO: By directly generate a string, the resulting file can contain comment, which is 
+             usefull for debugging. However, the idea is good. In future, we might change
+             it to create a P_Context in stead of a String.
+-} 
+content :: FSpec -> String
+content fSpec = unlines
    ([ "{- Do not edit manually. This code has been generated!!!"
     , "    Generated with "++ampersandVersionStr
     , "    Generated at "++show (genTime (getOpts fSpec))
@@ -48,38 +47,12 @@ content popKind mType fSpec = unlines
     , ""
     , "-}"
     , ""
-    , "CONTEXT "++show mType++" IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
-    ++ (concat.intersperse  []) (map (lines . showADL ) (popKind fSpec))
+    , "CONTEXT FormalAmpersand IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
+    ++ intercalate [] (map (lines . showADL ) (metaPops fSpec fSpec))
     ++
     [ ""
     , "ENDCONTEXT"
     ])
-instance GenericPopulations FSpec where
- generics _ fSpec =
-   filter (not.nullContent)
-    (
-    [ Pop "versionInfo" "Context"  "AmpersandVersion"
-           [(dirtyId fSpec, show ampersandVersionStr)]
-    , Pop "contextName" "Context" "ContextName"
-           [(dirtyId fSpec, (show.name) fSpec)]
-    , Pop "dbName" "Context" "DatabaseName"
-           [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
-    , Comment " ", Comment $ "[Relations]--: (count="++(show.length.vrels) fSpec++")" ]
-  ++   concatMap (generics fSpec) (vrels fSpec)
-  ++[ Comment " ", Comment $ "[Concepts]--: (count="++(show.length) [c | c <- concs fSpec]++")"]
-  ++   concatMap (generics fSpec) [c | c <- concs fSpec]
-  ++[ Comment " ", Comment $ "[TableColumnInfo]--: (count="++(show.length) allSqlPlugs++")"]
-  ++   concatMap (generics fSpec) allSqlPlugs
-  ++[ Comment " ", Comment $ "[Rules]--: (count="++(show.length.fallRules) fSpec++")"]
-  ++   concatMap (generics fSpec) (fallRules fSpec)
-  ++[ Comment " ", Comment $ "[Conjuncts]--: (count="++(show.length.vconjs) fSpec++")"]
-  ++   concatMap (generics fSpec) (vconjs fSpec)
-  ++[ Comment " ", Comment $ "[Roles]--: (count="++(show.length.fRoles) fSpec++")"]
-  ++   concatMap (generics fSpec) [role | (role,_) <- fRoles fSpec]
-    )
-  where
-    allSqlPlugs = [plug | InternalPlug plug <- plugInfos fSpec]
-
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
@@ -91,10 +64,6 @@ instance MetaPopulations FSpec where
            [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "dbName" "Context" "DatabaseName"
            [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
---    , Pop "concs" "Context" "Concept"
---           [(dirtyId fSpec, show "SESSION"), (dirtyId fSpec, show "ONE")]
---    , Pop "name"   "Context" "ContextIdentifier"
---           [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "allRoles" "Context" "Role"
            [(dirtyId fSpec, show "SystemAdmin")]
     , Pop "name"   "Role" "RoleName"
@@ -106,8 +75,6 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (vgens          fSpec)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).concs)    fSpec)
---  ++[ Comment " ", Comment $ "PATTERN Atoms: (count="++(show.length) (allAtoms fSpec)++")"]
---  ++   concatMap (metaPops fSpec) (allAtoms fSpec)
   ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
   ++   concatMap (metaPops fSpec) (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.vrels) fSpec++")"]
@@ -116,13 +83,11 @@ instance MetaPopulations FSpec where
   ++   concatMap (metaPops fSpec) (allExprs  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.fallRules) fSpec++")"]
   ++   concatMap (metaPops fSpec) ((sortBy (comparing name).fallRules)    fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length) allSqlPlugs++")"]
-  ++   concatMap (metaPops fSpec) allSqlPlugs
---  ++[ Comment " ", Comment $ "[Initial pairs]--: (count="++(show.length.allLinks) fSpec++")"]
---  ++   concatMap (metaPops fSpec) (allLinks fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
+  ++   concatMap (metaPops fSpec) (allConjuncts fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
+  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
   )
-  where
-    allSqlPlugs = sortBy (comparing name) [plug | InternalPlug plug <- plugInfos fSpec]
 
 instance MetaPopulations Pattern where
  metaPops fSpec pat =
@@ -152,99 +117,73 @@ instance MetaPopulations A_Gen where
           ]
   ]
 
-instance GenericPopulations A_Concept where
- generics fSpec cpt =
-   case cpt of
-     PlainConcept{} ->
-      [ Comment " "
-      , Comment $ " Concept `"++name cpt++"` "
-      , Pop "allConcepts" "Context" "Concept"
-             [(dirtyId fSpec,dirtyId cpt)]
-      , Pop "name" "Concept" "Identifier"
-             [(dirtyId cpt, (show.name) cpt)]
-      , Pop "affectedInvConjunctIds" "Concept" "ConjunctID"
-             [(dirtyId cpt, dirtyId conj) | conj <- filterFrontEndInvConjuncts affConjs]
-      , Pop "affectedSigConjunctIds" "Concept" "ConjunctID"
-             [(dirtyId cpt, dirtyId conj) | conj <- filterFrontEndSigConjuncts affConjs]
-      , Pop "conceptTableFields" "Concept" "TableColumn"
-             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
-      ]
-     ONE -> 
-      [ Comment " "
-      , Comment $ " Concept ONE "
-      , Pop "allConcepts" "Context" "Concept"
-             [(dirtyId fSpec,dirtyId cpt)]
-      , Pop "name" "Concept" "Identifier"
-             [(dirtyId cpt, (show.name) cpt)]
-      , Pop "conceptTableFields" "Concept" "TableColumn"
-             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
-      ]
-  where
-    affConjs = nub [ conj  
-                   | Just conjs<-[lookup cpt (allConjsPerConcept fSpec)]
-                   , conj<-conjs
-                   ]
-    largerConcs = largerConcepts (vgens fSpec) cpt++[cpt]
-    tablesAndAttributes = nub . concatMap (lookupCpt fSpec) $ largerConcs
-
 instance MetaPopulations A_Concept where
  metaPops fSpec cpt =
    [ Comment " "
    , Comment $ " Concept `"++name cpt++"` "
    , Pop "ttype" "Concept" "TType"
-             [(dirtyId cpt,dirtyId ((cptTType fSpec) cpt))] 
+             [(dirtyId cpt, dirtyId (cptTType fSpec cpt))] 
+   , Pop "name" "Concept" "Identifier"
+             [(dirtyId cpt, dirtyId cpt)]
    ]++
    case cpt of
      PlainConcept{} ->
       [ Comment $ " Concept `"++name cpt++"` "
       , Pop "concs" "Context" "Concept"
              [(dirtyId fSpec,dirtyId cpt)]
-      , Pop "name" "Concept" "Identifier"
-             [(dirtyId cpt, dirtyId cpt)]
 --      , Pop "conceptColumn" "Concept" "SqlAttribute"
 --             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
 --      , Pop "cptdf" "Concept" "ConceptDefinition"
 --             [(dirtyId cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
-      , Pop "cptpurpose" "Concept" "Purpose"
-             [(dirtyId cpt,(show.showADL) x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
+--      , Pop "cptpurpose" "Concept" "Purpose"
+--             [(dirtyId cpt,(show.showADL) x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
-     ONE -> []
+     ONE -> 
+      [ ]
   where
     largerConcs = largerConcepts (vgens fSpec) cpt++[cpt]
     tablesAndAttributes = nub . concatMap (lookupCpt fSpec) $ largerConcs
 
-instance GenericPopulations PlugSQL where
-  generics fSpec plug =
-      [ Comment " "
-      , Comment $ "Plug: '"++name plug++"'"
-      , Pop "tableInfo" "Context" "DBTable"
-               [(dirtyId fSpec, dirtyId plug)]
-      ] ++ concatMap (generics fSpec) [(plug,att) | att <- plugAttributes plug]
+instance MetaPopulations Conjunct where
+  metaPops fSpec conj =
+    [ Comment $ " Conjunct `"++rc_id conj++"` "
+    , Pop "allConjuncts" "Context" "Conjunct"
+             [(dirtyId fSpec,dirtyId conj)]
+    , Pop "originatesFrom" "Conjunct" "Rule"
+             [(dirtyId conj, dirtyId rul) | rul <- rc_orgRules conj]
+    , Pop "conjunct" "Conjunct" "Expression"
+             [(dirtyId conj, dirtyId (rc_conjunct conj))]
+    ] 
+
+instance MetaPopulations PlugInfo where
+ metaPops fSpec plug = 
+      [ Comment $ " Plug `"++name plug++"` "
+      , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
+      , Pop "in" "Concept" "Plug"                 
+             [(dirtyId cpt,dirtyId plug)| cpt <- concs plug]  
+      , Pop "relsInPlug" "Plug" "Relation"
+             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
+      ]++
+      (case plug of
+         InternalPlug plugSQL   -> metaPops fSpec plugSQL
+         ExternalPlug _ -> fatal 167 "ExternalPlug is not implemented in the meatgrinder. "
+      )      
 
 instance MetaPopulations PlugSQL where
   metaPops fSpec plug =
-  --    [ Pop "context" "PlugInfo" "Context"
-  --             [(dirtyId plug, dirtyId fSpec)]
-  --    , Pop "key" "PlugInfo" "SqlAttribute"
-  --             [(dirtyId plug, dirtyId (plug, head . plugAttributes $ plug))]
-  --    ] ++ 
-      concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
-
-instance GenericPopulations (PlugSQL,SqlAttribute) where
-  generics _ (plug,att) =
-      [ Pop "columninfo" "DBTable" "TableColumn"
-                 [(dirtyId plug, dirtyId (plug,att)) ]
-      , Pop "concept" "TableColumn" "Concept"
-                 [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]
-      , Pop "unique" "TableColumn" "Boolean"
-                 [(dirtyId (plug,att), (dirtyId.attUniq) att)]
-      , Pop "null" "TableColumn" "Boolean"
-                 [(dirtyId (plug,att), (dirtyId.attNull) att)]
-      ]
+    case plug of 
+       TblSQL{} ->
+         [ Pop "rootConcept" "TblSQL" "Concept"
+               [(dirtyId plug, dirtyId . target . attExpr . head . plugAttributes $ plug)]
+         , Pop "key" "TblSQL" "SqlAttribute"
+               [(dirtyId plug, dirtyId(plug,head . plugAttributes $ plug))]
+         ] ++ 
+         concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
+       BinSQL{} -> []  
 
 instance MetaPopulations (PlugSQL,SqlAttribute) where
   metaPops _ (plug,att) =
-      [ Pop "table" "SqlAttribute" "PlugInfo"
+      [ Pop "table" "SqlAttribute" "SQLPlug"
                  [(dirtyId (plug,att), dirtyId plug) ]
       , Pop "concept" "SqlAttribute" "Concept"
                  [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]
@@ -260,17 +199,6 @@ instance MetaPopulations (PlugSQL,SqlAttribute) where
               EFlp (EDcD dcl) -> Just dcl
               EDcI cpt -> Just (Isn cpt)
               _  -> Nothing
-instance GenericPopulations Role where
-  generics fSpec rol =
-      [ Comment $ "Role: '"++name rol++"'"
-      , Pop "allRoles" "Context" "Role"
-                 [(dirtyId fSpec, dirtyId rol) ]
-      , Pop "name" "Role" "TEXT"
-                 [(dirtyId rol, dirtyId rol) ]
-      , Pop "maintains" "Role" "Rule"
-                 [(dirtyId rol, dirtyId rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
-      ]
-
 instance MetaPopulations Role where
   metaPops fSpec rol =
       [ Pop "allRoles" "Context" "Role"
@@ -297,40 +225,9 @@ instance MetaPopulations Signature where
              [(dirtyId sgn, dirtyId (target sgn))]
       ]
 
-instance GenericPopulations Declaration where
- generics fSpec dcl =
-   case dcl of 
-     Sgn{} ->
-      [ Comment " "
-      , Comment $ " Relation '"++name dcl++showSign (sign dcl)++"'"
-      , Pop "allRelations" "Context" "Relation"
-             [(dirtyId fSpec, dirtyId dcl)]
-      , Pop "name" "Relation" "RelationName"
-             [(dirtyId dcl, (show.name) dcl)]
-      , Pop "srcConcept" "Relation" "Concept"
-             [(dirtyId dcl,dirtyId (source dcl))]
-      , Pop "tgtConcept" "Relation" "Concept"
-             [(dirtyId dcl,dirtyId (target dcl))]
-      , Pop "table" "Relation" "DBTable"
-             [(dirtyId dcl,dirtyId table)]
-      , Pop "srcCol" "Relation" "DBTableColumn"
-             [(dirtyId dcl,dirtyId (table,srcCol))]
-      , Pop "tgtCol" "Relation" "DBTableColumn"
-             [(dirtyId dcl,dirtyId (table,tgtCol))]
-      , Pop "affectedInvConjunctIds" "Relation" "ConjunctID"
-             [(dirtyId dcl,dirtyId conj) | conj <- filterFrontEndInvConjuncts affConjs ]
-      , Pop "affectedSigConjunctIds" "Relation" "ConjunctID"
-             [(dirtyId dcl,dirtyId conj) | conj <- filterFrontEndSigConjuncts affConjs ]
-      ]
-     Isn{} -> fatal 157 "Isn is not implemented yet"
-     Vs{}  -> fatal 158 "Vs is not implemented yet"
-   where
-     (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec dcl  -- type: (PlugSQL,SqlAttribute,SqlAttribute)
-     affConjs = fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
-
 instance MetaPopulations Declaration where
  metaPops fSpec dcl =
-   case dcl of
+   (case dcl of
      Sgn{} ->
       [ Comment " "
       , Comment $ " Relation `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
@@ -361,7 +258,18 @@ instance MetaPopulations Declaration where
       , Pop "decpurpose" "Relation" "Purpose"
              [(dirtyId dcl, (show.showADL) x) | x <- explanations dcl]
       ]
-     Isn ONE -> [Comment "No population for the declaration ONE" ]
+     Isn ONE -> 
+      [ Comment " "
+      , Comment " Relation `I[ONE]` "
+      , Pop "context" "Relation" "Context"
+             [(dirtyId dcl,dirtyId fSpec)]
+      , Pop "name" "Relation" "Identifier"
+             [(dirtyId dcl, (show.name) dcl)]
+      , Pop "source" "Relation" "Concept"
+             [(dirtyId dcl,dirtyId (source dcl))]
+      , Pop "target" "Relation" "Concept"
+             [(dirtyId dcl,dirtyId (target dcl))]
+      ]
      Isn{} -> 
       [ Comment " "
       , Comment $ " Relation `I["++name (source dcl)++"]`"
@@ -381,6 +289,8 @@ instance MetaPopulations Declaration where
              [(dirtyId dcl,dirtyId (target dcl))]
       ]
      Vs{}  -> fatal 158 "Vs is not implemented yet"
+   )++
+   metaPops fSpec (sign dcl)
    where
      (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec dcl  -- type: (PlugSQL,SqlAttribute,SqlAttribute)
 
@@ -399,9 +309,9 @@ instance MetaPopulations Expression where
   case expr of 
     EBrk e -> metaPops fSpec e
     _      ->
-      [ Pop "src" "Term" "Concept"
+      [ Pop "src" "Expression" "Concept"
              [(dirtyId expr, dirtyId (source expr))]
-      , Pop "tgt" "Term" "Concept"
+      , Pop "tgt" "Expression" "Concept"
              [(dirtyId expr, dirtyId (target expr))]
       ]++
       ( case expr of
@@ -421,25 +331,31 @@ instance MetaPopulations Expression where
             (EFlp e)     -> makeUnaryTerm  Converse   e
             (ECpl e)     -> makeUnaryTerm  UnaryMinus e
             (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
-            (EDcD dcl)   -> [Pop "bind" "Term" "Relation" [(dirtyId expr,dirtyId dcl)]
+            (EDcD dcl)   -> [Pop "bind" "Expression" "Relation" 
+                              [(dirtyId expr,dirtyId dcl)]
                             ]
---            EDcI{}       -> 
---            EEps{}       -> 
---            EDcV{}       -> 
---            EMp1{}       -> 
-            _            -> [Comment $ "TODO(in instance MetaPopulations Expression): "++showADL expr]
--- TODO: Work on the rest of the expressions (get rid of the statement above) 
+            (EDcI cpt)   -> [Pop "bind" "Expression" "Relation" 
+                              [(dirtyId expr,dirtyId (Isn cpt))]
+                            ]
+            EEps{}       -> []
+            (EDcV sgn)   -> [Pop "userSrc"  (show "V") "Concept" 
+                              [(dirtyId expr,dirtyId (source sgn))]
+                            ,Pop "userTrg"  (show "V") "Concept" 
+                              [(dirtyId expr,dirtyId (target sgn))]
+                            ]
+            (EMp1 v c)   -> [ --TODO! 
+                              --  Pop "singleton" "Atom" "Expression" 
+                              --    [(dirtyId expr,dirtyId (c,v))]
+                              -- ,Pop "pop" "Atom" "Concept"
+                              --    [(dirtyId (c,v),dirtyId c)]
+                            ]
        ) 
   where
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
     makeBinaryTerm op lhs rhs = 
-      [ Pop "lhs"  "BinaryTerm" "Term"
+      [ Pop "first"  "BinaryTerm" "Expression"
              [(dirtyId expr,dirtyId lhs)]
-      , Pop "rhs"  "BinaryTerm" "Term"
-             [(dirtyId expr,dirtyId rhs)]
-      , Pop "first"  "BinaryTerm" "Expression"
-             [(dirtyId expr,dirtyId lhs)]
-      , Pop "second" "BinaryTerm" "Expreseeion"
+      , Pop "second" "BinaryTerm" "Expression"
              [(dirtyId expr,dirtyId rhs)]
       , Pop "operator"  "BinaryTerm" "Operator"
              [(dirtyId expr,dirtyId op)]
@@ -476,70 +392,6 @@ instance Unique BinOp where
   showUnique = show
 
 
-instance GenericPopulations Rule where
- generics fSpec rul =
-      [ Comment " "
-      , Comment $ " Rule `"++name rul++"` "
-      , Pop "allRules" "Context" "Rule"
-             [(dirtyId fSpec, dirtyId rul)]
-      , Pop "name"  "Rule" "RuleID"
-             [(dirtyId rul, (show.name) rul)]
-      , Pop "ruleAdl"  "Rule" "Adl"
-             [(dirtyId rul,(show.showADL.rrexp) rul)]
-      , Pop "origin"  "Rule" "Origin"
-             [(dirtyId rul,(show.show.origin) rul)]
-      , Pop "meaning"  "Rule" "Meaning"
-             [(dirtyId rul,aMarkup2String ReST m) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
-      , Pop "message"  "Rule" "Message"
-             [(dirtyId rul,aMarkup2String ReST m) | m <- rrmsg rul, amLang m == fsLang fSpec ]
-      , Pop "srcConcept"  "Rule" "Concept"
-             [(dirtyId rul,(dirtyId.source.rrexp) rul)]
-      , Pop "tgtConcept"  "Rule" "Concept"
-             [(dirtyId rul,(dirtyId.target.rrexp) rul)]
-      , Pop "conjunctIds"  "Rule" "ConjunctID"
-             [(dirtyId rul,dirtyId conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
-      ]++case rrviol rul of
-        Nothing -> []
-        Just pve ->
-         [ Pop "pairView"  "Rule" "PairView"
-              [(dirtyId rul, dirtyId pve)]
-         ]++generics fSpec pve
-      
-      
-instance GenericPopulations (PairView Expression) where
- generics fSpec pve = 
-      [ Comment " "
-      ]++concatMap makeSegment (zip [0..] (ppv_segs pve))
-  where
-    makeSegment :: (Int,PairViewSegment Expression) -> [Pop]
-    makeSegment (i,pvs) =
-      [ Pop "segment" "PairView" "PairViewSegment"
-             [(dirtyId pve,dirtyId pvs)]
-      , Pop "sequenceNr" "PairViewSegment" "Int"
-             [(dirtyId pvs,show i)]
-      , Pop "segmentType" "PairViewSegment" "PairViewSegmentType"
-             [(dirtyId pvs, case pvs of 
-                         PairViewText{} -> "Text"
-                         PairViewExp{}  -> "Exp")
-            ]
-      ]++
-      case pvs of
-        PairViewText{} -> 
-          [Pop "text" "PairViewSegment" "String"
-               [(dirtyId pvs, pvsStr pvs)] 
-          ]
-        PairViewExp{} -> 
-          [Pop "srcOrTgt" "PairViewSegment" "SourceOrTarget"
-               [(dirtyId pvs, show (pvsSoT pvs))] 
-          ,Pop "expTgt" "PairViewSegment" "Concept"
-               [(dirtyId pvs, dirtyId (case pvsSoT pvs of
-                                Src -> source (pvsExp pvs)
-                                Tgt -> target (pvsExp pvs)
-                              ))] 
-          ,Pop "expSQL" "PairViewSegment" "MySQLQuery"
-               [(dirtyId pvs, sqlQuery fSpec (pvsExp pvs))] 
-          ]
-
 instance MetaPopulations Rule where
  metaPops fSpec rul =
       [ Comment " "
@@ -559,9 +411,11 @@ instance MetaPopulations Rule where
              [(dirtyId rul, (dirtyId.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept"
              [(dirtyId rul, (dirtyId.target.rrexp) rul)]
-      , Pop "conjunctIds"  "Rule" "ConjunctID"
+      , Pop "conjunctIds"  "Rule" "Conjunct"
              [(dirtyId rul, dirtyId conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
-      , Pop "rrexp"  "Rule" "Expression"
+      , Pop "originatesFrom" "Conjunct" "Rule"
+             [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
+      , Pop "term"  "Rule" "Expression"
              [(dirtyId rul, dirtyId (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
              [(dirtyId rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
@@ -577,33 +431,9 @@ instance MetaPopulations Rule where
       ]
 
 
-
-instance MetaPopulations PlugInfo where
- metaPops _ plug = 
-      [ Comment $ " Plug `"++name plug++"` "
-      , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
-      , Pop "in" "Concept" "Plug"                 
-             [(dirtyId cpt,dirtyId plug)| cpt <- concs plug]  
---      , Pop "relsMentionedIn" "Plug" "Relation"
---             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
-      ]      
-
 instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
  
-instance GenericPopulations Conjunct where
- generics fSpec conj =
-  [ Comment $ "Conjunct: '"++rc_id conj++"'."
-  , Pop "allConjuncts" "Context" "Conjunct" 
-         [(dirtyId fSpec, dirtyId conj)]
-  , Pop "signalRuleNames" "Conjunct" "Rule" 
-         [(dirtyId conj,dirtyId r) | r <- rc_orgRules conj, isFrontEndSignal r]
-  , Pop "invariantRuleNames" "Conjunct" "Rule" 
-         [(dirtyId conj,dirtyId r) | r <- rc_orgRules conj, isFrontEndInvariant  r]
-  , Pop "violationsSQL" "Conjunct" "MySQLQuery" 
-         [(dirtyId conj , sqlQuery fSpec (conjNF (getOpts fSpec) (notCpl (rc_conjunct conj)))
-          )]
-  ] 
 
 
 -----------------------------------------------------
@@ -641,6 +471,7 @@ instance AdlId ConceptDef
 instance AdlId Declaration
 instance AdlId Prop
 instance AdlId Expression
+  where dirtyId = show . show . hash . camelCase . uniqueShow False  -- Need to hash, because otherwise too long (>255)
 instance AdlId BinOp
 instance AdlId UnaryOp
 instance AdlId FSpec
@@ -649,8 +480,9 @@ instance AdlId Pattern
 instance AdlId PlugInfo
 instance AdlId PlugSQL
 instance AdlId (PlugSQL,SqlAttribute)
-  where dirtyId (plug,att) = concatDirtyIdStrings $ [dirtyId plug, (show.camelCase.attName) att]
+  where dirtyId (plug,att) = concatDirtyIdStrings [dirtyId plug, (show.camelCase.attName) att]
 instance AdlId Purpose
+instance AdlId (A_Concept,PSingleton)
 instance AdlId Rule
 instance AdlId Role
 instance AdlId Signature
@@ -694,8 +526,6 @@ nullContent _ = False
     
 class MetaPopulations a where
  metaPops :: FSpec -> a -> [Pop]
-class GenericPopulations a where
- generics :: FSpec -> a -> [Pop]   
 
 
 --------- Below here are some functions copied from Generate.hs TODO: Clean up.
@@ -705,13 +535,13 @@ isFrontEndInvariant :: Rule -> Bool
 isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
 
 isFrontEndSignal :: Rule -> Bool
-isFrontEndSignal r = isSignal r
+isFrontEndSignal = isSignal
 
 -- NOTE that results from filterFrontEndInvConjuncts and filterFrontEndSigConjuncts may overlap (conjunct appearing in both invariants and signals)
 -- and that because of extra condition in isFrontEndInvariant (not (ruleIsInvariantUniOrInj r)), some parameter conjuncts may not be returned
 -- as either inv or sig conjuncts (i.e. conjuncts that appear only in uni or inj rules) 
 filterFrontEndInvConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndInvConjuncts conjs = filter (\c -> any isFrontEndInvariant $ rc_orgRules c) conjs
+filterFrontEndInvConjuncts = filter (any isFrontEndInvariant . rc_orgRules)
 
 filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndSigConjuncts conjs = filter (\c -> any isFrontEndSignal $ rc_orgRules c) conjs
+filterFrontEndSigConjuncts = filter (any isFrontEndSignal . rc_orgRules)

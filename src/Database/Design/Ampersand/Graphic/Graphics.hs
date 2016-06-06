@@ -259,7 +259,7 @@ writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
       [writeDot DotOutput  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
---      [writeDot Png    | genFSpec opts ] ++
+      [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
       [writeDot Svg    | genFSpec opts ] ++
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
