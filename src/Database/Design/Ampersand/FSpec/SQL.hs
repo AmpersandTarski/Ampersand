@@ -159,8 +159,8 @@ maybeSpecialCase fSpec expr =
              , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
              , "   "++showADL expr++" ("++show (sign expr)++")"
              ]
-        ] $ let table1 = Name "tt1"
-                table2 = Name "tt2"
+        ] $ let table1 = Name "t1"
+                table2 = Name "t2"
                 (plug,s,t) = getDeclarationTableInfo fSpec dcl
                 (expr2Src,expr2trg) = if isFlipped 
                                       then (QName (name t), QName (name s))
@@ -179,7 +179,7 @@ maybeSpecialCase fSpec expr =
                                  (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
                                  False -- Needs to be false in MySql
                                  JLeft
-                                 (TRQueryExpr (Table [QName (name plug)]) `as` table2)
+                                 (TRSimple [QName (name plug)] `as` table2)
                                  (Just . JoinOn . conjunctSQL $
                                      [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,expr2Src])
                                      , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,expr2trg])
