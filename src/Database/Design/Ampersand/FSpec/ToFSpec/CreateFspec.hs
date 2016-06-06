@@ -7,15 +7,28 @@ import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.ADL1.P2A_Converters
+import Database.Design.Ampersand.Input
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
-import Database.Design.Ampersand.Input
+import Database.Design.Ampersand.FSpec.ArchiAnalyze
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
 import Database.Design.Ampersand.Core.ToMeta
 import Control.Monad
 
 -- | create an FSpec, based on the provided command-line options.
+--   Without the command-line switches "--ast-tables" or "--ast-file", 
+--   Ampersand compiles its script (userP_Ctx) straightforwardly in first order relation algebra.
+--   This is useful for simple scripts and the compilation process is easy to understand.
+--
+--   With "--ast-tables" switched on, Ampersand does more.
+--   These switches are useful for higher order Ampersand,
+--   in which the user can work with the rules, relations and concepts of the model inside the model.
+--   Besides the user script, userP_Ctx, Ampersand creates its own metamodel, rapP_Ctx, which is generated from "AST.adl"
+--   This metamodel is populated with the result of grinding userP_Ctx, being populationPctx.
+--   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
+--   The combination of model and populated metamodel results in the Guarded FSpec,
+--   which is the result of createFSpec.
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
@@ -27,8 +40,8 @@ createFSpec opts =
       = case pCtx2Fspec uCtx of
           Errors es -> return(Errors es)
           Checked uFspec
-            ->   when (genASTFile opts) (doGenMetaFile AST uFspec)
-              >> when (genGenericsFile opts) (doGenMetaFile Generics uFspec)
+            ->   when (genASTFile      opts) (doGenMetaFile AST      uFspec)  -- for the meatgrinder
+              >> when (genGenericsFile opts) (doGenMetaFile Generics uFspec)  -- for JSON-based communication to the front-end
               >> return (Checked ())
 
     genTables :: Guarded P_Context -> IO(Guarded FSpec)
@@ -38,15 +51,15 @@ createFSpec opts =
        Just mType
          -> do rapP_Ctx <- getFormalFile mType -- the P_Context of the
                let populationPctx       = join ( grind mType <$> pCtx2Fspec uCtx)
-                   populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
+                   populatedRapPctx     = (merge.sequenceA) [rapP_Ctx,populationPctx]
                    metaPopulatedRapPctx = toMeta opts <$> populatedRapPctx
-                   allCombinedPctx      = merge.sequenceA $ [uCtx, metaPopulatedRapPctx]
-               return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
+                   allCombinedPctx      = (merge.sequenceA) [uCtx, metaPopulatedRapPctx]
+               return (pCtx2Fspec allCombinedPctx) -- the RAP specification that is populated with the user's 'things' is returned.
 
     whatTablesToCreateExtra :: Maybe MetaType
     whatTablesToCreateExtra
-       | genASTTables opts     = Just AST
-       | genGenericTables opts = Just Generics
+       | genASTTables opts     = Just AST        -- for the meatgrinder
+       | genGenericTables opts = Just Generics   -- for JSON-based communication to the front-end
        | otherwise             = Nothing
 
     getFormalFile :: MetaType -> IO(Guarded P_Context)

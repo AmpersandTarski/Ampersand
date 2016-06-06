@@ -26,17 +26,17 @@ import Control.Exception
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
 -- | Parse an Ampersand file and all transitive includes
-parseADL ::  Options                -- ^ The options given through the command line
+parseADL :: Options                    -- ^ The options given through the command line
          -> Either FilePath MetaType   -- ^ The path of the file to be parsed OR the MetaType. In the latter case, the files will be taken from `allStaticFiles`
-         -> IO (Guarded P_Context)  -- ^ The resulting context
+         -> IO (Guarded P_Context)     -- ^ The resulting context
 parseADL opts thingToParse =
   whenCheckedIO (parseSingleADL opts useAllStaticFiles mainFile) $ \(ctxt, includes) ->
     whenCheckedIO (parseADLs opts useAllStaticFiles [fst mainFile] includes) $ \ctxts ->
       return $ Checked $ foldl mergeContexts ctxt ctxts
  where (mainFile, useAllStaticFiles) = case thingToParse of
                                          Left fp        -> ((fp            ,Nothing),False)
-                                         Right Generics -> (("Generics.adl",Nothing),True )
-                                         Right AST      -> (("AST.adl"     ,Nothing),True )
+                                         Right Generics -> (("Generics.adl",Nothing),True )  -- for JSON-based communication to the front-end
+                                         Right AST      -> (("AST.adl"     ,Nothing),True )  -- for the meatgrinder
 -- | Parses several ADL files
 parseADLs :: Options                    -- ^ The options given through the command line
           -> Bool                       -- ^ True iff the file is from FormalAmpersand files in `allStaticFiles`
@@ -67,7 +67,7 @@ parseADLs opts useAllStaticFiles parsedFilePaths fpIncludes =
                   uniques :: [SingleFileToParse] -> [SingleFileToParse]
                   uniques = map head . groupBy eql
                   eql :: Eq a => (a,b) -> (a,c) -> Bool 
-                  eql a b = fst a == fst b 
+                  eql a b = fst a == fst b
 
 type SingleFileToParse = (FilePath, Maybe Origin) -- The origin of why this file still has to be parsed.
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)

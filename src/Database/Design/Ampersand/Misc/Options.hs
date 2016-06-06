@@ -32,6 +32,7 @@ data Options = Options { showVersion :: Bool
                        , validateSQL :: Bool
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
+                       , archiName :: String     -- if this is a legal filename, that file is parsed as an Archi-repository and ground into the Archimate metamodel.
                        , allInterfaces :: Bool
                        , dbName :: String
                        , namespace :: String
@@ -116,8 +117,9 @@ getOptions =
                Options {genTime          = localTime
                       , dirOutput        = fromMaybe "."       (lookup envdirOutput    env)
                       , outputfile       = fatal 83 "No monadic options available."
-                      , dirPrototype     = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
+                      , dirPrototype     = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))        -- determine the directory for the prototype
                                                      (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
+                      , archiName        = ""
                       , dbName           = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
                       , dirExec          = takeDirectory exePath
                       , ampersandDataDir = dataDir
@@ -219,9 +221,13 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"
             , Hidden)
+          , (Option ['a']     ["archi"]
+               (ReqArg (\nm opts -> return opts{archiName = nm}) "FILENAME")
+               ("read an XML-file that contains an archi-repository.")
+            , Public)
           , (Option ['p']     ["proto"]
                (OptArg (\nm opts -> return opts {dirPrototype = fromMaybe (dirPrototype opts) nm
-                                                  ,genPrototype = True}
+                                                ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype (overrules environment variable "++ envdirPrototype ++ ").")
             , Public)

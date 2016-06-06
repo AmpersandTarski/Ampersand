@@ -27,8 +27,8 @@ makeMetaPopulationFile :: MetaType -> FSpec -> (FilePath,String)
 makeMetaPopulationFile mType fSpec
   = ("MetaPopulationFile"++show mType++".adl", content popKind mType fSpec)
     where popKind = case mType of
-                      Generics -> generics fSpec
-                      AST      -> metaPops fSpec 
+                      Generics -> generics fSpec    -- for JSON-based communication to the front-end
+                      AST      -> metaPops fSpec    -- for the meatgrinder
 
 {-SJ 2015-11-06 Strange that the function 'content' generates text.
 I would have expected a P-structure (of even an A-structure) instead.
