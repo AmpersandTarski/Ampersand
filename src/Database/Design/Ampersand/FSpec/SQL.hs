@@ -143,52 +143,25 @@ maybeSpecialCase fSpec expr =
                                        }
       | otherwise -> Nothing
     EIsc (expr1 , ECpl expr2)
-                  -> Just . BQEComment
-                              [ BlockComment . unlines $
-                                   [ "Optimized case for: <expr1> intersect with the complement of <expr2>."
-                                   , "where "
-                                   , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
-                                   , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
-                                   , "   "++showADL expr++" ("++show (sign expr)++")"
-                                   ]
-                              ] $ let table1 = Name "t1"
-                                      table2 = Name "t2"
-                                      col1 = Col { cTable = [table1]
-                                                 , cCol   = [sourceAlias]
-                                                 , cAlias = []
-                                                 , cSpecial = Nothing}
-                                      col2 = Col { cTable = [table1]
-                                                 , cCol   = [targetAlias]
-                                                 , cAlias = []
-                                                 , cSpecial = Nothing}
-                                  in BSE { bseSrc = col1
-                                         , bseTrg = col2
-                                         , bseTbl = [TRJoin 
-                                                       (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
-                                                       False -- Needs to be false in MySql
-                                                       JLeft
-                                                       (TRQueryExpr (toSQL (selectExpr fSpec expr2)) `as` table2)
-                                                       (Just . JoinOn . conjunctSQL $
-                                                           [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,sourceAlias])
-                                                           , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,targetAlias])
-                                                           ]
-                                                       ) 
-                                                    ]
-                                         , bseWhr = Just . disjunctSQL $
-                                                      [ isNull (Iden[table2,sourceAlias])
-                                                      , isNull (Iden[table2,targetAlias])
-                                                      ]
-                                         }
+                  -> go False expr1 expr2
     EIsc (expr1 , EFlp (ECpl expr2))
-                  -> Just . BQEComment
+                  -> go True expr1 expr2
+    _ -> Nothing 
+  where 
+    go :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
+    go isFlipped expr1 expr2 =
+                     Just . BQEComment
                               [ BlockComment . unlines $
-                                   [ "Optimized case for: <expr1> intersect with the flipped complement of <expr2>."
+                                   [ "Optimized case for: <expr1> intersect with the "
+                                         ++(if isFlipped then "flipped " else "")
+                                         ++"complement of <expr2>."
                                    , "where "
                                    , "  <expr1> = "++showADL expr1++" ("++show (sign expr1)++")"
                                    , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
                                    , "   "++showADL expr++" ("++show (sign expr)++")"
                                    ]
-                              ] $ let table1 = Name "t1"
+                              ] $ let fun = if isFlipped then flp else id
+                                      table1 = Name "t1"
                                       table2 = Name "t2"
                                       col1 = Col { cTable = [table1]
                                                  , cCol   = [sourceAlias]
@@ -204,7 +177,7 @@ maybeSpecialCase fSpec expr =
                                                        (TRQueryExpr (toSQL (selectExpr fSpec expr1)) `as` table1)
                                                        False -- Needs to be false in MySql
                                                        JLeft
-                                                       (TRQueryExpr (toSQL (selectExpr fSpec (flp expr2))) `as` table2)
+                                                       (TRQueryExpr (toSQL (selectExpr fSpec (fun expr2))) `as` table2)
                                                        (Just . JoinOn . conjunctSQL $
                                                            [ BinOp (Iden[table1,sourceAlias]) [Name "="] (Iden[table2,sourceAlias])
                                                            , BinOp (Iden[table1,targetAlias]) [Name "="] (Iden[table2,targetAlias])
@@ -216,7 +189,6 @@ maybeSpecialCase fSpec expr =
                                                       , isNull (Iden[table2,targetAlias])
                                                       ]
                                          }
-    _ -> Nothing 
 
 
 nonSpecialSelectExpr :: FSpec -> Expression -> BinQueryExpr
