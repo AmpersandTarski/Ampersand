@@ -18,6 +18,7 @@ environment:
 # converts ssh-based git submodules to https-based ones, that 
 # can be cloned without needing to mess about with ssh keys.
 before_build:
+- path  
 - curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
 - 7z x stack.zip stack.exe
 
@@ -29,7 +30,7 @@ skip_tags: true
 # ampersand.exe file that we will mark as an artifact
 build_script:
 # Suppress output from stack setup, as there is a lot and it's not necessary.
-- stack setup # --no-terminal > nul
+- stack setup --no-terminal > nul
 - stack build --only-snapshot --no-terminal
 - stack --local-bin-path . install ampersand
 # Set a magical environment variable
