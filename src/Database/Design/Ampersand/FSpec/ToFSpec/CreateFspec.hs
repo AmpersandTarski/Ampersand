@@ -15,6 +15,18 @@ import System.FilePath
 import Control.Monad
 
 -- | create an FSpec, based on the provided command-line options.
+--   Without the command-line switch "--meta-tables", 
+--   Ampersand compiles its script (userP_Ctx) straightforwardly in first order relation algebra.
+--   This is useful for simple scripts and the compilation process is easy to understand.
+--
+--   With "--meta-tables" switched on, Ampersand does more.
+--   This switch is useful for higher order Ampersand,
+--   in which the user can work with the rules, relations and concepts of the model inside the model.
+--   Besides the user script, userP_Ctx, Ampersand creates its own metamodel, rapP_Ctx, which is generated from "AST.adl"
+--   This metamodel is populated with the result of grinding userP_Ctx, being populationPctx.
+--   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
+--   The combination of model and populated metamodel results in the Guarded FSpec,
+--   which is the result of createFSpec.
 createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
