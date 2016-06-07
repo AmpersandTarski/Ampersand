@@ -21,6 +21,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.resource = Restangular.one('resources').one('$source$', resourceId); // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
 	\$scope.resource['_path_'] = '/resources/$source$/' + resourceId;
 	\$scope.resource['_ifcEntryResource_'] = true;
+    \$scope.updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes
 	
 	// Create new resource and add data to \$scope.resource['$interfaceName$']
 	if(\$routeParams['new']){
@@ -87,6 +88,9 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.saveResource = function(resource, requestType, save){
 		requestType = requestType || \$rootScope.defaultRequestType; // set requestType. This does not work if you want to pass in a falsey value i.e. false, null, undefined, 0 or ""
         save = save || \$localStorage.switchAutoSave;
+        
+        // Add resource to \$scope.updatedResources
+        if(\$scope.updatedResources.indexOf(resource) === -1) \$scope.updatedResources.push(resource);
 		
         if(save){
     		if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
@@ -253,12 +257,9 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	// TODO: change check on showSaveButton to check for unsaved patches
 	\$scope.\$on("\$locationChangeStart", function(event, next, current){
 		$if(verbose)$console.log("location changing to:" + next);$endif$
-		checkRequired = false; // default
-		for(var item in \$scope.showSaveButton) { // iterate over all properties (resourceIds) in showSaveButton object
-			if(\$scope.showSaveButton.hasOwnProperty( item ) ) { // only checks its own properties, not inherited ones
-				if(\$scope.showSaveButton[item] == true) checkRequired = true; // if item is not saved, checkRequired before location change
-			}
-		}
+		checkRequired = \$scope.updatedResources.reduce(function(prev, item, index, arr){
+            return prev || item['_patchesCache_'].length;
+        }, false);
 		
 		if(checkRequired){ // if checkRequired (see above)
 			confirmed = confirm("You have unsaved edits. Do you wish to leave?");
