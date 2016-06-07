@@ -31,8 +31,10 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
 					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
 					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
-					 ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
-					 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions'))
+					                             ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
+					                             ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
+                                                 ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
+                                                 )
 					 ,'notifications' => Notifications::getAll()
 					 ,'session' => array ( 'id' => $session->id
 					 , 'loggedIn' => $session->sessionUserLoggedIn())

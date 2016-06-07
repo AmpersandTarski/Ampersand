@@ -75,6 +75,10 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					if($scope.$storage.switchAutoCommit === undefined){
 						$scope.resetSwitchAutoCommit();
 					}
+                    // Default setting for switchAutoCommit
+					if($scope.$storage.switchAutoSave === undefined){
+						$scope.resetSwitchAutoSave();
+					}
 					
 					// Default setting for cacheGetCalls
 					if($scope.$storage.cacheGetCalls === undefined){
@@ -106,13 +110,15 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.resetSettings = function(){
 		// all off
+        $.each($scope.$storage.notificationPrefs, function(index, value){ $scope.$storage.notificationPrefs[index] = false });
 		$scope.$storage.switchAutoCommit = false;
-		$.each($scope.$storage.notificationPrefs, function(index, value){ $scope.$storage.notificationPrefs[index] = false });
+        $scope.$storage.switchAutoSave = false;
 		
 		$timeout(function() {
 			// reset to default		
 			$scope.resetNotificationSettings();
 			$scope.resetSwitchAutoCommit();
+            $scope.resetSwitchAutoSave();
 		}, 500);
 	};
 	
@@ -122,6 +128,10 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.resetSwitchAutoCommit = function(){
 		$scope.$storage.switchAutoCommit = $scope.defaultSettings.switchAutoCommit;
+	};
+    
+    $scope.resetSwitchAutoSave = function(){
+		$scope.$storage.switchAutoSave = $scope.defaultSettings.switchAutoSave;
 	};
 	
 	// Set request type based upon switchAutoCommit
