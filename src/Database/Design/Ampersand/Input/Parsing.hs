@@ -3,7 +3,7 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Database.Design.Ampersand.Input.Parsing (
-    parseADL,parseMeta , parseADL1pExpr, parseRule, parseCtx, runParser
+    parseADL,parseArchiMeta,parseMeta , parseADL1pExpr, parseRule, parseCtx, runParser
 ) where
 
 import Control.Applicative
@@ -30,6 +30,10 @@ parseADL :: Options                    -- ^ The options given through the comman
          -> FilePath   -- ^ The path of the file to be parsed
          -> IO (Guarded P_Context)     -- ^ The resulting context
 parseADL opts fp = parseThing opts (fp,Nothing) False
+
+parseArchiMeta :: Options -> IO (Guarded P_Context)
+parseArchiMeta opts = parseThing opts ("Archi.adl",Just $ Origin "Archimate metamodel") True
+
 parseMeta :: Options -> IO (Guarded P_Context)
 parseMeta opts = parseThing opts ("AST.adl",Just $ Origin "Formal Ampersand specification") True -- This is the top file from FormalAmpersand. 
 

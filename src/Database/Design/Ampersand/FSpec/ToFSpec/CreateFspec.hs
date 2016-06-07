@@ -10,6 +10,7 @@ import Database.Design.Ampersand.ADL1.P2A_Converters
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
+import Database.Design.Ampersand.FSpec.ArchiAnalyze
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
 import Control.Monad
