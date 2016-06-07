@@ -42,6 +42,12 @@ class Concept {
      */
     private $database;
     
+    /**
+     * Definition from which Concept object is created
+     * @var array
+     */
+    private $def;
+    
 	/**
 	 * Name (and unique identifier) of concept
 	 * @var string
@@ -107,6 +113,12 @@ class Concept {
 	 * @var DatabaseTable
 	 */
 	private $mysqlConceptTable;
+    
+    /**
+     * @var Atom[] $atomCache array with atoms that exist in the concept (within database transaction)
+     * used to prevent unnecessary queries to check if atom is already in database
+     */
+    private $atomCache = array();
 	
 	/**
 	 * Concept constructor
@@ -118,6 +130,8 @@ class Concept {
 	    $this->database = Database::singleton();
 	    $this->logger = Logger::getLogger('FW');
 	    
+        $this->def = $conceptDef;
+        
 		$this->name = $conceptDef['name'];
 		$this->type = $conceptDef['type'];
 		$this->isObject = ($this->type == "OBJECT") ? true : false;
@@ -128,7 +142,7 @@ class Concept {
 		    
 		    if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
 		    if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
-		    if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule");
+		    // if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule");
 		}
 		
 		$this->specializations = (array)$conceptDef['specializations'];
@@ -233,9 +247,16 @@ class Concept {
 	 * @return mixed[]
 	 */
 	public function getAllAtomObjects(){
-	    $arr = array();
-	    foreach ($this->getAllAtomIds() as $tgtAtomId){
-	        $tgtAtom = new Atom($tgtAtomId, $this->name);
+        // Query all atoms in table
+        if(isset($this->def['allAtomsQuery'])) $query = $this->def['allAtomsQuery'];
+        else{
+            $firstCol = current($this->mysqlConceptTable->getCols()); // We can query an arbitrary concept col for checking the existence of an atom
+	        $query = "SELECT DISTINCT `{$firstCol->name}` as `atomId` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
+        }
+        
+        $arr = array();
+	    foreach ((array)$this->database->Exe($query) as $row){
+	        $tgtAtom = new Atom($row['atomId'], $this->name, null, $row);
 	        $arr[] = $tgtAtom->getAtom();
 	    }
 	    return $arr;
@@ -330,6 +351,22 @@ class Concept {
 	public function createNewAtom(){
 	    return new Atom($this->createNewAtomId(), $this->name);
 	}
+    
+    /**
+     * @param Atom $atom check if atom exists in concept atom cache
+     * @return boolean
+     */
+    public function inAtomCache($atom){
+        return in_array($atom, $this->atomCache);
+    }
+    
+    /**
+     * @param Atom $atom atom to add to concept atom cache
+     * @return void
+     */
+    public function addToAtomCache($atom){
+        $this->atomCache[] = $atom;
+    }
 	
     /**********************************************************************************************
      * 

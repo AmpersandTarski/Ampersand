@@ -5,7 +5,6 @@ module Database.Design.Ampersand.Graphic.Graphics
 import Data.GraphViz
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.Switchboard
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Basics
@@ -260,7 +259,7 @@ writePicture opts pict
     = sequence_ (
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
       [writeDot DotOutput  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
---      [writeDot Png    | genFSpec opts ] ++
+      [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
       [writeDot Svg    | genFSpec opts ] ++
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )

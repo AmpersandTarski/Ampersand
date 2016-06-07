@@ -7,7 +7,6 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.List
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 
         
@@ -110,8 +109,8 @@ commentBlockSQL xs =
    map (\cmmnt -> "/* "++cmmnt++" */") $ hbar ++ xs ++ hbar
   where hbar = [replicate (maximum . map length $ xs) '-']
   
-generateAllDefPopQueries :: FSpec -> Bool -> [String]
-generateAllDefPopQueries fSpec withComment 
+generateAllDefPopQueries :: FSpec -> [String]
+generateAllDefPopQueries fSpec 
   = fillSignalTable (initialConjunctSignals fSpec) ++
     populateTablesWithPops
         

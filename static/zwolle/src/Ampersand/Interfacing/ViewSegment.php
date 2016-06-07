@@ -50,7 +50,6 @@ class ViewSegment {
      */
     public $expSQL;
 
-
     /**
      * Constructor of view segments
      * @param array $viewSegmentDef
