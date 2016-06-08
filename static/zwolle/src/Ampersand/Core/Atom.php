@@ -211,11 +211,10 @@ class Atom {
 	 * Returns view array of key-value pairs for this atom
 	 * @return array
 	 */
-	private function getView(){
-        $this->logger->debug("Get view for atom '{$this->__toString()}'");
-        
+	private function getView(){        
         // If view is not already set
         if(!isset($this->view)){
+            $this->logger->debug("Get view for atom '{$this->__toString()}'");
             $this->view = array();
             
             // If parentIfc is set, use view as defined by interface (can be null)
