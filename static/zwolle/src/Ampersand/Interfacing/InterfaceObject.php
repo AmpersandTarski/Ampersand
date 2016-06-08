@@ -608,6 +608,7 @@ class InterfaceObject {
 	
 	/**
 	 * Replace (src,tgt) tuple by (src,tgt') in relation provided in this interface
+     * @var array $patch
 	 * @throws Exception
 	 * @return void
 	 */
@@ -651,6 +652,7 @@ class InterfaceObject {
 	
 	/**
 	 * Add (src,tgt) tuple in relation provided in this interface
+     * @var array $patch
 	 * @throws Exception
 	 * @return void
 	 */
@@ -687,12 +689,41 @@ class InterfaceObject {
 	    }
 	}
 	
-	/**
-	 * Function not implemented. Use Atom->doPatchRemove() method instead.
-	 * @throws Exception
-	 */
-	public function doPatchRemove(){
-	    throw new Exception ("Cannot patch remove from '{$this->path}'. Missing resource identifier", 405);
+    /**
+     * Remove (src,tgt) tuple from relation provided in $this->parentIfc
+     * @var array $patch
+     * @throws Exception
+     * @return void
+     */
+	public function doPatchRemove($patch){	   
+	    // CRUD check
+	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+	    
+        // Check if patch value is provided
+	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch remove. No 'value' specfied in '{$this->path}'", 400);
+        
+        $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
+        
+		// Interface is property
+		if($this->isProp()){
+			// Properties must be treated as a 'replace', so not handled here
+			throw new Exception("Cannot patch remove for property '{$this->path}'. Use patch replace instead", 500);
+		
+		// Interface is a relation to an object
+        }elseif($this->tgtConcept->isObject){
+			
+			$this->relation->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+		
+		// Interface is a relation to a scalar (i.e. not an object)
+        }elseif(!$this->tgtConcept->isObject){
+			if($this->isUni) throw new Exception("Cannot patch remove for univalent interface {$this->path}. Use patch replace instead", 500);
+			
+			$this->relation->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+			
+		}else{
+			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);
+		}
+		
 	}
 	
 /**************************************************************************************************

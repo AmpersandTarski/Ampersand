@@ -173,10 +173,10 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct path
 		pathLength = patchResource['_path_'].length;
-		path = resource['_path_'].substring(pathLength) + '/' + ifc + '/' + value;
+		path = resource['_path_'].substring(pathLength) + '/' + ifc;
 		
 		// Construct patch
-		patches = [{ op : 'remove', path : path}];
+		patches = [{ op : 'remove', path : path, value: value}];
 		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!

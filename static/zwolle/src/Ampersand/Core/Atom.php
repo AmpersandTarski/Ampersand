@@ -591,7 +591,7 @@ class Atom {
 						$atomOrIfc->doPatchAdd($patch);
 						break;
 					case "remove" :
-						$atomOrIfc->doPatchRemove();
+						$atomOrIfc->doPatchRemove($patch);
 						break;
 					default :
 						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
@@ -611,27 +611,30 @@ class Atom {
 	
     /**
      * Function not implemented. Use InterfaceObject->doPatchReplace() method instead.
+     * @var array $patch
      * @throws Exception
      */
-	public function doPatchReplace(){
+	public function doPatchReplace($patch){
 	    throw new Exception ("Cannot patch replace from '{$this->path}'. Path ends with resource", 405);
 	}
 	
     /**
      * Function not implemented. Use InterfaceObject->doPatchAdd() method instead.
+     * @var array $patch
      * @throws Exception
      */
-	public function doPatchAdd(){
+	public function doPatchAdd($patch){
 	    throw new Exception ("Cannot patch add from '{$this->path}'. Path ends with resource", 405);
 	    
 	}
 	
     /**
      * Remove (src,tgt) tuple from relation provided in $this->parentIfc
+     * @var array $patch
      * @throws Exception
      * @return void
      */
-	public function doPatchRemove(){
+	public function doPatchRemove($patch){
 	    $ifc = $this->parentIfc;
 	   
 	    // CRUD check
@@ -654,7 +657,7 @@ class Atom {
 			$ifc->relation->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 			
 		}else{
-			throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
+			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);
 		}
 		
 	}
