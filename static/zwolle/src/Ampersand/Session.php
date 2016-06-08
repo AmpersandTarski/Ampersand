@@ -49,14 +49,24 @@ class Session {
 	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
 	
 	/**
-	 * 
-	 * @var InterfaceObject[]
+	 * @var InterfaceObject[] $accessibleInterfaces
 	 */
 	private $accessibleInterfaces = array(); // when login enabled: all interfaces for sessionRoles, otherwise: interfaces for active roles
-	private $ifcsOfActiveRoles = array(); // interfaces for active roles
-	public $rulesToMaintain = array(); // rules that are maintained by active roles 
 	
-	private $sessionAccountId;
+    /**
+	 * @var InterfaceObject[] $ifcsOfActiveRoles
+	 */
+    private $ifcsOfActiveRoles = array(); // interfaces for active roles
+	
+    /**
+	 * @var array $rulesToMaintain
+	 */
+    public $rulesToMaintain = array(); // rules that are maintained by active roles 
+	
+    /**
+     * @var Atom|false $sessionAccount
+     */
+	private $sessionAccount;
 	
 	private static $_instance = null; // Needed for singleton() pattern of Session class
 	
@@ -208,58 +218,40 @@ class Session {
 	    return $activeRoles;
 	}
 	
-	private function setSessionAccount(){
-		if(!Config::get('loginEnabled')){
-			$this->sessionAccountId = false;
-		
-		}else{
-			$session = new Atom(session_id(), 'SESSION');
-			$sessionAccounts = array_column((array)$session->ifc('SessionAccount')->getContent(), '_id_');
-				
-			if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
-			if(empty($sessionAccounts)){
-				$this->sessionAccountId = false;
-			}else{
-				$this->sessionAccountId = current($sessionAccounts);
-				$this->logger->debug("Session user set to '{$this->sessionAccountId}'");
-			}
-		}		
-	}
-	
-	public function getSessionAccountId(){
-		if(!Config::get('loginEnabled')){
-			return 'SYSTEM';
-		
-		}else{
-			if(!isset($this->sessionAccountId)) $this->setSessionAccount();
-			
-			if($this->sessionAccountId === false){
-				return $_SERVER['REMOTE_ADDR'];
-			}else{
-				return $this->sessionAccountId;
-			}
-		}
-	}
-	
+	public function getSessionAccount(){
+        if(!isset($this->sessionAccount)){
+            if(!Config::get('loginEnabled')){
+                $this->sessionAccount = false;
+                $this->logger->debug("Set sessionAccount: login not enabled");
+            }else{
+                $sessionAccounts = $this->sessionAtom->ifc('SessionAccount')->getTgtAtoms();
+                
+                if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
+                if(empty($sessionAccounts)){
+                    $this->sessionAccount = false;
+                    $this->logger->debug("Set sessionAccount: no session account");
+                }else{
+                    $this->sessionAccount = current($sessionAccounts);
+                    $this->logger->debug("Set sessionAccount: '{$this->sessionAccount->id}'");
+    			}
+    		}
+        }
+        return $this->sessionAccount;
+    }
+    
 	public function sessionUserLoggedIn(){
 		if(!Config::get('loginEnabled')){
 			return false;
-		
+		}elseif($this->getSessionAccount() !== false){
+			return true;
 		}else{
-			if(!isset($this->sessionAccountId)) $this->setSessionAccount();
-				
-			if($this->sessionAccountId === false){
-				return false;
-			}else{
-				return true;
-			}
+			return false;
 		}
 	}
 	
 	public function getSessionVars(){
 		if(!Config::get('loginEnabled')){
 			return false;
-		
 		}else{
 			try {
 				$options = array('metaData' => false, 'navIfc' => false);

@@ -151,26 +151,27 @@ class OAuthLoginController {
 
 				// Set sessionUser
 				$atom = new Atom($email, 'UserID');
-				$accounts = array_column((array)$atom->ifc('AccountForUserid')->getContent(), '_id_');
+				$accounts = $atom->ifc('AccountForUserid')->getTgtAtoms();
 
 				// create new user
 				if(empty($accounts)){
-				    $accountConcept = Concept::getConcept('Account');
-					$newAccount = $accountConcept->createNewAtom();
+				    $newAccount = Concept::getConcept('Account')->createNewAtom();
+                    
+                    // Save email as accUserid
 					$relAccUserid = Relation::getRelation('accUserid', $newAccount->concept->name, 'UserID');
 					$relAccUserid->addLink($newAccount, new Atom($email, 'UserID'), false, 'OAuthLoginExtension');
 
-					// add to Organization
+					// If possible, add account to organization(s) based on domain name
 					$domain = explode('@', $email)[1];
 					$atom = new Atom($domain, 'Domain');
-					$orgs = array_column((array)$atom->ifc('DomainOrgs')->getContent(), '_id_');
-					
+					$orgs = $atom->ifc('DomainOrgs')->getTgtAtoms();
 					$relAccOrg = Relation::getRelation('accOrg', $newAccount->concept->name, 'Organization');
 					foreach ($orgs as $org){
-						$relAccOrg->addLink($newAccount, new Atom($org, 'Organization'), false, 'OAuthLoginExtension');
+						$relAccOrg->addLink($newAccount, $org, false, 'OAuthLoginExtension');
 					}
-
-					$accounts[] = $newAccount->id;
+                    
+                    // Account created, add to $accounts list (used lateron)
+					$accounts[] = $newAccount;
 
 				}
 
@@ -180,9 +181,7 @@ class OAuthLoginController {
 				$relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', 'Account', 'DateTime');
 				$relAccLoginTimestamps = Relation::getRelation('accLoginTimestamps', 'Account', 'DateTime');
 				
-				foreach ($accounts as $accountId){
-				    $account = new Atom($accountId, 'Account');
-				    
+				foreach ($accounts as $account){				    
 					// Set sessionAccount
 					$relSessionAccount->addLink(new Atom(session_id(), 'SESSION'), $account, false, 'OAuthLoginExtension');
 

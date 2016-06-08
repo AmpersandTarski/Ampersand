@@ -37,7 +37,7 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
                                                  )
 					 ,'notifications' => Notifications::getAll()
 					 ,'session' => array ( 'id' => $session->id
-					 , 'loggedIn' => $session->sessionUserLoggedIn())
+					 ,'loggedIn' => $session->sessionUserLoggedIn())
 					 ,'sessionRoles' => array_values($session->getSessionRoles()) // return numeric array
 					 ,'sessionVars' => $session->getSessionVars()
 					 );
