@@ -369,7 +369,7 @@ class InterfaceObject {
 	 * @throws Exception
 	 * @return Atom[] [description]
 	 */
-	private function getTgtAtoms(){
+	public function getTgtAtoms(){
         
         $tgtAtoms = array();
         try {

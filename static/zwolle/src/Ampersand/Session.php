@@ -176,26 +176,24 @@ class Session {
 	}
 	
 	public function getSessionRoles(){
-		if(isset($this->sessionRoles)){
-			return $this->sessionRoles;
-		}else{
-			if(Config::get('loginEnabled')){
-				$sessionRoleLabels = array();
-				$sessionRoles = array();
-				
-				$session = new Atom(session_id(), 'SESSION');
-				$options = array('metaData' => false, 'navIfc' => true);
-				$sessionRoleLabels = array_column((array)$session->ifc('SessionRoles')->getContent($options), '_id_');
-				
+		if(!isset($this->sessionRoles)){
+            $sessionRoles = array();
+			if(Config::get('loginEnabled')){	
+                $sessionRoleLabels = array_map(
+                    function($o){
+                        return $o->id;
+                    }, $this->sessionAtom->ifc('SessionRoles')->getTgtAtoms()
+                );
 				foreach(Role::getAllRoles() as $role){
-					if(in_array(rawurlencode($role->label), $sessionRoleLabels)) $sessionRoles[] = $role; // rawurlencode because $sessionRoleLabels are urlencoded from getContent() above
+					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
 				}
 			}else{
 				$sessionRoles = Role::getAllRoles();
 			}
-			
-			return $this->sessionRoles = $sessionRoles;
+            
+			$this->sessionRoles = $sessionRoles;
 		}
+        return $this->sessionRoles;
 	}
 	
 	/**
