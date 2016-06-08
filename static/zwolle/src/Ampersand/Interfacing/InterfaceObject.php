@@ -732,6 +732,15 @@ class InterfaceObject {
  *
  *************************************************************************************************/
 	
+    /**
+     * Returns if interface exists
+     * @var string $ifcId Identifier of interface
+     * @return boolean
+     */
+    public static function interfaceExists($ifcId){
+        return array_key_exists($ifcId, self::getAllInterfaces());
+    }
+    
 	/**
 	 * Returns toplevel interface object
 	 * @param string $ifcId

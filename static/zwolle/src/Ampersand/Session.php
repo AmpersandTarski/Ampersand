@@ -250,17 +250,18 @@ class Session {
 	}
 	
 	public function getSessionVars(){
-		if(!Config::get('loginEnabled')){
-			return false;
-		}else{
+		if(InterfaceObject::interfaceExists('SessionVars')){
 			try {
+                $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionAtom->__toString()}");
 				$options = array('metaData' => false, 'navIfc' => false);
 				return $this->sessionAtom->ifc('SessionVars')->getContent($options);
 			}catch (Exception $e){
+                $this->logger->warning("Error while getting SessionVars interface: " . $e->getMessage());
 				return false;
-			}		
-			
-		}
+			}
+		}else{
+            return false;
+        }
 	}
 	
 	public function getInterfacesForNavBar(){
