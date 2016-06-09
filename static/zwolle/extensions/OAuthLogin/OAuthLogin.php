@@ -196,7 +196,7 @@ class OAuthLoginController {
 			}
 		}
 
-		header('Location: '. Config::get('serverURL'));
+		header('Location: '. Config::get('redirectAfterLogin', 'OAuthLogin'));
 		exit;
 	}
 }
