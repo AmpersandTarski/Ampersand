@@ -1,6 +1,8 @@
 # Release notes of Ampersand
 
 ## unreleased changes 
+
+## v3.5.2 (10 juni 2016)
   * Work on meatgrinder (still experimental!)
   * Bug fix: Issue with SQL query [Issue #152](https://github.com/AmpersandTarski/Ampersand/issues/152)
   * Bug fix: minor issue with SQL query [Issue #436](https://github.com/AmpersandTarski/Ampersand/issues/436)
