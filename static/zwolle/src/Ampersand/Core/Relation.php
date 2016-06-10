@@ -147,7 +147,7 @@ class Relation {
         
             if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
             if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
-            if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for relation '{$this->__toString()}') is not part of an invariant or signal rule");
+            // if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for relation '{$this->__toString()}') is not part of an invariant or signal rule");
         }
         
         // Specify mysql table information

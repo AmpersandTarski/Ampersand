@@ -373,13 +373,6 @@ pIndex  = P_Id <$> currPos
           pIndSegment :: AmpParser P_IdentSegment
           pIndSegment = P_IdentExp <$> pAtt
 
--- | A view definition looks like:
---      VIEW onSSN: Person("social security number":ssn)
--- or
---      VIEW SaveAdlFile: SaveAdlFile(PRIMHTML "<a href='../../index.php?operation=2&file=", filepath , filename
---      ,PRIMHTML "&userrole=", savecontext~;sourcefile;uploaded~;userrole
---      ,PRIMHTML "'>", filename/\V[SaveAdlFile*FileName], PRIMHTML "</a>")
--- which can be used to define a proper user interface by assigning labels and markup to the attributes in a view.
 
 --- ViewDef ::= FancyViewDef | ViewDefLegacy
 pViewDef :: AmpParser P_ViewDef

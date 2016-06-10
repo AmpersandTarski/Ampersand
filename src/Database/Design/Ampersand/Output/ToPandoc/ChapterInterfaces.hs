@@ -54,7 +54,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
             plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++
                        " " ++ showLang lang (fpComplexity interfaceFP) ++ 
                        ", en is daarmee " ++ show (fpVal interfaceFP) ++ " functiepunten waard.")
-       else plainText "" -- TODO: vervangen door de Pandoc-aanduiding voor "niks"
+       else mempty
       ) <>
       docCrudMatrix ifc <>
       (plain . strong . text) "Interfacestructuur:" <>

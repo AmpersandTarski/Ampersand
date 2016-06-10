@@ -816,6 +816,9 @@ instance Named A_Concept where
 instance Show A_Concept where
   showsPrec _ c = showString (name c)
 
+instance Unique (A_Concept, PSingleton) where
+  showUnique (c,val) = show val++"["++showUnique c++"]"
+
 data Signature = Sign A_Concept A_Concept deriving (Eq, Prelude.Ord, Typeable, Generic, Data)
 instance Hashable Signature
 instance Show Signature where

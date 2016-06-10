@@ -7,7 +7,6 @@ import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.FSpec(getConceptTableFor,Typology(..))
 import Data.Maybe
 import Data.Either
 import Database.Design.Ampersand.Graphic.ClassDiagram

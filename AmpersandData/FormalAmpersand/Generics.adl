@@ -17,16 +17,16 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 
 --[Relations]--
 --IDENT Relations: Relation(name,source,target,context) -- the name of the relation must be unique; it is therefore not the same as a RAP:Relation.
-RELATION affectedInvConjunctIds[Relation*ConjunctID]
+RELATION affectedInvConjunctIds[Relation*Conjunct]
 MEANING "When a pair in a relation is edited (created, updated or deleted), an (invariant) conjunct may be affected"
-RELATION affectedSigConjunctIds[Relation*ConjunctID]
+RELATION affectedSigConjunctIds[Relation*Conjunct]
 MEANING "When a pair in a relation is edited (created, updated or deleted), a (signal) conjunct may be affected"
 
 --[Concepts]--
 RELATION name[Concept*Identifier][TOT,UNI] 
-RELATION affectedInvConjunctIds[Concept*ConjunctID]
+RELATION affectedInvConjunctIds[Concept*Conjunct]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (invariant) conjunct may be affected"
-RELATION affectedSigConjunctIds[Concept*ConjunctID]
+RELATION affectedSigConjunctIds[Concept*Conjunct]
 MEANING "When an atom in a concept is edited (created, updated or deleted), a (signal) conjunct may be affected"
 
 --[Rules]--
@@ -39,7 +39,7 @@ RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmet
 RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
 RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
-RELATION conjunctIds[Rule*ConjunctID] -- e.g. 'conj_159'
+RELATION conjunctIds[Rule*Conjunct] -- e.g. 'conj_159'
 RELATION pairView[Rule*PairView] -- e.g. 
 --                  array
 --                    ( array ( 'segmentType' => 'Text', 'Text' => '{EX} DelPair;rliAcceptableRiskLevel;RLI;')
@@ -76,14 +76,8 @@ RELATION expSQL[PairViewSegment*MySQLQuery] [UNI] -- IFF SegmentType == 'Exp'
 
 --[Conjuncts]--
 RELATION allConjuncts[Context*Conjunct] [SUR,INJ]
-RELATION signalRuleNames[Conjunct*Rule] -- e.g. 'Activation of Managed BFControls' -- this is a signal rule
-RELATION invariantRuleNames[Conjunct*Rule] -- similar, for invariant rules.
-RELATION violationsSQL[Conjunct*MySQLQuery] -- e.g. '/* case: (EIsc lst\\\'@(_:_:_))
---                                       nhIsDashboard /\\\\ -I[NormHierarchy] ([NormHierarchy*NormHierarchy]) */
---                                    SELECT DISTINCT isect0.`NormHierarchy` AS `src`, isect0.`tgt_nhIsDashboard` AS `tgt`
---                                    FROM ( SELECT `NormHierarchy`, `tgt_nhIsDashboard`
---                                           FROM `NormHierarchy` WHERE `NormHierarchy` IS NOT NULL  AND  `tgt_nhIsDashboard` IS NOT NULL) AS isect0
---                                    WHERE isect0.NormHierarchy <> isect0.`tgt_nhIsDashboard` AND isect0.NormHierarchy IS NOT NULL AND isect0.`tgt_nhIsDashboard` IS NOT NULL'
+RELATION originatesFrom[Conjunct*Rule] [TOT] -- rule where the conjunct originates from.
+RELATION conjunct[Conjunct*Expression] [TOT]
 
 --[Roles]--
 

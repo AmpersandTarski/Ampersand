@@ -1,26 +1,49 @@
 module Database.Design.Ampersand.Output.FSpec2SQL
   (dumpSQLqueries)
 where
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateAllDefPopQueries
   )
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.SQL
 import Data.List
 
 dumpSQLqueries :: FSpec -> String
 dumpSQLqueries fSpec = intercalate "\n" $ 
-                         header "Database structure queries"
+                         header ampersandVersionStr
+                       ++header "Database structure queries"
                        ++generateDBstructQueries fSpec True
                        ++header "Initial population queries"
-                       ++generateAllDefPopQueries fSpec True
+                       ++generateAllDefPopQueries fSpec
                        ++header "Violations of conjuncts"
-                       ++concatMap showConjunct (vconjs fSpec)
+                       ++concatMap showConjunct (allConjuncts fSpec)
                        ++header "Queries per declaration"
                        ++concatMap showDecl (vrels fSpec)
+                       ++header "Queries of interfaces"
+                       ++concatMap showInterface (interfaceS fSpec ++ interfaceG fSpec)
     
    where
+     showInterface :: Interface -> [String]
+     showInterface ifc 
+        = header ("INTERFACE: "++name ifc)
+        ++(map ((++) "  ") . showObjDef . ifcObj) ifc
+        where 
+          showObjDef :: ObjectDef -> [String]
+          showObjDef obj
+            = (header . showADL . objctx) obj
+            ++(lines . prettySQLQueryWithPlaceholder 2 fSpec . objctx) obj
+            ++case objmsub obj of
+                 Nothing  -> []
+                 Just sub -> showSubInterface sub
+            ++header "Broad query of above stuff"     
+            ++(lines . prettyBroadQueryWithPlaceholder 2 fSpec $ obj)
+          showSubInterface :: SubInterface -> [String]
+          showSubInterface sub = 
+            case sub of 
+              Box{} -> concatMap showObjDef . siObjs $ sub
+              InterfaceRef{} -> []
+
      showConjunct :: Conjunct -> [String]
      showConjunct conj 
         = header (rc_id conj)

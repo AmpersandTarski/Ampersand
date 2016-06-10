@@ -24,13 +24,17 @@ module Database.Design.Ampersand.FSpec.FSpec
           , metaValues
           , SqlAttribute(..)
           , Typology(..)
+          , Interface(..)
           , Object(..)
+          , ObjectDef(..)
+          , SubInterface(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..),AAtomValue
           , showValADL,showValPHP,showValSQL,showSQL
           , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
+          , module Database.Design.Ampersand.Classes
           ) where
 -- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
 --       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
@@ -87,7 +91,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , getAllViewsForConcept :: A_Concept -> [ViewDef]
                    , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
-                   , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
+                   , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
                    , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
                    , allConjsPerDecl :: [(Declaration, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
@@ -103,7 +107,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , atomsInCptIncludingSmaller :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
                    , tableContents :: PlugSQL -> [[Maybe AAtomValue]] -- ^ tableContents is meant to compute the contents of an entity table.
                                                                       --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
-                   
+                                                                      -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
                    , pairsInExpr :: Expression -> [AAtomPair]   
                    , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
