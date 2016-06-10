@@ -1,6 +1,8 @@
 # Release notes of Ampersand
 
-## current development 
+## unreleased changes 
+
+## v3.5.2 (10 juni 2016)
   * Work on meatgrinder (still experimental!)
   * Bug fix: Issue with SQL query [Issue #152](https://github.com/AmpersandTarski/Ampersand/issues/152)
   * Bug fix: minor issue with SQL query [Issue #436](https://github.com/AmpersandTarski/Ampersand/issues/436)
@@ -8,6 +10,7 @@
   * SQL query performance improvements: [Issue #426](https://github.com/AmpersandTarski/Ampersand/issues/426) and 
     [Issue #217](https://github.com/AmpersandTarski/Ampersand/issues/217)
   * Back end performance: Postpone calculation of view and label for Atoms untill really needed (e.g. in interfaces)
+  * Added frontend switch to turn on/off auto saving changes
   
 ## v3.5.1 (17 may 2016)
   * Minor enhancement of generation of Logical Data Model
