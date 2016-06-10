@@ -1,5 +1,15 @@
 {-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
-module Main where
+module Main -- Database.Design.Ampersand.FSpec.ArchiAnalyze
+where
+--   import Database.Design.Ampersand.Core.ParseTree
+--   import Database.Design.Ampersand.Core.AbstractSyntaxTree
+--   import Database.Design.Ampersand.Basics      (fatal,Collection(..),Named(..))
+--   import Database.Design.Ampersand.Classes
+--   import Database.Design.Ampersand.ADL1 (insParentheses)
+--   import Database.Design.Ampersand.FSpec.FSpec
+--   import Prelude
+--   import Data.Char
+
    import System.IO
    import System.Environment
    import System.Exit
@@ -17,7 +27,10 @@ module Main where
 
    main :: IO ()
    main = do archiRepo <- runX (processStraight "CA repository.xml")
-             (writeFile "output.html" . writeHtmlString def . archi2Pandoc . concatMap analyze) archiRepo
+--             (writeFile "output.html" . writeHtmlString def .  archi2Pandoc . concatMap analyze) archiRepo
+             (putStr . intercalate "\n" . map show . filter (not.null.popPairs) . sortPops . grindArchi . identifyProps []) archiRepo
+          where sortPops pops = [ (head cl){popPairs = concatMap popPairs cl} | cl<-eqCl f pops ]
+                f p = popName p++"["++popSource p++"*"++popTarget p++"]"
 
    showElements archiTypes = intercalate "\n\n" (map showOneArchiType archiTypes)
     where
@@ -67,18 +80,7 @@ module Main where
        isRelationship str = (reverse.takeWhile (/='R').reverse) str == "elationship"
        isConcept str = not (isRelationship str)
 
-{-
-chptHeader lang chap
- = header 1 (chptTitle lang chap ) <> (para (xrefLabel chap))
-
-chptTitle :: Lang -> Chapter -> Inlines
-chptTitle lang cpt =
-     (case (cpt,lang) of
-        (Intro                 , Dutch  ) -> text "Inleiding"
-        (Intro                 , English) -> text "Introduction"
--}
-
--- The following code derives a data structure (called ArchiRepo) from an Archi-XML-file.
+-- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
    data ArchiRepo = ArchiRepo
      { archRepoName   :: String
@@ -93,6 +95,15 @@ chptTitle lang cpt =
      , fldType        :: String
      , fldElems       :: [Element]
      , fldFolders     :: [Folder]
+     } deriving (Show, Eq)
+
+   data Element = Element
+     { elemType       :: String
+     , elemId         :: String
+     , elemName       :: String
+     , elemDocu       :: String
+     , elChilds       :: [Child]
+     , elProps        :: [Prop]
      } deriving (Show, Eq)
 
 -- Children occur in views only.
@@ -138,45 +149,139 @@ chptTitle lang cpt =
      } deriving (Show, Eq)
 
    data Prop = Prop
-     { archPropKey    :: String
+     { archPropId     :: String
+     , archPropKey    :: String
      , archPropVal    :: String
      } deriving (Show, Eq)
 
-   data Element = Element
-     { elemType       :: String
-     , elemId         :: String
-     , elemName       :: String
-     , elemDocu       :: String
-     , elChilds       :: [Child]
-     , elProps        :: [Prop]
-     } deriving (Show, Eq)
 
-{- inspiration for adding the data structure to XML conversion ->
-   main = do [rc] <- runX (processStruct "CArepo.xml" >>> getErrStatus)
-             exitWith ( if rc >= c_err
-                        then ExitFailure (-1)
-                        else ExitSuccess
-                      )
+-- | Properties in Archimate have no identifying key. In Ampersand, that key is necessary. So the class WithProperties is defined to
+--   generate keys for properties, to be inserted in the grinding process. The only data structures with properties in the inner structure
+--   of Archi (i.e. in the repository minus the Views), are folders and elements. For this reason, the types ArchiRepo, Folder, and Element
+--   are instances of class WithProperties.
 
-   xmlArchiRepo :: ArrowXml a => ArchiRepo -> a XmlTree XmlTree
-   xmlArchiRepo archiRepo
-       = root [] [mkelem "archimate:ArchimateModel"
-                         [ sattr "xmlns:xsi" "http://www.w3.org/2001/XMLSchema-instance"
-                         , sattr "xmlns:archimate" "http://www.archimatetool.com/archimate"
-                         , sattr "name" (archRepoName archiRepo)
-                         , sattr "id" (archRepoId   archiRepo)
-                         ]
-                         [ txt "to be done" ]
-                 ]
+   class WithProperties a where
+     allProps      :: a -> [Prop]        -- takes all properties from an ArchiRepo, a Folder, or an Element
+     identifyProps :: [String] -> a -> a -- distributes identifiers ( [String] ) over an ArchiRepo, a Folder, or an Element, in order to assign a unique identifier to each property in it.
 
--- processStruct shows how to process an Archimate file into an HTML-list of elements without defining an intermediary data structure.
-   processStruct outfile
-    = xmlArchiRepo archiRepo
-      >>>
-      writeDocument [withIndent yes] outfile
--}
+   instance WithProperties ArchiRepo where
+     allProps archiRepo = allProps (archFolders archiRepo) ++ archProperties archiRepo
+     identifyProps _ archiRepo = archiRepo
+       { archProperties = [ prop{archPropId=propId} | (prop,propId)<- zip (archProperties archiRepo) propIds ]
+       , archFolders    = identifyProps fldrIds (archFolders archiRepo)
+       }
+       where
+         identifiers = [ "pr-"++show i | i<-[0..] ] -- infinitely many unique keys to identify properties.
+         fldrIds = take ((length.allProps.archFolders) archiRepo) identifiers
+         propIds = drop ((length.allProps.archFolders) archiRepo) identifiers
 
--- processStraight shows how to process an Archimate file into an HTML-list of elements without defining an intermediary data structure.
+   instance WithProperties Folder where
+     allProps folder = allProps (fldElems folder) ++ allProps (fldFolders folder)
+     identifyProps identifiers folder = folder
+       { fldElems   = identifyProps elemsIdentifiers (fldElems folder)
+       , fldFolders = identifyProps foldersIdentifiers (fldFolders folder)
+       }
+       where
+         elemsIdentifiers   = take ((length.allProps.fldElems) folder) identifiers
+         foldersIdentifiers = drop ((length.allProps.fldElems) folder) identifiers
+
+   instance WithProperties Element where
+     allProps element = elProps element
+--                      ++ allProps (elChilds element)   -- children are not (yet) being analyzed, so we skip the elChilds of the element.
+     identifyProps identifiers element = element
+       { elProps = [ prop{archPropId=propId} | (propId,prop)<- zip identifiers (elProps element) ] }
+
+   instance WithProperties a => WithProperties [a] where
+     allProps xs = concatMap allProps xs
+     identifyProps identifiers xs
+      = [ identifyProps ids x | (ids,x) <- zip idss xs ]
+        where
+         countProperties :: [Int] -- a list that contains the lengths of property lists in `folder`
+         countProperties = map (length.allProps) xs
+         idss = distr countProperties identifiers
+         distr :: [Int] -> [a] -> [[a]]  -- distribute identifiers in order to allocate them to items in `archiRepo`
+         distr (n:ns) identifiers = take n identifiers: distr ns (drop n identifiers)
+         distr []     identifiers = []
+
+
+
+-- The following code generates Ampersand population from an ArchiRepo
+   data Pop = Pop { popName ::   String
+                  , popSource :: String
+                  , popTarget :: String
+                  , popPairs ::  [(String,String)]
+                  }
+            | Comment { comment :: String  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
+                      }
+
+   instance Show Pop where
+     show p = popName p++"["++popSource p++"*"++popTarget p++"]"++
+              concat [ "\n   ("++x++", "++y++")" | (x,y)<-popPairs p ]
+
+-- | In order to populate an Archi-metamodel with the contents of an Archi-repository,
+--   we must grind that contents into binary tables. For that purpose, we define the
+--   class MetaArchi, and instantiate it on ArchiRepo and all its constituent types.
+   class MetaArchi a where
+     grindArchi :: a -> [Pop]  -- create population for a datastructure of type a.
+     keyArchi :: a->String     -- get the key value (dirty identifier) of an a.
+
+   instance MetaArchi ArchiRepo where
+     grindArchi archiRepo
+      = [ Pop "name" "ArchiRepo" "Text"
+            [(keyArchi archiRepo, archRepoName archiRepo)]
+        , Pop "folders" "ArchiRepo" "Folder"
+            (nub [(keyArchi archiRepo, keyArchi folder) | folder<-backendFolders])
+        , Pop "properties" "ArchiRepo" "Property"
+            (nub [(keyArchi archiRepo, keyArchi property) | property<-archProperties archiRepo])
+        ] ++ (concat.map grindArchi) backendFolders
+          ++ (concat.map grindArchi.archProperties) archiRepo
+        where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
+        
+     keyArchi = archRepoId
+
+   instance MetaArchi Folder where
+     grindArchi folder
+      = [ Pop "name" "Folder" "Text"
+            [(keyArchi folder, fldName folder)]
+        , Pop "type" "Folder" "Text"
+            [(keyArchi folder, fldType folder) | (not.null.fldType) folder]
+        , Pop "elements" "Folder" "Element"
+            (nub [(keyArchi folder, keyArchi element) | element<-fldElems folder])
+        , Pop "folders" "Folder" "Folder"
+            (nub [(keyArchi folder, keyArchi subFolder) | subFolder<-fldFolders folder])
+        ] ++ (concat.map grindArchi.fldElems)   folder
+          ++ (concat.map grindArchi.fldFolders) folder
+     keyArchi = fldId
+
+   instance MetaArchi Element where
+     grindArchi element
+      = [ Pop "type" "Element" "Text"   -- Archi ensures totality (I hope...)
+            [(keyArchi element, elemType element)]
+        , Pop "name" "Element" "Text"
+            [(keyArchi element, elemName element) | (not.null.elemName) element]
+        , Pop "docu" "Element" "Text"
+            [(keyArchi element, elemDocu element) | (not.null.elemDocu) element]
+        , Pop "childs" "Element" "Property"
+            (nub [(keyArchi element, keyArchi property) | property<-elProps element])
+        ] ++ (concat.map grindArchi.elProps) element
+     keyArchi = elemId
+
+   instance MetaArchi Prop where
+     grindArchi property
+      = [ Pop "key" "Property" "Text"
+            [(keyArchi property, archPropKey property)]
+        , Pop "val" "Property" "Text"
+            [(keyArchi property, archPropVal property)]
+        ]
+     keyArchi = archPropId
+
+   instance MetaArchi a => MetaArchi [a] where
+     grindArchi xs = concat [ grindArchi x | x<-xs ]
+     keyArchi = error "fatal 269: cannot use keyArchi on a list"
+
+
+-- The function `processStraight` derives an ArchiRepo from an Archi-XML-file.
+   processStraight :: String -> IOSLA (XIOState s0) XmlTree ArchiRepo
    processStraight infile
     = readDocument [ withRemoveWS  yes        -- purge redundant white spaces
                    , withCheckNamespaces yes  -- propagates name spaces into QNames
@@ -195,8 +300,32 @@ chptTitle lang cpt =
                          returnA -< ArchiRepo { archRepoName   = repoNm
                                               , archRepoId     = repoId
                                               , archFolders    = folders
-                                              , archProperties = props
+                                              , archProperties = [ prop{archPropId="pr-"++show i} | (prop,i)<- zip props [length (allProps folders)..] ]
                                               }
+
+        getFolder :: ArrowXml a => a XmlTree Folder
+        getFolder
+         = isElem >>> hasName "folders" >>>
+            proc l -> do fldNm   <- getAttrValue "name"                 -< l
+                         fldId   <- getAttrValue "id"                   -< l
+                         fldType <- getAttrValue "type"                 -< l
+                         elems   <- listA (getChildren >>> getElement)  -< l
+                         subFlds <- listA (getChildren >>> getFolder)   -< l
+                         returnA -< Folder { fldName    = fldNm
+                                           , fldId      = fldId
+                                           , fldType    = fldType
+                                           , fldElems   = elems
+                                           , fldFolders = subFlds
+                                           }
+
+        getProp :: ArrowXml a => a XmlTree Prop
+        getProp = isElem >>> hasName "properties" >>>
+            proc l -> do propKey <- getAttrValue "key"   -< l
+                         propVal <- getAttrValue "value" -< l
+                         returnA -< Prop { archPropKey = propKey
+                                         , archPropId  = error "fatal 315: archPropId not yet defined"
+                                         , archPropVal = propVal
+                                         }
 
         getElement :: ArrowXml a => a XmlTree Element
         getElement = atTag "elements" >>>
@@ -287,29 +416,6 @@ chptTitle lang cpt =
                                            , childs   = childs
                                            }
 
-        getFolder :: ArrowXml a => a XmlTree Folder
-        getFolder
-         = isElem >>> hasName "folders" >>>
-            proc l -> do fldNm   <- getAttrValue "name"                 -< l
-                         fldId   <- getAttrValue "id"                   -< l
-                         fldType <- getAttrValue "type"                 -< l
-                         elems   <- listA (getChildren >>> getElement)  -< l
-                         subFlds <- listA (getChildren >>> getFolder)   -< l
-                         returnA -< Folder { fldName    = fldNm
-                                           , fldId      = fldId
-                                           , fldType    = fldType
-                                           , fldElems   = elems
-                                           , fldFolders = subFlds
-                                           }
-
-        getProp :: ArrowXml a => a XmlTree Prop
-        getProp = isElem >>> hasName "properties" >>>
-            proc l -> do propKey <- getAttrValue "key"   -< l
-                         propVal <- getAttrValue "value" -< l
-                         returnA -< Prop { archPropKey = propKey
-                                         , archPropVal = propVal
-                                         }
-
 -- Auxiliaries
 
    atTag :: ArrowXml a => String -> a (NTree XNode) XmlTree
@@ -323,4 +429,3 @@ chptTitle lang cpt =
    eqCl :: Eq b => (a -> b) -> [a] -> [[a]]
    eqCl _ [] = []
    eqCl f (x:xs) = (x:[e |e<-xs, f x==f e]) : eqCl f [e |e<-xs, f x/=f e]
-
