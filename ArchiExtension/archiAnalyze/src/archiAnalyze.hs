@@ -21,64 +21,19 @@ where
    import Text.Pandoc
    import Text.Pandoc.Builder
 
-   -- This example demonstrates a more complex XML parse,
-   -- involving multiple levels, attributes, inner lists,
-   -- and dealing with optional data.
+   -- This module parses an Archi-repository by means of function `processStraight`.
+   -- That produces an object of type `ArchiRepo`
+   -- The function `grindArchi` transforms an `ArchiRepo` into binary tables, which is a list of `Pop` object.
+   -- The purpose of it all is to load Archimate content into an Ampersand context.
 
-   main :: IO ()
+   main :: IO () -- This main program is meant to test the grinding process of an Archi-repository
    main = do archiRepo <- runX (processStraight "CA repository.xml")
---             (writeFile "output.html" . writeHtmlString def .  archi2Pandoc . concatMap analyze) archiRepo
-             (putStr . intercalate "\n" . map show . filter (not.null.popPairs) . sortPops . grindArchi . identifyProps []) archiRepo
+             (writeFile "output.html" . writeHtmlString def .  archi2Pandoc . concatMap analyze) archiRepo
+             (putStr . intercalate "\n\n" . map show .
+              filter (not.null.popPairs) . sortPops .
+              grindArchi . identifyProps []) archiRepo
           where sortPops pops = [ (head cl){popPairs = concatMap popPairs cl} | cl<-eqCl f pops ]
                 f p = popName p++"["++popSource p++"*"++popTarget p++"]"
-
-   showElements archiTypes = intercalate "\n\n" (map showOneArchiType archiTypes)
-    where
-     showOneArchiType (str,elems)
-       = str++"\n"++intercalate "\n" ( nub [ elemId e ++ "\t" ++ elemName e | e<-elems ])
-
-   data Configuration = Conf
-     { elements :: [Element]
---     , associations :: [Association]
-     }
-
-   analyze :: ArchiRepo -> [(String,[Element])]
-   analyze aRepo = [ (elemType (head xs), nub xs) | xs<- eqCl elemType (extractElements aRepo) ]
-     where
-      extractElements :: ArchiRepo -> [Element]
-      extractElements aRepo = concat [ elemsFromFolder folder | folder<-archFolders aRepo ]
-
-      elemsFromFolder :: Folder -> [Element]
-      elemsFromFolder folder
-       = fldElems folder ++ concat [ elemsFromFolder folder | folder<-fldFolders folder ]
-
-   archi2Pandoc :: [(String,[Element])] -> Pandoc
-   archi2Pandoc archiTypes = myDoc
--- [(Inlines, [Blocks])]
-     where
-       myDoc :: Pandoc
-       myDoc = (setTitle "Analyse van Archimate" . doc)
-               (  simpleTable [ para "element type", para "number of elements"]                     -- headers
-                              [ map (para.text) [(drop 1 . dropWhile (/=':')) label, (show.length) elems]    -- rows
-                              | (label,elems)<-archiTypes, takeWhile (/=':') label=="archimate", isConcept label
-                              ]
-               <> simpleTable [ para "Relationship type", para "number of elements"]                     -- headers
-                              [ map (para.text) [(unfixRel . drop 1 . dropWhile (/=':')) label, (show.length) elems]    -- rows
-                              | (label,elems)<-archiTypes, takeWhile (/=':') label=="archimate", isRelationship label
-                              ]
-               <> definitionList [ (text label, showOneArchiType elems) | (label,elems)<-archiTypes ]
-               )
-       showOneArchiType :: [Element] -> [Blocks]
-       showOneArchiType elems
-           =  [ para (text (elemName e)) | cl<-eqCl elemId elems, e<-nubBy eqName cl ]
-       testOneArchiType :: [Element] -> [Blocks]
-       testOneArchiType elems
-           =  [ (para.text) ("One Archi-element, " ++ elemId (head cl) ++ ", has multiple names: " ++ intercalate ", " (map elemName cl'))
-              | cl<-eqCl elemId elems, let cl'=nubBy eqName cl, length cl'>1 ]
-       x `eqName` y = elemName x == elemName y
-       unfixRel str = (reverse.drop 1.dropWhile (/='R').reverse) str
-       isRelationship str = (reverse.takeWhile (/='R').reverse) str == "elationship"
-       isConcept str = not (isRelationship str)
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
@@ -203,6 +158,57 @@ where
          distr (n:ns) identifiers = take n identifiers: distr ns (drop n identifiers)
          distr []     identifiers = []
 
+
+   showElements archiTypes = intercalate "\n\n" (map showOneArchiType archiTypes)
+    where
+     showOneArchiType (str,elems)
+       = str++"\n"++intercalate "\n" ( nub [ elemId e ++ "\t" ++ elemName e | e<-elems ])
+
+   data Configuration = Conf
+     { elements :: [Element]
+--     , associations :: [Association]
+     }
+
+-- | The following analysis makes the content of an Archi-repository visible.
+--   In order to prove that the repository is being read, use this together with archi2Pandoc
+--   to display the contents that has been read by `processStraight`.
+   analyze :: ArchiRepo -> [(String,[Element])]
+   analyze aRepo = [ (elemType (head xs), nub xs) | xs<- eqCl elemType (extractElements aRepo) ]
+     where
+      extractElements :: ArchiRepo -> [Element]
+      extractElements aRepo = concat [ elemsFromFolder folder | folder<-archFolders aRepo ]
+
+      elemsFromFolder :: Folder -> [Element]
+      elemsFromFolder folder
+       = fldElems folder ++ concat [ elemsFromFolder folder | folder<-fldFolders folder ]
+
+   archi2Pandoc :: [(String,[Element])] -> Pandoc
+   archi2Pandoc archiTypes = myDoc
+-- [(Inlines, [Blocks])]
+     where
+       myDoc :: Pandoc
+       myDoc = (setTitle "Analyse van Archimate" . doc)
+               (  simpleTable [ para "element type", para "number of elements"]                     -- headers
+                              [ map (para.text) [(drop 1 . dropWhile (/=':')) label, (show.length) elems]    -- rows
+                              | (label,elems)<-archiTypes, takeWhile (/=':') label=="archimate", isConcept label
+                              ]
+               <> simpleTable [ para "Relationship type", para "number of elements"]                     -- headers
+                              [ map (para.text) [(unfixRel . drop 1 . dropWhile (/=':')) label, (show.length) elems]    -- rows
+                              | (label,elems)<-archiTypes, takeWhile (/=':') label=="archimate", isRelationship label
+                              ]
+               <> definitionList [ (text label, showOneArchiType elems) | (label,elems)<-archiTypes ]
+               )
+       showOneArchiType :: [Element] -> [Blocks]
+       showOneArchiType elems
+           =  [ para (text (elemName e)) | cl<-eqCl elemId elems, e<-nubBy eqName cl ]
+       testOneArchiType :: [Element] -> [Blocks]
+       testOneArchiType elems
+           =  [ (para.text) ("One Archi-element, " ++ elemId (head cl) ++ ", has multiple names: " ++ intercalate ", " (map elemName cl'))
+              | cl<-eqCl elemId elems, let cl'=nubBy eqName cl, length cl'>1 ]
+       x `eqName` y = elemName x == elemName y
+       unfixRel str = (reverse.drop 1.dropWhile (/='R').reverse) str
+       isRelationship str = (reverse.takeWhile (/='R').reverse) str == "elationship"
+       isConcept str = not (isRelationship str)
 
 
 -- The following code generates Ampersand population from an ArchiRepo
