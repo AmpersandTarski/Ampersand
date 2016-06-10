@@ -357,7 +357,7 @@ class Concept {
      * @return boolean
      */
     public function inAtomCache($atom){
-        return in_array($atom, $this->atomCache);
+        return in_array($atom, $this->atomCache, true); // strict mode to prevent 'Nesting level too deep' error
     }
     
     /**
