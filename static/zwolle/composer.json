@@ -8,6 +8,6 @@
     },
     "autoload": {
         "psr-4": {"Ampersand\\": "src/Ampersand"},
-        "files": ["src/Ampersand/Helper/functions.php", "src/Ampersand/Helper/array_column.php"]
+        "files": ["src/Ampersand/Helper/functions.php"]
     }
 }
