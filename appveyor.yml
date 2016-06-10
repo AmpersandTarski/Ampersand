@@ -18,7 +18,6 @@ environment:
 # converts ssh-based git submodules to https-based ones, that 
 # can be cloned without needing to mess about with ssh keys.
 before_build:
-- path  
 - curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
 - 7z x stack.zip stack.exe
 
@@ -48,10 +47,10 @@ artifacts:
 # that we include proper release notes, etc.)
 deploy:
   - provider: GitHub
-    tag: 'ampersand-$(AMPERSAND_VERSION)'
-    release: 'Release ampersand-$(AMPERSAND_VERSION)'
+    tag: 'TESTampersand-$(AMPERSAND_VERSION)'
+    release: 'TESTRelease ampersand-$(AMPERSAND_VERSION)'
     auth_token:
       secure: ToDo # Find out how and where this token can be obtained
     artifact: ampersand.exe
     on:
-      branch: master
+      branch: AppVeyor_integration
