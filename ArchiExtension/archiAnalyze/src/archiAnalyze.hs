@@ -3,7 +3,7 @@ module Main -- Database.Design.Ampersand.FSpec.ArchiAnalyze
 where
 --   import Database.Design.Ampersand.Core.ParseTree
 --   import Database.Design.Ampersand.Core.AbstractSyntaxTree
---   import Database.Design.Ampersand.Basics      (fatal,Collection(..),Named(..))
+--   import Database.Design.Ampersand.Basics      (fatal)
 --   import Database.Design.Ampersand.Classes
 --   import Database.Design.Ampersand.ADL1 (insParentheses)
 --   import Database.Design.Ampersand.FSpec.FSpec
@@ -11,15 +11,15 @@ where
 --   import Data.Char
 
    import System.IO
-   import System.Environment
-   import System.Exit
-   import System.Console.GetOpt
+   import System.Environment     -- May be commented out if used in Ampersand
+   import System.Exit            -- May be commented out if used in Ampersand
+   import System.Console.GetOpt  -- May be commented out if used in Ampersand
    import Data.Char              -- for things such as toLower
    import Data.List              -- for things such as intercalate
-   import Data.Maybe
+   import Data.Maybe             -- May be commented out if used in Ampersand
    import qualified Data.Map.Strict as Map  -- import qualified, to avoid name clashes with Prelude functions
    import Data.Tree.NTree.TypeDefs
-   import Text.XML.HXT.Core hiding (hSetEncoding, utf8)
+   import Text.XML.HXT.Core hiding (utf8, fatal)
    import Text.Pandoc
    import Text.Pandoc.Builder
 
@@ -136,7 +136,7 @@ where
        , archFolders    = identifyProps fldrIds (archFolders archiRepo)
        }
        where
-         identifiers = [ "pr-"++show i | i<-[0..] ] -- infinitely many unique keys to identify properties.
+         identifiers = [ "pr-"++show (i::Integer) | i<-[0..] ] -- infinitely many unique keys to identify properties.
          fldrIds = take ((length.allProps.archFolders) archiRepo) identifiers
          propIds = drop ((length.allProps.archFolders) archiRepo) identifiers
 
@@ -165,14 +165,15 @@ where
          countProperties = map (length.allProps) xs
          idss = distr countProperties identifiers
          distr :: [Int] -> [a] -> [[a]]  -- distribute identifiers in order to allocate them to items in `archiRepo`
-         distr (n:ns) identifiers = take n identifiers: distr ns (drop n identifiers)
-         distr []     identifiers = []
+         distr (n:ns) idents = take n idents: distr ns (drop n idents)
+         distr []     _      = []
 
 
+   showElements :: [([Char], [Element])] -> [Char]
    showElements archiTypes = intercalate "\n\n" (map showOneArchiType archiTypes)
     where
-     showOneArchiType (str,elems)
-       = str++"\n"++intercalate "\n" ( nub [ elemId e ++ "\t" ++ elemName e | e<-elems ])
+     showOneArchiType (chars,elems)
+       = chars++"\n"++intercalate "\n" ( nub [ elemId e ++ "\t" ++ elemName e | e<-elems ])
 
    data Configuration = Conf
      { elements :: [Element]
@@ -186,11 +187,11 @@ where
    analyze aRepo = [ (elemType (head xs), nub xs) | xs<- eqCl elemType (extractElements aRepo) ]
      where
       extractElements :: ArchiRepo -> [Element]
-      extractElements aRepo = concat [ elemsFromFolder folder | folder<-archFolders aRepo ]
+      extractElements repo = concat [ elemsFromFolder fldr | fldr<-archFolders repo ]
 
       elemsFromFolder :: Folder -> [Element]
       elemsFromFolder folder
-       = fldElems folder ++ concat [ elemsFromFolder folder | folder<-fldFolders folder ]
+       = fldElems folder ++ concat [ elemsFromFolder fldr | fldr<-fldFolders folder ]
 
    archi2Pandoc :: [(String,[Element])] -> Pandoc
    archi2Pandoc archiTypes = myDoc
@@ -211,14 +212,10 @@ where
        showOneArchiType :: [Element] -> [Blocks]
        showOneArchiType elems
            =  [ para (text (elemName e)) | cl<-eqCl elemId elems, e<-nubBy eqName cl ]
-       testOneArchiType :: [Element] -> [Blocks]
-       testOneArchiType elems
-           =  [ (para.text) ("One Archi-element, " ++ elemId (head cl) ++ ", has multiple names: " ++ intercalate ", " (map elemName cl'))
-              | cl<-eqCl elemId elems, let cl'=nubBy eqName cl, length cl'>1 ]
        x `eqName` y = elemName x == elemName y
-       unfixRel str = (reverse.drop 1.dropWhile (/='R').reverse) str
-       isRelationship str = (reverse.takeWhile (/='R').reverse) str == "elationship"
-       isConcept str = not (isRelationship str)
+       unfixRel chars = (reverse.drop 1.dropWhile (/='R').reverse) chars
+       isRelationship chars = (reverse.takeWhile (/='R').reverse) chars == "elationship"
+       isConcept = not.isRelationship
 
 
 -- The following code generates Ampersand population from an ArchiRepo
@@ -310,27 +307,28 @@ where
         (concat.map (grindArchi typeLookup).elProps) element
      keyArchi = elemId
 
-   translate typeLookup "name" typeLabel tuples
+   translate :: (String -> String) -> String -> String -> [(String, String)] -> Pop
+   translate _ "name" typeLabel tuples
     = Pop "naam" typeLabel "Tekst" tuples
-   translate typeLookup "docu" typeLabel tuples
+   translate _ "docu" typeLabel tuples
     = Pop "documentatie" typeLabel "Tekst" tuples
-   translate typeLookup "key" "Property" tuples
+   translate _ "key" "Property" tuples
     = Pop "key" "Property" "Tekst" tuples
-   translate typeLookup "value" "Property" tuples
+   translate _ "value" "Property" tuples
     = Pop "value" "Property" "Tekst" tuples
    translate typeLookup "relationship" relLabel tuples@((x,y):_)
     = Pop (unfixRel relLabel) (typeLookup x) (typeLookup y) tuples
       where
        -- transform for example  "archimate:AggregationRelationship"  into  "aggregation"
-       unfixRel str = (reverse.drop 1.dropWhile (/='R').reverse.relCase) str
-       relCase (c:str) = toLower c: str
-       relCase "" = error "fatal 314 empty relation identifier."
+       unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
+       relCase (c:cs) = toLower c: cs
+       relCase "" = error "fatal 325 empty relation identifier."
    translate typeLookup relLabel _ tuples@((x,y):_)
     = Pop relLabel (typeLookup x) (typeLookup y) tuples
-
+   translate _ _ _ _ = error "fatal 328 non-exhaustive pattern in translate"
 
    instance MetaArchi Prop where
-     typeMap property
+     typeMap _
       = []
      grindMetaArchi property
       = [ Pop "key" "Property" "Text"
@@ -366,132 +364,132 @@ where
         analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
         analArchiRepo
           = atTag "archimate:ArchimateModel" >>>
-            proc l -> do repoNm    <- getAttrValue "name"               -< l
-                         repoId    <- getAttrValue "id"                 -< l
-                         folders   <- listA (getChildren >>> getFolder) -< l
-                         props     <- listA (getChildren >>> getProp)   -< l
-                         returnA -< ArchiRepo { archRepoName   = repoNm
-                                              , archRepoId     = repoId
-                                              , archFolders    = folders
-                                              , archProperties = [ prop{archPropId="pr-"++show i} | (prop,i)<- zip props [length (allProps folders)..] ]
-                                              }
+            proc l -> do repoNm'   <- getAttrValue "name"               -< l
+                         repoId'   <- getAttrValue "id"                 -< l
+                         folders'  <- listA (getChildren >>> getFolder) -< l
+                         props'    <- listA (getChildren >>> getProp)   -< l
+                         returnA   -< ArchiRepo { archRepoName   = repoNm'
+                                                , archRepoId     = repoId'
+                                                , archFolders    = folders'
+                                                , archProperties = [ prop{archPropId="pr-"++show i} | (prop,i)<- zip props' [length (allProps folders')..] ]
+                                                }
 
         getFolder :: ArrowXml a => a XmlTree Folder
         getFolder
          = isElem >>> hasName "folders" >>>
-            proc l -> do fldNm   <- getAttrValue "name"                 -< l
-                         fldId   <- getAttrValue "id"                   -< l
-                         fldType <- getAttrValue "type"                 -< l
-                         elems   <- listA (getChildren >>> getElement)  -< l
-                         subFlds <- listA (getChildren >>> getFolder)   -< l
-                         returnA -< Folder { fldName    = fldNm
-                                           , fldId      = fldId
-                                           , fldType    = fldType
-                                           , fldElems   = elems
-                                           , fldFolders = subFlds
-                                           }
+            proc l -> do fldNm'     <- getAttrValue "name"                 -< l
+                         fldId'     <- getAttrValue "id"                   -< l
+                         fldType'   <- getAttrValue "type"                 -< l
+                         elems'     <- listA (getChildren >>> getElement)  -< l
+                         subFlds'   <- listA (getChildren >>> getFolder)   -< l
+                         returnA    -< Folder { fldName    = fldNm'
+                                              , fldId      = fldId'
+                                              , fldType    = fldType'
+                                              , fldElems   = elems'
+                                              , fldFolders = subFlds'
+                                              }
 
         getProp :: ArrowXml a => a XmlTree Prop
         getProp = isElem >>> hasName "properties" >>>
-            proc l -> do propKey <- getAttrValue "key"   -< l
-                         propVal <- getAttrValue "value" -< l
-                         returnA -< Prop { archPropKey = propKey
-                                         , archPropId  = error "fatal 315: archPropId not yet defined"
-                                         , archPropVal = propVal
-                                         }
+            proc l -> do propKey    <- getAttrValue "key"   -< l
+                         propVal    <- getAttrValue "value" -< l
+                         returnA    -< Prop { archPropKey = propKey
+                                            , archPropId  = error "fatal 315: archPropId not yet defined"
+                                            , archPropVal = propVal
+                                            }
 
         getElement :: ArrowXml a => a XmlTree Element
         getElement = atTag "elements" >>>
-            proc l -> do elemType  <- getAttrValue "xsi:type"           -< l
-                         elemId    <- getAttrValue "id"                 -< l
-                         elemName  <- getAttrValue "name"               -< l
-                         elemSrc   <- getAttrValue "source"             -< l
-                         elemTgt   <- getAttrValue "target"             -< l
-                         elemDocu  <- getAttrValue "documentation"      -< l
-                         childs    <- listA (getChildren >>> getChild)  -< l
-                         props     <- listA (getChildren >>> getProp)   -< l
-                         returnA   -< Element  { elemType = drop 1 (dropWhile (/=':') elemType)  -- drop the prefix "archimate:"
-                                               , elemId   = elemId
-                                               , elemName = elemName
-                                               , elemSrc  = elemSrc
-                                               , elemTgt  = elemTgt
-                                               , elemDocu = elemDocu
-                                               , elChilds = childs
-                                               , elProps  = props
+            proc l -> do elemType'  <- getAttrValue "xsi:type"           -< l
+                         elemId'    <- getAttrValue "id"                 -< l
+                         elemName'  <- getAttrValue "name"               -< l
+                         elemSrc'   <- getAttrValue "source"             -< l
+                         elemTgt'   <- getAttrValue "target"             -< l
+                         elemDocu'  <- getAttrValue "documentation"      -< l
+                         childs'    <- listA (getChildren >>> getChild)  -< l
+                         props'     <- listA (getChildren >>> getProp)   -< l
+                         returnA    -< Element  { elemType = drop 1 (dropWhile (/=':') elemType')  -- drop the prefix "archimate:"
+                                               , elemId   = elemId'
+                                               , elemName = elemName'
+                                               , elemSrc  = elemSrc'
+                                               , elemTgt  = elemTgt'
+                                               , elemDocu = elemDocu'
+                                               , elChilds = childs'
+                                               , elProps  = props'
                                                }
-
+                                  
         getRelation :: ArrowXml a => a XmlTree Relation
         getRelation = isElem >>> hasName "relationship" >>>
-            proc l -> do relType    <- getAttrValue "xsi:type"          -< l
-                         relHref    <- getAttrValue "href"              -< l
-                         returnA    -< Relation{ relType = relType
-                                               , relHref = relHref
+            proc l -> do relType'   <- getAttrValue "xsi:type"          -< l
+                         relHref'   <- getAttrValue "href"              -< l
+                         returnA    -< Relation{ relType = relType'
+                                               , relHref = relHref'
                                                }
 
         getBound :: ArrowXml a => a XmlTree Bound
         getBound = isElem >>> hasName "bounds" >>>
-            proc l -> do bnd_x      <- getAttrValue "x"                 -< l
-                         bnd_y      <- getAttrValue "y"                 -< l
-                         bnd_width  <- getAttrValue "width"             -< l
-                         bnd_height <- getAttrValue "height"            -< l
-                         returnA    -< Bound   { bnd_x      = bnd_x
-                                               , bnd_y      = bnd_y
-                                               , bnd_width  = bnd_width
-                                               , bnd_height = bnd_height
+            proc l -> do bnd_x'     <- getAttrValue "x"                 -< l
+                         bnd_y'     <- getAttrValue "y"                 -< l
+                         bndWidth'  <- getAttrValue "width"             -< l
+                         bndHeight' <- getAttrValue "height"            -< l
+                         returnA    -< Bound   { bnd_x      = bnd_x'
+                                               , bnd_y      = bnd_y'
+                                               , bnd_width  = bndWidth'
+                                               , bnd_height = bndHeight'
                                                }
 
         getSrcConn :: ArrowXml a => a XmlTree SourceConnection
         getSrcConn = isElem >>> hasName "sourceConnections" >>>
-            proc l -> do sConType   <- getAttrValue "xsi:type"          -< l
-                         sConId     <- getAttrValue "id"                -< l
-                         sConSrc    <- getAttrValue "source"            -< l
-                         sConTgt    <- getAttrValue "target"            -< l
-                         sConRel    <- getAttrValue "relationship"      -< l
-                         sConRelat  <- listA (getChildren>>>getRelation)-< l
-                         bendPts    <- listA (getChildren>>>getBendPt)  -< l
-                         returnA    -< SrcConn { sConType  = sConType
-                                               , sConId    = sConId
-                                               , sConSrc   = sConSrc
-                                               , sConTgt   = sConTgt
-                                               , sConRel   = sConRel
-                                               , sConRelat = sConRelat
-                                               , sCbendPts = bendPts
+            proc l -> do sConType'  <- getAttrValue "xsi:type"          -< l
+                         sConId'    <- getAttrValue "id"                -< l
+                         sConSrc'   <- getAttrValue "source"            -< l
+                         sConTgt'   <- getAttrValue "target"            -< l
+                         sConRel'   <- getAttrValue "relationship"      -< l
+                         sConRelat' <- listA (getChildren>>>getRelation)-< l
+                         bendPts'   <- listA (getChildren>>>getBendPt)  -< l
+                         returnA    -< SrcConn { sConType  = sConType'
+                                               , sConId    = sConId'
+                                               , sConSrc   = sConSrc'
+                                               , sConTgt   = sConTgt'
+                                               , sConRel   = sConRel'
+                                               , sConRelat = sConRelat'
+                                               , sCbendPts = bendPts'
                                                }
 
         getBendPt :: ArrowXml a => a XmlTree BendPoint
         getBendPt = isElem >>> hasName "bendpoints" >>>
-            proc l -> do bpStartX   <- getAttrValue "startX"            -< l
-                         bpStartY   <- getAttrValue "startY"            -< l
-                         bpEndX     <- getAttrValue "endX"              -< l
-                         bpEndY     <- getAttrValue "endY"              -< l
-                         returnA    -< BendPt  { bpStartX  = bpStartX
-                                               , bpStartY  = bpStartY
-                                               , bpEndX    = bpEndX  
-                                               , bpEndY    = bpEndY  
+            proc l -> do bpStartX'  <- getAttrValue "startX"              -< l
+                         bpStartY'  <- getAttrValue "startY"              -< l
+                         bpEndX'    <- getAttrValue "endX"                -< l
+                         bpEndY'    <- getAttrValue "endY"                -< l
+                         returnA    -< BendPt  { bpStartX  = bpStartX'
+                                               , bpStartY  = bpStartY'
+                                               , bpEndX    = bpEndX'  
+                                               , bpEndY    = bpEndY'  
                                                }
-
-        getChild
-         = atTag "children" >>>
-            proc l -> do chldType <- getAttrValue "xsi:type"            -< l
-                         chldId   <- getAttrValue "id"                  -< l
-                         chldName <- getAttrValue "name"                -< l
-                         chldFCol <- getAttrValue "fillColor"           -< l
-                         chldAlgn <- getAttrValue "textAlignment"       -< l
-                         chldElem <- getAttrValue "archimateElement"    -< l
-                         trgtConn <- getAttrValue "targetConnections"   -< l
-                         bound    <- getChildren >>> getBound           -< l
-                         srcConns <- listA (getChildren >>> getSrcConn) -< l
-                         childs   <- listA (getChildren >>> getChild)   -< l
-                         returnA  -< Child { chldType = chldType
-                                           , chldId   = chldId
-                                           , chldAlgn = chldAlgn
-                                           , chldFCol = chldFCol
-                                           , chldElem = chldElem
-                                           , trgtConn = trgtConn
-                                           , bound    = bound
-                                           , srcConns = srcConns
-                                           , childs   = childs
-                                           }
+                                    
+        getChild                    
+         = atTag "children" >>>     
+            proc l -> do chldType'  <- getAttrValue "xsi:type"            -< l
+                         chldId'    <- getAttrValue "id"                  -< l
+--                         chldName'  <- getAttrValue "name"                -< l -- defined, but not used.
+                         chldFCol'  <- getAttrValue "fillColor"           -< l
+                         chldAlgn'  <- getAttrValue "textAlignment"       -< l
+                         chldElem'  <- getAttrValue "archimateElement"    -< l
+                         trgtConn'  <- getAttrValue "targetConnections"   -< l
+                         bound'     <- getChildren >>> getBound           -< l
+                         srcConns'  <- listA (getChildren >>> getSrcConn) -< l
+                         childs'    <- listA (getChildren >>> getChild)   -< l
+                         returnA    -< Child { chldType = chldType'
+                                             , chldId   = chldId'
+                                             , chldAlgn = chldAlgn'
+                                             , chldFCol = chldFCol'
+                                             , chldElem = chldElem'
+                                             , trgtConn = trgtConn'
+                                             , bound    = bound'
+                                             , srcConns = srcConns'
+                                             , childs   = childs'
+                                             }
 
 -- Auxiliaries
 
