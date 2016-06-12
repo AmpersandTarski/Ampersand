@@ -72,34 +72,83 @@ RELATION kwaliteit[ArchiElement*Tekst] [UNI]
 RELATION post[ArchiElement*Tekst] [UNI]
 RELATION pre[ArchiElement*Tekst] [UNI]
 
-RELATION naam[ApplicationFunction *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[ApplicationComponent*Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[Product             *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[BusinessService     *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[BusinessRole        *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[BusinessProcess     *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[BusinessInterface   *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[BusinessFunction    *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[BusinessEvent       *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[BusinessActor       *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION documentatie[ApplicationFunction *Tekst] [UNI]
-RELATION documentatie[ApplicationComponent*Tekst] [UNI]
-RELATION documentatie[Product             *Tekst] [UNI]
-RELATION documentatie[BusinessService     *Tekst] [UNI]
-RELATION documentatie[BusinessRole        *Tekst] [UNI]
-RELATION documentatie[BusinessProcess     *Tekst] [UNI]
-RELATION documentatie[BusinessInterface   *Tekst] [UNI]
-RELATION documentatie[BusinessFunction    *Tekst] [UNI]
-RELATION documentatie[BusinessEvent       *Tekst] [UNI]
-RELATION documentatie[BusinessActor       *Tekst] [UNI]
+RELATION naam[ApplicationFunction   *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[ApplicationComponent  *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[ApplicationInteraction*Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[Product               *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessService       *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessRole          *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessProcess       *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessInterface     *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessFunction      *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessEvent         *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessActor         *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessObject        *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[BusinessCollaboration *Tekst] [UNI]       -- Has been shown to be TOT on April 11th, 2016.
+RELATION documentatie[ApplicationFunction *Tekst] [UNI] -- 
+RELATION documentatie[ApplicationComponent*Tekst] [UNI] -- 
+RELATION documentatie[Product             *Tekst] [UNI] -- 
+RELATION documentatie[BusinessService     *Tekst] [UNI] -- 
+RELATION documentatie[BusinessRole        *Tekst] [UNI] -- 
+RELATION documentatie[BusinessObject      *Tekst] [UNI] -- 
+RELATION documentatie[BusinessProcess     *Tekst] [UNI] -- 
+RELATION documentatie[BusinessInterface   *Tekst] [UNI] -- 
+RELATION documentatie[BusinessFunction    *Tekst] [UNI] -- 
+RELATION documentatie[BusinessEvent       *Tekst] [UNI] -- 
+RELATION documentatie[BusinessActor       *Tekst] [UNI] -- 
 
-RELATION naam[Goal      *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[Driver    *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[Constraint*Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION naam[Principle *Tekst] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
+RELATION naam[Principle *Tekst] [UNI]   -- .Has been shown to be TOT on April 11th, 2016.
+RELATION naam[Goal      *Tekst] [UNI]   -- .Has been shown to be TOT on April 11th, 2016.
+RELATION naam[Assessment*Tekst] [UNI]   -- .
+RELATION naam[Constraint*Tekst] [UNI]   -- .Has been shown to be TOT on April 11th, 2016.
+RELATION naam[Driver    *Tekst] [UNI]   -- .Has been shown to be TOT on April 11th, 2016.
+RELATION naam[Junction  *Tekst] [UNI]   -- .
+RELATION documentatie[Principle *Tekst] [UNI] -- .
+RELATION documentatie[Goal      *Tekst] [UNI] -- .
+RELATION documentatie[Constraint*Tekst] [UNI] -- .
 RELATION bedrijfsprincipe[Principle*Boolean] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
 RELATION strategisch[Principle*Boolean] [UNI]   -- Has been shown to be TOT on April 11th, 2016.
-RELATION documentatie[Principle*Tekst] [UNI]
+
+RELATION aggregation[Goal*Goal]
+RELATION usedBy[ApplicationFunction*BusinessFunction]
+RELATION influence[Principle*Principle]
+RELATION composition[BusinessFunction*BusinessFunction]
+RELATION triggering[BusinessService*BusinessProcess]
+RELATION aggregation[BusinessProcess*BusinessProcess]
+RELATION usedBy[BusinessProcess*BusinessProcess]
+RELATION triggering[BusinessProcess*BusinessProcess]
+RELATION assignment[BusinessRole*BusinessProcess]
+RELATION flow[ApplicationComponent*ApplicationComponent]
+RELATION flow[BusinessProcess*BusinessProcess]
+RELATION assignment[ApplicationComponent*ApplicationFunction]
+RELATION usedBy[ApplicationInteraction*ApplicationComponent]
+RELATION aggregation[Product*Product]
+RELATION influence[Principle*Goal]
+RELATION association[Assessment*BusinessProcess]
+RELATION usedBy[BusinessFunction*BusinessProcess]
+RELATION aggregation[BusinessInterface*BusinessInterface]
+RELATION usedBy[ApplicationComponent*ApplicationComponent]
+RELATION triggering[BusinessEvent*BusinessProcess]
+RELATION aggregation[ApplicationComponent*ApplicationComponent]
+RELATION usedBy[BusinessInterface*BusinessProcess]
+RELATION flow[BusinessCollaboration*BusinessCollaboration]
+RELATION association[Assessment*Product]
+RELATION assignment[BusinessCollaboration*BusinessProcess]
+RELATION flow[BusinessProcess*BusinessCollaboration]
+RELATION influence[Principle*Driver]
+RELATION aggregation[BusinessObject*BusinessObject]
+RELATION influence[Assessment*Goal]
+RELATION association[BusinessProcess*Assessment]
+RELATION usedBy[ApplicationComponent*ApplicationFunction]
+RELATION flow[BusinessCollaboration*BusinessProcess]
+RELATION usedBy[ApplicationFunction*ApplicationFunction]
+RELATION association[BusinessRole*BusinessEvent]
+RELATION association[BusinessProcess*Product]
+RELATION composition[BusinessProcess*BusinessProcess]
+RELATION access[BusinessFunction*BusinessObject]
+RELATION triggering[BusinessActor*BusinessProcess]
+RELATION triggering[BusinessEvent*BusinessInterface]
+RELATION usedBy[BusinessService*BusinessProcess]
 
 RELATION naam[UsedByRelationship*Tekst] [UNI]
 RELATION documentatie[UsedByRelationship *Tekst] [UNI]

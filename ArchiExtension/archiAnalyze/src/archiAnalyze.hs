@@ -14,27 +14,35 @@ where
    import System.Environment
    import System.Exit
    import System.Console.GetOpt
+   import Data.Char              -- for things such as toLower
    import Data.List              -- for things such as intercalate
    import Data.Maybe
+   import qualified Data.Map.Strict as Map  -- import qualified, to avoid name clashes with Prelude functions
    import Data.Tree.NTree.TypeDefs
-   import Text.XML.HXT.Core
+   import Text.XML.HXT.Core hiding (hSetEncoding, utf8)
    import Text.Pandoc
    import Text.Pandoc.Builder
 
    -- This module parses an Archi-repository by means of function `processStraight`.
    -- That produces an object of type `ArchiRepo`
-   -- The function `grindArchi` transforms an `ArchiRepo` into binary tables, which is a list of `Pop` object.
+   -- The function `grindMetaArchi` transforms an `ArchiRepo` into binary tables, which is a list of `Pop` object.
    -- The purpose of it all is to load Archimate content into an Ampersand context.
 
    main :: IO () -- This main program is meant to test the grinding process of an Archi-repository
-   main = do archiRepo <- runX (processStraight "CA repository.xml")
-             (writeFile "output.html" . writeHtmlString def .  archi2Pandoc . concatMap analyze) archiRepo
-             (putStr . intercalate "\n\n" . map show .
-              filter (not.null.popPairs) . sortPops .
-              grindArchi . identifyProps []) archiRepo
-          where sortPops pops = [ (head cl){popPairs = concatMap popPairs cl} | cl<-eqCl f pops ]
-                f p = popName p++"["++popSource p++"*"++popTarget p++"]"
-
+   main = do hSetEncoding stdout utf8
+             archiRepo <- runX (processStraight "CA repository.xml")
+--             (writeFile "output.html" . writeHtmlString def .  archi2Pandoc . concatMap analyze) archiRepo
+             let typeLookup atom = (Map.fromList . typeMap) archiRepo Map.! atom
+             let pops = (filter (not.null.popPairs) . sortPops . grindArchi typeLookup . identifyProps []) archiRepo
+             (putStr . intercalate "\n\n" . map show) pops
+             putStr "\n\n"
+             (putStr . intercalate "\n" . map showRel) pops
+              
+          where sortPops pops = [ (head cl){popPairs = concatMap popPairs cl} | cl<-eqCl relNameSrcTgt pops ]
+                relNameSrcTgt pop = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
+                showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
+                showRel pop = "RELATION "++relNameSrcTgt pop
+              
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
    data ArchiRepo = ArchiRepo
@@ -56,6 +64,8 @@ where
      { elemType       :: String
      , elemId         :: String
      , elemName       :: String
+     , elemSrc        :: String
+     , elemTgt        :: String
      , elemDocu       :: String
      , elChilds       :: [Child]
      , elProps        :: [Prop]
@@ -189,12 +199,12 @@ where
        myDoc :: Pandoc
        myDoc = (setTitle "Analyse van Archimate" . doc)
                (  simpleTable [ para "element type", para "number of elements"]                     -- headers
-                              [ map (para.text) [(drop 1 . dropWhile (/=':')) label, (show.length) elems]    -- rows
-                              | (label,elems)<-archiTypes, takeWhile (/=':') label=="archimate", isConcept label
+                              [ map (para.text) [label, (show.length) elems]    -- rows
+                              | (label,elems)<-archiTypes, isConcept label
                               ]
                <> simpleTable [ para "Relationship type", para "number of elements"]                     -- headers
-                              [ map (para.text) [(unfixRel . drop 1 . dropWhile (/=':')) label, (show.length) elems]    -- rows
-                              | (label,elems)<-archiTypes, takeWhile (/=':') label=="archimate", isRelationship label
+                              [ map (para.text) [unfixRel label, (show.length) elems]    -- rows
+                              | (label,elems)<-archiTypes, isRelationship label
                               ]
                <> definitionList [ (text label, showOneArchiType elems) | (label,elems)<-archiTypes ]
                )
@@ -221,32 +231,43 @@ where
                       }
 
    instance Show Pop where
-     show p = popName p++"["++popSource p++"*"++popTarget p++"]"++
-              concat [ "\n   ("++x++", "++y++")" | (x,y)<-popPairs p ]
+     show p = "POPULATION "++popName p++"["++popSource p++"*"++popTarget p++"]\n    [ "++
+              intercalate "\n    , " [ "("++show x++", "++show y++")" | (x,y)<-popPairs p ]++"\n    ]"
 
 -- | In order to populate an Archi-metamodel with the contents of an Archi-repository,
 --   we must grind that contents into binary tables. For that purpose, we define the
 --   class MetaArchi, and instantiate it on ArchiRepo and all its constituent types.
    class MetaArchi a where
-     grindArchi :: a -> [Pop]  -- create population for a datastructure of type a.
-     keyArchi :: a->String     -- get the key value (dirty identifier) of an a.
+     typeMap ::        a -> [(String,String)]     -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
+     grindMetaArchi :: a -> [Pop]                 -- create population for the metametamodel of Archi (i.e. folders, elements, properties, etc.)
+     grindArchi :: (String->String) -> a -> [Pop] -- create population for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
+     keyArchi ::       a -> String                -- get the key value (dirty identifier) of an a.
 
    instance MetaArchi ArchiRepo where
-     grindArchi archiRepo
+     typeMap archiRepo
+      = typeMap [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]  ++ 
+        (typeMap.archProperties) archiRepo
+     grindMetaArchi archiRepo
       = [ Pop "name" "ArchiRepo" "Text"
             [(keyArchi archiRepo, archRepoName archiRepo)]
         , Pop "folders" "ArchiRepo" "Folder"
             (nub [(keyArchi archiRepo, keyArchi folder) | folder<-backendFolders])
         , Pop "properties" "ArchiRepo" "Property"
             (nub [(keyArchi archiRepo, keyArchi property) | property<-archProperties archiRepo])
-        ] ++ (concat.map grindArchi) backendFolders
-          ++ (concat.map grindArchi.archProperties) archiRepo
+        ] ++ (concat.map grindMetaArchi) backendFolders
+          ++ (concat.map grindMetaArchi.archProperties) archiRepo
         where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
-        
+     grindArchi typeLookup archiRepo
+      = (concat.map (grindArchi typeLookup)) backendFolders  ++ 
+        (concat.map (grindArchi typeLookup).archProperties) archiRepo
+        where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
      keyArchi = archRepoId
 
    instance MetaArchi Folder where
-     grindArchi folder
+     typeMap folder
+      = (typeMap.fldElems)   folder  ++ 
+        (typeMap.fldFolders) folder
+     grindMetaArchi folder
       = [ Pop "name" "Folder" "Text"
             [(keyArchi folder, fldName folder)]
         , Pop "type" "Folder" "Text"
@@ -255,34 +276,80 @@ where
             (nub [(keyArchi folder, keyArchi element) | element<-fldElems folder])
         , Pop "folders" "Folder" "Folder"
             (nub [(keyArchi folder, keyArchi subFolder) | subFolder<-fldFolders folder])
-        ] ++ (concat.map grindArchi.fldElems)   folder
-          ++ (concat.map grindArchi.fldFolders) folder
+        ] ++ (concat.map grindMetaArchi.fldElems)   folder
+          ++ (concat.map grindMetaArchi.fldFolders) folder
+     grindArchi typeLookup folder
+      = (concat.map (grindArchi typeLookup).fldElems)   folder  ++ 
+        (concat.map (grindArchi typeLookup).fldFolders) folder
      keyArchi = fldId
 
    instance MetaArchi Element where
-     grindArchi element
+     typeMap element
+      = [(elemId element, elemType element) | (not.null.elemName) element, (null.elemSrc) element]    
+         ++ typeMap (elProps element)
+     grindMetaArchi element
       = [ Pop "type" "Element" "Text"   -- Archi ensures totality (I hope...)
             [(keyArchi element, elemType element)]
         , Pop "name" "Element" "Text"
             [(keyArchi element, elemName element) | (not.null.elemName) element]
-        , Pop "docu" "Element" "Text"
+        , Pop "documentation" "Element" "Text"
             [(keyArchi element, elemDocu element) | (not.null.elemDocu) element]
-        , Pop "childs" "Element" "Property"
+        , Pop "properties" "Element" "Property"
             (nub [(keyArchi element, keyArchi property) | property<-elProps element])
-        ] ++ (concat.map grindArchi.elProps) element
+        ] ++ (concat.map grindMetaArchi.elProps) element
+     grindArchi typeLookup element
+ --   Example from XML-file:  <elements xsi:type="archimate:AggregationRelationship" id="0034b753" source="b12f3af5" target="f5d4f341"/>
+      = [ translate typeLookup "name" (elemType element) [(elemId element, elemName element)]
+        | (not.null.elemName) element, (null.elemSrc) element] ++
+        [ translate typeLookup "docu" (elemType element) [(elemId element, elemDocu element)]
+        | (not.null.elemDocu) element, (null.elemSrc) element] ++
+        [ translate typeLookup "relationship" (elemType element) [(elemSrc element, elemTgt element)]
+        | (null.elemName) element, (not.null.elemSrc) element] ++
+        [ translate typeLookup (elemName element) (elemType element) [(elemSrc element, elemTgt element)]
+        | (not.null.elemName) element, (not.null.elemSrc) element] ++
+        (concat.map (grindArchi typeLookup).elProps) element
      keyArchi = elemId
 
+   translate typeLookup "name" typeLabel tuples
+    = Pop "naam" typeLabel "Tekst" tuples
+   translate typeLookup "docu" typeLabel tuples
+    = Pop "documentatie" typeLabel "Tekst" tuples
+   translate typeLookup "key" "Property" tuples
+    = Pop "key" "Property" "Tekst" tuples
+   translate typeLookup "value" "Property" tuples
+    = Pop "value" "Property" "Tekst" tuples
+   translate typeLookup "relationship" relLabel tuples@((x,y):_)
+    = Pop (unfixRel relLabel) (typeLookup x) (typeLookup y) tuples
+      where
+       -- transform for example  "archimate:AggregationRelationship"  into  "aggregation"
+       unfixRel str = (reverse.drop 1.dropWhile (/='R').reverse.relCase) str
+       relCase (c:str) = toLower c: str
+       relCase "" = error "fatal 314 empty relation identifier."
+   translate typeLookup relLabel _ tuples@((x,y):_)
+    = Pop relLabel (typeLookup x) (typeLookup y) tuples
+
+
    instance MetaArchi Prop where
-     grindArchi property
+     typeMap property
+      = []
+     grindMetaArchi property
       = [ Pop "key" "Property" "Text"
             [(keyArchi property, archPropKey property)]
-        , Pop "val" "Property" "Text"
+        , Pop "value" "Property" "Text"
             [(keyArchi property, archPropVal property)]
+        ]
+     grindArchi typeLookup property
+      = [ translate typeLookup "key" "Property"
+            [(keyArchi property, archPropKey property) | (not.null.archPropKey) property ]
+        , translate typeLookup "value" "Property"
+            [(keyArchi property, archPropVal property) | (not.null.archPropVal) property ]
         ]
      keyArchi = archPropId
 
    instance MetaArchi a => MetaArchi [a] where
-     grindArchi xs = concat [ grindArchi x | x<-xs ]
+     typeMap               xs = concat [ typeMap               x | x<-xs ]
+     grindMetaArchi        xs = concat [ grindMetaArchi        x | x<-xs ]
+     grindArchi typeLookup xs = concat [ grindArchi typeLookup x | x<-xs ]
      keyArchi = error "fatal 269: cannot use keyArchi on a list"
 
 
@@ -338,12 +405,16 @@ where
             proc l -> do elemType  <- getAttrValue "xsi:type"           -< l
                          elemId    <- getAttrValue "id"                 -< l
                          elemName  <- getAttrValue "name"               -< l
+                         elemSrc   <- getAttrValue "source"             -< l
+                         elemTgt   <- getAttrValue "target"             -< l
                          elemDocu  <- getAttrValue "documentation"      -< l
                          childs    <- listA (getChildren >>> getChild)  -< l
                          props     <- listA (getChildren >>> getProp)   -< l
-                         returnA   -< Element  { elemType = elemType
+                         returnA   -< Element  { elemType = drop 1 (dropWhile (/=':') elemType)  -- drop the prefix "archimate:"
                                                , elemId   = elemId
                                                , elemName = elemName
+                                               , elemSrc  = elemSrc
+                                               , elemTgt  = elemTgt
                                                , elemDocu = elemDocu
                                                , elChilds = childs
                                                , elProps  = props
