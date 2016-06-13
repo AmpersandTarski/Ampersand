@@ -42,36 +42,6 @@ where
                 showRel pop = "RELATION "++relNameSrcTgt pop
 
 
-   mkArchiContext pops =
-         ( "Archimate"                                                                         --  ctx_nm     = 
-         , []                                                                                  --  ctx_pos    = 
-         , error "fatal 686 No language because of Archi-import hack. Please report this as a bug"   --  ctx_lang   = 
-         , Nothing                                                                             --  ctx_markup = 
-         , []                                                                                  --  ctx_thms   = 
-         , []                                                                                  --  ctx_pats   = 
-         , []                                                                                  --  ctx_rs     = 
-         , archiDecls                                                                          --  ctx_ds     = 
-         , []                                                                                  --  ctx_cs     = 
-         , []                                                                                  --  ctx_ks     = 
-         , []                                                                                  --  ctx_rrules = 
-         , []                                                                                  --  ctx_rrels  = 
-         , []                                                                                  --  ctx_reprs  = 
-         , []                                                                                  --  ctx_vs     = 
-         , []                                                                                  --  ctx_gs     = 
-         , []                                                                                  --  ctx_ifcs   = 
-         , []                                                                                  --  ctx_ps     = 
-         , archiPops                                                                           --  ctx_pops   = 
-         , []                                                                                  --  ctx_sql    = 
-         , []                                                                                  --  ctx_php    = 
-         , []                                                                                  --  ctx_metas  = 
-         )
-     where equivClasses :: [[(P_Population, P_Declaration)]]
-           equivClasses = eqCl snd pops
-           archiPops  = [ (foldr1 mergePop.map fst) cl | cl<-equivClasses ]
-           archiDecls = [ (head.nub.map snd) cl | cl<-equivClasses ]
-           mergePop pop0 pop1 = pop0{p_popps = xs++[y | y<-ys, y `notElem` xs]}
-            where xs = p_popps pop0
-                  ys = p_popps pop1
 
    data Origin = OriginUnknown
                | Origin String 
