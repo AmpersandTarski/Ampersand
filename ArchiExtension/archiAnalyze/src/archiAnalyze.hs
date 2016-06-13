@@ -45,57 +45,64 @@ where
                 showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
                 showRel pop = "RELATION "++relNameSrcTgt pop
 
-{-
-   mkArchiContext :: [P_Population] -> P_Context
+
    mkArchiContext pops =
-     PCtx{ ctx_nm     = "Archimate"
-         , ctx_pos    = []
-         , ctx_lang   = fatal 686 "No language because of Archi-import hack. Please report this as a bug"
-         , ctx_markup = Nothing
-         , ctx_thms   = []
-         , ctx_pats   = []
-         , ctx_rs     = []
-         , ctx_ds     = []
-         , ctx_cs     = []
-         , ctx_ks     = []
-         , ctx_rrules = []
-         , ctx_rrels  = []
-         , ctx_reprs  = []
-         , ctx_vs     = []
-         , ctx_gs     = []
-         , ctx_ifcs   = []
-         , ctx_ps     = []
-         , ctx_pops   = pops
-         , ctx_sql    = []
-         , ctx_php    = []
-         , ctx_metas  = []
-         }
--}
+         ( "Archimate"                                                                         --  ctx_nm     = 
+         , []                                                                                  --  ctx_pos    = 
+         , error "fatal 686 No language because of Archi-import hack. Please report this as a bug"   --  ctx_lang   = 
+         , Nothing                                                                             --  ctx_markup = 
+         , []                                                                                  --  ctx_thms   = 
+         , []                                                                                  --  ctx_pats   = 
+         , []                                                                                  --  ctx_rs     = 
+         , archiDecls                                                                          --  ctx_ds     = 
+         , []                                                                                  --  ctx_cs     = 
+         , []                                                                                  --  ctx_ks     = 
+         , []                                                                                  --  ctx_rrules = 
+         , []                                                                                  --  ctx_rrels  = 
+         , []                                                                                  --  ctx_reprs  = 
+         , []                                                                                  --  ctx_vs     = 
+         , []                                                                                  --  ctx_gs     = 
+         , []                                                                                  --  ctx_ifcs   = 
+         , []                                                                                  --  ctx_ps     = 
+         , archiPops                                                                           --  ctx_pops   = 
+         , []                                                                                  --  ctx_sql    = 
+         , []                                                                                  --  ctx_php    = 
+         , []                                                                                  --  ctx_metas  = 
+         )
+     where equivClasses :: [[(P_Population, P_Declaration)]]
+           equivClasses = eqCl snd pops
+           archiPops  = [ (foldr1 mergePop.map fst) cl | cl<-equivClasses ]
+           archiDecls = [ (head.nub.map snd) cl | cl<-equivClasses ]
+           mergePop pop0 pop1 = pop0{p_popps = xs++[y | y<-ys, y `notElem` xs]}
+            where xs = p_popps pop0
+                  ys = p_popps pop1
 
    data Origin = OriginUnknown
                | Origin String 
-   
+                 deriving Eq
+
    data PAtomPair
      = PPair { pppos :: Origin
              , ppLeft  :: PAtomValue
              , ppRight :: PAtomValue
-             }
+             } deriving Eq
 
-   data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
+   data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign } deriving Eq
 
    data P_Concept
       = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
       | P_Singleton
+       deriving Eq
 
-   data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept }
+   data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept } deriving Eq
 
-   newtype PMeaning = PMeaning P_Markup
-   newtype PMessage = PMessage P_Markup
+   newtype PMeaning = PMeaning P_Markup deriving Eq
+   newtype PMessage = PMessage P_Markup deriving Eq
    data P_Markup =
        P_Markup  { mLang   ::   Maybe Lang
                  , mFormat :: Maybe PandocFormat
                  , mString :: String
-                 }
+                 } deriving Eq
 
    data P_Population
      = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
@@ -117,10 +124,11 @@ where
      | ScriptFloat Origin Double
      | XlsxDouble Origin Double
      | ComnBool Origin Bool
+       deriving Eq
 
-   data Lang = Dutch | English
+   data Lang = Dutch | English deriving Eq
 
-   data PandocFormat = HTML | ReST | LaTeX | Markdown
+   data PandocFormat = HTML | ReST | LaTeX | Markdown deriving Eq
 
    type Props = [Prop]
 
@@ -134,7 +142,8 @@ where
                   | Rfx          -- ^ reflexive
                   | Irf          -- ^ irreflexive
                   | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
-   
+                    deriving Eq
+
    data P_Declaration =
          P_Sgn { dec_nm :: String    -- ^ the name of the declaration
                , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
@@ -143,9 +152,9 @@ where
                                          -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
                , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
                , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
-               , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file.
+               , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalations come from the ampersand souce file.
                , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
-               }
+               } deriving Eq
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
@@ -342,7 +351,7 @@ where
      typeMap ::        a -> [(String,String)]     -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
      grindMetaArchi :: a -> [Pop]                 -- create population for the metametamodel of Archi (i.e. folders, elements, properties, etc.)
      grindArchi ::    (String->String) -> a -> [Pop]        -- create population for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
-     grindArchiPop :: (String->String) -> a -> [P_Population] -- create population for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
+     grindArchiPop :: (String->String) -> a -> [(P_Population,P_Declaration)] -- create population and the corresponding metamodel for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
      keyArchi ::       a -> String                -- get the key value (dirty identifier) of an a.
 
    instance MetaArchi ArchiRepo where
@@ -362,6 +371,10 @@ where
      grindArchi typeLookup archiRepo
       = (concat.map (grindArchi typeLookup)) backendFolders  ++ 
         (concat.map (grindArchi typeLookup).archProperties) archiRepo
+        where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
+     grindArchiPop typeLookup archiRepo
+      = (concat.map (grindArchiPop typeLookup)) backendFolders  ++ 
+        (concat.map (grindArchiPop typeLookup).archProperties) archiRepo
         where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
      keyArchi = archRepoId
 
@@ -383,6 +396,9 @@ where
      grindArchi typeLookup folder
       = (concat.map (grindArchi typeLookup).fldElems)   folder  ++ 
         (concat.map (grindArchi typeLookup).fldFolders) folder
+     grindArchiPop typeLookup folder
+      = (concat.map (grindArchiPop typeLookup).fldElems)   folder  ++ 
+        (concat.map (grindArchiPop typeLookup).fldFolders) folder
      keyArchi = fldId
 
    instance MetaArchi Element where
@@ -421,36 +437,30 @@ where
         (concat.map (grindArchiPop typeLookup).elProps) element
      keyArchi = elemId
 
-{-
-     = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
-                 , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
-                 , p_orig  :: Origin  -- the origin
-                 , p_nmdr  :: P_NamedRel  -- the named relation
-                 , p_popps :: [PAtomPair]   -- the contents
-                 }
-     = PPair { pppos :: Origin
-             , ppLeft  :: PAtomValue
-             , ppRight :: PAtomValue
-             }
--}
-   transform :: (String -> String) -> String -> String -> [(String, String)] -> P_Population
+   transform :: (String -> String) -> String -> String -> [(String, String)] -> (P_Population,P_Declaration)
    transform _ "name" typeLabel tuples
-    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+      , P_Sgn "naam" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
    transform _ "docu" typeLabel tuples
-    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentatie" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentatie" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+      , P_Sgn "documentatie" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
    transform _ "key" "Property" tuples
-    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "key" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "key" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
+      , P_Sgn "key" (P_Sign (PCpt "Property") (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
    transform _ "value" "Property" tuples
-    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "value" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "value" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
+      , P_Sgn "value" (P_Sign (PCpt "Property") (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
    transform typeLookup "relationship" relLabel tuples@((x,y):_)
-    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown (unfixRel relLabel) (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown (unfixRel relLabel) (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
+      , P_Sgn "relationship" (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))) [] [] [] [] OriginUnknown False )
       where
        -- transform for example  "archimate:AggregationRelationship"  into  "aggregation"
        unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
        relCase (c:cs) = toLower c: cs
        relCase "" = error "fatal 325 empty relation identifier."
    transform typeLookup relLabel _ tuples@((x,y):_)
-    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relLabel (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relLabel (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
+      , P_Sgn relLabel (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))) [] [] [] [] OriginUnknown False )
    transform _ _ _ _ = error "fatal 328 non-exhaustive pattern in transform"
 
    transTuples :: [(String, String)] -> [PAtomPair]
@@ -491,12 +501,19 @@ where
         , translate typeLookup "value" "Property"
             [(keyArchi property, archPropVal property) | (not.null.archPropVal) property ]
         ]
+     grindArchiPop typeLookup property
+      = [ transform typeLookup "key" "Property"
+            [(keyArchi property, archPropKey property) | (not.null.archPropKey) property ]
+        , transform typeLookup "value" "Property"
+            [(keyArchi property, archPropVal property) | (not.null.archPropVal) property ]
+        ]
      keyArchi = archPropId
 
    instance MetaArchi a => MetaArchi [a] where
-     typeMap               xs = concat [ typeMap               x | x<-xs ]
-     grindMetaArchi        xs = concat [ grindMetaArchi        x | x<-xs ]
-     grindArchi typeLookup xs = concat [ grindArchi typeLookup x | x<-xs ]
+     typeMap                  xs = concat [ typeMap                  x | x<-xs ]
+     grindMetaArchi           xs = concat [ grindMetaArchi           x | x<-xs ]
+     grindArchi typeLookup    xs = concat [ grindArchi    typeLookup x | x<-xs ]
+     grindArchiPop typeLookup xs = concat [ grindArchiPop typeLookup x | x<-xs ]
      keyArchi = error "fatal 269: cannot use keyArchi on a list"
 
 
