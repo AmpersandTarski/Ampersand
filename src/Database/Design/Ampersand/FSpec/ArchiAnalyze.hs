@@ -3,7 +3,7 @@ module Database.Design.Ampersand.FSpec.ArchiAnalyze (archi2PContext)
    -- The purpose of this module is to load Archimate content into an Ampersand context.
    -- This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
    -- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
-   -- The fact that Archimate produces a mix of model and metamodel is therefore not a problem.
+   -- In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
 where
    import Database.Design.Ampersand.Basics (fatal, eqCl)
    import Data.Char                         -- for things such as toLower
@@ -14,17 +14,17 @@ where
    import Database.Design.Ampersand.Core.ParseTree
 
 
-   -- | archi2PContext is meant to grind the contents of an Archi-repository into declarations and population inside a fresh Ampersand P_Context.
-   --   The process starts by parsing an XML-file by means of function `processStraight` into a data structure called `archiRepo`.
-   --   From this datastructure, we can derive a lookup-function, called `typeLookup`.
-   --   It assigns the Archi-type (e.g. Business Process) to an arbitrary Archi-identifier (e.g. "0957873").
+   -- | Function `archi2PContext` is meant to grind the contents of an Archi-repository into declarations and population inside a fresh Ampersand P_Context.
+   --   The process starts by parsing an XML-file by means of function `processStraight` into a data structure called `archiRepo`. This function uses arrow-logic from the HXT-module.
+   --   The resulting data structure contains the folder structure of the tool Archi (https://github.com/archimatetool/archi) and represents the model-elements and their properties.
+   --   A lookup-function, `typeLookup`,is derived from `archiRepo`. It assigns the Archi-type (e.g. Business Process) to an arbitrary Archi-identifier (e.g. "0957873").
    --   Then, the properties have to be provided with identifiers (see class `WithProperties`), because Archi represents them just as key-value pairs.
    --   The function `grindArchiPop` retrieves the population of meta-relations
    --   It produces the P_Populations and P_Declarations that represent the Archimate model.
    --   Finally, the function `mkArchiContext` produces a `P_Context` ready to be merged into the rest of Ampersand's population.
-   archi2PContext :: IO P_Context
-   archi2PContext
-    = do archiRepo <- runX (processStraight "CA repository.xml")
+   archi2PContext :: String -> IO P_Context
+   archi2PContext archiRepoFilename  -- e.g. "CA repository.xml"
+    = do archiRepo <- runX (processStraight archiRepoFilename)
          let typeLookup atom = (Map.fromList . typeMap) archiRepo Map.! atom
          return ((mkArchiContext . grindArchiPop typeLookup . identifyProps []) archiRepo)
 

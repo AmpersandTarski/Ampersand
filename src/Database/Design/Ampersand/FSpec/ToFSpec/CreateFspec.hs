@@ -32,7 +32,9 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     genFiles userP_Ctx >> genTables userP_Ctx
+     archiP_Ctx <- archi2PContext (archiName opts)
+     let userContext = if null (archiName opts) then userP_Ctx else merge.sequenceA $ [userP_Ctx, Checked archiP_Ctx]
+     genFiles userContext >> genTables userContext
    where
     genFiles :: Guarded P_Context -> IO(Guarded ())
     genFiles uCtx
