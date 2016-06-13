@@ -31,25 +31,129 @@ where
    main :: IO () -- This main program is meant to test the grinding process of an Archi-repository
    main = do hSetEncoding stdout utf8
              archiRepo <- runX (processStraight "CA repository.xml")
---             (writeFile "output.html" . writeHtmlString def .  archi2Pandoc . concatMap analyze) archiRepo
+             (writeFile "output.html" . writeHtmlString def .  archi2Pandoc . concatMap analyze) archiRepo
              let typeLookup atom = (Map.fromList . typeMap) archiRepo Map.! atom
              let pops = (filter (not.null.popPairs) . sortPops . grindArchi typeLookup . identifyProps []) archiRepo
-             (putStr . intercalate "\n\n" . map show) pops
-             putStr "\n\n"
-             (putStr . intercalate "\n" . map showRel) pops
-              
+             writeFile "output.adl"
+              ( (intercalate "\n\n" . map show) pops  ++
+                "\n\n"                                ++
+                (intercalate "\n" . map showRel) pops
+              )
+             return ()
           where sortPops pops = [ (head cl){popPairs = concatMap popPairs cl} | cl<-eqCl relNameSrcTgt pops ]
                 relNameSrcTgt pop = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
                 showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
                 showRel pop = "RELATION "++relNameSrcTgt pop
-              
+
+{-
+   mkArchiContext :: [P_Population] -> P_Context
+   mkArchiContext pops =
+     PCtx{ ctx_nm     = "Archimate"
+         , ctx_pos    = []
+         , ctx_lang   = fatal 686 "No language because of Archi-import hack. Please report this as a bug"
+         , ctx_markup = Nothing
+         , ctx_thms   = []
+         , ctx_pats   = []
+         , ctx_rs     = []
+         , ctx_ds     = []
+         , ctx_cs     = []
+         , ctx_ks     = []
+         , ctx_rrules = []
+         , ctx_rrels  = []
+         , ctx_reprs  = []
+         , ctx_vs     = []
+         , ctx_gs     = []
+         , ctx_ifcs   = []
+         , ctx_ps     = []
+         , ctx_pops   = pops
+         , ctx_sql    = []
+         , ctx_php    = []
+         , ctx_metas  = []
+         }
+-}
+
+   data Origin = OriginUnknown
+               | Origin String 
+   
+   data PAtomPair
+     = PPair { pppos :: Origin
+             , ppLeft  :: PAtomValue
+             , ppRight :: PAtomValue
+             }
+
+   data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
+
+   data P_Concept
+      = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
+      | P_Singleton
+
+   data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept }
+
+   newtype PMeaning = PMeaning P_Markup
+   newtype PMessage = PMessage P_Markup
+   data P_Markup =
+       P_Markup  { mLang   ::   Maybe Lang
+                 , mFormat :: Maybe PandocFormat
+                 , mString :: String
+                 }
+
+   data P_Population
+     = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+                 , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+                 , p_orig  :: Origin  -- the origin
+                 , p_nmdr  :: P_NamedRel  -- the named relation
+                 , p_popps :: [PAtomPair]   -- the contents
+                 }
+     | P_CptPopu { p_orig  :: Origin  -- the origin
+                 , p_cnme  :: String  -- the name of a concept
+                 , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
+                 }
+
+   data PAtomValue
+     = PSingleton Origin String (Maybe PAtomValue)
+     | ScriptString Origin String -- string from script char to enquote with when printed
+     | XlsxString Origin String
+     | ScriptInt Origin Integer
+     | ScriptFloat Origin Double
+     | XlsxDouble Origin Double
+     | ComnBool Origin Bool
+
+   data Lang = Dutch | English
+
+   data PandocFormat = HTML | ReST | LaTeX | Markdown
+
+   type Props = [Prop]
+
+   data Prop      = Uni          -- ^ univalent
+                  | Inj          -- ^ injective
+                  | Sur          -- ^ surjective
+                  | Tot          -- ^ total
+                  | Sym          -- ^ symmetric
+                  | Asy          -- ^ antisymmetric
+                  | Trn          -- ^ transitive
+                  | Rfx          -- ^ reflexive
+                  | Irf          -- ^ irreflexive
+                  | Prop         -- ^ PROP keyword, later replaced by [Sym, Asy]
+   
+   data P_Declaration =
+         P_Sgn { dec_nm :: String    -- ^ the name of the declaration
+               , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
+               , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
+               , dec_pragma :: [String]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
+                                         -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
+               , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
+               , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
+               , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all decalartions come from the ampersand souce file.
+               , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
+               }
+
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
    data ArchiRepo = ArchiRepo
      { archRepoName   :: String
      , archRepoId     :: String
      , archFolders    :: [Folder]
-     , archProperties :: [Prop]
+     , archProperties :: [ArchiProp]
      } deriving (Show, Eq)
  
    data Folder = Folder
@@ -68,7 +172,7 @@ where
      , elemTgt        :: String
      , elemDocu       :: String
      , elChilds       :: [Child]
-     , elProps        :: [Prop]
+     , elProps        :: [ArchiProp]
      } deriving (Show, Eq)
 
 -- Children occur in views only.
@@ -113,7 +217,7 @@ where
      , bpEndY         :: String
      } deriving (Show, Eq)
 
-   data Prop = Prop
+   data ArchiProp = ArchiProp
      { archPropId     :: String
      , archPropKey    :: String
      , archPropVal    :: String
@@ -126,7 +230,7 @@ where
 --   are instances of class WithProperties.
 
    class WithProperties a where
-     allProps      :: a -> [Prop]        -- takes all properties from an ArchiRepo, a Folder, or an Element
+     allProps      :: a -> [ArchiProp]        -- takes all properties from an ArchiRepo, a Folder, or an Element
      identifyProps :: [String] -> a -> a -- distributes identifiers ( [String] ) over an ArchiRepo, a Folder, or an Element, in order to assign a unique identifier to each property in it.
 
    instance WithProperties ArchiRepo where
@@ -237,7 +341,8 @@ where
    class MetaArchi a where
      typeMap ::        a -> [(String,String)]     -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
      grindMetaArchi :: a -> [Pop]                 -- create population for the metametamodel of Archi (i.e. folders, elements, properties, etc.)
-     grindArchi :: (String->String) -> a -> [Pop] -- create population for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
+     grindArchi ::    (String->String) -> a -> [Pop]        -- create population for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
+     grindArchiPop :: (String->String) -> a -> [P_Population] -- create population for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
      keyArchi ::       a -> String                -- get the key value (dirty identifier) of an a.
 
    instance MetaArchi ArchiRepo where
@@ -295,7 +400,6 @@ where
             (nub [(keyArchi element, keyArchi property) | property<-elProps element])
         ] ++ (concat.map grindMetaArchi.elProps) element
      grindArchi typeLookup element
- --   Example from XML-file:  <elements xsi:type="archimate:AggregationRelationship" id="0034b753" source="b12f3af5" target="f5d4f341"/>
       = [ translate typeLookup "name" (elemType element) [(elemId element, elemName element)]
         | (not.null.elemName) element, (null.elemSrc) element] ++
         [ translate typeLookup "docu" (elemType element) [(elemId element, elemDocu element)]
@@ -305,7 +409,52 @@ where
         [ translate typeLookup (elemName element) (elemType element) [(elemSrc element, elemTgt element)]
         | (not.null.elemName) element, (not.null.elemSrc) element] ++
         (concat.map (grindArchi typeLookup).elProps) element
+     grindArchiPop typeLookup element
+      = [ transform typeLookup "name" (elemType element) [(elemId element, elemName element)]
+        | (not.null.elemName) element, (null.elemSrc) element] ++
+        [ transform typeLookup "docu" (elemType element) [(elemId element, elemDocu element)]
+        | (not.null.elemDocu) element, (null.elemSrc) element] ++
+        [ transform typeLookup "relationship" (elemType element) [(elemSrc element, elemTgt element)]
+        | (null.elemName) element, (not.null.elemSrc) element] ++
+        [ transform typeLookup (elemName element) (elemType element) [(elemSrc element, elemTgt element)]
+        | (not.null.elemName) element, (not.null.elemSrc) element] ++
+        (concat.map (grindArchiPop typeLookup).elProps) element
      keyArchi = elemId
+
+{-
+     = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+                 , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+                 , p_orig  :: Origin  -- the origin
+                 , p_nmdr  :: P_NamedRel  -- the named relation
+                 , p_popps :: [PAtomPair]   -- the contents
+                 }
+     = PPair { pppos :: Origin
+             , ppLeft  :: PAtomValue
+             , ppRight :: PAtomValue
+             }
+-}
+   transform :: (String -> String) -> String -> String -> [(String, String)] -> P_Population
+   transform _ "name" typeLabel tuples
+    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+   transform _ "docu" typeLabel tuples
+    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentatie" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+   transform _ "key" "Property" tuples
+    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "key" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
+   transform _ "value" "Property" tuples
+    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "value" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
+   transform typeLookup "relationship" relLabel tuples@((x,y):_)
+    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown (unfixRel relLabel) (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
+      where
+       -- transform for example  "archimate:AggregationRelationship"  into  "aggregation"
+       unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
+       relCase (c:cs) = toLower c: cs
+       relCase "" = error "fatal 325 empty relation identifier."
+   transform typeLookup relLabel _ tuples@((x,y):_)
+    = P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relLabel (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
+   transform _ _ _ _ = error "fatal 328 non-exhaustive pattern in transform"
+
+   transTuples :: [(String, String)] -> [PAtomPair]
+   transTuples tuples = [ PPair OriginUnknown (ScriptString OriginUnknown x) (ScriptString OriginUnknown y) | (x,y)<-tuples ]
 
    translate :: (String -> String) -> String -> String -> [(String, String)] -> Pop
    translate _ "name" typeLabel tuples
@@ -327,7 +476,7 @@ where
     = Pop relLabel (typeLookup x) (typeLookup y) tuples
    translate _ _ _ _ = error "fatal 328 non-exhaustive pattern in translate"
 
-   instance MetaArchi Prop where
+   instance MetaArchi ArchiProp where
      typeMap _
       = []
      grindMetaArchi property
@@ -389,14 +538,14 @@ where
                                               , fldFolders = subFlds'
                                               }
 
-        getProp :: ArrowXml a => a XmlTree Prop
+        getProp :: ArrowXml a => a XmlTree ArchiProp
         getProp = isElem >>> hasName "properties" >>>
             proc l -> do propKey    <- getAttrValue "key"   -< l
                          propVal    <- getAttrValue "value" -< l
-                         returnA    -< Prop { archPropKey = propKey
-                                            , archPropId  = error "fatal 315: archPropId not yet defined"
-                                            , archPropVal = propVal
-                                            }
+                         returnA    -< ArchiProp { archPropKey = propKey
+                                                 , archPropId  = error "fatal 315: archPropId not yet defined"
+                                                 , archPropVal = propVal
+                                                 }
 
         getElement :: ArrowXml a => a XmlTree Element
         getElement = atTag "elements" >>>
