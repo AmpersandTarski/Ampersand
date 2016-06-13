@@ -12,6 +12,8 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 	
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
+    
+    foreach(RuleEngine::getSignalViolationsFromDB() as $violation) Notifications::addSignal($violation);
 	
 	// top level interfaces
 	$top = array();
