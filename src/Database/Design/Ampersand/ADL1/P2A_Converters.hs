@@ -233,7 +233,7 @@ pCtx2aCtx opts
       phpdefs     <- traverse (pObjDef2aObjDef declMap) p_phpdefs       --  user defined phpplugs, taken from the Ampersand script 
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation declMap) (p_roleRelations ++ concatMap pt_RRels p_patterns)
       declsAndPops <- traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) p_declarations
-      let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
+      let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls) :: Set.Set Type
       let soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs) :: [Type]
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2

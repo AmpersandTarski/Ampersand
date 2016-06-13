@@ -11,12 +11,8 @@ where
 --   import Data.Char
 
    import System.IO
-   import System.Environment     -- May be commented out if used in Ampersand
-   import System.Exit            -- May be commented out if used in Ampersand
-   import System.Console.GetOpt  -- May be commented out if used in Ampersand
    import Data.Char              -- for things such as toLower
    import Data.List              -- for things such as intercalate
-   import Data.Maybe             -- May be commented out if used in Ampersand
    import qualified Data.Map.Strict as Map  -- import qualified, to avoid name clashes with Prelude functions
    import Data.Tree.NTree.TypeDefs
    import Text.XML.HXT.Core hiding (utf8, fatal)
