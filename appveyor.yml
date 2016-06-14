@@ -1,0 +1,56 @@
+################################################
+# This file has been made according to the work of
+# Noon van der Silk. Thanks Noon!
+# https://silky.github.io/posts/2016-01-05-build-windows-haskell-app-with-stack-and-appveyor.html
+################################################
+
+# Disable the standard build process which would use MSBuild:
+build: off
+
+cache:
+- "c:\\sr" # stack root, short paths == fewer problems
+clone_folder: "c:\\stack"
+environment:
+  global:
+    STACK_ROOT: "c:\\sr"
+
+# obtain the stack executable, and also perform a small hack which
+# converts ssh-based git submodules to https-based ones, that 
+# can be cloned without needing to mess about with ssh keys.
+before_build:
+- curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
+- 7z x stack.zip stack.exe
+
+# prevent AppVeyor from building when it sees a new tag (later
+# in this script we end up making a new tag when we push a release)
+skip_tags: true
+
+# perform the typical stack build, and also install the 
+# ampersand.exe file that we will mark as an artifact
+build_script:
+# Suppress output from stack setup, as there is a lot and it's not necessary.
+- stack setup --no-terminal > nul
+- stack build --only-snapshot --no-terminal
+- stack --local-bin-path . install ampersand
+# Set a magical environment variable
+- cmd: for /f %%i in ('stack exec -- ampersand -v') do set AMPERSAND_VERSION=%%i
+
+# mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
+artifacts:
+- path: ampersand.exe
+
+# Auto-deploy
+# specify that, for each build that completes, AppVeyor should push
+# a release with the right tag to the GitHub releases page! 
+# (Note: probably we would want to be a bit more 
+# elaborate about when we push to the releases page; making sure 
+# that we include proper release notes, etc.)
+deploy:
+  - provider: GitHub
+    tag: '$(AMPERSAND_VERSION)'
+    release: '$(AMPERSAND_VERSION)'
+    auth_token:
+      secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
+    artifact: ampersand.exe
+    on:
+      branch: master
