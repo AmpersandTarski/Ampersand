@@ -6,7 +6,7 @@ use Ampersand\Session;
 use Ampersand\Core\Atom;
 use Ampersand\Log\Notifications;
 use Ampersand\Interfacing\InterfaceObject;
-use Ampersand\Helper\isAssoc;
+use function Ampersand\Helper\isAssoc;
 
 global $app;
 
