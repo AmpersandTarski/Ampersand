@@ -24,7 +24,7 @@ parseXlsxFile :: Options
 parseXlsxFile _ useAllStaticFiles file =
   do bytestr <- if useAllStaticFiles
                 then case getStaticFileContent FormalAmpersand file of
-                      Just cont -> do return $ fromString cont
+                      Just cont -> return $ fromString cont
                       Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++file++"`.")
                 else L.readFile file
      return . xlsx2pContext . toXlsx $ bytestr
@@ -51,12 +51,10 @@ instance Show SheetCellsForTable where  --for debugging only
       , "colNrs      : "++show (colNrs x)
       ] ++ debugInfo x 
 toPops :: FilePath -> SheetCellsForTable -> [P_Population]
-toPops file x = map popForColumn' (colNrs x)
+toPops file x = map popForColumn (colNrs x)
   where
-    popForColumn' i = -- trace (show x ++"(Now column: "++show i++")") $
-                    popForColumn i
     popForColumn :: Int -> P_Population
-    popForColumn i =
+    popForColumn i = --trace (show x ++"(Now column: "++show i++")") $
       if i  == sourceCol  
       then  P_CptPopu { p_orig = popOrigin
                       , p_cnme = sourceConceptName 
@@ -81,25 +79,26 @@ toPops file x = map popForColumn' (colNrs x)
           where swap (a,b) = (b,a)
        popOrigin :: Origin
        popOrigin = originOfCell (relNamesRow, targetCol)
-       conceptNamesRow = headerRowNrs x !! 1
-       relNamesRow     = headerRowNrs x !! 0
-       sourceCol       = colNrs x !! 0
+       conceptNamesRow = head . tail $ headerRowNrs x
+       relNamesRow     = head $ headerRowNrs x
+       sourceCol       = head $ colNrs x
        targetCol       = i 
        sourceConceptName :: String
        mSourceConceptDelimiter :: Maybe Char
        (sourceConceptName, mSourceConceptDelimiter)
           = case value (conceptNamesRow,sourceCol) of
-                Just (CellText t) -> case conceptNameWithOptionalDelimiter t of
-                                       Nothing -> fatal 94 "No valid source conceptname found. This should have been checked before"
-                                       Just res -> res
+                Just (CellText t) -> 
+                   fromMaybe (fatal 94 "No valid source conceptname found. This should have been checked before")
+                             (conceptNameWithOptionalDelimiter t)
                 _ -> fatal 96 "No valid source conceptname found. This should have been checked before"
        mTargetConceptName :: Maybe String
        mTargetConceptDelimiter :: Maybe Char
        (mTargetConceptName, mTargetConceptDelimiter)
           = case value (conceptNamesRow,targetCol) of
-                Just (CellText t) -> let (nm,mDel) = case conceptNameWithOptionalDelimiter t of
-                                                      Nothing -> fatal 94 "No valid source conceptname found. This should have been checked before"
-                                                      Just res -> res
+                Just (CellText t) -> let (nm,mDel) 
+                                           = fromMaybe
+                                                (fatal 94 "No valid source conceptname found. This should have been checked before")
+                                                (conceptNameWithOptionalDelimiter t)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
        relName :: String
@@ -113,13 +112,13 @@ toPops file x = map popForColumn' (colNrs x)
                        else (     str, False)
                 _ -> fatal 87 $ "No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol)
        thePairs :: [PAtomPair]
-       thePairs =  concat . catMaybes . map pairsAtRow . popRowNrs $ x
+       thePairs =  concat . mapMaybe pairsAtRow . popRowNrs $ x
        pairsAtRow :: Int -> Maybe [PAtomPair]
        pairsAtRow r = case (value (r,sourceCol)
                           ,value (r,targetCol)
                           ) of
                        (Just s,Just t) -> Just $ 
-                                            (if isFlipped then map flp else id) $
+                                            (if isFlipped then map flp else id)
                                                 [mkPair origTrg a b
                                                 | a <- cellToAtomValue mSourceConceptDelimiter s origSrc
                                                 , b <- cellToAtomValue mTargetConceptDelimiter t origTrg
@@ -130,10 +129,10 @@ toPops file x = map popForColumn' (colNrs x)
        cellToAtomValue :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
        cellToAtomValue mDelimiter cv orig
          = case cv of
-             CellText t   -> map (XlsxString orig) (map T.unpack (unDelimit mDelimiter t))
+             CellText t   -> map (XlsxString orig . T.unpack) (unDelimit mDelimiter t)
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [ComnBool orig b] 
-             CellRich ts -> map (XlsxString orig) . map T.unpack . unDelimit mDelimiter . T.concat . map _richTextRunText $ ts
+             CellRich ts -> map (XlsxString orig . T.unpack) . unDelimit mDelimiter . T.concat . map _richTextRunText $ ts
        unDelimit :: Maybe Char -> T.Text -> [T.Text]
        unDelimit mDelimiter xs =
          case mDelimiter of
@@ -146,12 +145,12 @@ toPops file x = map popForColumn' (colNrs x)
       = XLSXLoc file (theSheetName x) (r,c) 
 
     value :: (Int,Int) -> Maybe CellValue
-    value k = (theCellMap x) ^? ix k . cellValue . _Just
+    value k = theCellMap x ^? ix k . cellValue . _Just
 
 
 theSheetCellsForTable :: (T.Text,Worksheet) -> [SheetCellsForTable]
 theSheetCellsForTable (sheetName,ws) 
-  =  catMaybes [theMapping i | i <- [0..(Prelude.length tableStarters) - 1]]
+  =  catMaybes [theMapping i | i <- [0..Prelude.length tableStarters - 1]]
   where
     tableStarters :: [(Int,Int)]
     tableStarters = Prelude.filter isStartOfTable $ M.keys (ws  ^. wsCells)  
@@ -159,8 +158,8 @@ theSheetCellsForTable (sheetName,ws)
             isStartOfTable (rowNr,colNr)
               | colNr /= 1 = False
               | rowNr == 1 = isBracketed (rowNr,colNr) 
-              | otherwise  =           isBracketed (rowNr     ,colNr)  
-                             && (not $ isBracketed (rowNr - 1, colNr))             
+              | otherwise  =           isBracketed  (rowNr     ,colNr)  
+                             && (not . isBracketed) (rowNr - 1, colNr)             
               
     value :: (Int,Int) -> Maybe CellValue
     value k = (ws  ^. wsCells) ^? ix k . cellValue . _Just
