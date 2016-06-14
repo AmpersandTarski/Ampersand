@@ -47,8 +47,8 @@ artifacts:
 # that we include proper release notes, etc.)
 deploy:
   - provider: GitHub
-    tag: 'TESTampersand-$(AMPERSAND_VERSION)'
-    release: 'TESTRelease ampersand-$(AMPERSAND_VERSION)'
+    tag: 'TEST$(AMPERSAND_VERSION)'
+    release: 'TESTRelease $(AMPERSAND_VERSION)'
     auth_token:
       secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
     artifact: ampersand.exe
