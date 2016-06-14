@@ -76,6 +76,7 @@ data Options = Options { showVersion :: Bool
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
                        , oldNormalizer :: Bool
+                       , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
                        }
 
 getOptions :: IO Options
@@ -165,6 +166,7 @@ getOptions =
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
+                      , trimXLSXCells    = True
                       }
       -- Here we thread startOptions through all supplied option actions
       opts <- foldl (>>=) (return startOptions) actions
@@ -407,6 +409,10 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{oldNormalizer = False}))
                "Use the new normalizer at your own risk." -- :-)
             , Hidden)
+          , (Option []        ["do-not-trim-cellvalues"]
+               (NoArg (\opts -> return opts{trimXLSXCells = False}))
+               "Do not ignore leading and trailing spaces in .xlsx files that are INCLUDED in the script." -- :-)
+            , Public)
           ]
 
 usageInfo' :: Options -> String

@@ -1,7 +1,6 @@
 <?php
 
-//namespace Ampersand\Helper;
-// TODO: add namespace. From php 5.6+ functions can be imported with 'use function' statement
+namespace Ampersand\Helper;
 
 /**
  * Get the filesnames from a folder
