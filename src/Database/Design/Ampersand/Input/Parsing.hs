@@ -3,7 +3,7 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Database.Design.Ampersand.Input.Parsing (
-    parseADL,parseArchiMeta,parseMeta , parseADL1pExpr, parseRule, parseCtx, runParser
+    parseADL,parseMeta , parseADL1pExpr, parseRule, parseCtx, runParser
 ) where
 
 import Control.Applicative
@@ -32,8 +32,8 @@ parseADL :: Options                    -- ^ The options given through the comman
          -> IO (Guarded P_Context)     -- ^ The resulting context
 parseADL opts fp = parseThing opts (fp,Nothing) False
 
-parseArchiMeta :: Options -> IO (Guarded P_Context)
-parseArchiMeta opts = parseThing opts ("Archi.adl",Just $ Origin "Archimate metamodel") True
+--parseArchiMeta :: Options -> IO (Guarded P_Context)
+--parseArchiMeta opts = parseThing opts ("Archi.adl",Just $ Origin "Archimate metamodel") True
 
 parseMeta :: Options -> IO (Guarded P_Context)
 parseMeta opts = parseThing opts ("AST.adl",Just $ Origin "Formal Ampersand specification") True -- This is the top file from FormalAmpersand. 
@@ -99,7 +99,6 @@ parseSingleADL opts useAllStaticFiles singleFile
          | extension == ".xml" =
              do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
                 ; verboseLn opts (filePath ++ " has been interpreted as an Archi-repository.")
-                ; verboseLn opts ("bloop:\n"++show ctxFromArchi)
                 ; return ((\archiContents -> (archiContents,[])) <$> Checked ctxFromArchi)  -- Excel file cannot contain include files
                 }
          | otherwise =
@@ -114,7 +113,7 @@ parseSingleADL opts useAllStaticFiles singleFile
                     Right fileContents ->
                          whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) ->
                                do return (Checked (ctxts, relativePaths))
-            }
+                }
          where stripBom :: String -> String
                stripBom ('\239':'\187':'\191': s) = s
                stripBom s = s
