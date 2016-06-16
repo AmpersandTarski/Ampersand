@@ -5,9 +5,8 @@ module Database.Design.Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
    -- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
    -- In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
 where
-   import Database.Design.Ampersand.Basics (fatal, eqCl)
+   import Database.Design.Ampersand.Basics  -- for things such as fatal, eqClass
    import Data.Char                         -- for things such as toLower
-   import Data.List                         -- for things such as intercalate
    import qualified Data.Map.Strict as Map  -- import qualified, to avoid name clashes with Prelude functions
    import Data.Tree.NTree.TypeDefs
    import Text.XML.HXT.Core hiding (utf8, fatal)
@@ -37,7 +36,7 @@ where
          , ctx_thms   = []
          , ctx_pats   = []
          , ctx_rs     = []
-         , ctx_ds     = archiDecls
+         , ctx_ds     = map head (eqClass (==) archiDecls)
          , ctx_cs     = []
          , ctx_ks     = []
          , ctx_rrules = []
@@ -52,13 +51,7 @@ where
          , ctx_php    = []
          , ctx_metas  = []
          }
-     where equivClasses :: [[(P_Population, P_Declaration)]]
-           equivClasses = eqCl snd pops
-           archiPops  = [ (foldr1 mergePop.map fst) cl | cl<-equivClasses ]
-           archiDecls = [ (head.nub.map snd) cl | cl<-equivClasses ]
-           mergePop pop0 pop1 = pop0{p_popps = xs++[y | y<-ys, y `notElem` xs]}
-            where xs = p_popps pop0
-                  ys = p_popps pop1
+     where (archiPops, archiDecls) = unzip pops
 
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
@@ -216,12 +209,12 @@ where
 
    instance MetaArchi Element where
      typeMap element
-      = [(elemId element, elemType element) | (not.null.elemName) element, (null.elemSrc) element]    
+      = [(keyArchi element, elemType element) | (not.null.elemName) element, (null.elemSrc) element]    
          ++ typeMap (elProps element)
      grindArchiPop typeLookup element
-      = [ transform typeLookup "name" (elemType element) [(elemId element, elemName element)]
+      = [ transform typeLookup "name" (elemType element) [(keyArchi element, elemName element)]
         | (not.null.elemName) element, (null.elemSrc) element] ++
-        [ transform typeLookup "docu" (elemType element) [(elemId element, elemDocu element)]
+        [ transform typeLookup "docu" (elemType element) [(keyArchi element, elemDocu element)]
         | (not.null.elemDocu) element, (null.elemSrc) element] ++
         [ transform typeLookup "relationship" (elemType element) [(elemSrc element, elemTgt element)]
         | (null.elemName) element, (not.null.elemSrc) element] ++
@@ -264,11 +257,11 @@ where
       , P_Sgn "value" (P_Sign (PCpt "Property") (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
    transform typeLookup "relationship" relLabel tuples@((x,y):_)
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown (unfixRel relLabel) (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
-      , P_Sgn "relationship" (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))) [] [] [] [] OriginUnknown False )
+      , P_Sgn (unfixRel relLabel) (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))) [] [] [] [] OriginUnknown False )
       where
        -- transform for example  "archimate:AggregationRelationship"  into  "aggregation"
        unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
-       relCase (c:cs) = toLower c: cs
+       relCase (c:cs) = (toLower c): cs
        relCase "" = error "fatal 325 empty relation identifier."
    transform typeLookup relLabel _ tuples@((x,y):_)
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relLabel (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
