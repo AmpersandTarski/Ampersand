@@ -22,6 +22,7 @@ import System.FilePath
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
 import Database.Design.Ampersand.Input.Xslx.XLSX
+import Database.Design.Ampersand.Input.Archi.ArchiAnalyze
 import Control.Exception
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
@@ -94,6 +95,12 @@ parseSingleADL opts useAllStaticFiles singleFile
          | extension == ".xlsx" =
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts useAllStaticFiles filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
+                }
+         | extension == ".xml" =
+             do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
+                ; verboseLn opts (filePath ++ " has been interpreted as an Archi-repository.")
+                ; verboseLn opts ("bloop:\n"++show ctxFromArchi)
+                ; return ((\archiContents -> (archiContents,[])) <$> Checked ctxFromArchi)  -- Excel file cannot contain include files
                 }
          | otherwise =
              do { mFileContents

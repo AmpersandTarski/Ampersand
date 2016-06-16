@@ -10,7 +10,6 @@ import Database.Design.Ampersand.ADL1.P2A_Converters
 import Database.Design.Ampersand.FSpec.FSpec
 import Database.Design.Ampersand.FSpec.ShowMeatGrinder
 import Database.Design.Ampersand.Input
-import Database.Design.Ampersand.FSpec.ArchiAnalyze
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
 import Control.Monad
@@ -32,9 +31,7 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     archiP_Ctx <- archi2PContext (archiName opts)
-     let userContext = if null (archiName opts) then userP_Ctx else merge.sequenceA $ [userP_Ctx, Checked archiP_Ctx]
-     genFiles userContext >> genTables userContext
+     genFiles userP_Ctx >> genTables userP_Ctx
    where
     genFiles :: Guarded P_Context -> IO(Guarded ())
     genFiles uCtx

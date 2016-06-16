@@ -1,5 +1,5 @@
 {-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
-module Database.Design.Ampersand.FSpec.ArchiAnalyze (archi2PContext)
+module Database.Design.Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
    -- The purpose of this module is to load Archimate content into an Ampersand context.
    -- This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
    -- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
@@ -32,7 +32,7 @@ where
    mkArchiContext pops =
      PCtx{ ctx_nm     = "Archimate"
          , ctx_pos    = []
-         , ctx_lang   = fatal 686 "No language because of Archi-import hack. Please report this as a bug"
+         , ctx_lang   = Dutch  -- fatal 686 "No language because of Archi-import hack. Please report this as a bug"
          , ctx_markup = Nothing
          , ctx_thms   = []
          , ctx_pats   = []
