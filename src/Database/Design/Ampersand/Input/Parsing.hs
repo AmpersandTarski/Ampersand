@@ -98,8 +98,6 @@ parseSingleADL opts useAllStaticFiles singleFile
                 }
          | extension == ".xml" =
              do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
-                ; verboseLn opts $ "Aantal decls: "++(show . length . ctx_ds) ctxFromArchi
-                ; sequence_ [verboseLn opts $ "   "++showDcl dcl | dcl <- ctx_ds ctxFromArchi ]
                 ; verboseLn opts (filePath ++ " has been interpreted as an Archi-repository.")
                 ; return ((\archiContents -> (archiContents,[])) <$> Checked ctxFromArchi)  -- Excel file cannot contain include files
                 }

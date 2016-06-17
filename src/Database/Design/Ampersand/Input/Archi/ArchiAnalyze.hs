@@ -5,12 +5,13 @@ module Database.Design.Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
    -- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
    -- In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
 where
-   import Database.Design.Ampersand.Basics  -- for things such as fatal, eqClass
+--   import Database.Design.Ampersand.Basics  -- for things such as fatal, eqClass
    import Data.Char                         -- for things such as toLower
    import qualified Data.Map.Strict as Map  -- import qualified, to avoid name clashes with Prelude functions
    import Data.Tree.NTree.TypeDefs
    import Text.XML.HXT.Core hiding (utf8, fatal,trace)
    import Database.Design.Ampersand.Core.ParseTree
+   import Data.List  -- for things such as nub
    import Data.Maybe
 
    -- | Function `archi2PContext` is meant to grind the contents of an Archi-repository into declarations and population inside a fresh Ampersand P_Context.
@@ -36,7 +37,7 @@ where
          , ctx_thms   = []
          , ctx_pats   = []
          , ctx_rs     = []
-         , ctx_ds     = map head (eqClass (==) archiDecls)
+         , ctx_ds     = nub archiDecls
          , ctx_cs     = []
          , ctx_ks     = []
          , ctx_rrules = []
@@ -51,8 +52,9 @@ where
          , ctx_php    = []
          , ctx_metas  = []
          }
-     where (archiPops, archiDecls) = unzip pops
-
+     where archiPops ::  [P_Population]
+           archiDecls :: [P_Declaration]
+           (archiPops, archiDecls) = unzip pops
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
