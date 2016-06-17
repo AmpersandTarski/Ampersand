@@ -230,8 +230,7 @@ Test-Suite regression-test
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
-                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
-                     Paths_ampersand
+                     Database.Design.Ampersand.Prototype.StaticFiles_Generated
 
 Test-Suite ampersand-test
   type:              exitcode-stdio-1.0
@@ -261,6 +260,7 @@ Test-Suite ampersand-test
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
                      xlsx == 0.2.1.*,
+                     yaml == 0.8.17.*,
                      zlib == 0.6.*
   other-modules:
                      Database.Design.Ampersand.Misc.Options,
@@ -335,5 +335,4 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
-                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
-                     Paths_ampersand
+                     Database.Design.Ampersand.Prototype.StaticFiles_Generated

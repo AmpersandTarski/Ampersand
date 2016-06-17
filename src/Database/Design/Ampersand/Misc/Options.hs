@@ -181,10 +181,11 @@ getOptions =
                   Left err -> do putStrLn $ "." </> yaml ++" could not be parsed."
                                  putStrLn $ prettyPrintParseException err
                                  return $ error "Please fix this first."
-                  Right args -> do print args
-                                   case partitionEithers . map arg2str $ args of
-                                     (xs ,[]) -> return xs
-                                     (_, x:_) -> error $ "Error in config file `"++yaml++"`: "++x
+                  Right (Config args)
+                           -> do print args
+                                 case partitionEithers . map arg2str $ args of
+                                   (xs ,[]) -> return xs
+                                   (_, x:_) -> error $ "Error in config file `"++yaml++"`: "++x
         where
           arg2str :: Argument -> Either String String
           arg2str (Argument str) 
@@ -195,9 +196,10 @@ getOptions =
       readYamlConfig str
          = error $ "Cannot handle command line argument: "++str 
 
-      parseYaml :: String -> IO (Either ParseException [Argument]) 
+      parseYaml :: String -> IO (Either ParseException Config) 
       parseYaml yaml = decodeFileEither $ "." </> yaml
-
+data Config = Config{ config::[Argument]} deriving (Generic,Show)
+instance FromJSON Config
 data Argument = Argument String deriving (Generic,Show)
 instance FromJSON Argument
 
