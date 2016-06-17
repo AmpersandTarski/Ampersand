@@ -56,6 +56,7 @@ executable ampersand
                      text == 1.2.*,
                      time == 1.5.*,
                      utf8-string == 1.0.*,
+                     yaml == 0.8.17.*,
                      xlsx == 0.2.1.*,
                      zlib == 0.6.*
 
@@ -152,7 +153,6 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.PHP,
                      Database.Design.Ampersand.Prototype.ProtoUtil,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
-                     Paths_ampersand,
                      Database.Design.Ampersand.Output.ToJSON.MySQLInstaller,
                      Database.Design.Ampersand.Output.ToJSON.Settings,
                      Database.Design.Ampersand.Output.ToJSON.Relations,

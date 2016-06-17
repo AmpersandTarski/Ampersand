@@ -1,3 +1,5 @@
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FSpecFormat(..)
@@ -17,6 +19,10 @@ import Database.Design.Ampersand.Basics
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 import Data.Char
+
+import Data.Yaml
+import GHC.Generics
+import Data.Either
 
 -- | This data constructor is able to hold all kind of information that is useful to
 --   express what the user would like Ampersand to do.
@@ -86,14 +92,18 @@ getOptions =
                        return (utcToLocalTime timeZone utcTime)
       env <- getEnvironment
       let usage = "\nType '"++ progName++" --help' for usage info."
-      let (actions, fNames, errors) = getOpt Permute (map fst options) args
+          (configs,plainArgs) = partition (isPrefixOf "--config") args
+      argsFromYaml <- mapM readYamlConfig configs
+      let (actions, fNames, errors) = getOpt Permute (map fst options) $ concat argsFromYaml ++ plainArgs
+      
       unless (null errors) (error $ concat errors ++ usage)
       let fName = case fNames of
                    []  -> error ("Please supply the name of an ampersand file" ++ usage)
                    [x] -> x
                    _   -> error ("too many files: "++ intercalate ", " fNames  ++ usage)
 
-      let startOptions =
+      let startOptions :: Options
+          startOptions =
                Options {genTime          = localTime
                       , dirOutput        = fromMaybe "."       (lookup envdirOutput    env)
                       , outputfile       = fatal 83 "No monadic options available."
@@ -152,6 +162,8 @@ getOptions =
                       , trimXLSXCells    = True
                       }
       -- Here we thread startOptions through all supplied option actions
+      
+      
       opts <- foldl (>>=) (return startOptions) actions
       -- Now we do some checks on the options:
       when (development opts && validateSQL opts)
@@ -160,8 +172,35 @@ getOptions =
       when (genPrototype opts)
            (createDirectoryIfMissing True (dirPrototype opts))
       return opts
+  where
+      readYamlConfig :: String -> IO [String]
+      readYamlConfig ('-':'-':'c':'o':'n':'f':'i':'g':'=':yaml)  
+         = do putStrLn $ "config file:"++yaml
+              res <- parseYaml yaml
+              case res of 
+                  Left err -> do putStrLn $ "." </> yaml ++" could not be parsed."
+                                 putStrLn $ prettyPrintParseException err
+                                 return $ error "Please fix this first."
+                  Right args -> do print args
+                                   case partitionEithers . map arg2str $ args of
+                                     (xs ,[]) -> return xs
+                                     (_, x:_) -> error $ "Error in config file `"++yaml++"`: "++x
+        where
+          arg2str :: Argument -> Either String String
+          arg2str (Argument str) 
+            | "config" `isPrefixOf` str = Right "`config` is not allowed inside a config file"
+            | otherwise = Left $ "--"++str
+      readYamlConfig "--config"
+         = error "Command line argument --config requires an file name as an argument"
+      readYamlConfig str
+         = error $ "Cannot handle command line argument: "++str 
 
-   
+      parseYaml :: String -> IO (Either ParseException [Argument]) 
+      parseYaml yaml = decodeFileEither $ "." </> yaml
+
+data Argument = Argument String deriving (Generic,Show)
+instance FromJSON Argument
+
 data DisplayMode = Public | Hidden deriving Eq
 
 data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
@@ -188,6 +227,11 @@ options = [ (Option ['v']   ["version"]
           , (Option ['V']   ["verbose"]
                (NoArg (\opts -> return opts{verboseP = True}))
                "verbose error message format."
+            , Public)
+          , (Option []      ["config"]
+               (ReqArg (\nm _ -> fatal 194 $ "config file ("++nm++")should not be treated as a regular option."
+                       ) "config.yaml")
+               "config file (*.yaml)"
             , Public)
           , (Option []      ["dev"]
                (NoArg (\opts -> return opts{development = True}))
