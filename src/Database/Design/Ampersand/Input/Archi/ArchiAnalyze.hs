@@ -9,9 +9,9 @@ where
    import Data.Char                         -- for things such as toLower
    import qualified Data.Map.Strict as Map  -- import qualified, to avoid name clashes with Prelude functions
    import Data.Tree.NTree.TypeDefs
-   import Text.XML.HXT.Core hiding (utf8, fatal)
+   import Text.XML.HXT.Core hiding (utf8, fatal,trace)
    import Database.Design.Ampersand.Core.ParseTree
-
+   import Data.Maybe
 
    -- | Function `archi2PContext` is meant to grind the contents of an Archi-repository into declarations and population inside a fresh Ampersand P_Context.
    --   The process starts by parsing an XML-file by means of function `processStraight` into a data structure called `archiRepo`. This function uses arrow-logic from the HXT-module.
@@ -125,7 +125,7 @@ where
      } deriving (Show, Eq)
 
    data ArchiProp = ArchiProp
-     { archPropId     :: String
+     { archPropId     :: Maybe String
      , archPropKey    :: String
      , archPropVal    :: String
      } deriving (Show, Eq)
@@ -143,7 +143,7 @@ where
    instance WithProperties ArchiRepo where
      allProps archiRepo = allProps (archFolders archiRepo) ++ archProperties archiRepo
      identifyProps _ archiRepo = archiRepo
-       { archProperties = [ prop{archPropId=propId} | (prop,propId)<- zip (archProperties archiRepo) propIds ]
+       { archProperties = [ prop{archPropId=Just propId} | (prop,propId)<- zip (archProperties archiRepo) propIds ]
        , archFolders    = identifyProps fldrIds (archFolders archiRepo)
        }
        where
@@ -165,7 +165,7 @@ where
      allProps element = elProps element
 --                      ++ allProps (elChilds element)   -- children are not (yet) being analyzed, so we skip the elChilds of the element.
      identifyProps identifiers element = element
-       { elProps = [ prop{archPropId=propId} | (propId,prop)<- zip identifiers (elProps element) ] }
+       { elProps = [ prop{archPropId=Just propId} | (propId,prop)<- zip identifiers (elProps element) ] }
 
    instance WithProperties a => WithProperties [a] where
      allProps xs = concatMap allProps xs
@@ -232,7 +232,7 @@ where
         , transform typeLookup "value" "Property"
             [(keyArchi property, archPropVal property) | (not.null.archPropVal) property ]
         ]
-     keyArchi = archPropId
+     keyArchi = fromMaybe (error "fatal 234: No key defined yet") . archPropId
 
    instance MetaArchi a => MetaArchi [a] where
      typeMap                  xs = concat [ typeMap                  x | x<-xs ]
@@ -292,7 +292,7 @@ where
                          returnA   -< ArchiRepo { archRepoName   = repoNm'
                                                 , archRepoId     = repoId'
                                                 , archFolders    = folders'
-                                                , archProperties = [ prop{archPropId="pr-"++show i} | (prop,i)<- zip props' [length (allProps folders')..] ]
+                                                , archProperties = [ prop{archPropId=Just $ "pr-"++show i} | (prop,i)<- zip props' [length (allProps folders')..] ]
                                                 }
 
         getFolder :: ArrowXml a => a XmlTree Folder
@@ -315,7 +315,7 @@ where
             proc l -> do propKey    <- getAttrValue "key"   -< l
                          propVal    <- getAttrValue "value" -< l
                          returnA    -< ArchiProp { archPropKey = propKey
-                                                 , archPropId  = error "fatal 315: archPropId not yet defined"
+                                                 , archPropId  = Nothing -- error "fatal 315: archPropId not yet defined"
                                                  , archPropVal = propVal
                                                  }
 
