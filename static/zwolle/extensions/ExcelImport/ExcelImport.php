@@ -177,25 +177,23 @@ class ExcelImport {
 	    $row = 1; // Go to the first row where a table starts.
 	    for ($i = $row; $i <= $highestrow; $i++){
 	        $row = $i;
-	        if (substr($worksheet->getCell('A' . $row)->getValue(), 0, 1) === '[') break;
+	        $cellvalue = $worksheet->getCell('A' . $row)->getValue();
+	        if (substr(trim($cellvalue), 0, 1) === '[') break;
 	    } // We are now at the beginning of a table or at the end of the file.
 	    
 	    $lines = array(); // Line is a buffer of one or more related (subsequent) excel rows
 	    
 	    while ($row <= $highestrow){
 	        // Read this line as an array of values
-	    
+
 	        $line = array(); // values is a buffer containing the cells in a single excel row
 	        for ($columnnr = 0; $columnnr < $highestcolumnnr; $columnnr++){
 	            $columnletter = PHPExcel_Cell::stringFromColumnIndex($columnnr);
 	            $cell = $worksheet->getCell($columnletter . $row);
-	            	
 	            $cellvalue = (string)$cell->getCalculatedValue();
-	            	
 	            // overwrite $cellvalue in case of datetime
 	            // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
 	            if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
-	            	
 	            $line[] = $cellvalue;
 	        }
 	        $lines[] = $line; // add line (array of values) to the line buffer
@@ -203,7 +201,7 @@ class ExcelImport {
 	        $row++;
 	        // Is this relation table done? Then we parse the current values into function calls and reset it
 	        $firstCellInRow = (string)$worksheet->getCell('A' . $row)->getCalculatedValue();
-	        if (substr($firstCellInRow, 0, 1) === '['){
+	        if (substr(trim($firstCellInRow), 0, 1) === '['){
 	            // Relation table is complete, so it can be processed.
 	            $this->ParseLines($lines);
 	            $lines = array();
@@ -228,7 +226,7 @@ class ExcelImport {
 		    // First line specifies relation names
 			if ($linenr == 0){
 			    for ($col = 0; $col < $totalcolumns; $col++){
-			        $relations[$col] = $line[$col];
+			        $relations[$col] = trim($line[$col]); // No leading/trailing spaces around relation names.
 				}
 			
 			// Second line specifies concepts (and optionally: separators)
@@ -236,15 +234,16 @@ class ExcelImport {
 			    // In the Haskell importer, separators are the last character before the ']' if the concept is surrounded by such block quotes. Alternatively, you could specify a separator following such block-quotes, allowing for multiple-character separators.
 				for ($col = 0; $col < $totalcolumns; $col++){
 				    
-				    if($line[$col] == ''){
+				    $cellvalue = trim($line[$col]); // No leading/trailing spaces around cell values in second line
+				    if($cellvalue == ''){
 				        $concept[$col] = null;
 				    // The cell contains either 'Concept' or '[Conceptx]' where x is a separator character (e.g. ';', ',', ...)
-				    }elseif ((substr($line[$col], 0, 1) == '[') && (substr($line[$col], -1) == ']') ){
+				    }elseif ((substr($cellvalue, 0, 1) == '[') && (substr($cellvalue, -1) == ']') ){
 				        if($col == 0) throw new Exception ("Seperator character not allowed for first column of excel import. Specified '{$line[$col]}'", 500);
-				        $concept[$col] = Concept::getConcept(substr($line[$col], 1, -2));
-						$separator[$col] = substr($line[$col], -2, 1);
+				        $concept[$col] = Concept::getConcept(substr($cellvalue, 1, -2));
+						$separator[$col] = substr($cellvalue, -2, 1);
 					}else{
-					    $concept[$col] = Concept::getConcept($line[$col]);
+					    $concept[$col] = Concept::getConcept($cellvalue);
 						$separator[$col] = false;
 					}
 					
@@ -264,7 +263,7 @@ class ExcelImport {
 			
 			// All other lines specify atoms
 			}else{			    
-			    $line[0] = trim($line[0]); // Trim cell content
+			    $line[0] = trim($line[0]); // Trim cell content (= dirty identifier)
 			    
 			    // Determine left atom (column 0) of line
 				if ($line[0] == '') continue; // Don't process lines that start with an empty first cell
@@ -283,15 +282,14 @@ class ExcelImport {
 					// Determine right atom(s)
 					$rightAtoms = array();
 					
-					$cell = trim($line[$col]); // Trim cell content
-					
+					$cell = trim($line[$col]); // Start of check for multiple atoms in single cell
 					if ($cell == '') continue; // If cell is empty, it is skipped
 					elseif ($cell == '_NEW') $rightAtoms[] = $leftAtom; // If the cell contains '_NEW', the same atom as the $leftAtom is used. Useful for property-relations
 					elseif($separator[$col]){
 					    $atomsIds = explode($separator[$col],$cell); // atomnames may have surrounding whitespace
 					    foreach($atomsIds as $atomId) $rightAtoms[] = new Atom(trim($atomId), $concept[$col]->name);
 					}else{
-					    $rightAtoms[] = new Atom($line[$col], $concept[$col]->name);
+					    $rightAtoms[] = new Atom($line[$col], $concept[$col]->name); // DO NOT TRIM THIS CELL CONTENTS as it contains an atom that may need leading/trailing spaces
 					}
 					
 					foreach ($rightAtoms as $rightAtom){
