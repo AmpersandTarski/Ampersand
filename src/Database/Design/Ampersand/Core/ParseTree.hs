@@ -213,8 +213,19 @@ data P_Declaration =
             , dec_fpos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all declarations come from the ampersand souce file.
             , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
             } deriving (Show) --For QuickCheck error messages only!
+
+-- | Equality on P_Declaration
+--   Normally, equality on declarations means equality of both name (dec_nm) and signature (dec_sign).
+--   However, in the parser, we need to distinguish between two declarations with the same name and signature when they are in different locations.
+--   That occurs for example if we need to locate a copy of a declaration for generating an error message.
+--   For this reason, equality in the P-structure is defined on origin.
+--   It is easy to see that if the locations are the same, then the relations must be the same.
+--   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
+--   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Declarations.
 instance Eq P_Declaration where
- decl==decl' = origin decl==origin decl'
+ decl==decl'
+   | origin decl==OriginUnknown || origin decl'==OriginUnknown = dec_nm decl==dec_nm decl' && dec_sign decl==dec_sign decl'
+   | otherwise                                                 = origin decl==origin decl'
 instance Prelude.Ord P_Declaration where
  decl `compare` decl' = origin decl `compare` origin decl'
 instance Named P_Declaration where
@@ -751,7 +762,8 @@ instance Traced PPurpose where
 data P_Concept
    = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
    | P_Singleton
---      deriving (Eq, Ord)
+      deriving (Eq)
+-- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Declaration must be Eq on name and signature.
 -- (Sebastiaan 12 feb 2012) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 -- (Sebastiaan 11 okt 2013) Removed this again, I thought it would be more clean to use newtype for this instead
 
@@ -762,7 +774,8 @@ instance Named P_Concept where
 instance Show P_Concept where
  showsPrec _ c = showString (name c)
 
-data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept }
+data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept } deriving Eq
+-- (Stef June 17th, 2016)   P_Sign is defined Eq, because P_Declaration must be Eq on name and signature.
 
 instance Show P_Sign where
   showsPrec _ sgn =
