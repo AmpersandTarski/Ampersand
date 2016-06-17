@@ -1,4 +1,3 @@
-{-# LANGUAGE PatternGuards #-}
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FSpecFormat(..)
@@ -15,7 +14,6 @@ import Data.Time.LocalTime
 import Control.Monad
 import Data.Maybe
 import Database.Design.Ampersand.Basics
-import Paths_ampersand (getDataDir)
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List
 import Data.Char
@@ -61,7 +59,6 @@ data Options = Options { showVersion :: Bool
                        , genBericht :: Bool
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
-                       , ampersandDataDir :: FilePath -- the directory where Ampersand data files are.
                        , progrName :: String --The name of the adl executable
                        , fileName :: FilePath --the file with the Ampersand context
                        , baseName :: String
@@ -84,26 +81,13 @@ getOptions =
    do args     <- getArgs
       progName <- getProgName
       exePath  <- getExecutablePath -- findExecutable progName
-      dataPath <- getDataDir
-      let haskellInstallationDirectory = dataPath </> "AmpersandData"
-      existshaskellInstallationDirectory <- doesDirectoryExist  haskellInstallationDirectory
---      putStrLn  $ "haskellInstallationDirectory: "  ++haskellInstallationDirectory
-
-      let ampersandInstallationDirectory = takeDirectory exePath </> ".." </> "AmpersandData"
-      existsampersandInstallationDirectory <- doesDirectoryExist  ampersandInstallationDirectory
---      putStrLn  $ "ampersandInstallationDirectory: "++ampersandInstallationDirectory
-
-      let dataDir
-            | existshaskellInstallationDirectory   = haskellInstallationDirectory
-            | existsampersandInstallationDirectory = ampersandInstallationDirectory
-            | otherwise                            = exePath
       localTime <-  do utcTime <- getCurrentTime
                        timeZone <- getCurrentTimeZone
                        return (utcToLocalTime timeZone utcTime)
       env <- getEnvironment
       let usage = "\nType '"++ progName++" --help' for usage info."
       let (actions, fNames, errors) = getOpt Permute (map fst options) args
-      when ((not.null) errors) (error $ concat errors ++ usage)
+      unless (null errors) (error $ concat errors ++ usage)
       let fName = case fNames of
                    []  -> error ("Please supply the name of an ampersand file" ++ usage)
                    [x] -> x
@@ -113,11 +97,10 @@ getOptions =
                Options {genTime          = localTime
                       , dirOutput        = fromMaybe "."       (lookup envdirOutput    env)
                       , outputfile       = fatal 83 "No monadic options available."
-                      , dirPrototype     = fromMaybe ("." </> (addExtension (takeBaseName fName) ".proto"))
-                                                     (lookup envdirPrototype env) </> (addExtension (takeBaseName fName) ".proto")
+                      , dirPrototype     = fromMaybe ("." </> addExtension (takeBaseName fName) ".proto")
+                                                     (lookup envdirPrototype env) </> addExtension (takeBaseName fName) ".proto"
                       , dbName           = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
                       , dirExec          = takeDirectory exePath
-                      , ampersandDataDir = dataDir
                       , preVersion       = fromMaybe ""        (lookup "CCPreVersion"  env)
                       , postVersion      = fromMaybe ""        (lookup "CCPostVersion" env)
                       , showVersion      = False
@@ -178,6 +161,7 @@ getOptions =
            (createDirectoryIfMissing True (dirPrototype opts))
       return opts
 
+   
 data DisplayMode = Public | Hidden deriving Eq
 
 data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
@@ -231,19 +215,19 @@ options = [ (Option ['v']   ["version"]
                                                           then sqlHost opts
                                                           else nm}
                        ) "HOSTNAME")
-               ("set SQL host name (Defaults to `localhost`)")
+               "set SQL host name (Defaults to `localhost`)"
             , Public)
           , (Option []  ["sqlLogin"]
                (ReqArg (\nm opts -> return opts{sqlLogin = if nm == ""
                                                           then sqlLogin opts
                                                           else nm}
                        ) "USER")
-               ("set SQL host name (Defaults to `ampersand`)")
+               "set SQL user name (Defaults to `ampersand`)"
             , Public)
           , (Option []  ["sqlPwd"]
                (ReqArg (\nm opts -> return opts{sqlPwd = nm}
                        ) "PASSWORD")
-               ("set SQL host name (Defaults to `ampersand`)")
+               "set SQL password (Defaults to `ampersand`)"
             , Public)
           , (Option []        ["sql-bin-tables"]
                (NoArg (\opts -> return opts{sqlBinTables = True}))
@@ -428,7 +412,7 @@ infoHeader progName = "\nUsage info:\n " ++ progName ++ " options file ...\n\nLi
 publishOption:: OptDescr a -> String
 publishOption (Option shorts longs args expl) 
   = unlines (
-    [ "  "++intercalate ", " ["--"++l | l <-longs] 
+    ( "  "++intercalate ", " ["--"++l | l <-longs] 
       ++case args of
          NoArg _      -> "" 
          ReqArg _ str -> "="++str
@@ -436,8 +420,8 @@ publishOption (Option shorts longs args expl)
       ++case intercalate ", " [ "-"++[c] | c <- shorts] of
           []  -> []
           xs  -> " ("++xs++")"
-    ] 
-    ) ++unlines (map (replicate 10 ' '++) (lines (limit 65 expl)))
+    ): 
+     map (replicate 10 ' '++) (lines (limit 65 expl)))
   where
    limit :: Int -> String -> String
    limit i = intercalate "\n" . map (singleLine i . words) . lines
