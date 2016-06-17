@@ -198,11 +198,38 @@ getOptions =
 
       parseYaml :: String -> IO (Either ParseException Config) 
       parseYaml yaml = decodeFileEither $ "." </> yaml
-data Config = Config{ config::[Argument]} deriving (Generic,Show)
+data Config = Config [Argument] deriving (Generic,Show)
 instance FromJSON Config
 data Argument = Argument String deriving (Generic,Show)
 instance FromJSON Argument
 
+writeConfigFile :: IO ()
+writeConfigFile = writeFile sampleConfigFileName (unlines sampleConfigFile)
+sampleConfigFileName :: FilePath
+sampleConfigFileName = "sampleconfig.yaml"
+sampleConfigFile :: [String]
+sampleConfigFile =
+  [ " # Sample config file for Ampersand"
+  , " # This file contains a list of all command line options that can be set using a config file"
+  , " # It can be used by specifying:  ampersand.exe --config=myConfig.yaml myModel.adl"
+  , " # remove the comment character (`#`) in front of the switches you want to activate."
+  , " # Note: Make sure that the minus (`-`) characters are in exactly the same column. Yaml format is picky about that."
+  , ""
+  , "config:"
+  ]++(concatMap yamlItem . filter canBeYamlOption . map fst $ options)
+  where
+    yamlItem :: OptionDef -> [String]
+    yamlItem (Option _ label kind info ) =
+      [ " ### "++info++":"
+      , " # - "++head label++case kind of
+                                 NoArg _ -> "" 
+                                 ReqArg _ arg -> "="++arg
+                                 OptArg _ arg -> "(="++arg++")"
+      , ""
+      ]
+    canBeYamlOption :: OptionDef -> Bool
+    canBeYamlOption (Option _ label _ _ ) =
+      null $ label `isc` ["version","help","config","sampleConfigFile"]  
 data DisplayMode = Public | Hidden deriving Eq
 
 data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
@@ -230,6 +257,13 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{verboseP = True}))
                "verbose error message format."
             , Public)
+          , (Option []   ["sampleConfigFile"]
+               (NoArg (\opts -> do writeConfigFile
+                                   putStrLn (sampleConfigFileName++" written.")
+                                   return opts))
+               ("write a sample configuration file ("++sampleConfigFileName++")")
+            , Public)
+
           , (Option []      ["config"]
                (ReqArg (\nm _ -> fatal 194 $ "config file ("++nm++")should not be treated as a regular option."
                        ) "config.yaml")
