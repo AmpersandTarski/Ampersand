@@ -107,9 +107,9 @@ doGenFrontend fSpec =
 copyIncludes :: FSpec -> IO ()
 copyIncludes fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
-          includeDir = adlSourceDir </> "include"
+          includeDir = adlSourceDir </> dirInclude (getOpts fSpec)
           protoDir = Opts.dirPrototype (getOpts fSpec)
-    ; includeDirExists <- doesDirectoryExist $ includeDir
+    ; includeDirExists <- doesDirectoryExist includeDir
     ; if includeDirExists then
        do { verboseLn (getOpts fSpec) $ "Copying user includes from " ++ includeDir 
           ; includeDirContents <- fmap (map (includeDir </>)) $ getProperDirectoryContents includeDir

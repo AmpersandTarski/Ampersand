@@ -35,6 +35,7 @@ data Options = Options { showVersion :: Bool
                        , validateSQL :: Bool
                        , genPrototype :: Bool
                        , dirPrototype :: String  -- the directory to generate the prototype in.
+                       , dirInclude :: String -- the directory that is included in the generated prototype
                        , allInterfaces :: Bool
                        , dbName :: String
                        , namespace :: String
@@ -109,6 +110,7 @@ getOptions =
                       , outputfile       = fatal 83 "No monadic options available."
                       , dirPrototype     = fromMaybe ("." </> addExtension (takeBaseName fName) ".proto")
                                                      (lookup envdirPrototype env) </> addExtension (takeBaseName fName) ".proto"
+                      , dirInclude       = "include"
                       , dbName           = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
                       , dirExec          = takeDirectory exePath
                       , preVersion       = fromMaybe ""        (lookup "CCPreVersion"  env)
@@ -223,8 +225,8 @@ sampleConfigFile =
       [ " ### "++info++":"
       , " # - "++head label++case kind of
                                  NoArg _ -> "" 
-                                 ReqArg _ arg -> "="++arg
-                                 OptArg _ arg -> "(="++arg++")"
+                                 ReqArg _ str -> "="++str
+                                 OptArg _ str -> "[="++str++"]"
       , ""
       ]
     canBeYamlOption :: OptionDef -> Bool
@@ -263,7 +265,6 @@ options = [ (Option ['v']   ["version"]
                                    return opts))
                ("write a sample configuration file ("++sampleConfigFileName++")")
             , Public)
-
           , (Option []      ["config"]
                (ReqArg (\nm _ -> fatal 194 $ "config file ("++nm++")should not be treated as a regular option."
                        ) "config.yaml")
@@ -282,6 +283,12 @@ options = [ (Option ['v']   ["version"]
                                                   ,genPrototype = True}
                        ) "DIRECTORY")
                ("generate a functional prototype (overrules environment variable "++ envdirPrototype ++ ").")
+            , Public)
+          , (Option []     ["include"]
+               (ReqArg (\nm opts -> return opts {dirInclude = nm
+                                                ,genPrototype = True}
+                       ) "DIRECTORY")
+               "include a directory into the generated prototype, instead of the default."
             , Public)
           , (Option ['d']  ["dbName"]
                (ReqArg (\nm opts -> return opts{dbName = if nm == ""
