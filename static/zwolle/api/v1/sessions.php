@@ -12,6 +12,8 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 	
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
+    
+    foreach(RuleEngine::getSignalViolationsFromDB() as $violation) Notifications::addSignal($violation);
 	
 	// top level interfaces
 	$top = array();
@@ -31,11 +33,13 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
 					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
 					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
-					 ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
-					 ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions'))
+					                             ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
+					                             ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
+                                                 ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
+                                                 )
 					 ,'notifications' => Notifications::getAll()
 					 ,'session' => array ( 'id' => $session->id
-					 , 'loggedIn' => $session->sessionUserLoggedIn())
+					 ,'loggedIn' => $session->sessionUserLoggedIn())
 					 ,'sessionRoles' => array_values($session->getSessionRoles()) // return numeric array
 					 ,'sessionVars' => $session->getSessionVars()
 					 );

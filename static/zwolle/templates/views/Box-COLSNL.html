@@ -7,7 +7,7 @@ $endif$<table class="table table-striped table-hover table-condensed">
 				$subObj.subObjContents$
 			</td>}$
 			<td>$if(isRoot)$
-				<button type="button" class="btn btn-warning btn-xs" ng-if="resource['_showButtons_']['save']" ng-click="saveResource(resource, 'promise')">Save</button>
+				<button type="button" class="btn btn-warning btn-xs" ng-if="resource['_showButtons_']['save']" ng-click="saveResource(resource, 'promise', true)">Save</button>
 				<button type="button" class="btn btn-danger btn-xs" ng-if="resource['_showButtons_']['cancel']" ng-click="cancelResource(resource)">Cancel</button>$endif$$if(crudU)$
 				<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(parent, '$name$', key, parent)"></span>$endif$$if(crudD)$
 				<span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(parent, '$name$', resource, 'promise')"></span>$endif$

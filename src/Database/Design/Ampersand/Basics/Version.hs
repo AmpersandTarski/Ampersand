@@ -31,9 +31,9 @@ fatal lineNr msg
 ampersandVersionStr :: String
 ampersandVersionStr = ampersandVersionWithoutBuildTimeStr ++", build time: "++buildTimeStr
 
--- | String, containing the Ampersand version
+-- | String, containing the Ampersand version. The part unto the first space is used as name of the release (appVeyor)
 ampersandVersionWithoutBuildTimeStr :: String
-ampersandVersionWithoutBuildTimeStr = "Ampersand v"++cabalVersionStr++"["++gitInfoStr++"]"
+ampersandVersionWithoutBuildTimeStr = "Ampersand-v"++cabalVersionStr++" ["++gitInfoStr++"]"
 {-
    #1.#2.#3[$gitInfo] : #1 major version; #2 student release version; #3 production fix version (normally 0 );
    $gitInfo: "branch:SHA", followed by a '*' if the working copy was dirty: e.g. "master:0eea5e3*" 
