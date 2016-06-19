@@ -211,17 +211,26 @@ where
 
    instance MetaArchi Element where
      typeMap element
-      = [(keyArchi element, elemType element) | (not.null.elemName) element, (null.elemSrc) element]    
-         ++ typeMap (elProps element)
+      = [(keyArchi element, elemType element)            | (not.null.elemName) element, (null.elemSrc) element] ++
+        [(keyArchi element, elemName element)            | (not.null.elemName) element, (not.null.elemSrc) element] ++
+        [(keyArchi element, unfixRel (elemType element)) | (null.elemName) element, (not.null.elemSrc) element] ++
+        typeMap (elProps element)
      grindArchiPop typeLookup element
-      = [ transform typeLookup "name" (elemType element) [(keyArchi element, elemName element)]
+      = [ translateArchiObj typeLookup "name" (elemType element) [(keyArchi element, elemName element)]
         | (not.null.elemName) element, (null.elemSrc) element] ++
-        [ transform typeLookup "docu" (elemType element) [(keyArchi element, elemDocu element)]
+        [ translateArchiObj typeLookup "docu" (elemType element) [(keyArchi element, elemDocu element)]
         | (not.null.elemDocu) element, (null.elemSrc) element] ++
-        [ transform typeLookup "relationship" (elemType element) [(elemSrc element, elemTgt element)]
-        | (null.elemName) element, (not.null.elemSrc) element] ++
-        [ transform typeLookup (elemName element) (elemType element) [(elemSrc element, elemTgt element)]
-        | (not.null.elemName) element, (not.null.elemSrc) element] ++
+        (if (null.elemSrc) element then []  else    -- do this only for elements which are a relationship.
+         translateArchiRel
+                    typeLookup (keyArchi element)
+                    (if (null.elemName) element
+                     then unfixRel (elemType element)
+                     else elemName element
+                    )
+                    (elemSrc element) (elemTgt element)
+        ) ++
+        [ translateArchiObj typeLookup "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
+        | prop<-elProps element] ++
         (concat.map (grindArchiPop typeLookup).elProps) element
      keyArchi = elemId
 
@@ -229,9 +238,9 @@ where
      typeMap _
       = []
      grindArchiPop typeLookup property
-      = [ transform typeLookup "key" "Property"
+      = [ translateArchiObj typeLookup "key" "Property"
             [(keyArchi property, archPropKey property) | (not.null.archPropKey) property ]
-        , transform typeLookup "value" "Property"
+        , translateArchiObj typeLookup "value" "Property"
             [(keyArchi property, archPropVal property) | (not.null.archPropVal) property ]
         ]
      keyArchi = fromMaybe (error "fatal 234: No key defined yet") . archPropId
@@ -241,35 +250,56 @@ where
      grindArchiPop typeLookup xs = concat [ grindArchiPop typeLookup x | x<-xs ]
      keyArchi = error "fatal 269: cannot use keyArchi on a list"
 
--- | The function `transform` does the actual compilation of data elements of archiRepo into the Ampersand structure.
+-- | The function `translateArchiObj` does the actual compilation of data objects from archiRepo into the Ampersand structure.
 --   It looks redundant to produce both a `P_Population` and a `P_Declaration`, but the first contains the population and the second is used to
 --   include the metamodel of Archimate in the population. This save the author the effort of maintaining an Archimate-metamodel.
-   transform :: (String -> String) -> String -> String -> [(String, String)] -> (P_Population,P_Declaration)
-   transform _ "name" typeLabel tuples
+   translateArchiObj :: (String -> String) -> String -> String -> [(String, String)] -> (P_Population,P_Declaration)
+   translateArchiObj _ "name" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "naam" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
-   transform _ "docu" typeLabel tuples
+      , P_Sgn "naam" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False )
+   translateArchiObj _ "docu" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentatie" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "documentatie" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
-   transform _ "key" "Property" tuples
+      , P_Sgn "documentatie" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False )
+   translateArchiObj _ "key" "Property" tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "key" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "key" (P_Sign (PCpt "Property") (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
-   transform _ "value" "Property" tuples
+      , P_Sgn "key" (P_Sign (PCpt "Property") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False )
+   translateArchiObj _ "value" "Property" tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "value" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "value" (P_Sign (PCpt "Property") (PCpt "Tekst")) [] [] [] [] OriginUnknown False )
-   transform typeLookup "relationship" relLabel tuples@((x,y):_)
-    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown (unfixRel relLabel) (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
-      , P_Sgn (unfixRel relLabel) (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))) [] [] [] [] OriginUnknown False )
-      where
-       -- transform for example  "archimate:AggregationRelationship"  into  "aggregation"
-       unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
-       relCase (c:cs) = (toLower c): cs
-       relCase "" = error "fatal 325 empty relation identifier."
-   transform typeLookup relLabel _ tuples@((x,y):_)
+      , P_Sgn "value" (P_Sign (PCpt "Property") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False )
+   translateArchiObj _ "elprop" typeLabel tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "propOf" (Just (P_Sign (PCpt "Property") (PCpt "ArchiElement")))) (transTuples tuples)
+      , P_Sgn "propOf" (P_Sign (PCpt "Property") (PCpt "ArchiElement")) [Uni] [] [] [] OriginUnknown False )
+   translateArchiObj typeLookup relLabel _ tuples@((x,y):_)
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relLabel (Just (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))))) (transTuples tuples)
       , P_Sgn relLabel (P_Sign (PCpt (typeLookup x)) (PCpt (typeLookup y))) [] [] [] [] OriginUnknown False )
-   transform _ _ _ _ = error "fatal 328 non-exhaustive pattern in transform"
+   translateArchiObj _ _ _ _ = error "fatal 328 non-exhaustive pattern in translateArchiObj"
 
+-- | The function `translateArchiRel` does the actual compilation of relationships from archiRepo into the Ampersand structure.
+   translateArchiRel :: (String -> String) -> String -> String -> String -> String -> [(P_Population, P_Declaration)]
+   translateArchiRel typeLookup relId relLabel x y
+    = [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relNm (Just (P_Sign (PCpt xType) (PCpt yType)))) (transTuples [(x,y)])
+        , P_Sgn relNm (P_Sign (PCpt xType) (PCpt yType)) [] [] [] [] OriginUnknown False )
+-- To obtain a readable Archimate Metamodel in graphviz, remove the following 4 lines from the code.
+-- In that way, the source- and target functions (from the meta-metamodel) do not pollute the diagram, whereas the relation is still visible.
+      , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "source" (Just (P_Sign (PCpt relLabel) (PCpt xType)))) (transTuples [(relId,x)])
+        , P_Sgn "source" (P_Sign (PCpt relNm) (PCpt xType)) [Uni] [] [] [] OriginUnknown False )
+      , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "target" (Just (P_Sign (PCpt relLabel) (PCpt yType)))) (transTuples [(relId,y)])
+        , P_Sgn "target" (P_Sign (PCpt relNm) (PCpt yType)) [Uni] [] [] [] OriginUnknown False )
+      ] ++
+      [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "datatype" (Just (P_Sign (PCpt relNm) (PCpt "Tekst")))) (transTuples [(relId,relLabel)])
+        , P_Sgn "datatype" (P_Sign (PCpt relNm) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False )
+      | xType=="ApplicationComponent" && yType=="ApplicationComponent" && relLabel/="flow" ]
+      where xType = typeLookup x
+            yType = typeLookup y
+            relNm = if xType=="ApplicationComponent" && yType=="ApplicationComponent"
+                    then "flow"
+                    else relLabel
+
+   unfixRel :: String -> String
+   unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
+   relCase :: String -> String
+   relCase (c:cs) = (toLower c): cs
+   relCase "" = error "fatal 325 empty relation identifier."
    transTuples :: [(String, String)] -> [PAtomPair]
    transTuples tuples = [ PPair OriginUnknown (ScriptString OriginUnknown x) (ScriptString OriginUnknown y) | (x,y)<-tuples ]
 
