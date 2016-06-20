@@ -57,6 +57,7 @@ executable ampersand
                      time == 1.5.*,
                      utf8-string == 1.0.*,
                      yaml == 0.8.17.*,
+                     yaml-config,
                      xlsx == 0.2.1.*,
                      zlib == 0.6.*
 

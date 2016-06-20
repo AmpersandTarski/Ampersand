@@ -1,5 +1,6 @@
-{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PackageImports #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Database.Design.Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FSpecFormat(..)
@@ -17,12 +18,10 @@ import Control.Monad
 import Data.Maybe
 import Database.Design.Ampersand.Basics
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
-import Data.List
+import Data.List as DL
 import Data.Char
 
-import Data.Yaml
-import GHC.Generics
-import Data.Either
+import "yaml-config" Data.Yaml.Config as YC 
 
 -- | This data constructor is able to hold all kind of information that is useful to
 --   express what the user would like Ampersand to do.
@@ -106,15 +105,15 @@ getOptions =
       let startOptions :: Options
           startOptions =
                Options {genTime          = localTime
-                      , dirOutput        = fromMaybe "."       (lookup envdirOutput    env)
+                      , dirOutput        = fromMaybe "."       (DL.lookup envdirOutput    env)
                       , outputfile       = fatal 83 "No monadic options available."
                       , dirPrototype     = fromMaybe ("." </> addExtension (takeBaseName fName) ".proto")
-                                                     (lookup envdirPrototype env) </> addExtension (takeBaseName fName) ".proto"
+                                                     (DL.lookup envdirPrototype env) </> addExtension (takeBaseName fName) ".proto"
                       , dirInclude       = "include"
-                      , dbName           = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (lookup envdbName env)
+                      , dbName           = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (DL.lookup envdbName env)
                       , dirExec          = takeDirectory exePath
-                      , preVersion       = fromMaybe ""        (lookup "CCPreVersion"  env)
-                      , postVersion      = fromMaybe ""        (lookup "CCPostVersion" env)
+                      , preVersion       = fromMaybe ""        (DL.lookup "CCPreVersion"  env)
+                      , postVersion      = fromMaybe ""        (DL.lookup "CCPostVersion" env)
                       , showVersion      = False
                       , showHelp         = False
                       , verboseP         = False
@@ -178,32 +177,26 @@ getOptions =
       readYamlConfig :: String -> IO [String]
       readYamlConfig ('-':'-':'c':'o':'n':'f':'i':'g':'=':yaml)  
          = do putStrLn $ "config file:"++yaml
-              res <- parseYaml yaml
-              case res of 
-                  Left err -> do putStrLn $ "." </> yaml ++" could not be parsed."
-                                 putStrLn $ prettyPrintParseException err
-                                 return $ error "Please fix this first."
-                  Right (Config args)
-                           -> do print args
-                                 case partitionEithers . map arg2str $ args of
-                                   (xs ,[]) -> return xs
-                                   (_, x:_) -> error $ "Error in config file `"++yaml++"`: "++x
-        where
-          arg2str :: Argument -> Either String String
-          arg2str (Argument str) 
-            | "config" `isPrefixOf` str = Right "`config` is not allowed inside a config file"
-            | otherwise = Left $ "--"++str
+              config <- load yaml
+              case keys config \\ ["switches"] of
+                []  -> do let switches :: [String] = YC.lookupDefault "switches" [] config
+                          case filter (not . isValidSwitch) switches of
+                            []  -> return $ map ("--"++) switches
+                            [x] -> configFail yaml $ "Invalid switch: "++x
+                            xs  -> configFail yaml $ "Invalid switches: "++intercalate ", " xs
+                           
+                [x] -> configFail yaml $ "Unknown key: "++show x 
+                xs  -> configFail yaml $ "Unknown keys: "++intercalate ", " (map show xs)
+              
       readYamlConfig "--config"
-         = error "Command line argument --config requires an file name as an argument"
+         = error "Command line argument --config requires a file name as an argument"
       readYamlConfig str
          = error $ "Cannot handle command line argument: "++str 
-
-      parseYaml :: String -> IO (Either ParseException Config) 
-      parseYaml yaml = decodeFileEither $ "." </> yaml
-data Config = Config [Argument] deriving (Generic,Show)
-instance FromJSON Config
-data Argument = Argument String deriving (Generic,Show)
-instance FromJSON Argument
+      configFail yaml msg
+         = error . unlines $
+            [ "\nError in "++yaml++":"
+            , "  "++msg
+            ]
 
 writeConfigFile :: IO ()
 writeConfigFile = writeFile sampleConfigFileName (unlines sampleConfigFile)
@@ -217,21 +210,43 @@ sampleConfigFile =
   , " # remove the comment character (`#`) in front of the switches you want to activate."
   , " # Note: Make sure that the minus (`-`) characters are in exactly the same column. Yaml format is picky about that."
   , ""
-  , "config:"
-  ]++(concatMap yamlItem . filter canBeYamlOption . map fst $ options)
+  , "switches:"
+  ]++concatMap (yamlItem . fst) options
   where
     yamlItem :: OptionDef -> [String]
-    yamlItem (Option _ label kind info ) =
-      [ " ### "++info++":"
-      , " # - "++head label++case kind of
-                                 NoArg _ -> "" 
-                                 ReqArg _ str -> "="++str
-                                 OptArg _ str -> "[="++str++"]"
-      , ""
-      ]
-    canBeYamlOption :: OptionDef -> Bool
-    canBeYamlOption (Option _ label _ _ ) =
-      null $ label `isc` ["version","help","config","sampleConfigFile"]  
+    yamlItem (Option _ label kind info ) 
+      = if head label `elem` validSwitches
+        then
+         [ "  ### "++info++":"
+         , "  # - "++head label++case kind of
+                                   NoArg _ -> "" 
+                                   ReqArg _ str -> "="++str
+                                   OptArg _ str -> "[="++str++"]"
+         , ""
+         ]
+        else []   
+isValidSwitch :: String -> Bool
+isValidSwitch str = 
+  case mapMaybe (matches . fst) options of
+    [Option _ _ kind _]
+        -> case (dropWhile (/= '=') str, kind) of
+             ([]    , NoArg  _  ) -> True 
+             ([]    , OptArg _ _) -> True
+             ('=':_ , OptArg _ _) -> True
+             ('=':_ , ReqArg _ _) -> True
+             _  -> False
+    _  -> False
+  where 
+    matches :: OptionDef -> Maybe OptionDef
+    matches x@(Option _ labels _ _) 
+     = if takeWhile (/= '=') str `elem` labels \\ ["version","help","config","sampleConfigFile"]
+       then Just x
+       else Nothing
+validSwitches :: [String]
+validSwitches =  filter canBeYamlSwitch [head label | Option _ label _ _ <- map fst options]
+canBeYamlSwitch :: String -> Bool
+canBeYamlSwitch str =
+   takeWhile (/= '=') str `notElem` ["version","help","config","sampleConfigFile"]  
 data DisplayMode = Public | Hidden deriving Eq
 
 data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
