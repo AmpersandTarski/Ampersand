@@ -12,6 +12,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Rule\Rule;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Rule\Violation;
+use function Ampersand\Helper\getDirectoryList;
 
 // Define hooks
 $hook1 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());

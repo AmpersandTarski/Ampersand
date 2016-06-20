@@ -21,7 +21,7 @@ import Database.Design.Ampersand.Prototype.StaticFiles_Generated
 parseXlsxFile :: Options 
               -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
               -> FilePath -> IO (Guarded [P_Population])
-parseXlsxFile _ useAllStaticFiles file =
+parseXlsxFile opts useAllStaticFiles file =
   do bytestr <- if useAllStaticFiles
                 then case getStaticFileContent FormalAmpersand file of
                       Just cont -> return $ fromString cont
@@ -31,7 +31,7 @@ parseXlsxFile _ useAllStaticFiles file =
  where
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
   xlsx2pContext xlsx 
-    = Checked $ concatMap (toPops file) $
+    = Checked $ concatMap (toPops opts file) $
          Prelude.concatMap theSheetCellsForTable (xlsx ^. xlSheets . to M.toList)
       
 data SheetCellsForTable 
@@ -50,8 +50,8 @@ instance Show SheetCellsForTable where  --for debugging only
       , "popRowNrs   : "++show (popRowNrs x)
       , "colNrs      : "++show (colNrs x)
       ] ++ debugInfo x 
-toPops :: FilePath -> SheetCellsForTable -> [P_Population]
-toPops file x = map popForColumn (colNrs x)
+toPops :: Options -> FilePath -> SheetCellsForTable -> [P_Population]
+toPops opts file x = map popForColumn (colNrs x)
   where
     popForColumn :: Int -> P_Population
     popForColumn i = --trace (show x ++"(Now column: "++show i++")") $
@@ -89,7 +89,7 @@ toPops file x = map popForColumn (colNrs x)
           = case value (conceptNamesRow,sourceCol) of
                 Just (CellText t) -> 
                    fromMaybe (fatal 94 "No valid source conceptname found. This should have been checked before")
-                             (conceptNameWithOptionalDelimiter t)
+                             (conceptNameWithOptionalDelimiter . trim $ t)
                 _ -> fatal 96 "No valid source conceptname found. This should have been checked before"
        mTargetConceptName :: Maybe String
        mTargetConceptDelimiter :: Maybe Char
@@ -98,7 +98,7 @@ toPops file x = map popForColumn (colNrs x)
                 Just (CellText t) -> let (nm,mDel) 
                                            = fromMaybe
                                                 (fatal 94 "No valid source conceptname found. This should have been checked before")
-                                                (conceptNameWithOptionalDelimiter t)
+                                                (conceptNameWithOptionalDelimiter . trim $ t)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
        relName :: String
@@ -106,7 +106,7 @@ toPops file x = map popForColumn (colNrs x)
        (relName,isFlipped) 
           = case value (relNamesRow,targetCol) of
                 Just (CellText t) -> 
-                    let str = T.unpack t
+                    let str = T.unpack . trim $ t
                     in if last str == '~'
                        then (init str, True )
                        else (     str, False)
@@ -129,16 +129,16 @@ toPops file x = map popForColumn (colNrs x)
        cellToAtomValue :: Maybe Char -> CellValue -> Origin -> [PAtomValue]  -- The value in a cell can contain the delimeter of the row
        cellToAtomValue mDelimiter cv orig
          = case cv of
-             CellText t   -> map (XlsxString orig . T.unpack) (unDelimit mDelimiter t)
+             CellText t   -> map (XlsxString orig . T.unpack) (unDelimit mDelimiter . handleSpaces $ t)
              CellDouble d -> [XlsxDouble orig d]
              CellBool b -> [ComnBool orig b] 
-             CellRich ts -> map (XlsxString orig . T.unpack) . unDelimit mDelimiter . T.concat . map _richTextRunText $ ts
+             CellRich ts -> map (XlsxString orig . T.unpack) . unDelimit mDelimiter . handleSpaces . T.concat . map _richTextRunText $ ts
        unDelimit :: Maybe Char -> T.Text -> [T.Text]
-       unDelimit mDelimiter xs =
+       unDelimit mDelimiter xs = 
          case mDelimiter of
            Nothing -> [xs]
-           (Just delimiter) -> T.split (== delimiter) xs
-            
+           (Just delimiter) -> map trim $ T.split (== delimiter) xs
+       handleSpaces = if trimXLSXCells opts then trim else id     
     originOfCell :: (Int,Int) -- (row number,col number)
                  -> Origin
     originOfCell (r,c) 
@@ -166,7 +166,8 @@ theSheetCellsForTable (sheetName,ws)
     isBracketed :: (Int,Int) -> Bool
     isBracketed k = 
        case value k of
-         Just (CellText t) -> (not . T.null ) t && T.head t == '[' && T.last t == ']'
+         Just (CellText t) -> (not . T.null ) trimmed && T.head trimmed == '[' && T.last trimmed == ']'
+               where trimmed = trim t
          _                 -> False      
     theMapping :: Int -> Maybe SheetCellsForTable
     theMapping indexInTableStarters 
@@ -208,7 +209,7 @@ theSheetCellsForTable (sheetName,ws)
           | otherwise                  = notEmpty (rowNr,firstColumNr)
        notEmpty k
           = case value k of
-            Just (CellText t)   -> (not . T.null) t
+            Just (CellText t)   -> (not . T.null . trim) t
             Just (CellDouble _) -> True
             Just (CellBool _)   -> True
             Just (CellRich _)   -> True
@@ -220,11 +221,11 @@ theSheetCellsForTable (sheetName,ws)
           | otherwise  = isProperConceptName (conceptNameRowNr,colNr) && isProperRelName(relationNameRowNr,colNr)
        isProperConceptName k 
          = case value k of
-            Just (CellText t) -> isJust (conceptNameWithOptionalDelimiter t)
+            Just (CellText t) -> isJust . conceptNameWithOptionalDelimiter . trim $ t
             _ -> False
        isProperRelName k 
          = case value k of
-            Just (CellText t) -> (not . T.null) t && isLower(T.head t)
+            Just (CellText t) -> (not . T.null . trim) t && (isLower . T.head . trim) t
             _ -> False
                
 conceptNameWithOptionalDelimiter :: T.Text -> Maybe ( String     {- Conceptname -} 
@@ -252,4 +253,12 @@ isConceptName :: T.Text -> Bool
 isConceptName t = case T.uncons t of
                     Nothing  -> False
                     (Just (h,_)) -> isUpper h
- 
+
+-- | trim is used to remove leading and trailing spaces
+trim :: T.Text -> T.Text
+trim = T.reverse . trim' . T.reverse . trim'
+  where 
+    trim' :: T.Text -> T.Text
+    trim' t = case uncons t of
+               Just (' ',t') -> trim' t'
+               _  -> t 
