@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
+﻿{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
 module Database.Design.Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
    -- The purpose of this module is to load Archimate content into an Ampersand context.
    -- This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
@@ -312,7 +312,7 @@ where
    unfixRel :: String -> String
    unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
    relCase :: String -> String
-   relCase (c:cs) = (toUpper c): cs
+   relCase (c:cs) = (toLower c): cs
    relCase "" = error "fatal 325 empty relation identifier."
    transTuples :: [(String, String)] -> [PAtomPair]
    transTuples tuples = [ PPair OriginUnknown (ScriptString OriginUnknown x) (ScriptString OriginUnknown y) | (x,y)<-tuples ]
