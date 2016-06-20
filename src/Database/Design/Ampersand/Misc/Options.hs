@@ -293,10 +293,10 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"
             , Hidden)
-          , (Option ['a']     ["archi"]
-               (ReqArg (\nm opts -> return opts{archiName = nm}) "FILENAME")
-               ("read an XML-file that contains an archi-repository.")
-            , Public)
+--          , (Option ['a']     ["archi"]
+--               (ReqArg (\nm opts -> return opts{archiName = nm}) "FILENAME")
+--               ("read an XML-file that contains an archi-repository.")
+--            , Public)
           , (Option ['p']     ["proto"]
                (OptArg (\nm opts -> return opts {dirPrototype = fromMaybe (dirPrototype opts) nm
                                                 ,genPrototype = True}
