@@ -586,8 +586,13 @@ data P_Population
               }
    deriving (Show) --For QuickCheck error messages only!
 
-instance Eq P_Population where --Required for merge of P_Contexts
- p1 == p2 = name p1 == name p2 && origin p1 ==origin p2 
+instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
+ p1 == p2
+   | origin p1==OriginUnknown || origin p2==OriginUnknown = case (p1,p2) of
+                                                              (P_RelPopu{},P_RelPopu{}) -> p_popps p1==p_popps p2
+                                                              (P_CptPopu{},P_CptPopu{}) -> p_popas p1==p_popas p2
+                                                              _                         -> False
+   | otherwise                                            = origin p1==origin p2
 
 instance Named P_Population where
  name P_RelPopu{p_nmdr = nr} = name nr
@@ -793,8 +798,10 @@ data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand 
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
                   }
-instance Eq P_Gen where --Required for merge of P_Contexts
- p1 == p2 = origin p1 ==origin p2 
+instance Eq P_Gen where --Required for merge of P_Contexts -- see also the comment at `Eq P_Concept`
+ p1 == p2 | origin p1==OriginUnknown || origin p2==OriginUnknown = gen_spc p1==gen_spc p2 && gen_gen p1==gen_gen p2
+          | otherwise                                            = origin p1 ==origin p2
+
 gen_concs :: P_Gen -> [P_Concept]
 gen_concs (P_Cy {gen_rhs=x}) = x
 gen_concs (PGen {gen_gen=x,gen_spc=y}) = [x,y]
