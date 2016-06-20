@@ -3,6 +3,7 @@
 ## unreleased changes
   * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) New switch: --include
   * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) Enhancement: Introduction of a configuration file. A sample configuration file is generated when you use the switch --sampleConfigFile. To use a config file, use the switch --config=MyConfig.yaml
+  * [Issue #468](https://github.com/AmpersandTarski/Ampersand/issues/468) Enhancement: default configuration file (when it exists)
   * Enhancement: From now on, all text values read from .xlsx files are trimmed (leading and trailing spaces are removed), unless the switch --do-not-trim-cellvalues is given. [Issue #414](https://github.com/AmpersandTarski/Ampersand/issues/414)
   * More automation on releasing Ampersand.
   
