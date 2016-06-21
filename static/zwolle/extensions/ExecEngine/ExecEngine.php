@@ -21,7 +21,11 @@ $hook2 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'functio
 Hooks::addHook('postDatabaseReinstallDB', $hook2);
 
 // UI
-$GLOBALS['navBar']['refreshMenu'][] = array ( 'url' =>	'extensions/ExecEngine/ui/views/MenuItem.html');
+AngularApp::addMenuItem('ext', 'extensions/ExecEngine/ui/views/MenuItem.html',
+    function($session){
+        $roles = Config::get('allowedRolesForRunFunction','execEngine');
+        return (!empty(array_intersect($session->getActiveRoles(), (array)$roles)) || is_null($roles));
+    });
 AngularApp::addJS('extensions/ExecEngine/ui/js/ExecEngine.js');
 
 // API

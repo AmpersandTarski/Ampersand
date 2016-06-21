@@ -12,8 +12,8 @@ use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
 
 // UI
+AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function($session){ return true;});
 AngularApp::addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
-$GLOBALS['navBar']['roleMenu'][] = array ('url' => 'extensions/OAuthLogin/ui/views/MenuItem.html');
 
 // API
 $GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'oauthlogin.php';
