@@ -114,6 +114,9 @@ class Session {
 	// Prevent any copy of this object
 	private function __clone(){}
 	
+    /**
+     * @return Session
+     */
 	public static function singleton(){
 		if(is_null (self::$_instance) ) self::$_instance = new Session();
 		return self::$_instance;
@@ -185,6 +188,9 @@ class Session {
 	    $this->logger->info("Role '{$role->id}' is activated");
 	}
 	
+    /**
+     * @return Role[]
+     */
 	public function getSessionRoles(){
 		if(!isset($this->sessionRoles)){
             $sessionRoles = array();
