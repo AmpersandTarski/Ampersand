@@ -1,18 +1,13 @@
-<nav class="navbar navbar-default" role="navigation" ng-controller="static_navigationBarController">	
-	<div class="container">
-		<div class="navbar-header">
-			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-options">Options</button>
-			<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar-interfaces">Interfaces</button>
-			<a class="navbar-brand" href="#/"><span class="glyphicon glyphicon-home"></span></a>
-		</div>
-		<ul class="collapse navbar-collapse nav navbar-nav" id="navbar-interfaces">
+<nav class="navbar navbar-default" role="navigation" ng-controller="static_navigationBarController">
+	<div id="navbar-wrapper" class="container">
+		<ul class="nav navbar-nav" id="navbar-interfaces" my-navbar-resize>
+            <li><a href="#/"><span class="glyphicon glyphicon-home"></span></a></li>
 			<li id="{{interface.label}}" ng-repeat="interface in navbar.top"> <!-- the interface id is there so we can style specific menu items with css -->
 				<a href="#/{{interface.id}}">
 					<span class="glyphicon glyphicon-list-alt"></span> {{interface.label}}</a>
 			</li>
 		</ul>
-		
-		<ul class="collapse navbar-collapse nav navbar-nav navbar-right" id="navbar-options">	
+		<ul class="nav navbar-nav navbar-right" id="navbar-options">
             <!-- hidden on extra small devices, e.g. phone (<768px) -->
 			<li class="dropdown hidden-xs" uib-tooltip="Show/hide notifications" tooltip-trigger="mouseenter" tooltip-placement="left">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-bullhorn"></span></a>
