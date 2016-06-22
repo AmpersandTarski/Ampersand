@@ -38,16 +38,15 @@
 				<ul class="dropdown-menu" role="menu">
 					<li><a href="" ng-click="reload()"><span class="glyphicon glyphicon-refresh"></span> Refresh page</a></li>
 					<li><a href="#/" ng-click="destroySession()"><span class="glyphicon glyphicon-repeat"></span> Reset session</a></li>
-					<li><a href="#/admin/installer"><span class="glyphicon glyphicon-trash"></span> Reinstall database</a></li>
-					<li ng-if="navbar.refreshMenu" class="divider" role="presentation"></li>
+					<li ng-if="navbar.refreshMenu.length" class="divider" role="presentation"></li>
 					<li ng-repeat="app in navbar.refreshMenu" ng-include="app.url"/>
 				</ul>
 			</li>
 			
-			<li ng-if="navbar.appMenu" class="dropdown" uib-tooltip="Select application extensions" tooltip-trigger="mouseenter" tooltip-placement="left">
+			<li ng-if="navbar.extMenu.length" class="dropdown" uib-tooltip="Select application extensions" tooltip-trigger="mouseenter" tooltip-placement="left">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-th"></span></a>
 				<ul class="dropdown-menu" role="menu">
-					<li ng-repeat="app in navbar.appMenu" ng-include="app.url"/>
+					<li ng-repeat="ext in navbar.extMenu" ng-include="ext.url"/>
 					<!-- <li class="divider" role="presentation"></li>-->					
 				</ul>
 			</li>
@@ -61,11 +60,11 @@
 				</ul>
 			</li>
 			
-			<li ng-if="$sessionStorage.sessionRoles.length > 0 || navbar.roleMenu" class="dropdown" uib-tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="right">
+			<li ng-if="$sessionStorage.sessionRoles.length || navbar.roleMenu.length" class="dropdown" uib-tooltip="Switch between different roles" tooltip-trigger="mouseenter" tooltip-placement="right">
 				<a href="" class="dropdown-toggle" data-toggle="dropdown"><span class="glyphicon glyphicon-user"></span></a>
 				<ul class="dropdown-menu" role="menu">
 					<li ng-repeat="role in $sessionStorage.sessionRoles" ng-click="$event.stopPropagation(); toggleRole();"><switch ng-model="role.active"> {{role.label}}</switch></li>
-					<li ng-if="navbar.roleMenu && $sessionStorage.sessionRoles.length > 0" class="divider" role="presentation"></li>
+					<li ng-if="navbar.roleMenu.length && $sessionStorage.sessionRoles.length" class="divider" role="presentation"></li>
 					<li ng-repeat="ext in navbar.roleMenu" ng-include="ext.url"/>
 				</ul>
 			</li>

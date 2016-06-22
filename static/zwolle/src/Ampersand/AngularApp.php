@@ -7,6 +7,7 @@
 
 namespace Ampersand;
 
+use Exception;
 use Ampersand\Log\Logger;
 use function Ampersand\Helper\getDirectoryList;
 
@@ -27,6 +28,21 @@ class AngularApp {
 	
 	private static $cssFiles = array();
 	private static $jsFiles = array();
+    
+    /**
+     * @var array $extMenu contains potential items for the extensions menu (in navbar)
+     */
+    private static $extMenu = array();
+    
+    /**
+     * @var array $refreshMenu contains potential items for the refresh menu (in navbar)
+     */
+    private static $refreshMenu = array();
+    
+    /**
+     * @var array $roleMenu contains potential items for the role menu (in navbar)
+     */
+    private static $roleMenu = array();
 
 	public function __construct(){
 	    $this->logger = Logger::getLogger('FW');
@@ -45,6 +61,53 @@ class AngularApp {
 	public static function addJS($relativePath){
 		AngularApp::$jsFiles[] = $relativePath;
 	}
+    
+    /**
+     * @param string $menu specifies to which part of the menu (navbar) this item belongs to
+     * @param string $itemUrl location of html template to use as menu item
+     * @param function function which returns true/false determining to add the menu item or not
+     */
+    public static function addMenuItem($menu, $itemUrl, $function){
+        switch ($menu) {
+            case 'ext':
+                self::$extMenu[] = array('url' => $itemUrl, 'addItem' => $function);
+                break;
+            case 'refresh':
+                self::$refreshMenu[] = array('url' => $itemUrl, 'addItem' => $function);
+                break;
+            case 'role':
+                self::$roleMenu[] = array('url' => $itemUrl, 'addItem' => $function);
+                break;
+            default:
+                throw new Exception("Cannot add item to menu. Unknown menu: '{$menu}'", 500);
+                break;
+        }
+    }
+    
+    public static function getMenuItems($menu){
+        $session = Session::singleton();
+        switch ($menu) {
+            case 'ext':
+                $arr = self::$extMenu;
+                break;
+            case 'refresh':
+                $arr = self::$refreshMenu;
+                break;
+            case 'role':
+                $arr = self::$roleMenu;
+                break;
+            default:
+                throw new Exception("Cannot get menu items. Unknown menu: '{$menu}'", 500);
+                break;
+        }
+        
+        $menuItems = array();
+        foreach ($arr as $item) {
+            if($item['addItem']($session)) $menuItems[] = $item;
+        }
+        
+        return $menuItems;
+    }
 
 	public function buildHtml(){
 		$this->addHtmlLine("<!doctype html>");

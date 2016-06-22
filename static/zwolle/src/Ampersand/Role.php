@@ -67,6 +67,13 @@ class Role {
 		    $this->interfaces[] = InterfaceObject::getInterface($ifcId);
 		}
 	}
+    
+    /**
+     * @return string role label
+     */
+    public function __toString(){
+        return $this->label;
+    }
 	
 	/**
 	 * Get array of rules names that are maintained by this role
