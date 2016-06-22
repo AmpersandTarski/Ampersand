@@ -5,6 +5,7 @@
   * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) Enhancement: Introduction of a configuration file. A sample configuration file is generated when you use the switch --sampleConfigFile. To use a config file, use the switch --config=MyConfig.yaml
   * Enhancement: From now on, all text values read from .xlsx files are trimmed (leading and trailing spaces are removed), unless the switch --do-not-trim-cellvalues is given. [Issue #414](https://github.com/AmpersandTarski/Ampersand/issues/414)
   * More automation on releasing Ampersand.
+  * Frontend: Options in frontend navbar now can be defined for certain roles only (e.g. the installer and excelimporter).
   
 ## v3.5.2 (10 juni 2016)
   * Work on meatgrinder (still experimental!)
