@@ -91,9 +91,17 @@ getOptions =
                        timeZone <- getCurrentTimeZone
                        return (utcToLocalTime timeZone utcTime)
       env <- getEnvironment
+
       let usage = "\nType '"++ progName++" --help' for usage info."
           (configs,plainArgs) = partition (isPrefixOf "--config") args
-      argsFromYaml <- mapM readYamlConfig configs
+          (_,ns,_) = getOpt Permute (map fst options) plainArgs
+      configs' <- case (configs,ns) of
+                   ([],[n]) -> 
+                         do let yaml = addExtension (takeBaseName n) ".yaml"
+                            exists <- doesFileExist $ "." </> yaml
+                            return ["--config=" ++ yaml | exists] 
+                   _  -> return configs
+      argsFromYaml <- mapM readYamlConfig configs'
       let (actions, fNames, errors) = getOpt Permute (map fst options) $ concat argsFromYaml ++ plainArgs
       
       unless (null errors) (error $ concat errors ++ usage)

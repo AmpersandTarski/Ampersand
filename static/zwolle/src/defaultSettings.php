@@ -1,6 +1,7 @@
 <?php
 
 use Ampersand\Config;
+use Ampersand\AngularApp;
 
 try{
     Config::set('pathToGeneratedFiles', 'global', dirname(dirname(__FILE__)) . '/generics/');
@@ -62,6 +63,12 @@ try{
     Config::set('defaultAutoHideSuccesses', 'notifications', true);
     Config::set('defaultShowErrors', 'notifications', true);
     Config::set('defaultShowInvariants', 'notifications', true);
+    
+    // Navigation menu settings
+    AngularApp::addMenuItem('refresh', 'app/views/partials/installerMenuItem.html', 
+        function($session){
+            return !Config::get('productionEnv');
+        });
 
 }catch(Exception $e){
     throw $e;

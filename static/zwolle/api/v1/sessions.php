@@ -1,6 +1,7 @@
 <?php
 
 use Ampersand\Session;
+use Ampersand\AngularApp;
 use Ampersand\Log\Notifications;
 use Ampersand\Config;
 use Ampersand\Rule\RuleEngine;
@@ -29,9 +30,9 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 	
 	$content = array ('top' => $top
 					 ,'new' => $new
-					 ,'refreshMenu' => $GLOBALS['navBar']['refreshMenu']
-					 ,'appMenu' => $GLOBALS['navBar']['appMenu']
-					 ,'roleMenu' => $GLOBALS['navBar']['roleMenu']
+					 ,'refreshMenu' => AngularApp::getMenuItems('refresh')
+					 ,'extMenu' => AngularApp::getMenuItems('ext')
+					 ,'roleMenu' => AngularApp::getMenuItems('role')
 					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
 					                             ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
 					                             ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
