@@ -40,9 +40,9 @@ where
             relNameSrcTgt pop = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
             showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
             showRel pop = "RELATION "++relNameSrcTgt pop ++
-                          (if popName pop=="naam" || popName pop=="documentatie" ||
-                              popSource pop=="Property" ||
-                              popSource pop=="Relationship"
+                          (if popName pop=="naam" || popName pop=="type" ||
+                              popName pop=="documentatie" || popName pop=="folder" ||
+                              popSource pop=="Property" || popSource pop=="Relationship"
                            then " [UNI]" else "")
 
    mkArchiContext :: [(P_Population,P_Declaration,[P_Gen])] -> P_Context
@@ -241,10 +241,26 @@ where
       = (typeMap.fldElems)   folder  ++ 
         (typeMap.fldFolders) folder
      grindArchi elemLookup folder
-      = (concat.map (grindArchi elemLookup)               .fldElems)   folder  ++ 
+      = [ translate "name" "ArchiFolder" [(keyArchi folder, fldName folder)]] ++
+        [ translate "type" "ArchiFolder" [(keyArchi folder, fldType folder)]] ++
+        [ translate "sub"  "ArchiFolder"
+           [(keyArchi subFolder, keyArchi folder) | subFolder<-fldFolders folder]
+        | (not.null.fldFolders) folder ] ++
+        [ translate "in"   "ArchiFolder"
+           [(keyArchi element, keyArchi folder) | element<-fldElems folder]
+        | (not.null.fldElems) folder ] ++
+        (concat.map (grindArchi elemLookup)               .fldElems)   folder  ++ 
         (concat.map (grindArchi elemLookup.insType folder).fldFolders) folder
      grindArchiPop elemLookup folder
-      = (concat.map (grindArchiPop elemLookup)               .fldElems)   folder  ++ 
+      = [ translateArchiObj "name" "ArchiFolder" [(keyArchi folder, fldName folder)]] ++
+        [ translateArchiObj "type" "ArchiFolder" [(keyArchi folder, fldType folder)]] ++
+        [ translateArchiObj "sub"  "ArchiFolder"
+           [(keyArchi subFolder, keyArchi folder) | subFolder<-fldFolders folder]
+        | (not.null.fldFolders) folder ] ++
+        [ translateArchiObj "in"   "ArchiFolder"
+           [(keyArchi element, keyArchi folder) | element<-fldElems folder]
+        | (not.null.fldElems) folder ] ++
+        (concat.map (grindArchiPop elemLookup)               .fldElems)   folder  ++ 
         (concat.map (grindArchiPop elemLookup.insType folder).fldFolders) folder
      keyArchi = fldId
 
@@ -256,15 +272,6 @@ where
            ("",_)    -> sub
            (ftyp,"") -> sub{fldType=ftyp}
            _         -> sub
-
-{-
-     { fldName        :: String
-     , fldId          :: String
-     , fldType        :: String
-     , fldElems       :: [Element]
-     , fldFolders     :: [Folder]
-
--}
 
    instance MetaArchi Element where
 -- A type map is constructed for Archi-objects only. Taking relationships into this map brings Archi into higher order logic, and may cause black holes in Haskell. 
@@ -337,6 +344,12 @@ where
    translate :: String -> String -> [(String, String)] -> Pop
    translate "name" typeLabel tuples
     = Pop "naam" typeLabel "Tekst" tuples
+   translate "type" typeLabel tuples
+    = Pop "type" typeLabel "Tekst" tuples
+   translate "sub" typeLabel tuples
+    = Pop "sub" typeLabel typeLabel tuples
+   translate "in" _ tuples
+    = Pop "folder" "ArchiObject" "ArchiFolder" tuples
    translate "docu" typeLabel tuples
     = Pop "documentatie" typeLabel "Tekst" tuples
    translate "key" "Property" tuples
@@ -374,6 +387,15 @@ where
    translateArchiObj "name" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
       , P_Sgn "naam" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+   translateArchiObj "type" typeLabel tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "type" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+      , P_Sgn "type" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+   translateArchiObj "sub" typeLabel tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "sub" (Just (P_Sign (PCpt typeLabel) (PCpt typeLabel)))) (transTuples tuples)
+      , P_Sgn "sub" (P_Sign (PCpt typeLabel) (PCpt typeLabel)) [] [] [] [] OriginUnknown False, [] )
+   translateArchiObj "in" _ tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "folder" (Just (P_Sign (PCpt "ArchiObject") (PCpt "ArchiFolder")))) (transTuples tuples)
+      , P_Sgn "folder" (P_Sign (PCpt "ArchiObject") (PCpt "ArchiFolder")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "docu" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentatie" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
       , P_Sgn "documentatie" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
