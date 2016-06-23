@@ -241,12 +241,30 @@ where
       = (typeMap.fldElems)   folder  ++ 
         (typeMap.fldFolders) folder
      grindArchi elemLookup folder
-      = (concat.map (grindArchi elemLookup).fldElems)   folder  ++ 
-        (concat.map (grindArchi elemLookup).fldFolders) folder
+      = (concat.map (grindArchi elemLookup)               .fldElems)   folder  ++ 
+        (concat.map (grindArchi elemLookup.insType folder).fldFolders) folder
      grindArchiPop elemLookup folder
-      = (concat.map (grindArchiPop elemLookup).fldElems)   folder  ++ 
-        (concat.map (grindArchiPop elemLookup).fldFolders) folder
+      = (concat.map (grindArchiPop elemLookup)               .fldElems)   folder  ++ 
+        (concat.map (grindArchiPop elemLookup.insType folder).fldFolders) folder
      keyArchi = fldId
+
+-- | If a folder has a fldType, all subfolders without a type are meant to have the same fldType.
+--   For this purpose, the fldType is transported recursively to subfolders.
+   insType :: Folder -> Folder -> Folder
+   insType super sub
+    = case (fldType super, fldType sub) of
+           ("",_)    -> sub
+           (ftyp,"") -> sub{fldType=ftyp}
+           _         -> sub
+
+{-
+     { fldName        :: String
+     , fldId          :: String
+     , fldType        :: String
+     , fldElems       :: [Element]
+     , fldFolders     :: [Folder]
+
+-}
 
    instance MetaArchi Element where
 -- A type map is constructed for Archi-objects only. Taking relationships into this map brings Archi into higher order logic, and may cause black holes in Haskell. 
