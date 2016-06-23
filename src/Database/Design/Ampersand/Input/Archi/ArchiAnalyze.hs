@@ -40,9 +40,8 @@ where
             relNameSrcTgt pop = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
             showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
             showRel pop = "RELATION "++relNameSrcTgt pop ++
-                          (if popName pop=="naam" || popName pop=="type" ||
-                              popName pop=="documentatie" || popName pop=="folder" ||
-                              popSource pop=="Property" || popSource pop=="Relationship"
+                          (if popName pop `elem` ["naam", "type", "level", "documentatie", "folder", "archiLayer"]
+                           || popSource pop `elem` ["Property", "Relationship"]
                            then " [UNI]" else "")
 
    mkArchiContext :: [(P_Population,P_Declaration,[P_Gen])] -> P_Context
@@ -95,9 +94,10 @@ where
      } deriving (Show, Eq)
  
    data Folder = Folder
-     { fldName        :: String
-     , fldId          :: String
-     , fldType        :: String
+     { fldName        :: String    -- the name of the folder
+     , fldId          :: String    -- the Archi-id (e.g. "b12f3af5")
+     , fldType        :: String    -- the xsi:type of the folder
+     , fldLevel       :: Int       -- the nesting level: 0=top level, 1=subfolder, 2=subsubfolder, etc.
      , fldElems       :: [Element]
      , fldFolders     :: [Folder]
      } deriving (Show, Eq)
@@ -243,23 +243,31 @@ where
      grindArchi elemLookup folder
       = [ translate "name" "ArchiFolder" [(keyArchi folder, fldName folder)]] ++
         [ translate "type" "ArchiFolder" [(keyArchi folder, fldType folder)]] ++
+        [ translate "level" "ArchiFolder" [(keyArchi folder, (show.fldLevel) folder)]] ++
         [ translate "sub"  "ArchiFolder"
            [(keyArchi subFolder, keyArchi folder) | subFolder<-fldFolders folder]
         | (not.null.fldFolders) folder ] ++
         [ translate "in"   "ArchiFolder"
            [(keyArchi element, keyArchi folder) | element<-fldElems folder]
         | (not.null.fldElems) folder ] ++
+        [ translate "archiLayer" (elemType element)
+           [(keyArchi element, fldType folder)]
+        | element<-fldElems folder] ++
         (concat.map (grindArchi elemLookup)               .fldElems)   folder  ++ 
         (concat.map (grindArchi elemLookup.insType folder).fldFolders) folder
      grindArchiPop elemLookup folder
       = [ translateArchiObj "name" "ArchiFolder" [(keyArchi folder, fldName folder)]] ++
         [ translateArchiObj "type" "ArchiFolder" [(keyArchi folder, fldType folder)]] ++
+        [ translateArchiObj "level" "ArchiFolder" [(keyArchi folder, (show.fldLevel) folder)]] ++
         [ translateArchiObj "sub"  "ArchiFolder"
            [(keyArchi subFolder, keyArchi folder) | subFolder<-fldFolders folder]
         | (not.null.fldFolders) folder ] ++
         [ translateArchiObj "in"   "ArchiFolder"
            [(keyArchi element, keyArchi folder) | element<-fldElems folder]
         | (not.null.fldElems) folder ] ++
+        [ translateArchiObj "archiLayer" (elemType element)
+           [(keyArchi element, fldType folder)]
+        | element<-fldElems folder] ++
         (concat.map (grindArchiPop elemLookup)               .fldElems)   folder  ++ 
         (concat.map (grindArchiPop elemLookup.insType folder).fldFolders) folder
      keyArchi = fldId
@@ -346,6 +354,8 @@ where
     = Pop "naam" typeLabel "Tekst" tuples
    translate "type" typeLabel tuples
     = Pop "type" typeLabel "Tekst" tuples
+   translate "level" _ tuples
+    = Pop "level" "ArchiFolder" "Tekst" tuples
    translate "sub" typeLabel tuples
     = Pop "sub" typeLabel typeLabel tuples
    translate "in" _ tuples
@@ -358,6 +368,8 @@ where
     = Pop "value" "Property" "Tekst" tuples
    translate "elprop" _ tuples
     = Pop "propOf" "Property" "ArchiObject" tuples
+   translate "archiLayer" typeLabel tuples
+    = Pop "archiLayer" typeLabel "ArchiLayer" tuples
    translate _ _ _ = error "fatal 328 non-exhaustive pattern in translate"
 
 -- | The function `translateRel` compiles relationships from archiRepo into a  [Pop].
@@ -390,6 +402,9 @@ where
    translateArchiObj "type" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "type" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
       , P_Sgn "type" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+   translateArchiObj "level" _ tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "level" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")))) (transTuples tuples)
+      , P_Sgn "level" (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "sub" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "sub" (Just (P_Sign (PCpt typeLabel) (PCpt typeLabel)))) (transTuples tuples)
       , P_Sgn "sub" (P_Sign (PCpt typeLabel) (PCpt typeLabel)) [] [] [] [] OriginUnknown False, [] )
@@ -408,6 +423,9 @@ where
    translateArchiObj "elprop" _ tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "propOf" (Just (P_Sign (PCpt "Property") (PCpt "ArchiObject")))) (transTuples tuples)
       , P_Sgn "propOf" (P_Sign (PCpt "Property") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False, [] )
+   translateArchiObj "archiLayer" typeLabel tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "archiLayer" (Just (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")))) (transTuples tuples)
+      , P_Sgn "archiLayer" (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj _ _ _ = error "fatal 328 non-exhaustive pattern in translateArchiObj"
 
 -- | The function `translateArchiRel` does the actual compilation of relationships from archiRepo into the Ampersand P-structure.
@@ -463,27 +481,28 @@ where
         analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
         analArchiRepo
           = atTag "archimate:ArchimateModel" >>>
-            proc l -> do repoNm'   <- getAttrValue "name"               -< l
-                         repoId'   <- getAttrValue "id"                 -< l
-                         folders'  <- listA (getChildren >>> getFolder) -< l
-                         props'    <- listA (getChildren >>> getProp)   -< l
+            proc l -> do repoNm'   <- getAttrValue "name"                  -< l
+                         repoId'   <- getAttrValue "id"                    -< l
+                         folders'  <- listA (getChildren >>> getFolder 0)  -< l
+                         props'    <- listA (getChildren >>> getProp)      -< l
                          returnA   -< ArchiRepo { archRepoName   = repoNm'
                                                 , archRepoId     = repoId'
                                                 , archFolders    = folders'
                                                 , archProperties = [ prop{archPropId=Just $ "pr-"++show i} | (prop,i)<- zip props' [length (allProps folders')..] ]
                                                 }
 
-        getFolder :: ArrowXml a => a XmlTree Folder
-        getFolder
+        getFolder :: ArrowXml a => Int -> a XmlTree Folder
+        getFolder level
          = isElem >>> hasName "folders" >>>
             proc l -> do fldNm'     <- getAttrValue "name"                 -< l
                          fldId'     <- getAttrValue "id"                   -< l
                          fldType'   <- getAttrValue "type"                 -< l
                          elems'     <- listA (getChildren >>> getElement)  -< l
-                         subFlds'   <- listA (getChildren >>> getFolder)   -< l
+                         subFlds'   <- listA (getChildren >>> getFolder (level+1))   -< l
                          returnA    -< Folder { fldName    = fldNm'
                                               , fldId      = fldId'
                                               , fldType    = fldType'
+                                              , fldLevel   = level
                                               , fldElems   = elems'
                                               , fldFolders = subFlds'
                                               }
