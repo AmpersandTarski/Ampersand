@@ -202,7 +202,7 @@ class Atom {
     public function getLabel(){
         if(!isset($this->label)){
             $viewStr = implode($this->getView());
-            $this->label = empty($viewStr) ? $this->id : $viewStr; // empty view => label = id
+            $this->label = empty(trim($viewStr)) ? $this->id : $viewStr; // empty view => label = id
         }
         return $this->label;
     }
