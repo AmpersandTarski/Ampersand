@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
+﻿{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
 module Main -- Database.Design.Ampersand.FSpec.ArchiAnalyze
 where
 --   import Database.Design.Ampersand.Core.ParseTree

@@ -1,13 +1,13 @@
-﻿{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
+{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
 module Database.Design.Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
    -- The purpose of this module is to load Archimate content into an Ampersand context.
    -- This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
    -- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
    -- In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
 where
-   import Database.Design.Ampersand.Basics  -- for things such as fatal, eqClass
-   import Data.Char                         -- for things such as toLower
-   import qualified Data.Map.Strict as Map  -- import qualified, to avoid name clashes with Prelude functions
+   import Database.Design.Ampersand.Basics hiding (writeFile) -- for things such as fatal, eqClass
+   import Data.Char                                           -- for things such as toLower
+   import qualified Data.Map.Strict as Map                    -- import qualified, to avoid name clashes with Prelude functions
    import Data.Tree.NTree.TypeDefs
    import Text.XML.HXT.Core hiding (utf8, fatal,trace)
    import Database.Design.Ampersand.Core.ParseTree
@@ -25,9 +25,25 @@ where
    --   Finally, the function `mkArchiContext` produces a `P_Context` ready to be merged into the rest of Ampersand's population.
    archi2PContext :: String -> IO P_Context
    archi2PContext archiRepoFilename  -- e.g. "CA repository.xml"
-    = do archiRepo <- runX (processStraight archiRepoFilename)
-         let elemLookup atom = Map.lookup atom (Map.fromList (typeMap archiRepo))
-         return ((mkArchiContext . grindArchiPop elemLookup . identifyProps []) archiRepo)
+    = do -- hSetEncoding stdout utf8
+         archiRepo <- runX (processStraight archiRepoFilename)
+         let elemLookup atom = (Map.lookup atom . Map.fromList . typeMap) archiRepo
+         let archiRepoWithProps = (identifyProps []) archiRepo
+         let pops = (filter (not.null.popPairs) . sortPops . grindArchi elemLookup) archiRepoWithProps
+         writeFile "ArchiMetaModel.adl"
+          ( (intercalate "\n\n" . map show) pops  ++
+            "\n\n"                                ++
+            (intercalate "\n" . map showRel) pops
+          )
+         return ((mkArchiContext . grindArchiPop elemLookup) archiRepoWithProps)
+      where sortPops pops = [ (head cl){popPairs = concatMap popPairs cl} | cl<-eqCl relNameSrcTgt pops ]
+            relNameSrcTgt pop = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
+            showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
+            showRel pop = "RELATION "++relNameSrcTgt pop ++
+                          (if popName pop=="naam" || popName pop=="documentatie" ||
+                              popSource pop=="Property" ||
+                              popSource pop=="Relationship"
+                           then " [UNI]" else "")
 
    mkArchiContext :: [(P_Population,P_Declaration,[P_Gen])] -> P_Context
    mkArchiContext pops =
@@ -57,6 +73,17 @@ where
            archiDecls :: [P_Declaration]
            archiGenss :: [[P_Gen]]
            (archiPops, archiDecls, archiGenss) = unzip3 pops
+
+-- The datastructure `Pop` is used to generate an Archimate-metamodel in ADL-format from an ArchiRepo
+   data Pop = Pop { popName ::   String
+                  , popSource :: String
+                  , popTarget :: String
+                  , popPairs ::  [(String,String)]
+                  }
+
+   instance Show Pop where
+     show p = "POPULATION "++popName p++"["++popSource p++"*"++popTarget p++"]\n    [ "++
+              intercalate "\n    , " [ "("++show x++", "++show y++")" | (x,y)<-popPairs p ]++"\n    ]"
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
@@ -189,7 +216,9 @@ where
 --   class MetaArchi, and instantiate it on ArchiRepo and all its constituent types.
    class MetaArchi a where
      typeMap ::        a -> [(String,String)]        -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
-     grindArchiPop :: (String->Maybe String) -> a -> -- create population and the corresponding metamodel for the metamodel of Archi (i.e. BusinessProcess, DataObject, etc.)
+     grindArchi ::    (String->Maybe String) -> a -> -- create population for the ADL-formatted  metamodel of Archi
+                      [Pop]                         
+     grindArchiPop :: (String->Maybe String) -> a -> -- create population and the corresponding metamodel for the P-structure in Ampersand
                       [(P_Population,P_Declaration,[P_Gen])]
      keyArchi ::       a -> String                   -- get the key value (dirty identifier) of an a.
 
@@ -197,6 +226,10 @@ where
      typeMap archiRepo
       = typeMap [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]  ++ 
         (typeMap.archProperties) archiRepo
+     grindArchi elemLookup archiRepo
+      = (concat.map (grindArchi elemLookup)) backendFolders  ++ 
+        (concat.map (grindArchi elemLookup).archProperties) archiRepo
+        where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
      grindArchiPop elemLookup archiRepo
       = (concat.map (grindArchiPop elemLookup)) backendFolders  ++ 
         (concat.map (grindArchiPop elemLookup).archProperties) archiRepo
@@ -207,6 +240,9 @@ where
      typeMap folder
       = (typeMap.fldElems)   folder  ++ 
         (typeMap.fldFolders) folder
+     grindArchi elemLookup folder
+      = (concat.map (grindArchi elemLookup).fldElems)   folder  ++ 
+        (concat.map (grindArchi elemLookup).fldFolders) folder
      grindArchiPop elemLookup folder
       = (concat.map (grindArchiPop elemLookup).fldElems)   folder  ++ 
         (concat.map (grindArchiPop elemLookup).fldFolders) folder
@@ -217,6 +253,23 @@ where
      typeMap element
       = [(keyArchi element, elemType element) | (not.null.elemName) element, (null.elemSrc) element] ++
         typeMap (elProps element)
+     grindArchi elemLookup element
+      = [ translate "name" (elemType element) [(keyArchi element, elemName element)]
+        | (not.null.elemName) element, (null.elemSrc) element] ++
+        [ translate "docu" (elemType element) [(keyArchi element, elemDocu element)]
+        | (not.null.elemDocu) element, (null.elemSrc) element] ++
+        (if isRelationship element then []  else    -- do this only for elements which are a relationship.
+         translateRel
+                    elemLookup (keyArchi element)
+                    (if (null.elemName) element
+                     then unfixRel (elemType element)
+                     else relCase (elemName element)
+                    )
+                    (elemSrc element) (elemTgt element)
+        ) ++
+        [ translate "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
+        | prop<-elProps element] ++
+        (concat.map (grindArchi elemLookup).elProps) element
      grindArchiPop elemLookup element
       = [ translateArchiObj "name" (elemType element) [(keyArchi element, elemName element)]
         | (not.null.elemName) element, (null.elemSrc) element] ++
@@ -227,7 +280,7 @@ where
                     elemLookup (keyArchi element)
                     (if (null.elemName) element
                      then unfixRel (elemType element)
-                     else elemName element
+                     else relCase (elemName element)
                     )
                     (elemSrc element) (elemTgt element)
         ) ++
@@ -242,6 +295,12 @@ where
    instance MetaArchi ArchiProp where
      typeMap _
       = []
+     grindArchi _ property
+      = [ translate "key" "Property"
+            [(keyArchi property, archPropKey property) | (not.null.archPropKey) property ]
+        , translate "value" "Property"
+            [(keyArchi property, archPropVal property) | (not.null.archPropVal) property ]
+        ]
      grindArchiPop _ property
       = [ translateArchiObj "key" "Property"
             [(keyArchi property, archPropKey property) | (not.null.archPropKey) property ]
@@ -252,8 +311,43 @@ where
 
    instance MetaArchi a => MetaArchi [a] where
      typeMap                  xs = concat [ typeMap                  x | x<-xs ]
+     grindArchi elemLookup    xs = concat [ grindArchi    elemLookup x | x<-xs ]
      grindArchiPop elemLookup xs = concat [ grindArchiPop elemLookup x | x<-xs ]
      keyArchi = error "fatal 269: cannot use keyArchi on a list"
+
+-- | The function `translate` compiles data objects from archiRepo into a  [Pop].
+   translate :: String -> String -> [(String, String)] -> Pop
+   translate "name" typeLabel tuples
+    = Pop "naam" typeLabel "Tekst" tuples
+   translate "docu" typeLabel tuples
+    = Pop "documentatie" typeLabel "Tekst" tuples
+   translate "key" "Property" tuples
+    = Pop "key" "Property" "Tekst" tuples
+   translate "value" "Property" tuples
+    = Pop "value" "Property" "Tekst" tuples
+   translate "elprop" _ tuples
+    = Pop "propOf" "Property" "ArchiObject" tuples
+   translate _ _ _ = error "fatal 328 non-exhaustive pattern in translate"
+
+-- | The function `translateRel` compiles relationships from archiRepo into a  [Pop].
+   translateRel :: (String -> Maybe String) -> String -> String -> String -> String -> [Pop]
+   translateRel elemLookup relId relLabel x y
+    = [ Pop relNm xType yType [(x,y)]
+      , Pop "source" "Relationship" "ArchiObject" [(relId,x)]
+      , Pop "target" "Relationship" "ArchiObject" [(relId,y)]
+      ] ++
+      [ Pop "datatype" "Relationship" "Tekst" [(relId,relLabel)]
+      | xType=="ApplicationComponent" && yType=="ApplicationComponent" && relLabel/="flow" ]
+      where xType = case elemLookup x of
+                      Just str -> str
+                      Nothing -> fatal 292 ("No Archi-object found for Archi-identifier "++show x)
+            yType = case elemLookup y of
+                      Just str -> str
+                      Nothing -> fatal 293 ("No Archi-object found for Archi-identifier "++show y)
+            relNm = if xType=="ApplicationComponent" && yType=="ApplicationComponent"
+                    then "flow"
+                    else relCase relLabel  --  ++"["++xType++"*"++yType++"]"
+
 
 -- | The function `translateArchiObj` does the actual compilation of data objects from archiRepo into the Ampersand structure.
 --   It looks redundant to produce both a `P_Population` and a `P_Declaration`, but the first contains the population and the second is used to
@@ -276,15 +370,13 @@ where
       , P_Sgn "propOf" (P_Sign (PCpt "Property") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj _ _ _ = error "fatal 328 non-exhaustive pattern in translateArchiObj"
 
--- | The function `translateArchiRel` does the actual compilation of relationships from archiRepo into the Ampersand structure.
+-- | The function `translateArchiRel` does the actual compilation of relationships from archiRepo into the Ampersand P-structure.
    translateArchiRel :: (String -> Maybe String) -> String -> String -> String -> String -> [(P_Population, P_Declaration, [P_Gen])]
    translateArchiRel elemLookup relId relLabel x y
     = [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relNm (Just (P_Sign (PCpt xType) (PCpt yType)))) (transTuples [(x,y)])
         , P_Sgn relNm (P_Sign (PCpt xType) (PCpt yType)) [] [] [] [] OriginUnknown False
         , []
         )
--- To obtain a readable Archimate Metamodel in graphviz, remove the following 4 lines from the code.
--- In that way, the source- and target functions (from the meta-metamodel) do not pollute the diagram, whereas the relation is still visible.
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "source" (Just (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")))) (transTuples [(relId,x)])
         , P_Sgn "source" (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False
         , [] -- [ PGen OriginUnknown (PCpt xType) (PCpt "ArchiObject") ]
@@ -307,7 +399,7 @@ where
                       Nothing -> fatal 293 ("No Archi-object found for Archi-identifier "++show y)
             relNm = if xType=="ApplicationComponent" && yType=="ApplicationComponent"
                     then "flow"
-                    else relLabel  --  ++"["++xType++"*"++yType++"]"
+                    else relCase relLabel  --  ++"["++xType++"*"++yType++"]"
 
    unfixRel :: String -> String
    unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
