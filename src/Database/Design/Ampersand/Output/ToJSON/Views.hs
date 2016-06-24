@@ -11,7 +11,7 @@ import Database.Design.Ampersand.Output.ToJSON.Concepts
 data Views = Views [View] deriving (Generic, Show)
 data View = View
   { vwJSONlabel      :: String
-  , vwJSONconcept    :: String
+  , vwJSONconceptId  :: String
   , vwJSONisDefault  :: Bool
   , vwJSONsegments   :: [Segment]
   } deriving (Generic, Show)
@@ -25,7 +25,7 @@ instance JSON FSpec Views where
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
   { vwJSONlabel      = name vd
-  , vwJSONconcept    = name . vdcpt $ vd
+  , vwJSONconceptId  = escapeIdentifier . name . vdcpt $ vd
   , vwJSONisDefault  = vdIsDefault vd
   , vwJSONsegments   = map (fromAmpersand fSpec) . vdats $ vd
   } 
