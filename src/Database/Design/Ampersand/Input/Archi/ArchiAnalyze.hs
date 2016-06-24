@@ -40,7 +40,7 @@ where
             relNameSrcTgt pop = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
             showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
             showRel pop = "RELATION "++relNameSrcTgt pop ++
-                          (if popName pop `elem` ["naam", "type", "level", "documentatie", "folder", "archiLayer"]
+                          (if popName pop `elem` ["cat", "naam", "type", "level", "documentatie", "folder", "archiLayer"]
                            || popSource pop `elem` ["Property", "Relationship"]
                            then " [UNI]" else "")
 
@@ -98,8 +98,8 @@ where
      , fldId          :: String    -- the Archi-id (e.g. "b12f3af5")
      , fldType        :: String    -- the xsi:type of the folder
      , fldLevel       :: Int       -- the nesting level: 0=top level, 1=subfolder, 2=subsubfolder, etc.
-     , fldElems       :: [Element]
-     , fldFolders     :: [Folder]
+     , fldElems       :: [Element] -- the elements in the current folder, without the subfolders
+     , fldFolders     :: [Folder]  -- the subfolders
      } deriving (Show, Eq)
 
    data Element = Element
@@ -250,6 +250,8 @@ where
         [ translate "in"   "ArchiFolder"
            [(keyArchi element, keyArchi folder) | element<-fldElems folder]
         | (not.null.fldElems) folder ] ++
+        [ translate "cat" (elemType element) [(keyArchi element, fldName folder)]
+        | fldLevel folder>1, element<-fldElems folder] ++
         [ translate "archiLayer" (elemType element)
            [(keyArchi element, fldType folder)]
         | element<-fldElems folder] ++
@@ -265,12 +267,15 @@ where
         [ translateArchiObj "in"   "ArchiFolder"
            [(keyArchi element, keyArchi folder) | element<-fldElems folder]
         | (not.null.fldElems) folder ] ++
+        [ translateArchiObj "cat" (elemType element) [(keyArchi element, fldName folder)]
+        | fldLevel folder>1, element<-fldElems folder] ++
         [ translateArchiObj "archiLayer" (elemType element)
            [(keyArchi element, fldType folder)]
         | element<-fldElems folder] ++
         (concat.map (grindArchiPop elemLookup)               .fldElems)   folder  ++ 
         (concat.map (grindArchiPop elemLookup.insType folder).fldFolders) folder
      keyArchi = fldId
+
 
 -- | If a folder has a fldType, all subfolders without a type are meant to have the same fldType.
 --   For this purpose, the fldType is transported recursively to subfolders.
@@ -348,6 +353,7 @@ where
      grindArchiPop elemLookup xs = concat [ grindArchiPop elemLookup x | x<-xs ]
      keyArchi = error "fatal 269: cannot use keyArchi on a list"
 
+
 -- | The function `translate` compiles data objects from archiRepo into a  [Pop].
    translate :: String -> String -> [(String, String)] -> Pop
    translate "name" typeLabel tuples
@@ -360,6 +366,8 @@ where
     = Pop "sub" typeLabel typeLabel tuples
    translate "in" _ tuples
     = Pop "folder" "ArchiObject" "ArchiFolder" tuples
+   translate "cat" typeLabel tuples
+    = Pop "category" typeLabel "Tekst" tuples
    translate "docu" typeLabel tuples
     = Pop "documentatie" typeLabel "Tekst" tuples
    translate "key" "Property" tuples
@@ -411,6 +419,9 @@ where
    translateArchiObj "in" _ tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "folder" (Just (P_Sign (PCpt "ArchiObject") (PCpt "ArchiFolder")))) (transTuples tuples)
       , P_Sgn "folder" (P_Sign (PCpt "ArchiObject") (PCpt "ArchiFolder")) [Uni] [] [] [] OriginUnknown False, [] )
+   translateArchiObj "cat" typeLabel tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "category" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
+      , P_Sgn "category" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "docu" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentatie" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
       , P_Sgn "documentatie" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
@@ -498,7 +509,7 @@ where
                          fldId'     <- getAttrValue "id"                   -< l
                          fldType'   <- getAttrValue "type"                 -< l
                          elems'     <- listA (getChildren >>> getElement)  -< l
-                         subFlds'   <- listA (getChildren >>> getFolder (level+1))   -< l
+                         subFlds'   <- listA (getChildren >>> getFolder (level+1)) -< l
                          returnA    -< Folder { fldName    = fldNm'
                                               , fldId      = fldId'
                                               , fldType    = fldType'
@@ -517,7 +528,7 @@ where
                                                  }
 
         getElement :: ArrowXml a => a XmlTree Element
-        getElement = atTag "elements" >>>
+        getElement = isElem >>> hasName "elements" >>>  -- don't use atTag, because recursion is in getFolder.
             proc l -> do elemType'  <- getAttrValue "xsi:type"           -< l
                          elemId'    <- getAttrValue "id"                 -< l
                          elemName'  <- getAttrValue "name"               -< l
