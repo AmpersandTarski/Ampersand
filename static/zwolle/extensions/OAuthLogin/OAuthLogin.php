@@ -175,7 +175,7 @@ class OAuthLoginController {
     private function login($email){
         if(empty($email)) throw new Exception("No emailaddress provided to login", 500);
         
-        Session::singleton();
+        $session = Session::singleton();
         $db = Database::singleton();
         
         // Set sessionUser
@@ -212,7 +212,7 @@ class OAuthLoginController {
         
         foreach ($accounts as $account){				    
             // Set sessionAccount
-            $relSessionAccount->addLink(new Atom(session_id(), 'SESSION'), $account, false, 'OAuthLoginExtension');
+            $relSessionAccount->addLink($session->sessionAtom, $account, false, 'OAuthLoginExtension');
 
             // Timestamps
             $ts = new Atom(date(DATE_ISO8601), 'DateTime');

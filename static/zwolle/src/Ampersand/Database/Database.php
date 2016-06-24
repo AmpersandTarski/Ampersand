@@ -133,7 +133,8 @@ class Database {
 		    if(!Config::get('productionEnv')){
     		    switch ($e->getCode()){
     		        case 1049 :
-    		            Logger::getUserLogger()->error('Please <a href="#/admin/installer" class="alert-link">install database</a>');
+    		            throw new Exception("Please <a href=\"#/admin/installer\" class=\"alert-link\">install database</a>",500);
+                        break;
     		        default : 
     		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
     		    }
@@ -254,7 +255,6 @@ class Database {
 	 */
 	public function Exe($query){
 		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
-		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
 		$result = $this->doQuery($query);
 		$this->logger->debug($query);
