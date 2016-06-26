@@ -461,10 +461,10 @@ pObjDef = obj <$> currPos
                        , obj_mView = mView
                        , obj_msub = msub
                        }
---- Cruds ::= ADLid | Conid
+--- Cruds ::= crud in upper /lowercase combinations
 pCruds :: AmpParser P_Cruds
-pCruds = P_Cruds <$> currPos 
-                 <*> (pADLid <|> pConid)
+pCruds = P_Cruds <$> currPos <*> pCrudString
+
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
 pBox = pBrackets $ pObjDef `sepBy1` pComma

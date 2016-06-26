@@ -9,7 +9,7 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
     -- Positions
     currPos, posOf, valPosOf,
     -- Basic parsers
-    pConid, pString, pExpl, pVarid,
+    pConid, pString, pExpl, pVarid, pCrudString,
     -- special parsers
     pAtomInExpression, pAtomValInPopulation, Value(..),
     -- Special symbols
@@ -35,6 +35,7 @@ import Data.Time.Calendar
 import Data.Time.Clock
 import Database.Design.Ampersand.Basics (fatal)
 import Data.Maybe
+import Data.Char(toLower)
 import Prelude hiding ((<$))
 
 -- | The Ampersand parser type
@@ -129,6 +130,22 @@ pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing }) <?> "exp
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
 pVarid = check (\lx -> case lx of { LexVarId s -> Just s; _ -> Nothing }) <?> "lower case identifier"
+
+pCrudString :: AmpParser String
+pCrudString = check (\lx -> case lx of 
+                              LexConId s -> testCrud s 
+                              LexVarId s -> testCrud s
+                              _ -> Nothing 
+                    ) <?> "crud definition"
+   where 
+     testCrud "" = Nothing
+     testCrud s = test "crud" (map toLower s)
+       where test _ [] = Just s
+             test [] _ = Nothing
+             test (x:xs) (y:ys) 
+                       = if x == y 
+                         then test xs ys
+                         else test xs (y:ys)
 
 --- Atom ::= "'" Any* "'"
 pAtomInExpression :: AmpParser Value
