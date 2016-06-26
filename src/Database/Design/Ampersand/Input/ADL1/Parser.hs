@@ -411,9 +411,9 @@ pInterface = lbl <$> currPos
                  <*> (pColon *> pTerm)          -- the expression of the interface object
                  <*> pMaybe pCruds              -- The Crud-string (will later be tested, that it can contain only characters crud (upper/lower case)
                  <*> pMaybe (pChevrons pConid)  -- The view that should be used for this object
-                 <*> pMaybe pSubInterface
-    where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> Maybe P_SubInterface -> P_Interface
-          lbl p nm params roles ctx mCrud mView msub
+                 <*> pSubInterface
+    where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
+          lbl p nm params roles ctx mCrud mView sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_Obj { obj_nm   = nm
@@ -421,7 +421,7 @@ pInterface = lbl <$> currPos
                                           , obj_ctx  = ctx
                                           , obj_crud = mCrud
                                           , obj_mView = mView
-                                          , obj_msub = msub
+                                          , obj_msub = Just sub
                                           }
                      , ifc_Pos    = p
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
@@ -467,7 +467,7 @@ pCruds = P_Cruds <$> currPos <*> pCrudString
 
 --- Box ::= '[' ObjDefList ']'
 pBox :: AmpParser [P_ObjectDef]
-pBox = pBrackets $ pObjDef `sepBy1` pComma
+pBox = pBrackets $ pObjDef `sepBy` pComma
 
 --- Sqlplug ::= 'SQLPLUG' ObjDef
 pSqlplug :: AmpParser P_ObjectDef
