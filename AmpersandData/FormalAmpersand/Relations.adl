@@ -2,9 +2,12 @@
 -- The comments for this script can be found in Rules.doc
 
 PATTERN Relations
---VIEW Relation: Relation( name , TXT "::", sign;src;name[Concept*Identifier] ,TXT " * ", sign;tgt;name[Concept*Identifier] )
---IDENT Relation: Relation( name, sign;src;name[Concept*Identifier], sign;tgt;name[Concept*Identifier] )
-RULE "eq relation": name[Relation*Name];name[Relation*Name]~ /\ sign[Relation*Signature];src;(sign[Relation*Signature];src)~ /\ sign[Relation*Signature];tgt;(sign[Relation*Signature];tgt)~ |- I[Relation]
+--VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*Identifier] ,TXT " * ", sign[Relation*Signature];tgt;name[Concept*Identifier] )
+--IDENT Relation: Relation( name, sign[Relation*Signature];src;name[Concept*Identifier], sign[Relation*Signature];tgt;name[Concept*Identifier] )
+RULE "eq relation": name[Relation*Name];name[Relation*Name]~ 
+                 /\ sign[Relation*Signature];src[Signature*Concept];(sign[Relation*Signature];src[Signature*Concept])~ 
+                 /\ sign[Relation*Signature];tgt[Signature*Concept];(sign[Relation*Signature];tgt[Signature*Concept])~ 
+                 |- I[Relation]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
 
@@ -15,7 +18,7 @@ MEANING "The signature of a relation."
 RELATION decprps[Relation*PropertyRule] [INJ]
 MEANING "The properties of a relation."
 
-VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , tgt;name[Concept*Identifier] , TXT "]" )
+VIEW Signature: Signature( TXT "[" , src[Signature*Concept];name[Concept*Identifier] , TXT "*" , tgt;name[Concept*Identifier] , TXT "]" )
 
 RELATION src[Signature*Concept] [UNI,TOT]
 MEANING "The source of a signature."
