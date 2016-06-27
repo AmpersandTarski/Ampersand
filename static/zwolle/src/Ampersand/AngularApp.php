@@ -103,10 +103,12 @@ class AngularApp {
         }
         
         // Filter menu items
-        return array_filter($arr, function($item) use ($session){
+        $result = array_filter($arr, function($item) use ($session){
             // Execute function which determines if item must be added or not
             return $item['addItem']($session);
         });
+        
+        return array_values($result); // reindex array
     }
     
     public static function getNavBarIfcs($menu){
@@ -139,9 +141,11 @@ class AngularApp {
         });
         
         // Create return object
-        return array_map(function($ifc){
+        $result = array_map(function($ifc){
             return array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
         }, $interfaces);
+        
+        return array_values($result); // reindex array
     }
 
 	public function buildHtml(){

@@ -778,7 +778,7 @@ class InterfaceObject {
 	public static function getPublicInterfaces(){
 	    $interfaces = array();
 	    foreach(InterfaceObject::getAllInterfaces() as $ifc){
-	        if (empty($ifc->ifcRoleNames)) $interfaces[$ifc->id] = $ifc;
+	        if (empty($ifc->ifcRoleNames)) $interfaces[] = $ifc;
 	    }
 	    return $interfaces;
 	}
