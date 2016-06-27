@@ -28,7 +28,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   ]
 INTERFACE GenTree FOR Ampersand : I[Concept]
 BOX [ concept : I[Concept]
-    , "Kinds" :  gengen~;genspc LINKTO INTERFACE GenTree
+    , "Kinds" :  gengen[Gen*Concept]~;genspc[Gen*Concept] LINKTO INTERFACE GenTree
     ] 
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternIdentifier]
@@ -69,10 +69,10 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
     , name    : name
     , ttype   : ttype
-    , "source~" : source~ LINKTO INTERFACE Relation
-    , "target~" : target~ LINKTO INTERFACE Relation
-    , "gengen~" : gengen~
-    , "genspc~" : genspc~
+    , "source~" : source[Relation*Concept]~ LINKTO INTERFACE Relation
+    , "target~" : target[Relation*Concept]~ LINKTO INTERFACE Relation
+    , "gengen~" : gengen[Gen*Concept]~
+    , "genspc~" : genspc[Gen*Concept]~
     , "rootConcept~" : rootConcept~
     , "src of expression~" : src[Expression*Concept]~
     , "tgt of expression~" : tgt[Expression*Concept]~
@@ -108,12 +108,12 @@ TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Pair" : I
          , l : l
          , r : r
-         , in : in
+         , inPR : inPR[Pair*Relation]
          ]
     , Relations : V[SESSION*Relation]
     COLS [ "Relation" : I 
-         , source : source
-         , target : target
+         , source : source[Relation*Concept]
+         , target : target[Relation*Concept]
          ]
     , Concepts : V[SESSION*Concept]
     COLS [ "Concept" : I 
@@ -131,8 +131,8 @@ BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
 
 INTERFACE Gen FOR Ampersand : I[Gen]
 BOX [ "gens~" : gens~
-    , "gengen" : gengen
-    , "genspc" : genspc
+    , "gengen" : gengen[Gen*Concept]
+    , "genspc" : genspc[Gen*Concept]
     ]
 
 INTERFACE Relation FOR Ampersand : I[Relation]
@@ -154,7 +154,7 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
 	, "bind~" : bind[Expression*Relation]~
 	, "declarations~" : declarations[Pattern*Relation]~
-	, "in~" : in[Pair*Relation]~
+	, "in~" : inPR[Pair*Relation]~
 	      BOX <SHCOLS>
 	        [ l : l
 	        , r : r

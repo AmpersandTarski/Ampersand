@@ -11,7 +11,7 @@ PROCESS Atoms
     RULE "Identifiability of concepts": name;name~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
-    RELATION in[Pair*Relation] [UNI,TOT] -- TOT is maintained by the exec-engine
+    RELATION inPR[Pair*Relation] [UNI,TOT] -- TOT is maintained by the exec-engine
     RELATION l[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
     RELATION r[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
 ENDPROCESS
@@ -21,15 +21,15 @@ PROCESS "Compute populations"
     MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
     ROLE ExecEngine MAINTAINS insPop, delPop
-    RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop
+    RULE insPop : l~;inPR[Pair*Relation];source[Relation*Concept];isaStar \/ r~;inPR[Pair*Relation];target[Relation*Concept];isaStar |- pop
     VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-    RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
+    RULE delPop : pop |- l~;inPR[Pair*Relation];source[Relation*Concept];isaStar \/ r~;inPR[Pair*Relation];target[Relation*Concept];isaStar
     VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
-    ROLE ExecEngine MAINTAINS "TOT in", "TOT in[Pair*Relation]"
-    RULE "TOT in" : I[Pair] |- in;in~
-    VIOLATION ( TXT "{EX} DelPair;l;Pair;", SRC I, TXT ";Atom;", TGT in
-              , TXT "{EX} DelPair;r;Pair;", SRC I, TXT ";Atom;", TGT in
+    ROLE ExecEngine MAINTAINS "TOT inPR", "TOT inPR[Pair*Relation]"
+    RULE "TOT inPR" : I[Pair] |- inPR[Pair*Relation];inPR[Pair*Relation]~
+    VIOLATION ( TXT "{EX} DelPair;l;Pair;", SRC I, TXT ";Atom;", TGT inPR[Pair*Relation]
+              , TXT "{EX} DelPair;r;Pair;", SRC I, TXT ";Atom;", TGT inPR[Pair*Relation]
               , TXT "{EX} DelAtom;Pair;", SRC I
               )
 

@@ -13,7 +13,7 @@ PROCESS "Expression definitions"
     VIEW Equivalence        : Equivalence(TXT "RULE ", first, TXT " = ", second)
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first, TXT " |- ", second)
     VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
-    VIEW Relation           : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
+    VIEW Relation           : Relation(name, TXT "[", source[Relation*Concept];name, TXT "*", target[Relation*Concept];name, TXT "]")
     VIEW UnaryMinus         : UnaryMinus(TXT "-", arg[UnaryTerm*Expression])
     VIEW Converse           : Converse  (arg[UnaryTerm*Expression], TXT "~")
     VIEW KleeneStar         : KleeneStar(arg[UnaryTerm*Expression], TXT "*")

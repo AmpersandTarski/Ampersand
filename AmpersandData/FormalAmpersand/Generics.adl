@@ -16,7 +16,7 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 --    ();
 
 --[Relations]--
---IDENT Relations: Relation(name,source,target,context) -- the name of the relation must be unique; it is therefore not the same as a RAP:Relation.
+--IDENT Relations: Relation(name,source[Relation*Concept],target[Relation*Concept],context) -- the name of the relation must be unique; it is therefore not the same as a RAP:Relation.
 RELATION affectedInvConjunctIds[Relation*Conjunct]
 MEANING "When a pair in a relation is edited (created, updated or deleted), an (invariant) conjunct may be affected"
 RELATION affectedSigConjunctIds[Relation*Conjunct]
