@@ -259,13 +259,12 @@ class Atom {
 	}
     
     public function getQueryData($colName = null){
-        if(is_null($this->qData)) throw new Exception("No query data available for atom '{$this->__toString()}'", 1001);
         if(is_null($colName)){
-            return $this->qData;
+            if(is_null($this->qData)) return array();
+            else return $this->qData;
         }else{
             // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
-            $colName;
-            if(!array_key_exists($colName, $this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
+            if(!array_key_exists($colName, (array)$this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
             return $this->qData[$colName];
         }
     }

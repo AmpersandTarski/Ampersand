@@ -373,11 +373,16 @@ class InterfaceObject {
         
         $tgtAtoms = array();
         try {
-            // Try to get tgt atom from srcAtom query data (in case of uni relation in same table)
-            $tgt = $this->srcAtom->getQueryData('ifc_' . $this->id); // column is prefixed with ifc_
-            if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept->name, $this);
-            
+            // If interface isIdent (i.e. expr = I[Concept]) we can return the srcAtom
+            if($this->isIdent){
+                $tgtAtoms[] = new Atom($this->srcAtom->id, $this->tgtConcept->name, $this, $this->srcAtom->getQueryData());
+                
+            // Else try to get tgt atom from srcAtom query data (in case of uni relation in same table)
+            }else{
+                $tgt = $this->srcAtom->getQueryData('ifc_' . $this->id); // column is prefixed with ifc_
                 // $this->logger->debug("#217 One query saved due to reusing data from source atom");
+                if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept->name, $this);
+            }            
         }catch (Exception $e) {
             // Column not defined, perform sub interface query
             if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
