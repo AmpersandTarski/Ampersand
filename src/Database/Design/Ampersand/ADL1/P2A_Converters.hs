@@ -603,7 +603,9 @@ pCtx2aCtx opts
          })
      = do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
           crud <- pCruds2aCruds mCrud
-          maybeObj <- maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
+          maybeObj <- case subs of
+                        Just P_Box{si_box=[]} -> pure Nothing
+                        _ -> maybeOverGuarded (pSubi2aSubi declMap objExpr tgtBounded o) subs <* typeCheckViewAnnotation objExpr mView
           case maybeObj of
                Just (newExpr,subStructures) -> return (obj crud (newExpr,srcBounded) (Just subStructures))
                Nothing                      -> return (obj crud (objExpr,srcBounded) Nothing)
