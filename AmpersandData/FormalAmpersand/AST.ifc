@@ -15,7 +15,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
     ]
   , "Patterns" : patterns[Context*Pattern] BOX 
     [ "Pattern" : I INTERFACE Pattern]
-  , "Gens" : concs ; (I[Concept] 
+  , "Gens" : concs[Context*Concept] ; (I[Concept] 
           /\
                 (gengen[Gen*Concept]~;gengen[Gen*Concept]) /\
                 ( -(genspc[Gen*Concept]~;genspc[Gen*Concept]))) 
@@ -84,13 +84,15 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
 
 INTERFACE Expression FOR Ampersand : I[Expression]
 BOX [ expression: I[Expression]
-    , first : first LINKTO INTERFACE Expression
+    , first : first[BinaryTerm*Expression] LINKTO INTERFACE Expression
     , operator : operator
-    , second : second LINKTO INTERFACE Expression
+    , second : second[BinaryTerm*Expression] LINKTO INTERFACE Expression
     , arg : arg[UnaryTerm*Expression]
     , term : term[Rule*Expression]
-    , bind  : bind LINKTO INTERFACE Expression
-    , singleton : singleton LINKTO INTERFACE Expression
+    , bind  : bind[Expression*Relation] LINKTO INTERFACE Expression
+    , singleton : singleton[Atom*Expression] LINKTO INTERFACE Expression
+    , "user defined src" : userSrc["V"*Concept]
+    , "user defined trg" : userTrg["V"*Concept]
     ]
 INTERFACE Signature FOR Ampersand : I[Signature]
 BOX [ Signature: I[Signature]
@@ -129,7 +131,7 @@ BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
 
 
 INTERFACE Gen FOR Ampersand : I[Gen]
-BOX [ "gens~" : gens~
+BOX [ "gens~" : gens[Context*Gen]~
     , "gengen" : gengen[Gen*Concept]
     , "genspc" : genspc[Gen*Concept]
     ]
