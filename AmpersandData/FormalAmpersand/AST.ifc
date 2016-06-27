@@ -45,7 +45,6 @@ BOX [ "name" : name[Rule*RuleID]
     , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
     , "rules~"  : rules[Pattern*Rule]~
     , "maintains~ (Role)" : maintains[Role*Rule]~
-    , "term (Expression)" : term[Rule*Expression]
     , "tgtConcept" : tgtConcept[Rule*Concept]
     , "srcConcept" : srcConcept[Rule*Concept]
     , "term" : term[Rule*Expression]
@@ -56,8 +55,8 @@ BOX [ "name" : name[Rule*RuleID]
     , "pairView" : pairView
     , "message" : message
     , "conjunctIds" : conjunctIds
-    , "rrmean" : rrmean
-    , "rrpurpose" : rrpurpose
+    , "rrmean" : rrmean[Rule * Meaning]
+    , "rrpurpose" : rrpurpose[Rule * Purpose]
     ]
     
 INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX

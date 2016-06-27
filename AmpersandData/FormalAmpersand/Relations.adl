@@ -4,7 +4,7 @@
 PATTERN Relations
 --VIEW Relation: Relation( name , TXT "::", sign;src;name[Concept*Identifier] ,TXT " * ", sign;tgt;name[Concept*Identifier] )
 --IDENT Relation: Relation( name, sign;src;name[Concept*Identifier], sign;tgt;name[Concept*Identifier] )
-RULE "eq relation": name[Relation*Name];name[Relation*Name]~ /\ sign;src;(sign;src)~ /\ sign;tgt;(sign;tgt)~ |- I[Relation]
+RULE "eq relation": name[Relation*Name];name[Relation*Name]~ /\ sign[Relation*Signature];src;(sign[Relation*Signature];src)~ /\ sign[Relation*Signature];tgt;(sign[Relation*Signature];tgt)~ |- I[Relation]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
 
