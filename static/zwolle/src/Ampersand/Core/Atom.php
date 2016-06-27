@@ -148,7 +148,7 @@ class Atom {
 	 */
 	public function atomExists(){
         if($this->concept->inAtomCache($this)){
-            $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
+            // $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
             return true;
         }elseif($this->id === '_NEW'){
             return true; // Return true if id is '_NEW' (special case)
@@ -235,7 +235,7 @@ class Atom {
                             try {
                                 // Try to get view segment from atom query data
                                 $this->view[$key] = $this->getQueryData('view_' . $key); // column is prefixed with view_
-                                $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");                                
+                                // $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");                                
                             
                             }catch (Exception $e) {
                                 // Column not defined, perform query

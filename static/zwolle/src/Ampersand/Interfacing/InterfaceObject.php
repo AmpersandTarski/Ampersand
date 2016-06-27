@@ -357,7 +357,7 @@ class InterfaceObject {
     private function getQuery($srcAtom){
         if(strpos($this->query, '_SRCATOM') !== false){
             $query = str_replace('_SRCATOM', $srcAtom->idEsc, $this->query);
-            $this->logger->debug("#426 Faster query because subquery saved by _SRCATOM placeholder");
+            // $this->logger->debug("#426 Faster query because subquery saved by _SRCATOM placeholder");
         }else{
             $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$srcAtom->idEsc}' AND `tgt` IS NOT NULL";
         }
@@ -375,9 +375,9 @@ class InterfaceObject {
         try {
             // Try to get tgt atom from srcAtom query data (in case of uni relation in same table)
             $tgt = $this->srcAtom->getQueryData('ifc_' . $this->id); // column is prefixed with ifc_
-            $this->logger->debug("#217 One query saved due to reusing data from source atom");
             if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept->name, $this);
             
+                // $this->logger->debug("#217 One query saved due to reusing data from source atom");
         }catch (Exception $e) {
             // Column not defined, perform sub interface query
             if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
