@@ -2,7 +2,7 @@
 -- The comments for this script can be found in Rules.doc
 
 PATTERN Rules
-IDENT Rule: Rule(name)
+IDENT Rule: Rule(name[Rule*RuleID])
 REPRESENT RuleID TYPE ALPHANUMERIC
 RELATION name[Rule*RuleID] [UNI,TOT,INJ]
 MEANING "The name of a rule."

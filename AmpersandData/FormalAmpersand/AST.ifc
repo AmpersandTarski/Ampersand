@@ -67,7 +67,7 @@ INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
     ]
 INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
-    , name    : name
+    , name    : name[Concept*Identifier]
     , ttype   : ttype
     , "source~" : source[Relation*Concept]~ LINKTO INTERFACE Relation
     , "target~" : target[Relation*Concept]~ LINKTO INTERFACE Relation
@@ -108,7 +108,7 @@ TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Pair" : I
          , l : l
          , r : r
-         , inPR : inPR[Pair*Relation]
+         , in : in[Pair*Relation]
          ]
     , Relations : V[SESSION*Relation]
     COLS [ "Relation" : I 
@@ -117,7 +117,7 @@ TABS[ Atoms : V[SESSION*Atom]
          ]
     , Concepts : V[SESSION*Concept]
     COLS [ "Concept" : I 
-         , name : name -- [Concept*Identifier]
+         , name : name[Concept*Identifier]
          ]
     ]
     
@@ -145,7 +145,7 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "decprR" : decprR[Relation*String]
 	, "decprps" : decprps[Relation*PropertyRule]
 	, "decpurpose" : decpurpose[Relation*Purpose]
-	, "name" : name[Relation*Identifier]
+	, "name" : name[Relation*Name]
 	, "prop" : prop[Relation*Property]
 	, "sign" : sign[Relation*Signature]
 	, "source" : source[Relation*Concept]
@@ -154,7 +154,7 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
 	, "bind~" : bind[Expression*Relation]~
 	, "declarations~" : declarations[Pattern*Relation]~
-	, "in~" : inPR[Pair*Relation]~
+	, "in~" : in[Pair*Relation]~
 	      BOX <SHCOLS>
 	        [ l : l
 	        , r : r

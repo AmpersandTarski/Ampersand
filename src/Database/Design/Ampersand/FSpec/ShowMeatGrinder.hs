@@ -233,7 +233,7 @@ instance MetaPopulations Declaration where
       , Comment $ " Relation `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
       , Pop "context" "Relation" "Context"
              [(dirtyId dcl,dirtyId fSpec)] 
-      , Pop "name" "Relation" "Identifier"
+      , Pop "name" "Relation" "Name"
              [(dirtyId dcl, (show.name) dcl)]
 --      , Pop "srcCol" "Relation" "SqlAttribute"
 --             [(dirtyId dcl,dirtyId (table,srcCol))]
@@ -263,7 +263,7 @@ instance MetaPopulations Declaration where
       , Comment " Relation `I[ONE]` "
       , Pop "context" "Relation" "Context"
              [(dirtyId dcl,dirtyId fSpec)]
-      , Pop "name" "Relation" "Identifier"
+      , Pop "name" "Relation" "Name"
              [(dirtyId dcl, (show.name) dcl)]
       , Pop "source" "Relation" "Concept"
              [(dirtyId dcl,dirtyId (source dcl))]
@@ -277,7 +277,7 @@ instance MetaPopulations Declaration where
              [(dirtyId dcl,dirtyId (sign dcl))]
       , Pop "context" "Relation" "Context"
              [(dirtyId dcl,dirtyId fSpec)]
-      , Pop "name" "Relation" "Identifier"
+      , Pop "name" "Relation" "Name"
              [(dirtyId dcl, (show.name) dcl)]
 --      , Pop "srcCol" "Relation" "SqlAttribute"
 --             [(dirtyId dcl,dirtyId (table,srcCol))]

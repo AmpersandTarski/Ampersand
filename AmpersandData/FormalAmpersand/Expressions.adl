@@ -9,11 +9,12 @@ PROCESS "Expression definitions"
     RELATION tgt[Expression*Concept]
     RELATION bind[Expression*Relation]
     RELATION term[Rule*Expression]
+    RELATION in[Pair*Expression]
     
     VIEW Equivalence        : Equivalence(TXT "RULE ", first, TXT " = ", second)
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first, TXT " |- ", second)
     VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
-    VIEW Relation           : Relation(name, TXT "[", source[Relation*Concept];name, TXT "*", target[Relation*Concept];name, TXT "]")
+    VIEW Relation           : Relation(name[Relation*Name], TXT "[", source[Relation*Concept];name[Concept*Identifier], TXT "*", target[Relation*Concept];name[Concept*Identifier], TXT "]")
     VIEW UnaryMinus         : UnaryMinus(TXT "-", arg[UnaryTerm*Expression])
     VIEW Converse           : Converse  (arg[UnaryTerm*Expression], TXT "~")
     VIEW KleeneStar         : KleeneStar(arg[UnaryTerm*Expression], TXT "*")

@@ -39,7 +39,7 @@ MEANING "The purposes of a pattern."
 ENDPATTERN
 
 PATTERN Specialization
-VIEW Gen: Gen( TXT "CLASSIFY ", genspc[Gen*Concept];name{-[Concept*Identifier]-} , TXT " ISA " , gengen[Gen*Concept];name{-[Concept*Identifier]-} )
+VIEW Gen: Gen( TXT "CLASSIFY ", genspc[Gen*Concept];name[Concept*Identifier] , TXT " ISA " , gengen[Gen*Concept];name[Concept*Identifier] )
 RULE "eq gen": gengen[Gen*Concept];gengen[Gen*Concept]~ /\ genspc[Gen*Concept];genspc[Gen*Concept]~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
