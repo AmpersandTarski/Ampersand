@@ -133,8 +133,7 @@ class Database {
 		    if(!Config::get('productionEnv')){
     		    switch ($e->getCode()){
     		        case 1049 :
-    		            // throw new Exception("Please <a href=\"#/admin/installer\" class=\"alert-link\">install database</a>",500);
-                        throw $e;
+    		            throw new Exception("Please <a href=\"#/admin/installer\" class=\"alert-link\">install database</a>",500);
                         break;
     		        default : 
     		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
@@ -158,21 +157,7 @@ class Database {
 	 * @return Database
 	 */
 	public static function singleton(){
-		try{
-		    if(!is_object (self::$_instance) ) self::$_instance = new Database();
-        }catch (Exception $e) {
-		    switch ($e->getCode()){
-		        case 1049 :
-		            self::createDB();
-		            self::$_instance = new Database();
-		            self::$_instance->reinstallDB();
-
-		            break;
-		        default : 
-		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
-    		}
-
-        } 
+		if(!is_object (self::$_instance) ) self::$_instance = new Database();
 		return self::$_instance;
 	}
 	
