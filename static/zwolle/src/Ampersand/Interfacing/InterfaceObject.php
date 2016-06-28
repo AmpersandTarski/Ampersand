@@ -370,11 +370,10 @@ class InterfaceObject {
 	 * @return Atom[] [description]
 	 */
 	public function getTgtAtoms(){
-        
         $tgtAtoms = array();
         try {
             // If interface isIdent (i.e. expr = I[Concept]) we can return the srcAtom
-            if($this->isIdent){
+            if($this->isIdent && $this->srcConcept == $this->tgtConcept){
                 $tgtAtoms[] = new Atom($this->srcAtom->id, $this->tgtConcept->name, $this, $this->srcAtom->getQueryData());
                 
             // Else try to get tgt atom from srcAtom query data (in case of uni relation in same table)
