@@ -374,7 +374,8 @@ instance Named Interface where
   name = name . ifcObj
 instance Traced Interface where
   origin = ifcPos
-
+instance Unique Interface where
+  showUnique = name
 -- Utility function for looking up interface refs
 getInterfaceByName :: [Interface] -> String -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of

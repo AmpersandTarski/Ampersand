@@ -63,6 +63,6 @@ RELATION allRoles[Context*Role] [SUR,INJ]
 RELATION name[Role*RoleName] [UNI,TOT]
 REPRESENT RoleName TYPE ALPHANUMERIC
 RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
-
+RELATION interfaces[Role*Interface]
 
 ENDCONTEXT

@@ -207,6 +207,8 @@ instance MetaPopulations Role where
                  [(dirtyId rol, dirtyId rol) ]
       , Pop "maintains" "Role" "Rule"
                  [(dirtyId rol, dirtyId rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
+      , Pop "interfaces" "Role" "Interface"
+                 [(dirtyId rol, dirtyId ifc) | ifc <- roleInterfaces fSpec rol]
       ]
 
 instance MetaPopulations Atom where
@@ -485,6 +487,7 @@ instance AdlId Purpose
 instance AdlId (A_Concept,PSingleton)
 instance AdlId Rule
 instance AdlId Role
+instance AdlId Interface
 instance AdlId Signature
 instance AdlId TType
 instance AdlId Conjunct
