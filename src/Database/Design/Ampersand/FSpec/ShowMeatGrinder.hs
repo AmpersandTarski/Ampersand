@@ -128,8 +128,7 @@ instance MetaPopulations A_Concept where
    ]++
    case cpt of
      PlainConcept{} ->
-      [ Comment $ " Concept `"++name cpt++"` "
-      , Pop "concs" "Context" "Concept"
+      [ Pop "concs" "Context" "Concept"
              [(dirtyId fSpec,dirtyId cpt)]
 --      , Pop "conceptColumn" "Concept" "SqlAttribute"
 --             [(dirtyId cpt, dirtyId att) | att <- tablesAndAttributes]
@@ -161,8 +160,8 @@ instance MetaPopulations PlugInfo where
       , Pop "maintains" "Plug" "Rule" [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
       , Pop "in" "Concept" "Plug"                 
              [(dirtyId cpt,dirtyId plug)| cpt <- concs plug]  
-      , Pop "relsInPlug" "Plug" "Relation"
-             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
+--      , Pop "relsInPlug" "Plug" "Relation"
+--             [(dirtyId plug,dirtyId dcl)| dcl <- relsMentionedIn plug]
       ]++
       (case plug of
          InternalPlug plugSQL   -> metaPops fSpec plugSQL

@@ -25,21 +25,21 @@ CLASSIFY SQLPlug ISA Plug
 
 RELATION rootConcept[TblSQL*Concept] [UNI]
 
-RULE "New TblSQL" : I[Concept]-isa~;isa |- rootConcept~;rootConcept
+RULE "New TblSQL" : I[Concept]-isa~;isa |- rootConcept[TblSQL*Concept]~;rootConcept[TblSQL*Concept]
 MEANING "Each largest concept is the root concept of a TblSQL."
 VIOLATION ( TXT "{EX} NewStruct;TblSQL"
-          , TXT ";rootConcept;TblSQL;_NEW;Concept;", SRC I
+          , TXT ";rootConcept[TblSQL*Concept];TblSQL;_NEW;Concept;", SRC I
           )
-RULE "Del TblSQL" : rootConcept~;rootConcept |- I[Concept]-isa~;isa
+RULE "Del TblSQL" : rootConcept[TblSQL*Concept]~;rootConcept[TblSQL*Concept] |- I[Concept]-isa~;isa
 MEANING "Each TblSQL has at most one largest concept as root."
-VIOLATION ( TXT "{EX} DelPair;rootConcept;TblSQL;", SRC rootConcept~, TXT ";Concept;", SRC I
-          , TXT "{EX} DelAtom;TblSQL;", SRC rootConcept~
+VIOLATION ( TXT "{EX} DelPair;rootConcept[TblSQL*Concept];TblSQL;", SRC rootConcept[TblSQL*Concept]~, TXT ";Concept;", SRC I
+          , TXT "{EX} DelAtom;TblSQL;", SRC rootConcept[TblSQL*Concept]~
           )
 ROLE ExecEngine MAINTAINS "New TblSQL", "Del TblSQL"
 
 RELATION table[SqlAttribute*SQLPlug] [UNI]
 
-RULE "Assign attributes to tables" : rootConcept;isaStar~;conceptAttribute |- table~
+RULE "Assign attributes to tables" : rootConcept[TblSQL*Concept];isaStar~;conceptAttribute |- table~
 MEANING "The concept attributes of all specializations of a root concept are in the same table."
 VIOLATION ( TXT "{EX} InsPair;table;SqlAttribute;", TGT I, TXT ";SQLPlug;", SRC I[SQLPlug] )
 ROLE ExecEngine MAINTAINS "Assign attributes to tables"
@@ -47,11 +47,11 @@ ROLE ExecEngine MAINTAINS "Assign attributes to tables"
 RELATION key[TblSQL*SqlAttribute] [UNI,TOT]
 MEANING "Each SQLPlug has one field designated to contain atom keys."
 
-RULE "Insert key of a TblSQL" : rootConcept;conceptAttribute |- key
+RULE "Insert key of a TblSQL" : rootConcept[TblSQL*Concept];conceptAttribute |- key
 MEANING "The conceptattribute of the root concept of a TblSQL is the key of that TblSQL."
 VIOLATION ( TXT "{EX} InsPair;key;TblSQL;", SRC I, TXT ";SqlAttribute;", TGT I )
 ROLE ExecEngine MAINTAINS "Insert key of a TblSQL"
-RULE "Delete key from a TblSQL" : key |- rootConcept;conceptAttribute
+RULE "Delete key from a TblSQL" : key |- rootConcept[TblSQL*Concept];conceptAttribute
 MEANING "The key of a TblSQL is the conceptattribute of the root concept of that TblSQL."
 VIOLATION ( TXT "{EX} DelPair;key;TblSQL;", SRC I, TXT ";SqlAttribute;", TGT I )
 ROLE ExecEngine MAINTAINS "Delete key from a TblSQL"

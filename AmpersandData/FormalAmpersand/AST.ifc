@@ -26,8 +26,10 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
   ]
 INTERFACE GenTree FOR Ampersand : I[Concept]
-BOX [ concept : I[Concept] LINKTO INTERFACE Concept
-    , "Kinds" :  gengen[Gen*Concept]~;genspc[Gen*Concept] LINKTO INTERFACE GenTree
+  BOX <ROWSNL>
+    [ concept : I[Concept] LINKTO INTERFACE Concept
+    , "is a"  : genspc[Gen*Concept]~;gengen[Gen*Concept] LINKTO INTERFACE GenTree
+    , "Kinds" : gengen[Gen*Concept]~;genspc[Gen*Concept] LINKTO INTERFACE GenTree
     ] 
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternIdentifier]
