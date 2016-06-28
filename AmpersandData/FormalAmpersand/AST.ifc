@@ -10,7 +10,6 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
     [ "name"  : name[Context*ContextIdentifier]
     , "versionInfo" : versionInfo
     , "dbName" : dbName
-    , "owner" : owner[Context*Account]
     , "valid~" : valid[Rule*Context]~
     ]
   , "Patterns" : patterns[Context*Pattern] BOX 
@@ -27,7 +26,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
   ]
 INTERFACE GenTree FOR Ampersand : I[Concept]
-BOX [ concept : I[Concept]
+BOX [ concept : I[Concept] LINKTO INTERFACE Concept
     , "Kinds" :  gengen[Gen*Concept]~;genspc[Gen*Concept] LINKTO INTERFACE GenTree
     ] 
 INTERFACE Pattern FOR Ampersand : I[Pattern]
