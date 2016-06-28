@@ -13,9 +13,9 @@ MEANING "The unique signature of a relation consists of a relation name, a sourc
 
 RELATION name[Relation*Name] [UNI,TOT]
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
-RELATION sign[Relation*Signature] [UNI] --TODO: Should be TOT, but this is only true for user-defined relations. TODO: I[<Concept>] is a relation? And what about V?? In Haskell, it currently is.
+RELATION sign[Relation*Signature] [UNI,TOT] 
 MEANING "The signature of a relation."
-RELATION decprps[Relation*PropertyRule] [INJ]
+RELATION decprps[Relation*PropertyRule] [INJ,SUR]
 MEANING "The properties of a relation."
 
 VIEW Signature: Signature( TXT "[" , src[Signature*Concept];name[Concept*Identifier] , TXT "*" , tgt[Signature*Concept];name[Concept*Identifier] , TXT "]" )

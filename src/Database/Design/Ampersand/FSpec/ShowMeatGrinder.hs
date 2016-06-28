@@ -124,7 +124,7 @@ instance MetaPopulations A_Concept where
    , Pop "ttype" "Concept" "TType"
              [(dirtyId cpt, dirtyId (cptTType fSpec cpt))] 
    , Pop "name" "Concept" "Identifier"
-             [(dirtyId cpt, dirtyId cpt)]
+             [(dirtyId cpt, show . name $ cpt)]
    ]++
    case cpt of
      PlainConcept{} ->
@@ -260,18 +260,6 @@ instance MetaPopulations Declaration where
       , Pop "decpurpose" "Relation" "Purpose"
              [(dirtyId dcl, (show.showADL) x) | x <- explanations dcl]
       ]
-     Isn ONE -> 
-      [ Comment " "
-      , Comment " Relation `I[ONE]` "
-      , Pop "context" "Relation" "Context"
-             [(dirtyId dcl,dirtyId fSpec)]
-      , Pop "name" "Relation" "Name"
-             [(dirtyId dcl, (show.name) dcl)]
-      , Pop "source" "Relation" "Concept"
-             [(dirtyId dcl,dirtyId (source dcl))]
-      , Pop "target" "Relation" "Concept"
-             [(dirtyId dcl,dirtyId (target dcl))]
-      ]
      Isn{} -> 
       [ Comment " "
       , Comment $ " Relation `I["++name (source dcl)++"]`"
@@ -333,10 +321,10 @@ instance MetaPopulations Expression where
             (EFlp e)     -> makeUnaryTerm  Converse   e
             (ECpl e)     -> makeUnaryTerm  UnaryMinus e
             (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
-            (EDcD dcl)   -> [Pop "bind" "Expression" "Relation" 
+            (EDcD dcl)   -> [Pop "bind" "BindedRelation" "Relation" 
                               [(dirtyId expr,dirtyId dcl)]
                             ]
-            (EDcI cpt)   -> [Pop "bind" "Expression" "Relation" 
+            (EDcI cpt)   -> [Pop "bind" "BindedRelation" "Relation" 
                               [(dirtyId expr,dirtyId (Isn cpt))]
                             ]
             EEps{}       -> []
@@ -345,10 +333,9 @@ instance MetaPopulations Expression where
                             ,Pop "userTrg"  (show "V") "Concept" 
                               [(dirtyId expr,dirtyId (target sgn))]
                             ]
-            (EMp1 v c)   -> [ --TODO! 
-                              --  Pop "singleton" "Atom" "Expression" 
-                              --    [(dirtyId expr,dirtyId (c,v))]
-                              -- ,Pop "pop" "Atom" "Concept"
+            (EMp1 v c)   -> [ Pop "singleton" "Singleton" "Atom"
+                              [(dirtyId expr,dirtyId (c,v))]
+                            --,Pop "pop" "Atom" "Concept"
                               --    [(dirtyId (c,v),dirtyId c)]
                             ]
        ) 
@@ -417,7 +404,7 @@ instance MetaPopulations Rule where
              [(dirtyId rul, dirtyId conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "originatesFrom" "Conjunct" "Rule"
              [(dirtyId conj,dirtyId rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
-      , Pop "term"  "Rule" "Expression"
+      , Pop "formalExpression"  "Rule" "Expression"
              [(dirtyId rul, dirtyId (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning"
              [(dirtyId rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]

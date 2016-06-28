@@ -46,7 +46,7 @@ BOX [ "name" : name[Rule*RuleID]
     , "maintains~ (Role)" : maintains[Role*Rule]~
     , "tgtConcept" : tgtConcept[Rule*Concept]
     , "srcConcept" : srcConcept[Rule*Concept]
-    , "term" : term[Rule*Expression]
+    , "formalExpression" : formalExpression[Rule*Expression]
     , "sign" : sign[Rule*Signature]
     , "maintains~ (Plug)" : maintains[Plug*Rule]~
     , "origin" : origin[Rule*Origin]
@@ -87,11 +87,12 @@ BOX [ expression: I[Expression]
     , operator : operator
     , second : second[BinaryTerm*Expression] LINKTO INTERFACE Expression
     , arg : arg[UnaryTerm*Expression]
-    , term : term[Rule*Expression]
-    , bind  : bind[Expression*Relation] LINKTO INTERFACE Expression
-    , singleton : singleton[Atom*Expression] LINKTO INTERFACE Expression
+    , "formalExpression~" : formalExpression[Rule*Expression]~
+    , bind  : bind[BindedRelation*Relation] LINKTO INTERFACE Relation
+    , singleton : singleton[Singleton*Atom] 
     , "user defined src" : userSrc["V"*Concept]
     , "user defined trg" : userTrg["V"*Concept]
+    , "user defined cpt" : userCpt["I"*Concept]
     ]
 INTERFACE Signature FOR Ampersand : I[Signature]
 BOX [ Signature: I[Signature]
@@ -152,7 +153,7 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "srcAtt" : srcAtt[Relation*SqlAttribute]
 	, "target" : target[Relation*Concept]
 	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
-	, "bind~" : bind[Expression*Relation]~
+	, "bind~" : bind[BindedRelation*Relation]~
 	, "declarations~" : declarations[Pattern*Relation]~
 	, "in~" : in[Pair*Relation]~
 	      BOX <SHCOLS>
@@ -177,6 +178,13 @@ BOX [ "table" : table
     , "srcAtt~" : srcAtt~
     ]
 
+INTERFACE Role FOR Ampersand : I[Role]
+BOX [ "name" : name[Role*RoleName]
+    , "interfaces" : interfaces[Role*Interface] 
+    ]
+INTERFACE Interface FOR Ampersand : I[Interface]
+BOX [ "interfaces~"  : interfaces[Role*Interface]~
+    ]
 ENDCONTEXT
 
 
