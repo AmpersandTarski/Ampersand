@@ -9,6 +9,7 @@
   * More automation on releasing Ampersand.
   * Frontend: Options in frontend navbar now can be defined for certain roles only (e.g. the installer and excelimporter).
   * [Issue #103](https://github.com/AmpersandTarski/Ampersand/issues/103) Fix overlap by multiple rows in navbar
+  * [Issue #423] Database is automatically installed when it does not exists yet (first time use)
   
 ## v3.5.2 (10 juni 2016)
   * Work on meatgrinder (still experimental!)
