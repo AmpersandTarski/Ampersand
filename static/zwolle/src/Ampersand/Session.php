@@ -16,216 +16,230 @@ use Ampersand\Rule\Rule;
 use Ampersand\Log\Logger;
 
 /**
- *
+ * Class of session objects
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
 class Session {
-	
+    
     /**
-     *
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
     
-	public $id;
-	
-	/**
-	 * 
-	 * @var Atom
-	 */
-	public $sessionAtom;
-	
-	public $database;
-	public $interface;
-	public $viewer;
-	
-	/**
-	 * Specifies if session is expired
-	 * @var boolean
-	 */
-	private $isExpired = false;
-	
-	private $sessionRoles; // when login enabled: all roles for loggedin user, otherwise all roles
-	
-	/**
-	 * @var InterfaceObject[] $accessibleInterfaces
-	 */
-	private $accessibleInterfaces = array(); // when login enabled: all interfaces for sessionRoles, otherwise: interfaces for active roles
-	
     /**
-	 * @var InterfaceObject[] $ifcsOfActiveRoles
-	 */
-    private $ifcsOfActiveRoles = array(); // interfaces for active roles
-	
+     * @var string $id session identifier
+     */
+    public $id;
+    
     /**
-	 * @var array $rulesToMaintain
-	 */
+     * @var Atom $sessionAtom reference to corresponding session object (Atom) in &-domain
+     */
+    public $sessionAtom;
+    
+    /**
+     * @var Database $database reference to database object
+     */
+    public $database;
+    
+    /**
+     * @var Role[] $sessionRoles contains roles for loggedin user when login is enabled, otherwise all roles
+     */
+    private $sessionRoles; 
+    
+    /**
+     * @var InterfaceObject[] $accessibleInterfaces contains interfaces for sessionRoles when login is enabled, otherwise interfaces for active roles
+     */
+    private $accessibleInterfaces = array();
+    
+    /**
+     * @var array $rulesToMaintain
+     */
     public $rulesToMaintain = array(); // rules that are maintained by active roles 
-	
+    
     /**
      * @var Atom|false $sessionAccount
      */
-	private $sessionAccount;
-	
-	private static $_instance = null; // Needed for singleton() pattern of Session class
-	
-	// prevent any outside instantiation of this object
-	private function __construct(){
-	    try {
-    	    $this->logger = Logger::getLogger('FW');
-    		
-    	    $this->id = session_id();
-    	    $this->sessionAtom = new Atom($this->id, 'SESSION');
-    		
-    		$this->logger->debug("Session id: {$this->id}");
-    		
-    		$this->database = Database::singleton();
-    		
-    		// Check if 'SESSION' is defined as concept in Ampersand script
-    		Concept::getConcept('SESSION');
-    		
-    		// Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-    		$expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
-    		foreach ($expiredSessionsAtoms as $expiredSessionAtom){
-    		    if($expiredSessionAtom == $this->id) $this->isExpired = true; 
-    		    $this->destroyAmpersandSession($expiredSessionAtom);
-    		}
-    		
-    		// Throw exception when session is expired AND login functionality is enabled 
-    		if($this->isExpired && Config::get('loginEnabled')) throw new Exception ("Your session has expired, please login again", 440); // 440 Login Timeout -> is redirected by frontend to login page
+    private $sessionAccount;
     
-    		// Create a new Ampersand session if session_id() is not in SESSION table (browser started a new session or Ampersand session was expired
-    		$sessionAtom = new Atom($this->id, 'SESSION');
-    		if (!$sessionAtom->atomExists()){ 
-    			$sessionAtom->addAtom();
-    			$this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
-    		}
+    /**
+     * @var Session $_instance needed for singleton() pattern of Session class
+     */
+    private static $_instance = null;
     
-    		$this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
-    		
-    		// Add public interfaces
-    		$this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
-	    }catch (Exception $e){
-	        Logger::getUserLogger()->error("Session not initialized: {$e->getMessage()}");
-	    }
-	}
-	
-	// Prevent any copy of this object
-	private function __clone(){}
-	
+    /**
+     * Constructor of Session class
+     * private to prevent any outside instantiation of this object
+     */
+    private function __construct(){
+        $this->logger = Logger::getLogger('FW');
+        $this->database = Database::singleton();
+        
+        $this->id = session_id();
+        $this->sessionAtom = new Atom($this->id, 'SESSION');
+        
+        $this->logger->debug("Session id: {$this->id}");
+        
+        // Check if 'SESSION' is defined as concept in Ampersand script
+        Concept::getConcept('SESSION');
+        
+        // Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
+        $expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
+        foreach ($expiredSessionsAtoms as $expiredSessionAtom){
+            if($expiredSessionAtom == $this->id){
+                // Notify user that session is expired when login functionality is enabled 
+                if(Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again"); // 440 Login Timeout -> is redirected by frontend to login page
+            }
+            $this->destroyAmpersandSession($expiredSessionAtom);
+        }
+        
+        // Create a new Ampersand session atom if not yet in SESSION table (browser started a new session or Ampersand session was expired)
+        $sessionAtom = new Atom($this->id, 'SESSION');
+        if (!$sessionAtom->atomExists()){ 
+            $sessionAtom->addAtom();
+            $this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
+        }
+
+        $this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+        
+        // Add public interfaces
+        $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
+    }
+    
+    /**
+     * private method to prevent any copy of this object
+     */
+    private function __clone(){}
+    
     /**
      * @return Session
      */
-	public static function singleton(){
-		if(is_null (self::$_instance) ) self::$_instance = new Session();
-		return self::$_instance;
-	}
-	
-	public static function reInit(){
-	    return self::$_instance = new Session();
-	}
-	
-	private function destroyAmpersandSession($sessionAtom){
-		$this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '".$sessionAtom."'");
-		$this->database->deleteAtom(new Atom($sessionAtom, 'SESSION'));
-		$this->database->commitTransaction();
-	}
-	
-	public function destroySession(){
-		$this->destroyAmpersandSession(session_id());
-		session_regenerate_id(true);
-		$this->id = session_id();
-		
-	}
-	
-	public function activateRoles($roleIds = null){
-		$roles = $this->getSessionRoles();
-		if(empty($roles)){
-			$this->logger->debug("No roles available to activate");	
-		}elseif(is_null($roleIds)){
-			$this->logger->debug("Activate default roles");
-			foreach($this->sessionRoles as &$role) $this->activateRole($role);
-		}elseif(empty($roleIds)){
-			$this->logger->debug("No roles provided to activate");
-		}else{
-			if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
-			foreach($this->sessionRoles as &$role){
-				if(in_array($role->id, $roleIds)) $this->activateRole($role);
-			}
-		}
-		
-		// Add public interfaces
-		$this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, InterfaceObject::getPublicInterfaces());
-		
-		// If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
-		if(Config::get('loginEnabled')){
-			foreach($roles as $role){
-				$this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-			}
-		}
-		
-		// Filter duplicate values
-		$this->ifcsOfActiveRoles = array_unique($this->ifcsOfActiveRoles);
-		$this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
-		$this->rulesToMaintain = array_unique($this->rulesToMaintain);
-	}
-	
-	/**
-	 * 
-	 * @param Role $role
-	 * @return void
-	 */
-	private function activateRole(&$role){
-	    $role->active = true;
-	    $this->ifcsOfActiveRoles = array_merge($this->ifcsOfActiveRoles, $role->interfaces());
-	    $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-	    
-	    foreach($role->maintains() as $ruleName){
-	        $this->rulesToMaintain[] = Rule::getRule($ruleName);
-	    }
-	    
-	    $this->logger->info("Role '{$role->id}' is activated");
-	}
-	
+    public static function singleton(){
+        if(is_null (self::$_instance) ) self::$_instance = new Session();
+        return self::$_instance;
+    }
+    
     /**
+     * Function reinitializes the Session object (calls constructor again)
+     * @return Session
+     */
+    public static function reInit(){
+        return self::$_instance = new Session();
+    }
+    
+    /**
+     * Delete provided Ampersand session atom from database
+     * @param string $sessionAtomId ampersand session atom id
+     * @return void
+     */
+    private function destroyAmpersandSession($sessionAtomId){
+        $this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '{$sessionAtomId}'");
+        $this->database->deleteAtom(new Atom($sessionAtomId, 'SESSION'));
+        $this->database->commitTransaction();
+    }
+    
+    /**
+     * Destroy php session, delete Ampersand session atom from db and reinitialize Session object
+     * @return void
+     */
+    public function destroySession(){
+        $this->destroyAmpersandSession($this->id);
+        session_regenerate_id(true);
+        $this->reInit();
+    }
+    
+    /**
+     * Activatie provided roles (if allowed)
+     * @param array $roleIds list of role ids that must be activated
+     * @return void
+     */
+    public function activateRoles($roleIds = null){
+        $roles = $this->getSessionRoles();
+        if(empty($roles)){
+            $this->logger->debug("No roles available to activate");    
+        }elseif(is_null($roleIds)){
+            $this->logger->debug("Activate default roles");
+            foreach($this->sessionRoles as &$role) $this->activateRole($role);
+        }elseif(empty($roleIds)){
+            $this->logger->debug("No roles provided to activate");
+        }else{
+            if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
+            foreach($this->sessionRoles as &$role){
+                if(in_array($role->id, $roleIds)) $this->activateRole($role);
+            }
+        }
+        
+        // If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
+        if(Config::get('loginEnabled')){
+            foreach($roles as $role){
+                $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+            }
+        }
+        
+        // Filter duplicate values
+        $this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
+        $this->rulesToMaintain = array_unique($this->rulesToMaintain);
+    }
+    
+    /**
+     * Activate provided role
+     * @param Role $role
+     * @return void
+     */
+    private function activateRole(&$role){
+        $role->active = true;
+        $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+        
+        foreach($role->maintains() as $ruleName){
+            $this->rulesToMaintain[] = Rule::getRule($ruleName);
+        }
+        
+        $this->logger->info("Role '{$role->id}' is activated");
+    }
+    
+    /**
+     * Get session roles (i.e. allowed roles for the current loggedin user (if login is enabled) or all roles otherwise)
      * @return Role[]
      */
-	public function getSessionRoles(){
-		if(!isset($this->sessionRoles)){
+    public function getSessionRoles(){
+        if(!isset($this->sessionRoles)){
             $sessionRoles = array();
-			if(Config::get('loginEnabled')){
+            if(Config::get('loginEnabled')){
                 $this->logger->debug("Getting interface 'SessionRoles' for {$this->sessionAtom->__toString()}");
                 $sessionRoleLabels = array_map(
                     function($o){
                         return $o->id;
                     }, $this->sessionAtom->ifc('SessionRoles')->getTgtAtoms()
                 );
-				foreach(Role::getAllRoles() as $role){
-					if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
-				}
-			}else{
-				$sessionRoles = Role::getAllRoles();
-			}
+                foreach(Role::getAllRoles() as $role){
+                    if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
+                }
+            }else{
+                $sessionRoles = Role::getAllRoles();
+            }
             
-			$this->sessionRoles = $sessionRoles;
-		}
+            $this->sessionRoles = $sessionRoles;
+        }
         return $this->sessionRoles;
-	}
-	
-	/**
-	 * 
-	 * @return Role[]
-	 */
-	public function getActiveRoles(){
-	    $activeRoles = array();
-	    foreach ($this->getSessionRoles() as $role){
-	        if($role->active) $activeRoles[] = $role; 
-	    }
-	    return $activeRoles;
-	}
-	
-	public function getSessionAccount(){
+    }
+    
+    /**
+     * Get active roles
+     * @return Role[]
+     */
+    public function getActiveRoles(){
+        $activeRoles = array();
+        foreach ($this->getSessionRoles() as $role){
+            if($role->active) $activeRoles[] = $role; 
+        }
+        return $activeRoles;
+    }
+    
+    /**
+     * Get session account
+     * @return Atom|false returns Ampersand account atom when there is a session account or false otherwise
+     */
+    public function getSessionAccount(){
         if(!isset($this->sessionAccount)){
             if(!Config::get('loginEnabled')){
                 $this->sessionAccount = false;
@@ -241,80 +255,79 @@ class Session {
                 }else{
                     $this->sessionAccount = current($sessionAccounts);
                     $this->logger->debug("Set sessionAccount: '{$this->sessionAccount->id}'");
-    			}
-    		}
+                }
+            }
         }
         return $this->sessionAccount;
     }
     
-	public function sessionUserLoggedIn(){
-		if(!Config::get('loginEnabled')){
-			return false;
-		}elseif($this->getSessionAccount() !== false){
-			return true;
-		}else{
-			return false;
-		}
-	}
-	
-	public function getSessionVars(){
-		if(InterfaceObject::interfaceExists('SessionVars')){
-			try {
-                $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionAtom->__toString()}");
-				$options = array('metaData' => false, 'navIfc' => false);
-				return $this->sessionAtom->ifc('SessionVars')->getContent($options);
-			}catch (Exception $e){
-                $this->logger->warning("Error while getting SessionVars interface: " . $e->getMessage());
-				return false;
-			}
-		}else{
+    /**
+     * Determine is there is a loggedin user (account)
+     * @return boolean
+     */
+    public function sessionUserLoggedIn(){
+        if(!Config::get('loginEnabled')){
+            return false;
+        }elseif($this->getSessionAccount() !== false){
+            return true;
+        }else{
             return false;
         }
-	}
-	
-	public function getInterfacesForNavBar(){
-		$interfaces = array();
-		foreach($this->ifcsOfActiveRoles as $interface){
-			if(($interface->srcConcept->name == 'SESSION' || $interface->srcConcept->name == 'ONE') && $interface->crudR) $interfaces[] = $interface;
-		}
-		return $interfaces;
-	}
-	
-	public function getInterfacesToCreateAtom(){
-		$interfaces = array();
-		foreach($this->ifcsOfActiveRoles as $interface){
-			//if($interface->srcConcept->name != 'SESSION' && $interface->srcConcept->name != 'ONE') $interfaces[] = $interface;
-			if($interface->crudC && $interface->isIdent) $interfaces[] = $interface;
-		}
-		return $interfaces;
-	}
-	
-	public function getInterfacesToReadConcept($conceptName){
-		$interfaces = array();
-		foreach($this->accessibleInterfaces as $interface){
-			if(($interface->srcConcept->name == $conceptName || $interface->srcConcept->hasSpecialization($conceptName)) 
-			        && $interface->crudR
-			        && (!$interface->crudC or ($interface->crudU or $interface->crudD))
-			        ) $interfaces[] = $interface;
-		}
-		return $interfaces;
-	}
-	
-	/**
-	 * 
-	 * @param Concept $concept
-	 * @return boolean
-	 */
-	public function isEditableConcept($concept){
-		foreach($this->accessibleInterfaces as $ifc) 
-		    if (in_array($concept, $ifc->editableConcepts)) return true;
-		
-		// Else
-		return false;
-	}
-	
-	public function isAccessibleIfc($interfaceId){
-		return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->accessibleInterfaces));
-	}
+    }
+    
+    /**
+     * Get session variables (from 'SessionVars' interface)
+     * @return mixed|false session variables (if interface 'SessionVars' is defined in &-script) or false otherwise
+     */
+    public function getSessionVars(){
+        if(InterfaceObject::interfaceExists('SessionVars')){
+            try {
+                $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionAtom->__toString()}");
+                $options = array('metaData' => false, 'navIfc' => false);
+                return $this->sessionAtom->ifc('SessionVars')->getContent($options);
+            }catch (Exception $e){
+                $this->logger->warning("Error while getting SessionVars interface: " . $e->getMessage());
+                return false;
+            }
+        }else{
+            return false;
+        }
+    }    
+    
+    /**
+     * Get interfaces that are accessible in the current session to 'Read' a certain concept
+     * @param string $conceptName
+     * @return InterfaceObject[]
+     */
+    public function getInterfacesToReadConcept($conceptName){
+        $interfaces = array();
+        foreach($this->accessibleInterfaces as $interface){
+            if(($interface->srcConcept->name == $conceptName || $interface->srcConcept->hasSpecialization($conceptName)) 
+                    && $interface->crudR
+                    && (!$interface->crudC or ($interface->crudU or $interface->crudD))
+                    ) $interfaces[] = $interface;
+        }
+        return $interfaces;
+    }
+    
+    /**
+     * Determine if provided concept is editable concept in one of the accessible interfaces in the current session
+     * @param Concept $concept
+     * @return boolean
+     */
+    public function isEditableConcept($concept){
+        return array_reduce($this->accessibleInterfaces, function($carry, $ifc) use ($concept){
+            return ($carry || in_array($concept, $ifc->editableConcepts));
+        }, false);
+    }
+    
+    /**
+     * Determine if provided interface is accessible in the current session
+     * @param string $interfaceId
+     * @return boolean
+     */
+    public function isAccessibleIfc($interfaceId){
+        return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->accessibleInterfaces));
+    }
 }
 ?>

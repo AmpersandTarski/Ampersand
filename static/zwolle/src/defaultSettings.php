@@ -28,7 +28,7 @@ try{
 
     Config::set('sessionExpirationTime', 'global', 60*60); // expiration time in seconds
     Config::set('productionEnv', 'global', false); // set environment as production deployment (or not = default)
-    Config::set('debugMode', 'global', true); // set debugMode (or not = default). Impacts the way errors are returned by API
+    Config::set('debugMode', 'global', false); // set debugMode (or not = default). Impacts the way errors are returned by API
 
     Config::set('absolutePath', 'global', __DIR__ . '/../');
     Config::set('uploadPath', 'global', 'uploads/'); // absolute path to folder, without trailing slash

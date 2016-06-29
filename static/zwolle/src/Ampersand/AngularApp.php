@@ -8,6 +8,7 @@
 namespace Ampersand;
 
 use Exception;
+use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Log\Logger;
 use function Ampersand\Helper\getDirectoryList;
 
@@ -101,12 +102,50 @@ class AngularApp {
                 break;
         }
         
-        $menuItems = array();
-        foreach ($arr as $item) {
-            if($item['addItem']($session)) $menuItems[] = $item;
+        // Filter menu items
+        $result = array_filter($arr, function($item) use ($session){
+            // Execute function which determines if item must be added or not
+            return $item['addItem']($session);
+        });
+        
+        return array_values($result); // reindex array
+    }
+    
+    public static function getNavBarIfcs($menu){
+        $session = Session::singleton();
+        $navBarIfcs = array();
+        
+        // Add public interfaces
+        $interfaces = InterfaceObject::getPublicInterfaces();
+        
+        // Add interfaces for active roles
+        foreach($session->getActiveRoles() as $role){
+            $interfaces = array_merge($interfaces, $role->interfaces());
         }
         
-        return $menuItems;
+        // Filter duplicate interfaces
+        $interfaces = array_unique($interfaces); 
+        
+        // Filter interfaces for requested part of navbar
+        $interfaces = array_filter($interfaces, function($ifc) use ($menu){
+            switch ($menu) {
+                case 'top':
+                    if(($ifc->srcConcept->name == 'SESSION' || $ifc->srcConcept->name == 'ONE') && $ifc->crudR) return true;
+                    else return false;
+                case 'new':
+                    if($ifc->crudC && $ifc->isIdent) return true;
+                    else return false;
+                default:
+                    throw new Exception("Cannot get navbar interfaces. Unknown menu: '{$menu}'", 500);
+            }
+        });
+        
+        // Create return object
+        $result = array_map(function($ifc){
+            return array('id' => $ifc->id, 'label' => $ifc->label, 'link' => '/' . $ifc->id);
+        }, $interfaces);
+        
+        return array_values($result); // reindex array
     }
 
 	public function buildHtml(){

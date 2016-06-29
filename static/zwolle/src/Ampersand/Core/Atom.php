@@ -148,7 +148,7 @@ class Atom {
 	 */
 	public function atomExists(){
         if($this->concept->inAtomCache($this)){
-            $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
+            // $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
             return true;
         }elseif($this->id === '_NEW'){
             return true; // Return true if id is '_NEW' (special case)
@@ -202,7 +202,7 @@ class Atom {
     public function getLabel(){
         if(!isset($this->label)){
             $viewStr = implode($this->getView());
-            $this->label = empty($viewStr) ? $this->id : $viewStr; // empty view => label = id
+            $this->label = empty(trim($viewStr)) ? $this->id : $viewStr; // empty view => label = id
         }
         return $this->label;
     }
@@ -235,7 +235,7 @@ class Atom {
                             try {
                                 // Try to get view segment from atom query data
                                 $this->view[$key] = $this->getQueryData('view_' . $key); // column is prefixed with view_
-                                $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");                                
+                                // $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");                                
                             
                             }catch (Exception $e) {
                                 // Column not defined, perform query
@@ -259,13 +259,12 @@ class Atom {
 	}
     
     public function getQueryData($colName = null){
-        if(is_null($this->qData)) throw new Exception("No query data available for atom '{$this->__toString()}'", 1001);
         if(is_null($colName)){
-            return $this->qData;
+            if(is_null($this->qData)) return array();
+            else return $this->qData;
         }else{
             // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
-            $colName;
-            if(!array_key_exists($colName, $this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
+            if(!array_key_exists($colName, (array)$this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
             return $this->qData[$colName];
         }
     }

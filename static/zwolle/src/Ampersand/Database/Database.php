@@ -106,41 +106,24 @@ class Database {
 	 * Constructor of database class
 	 * Singleton pattern: private function to prevent any outside instantiantion of this object. 
 	 * Use Database::singleton() instead
-	 * 
-	 * @throws Exception
 	 */
 	private function __construct(){
 	    $this->logger = Logger::getLogger('DATABASE');
 	    
-	    try{
-    	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
-    		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
-    		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
-    		$this->db_name = Config::get('dbName', 'mysqlDatabase');
-    		
-    		// Enable mysqli errors to be thrown as Exceptions
-    		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-    		
-    		// Connect to MYSQL database
-    		$this->db_link = mysqli_init();
-    		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
-    		
-    		// Set sql_mode to ANSI
-    		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-			
-		}catch (Exception $e){
-		    // Convert mysqli_sql_exceptions into 500 errors
-		    if(!Config::get('productionEnv')){
-    		    switch ($e->getCode()){
-    		        case 1049 :
-    		            Logger::getUserLogger()->error('Please <a href="#/admin/installer" class="alert-link">install database</a>');
-    		        default : 
-    		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
-    		    }
-		    }else{
-		        throw new Exception("Cannot connect to database", 500);
-		    }
-		}
+	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
+		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
+		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
+		$this->db_name = Config::get('dbName', 'mysqlDatabase');
+		
+		// Enable mysqli errors to be thrown as Exceptions
+		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+		
+		// Connect to MYSQL database
+		$this->db_link = mysqli_init();
+		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+		
+		// Set sql_mode to ANSI
+		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
 	}
 	
 	/**
@@ -156,7 +139,26 @@ class Database {
 	 * @return Database
 	 */
 	public static function singleton(){
-		if(!is_object (self::$_instance) ) self::$_instance = new Database();
+        try {
+            if(!is_object (self::$_instance)) self::$_instance = new Database();
+        }catch (Exception $e){
+            // Convert mysqli_sql_exceptions into 500 errors
+            if(!Config::get('productionEnv')){
+                switch ($e->getCode()){
+                    case 1049 : // Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR)
+                        // throw new Exception("Please <a href=\"#/admin/installer\" class=\"alert-link\">install database</a>",500);
+                        self::createDB();
+                        self::$_instance = new Database();
+                        self::$_instance->logger->info("Automatically installing database for the first time");
+                        self::$_instance->reinstallDB();
+                        break;
+    		        default : 
+    		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
+    		    }
+		    }else{
+		        throw new Exception("Cannot connect to database", 500);
+		    }
+		}
 		return self::$_instance;
 	}
 	
@@ -254,7 +256,6 @@ class Database {
 	 */
 	public function Exe($query){
 		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
-		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
 		$result = $this->doQuery($query);
 		$this->logger->debug($query);
@@ -281,7 +282,14 @@ class Database {
 	        return $this->db_link->query($query);
         }catch (Exception $e){
             // Convert mysqli_sql_exceptions into 500 errors
-            throw new Exception("MYSQL error " . $e->getCode() . ": " . $e->getMessage() . " in query:" . $query, 500);
+            switch ($e->getCode()){
+                case 1146 : // Error: 1146 SQLSTATE: 42S02 (ER_NO_SUCH_TABLE)
+                    throw new Exception("{$e->getMessage()}. Try <a href=\"#/admin/installer\" class=\"alert-link\">reinstalling database</a>",500);
+                    break;
+                default:
+                    throw new Exception("MYSQL error " . $e->getCode() . ": " . $e->getMessage() . " in query:" . $query, 500);
+                    break;
+            }
         }
 	}
 	

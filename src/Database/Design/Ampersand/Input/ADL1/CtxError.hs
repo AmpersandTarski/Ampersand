@@ -156,10 +156,10 @@ class GetOneGuarded a where
   hasNone o = getOneExactly o []
 
 instance GetOneGuarded (P_SubIfc a) where
-  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one P-subinterface in "++showADL o]
 
 instance GetOneGuarded (SubInterface) where
-  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one A-subinterface in "++showADL o]
 
 instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d

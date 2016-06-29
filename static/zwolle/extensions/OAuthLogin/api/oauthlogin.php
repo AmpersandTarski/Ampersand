@@ -44,7 +44,7 @@ $app->get('/oauthlogin/login', function () use ($app){
 $app->get('/oauthlogin/logout', function () use ($app){
     $session = Session::singleton();
     
-    $session->database->deleteAtom(new Atom(session_id(), 'SESSION'));
+    $session->database->deleteAtom(new Atom($session->id, 'SESSION'));
         
     $session->database->closeTransaction('Logout successfull', true);
         
