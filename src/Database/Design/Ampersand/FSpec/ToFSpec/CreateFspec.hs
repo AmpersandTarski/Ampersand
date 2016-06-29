@@ -38,11 +38,11 @@ createFSpec opts =
       = case pCtx2Fspec uCtx of
           Errors es -> return(Errors es)
           Checked uFspec
-            ->   when (genASTFile opts) (doGenMetaFile uFspec)
+            ->   when (genMetaFile opts) (doGenMetaFile uFspec)
               >> return (Checked ())
 
     genTables :: Guarded P_Context -> IO(Guarded FSpec)
-    genTables uCtx= case genASTTables opts of
+    genTables uCtx= case genMetaTables opts of
        False
          -> return (pCtx2Fspec uCtx)
        True

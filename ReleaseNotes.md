@@ -1,11 +1,12 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * Enhancement: From now on, default behaviour is that extra information about the model (meta-information) is available. To omit this, the switch `--no-meta-tables` has been introduced. The experimental switch `--meta-tables` has been removed. 
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 
-  * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) New switch: --include
-  * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) Enhancement: Introduction of a configuration file. A sample configuration file is generated when you use the switch --sampleConfigFile. To use a config file, use the switch --config=MyConfig.yaml
+  * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) New switch: `--include`
+  * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) Enhancement: Introduction of a configuration file. A sample configuration file is generated when you use the switch `--sampleConfigFile`. To use a config file, use the switch `--config=MyConfig.yaml`
   * [Issue #468](https://github.com/AmpersandTarski/Ampersand/issues/468) Enhancement: default configuration file (when it exists)
-  * Enhancement: From now on, all text values read from .xlsx files are trimmed (leading and trailing spaces are removed), unless the switch --do-not-trim-cellvalues is given. [Issue #414](https://github.com/AmpersandTarski/Ampersand/issues/414)
+  * Enhancement: From now on, all text values read from .xlsx files are trimmed (leading and trailing spaces are removed), unless the switch `--do-not-trim-cellvalues` is given. [Issue #414](https://github.com/AmpersandTarski/Ampersand/issues/414)
   * More automation on releasing Ampersand.
   * Frontend: Options in frontend navbar now can be defined for certain roles only (e.g. the installer and excelimporter).
   * [Issue #103](https://github.com/AmpersandTarski/Ampersand/issues/103) Fix overlap by multiple rows in navbar
@@ -24,7 +25,7 @@
 ## v3.5.1 (17 may 2016)
   * Minor enhancement of generation of Logical Data Model
   * More consisten use of views in interface definitions: [Issue #416](https://github.com/AmpersandTarski/Ampersand/issues/416)
-  * Re-enabled output format for --fSpec=asciidoc
+  * Re-enabled output format for `--fSpec=asciidoc`
   * Added depth parameter in API resources call (?depth=<int>). This provides functionality to specify the depth of subinterfaces for which the content must be returned and is especially usefull for recursive (sub)interfaces using the LINKTO statement.
   * Added this release notes file. 
   * Bug fixes: [Issue #413](https://github.com/AmpersandTarski/Ampersand/issues/413) 
