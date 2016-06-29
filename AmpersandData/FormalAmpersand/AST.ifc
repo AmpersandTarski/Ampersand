@@ -91,7 +91,7 @@ BOX [ expression: I[Expression]
     , arg : arg[UnaryTerm*Expression]
     , "formalExpression~" : formalExpression[Rule*Expression]~
     , bind  : bind[BindedRelation*Relation] LINKTO INTERFACE Relation
-    , singleton : singleton[Singleton*Atom] 
+    , singleton : singleton[Singleton*AtomValue] 
     , "user defined src" : userSrc["V"*Concept]
     , "user defined trg" : userTrg["V"*Concept]
     , "user defined cpt" : userCpt["I"*Concept]

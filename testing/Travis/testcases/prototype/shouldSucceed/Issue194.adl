@@ -7,7 +7,7 @@ RELATION aantalWielen [ Auto * Getal]  [UNI,TOT]
 REPRESENT Getal TYPE INTEGER
 
 RULE ThisShouldHoldForTheGivenExcelSheet 
-  : eigenaar;'Piet';eigenaar~ |- aantalWielen;'4';aantalWielen~
+  : (I[Voertuig] /\ eigenaar;'Piet';eigenaar~) |- aantalWielen;'4';aantalWielen~
 
 ENDCONTEXT  
 

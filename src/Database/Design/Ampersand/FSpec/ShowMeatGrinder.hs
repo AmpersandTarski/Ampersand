@@ -169,8 +169,8 @@ instance MetaPopulations PlugInfo where
       )      
 
 instance MetaPopulations PlugSQL where
-  metaPops fSpec plug =
-    case plug of 
+  metaPops fSpec plug = []
+{-    case plug of 
        TblSQL{} ->
          [ Pop "rootConcept" "TblSQL" "Concept"
                [(dirtyId plug, dirtyId . target . attExpr . head . plugAttributes $ plug)]
@@ -179,10 +179,10 @@ instance MetaPopulations PlugSQL where
          ] ++ 
          concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
        BinSQL{} -> []  
-
+-}
 instance MetaPopulations (PlugSQL,SqlAttribute) where
-  metaPops _ (plug,att) =
-      [ Pop "table" "SqlAttribute" "SQLPlug"
+  metaPops _ (plug,att) = []
+{-      [ Pop "table" "SqlAttribute" "SQLPlug"
                  [(dirtyId (plug,att), dirtyId plug) ]
       , Pop "concept" "SqlAttribute" "Concept"
                  [(dirtyId (plug,att), dirtyId.target.attExpr $ att)]
@@ -198,6 +198,7 @@ instance MetaPopulations (PlugSQL,SqlAttribute) where
               EFlp (EDcD dcl) -> Just dcl
               EDcI cpt -> Just (Isn cpt)
               _  -> Nothing
+-}
 instance MetaPopulations Role where
   metaPops fSpec rol =
       [ Pop "allRoles" "Context" "Role"
@@ -332,8 +333,8 @@ instance MetaPopulations Expression where
                             ,Pop "userTrg"  (show "V") "Concept" 
                               [(dirtyId expr,dirtyId (target sgn))]
                             ]
-            (EMp1 v c)   -> [ Pop "singleton" "Singleton" "Atom"
-                              [(dirtyId expr,dirtyId (c,v))]
+            (EMp1 v c)   -> [ Pop "singleton" "Singleton" "AtomValue"
+                              [(dirtyId expr,showADL v)]
                             --,Pop "pop" "Atom" "Concept"
                               --    [(dirtyId (c,v),dirtyId c)]
                             ]
@@ -470,7 +471,6 @@ instance AdlId PlugSQL
 instance AdlId (PlugSQL,SqlAttribute)
   where dirtyId (plug,att) = concatDirtyIdStrings [dirtyId plug, (show.camelCase.attName) att]
 instance AdlId Purpose
-instance AdlId (A_Concept,PSingleton)
 instance AdlId Rule
 instance AdlId Role
 instance AdlId Interface
