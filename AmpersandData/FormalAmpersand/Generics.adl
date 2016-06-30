@@ -59,10 +59,14 @@ RELATION conjunct[Conjunct*Expression] [TOT]
 
 --[Roles]--
 
+IDENT Role : Role(name)
 RELATION allRoles[Context*Role] [SUR,INJ]
 RELATION name[Role*RoleName] [UNI,TOT]
 REPRESENT RoleName TYPE ALPHANUMERIC
 RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
 RELATION interfaces[Role*Interface]
+
+--[Roles]--
+RELATION interfaces[Context*Interface][SUR,INJ]
 
 ENDCONTEXT

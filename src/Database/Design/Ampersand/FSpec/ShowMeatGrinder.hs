@@ -70,25 +70,33 @@ instance MetaPopulations FSpec where
            [(show "SystemAdmin", show "SystemAdmin")]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
-  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).vpatterns)    fSpec)
+  ++   concatMap extract (sortByName . vpatterns $ fSpec)
   ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.vgens) fSpec++")"]
-  ++   concatMap (metaPops fSpec) (vgens          fSpec)
+  ++   concatMap extract (vgens fSpec)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) fSpec++")"]
-  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).concs)    fSpec)
+  ++   concatMap extract (sortByName . concs $ fSpec)
   ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
-  ++   concatMap (metaPops fSpec) (allSigns fSpec)
+  ++   concatMap extract (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.vrels) fSpec++")"]
-  ++   concatMap (metaPops fSpec) (vrels fSpec ++ [ Isn c | c<-concs fSpec])
+  ++   concatMap extract (vrels fSpec ++ [ Isn c | c<-concs fSpec])
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
-  ++   concatMap (metaPops fSpec) (allExprs  fSpec)
+  ++   concatMap extract (allExprs  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.fallRules) fSpec++")"]
-  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).fallRules)    fSpec)
+  ++   concatMap extract (sortByName . fallRules $ fSpec)
   ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
-  ++   concatMap (metaPops fSpec) (allConjuncts fSpec)
+  ++   concatMap extract (allConjuncts fSpec)
   ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
-  ++   concatMap (metaPops fSpec) ((sortBy (comparing name).plugInfos)    fSpec)
+  ++   concatMap extract (sortByName . plugInfos $ fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Interfaces: (count="++(show.length.interfaceS) fSpec++")"]
+  ++   concatMap extract (sortByName . interfaceS $ fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) fSpec++")"]
+  ++   concatMap (extract . fst) (fRoles fSpec)
   )
-
+  where 
+    extract :: MetaPopulations a => a -> [Pop]
+    extract = metaPops fSpec
+    sortByName :: Named a => [a] -> [a]
+    sortByName = sortBy (comparing name)
 instance MetaPopulations Pattern where
  metaPops fSpec pat =
    [ Comment " "
@@ -177,7 +185,7 @@ instance MetaPopulations PlugSQL where
          , Pop "key" "TblSQL" "SqlAttribute"
                [(dirtyId plug, dirtyId(plug,head . plugAttributes $ plug))]
          ] ++ 
-         concatMap (metaPops fSpec) [(plug,att) | att <- plugAttributes plug]
+         concatMap extract [(plug,att) | att <- plugAttributes plug]
        BinSQL{} -> []  
 -}
 instance MetaPopulations (PlugSQL,SqlAttribute) where
@@ -209,6 +217,11 @@ instance MetaPopulations Role where
                  [(dirtyId rol, dirtyId rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
       , Pop "interfaces" "Role" "Interface"
                  [(dirtyId rol, dirtyId ifc) | ifc <- roleInterfaces fSpec rol]
+      ]
+instance MetaPopulations Interface where
+  metaPops fSpec ifc =
+      [ Pop "interfaces" "Context" "Interface"
+                 [(dirtyId fSpec, dirtyId ifc) ]
       ]
 
 instance MetaPopulations Atom where
