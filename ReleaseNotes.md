@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## unreleased changes
+## v3.6.0 (8 july 2016)
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 
   * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) New switch: --include
   * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) Enhancement: Introduction of a configuration file. A sample configuration file is generated when you use the switch --sampleConfigFile. To use a config file, use the switch --config=MyConfig.yaml
