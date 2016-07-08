@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.5.2
+version:        3.6.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -56,6 +56,8 @@ executable ampersand
                      text == 1.2.*,
                      time == 1.5.*,
                      utf8-string == 1.0.*,
+                     yaml == 0.8.17.*,
+                     yaml-config == 0.4.*,
                      xlsx == 0.2.1.*,
                      zlib == 0.6.*
 
@@ -152,7 +154,6 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.PHP,
                      Database.Design.Ampersand.Prototype.ProtoUtil,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
-                     Paths_ampersand,
                      Database.Design.Ampersand.Output.ToJSON.MySQLInstaller,
                      Database.Design.Ampersand.Output.ToJSON.Settings,
                      Database.Design.Ampersand.Output.ToJSON.Relations,
@@ -174,6 +175,7 @@ Test-Suite regression-test
                      conduit-extra == 1.1.13.*,
                      conduit-combinators == 1.0.3.*,
                      yaml == 0.8.17.*,
+                     yaml-config == 0.4.*,
                      process == 1.2.*,
                      transformers == 0.4.*,
                      directory == 1.2.*,
@@ -230,8 +232,7 @@ Test-Suite regression-test
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
-                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
-                     Paths_ampersand
+                     Database.Design.Ampersand.Prototype.StaticFiles_Generated
 
 Test-Suite ampersand-test
   type:              exitcode-stdio-1.0
@@ -261,6 +262,8 @@ Test-Suite ampersand-test
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
                      xlsx == 0.2.1.*,
+                     yaml == 0.8.17.*,
+                     yaml-config == 0.4.*,
                      zlib == 0.6.*
   other-modules:
                      Database.Design.Ampersand.Misc.Options,
@@ -335,5 +338,4 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
-                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
-                     Paths_ampersand
+                     Database.Design.Ampersand.Prototype.StaticFiles_Generated

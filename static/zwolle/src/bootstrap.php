@@ -32,7 +32,4 @@ require_once (__DIR__ . '/defaultSettings.php');
 require_once (__DIR__ . '/../localSettings.php');
 if(!defined('LOCALSETTINGS_VERSION') || Ampersand::REQ_LOCALSETTINGS_VERSION > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to format of v" . number_format (Ampersand::REQ_LOCALSETTINGS_VERSION, 1), 500);
 
-// Start Ampersand Session
-Session::singleton();
-
 ?>

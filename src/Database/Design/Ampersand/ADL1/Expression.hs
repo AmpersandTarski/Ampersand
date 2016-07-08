@@ -97,7 +97,7 @@ notCpl (ECpl e) = e
 notCpl e = ECpl e
 
 isCpl :: Expression -> Bool
-isCpl (ECpl{}) = True
+isCpl ECpl{} = True
 isCpl _ = False
 
 isPos :: Expression -> Bool

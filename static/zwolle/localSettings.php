@@ -12,8 +12,8 @@ date_default_timezone_set('Europe/Amsterdam');
  * LOGGING functionality
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
-ini_set("display_errors", false);
-//Config::set('debugMode', 'global', false); // default = true
+ini_set("display_errors", true);
+//Config::set('debugMode', 'global', true); // default = false
 
 // Log file handler
 $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);

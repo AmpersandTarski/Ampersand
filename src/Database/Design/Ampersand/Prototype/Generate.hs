@@ -123,7 +123,7 @@ generateAllDefPopQueries fSpec
             , "   ("++intercalate ", " (map show ["conjId","src","tgt"])++")"
             ] ++ lines 
               ( "VALUES " ++ intercalate " , " 
-                  [ "(" ++intercalate ", " (map showAsValue [rc_id conj, showValPHP (apLeft p), showValPHP (apRight p)])++ ")" 
+                  [ "(" ++intercalate ", " [showAsValue (rc_id conj), showValPHP (apLeft p), showValPHP (apRight p)]++ ")" 
                   | (conj, viols) <- conjSignals
                   , p <- viols
                   ]
