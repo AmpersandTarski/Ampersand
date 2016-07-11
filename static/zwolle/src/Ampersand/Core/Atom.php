@@ -453,11 +453,13 @@ class Atom {
 	    // Define interface(s) to navigate to for this tgtAtom
 	    if($options['navIfc']){
 	        $ifcs = array();
-	        if($this->parentIfc->isLinkTo && $session->isAccessibleIfc($this->parentIfc->refInterfaceId))
-	            $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
-	        else $ifcs = array_map(function($o) {
-	            return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
-	        }, $session->getInterfacesToReadConcept($this->concept->name));
+	        if($this->parentIfc->isLinkTo){
+                if ($session->isAccessibleIfc($this->parentIfc->refInterfaceId)) $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
+	        }else{
+                $ifcs = array_map(function($o) {
+	                   return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
+	            }, $session->getInterfacesToReadConcept($this->concept->name));
+            }
 	        $content['_ifcs_'] = $ifcs;
 	    }
 	    
