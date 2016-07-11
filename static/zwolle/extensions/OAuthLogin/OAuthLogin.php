@@ -57,6 +57,7 @@ class OAuthLoginController {
 				 , CURLOPT_POST => 1
 				 , CURLOPT_POSTFIELDS => http_build_query ($token_request['arguments'])
 				 , CURLOPT_HTTPHEADER => array('Content-Type: application/x-www-form-urlencoded', 'Accept: application/json')
+                 , CURLOPT_CAINFO => __DIR__ . '/cacert.pem'
 				 )
 			);
 
@@ -95,6 +96,7 @@ class OAuthLoginController {
 				 , CURLOPT_URL => $api_url
 				 , CURLOPT_USERAGENT => Config::get('contextName')
 				 , CURLOPT_HTTPHEADER => array('Authorization: Bearer ' . $this->tokenObj->access_token, 'x-li-format: json')
+                 , CURLOPT_CAINFO => __DIR__ . '/cacert.pem'
 				 )
 			);
 
