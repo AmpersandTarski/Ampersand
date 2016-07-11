@@ -648,13 +648,13 @@ class Atom {
 		// Interface is a relation to an object
 		}elseif($ifc->tgtConcept->isObject){
 			
-			$ifc->relation->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
+			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
 		}elseif(!$ifc->tgtConcept->isObject){
 			if($ifc->isUni) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
 			
-			$ifc->relation->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
+			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 			
 		}else{
 			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);

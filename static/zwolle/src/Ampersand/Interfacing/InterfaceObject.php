@@ -260,7 +260,16 @@ class InterfaceObject {
 	public function __toString() {
 		return $this->id;
 	}
-	
+    
+    /**
+     * Returns interface relation (when interface expression = relation), throws exception otherwise
+     * @return Relation|Exception
+     */
+	public function relation(){
+        if(is_null($this->relation)) throw new Exception ("Interface expression for '{$this->path}' is not a relation", 500);
+        else return $this->relation;
+    }
+
 	/**
 	 * Returns if interface expression relation is a property
 	 * @return boolean
@@ -331,7 +340,7 @@ class InterfaceObject {
 	    // Check if atom does not exist and if it may be created here
 	    elseif(!$atom->atomExists() && $this->crudC){
 	        // If interface expression is a relation, add tuple($this->srcAtom, $atom) in this relation
-	        if($this->relation) $this->relation->addLink($this->srcAtom, $atom, $this->relationIsFlipped);
+	        if($this->relation) $this->relation()->addLink($this->srcAtom, $atom, $this->relationIsFlipped);
 	        // Else only create atom
 	        else $atom->addAtom();
 	        
@@ -537,7 +546,7 @@ class InterfaceObject {
 	    }
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
-	    if($this->relation) $this->relation->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
+	    if($this->relation) $this->relation()->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
 	    
 	    // Walk to new atom
 	    $newAtom = $this->atom($newAtom->id);
@@ -633,9 +642,9 @@ class InterfaceObject {
 	        if(!(is_bool($value) || is_null($value))) throw new Exception("Interface '{$this->path}' is property, boolean expected, non-boolean provided");
 	        	
 	        // When true
-	        if($value) $this->relation->addLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
+	        if($value) $this->relation()->addLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
 	        // When false or null
-	        else $this->relation->deleteLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
+	        else $this->relation()->deleteLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
 	        	
 	    // Interface is a relation to an object
 	    }elseif($this->tgtConcept->isObject){
@@ -643,11 +652,10 @@ class InterfaceObject {
 	
 	    // Interface is a relation to a scalar (i.e. not an object)
 	    }elseif(!$this->tgtConcept->isObject){
-	        
 	        // Replace by nothing => deleteLink
-	        if(is_null($value)) $this->relation->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept->name), $this->relationIsFlipped);
+	        if(is_null($value)) $this->relation()->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept->name), $this->relationIsFlipped);
 	        // Replace by other atom => addLink
-	        else $this->relation->addLink($this->srcAtom, new Atom($value, $this->tgtConcept->name), $this->relationIsFlipped);
+	        else $this->relation()->addLink($this->srcAtom, new Atom($value, $this->tgtConcept->name), $this->relationIsFlipped);
 	        
 	    }else{
 	        throw new Exception ("Unknown patch replace. Please contact the application administrator", 500);
@@ -676,17 +684,22 @@ class InterfaceObject {
 	
 	    // Interface is a relation to an object
 	    }elseif($this->tgtConcept->isObject){
-	        // Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception
-	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->__toString()}' does not exist and may not be created in {$this->path}", 403);
-	        	
-	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
-	
+	        // Check if atom exists and may be created (crudC)
+	        if(!$tgtAtom->atomExists()){
+                if($this->crudC) $tgtAtom->addAtom();
+                else throw new Exception ("Resource '{$tgtAtom->__toString()}' does not exist and may not be created in {$this->path}", 403);
+            }
+	        
+            // Add link when possible (relation is specified)	
+	        if(is_null($this->relation)) $this->logger->debug("addLink skipped because '{$this->path}' is not an editable expression");
+            else $this->relation()->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+            
 	    // Interface is a relation to a scalar (i.e. not an object)
 	    }elseif(!$this->tgtConcept->isObject){    	
 	        // Check: If interface is univalent, throw exception
 	        if($this->isUni) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
 	        	
-	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+	        $this->relation()->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 	        
 	    }else{
 	        throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
@@ -716,13 +729,13 @@ class InterfaceObject {
 		// Interface is a relation to an object
         }elseif($this->tgtConcept->isObject){
 			
-			$this->relation->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+			$this->relation()->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
         }elseif(!$this->tgtConcept->isObject){
 			if($this->isUni) throw new Exception("Cannot patch remove for univalent interface {$this->path}. Use patch replace instead", 500);
 			
-			$this->relation->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+			$this->relation()->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 			
 		}else{
 			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);
