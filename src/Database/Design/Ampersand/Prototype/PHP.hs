@@ -122,7 +122,7 @@ populateTablesPHP fSpec =
                                               intercalate (phpIndent 29++", ") 
                                                 [ "(" ++sqlConjId++", "++showValPHP (apLeft p)++", "++showValPHP (apRight p)++")" 
                                                 | (conj, viols) <- conjSignals
-                                                , let sqlConjId = "'" ++ rc_id conj ++ "'" -- conjunct id's do not need escaping
+                                                , let sqlConjId = "'" ++ rc_id conj ++ "'" -- conjunct id's do not need escaping (SJ 2016-07-07: In that case: why not escape with showValPHP for the sake of maintainability?)
                                                 , p <- viols
                                                 ])++"\n"++
         "            );"
