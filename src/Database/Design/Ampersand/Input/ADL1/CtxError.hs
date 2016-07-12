@@ -224,7 +224,7 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
 mkDanglingRefError entity ref orig =
-  CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref
+  CTXE orig $ "Reference to non-existent " ++ entity ++ ": "++show ref
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
 mkUndeclaredError entity objDef ref =
   CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
