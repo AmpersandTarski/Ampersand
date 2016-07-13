@@ -55,8 +55,9 @@ deploy:
     release: '$(AMPERSAND_VERSION)'
     auth_token:
       secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
-    artifact: ampersand.exe
-    artifact: '$(WINZIPFILE)'
+    artifact:
+      - ampersand.exe
+      - '$(WINZIPFILE)'
 
 
     
