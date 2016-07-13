@@ -34,6 +34,10 @@ build_script:
 - stack --local-bin-path . install ampersand
 # Set a magical environment variable
 - cmd: for /f %%i in ('stack exec -- ampersand -v') do set AMPERSAND_VERSION=%%i
+- cmd: set WINZIPFILE=win-%AMPERSAND_VERSION%.zip
+- cmd: echo %WINZIPFILE%
+- appveyor PushArtifact %WINZIPFILE%
+- cmd: 7z a -tzip "win-ampersand.zip" ampersand.exe 
 
 # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
 artifacts:
@@ -52,5 +56,5 @@ deploy:
     auth_token:
       secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
     artifact: ampersand.exe
-    on:
-      branch: master
+    artifact: %WINZIPFILE%
+    
