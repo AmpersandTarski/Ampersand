@@ -7,6 +7,9 @@
 # Disable the standard build process which would use MSBuild:
 build: off
 
+# version format
+version: build.{build}-{branch}
+
 cache:
 - "c:\\sr" # stack root, short paths == fewer problems
 clone_folder: "c:\\stack"
