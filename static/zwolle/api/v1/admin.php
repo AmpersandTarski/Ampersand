@@ -160,6 +160,8 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			throw new Exception ("Unknown groupBy argument", 500);
 			break;
 	}
+    
+    usort($content, function($a, $b){ return $b['duration'] <=> $a['duration'];});
 	
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 	
