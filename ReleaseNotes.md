@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * Performance enhancement: Added indexes on table columns when possible
 
 ## v3.6.0 (8 july 2016)
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 

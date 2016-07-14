@@ -7,6 +7,7 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.List
 import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 
         
@@ -36,23 +37,26 @@ generateDBstructQueries fSpec withComment
         , "   ) ENGINE="++dbEngine
         ] 
       ]++
-      map tableSpec2Queries [(plug2TableSpec p) | InternalPlug p <- plugInfos fSpec]++
+      concatMap tableSpec2Queries [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]++
       [ ["SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]
       ]
    where 
-        tableSpec2Queries :: TableSpec -> [String]
+        tableSpec2Queries :: TableSpec -> [[String]]
         tableSpec2Queries ts = 
-            (if withComment then tsCmnt ts else [] )
+         (  (if withComment then tsCmnt ts else [] )
           ++["CREATE TABLE "++show (tsName ts)] 
-          ++(map (uncurry (++)) 
-                (zip (" ( ": repeat " , " ) 
-                     (  map fld2sql (tsflds ts)
-                     ++ tsKey ts
-                     )
-                )
-            )
+          ++zipWith (++) (" ( " : repeat " , ")
+               (map fld2sql (tsflds ts) ++ tsKey ts)
+            
           ++[" , "++show "ts_insertupdate"++" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]
           ++[" ) ENGINE="++dbEngine]
+         ):
+         [ ["CREATE INDEX "++show (tsName ts++"_"++name fld)++" ON "++show (tsName ts)++" ("++show (name fld)++")"]
+         | fld <- case tsflds ts of
+                    _:xs -> xs
+                    _ -> fatal 55 $ "A table with no fields found! ("++show (tsName ts)++")"
+         , suitableAsKey (attType  fld)
+         ]
         fld2sql :: SqlAttribute -> String
         fld2sql = attributeSpec2Str . fld2AttributeSpec
 
@@ -75,7 +79,7 @@ fld2AttributeSpec att
                   , fsDbNull = attDBNull att 
                   }
 attributeSpec2Str :: AttributeSpec -> String
-attributeSpec2Str fs = intercalate " "
+attributeSpec2Str fs = unwords
                         [ show (fsname fs)
                         , fstype fs
                         , if fsDbNull fs then " DEFAULT NULL" else " NOT NULL"
@@ -98,7 +102,7 @@ plug2TableSpec plug
                  (BinSQL{}, _)   -> []
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
-                         TableKey isPrim _ -> if isPrim then ["PRIMARY " ++ "KEY ("++(show . attName) primFld++")"] else []
+                         TableKey isPrim _ -> ["PRIMARY " ++ "KEY (" ++ (show . attName) primFld ++ ")" | isPrim]
                          ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
                          PlainAttr     -> []
      , tsEngn = dbEngine
