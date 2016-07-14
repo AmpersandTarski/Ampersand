@@ -168,6 +168,12 @@ createTempDbPHP dbNm =
       [ "$DB_name='"++addSlashes dbNm++"';"
       , "// Drop the database if it exists"
       , "$sql=\"DROP DATABASE $DB_name\";"
+      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
+      , "// Check connection"
+      , "if (mysqli_connect_errno()) {"
+      , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
+      , "}"
+      , ""
       , "mysqli_query($DB_link,$sql);"
       , "// Don't bother about the error if the database didn't exist..."
       , ""
@@ -190,21 +196,23 @@ createTempDbPHP dbNm =
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: FSpec -> String -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
-  fmap sort (performQuery (getOpts fSpec) dbNm violationsQuery)
+  fmap sort (performQuery fSpec dbNm violationsQuery)
  where violationsExpr = conjNF (getOpts fSpec) exp
        violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 
-performQuery :: Options -> String -> String -> IO [(String,String)]
-performQuery opts dbNm queryStr =
+performQuery :: FSpec -> String -> String -> IO [(String,String)]
+performQuery fSpec dbNm queryStr =
  do { queryResult <- (executePHPStr . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-      then do verboseLn opts{verboseP=True} ("\n******Problematic query:\n"++queryStr++"\n******")
+      then do verboseLn opts{verboseP=True} ("\n******Problematic php:\n"++showPHP php++"\n******")
+              verboseLn opts{verboseP=True} ("\n******Problematic query:\n"++queryStr++"\n******")
               fatal 141 $ "PHP/SQL problem: "++queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
              _            -> fatal 143 $ "Parse error on php result: "++show queryResult
     }
    where
+    opts = getOpts fSpec
     php =
       [ "// Try to connect to the database"
       , "$DB_name='"++addSlashes dbNm++"';"
@@ -247,17 +255,17 @@ executePHPStr phpStr =
     ; (tempPhpFile, temph) <- openTempFile tempdir "phpInput"
     ; hPutStr temph phpStr
     ; hClose temph
-    ; results <- executePHP Nothing tempPhpFile []
+    ; results <- executePHP tempPhpFile
     ; removeFile tempPhpFile
     ; return results
     }
     
-executePHP :: Maybe String -> String -> [String] -> IO String
-executePHP mWorkingDir phpPath phpArgs =
+executePHP :: String -> IO String
+executePHP phpPath =
  do { let cp = CreateProcess
-                { cmdspec       = RawCommand "php" $ phpPath : phpArgs
-                , cwd           = mWorkingDir
-                , env           = Just [("TERM","dumb")] -- environment
+                { cmdspec       = ShellCommand $ "php "++phpPath 
+                , cwd           = Nothing
+                , env           = Nothing -- Just [("TERM","dumb")] -- environment
                 , std_in        = Inherit
                 , std_out       = CreatePipe
                 , std_err       = CreatePipe
@@ -265,7 +273,6 @@ executePHP mWorkingDir phpPath phpArgs =
                 , create_group  = False
                 , delegate_ctlc = False -- don't let php handle ctrl-c
                 }
-
     ; (_, mStdOut, mStdErr, _) <- createProcess cp
     ; outputStr <-
         case (mStdOut, mStdErr) of

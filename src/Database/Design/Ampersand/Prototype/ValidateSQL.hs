@@ -1,11 +1,12 @@
 module Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
-import Prelude hiding (exp)
+import Prelude hiding (exp,putStrLn,putStr)
 import Data.List
 import Control.Monad
 import System.Exit
-import System.IO hiding (hPutStr,hGetContents)
+import System.IO hiding (hPutStr,hGetContents,putStrLn,putStr)
 import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
 {-
@@ -114,10 +115,11 @@ validateExp fSpec vExp@(exp, orig) =
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
-                                     createTempDbPHP tempDbName ++
-                                     createTablesPHP fSpec ++
-                                     populateTablesPHP fSpec
+ do { _ <- executePHPStr . showPHP $ php
     ; return ()
     }
- 
+   where 
+    php = sqlServerConnectPHP fSpec ++
+          createTempDbPHP tempDbName ++
+          createTablesPHP fSpec ++
+          populateTablesPHP fSpec
