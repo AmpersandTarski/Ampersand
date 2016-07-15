@@ -20,10 +20,15 @@ tempDbName = "ampersand_temporaryvalidationdb"
 
 validateRulesSQL :: FSpec -> IO Bool
 validateRulesSQL fSpec =
- do { when (any (not.isSignal.fst) (allViolations fSpec))
-        (do { putStrLn "The population would violate invariants. Could not generate your database."
+ do { let invViols = filter (not.isSignal.fst) (allViolations fSpec)
+    ; unless (null invViols)
+        (do { mapM_ putStrLn $
+               "The population would violate invariants. Could not generate your database." : 
+               ["  Rule `"++name rul++"`: "++show (length vs)++" violations."
+               | (rul,vs) <- invViols
+               ]
             ; exitWith $ ExitFailure 10
-                 })
+            })
     ; hSetBuffering stdout NoBuffering
 
     ; putStrLn "Initializing temporary database"
