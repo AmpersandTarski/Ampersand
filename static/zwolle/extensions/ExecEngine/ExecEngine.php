@@ -101,9 +101,9 @@ class ExecEngine {
 					$rulesThatHaveViolations[] = $rule->id;
 					
 					// Fix violations for every rule
-					$logger->notice("ExecEngine fixing violations for rule '{$rule->id}'");
+					$logger->notice("ExecEngine fixing " . count($violations) . " violations for rule '{$rule->id}'");
 					self::fixViolations($violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
-					$logger->debug("Fixed violations for rule '{$rule->__toString()}'");
+					$logger->debug("Fixed " . count($violations) . " violations for rule '{$rule->__toString()}'");
 					
 					// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)
 					if(self::$autoRerun) self::$doRun = true;
@@ -121,8 +121,12 @@ class ExecEngine {
 	 * @return void
 	 */
 	public static function fixViolations($violations){
-		
-		foreach ($violations as $violation){
+		$logger = Logger::getLogger('EXECENGINE');
+        $total = count($violations);
+        
+		foreach ($violations as $key => $violation){
+            $num = $key + 1;
+            $logger->info("Fixing violation {$num}/{$total}");
 		    $violation = new ExecEngineViolation($violation->rule, $violation->src->id, $violation->tgt->id);
 		    
 			$theMessage = $violation->getViolationMessage();
