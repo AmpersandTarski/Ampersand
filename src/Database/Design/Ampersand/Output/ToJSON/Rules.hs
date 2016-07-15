@@ -33,6 +33,7 @@ data JsonPairViewSegment = JsonPairViewSegment
   , pvsJSONsrcOrTgt    :: Maybe String
   , pvsJSONexpTgt      :: Maybe String
   , pvsJSONexpSQL      :: Maybe String
+  , pvsJSONexpIsIdent  :: Maybe Bool
   } deriving (Generic, Show)
 
 instance ToJSON Rules where
@@ -84,6 +85,9 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
   , pvsJSONexpSQL      = case pvs of
                            PairViewText{} -> Nothing
                            PairViewExp _ _ e         -> Just . sqlQuery fSpec $ e
+  , pvsJSONexpIsIdent  = case pvs of
+                           PairViewText{} -> Nothing
+                           PairViewExp _ _ e         -> Just . isIdent $ e --show $ e
   } 
  
   

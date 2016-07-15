@@ -184,10 +184,16 @@ class ExecEngineViolation extends Violation {
 	        }elseif($segment['segmentType'] == 'Exp'){
 	            // select starting atom depending on whether the segment uses the src of tgt atom.
 	            $atom = $segment['srcOrTgt'] == 'Src' ? $this->src : $this->tgt;
-	
-	            // quering the expression
-	            $query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '{$atom->idEsc}'"; // SRC of TGT kunnen door een expressie gevolgd worden
-	            $rows = $database->Exe($query);
+                
+                $rows = array();
+                if($segment['expIsIdent']){ 
+                    // when segment expression isIdent (i.e. SRC I or TGT I), we don't have to query the database.
+                    $rows[] = array('tgt' => $atom->id);
+                }else{
+                    // quering the expression
+                    $query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '{$atom->idEsc}'"; // SRC of TGT kunnen door een expressie gevolgd worden
+                    $rows = $database->Exe($query);
+                }
 	
 	            // returning the result
 				if(count($rows) == 0){
