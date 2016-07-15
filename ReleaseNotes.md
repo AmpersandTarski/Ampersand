@@ -2,6 +2,7 @@
 
 ## unreleased changes
   * Enhancement: From now on, default behaviour is that extra information about the model (meta-information) is available. To omit this, the switch `--no-meta-tables` has been introduced. The experimental switch `--meta-tables` has been removed. 
+  * Performance enhancement: Added indexes on table columns when possible
 
 ## v3.6.0 (8 july 2016)
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 
