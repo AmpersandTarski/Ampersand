@@ -43,7 +43,7 @@ VIEW Gen: Gen( TXT "CLASSIFY ", genspc[Gen*Concept];name[Concept*Identifier] , T
 RULE "eq gen": gengen[Gen*Concept];gengen[Gen*Concept]~ /\ genspc[Gen*Concept];genspc[Gen*Concept]~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
-RELATION gengen[Gen*Concept] [UNI,TOT]
+RELATION gengen[Gen*Concept] [TOT]
 MEANING "A generalization rule refers to one more generic concept."
 RELATION genspc[Gen*Concept] [UNI,TOT]
 MEANING "A generalization rule refers to one more specific concept."
