@@ -7,6 +7,9 @@
 # Disable the standard build process which would use MSBuild:
 build: off
 
+# version format
+version: build.{build}-{branch}
+
 cache:
 - "c:\\sr" # stack root, short paths == fewer problems
 clone_folder: "c:\\stack"
@@ -38,6 +41,7 @@ build_script:
 # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
 artifacts:
 - path: ampersand.exe
+  name: Windows binary
 
 # Auto-deploy
 # specify that, for each build that completes, AppVeyor should push
@@ -51,6 +55,7 @@ deploy:
     release: '$(AMPERSAND_VERSION)'
     auth_token:
       secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
-    artifact: ampersand.exe
-    on:
-      branch: master
+    artifact: Windows binary
+      
+
+    

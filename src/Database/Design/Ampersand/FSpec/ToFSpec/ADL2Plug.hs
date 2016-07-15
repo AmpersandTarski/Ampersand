@@ -1,6 +1,7 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
-  ,typologies)
+  ,typologies
+  ,suitableAsKey)
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
