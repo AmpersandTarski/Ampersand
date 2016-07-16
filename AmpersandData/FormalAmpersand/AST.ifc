@@ -89,7 +89,9 @@ BOX [ expression: I[Expression]
     , operator : operator
     , second : second LINKTO INTERFACE Expression
     , arg : arg[UnaryTerm*Expression]
-    , bind  : bind
+    , term : term[Rule*Expression]
+    , bind  : bind LINKTO INTERFACE Expression
+    , singleton : singleton LINKTO INTERFACE Expression
     ]
 INTERFACE Signature FOR Ampersand : I[Signature]
 BOX [ Signature: I[Signature]
