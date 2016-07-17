@@ -1,4 +1,4 @@
-CONTEXT AST IN ENGLISH LATEX
+﻿CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Atoms.adl"
 
@@ -10,9 +10,9 @@ PROCESS "Expression definitions"
     RELATION bind[Expression*Relation]
     RELATION term[Rule*Expression]
     
-    VIEW Equivalence        : Equivalence(TXT "RULE ", term;first, TXT " = ", term;second)
-    VIEW Inclusion          : Inclusion  (TXT "RULE ", term;first, TXT " |- ", term;second)
-    VIEW Truth              : Truth      (TXT "RULE ", term)
+    VIEW Equivalence        : Equivalence(TXT "RULE ", first, TXT " = ", second)
+    VIEW Inclusion          : Inclusion  (TXT "RULE ", first, TXT " |- ", second)
+    VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
     VIEW Relation           : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
     VIEW UnaryMinus         : UnaryMinus(TXT "-", arg[UnaryTerm*Expression])
     VIEW Converse           : Converse  (arg[UnaryTerm*Expression], TXT "~")
@@ -43,6 +43,7 @@ PROCESS "Expression definitions"
     RELATION arg[UnaryTerm*Expression] [UNI]
 
     CONCEPT Atom ""
+    CLASSIFY Atom ISA Expression
     RELATION singleton[Atom*Expression] [UNI]
     
     CONCEPT "V" "The cartesian product."
@@ -53,9 +54,10 @@ PROCESS "Expression definitions"
     CLASSIFY Equivalence ISA Rule
     CLASSIFY Inclusion   ISA Rule
     CLASSIFY Truth       ISA Rule
-
+    CLASSIFY Rule        ISA BinaryTerm
     --RELATION repr[Expression*Representation] [UNI, TOT, INJ]
     --The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
+    CLASSIFY Relation           ISA Expression
     CLASSIFY Converse           ISA UnaryTerm
     CLASSIFY KleeneStar         ISA UnaryTerm
     CLASSIFY KleenePlus         ISA UnaryTerm
