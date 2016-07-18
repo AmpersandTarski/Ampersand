@@ -1,4 +1,4 @@
-﻿CONTEXT AST IN ENGLISH LATEX
+CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Rules.doc
 
 PATTERN Relations
@@ -43,8 +43,6 @@ RELATION decpurpose[Relation * Purpose]
 MEANING "The purposes of a relation."
 RELATION in[Pair*Relation]
 MEANING "The population of a relation."
-RELATION context[Relation*Context] [UNI,TOT]
-MEANING "If a relation declaration is used in a context, that relation exists in that context. This is registered in the system."
 
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE "entity integrity of relation": left;left~ /\ right;right~ /\ in;in~ |- I
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "There cannot be two relationships in the population of a relation with the same source and same target."

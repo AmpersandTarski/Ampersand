@@ -34,7 +34,7 @@ INTERFACE GenTree FOR Ampersand : I[Concept]
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternIdentifier]
     , "patterns~" : patterns[Context*Pattern]~
-    , "Relations" : declarations[Pattern*Relation]  LINKTO INTERFACE "Relation"
+    , "Relations" : relsDefdIn[Pattern*Relation]  LINKTO INTERFACE "Relation"
     , "rules"  : rules[Pattern*Rule]
     , "purpose" : purpose[Pattern*Purpose]
     ]
@@ -156,7 +156,8 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "target" : target[Relation*Concept]
 	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
 	, "bind~" : bind[BindedRelation*Relation]~
-	, "declarations~" : declarations[Pattern*Relation]~
+	, "declared in pattern" : relsDefdIn[Pattern*Relation]~
+	, "declared in context (outside a pattern)" : ctxds[Context*Relation]
 	, "in~" : in[Pair*Relation]~
 	      BOX <SHCOLS>
 	        [ l : l

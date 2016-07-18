@@ -1,4 +1,4 @@
-﻿CONTEXT RAP IN ENGLISH
+CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "AST.ifc"
 --INCLUDE "MinimalAST.xlsx" -- Contains minimal population. Anything discarded from it must break an invariant
@@ -31,7 +31,7 @@ RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
 MEANING "The name of a pattern."
 RELATION rules[Pattern*Rule]
 MEANING "The user-defined rules in a pattern."
-RELATION declarations[Pattern*Relation]
+RELATION relsDefdIn[Pattern*Relation]
 MEANING "The relations that are declared in a pattern."
 RELATION purpose[Pattern*Purpose]
 MEANING "The purposes of a pattern."

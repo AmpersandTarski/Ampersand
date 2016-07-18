@@ -68,13 +68,15 @@ instance MetaPopulations FSpec where
            [(dirtyId fSpec, show "SystemAdmin")]
     , Pop "name"   "Role" "RoleName"
            [(show "SystemAdmin", show "SystemAdmin")]
+    , Pop "fallRules" "Context" "Rule"
+           [(dirtyId fSpec, dirtyId r) | r<-fallRules fSpec]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
-  ++   concatMap extract (sortByName . vpatterns $ fSpec)
+  ++   concatMap extract (sortByName (vpatterns fSpec))
   ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.vgens) fSpec++")"]
   ++   concatMap extract (vgens fSpec)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) fSpec++")"]
-  ++   concatMap extract (sortByName . concs $ fSpec)
+  ++   concatMap extract (sortByName (concs fSpec))
   ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
   ++   concatMap extract (allSigns fSpec)
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.vrels) fSpec++")"]
@@ -82,13 +84,13 @@ instance MetaPopulations FSpec where
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
   ++   concatMap extract (allExprs  fSpec)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.fallRules) fSpec++")"]
-  ++   concatMap extract (sortByName . fallRules $ fSpec)
+  ++   concatMap extract (sortByName (fallRules fSpec))
   ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
   ++   concatMap extract (allConjuncts fSpec)
   ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
-  ++   concatMap extract (sortByName . plugInfos $ fSpec)
+  ++   concatMap extract (sortByName (plugInfos fSpec))
   ++[ Comment " ", Comment $ "PATTERN Interfaces: (count="++(show.length.interfaceS) fSpec++")"]
-  ++   concatMap extract (sortByName . interfaceS $ fSpec)
+  ++   concatMap extract (sortByName (interfaceS fSpec))
   ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) fSpec++")"]
   ++   concatMap (extract . fst) (fRoles fSpec)
   )
@@ -107,7 +109,9 @@ instance MetaPopulations Pattern where
           [(dirtyId pat, (show.name) pat)]
    , Pop "rules"   "Pattern" "Rule"
           [(dirtyId pat,dirtyId x) | x <- ptrls pat]
-   , Pop "declarations"   "Pattern" "Relation"
+   , Pop "relsDefdIn"   "Context" "Relation"
+          [(dirtyId fSpec,dirtyId x) | x <- (relsDefdIn.originalContext) fSpec]
+   , Pop "relsDefdIn"   "Pattern" "Relation"
           [(dirtyId pat,dirtyId x) | x <- ptdcs pat]
    , Pop "purpose"   "Pattern" "Purpose"
           [(dirtyId pat,dirtyId x) | x <- ptxps pat]

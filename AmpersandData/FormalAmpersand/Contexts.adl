@@ -1,18 +1,91 @@
-﻿CONTEXT RAP IN ENGLISH
+CONTEXT RAP IN ENGLISH
 PATTERN Context
     CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
     IDENT Context: Context(name[Context*ContextIdentifier])  
     REPRESENT ContextIdentifier TYPE ALPHANUMERIC
-    RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ,SUR]
+    RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ]
     MEANING "The name of a context."
-    RELATION valid[Rule*Context]
+    RELATION name[Rule*RuleID] [UNI,TOT,INJ]
+    RELATION name[Relation*Name] [UNI,TOT]
+    RELATION name[Concept*Identifier] [UNI,TOT,INJ] 
+    MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     RELATION patterns[Context*Pattern]
+    MEANING "The patterns in a context."
+    RELATION rules[Pattern*Rule]
     MEANING "The patterns in a context."
     RELATION concs[Context*Concept]
     MEANING "A concept, mentioned anywhere in a context."
     RELATION gens[Context*Gen]
     MEANING "The user-defined generalization rules in a context."
-    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations FIX: Compare with context[Relation*Context]
+ENDPATTERN
+
+PURPOSE PATTERN Validity
+{+The mechanism to define truth within context is represented by the relation `valid`.
+The idea is that a context determines concepts, relations and rules, all of which we say are `valid` in the context.
+For this purpose we define three relations, `valid[Concept*Context]`, `valid[Relation*Context]`, and `valid[Rule*Context]`.
+-}
+PATTERN Validity
+    RELATION relsDefdIn[Pattern*Relation]  -- comes from class Language. This contains all relations declared inside a pattern.
+    MEANING "The relations that are declared in a pattern."
+    RELATION ctxds[Context*Relation]       -- comes from FSpec. This contains all relations declared inside a context but outside the patterns it contains.
+    MEANING "The relations that are declared in a context, outside the scope of any pattern declared in that context."
+    RELATION concepts[Pattern*Concept]
+    RELATION uses[Context*Pattern]
+    MEANING "If a context uses a pattern, everything declared in that pattern is valid within the context."
+    RELATION context[Concept*Context]
+    MEANING "If a concept declaration is used in a context, that concept exists in that context. This is registered in the system."
+    RELATION context[Relation*Context]
+    MEANING "If a relation declaration is used in a context, that relation exists in that context. This is registered in the system."
+    RELATION context[Rule*Context]
+    MEANING "If a rule is declared in a context, that rule exists in that context. This is registered in the system."
+    RELATION valid[Concept*Context]
+    MEANING "A concept/context pair in the relation `valid[Concept*Context]` means that this concept exists with the context."
+    ROLE ExecEngine MAINTAINS validConcepts
+    PURPOSE RULE validRelations MARKDOWN
+    {+In order to compute validity of concepts within a context,
+    three categories of concepts are taken into account:
+     - the concept defined in the context
+     - all concept defined in patterns within the context
+     - all concept defined in patterns used by the context
+    -}
+    ROLE ExecEngine MAINTAINS validConcepts
+    RULE validConcepts : concepts~;(patterns~\/uses~) \/ context[Concept*Context] |- valid[Concept*Context]
+    MEANING "Every concept defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
+    VIOLATION (TXT "{EX} InsPair;valid;Concept;", SRC I, TXT ";Context;", TGT I)
+    RULE AllValidConcepts : valid[Concept*Context] |- concepts~;(patterns~\/uses~) \/ context[Concept*Context]
+    VIOLATION (TXT "Concept ", SRC name, TXT " is not valid in context ", TGT I)
+
+    RELATION valid[Relation*Context]
+    MEANING "A relation/context pair in the relation `valid[Relation*Context]` means that this relation exists with the context."
+    ROLE ExecEngine MAINTAINS validRelations
+    PURPOSE RULE validRelations MARKDOWN
+    {+In order to compute validity of relations within a context,
+    three categories of relations are taken into account:
+     - the relation defined in the context
+     - all relation defined in patterns within the context
+     - all relation defined in patterns used by the context
+    -}
+    RULE validRelations : (patterns\/uses);relsDefdIn \/ ctxds[Context*Relation] |- valid[Relation*Context]~
+    MEANING "Every relation defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
+    VIOLATION (TXT "{EX} InsPair;valid;Relation;", SRC I, TXT ";Context;", TGT I)
+    RULE AllValidRelations : valid[Relation*Context]~ |- (patterns\/uses);relsDefdIn \/ ctxds[Context*Relation]
+    VIOLATION (TXT "Relation ", SRC name, TXT " is not valid in context ", TGT I)
+
+    RELATION valid[Rule*Context]
+    MEANING "A rule/context pair in the relation `valid[Rule*Context]` means that this rule exists with the context."
+    ROLE ExecEngine MAINTAINS validRules
+    PURPOSE RULE validRules MARKDOWN
+    {+In order to compute validity of rules within a context,
+    three categories of rules are taken into account:
+     - the rules defined in the context
+     - all rules defined in patterns within the context
+     - all rules defined in patterns used by the context
+    -}
+    RULE validRules : rules~;(patterns~\/uses~) \/ context[Rule*Context] |- valid[Rule*Context]
+    MEANING "Every rule defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
+    VIOLATION (TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I)
+    RULE AllValidRules : valid[Rule*Context] |- rules~;(patterns~\/uses~) \/ context[Rule*Context]
+    VIOLATION (TXT "Rule ", SRC name, TXT " is not valid in context ", TGT I)
 ENDPATTERN
 
 ENDCONTEXT
