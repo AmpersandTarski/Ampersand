@@ -50,14 +50,14 @@ executable ampersand
                      pandoc-types == 1.16.*,
                      parsec == 3.1.*,
                      process == 1.4.*,
-                     simple-sql-parser == 0.4.1,
+                     simple-sql-parser == 0.4.*,
                      split == 0.2.*,
                      SpreadsheetML ==0.1.*,
                      text == 1.2.*,
                      time == 1.6.*,
                      utf8-string == 1.0.*,
                      yaml == 0.8.17.*,
-                     xlsx == 0.2.1.*,
+                     xlsx == 0.2.*,
                      zlib == 0.6.*
 
   other-modules:
