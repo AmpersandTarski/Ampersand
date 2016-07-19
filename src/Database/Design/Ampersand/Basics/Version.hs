@@ -2,7 +2,6 @@
 -- | This module contains Version of Ampersand
 module Database.Design.Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatal) where
 import GHC.Stack
-import GHC.SrcLoc
 import Database.Design.Ampersand.Basics.BuildInfo_Generated
 
 maxLen :: Int
@@ -24,7 +23,7 @@ fatal lineNr msg
  where showCS (root:rest) = unlines (showCallSite root : map (indent . showCallSite) rest)
        showCS [] = "fatal without a call site (check Version.hs to add a call site)\n"
        indent l = "             " ++ l
-       showCallSite (f, loc) = f ++ ", called at " ++ showSrcLoc loc
+       showCallSite (f, loc) = f ++ ", called at " ++ prettySrcLoc loc
 {-# NOINLINE fatal #-}
 
 -- | String, containing the Ampersand version, including the build timestamp.
