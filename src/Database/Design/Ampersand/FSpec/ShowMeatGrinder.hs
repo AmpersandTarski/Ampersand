@@ -53,6 +53,7 @@ content fSpec = unlines
     [ ""
     , "ENDCONTEXT"
     ])
+
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
@@ -99,12 +100,13 @@ instance MetaPopulations FSpec where
     extract = metaPops fSpec
     sortByName :: Named a => [a] -> [a]
     sortByName = sortBy (comparing name)
+
 instance MetaPopulations Pattern where
  metaPops fSpec pat =
    [ Comment " "
    , Comment $ " Pattern `"++name pat++"` "
-   , Pop "patterns" "Context" "Pattern"
-          [(dirtyId fSpec,dirtyId pat)]
+   , Pop "context" "Pattern" "Context"
+          [(dirtyId pat,dirtyId fSpec)]
    , Pop "name"    "Pattern" "PatternIdentifier"
           [(dirtyId pat, (show.name) pat)]
    , Pop "rules"   "Pattern" "Rule"
@@ -116,6 +118,7 @@ instance MetaPopulations Pattern where
    , Pop "purpose"   "Pattern" "Purpose"
           [(dirtyId pat,dirtyId x) | x <- ptxps pat]
    ]
+
 instance MetaPopulations A_Gen where
  metaPops fSpec gen =
   [ Pop "gens" "Context" "Gen"
@@ -192,6 +195,7 @@ instance MetaPopulations PlugSQL where
          concatMap extract [(plug,att) | att <- plugAttributes plug]
        BinSQL{} -> []  
 -}
+
 instance MetaPopulations (PlugSQL,SqlAttribute) where
   metaPops _ (plug,att) = []
 {-      [ Pop "table" "SqlAttribute" "SQLPlug"
@@ -211,6 +215,7 @@ instance MetaPopulations (PlugSQL,SqlAttribute) where
               EDcI cpt -> Just (Isn cpt)
               _  -> Nothing
 -}
+
 instance MetaPopulations Role where
   metaPops fSpec rol =
       [ Pop "allRoles" "Context" "Role"
@@ -222,6 +227,7 @@ instance MetaPopulations Role where
       , Pop "interfaces" "Role" "Interface"
                  [(dirtyId rol, dirtyId ifc) | ifc <- roleInterfaces fSpec rol]
       ]
+
 instance MetaPopulations Interface where
   metaPops fSpec ifc =
       [ Pop "interfaces" "Context" "Interface"
@@ -236,6 +242,7 @@ instance MetaPopulations Atom where
    , Pop "repr"  "Atom" "Representation"
           [(dirtyId atm, (showValADL.atmVal) atm)]
    ]
+
 instance MetaPopulations Signature where
  metaPops _ sgn =
       [ Pop "src" "Signature" "Concept"
