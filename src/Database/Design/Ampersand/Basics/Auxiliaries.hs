@@ -27,9 +27,9 @@ eqClass f (x:xs) = (x:[e |e<-xs, f x e]) : eqClass f [e |e<-xs, not (f x e)]
 --    'eqCl name persons' produces a list,in which each element is a list of persons with the same name.
 -- Example> eqCl (=='s') "Mississippi" = "ssss"
 
-eqCl :: Eq b => (a -> b) -> [a] -> [[a]]
+eqCl :: Ord b => (a -> b) -> [a] -> [[a]]
 eqCl _ [] = []
-eqCl f (x:xs) = (x:[e |e<-xs, f x==f e]) : eqCl f [e |e<-xs, f x/=f e]
+eqCl f lst = Map.elems (Map.fromListWith (++) [(f e,[e]) | e <- lst])
 
 -- | getCycles returns a list of cycles in the edges list (each edge is a pair of a from-vertex
 --   and a list of to-vertices)

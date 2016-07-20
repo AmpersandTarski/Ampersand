@@ -1,6 +1,5 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec) where
-
 import Prelude
 import Data.Char
 import Data.List
@@ -134,10 +133,7 @@ makeFSpec opts context
           where cra = pairsinexpr (antecedent r)
                 crc = pairsinexpr (consequent r)
      conjunctViolations :: Conjunct -> [AAtomPair]
-     conjunctViolations conj =
-       let vConts    = Set.fromList $ pairsinexpr (EDcV (sign (rc_conjunct conj)))
-           conjConts = Set.fromList $ pairsinexpr (rc_conjunct conj)
-       in  Set.toList $ vConts `Set.difference` conjConts 
+     conjunctViolations conj = pairsinexpr (rc_conjunct_inv conj)
 
      contextinfo = ctxInfo context
 
@@ -471,7 +467,7 @@ makeFSpec opts context
         ----------------------------------------------------
         --  Warshall's transitive closure algorithm in Haskell, adapted to carry along the intermediate steps:
         ----------------------------------------------------
-             clos2 :: (Eq a,Eq b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
+             clos2 :: (Ord a,Ord b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
              clos2 xs
                = foldl f xs (nub (map fst3 xs) `isc` nub (map thd3 xs))
                  where

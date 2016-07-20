@@ -218,9 +218,9 @@ data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affect
                  , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
                  } deriving Show
 
-instance Eq Quad where
-  q == q'  = qDcl q == qDcl q' && qRule q == qRule q'
-
+instance Ord Quad where
+  q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
+instance Eq Quad where q == q' = compare q q' == EQ
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
 

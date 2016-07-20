@@ -16,7 +16,7 @@ import Data.Map hiding (null, unions,delete)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import Data.Maybe (maybeToList)
 import Data.List (nub,delete)
-  
+import Debug.Trace
        
        
 genericAndSpecifics :: A_Gen -> [(A_Concept,A_Concept)]

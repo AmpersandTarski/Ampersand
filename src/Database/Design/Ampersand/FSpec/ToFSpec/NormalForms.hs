@@ -18,6 +18,8 @@ import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Misc.Options
 import Database.Design.Ampersand.Input (parseRule)
 import Database.Design.Ampersand.FSpec.ShowADL  -- for debug purposes only
+import Data.Hashable
+import Data.Text (pack)
 import Prelude hiding (head)
 
 {- SJC:
@@ -583,7 +585,7 @@ rTerm2expr term
      RConst e   -> e
    where
      makeDecl nm sgn
-      = Sgn { decnm   = nm
+      = Sgn { decnm   = pack nm
             , decsgn  = sgn
             , decprps = fatal 480 "Illegal RTerm in rTerm2expr"
             , decprps_calc = Nothing
@@ -595,11 +597,8 @@ rTerm2expr term
             , decusr  = fatal 488 "Illegal RTerm in rTerm2expr"
             , decpat  = fatal 489 "Illegal RTerm in rTerm2expr"
             , decplug = fatal 490 "Illegal RTerm in rTerm2expr"
+            , dech    = hash nm `hashWithSalt` sgn
             }
-     makeConcept "ONE" = ONE
-     makeConcept  str  = 
-        PlainConcept { cptnm = str
-                     }
 
 instance ShowADL RTerm where
  showADL = showExpr 0
@@ -1054,7 +1053,7 @@ head (a:_) = a
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
 delta :: Signature -> Expression
 delta sgn
- = EDcD   Sgn { decnm   = "Delta"
+ = EDcD   Sgn { decnm   = pack "Delta"
               , decsgn  = sgn
               , decprps = []
               , decprps_calc = Nothing
@@ -1068,6 +1067,7 @@ delta sgn
               , decusr  = False
               , decpat  = ""
               , decplug = True
+              , dech = hash sgn
               }
 
 {- Normalization of process algebra clauses -}
@@ -1587,8 +1587,8 @@ isEIsc _       = False
 
 
 
-conjuncts :: Options -> Rule -> [Expression]
-conjuncts opts = exprIsc2list.conjNF opts.rrexp
+conjuncts :: Options -> Rule -> [(Expression,Expression)]
+conjuncts opts = map (\v -> (v,notCpl v)).exprIsc2list.conjNF opts.rrexp
 
 allShifts :: Options -> DnfClause -> [DnfClause]
 allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
@@ -1730,15 +1730,16 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
 
 makeAllConjs :: Options -> [Rule] -> [Conjunct]
 makeAllConjs opts allRls =
-  let conjExprs :: [(Expression, [Rule])]
+  let conjExprs :: [((Expression,Expression), [Rule])]
       conjExprs = converse [ (rule, conjuncts opts rule) | rule <- allRls ]
       
       conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
                      , rc_orgRules   = rs
                      , rc_conjunct   = expr
+                     , rc_conjunct_inv = expr
                      , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
                      }
-              | ((expr, rs),i) <- zip conjExprs [0..]
+              | (((expr,inv_expr), rs),i) <- zip conjExprs [0..]
               ]
   in  conjs
    where
