@@ -50,6 +50,7 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , module Database.Design.Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConcept
+ , aavstr
  ) where
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
@@ -548,7 +549,7 @@ mkAtomPair = APair
 data AAtomValue
   = AAVString  { aavhash :: Int
                , aavtyp :: TType
-               , aavstr :: String
+               , aavtxt :: Text
                }
   | AAVInteger { aavtyp :: TType
                , aavint :: Integer
@@ -566,6 +567,9 @@ data AAtomValue
                 , aadatetime ::  UTCTime
                 }
   | AtomValueOfONE deriving (Eq,Prelude.Ord, Show)
+
+aavstr :: AAtomValue -> String
+aavstr = unpack.aavtxt
 showValPHP :: AAtomValue -> Text
 showValPHP val = pack$
   case val of
@@ -932,20 +936,20 @@ unsafePAtomVal2AtomValue' typ mCpt pav
   = case pav of
       PSingleton _ str mval
          -> case typ of
-             Alphanumeric     -> Right (AAVString (hash str) typ str)
-             BigAlphanumeric  -> Right (AAVString (hash str) typ str)
-             HugeAlphanumeric -> Right (AAVString (hash str) typ str)
-             Password         -> Right (AAVString (hash str) typ str)
-             Object           -> Right (AAVString (hash str) typ str)
+             Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
+             BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
+             HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
+             Password         -> Right (AAVString (hash str) typ (pack str))
+             Object           -> Right (AAVString (hash str) typ (pack str))
              _                -> case mval of
                                    Nothing -> message str
                                    Just x -> unsafePAtomVal2AtomValue typ mCpt x
       ScriptString _ str
          -> case typ of
-             Alphanumeric     -> Right (AAVString (hash str) typ str)
-             BigAlphanumeric  -> Right (AAVString (hash str) typ str)
-             HugeAlphanumeric -> Right (AAVString (hash str) typ str)
-             Password         -> Right (AAVString (hash str) typ str)
+             Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
+             BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
+             HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
+             Password         -> Right (AAVString (hash str) typ (pack str))
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -955,13 +959,13 @@ unsafePAtomVal2AtomValue' typ mCpt pav
              Integer          -> message str
              Float            -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> Right (AAVString (hash str) typ str)
+             Object           -> Right (AAVString (hash str) typ (pack str))
       XlsxString _ str
          -> case typ of
-             Alphanumeric     -> Right (AAVString (hash str) typ str)
-             BigAlphanumeric  -> Right (AAVString (hash str) typ str)
-             HugeAlphanumeric -> Right (AAVString (hash str) typ str)
-             Password         -> Right (AAVString (hash str) typ str)
+             Alphanumeric     -> Right (AAVString (hash str) typ (pack str))
+             BigAlphanumeric  -> Right (AAVString (hash str) typ (pack str))
+             HugeAlphanumeric -> Right (AAVString (hash str) typ (pack str))
+             Password         -> Right (AAVString (hash str) typ (pack str))
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
@@ -987,7 +991,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                                    Just r  -> Right (AAVFloat typ r)
                                    Nothing -> message str
              TypeOfOne        -> Left "ONE has a population of it's own, that cannot be modified"
-             Object           -> Right (AAVString (hash str) typ str)
+             Object           -> Right (AAVString (hash str) typ (pack str))
       ScriptInt _ i
          -> case typ of
              Alphanumeric     -> message i
@@ -1063,7 +1067,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
 
    where
      relaxXLSXInput :: Double -> Either String AAtomValue
-     relaxXLSXInput v = Right (AAVString (hash v) typ (neat (show v)))
+     relaxXLSXInput v = Right (AAVString (hash v) typ (pack (neat (show v))))
        where neat :: String -> String
              neat s 
                | onlyZeroes dotAndAfter = beforeDot
