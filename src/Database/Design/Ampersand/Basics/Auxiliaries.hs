@@ -42,12 +42,19 @@ getCycles edges =
 
 
 -- |  Warshall's transitive closure algorithm
-transClosureMap :: (Eq a, Ord a) => Map a [a] -> Map a [a]
-transClosureMap xs
+transClosureMap' :: (Eq a, Ord a) => Map a [a] -> Map a [a]
+transClosureMap' xs
   = foldl f xs (Map.keys xs `intersect` nub (concat (Map.elems xs)))
     where
      f :: (Eq a, Ord a) => Map a [a] -> a -> Map a [a]   -- The type is given for documentation purposes only
      f q x = Map.unionWith union q (Map.fromListWith union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
+-- |  Warshall's transitive closure algorithm
+transClosureMap :: (Eq a, Ord a) => Map a (Set a) -> Map a (Set a)
+transClosureMap xs
+  = foldl f xs (Map.keysSet xs `Set.intersection` (mconcat (Map.elems xs)))
+    where
+     f :: (Eq a, Ord a) => Map a (Set a) -> a -> Map a (Set a)
+     f q x = Map.unionWith Set.union q (Map.fromListWith Set.union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
 
 -- The following function can be used to determine how much of a set of alternative expression is already determined
 -- | The 'combinations' function returns all possible combinations of lists of list.
