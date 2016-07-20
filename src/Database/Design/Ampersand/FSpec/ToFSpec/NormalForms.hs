@@ -1583,12 +1583,8 @@ isEIsc :: Expression -> Bool
 isEIsc EIsc{}  = True
 isEIsc _       = False
 
-
-
-
-
-conjuncts :: Options -> Rule -> [(Expression,Expression)]
-conjuncts opts = map (\v -> (v,notCpl v)).exprIsc2list.conjNF opts.rrexp
+conjuncts :: Options -> Rule -> [Expression]
+conjuncts opts = exprIsc2list.conjNF opts.rrexp
 
 allShifts :: Options -> DnfClause -> [DnfClause]
 allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
@@ -1730,16 +1726,16 @@ allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shif
 
 makeAllConjs :: Options -> [Rule] -> [Conjunct]
 makeAllConjs opts allRls =
-  let conjExprs :: [((Expression,Expression), [Rule])]
+  let conjExprs :: [(Expression, [Rule])]
       conjExprs = converse [ (rule, conjuncts opts rule) | rule <- allRls ]
       
       conjs = [ Cjct { rc_id = "conj_"++show (i :: Int)
                      , rc_orgRules   = rs
                      , rc_conjunct   = expr
-                     , rc_conjunct_inv = expr
+                     -- , rc_conjunct_inv = notCpl expr
                      , rc_dnfClauses = allShifts opts (expr2dnfClause expr)
                      }
-              | (((expr,inv_expr), rs),i) <- zip conjExprs [0..]
+              | ((expr, rs),i) <- zip conjExprs [0..]
               ]
   in  conjs
    where

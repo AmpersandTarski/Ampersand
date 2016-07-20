@@ -192,7 +192,6 @@ data Conjunct = Cjct { rc_id ::         String -- string that identifies this co
                                                -- this is an internal id that has no counterpart at the ADL level)
                      , rc_orgRules ::   [Rule] -- All rules this conjunct originates from
                      , rc_conjunct ::   Expression
-                     , rc_conjunct_inv ::   Expression -- complement of the expression
                      , rc_dnfClauses :: [DnfClause]
                      } deriving (Show,Typeable)
 
@@ -567,8 +566,8 @@ data AAtomValue
                 , aadatetime ::  UTCTime
                 }
   | AtomValueOfONE deriving (Eq,Prelude.Ord, Show)
-showValPHP :: AAtomValue -> String
-showValPHP val =
+showValPHP :: AAtomValue -> Text
+showValPHP val = pack$
   case val of
    AAVString{}  -> "'"++f (aavstr val)++"'"
      where
