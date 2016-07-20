@@ -14,9 +14,9 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics hiding (empty)
 import Data.Map hiding (null, unions,delete)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
+import qualified Data.Set as Set
 import Data.Maybe (maybeToList)
 import Data.List (nub,delete)
-       
        
 genericAndSpecifics :: A_Gen -> [(A_Concept,A_Concept)]
 genericAndSpecifics gen = 
@@ -71,13 +71,13 @@ pairsOf ci ps dcl
                       ]
 
 fullContents :: ContextInfo -> [Population] -> Expression -> [AAtomPair]
-fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, a<-keys pairMap, b<-pairMap ! a ]
+fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.toList pairMap, b<-Set.toList bs ]
   where
    unions t1 t2 = unionWith uni t1 t2
    inters t1 t2 = mergeWithKey (\_ l r ->case l `isc` r of [] -> Nothing; atoms -> Just atoms) c c t1 t2
                   where c=const empty
    differ t1 t2 = differenceWith (\l r->case l >- r of [] -> Nothing; atoms -> Just atoms) t1 t2
-   contents :: Expression -> Map AAtomValue [AAtomValue]
+   contents :: Expression -> Map AAtomValue (Set.Set AAtomValue)
    contents expr
     = let aVals = atomValuesOf ci ps 
           lkp x contMap = (concat.maybeToList.lookup x) contMap in  -- (!) may not be used, because we don't know whether x `elem` keys fmap

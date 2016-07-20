@@ -233,7 +233,7 @@ performQuery opts dbNm queryStr =
       , "    unset($row);"
       , "  }"
       , "echo '[';"
-      , "for ($i = 0; $i < count($rows); $i<>) {"
+      , "for ($i = 0; $i < count($rows); $i++) {"
       , "  if ($i==0) echo ''; else echo ',';"
       , "  echo '(\"'.addslashes($rows[$i]['src']).'\", \"'.addslashes($rows[$i]['tgt']).'\")';"
       , "}"

@@ -57,7 +57,7 @@ generateDBstructQueries fSpec withComment
           <>[" , "<>doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]
           <>[" ) ENGINE="<>dbEngine]
          ):
-         [ ["CREATE INDEX "<>doubleQuote (tsName ts<>"_"<>name fld)<>" ON "<>show (tsName ts)<>" ("<>show (name fld)<>")"]
+         [ ["CREATE INDEX "<>show (tsName ts<>"_"<>name fld)<>" ON "<>show (tsName ts)<>" ("<>show (name fld)<>")"]
          | fld <- case tsflds ts of
                     _:xs -> xs
                     _ -> fatal 55 $ "A table with no fields found! ("<>show (tsName ts)<>")"

@@ -7,7 +7,7 @@ where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Prototype.Generate 
 import qualified Data.Text as Text
-
+ 
 data MySQLInstaller = MySQLInstaller
   { msiJSONallDBstructQueries :: [Text.Text]
   , msiJSONallDefPopQueries   :: [Text.Text]
