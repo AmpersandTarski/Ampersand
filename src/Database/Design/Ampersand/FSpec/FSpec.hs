@@ -38,7 +38,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           ) where
 -- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
 --       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
---       hyrarchie to reflect the Architecture. 
+--       hierarchie to reflect the Architecture. 
 import Data.List
 import Data.Text (Text,unpack)
 import Data.Typeable

@@ -22,7 +22,6 @@ import System.FilePath
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
 import Database.Design.Ampersand.Input.Xslx.XLSX
-import Database.Design.Ampersand.Input.Archi.ArchiAnalyze
 import Control.Exception
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
@@ -31,9 +30,6 @@ parseADL :: Options                    -- ^ The options given through the comman
          -> FilePath   -- ^ The path of the file to be parsed
          -> IO (Guarded P_Context)     -- ^ The resulting context
 parseADL opts fp = parseThing opts (fp,Nothing) False
-
---parseArchiMeta :: Options -> IO (Guarded P_Context)
---parseArchiMeta opts = parseThing opts ("Archi.adl",Just $ Origin "Archimate metamodel") True
 
 parseMeta :: Options -> IO (Guarded P_Context)
 parseMeta opts = parseThing opts ("AST.adl",Just $ Origin "Formal Ampersand specification") True -- This is the top file from FormalAmpersand. 
@@ -95,11 +91,6 @@ parseSingleADL opts useAllStaticFiles singleFile
          | extension == ".xlsx" =
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts useAllStaticFiles filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
-                }
-         | extension == ".xml" =
-             do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
-                ; verboseLn opts (filePath ++ " has been interpreted as an Archi-repository.")
-                ; return ((\archiContents -> (archiContents,[])) <$> Checked ctxFromArchi)  -- Excel file cannot contain include files
                 }
          | otherwise =
              do { mFileContents
