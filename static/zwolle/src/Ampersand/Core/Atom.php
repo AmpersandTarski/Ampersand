@@ -124,7 +124,9 @@ class Atom {
 	}
 	
 	public function __toString(){
-	    return "{$this->id}[{$this->concept->name}]";
+        // if atom id is longer than 40 chars, display first and last 20 chars
+        $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
+	    return "{$id}[{$this->concept->name}]";
 	}
 	
 	/**
