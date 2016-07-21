@@ -4,6 +4,7 @@ module Database.Design.Ampersand.Output.ToJSON.Settings
   (Settings)
 where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
+import qualified Data.Text as Text
 
 data Settings = Settings 
   { sngJSONversionInfo :: String
@@ -15,7 +16,7 @@ instance ToJSON Settings where
 instance JSON FSpec Settings where
  fromAmpersand fSpec _ = Settings 
   { sngJSONversionInfo   = ampersandVersionStr
-  , sngJSONcontextName   = fsName $ fSpec
+  , sngJSONcontextName   = Text.unpack (fsName fSpec)
   , sngJSONmysqlSettings = fromAmpersand fSpec fSpec
   } 
 

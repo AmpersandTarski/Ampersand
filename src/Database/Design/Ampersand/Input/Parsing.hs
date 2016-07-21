@@ -114,7 +114,6 @@ parseSingleADL opts useAllStaticFiles singleFile
                          whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) ->
                                do return (Checked (ctxts, relativePaths))
                 }
-         where showDcl dcl = name dcl ++show(dec_sign dcl)
                stripBom :: String -> String
                stripBom ('\239':'\187':'\191': s) = s
                stripBom s = s

@@ -728,7 +728,7 @@ Based on this derivation:
 atomVal2InSQL :: AAtomValue -> ValueExpr
 atomVal2InSQL val =
  case val of 
-   AAVString _ str     -> StringLit str
+   AAVString{}         -> StringLit (aavstr val)
    AAVInteger _ int    -> NumLit (show int)
    AAVFloat _ d        -> NumLit (show d)
    AAVBoolean _ b      -> NumLit $ if b then "1" else "0"

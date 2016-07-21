@@ -70,7 +70,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                                              Nothing -> Nothing
                                              Just aVal -> Just $
                                                 case aVal of
-                                                  AAVString _ str -> CellText $ T.pack str
+                                                  AAVString{} -> CellText $ T.pack (aavstr aVal)
                                                   AAVInteger _ int -> CellDouble (fromInteger int)
                                                   AAVFloat _ x -> CellDouble x
                                                   AAVBoolean _ b -> CellBool b

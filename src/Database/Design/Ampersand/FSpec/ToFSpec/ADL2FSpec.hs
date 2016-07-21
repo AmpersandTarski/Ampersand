@@ -1,11 +1,11 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec) where
-
 import Prelude
 import Data.Char
 import Data.List
 import Data.Maybe
 import Text.Pandoc
+import Data.Text (pack)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
@@ -17,13 +17,12 @@ import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
 import Database.Design.Ampersand.FSpec.ShowADL
-import qualified Data.Set as Set
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
 makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
- =      FSpec { fsName       = name context
+ =      FSpec { fsName       = pack (name context)
               , originalContext = context 
               , getOpts      = opts
               , fspos        = ctxpos context
@@ -134,11 +133,7 @@ makeFSpec opts context
           where cra = pairsinexpr (antecedent r)
                 crc = pairsinexpr (consequent r)
      conjunctViolations :: Conjunct -> [AAtomPair]
-     conjunctViolations conj =
-       let vConts    = Set.fromList $ pairsinexpr (EDcV (sign (rc_conjunct conj)))
-           conjConts = Set.fromList $ pairsinexpr (rc_conjunct conj)
-       in  Set.toList $ vConts `Set.difference` conjConts 
-
+     conjunctViolations conj = pairsinexpr (notCpl (rc_conjunct conj))
      contextinfo = ctxInfo context
 
      fSpecAllConcepts = concs context
@@ -471,7 +466,7 @@ makeFSpec opts context
         ----------------------------------------------------
         --  Warshall's transitive closure algorithm in Haskell, adapted to carry along the intermediate steps:
         ----------------------------------------------------
-             clos2 :: (Eq a,Eq b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
+             clos2 :: (Ord a,Ord b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
              clos2 xs
                = foldl f xs (nub (map fst3 xs) `isc` nub (map thd3 xs))
                  where

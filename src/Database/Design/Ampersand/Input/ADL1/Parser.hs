@@ -413,7 +413,7 @@ pInterface = lbl <$> currPos
                  <*> pMaybe (pChevrons pConid)  -- The view that should be used for this object
                  <*> pSubInterface
     where lbl :: Origin -> String ->  [P_NamedRel] -> [Role] -> Term TermPrim -> Maybe P_Cruds -> Maybe String -> P_SubInterface -> P_Interface
-          lbl p nm params roles ctx mCrud mView sub
+          lbl p nm _params roles ctx mCrud mView sub
              = P_Ifc { ifc_Name   = nm
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_Obj { obj_nm   = nm
