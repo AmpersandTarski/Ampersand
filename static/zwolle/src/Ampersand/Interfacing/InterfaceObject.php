@@ -311,10 +311,28 @@ class InterfaceObject {
 	    
 	    throw new Exception("Subinterface '{$ifcLabel}' does not exists in interface '{$this->path}'", 500);
 	}
+    
+    /**
+     * Return array with all sub interface recursively (incl. the interface itself)
+     * @return InterfaceObject[]
+     */
+    public function getInterfaceFlattened(){
+        $arr = array();
+        $arr[] = $this;
+        foreach ($this->getSubinterfaces(false) as $ifc){
+            $arr = array_merge($arr, $ifc->getInterfaceFlattened());
+        }
+        return $arr;
+    }
 	
-	private function getSubinterfaces(){
+    /**
+     * @param boolean $inclRefs specifies whether to include subinterfaces from referenced interfaces
+     * @return InterfaceObject[] 
+     */
+	private function getSubinterfaces($inclRefs = true){
 	    if(!$this->isRef()) return $this->subInterfaces;
-	    else return self::getInterface($this->refInterfaceId)->getSubinterfaces();
+	    elseif($inclRefs) return self::getInterface($this->refInterfaceId)->getSubinterfaces();
+        else return array();
 	}
 	
 /**************************************************************************************************

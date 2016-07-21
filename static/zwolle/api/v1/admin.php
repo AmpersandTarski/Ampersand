@@ -3,6 +3,7 @@
 use Ampersand\Config;
 use Ampersand\Database\Database;
 use Ampersand\Session;
+use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Log\Notifications;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\Rule;
@@ -208,6 +209,45 @@ $app->get('/admin/report/conjuncts', function () use ($app){
     }
     
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
+$app->get('/admin/report/interfaces', function () use ($app){
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+    
+    $arr = array();
+    foreach (InterfaceObject::getAllInterfaces() as $key => $ifc) {
+        $arr = array_merge($arr, $ifc->getInterfaceFlattened());
+    }
+    
+    $content = array_map(function(InterfaceObject $ifc){
+        return array( 'label' => $ifc->label
+                    , 'path' => $ifc->path
+                    , 'crudC' => $ifc->crudC
+                    , 'crudR' => $ifc->crudR
+                    , 'crudU' => $ifc->crudU
+                    , 'crudD' => $ifc->crudD
+                    , 'src' => $ifc->srcConcept->name
+                    , 'tgt' => $ifc->tgtConcept->name
+                    , 'view' => $ifc->view->label
+                    , 'relation' => $ifc->relation->signature
+                    , 'flipped' => $ifc->relationIsFlipped
+                    , 'ref' => $ifc->refInterfaceId
+                );
+        
+    }, $arr);
+    
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=data.csv');
+
+    // create a file pointer connected to the output stream
+    $output = fopen('php://output', 'w');
+
+    // output the column headings
+    fputcsv($output, array_keys($content[0]));
+    
+    foreach ($content as $row) fputcsv($output, $row);
+    
+    // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 ?>
