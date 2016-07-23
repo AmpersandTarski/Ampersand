@@ -1,4 +1,4 @@
-﻿CONTEXT "AST Interface" IN ENGLISH
+CONTEXT "AST Interface" IN ENGLISH
 
 INTERFACE Ampersand FOR Ampersand : '_SESSION';V[SESSION*Context]
 BOX <SHCOLS>
@@ -14,12 +14,13 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
     ]
   , "Patterns" : patterns[Context*Pattern] BOX 
     [ "Pattern" : I INTERFACE Pattern]
-  , "Gens" : concs[Context*Concept] ; (I[Concept] 
-          /\
-                (gengen[Gen*Concept]~;gengen[Gen*Concept]) /\
-                ( -(genspc[Gen*Concept]~;genspc[Gen*Concept]))) 
-         INTERFACE GenTree 
-  , "Concepts" : concs[Context*Concept]
+  , "Gens" : context[Concept*Context]~ ;
+             (I[Concept]                                  /\
+                gengen[Gen*Concept]~;gengen[Gen*Concept]  /\
+              -(genspc[Gen*Concept]~;genspc[Gen*Concept])
+             )  INTERFACE GenTree 
+  , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
+  , "Concepts defined outside patterns" : context[Concept*Context]~
   , "Relations" : context[Relation*Context]~  LINKTO INTERFACE "Relation"
   , "Roles" : allRoles[Context*Role]
   , "allConjuncts" : allConjuncts[Context*Conjunct]
@@ -157,13 +158,13 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
 	, "bind~" : bind[BindedRelation*Relation]~
 	, "declared in pattern" : relsDefdIn[Pattern*Relation]~
-	, "declared in context (outside a pattern)" : ctxds[Context*Relation]
+	, "declared in context (outside a pattern)" : context[Relation*Context]
 	, "in~" : in[Pair*Relation]~
 	      BOX <SHCOLS>
 	        [ l : l
 	        , r : r
 	        ]
-	, "relations~" : relations[Context*Relation]~
+	, "valid in (context)" : valid[Relation*Context]
 	, "relsInPlug~" : relsInPlug[Plug*Relation]~
     ]
 
