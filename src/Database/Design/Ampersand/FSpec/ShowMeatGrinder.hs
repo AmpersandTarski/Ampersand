@@ -109,6 +109,8 @@ instance MetaPopulations Pattern where
           [(dirtyId pat,dirtyId fSpec)]
    , Pop "name"    "Pattern" "PatternIdentifier"
           [(dirtyId pat, (show.name) pat)]
+   , Pop "concepts"   "Pattern" "Concept"
+          [(dirtyId pat,dirtyId x) | x <- ptcds pat]
    , Pop "rules"   "Pattern" "Rule"
           [(dirtyId pat,dirtyId x) | x <- ptrls pat]
    , Pop "relsDefdIn"   "Context" "Relation"
