@@ -24,6 +24,8 @@ import Data.List as Lst
 import Data.Char(toUpper,toLower)
 import Data.Either
 import GHC.Stack
+import Data.Hashable
+import Data.Text (pack)
 import Control.Arrow(first)
 
 data Type = UserConcept String
@@ -41,7 +43,7 @@ instance Named Type where
 
 typeOrConcept :: Type -> Either A_Concept (Maybe TType)
 typeOrConcept (BuiltIn TypeOfOne)  = Left  ONE
-typeOrConcept (UserConcept s)      = Left$ PlainConcept s
+typeOrConcept (UserConcept s)      = Left$ makeConcept s
 typeOrConcept (BuiltIn x)          = Right (Just x)
 typeOrConcept RepresentSeparator = Right Nothing
 
@@ -155,7 +157,7 @@ checkOtherAtomsInSessionConcept ctx = case [mkOtherAtomInSessionError atom
                                         [] -> return ()
                                         errs -> Errors errs
         where isPermittedSessionValue :: AAtomValue -> Bool
-              isPermittedSessionValue (AAVString _ str) = str == "_SESSION"
+              isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
               isPermittedSessionValue _                 = False
 
 pSign2aSign :: P_Sign -> Signature
@@ -245,8 +247,7 @@ pCtx2aCtx opts
                      , ctxpats = pats
                      , ctxrs = rules
                      , ctxds = map fst declsAndPops
-                     , ctxpopus = Lst.nub (udpops
-                                     ++map snd declsAndPops)
+                     , ctxpopus = Set.toList (Set.union (Set.fromList udpops) (Set.fromList (map snd declsAndPops)))
                      , ctxcds = allConceptDefs
                      , ctxks = identdefs
                      , ctxrrules = allRoleRules
@@ -310,7 +311,7 @@ pCtx2aCtx opts
               reprTrios :: [(A_Concept,TType,Origin)]
               reprTrios = nub $ concatMap toReprs reprs
                 where toReprs :: Representation -> [(A_Concept,TType,Origin)]
-                      toReprs r = [ (castConcept str,reprdom r,reprpos r) | str <- reprcpts r]
+                      toReprs r = [ (makeConcept str,reprdom r,reprpos r) | str <- reprcpts r]
               conceptsOfGroups :: [A_Concept]
               conceptsOfGroups = nub (concat groups)
               conceptsOfReprs :: [A_Concept]
@@ -433,7 +434,7 @@ pCtx2aCtx opts
       -> P_Declaration -> Guarded (Declaration,Population)
     pDecl2aDecl patNm contextInfo defLanguage defFormat pd
      = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
-           dcl = Sgn { decnm   = dec_nm pd
+           dcl = Sgn { decnm   = pack (dec_nm pd)
                      , decsgn  = decSign
                      , decprps = dec_prps pd
                      , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
@@ -445,6 +446,7 @@ pCtx2aCtx opts
                      , decusr  = True
                      , decpat  = patNm
                      , decplug = dec_plug pd
+                     , dech    = hash (dec_nm pd) `hashWithSalt` decSign
                      }
        in checkEndoProps >> 
           (\aps -> (dcl,ARelPopu { popdcl = dcl
@@ -487,9 +489,6 @@ pCtx2aCtx opts
        where
          leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType str))
 
-    castConcept :: String -> A_Concept
-    castConcept "ONE" = ONE
-    castConcept x     = PlainConcept { cptnm = x }
     userConcept :: String -> Type
     userConcept "ONE" = BuiltIn TypeOfOne
     userConcept x     = UserConcept x
@@ -499,7 +498,7 @@ pCtx2aCtx opts
      case pop of
        P_RelPopu{p_nmdr = nmdr, p_popps=aps, p_src = src, p_tgt = tgt}
          -> do dcl <- case p_mbSign nmdr of
-                        Nothing -> findDeclLooselyTyped declMap pop (name nmdr) (castConcept <$> src) (castConcept <$> tgt)
+                        Nothing -> findDeclLooselyTyped declMap pop (name nmdr) (makeConcept <$> src) (makeConcept <$> tgt)
                         _ -> namedRel2Decl declMap nmdr
                       
                aps' <- traverse (pAtomPair2aAtomPair contextInfo dcl) aps
@@ -511,7 +510,7 @@ pCtx2aCtx opts
                                , poptgt = fromMaybe (target dcl) tgt'
                                }
        P_CptPopu{}
-         -> let cpt = castConcept (p_cnme pop) in  
+         -> let cpt = makeConcept (p_cnme pop) in  
             (\vals
               -> ACptPopu { popcpt = cpt
                           , popas  = vals

@@ -21,6 +21,7 @@ import System.FilePath
 import Data.Time.Clock.POSIX
 import qualified Data.ByteString.Lazy as L
 import Data.List
+import qualified Data.Text.IO as Text
 import Data.Function (on)
 
 import System.Exit
@@ -80,7 +81,7 @@ doGenHaskell fSpec =
 doGenSQLdump :: FSpec -> IO()
 doGenSQLdump fSpec =
  do { verboseLn (getOpts fSpec) $ "Generating SQL queries dumpfile for "++name fSpec
-    ; writeFile outputFile (dumpSQLqueries fSpec)
+    ; Text.writeFile outputFile (dumpSQLqueries fSpec)
     ; verboseLn (getOpts fSpec) $ "SQL queries dumpfile written into " ++ outputFile ++ "."
     }
  where outputFile = combine (dirOutput (getOpts fSpec)) $ replaceExtension (baseName (getOpts fSpec)) ".sqlDump"

@@ -6,15 +6,16 @@ module Database.Design.Ampersand.Output.ToJSON.MySQLInstaller
 where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Prototype.Generate 
-
+import qualified Data.Text as Text
+ 
 data MySQLInstaller = MySQLInstaller
-  { msiJSONallDBstructQueries :: [String]
-  , msiJSONallDefPopQueries   :: [String]
+  { msiJSONallDBstructQueries :: [Text.Text]
+  , msiJSONallDefPopQueries   :: [Text.Text]
   } deriving (Generic, Show)
 instance ToJSON MySQLInstaller where
   toJSON = amp2Jason
 instance JSON FSpec MySQLInstaller where
  fromAmpersand fSpec _ = MySQLInstaller
-  { msiJSONallDBstructQueries = generateDBstructQueries  fSpec False
+  { msiJSONallDBstructQueries = map Text.pack$ generateDBstructQueries  fSpec False
   , msiJSONallDefPopQueries   = generateAllDefPopQueries fSpec
   }

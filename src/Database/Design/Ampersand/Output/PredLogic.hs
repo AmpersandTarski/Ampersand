@@ -9,6 +9,7 @@ import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.FSpec.ShowADL
 import Data.Char
+import Data.Text (pack)
 import Database.Design.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
 
 --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
@@ -257,7 +258,7 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                Pred nm v'          -> nm++"{"++v'++"}"
       makeRel :: String -> Declaration -- This function exists solely for the purpose of dom and cod
       makeRel str
-          =    Sgn { decnm   = str
+          =    Sgn { decnm   = pack str
                    , decsgn  = fatal 217 "Do not refer to decsgn of this dummy relation"
                    , decprps = [Uni,Tot]
                    , decprps_calc = Nothing
@@ -269,6 +270,7 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                    , decusr  = False
                    , decpat  = fatal 228 "Do not refer to decpat of this dummy relation"
                    , decplug = fatal 229 "Do not refer to decplug of this dummy relation"
+                   , dech    = fatal 272 "Do not use EQ on this dummy relation"
                    }
 
 --objOrShow :: Lang -> PredLogic -> String
