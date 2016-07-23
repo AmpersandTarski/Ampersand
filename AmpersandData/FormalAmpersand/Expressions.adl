@@ -1,10 +1,10 @@
-﻿CONTEXT AST IN ENGLISH LATEX
+CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Atoms.adl"
 
 
 PROCESS "Expression definitions"
-    RELATION patterns[Context*Pattern]
+    RELATION context[Pattern*Context] -- copied from Contexts.adl
     RELATION src[Expression*Concept]
     RELATION tgt[Expression*Concept]
     RELATION bind[BindedRelation*Relation]

@@ -43,7 +43,7 @@ createFSpec opts =
               >> return (Checked ())
 
     genTables :: Guarded FSpec -> Guarded P_Context -> IO(Guarded FSpec)
-    genTables fsp uCtx = case genASTTables opts of
+    genTables fsp uCtx = case genMetaTables opts of
        False
          -> return fsp
        True

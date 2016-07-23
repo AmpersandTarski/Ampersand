@@ -71,6 +71,8 @@ instance MetaPopulations FSpec where
            [(show "SystemAdmin", show "SystemAdmin")]
     , Pop "fallRules" "Context" "Rule"
            [(dirtyId fSpec, dirtyId r) | r<-fallRules fSpec]
+    , Pop "context" "Pattern" "Context"                            -- The context in which a pattern is defined.
+           [(dirtyId p, dirtyId fSpec) | p<-vpatterns fSpec]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap extract (sortByName (vpatterns fSpec))
@@ -105,12 +107,11 @@ instance MetaPopulations Pattern where
  metaPops fSpec pat =
    [ Comment " "
    , Comment $ " Pattern `"++name pat++"` "
-   , Pop "context" "Pattern" "Context"
-          [(dirtyId pat,dirtyId fSpec)]
    , Pop "name"    "Pattern" "PatternIdentifier"
           [(dirtyId pat, (show.name) pat)]
-   , Pop "concepts"   "Pattern" "Concept"
-          [(dirtyId pat,dirtyId x) | x <- ptcds pat]
+--  Activate this code when concept definitions are allowed inside a pattern
+--   , Pop "concepts"   "Pattern" "Concept"
+--          [(dirtyId pat,dirtyId x) | x <- ptcds pat]
    , Pop "rules"   "Pattern" "Rule"
           [(dirtyId pat,dirtyId x) | x <- ptrls pat]
    , Pop "relsDefdIn"   "Context" "Relation"

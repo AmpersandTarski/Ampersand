@@ -204,8 +204,8 @@ evaluateExpSQL fSpec dbNm exp =
  where violationsExpr = conjNF (getOpts fSpec) exp
        violationsQuery = Text.pack$ prettySQLQuery 26 fSpec violationsExpr
 
-performQuery :: Options -> String -> Text.Text -> IO [(String,String)]
-performQuery opts dbNm queryStr =
+performQuery :: FSpec -> String -> Text.Text -> IO [(String,String)]
+performQuery fSpec dbNm queryStr =
  do { queryResult <- (executePHPStr . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn opts{verboseP=True} (Text.unpack$ "\n******Problematic query:\n"<>queryStr<>"\n******")
@@ -213,7 +213,7 @@ performQuery opts dbNm queryStr =
       else case reads queryResult of
              [(pairs,"")] -> return pairs
              _            -> fatal 143 $ "Parse error on php result: "<>show queryResult
-    }
+    } 
    where
     opts = getOpts fSpec
     php =

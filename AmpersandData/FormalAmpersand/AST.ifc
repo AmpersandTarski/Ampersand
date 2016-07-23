@@ -12,7 +12,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
     , "dbName" : dbName
     , "valid~" : valid[Rule*Context]~
     ]
-  , "Patterns" : patterns[Context*Pattern] BOX 
+  , "Patterns" : context[Pattern*Context]~ BOX 
     [ "Pattern" : I INTERFACE Pattern]
   , "Gens" : context[Concept*Context]~ ;
              (I[Concept]                                  /\
@@ -34,7 +34,7 @@ INTERFACE GenTree FOR Ampersand : I[Concept]
     ] 
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternIdentifier]
-    , "patterns~" : patterns[Context*Pattern]~
+    , "patterns~" : context[Pattern*Context]
     , "Relations" : relsDefdIn[Pattern*Relation]  LINKTO INTERFACE "Relation"
     , "rules"  : rules[Pattern*Rule]
     , "purpose" : purpose[Pattern*Purpose]
