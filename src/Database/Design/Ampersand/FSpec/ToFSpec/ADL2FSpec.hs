@@ -68,7 +68,7 @@ makeFSpec opts context
                                                   concatMap ifcRoles (ctxifcs context )
                                                  )
                                    ) [0..] 
-              , fallRules = allrules
+              , fallRules    = allrules
               , vrules       = filter      isUserDefined  allrules
               , grules       = filter (not.isUserDefined) allrules
               , invariants   = filter (not.isSignal)      allrules
