@@ -46,13 +46,14 @@ content fSpec = unlines
     , "impact on the generator of this file. "
     , ""
     , "-}"
-    , ""
-    , "CONTEXT FormalAmpersand IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."]
-    ++ intercalate [] (map (lines . showADL ) (metaPops fSpec fSpec))
-    ++
+    , "CONTEXT FormalAmpersand IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."
+    , showRelsFromPops pops
+    , "" ]
+    ++ intercalate [] (map (lines . showADL ) pops)  ++
     [ ""
     , "ENDCONTEXT"
     ])
+    where pops = metaPops fSpec fSpec
 
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
