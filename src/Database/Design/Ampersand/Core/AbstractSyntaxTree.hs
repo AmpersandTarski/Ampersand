@@ -555,7 +555,7 @@ mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
 
 instance Unique AAtomPair where
-  showUnique apair = (showUnique.apLeft) apair ++ (showUnique.apRight) apair
+  showUnique apair = "("++(showUnique.apLeft) apair ++","++ (showUnique.apRight) apair++")"
 
 data AAtomValue
   = AAVString  { aavhash :: Int

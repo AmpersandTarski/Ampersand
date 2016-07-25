@@ -46,7 +46,7 @@ data UniqueObj a =
                  } deriving (Typeable)
 
 instance Unique a => Unique [a] where
-   showUnique [] = fatal 74 $ "empty list is not unique"
+   showUnique [] = "[]"
    showUnique xs = "["++intercalate ", " (map showUnique xs)++"]"
 
 instance Unique Bool where
