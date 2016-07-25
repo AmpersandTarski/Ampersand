@@ -256,10 +256,10 @@ class ExcelImport {
     					if($relations[$col] == '' || $concept[$col] == ''){
     					    $relations[$col] = null;
     					}elseif(substr($relations[$col], -1) == '~'){ // Relation is flipped is last character is a tilde (~)
-    					    $relations[$col] = Relation::getRelation(substr($relations[$col], 0, -1), $concept[$col]->name, $concept[0]->name);
+    					    $relations[$col] = Relation::getRelation(substr($relations[$col], 0, -1), $concept[$col], $concept[0]);
     					    $flipped[$col] = true;
     					}else{
-    					    $relations[$col] = Relation::getRelation($relations[$col], $concept[0]->name, $concept[$col]->name);
+    					    $relations[$col] = Relation::getRelation($relations[$col], $concept[0], $concept[$col]);
     					    $flipped[$col] = false;
     					}
 					}

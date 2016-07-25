@@ -266,33 +266,31 @@ class Relation {
     
     /**
      * Return Relation object
-     * TODO: replace param string $srcConceptName by Concept $srcConcept
-     * TODO: replace param string $tgtConceptName by Concept $tgtConcept
      * @param string $relationSignature
-     * @param string $srcConceptName
-     * @param string $tgtConceptName
+     * @param Concept|string $srcConcept
+     * @param Concept|string $tgtConcept
      * @throws Exception if Relation is not defined
      * @return Relation
      */
-    public static function getRelation($relationSignature, $srcConceptName = null, $tgtConceptName = null){
+    public static function getRelation($relationSignature, $srcConcept = null, $tgtConcept = null){
         $relations = self::getAllRelations();
         
-        if(!is_null($srcConceptName)) $srcConcept = Concept::getConcept($srcConceptName);
-        if(!is_null($tgtConceptName)) $tgtConcept = Concept::getConcept($tgtConceptName);
+        if(is_string($srcConcept)) $srcConcept = Concept::getConcept($srcConcept);
+        if(is_string($tgtConcept)) $tgtConcept = Concept::getConcept($tgtConcept);
         
         // If relation can be found by its fullRelationSignature return the relation
         if(array_key_exists($relationSignature, $relations)){
             $relation = $relations[$relationSignature];
             
             // If srcConceptName and tgtConceptName are provided, check that they match the found relation
-            if(!is_null($srcConceptName) && !in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())) throw new Exception("Provided src concept [{$srcConceptName}] does not match the found relation '{$relation->__toString()}'", 500);  
-            if(!is_null($tgtConceptName) && !in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())) throw new Exception("Provided tgt concept [{$tgtConceptName}] does not match the found relation '{$relation->__toString()}'", 500);
+            if(!is_null($srcConcept) && !in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())) throw new Exception("Provided src concept '{$srcConcept}' does not match the relation '{$relation->__toString()}'", 500);  
+            if(!is_null($tgtConcept) && !in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())) throw new Exception("Provided tgt concept '{$tgtConcept}' does not match the relation '{$relation->__toString()}'", 500);
             
             return $relation;
         }
         
         // Else try to find the relation by its name, srcConcept and tgtConcept
-        if(!is_null($srcConceptName) && !is_null($tgtConceptName)){
+        if(!is_null($srcConcept) && !is_null($tgtConcept)){
             foreach ($relations as $relation){
                 if($relation->name == $relationSignature 
                         && in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())

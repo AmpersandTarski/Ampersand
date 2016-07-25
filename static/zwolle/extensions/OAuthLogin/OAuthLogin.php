@@ -187,14 +187,14 @@ class OAuthLoginController {
             $newAccount = Concept::getConcept('Account')->createNewAtom();
             
             // Save email as accUserid
-            $relAccUserid = Relation::getRelation('accUserid', $newAccount->concept->name, 'UserID');
+            $relAccUserid = Relation::getRelation('accUserid', $newAccount->concept, 'UserID');
             $relAccUserid->addLink($newAccount, new Atom($email, 'UserID'), false, 'OAuthLoginExtension');
 
             // If possible, add account to organization(s) based on domain name
             $domain = explode('@', $email)[1];
             $atom = new Atom($domain, 'Domain');
             $orgs = $atom->ifc('DomainOrgs')->getTgtAtoms();
-            $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept->name, 'Organization');
+            $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, 'Organization');
             foreach ($orgs as $org){
                 $relAccOrg->addLink($newAccount, $org, false, 'OAuthLoginExtension');
             }

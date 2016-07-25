@@ -234,8 +234,9 @@ function SetConcept($conceptA, $conceptB, $atom){
 		$database = Database::singleton();
 		
 		$atom = new Atom($atom, $conceptA);
+        $conceptB = Concept::getConceptByLabel($conceptB);
 		$database->atomSetConcept($atom, $conceptB);
-		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' added as member to concept '$conceptB'");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' added as member to concept '{$conceptB}'");
 	
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('SetConcept: ' . $e->getMessage());

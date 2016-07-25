@@ -556,8 +556,8 @@ class InterfaceObject {
 	            else throw new Exception ("Error in file upload", 500);
 	
 	            // Populate filePath and originalFileName relations in database
-	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept->name, 'FilePath');
-	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept->name, 'FileName');
+	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept, 'FilePath');
+	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept, 'FileName');
 	            
 	            $relFilePath->addLink($newAtom, new Atom($relativePath, 'FilePath'));
 	            $relOriginalFileName->addLink($newAtom, new Atom($_FILES['file']['name'], 'FileName'));

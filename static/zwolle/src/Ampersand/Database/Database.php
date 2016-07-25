@@ -364,16 +364,13 @@ class Database {
 	/**
 	 * Adding an atom[ConceptA] as member to ConceptB set. 
 	 * This can only be done when concept of atom (ConceptA) and ConceptB are in the same classification tree.
-     * TODO: replace param string $conceptBName by Concept $conceptB
 	 * @param Atom $atom
-	 * @param string $conceptBName
+	 * @param Concept $conceptB
 	 * @throws Exception
 	 * @return void
 	 */
-	public function atomSetConcept($atom, $conceptBName){
-	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptBName})");
-	    
-	    $conceptB = Concept::getConcept($conceptBName);
+	public function atomSetConcept($atom, $conceptB){
+	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptB})");
 	    
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
@@ -399,7 +396,7 @@ class Database {
 		$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atom->idEsc}'");
 		
 		// Check if query resulted in an affected row
-		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomSetConcept({$atom->__toString()}, {$conceptBName})", 500);
+		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomSetConcept({$atom->__toString()}, {$conceptB})", 500);
 		
 		$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 		
