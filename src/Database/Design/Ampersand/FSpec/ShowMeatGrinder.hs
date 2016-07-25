@@ -55,6 +55,9 @@ content fSpec = unlines
     ])
     where pops = metaPops fSpec fSpec
 
+{-SJ 2016-07-24 In generating the metapopulation of a script, we need to maintain a close relation
+with the A-structure. But why?
+-} 
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
@@ -62,18 +65,32 @@ instance MetaPopulations FSpec where
     [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
   ++[ Pop "versionInfo" "Context"  "AmpersandVersion" [Uni,Tot]
            [(dirtyId fSpec, show ampersandVersionStr)]
-    , Pop "name" "Context" "ContextIdentifier" [Uni,Tot]
-           [(dirtyId fSpec, (show.name) fSpec)]
     , Pop "dbName" "Context" "DatabaseName" [Uni,Tot]
            [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
+    , Pop "name" "Context" "Identifier" [Uni,Tot]
+           [(dirtyId fSpec, (show.ctxnm.originalContext) fSpec)]
+    , Pop "location" "Context" "Location" [Uni,Tot]
+           [(dirtyId fSpec, (show.ctxpos.originalContext) fSpec)]
+    , Pop "language" "Context" "Language" [Uni,Tot]
+           [(dirtyId fSpec, (show.ctxlang.originalContext) fSpec)]
+    , Pop "markup" "Context" "Markup" [Uni,Tot]
+           [(dirtyId fSpec, (show.ctxmarkup.originalContext) fSpec)]
+    , Pop "context" "Pattern" "Context" [Uni]                      -- The context in which a pattern is defined.
+           [(dirtyId p, dirtyId fSpec) | p<-(ctxpats.originalContext) fSpec]
+    , Pop "context" "Rule" "Context" [Uni]                         -- The context in which a rule is defined.
+           [(dirtyId r, dirtyId fSpec) | r<-(ctxrs.originalContext) fSpec]
+    , Pop "context" "Relation" "Context" [Uni]                         -- The context in which a rule is defined.
+           [(dirtyId r, dirtyId fSpec) | r<-(ctxds.originalContext) fSpec]
+    , Pop "context" "Population" "Context" [Uni]                         -- The context in which a rule is defined.
+           [(dirtyId pop, dirtyId fSpec) | pop<-(ctxpopus.originalContext) fSpec]
+    , Pop "context" "Concept" "Context" [Uni]                         -- The context in which a rule is defined.
+           [(dirtyId c, dirtyId fSpec) | c<-(ctxcds.originalContext) fSpec]
+    , Pop "context" "IdentityDef" "Context" [Uni]                         -- The context in which a rule is defined.
+           [(dirtyId c, dirtyId fSpec) | c<-(ctxks.originalContext) fSpec]
     , Pop "allRoles" "Context" "Role" [Tot]
            [(dirtyId fSpec, show "SystemAdmin")]
     , Pop "name"   "Role" "RoleName" [Uni,Tot]
            [(show "SystemAdmin", show "SystemAdmin")]
-    , Pop "context" "Rule" "Context" [Uni]                         -- The context in which a rule is defined.
-           [(dirtyId r, dirtyId fSpec) | r<-(ctxrs.originalContext) fSpec]
-    , Pop "context" "Pattern" "Context" [Uni]                      -- The context in which a pattern is defined.
-           [(dirtyId p, dirtyId fSpec) | p<-(ctxpats.originalContext) fSpec]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
   ++   concatMap extract (sortByName (vpatterns fSpec))
@@ -508,6 +525,8 @@ instance AdlId (PlugSQL,SqlAttribute)
 instance AdlId Purpose
 instance AdlId Rule
 instance AdlId Role
+instance AdlId Population
+instance AdlId IdentityDef
 instance AdlId Interface
 instance AdlId Signature
 instance AdlId TType
