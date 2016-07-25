@@ -102,6 +102,7 @@ class Atom {
     
 	/**
 	 * Atom constructor
+     * TODO: replace param string $conceptName by Concept $concept
 	 * @param string $atomId
 	 * @param string $conceptName
 	 * @param InterfaceObject $ifc
@@ -113,7 +114,11 @@ class Atom {
 		$this->logger = Logger::getLogger('FW');
 		
 		$this->parentIfc = $ifc;
-		$this->concept = Concept::getConcept($conceptName);
+		try{
+            $this->concept = Concept::getConcept($conceptName);
+        }catch(Exception $e){
+            $this->concept = Concept::getConceptByLabel($conceptName);
+        }
         $this->qData = $qData;
 		
 		$this->setId($atomId);
@@ -124,7 +129,7 @@ class Atom {
 	}
 	
 	public function __toString(){
-	    return "{$this->id}[{$this->concept->name}]";
+	    return "{$this->id}[{$this->concept}]";
 	}
 	
 	/**
@@ -299,7 +304,7 @@ class Atom {
 	        case "OBJECT" :
 	            return rawurlencode($this->id);
 	        default :
-	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
+	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
 	    }
 	}
 	
@@ -334,7 +339,7 @@ class Atom {
 	        case "OBJECT" :
 	            return $this->id;
 	        default :
-	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
+	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
 	    }
 	}
 	
@@ -458,7 +463,7 @@ class Atom {
 	            $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
 	        else $ifcs = array_map(function($o) {
 	            return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
-	        }, $session->getInterfacesToReadConcept($this->concept->name));
+	        }, $session->getInterfacesToReadConcept($this->concept));
 	        $content['_ifcs_'] = $ifcs;
 	    }
 	    
@@ -526,7 +531,7 @@ class Atom {
 	        
 		// Handle options
 		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
-		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept->name . ' updated';
+		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
 		
 		// Perform patches
 		$this->doPatches($patches);
@@ -555,7 +560,7 @@ class Atom {
 	    $this->database->deleteAtom($this);
 	
 	    // Close transaction
-	    $this->database->closeTransaction($this->concept->name . ' deleted');
+	    $this->database->closeTransaction($this->concept . ' deleted');
 	
 	    return;
 	}

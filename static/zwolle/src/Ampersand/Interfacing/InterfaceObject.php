@@ -209,8 +209,8 @@ class InterfaceObject {
 		$this->relationIsFlipped = $ifcDef['relationIsFlipped'];
 		
 		// Interface expression information
-		$this->srcConcept = Concept::getConcept($ifcDef['expr']['srcConcept']);
-		$this->tgtConcept = Concept::getConcept($ifcDef['expr']['tgtConcept']);
+		$this->srcConcept = Concept::getConcept($ifcDef['expr']['srcConceptId']);
+		$this->tgtConcept = Concept::getConcept($ifcDef['expr']['tgtConceptId']);
 		$this->isUni = $ifcDef['expr']['isUni'];
 		$this->isTot = $ifcDef['expr']['isTot'];
 		$this->isIdent = $ifcDef['expr']['isIdent'];
@@ -284,7 +284,7 @@ class InterfaceObject {
 	 */
 	public function setSrcAtom($atom){
 	    // Check if atom can be used as source for this interface
-	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept [{$this->srcConcept->name}] or any of its generalizations. Interface path: '{$this->path}'", 500);
+	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept '{$this->srcConcept}' or any of its generalizations. Interface path: '{$this->path}'", 500);
 	    
 	    $this->srcAtom = $atom;
 	    $this->path = $this->srcAtom->path . '/' . $this->id;
@@ -517,7 +517,7 @@ class InterfaceObject {
 	public function create($data, $options = array()){	
 	    // CRUD check
 	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
-	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object [{$this->tgtConcept->name}] in '{$this->path}'. Use PATCH add operation instead", 405);
+	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object '{$this->tgtConcept}' in '{$this->path}'. Use PATCH add operation instead", 405);
 	    
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -569,7 +569,7 @@ class InterfaceObject {
 	
 	    // Close transaction
 	    $atomStoreNewContent = $this->crudR ? $newAtom : null; // Get and store new content if interface is readable (crudR)
-	    $this->database->closeTransaction($newAtom->concept->name . ' created', null, $atomStoreNewContent);
+	    $this->database->closeTransaction($newAtom->concept . ' created', null, $atomStoreNewContent);
 	
 	    // Return atom content (can be null)
 	    return $newAtom->getStoredContent();

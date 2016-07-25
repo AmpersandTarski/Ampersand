@@ -296,13 +296,13 @@ class Session {
     
     /**
      * Get interfaces that are accessible in the current session to 'Read' a certain concept
-     * @param string $conceptName
+     * @param Concept $concept
      * @return InterfaceObject[]
      */
-    public function getInterfacesToReadConcept($conceptName){
+    public function getInterfacesToReadConcept($concept){
         $interfaces = array();
         foreach($this->accessibleInterfaces as $interface){
-            if(($interface->srcConcept->name == $conceptName || $interface->srcConcept->hasSpecialization($conceptName)) 
+            if(($interface->srcConcept == $concept || $interface->srcConcept->hasSpecialization($concept)) 
                     && $interface->crudR
                     && (!$interface->crudC or ($interface->crudU or $interface->crudD))
                     ) $interfaces[] = $interface;

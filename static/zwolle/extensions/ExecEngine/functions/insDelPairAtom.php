@@ -48,11 +48,11 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
         }
 		
 		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
-		$srcConcept = Concept::getConcept($srcConceptName);
+		$srcConcept = Concept::getConceptByLabel($srcConceptName);
 	    if($srcAtom == "_NEW") $srcAtom = $srcConcept->createNewAtomId();
 		
 		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
-	    $tgtConcept = Concept::getConcept($tgtConceptName);
+	    $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
 		if($tgtAtom == "_NEW") $tgtAtom = $tgtConcept->createNewAtomId();
 		
 		$srcAtomIds = explode('_AND', $srcAtom);
@@ -135,7 +135,7 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
 	try{		
 		// We start with parsing the first one or two arguments
-		$c = Concept::getConcept(func_get_arg(0)); // Concept for which atom is to be created
+		$c = Concept::getConceptByLabel(func_get_arg(0)); // Concept for which atom is to be created
 		$atom = $c->createNewAtom(); // Default marker for atom-to-be-created.
 
 		Logger::getLogger('EXECENGINE')->info("Newstruct for concept '{$c}'");
@@ -152,9 +152,9 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
 			
 			$relation   = func_get_arg($i);
-			$srcConcept = Concept::getConcept(func_get_arg($i+1));
+			$srcConcept = Concept::getConceptByLabel(func_get_arg($i+1));
 			$srcAtomId    = func_get_arg($i+2);
-			$tgtConcept = Concept::getConcept(func_get_arg($i+3));
+			$tgtConcept = Concept::getConceptByLabel(func_get_arg($i+3));
 			$tgtAtomId    = func_get_arg($i+4);
 			
 			if($srcAtomId == "NULL" or $tgtAtomId == "NULL") throw new Exception("NewStruct: use of keyword NULL is deprecated, use '_NEW'", 500);
@@ -187,7 +187,7 @@ function InsAtom($conceptName){
 	try{
 		$database = Database::singleton();
 		
-		$concept = Concept::getConcept($conceptName);
+		$concept = Concept::getConceptByLabel($conceptName);
         $atom = $concept->createNewAtom();
 		$atom->addAtom(); // insert new atom in database
 		

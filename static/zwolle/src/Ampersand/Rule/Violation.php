@@ -114,10 +114,10 @@ class Violation {
         $session = Session::singleton();
 
         $links = array();
-        foreach ($session->getInterfacesToReadConcept($this->src->concept->name) as $interface){
+        foreach ($session->getInterfacesToReadConcept($this->src->concept) as $interface){
             $links[] = "#/{$interface->id}/{$this->src->getJsonRepresentation()}";
         }
-        foreach ($session->getInterfacesToReadConcept($this->tgt->concept->name) as $interface){
+        foreach ($session->getInterfacesToReadConcept($this->tgt->concept) as $interface){
             $links[] = "#/{$interface->id}/{$this->tgt->getJsonRepresentation()}";
         }
         return array_unique($links);

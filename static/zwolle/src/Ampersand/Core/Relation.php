@@ -129,8 +129,8 @@ class Relation {
         $this->logger = Logger::getLogger('FW');
         
         $this->name = $relationDef['name'];
-        $this->srcConcept = Concept::getConcept($relationDef['srcConcept']);
-        $this->tgtConcept = Concept::getConcept($relationDef['tgtConcept']);
+        $this->srcConcept = Concept::getConcept($relationDef['srcConceptId']);
+        $this->tgtConcept = Concept::getConcept($relationDef['tgtConceptId']);
         
         $this->signature = $relationDef['signature'];
         
@@ -161,7 +161,7 @@ class Relation {
     }
     
     public function __toString(){
-        return "{$this->name}[{$this->srcConcept->name}*{$this->tgtConcept->name}]";
+        return "{$this->name}[{$this->srcConcept}*{$this->tgtConcept}]";
     }
     
     /**
@@ -266,6 +266,8 @@ class Relation {
     
     /**
      * Return Relation object
+     * TODO: replace param string $srcConceptName by Concept $srcConcept
+     * TODO: replace param string $tgtConceptName by Concept $tgtConcept
      * @param string $relationSignature
      * @param string $srcConceptName
      * @param string $tgtConceptName

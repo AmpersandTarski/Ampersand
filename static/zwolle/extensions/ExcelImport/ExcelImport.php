@@ -106,7 +106,7 @@ class ExcelImport {
 	    $highestcolumn = $worksheet->getHighestColumn();
 	    $highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
 	    
-	    $leftConcept = Concept::getConcept((string)$worksheet->getCell('A1'));
+	    $leftConcept = Concept::getConceptByLabel((string)$worksheet->getCell('A1'));
 	    if($leftConcept != $ifc->tgtConcept) throw new Exception("Target concept of interface '{$ifc->path}' does not match concept specified in cell {$worksheet->getTitle()}:A1", 500);
 	    
 	    // Parse other columns of first row
@@ -134,7 +134,7 @@ class ExcelImport {
 	            $leftAtom = $leftConcept->createNewAtom()->addAtom();
 	        }else{
 	            $leftAtom = new Atom($firstCol, $leftConcept->name);
-	            if(!$leftAtom->atomExists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept->name} in cell A{$row}. This is not allowed.", 403);
+	            if(!$leftAtom->atomExists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
 	            $leftAtom->addAtom();
 	        }
 	        
@@ -153,7 +153,7 @@ class ExcelImport {
 	            if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
 	            
 	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept->name);
-	            if(!$rightAtom->atomExists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept->name} in cell {$columnletter}{$row}. This is not allowed.", 403);
+	            if(!$rightAtom->atomExists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
 	            
 	            $header[$columnletter]->relation->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
 	        }
@@ -244,10 +244,10 @@ class ExcelImport {
 				    // The cell contains either 'Concept' or '[Conceptx]' where x is a separator character (e.g. ';', ',', ...)
 				    }elseif ((substr($cellvalue, 0, 1) == '[') && (substr($cellvalue, -1) == ']') ){
 				        if($col == 0) throw new Exception ("Seperator character not allowed for first column of excel import. Specified '{$line[$col]}'", 500);
-				        $concept[$col] = Concept::getConcept(substr($cellvalue, 1, -2));
+				        $concept[$col] = Concept::getConceptByLabel(substr($cellvalue, 1, -2));
 						$separator[$col] = substr($cellvalue, -2, 1);
 					}else{
-					    $concept[$col] = Concept::getConcept($cellvalue);
+					    $concept[$col] = Concept::getConceptByLabel($cellvalue);
 						$separator[$col] = false;
 					}
 					
