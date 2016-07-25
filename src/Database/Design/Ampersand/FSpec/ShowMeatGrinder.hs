@@ -541,10 +541,13 @@ instance AdlId A_Gen
 instance AdlId Atom
 instance AdlId ConceptDef
 instance AdlId Declaration
-  where dirtyId ctx r = show (declMap' ctx Map.! r)
+  where dirtyId ctx r
+         = case Map.lookup r (declMap' ctx) of
+            Nothing -> fatal 546 ("no relation known as: "++showUnique r)
+            Just i  -> show i
           where
            declMap' :: A_Context -> Map.Map Declaration Int
-           declMap' ctx = Map.fromList (zip (relsDefdIn ctx) [1..])
+           declMap' ctx = Map.fromList (zip (relsDefdIn ctx++[ Isn c | c<-concs ctx]) [1..])
 instance AdlId Prop
 instance AdlId Expression
   where dirtyId _ = show . show . hash . camelCase . uniqueShow False  -- Need to hash, because otherwise too long (>255)

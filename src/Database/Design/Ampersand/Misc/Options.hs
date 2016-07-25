@@ -159,7 +159,7 @@ getOptions =
                       , baseName         = takeBaseName fName
                       , export2adl       = False
                       , test             = False
-                      , genMetaTables    = True
+                      , genMetaTables    = False
                       , genMetaFile      = False
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
@@ -472,9 +472,9 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{test = True}))
                "Used for test purposes only."
             , Hidden)
-          , (Option []        ["no-meta-tables"]
-               (NoArg (\opts -> return opts{genMetaTables = False}))
-               "When set, do not generate the meta-tables of ampersand into the prototype"
+          , (Option []        ["meta-tables"]
+               (NoArg (\opts -> return opts{genMetaTables = True}))
+               "When set, generate the meta-tables of ampersand into the prototype"
             , Hidden)
           , (Option []        ["meta-file"]
                (NoArg (\opts -> return opts{genMetaFile = True}))
