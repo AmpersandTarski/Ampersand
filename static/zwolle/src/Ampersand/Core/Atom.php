@@ -112,7 +112,7 @@ class Atom {
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
-        $this->concept = $concept
+        $this->concept = $concept;
 		$this->parentIfc = $ifc;
         $this->qData = $qData;
 		
