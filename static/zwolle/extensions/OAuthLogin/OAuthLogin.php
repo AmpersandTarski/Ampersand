@@ -178,21 +178,25 @@ class OAuthLoginController {
         $session = Session::singleton();
         $db = Database::singleton();
         
+        $conceptUserID = Concept::getConceptByLabel('UserID');
+        $conceptDomain = Concept::getConceptByLabel('Domain');
+        $conceptDateTime = Concept::getConceptByLabel('DateTime');
+        
         // Set sessionUser
-        $atom = new Atom($email, 'UserID');
+        $atom = new Atom($email, $conceptUserID);
         $accounts = $atom->ifc('AccountForUserid')->getTgtAtoms();
 
         // create new user
         if(empty($accounts)){
-            $newAccount = Concept::getConcept('Account')->createNewAtom();
+            $newAccount = Concept::getConceptByLabel('Account')->createNewAtom();
             
             // Save email as accUserid
-            $relAccUserid = Relation::getRelation('accUserid', $newAccount->concept, 'UserID');
-            $relAccUserid->addLink($newAccount, new Atom($email, 'UserID'), false, 'OAuthLoginExtension');
+            $relAccUserid = Relation::getRelation('accUserid', $newAccount->concept, $conceptUserID);
+            $relAccUserid->addLink($newAccount, new Atom($email, $conceptUserID), false, 'OAuthLoginExtension');
 
             // If possible, add account to organization(s) based on domain name
             $domain = explode('@', $email)[1];
-            $atom = new Atom($domain, 'Domain');
+            $atom = new Atom($domain, $conceptDomain);
             $orgs = $atom->ifc('DomainOrgs')->getTgtAtoms();
             $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, 'Organization');
             foreach ($orgs as $org){
@@ -207,15 +211,15 @@ class OAuthLoginController {
         if(count($accounts) > 1) throw new Exception("Multiple users registered with email $email", 401);
         
         $relSessionAccount = Relation::getRelation('sessionAccount', 'SESSION', 'Account');
-        $relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', 'Account', 'DateTime');
-        $relAccLoginTimestamps = Relation::getRelation('accLoginTimestamps', 'Account', 'DateTime');
+        $relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', 'Account', $conceptDateTime);
+        $relAccLoginTimestamps = Relation::getRelation('accLoginTimestamps', 'Account', $conceptDateTime);
         
         foreach ($accounts as $account){				    
             // Set sessionAccount
             $relSessionAccount->addLink($session->sessionAtom, $account, false, 'OAuthLoginExtension');
 
             // Timestamps
-            $ts = new Atom(date(DATE_ISO8601), 'DateTime');
+            $ts = new Atom(date(DATE_ISO8601), $conceptDateTime);
             $relAccMostRecentLogin->addLink($account, $ts, false, 'OAuthLoginExtension');
             $relAccLoginTimestamps->addLink($account, $ts, false, 'OAuthLoginExtension');
         }

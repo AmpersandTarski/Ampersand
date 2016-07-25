@@ -321,7 +321,7 @@ class InterfaceObject {
 	 * @return Atom
 	 */
 	public function atom($atomId){
-	    $atom = new Atom($atomId, $this->tgtConcept->name, $this);
+	    $atom = new Atom($atomId, $this->tgtConcept, $this);
 	    
 	    // Check if tgtAtom is part of tgtAtoms of interface
         if(array_reduce($this->getTgtAtoms(), function($carry, $tgtAtom) use ($atom){
@@ -376,7 +376,7 @@ class InterfaceObject {
             // Try to get tgt atom from srcAtom query data (in case of uni relation in same table)
             $tgt = $this->srcAtom->getQueryData('ifc_' . $this->id); // column is prefixed with ifc_
             $this->logger->debug("#217 One query saved due to reusing data from source atom");
-            if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept->name, $this);
+            if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept, $this);
             
         }catch (Exception $e) {
             // Column not defined, perform sub interface query
@@ -387,7 +387,7 @@ class InterfaceObject {
                 if($this->isUni && (count($data) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
                 
                 foreach ($data as $row) {
-                    $tgtAtoms[] = new Atom($row['tgt'], $this->tgtConcept->name, $this, $row);
+                    $tgtAtoms[] = new Atom($row['tgt'], $this->tgtConcept, $this, $row);
                 }
             }else{
                 throw $e;
@@ -544,7 +544,9 @@ class InterfaceObject {
 	
 	    // Special case for file upload. TODO: make extension with hooks
 	    if($this->tgtConcept->name == "FileObject"){
-	         
+	        $conceptFilePath = Concept::getConceptByLabel('FilePath');
+            $conceptFileName = Concept::getConceptByLabel('FileName');
+            
 	        if (is_uploaded_file($_FILES['file']['tmp_name'])){
 	            $tmp_name = $_FILES['file']['tmp_name'];
 	            $new_name = time() . '_' . $_FILES['file']['name'];
@@ -556,11 +558,11 @@ class InterfaceObject {
 	            else throw new Exception ("Error in file upload", 500);
 	
 	            // Populate filePath and originalFileName relations in database
-	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept, 'FilePath');
-	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept, 'FileName');
+	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept, $conceptFilePath);
+	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept, $conceptFileName);
 	            
-	            $relFilePath->addLink($newAtom, new Atom($relativePath, 'FilePath'));
-	            $relOriginalFileName->addLink($newAtom, new Atom($_FILES['file']['name'], 'FileName'));
+	            $relFilePath->addLink($newAtom, new Atom($relativePath, $conceptFilePath));
+	            $relOriginalFileName->addLink($newAtom, new Atom($_FILES['file']['name'], $conceptFileName));
 	
 	        }else{
 	            throw new Exception ("No file uploaded", 500);
@@ -641,9 +643,9 @@ class InterfaceObject {
 	    }elseif(!$this->tgtConcept->isObject){
 	        
 	        // Replace by nothing => deleteLink
-	        if(is_null($value)) $this->relation->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept->name), $this->relationIsFlipped);
+	        if(is_null($value)) $this->relation->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept), $this->relationIsFlipped);
 	        // Replace by other atom => addLink
-	        else $this->relation->addLink($this->srcAtom, new Atom($value, $this->tgtConcept->name), $this->relationIsFlipped);
+	        else $this->relation->addLink($this->srcAtom, new Atom($value, $this->tgtConcept), $this->relationIsFlipped);
 	        
 	    }else{
 	        throw new Exception ("Unknown patch replace. Please contact the application administrator", 500);
@@ -663,7 +665,7 @@ class InterfaceObject {
 	    // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied in '{$this->path}'", 400);
 	    
-	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
+	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept);
 	    
 	    // Interface is property
 	    if($this->isProp()){
@@ -702,7 +704,7 @@ class InterfaceObject {
         // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch remove. No 'value' specfied in '{$this->path}'", 400);
         
-        $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
+        $tgtAtom = new Atom($patch['value'], $this->tgtConcept);
         
 		// Interface is property
 		if($this->isProp()){

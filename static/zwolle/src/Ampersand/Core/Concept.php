@@ -264,7 +264,7 @@ class Concept {
         
         $arr = array();
 	    foreach ((array)$this->database->Exe($query) as $row){
-	        $tgtAtom = new Atom($row['atomId'], $this->name, null, $row);
+	        $tgtAtom = new Atom($row['atomId'], $this, null, $row);
 	        $arr[] = $tgtAtom->getAtom();
 	    }
 	    return $arr;
@@ -357,7 +357,7 @@ class Concept {
 	 * @return Atom
 	 */
 	public function createNewAtom(){
-	    return new Atom($this->createNewAtomId(), $this->name);
+	    return new Atom($this->createNewAtomId(), $this);
 	}
     
     /**

@@ -68,9 +68,10 @@ $app->get('/admin/import', function () use ($app){
     foreach((array)$allAtoms as $cpt => $atoms) if(!empty($atoms)) Concept::getConcept($cpt);
     foreach((array)$allLinks as $rel => $links) if(!empty($links)) Relation::getRelation($rel);
     
-    foreach((array)$allAtoms as $cpt => $atoms){        
+    foreach((array)$allAtoms as $cpt => $atoms){
+        $concept = Concept::getConcept($cpt);
         foreach($atoms as $atomId){
-            $atom = new Atom($atomId, $cpt);
+            $atom = new Atom($atomId, $concept);
             $atom->addAtom();
         }
     }
@@ -81,7 +82,7 @@ $app->get('/admin/import', function () use ($app){
         foreach($links as $link){
             if(is_null($link['src']) || is_null($link['tgt'])) continue; // skip
             
-            $relation->addLink(new Atom($link['src'], $relation->srcConcept->name), new Atom($link['tgt'], $relation->tgtConcept->name));
+            $relation->addLink(new Atom($link['src'], $relation->srcConcept), new Atom($link['tgt'], $relation->tgtConcept));
         }
     }
     

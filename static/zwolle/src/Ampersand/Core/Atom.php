@@ -102,23 +102,18 @@ class Atom {
     
 	/**
 	 * Atom constructor
-     * TODO: replace param string $conceptName by Concept $concept
 	 * @param string $atomId
-	 * @param string $conceptName
+	 * @param Concept $concept
 	 * @param InterfaceObject $ifc
-     * @param array|null $qData the row data (from database query) from which this atom is created
+     * @param array $qData the row data (from database query) from which this atom is created
 	 * @return void
 	 */
-	public function __construct($atomId, $conceptName, $ifc = null, $qData = null){
+	public function __construct($atomId, Concept $concept, InterfaceObject $ifc = null, array $qData = null){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
+        $this->concept = $concept
 		$this->parentIfc = $ifc;
-		try{
-            $this->concept = Concept::getConcept($conceptName);
-        }catch(Exception $e){
-            $this->concept = Concept::getConceptByLabel($conceptName);
-        }
         $this->qData = $qData;
 		
 		$this->setId($atomId);

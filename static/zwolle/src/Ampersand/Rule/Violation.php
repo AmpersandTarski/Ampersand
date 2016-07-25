@@ -57,8 +57,8 @@ class Violation {
      */
     public function __construct($rule, $srcAtomId, $tgtAtomId){
         $this->rule = $rule;
-        $this->src = new Atom($srcAtomId, $rule->srcConcept->name);
-        $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept->name);
+        $this->src = new Atom($srcAtomId, $rule->srcConcept);
+        $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept);
     }
 
     public function __toString(){

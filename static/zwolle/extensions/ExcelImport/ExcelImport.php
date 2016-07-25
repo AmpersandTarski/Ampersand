@@ -133,7 +133,7 @@ class ExcelImport {
 	            if(!$ifc->crudC) throw new Exception("Trying to create new atom in cell A{$row}. This is not allowed.", 403);
 	            $leftAtom = $leftConcept->createNewAtom()->addAtom();
 	        }else{
-	            $leftAtom = new Atom($firstCol, $leftConcept->name);
+	            $leftAtom = new Atom($firstCol, $leftConcept);
 	            if(!$leftAtom->atomExists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
 	            $leftAtom->addAtom();
 	        }
@@ -152,7 +152,7 @@ class ExcelImport {
 	            // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
 	            if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
 	            
-	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept->name);
+	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept);
 	            if(!$rightAtom->atomExists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
 	            
 	            $header[$columnletter]->relation->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
@@ -272,7 +272,7 @@ class ExcelImport {
 			    // Determine left atom (column 0) of line
 				if ($line[0] == '') continue; // Don't process lines that start with an empty first cell
 				elseif ($line[0] == '_NEW') $leftAtom = $concept[0]->createNewAtom(); // Create a unique atom name
-				else $leftAtom = new Atom($line[0], $concept[0]->name);
+				else $leftAtom = new Atom($line[0], $concept[0]);
 				
 				// Insert $leftAtom into the DB if it does not yet exist
 				$leftAtom->addAtom();
@@ -291,9 +291,9 @@ class ExcelImport {
 					elseif ($cell == '_NEW') $rightAtoms[] = $leftAtom; // If the cell contains '_NEW', the same atom as the $leftAtom is used. Useful for property-relations
 					elseif($separator[$col]){
 					    $atomsIds = explode($separator[$col],$cell); // atomnames may have surrounding whitespace
-					    foreach($atomsIds as $atomId) $rightAtoms[] = new Atom(trim($atomId), $concept[$col]->name);
+					    foreach($atomsIds as $atomId) $rightAtoms[] = new Atom(trim($atomId), $concept[$col]);
 					}else{
-					    $rightAtoms[] = new Atom($line[$col], $concept[$col]->name); // DO NOT TRIM THIS CELL CONTENTS as it contains an atom that may need leading/trailing spaces
+					    $rightAtoms[] = new Atom($line[$col], $concept[$col]); // DO NOT TRIM THIS CELL CONTENTS as it contains an atom that may need leading/trailing spaces
 					}
 					
 					foreach ($rightAtoms as $rightAtom){

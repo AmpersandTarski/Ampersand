@@ -275,8 +275,8 @@ class Relation {
     public static function getRelation($relationSignature, $srcConcept = null, $tgtConcept = null){
         $relations = self::getAllRelations();
         
-        if(is_string($srcConcept)) $srcConcept = Concept::getConcept($srcConcept);
-        if(is_string($tgtConcept)) $tgtConcept = Concept::getConcept($tgtConcept);
+        if(is_string($srcConcept)) $srcConcept = Concept::getConceptByLabel($srcConcept);
+        if(is_string($tgtConcept)) $tgtConcept = Concept::getConceptByLabel($tgtConcept);
         
         // If relation can be found by its fullRelationSignature return the relation
         if(array_key_exists($relationSignature, $relations)){
