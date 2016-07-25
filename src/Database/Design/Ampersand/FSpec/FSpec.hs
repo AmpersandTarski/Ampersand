@@ -152,8 +152,8 @@ concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
 instance ConceptStructure FSpec where
-  concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this FSpec
-  expressionsIn fSpec = allExprs fSpec
+  concs         = allConcepts
+  expressionsIn = allExprs 
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
@@ -232,7 +232,7 @@ dnf2expr dnf
     ([],[]) -> fatal 327 "empty dnf clause"
     ([],cs ) -> foldr1 (.\/.) cs
     (as,[]) -> notCpl (foldr1 (./\.) as)
-    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. (foldr1 (.\/.) cs)
+    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
 
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef
@@ -365,5 +365,5 @@ showSQL tt =
      Integer          -> "BIGINT"
      Float            -> "FLOAT"
      Object           -> "VARCHAR(255)"
-     TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
+     TypeOfOne        -> fatal 461 "ONE is not represented in SQL" 
 
