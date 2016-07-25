@@ -1,7 +1,8 @@
 # Release notes of Ampersand
 
 ## unreleased changes
-  * Performance enhancement: Added indexes on table columns when possible
+  * [Issue #488](https://github.com/AmpersandTarski/Ampersand/issues/488) Performance enhancement: Added indexes on table columns when possible
+  * [Issue #486](https://github.com/AmpersandTarski/Ampersand/issues/486) Performance enhancement: Removed DISTINCT in subqueries
 
 ## v3.6.0 (8 july 2016)
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 
