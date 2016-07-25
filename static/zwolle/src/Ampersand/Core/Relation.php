@@ -267,12 +267,12 @@ class Relation {
     /**
      * Return Relation object
      * @param string $relationSignature
-     * @param Concept|string $srcConcept
-     * @param Concept|string $tgtConcept
+     * @param Concept $srcConcept
+     * @param Concept $tgtConcept
      * @throws Exception if Relation is not defined
      * @return Relation
      */
-    public static function getRelation($relationSignature, $srcConcept = null, $tgtConcept = null){
+    public static function getRelation($relationSignature, Concept $srcConcept = null, Concept $tgtConcept = null){
         $relations = self::getAllRelations();
         
         if(is_string($srcConcept)) $srcConcept = Concept::getConceptByLabel($srcConcept);

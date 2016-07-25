@@ -37,7 +37,9 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 	Logger::getLogger('EXECENGINE')->info("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
 	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
-		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
+        $srcConcept = Concept::getConceptByLabel($srcConceptName);
+        $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
+		$relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
 		
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
@@ -48,11 +50,9 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
         }
 		
 		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
-		$srcConcept = Concept::getConceptByLabel($srcConceptName);
 	    if($srcAtom == "_NEW") $srcAtom = $srcConcept->createNewAtomId();
 		
 		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
-	    $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
 		if($tgtAtom == "_NEW") $tgtAtom = $tgtConcept->createNewAtomId();
 		
 		$srcAtomIds = explode('_AND', $srcAtom);
@@ -84,7 +84,9 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 	Logger::getLogger('EXECENGINE')->info("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
 	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
-		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
+        $srcConcept = Concept::getConceptByLabel($srcConceptName);
+        $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
+		$relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
 		
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
@@ -93,9 +95,6 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
             Logger::getLogger('EXECENGINE')->debug("DelPair ignored because src and/or tgt atom is _NULL");
             return;
         }
-		
-        $srcConcept = Concept::getConceptByLabel($srcConceptName);
-        $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
         
 		$srcAtoms = explode('_AND', $srcAtom);
 		$tgtAtoms = explode('_AND', $tgtAtom);

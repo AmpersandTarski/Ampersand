@@ -181,6 +181,9 @@ class OAuthLoginController {
         $conceptUserID = Concept::getConceptByLabel('UserID');
         $conceptDomain = Concept::getConceptByLabel('Domain');
         $conceptDateTime = Concept::getConceptByLabel('DateTime');
+        $conceptOrg = Concept::getConceptByLabel('Organization');
+        $conceptAccount = Concept::getConceptByLabel('Account');
+        $conceptSession = Concept::getConceptByLabel('SESSION');
         
         // Set sessionUser
         $atom = new Atom($email, $conceptUserID);
@@ -198,7 +201,7 @@ class OAuthLoginController {
             $domain = explode('@', $email)[1];
             $atom = new Atom($domain, $conceptDomain);
             $orgs = $atom->ifc('DomainOrgs')->getTgtAtoms();
-            $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, 'Organization');
+            $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, $conceptOrg);
             foreach ($orgs as $org){
                 $relAccOrg->addLink($newAccount, $org, false, 'OAuthLoginExtension');
             }
@@ -210,9 +213,9 @@ class OAuthLoginController {
 
         if(count($accounts) > 1) throw new Exception("Multiple users registered with email $email", 401);
         
-        $relSessionAccount = Relation::getRelation('sessionAccount', 'SESSION', 'Account');
-        $relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', 'Account', $conceptDateTime);
-        $relAccLoginTimestamps = Relation::getRelation('accLoginTimestamps', 'Account', $conceptDateTime);
+        $relSessionAccount = Relation::getRelation('sessionAccount', $conceptSession, $conceptAccount);
+        $relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', $conceptAccount, $conceptDateTime);
+        $relAccLoginTimestamps = Relation::getRelation('accLoginTimestamps', $conceptAccount, $conceptDateTime);
         
         foreach ($accounts as $account){				    
             // Set sessionAccount
