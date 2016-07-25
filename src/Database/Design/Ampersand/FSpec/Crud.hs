@@ -47,9 +47,10 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
         crudCncpts = allConcs \\ nonCrudConcpts
         
         transSurjClosureMap :: Map A_Concept [A_Concept]
-        transSurjClosureMap = transClosureMap . Map.fromListWith union $
+        transSurjClosureMap = transClosureMap' . Map.fromListWith union $
           [ (target d, [source d]) | d <- decls, isSur d ] ++ -- TODO: no isUni?
           [ (source d, [target d]) | d <- decls, isTot d ]    -- TODO: no isInj?
+          -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
         
         
         -- crud concept together with its target concept in the surjective/total transitive closure of declarations

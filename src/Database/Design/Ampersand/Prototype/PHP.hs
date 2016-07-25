@@ -1,3 +1,4 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Prototype.PHP 
          ( evaluateExpSQL, executePHPStr, sqlServerConnectPHP, createTempDbPHP, showPHP
          , setSqlModePHP, createTablesPHP, populateTablesPHP
@@ -6,7 +7,10 @@ module Database.Design.Ampersand.Prototype.PHP
 import Prelude hiding (exp,putStrLn)
 import Control.Exception
 import Control.Monad
+import Data.Monoid
 import Data.List
+import qualified Data.Text as Text
+import qualified Data.Text.IO as Text
 import System.Process
 import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
@@ -17,12 +21,12 @@ import Database.Design.Ampersand.Basics hiding (putStrLn)
 import Database.Design.Ampersand.Misc
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 
-createTablesPHP :: FSpec -> [String]
+createTablesPHP :: FSpec -> [Text.Text]
 createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
-        ] ++
-        concatMap createTablePHP [sessionTableSpec, historyTableSpec] ++
+        ] <>
+        concatMap createTablePHP [sessionTableSpec, historyTableSpec] <>
         [ "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
         , "$microseconds = substr($time[0], 2,6);"
         , "$seconds =$time[1].$microseconds;"
@@ -34,52 +38,52 @@ createTablesPHP fSpec =
         , "  $error=true; echo $err.'<br />';"
         , "}"
         , ""
-        ] ++setSqlModePHP++
-        createTablePHP signalTableSpec ++
+        ] <>setSqlModePHP<>
+        createTablePHP signalTableSpec <>
         [ ""
-        , "//// Number of plugs: " ++ show (length (plugInfos fSpec))
+        , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
         ]
         -- Create all plugs
-        ++ concatMap (createTablePHP . plug2TableSpec) [p | InternalPlug p <- plugInfos fSpec]
+        <> concatMap (createTablePHP . plug2TableSpec) [p | InternalPlug p <- plugInfos fSpec]
 
 --                 (headerCmmnt,tableName,crflds,engineOpts)
-type TableSpec = (String,String,[String],String)
+type TableSpec = (String,String,[Text.Text],String)
 
-getTableName :: TableSpec -> String
-getTableName (_,nm,_,_) = nm
+getTableName :: TableSpec -> Text.Text
+getTableName (_,nm,_,_) = Text.pack nm
 
-createTablePHP :: TableSpec -> [String]
+createTablePHP :: TableSpec -> [Text.Text]
 createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
-  [ headerCmmnt
+  [ Text.pack headerCmmnt
   -- Drop table if it already exists
-  , "if($columns = mysqli_query($DB_link, "++showPhpStr ("SHOW COLUMNS FROM `"++tableName++"`")++")){"
-  , "    mysqli_query($DB_link, "++showPhpStr ("DROP TABLE `"++tableName++"`")++");"
+  , "if($columns = mysqli_query($DB_link, "<>showPhpStr ("SHOW COLUMNS FROM `"<>Text.pack tableName<>"`")<>")){"
+  , "    mysqli_query($DB_link, "<>showPhpStr ("DROP TABLE `"<>Text.pack tableName<>"`")<>");"
   , "}"
-  ] ++
-  [ "mysqli_query($DB_link,\"CREATE TABLE `"++tableName++"`"] ++
-  [ replicate 23 ' ' ++ [pref] ++ " " ++ att | (pref, att) <- zip ('(' : repeat ',') crflds ] ++
-  [ replicate 23 ' ' ++ ") ENGINE=" ++engineOpts ++ "\");"]++
+  ] <>
+  [ "mysqli_query($DB_link,\"CREATE TABLE `"<>Text.pack tableName<>"`"] <>
+  [ Text.replicate 23 " " <> Text.pack [pref] <> " " <> att | (pref, att) <- zip ('(' : repeat ',') crflds ] <>
+  [ Text.replicate 23 " " <> ") ENGINE=" <>Text.pack engineOpts <> "\");"]<>
   [ "if($err=mysqli_error($DB_link)) {"
   , "  $error=true; echo $err.'<br />';"
   , "}"
   , "" 
-  ]++setSqlModePHP
+  ]<>setSqlModePHP
 
 
 plug2TableSpec :: PlugSQL -> TableSpec
 plug2TableSpec plug
- = ( unlines $ commentBlock (["Plug "++name plug,"","attributes:"]++map (\x->showADL (attExpr x)++"  "++(show.properties.attExpr) x) (plugAttributes plug))
+ = ( unlines $ commentBlock (["Plug "<>name plug,"","attributes:"]<>map (\x->showADL (attExpr x)<>"  "<>(show.properties.attExpr) x) (plugAttributes plug))
    , name plug
-   , [ quote (attName f)++" " ++ showSQL (attType f) ++ " DEFAULT NULL"
-     | f <- plugAttributes plug ]++
+   , [ quote (Text.pack$ attName f)<>" " <> Text.pack (showSQL (attType f)) <> " DEFAULT NULL"
+     | f <- plugAttributes plug ]<>
       case (plug, (head.plugAttributes) plug) of
            (BinSQL{}, _)   -> []
            (_,    primAtt) ->
                 case attUse primAtt of
                    TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
-                                          ++ "KEY (`"++attName primAtt++"`)"
+                                          <> "KEY (`"<>Text.pack (attName primAtt)<>"`)"
                                         ]
-                   ForeignKey c  -> fatal 195 ("ForeignKey "++name c++"not expected here!")
+                   ForeignKey c  -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
                    PlainAttr     -> []
    , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN")
 
@@ -109,51 +113,51 @@ historyTableSpec
      , "`Date` VARCHAR(255) DEFAULT NULL" ]
    , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
 
-populateTablesPHP :: FSpec -> [String]
+populateTablesPHP :: FSpec -> [Text.Text]
 populateTablesPHP fSpec =
-  fillSignalTable (initialConjunctSignals fSpec) ++
+  fillSignalTable (initialConjunctSignals fSpec) <>
   populateTablesWithInitialPopsPHP fSpec
   where
     fillSignalTable []          = []
     fillSignalTable conjSignals =
-      [ "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++ quote (getTableName signalTableSpec)
-                                                                    ++" (`conjId`, `src`, `tgt`)"
-                                              ++phpIndent 24++"VALUES " ++ 
-                                              intercalate (phpIndent 29++", ") 
-                                                [ "(" ++sqlConjId++", "++showValPHP (apLeft p)++", "++showValPHP (apRight p)++")" 
+      [ "mysqli_query($DB_link, "<>showPhpStr ("INSERT INTO "<> quote (getTableName signalTableSpec)
+                                                                    <>" (`conjId`, `src`, `tgt`)"
+                                              <>phpIndent 24<>"VALUES " <> 
+                                              Text.intercalate (phpIndent 29<>", ") 
+                                                [ "(" <>sqlConjId<>", "<>showValPHP (apLeft p)<>", "<>showValPHP (apRight p)<>")" 
                                                 | (conj, viols) <- conjSignals
-                                                , let sqlConjId = "'" ++ rc_id conj ++ "'" -- conjunct id's do not need escaping
+                                                , let sqlConjId = "'" <> Text.pack (rc_id conj) <> "'" -- conjunct id's do not need escaping (SJ 2016-07-07: In that case: why not escape with showValPHP for the sake of maintainability?)
                                                 , p <- viols
-                                                ])++"\n"++
+                                                ])<>"\n"<>
         "            );"
       , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
       ]
 
-populateTablesWithInitialPopsPHP :: FSpec -> [String]
+populateTablesWithInitialPopsPHP :: FSpec -> [Text.Text]
 populateTablesWithInitialPopsPHP fSpec =
   concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   where
     populatePlugPHP plug
          = case tableContents fSpec plug of
                [] -> []
-               tblRecords -> ( "mysqli_query($DB_link, "++showPhpStr ("INSERT INTO "++quote (name plug)
-                                                           ++" ("++intercalate "," [quote (attName f) |f<-plugAttributes plug]++")"
-                                                           ++phpIndent 17++"VALUES " ++ intercalate (phpIndent 22++", ") [ "(" ++valuechain md++ ")" | md<-tblRecords]
-                                                           ++phpIndent 16 )
-                                        ++");"
+               tblRecords -> ( "mysqli_query($DB_link, "<>showPhpStr ("INSERT INTO "<>quote (Text.pack (name plug))
+                                                           <>" ("<>Text.intercalate "," [quote (Text.pack$ attName f) |f<-plugAttributes plug]<>")"
+                                                           <>phpIndent 17<>"VALUES " <> Text.intercalate (phpIndent 22<>", ") [ "(" <>valuechain md<> ")" | md<-tblRecords]
+                                                           <>phpIndent 16 )
+                                        <>");"
                              ):
                              ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
      where
-        valuechain record = intercalate ", " [case att of Nothing -> "NULL" ; Just val -> showValPHP val | att<-record]
+        valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> showValPHP val | att<-record]
 
 
-sqlServerConnectPHP :: FSpec -> [String]
+sqlServerConnectPHP :: FSpec -> [Text.Text]
 sqlServerConnectPHP fSpec =
   [ "// Try to connect to the database"
   , "global $DB_host,$DB_user,$DB_pass;"
-  , "$DB_host='"++addSlashes (sqlHost (getOpts fSpec))++"';"
-  , "$DB_user='"++addSlashes (sqlLogin (getOpts fSpec))++"';"
-  , "$DB_pass='"++addSlashes (sqlPwd (getOpts fSpec))++"';"
+  , "$DB_host='"<>addSlashes (Text.pack (sqlHost (getOpts fSpec)))<>"';"
+  , "$DB_user='"<>addSlashes (Text.pack (sqlLogin (getOpts fSpec)))<>"';"
+  , "$DB_pass='"<>addSlashes (Text.pack (sqlPwd (getOpts fSpec)))<>"';"
   
   , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
   , "// Check connection"
@@ -161,11 +165,11 @@ sqlServerConnectPHP fSpec =
   , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
   , "}"
   , ""
-  ]++setSqlModePHP
+  ]<>setSqlModePHP
 
-createTempDbPHP :: String -> [String]
+createTempDbPHP :: String -> [Text.Text]
 createTempDbPHP dbNm =
-      [ "$DB_name='"++addSlashes dbNm++"';"
+      [ "$DB_name='"<>addSlashes (Text.pack dbNm)<>"';"
       , "// Drop the database if it exists"
       , "$sql=\"DROP DATABASE $DB_name\";"
       , "mysqli_query($DB_link,$sql);"
@@ -184,7 +188,7 @@ createTempDbPHP dbNm =
       , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
       , "  }"
       , ""
-      ]++setSqlModePHP
+      ]<>setSqlModePHP
 
 
 -- evaluate normalized exp in SQL
@@ -192,34 +196,34 @@ evaluateExpSQL :: FSpec -> String -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
   fmap sort (performQuery (getOpts fSpec) dbNm violationsQuery)
  where violationsExpr = conjNF (getOpts fSpec) exp
-       violationsQuery = prettySQLQuery 26 fSpec violationsExpr
+       violationsQuery = Text.pack$ prettySQLQuery 26 fSpec violationsExpr
 
-performQuery :: Options -> String -> String -> IO [(String,String)]
+performQuery :: Options -> String -> Text.Text -> IO [(String,String)]
 performQuery opts dbNm queryStr =
  do { queryResult <- (executePHPStr . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
-      then do verboseLn opts{verboseP=True} ("\n******Problematic query:\n"++queryStr++"\n******")
-              fatal 141 $ "PHP/SQL problem: "++queryResult
+      then do verboseLn opts{verboseP=True} (Text.unpack$ "\n******Problematic query:\n"<>queryStr<>"\n******")
+              fatal 141 $ "PHP/SQL problem: "<>queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal 143 $ "Parse error on php result: "++show queryResult
+             _            -> fatal 143 $ "Parse error on php result: "<>show queryResult
     }
    where
     php =
       [ "// Try to connect to the database"
-      , "$DB_name='"++addSlashes dbNm++"';"
+      , "$DB_name='"<>addSlashes (Text.pack dbNm)<>"';"
       , "global $DB_host,$DB_user,$DB_pass;"
-      , "$DB_host='"++addSlashes (sqlHost opts)++"';"
-      , "$DB_user='"++addSlashes (sqlLogin opts)++"';"
-      , "$DB_pass='"++addSlashes (sqlPwd opts)++"';"
+      , "$DB_host='"<>addSlashes (Text.pack (sqlHost opts))<>"';"
+      , "$DB_user='"<>addSlashes (Text.pack (sqlLogin opts))<>"';"
+      , "$DB_pass='"<>addSlashes (Text.pack (sqlPwd opts))<>"';"
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
       , "  die(\"Error: Failed to connect to $DB_name: \" . mysqli_connect_error());"
       , "  }"
       , ""
-      ]++setSqlModePHP++
-      [ "$sql="++showPhpStr queryStr++";"
+      ]<>setSqlModePHP<>
+      [ "$sql="<>showPhpStr queryStr<>";"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
       , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
@@ -237,15 +241,15 @@ performQuery opts dbNm queryStr =
       ]
 
 -- call the command-line php with phpStr as input
-executePHPStr :: String -> IO String
+executePHPStr :: Text.Text -> IO String
 executePHPStr phpStr =
  do { tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
-                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " ++ err)
+                                 hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                                  return ".")
 
     ; (tempPhpFile, temph) <- openTempFile tempdir "phpInput"
-    ; hPutStr temph phpStr
+    ; Text.hPutStr temph phpStr
     ; hClose temph
     ; results <- executePHP Nothing tempPhpFile []
     ; removeFile tempPhpFile
@@ -277,22 +281,22 @@ executePHP mWorkingDir phpPath phpArgs =
               ; seq (length errStr) $ return ()
               ; hClose stdErrH
               ; unless (null errStr) $
-                  putStrLn $ "Error during PHP execution:\n" ++ errStr
+                  putStrLn $ "Error during PHP execution:\n" <> errStr
               ; outputStr' <- hGetContents stdOutH --and fetch the results from the output pipe
               ; seq (length outputStr') $ return ()
               ; hClose stdOutH
               ; return outputStr'
               }
---    ; putStrLn $ "Results:\n" ++ outputStr
+--    ; putStrLn $ "Results:\n" <> outputStr
     ; return outputStr
     }
 
-showPHP :: [String] -> String
-showPHP phpLines = unlines $ ["<?php"]++phpLines++["?>"]
+showPHP :: [Text.Text] -> Text.Text
+showPHP phpLines = Text.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
 -- | php code snippet to set the sql_mode
-setSqlModePHP :: [String]
+setSqlModePHP :: [Text.Text]
 setSqlModePHP = 
        [ "$sql=\"SET SESSION sql_mode = 'ANSI,TRADITIONAL'\";" -- ANSI because of the syntax of the generated SQL
                                                                -- TRADITIONAL because of some more safety

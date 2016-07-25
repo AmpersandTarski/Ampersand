@@ -38,8 +38,9 @@ module Database.Design.Ampersand.FSpec.FSpec
           ) where
 -- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
 --       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
---       hyrarchie to reflect the Architecture. 
+--       hierarchie to reflect the Architecture. 
 import Data.List
+import Data.Text (Text,unpack)
 import Data.Typeable
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
 import Database.Design.Ampersand.Basics
@@ -50,7 +51,7 @@ import Database.Design.Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
 import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
-data FSpec = FSpec { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
+data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showADL)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
@@ -188,7 +189,7 @@ data Fswitchboard
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
 instance Named FSpec where
-  name = fsName
+  name = unpack . fsName
 
 instance Named FSid where
   name (FS_id nm) = nm
@@ -218,9 +219,9 @@ data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affect
                  , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
                  } deriving Show
 
-instance Eq Quad where
-  q == q'  = qDcl q == qDcl q' && qRule q == qRule q'
-
+instance Ord Quad where
+  q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
+instance Eq Quad where q == q' = compare q q' == EQ
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
 

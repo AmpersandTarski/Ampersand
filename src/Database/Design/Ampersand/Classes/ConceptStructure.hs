@@ -50,7 +50,7 @@ instance ConceptStructure a => ConceptStructure [a] where
   expressionsIn = foldr ((uni) . expressionsIn) []
 
 instance ConceptStructure A_Context where
-  concs ctx = foldr uni [ONE, PlainConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
+  concs ctx = foldr uni [ONE, makeConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ (concs.ctxpats) ctx
               , (concs.ctxrs) ctx
               , (concs.ctxds) ctx
@@ -106,9 +106,7 @@ instance ConceptStructure A_Concept where
   expressionsIn _ = []
 
 instance ConceptStructure ConceptDef where
-  concs        cd = [PlainConcept { cptnm = name cd
-                                  }
-                    ]
+  concs        cd = [makeConcept (name cd)]
   expressionsIn _ = []
 
 instance ConceptStructure Signature where

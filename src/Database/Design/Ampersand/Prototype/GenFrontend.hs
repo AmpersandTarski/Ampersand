@@ -1,4 +1,4 @@
-{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
 module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs) where
 
 import Prelude hiding (putStr,putStrLn,readFile)
