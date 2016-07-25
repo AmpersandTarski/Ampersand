@@ -8,6 +8,7 @@ where
 import Data.List
 import Data.Char
 import Data.Ord
+import qualified Data.Map.Strict as Map
 import Data.Hashable (hash) -- a not good enouqh function, but used for the time being. 
 import Data.Maybe
 import Data.Typeable
@@ -68,26 +69,26 @@ instance MetaPopulations FSpec where
     , Pop "dbName" "Context" "DatabaseName" [Uni,Tot]
            [(dirtyId fSpec, (show.dbName.getOpts) fSpec)]
     , Pop "name" "Context" "Identifier" [Uni,Tot]
-           [(dirtyId fSpec, (show.ctxnm.originalContext) fSpec)]
+           [(dirtyId fSpec, (show.ctxnm) ctx)]
     , Pop "location" "Context" "Location" [Uni,Tot]
-           [(dirtyId fSpec, (show.ctxpos.originalContext) fSpec)]
+           [(dirtyId fSpec, (show.ctxpos) ctx)]
     , Pop "language" "Context" "Language" [Uni,Tot]
-           [(dirtyId fSpec, (show.ctxlang.originalContext) fSpec)]
+           [(dirtyId fSpec, (show.ctxlang) ctx)]
     , Pop "markup" "Context" "Markup" [Uni,Tot]
-           [(dirtyId fSpec, (show.ctxmarkup.originalContext) fSpec)]
+           [(dirtyId fSpec, (show.ctxmarkup) ctx)]
     , Pop "context" "Pattern" "Context" [Uni]                      -- The context in which a pattern is defined.
-           [(dirtyId p, dirtyId fSpec) | p<-(ctxpats.originalContext) fSpec]
+           [(dirtyId p, dirtyId fSpec) | p<-ctxpats ctx]
     , Pop "context" "Rule" "Context" [Uni]                         -- The context in which a rule is defined.
-           [(dirtyId r, dirtyId fSpec) | r<-(ctxrs.originalContext) fSpec]
+           [(dirtyId r, dirtyId fSpec) | r<-ctxrs ctx]
     , Pop "context" "Relation" "Context" [Uni]                         -- The context in which a rule is defined.
-           [(dirtyId r, dirtyId fSpec) | r<-(ctxds.originalContext) fSpec]
+           [(show (declMap' Map.! r), dirtyId fSpec) | r<-ctxds ctx]
     , Pop "context" "Population" "Context" [Uni]                         -- The context in which a rule is defined.
-           [(dirtyId pop, dirtyId fSpec) | pop<-(ctxpopus.originalContext) fSpec]
+           [(dirtyId pop, dirtyId fSpec) | pop<-ctxpopus ctx]
     , Pop "context" "Concept" "Context" [Uni]                         -- The context in which a rule is defined.
-           [(dirtyId c, dirtyId fSpec) | c<-(ctxcds.originalContext) fSpec]
+           [(dirtyId c, dirtyId fSpec) | c<-ctxcds ctx]
     , Pop "context" "IdentityDef" "Context" [Uni]                         -- The context in which a rule is defined.
-           [(dirtyId c, dirtyId fSpec) | c<-(ctxks.originalContext) fSpec]
-    , Pop "allRoles" "Context" "Role" [Tot]
+           [(dirtyId c, dirtyId fSpec) | c<-ctxks ctx]
+    , Pop "allRoleRules" "Context" "Role" [Tot]
            [(dirtyId fSpec, show "SystemAdmin")]
     , Pop "name"   "Role" "RoleName" [Uni,Tot]
            [(show "SystemAdmin", show "SystemAdmin")]
@@ -116,10 +117,15 @@ instance MetaPopulations FSpec where
   ++   concatMap (extract . fst) (fRoles fSpec)
   )
   where 
+    ctx = originalContext fSpec
     extract :: MetaPopulations a => a -> [Pop]
     extract = metaPops fSpec
     sortByName :: Named a => [a] -> [a]
     sortByName = sortBy (comparing name)
+    declMap :: Map.Map Int Declaration
+    declMap  = Map.fromList (zip [1..] (relsDefdIn ctx))
+    declMap' :: Map.Map Declaration Int
+    declMap' = Map.fromList (zip (relsDefdIn ctx) [1..])
 
 instance MetaPopulations Pattern where
  metaPops fSpec pat =
