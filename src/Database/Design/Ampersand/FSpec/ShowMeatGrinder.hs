@@ -71,11 +71,11 @@ instance MetaPopulations FSpec where
     , Pop "name" "Context" "Identifier" [Uni,Tot]
            [(dirtyId ctx ctx, (show.ctxnm) ctx)]
     , Pop "location" "Context" "Location" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.ctxpos) ctx)]
+           [(dirtyId ctx ctx, (show.showUnique.ctxpos) ctx)]
     , Pop "language" "Context" "Language" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.ctxlang) ctx)]
+           [(dirtyId ctx ctx, (show.show.ctxlang) ctx)]
     , Pop "markup" "Context" "Markup" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.ctxmarkup) ctx)]
+           [(dirtyId ctx ctx, (show.show.ctxmarkup) ctx)]
     , Pop "context" "Pattern" "Context" [Uni]                      -- The context in which a pattern is defined.
            [(dirtyId ctx p, dirtyId ctx ctx) | p<-ctxpats ctx]
     , Pop "context" "Rule" "Context" [Uni]                         -- The context in which a rule is defined.
@@ -544,7 +544,7 @@ instance AdlId Declaration
   where dirtyId ctx r
          = case Map.lookup r (declMap' ctx) of
             Nothing -> fatal 546 ("no relation known as: "++showUnique r)
-            Just i  -> show i
+            Just i  -> show (show i)
           where
            declMap' :: A_Context -> Map.Map Declaration Int
            declMap' ctx = Map.fromList (zip (relsDefdIn ctx++[ Isn c | c<-concs ctx]) [1..])

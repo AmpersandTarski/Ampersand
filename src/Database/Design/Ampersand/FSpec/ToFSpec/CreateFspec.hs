@@ -31,22 +31,22 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     verboseLn opts ("Generating meta file in path "++dirOutput opts)
      let gFSpec = pCtx2Fspec userP_Ctx
      let (filePath,metaContents)
           = case gFSpec of
              Checked fSpec -> makeMetaPopulationFile fSpec
              _ -> fatal 38 "errors in gFSpec"
-     writeFile (combine (dirOutput opts) filePath) metaContents
+--     when (genMetaFile opts)
+     verboseLn opts ("Generating meta file in path "++dirOutput opts)
+     writeFile (combine (dirOutput opts) filePath) metaContents      
+     verboseLn opts ("\""++filePath++"\" written")
      genFiles gFSpec >> genTables gFSpec userP_Ctx
    where
     genFiles :: Guarded FSpec -> IO(Guarded ())
     genFiles gFSpec
       = case gFSpec of
           Errors es -> return(Errors es)
-          Checked fSpec
-            ->   when (genMetaFile opts) (doGenMetaFile fSpec)
-              >> return (Checked ())
+          _ -> return (Checked ())
 
     genTables :: Guarded FSpec -> Guarded P_Context -> IO(Guarded FSpec)
     genTables gFSpec uCtx = case genMetaTables opts of
@@ -78,13 +78,3 @@ createFSpec opts =
              = case includes of
                [] -> a
                _  -> fatal 83 "Meatgrinder returns included file. That isn't anticipated."
-
-
-doGenMetaFile :: FSpec -> IO()
-doGenMetaFile fSpec =
- do { verboseLn (getOpts fSpec) $ "Generating meta file for "++name fSpec
-    ; writeFile outputFile contents
-    ; verboseLn (getOpts fSpec) $ "Meatgrinder output written into " ++ outputFile ++ ""
-    }
- where outputFile = combine (dirOutput (getOpts fSpec)) $ fpath
-       (fpath,contents) = makeMetaPopulationFile fSpec
