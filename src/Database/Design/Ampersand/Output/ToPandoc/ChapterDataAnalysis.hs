@@ -304,35 +304,22 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
       showAttributes atts = bulletList (map showAttribute atts)
         where
           showAttribute att =
---FIXME 20140525: Onderstaande code vervangen door afl te leiden van `attUse`. Daar zit deze info al in verwerkt!
-             let isPrimaryKey = case attExpr att of
-                                  e@EDcI{} -> e==attExpr (head atts) -- The first attribute represents the most general concept
-                                  _        -> False
-                 mForeignKey  = case attExpr att of
-                                  EIsc (EDcI c,_) -> Just c
-                                  _               -> Nothing
-             in para (  (strong.text.attName) att
+                para (  (strong.text.attName) att
                       <> linebreak
-                      <> (if isPrimaryKey
-                          then case fsLang fSpec of
-                                Dutch   -> "Dit attribuut is de primaire sleutel. "
-                                English -> "This attribute is the primary key. "
-                          else
-                          case mForeignKey of
-                           Just c ->  case fsLang fSpec of
-                                         Dutch   -> "Dit attribuut verwijst naar een voorkomen in de tabel "
-                                         English -> "This attribute is a foreign key to "
-                                     <> (text.name) c
-                           Nothing -- (no foreign key...)
-                             -> --if isBool
-                                --then
-                                --else
-                                  (case fsLang fSpec of
-                                     Dutch   -> "Dit attribuut implementeert "
-                                     English -> "This attribute implements "
-                                  <> primExpr2pandocMath (fsLang fSpec) (attExpr att)
-                                  <> "."
-                                  )
+                      <> (case attUse att of
+                            PrimaryKey _ -> case fsLang fSpec of
+                                              Dutch   -> "Dit attribuut is de primaire sleutel. "
+                                              English -> "This attribute is the primary key. "
+                            ForeignKey c -> case fsLang fSpec of
+                                              Dutch   -> "Dit attribuut verwijst naar een voorkomen in de tabel "
+                                              English -> "This attribute is a foreign key to "
+                                               <> (text.name) c
+                            PlainAttr  -> ( case fsLang fSpec of
+                                              Dutch   -> "Dit attribuut implementeert "
+                                              English -> "This attribute implements "
+                                          <> primExpr2pandocMath (fsLang fSpec) (attExpr att)
+                                          <> "."
+                                          )
                          )
                       <> linebreak
                       <> (code.show.attType) att

@@ -163,9 +163,9 @@ instance ShowHS SqlAttribute where
                indentB = indentA++"            " -- adding the width of ", attExpr = "
 
 instance ShowHS SqlAttributeUsage where
- showHS _ _ (TableKey isPrimary aCpt) = "TableKey "  ++show isPrimary++" "++showHSName aCpt
- showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
- showHS _ _ PlainAttr                 = "PlainAttr "
+ showHS _ _ (PrimaryKey aCpt) = "PrimaryKey "++showHSName aCpt
+ showHS _ _ (ForeignKey aCpt) = "ForeignKey "++showHSName aCpt
+ showHS _ _ PlainAttr         = "PlainAttr "
 
 instance ShowHS TType where
  showHS _ indent tt = indent ++ show tt

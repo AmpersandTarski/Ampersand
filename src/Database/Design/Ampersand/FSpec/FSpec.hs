@@ -22,7 +22,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , lookupCpt, getConceptTableFor
           , RelStore(..)
           , metaValues
-          , SqlAttribute(..)
+          , SqlAttribute(..),isPrimaryKey,isForeignKey
           , Typology(..)
           , Interface(..)
           , Object(..)
@@ -316,7 +316,7 @@ data RelStore
      , rsSrcAtt    :: SqlAttribute
      , rsTrgAtt    :: SqlAttribute
      } deriving (Show, Typeable)
-data SqlAttributeUsage = TableKey Bool A_Concept  -- The SQL-attribute is the (primary) key of the table. (The boolean tells whether or not it is primary)
+data SqlAttributeUsage = PrimaryKey A_Concept
                        | ForeignKey A_Concept  -- The SQL-attribute is a reference (containing the primary key value of) a TblSQL
                        | PlainAttr             -- None of the above
                        deriving (Eq, Show)
@@ -339,6 +339,15 @@ instance Ord SqlAttribute where
 instance ConceptStructure SqlAttribute where
   concs     f = [target e' |let e'=attExpr f,isSur e']
   expressionsIn   f = expressionsIn   (attExpr f)
+
+isPrimaryKey :: SqlAttribute -> Bool
+isPrimaryKey att = case attUse att of
+                    PrimaryKey _ -> True
+                    _ -> False
+isForeignKey :: SqlAttribute -> Bool
+isForeignKey att = case attUse att of
+                    ForeignKey _ -> True
+                    _ -> False
 
 showSQL :: TType -> String
 showSQL tt =
