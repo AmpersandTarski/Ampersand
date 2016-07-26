@@ -80,9 +80,7 @@ plug2TableSpec plug
            (BinSQL{}, _)   -> []
            (_,    primAtt) ->
                 case attUse primAtt of
-                   TableKey isPrim _ -> [ (if isPrim then "PRIMARY " else "")
-                                          <> "KEY (`"<>Text.pack (attName primAtt)<>"`)"
-                                        ]
+                   PrimaryKey _ -> [ "PRIMARY KEY ("<>Text.pack (attName primAtt)<>")"]
                    ForeignKey c  -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
                    PlainAttr     -> []
    , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN")
