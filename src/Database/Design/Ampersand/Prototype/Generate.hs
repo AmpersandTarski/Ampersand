@@ -107,7 +107,7 @@ plug2TableSpec plug
                  (BinSQL{}, _)   -> []
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
-                         PrimaryKey _ -> ["PRIMARY KEY (`" <> (show . attName) primFld <> "`)" ]
+                         PrimaryKey _ -> ["PRIMARY KEY (" <> (show . attName) primFld <> ")" ]
                          ForeignKey c -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
                          PlainAttr    -> []
      , tsEngn = dbEngine
