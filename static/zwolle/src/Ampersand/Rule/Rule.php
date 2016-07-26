@@ -118,8 +118,8 @@ class Rule {
         $this->origin = $ruleDef['origin'];
         $this->ruleAdl = $ruleDef['ruleAdl'];
         
-        $this->srcConcept = Concept::getConcept($ruleDef['srcConcept']);
-        $this->tgtConcept = Concept::getConcept($ruleDef['tgtConcept']);
+        $this->srcConcept = Concept::getConcept($ruleDef['srcConceptId']);
+        $this->tgtConcept = Concept::getConcept($ruleDef['tgtConceptId']);
         
         $this->meaning = $ruleDef['meaning'];
         $this->message = $ruleDef['message'];

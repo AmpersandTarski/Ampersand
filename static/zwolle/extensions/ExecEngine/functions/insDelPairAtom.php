@@ -37,7 +37,9 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 	Logger::getLogger('EXECENGINE')->info("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
 	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
-		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
+        $srcConcept = Concept::getConceptByLabel($srcConceptName);
+        $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
+		$relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
 		
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
@@ -48,19 +50,17 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
         }
 		
 		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
-		$srcConcept = Concept::getConcept($srcConceptName);
 	    if($srcAtom == "_NEW") $srcAtom = $srcConcept->createNewAtomId();
 		
 		// if tgtAtom is specified as _NEW, a new atom of tgtConcept is created
-	    $tgtConcept = Concept::getConcept($tgtConceptName);
 		if($tgtAtom == "_NEW") $tgtAtom = $tgtConcept->createNewAtomId();
 		
 		$srcAtomIds = explode('_AND', $srcAtom);
 		$tgtAtomIds = explode('_AND', $tgtAtom);
 		foreach($srcAtomIds as $a){
-			$src = new Atom($a, $srcConceptName);
+			$src = new Atom($a, $srcConcept);
 		    foreach($tgtAtomIds as $b){
-				$tgt = new Atom($b, $tgtConceptName);
+				$tgt = new Atom($b, $tgtConcept);
 				$relation->addLink($src, $tgt, false, 'ExecEngine');
 			}
 		}
@@ -84,7 +84,9 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 	Logger::getLogger('EXECENGINE')->info("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
 	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
-		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
+        $srcConcept = Concept::getConceptByLabel($srcConceptName);
+        $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
+		$relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
 		
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
@@ -93,16 +95,16 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
             Logger::getLogger('EXECENGINE')->debug("DelPair ignored because src and/or tgt atom is _NULL");
             return;
         }
-		
+        
 		$srcAtoms = explode('_AND', $srcAtom);
 		$tgtAtoms = explode('_AND', $tgtAtom);
 		if(count($srcAtoms) > 1) throw new Exception('DelPair function call has more than one src atom', 501); // 501: Not implemented
 		if(count($tgtAtoms) > 1) throw new Exception('DelPair function call has more than one tgt atom', 501); // 501: Not implemented
 		
 		foreach($srcAtoms as $a){
-		    $src = new Atom($a, $srcConceptName);
+		    $src = new Atom($a, $srcConcept);
 		    foreach($tgtAtoms as $b){
-				$tgt = new Atom($b, $tgtConceptName);
+				$tgt = new Atom($b, $tgtConcept);
 		        $relation->deleteLink($src, $tgt, false, 'ExecEngine');
 			}
 		}
@@ -135,13 +137,13 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
 	try{		
 		// We start with parsing the first one or two arguments
-		$c = Concept::getConcept(func_get_arg(0)); // Concept for which atom is to be created
+		$c = Concept::getConceptByLabel(func_get_arg(0)); // Concept for which atom is to be created
 		$atom = $c->createNewAtom(); // Default marker for atom-to-be-created.
 
 		Logger::getLogger('EXECENGINE')->info("Newstruct for concept '{$c}'");
 		
 		// Check if name of new atom is explicitly specified
-		if (func_num_args() % 5 == 2) $atom = new Atom(func_get_arg(1), $c->name); // If so, we'll be using this to create the new atom
+		if (func_num_args() % 5 == 2) $atom = new Atom(func_get_arg(1), $c); // If so, we'll be using this to create the new atom
 		// Check for valid number of arguments
 		elseif(func_num_args() % 5 != 1) throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
 		
@@ -152,9 +154,9 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
 			
 			$relation   = func_get_arg($i);
-			$srcConcept = Concept::getConcept(func_get_arg($i+1));
+			$srcConcept = Concept::getConceptByLabel(func_get_arg($i+1));
 			$srcAtomId    = func_get_arg($i+2);
-			$tgtConcept = Concept::getConcept(func_get_arg($i+3));
+			$tgtConcept = Concept::getConceptByLabel(func_get_arg($i+3));
 			$tgtAtomId    = func_get_arg($i+4);
 			
 			if($srcAtomId == "NULL" or $tgtAtomId == "NULL") throw new Exception("NewStruct: use of keyword NULL is deprecated, use '_NEW'", 500);
@@ -187,7 +189,7 @@ function InsAtom($conceptName){
 	try{
 		$database = Database::singleton();
 		
-		$concept = Concept::getConcept($conceptName);
+		$concept = Concept::getConceptByLabel($conceptName);
         $atom = $concept->createNewAtom();
 		$atom->addAtom(); // insert new atom in database
 		
@@ -211,7 +213,7 @@ function DelAtom($concept, $atomId){
 	try{
 		$database = Database::singleton();
 		
-		$atom = new Atom($atomId, $concept);
+		$atom = new Atom($atomId, Concept::getConceptByLabel($concept));
 		$database->deleteAtom($atom); // delete atom + all relations with other atoms
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' deleted");
 	
@@ -233,9 +235,10 @@ function SetConcept($conceptA, $conceptB, $atom){
 	try{
 		$database = Database::singleton();
 		
-		$atom = new Atom($atom, $conceptA);
+		$atom = new Atom($atom, Concept::getConceptByLabel($conceptA));
+        $conceptB = Concept::getConceptByLabel($conceptB);
 		$database->atomSetConcept($atom, $conceptB);
-		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' added as member to concept '$conceptB'");
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' added as member to concept '{$conceptB}'");
 	
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('SetConcept: ' . $e->getMessage());
@@ -254,7 +257,7 @@ function ClearConcept($concept, $atom){
 	try{
 		$database = Database::singleton();
         
-		$atom = new Atom($atom, $concept);
+		$atom = new Atom($atom, Concept::getConceptByLabel($concept));
 		$database->atomClearConcept($atom);
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' removed as member from concept '$concept'");
 

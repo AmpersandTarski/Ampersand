@@ -14,15 +14,15 @@ data Rules = Rules
   , rulJSONsignals    :: [JsonRule]
   } deriving (Generic, Show)
 data JsonRule = JsonRule
-  { rulJSONname        :: String
-  , rulJSONruleAdl     :: String
-  , rulJSONorigin      :: String
-  , rulJSONmeaning     :: String
-  , rulJSONmessage     :: String
-  , rulJSONsrcConcept  :: String
-  , rulJSONtgtConcept  :: String
-  , rulJSONconjunctIds :: [String]
-  , rulJSONpairView    :: Maybe JsonPairView
+  { rulJSONname         :: String
+  , rulJSONruleAdl      :: String
+  , rulJSONorigin       :: String
+  , rulJSONmeaning      :: String
+  , rulJSONmessage      :: String
+  , rulJSONsrcConceptId :: String
+  , rulJSONtgtConceptId :: String
+  , rulJSONconjunctIds  :: [String]
+  , rulJSONpairView     :: Maybe JsonPairView
   } deriving (Generic, Show)
 data JsonPairView = JsonPairView [JsonPairViewSegment]
     deriving (Generic, Show)
@@ -55,8 +55,8 @@ instance JSON Rule JsonRule where
   , rulJSONorigin      = show.rrfps     $ rule
   , rulJSONmeaning     = showMeaning
   , rulJSONmessage     = showMessage
-  , rulJSONsrcConcept  = name . source . rrexp $ rule
-  , rulJSONtgtConcept  = name . target . rrexp $ rule
+  , rulJSONsrcConceptId = escapeIdentifier . name . source . rrexp $ rule
+  , rulJSONtgtConceptId = escapeIdentifier . name . target . rrexp $ rule
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
   , rulJSONpairView    = fmap (fromAmpersand fSpec) (rrviol rule)
   } 
