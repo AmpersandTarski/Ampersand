@@ -60,10 +60,10 @@ instance JSON Rule JsonRule where
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
   , rulJSONpairView    = fmap (fromAmpersand fSpec) (rrviol rule)
   } 
-   where showMeaning = maybe "" (aMarkup2String ReST) (meaning (fsLang fSpec) rule)
+   where showMeaning = maybe "" (aMarkup2String HTML) (meaning (fsLang fSpec) rule)
          showMessage = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
                               []    -> ""
-                              markup:_ -> aMarkup2String ReST markup
+                              markup:_ -> aMarkup2String HTML markup
 instance JSON (PairView Expression) JsonPairView where
  fromAmpersand fSpec pv = JsonPairView $ map (fromAmpersand fSpec) (zip [0..] (ppv_segs pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
