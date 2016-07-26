@@ -374,23 +374,21 @@ class Database {
 	 * Adding an atom[ConceptA] as member to ConceptB set. 
 	 * This can only be done when concept of atom (ConceptA) and ConceptB are in the same classification tree.
 	 * @param Atom $atom
-	 * @param string $conceptBName
+	 * @param Concept $conceptB
 	 * @throws Exception
 	 * @return void
 	 */
-	public function atomSetConcept($atom, $conceptBName){
-	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptBName})");
-	    
-	    $conceptB = Concept::getConcept($conceptBName);
+	public function atomSetConcept($atom, $conceptB){
+	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptB})");
 	    
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
 	    
 		// Check if conceptA and conceptB are in the same classification tree
-		if(!$atom->concept->inSameClassificationTree($conceptB)) throw new Exception("Concepts '[{$atom->concept->name}]' and '[{$conceptB->name}]' are not in the same classification tree", 500);
+		if(!$atom->concept->inSameClassificationTree($conceptB)) throw new Exception("Concepts '[{$atom->concept}]' and '[{$conceptB}]' are not in the same classification tree", 500);
 		
 		// Check if atom is part of conceptA
-		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
+		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom}' does not exists", 500);
 		
 		// Get table info
 		$conceptTableInfoB = $conceptB->getConceptTableInfo();
@@ -407,7 +405,7 @@ class Database {
 		$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atom->idEsc}'");
 		
 		// Check if query resulted in an affected row
-		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomSetConcept({$atom->__toString()}, {$conceptBName})", 500);
+		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomSetConcept({$atom->__toString()}, {$conceptB})", 500);
 		
 		$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 		
@@ -428,10 +426,10 @@ class Database {
 	    if (!isset($this->transaction)) $this->startTransaction();
 	    
 		// Check if concept is a specialization of another concept
-		if(empty($atom->concept->getGeneralizations())) throw new Exception("Concept '[{$atom->concept->name}]' has no generalizations, atom can therefore not be removed as member from this set", 500);
+		if(empty($atom->concept->getGeneralizations())) throw new Exception("Concept '{$atom->concept}' has no generalizations, atom can therefore not be removed as member from this set", 500);
 			
 		// Check if atom is part of conceptA
-		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
+		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom}' does not exists", 500);
 			
 		// Get col information for concept and its specializations
 		$colNames = array();
@@ -481,7 +479,7 @@ class Database {
 	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
 	            break;
 	        default :
-	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
+	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
 	    }
 	    // Check if query resulted in an affected row
 	    if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::addLink({$relation->__toString()},{$srcAtom->__toString()},{$tgtAtom->__toString()})", 500);
@@ -527,7 +525,7 @@ class Database {
 	            else throw new Exception ("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
 	            break;
 	        default :
-	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
+	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
 	    }
 	    // Check if query resulted in an affected row
 	    if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::deleteLink({$relation->__toString()},{$srcAtom->__toString()},{$tgtAtom->__toString()})", 500);
@@ -548,7 +546,7 @@ class Database {
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
 	    
-		$concept = Concept::getConcept($atom->concept->name);
+		$concept = $atom->concept;
 		
 		// Delete atom from concept table
 		$conceptTable = $concept->getConceptTableInfo();

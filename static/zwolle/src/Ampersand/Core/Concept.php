@@ -49,10 +49,17 @@ class Concept {
     private $def;
     
 	/**
-	 * Name (and unique identifier) of concept
-	 * @var string
+	 * Name (and unique escaped identifier) of concept
+     * TODO: rename var to $id
+	 * @var string $name Escaped name of concept as defined in Ampersand script
 	 */
     public $name;
+    
+    /**
+     * Unescaped name of concept
+     * @var string $label Unescaped name of concept as defined in Ampersand script
+     */
+    public $label;
 	
 	/**
 	 * Specifies technical representation of atoms of this concept (e.g. OBJECT, ALPHANUMERIC, INTERGER, BOOLEAN, etc)
@@ -132,7 +139,8 @@ class Concept {
 	    
         $this->def = $conceptDef;
         
-		$this->name = $conceptDef['name'];
+		$this->name = $conceptDef['id'];
+        $this->label = $conceptDef['label'];
 		$this->type = $conceptDef['type'];
 		$this->isObject = ($this->type == "OBJECT") ? true : false;
 		
@@ -159,7 +167,7 @@ class Concept {
 	}
 	
 	public function __toString(){
-	    return $this->name;
+	    return $this->label;
 	}
 	
 	/**
@@ -171,21 +179,21 @@ class Concept {
 	}
 	
 	/**
-	 * Check if this concept is a generalization of another given concept(name)
-	 * @param string $conceptName
+	 * Check if this concept is a generalization of another given concept
+	 * @param Concept $concept
 	 * @return boolean
 	 */
-	public function hasSpecialization($conceptName){
-		return in_array($conceptName, $this->specializations);
+	public function hasSpecialization($concept){
+		return in_array($concept->name, $this->specializations);
 	}
 	
 	/**
-	 * Check if this concept is a specialization of another given concept(name)
-	 * @param string $conceptName
+	 * Check if this concept is a specialization of another given concept
+	 * @param Concept $concept
 	 * @return boolean
 	 */
-	public function hasGeneralization($conceptName){
-		return in_array($conceptName, $this->generalizations);
+	public function hasGeneralization($concept){
+		return in_array($concept->name, $this->generalizations);
 	}
 	
 	/**
@@ -235,8 +243,8 @@ class Concept {
 	 */
 	public function inSameClassificationTree($concept){
 	    if($this->name == $concept->name) return true;
-	    if($this->hasSpecialization($concept->name)) return true;
-	    if($this->hasGeneralization($concept->name)) return true;
+	    if($this->hasSpecialization($concept)) return true;
+	    if($this->hasGeneralization($concept)) return true;
 	     
 	    // else
 	    return false;
@@ -256,7 +264,7 @@ class Concept {
         
         $arr = array();
 	    foreach ((array)$this->database->Exe($query) as $row){
-	        $tgtAtom = new Atom($row['atomId'], $this->name, null, $row);
+	        $tgtAtom = new Atom($row['atomId'], $this, null, $row);
 	        $arr[] = $tgtAtom->getAtom();
 	    }
 	    return $arr;
@@ -349,7 +357,7 @@ class Concept {
 	 * @return Atom
 	 */
 	public function createNewAtom(){
-	    return new Atom($this->createNewAtomId(), $this->name);
+	    return new Atom($this->createNewAtomId(), $this);
 	}
     
     /**
@@ -375,8 +383,8 @@ class Concept {
      *********************************************************************************************/
 	
 	/**
-	 * Return concept object
-	 * @param string $conceptName
+	 * Return concept object given a concept identifier
+	 * @param string $conceptName Escaped concept name
 	 * @throws Exception if concept is not defined
 	 * @return Concept
 	 */
@@ -384,6 +392,19 @@ class Concept {
 	    if(!array_key_exists($conceptName, $concepts = self::getAllConcepts())) throw new Exception("Concept '{$conceptName}' is not defined", 500);
 	     
 	    return $concepts[$conceptName];
+	}
+    
+    /**
+	 * Return concept object given a concept label
+	 * @param string $conceptLabel Unescaped concept name
+	 * @throws Exception if concept is not defined
+	 * @return Concept
+	 */
+	public static function getConceptByLabel($conceptLabel){
+        foreach(self::getAllConcepts() as $concept)
+	        if($concept->label == $conceptLabel) return $concept;
+	    
+	    throw new Exception("Concept '{$conceptLabel}' is not defined", 500);
 	}
 	
 	/**
@@ -407,7 +428,7 @@ class Concept {
 	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'concepts.json');
 	    $allConceptDefs = (array)json_decode($file, true);
 	
-	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['name']] = new Concept($conceptDef);
+	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef);
 	}
 }
 
