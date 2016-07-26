@@ -6,8 +6,8 @@ PATTERN Persistence
 RELATION rec[Field*Record] [UNI,TOT] -- the record in which a field resides
 RELATION att[Field*SqlAttribute] [UNI,TOT] -- the attribute in which a field resides
 RELATION val[Field*Atom] [UNI] -- the record in which a field resides
-RELATION in[Record*PlugInfo] [UNI,TOT] -- the record in which a field resides
-RELATION table[SqlAttribute*PlugInfo] [UNI,TOT] -- the attribute in which a field resides
+RELATION in[Record*SQLPlug] [UNI,TOT] -- the record in which a field resides
+RELATION table[SqlAttribute*SQLPlug] [UNI,TOT] -- the attribute in which a field resides
 RELATION srcAtt[Relation*SqlAttribute] [UNI] -- should be TOT as well...
 RELATION tgtAtt[Relation*SqlAttribute] [UNI] -- should be TOT as well...
 RELATION l[Pair*Atom] [UNI] -- should be TOT as well...

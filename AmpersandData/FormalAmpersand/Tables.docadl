@@ -1,39 +1,34 @@
 ﻿CONTEXT AST IN ENGLISH LATEX
 INCLUDE "Tables.adl"
 
-PURPOSE CONCEPT PlugInfo
-{+Ampersand uses PlugInfos to store a set of records.
-One particular implementation of a PlugInfo is a table in a relational database.
-However, this pattern generalizes to other persistent structures, hence the name "PlugInfo".
-The current implementation uses tables from a relational database for this purpose.
--}
-
 PURPOSE PATTERN Persistence
 {+This pattern describes how pairs can be stored in a persistent storage system (PSS), such as a relational database.
-The assumption is that the elements of a pair are stored in fields of a record, and records are stored in a table-like structure called PlugInfo.
+The assumption is that the elements of a pair are stored in fields of a record, and records are stored in a table-like structure called SQLPlug.
 This pattern guarantees a sound definition of the relation in[Pair*Relation].
 In doing so, the specification leaves certain choices open for the implementation.
 They can be made for reasons of performance, for instance.
 These choices considered to be outside the scope of this pattern.
 This pattern only defines the relation ``in[Pair*Relation] in terms of PlugInfos.
-The challenge is to translate a partial order of concepts together with a set of binary relations to a PlugInfo.
+The challenge is to translate a partial order of concepts together with a set of binary relations to a SQLPlug.
 -}
 PURPOSE CONCEPT Field
 {+A record contains fields in which atoms can be stored. If a field contains no atom, we call it empty. There can be at most one atom in a field.
 -}
 PURPOSE CONCEPT Record
-{+A PlugInfo contains records, each of which can store multiple pairs.
+{+A SQLPlug contains records, each of which can store multiple pairs.
 The purpose of a record is to store facts about a single object.
 A reservation record is an example, in which facts about one particular reservation are stored in one record.
 -}
 PURPOSE CONCEPT Field
 {+A record contains fields in which atoms can be stored. If a field contains no atom, we call it empty. There can be at most one atom in a field.
 -}
+
 PURPOSE CONCEPT SQLPlug
 {+Ampersand uses tables to store population in a relational database.
-They are called "SQLPlug".
+They are called "SQLPlug". This corresponds to PlugInfo in the Haskell source code.
 The challenge is to translate a partial order of concepts together with a set of binary relations
 to a tabular structure that corresponds to a relational database.
+This concept generalizes to other persistent structures, but it is currently used for SQL-tables only.
 -}
 CONCEPT SQLPlug "AnSQLPlug SQLPlug is either a TblSQL or a BinSQL."
 PURPOSE RELATION val[Field*Atom]
@@ -45,9 +40,6 @@ PURPOSE RELATION val[Field*Atom]
 -}
 RELATION val[Field*Atom] [UNI] -- the record in which a field resides
 MEANING "The relation `val` determines which atom is stored in any particular field."
-PURPOSE RELATION in[Record*PlugInfo]
-{+
--}
 PURPOSE RELATION rec[Field*Record]
 {+
 -}
@@ -58,14 +50,14 @@ PURPOSE RELATION att[Field*SqlAttribute]
 -}
 RELATION att[Field*SqlAttribute] [UNI,TOT] -- the attribute in which a field resides
 MEANING ""
-RELATION in[Record*PlugInfo] [UNI,TOT] -- the record in which a field resides
+RELATION in[Record*SQLPlug] [UNI,TOT] -- the record in which a field resides
 MEANING ""
-PURPOSE RELATION table[SqlAttribute*PlugInfo]
-{+This function `table` exists to determine the attributes of every PlugInfo.
+PURPOSE RELATION table[SqlAttribute*SQLPlug]
+{+This function `table` exists to determine the attributes of every SQLPlug.
 This knowledge can be used to generate database tables.
 -}
-RELATION table[SqlAttribute*PlugInfo] [UNI]
-MEANING "Each SqlAttribute is a column in precisely one PlugInfo. So, the relation `table~` associates a set of SqlAttributes with every `PlugInfo`."
+RELATION table[SqlAttribute*SQLPlug] [UNI]
+MEANING "Each SqlAttribute is a column in precisely one SQLPlug. So, the relation `table~` associates a set of SqlAttributes with every `SQLPlug`."
 
 PURPOSE RELATION srcAtt[Relation*SqlAttribute]
 {+The source and target of a relation are administered in designated attributes (i.e. columns of a table).
@@ -103,11 +95,11 @@ PURPOSE RULE identifyField   -- rec;rec~/\att;att~ |- I[Field]
 {+In order to retrieve atoms from fields, every field must be identified uniquely.
 -}
 PURPOSE RULE inTable   -- in = rec~;att;table
-{+The following rule is needed by the PSS to compute whether a Record is in a PlugInfo.
+{+The following rule is needed by the PSS to compute whether a Record is in a SQLPlug.
 As a consequence, users can be assured that the PSS stores records in the right table.
 -}
 
-CONCEPT PlugInfo "A PlugInfo is either a TblSQL or a BinSQL."
+CONCEPT SQLPlug "A SQLPlug is either a TblSQL or a BinSQL."
 PURPOSE CONCEPT TblSQL
 {+Ampersand translates the partial order of concepts to a TblSQL, which is a specific form of SQLPlug.
 Relations that are either univalent or injective store its population in the same tables.
