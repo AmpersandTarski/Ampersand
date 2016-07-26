@@ -76,7 +76,7 @@ class SQLAble a where
                             -> bqeWithPlaceholder
                          | otherwise -> bqeWithoutPlaceholder
                        _ -> bqeWithoutPlaceholder
-            BCQE{} -> BCQE { bseSetQuantifier = All
+            BCQE{} -> BCQE { bseSetQuantifier = SQDefault
                            , bcqeOper = bcqeOper bqe
                            , bcqe0 = insertPlaceholder . bcqe0 $ bqe
                            , bcqe1 = insertPlaceholder . bcqe1 $ bqe
@@ -85,7 +85,7 @@ class SQLAble a where
         where 
           bqeWithoutPlaceholder = BQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
           bqeWithPlaceholder = 
-             BSE { bseSetQuantifier = All
+             BSE { bseSetQuantifier = SQDefault
                  , bseSrc = bseSrc bqe
                  , bseTrg = bseTrg bqe
                  , bseTbl = bseTbl bqe
@@ -138,7 +138,7 @@ maybeSpecialCase fSpec expr =
                                                    , notNull aAtt
                                                    ]
                                  in    
-                                   BSE { bseSetQuantifier = All
+                                   BSE { bseSetQuantifier = SQDefault
                                        , bseSrc = col
                                        , bseTrg = col
                                        , bseTbl = [sqlConceptTable fSpec a `as` Name "notIns"]
@@ -166,7 +166,7 @@ maybeSpecialCase fSpec expr =
              , "  <expr2> = "++showADL expr2++" ("++show (sign expr2)++")"
              , "   "++showADL expr++" ("++show (sign expr)++")"
              ]
-        ] $ BSE { bseSetQuantifier = All
+        ] $ BSE { bseSetQuantifier = SQDefault
                 , bseSrc = Col { cTable = [table1]
                                , cCol   = [sourceAlias]
                                , cAlias = []
@@ -249,7 +249,7 @@ nonSpecialSelectExpr fSpec expr=
                           [] -> case specificValue of 
                                  Nothing  -> emptySet -- case might occur with only negMp1Terms??
                                  Just singleton -> selectExpr fSpec (EMp1 singleton (source expr))
-                          ts  ->    BSE { bseSetQuantifier = All
+                          ts  ->    BSE { bseSetQuantifier = SQDefault
                                         , bseSrc = theSr'
                                         , bseTrg = theTr'
                                         , bseTbl = theTbl
@@ -315,7 +315,7 @@ nonSpecialSelectExpr fSpec expr=
                                           [e] -> e
                                           es  -> -- Note: We now have at least two subexpressions
                                                  BQEComment [BlockComment "`intersect` does not work in MySQL, so this statement is generated:"]
-                                                 BSE { bseSetQuantifier = All
+                                                 BSE { bseSetQuantifier = SQDefault
                                                      , bseSrc = Col { cTable = [iSect 0]
                                                                     , cCol   = [sourceAlias]
                                                                     , cAlias = []
@@ -340,7 +340,7 @@ nonSpecialSelectExpr fSpec expr=
                                                         ]
 
     EUni (l,r) -> BQEComment [BlockComment $ "case: EUni (l,r)"++showADL expr++" ("++show (sign expr)++")"]
-                  BCQE { bseSetQuantifier = All
+                  BCQE { bseSetQuantifier = SQDefault
                        , bcqeOper = Union
                        , bcqe0    = selectExpr fSpec l
                        , bcqe1    = selectExpr fSpec r
@@ -429,7 +429,7 @@ nonSpecialSelectExpr fSpec expr=
                                   . selectExpr fSpec . EDcI . target . fenceExpr $ i
 
                 in BQEComment [BlockComment $ "case: (ECps es), with two or more elements in es."++showADL expr]
-                   BSE { bseSetQuantifier = All
+                   BSE { bseSetQuantifier = SQDefault
                        , bseSrc = if source (head es) == ONE -- the first expression is V[ONE*someConcept]
                                   then theONESingleton
                                   else Col { cTable = [fenceName firstNr]
@@ -460,12 +460,12 @@ nonSpecialSelectExpr fSpec expr=
                                        , bseWhr = bseWhr se
                                        }
                          BCQE { bcqeOper = Union }
-                               -> BCQE { bseSetQuantifier = All
+                               -> BCQE { bseSetQuantifier = SQDefault
                                        , bcqeOper = Union 
                                        , bcqe0    = flipped (bcqe0 se)
                                        , bcqe1    = flipped (bcqe1 se)
                                        }
-                         BCQE{} -> BSE { bseSetQuantifier = All
+                         BCQE{} -> BSE { bseSetQuantifier = SQDefault
                                        , bseSrc = Col { cTable = [fTable]
                                                       , cCol   = [targetAlias]
                                                       , cAlias = []
@@ -483,7 +483,7 @@ nonSpecialSelectExpr fSpec expr=
                                     _ -> fatal 309 "A flipped expression will always start with the comment `Flipped: ..."
     (EMp1 val c) -> let cAtt = Iden [sqlAttConcept fSpec c]
                     in BQEComment [BlockComment "case: EMp1 val c"]
-                         BSE { bseSetQuantifier = All
+                         BSE { bseSetQuantifier = SQDefault
                              , bseSrc = Col { cTable = []
                                             , cCol   = [sqlAttConcept fSpec c]
                                             , cAlias = []
@@ -503,7 +503,7 @@ nonSpecialSelectExpr fSpec expr=
                  in BQEComment [BlockComment $ "case: (EDcV (Sign s t))   V"++show (Sign s t)++""] $
                     case (s,t) of
                      (ONE, ONE) -> one
-                     (_  , ONE) -> BSE { bseSetQuantifier = All
+                     (_  , ONE) -> BSE { bseSetQuantifier = SQDefault
                                        , bseSrc = Col { cTable = [psrc]
                                                       , cCol   = [fsrc]
                                                       , cAlias = []
@@ -513,7 +513,7 @@ nonSpecialSelectExpr fSpec expr=
                                        , bseWhr = Just (notNull (Iden [psrc, fsrc]))
                                                               
                                        }
-                     (ONE, _  ) -> BSE { bseSetQuantifier = All
+                     (ONE, _  ) -> BSE { bseSetQuantifier = SQDefault
                                        , bseSrc = theONESingleton
                                        , bseTrg = Col { cTable = [ptgt]
                                                       , cCol   = [ftgt]
@@ -522,7 +522,7 @@ nonSpecialSelectExpr fSpec expr=
                                        , bseTbl = [TRSimple [ptgt]]
                                        , bseWhr = Just (notNull (Iden [ptgt, ftgt]))
                                        }
-                     _     -> BSE { bseSetQuantifier = All
+                     _     -> BSE { bseSetQuantifier = SQDefault
                                   , bseSrc = Col { cTable = [first]
                                                  , cCol   = [fsrc]
                                                  , cAlias = []
@@ -542,7 +542,7 @@ nonSpecialSelectExpr fSpec expr=
     
     (EDcI c)             -> BQEComment [BlockComment $ "I["++name c++"]"] $
                              case c of
-                              ONE ->   BSE { bseSetQuantifier = All
+                              ONE ->   BSE { bseSetQuantifier = SQDefault
                                            , bseSrc = theONESingleton
                                            , bseTrg = theONESingleton
                                            , bseTbl = []
@@ -550,7 +550,7 @@ nonSpecialSelectExpr fSpec expr=
                                            }
                               PlainConcept{} -> 
                                  let cAtt = Iden [sqlAttConcept fSpec c]
-                                 in    BSE { bseSetQuantifier = All
+                                 in    BSE { bseSetQuantifier = SQDefault
                                            , bseSrc = Col { cTable = []
                                                           , cCol   = [sqlAttConcept fSpec c]
                                                           , cAlias = []
@@ -567,7 +567,7 @@ nonSpecialSelectExpr fSpec expr=
     -- EEps behaves like I. The intersects are semantically relevant, because all semantic irrelevant EEps expressions have been filtered from es.
     (EEps c sgn)     -> BQEComment [BlockComment $ "epsilon "++name c++" "++showSign sgn] $
                          case c of -- select the population of the most specific concept, which is the source.
-                              ONE ->   BSE { bseSetQuantifier = All
+                              ONE ->   BSE { bseSetQuantifier = SQDefault
                                            , bseSrc = theONESingleton
                                            , bseTrg = theONESingleton
                                            , bseTbl = []
@@ -575,7 +575,7 @@ nonSpecialSelectExpr fSpec expr=
                                            }
                               PlainConcept{} -> 
                                  let cAtt = Iden [sqlAttConcept fSpec c]
-                                 in    BSE { bseSetQuantifier = All
+                                 in    BSE { bseSetQuantifier = SQDefault
                                            , bseSrc = Col { cTable = []
                                                           , cCol   = [sqlAttConcept fSpec c]
                                                           , cAlias = []
@@ -596,7 +596,7 @@ nonSpecialSelectExpr fSpec expr=
            EDcV _        -> emptySet
            EDcI ONE      -> fatal 254 "EDcI ONE must not be seen at this place."
            EDcI c        -> BQEComment [BlockComment $ "case: ECpl (EDcI "++name c++")"]
-                             BSE { bseSetQuantifier = All
+                             BSE { bseSetQuantifier = SQDefault
                                  , bseSrc = Col { cTable = [QName "concept0"]
                                                 , cCol   = [concpt]
                                                 , cAlias = []
@@ -615,7 +615,7 @@ nonSpecialSelectExpr fSpec expr=
                                  }
                              where concpt = sqlAttConcept fSpec c
            _             -> BQEComment (map BlockComment [ "case: ECpl e", "ECpl ( \""++showADL e++"\" )"])
-                            BSE { bseSetQuantifier = All
+                            BSE { bseSetQuantifier = SQDefault
                                 , bseSrc = Col { cTable = [closedWorldName]
                                                , cCol   = [sourceAlias]
                                                , cAlias = []
@@ -686,7 +686,7 @@ Based on this derivation:
               | target l == ONE = fatal 332 ("ONE is unexpected as target of "++showADL l)
               | target r == ONE = fatal 333 ("ONE is unexpected as target of "++showADL r)
               | otherwise
-                  = BSE { bseSetQuantifier = All
+                  = BSE { bseSetQuantifier = SQDefault
                         , bseSrc = Col { cTable = [resLeft]
                                        , cCol   = [mainSrc]
                                        , cAlias = []
@@ -771,7 +771,7 @@ selectDeclaration fSpec dcl =
      | source sgn == ONE -> fatal 468 "ONE is not expected at this place"
      | target sgn == ONE -> fatal 469 "ONE is not expected at this place"
      | otherwise
-           -> BSE { bseSetQuantifier = All
+           -> BSE { bseSetQuantifier = SQDefault
                   , bseSrc = Col { cTable = [Name "vfst"]
                                  , cCol   = [sqlAttConcept fSpec (source sgn)]
                                  , cAlias = []
@@ -789,7 +789,7 @@ selectDeclaration fSpec dcl =
    where
      leafCode :: (PlugSQL,SqlAttribute,SqlAttribute) -> BinQueryExpr
      leafCode (plug,s,t) 
-         = BSE { bseSetQuantifier = All
+         = BSE { bseSetQuantifier = SQDefault
                , bseSrc = Col { cTable = []
                               , cCol   = [QName (name s)]
                               , cAlias = []
@@ -811,7 +811,7 @@ selectSource = selectSorT sourceAlias
 
 selectSorT :: Name -> BinQueryExpr -> QueryExpr
 selectSorT att binExp =
-     Select { qeSetQuantifier = All
+     Select { qeSetQuantifier = SQDefault
             , qeSelectList    = [(Iden [att],Nothing)]   
             , qeFrom          = [TRQueryExpr (toSQL binExp) `as` att]
             , qeWhere         = Nothing
@@ -829,7 +829,7 @@ selectExists, selectNotExists
 selectNotExists tbl whr = PrefixOp [Name "NOT"] $ selectExists tbl whr
 selectExists tbl whr = 
   SubQueryExpr SqExists
-     Select { qeSetQuantifier = All
+     Select { qeSetQuantifier = SQDefault
             , qeSelectList    = [(Star,Nothing)]   
             , qeFrom          = [case tbl of 
                                    TRAlias{} -> tbl
@@ -999,7 +999,7 @@ emptySet :: BinQueryExpr
 emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"]
            BSE { 
                -- select 1 as src, 1 as trg from (select 1) dummy where false
-                 bseSetQuantifier = All
+                 bseSetQuantifier = SQDefault
                , bseSrc = Col { cTable = [nothing]
                               , cCol   = [a]
                               , cAlias = []
@@ -1009,7 +1009,7 @@ emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"]
                               , cAlias = []
                               , cSpecial = Nothing}
                , bseTbl = [TRQueryExpr (QEComment [BlockComment "Select nothing..."] 
-                                        Select { qeSetQuantifier = All
+                                        Select { qeSetQuantifier = SQDefault
                                                , qeSelectList = [(NumLit "1", Just a)]
                                                , qeFrom = []
                                                , qeWhere = Nothing
@@ -1029,10 +1029,10 @@ emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"]
 one :: BinQueryExpr
 one = BQEComment [BlockComment "Just ONE"]
       BSE {  -- select distinct 1 as src, 1 as tgt from (select 1) as a
-            bseSetQuantifier = All
+            bseSetQuantifier = SQDefault
           , bseSrc = theONESingleton
           , bseTrg = theONESingleton
-          , bseTbl = [ TRQueryExpr Select { qeSetQuantifier = All
+          , bseTbl = [ TRQueryExpr Select { qeSetQuantifier = SQDefault
                                           , qeSelectList = [(NumLit "1", Nothing)]
                                           , qeFrom = []
                                           , qeWhere = Nothing
