@@ -6,10 +6,7 @@ module Database.Design.Ampersand.Output.ToJSON.Concepts
 where
 import Database.Design.Ampersand.FSpec(showADL)
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.FSpec.SQL (prettySQLQuery)
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
 import Data.Maybe
 import Data.List(nub)
 
@@ -86,7 +83,7 @@ instance JSON A_Concept TableCols where
       _       -> fatal 81 $ "Concept `"++name cpt++"` found in multiple tables."
 instance JSON ViewDef View where
  fromAmpersand fSpec vd = View
-  { vwJSONlabel        = vdlbl vd
+  { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
   , vwJSONsegments     = map (fromAmpersand fSpec) . vdats $ vd
@@ -103,7 +100,7 @@ instance JSON ViewSegment Segment where
                        ViewExp expr -> Just . showADL $ expr
                        _            -> Nothing
   , segJSONexpSQL  = case vsmLoad seg of
-                       ViewExp expr -> Just $ prettySQLQuery fSpec 0 expr
+                       ViewExp expr -> Just $ sqlQuery fSpec expr
                        _            -> Nothing
   , segJSONtext    = case vsmLoad seg of
                        ViewText str -> Just str

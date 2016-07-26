@@ -207,7 +207,7 @@ chpDiagnosis fSpec
            bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) $ decls
            purposeOnlyMissing = filter (not . hasPurpose) . filter (      hasMeaning) $ decls
            meaningOnlyMissing = filter (      hasPurpose) . filter (not . hasMeaning) $ decls
-           decls = allDecls fSpec  -- A restriction on only themes that the user wants the document for is not supported, 
+           decls = vrels fSpec  -- A restriction on only themes that the user wants the document for is not supported, 
                                    -- because it is possible that declarations from other themes are required in the
                                    -- generated document. 
            showDcl = math . showMath . EDcD

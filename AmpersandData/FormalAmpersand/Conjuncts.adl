@@ -8,7 +8,8 @@ RELATION rc_dnfClauses[Conjunct*DnfClause]
 RELATION conjuncts[Rule*Expression]
 RELATION expr2dnfClause[Expression*DnfClause] [UNI,TOT]
 RELATION allShifts[DnfClause*DnfClause]
-RELATION rrexp[Rule*Expression] [UNI,TOT]
+--RELATION rrexp[Rule*Expression] [UNI,TOT] HJO: Removed. Is the same as term[Rule*Expression]
+RELATION term[Rule*Expression][UNI,TOT] --is defined somewhere else too.
 RELATION conjNF[Expression*Expression] [UNI,TOT]
 RELATION exprIsc2list[Expression*Expression] [TOT]
 RELATION name[Rule*RuleID] [UNI,TOT]
@@ -19,7 +20,7 @@ MEANING "All conjuncts in a quad are derived by means of the relation ``conjunct
 RULE Conjuncts2 : rc_conjunct~;rc_dnfClauses = expr2dnfClause;allShifts
 MEANING "A conjunct in a quad stores all dnf-clauses that are derived from the expression in that conjunct."
 
-RULE defconjuncts : conjuncts = rrexp;conjNF;exprIsc2list
+RULE defconjuncts : conjuncts = term[Rule*Expression];conjNF;exprIsc2list
 MEANING "The conjuncts in a rule are defined as the top-level subexpressions in the conjunctive normal form of the expression related to that rule."
 
 RULE Conjuncts4 : qConjuncts~;qRule |- rc_rulename;name~

@@ -1,0 +1,15 @@
+$if(verbose)$<!-- URL.html -->
+<!-- Requires & statement: 
+    CONCEPT URL "a uniform resource locator as defined by RFCxxxx"
+    REPRESENT URL TYPE BIGALPHANUMERIC
+    VIEW URL : URL DEFAULT HTML TEMPLATE "View-URL.html" ENDVIEW
+-->
+$endif$<div class="input-group">
+	$if(crudU)$$if(exprIsUni)$<input ng-model="resource['$name$']" my-bluronenter type="text" placeholder="Value" class="form-control input-sm" ng-blur="saveItem(resource, '$name$', patchResource)">$else$<div ng-repeat="row in resource['$name$'] track by \$index">
+		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(resource, '$name$', \$index, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
+		<span class="wordwrap"><a ng-href="{{row}}" target="_blank">{{row}}</a></span>
+	</div>
+	<div ng-controller="addItemController">
+		<input ng-model="selected.value" my-bluronenter type="text" placeholder="Add value" class="form-control input-sm" ng-blur="addItem(resource, '$name$', selected, patchResource)">
+	</div>$endif$$else$$if(exprIsUni)$<div class="wordwrap">{{resource['$name$']}}</div>$else$<div ng-repeat="row in resource['$name$'] track by \$index" class="wordwrap"><a ng-href="{{row}}" target="_blank">{{row}}</a></div>$endif$$endif$
+</div>

@@ -1,15 +1,14 @@
 module Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
-import Prelude hiding (exp)
+import Prelude hiding (exp,putStrLn,putStr)
 import Data.List
 import Control.Monad
 import System.Exit
-import System.IO hiding (hPutStr,hGetContents)
-import Database.Design.Ampersand hiding (putStr, origin)
+import System.IO hiding (hPutStr,hGetContents,putStrLn,putStr)
+import Database.Design.Ampersand.FSpec
+import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Prototype.Installer
-import Database.Design.Ampersand.Prototype.PHP
-
+import Database.Design.Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
@@ -21,10 +20,15 @@ tempDbName = "ampersand_temporaryvalidationdb"
 
 validateRulesSQL :: FSpec -> IO Bool
 validateRulesSQL fSpec =
- do { when (any (not.isSignal.fst) (allViolations fSpec))
-        (do { putStrLn "The population would violate invariants. Could not generate your database."
+ do { let invViols = filter (not.isSignal.fst) (allViolations fSpec)
+    ; unless (null invViols)
+        (do { mapM_ putStrLn $
+               "The population would violate invariants. Could not generate your database." : 
+               ["  Rule `"++name rul++"`: "++show (length vs)++" violations."
+               | (rul,vs) <- invViols
+               ]
             ; exitWith $ ExitFailure 10
-                 })
+            })
     ; hSetBuffering stdout NoBuffering
 
     ; putStrLn "Initializing temporary database"
@@ -116,10 +120,11 @@ validateExp fSpec vExp@(exp, orig) =
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
-                                     createTempDbPHP tempDbName ++
-                                     createTablesPHP fSpec ++
-                                     populateTablesPHP fSpec
+ do { _ <- executePHPStr . showPHP $ php
     ; return ()
     }
- 
+   where 
+    php = sqlServerConnectPHP fSpec ++
+          createTempDbPHP tempDbName ++
+          createTablesPHP fSpec ++
+          populateTablesPHP fSpec

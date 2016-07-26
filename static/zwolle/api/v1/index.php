@@ -1,6 +1,10 @@
 <?php
 
-require_once (__DIR__ . '/../../fw/includes.php');
+use Ampersand\Config;
+use Ampersand\Log\Logger;
+use Ampersand\Log\Notifications;
+
+require_once (__DIR__ . '/../../src/bootstrap.php');
 
 // Code to add special http response codes that are not supported by Slim
 class NewResponse extends \Slim\Http\Response {
@@ -22,11 +26,12 @@ $app->response->headers->set('Content-Type', 'application/json');
 $app->error(function (Exception $e) use ($app) {
 	$app->response->setStatus($e->getCode());
 	try{
+        Logger::getLogger("API")->error($e->getMessage());
 	    $notifications = Notifications::getAll();
 	    print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
 	}catch(Exception $b){
-	    $notifications = array('logs' => array(array('type' => 'LOG', 'message' => "Could not return logs due to exception '{$b->getMessage()}'")));
-	    print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
+        Logger::getLogger("API")->error($b->getMessage());
+	    print json_encode(array('error' => $b->getCode(), 'msg' => $b->getMessage(), 'notifications' => array()));
 	}
 	
 });

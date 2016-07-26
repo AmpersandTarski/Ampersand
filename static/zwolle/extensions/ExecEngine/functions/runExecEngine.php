@@ -1,7 +1,11 @@
 <?php
+
+use Ampersand\Log\Logger;
+use Ampersand\Extension\ExecEngine\ExecEngine;
+
 function RerunExecEngine($logText = 'run ExecEngine again after completion'){	
 		
-	Notifications::addLog('Rerun: ' . $logText, 'ExecEngine');
+	Logger::getLogger('EXECENGINE')->debug("Rerun: {$logText}");
 	ExecEngine::$doRun = true;
 	
 	return true;

@@ -48,14 +48,13 @@ instance ShowADL ObjectDef where
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
                                [ showstr (name o)++
-                                  (if null (objstrs o) then "" else " {"++intercalate ", " [showstr (unwords ss) | ss<-objstrs o]++"}")++
                                   " : "++showADL (objctx o)++
                                   recur (ind++"      ") (objmsub o)
                                | o<-objs
                                ]++
            ind++"     ]"
         showClass Nothing = ""
-        showClass (Just cl) = "<" ++ cl ++ ">" -- TODO: parser cannot handle these class annotations yet
+        showClass (Just cl) = "<" ++ cl ++ ">" 
 instance ShowADL Cruds where
  showADL x = " "++f crudC 'C'++f crudR 'R'++f crudU 'U'++f crudD 'D'
    where
@@ -160,9 +159,6 @@ instance ShowADL P_RoleRule where
 instance ShowADL Interface where
  showADL ifc
   = "INTERFACE "++showstr(name ifc)
-          ++ maybe "" ((" CLASS "++) . showstr) (ifcClass ifc)
-          ++(if null (ifcParams ifc) then "" else "("++intercalate ", " [showADL r | r<-ifcParams ifc]++")")
-          ++(if null (ifcArgs ifc) then "" else "{"++intercalate ", " [showstr(unwords strs) | strs<-ifcArgs ifc]++"}")
           ++(if null (ifcRoles ifc) then "" else " FOR "++intercalate ", " (map name (ifcRoles ifc)))
           ++showADL (ifcObj ifc)
 
@@ -177,7 +173,7 @@ instance ShowADL IdentitySegment where
 
 instance ShowADL ViewDef where
  showADL vd
-  = "VIEW "++vdlbl vd
+  = "VIEW "++name vd
           ++ ": " ++name (vdcpt vd)
           ++ "(" ++intercalate ", " (map showADL $ vdats vd) ++ ")"
      --TODO: Make this output the more generic FancyViewDef 
@@ -369,7 +365,7 @@ instance ShowADL PAtomValue where
               
 instance ShowADL AAtomValue where
  showADL at = case at of
-              AAVString  _ str -> show str
+              AAVString{} -> show (aavstr at)
               AAVInteger _ i   -> show i
               AAVFloat   _ f   -> show f
               AAVBoolean _ b   -> show b

@@ -18,6 +18,12 @@
        }
 */
 
+use Ampersand\Log\Logger;
+use Ampersand\Database\Database;
+use Ampersand\Core\Relation;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Atom;
+
 /*
    Example of rule that automatically inserts pairs into a relation (analogous stuff holds for DelPair):
    ROLE ExecEngine MAINTAINS "New Customers"
@@ -28,17 +34,18 @@
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function InsPair(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)", 'ExecEngine');
-	try{	
-		$database = Database::singleton();
-		
+	Logger::getLogger('EXECENGINE')->info("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
+	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
 		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
 		
 		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
 		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-		if($srcAtom == '_NULL' or $tgtAtom == '_NULL') return 'InsPair ignored because src and/or tgt atom is _NULL';
+		if($srcAtom == '_NULL' or $tgtAtom == '_NULL'){
+            Logger::getLogger('EXECENGINE')->debug("InsPair ignored because src and/or tgt atom is _NULL");
+            return;
+        }
 		
 		// if srcAtomIdStr is specified as _NEW, a new atom of srcConcept is created
 		$srcConcept = Concept::getConcept($srcConceptName);
@@ -58,9 +65,9 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 			}
 		}
 		
-		return "Tuple ('{$srcAtom}', '{$tgtAtom}') inserted into '{$relation->__toString()}'";
+		Logger::getLogger('EXECENGINE')->debug("Tuple ('{$srcAtom}', '{$tgtAtom}') inserted into '{$relation->__toString()}'");
 	}catch(Exception $e){
-		Notifications::addError('InsPair: ' . $e->getMessage());
+		Logger::getUserLogger()->error('InsPair: ' . $e->getMessage());
 	}
 }
 
@@ -74,10 +81,18 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function DelPair(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)", 'ExecEngine');
+	Logger::getLogger('EXECENGINE')->info("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
 	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
 		$relation = Relation::getRelation($relationName, $srcConceptName, $tgtConceptName);
+		
+		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
+		
+		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
+		if($srcAtom == '_NULL' or $tgtAtom == '_NULL'){
+            Logger::getLogger('EXECENGINE')->debug("DelPair ignored because src and/or tgt atom is _NULL");
+            return;
+        }
 		
 		$srcAtoms = explode('_AND', $srcAtom);
 		$tgtAtoms = explode('_AND', $tgtAtom);
@@ -92,9 +107,9 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 			}
 		}
 		
-		return "Tuple ('{$srcAtom}', '{$tgtAtom}') deleted from '{$relation->__toString()}'";
+		Logger::getLogger('EXECENGINE')->debug("Tuple ('{$srcAtom}', '{$tgtAtom}') deleted from '{$relation->__toString()}'");
 	}catch(Exception $e){
-		Notifications::addError('DelPair: ' . $e->getMessage());
+		Logger::getUserLogger()->error('DelPair: ' . $e->getMessage());
 	}
 }
 
@@ -118,97 +133,68 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 
 */
 function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
-	try{
-		$database = Database::singleton();
-		
+	try{		
 		// We start with parsing the first one or two arguments
-		$ConceptC = func_get_arg(0);              // Name of concept for which atom is to be created
-		$c = Concept::getConcept($ConceptC);
-		$AtomC = $c->createNewAtomId();   // Default marker for atom-to-be-created.
+		$c = Concept::getConcept(func_get_arg(0)); // Concept for which atom is to be created
+		$atom = $c->createNewAtom(); // Default marker for atom-to-be-created.
 
-		Notifications::addLog("Newstruct for concept $ConceptC", 'ExecEngine');
+		Logger::getLogger('EXECENGINE')->info("Newstruct for concept '{$c}'");
 		
-		if (func_num_args() % 5 == 2){            // Check if name of new atom is explicitly specified
-			$AtomC = func_get_arg(1);              // If so, we'll be using this to create the new atom
-		}elseif(func_num_args() % 5 != 1){       // check for valid number of arguments
-			throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
-		}
+		// Check if name of new atom is explicitly specified
+		if (func_num_args() % 5 == 2) $atom = new Atom(func_get_arg(1), $c->name); // If so, we'll be using this to create the new atom
+		// Check for valid number of arguments
+		elseif(func_num_args() % 5 != 1) throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
 		
-		// Then, we create a new atom of type $ConceptC
-		$database->addAtomToConcept(new Atom($AtomC, $ConceptC));     // insert new atom in database
+		// Add atom to concept
+		$atom->addAtom();
 	
 		// Next, for every relation that follows in the argument list, we create a link
 		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
 			
 			$relation   = func_get_arg($i);
-			$srcConcept = func_get_arg($i+1);
-			$srcAtom    = func_get_arg($i+2);
-			$tgtConcept = func_get_arg($i+3);
-			$tgtAtom    = func_get_arg($i+4);
+			$srcConcept = Concept::getConcept(func_get_arg($i+1));
+			$srcAtomId    = func_get_arg($i+2);
+			$tgtConcept = Concept::getConcept(func_get_arg($i+3));
+			$tgtAtomId    = func_get_arg($i+4);
 			
-			if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
+			if($srcAtomId == "NULL" or $tgtAtomId == "NULL") throw new Exception("NewStruct: use of keyword NULL is deprecated, use '_NEW'", 500);
 			
-			// if either srcAtom or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
-			if($srcAtom == '_NULL' or $tgtAtom == '_NULL') {
-				Notifications::addLog("Skipping insPair $relation, because source and tgt are null", 'ExecEngine');
-				continue; 
-			}
+			// NewStruct requires that atom $srcAtomId or $tgtAtomId must be _NEW
+			// Note: when populating a [PROP] relation, both atoms can be new
+			if (!($srcAtomId == '_NEW' or $tgtAtomId == '_NEW')) throw new Exception("NewStruct: relation '{$relation}' requires that atom '{$srcAtomId}' or '{$tgtAtomId}' must be '_NEW'", 500);
 			
-			// populate relation r1, first checking for allowed syntax:		
-			if (!($srcAtom == '_NEW' or $tgtAtom == '_NEW')){ // Note: when populating a [PROP] relation, both atoms can be new
-				// NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW
-				throw new Exception("NewStruct: relation $relation requires that atom $srcAtom or $tgtAtom must be _NEW", 500);
-			}
+			// NewStruct requires that concept $srcConcept or $tgtConcept must be concept $c
+			if (!in_array($srcConcept, $c->getGeneralizationsIncl()) && !in_array($tgtConcept, $c->getGeneralizationsIncl())) throw new Exception("NewStruct: relation '{$relation}' requires that src or tgt concept must be '{$c}' (or any of its generalizations)", 500);
 		
-			if (!($srcConcept == $ConceptC or $tgtConcept == $ConceptC)){
-				// NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC
-				throw new Exception("NewStruct: relation $relation requires that concept $srcConcept or $tgtConcept must be $ConceptC", 500);
-			}
-		
-			if ($srcConcept == $ConceptC){
-				if ($srcAtom == '_NEW'){
-					$srcAtom = $AtomC;
-	/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
-				}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-					// NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)
-					throw new Exception("NewStruct: $srcAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
-				}
-			}
-		
-			if ($tgtConcept == $ConceptC){  
-				if ($tgtAtom == '_NEW'){  
-					$tgtAtom = $AtomC;
-	/* The following code prevents ASY (and other homogeneous) relations to be populated, and is therefore declared obsolete.
-				}else{ // While it strictly not necessary to err here, for most cases this helps to find errors in the ADL script
-					// NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)
-					throw new Exception("NewStruct: $tgtAtom must be _NEW when $ConceptC is the concept (in relation $relation)", 500); */
-				}
-			}
+			// Replace atom by the newstruct atom if _NEW is used
+			if(in_array($srcConcept, $c->getGeneralizationsIncl()) && $srcAtomId == '_NEW') $srcAtomId = $atom->id;
+			if(in_array($tgtConcept, $c->getGeneralizationsIncl()) && $tgtAtomId == '_NEW') $tgtAtomId = $atom->id;
 			
-			// Any logging is done by InsPair:
-			InsPair($relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom);
+			// Any logging is done by InsPair
+			InsPair($relation,$srcConcept->name,$srcAtomId,$tgtConcept->name,$tgtAtomId);
 		}
-		return "New structure '". $AtomC . "' created";
+		Logger::getLogger('EXECENGINE')->debug("Newstruct: atom '{$atom}' created");
 	
 	}catch(Exception $e){
-		Notifications::addError('NewStruct: ' . $e->getMessage());
+		Logger::getUserLogger()->error("NewStruct: {$e->getMessage()}");
 	}
 }
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
 function InsAtom($conceptName){
 	if(func_num_args() != 1) throw new Exception("Wrong number of arguments supplied for function InsAtom(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("InsAtom($conceptName)", 'ExecEngine');
+	Logger::getLogger('EXECENGINE')->info("InsAtom($conceptName)");
 	try{
 		$database = Database::singleton();
 		
 		$concept = Concept::getConcept($conceptName);
-		$database->addAtomToConcept($atom = $concept->createNewAtom()); // insert new atom in database
+        $atom = $concept->createNewAtom();
+		$atom->addAtom(); // insert new atom in database
 		
-		return "Atom '{$atom->__toString()}' created and added to database";
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' created and added to database");
 		
 	}catch(Exception $e){
-		Notifications::addError('InsAtom: ' . $e->getMessage());
+		Logger::getUserLogger()->error('InsAtom: ' . $e->getMessage());
 	}
 	
 }
@@ -221,16 +207,16 @@ function InsAtom($conceptName){
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
 function DelAtom($concept, $atomId){
 	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function DelAtom(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("DelAtom($concept,$atomId)", 'ExecEngine');
+	Logger::getLogger('EXECENGINE')->info("DelAtom($concept,$atomId)");
 	try{
 		$database = Database::singleton();
 		
 		$atom = new Atom($atomId, $concept);
 		$database->deleteAtom($atom); // delete atom + all relations with other atoms
-		return "Atom '{$atom->id}[{$atom->concept->name}]' deleted";
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' deleted");
 	
 	}catch(Exception $e){
-		Notifications::addError('DelAtom: ' . $e->getMessage());
+		Logger::getUserLogger()->error('DelAtom: ' . $e->getMessage());
 	}
 	
 }
@@ -243,16 +229,16 @@ function DelAtom($concept, $atomId){
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atom>")
 function SetConcept($conceptA, $conceptB, $atom){
 	if(func_num_args() != 3) throw new Exception("Wrong number of arguments supplied for function SetConcept(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("SetConcept($conceptA,$conceptB,$atom)", 'ExecEngine');
+	Logger::getLogger('EXECENGINE')->info("SetConcept($conceptA,$conceptB,$atom)");
 	try{
 		$database = Database::singleton();
 		
 		$atom = new Atom($atom, $conceptA);
 		$database->atomSetConcept($atom, $conceptB);
-		return "Atom '{$atom->id}[{$atom->concept->name}]' added as member to concept '$conceptB'";
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' added as member to concept '$conceptB'");
 	
 	}catch(Exception $e){
-		Notifications::addError('SetConcept: ' . $e->getMessage());
+		Logger::getUserLogger()->error('SetConcept: ' . $e->getMessage());
 	}
 }
 
@@ -264,16 +250,16 @@ function SetConcept($conceptA, $conceptB, $atom){
 // Use: VIOLATION (TXT "ClearConcept;<Concept>;<atom>")
 function ClearConcept($concept, $atom){
 	if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function ClearConcept(): ".func_num_args()." arguments", 500);
-	Notifications::addLog("ClearConcept($concept,$atom)", 'ExecEngine');
+	Logger::getLogger('EXECENGINE')->info("ClearConcept($concept,$atom)");
 	try{
 		$database = Database::singleton();
         
 		$atom = new Atom($atom, $concept);
 		$database->atomClearConcept($atom);
-		return "Atom '{$atom->id}[{$atom->concept->name}]' removed as member from concept '$concept'";
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' removed as member from concept '$concept'");
 
 	}catch(Exception $e){
-		Notifications::addError('ClearConcept: ' . $e->getMessage());
+		Logger::getUserLogger()->error('ClearConcept: ' . $e->getMessage());
 	}
 }
 ?>

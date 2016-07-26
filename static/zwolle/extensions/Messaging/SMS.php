@@ -1,9 +1,16 @@
 <?php
 
+namespace Ampersand\Extension\Messaging;
+
+use Ampersand\Hooks;
+use Ampersand\Config;
+use Ampersand\Log\Logger;
+use MessageBird;
+
 require_once (__DIR__ . '/lib/class.MessageBird.php');
 
 // Define hooks
-$hook = array( 'class' => 'SMSNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\SMSNotifications'
 			 , 'function' => 'pushNotificationCache'
 			 , 'filename' => 'SMS.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -11,7 +18,7 @@ $hook = array( 'class' => 'SMSNotifications'
 			 );
 Hooks::addHook('postDatabaseCommitTransaction', $hook);
 
-$hook = array( 'class' => 'SMSNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\SMSNotifications'
 			 , 'function' => 'clearNotificationCache'
 			 , 'filename' => 'SMS.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -23,14 +30,13 @@ class SMSNotifications {
 	private static $notifications = array();
 	
 	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('SMS[execEnginePushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('SMS[execEnginePushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 
 		if($userKeys == '_NULL') $userKeys = array(null);
 		else $userKeys = explode('_AND', $userKeys);
@@ -39,14 +45,13 @@ class SMSNotifications {
 	}
 	
 	public static function pushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('SMS[pushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('SMS[pushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		
 		foreach($userKeys as $userKey){
 			if(!is_null($userKey)) self::$notifications[] = array('userKey' => $userKey, 'message' => $message, 'title' => $title, 'url' => $url, 'urltitle' => $urltitle);
@@ -61,24 +66,23 @@ class SMSNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		Notifications::addLog('SMS[pushNotificationCache]','MESSAGING');
+		Logger::getLogger('MESSAGING')->debug('SMS[pushNotificationCache]');
 		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url'], $notification['urltitle']);
 	}
 
 	public static function clearNotificationCache(){
-		Notifications::addLog('SMS[clearNotificationCache]','MESSAGING');
+		Logger::getLogger('MESSAGING')->debug('SMS[clearNotificationCache]');
 		self::$notifications = array();
 	}
 
 	private static function pushNotification($SMSAddr,$message, $title=null, $url=null, $urltitle=null){
-			Notifications::addLog('UNTESTED !!! SMS[pushNotification'
+			Logger::getLogger('MESSAGING')->debug('UNTESTED !!! SMS[pushNotification'
 			                     .']; $SMSAddr=['.$SMSAddr
 			                     .']; $message=['.$message
 			                     .']; $title=['.$title
 			                     .']; $url=['.$url
 			                     .']; $urltitle=['.$urltitle
-			                     .']'
-			                     ,'MESSAGING');
+			                     .']');
 	
 	/* Config params for SendSMS function of ExecEngine (using MessageBird.com)
 	 * Set the sender, could be a number (16 numbers) or letters (11 characters)
@@ -91,7 +95,7 @@ class SMSNotifications {
 		$password = $config['password'];
 		$sender = $config['sender'];
 	
-		Notifications::addLog('Username = '.$username, 'MESSAGING');
+		Logger::getLogger('MESSAGING')->debug('Username = '.$username);
 		
 		// Set the Messagebird username and password, and create an instance of the MessageBird class
 		$sms = new MessageBird($username, $password);
@@ -116,19 +120,19 @@ class SMSNotifications {
 		// $sms->setDlrUrl('http://www.example.com/dlr_url.php');
 		
 		// If $test is TRUE, then the message is not actually sent or scheduled, and there will be no credits deducted.
-	       Notifications::addLog("SMS testing is set to TRUE (messages are not actually sent)", 'MESSAGING');
+	       Logger::getLogger('MESSAGING')->debug("SMS testing is set to TRUE (messages are not actually sent)");
 		   $sms->setTest(true);
 		
 		// Send the message to the destination(s)
 		$sms->sendSms($message);
 	
-		if ($sms->getResponseCode() =="01") 
-	    { Notifications::addSuccess('SMS message sent.');
+		if ($sms->getResponseCode() =="01") {
+		    Logger::getUserLogger()->notice("SMS message sent.");
 	    } else
-	    { Notifications::addError('SMS error: ' . $sms->getResponseMessage());
+	    { Logger::getUserLogger()->error('SMS error: ' . $sms->getResponseMessage());
 	    }
-		Notifications::addLog("SMS Response: " . $sms->getResponseMessage(), 'MESSAGING');
-		Notifications::addLog("SMS Balance: " . $sms->getCreditBalance(), 'MESSAGING');
+		Logger::getLogger('MESSAGING')->debug("SMS Response: " . $sms->getResponseMessage());
+		Logger::getLogger('MESSAGING')->debug("SMS Balance: " . $sms->getCreditBalance());
 	}
 }
 ?>

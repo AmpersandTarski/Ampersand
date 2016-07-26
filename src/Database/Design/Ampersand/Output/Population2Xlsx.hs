@@ -3,7 +3,6 @@ module Database.Design.Ampersand.Output.Population2Xlsx
   (fSpec2PopulationXlsx)
 where
 import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import qualified Data.Map as M
 import Codec.Xlsx
@@ -71,7 +70,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                                              Nothing -> Nothing
                                              Just aVal -> Just $
                                                 case aVal of
-                                                  AAVString _ str -> CellText $ T.pack str
+                                                  AAVString{} -> CellText $ T.pack (aavstr aVal)
                                                   AAVInteger _ int -> CellDouble (fromInteger int)
                                                   AAVFloat _ x -> CellDouble x
                                                   AAVBoolean _ b -> CellBool b

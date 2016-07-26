@@ -1,5 +1,15 @@
 <?php
 
+use Ampersand\Config;
+use Ampersand\Core\Concept;
+use Ampersand\Session;
+use Ampersand\Core\Atom;
+use Ampersand\Log\Notifications;
+use Ampersand\Interfacing\InterfaceObject;
+use function Ampersand\Helper\isAssoc;
+
+global $app;
+
 /**************************************************************************************************
  *
  * resource calls WITHOUT interfaces
@@ -44,7 +54,7 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 	if(!$session->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
 
 	// Get specific resource (i.e. atom)
-	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->id}[{$resource->concept->name}]' not found", 404);
+	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->__toString()}' not found", 404);
 	
 	$content = $resource->getAtom();
 
@@ -98,6 +108,10 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	
 	$atom = new Atom($resourceId, $resourceType);
 	$atom->topLevelIfcId = $topLevelIfcId;
+	
+	// Create atom if not exists and crudC is allowed
+	if(!$atom->atomExists() && InterfaceObject::getInterface($topLevelIfcId)->crudC) $atom->addAtom();
+	
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 	
 	// Perform patch(es)

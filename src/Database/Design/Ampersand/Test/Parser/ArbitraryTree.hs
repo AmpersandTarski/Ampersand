@@ -17,14 +17,14 @@ printable = suchThat arbitrary isValid
 
 -- Generates a simple string of ascii characters
 safeStr :: Gen String
-safeStr = listOf printable
+safeStr = listOf printable `suchThat` noEsc
 
 -- Generates a simple non-empty string of ascii characters
 safeStr1 :: Gen String
-safeStr1 = listOf1 printable
+safeStr1 = listOf1 printable `suchThat` noEsc
 
-maybeSafeStr :: Gen (Maybe String)
-maybeSafeStr = oneof [Just <$> safeStr, return Nothing]
+noEsc :: String -> Bool
+noEsc = all (/= '\\')
 
 -- Genrates a valid ADL identifier
 identifier :: Gen String
@@ -62,9 +62,8 @@ genObj = makeObj arbitrary genIfc (return Nothing)
 
 makeObj :: Gen a -> (Int -> Gen (P_SubIfc a)) -> Gen (Maybe String) -> Int -> Gen (P_ObjDef a)
 makeObj genPrim ifcGen genView n =
-        P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc <*> args
-              where args = listOf $ listOf1 identifier
-                    term = Prim <$> genPrim
+        P_Obj <$> lowerId  <*> arbitrary <*> term <*> arbitrary <*> genView <*> ifc
+              where term = Prim <$> genPrim
                     ifc  = if n == 0 then return Nothing
                            else Just <$> ifcGen (n`div`2)
 
@@ -263,20 +262,16 @@ instance Arbitrary PAtomValue where
        ]
      where stringConstraints :: String -> Bool
            stringConstraints str =
-             case str of
-              [] -> True
-              ('\\':_) -> False -- om van het geneuzel af te zijn.
-              ('\'':_) -> False -- This string would cause problems as a Singleton in an Expresson
-              ('\\':'\'':cs) -> stringConstraints cs
-              ('\\':'"':cs) -> stringConstraints cs
-              ('"':_) -> False -- This string would cause problems as a Singleton in an Expresson
-              ['\\']  -> False -- If the last character is an escape, the double quote ending the string would not be seen as such.
-              (_:cs)  -> stringConstraints cs
+             case readLitChar str of
+              [(c,cs)] -> if c `elem` ['\'', '"', '\\'] 
+                          then False
+                          else stringConstraints cs
+              _ -> True  -- end of string
+
 instance Arbitrary P_Interface where
-    arbitrary = P_Ifc <$> safeStr1 <*> maybeSafeStr
-                      <*> listOf relationRef <*> args <*> listOf arbitrary
+    arbitrary = P_Ifc <$> safeStr1
+                      <*> listOf arbitrary
                       <*> sized objTermPrim <*> arbitrary <*> safeStr
-                   where args = listOf $ listOf1 safeStr
 
 instance Arbitrary a => Arbitrary (P_ObjDef a) where
     arbitrary = sized genObj
@@ -354,4 +349,4 @@ instance Arbitrary PandocFormat where
     arbitrary = elements [HTML, ReST, LaTeX, Markdown]
 
 instance Arbitrary Prop where
-    arbitrary = elements [Uni, Inj, Sur, Tot, Sym, Asy, Trn, Rfx, Irf, Aut, Prop]
+    arbitrary = elements [minBound..]

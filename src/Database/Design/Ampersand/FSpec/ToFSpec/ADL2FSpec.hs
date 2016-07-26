@@ -1,11 +1,11 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec) where
-
 import Prelude
 import Data.Char
 import Data.List
 import Data.Maybe
 import Text.Pandoc
+import Data.Text (pack)
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
@@ -17,13 +17,12 @@ import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
 import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
 import Database.Design.Ampersand.FSpec.ShowADL
-import qualified Data.Set as Set
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
 makeFSpec :: Options -> A_Context -> FSpec
 makeFSpec opts context
- =      FSpec { fsName       = name context
+ =      FSpec { fsName       = pack (name context)
               , originalContext = context 
               , getOpts      = opts
               , fspos        = ctxpos context
@@ -69,20 +68,19 @@ makeFSpec opts context
                                                   concatMap ifcRoles (ctxifcs context )
                                                  )
                                    ) [0..] 
-              , fallRules = allrules
+              , fallRules    = allrules
               , vrules       = filter      isUserDefined  allrules
               , grules       = filter (not.isUserDefined) allrules
               , invariants   = filter (not.isSignal)      allrules
               , signals      = filter      isSignal       allrules
-              , vconjs       = allConjs
+              , allConjuncts       = allConjs
               , allConjsPerRule = fSpecAllConjsPerRule
               , allConjsPerDecl = fSpecAllConjsPerDecl
               , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
               , vEcas        = allVecas
-              , vrels        = calculatedDecls
               , allUsedDecls = relsUsedIn context
-              , allDecls     = fSpecAllDecls
+              , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
               , cptTType     = (\cpt -> representationOf contextinfo cpt)
               , fsisa        = nub . concatMap genericAndSpecifics . gens $ context
@@ -96,7 +94,7 @@ makeFSpec opts context
               , conceptDefs  = ctxcds context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
-              , crudInfo     = mkCrudInfo fSpecAllConcepts fSpecAllDecls fSpecAllInterfaces
+              , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
@@ -104,17 +102,16 @@ makeFSpec opts context
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context
-              , allSigns     = nub $ map sign fSpecAllDecls ++ map sign (expressionsIn context)
+              , allSigns     = nub $ map sign calculatedDecls ++ map sign (expressionsIn context)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
                                          ]
               , fcontextInfo = contextinfo
               , ftypologies   = typologies context
-              , rootConcept = rootConcept'
+              , typologyOf = typologyOf'
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
-              , editableConcepts = editablecpts 
               }
    where           
      fMaintains' :: Role -> [Rule]
@@ -122,24 +119,10 @@ makeFSpec opts context
                             | rule <- allrules
                             , role `elem` maintainersOf rule
                             ]
-     rootConcept' cpt = 
+     typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
-           [t] -> tyroot t
+           [t] -> t
            _   -> fatal 121 $ "concept "++name cpt++" should be in exactly one typology!"
-     editablecpts :: Interface -> [A_Concept]
-     editablecpts ifc = nub (cpts ++ concatMap (smallerConcepts (gens context)) cpts)
-        where
-          cpts = editables (ifcObj ifc)
-          editables :: ObjectDef -> [A_Concept]
-          editables obj = 
-             case objmsub obj of
-               Nothing       -> case objctx obj of
-                                  EDcD rel -> f target rel
-                                  EFlp (EDcD rel) -> f source rel
-                                  _ -> []
-               Just (InterfaceRef _ _ _) -> []
-               Just (Box _ _ objs)     -> foldr (uni) [] (map editables objs)
-          f sORt dcl = [sORt dcl | dcl `elem` ifcParams ifc]
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
@@ -150,22 +133,17 @@ makeFSpec opts context
           where cra = pairsinexpr (antecedent r)
                 crc = pairsinexpr (consequent r)
      conjunctViolations :: Conjunct -> [AAtomPair]
-     conjunctViolations conj =
-       let vConts    = Set.fromList $ pairsinexpr (EDcV (sign (rc_conjunct conj)))
-           conjConts = Set.fromList $ pairsinexpr (rc_conjunct conj)
-       in  Set.toList $ vConts `Set.difference` conjConts 
-
+     conjunctViolations conj = pairsinexpr (notCpl (rc_conjunct conj))
      contextinfo = ctxInfo context
 
      fSpecAllConcepts = concs context
-     fSpecAllDecls = relsDefdIn context
      fSpecAllInterfaces :: [Interface]
      fSpecAllInterfaces = map enrichIfc (ctxifcs context)
        where
           enrichIfc :: Interface -> Interface
           enrichIfc ifc
-           = ifc{ ifcEcas = fst . assembleECAs opts context $ ifcParams ifc
-                , ifcControls = makeIfcControls (ifcParams ifc) allConjs
+           = ifc{ ifcEcas = fst . assembleECAs opts context $ []
+                , ifcControls = makeIfcControls [] allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
      fSpecRoleInterfaces role = filter (forThisRole role) fSpecAllInterfaces
@@ -221,13 +199,13 @@ makeFSpec opts context
          Identity     -> False
      allActivities :: [Activity]
      allActivities = map makeActivity (filter isSignal allrules)
-     allVecas = {-preEmpt opts . -} fst (assembleECAs opts context fSpecAllDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
+     allVecas = {-preEmpt opts . -} fst (assembleECAs opts context calculatedDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
      -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
      calcProps :: Declaration -> Declaration
      calcProps d = d{decprps_calc = Just calculated}
          where calculated = decprps d `uni` [Tot | d `elem` totals]
                                       `uni` [Sur | d `elem` surjectives]
-     calculatedDecls = map calcProps fSpecAllDecls
+     calculatedDecls = map calcProps (relsDefdIn context)
   -- determine relations that are total (as many as possible, but not necessarily all)
      totals      = [ d |       EDcD d  <- totsurs ]
      surjectives = [ d | EFlp (EDcD d) <- totsurs ]
@@ -245,10 +223,10 @@ makeFSpec opts context
   -- Lookup view by id in fSpec.
      lookupView' :: String -> ViewDef
      lookupView'  viewId =
-       case filter (\v -> vdlbl v == viewId) $ viewDefs context of
+       case filter (\v -> name v == viewId) $ viewDefs context of
          []   -> fatal 174 $ "Undeclared view " ++ show viewId ++ "." -- Will be caught by static analysis
          [vd] -> vd
-         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map vdlbl vds) -- Will be caught by static analysis
+         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map name vds) -- Will be caught by static analysis
      
    -- get all views for a specific concept and all larger concepts.
      getAllViewsForConcept' :: A_Concept -> [ViewDef]
@@ -285,7 +263,7 @@ makeFSpec opts context
                 genPlugs             -- all generated plugs
      genPlugs = [InternalPlug (rename p (qlfname (name p)))
                 | p <- uniqueNames (map name definedplugs) -- the names of definedplugs will not be changed, assuming they are all unique
-                                   (makeGeneratedSqlPlugs context calcProps)
+                                   (makeGeneratedSqlPlugs opts context calcProps)
                 ]
      qlfname x = if null (namespace opts) then x else "ns"++namespace opts++x
 
@@ -337,12 +315,12 @@ makeFSpec opts context
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
 --          to ensure insertability of entities (signal declarations are excluded)
-     cRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isTot d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isTot d) && isSur d, not$decplug d]
+     cRels = [     EDcD d  | d@Sgn{}<-calculatedDecls, isTot d, not$decplug d]++
+             [flp (EDcD d) | d@Sgn{}<-calculatedDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
 --          to ensure deletability of entities (signal declarations are excluded)
-     dRels = [     EDcD d  | d@Sgn{}<-fSpecAllDecls, isInj d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-fSpecAllDecls, not (isInj d) && isUni d, not$decplug d]
+     dRels = [     EDcD d  | d@Sgn{}<-calculatedDecls, isInj d, not$decplug d]++
+             [flp (EDcD d) | d@Sgn{}<-calculatedDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
@@ -369,7 +347,7 @@ makeFSpec opts context
                      , objcrud = fatal 351 "No default crud in generated interface"
                      , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
-                     , objstrs = [] }
+                     }
                | cl<-eqCl head es, (t:_)<-take 1 cl] --
             -- es is a list of expression lists, each with at least one expression in it. They all have the same source concept (i.e. source.head)
             -- Each expression list represents a path from the origin of a box to the attribute.
@@ -380,16 +358,13 @@ makeFSpec opts context
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
-        [Ifc { ifcClass    = Nothing
-             , ifcParams   = params
-             , ifcArgs     = []
-             , ifcObj      = Obj { objnm   = name c
+        [Ifc { ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
                                  , objcrud = fatal 371 "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
-                                 , objstrs = [] }
+                                 }
              , ifcEcas     = fst (assembleECAs opts context params)
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
@@ -409,16 +384,13 @@ makeFSpec opts context
      --end otherwise: default theme
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
-      = [Ifc { ifcClass    = ifcClass ifcc
-             , ifcParams   = ifcParams ifcc
-             , ifcArgs     = ifcArgs   ifcc
-             , ifcObj      = Obj { objnm   = nm
+      = [Ifc { ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
                                  , objcrud = fatal 400 "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
-                                 , objstrs = [] }
+                                 }
              , ifcEcas     = ifcEcas     ifcc
              , ifcControls = ifcControls ifcc
              , ifcPos      = ifcPos      ifcc
@@ -440,7 +412,6 @@ makeFSpec opts context
                         , objcrud  = fatal 419 "No default crud in generated interface."
                         , objmView = Nothing
                         , objmsub  = Nothing
-                        , objstrs  = []
                         }
         ]
      ----------------------
@@ -454,30 +425,32 @@ makeFSpec opts context
         while maintaining all invariants.
         -}
      makeActivity :: Rule -> Activity
-     makeActivity rul
-         = let s = Act{ actRule   = rul
-                      , actTrig   = decls
-                      , actAffect = nub [ d' | (d,_,d')<-clos2 affectPairs, d `elem` decls]
-                      , actQuads  = invQs
-                      , actEcas   = [eca | eca<-allVecas, eDcl (ecaTriggr eca) `elem` decls]
-                      , actPurp   = [Expl { explPos = OriginUnknown
-                                          , explObj = ExplRule (name rul)
-                                          , explMarkup = A_Markup { amLang   = Dutch
-                                                                  , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
-                                                                  }
-                                          , explUserdefd = False
-                                          , explRefIds = ["Regel "++name rul]
-                                          }
-                                    ,Expl { explPos = OriginUnknown
-                                          , explObj = ExplRule (name rul)
-                                          , explMarkup = A_Markup { amLang   = English
-                                                                  , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
-                                                                  }
-                                          , explUserdefd = False
-                                          , explRefIds = ["Regel "++name rul]
-                                          }
+     makeActivity rul 
+         = -- Trace added to demonstrate that this function takes VERY long.
+           (\x -> trace ("trace: makeActivity for rule `"++name rul++"`") x) 
+           Act{ actRule   = rul
+              , actTrig   = decls
+              , actAffect = nub [ d' | (d,_,d')<-clos2 affectPairs, d `elem` decls]
+              , actQuads  = invQs
+              , actEcas   = [eca | eca<-allVecas, eDcl (ecaTriggr eca) `elem` decls]
+              , actPurp   = [Expl { explPos = OriginUnknown
+                                  , explObj = ExplRule (name rul)
+                                  , explMarkup = A_Markup { amLang   = Dutch
+                                                          , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
+                                                          }
+                                  , explUserdefd = False
+                                  , explRefIds = ["Regel "++name rul]
+                                  }
+                            ,Expl { explPos = OriginUnknown
+                                  , explObj = ExplRule (name rul)
+                                  , explMarkup = A_Markup { amLang   = English
+                                                          , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
+                                                          }
+                                  , explUserdefd = False
+                                  , explRefIds = ["Regel "++name rul]
+                                  }
                                     ]
-                      } in s
+              } 
          where
         -- relations that may be affected by an edit action within the transaction
              decls        = relsUsedIn rul
@@ -493,7 +466,7 @@ makeFSpec opts context
         ----------------------------------------------------
         --  Warshall's transitive closure algorithm in Haskell, adapted to carry along the intermediate steps:
         ----------------------------------------------------
-             clos2 :: (Eq a,Eq b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
+             clos2 :: (Ord a,Ord b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
              clos2 xs
                = foldl f xs (nub (map fst3 xs) `isc` nub (map thd3 xs))
                  where
@@ -547,7 +520,7 @@ tblcontents ci ps plug
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
        case attributes plug of 
          []   -> fatal 593 "no attributes in plug."
-         f:fs -> transpose
+         f:fs -> (nub.transpose)
                  ( map Just cAtoms
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
@@ -561,7 +534,12 @@ tblcontents ci ps plug
                     = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
-                       _ -> fatal 428 ("(this could happen when using --dev flag, when there are violations)\n"++
+                       ps' -> trace ("Plug: "++name plug) $
+                             trace ("Attibutes: "++(show . map name)(f:fs)) $
+                             trace ("Atoms: "++(intercalate "\n       " . map show) cAtoms) $
+                             trace ("Pairs: "++(intercalate "\n       " . map showADL) pairs) $
+                             trace ("ps'  : "++(intercalate "\n       " . map showADL) ps') $
+                             fatal 428 ("(this could happen when using --dev flag, when there are violations, or if you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)\n"++
                                "Looking for: '"++showValADL a++"'.\n"++
                                "Multiple values in one attribute. \n"
                                )

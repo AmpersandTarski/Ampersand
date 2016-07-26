@@ -47,9 +47,10 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
         crudCncpts = allConcs \\ nonCrudConcpts
         
         transSurjClosureMap :: Map A_Concept [A_Concept]
-        transSurjClosureMap = transClosureMap . Map.fromListWith union $
+        transSurjClosureMap = transClosureMap' . Map.fromListWith union $
           [ (target d, [source d]) | d <- decls, isSur d ] ++ -- TODO: no isUni?
           [ (source d, [target d]) | d <- decls, isTot d ]    -- TODO: no isInj?
+          -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
         
         
         -- crud concept together with its target concept in the surjective/total transitive closure of declarations
@@ -87,19 +88,22 @@ getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterf
   where editableTarget expr = 
           case getExpressionRelation expr of
             Nothing                                                              -> []
-            Just (declSrc, decl, declTgt, isFlipped) | decl `elem` ifcParams ifc -> [(decl, if isFlipped then declSrc else declTgt)]
+            Just (declSrc, decl, declTgt, isFlipped) | decl `elem` [] -> [(decl, if isFlipped then declSrc else declTgt)]
                                                      | otherwise                 -> []
 
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
   where getExprs Obj{objctx=expr, objmsub=subObj} = 
-          expr : case subObj of Nothing                -> []
-                                Just (InterfaceRef _ nm _) ->
-                                  case filter (\rIfc -> name rIfc == nm) $ allIfcs of -- Follow interface ref
-                                    []      -> fatal 65 $ "Referenced interface " ++ nm ++ " missing"
-                                    (_:_:_) -> fatal 66 $ "Multiple declarations of referenced interface " ++ nm
+          expr : case subObj of 
+                   Nothing                -> []
+                   Just si -> case si of
+                               InterfaceRef{siIsLink = True} -> []
+                               InterfaceRef{siIsLink = False} ->
+                                  case filter (\rIfc -> name rIfc == siIfcId si) $ allIfcs of -- Follow interface ref
+                                    []      -> fatal 65 $ "Referenced interface " ++ siIfcId si ++ " missing"
+                                    (_:_:_) -> fatal 66 $ "Multiple declarations of referenced interface " ++ siIfcId si
                                     [i]     -> getAllInterfaceExprs allIfcs i
-                                Just (Box _ _ objs)    -> concatMap getExprs objs
+                               Box{} -> concatMap getExprs (siObjs si)
 
 getCrudObjsPerConcept :: [(Interface, [(A_Concept,Bool,Bool,Bool,Bool)])] ->
                          [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]

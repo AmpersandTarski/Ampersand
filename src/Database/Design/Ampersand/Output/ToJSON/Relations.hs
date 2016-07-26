@@ -6,7 +6,6 @@ where
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 import Database.Design.Ampersand.FSpec.FSpecAux
-import Database.Design.Ampersand
 import Data.Maybe
 
 data Relations = Relations [Relation]deriving (Generic, Show)
@@ -19,6 +18,7 @@ data Relation = Relation
   , relJSONtot         :: Bool
   , relJSONinj         :: Bool
   , relJSONsur         :: Bool
+  , relJSONprop        :: Bool
   , relJSONaffectedConjuncts :: [String]
   , relJSONmysqlTable  :: RelTableInfo
   } deriving (Generic, Show)
@@ -31,7 +31,6 @@ data RelTableInfo = RelTableInfo -- Contains info about where the relation is im
 data TableCol = TableCol
   { tcJSONname     :: String
   , tcJSONnull     :: Bool
-  , tcJSONdbNull   :: Bool
   , tcJSONunique   :: Bool
   } deriving (Generic, Show)
 instance ToJSON Relations where
@@ -43,7 +42,7 @@ instance ToJSON RelTableInfo where
 instance ToJSON TableCol where
   toJSON = amp2Jason
 instance JSON FSpec Relations where
- fromAmpersand fSpec _ = Relations (map (fromAmpersand fSpec) (allDecls fSpec))
+ fromAmpersand fSpec _ = Relations (map (fromAmpersand fSpec) (vrels fSpec))
 instance JSON Declaration Relation where
  fromAmpersand fSpec dcl = Relation 
          { relJSONname       = name dcl
@@ -54,6 +53,7 @@ instance JSON Declaration Relation where
          , relJSONtot      = isTot dcl
          , relJSONinj      = isInj dcl
          , relJSONsur      = isSur dcl
+         , relJSONprop     = isProp dcl
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
          , relJSONmysqlTable = fromAmpersand fSpec dcl
          }
@@ -74,8 +74,7 @@ instance JSON Declaration RelTableInfo where
 instance JSON SqlAttribute TableCol where
  fromAmpersand _ att = TableCol
   { tcJSONname   = attName att
-  , tcJSONnull   = attNull att
-  , tcJSONdbNull = attDBNull att
+  , tcJSONnull   = attDBNull att
   , tcJSONunique = attUniq att
   }
 

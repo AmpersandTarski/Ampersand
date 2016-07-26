@@ -1,47 +1,109 @@
 CONTEXT "AST Interface" IN ENGLISH
 
-INTERFACE Ampersand FOR Ampersand : I[SESSION];'_SESSION'
-TABS[ Context : V[SESSION*Context]
-    COLS ["name" : name[Context*ContextIdentifier]
-         , patterns : usedPatterns
-         ]
-    , "Patterns" : V[SESSION*Pattern]
-    COLS [ Pattern : name[Pattern*PatternIdentifier]
-         , Purpose : purpose
-         , Rules : rules
-         , Relations : declarations
-         ]
-    , "Specializations" : V[SESSION*Gen]
-    COLS [ Generic  : gengen
-         , Specific : genspc
-         ]
-    , "Concepts" : V[SESSION*PlainConcept]
-    COLS [ Id: I
-       --  , Definition : cptdf
-       --  , Purpose : cptpurpose
-       --  , "Technical Type" : cpttp
-         ]
-    , "Relations" : V[SESSION*Relation]
-    COLS [ name : name
-         , signature : sign
-         , properties : decprps;declaredthrough
-         , pragmaL  : decprL
-         , pragmaM  : decprM
-         , pragmaR  : decprR
-         , Meaning  : decmean
-         , population : in~
-         ]
-    , "Rules" : V[SESSION*Rule]
-    COLS [ name : name
-         , signature : sign
-         , Expression : rrexp[Rule*Expression]
-         , Meaning : rrmean
-         , Purpose : rrpurpose
-         , Property : declaredthrough
-         ]
---    , "All plugs" : V[ONE*Context];
+INTERFACE Ampersand FOR Ampersand : '_SESSION';V[SESSION*Context]
+BOX <SHCOLS>
+    [ "Context" : I
+    , "name" : name[Context*ContextIdentifier]
+    ]
+INTERFACE "Context" FOR Ampersand : I[Context] TABS
+  [ "About" : I BOX
+    [ "name"  : name[Context*ContextIdentifier]
+    , "versionInfo" : versionInfo
+    , "dbName" : dbName
+    , "valid~" : valid[Rule*Context]~
+    ]
+  , "Patterns" : context[Pattern*Context]~ BOX 
+    [ "Pattern" : I INTERFACE Pattern]
+  , "Gens" : context[Concept*Context]~ ;
+             (I[Concept]                                  /\
+                gengen[Gen*Concept]~;gengen[Gen*Concept]  /\
+              -(genspc[Gen*Concept]~;genspc[Gen*Concept])
+             )  INTERFACE GenTree 
+  , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
+  , "Concepts defined outside patterns" : context[Concept*Context]~
+  , "Relations" : context[Relation*Context]~  LINKTO INTERFACE "Relation"
+  , "Roles" : allRoles[Context*Role]
+  , "allConjuncts" : allConjuncts[Context*Conjunct]
+  , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
+  ]
+INTERFACE GenTree FOR Ampersand : I[Concept]
+  BOX <ROWSNL>
+    [ concept : I[Concept] LINKTO INTERFACE Concept
+    , "is a"  : genspc[Gen*Concept]~;gengen[Gen*Concept] LINKTO INTERFACE GenTree
+    , "Kinds" : gengen[Gen*Concept]~;genspc[Gen*Concept] LINKTO INTERFACE GenTree
+    ] 
+INTERFACE Pattern FOR Ampersand : I[Pattern]
+BOX [ Pattern : name[Pattern*PatternIdentifier]
+    , "patterns~" : context[Pattern*Context]
+    , "Relations" : relsDefdIn[Pattern*Relation]  LINKTO INTERFACE "Relation"
+    , "rules"  : rules[Pattern*Rule]
+    , "purpose" : purpose[Pattern*Purpose]
     ]
 
+INTERFACE "Rule" FOR Ampersand : I[Rule]
+BOX [ "name" : name[Rule*RuleID]
+    , "valid" : valid[Rule*Context]
+    , "allRules~" : allRules[Context*Rule]~
+    , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
+    , "rules~"  : rules[Pattern*Rule]~
+    , "maintains~ (Role)" : maintains[Role*Rule]~
+    , "tgtConcept" : tgtConcept[Rule*Concept]
+    , "srcConcept" : srcConcept[Rule*Concept]
+    , "formalExpression" : formalExpression[Rule*Expression]
+    , "sign" : sign[Rule*Signature]
+    , "maintains~ (Plug)" : maintains[Plug*Rule]~
+    , "origin" : origin[Rule*Origin]
+    , "rrviols" : rrviols
+    , "pairView" : pairView
+    , "message" : message
+    , "conjunctIds" : conjunctIds
+    , "rrmean" : rrmean[Rule * Meaning]
+    , "rrpurpose" : rrpurpose[Rule * Purpose]
+    ]
+    
+INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
+    [ "ID" : I
+    , "originatesFrom" : originatesFrom[Conjunct*Rule]
+    , "conjunct"       : conjunct[Conjunct*Expression]
+    ]
+INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
+    [ concept : I
+    , name    : name[Concept*Identifier]
+    , ttype   : ttype
+    , "source~" : source[Relation*Concept]~ LINKTO INTERFACE Relation
+    , "target~" : target[Relation*Concept]~ LINKTO INTERFACE Relation
+    , "gengen~" : gengen[Gen*Concept]~
+    , "genspc~" : genspc[Gen*Concept]~
+    , "rootConcept~" : rootConcept~
+    , "src of expression~" : src[Expression*Concept]~
+    , "tgt of expression~" : tgt[Expression*Concept]~
+    , "src of sign~" : src[Signature*Concept]~
+    , "tgt of sign~" : tgt[Signature*Concept]~
+    , "concept~" : concept~
+    , "conceptAttribute" : conceptAttribute
+    , "in" : in[Concept*Plug]
+    ]
+
+INTERFACE Expression FOR Ampersand : I[Expression]
+BOX [ expression: I[Expression]
+    , first : first[BinaryTerm*Expression] LINKTO INTERFACE Expression
+    , operator : operator
+    , second : second[BinaryTerm*Expression] LINKTO INTERFACE Expression
+    , arg : arg[UnaryTerm*Expression]
+    , "formalExpression~" : formalExpression[Rule*Expression]~
+    , bind  : bind[BindedRelation*Relation] LINKTO INTERFACE Relation
+    , singleton : singleton[Singleton*AtomValue] 
+    , "user defined src" : userSrc["V"*Concept]
+    , "user defined trg" : userTrg["V"*Concept]
+    , "user defined cpt" : userCpt["I"*Concept]
+    ]
+INTERFACE Signature FOR Ampersand : I[Signature]
+BOX [ Signature: I[Signature]
+    , src : src[Signature*Concept] LINKTO INTERFACE "Concept"
+    , tgt : tgt[Signature*Concept] LINKTO INTERFACE "Concept"
+    , "sign~ (Relation)" : sign[Relation*Signature]~ LINKTO INTERFACE "Relation"
+    , "sign~ (Rule)" : sign[Rule*Signature]~ LINKTO INTERFACE "Rule"
+    ] 
 INTERFACE Atoms FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Atom" : I
@@ -50,39 +112,85 @@ TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Pair" : I
          , l : l
          , r : r
-         , in : in
+         , in : in[Pair*Relation]
          ]
     , Relations : V[SESSION*Relation]
     COLS [ "Relation" : I 
-         , source : source
-         , target : target
+         , source : source[Relation*Concept]
+         , target : target[Relation*Concept]
          ]
     , Concepts : V[SESSION*Concept]
     COLS [ "Concept" : I 
-         , name : name -- [Concept*Identifier]
+         , name : name[Concept*Identifier]
          ]
     ]
     
 
-
-INTERFACE Pattern FOR Ampersand : I[Pattern]
-BOX [ Pattern : name[Pattern*PatternIdentifier]
-    ]
+INTERFACE PropertyRule FOR Ampersand : I[PropertyRule]
+BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
+	, "decprps~" : decprps[Relation*PropertyRule]~  LINKTO INTERFACE "Relation"
+	]
+	 
 
 
 INTERFACE Gen FOR Ampersand : I[Gen]
-BOX [ gengen : gengen
-    , genspc : genspc
+BOX [ "gens~" : gens[Context*Gen]~
+    , "gengen" : gengen[Gen*Concept]
+    , "genspc" : genspc[Gen*Concept]
     ]
 
 INTERFACE Relation FOR Ampersand : I[Relation]
-BOX [ name    : name
-    , sign    : sign
-    , decprL  : decprL
-    , decprM  : decprM
-    , decprR  : decprR
-    , meaning : decmean
-    , purpose : decpurpose
-    , population: in~
+BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
+	, "affectedSigConjunctIds" : affectedSigConjunctIds[Relation*Conjunct]
+	, "context" : context[Relation*Context]
+	, "decmean" : decmean[Relation*Meaning]
+	, "decprL" : decprL[Relation*String]
+	, "decprM" : decprM[Relation*String]
+	, "decprR" : decprR[Relation*String]
+	, "decprps" : decprps[Relation*PropertyRule]
+	, "decpurpose" : decpurpose[Relation*Purpose]
+	, "name" : name[Relation*Name]
+	, "prop" : prop[Relation*Property]
+	, "sign" : sign[Relation*Signature]
+	, "source" : source[Relation*Concept]
+	, "srcAtt" : srcAtt[Relation*SqlAttribute]
+	, "target" : target[Relation*Concept]
+	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
+	, "bind~" : bind[BindedRelation*Relation]~
+	, "declared in pattern" : relsDefdIn[Pattern*Relation]~
+	, "declared in context (outside a pattern)" : context[Relation*Context]
+	, "in~" : in[Pair*Relation]~
+	      BOX <SHCOLS>
+	        [ l : l
+	        , r : r
+	        ]
+	, "valid in (context)" : valid[Relation*Context]
+	, "relsInPlug~" : relsInPlug[Plug*Relation]~
+    ]
+
+INTERFACE TblSQL FOR Ampersand : I[TblSQL]
+BOX [ "rootConcept" : rootConcept[TblSQL*Concept]
+    , "key" : key[TblSQL*SqlAttribute]
+    , "reprType" : reprType[TblSQL*TType]
+    ]       
+INTERFACE SqlAttribute FOR Ampersand : I[SqlAttribute]
+BOX [ "table" : table
+    , "key~" : key~
+    , "conceptAttribute~" : conceptAttribute~
+    , "concept" : concept
+    , "tgtAtt~" : tgtAtt~
+    , "srcAtt~" : srcAtt~
+    ]
+
+INTERFACE Role FOR Ampersand : I[Role]
+BOX [ "name" : name[Role*RoleName]
+    , "interfaces" : interfaces[Role*Interface] 
+    ]
+INTERFACE Interface FOR Ampersand : I[Interface]
+BOX [ "interfaces~"  : interfaces[Role*Interface]~
     ]
 ENDCONTEXT
+
+
+
+

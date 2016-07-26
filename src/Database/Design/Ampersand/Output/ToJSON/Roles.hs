@@ -4,11 +4,9 @@
 module Database.Design.Ampersand.Output.ToJSON.Roles 
     (Roles)
 where
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Prototype.ProtoUtil
 
+import Database.Design.Ampersand.Output.ToJSON.JSONutils
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson

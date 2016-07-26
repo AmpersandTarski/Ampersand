@@ -62,6 +62,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     	if(typeof response.data === 'object'){
     		var message = response.data.msg || response.statusText; // if empty response message, take statusText
     		$rootScope.addError(message, response.status, true);
+    		
+    		if(response.data.notifications !== undefined) $rootScope.updateNotifications(response.data.notifications); 
     	}else{
     		var message = response.status + ' ' + response.statusText;
     		var details = response.data; // html content is excepted
@@ -144,8 +146,9 @@ AmpersandApp.directive('myShowonhoverBox', function (){
 	
 	return {
 		  restrict		: 'E'
-		, scope 		: {ifcs : '=', resource : '=', label : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+		, scope 		: {ifcs : '=', resource : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
 		, templateUrl	: 'app/views/partials/my_nav_to_interfaces.html'
+		, transclude	: true
 	};
 }).directive('myNavToOtherInterfaces', function(){
 	

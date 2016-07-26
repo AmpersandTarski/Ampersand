@@ -50,7 +50,7 @@ instance ConceptStructure a => ConceptStructure [a] where
   expressionsIn = foldr ((uni) . expressionsIn) []
 
 instance ConceptStructure A_Context where
-  concs ctx = foldr uni [ONE, PlainConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
+  concs ctx = foldr uni [ONE, makeConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
               [ (concs.ctxpats) ctx
               , (concs.ctxrs) ctx
               , (concs.ctxds) ctx
@@ -106,9 +106,7 @@ instance ConceptStructure A_Concept where
   expressionsIn _ = []
 
 instance ConceptStructure ConceptDef where
-  concs        cd = [PlainConcept { cptnm = name cd
-                                  }
-                    ]
+  concs        cd = [makeConcept (name cd)]
   expressionsIn _ = []
 
 instance ConceptStructure Signature where
@@ -124,10 +122,12 @@ instance ConceptStructure ObjectDef where
 
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
-  concs (Box _ _ objs)         = concs objs
-  concs InterfaceRef{}         = []
-  expressionsIn (Box _ _ objs) = expressionsIn objs
-  expressionsIn InterfaceRef{} = []
+  concs si = case si of
+              Box{} -> concs (siObjs si)
+              InterfaceRef{} -> []
+  expressionsIn si = case si of
+              Box{} -> expressionsIn (siObjs si)
+              InterfaceRef{} -> []
 
 instance ConceptStructure Pattern where
   concs pat = foldr uni []
@@ -148,7 +148,6 @@ instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
   expressionsIn ifc = foldr (uni) []
                      [ (expressionsIn.ifcObj) ifc
-                     , map EDcD $ ifcParams ifc -- Return param declarations as expressions
                      ]
 
 instance ConceptStructure Declaration where

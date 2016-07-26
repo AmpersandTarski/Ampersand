@@ -4,11 +4,11 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 	$scope.$sessionStorage = $sessionStorage;
 	
 	// Initialize notifications container
-	$rootScope.notifications =  { 'logs' 		: []
-								, 'violations' 	: []
+	$rootScope.notifications =  { 'signals' 	: []
 								, 'invariants' 	: []
 								, 'infos' 		: []
 								, 'successes' 	: []
+								, 'warnings'	: []
 								, 'errors' 		: []
 								};
 	
@@ -17,13 +17,13 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		if(notifications === undefined) notifications = {};
 		
 		// Overwrite
-		$rootScope.notifications.logs = notifications.logs;
-		$rootScope.notifications.violations = notifications.violations;
+		$rootScope.notifications.signals = notifications.signals;
 		$rootScope.notifications.invariants = notifications.invariants;
 		$rootScope.notifications.infos = notifications.infos;
 		
 		// Merge
 		$rootScope.notifications.successes = $rootScope.notifications.successes.concat(notifications.successes);
+		$rootScope.notifications.warnings = $rootScope.notifications.warnings.concat(notifications.warnings);
 		$rootScope.notifications.errors = $rootScope.notifications.errors.concat(notifications.errors);
 		
 		if($scope.$storage.notificationPrefs.switchAutoHideSuccesses){
@@ -31,10 +31,6 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		    	$rootScope.notifications.successes = [];
 		    }, 3000);
 		}
-		
-		angular.forEach(notifications.logs, function(log) {
-			if($scope.$storage.logWindowPrefs.showLogTypes[log.type] == undefined) $scope.$storage.logWindowPrefs.showLogTypes[log.type] = true;
-		});
 	}
 	
 	$rootScope.addError = function(message, code, persistent, details){
@@ -56,6 +52,18 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		if(!alreadyExists) $rootScope.notifications.errors.push( {'message' : message, 'code' : code, 'count' : 1, 'persistent' : persistent, 'details' : details} );
 	}
 	
+	$rootScope.addWarning = function(message){
+		alreadyExists = false;
+		arr = $rootScope.notifications.warnings;
+		for (var i = 0; i < arr.length; i++) {
+			if (arr[i].message == message) {
+				arr[i].count += 1;
+				alreadyExists = true;
+			}
+		}
+		if(!alreadyExists) $rootScope.notifications.warnings.push( {'message' : message, 'count' : 1} );
+	}
+	
 	$rootScope.addInfo = function(message){
 		alreadyExists = false;
 		arr = $rootScope.notifications.infos;
@@ -75,7 +83,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 		});
 	}
 	
-	// Hide success-, error-, info- and invariant violation messages (not process rule violations) upon route change
+	// Hide success-, error-, warnings-, info- and invariant violation messages (not signals) upon route change
 	$scope.$on("$routeChangeSuccess", function(){
 		$rootScope.notifications.successes = [];
 		$rootScope.notifications.errors = $rootScope.notifications.errors.filter(function (error){
@@ -85,6 +93,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 			}
 			else return false;
 		});
+		$rootScope.notifications.warnings = [];
 		$rootScope.notifications.infos = [];
 		$rootScope.notifications.invariants = [];
 	});

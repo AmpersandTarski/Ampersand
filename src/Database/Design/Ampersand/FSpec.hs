@@ -13,15 +13,12 @@ module Database.Design.Ampersand.FSpec
    )
 where
 import Database.Design.Ampersand.FSpec.FSpec
-       (FSpec(..), concDefs, ECArule(..), plugAttributes, lookupCpt, metaValues,AAtomValue, showValADL,showValPHP,showValSQL,showSQL,A_Concept,Declaration,A_Gen
-       ,PlugInfo(..), PlugSQL(..), SqlAttribute(..), SqlAttributeUsage(..),RelStore(..), )
-
 import Database.Design.Ampersand.Basics      (fatal,Collection(..),Named(..))
 import Database.Design.Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..))
 import Database.Design.Ampersand.FSpec.ShowECA (showECA)
-import Database.Design.Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile,MetaType(..))
+import Database.Design.Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile)
 import Database.Design.Ampersand.FSpec.ToFSpec.Calc
        (showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd,commaPandocOr)
 import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec

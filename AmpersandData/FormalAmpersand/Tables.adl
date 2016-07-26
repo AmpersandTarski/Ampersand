@@ -1,6 +1,6 @@
-﻿CONTEXT AST IN ENGLISH
+CONTEXT AST IN ENGLISH
 INCLUDE "Atoms.adl"
-INCLUDE "Tables.xlsx"
+--INCLUDE "Tables.xlsx"
 
 PATTERN Persistence
 RELATION rec[Field*Record] [UNI,TOT] -- the record in which a field resides
@@ -36,42 +36,45 @@ VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", SRC I
           )
 RULE "TOT conceptAttribute (del)" : conceptAttribute;conceptAttribute~ |- I[Concept]
-VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC conceptAttribute, TXT ";Concept;", SRC I
+VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC conceptAttribute, TXT ";Concept;", SRC I  -- HJO20160604: @Stef, hoe weet je zeker dat die vooraf bestaat??
           , TXT "{EX} DelPair;conceptAttribute;Concept;", SRC I, TXT ";SqlAttribute;", SRC conceptAttribute
           , TXT "{EX} DelAtom;SqlAttribute;", SRC I
           )
 ROLE ExecEngine MAINTAINS "TOT conceptAttribute (new)", "TOT conceptAttribute (del)"
 
-CLASSIFY TblSQL ISA PlugInfo
-CLASSIFY BinSQL ISA PlugInfo
+CLASSIFY TblSQL ISA SQLPlug
+CLASSIFY BinSQL ISA SQLPlug
+CLASSIFY SQLPlug ISA Plug
 
 RELATION rootConcept[TblSQL*Concept] [UNI]
 
-RULE "New TblSQL" : I[Concept]-isa~;isa |- rootConcept~;rootConcept
+RULE "New TblSQL" : I[Concept]-isa~;isa |- rootConcept[TblSQL*Concept]~;rootConcept[TblSQL*Concept]
 MEANING "Each largest concept is the root concept of a TblSQL."
 VIOLATION ( TXT "{EX} NewStruct;TblSQL"
-          , TXT ";rootConcept;TblSQL;_NEW;Concept;", SRC I
+          , TXT ";rootConcept[TblSQL*Concept];TblSQL;_NEW;Concept;", SRC I
           )
-RULE "Del TblSQL" : rootConcept~;rootConcept |- I[Concept]-isa~;isa
+RULE "Del TblSQL" : rootConcept[TblSQL*Concept]~;rootConcept[TblSQL*Concept] |- I[Concept]-isa~;isa
 MEANING "Each TblSQL has at most one largest concept as root."
-VIOLATION ( TXT "{EX} DelPair;rootConcept;TblSQL;", SRC rootConcept~, TXT ";Concept;", SRC I
-          , TXT "{EX} DelAtom;TblSQL;", SRC rootConcept~
+VIOLATION ( TXT "{EX} DelPair;rootConcept[TblSQL*Concept];TblSQL;", SRC rootConcept[TblSQL*Concept]~, TXT ";Concept;", SRC I
+          , TXT "{EX} DelAtom;TblSQL;", SRC rootConcept[TblSQL*Concept]~
           )
 ROLE ExecEngine MAINTAINS "New TblSQL", "Del TblSQL"
 
-RULE "Assign attributes to tables" : rootConcept;isaStar~;conceptAttribute |- table~
+RELATION table[SqlAttribute*SQLPlug] [UNI]
+
+RULE "Assign attributes to tables" : rootConcept[TblSQL*Concept];isaStar~;conceptAttribute |- table~
 MEANING "The concept attributes of all specializations of a root concept are in the same table."
-VIOLATION ( TXT "{EX} InsPair;table;SqlAttribute;", TGT I, TXT ";PlugInfo;", SRC I[PlugInfo] )
+VIOLATION ( TXT "{EX} InsPair;table;SqlAttribute;", TGT I, TXT ";SQLPlug;", SRC I[SQLPlug] )
 ROLE ExecEngine MAINTAINS "Assign attributes to tables"
 
 RELATION key[TblSQL*SqlAttribute] [UNI,TOT]
-MEANING "Each PlugInfo has one field designated to contain atom keys."
+MEANING "Each SQLPlug has one field designated to contain atom keys."
 
-RULE "Insert key of a TblSQL" : rootConcept;conceptAttribute |- key
+RULE "Insert key of a TblSQL" : rootConcept[TblSQL*Concept];conceptAttribute |- key
 MEANING "The conceptattribute of the root concept of a TblSQL is the key of that TblSQL."
 VIOLATION ( TXT "{EX} InsPair;key;TblSQL;", SRC I, TXT ";SqlAttribute;", TGT I )
 ROLE ExecEngine MAINTAINS "Insert key of a TblSQL"
-RULE "Delete key from a TblSQL" : key |- rootConcept;conceptAttribute
+RULE "Delete key from a TblSQL" : key |- rootConcept[TblSQL*Concept];conceptAttribute
 MEANING "The key of a TblSQL is the conceptattribute of the root concept of that TblSQL."
 VIOLATION ( TXT "{EX} DelPair;key;TblSQL;", SRC I, TXT ";SqlAttribute;", TGT I )
 ROLE ExecEngine MAINTAINS "Delete key from a TblSQL"
@@ -90,15 +93,15 @@ MEANING "The target attribute of a univalent relation is created in the same tab
 VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;_NEW"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", SRC target
-          , TXT ";table;SqlAttribute;_NEW;PlugInfo;", TGT I
+          , TXT ";table;SqlAttribute;_NEW;SQLPlug;", TGT I
           )
 RULE "clean srcAtt for univalent relations" : (I/\prop;'UNI';prop~);srcAtt |- source;conceptAttribute
 MEANING "The source attribute of a univalent relation is the concept-table of its source concept."
 VIOLATION ( TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
 RULE "clean tgtAtt for univalent relations" : (I/\prop;'UNI';prop~);tgtAtt;table |- srcAtt;table
 MEANING "The target attribute of a univalent relation is removed from the table in which its source attribute resides."
-VIOLATION ( TXT "{EX} DelAtom;PlugInfo;", TGT I
-          , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";PlugInfo;", TGT I
+VIOLATION ( TXT "{EX} DelAtom;SQLPlug;", TGT I
+          , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";SQLPlug;", TGT I
           , TXT "{EX} DelPair;concept;SqlAttribute;", SRC tgtAtt, TXT ";Concept;", SRC target
           , TXT "{EX} DelAtom;SqlAttribute;", SRC tgtAtt
           , TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC tgtAtt
@@ -121,15 +124,15 @@ MEANING "The target attribute of a univalent relation is created in the same tab
 VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           , TXT ";srcAtt;Relation;", SRC I, TXT ";SqlAttribute;_NEW"
           , TXT ";concept;SqlAttribute;_NEW;Concept;", SRC source
-          , TXT ";table;SqlAttribute;_NEW;PlugInfo;", TGT I
+          , TXT ";table;SqlAttribute;_NEW;SQLPlug;", TGT I
           )
 RULE "clean tgtAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt |- target;conceptAttribute
 MEANING "The target attribute of a univalent relation is the concept-table of its target concept."
 VIOLATION ( TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
 RULE "clean srcAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);srcAtt;table |- tgtAtt;table
 MEANING "The target attribute of a univalent relation is removed from the table in which its source attribute resides."
-VIOLATION ( TXT "{EX} DelAtom;PlugInfo;", TGT I
-          , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";PlugInfo;", TGT I
+VIOLATION ( TXT "{EX} DelAtom;SQLPlug;", TGT I
+          , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";SQLPlug;", TGT I
           , TXT "{EX} DelPair;concept;SqlAttribute;", SRC srcAtt, TXT ";Concept;", SRC source
           , TXT "{EX} DelAtom;SqlAttribute;", SRC srcAtt
           , TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC srcAtt
@@ -160,7 +163,7 @@ VIOLATION ( TXT "{EX} NewStruct;SqlAttribute"
           )
 RULE "new BinSQL" :
      srcAtt~;((I[Relation]-prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt |- table;I[BinSQL];table~
-MEANING "Every relation has a pluginfo in which to store its population."
+MEANING "Every relation has an SQLPlug in which to store its population."
 VIOLATION ( TXT "{EX} NewStruct;BinSQL"
           , TXT ";table;SqlAttribute;", SRC I, TXT ";BinSQL;_NEW"
           , TXT ";table;SqlAttribute;", TGT I, TXT ";BinSQL;_NEW"
@@ -174,17 +177,17 @@ RULE "clear table for n-to-m relations (source)" :
      ((I-prop;'INJ';prop~)-prop;'UNI';prop~);srcAtt;concept |- source
 MEANING "The source concept of an n-to-m relation is the concept of the source attribute of that relation."
 VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC srcAtt, TXT ";Concept;", SRC srcAtt;concept
-          , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";PlugInfo;", SRC srcAtt;table
+          , TXT "{EX} DelPair;table;SqlAttribute;", SRC srcAtt, TXT ";SQLPlug;", SRC srcAtt;table
           , TXT "{EX} DelAtom;SqlAttribute;", SRC srcAtt
-          , TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;;", SRC srcAtt
+          , TXT "{EX} DelPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC srcAtt
           )
 RULE "clear table for n-to-m relations (target)" :
       ((I-prop;'INJ';prop~)-prop;'UNI';prop~);tgtAtt;concept |- target
 MEANING "The target concept of an n-to-m relation is the concept of the target attribute of that relation."
 VIOLATION ( TXT "{EX} DelPair;concept;SqlAttribute;", SRC tgtAtt, TXT ";Concept;", SRC tgtAtt;concept
-          , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";PlugInfo;", SRC tgtAtt;table
+          , TXT "{EX} DelPair;table;SqlAttribute;", SRC tgtAtt, TXT ";SQLPlug;", SRC tgtAtt;table
           , TXT "{EX} DelAtom;SqlAttribute;", SRC tgtAtt
-          , TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;;", SRC tgtAtt
+          , TXT "{EX} DelPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", SRC tgtAtt
           )
 RULE "remove BinSQL" : I[BinSQL] |- table~;table
 MEANING "Every BinSQL has two attributes."

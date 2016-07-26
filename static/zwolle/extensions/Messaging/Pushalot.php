@@ -1,9 +1,17 @@
 <?php
 
+namespace Ampersand\Extension\Messaging;
+
+use Exception;
+use Ampersand\Hooks;
+use Ampersand\Config;
+use Ampersand\Log\Logger;
+use Pushalot;
+
 require_once (__DIR__ . '/lib/pushalot_api.php');
 
 // Define hooks
-$hook = array( 'class' => 'PushalotNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\PushalotNotifications'
 			 , 'function' => 'pushNotificationCache'
 			 , 'filename' => 'Pushalot.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -11,7 +19,7 @@ $hook = array( 'class' => 'PushalotNotifications'
 			 );
 Hooks::addHook('postDatabaseCommitTransaction', $hook);
 
-$hook = array( 'class' => 'PushalotNotifications'
+$hook = array( 'class' => '\Ampersand\Extension\Messaging\PushalotNotifications'
 			 , 'function' => 'clearNotificationCache'
 			 , 'filename' => 'Pushalot.php'
 			 , 'filepath' => 'extensions/Messaging'
@@ -23,14 +31,13 @@ class PushalotNotifications {
 	private static $notifications = array();
 	
 	public static function execEnginePushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushalot[execEnginePushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('Pushalot[execEnginePushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 
 		if($userKeys == '_NULL') $userKeys = array(null);
 		else $userKeys = explode('_AND', $userKeys);
@@ -39,14 +46,13 @@ class PushalotNotifications {
 	}
 	
 	public static function pushNotificationOnCommit($userKeys, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushalot[pushNotificationOnCommit'
+		Logger::getLogger('MESSAGING')->debug('Pushalot[pushNotificationOnCommit'
 		                     .']; $userKeys=['.$userKeys
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		
 		foreach($userKeys as $userKey){
 			if(!is_null($userKey)) self::$notifications[] = array('userKey' => $userKey, 'message' => $message, 'title' => $title, 'url' => $url, 'urltitle' => $urltitle);
@@ -61,23 +67,22 @@ class PushalotNotifications {
 	}
 	
 	public static function pushNotificationCache(){
-		Notifications::addLog('Pushalot[pushNotificationCache]','MESSAGING');
+		Logger::getLogger('MESSAGING')->debug('Pushalot[pushNotificationCache]');
 		foreach (self::$notifications as $notification) self::pushNotification($notification['userKey'], $notification['message'], $notification['title'], $notification['url'], $notification['urltitle']);
 	}
 
 	public static function clearNotificationCache(){
-		Notifications::addLog('Pushalot[clearNotificationCache]','MESSAGING');
+		Logger::getLogger('MESSAGING')->debug('Pushalot[clearNotificationCache]');
 		self::$notifications = array();
 	}
 
 	private static function pushNotification($userKey, $message, $title=null, $url=null, $urltitle=null){
-		Notifications::addLog('Pushalot - $userKey=['.$userKey
+		Logger::getLogger('MESSAGING')->debug('Pushalot - $userKey=['.$userKey
 		                     .']; $message=['.$message
 		                     .']; $title=['.$title
 		                     .']; $url=['.$url
 		                     .']; $urltitle=['.$urltitle
-		                     .']'
-		                     ,'MESSAGING');
+		                     .']');
 		if(is_null($userKey)) throw new Exception("Pushalot - User/API key not specified", 500);
 		$notification = new Pushalot($userKey);
 		//$pushalot->setProxy('http://localhost:12345','user:pass');
@@ -92,9 +97,9 @@ class PushalotNotifications {
 			'Source'=>'Ampersand prototype'
 		));
 	        if(!$success) {
-			Notifications::addError("Pushalot error '$notification->getError()' sending notification to '$userKey'");
+			Logger::getUserLogger()->error("Pushalot error '$notification->getError()' sending notification to '$userKey'");
 		}else{
-			Notifications::addSuccess('Pushalot message sent.');
+			Logger::getUserLogger()->notice("Pushalot message sent.");
 		}
 
 	}

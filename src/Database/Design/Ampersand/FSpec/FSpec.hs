@@ -23,18 +23,24 @@ module Database.Design.Ampersand.FSpec.FSpec
           , RelStore(..)
           , metaValues
           , SqlAttribute(..)
+          , Typology(..)
+          , Interface(..)
           , Object(..)
+          , ObjectDef(..)
+          , SubInterface(..)
           , PlugInfo(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..),AAtomValue
           , showValADL,showValPHP,showValSQL,showSQL
           , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
+          , module Database.Design.Ampersand.Classes
           ) where
 -- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
 --       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
---       hyrarchie to reflect the Architecture. 
+--       hierarchie to reflect the Architecture. 
 import Data.List
+import Data.Text (Text,unpack)
 import Data.Typeable
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
 import Database.Design.Ampersand.Basics
@@ -45,7 +51,7 @@ import Database.Design.Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
 import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
-data FSpec = FSpec { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
+data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showADL)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
@@ -75,7 +81,6 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , invariants ::   [Rule]                   -- ^ All invariant rules
                    , signals ::      [Rule]                   -- ^ All signal rules
                    , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
-                   , allDecls ::     [Declaration]            -- ^ All relations that are declared in the fSpec
                    , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
                                                               --   one declaration for each signal.
@@ -87,7 +92,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , getAllViewsForConcept :: A_Concept -> [ViewDef]
                    , lookupView :: String -> ViewDef          -- ^ Lookup view by id in fSpec.
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
-                   , vconjs ::       [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
+                   , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
                    , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
                    , allConjsPerDecl :: [(Declaration, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
@@ -103,7 +108,7 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , atomsInCptIncludingSmaller :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
                    , tableContents :: PlugSQL -> [[Maybe AAtomValue]] -- ^ tableContents is meant to compute the contents of an entity table.
                                                                       --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
-                   
+                                                                      -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
                    , pairsInExpr :: Expression -> [AAtomPair]   
                    , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
@@ -111,10 +116,9 @@ data FSpec = FSpec { fsName ::       String                   -- ^ The name of t
                    , allSigns ::     [Signature]              -- ^ All Signs in the fSpec
                    , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]
-                   , rootConcept :: A_Concept -> A_Concept
+                   , typologyOf :: A_Concept -> Typology
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
-                   , editableConcepts :: Interface -> [A_Concept]  -- ^ All editable concepts per Interface. (See https://github.com/AmpersandTarski/ampersand/issues/211 )
                    } deriving Typeable
 instance Eq FSpec where
  f == f' = name f == name f'
@@ -185,7 +189,7 @@ data Fswitchboard
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
 instance Named FSpec where
-  name = fsName
+  name = unpack . fsName
 
 instance Named FSid where
   name (FS_id nm) = nm
@@ -215,9 +219,9 @@ data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affect
                  , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
                  } deriving Show
 
-instance Eq Quad where
-  q == q'  = qDcl q == qDcl q' && qRule q == qRule q'
-
+instance Ord Quad where
+  q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
+instance Eq Quad where q == q' = compare q q' == EQ
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
 
@@ -300,10 +304,10 @@ lookupCpt fSpec cpt = [(plug,att) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, 
                       [(plug,att) |InternalPlug plug@BinSQL{}<-plugInfos fSpec, (c,att)<-cLkpTbl plug,c==cpt]
 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
-getConceptTableFor :: FSpec -> A_Concept -> String
+getConceptTableFor :: FSpec -> A_Concept -> PlugSQL
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
                                []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
-                               (t,_):_ -> name t -- in case there are more, we use the first one
+                               (t,_):_ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
 data RelStore 

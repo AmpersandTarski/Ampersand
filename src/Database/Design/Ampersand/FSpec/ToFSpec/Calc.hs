@@ -56,7 +56,7 @@ head (a:_) = a
 --   --     visible r  = r `elem` vis
 --        invs       = [rule | rule<-invariants fSpec, (not.null) (map makeDeclaration (relsUsedIn rule) `isc` vis)]
 --   --     qs         = vquads fSpec
---   --     (ecaRs, _) = assembleECAs fSpec (allDecls fSpec)
+--   --     (ecaRs, _) = assembleECAs fSpec (vrels fSpec)
 ----        editable (ERel Rel{} _)  = True    --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2FSpec.hs, maar is daar ANDERS(!)...
 ----        editable _               = False
 ----        editMph (ERel r@Rel{} _) = r       --WHY?? Stef, welke functie is de juiste?? TODO deze functie staat ook in ADL2FSpec.hs, maar is daar ANDERS(!)...
@@ -241,14 +241,13 @@ checkMono :: Options
           -> Declaration
           -> Bool
 checkMono opts expr ev dcl
-  = case ruleType conclusion of
-     Truth -> fatal 247 "derivMono came up with a Truth!"
-     _     -> simplify expr == simplify (antecedent conclusion) &&
-              simplify (subst (dcl, actSem opts ev (EDcD dcl) (delta (sign dcl))) expr) ==
-              simplify (consequent conclusion)
+  = if hasantecedent conclusion 
+    then simplify expr == simplify (antecedent conclusion) &&
+         simplify (subst (dcl, actSem opts ev (EDcD dcl) (delta (sign dcl))) expr) ==
+         simplify (consequent conclusion)
+    else fatal 247 "derivMono came up with a Truth!"
   where (conclusion,_,_) = last (derivMono expr ev dcl)
 
-data RuleType = Inclusion | Equivalence | Truth  deriving (Eq,Show)
 
 type Proof expr = [(expr,[String],String)]
 reversePrf :: Proof e -> Proof e
@@ -428,12 +427,12 @@ lambda tOp' e' expr' = [reversePrf[(e'',txt,op)
 --      lam tOp e f       = []
 
 -- longstcomn determines the longest prefix common to all xs in xss.
-  longstcomn :: (Eq a) => [[(a, b, c, d)]] -> [(a, b, c, d)]
+  longstcomn :: (Ord a) => [[(a, b, c, d)]] -> [(a, b, c, d)]
   longstcomn xss | or [null xs | xs<-xss]      = []
                  | length (eqCl first xss)==1 = head [head prf | prf<-xss]: longstcomn [tail prf | prf<-xss]
                  | otherwise                  = []
  -- remainders determines the remainders.
-  remainders :: (Eq a) => [[(a, b, c, d)]] -> [[(a, b, c, d)]] -> [[(a, b, c, d)]]
+  remainders :: (Ord a) => [[(a, b, c, d)]] -> [[(a, b, c, d)]] -> [[(a, b, c, d)]]
   remainders _ xss | or [null xs | xs<-xss]      = xss
                    | length (eqCl first xss)==1 = remainders xss [tail prf | prf<-xss]
                    | otherwise                  = xss
@@ -455,11 +454,6 @@ lambda tOp' e' expr' = [reversePrf[(e'',txt,op)
   first ((e'',_,_,_):_) = e''
   first _ = fatal 472 "wrong pattern in first"
 
-ruleType :: Rule -> RuleType
-ruleType r = case rrexp r of
-              EEqu{} -> Equivalence
-              EInc{} -> Inclusion
-              _      -> Truth
 
 -- | Action semantics for inserting a delta into a relation dcl.
 actSem :: Options -> InsDel -> Expression -> Expression -> Expression
@@ -489,7 +483,7 @@ assembleECAs options context editables
                       (codeBlock . ("\n     "++) . showECA "\n     ".ecaRule) ruleNr
                     )
           )
-        | rel <- editables -- allDecls fSpec ++ [ Isn c | c<-concs fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
+        | rel <- editables -- vrels fSpec ++ [ Isn c | c<-concs fSpec, c/=ONE] -- This is the relation in which a delta is being inserted or deleted.
  --       , let relEq = [ q | q<-vquads fSpec, qDcl q==rel] -- Gather the quads with the same declaration (qDcl). A quad has a declaration (qDcl), a rule (qRule) and clauses qConjuncts
         , let EDcD delt = delta (sign rel)                -- delt is a placeholder for the pairs that have been inserted or deleted in rel.
         , ev<-[Ins,Del]

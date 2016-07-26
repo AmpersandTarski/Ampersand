@@ -1,25 +1,27 @@
 module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
-  ,typologies)
+  ,typologies
+  ,suitableAsKey)
 where
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
 import Database.Design.Ampersand.Basics
 import Database.Design.Ampersand.Classes
 import Database.Design.Ampersand.FSpec.FSpec
+import Database.Design.Ampersand.Misc
 import Data.Maybe
 import Data.Char
 
-makeGeneratedSqlPlugs :: A_Context 
+makeGeneratedSqlPlugs :: Options -> A_Context 
               -> (Declaration -> Declaration) -- Function to add calculated properties to a declaration
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
-makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
+makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
   where 
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
-    calculatedDecls = map calcProps .filter (not . decplug) . relsDefdIn $ context 
+    calculatedDecls = (map calcProps .filter (not . decplug) . relsDefdIn) context 
     (conceptTableParts, linkTableParts) = dist calculatedDecls (typologies context)
     makeConceptTable :: (Typology, [Declaration]) -> PlugSQL
     makeConceptTable (typ , dcls) = 
@@ -85,8 +87,9 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                             Just nm -> nm
                               , attExpr = expr
                               , attType = repr cpt
-                              , attUse  = if cpt == tableKey
-                                          then TableKey True cpt
+                              , attUse  = if cpt == tableKey 
+                                             && repr cpt == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
+                                          then TableKey True cpt  
                                           else PlainAttr
                               , attNull   = not . isTot $ expr
                               , attDBNull = cpt /= tableKey 
@@ -168,7 +171,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                 then ForeignKey (target srcExpr)
                                 else PlainAttr
                     , attNull = isTot trgExpr
-                    , attDBNull = True  -- to prevent database errors. Ampersand checks for itself. 
+                    , attDBNull = False  -- false for link tables
                     , attUniq = isUni trgExpr
                     , attFlipped = isFlipped trgExpr
                     }
@@ -179,7 +182,7 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
                                 then ForeignKey (target trgExpr)
                                 else PlainAttr
                     , attNull = isSur trgExpr
-                    , attDBNull = True  -- to prevent database errors. Ampersand checks for itself. 
+                    , attDBNull = False  -- false for link tables
                     , attUniq = isInj trgExpr
                     , attFlipped = isFlipped trgExpr
                     }
@@ -200,8 +203,10 @@ makeGeneratedSqlPlugs context calcProps = conceptTables ++ linkTables
         declsInTable typ = [ dcl | dcl <- dcls
                             , not . null $ maybeToList (conceptTableOf dcl) `isc` tyCpts typ ]
         
-conceptTableOf :: Declaration -> Maybe A_Concept
-conceptTableOf d = fmap fst $ wayToStore d
+        conceptTableOf :: Declaration -> Maybe A_Concept
+        conceptTableOf d = if sqlBinTables opts
+                           then Nothing
+                           else fmap fst $ wayToStore d
 
 -- | this function tells in what concepttable a given declaration is to be stored. If stored
 --   in a concept table, it returns the concept and a boolean, telling wether or not the relation

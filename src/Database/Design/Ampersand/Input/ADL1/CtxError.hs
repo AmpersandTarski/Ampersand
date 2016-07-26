@@ -8,12 +8,14 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
   , mustBeBound
   , GetOneGuarded(..), uniqueNames
   , TypeAware(..), unexpectedType
+  , mkErrorReadingINCLUDE
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError
   , mkInvalidCRUDError
   , mkMultipleRepresentTypesError, nonMatchingRepresentTypes
+  , mkEndoPropertyError
   , mkMultipleTypesInTypologyError
   , mkIncompatibleAtomValueError
   , mkTypeMismatchError
@@ -33,7 +35,7 @@ where
 import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.FSpec.ShowADL
 import Database.Design.Ampersand.Basics
--- import Data.Traversable
+import Data.Maybe
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
 import Database.Design.Ampersand.Core.ParseTree
@@ -91,6 +93,13 @@ unexpectedType o x = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showAD
 -- unexpectedType o x = res
 --   where res = Errors [CTXE o$ "Unexpected "<>getADLType [x]<>": "<>showADL x<>"\n  expecting "<>getADLType_a res]
 -- There is no loop, since getADLType_a cannot inspect its first argument (res), and the chain of constructors: "Errors", (:) and CTXE, contains a lazy one (in fact, they are all lazy). In case all occurences of "getADLType_a" are non-strict in their first argument, that would already break a loop.
+mkErrorReadingINCLUDE :: Maybe Origin -> FilePath -> String -> Guarded a
+mkErrorReadingINCLUDE mo file str
+ = Errors [CTXE (fromMaybe (Origin "command line argument") mo) msg]
+    where 
+      msg = intercalate "\n    " $
+             [ "While looking for file '"++file++"':" 
+             ]++lines str
 
 mkMultipleRepresentTypesError :: A_Concept -> [(TType,Origin)] -> Guarded a
 mkMultipleRepresentTypesError cpt rs
@@ -147,10 +156,10 @@ class GetOneGuarded a where
   hasNone o = getOneExactly o []
 
 instance GetOneGuarded (P_SubIfc a) where
-  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one P-subinterface in "++showADL o]
 
 instance GetOneGuarded (SubInterface) where
-  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one A-subinterface in "++showADL o]
 
 instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d
@@ -161,7 +170,7 @@ mkTypeMismatchError :: (ShowADL t, Association t, Traced a2, Named a) => a2 -> t
 mkTypeMismatchError o decl sot conc
  = Errors [CTXE (origin o) message]
  where
-  message = "The "++show sot++" concept for the population pairs, namely "++show (name conc)
+  message = "The "++show sot++" for the population pairs, namely "++name conc
             ++"\n  must be more specific or equal to that of the relation you wish to populate, namely: "++showEC (sot,decl)
 
 
@@ -215,10 +224,23 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
 mkDanglingRefError entity ref orig =
-  CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref
+  CTXE orig $ "Reference to non-existent " ++ entity ++ ": "++show ref
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
 mkUndeclaredError entity objDef ref =
   CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)
+
+mkEndoPropertyError :: Origin -> [Prop] -> CtxError
+mkEndoPropertyError orig ps =
+  CTXE orig msg
+  where 
+    msg = intercalate "\n" $
+       case ps of
+         []  -> fatal 227 $ "What property is causing this error???"
+         [p] -> ["Property "++show p++" can only be used for relations where"
+                ,"  source and target are equal."]
+         _   -> ["Properties "++showAnd++" can only be used for relations where"
+                ,"  source and target are equal."]
+     where showAnd = intercalate ", " (map show . init $ ps)++" and "++(show . last) ps
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
 mkMultipleInterfaceError role ifc duplicateIfcs =
@@ -247,7 +269,7 @@ mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
 mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
 mkMultipleDefaultError (c, viewDefs@(vd0:_)) =
   CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++
-                      concat ["\n    VIEW " ++ vdlbl vd ++ " (at " ++ show (origin vd) ++ ")"
+                      concat ["\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")"
                              | vd <- viewDefs ]
 
 mkIncompatibleViewError :: (Named b,Named c) => P_ObjDef a -> String -> b -> c -> CtxError
@@ -372,7 +394,7 @@ whenError a@(Checked _) _ = a
 
 
 showErr :: CtxError -> String
-showErr (CTXE o s) = s ++ "\n  " ++ showFullOrig o
+showErr (CTXE o s) = showFullOrig o ++ "\n  " ++ s
 showErr (PE msg)   = messageString msg
 
 showFullOrig :: Origin -> String

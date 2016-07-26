@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.5.0
+version:        3.6.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -29,10 +29,13 @@ executable ampersand
   hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall
-  build-depends:     aeson == 0.9.*,
+  build-depends:     aeson == 0.11.*,
                      aeson-pretty == 0.7.*,
-                     base >= 4.7 && < 5.0,
+                     base == 4.8.*,
                      bytestring == 0.10.*,
+                     conduit == 1.2.6.*,
+                     conduit-extra == 1.1.13.*,
+                     conduit-combinators == 1.0.3.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
                      data-default >=0.5 && <0.6,
@@ -43,7 +46,7 @@ executable ampersand
                      HStringTemplate == 0.8.*,
                      lens == 4.13.*,
                      mtl == 2.2.*,
-                     pandoc == 1.16.*,
+                     pandoc == 1.17.*,
                      pandoc-types == 1.16.*,
                      parsec == 3.1.*,
                      process == 1.2.*,
@@ -53,11 +56,12 @@ executable ampersand
                      text == 1.2.*,
                      time == 1.5.*,
                      utf8-string == 1.0.*,
-                     xlsx == 0.2.*,
+                     yaml == 0.8.17.*,
+                     yaml-config == 0.4.*,
+                     xlsx == 0.2.1.*,
                      zlib == 0.6.*
 
   other-modules:
-                     Database.Design.Ampersand,
                      Database.Design.Ampersand.ADL1,
                      Database.Design.Ampersand.ADL1.Disambiguate,
                      Database.Design.Ampersand.ADL1.ECArule,
@@ -82,7 +86,6 @@ executable ampersand
                      Database.Design.Ampersand.Core.A2P_Converters,
                      Database.Design.Ampersand.Core.AbstractSyntaxTree,
                      Database.Design.Ampersand.Core.ParseTree,
-                     Database.Design.Ampersand.Core.ToMeta,
                      Database.Design.Ampersand.FSpec,
                      Database.Design.Ampersand.FSpec.Crud,
                      Database.Design.Ampersand.FSpec.FPA,
@@ -147,13 +150,10 @@ executable ampersand
                      Database.Design.Ampersand.Prototype.GenBericht,
                      Database.Design.Ampersand.Prototype.GenFrontend,
                      Database.Design.Ampersand.Prototype.Generate,
-                     Database.Design.Ampersand.Prototype.Installer,
-                     Database.Design.Ampersand.Prototype.ObjBinGen,
+                     Database.Design.Ampersand.Prototype.WriteStaticFiles,
                      Database.Design.Ampersand.Prototype.PHP,
                      Database.Design.Ampersand.Prototype.ProtoUtil,
-                     Database.Design.Ampersand.Prototype.ValidateEdit,
                      Database.Design.Ampersand.Prototype.ValidateSQL,
-                     Paths_ampersand,
                      Database.Design.Ampersand.Output.ToJSON.MySQLInstaller,
                      Database.Design.Ampersand.Output.ToJSON.Settings,
                      Database.Design.Ampersand.Output.ToJSON.Relations,
@@ -170,11 +170,12 @@ Test-Suite regression-test
   hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall
-  build-depends:     base >= 4.7 && < 5.0,
-                     conduit,
-                     conduit-extra,
-                     conduit-combinators,
-                     yaml,
+  build-depends:     base == 4.8.*,
+                     conduit == 1.2.6.*,
+                     conduit-extra == 1.1.13.*,
+                     conduit-combinators == 1.0.3.*,
+                     yaml == 0.8.17.*,
+                     yaml-config == 0.4.*,
                      process == 1.2.*,
                      transformers == 0.4.*,
                      directory == 1.2.*,
@@ -202,7 +203,6 @@ Test-Suite regression-test
                      Database.Design.Ampersand.Classes.ViewPoint,
                      Database.Design.Ampersand.Core.AbstractSyntaxTree,
                      Database.Design.Ampersand.Core.ParseTree,
-                     Database.Design.Ampersand.Core.ToMeta,
                      Database.Design.Ampersand.FSpec.Crud,
                      Database.Design.Ampersand.FSpec.FSpec,
                      Database.Design.Ampersand.FSpec.FSpecAux,
@@ -232,8 +232,7 @@ Test-Suite regression-test
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
-                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
-                     Paths_ampersand
+                     Database.Design.Ampersand.Prototype.StaticFiles_Generated
 
 Test-Suite ampersand-test
   type:              exitcode-stdio-1.0
@@ -241,9 +240,9 @@ Test-Suite ampersand-test
   hs-source-dirs:    src
   default-language:  Haskell2010
   ghc-options:       -fhpc -with-rtsopts=-M1536m -Wall
-  build-depends:     base >= 4.7 && < 5.0,
+  build-depends:     base == 4.8.*,
                      bytestring == 0.10.*,
-                     conduit == 1.2.*,
+                     conduit == 1.2.6.*,
                      containers == 0.5.*,
                      data-default >=0.5 && <0.6,
                      directory == 1.2.*,
@@ -252,7 +251,7 @@ Test-Suite ampersand-test
                      lens == 4.13.*,
                      MissingH == 1.3.*,
                      mtl == 2.2.*,
-                     pandoc == 1.16.*,
+                     pandoc == 1.17.*,
                      pandoc-types == 1.16.*,
                      parsec == 3.1.*,
                      QuickCheck == 2.8.*,
@@ -262,7 +261,9 @@ Test-Suite ampersand-test
                      transformers == 0.4.*,
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
-                     xlsx == 0.2.*,
+                     xlsx == 0.2.1.*,
+                     yaml == 0.8.17.*,
+                     yaml-config == 0.4.*,
                      zlib == 0.6.*
   other-modules:
                      Database.Design.Ampersand.Misc.Options,
@@ -308,7 +309,6 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Classes.ViewPoint,
                      Database.Design.Ampersand.Core.AbstractSyntaxTree,
                      Database.Design.Ampersand.Core.ParseTree,
-                     Database.Design.Ampersand.Core.ToMeta,
                      Database.Design.Ampersand.FSpec.Crud,
                      Database.Design.Ampersand.FSpec.FSpec,
                      Database.Design.Ampersand.FSpec.FSpecAux,
@@ -338,5 +338,4 @@ Test-Suite ampersand-test
                      Database.Design.Ampersand.Misc,
                      Database.Design.Ampersand.Misc.Explain,
                      Database.Design.Ampersand.Misc.Languages,
-                     Database.Design.Ampersand.Prototype.StaticFiles_Generated,
-                     Paths_ampersand
+                     Database.Design.Ampersand.Prototype.StaticFiles_Generated

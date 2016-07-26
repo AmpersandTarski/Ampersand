@@ -75,6 +75,10 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					if($scope.$storage.switchAutoCommit === undefined){
 						$scope.resetSwitchAutoCommit();
 					}
+                    // Default setting for switchAutoCommit
+					if($scope.$storage.switchAutoSave === undefined){
+						$scope.resetSwitchAutoSave();
+					}
 					
 					// Default setting for cacheGetCalls
 					if($scope.$storage.cacheGetCalls === undefined){
@@ -106,13 +110,15 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.resetSettings = function(){
 		// all off
+        $.each($scope.$storage.notificationPrefs, function(index, value){ $scope.$storage.notificationPrefs[index] = false });
 		$scope.$storage.switchAutoCommit = false;
-		$.each($scope.$storage.notificationPrefs, function(index, value){ $scope.$storage.notificationPrefs[index] = false });
+        $scope.$storage.switchAutoSave = false;
 		
 		$timeout(function() {
 			// reset to default		
 			$scope.resetNotificationSettings();
 			$scope.resetSwitchAutoCommit();
+            $scope.resetSwitchAutoSave();
 		}, 500);
 	};
 	
@@ -122,6 +128,10 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	
 	$scope.resetSwitchAutoCommit = function(){
 		$scope.$storage.switchAutoCommit = $scope.defaultSettings.switchAutoCommit;
+	};
+    
+    $scope.resetSwitchAutoSave = function(){
+		$scope.$storage.switchAutoSave = $scope.defaultSettings.switchAutoSave;
 	};
 	
 	// Set request type based upon switchAutoCommit
@@ -135,4 +145,42 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	});
 	
 	$rootScope.refreshNavBar(); // initialize navbar
+}).directive('myNavbarResize', function ($window, $rootScope, $timeout) {
+    return function (scope, element) {
+        var w = angular.element($window);
+        
+        var resizeNavbar = function() {
+            $timeout(function(){
+                // moving ifc items from dropdown-menu to navbar itself
+                while($('#navbar-interfaces').width() < ($('#navbar-wrapper').width() - $('#navbar-options').width())
+                        && $('#navbar-interfaces-dropdown-menu').children().length > 0){
+                    $("#navbar-interfaces-dropdown-menu").children().first().appendTo("#navbar-interfaces");
+                }
+                
+                // moving ifc items from navbar to dropdown-menu
+                while($('#navbar-interfaces').width() > ($('#navbar-wrapper').width() - $('#navbar-options').width())){
+                    $("#navbar-interfaces").children().last().prependTo("#navbar-interfaces-dropdown-menu");
+                    
+                    // show/hide dropdown menu for more interfaces (must be inside loop, because it affects the width of the navbar
+                    $('#navbar-interfaces-dropdown').toggleClass('hidden', !$('#navbar-interfaces-dropdown-menu').children().length > 0);
+                }
+                
+                // show/hide dropdown menu when possible
+                $('#navbar-interfaces-dropdown').toggleClass('hidden', !$('#navbar-interfaces-dropdown-menu').children().length > 0);
+            });
+        };
+        
+        // watch navbar
+        $rootScope.$watch('navbar', function() {
+            resizeNavbar();
+        });
+        
+        // when window size gets changed
+        w.bind('resize', function () {        
+            resizeNavbar();
+        });
+        
+        // when page loads
+        resizeNavbar();
+    }
 });

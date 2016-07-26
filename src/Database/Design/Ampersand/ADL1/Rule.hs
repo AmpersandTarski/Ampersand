@@ -28,14 +28,13 @@ consequent r
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all relations is provided, in order to generate shorter names if possible.
 rulefromProp :: Prop -> Declaration -> Maybe Rule
-rulefromProp Aut _ = Nothing
 rulefromProp prp d@Sgn{} =
   Just $ 
-     Ru { rrnm  = show prp++" "++name d++"::"++s++"*"++t
+     Ru { rrnm  = show prp++" "++showDcl
         , rrexp = rExpr
         , rrfps = origin d
-        , rrmean = AMeaning $ explain True prp
-        , rrmsg = explain False prp
+        , rrmean = AMeaning $ explain prp
+        , rrmsg =  violMsg prp
         , rrviol = Nothing
         , rrtyp = sign rExpr
         , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
@@ -44,8 +43,11 @@ rulefromProp prp d@Sgn{} =
         , isSignal = fatal 63 "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where
-        s = name (source d)
-        t = name (target d)
+        showDcl = name d ++"["++name (source d)++
+                             (if source d == target d 
+                              then ""
+                              else "*"++name (target d)
+                             )++"]"
         r:: Expression
         r = EDcD d
         rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
@@ -60,40 +62,63 @@ rulefromProp prp d@Sgn{} =
                      Trn-> r .:. r .|-. r
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
-                     Aut -> fatal 78 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
                      Prop -> fatal 78 "Prop should have been converted by the parser"
-        explain isPositive prop = [ A_Markup English (string2Blocks ReST (
-                              case prop of
-                                Sym-> state isPositive English (name d++"["++s++"]") "symmetric"
-                                Asy-> state isPositive English (name d++"["++s++"]") "antisymmetric"
-                                Trn-> state isPositive English (name d++"["++s++"]") "transitive"
-                                Rfx-> state isPositive English (name d++"["++s++"]") "reflexive"
-                                Irf-> state isPositive English (name d++"["++s++"]") "irreflexive"
-                                Uni-> state isPositive English (name d++"["++s++"*"++t++"]") "univalent"
-                                Sur-> state isPositive English (name d++"["++s++"*"++t++"]") "surjective"
-                                Inj-> state isPositive English (name d++"["++s++"*"++t++"]") "injective"
-                                Tot-> state isPositive English (name d++"["++s++"*"++t++"]") "total"
-                                Aut -> fatal 90 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
-                                Prop -> fatal 90 "Prop should have been converted by the parser"
-                                ))
-                       ,   A_Markup Dutch (string2Blocks ReST (
-                              case prop of
-                                Sym-> state isPositive Dutch (name d++"["++s++"]") "symmetrisch."
-                                Asy-> state isPositive Dutch (name d++"["++s++"]") "antisymmetrisch."
-                                Trn-> state isPositive Dutch (name d++"["++s++"]") "transitief."
-                                Rfx-> state isPositive Dutch (name d++"["++s++"]") "reflexief."
-                                Irf-> state isPositive Dutch (name d++"["++s++"]") "irreflexief."
-                                Uni-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "univalent"
-                                Sur-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "surjectief"
-                                Inj-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "injectief"
-                                Tot-> state isPositive Dutch (name d++"["++s++"*"++t++"]") "totaal"
-                                Aut -> fatal 103 "Aut should have been handled by pattern match on top-level declaration rulefromProp"
-                                Prop -> fatal 103 "Prop should have been converted by pattern the parser"
-                                ))
-                      ]
-
-        state True  _       left right = left ++ " is " ++ right
-        state False English left right = left ++ " is not " ++ right
-        state False Dutch   left right = left ++ " is niet " ++ right
+        explain prop = [ explang lang | lang <-[English,Dutch]]
+          where 
+            explang lang = A_Markup lang (string2Blocks ReST $ f lang)
+            f English =
+                  case prop of
+                    Sym-> showDcl++" is "++"symmetric"
+                    Asy-> showDcl++" is "++"antisymmetric"
+                    Trn-> showDcl++" is "++"transitive"
+                    Rfx-> showDcl++" is "++"reflexive"
+                    Irf-> showDcl++" is "++"irreflexive"
+                    Uni-> showDcl++" is "++"univalent"
+                    Sur-> showDcl++" is "++"surjective"
+                    Inj-> showDcl++" is "++"injective"
+                    Tot-> showDcl++" is "++"total"
+                    Prop -> fatal 90 "Prop should have been converted by the parser"
+            f Dutch =
+                  case prop of
+                    Sym-> showDcl++" is "++"symmetrisch"
+                    Asy-> showDcl++" is "++"antisymmetrisch"
+                    Trn-> showDcl++" is "++"transitief"
+                    Rfx-> showDcl++" is "++"reflexief"
+                    Irf-> showDcl++" is "++"irreflexief"
+                    Uni-> showDcl++" is "++"univalent"
+                    Sur-> showDcl++" is "++"surjectief"
+                    Inj-> showDcl++" is "++"injectief"
+                    Tot-> showDcl++" is "++"totaal"
+                    Prop -> fatal 103 "Prop should have been converted by pattern the parser"
+         
+        violMsg prop = [ msg lang | lang <-[English,Dutch]]
+          where
+            s= name (source d)
+            t= name (target d)
+            msg lang = A_Markup lang (string2Blocks ReST $ f lang)
+            f English =
+                  case prop of
+                    Sym-> showDcl++" is "++"symmetric"
+                    Asy-> showDcl++" is "++"antisymmetric"
+                    Trn-> showDcl++" is "++"transitive"
+                    Rfx-> showDcl++" is "++"reflexive"
+                    Irf-> showDcl++" is "++"irreflexive"
+                    Uni-> "Each " ++s++" may only have one "++t++"" ++" in the relation "++name d
+                    Inj-> "Each " ++t++" may only have one "++s++"" ++" in the relation "++name d
+                    Tot ->"Every "++s++" must have a "      ++t++"" ++" in the relation "++name d
+                    Sur ->"Every "++t++" must have a "      ++s++"" ++" in the relation "++name d
+                    Prop -> fatal 90 "Prop should have been converted by the parser"
+            f Dutch =
+                  case prop of
+                    Sym-> showDcl++" is "++"symmetrisch"
+                    Asy-> showDcl++" is "++"antisymmetrisch"
+                    Trn-> showDcl++" is "++"transitief"
+                    Rfx-> showDcl++" is "++"reflexief"
+                    Irf-> showDcl++" is "++"irreflexief"
+                    Uni-> "Elke "++s++" mag slechts één "++t++   " hebben" ++" in de relatie "++name d
+                    Inj-> "Elke "++t++" mag slechts één "++s++   " hebben" ++" in de relatie "++name d
+                    Tot-> "Elke "++s++" dient één "      ++t++" te hebben" ++" in de relatie "++name d
+                    Sur-> "Elke "++t++" dient een "      ++s++" te hebben" ++" in de relatie "++name d
+                    Prop -> fatal 103 "Prop should have been converted by pattern the parser"
 
 rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined relations."
