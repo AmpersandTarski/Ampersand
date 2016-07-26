@@ -42,9 +42,7 @@ class SQLAble a where
   doNonPretty :: (FSpec -> a -> BinQueryExpr) -> FSpec -> a -> String
   doNonPretty fun fSpec 
     =  unwords . words 
-     . prettyQueryExpr theDialect
-     . (\x->x{ qeSetQuantifier = Distinct }) -- outermost select is made "distinct". see also issue #486.
-     . toSQL
+     . prettyQueryExpr theDialect . toSQL
      . stripComment
      . fun fSpec
 
@@ -60,7 +58,6 @@ class SQLAble a where
     =  intercalate ("\n"++replicate i ' ') 
      . lines
      . prettyQueryExpr theDialect 
-     . (\x->x{ qeSetQuantifier = Distinct }) -- outermost select is made "distinct". see also issue #486.
      . toSQL
      . fun fSpec
   
@@ -877,7 +874,7 @@ stripCommentQueryExpr qe =
 toSQL :: BinQueryExpr -> QueryExpr
 toSQL bqe 
  = case bqe of
-    BSE{} -> Select { qeSetQuantifier = SQDefault -- Note: possibly inefficient, because we have not ensured that every element of sl is unique. Solution: replace SQDefault by Distinct. However, this is very inefficient if uniqueness is guaranteed... see also issue #486.
+    BSE{} -> Select { qeSetQuantifier = Distinct
                     , qeSelectList    = [ (col2ValueExpr (bseSrc bqe), Just sourceAlias)
                                         , (col2ValueExpr (bseTrg bqe), Just targetAlias)]
                     , qeFrom          = bseTbl bqe
@@ -1051,7 +1048,7 @@ broadQuery fSpec obj =
           BQEComment _ x -> extendWithCols objs x 
    where 
      newSelect (sl,f,w) =
-        Select { qeSetQuantifier = SQDefault  -- Note: possibly inefficient, because we have not ensured that every element of sl is unique. Solution: replace SQDefault by Distinct. However, this is very inefficient if uniqueness is guaranteed... see also issue #486.
+        Select { qeSetQuantifier = Distinct
                , qeSelectList    = sl
                , qeFrom          = f
                , qeWhere         = w

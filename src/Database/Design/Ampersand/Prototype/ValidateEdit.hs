@@ -91,13 +91,12 @@ createTempDatabase fSpec pops =
     ; return ()
     }
 
--- | In a concept table, double occurrences may not exist. This allows us to avoid 'SELECT DISTINCT' in favor of 'SELECT'.
---   To prevent needing a unary query function, we add a dummy NULL column and use `src` and `tgt` as column names (in line with what performQuery expects)
 getSqlConceptTable :: FSpec -> A_Concept -> IO (A_Concept, [String])
 getSqlConceptTable fSpec c =
- do { let query = case lookupCpt fSpec c of
+ do { -- to prevent needing a unary query function, we add a dummy NULL column and use `src` and `tgt` as column names (in line with what performQuery expects)
+      let query = case lookupCpt fSpec c of
                     []                      -> fatal 58  "No concept table for concept \"" ++ name c ++ "\""
-                    (table,conceptAttribute):_ -> "SELECT `" ++ attName conceptAttribute ++ "` as `src`, NULL as `tgt`"++
+                    (table,conceptAttribute):_ -> "SELECT DISTINCT `" ++ attName conceptAttribute ++ "` as `src`, NULL as `tgt`"++
                                                   " FROM `" ++ name table ++ "`" ++
                                                   " WHERE `" ++ attName conceptAttribute ++ "` IS NOT NULL"
     --; putStrLn $ "Query for concept " ++ name c ++ ":" ++ query 
