@@ -3,9 +3,10 @@
 module Database.Design.Ampersand.Output.ToJSON.Conjuncts 
   (Conjuncts)
 where
-import Database.Design.Ampersand.FSpec.ToFSpec.Calc (showPrf)
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (cfProof,conjNF)
-import Database.Design.Ampersand.FSpec.ShowADL (showADL)
+--import Database.Design.Ampersand.FSpec.ToFSpec.Calc (showPrf)
+--import Database.Design.Ampersand.FSpec.ShowADL (showADL)
+--import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (cfProof)
+import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
 import Database.Design.Ampersand.Output.ToJSON.JSONutils 
 import Database.Design.Ampersand.Core.AbstractSyntaxTree 
 
