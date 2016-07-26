@@ -10,6 +10,7 @@ use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
+use Ampersand\Output\OutputCSV;
 
 global $app;
 
@@ -163,8 +164,14 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 	}
     
     usort($content, function($a, $b){ return $b['duration'] <=> $a['duration'];});
+    
+    // Output
+    $output = new OutputCSV();
+    $output->addColumns(array_keys($content[0]));
+    foreach ($content as $row) $output->addRow($row);
+    $output->render('conj-performance-report.csv');
 	
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+	// print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 	
 });
 
@@ -236,16 +243,11 @@ $app->get('/admin/report/interfaces', function () use ($app){
         
     }, $arr);
     
-    header('Content-Type: text/csv; charset=utf-8');
-    header('Content-Disposition: attachment; filename=data.csv');
-
-    // create a file pointer connected to the output stream
-    $output = fopen('php://output', 'w');
-
-    // output the column headings
-    fputcsv($output, array_keys($content[0]));
-    
-    foreach ($content as $row) fputcsv($output, $row);
+    // Output
+    $output = new OutputCSV();
+    $output->addColumns(array_keys($content[0]));
+    foreach ($content as $row) $output->addRow($row);
+    $output->render('ifc-report.csv');
     
     // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
