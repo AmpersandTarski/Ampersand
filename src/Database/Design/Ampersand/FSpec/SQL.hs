@@ -25,19 +25,13 @@ broadQueryWithPlaceholder :: FSpec -> ObjectDef -> String
 broadQueryWithPlaceholder fSpec
   = unwords . words 
      . prettyQueryExpr theDialect
-     . outerDistinct -- outermost select is made "distinct". see also issue #486.
      . broadQuery fSpec 
 prettyBroadQueryWithPlaceholder :: Int -> FSpec -> ObjectDef -> String
 prettyBroadQueryWithPlaceholder i fSpec
     =  intercalate ("\n"++replicate i ' ') 
      . lines
      . prettyQueryExpr theDialect 
-     . outerDistinct -- outermost select is made "distinct". see also issue #486.
      . broadQuery fSpec
-
-outerDistinct :: QueryExpr -> QueryExpr
-outerDistinct x@Select{} = x{ qeSetQuantifier = Distinct }
-outerDistinct x = x
 
 class SQLAble a where
   -- | show SQL query without comments and not prettyprinted
