@@ -20,7 +20,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
  where
    -- shorthand for easy localizing    
   l :: LocalizedStr -> String
-  l lstr = localize (fsLang fSpec) lstr
+  l = localize (fsLang fSpec)
   sectionLevel = 2
  
   theBlocks
@@ -79,16 +79,16 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                       English -> text "Logical data model"
                     )
       <> para (case fsLang fSpec of
-                 Dutch   -> (text "De afspraken zijn vertaald naar een gegevensmodel. "
+                 Dutch   -> text "De afspraken zijn vertaald naar een gegevensmodel. "
                            <> ( if canXRefer (getOpts fSpec)
                                 then text "Dit gegevensmodel is in figuur " <> xRefReference (getOpts fSpec) logicalDataModelPicture <> text " weergegeven."
                                 else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
-                            ) )
-                 English -> (text "The functional requirements have been translated into a data model. "
+                              )
+                 English -> text "The functional requirements have been translated into a data model. "
                            <> ( if canXRefer (getOpts fSpec)
                                 then text "This model is shown by figure " <> xRefReference (getOpts fSpec) logicalDataModelPicture <> text "."
                                 else text "This model is shown by the figure below. "
-                            ) )
+                              )
               )
        <> para (showImage (getOpts fSpec) logicalDataModelPicture)
        <> let nrOfClasses = length (classes oocd)
@@ -149,8 +149,8 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
        
   detailsOfClass :: Class -> Blocks
   detailsOfClass cl =
-       (   header (sectionLevel+1) 
-                  (((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl))
+           header (sectionLevel+1) 
+                  ((text.l) (NL "Gegevensverzameling: ", EN "Entity type: ") <> (emph.strong.text.name) cl)
         <> case clcpt cl of
              Nothing -> mempty
              Just cpt -> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) cpt)
@@ -179,7 +179,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                  [] -> para ( text (name cl) <> text (l (NL " heeft geen associaties.", EN " has no associations.")))
                  _  -> para ( text (name cl) <> text (l (NL " heeft de volgende associaties: ", EN " has the following associations: ")))
                          <> orderedList (map assocToRow asscs) 
-       )
     where
         
      assocToRow :: Database.Design.Ampersand.Graphic.ClassDiagram.Association -> Blocks
@@ -222,34 +221,34 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   crudMatrixSection =
        header sectionLevel (text.l $ (NL "Logisch gegevensmodel", EN "Logical data model"))
     <> mconcat
-        [ simpleTable [ plainText "Concept", plainText "C", plainText "R", plainText "U", plainText "D" ] $
+        [ simpleTable [ plainText "Concept", plainText "C", plainText "R", plainText "U", plainText "D" ]
             [ [ plainText $ name cncpt
-              , mconcat $ map (plainText . name) ifcsC
-              , mconcat $ map (plainText . name) ifcsR
-              , mconcat $ map (plainText . name) ifcsU
-              , mconcat $ map (plainText . name) ifcsD ]
+              , mconcat . map (plainText . name) $ ifcsC
+              , mconcat . map (plainText . name) $ ifcsR
+              , mconcat . map (plainText . name) $ ifcsU
+              , mconcat . map (plainText . name) $ ifcsD ]
             | (cncpt, (ifcsC, ifcsR, ifcsU, ifcsD)) <- crudObjsPerConcept (crudInfo fSpec)
             ]
         ]
   
 
   technicalDataModelBlocks = 
-   (   header sectionLevel
+       header sectionLevel
                 (case fsLang fSpec of
                     Dutch   ->  "Technisch datamodel"
                     English ->  "Technical datamodel"
                 )
     <> para (case fsLang fSpec of
-               Dutch   -> ( "De afspraken zijn vertaald naar een technisch datamodel. "
+               Dutch   ->   "De afspraken zijn vertaald naar een technisch datamodel. "
                          <> ( if canXRefer (getOpts fSpec)
                               then "Dit model is in figuur " <> xRefReference (getOpts fSpec) technicalDataModelPicture <> " weergegeven."
                               else "Dit model is in onderstaand figuur weergegeven. "
-                          ) )
-               English -> ( "The functional requirements have been translated into a technical data model. "
+                            )
+               English ->   "The functional requirements have been translated into a technical data model. "
                          <> ( if canXRefer (getOpts fSpec)
                               then "This model is shown by figure " <> xRefReference (getOpts fSpec) technicalDataModelPicture <> "."
                               else "This model is shown by the figure below. "
-                          ) )
+                            )
             )
     <> para (showImage (getOpts fSpec) technicalDataModelPicture)
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec))
@@ -259,8 +258,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
         English -> text ("The technical datamodel consists of the following "++show nrOfTables++" tables:")
             )
     <> mconcat [detailsOfplug p | p <- sortBy (compare `on` (map toLower . name)) (plugInfos fSpec), isTable p]
-   ) 
-    where
+   where
       isTable :: PlugInfo -> Bool
       isTable (InternalPlug TblSQL{}) = True
       isTable (InternalPlug BinSQL{}) = True
@@ -304,36 +302,21 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
       showAttributes atts = bulletList (map showAttribute atts)
         where
           showAttribute att =
---FIXME 20140525: Onderstaande code vervangen door afl te leiden van `attUse`. Daar zit deze info al in verwerkt!
-             let isPrimaryKey = case attExpr att of
-                                  e@EDcI{} -> e==attExpr (head atts) -- The first attribute represents the most general concept
-                                  _        -> False
-                 mForeignKey  = case attExpr att of
-                                  EIsc (EDcI c,_) -> Just c
-                                  _               -> Nothing
-             in para (  (strong.text.attName) att
+                para (  (strong.text.attName) att
                       <> linebreak
-                      <> (if isPrimaryKey
-                          then case fsLang fSpec of
-                                Dutch   -> "Dit attribuut is de primaire sleutel. "
-                                English -> "This attribute is the primary key. "
-                          else
-                          case mForeignKey of
-                           Just c ->  case fsLang fSpec of
-                                         Dutch   -> "Dit attribuut verwijst naar een voorkomen in de tabel "
-                                         English -> "This attribute is a foreign key to "
-                                     <> (text.name) c
-                           Nothing -- (no foreign key...)
-                             -> --if isBool
-                                --then
-                                --else
-                                  (case fsLang fSpec of
-                                     Dutch   -> "Dit attribuut implementeert "
-                                     English -> "This attribute implements "
-                                  <> primExpr2pandocMath (fsLang fSpec) (attExpr att)
-                                  <> "."
-                                  )
-                         )
+                      <> case attUse att of
+                            PrimaryKey _ -> case fsLang fSpec of
+                                              Dutch   -> "Dit attribuut is de primaire sleutel. "
+                                              English -> "This attribute is the primary key. "
+                            ForeignKey c -> case fsLang fSpec of
+                                              Dutch   -> "Dit attribuut verwijst naar een voorkomen in de tabel "
+                                              English -> "This attribute is a foreign key to "
+                                               <> (text.name) c
+                            PlainAttr    -> case fsLang fSpec of
+                                              Dutch   -> "Dit attribuut implementeert "
+                                              English -> "This attribute implements "
+                                          <> primExpr2pandocMath (fsLang fSpec) (attExpr att)
+                                          <> "."
                       <> linebreak
                       <> (code.show.attType) att
                       <> ", "
@@ -380,14 +363,14 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
       map (docRule heading) rules
   
     docRule :: LocalizedStr -> Rule -> Blocks
-    docRule heading rule = mconcat $
+    docRule heading rule = mconcat
        [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
        , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) rule
        , fromList $ meaning2Blocks (fsLang fSpec) rule
        , if showPredExpr (getOpts fSpec)
          then let predicate = toPredLogic rule
               in  if format == Frtf then
-                     plain $ linebreak <> (singleton $ RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
+                     plain $ linebreak <> singleton (RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                   else
                     pandocEqnArrayWithLabel (XRefDataAnalRule rule) (showLatex predicate)
          else if format == FLatex
@@ -406,11 +389,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
        ]   
       where format = fspecFormat (getOpts fSpec) -- todo: bit hacky to use the output format here, but otherwise we need a major refactoring
   
-
-
-
-     
-
 primExpr2pandocMath :: Lang -> Expression -> Inlines
 primExpr2pandocMath lang e =
  case e of

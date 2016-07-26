@@ -296,6 +296,10 @@ input .ng-invalid .ng-dirty {
 	padding-bottom		: 5px;
 }
 
+#notificationCenter p {
+	margin              : 0px;
+}
+
 /********* LOG WINDOW *****************/
 #logWindow {
 	height				: 400px;

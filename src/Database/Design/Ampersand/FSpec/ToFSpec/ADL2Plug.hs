@@ -89,7 +89,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                               , attType = repr cpt
                               , attUse  = if cpt == tableKey 
                                              && repr cpt == Object -- For scalars, we do not want a primary key. This is a workaround fix for issue #341
-                                          then TableKey True cpt  
+                                          then PrimaryKey cpt  
                                           else PlainAttr
                               , attNull   = not . isTot $ expr
                               , attDBNull = cpt /= tableKey 

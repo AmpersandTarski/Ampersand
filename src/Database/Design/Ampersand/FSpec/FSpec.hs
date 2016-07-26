@@ -22,7 +22,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , lookupCpt, getConceptTableFor
           , RelStore(..)
           , metaValues
-          , SqlAttribute(..)
+          , SqlAttribute(..),isPrimaryKey,isForeignKey
           , Typology(..)
           , Interface(..)
           , Object(..)
@@ -38,8 +38,9 @@ module Database.Design.Ampersand.FSpec.FSpec
           ) where
 -- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
 --       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
---       hyrarchie to reflect the Architecture. 
+--       hierarchie to reflect the Architecture. 
 import Data.List
+import Data.Text (Text,unpack)
 import Data.Typeable
 import Database.Design.Ampersand.ADL1.Expression (notCpl)
 import Database.Design.Ampersand.Basics
@@ -50,7 +51,7 @@ import Database.Design.Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
 import Database.Design.Ampersand.FSpec.ToFSpec.Populated
 
-data FSpec = FSpec { fsName ::       String                   -- ^ The name of the specification, taken from the Ampersand script
+data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showADL)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
@@ -151,8 +152,8 @@ concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
 instance ConceptStructure FSpec where
-  concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this FSpec
-  expressionsIn fSpec = allExprs fSpec
+  concs         = allConcepts
+  expressionsIn = allExprs 
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
@@ -188,7 +189,7 @@ data Fswitchboard
 data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
 instance Named FSpec where
-  name = fsName
+  name = unpack . fsName
 
 instance Named FSid where
   name (FS_id nm) = nm
@@ -218,9 +219,9 @@ data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affect
                  , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
                  } deriving Show
 
-instance Eq Quad where
-  q == q'  = qDcl q == qDcl q' && qRule q == qRule q'
-
+instance Ord Quad where
+  q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
+instance Eq Quad where q == q' = compare q q' == EQ
 instance Eq Activity where
   a == a'  = actRule a == actRule a'
 
@@ -231,7 +232,7 @@ dnf2expr dnf
     ([],[]) -> fatal 327 "empty dnf clause"
     ([],cs ) -> foldr1 (.\/.) cs
     (as,[]) -> notCpl (foldr1 (./\.) as)
-    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. (foldr1 (.\/.) cs)
+    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
 
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef
@@ -315,7 +316,7 @@ data RelStore
      , rsSrcAtt    :: SqlAttribute
      , rsTrgAtt    :: SqlAttribute
      } deriving (Show, Typeable)
-data SqlAttributeUsage = TableKey Bool A_Concept  -- The SQL-attribute is the (primary) key of the table. (The boolean tells whether or not it is primary)
+data SqlAttributeUsage = PrimaryKey A_Concept
                        | ForeignKey A_Concept  -- The SQL-attribute is a reference (containing the primary key value of) a TblSQL
                        | PlainAttr             -- None of the above
                        deriving (Eq, Show)
@@ -339,6 +340,15 @@ instance ConceptStructure SqlAttribute where
   concs     f = [target e' |let e'=attExpr f,isSur e']
   expressionsIn   f = expressionsIn   (attExpr f)
 
+isPrimaryKey :: SqlAttribute -> Bool
+isPrimaryKey att = case attUse att of
+                    PrimaryKey _ -> True
+                    _ -> False
+isForeignKey :: SqlAttribute -> Bool
+isForeignKey att = case attUse att of
+                    ForeignKey _ -> True
+                    _ -> False
+
 showSQL :: TType -> String
 showSQL tt =
   case tt of 
@@ -355,5 +365,5 @@ showSQL tt =
      Integer          -> "BIGINT"
      Float            -> "FLOAT"
      Object           -> "VARCHAR(255)"
-     TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
+     TypeOfOne        -> fatal 461 "ONE is not represented in SQL" 
 

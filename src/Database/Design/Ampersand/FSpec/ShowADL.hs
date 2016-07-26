@@ -365,7 +365,7 @@ instance ShowADL PAtomValue where
               
 instance ShowADL AAtomValue where
  showADL at = case at of
-              AAVString  _ str -> show str
+              AAVString{} -> show (aavstr at)
               AAVInteger _ i   -> show i
               AAVFloat   _ f   -> show f
               AAVBoolean _ b   -> show b

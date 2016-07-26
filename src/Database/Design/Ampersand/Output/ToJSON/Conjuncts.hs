@@ -15,7 +15,6 @@ data JSONConjunct = JSONConjunct
   , cnjJSONsignalRuleNames    :: [String]
   , cnjJSONinvariantRuleNames :: [String]
   , cnjJSONviolationsSQL      :: String
-  , cnjJSONnormalizationSteps :: Maybe [String] -- Not used in frontend. Just informative for analisys
   } deriving (Generic, Show)
 instance ToJSON JSONConjunct where
   toJSON = amp2Jason
@@ -29,9 +28,4 @@ instance JSON Conjunct JSONConjunct where
   , cnjJSONsignalRuleNames     = map name . filter isSignal . rc_orgRules $ conj
   , cnjJSONinvariantRuleNames  = map name . filter (not . isSignal) . filter (not . ruleIsInvariantUniOrInj) . rc_orgRules $ conj
   , cnjJSONviolationsSQL       = sqlQuery fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj
-  , cnjJSONnormalizationSteps  
-     = if verboseP (getOpts fSpec)
-       then Just . showPrf showADL . cfProof (getOpts fSpec) . notCpl . rc_conjunct $ conj
-       else Nothing 
   }
-  

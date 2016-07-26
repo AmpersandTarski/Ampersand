@@ -31,23 +31,24 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     genFiles userP_Ctx >> genTables userP_Ctx
+     let fsp = pCtx2Fspec userP_Ctx
+     genFiles fsp >> genTables fsp userP_Ctx
    where
-    genFiles :: Guarded P_Context -> IO(Guarded ())
-    genFiles uCtx
-      = case pCtx2Fspec uCtx of
+    genFiles :: Guarded FSpec -> IO(Guarded ())
+    genFiles fsp
+      = case fsp of
           Errors es -> return(Errors es)
           Checked uFspec
             ->   when (genASTFile opts) (doGenMetaFile uFspec)
               >> return (Checked ())
 
-    genTables :: Guarded P_Context -> IO(Guarded FSpec)
-    genTables uCtx= case genASTTables opts of
+    genTables :: Guarded FSpec -> Guarded P_Context -> IO(Guarded FSpec)
+    genTables fsp uCtx = case genASTTables opts of
        False
-         -> return (pCtx2Fspec uCtx)
+         -> return fsp
        True
          -> do rapP_Ctx <- parseMeta opts -- the P_Context of the
-               let populationPctx       = join ( grind <$> pCtx2Fspec uCtx)
+               let populationPctx       = join ( grind <$> fsp)
                    populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
                    metaPopulatedRapPctx = populatedRapPctx
                    allCombinedPctx      = merge.sequenceA $ [uCtx, metaPopulatedRapPctx]

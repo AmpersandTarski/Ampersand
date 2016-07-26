@@ -103,17 +103,17 @@ class Atom {
 	/**
 	 * Atom constructor
 	 * @param string $atomId
-	 * @param string $conceptName
+	 * @param Concept $concept
 	 * @param InterfaceObject $ifc
-     * @param array|null $qData the row data (from database query) from which this atom is created
+     * @param array $qData the row data (from database query) from which this atom is created
 	 * @return void
 	 */
-	public function __construct($atomId, $conceptName, $ifc = null, $qData = null){
+	public function __construct($atomId, Concept $concept, InterfaceObject $ifc = null, array $qData = null){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
+        $this->concept = $concept;
 		$this->parentIfc = $ifc;
-		$this->concept = Concept::getConcept($conceptName);
         $this->qData = $qData;
 		
 		$this->setId($atomId);
@@ -126,7 +126,7 @@ class Atom {
 	public function __toString(){
         // if atom id is longer than 40 chars, display first and last 20 chars
         $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
-	    return "{$id}[{$this->concept->name}]";
+	    return "{$id}[{$this->concept}]";
 	}
 	
 	/**
@@ -300,7 +300,7 @@ class Atom {
 	        case "OBJECT" :
 	            return rawurlencode($this->id);
 	        default :
-	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
+	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
 	    }
 	}
 	
@@ -335,7 +335,7 @@ class Atom {
 	        case "OBJECT" :
 	            return $this->id;
 	        default :
-	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
+	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
 	    }
 	}
 	
@@ -460,7 +460,7 @@ class Atom {
 	        }else{
                 $ifcs = array_map(function($o) {
 	                   return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
-	            }, $session->getInterfacesToReadConcept($this->concept->name));
+	            }, $session->getInterfacesToReadConcept($this->concept));
             }
 	        $content['_ifcs_'] = $ifcs;
 	    }
@@ -529,7 +529,7 @@ class Atom {
 	        
 		// Handle options
 		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
-		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept->name . ' updated';
+		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
 		
 		// Perform patches
 		$this->doPatches($patches);
@@ -558,7 +558,7 @@ class Atom {
 	    $this->database->deleteAtom($this);
 	
 	    // Close transaction
-	    $this->database->closeTransaction($this->concept->name . ' deleted');
+	    $this->database->closeTransaction($this->concept . ' deleted');
 	
 	    return;
 	}

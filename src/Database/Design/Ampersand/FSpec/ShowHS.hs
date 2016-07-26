@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Database.Design.Ampersand.FSpec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
@@ -96,10 +96,10 @@ instance ShowHS PlugSQL where
                    ,"       }"
                    ]
 
-instance ShowHSName (ECArule) where
+instance ShowHSName ECArule where
  showHSName r = "ecaRule"++show (ecaNum r)
 
-instance ShowHS (ECArule) where
+instance ShowHS ECArule where
  showHS opts indent r
    =         "ECA { ecaTriggr = " ++ showHS opts "" (ecaTriggr r) ++
      indent++"    , ecaDelta  = " ++ showHSName (ecaDelta r)++
@@ -163,9 +163,9 @@ instance ShowHS SqlAttribute where
                indentB = indentA++"            " -- adding the width of ", attExpr = "
 
 instance ShowHS SqlAttributeUsage where
- showHS _ _ (TableKey isPrimary aCpt) = "TableKey "  ++show isPrimary++" "++showHSName aCpt
- showHS _ _ (ForeignKey aCpt)         = "ForeignKey "++showHSName aCpt
- showHS _ _ PlainAttr                 = "PlainAttr "
+ showHS _ _ (PrimaryKey aCpt) = "PrimaryKey "++showHSName aCpt
+ showHS _ _ (ForeignKey aCpt) = "ForeignKey "++showHSName aCpt
+ showHS _ _ PlainAttr         = "PlainAttr "
 
 instance ShowHS TType where
  showHS _ indent tt = indent ++ show tt
@@ -179,7 +179,7 @@ instance ShowHS Quad where
    = intercalate indent
             [ "Quad{ qDcl     = " ++ showHSName (qDcl q)
             , "    , qRule    = " ++ showHSName (qRule q)
-            , wrap "    , qConjuncts = " newindent (\_->showHSName) (qConjuncts q)
+            , wrap "    , qConjuncts = " newindent (const showHSName) (qConjuncts q)
             , "    }"
             ]
     where
@@ -191,9 +191,9 @@ instance ShowHS Fswitchboard where
        [ "Fswtch { fsbEvIn  = " ++ showHS opts newindent (fsbEvIn  fsb)
        , "       , fsbEvOut = " ++ showHS opts newindent (fsbEvOut fsb)
        ,wrap
-         "       , fsbConjs = " newindent' (\_->shConj) (fsbConjs  fsb)
+         "       , fsbConjs = " newindent' (const shConj) (fsbConjs  fsb)
        ,wrap
-         "       , fsbECAs  = " newindent' (\_->showHSName) (fsbECAs  fsb)
+         "       , fsbECAs  = " newindent' (const showHSName) (fsbECAs  fsb)
        , "       }"
        ]
     where
@@ -216,7 +216,7 @@ instance ShowHS Conjunct where
  showHS opts indent x
    = intercalate (indent ++"    ")
        [   "Cjct{ rc_id         = " ++ show (rc_id x)
-       ,       ", rc_orgRules   = " ++ "[ "++intercalate (", ") (map showHSName (rc_orgRules x))++"]"
+       ,       ", rc_orgRules   = " ++ "[ "++intercalate ", " (map showHSName (rc_orgRules x))++"]"
        ,       ", rc_conjunct   = " ++ showHS opts indentA (rc_conjunct x)
        , wrap  ", rc_dnfClauses = " indentA (\_->showHS opts (indentA++"  ")) (rc_dnfClauses x)
        ,       "}"
@@ -233,9 +233,9 @@ instance ShowHS FSpec where
         , wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
         ,      ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
         ,      ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
-        , wrap ", pattsInScope  = " indentA (\_->showHSName) (pattsInScope fSpec)
-        , wrap ", rulesInScope  = " indentA (\_->showHSName) (rulesInScope fSpec)
-        , wrap ", declsInScope  = " indentA (\_->showHSName) (declsInScope fSpec)
+        , wrap ", pattsInScope  = " indentA (const showHSName) (pattsInScope fSpec)
+        , wrap ", rulesInScope  = " indentA (const showHSName) (rulesInScope fSpec)
+        , wrap ", declsInScope  = " indentA (const showHSName) (declsInScope fSpec)
         , wrap ", cDefsInScope  = " indentA (\_->showHS opts (indentA++"  ")) (cDefsInScope fSpec)
         , wrap ", gensInScope   = " indentA (showHS opts)   (gensInScope fSpec)
         , wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
@@ -250,22 +250,22 @@ instance ShowHS FSpec where
                  _         -> "[ "++intercalate (indentA++", ") ["("++show r++","++showHS opts "" rel++")" | (r,rel)<-fRoleRels fSpec]++indentA++"]"
         ,      ", fRoleRuls     = " ++showHS opts indentA (fRoleRuls fSpec)
         , wrap ", fRoles        = " indentA (showHS opts)    [rol | (rol,_) <- fRoles fSpec]
-        , wrap ", vrules        = " indentA (\_->showHSName) (vrules fSpec)
-        , wrap ", grules        = " indentA (\_->showHSName) (grules fSpec)
-        , wrap ", invariants    = " indentA (\_->showHSName) (invariants fSpec)
-        , wrap ", fallRules     = " indentA (\_->showHSName) (fallRules fSpec)
-        , wrap ", allUsedDecls  = " indentA (\_->showHSName) (allUsedDecls fSpec)
-        , wrap ", vrels         = " indentA (\_->showHSName) (vrels fSpec)
-        , wrap ", allConcepts   = " indentA (\_->showHSName) (allConcepts fSpec)
-        , wrap ", vIndices      = " indentA (\_->showHSName) (vIndices fSpec)
-        , wrap ", vviews        = " indentA (\_->showHSName) (vviews fSpec)
+        , wrap ", vrules        = " indentA (const showHSName) (vrules fSpec)
+        , wrap ", grules        = " indentA (const showHSName) (grules fSpec)
+        , wrap ", invariants    = " indentA (const showHSName) (invariants fSpec)
+        , wrap ", fallRules     = " indentA (const showHSName) (fallRules fSpec)
+        , wrap ", allUsedDecls  = " indentA (const showHSName) (allUsedDecls fSpec)
+        , wrap ", vrels         = " indentA (const showHSName) (vrels fSpec)
+        , wrap ", allConcepts   = " indentA (const showHSName) (allConcepts fSpec)
+        , wrap ", vIndices      = " indentA (const showHSName) (vIndices fSpec)
+        , wrap ", vviews        = " indentA (const showHSName) (vviews fSpec)
         , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
-        , wrap ", fsisa         = " indentA (\_->showHSName) (fsisa fSpec)
-        , wrap ", allConjuncts        = " indentA (\_->showHSName) (allConjuncts fSpec)
-        , wrap ", vquads        = " indentA (\_->showHSName) (vquads fSpec)
-        , wrap ", vEcas         = " indentA (\_->showHSName) (vEcas fSpec)
+        , wrap ", fsisa         = " indentA (const showHSName) (fsisa fSpec)
+        , wrap ", allConjuncts        = " indentA (const showHSName) (allConjuncts fSpec)
+        , wrap ", vquads        = " indentA (const showHSName) (vquads fSpec)
+        , wrap ", vEcas         = " indentA (const showHSName) (vEcas fSpec)
         ,      ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)
-        , wrap ", vpatterns     = " indentA (\_->showHSName) (vpatterns fSpec)
+        , wrap ", vpatterns     = " indentA (const showHSName) (vpatterns fSpec)
         , wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
         , wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
         ,      ", metas         = allMetas"
@@ -430,11 +430,11 @@ instance ShowHS Activity where
  showHS opts indent act =
     intercalate indentA
      [ "Act { actRule   = "++showHSName (actRule act)
-     , wrap ", actTrig   = " indentB (\_->showHSName) (actTrig   act)
-     , wrap ", actAffect = " indentB (\_->showHSName) (actAffect act)
-     , wrap ", actQuads  = " indentB (\_->showHSName) (actQuads  act)
-     , wrap ", actEcas   = " indentB (\_->showHSName) (actEcas   act)
-     , wrap ", actPurp   = " indentB (\_->(showHS opts indentB)) (actPurp act)
+     , wrap ", actTrig   = " indentB (const showHSName) (actTrig   act)
+     , wrap ", actAffect = " indentB (const showHSName) (actAffect act)
+     , wrap ", actQuads  = " indentB (const showHSName) (actQuads  act)
+     , wrap ", actEcas   = " indentB (const showHSName) (actEcas   act)
+     , wrap ", actPurp   = " indentB (const $ showHS opts indentB) (actPurp act)
      , "      }"
      ]
     where indentA = indent ++replicate (length ("Act "::String)) ' '
@@ -607,7 +607,7 @@ instance ShowHS Interface where
         [ "Ifc { ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
         , "    , ifcEcas   = " ++ showHS opts (indent++"                 ") (ifcEcas ifc)
-        , wrap "    , ifcControls = " (indent++"                  ") (\_->showHSName) (ifcControls ifc)
+        , wrap "    , ifcControls = " (indent++"                  ") (const showHSName) (ifcControls ifc)
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
         , "    , ifcPrp    = " ++ show(ifcPrp ifc)
         ]++indent++"    }"
@@ -683,9 +683,9 @@ instance ShowHS ConceptDef where
  showHS opts _ cd
   = " Cd ("++showHS opts "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
 instance ShowHSName Char where
- showHSName c = show c
+ showHSName = show
 instance ShowHS Char where
- showHS _ _ c = show c
+ showHS _ _ = show
 instance ShowHSName A_Concept where
  showHSName ONE = haskellIdentifier "cptOne"
  showHSName c = haskellIdentifier ("cpt_"++name c)
@@ -710,7 +710,7 @@ instance ShowHS Prop where
  showHS _ _ = showHSName
 
 instance ShowHS FilePos where
- showHS _ _ pos = show pos
+ showHS _ _ = show
 
 instance ShowHSName Origin where
  showHSName ori = "Orig"++show x++show (hash x)
