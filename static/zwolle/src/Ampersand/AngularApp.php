@@ -218,6 +218,10 @@ class AngularApp {
 		// datetimepicker
 		$this->addHtmlLine('<script src="app/lib/ui-bootstrap/datetimepicker/datetimepicker.js"></script>');
 		$this->addHtmlLine('<link href="app/lib/ui-bootstrap/datetimepicker/datetimepicker.css" rel="stylesheet" media="screen" type="text/css">');
+        
+        // markdown support
+        $this->addHtmlLine('<script src="app/bower_components/marked/lib/marked.js"></script>');
+        $this->addHtmlLine('<script src="app/bower_components/angular-marked/dist/angular-marked.js"></script>');
 
 		/*
 		 ********** CSS *********************************
