@@ -124,7 +124,9 @@ class Atom {
 	}
 	
 	public function __toString(){
-	    return "{$this->id}[{$this->concept}]";
+        // if atom id is longer than 40 chars, display first and last 20 chars
+        $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
+	    return "{$id}[{$this->concept}]";
 	}
 	
 	/**
@@ -453,11 +455,13 @@ class Atom {
 	    // Define interface(s) to navigate to for this tgtAtom
 	    if($options['navIfc']){
 	        $ifcs = array();
-	        if($this->parentIfc->isLinkTo && $session->isAccessibleIfc($this->parentIfc->refInterfaceId))
-	            $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
-	        else $ifcs = array_map(function($o) {
-	            return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
-	        }, $session->getInterfacesToReadConcept($this->concept));
+	        if($this->parentIfc->isLinkTo){
+                if ($session->isAccessibleIfc($this->parentIfc->refInterfaceId)) $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
+	        }else{
+                $ifcs = array_map(function($o) {
+	                   return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
+	            }, $session->getInterfacesToReadConcept($this->concept));
+            }
 	        $content['_ifcs_'] = $ifcs;
 	    }
 	    
@@ -646,13 +650,13 @@ class Atom {
 		// Interface is a relation to an object
 		}elseif($ifc->tgtConcept->isObject){
 			
-			$ifc->relation->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
+			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
 		}elseif(!$ifc->tgtConcept->isObject){
 			if($ifc->isUni) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
 			
-			$ifc->relation->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
+			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 			
 		}else{
 			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);

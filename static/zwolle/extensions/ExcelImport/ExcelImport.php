@@ -155,7 +155,7 @@ class ExcelImport {
 	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept);
 	            if(!$rightAtom->atomExists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
 	            
-	            $header[$columnletter]->relation->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
+	            $header[$columnletter]->relation()->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
 	        }
 	    }
 	}

@@ -122,7 +122,7 @@ class Concept {
 	private $mysqlConceptTable;
     
     /**
-     * @var Atom[] $atomCache array with atoms that exist in the concept (within database transaction)
+     * @var string[] $atomCache array with atomids that exist in the concept (within database transaction)
      * used to prevent unnecessary queries to check if atom is already in database
      */
     private $atomCache = array();
@@ -365,7 +365,7 @@ class Concept {
      * @return boolean
      */
     public function inAtomCache($atom){
-        return in_array($atom, $this->atomCache, true); // strict mode to prevent 'Nesting level too deep' error
+        return in_array($atom->id, $this->atomCache, true); // strict mode to prevent 'Nesting level too deep' error
     }
     
     /**
@@ -373,7 +373,7 @@ class Concept {
      * @return void
      */
     public function addToAtomCache($atom){
-        $this->atomCache[] = $atom;
+        $this->atomCache[] = $atom->id;
     }
 	
     /**********************************************************************************************

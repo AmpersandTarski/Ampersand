@@ -3,12 +3,14 @@
 use Ampersand\Config;
 use Ampersand\Database\Database;
 use Ampersand\Session;
+use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Log\Notifications;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
+use Ampersand\Output\OutputCSV;
 
 global $app;
 
@@ -161,8 +163,16 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			throw new Exception ("Unknown groupBy argument", 500);
 			break;
 	}
+    
+    usort($content, function($a, $b){ return $b['duration'] <=> $a['duration'];});
+    
+    // Output
+    $output = new OutputCSV();
+    $output->addColumns(array_keys($content[0]));
+    foreach ($content as $row) $output->addRow($row);
+    $output->render('conj-performance-report.csv');
 	
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+	// print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 	
 });
 
@@ -207,6 +217,40 @@ $app->get('/admin/report/conjuncts', function () use ($app){
     }
     
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
+$app->get('/admin/report/interfaces', function () use ($app){
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+    
+    $arr = array();
+    foreach (InterfaceObject::getAllInterfaces() as $key => $ifc) {
+        $arr = array_merge($arr, $ifc->getInterfaceFlattened());
+    }
+    
+    $content = array_map(function(InterfaceObject $ifc){
+        return array( 'label' => $ifc->label
+                    , 'path' => $ifc->path
+                    , 'crudC' => $ifc->crudC
+                    , 'crudR' => $ifc->crudR
+                    , 'crudU' => $ifc->crudU
+                    , 'crudD' => $ifc->crudD
+                    , 'src' => $ifc->srcConcept->name
+                    , 'tgt' => $ifc->tgtConcept->name
+                    , 'view' => $ifc->view->label
+                    , 'relation' => $ifc->relation->signature
+                    , 'flipped' => $ifc->relationIsFlipped
+                    , 'ref' => $ifc->refInterfaceId
+                );
+        
+    }, $arr);
+    
+    // Output
+    $output = new OutputCSV();
+    $output->addColumns(array_keys($content[0]));
+    foreach ($content as $row) $output->addRow($row);
+    $output->render('ifc-report.csv');
+    
+    // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 ?>

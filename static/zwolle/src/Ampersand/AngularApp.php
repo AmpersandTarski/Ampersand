@@ -133,7 +133,10 @@ class AngularApp {
                     if(($ifc->srcConcept->name == 'SESSION' || $ifc->srcConcept->name == 'ONE') && $ifc->crudR) return true;
                     else return false;
                 case 'new':
-                    if($ifc->crudC && $ifc->isIdent) return true;
+                    // crudR, because the response content must contain the newly created atom
+                    // crudC, otherwise the atom cannot be created
+                    // isIdent (interface expr = I[Concept]), because otherwise a src atom is necesarry, which we don't have wiht +-menu
+                    if($ifc->crudR && $ifc->crudC && $ifc->isIdent) return true;
                     else return false;
                 default:
                     throw new Exception("Cannot get navbar interfaces. Unknown menu: '{$menu}'", 500);
