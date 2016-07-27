@@ -9,7 +9,10 @@ $endif$*/
 AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, Restangular, \$location, \$timeout, \$localStorage) {	
 	if(typeof \$routeParams.resourceId !== 'undefined') resourceId = \$routeParams.resourceId;
 	else resourceId = \$scope.\$sessionStorage.session.id;
-	
+    
+    \$scope.navLabel = \$route.current.\$\$route.interfaceLabel; // interfaceLabel is specified in RouteProvider.js
+	\$scope.updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes
+    
 	/**********************************************************************************************
 	 * 
 	 *	GET INTERFACE
@@ -21,7 +24,14 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.resource = Restangular.one('resources').one('$source$', resourceId); // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
 	\$scope.resource['_path_'] = '/resources/$source$/' + resourceId;
 	\$scope.resource['_ifcEntryResource_'] = true;
-    \$scope.updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes
+    \$scope.resource.$interfaceName$ = []; // initialize resource interface object
+    
+    // watch and update navLabel (e.g. used by breadcrumb)
+    \$scope.\$watchCollection('resource.$interfaceName$', function() {
+		if(resourceId != \$scope.\$sessionStorage.session.id){
+            \$scope.navLabel = (\$scope.resource.$interfaceName$[0] || {})._label_ ? \$scope.resource.$interfaceName$[0]._label_ : '...';
+        }
+	});
 	
 	// Create new resource and add data to \$scope.resource['$interfaceName$']
 	if(\$routeParams['new']){
@@ -78,6 +88,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to patch only the changed attributes of a Resource
 	\$scope.patchResource = function(resource, patches, requestType){		
+        $if(verbose)$console.log(patches);$endif$
 		if(typeof resource['_patchesCache_'] === 'undefined') resource['_patchesCache_'] = []; // new array
 		resource['_patchesCache_'] = resource['_patchesCache_'].concat(patches); // add new patches
 		
@@ -132,7 +143,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'replace', path : path, value : value}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
@@ -153,7 +163,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			
 			// Construct patch
 			patches = [{ op : 'add', path : path, value : selected.value}];
-			$if(verbose)$console.log(patches);$endif$
 			
 			// Reset selected value
 			selected.value = '';			
@@ -177,7 +186,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'remove', path : path, value: value}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
@@ -214,7 +222,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			
 			// Construct patch
 			patches = [{ op : 'add', path : path, value : obj['_id_']}];
-			$if(verbose)$console.log(patches);$endif$
 			
 			// Patch!
 			\$scope.patchResource(patchResource, patches);
@@ -233,7 +240,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'remove', path : path}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
