@@ -9,7 +9,8 @@ $endif$*/
 AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, Restangular, \$location, \$timeout, \$localStorage) {	
 	if(typeof \$routeParams.resourceId !== 'undefined') resourceId = \$routeParams.resourceId;
 	else resourceId = \$scope.\$sessionStorage.session.id;
-	
+    
+    \$scope.navLabel = \$route.current.\$\$route.interfaceLabel; // interfaceLabel is specified in RouteProvider.js
 	/**********************************************************************************************
 	 * 
 	 *	GET INTERFACE
@@ -22,6 +23,14 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.resource['_path_'] = '/resources/$source$/' + resourceId;
 	\$scope.resource['_ifcEntryResource_'] = true;
     \$scope.updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes
+    \$scope.resource.$interfaceName$ = []; // initialize resource interface object
+    
+    // watch and update navLabel (e.g. used by breadcrumb)
+    \$scope.\$watchCollection('resource.$interfaceName$', function() {
+		if(resourceId != \$scope.\$sessionStorage.session.id){
+            \$scope.navLabel = (\$scope.resource.$interfaceName$[0] || {})._label_ ? \$scope.resource.$interfaceName$[0]._label_ : '...';
+        }
+	});
 	
 	// Create new resource and add data to \$scope.resource['$interfaceName$']
 	if(\$routeParams['new']){
