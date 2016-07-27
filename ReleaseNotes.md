@@ -5,6 +5,11 @@
   * [Issue #486](https://github.com/AmpersandTarski/Ampersand/issues/486) Performance enhancement: Removed DISTINCT in subqueries
   * [Issue #459](https://github.com/AmpersandTarski/Ampersand/issues/459) fix for underscores in Concept name
   * [Issue #489](https://github.com/AmpersandTarski/Ampersand/issues/489) Implemented markdown for rule violation messages in frontend
+  * [Issue #412](https://github.com/AmpersandTarski/Ampersand/issues/412) Partial fix for removing rows from COLS template 
+  * ExecEngine extension: improved logging for debugging
+  * Added new reporting functionality for backend framework
+  * DB performance: less queries because 'I[Concept]'-expression is not queried anymore
+  * Minor backend fixes
 
 ## v3.6.0 (8 july 2016)
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 
