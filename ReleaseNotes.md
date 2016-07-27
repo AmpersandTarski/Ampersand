@@ -6,6 +6,7 @@
   * [Issue #459](https://github.com/AmpersandTarski/Ampersand/issues/459) fix for underscores in Concept name
   * [Issue #489](https://github.com/AmpersandTarski/Ampersand/issues/489) Implemented markdown for rule violation messages in frontend
   * [Issue #412](https://github.com/AmpersandTarski/Ampersand/issues/412) Partial fix for removing rows from COLS template 
+  * [Issue #373](https://github.com/AmpersandTarski/Ampersand/issues/373) Fix breadcrumb
   * ExecEngine extension: improved logging for debugging
   * Added new reporting functionality for backend framework
   * DB performance: less queries because 'I[Concept]'-expression is not queried anymore
