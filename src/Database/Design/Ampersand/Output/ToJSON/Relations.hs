@@ -10,17 +10,17 @@ import Data.Maybe
 
 data Relations = Relations [Relation]deriving (Generic, Show)
 data Relation = Relation
-  { relJSONname        :: String
-  , relJSONsignature   :: String
-  , relJSONsrcConcept  :: String
-  , relJSONtgtConcept  :: String
-  , relJSONuni         :: Bool
-  , relJSONtot         :: Bool
-  , relJSONinj         :: Bool
-  , relJSONsur         :: Bool
-  , relJSONprop        :: Bool
+  { relJSONname         :: String
+  , relJSONsignature    :: String
+  , relJSONsrcConceptId :: String
+  , relJSONtgtConceptId :: String
+  , relJSONuni          :: Bool
+  , relJSONtot          :: Bool
+  , relJSONinj          :: Bool
+  , relJSONsur          :: Bool
+  , relJSONprop         :: Bool
   , relJSONaffectedConjuncts :: [String]
-  , relJSONmysqlTable  :: RelTableInfo
+  , relJSONmysqlTable   :: RelTableInfo
   } deriving (Generic, Show)
 data RelTableInfo = RelTableInfo -- Contains info about where the relation is implemented in SQL
   { rtiJSONname    :: String
@@ -47,8 +47,8 @@ instance JSON Declaration Relation where
  fromAmpersand fSpec dcl = Relation 
          { relJSONname       = name dcl
          , relJSONsignature  = name dcl ++ (show . sign) dcl
-         , relJSONsrcConcept  = name . source $ dcl 
-         , relJSONtgtConcept  = name . target $ dcl
+         , relJSONsrcConceptId  = escapeIdentifier . name . source $ dcl 
+         , relJSONtgtConceptId  = escapeIdentifier . name . target $ dcl
          , relJSONuni      = isUni dcl
          , relJSONtot      = isTot dcl
          , relJSONinj      = isInj dcl

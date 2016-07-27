@@ -41,8 +41,8 @@ data JSONCruds = JSONCruds
   , crudJSONdelete            :: Bool
   } deriving (Generic, Show)
 data JSONexpr = JSONexpr
-  { exprJSONsrcConcept        :: String
-  , exprJSONtgtConcept        :: String
+  { exprJSONsrcConceptId      :: String
+  , exprJSONtgtConceptId      :: String
   , exprJSONisUni             :: Bool
   , exprJSONisTot             :: Bool
   , exprJSONisIdent           :: Bool
@@ -100,8 +100,8 @@ instance JSON Cruds JSONCruds where
   
 instance JSON ObjectDef JSONexpr where
  fromAmpersand fSpec object = JSONexpr
-  { exprJSONsrcConcept        = name srcConcept
-  , exprJSONtgtConcept        = name tgtConcept
+  { exprJSONsrcConceptId      = escapeIdentifier . name $ srcConcept
+  , exprJSONtgtConceptId      = escapeIdentifier . name $ tgtConcept
   , exprJSONisUni             = isUni normalizedInterfaceExp
   , exprJSONisTot             = isTot normalizedInterfaceExp
   , exprJSONisIdent           = isIdent normalizedInterfaceExp

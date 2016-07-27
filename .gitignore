@@ -25,6 +25,6 @@ miscellaneous/AmpersandBackup.jgfns
 .settings/org.eclipse.php.core.prefs
 /.stack-work
 static/zwolle/lib/
-static/zwolle/app/bower_components/
+# static/zwolle/app/bower_components/
 static/zwolle/app/node_modules/
 ArchiExtension/archiAnalyze/.stack-work/
