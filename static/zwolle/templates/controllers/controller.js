@@ -88,6 +88,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to patch only the changed attributes of a Resource
 	\$scope.patchResource = function(resource, patches, requestType){		
+        $if(verbose)$console.log(patches);$endif$
 		if(typeof resource['_patchesCache_'] === 'undefined') resource['_patchesCache_'] = []; // new array
 		resource['_patchesCache_'] = resource['_patchesCache_'].concat(patches); // add new patches
 		
@@ -142,7 +143,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'replace', path : path, value : value}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
@@ -163,7 +163,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			
 			// Construct patch
 			patches = [{ op : 'add', path : path, value : selected.value}];
-			$if(verbose)$console.log(patches);$endif$
 			
 			// Reset selected value
 			selected.value = '';			
@@ -187,7 +186,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'remove', path : path, value: value}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
@@ -224,7 +222,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			
 			// Construct patch
 			patches = [{ op : 'add', path : path, value : obj['_id_']}];
-			$if(verbose)$console.log(patches);$endif$
 			
 			// Patch!
 			\$scope.patchResource(patchResource, patches);
@@ -243,7 +240,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'remove', path : path}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
