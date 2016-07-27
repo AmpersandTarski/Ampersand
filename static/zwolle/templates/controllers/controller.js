@@ -11,6 +11,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	else resourceId = \$scope.\$sessionStorage.session.id;
     
     \$scope.navLabel = \$route.current.\$\$route.interfaceLabel; // interfaceLabel is specified in RouteProvider.js
+	\$scope.updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes
+    
 	/**********************************************************************************************
 	 * 
 	 *	GET INTERFACE
@@ -22,7 +24,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.resource = Restangular.one('resources').one('$source$', resourceId); // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
 	\$scope.resource['_path_'] = '/resources/$source$/' + resourceId;
 	\$scope.resource['_ifcEntryResource_'] = true;
-    \$scope.updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes
     \$scope.resource.$interfaceName$ = []; // initialize resource interface object
     
     // watch and update navLabel (e.g. used by breadcrumb)
