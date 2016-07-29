@@ -4,6 +4,7 @@ use Ampersand\Session;
 use Ampersand\Config;
 use Ampersand\Log\Notifications;
 use Ampersand\Core\Atom;
+use Ampersand\Core\Concept;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
 
 global $app;
