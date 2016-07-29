@@ -1,7 +1,7 @@
 cabal.sandbox.config
 .cabal-sandbox
 .dist-buildwrapper
-dist
+/dist
 .idea
 
 StaticFiles_Generated.hs
