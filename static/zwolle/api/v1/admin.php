@@ -164,7 +164,12 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			break;
 	}
     
-    usort($content, function($a, $b){ return $b['duration'] <=> $a['duration'];});
+    usort($content, function($a, $b){ 
+        // return $b['duration'] <=> $a['duration']; // uses php7 spaceship operator
+        if($b['duration'] < $a['duration']) return -1;
+        elseif($b['duration'] == $a['duration']) return 0;
+        elseif($b['duration'] > $a['duration']) return 1;
+    });
     
     // Output
     $output = new OutputCSV();
