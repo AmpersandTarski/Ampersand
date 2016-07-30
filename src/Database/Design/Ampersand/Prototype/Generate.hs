@@ -104,7 +104,10 @@ plug2TableSpec plug
      , tsName = name plug
      , tsflds = plugAttributes plug
      , tsKey  = case (plug, (head.plugAttributes) plug) of
-                 (BinSQL{}, _)   -> []
+                 (BinSQL{}, _)   -> [  "PRIMARY KEY (" 
+                                       <> intercalate ", " (map (show . attName) (plugAttributes plug))
+                                       <> ")"
+                                    ]
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
                          PrimaryKey _ -> ["PRIMARY KEY (" <> (show . attName) primFld <> ")" ]
@@ -127,7 +130,7 @@ generateAllDefPopQueries fSpec
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [Text.Text]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
-     = [Text.unlines $ 
+     = [Text.unlines
             [ "INSERT INTO "<>Text.pack (show (getTableName signalTableSpec))
             , "   ("<>Text.intercalate ", " (map (Text.pack . doubleQuote) ["conjId","src","tgt"])<>")"
             , "VALUES " <> Text.intercalate " , " 
@@ -146,7 +149,7 @@ generateAllDefPopQueries fSpec
           = case tableContents fSpec plug of
              []  -> []
              tblRecords 
-                 -> [Text.unlines $ 
+                 -> [Text.unlines
                        [ "INSERT INTO "<>Text.pack (show (name plug))
                        , "   ("<>Text.intercalate ", " (map (Text.pack . show . attName) (plugAttributes plug))<>") "
                        , "VALUES " <> Text.intercalate " , " 
