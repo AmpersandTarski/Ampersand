@@ -57,8 +57,8 @@ class Violation {
      */
     public function __construct($rule, $srcAtomId, $tgtAtomId){
         $this->rule = $rule;
-        $this->src = new Atom($srcAtomId, $rule->srcConcept->name);
-        $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept->name);
+        $this->src = new Atom($srcAtomId, $rule->srcConcept);
+        $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept);
     }
 
     public function __toString(){
@@ -114,10 +114,10 @@ class Violation {
         $session = Session::singleton();
 
         $links = array();
-        foreach ($session->getInterfacesToReadConcept($this->src->concept->name) as $interface){
+        foreach ($session->getInterfacesToReadConcept($this->src->concept) as $interface){
             $links[] = "#/{$interface->id}/{$this->src->getJsonRepresentation()}";
         }
-        foreach ($session->getInterfacesToReadConcept($this->tgt->concept->name) as $interface){
+        foreach ($session->getInterfacesToReadConcept($this->tgt->concept) as $interface){
             $links[] = "#/{$interface->id}/{$this->tgt->getJsonRepresentation()}";
         }
         return array_unique($links);

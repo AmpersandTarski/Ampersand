@@ -7,9 +7,12 @@ INTERFACE "$interfaceName$" : $expAdl$ :: $source$ * $target$  ($if(!isRoot)$non
 Roles: [$roles;separator=", "$]
 $endif$*/
 AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, Restangular, \$location, \$timeout, \$localStorage) {	
-	if(typeof \$routeParams.resourceId != 'undefined') resourceId = \$routeParams.resourceId;
+	if(typeof \$routeParams.resourceId !== 'undefined') resourceId = \$routeParams.resourceId;
 	else resourceId = \$scope.\$sessionStorage.session.id;
-	
+    
+    \$scope.navLabel = \$route.current.\$\$route.interfaceLabel; // interfaceLabel is specified in RouteProvider.js
+	\$scope.updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes
+    
 	/**********************************************************************************************
 	 * 
 	 *	GET INTERFACE
@@ -21,7 +24,14 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.resource = Restangular.one('resources').one('$source$', resourceId); // BaseURL to the API is already configured in AmpersandApp.js (i.e. 'http://pathToApp/api/v1/')
 	\$scope.resource['_path_'] = '/resources/$source$/' + resourceId;
 	\$scope.resource['_ifcEntryResource_'] = true;
-    \$scope.updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes
+    \$scope.resource.$interfaceName$ = []; // initialize resource interface object
+    
+    // watch and update navLabel (e.g. used by breadcrumb)
+    \$scope.\$watchCollection('resource.$interfaceName$', function() {
+		if(resourceId != \$scope.\$sessionStorage.session.id){
+            \$scope.navLabel = (\$scope.resource.$interfaceName$[0] || {})._label_ ? \$scope.resource.$interfaceName$[0]._label_ : '...';
+        }
+	});
 	
 	// Create new resource and add data to \$scope.resource['$interfaceName$']
 	if(\$routeParams['new']){
@@ -78,7 +88,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to patch only the changed attributes of a Resource
 	\$scope.patchResource = function(resource, patches, requestType){		
-		if(resource['_patchesCache_'] === undefined) resource['_patchesCache_'] = []; // new array
+        $if(verbose)$console.log(patches);$endif$
+		if(typeof resource['_patchesCache_'] === 'undefined') resource['_patchesCache_'] = []; // new array
 		resource['_patchesCache_'] = resource['_patchesCache_'].concat(patches); // add new patches
 		
 		\$scope.saveResource(resource, requestType);
@@ -123,7 +134,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to save item (non-array)
 	\$scope.saveItem = function(resource, ifc, patchResource){		
-		if(resource[ifc] === '') value = null;
+		if(typeof resource[ifc] === 'undefined' || resource[ifc] === '') value = null;
 		else value = resource[ifc];
 		
 		// Construct path
@@ -132,7 +143,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'replace', path : path, value : value}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
@@ -140,11 +150,11 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to add item to array
 	\$scope.addItem = function(resource, ifc, selected, patchResource){		
-		if(selected.value === undefined){
+		if(typeof selected.value === 'undefined'){
 			console.log('Value undefined');
 		}else if(selected.value !== ''){
 			// Adapt in js model
-			if(resource[ifc] === null) resource[ifc] = [];
+			if(typeof resource[ifc] === 'undefined' || resource[ifc] === null) resource[ifc] = [];
 			resource[ifc].push(selected.value);
 			
 			// Construct path
@@ -153,7 +163,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			
 			// Construct patch
 			patches = [{ op : 'add', path : path, value : selected.value}];
-			$if(verbose)$console.log(patches);$endif$
 			
 			// Reset selected value
 			selected.value = '';			
@@ -177,7 +186,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'remove', path : path, value: value}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
@@ -192,16 +200,16 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	
 	// Function to add an object to a certain interface (array) of a resource
 	\$scope.addObject = function(resource, ifc, obj, patchResource){
-		// If patchResource is undefined, the patchResource equals the patchResource
-		if(patchResource === undefined){
+		// If patchResource is undefined, the patchResource equals the resource
+		if(typeof patchResource === 'undefined'){
 			patchResource = resource
 		}
 		
-		if(obj['_id_'] === undefined || obj['_id_'] == ''){
+		if(typeof obj['_id_'] === 'undefined' || obj['_id_'] == ''){
 			console.log('Selected object id is undefined');
 		}else{
 			// Adapt js model
-			if(resource[ifc] === null) resource[ifc] = [];
+			if(typeof resource[ifc] === 'undefined' || resource[ifc] === null) resource[ifc] = [];
 			try {
 				resource[ifc].push(obj.plain()); // plain is Restangular function
 			}catch(e){
@@ -214,7 +222,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 			
 			// Construct patch
 			patches = [{ op : 'add', path : path, value : obj['_id_']}];
-			$if(verbose)$console.log(patches);$endif$
 			
 			// Patch!
 			\$scope.patchResource(patchResource, patches);
@@ -233,7 +240,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		
 		// Construct patch
 		patches = [{ op : 'remove', path : path}];
-		$if(verbose)$console.log(patches);$endif$
 		
 		// Patch!
 		\$scope.patchResource(patchResource, patches);
@@ -243,7 +249,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 	\$scope.typeahead = {}; // an empty object for typeahead
 	\$scope.getTypeahead = function(resourceType){
 		// Only if not yet set
-		if(\$scope.typeahead[resourceType] === undefined){
+		if(typeof \$scope.typeahead[resourceType] === 'undefined'){
 			\$scope.typeahead[resourceType] = Restangular.all('resources/' + resourceType).getList().\$object;
 		}
 	};

@@ -101,9 +101,9 @@ class ExecEngine {
 					$rulesThatHaveViolations[] = $rule->id;
 					
 					// Fix violations for every rule
-					$logger->notice("ExecEngine fixing violations for rule '{$rule->id}'");
+					$logger->notice("ExecEngine fixing " . count($violations) . " violations for rule '{$rule->id}'");
 					self::fixViolations($violations); // Conjunct violations are not cached, because they are fixed by the ExecEngine
-					$logger->debug("Fixed violations for rule '{$rule->__toString()}'");
+					$logger->debug("Fixed " . count($violations) . " violations for rule '{$rule->__toString()}'");
 					
 					// If $autoRerun, set $doRun to true because violations have been fixed (this may fire other execEngine rules)
 					if(self::$autoRerun) self::$doRun = true;
@@ -121,8 +121,12 @@ class ExecEngine {
 	 * @return void
 	 */
 	public static function fixViolations($violations){
-		
-		foreach ($violations as $violation){
+		$logger = Logger::getLogger('EXECENGINE');
+        $total = count($violations);
+        
+		foreach ($violations as $key => $violation){
+            $num = $key + 1;
+            $logger->info("Fixing violation {$num}/{$total}: ({$violation->src},{$violation->tgt})");
 		    $violation = new ExecEngineViolation($violation->rule, $violation->src->id, $violation->tgt->id);
 		    
 			$theMessage = $violation->getViolationMessage();
@@ -180,10 +184,16 @@ class ExecEngineViolation extends Violation {
 	        }elseif($segment['segmentType'] == 'Exp'){
 	            // select starting atom depending on whether the segment uses the src of tgt atom.
 	            $atom = $segment['srcOrTgt'] == 'Src' ? $this->src : $this->tgt;
-	
-	            // quering the expression
-	            $query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '{$atom->idEsc}'"; // SRC of TGT kunnen door een expressie gevolgd worden
-	            $rows = $database->Exe($query);
+                
+                $rows = array();
+                if($segment['expIsIdent']){ 
+                    // when segment expression isIdent (i.e. SRC I or TGT I), we don't have to query the database.
+                    $rows[] = array('tgt' => $atom->id);
+                }else{
+                    // quering the expression
+                    $query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '{$atom->idEsc}'"; // SRC of TGT kunnen door een expressie gevolgd worden
+                    $rows = $database->Exe($query);
+                }
 	
 	            // returning the result
 				if(count($rows) == 0){

@@ -75,13 +75,12 @@ class Session {
         $this->logger = Logger::getLogger('FW');
         $this->database = Database::singleton();
         
+        $conceptSession = Concept::getConceptByLabel('SESSION'); // Also checks if 'SESSION' is defined as concept in Ampersand script
+        
         $this->id = session_id();
-        $this->sessionAtom = new Atom($this->id, 'SESSION');
+        $this->sessionAtom = new Atom($this->id, $conceptSession);
         
         $this->logger->debug("Session id: {$this->id}");
-        
-        // Check if 'SESSION' is defined as concept in Ampersand script
-        Concept::getConcept('SESSION');
         
         // Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
         $expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
@@ -94,7 +93,7 @@ class Session {
         }
         
         // Create a new Ampersand session atom if not yet in SESSION table (browser started a new session or Ampersand session was expired)
-        $sessionAtom = new Atom($this->id, 'SESSION');
+        $sessionAtom = new Atom($this->id, $conceptSession);
         if (!$sessionAtom->atomExists()){ 
             $sessionAtom->addAtom();
             $this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
@@ -134,7 +133,7 @@ class Session {
      */
     private function destroyAmpersandSession($sessionAtomId){
         $this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '{$sessionAtomId}'");
-        $this->database->deleteAtom(new Atom($sessionAtomId, 'SESSION'));
+        $this->database->deleteAtom(new Atom($sessionAtomId, Concept::getConceptByLabel('SESSION')));
         $this->database->commitTransaction();
     }
     
@@ -296,13 +295,13 @@ class Session {
     
     /**
      * Get interfaces that are accessible in the current session to 'Read' a certain concept
-     * @param string $conceptName
+     * @param Concept $concept
      * @return InterfaceObject[]
      */
-    public function getInterfacesToReadConcept($conceptName){
+    public function getInterfacesToReadConcept($concept){
         $interfaces = array();
         foreach($this->accessibleInterfaces as $interface){
-            if(($interface->srcConcept->name == $conceptName || $interface->srcConcept->hasSpecialization($conceptName)) 
+            if(($interface->srcConcept == $concept || $interface->srcConcept->hasSpecialization($concept)) 
                     && $interface->crudR
                     && (!$interface->crudC or ($interface->crudU or $interface->crudD))
                     ) $interfaces[] = $interface;

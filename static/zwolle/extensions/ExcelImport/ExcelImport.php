@@ -106,7 +106,7 @@ class ExcelImport {
 	    $highestcolumn = $worksheet->getHighestColumn();
 	    $highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
 	    
-	    $leftConcept = Concept::getConcept((string)$worksheet->getCell('A1'));
+	    $leftConcept = Concept::getConceptByLabel((string)$worksheet->getCell('A1'));
 	    if($leftConcept != $ifc->tgtConcept) throw new Exception("Target concept of interface '{$ifc->path}' does not match concept specified in cell {$worksheet->getTitle()}:A1", 500);
 	    
 	    // Parse other columns of first row
@@ -133,8 +133,8 @@ class ExcelImport {
 	            if(!$ifc->crudC) throw new Exception("Trying to create new atom in cell A{$row}. This is not allowed.", 403);
 	            $leftAtom = $leftConcept->createNewAtom()->addAtom();
 	        }else{
-	            $leftAtom = new Atom($firstCol, $leftConcept->name);
-	            if(!$leftAtom->atomExists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept->name} in cell A{$row}. This is not allowed.", 403);
+	            $leftAtom = new Atom($firstCol, $leftConcept);
+	            if(!$leftAtom->atomExists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
 	            $leftAtom->addAtom();
 	        }
 	        
@@ -152,10 +152,10 @@ class ExcelImport {
 	            // the @ is a php indicator for a unix timestamp (http://php.net/manual/en/datetime.formats.compound.php), later used for typeConversion
 	            if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
 	            
-	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept->name);
-	            if(!$rightAtom->atomExists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept->name} in cell {$columnletter}{$row}. This is not allowed.", 403);
+	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept);
+	            if(!$rightAtom->atomExists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
 	            
-	            $header[$columnletter]->relation->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
+	            $header[$columnletter]->relation()->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
 	        }
 	    }
 	}
@@ -244,10 +244,10 @@ class ExcelImport {
 				    // The cell contains either 'Concept' or '[Conceptx]' where x is a separator character (e.g. ';', ',', ...)
 				    }elseif ((substr($cellvalue, 0, 1) == '[') && (substr($cellvalue, -1) == ']') ){
 				        if($col == 0) throw new Exception ("Seperator character not allowed for first column of excel import. Specified '{$line[$col]}'", 500);
-				        $concept[$col] = Concept::getConcept(substr($cellvalue, 1, -2));
+				        $concept[$col] = Concept::getConceptByLabel(substr($cellvalue, 1, -2));
 						$separator[$col] = substr($cellvalue, -2, 1);
 					}else{
-					    $concept[$col] = Concept::getConcept($cellvalue);
+					    $concept[$col] = Concept::getConceptByLabel($cellvalue);
 						$separator[$col] = false;
 					}
 					
@@ -256,10 +256,10 @@ class ExcelImport {
     					if($relations[$col] == '' || $concept[$col] == ''){
     					    $relations[$col] = null;
     					}elseif(substr($relations[$col], -1) == '~'){ // Relation is flipped is last character is a tilde (~)
-    					    $relations[$col] = Relation::getRelation(substr($relations[$col], 0, -1), $concept[$col]->name, $concept[0]->name);
+    					    $relations[$col] = Relation::getRelation(substr($relations[$col], 0, -1), $concept[$col], $concept[0]);
     					    $flipped[$col] = true;
     					}else{
-    					    $relations[$col] = Relation::getRelation($relations[$col], $concept[0]->name, $concept[$col]->name);
+    					    $relations[$col] = Relation::getRelation($relations[$col], $concept[0], $concept[$col]);
     					    $flipped[$col] = false;
     					}
 					}
@@ -272,7 +272,7 @@ class ExcelImport {
 			    // Determine left atom (column 0) of line
 				if ($line[0] == '') continue; // Don't process lines that start with an empty first cell
 				elseif ($line[0] == '_NEW') $leftAtom = $concept[0]->createNewAtom(); // Create a unique atom name
-				else $leftAtom = new Atom($line[0], $concept[0]->name);
+				else $leftAtom = new Atom($line[0], $concept[0]);
 				
 				// Insert $leftAtom into the DB if it does not yet exist
 				$leftAtom->addAtom();
@@ -291,9 +291,9 @@ class ExcelImport {
 					elseif ($cell == '_NEW') $rightAtoms[] = $leftAtom; // If the cell contains '_NEW', the same atom as the $leftAtom is used. Useful for property-relations
 					elseif($separator[$col]){
 					    $atomsIds = explode($separator[$col],$cell); // atomnames may have surrounding whitespace
-					    foreach($atomsIds as $atomId) $rightAtoms[] = new Atom(trim($atomId), $concept[$col]->name);
+					    foreach($atomsIds as $atomId) $rightAtoms[] = new Atom(trim($atomId), $concept[$col]);
 					}else{
-					    $rightAtoms[] = new Atom($line[$col], $concept[$col]->name); // DO NOT TRIM THIS CELL CONTENTS as it contains an atom that may need leading/trailing spaces
+					    $rightAtoms[] = new Atom($line[$col], $concept[$col]); // DO NOT TRIM THIS CELL CONTENTS as it contains an atom that may need leading/trailing spaces
 					}
 					
 					foreach ($rightAtoms as $rightAtom){
