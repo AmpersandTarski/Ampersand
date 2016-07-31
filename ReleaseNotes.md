@@ -2,7 +2,6 @@
 
 ## unreleased changes
   * [Issue #488](https://github.com/AmpersandTarski/Ampersand/issues/488) Performance enhancement: Added indexes on table columns when possible
-  * Enhancement: From now on, default behaviour is that extra information about the model (meta-information) is available. To omit this, the switch `--no-meta-tables` has been introduced. The experimental switch `--meta-tables` has been removed. 
   * [Issue #486](https://github.com/AmpersandTarski/Ampersand/issues/486) Performance enhancement: Removed DISTINCT in subqueries
   * [Issue #459](https://github.com/AmpersandTarski/Ampersand/issues/459) fix for underscores in Concept name
   * [Issue #489](https://github.com/AmpersandTarski/Ampersand/issues/489) Implemented markdown for rule violation messages in frontend
