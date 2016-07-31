@@ -198,6 +198,11 @@ installComposerLibs fSpec =
        , close_fds = False
        , create_group = False
        , delegate_ctlc = True
+       , detach_console = False
+       , create_new_console = False
+       , new_session = False
+       , child_group = Nothing
+       , child_user = Nothing
        }
      composerTargetPath = dirPrototype (getOpts fSpec)
      failOutput (exit_code, stdout, stderr) =
