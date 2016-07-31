@@ -8,7 +8,7 @@
 [![Throughput Graph](https://graphs.waffle.io/AmpersandTarski/Ampersand/throughput.svg)](https://waffle.io/AmpersandTarski/Ampersand/metrics)
 
 ## Releases
-Check out the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) and the [![Latest Release](https://img.shields.io/github/release/AmpersandTarski/Ampersand.svg)](https://github.com/AmpersandTarski/Ampersand/releases/latest)
+Check out the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) and [![all Releases](https://img.shields.io/github/release/AmpersandTarski/Ampersand.svg)](https://github.com/AmpersandTarski/Ampersand/releases)
 
 ## Documentation
 
