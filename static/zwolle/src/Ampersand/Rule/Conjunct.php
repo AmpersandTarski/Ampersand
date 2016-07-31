@@ -154,6 +154,7 @@ class Conjunct {
             	
         }catch (Exception $e){
             Logger::getUserLogger()->error("While checking conjunct '{$this->id}': " . $e->getMessage());
+            return array();
         }
     }
     

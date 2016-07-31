@@ -2,7 +2,7 @@
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
 # resolver: lts-3.18
-resolver: nightly-2016-06-18
+resolver: nightly-2016-07-30
 --resolver: lts-6.3
 
 # Local packages, usually specified by relative directory name
@@ -13,6 +13,7 @@ packages:
 extra-deps: 
 - SpreadsheetML-0.1
 - simple-sql-parser-0.4.2
+- yaml-config-0.4.0
 - csv-0.1.2
 - pandoc-1.17.1
 - hslua-0.4.1

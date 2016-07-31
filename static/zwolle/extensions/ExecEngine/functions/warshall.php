@@ -28,6 +28,7 @@
    4) Rather than defining/computing rStar (for r*), you may use the expression (I \/ rPlus)
 */
 
+use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
 use Ampersand\Extension\ExecEngine\ExecEngine;
 use Ampersand\Database\Database;
@@ -82,7 +83,8 @@ function RetrievePopulation($relationName, $conceptName){
 	try{
 		$database = Database::singleton();
 		
-		$relation = Relation::getRelation($relationName, $conceptName, $conceptName);
+        $concept = Concept::getConceptByLabel($conceptName);
+		$relation = Relation::getRelation($relationName, $concept, $concept);
 		$relationTable = $relation->getMysqlTable();
 		$srcCol = $relationTable->srcCol();
 		$tgtCol = $relationTable->tgtCol();
@@ -107,7 +109,8 @@ function OverwritePopulation($rArray, $relationName, $conceptName){
 	try{
 		$database = Database::singleton();
 		
-		$relation = Relation::getRelation($relationName, $conceptName, $conceptName);
+        $concept = Concept::getConceptByLabel($conceptName);
+		$relation = Relation::getRelation($relationName, $concept, $concept);
 		$relationTable = $relation->getMysqlTable();
 		$srcCol = $relationTable->srcCol();
 		$tgtCol = $relationTable->tgtCol();

@@ -26,10 +26,11 @@ import Control.Exception
 import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
 -- | Parse an Ampersand file and all transitive includes
-parseADL ::  Options                -- ^ The options given through the command line
+parseADL :: Options                    -- ^ The options given through the command line
          -> FilePath   -- ^ The path of the file to be parsed
-         -> IO (Guarded P_Context)  -- ^ The resulting context
+         -> IO (Guarded P_Context)     -- ^ The resulting context
 parseADL opts fp = parseThing opts (fp,Nothing) False
+
 parseMeta :: Options -> IO (Guarded P_Context)
 parseMeta opts = parseThing opts ("AST.adl",Just $ Origin "Formal Ampersand specification") True -- This is the top file from FormalAmpersand. 
 
@@ -69,7 +70,7 @@ parseADLs opts useAllStaticFiles parsedFilePaths fpIncludes =
                   uniques :: [SingleFileToParse] -> [SingleFileToParse]
                   uniques = map head . groupBy eql
                   eql :: Eq a => (a,b) -> (a,c) -> Bool 
-                  eql a b = fst a == fst b 
+                  eql a b = fst a == fst b
 
 type SingleFileToParse = (FilePath, Maybe Origin) -- The origin of why this file still has to be parsed.
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
@@ -103,8 +104,9 @@ parseSingleADL opts useAllStaticFiles singleFile
                     Right fileContents ->
                          whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) ->
                                do return (Checked (ctxts, relativePaths))
-            }
-         where stripBom :: String -> String
+                }
+         where -- showDcl dcl = name dcl ++show(dec_sign dcl)
+               stripBom :: String -> String
                stripBom ('\239':'\187':'\191': s) = s
                stripBom s = s
                extension = map toLower $ takeExtension filePath

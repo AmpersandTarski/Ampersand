@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.5.2
+version:        3.6.0
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -30,15 +30,15 @@ executable ampersand
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall
   build-depends:     aeson == 0.11.*,
-                     aeson-pretty == 0.7.*,
+                     aeson-pretty == 0.8.*,
                      base == 4.9.*,
                      bytestring == 0.10.*,
                      conduit == 1.2.6.*,
                      conduit-extra == 1.1.13.*,
-                     conduit-combinators == 1.0.3.*,
+                     conduit-combinators == 1.0.4.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
-                     data-default == 0.6.*,
+                     data-default == 0.7.*,
                      directory == 1.2.*,
                      filepath == 1.4.*,
                      graphviz == 2999.18.*,
@@ -56,8 +56,9 @@ executable ampersand
                      text == 1.2.*,
                      time == 1.6.*,
                      utf8-string == 1.0.*,
-                     yaml == 0.8.17.*,
-                     xlsx == 0.2.*,
+                     xlsx == 0.2.3,
+                     yaml == 0.8.18.*,
+                     yaml-config == 0.4.*,
                      zlib == 0.6.*
 
   other-modules:
@@ -172,8 +173,9 @@ Test-Suite regression-test
   build-depends:     base == 4.9.*,
                      conduit == 1.2.6.*,
                      conduit-extra == 1.1.13.*,
-                     conduit-combinators == 1.0.3.*,
-                     yaml == 0.8.17.*,
+                     conduit-combinators == 1.0.4.*,
+                     yaml == 0.8.18.*,
+                     yaml-config == 0.4.*,
                      process == 1.4.*,
                      transformers == 0.5.*,
                      directory == 1.2.*,
@@ -242,7 +244,7 @@ Test-Suite ampersand-test
                      bytestring == 0.10.*,
                      conduit == 1.2.6.*,
                      containers == 0.5.*,
-                     data-default == 0.6.*,
+                     data-default == 0.7.*,
                      directory == 1.2.*,
                      filepath == 1.4.*,
                      hashable == 1.2.*,
@@ -259,8 +261,9 @@ Test-Suite ampersand-test
                      transformers == 0.5.*,
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
-                     xlsx == 0.2.*,
-                     yaml == 0.8.17.*,
+                     xlsx == 0.2.3,
+                     yaml == 0.8.18.*,
+                     yaml-config == 0.4.*,
                      zlib == 0.6.*
   other-modules:
                      Database.Design.Ampersand.Misc.Options,

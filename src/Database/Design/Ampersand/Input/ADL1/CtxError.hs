@@ -156,10 +156,10 @@ class GetOneGuarded a where
   hasNone o = getOneExactly o []
 
 instance GetOneGuarded (P_SubIfc a) where
-  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one P-subinterface in "++showADL o]
 
 instance GetOneGuarded (SubInterface) where
-  hasNone o = Errors [CTXE (origin o)$ "Required: one subinterface in "++showADL o]
+  hasNone o = Errors [CTXE (origin o)$ "Required: one A-subinterface in "++showADL o]
 
 instance GetOneGuarded Declaration where
   getOneExactly _ [d] = Checked d
@@ -224,7 +224,7 @@ mkDanglingRefError :: String -- The type of thing that dangles. eg. "Rule"
                    -> Origin -- The place where the thing is found.
                    -> CtxError
 mkDanglingRefError entity ref orig =
-  CTXE orig $ "Refference to non-existent " ++ entity ++ ": "++show ref
+  CTXE orig $ "Reference to non-existent " ++ entity ++ ": "++show ref
 mkUndeclaredError :: (Traced e, Named e) => String -> e -> String -> CtxError
 mkUndeclaredError entity objDef ref =
   CTXE (origin objDef) $ "Undeclared " ++ entity ++ " " ++ show ref ++ " referenced at field " ++ show (name objDef)

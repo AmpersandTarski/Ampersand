@@ -14,10 +14,9 @@ AmpersandApp.controller('static_breadcrumbController', function ($scope, $route,
 
 		// Add new breadcrumb item (except for home path '/')
 		if($location.path() != '/'){
-			$scope.history.push({ 'link' : $location.path() 
-								, 'scope': current.scope
-								, 'resourceId' : current.params.resourceId
-								, 'interfaceLabel' : current.$$route.interfaceLabel
+			$scope.history.push({ 'link' : $location.path()
+                                , 'interfaceData' : current.scope
+								, 'interfaceLabel' : current.$$route.interfaceLabel // interfaceLabel is specified in RouteProvider.js
 								});
 		}
 		

@@ -1,23 +1,10 @@
-{-# OPTIONS_GHC -Wall -Werror #-}
+{-# OPTIONS_GHC -Wall #-}
 module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
 import Database.Design.Ampersand.Core.ParseTree
 import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics (fatal)
+--import Database.Design.Ampersand.Basics (fatal)
 --import Control.Applicative
---import Data.Traversable
 import qualified Data.Set as Set
-
-findConcept :: String -> A_Concept
--- SJC: ONE should be tokenized, so it cannot occur as a string
--- especially because we require that concepts are identifiable by their name
--- hence if this line would change the semantics, we have either
--- (1) made a programming error in the call of findConcept (in which case you should call findConceptOrONE instead)
--- (2) made an error in the tokenizer/parser
-findConcept "ONE" = fatal 200 "ONE is not a valid name for a concept"
-findConcept x =
-   PlainConcept { cptnm = x
-                }
-
 
 -- this is *only* used internally!
 data D_Concept
@@ -264,7 +251,7 @@ orWhenEmpty a b = if (null a) then b else a
 pCpt2aCpt :: P_Concept -> A_Concept
 pCpt2aCpt pc
     = case pc of
-        PCpt{} -> findConcept (p_cptnm pc)
+        PCpt{} -> makeConcept (p_cptnm pc)
         P_Singleton -> ONE
 
 data Change a = Change a Bool

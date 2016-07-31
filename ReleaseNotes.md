@@ -1,10 +1,27 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * [Issue #488](https://github.com/AmpersandTarski/Ampersand/issues/488) Performance enhancement: Added indexes on table columns when possible
+  * [Issue #486](https://github.com/AmpersandTarski/Ampersand/issues/486) Performance enhancement: Removed DISTINCT in subqueries
+  * [Issue #459](https://github.com/AmpersandTarski/Ampersand/issues/459) fix for underscores in Concept name
+  * [Issue #489](https://github.com/AmpersandTarski/Ampersand/issues/489) Implemented markdown for rule violation messages in frontend
+  * [Issue #412](https://github.com/AmpersandTarski/Ampersand/issues/412) Partial fix for removing rows from COLS template 
+  * [Issue #373](https://github.com/AmpersandTarski/Ampersand/issues/373) Fix breadcrumb
+  * ExecEngine extension: improved logging for debugging
+  * Added new reporting functionality for backend framework
+  * DB performance: less queries because 'I[Concept]'-expression is not queried anymore
+  * Minor backend fixes
+
+## v3.6.0 (8 july 2016)
+  * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 
   * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) New switch: --include
   * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) Enhancement: Introduction of a configuration file. A sample configuration file is generated when you use the switch --sampleConfigFile. To use a config file, use the switch --config=MyConfig.yaml
-  * Enhancement: From now on, all text values read from .xlsx files are trimmed (leading and trailing spaces are removed), unless the switch --do-not-trim-cellvalues is given. [Issue #414](https://github.com/AmpersandTarski/Ampersand/issues/414)
+  * [Issue #468](https://github.com/AmpersandTarski/Ampersand/issues/468) Enhancement: default configuration file (when it exists)
+  * [Issue #414](https://github.com/AmpersandTarski/Ampersand/issues/414) Enhancement: From now on, all text values read from .xlsx files are trimmed (leading and trailing spaces are removed), unless the switch --do-not-trim-cellvalues is given. 
   * More automation on releasing Ampersand.
+  * Frontend: Options in frontend navbar now can be defined for certain roles only (e.g. the installer and excelimporter).
+  * [Issue #103](https://github.com/AmpersandTarski/Ampersand/issues/103) Fix overlap by multiple rows in navbar
+  * [Issue #423](https://github.com/AmpersandTarski/Ampersand/issues/423) Database is automatically installed when it does not exists yet (first time use)
   
 ## v3.5.2 (10 juni 2016)
   * Work on meatgrinder (still experimental!)

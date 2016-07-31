@@ -210,13 +210,17 @@ fieldset {
 	min-width			: 35px;
 }
 
-.bigalphanumeric:hover, .hugealphanumeric:hover {
+.bigalphanumeric .hugealphanumeric {
+    padding				: 5px 10px 5px 0px;
+    width				: 100%;
+}
+
+.hugealphanumeric:hover {
 	border-width		: 1px;
 	border-style		: solid;
 	border-color		: lightgray;
-	padding				: 5px 10px 5px 10px; 
-	margin-bottom		: 5px;
-	width				: 100%;
+	padding-left		: 10px;
+    margin-bottom       : 1px;
 }
 
 /********* FORMS, INPUTS, ETC **************/
@@ -290,6 +294,10 @@ input .ng-invalid .ng-dirty {
 #notificationCenter .panel .list-group-item {
 	padding-top			: 5px;
 	padding-bottom		: 5px;
+}
+
+#notificationCenter p {
+	margin              : 0px;
 }
 
 /********* LOG WINDOW *****************/

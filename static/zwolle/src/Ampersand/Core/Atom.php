@@ -103,17 +103,17 @@ class Atom {
 	/**
 	 * Atom constructor
 	 * @param string $atomId
-	 * @param string $conceptName
+	 * @param Concept $concept
 	 * @param InterfaceObject $ifc
-     * @param array|null $qData the row data (from database query) from which this atom is created
+     * @param array $qData the row data (from database query) from which this atom is created
 	 * @return void
 	 */
-	public function __construct($atomId, $conceptName, $ifc = null, $qData = null){
+	public function __construct($atomId, Concept $concept, InterfaceObject $ifc = null, array $qData = null){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
+        $this->concept = $concept;
 		$this->parentIfc = $ifc;
-		$this->concept = Concept::getConcept($conceptName);
         $this->qData = $qData;
 		
 		$this->setId($atomId);
@@ -124,7 +124,9 @@ class Atom {
 	}
 	
 	public function __toString(){
-	    return "{$this->id}[{$this->concept->name}]";
+        // if atom id is longer than 40 chars, display first and last 20 chars
+        $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
+	    return "{$id}[{$this->concept}]";
 	}
 	
 	/**
@@ -148,7 +150,7 @@ class Atom {
 	 */
 	public function atomExists(){
         if($this->concept->inAtomCache($this)){
-            $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
+            // $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
             return true;
         }elseif($this->id === '_NEW'){
             return true; // Return true if id is '_NEW' (special case)
@@ -202,7 +204,7 @@ class Atom {
     public function getLabel(){
         if(!isset($this->label)){
             $viewStr = implode($this->getView());
-            $this->label = empty($viewStr) ? $this->id : $viewStr; // empty view => label = id
+            $this->label = empty(trim($viewStr)) ? $this->id : $viewStr; // empty view => label = id
         }
         return $this->label;
     }
@@ -235,7 +237,7 @@ class Atom {
                             try {
                                 // Try to get view segment from atom query data
                                 $this->view[$key] = $this->getQueryData('view_' . $key); // column is prefixed with view_
-                                $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");                                
+                                // $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");                                
                             
                             }catch (Exception $e) {
                                 // Column not defined, perform query
@@ -259,13 +261,12 @@ class Atom {
 	}
     
     public function getQueryData($colName = null){
-        if(is_null($this->qData)) throw new Exception("No query data available for atom '{$this->__toString()}'", 1001);
         if(is_null($colName)){
-            return $this->qData;
+            if(is_null($this->qData)) return array();
+            else return $this->qData;
         }else{
             // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
-            $colName;
-            if(!array_key_exists($colName, $this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
+            if(!array_key_exists($colName, (array)$this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
             return $this->qData[$colName];
         }
     }
@@ -299,7 +300,7 @@ class Atom {
 	        case "OBJECT" :
 	            return rawurlencode($this->id);
 	        default :
-	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
+	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
 	    }
 	}
 	
@@ -334,7 +335,7 @@ class Atom {
 	        case "OBJECT" :
 	            return $this->id;
 	        default :
-	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept->name}]'", 501);
+	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
 	    }
 	}
 	
@@ -454,11 +455,13 @@ class Atom {
 	    // Define interface(s) to navigate to for this tgtAtom
 	    if($options['navIfc']){
 	        $ifcs = array();
-	        if($this->parentIfc->isLinkTo && $session->isAccessibleIfc($this->parentIfc->refInterfaceId))
-	            $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
-	        else $ifcs = array_map(function($o) {
-	            return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
-	        }, $session->getInterfacesToReadConcept($this->concept->name));
+	        if($this->parentIfc->isLinkTo){
+                if ($session->isAccessibleIfc($this->parentIfc->refInterfaceId)) $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
+	        }else{
+                $ifcs = array_map(function($o) {
+	                   return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
+	            }, $session->getInterfacesToReadConcept($this->concept));
+            }
 	        $content['_ifcs_'] = $ifcs;
 	    }
 	    
@@ -526,7 +529,7 @@ class Atom {
 	        
 		// Handle options
 		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
-		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept->name . ' updated';
+		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
 		
 		// Perform patches
 		$this->doPatches($patches);
@@ -555,7 +558,7 @@ class Atom {
 	    $this->database->deleteAtom($this);
 	
 	    // Close transaction
-	    $this->database->closeTransaction($this->concept->name . ' deleted');
+	    $this->database->closeTransaction($this->concept . ' deleted');
 	
 	    return;
 	}
@@ -647,13 +650,13 @@ class Atom {
 		// Interface is a relation to an object
 		}elseif($ifc->tgtConcept->isObject){
 			
-			$ifc->relation->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
+			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
 		}elseif(!$ifc->tgtConcept->isObject){
 			if($ifc->isUni) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
 			
-			$ifc->relation->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
+			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 			
 		}else{
 			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);

@@ -106,41 +106,24 @@ class Database {
 	 * Constructor of database class
 	 * Singleton pattern: private function to prevent any outside instantiantion of this object. 
 	 * Use Database::singleton() instead
-	 * 
-	 * @throws Exception
 	 */
 	private function __construct(){
 	    $this->logger = Logger::getLogger('DATABASE');
 	    
-	    try{
-    	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
-    		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
-    		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
-    		$this->db_name = Config::get('dbName', 'mysqlDatabase');
-    		
-    		// Enable mysqli errors to be thrown as Exceptions
-    		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-    		
-    		// Connect to MYSQL database
-    		$this->db_link = mysqli_init();
-    		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
-    		
-    		// Set sql_mode to ANSI
-    		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-			
-		}catch (Exception $e){
-		    // Convert mysqli_sql_exceptions into 500 errors
-		    if(!Config::get('productionEnv')){
-    		    switch ($e->getCode()){
-    		        case 1049 :
-    		            Logger::getUserLogger()->error('Please <a href="#/admin/installer" class="alert-link">install database</a>');
-    		        default : 
-    		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
-    		    }
-		    }else{
-		        throw new Exception("Cannot connect to database", 500);
-		    }
-		}
+	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
+		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
+		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
+		$this->db_name = Config::get('dbName', 'mysqlDatabase');
+		
+		// Enable mysqli errors to be thrown as Exceptions
+		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+		
+		// Connect to MYSQL database
+		$this->db_link = mysqli_init();
+		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+		
+		// Set sql_mode to ANSI
+		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
 	}
 	
 	/**
@@ -156,7 +139,26 @@ class Database {
 	 * @return Database
 	 */
 	public static function singleton(){
-		if(!is_object (self::$_instance) ) self::$_instance = new Database();
+        try {
+            if(!is_object (self::$_instance)) self::$_instance = new Database();
+        }catch (Exception $e){
+            // Convert mysqli_sql_exceptions into 500 errors
+            if(!Config::get('productionEnv')){
+                switch ($e->getCode()){
+                    case 1049 : // Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR)
+                        // throw new Exception("Please <a href=\"#/admin/installer\" class=\"alert-link\">install database</a>",500);
+                        self::createDB();
+                        self::$_instance = new Database();
+                        self::$_instance->logger->info("Automatically installing database for the first time");
+                        self::$_instance->reinstallDB();
+                        break;
+    		        default : 
+    		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
+    		    }
+		    }else{
+		        throw new Exception("Cannot connect to database", 500);
+		    }
+		}
 		return self::$_instance;
 	}
 	
@@ -254,7 +256,6 @@ class Database {
 	 */
 	public function Exe($query){
 		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
-		$query = str_replace('__MYSESSION__', session_id(), $query); // Replace __MYSESSION__ var with current session id.
 		
 		$result = $this->doQuery($query);
 		$this->logger->debug($query);
@@ -280,8 +281,20 @@ class Database {
 	    try{
 	        return $this->db_link->query($query);
         }catch (Exception $e){
-            // Convert mysqli_sql_exceptions into 500 errors
-            throw new Exception("MYSQL error " . $e->getCode() . ": " . $e->getMessage() . " in query:" . $query, 500);
+            if(!Config::get('productionEnv')){
+                // Convert mysqli_sql_exceptions into 500 errors
+                switch ($e->getCode()){
+                    case 1146 : // Error: 1146 SQLSTATE: 42S02 (ER_NO_SUCH_TABLE)
+                    case 1054 : // Error: 1054 SQLSTATE: 42S22 (ER_BAD_FIELD_ERROR)
+                        throw new Exception("{$e->getMessage()}. Try <a href=\"#/admin/installer\" class=\"alert-link\">reinstalling database</a>",500);
+                        break;
+                    default:
+                        throw new Exception("MYSQL error " . $e->getCode() . ": " . $e->getMessage() . " in query:" . $query, 500);
+                        break;
+                }
+            }else{
+                throw new Exception("Error in database query", 500);
+            }
         }
 	}
 	
@@ -352,7 +365,7 @@ class Database {
 				  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
 		
 		// Check if query resulted in an affected row
-		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No record inserted in Database::addAtomToConcept({$atom->__toString()})", 500);
+        $this->checkForAffectedRows();
 		
 		$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 		
@@ -365,23 +378,21 @@ class Database {
 	 * Adding an atom[ConceptA] as member to ConceptB set. 
 	 * This can only be done when concept of atom (ConceptA) and ConceptB are in the same classification tree.
 	 * @param Atom $atom
-	 * @param string $conceptBName
+	 * @param Concept $conceptB
 	 * @throws Exception
 	 * @return void
 	 */
-	public function atomSetConcept($atom, $conceptBName){
-	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptBName})");
-	    
-	    $conceptB = Concept::getConcept($conceptBName);
+	public function atomSetConcept($atom, $conceptB){
+	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptB})");
 	    
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
 	    
 		// Check if conceptA and conceptB are in the same classification tree
-		if(!$atom->concept->inSameClassificationTree($conceptB)) throw new Exception("Concepts '[{$atom->concept->name}]' and '[{$conceptB->name}]' are not in the same classification tree", 500);
+		if(!$atom->concept->inSameClassificationTree($conceptB)) throw new Exception("Concepts '[{$atom->concept}]' and '[{$conceptB}]' are not in the same classification tree", 500);
 		
 		// Check if atom is part of conceptA
-		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
+		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom}' does not exists", 500);
 		
 		// Get table info
 		$conceptTableInfoB = $conceptB->getConceptTableInfo();
@@ -398,7 +409,7 @@ class Database {
 		$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atom->idEsc}'");
 		
 		// Check if query resulted in an affected row
-		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomSetConcept({$atom->__toString()}, {$conceptBName})", 500);
+		$this->checkForAffectedRows();
 		
 		$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 		
@@ -419,10 +430,10 @@ class Database {
 	    if (!isset($this->transaction)) $this->startTransaction();
 	    
 		// Check if concept is a specialization of another concept
-		if(empty($atom->concept->getGeneralizations())) throw new Exception("Concept '[{$atom->concept->name}]' has no generalizations, atom can therefore not be removed as member from this set", 500);
+		if(empty($atom->concept->getGeneralizations())) throw new Exception("Concept '{$atom->concept}' has no generalizations, atom can therefore not be removed as member from this set", 500);
 			
 		// Check if atom is part of conceptA
-		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom->id}[{$atom->concept->name}]' does not exists", 500);
+		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom}' does not exists", 500);
 			
 		// Get col information for concept and its specializations
 		$colNames = array();
@@ -442,7 +453,7 @@ class Database {
 		$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atom->idEsc}'");
 		
 		// Check if query resulted in an affected row
-		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::atomClearConcept({$atom->__toString()})", 500);
+		$this->checkForAffectedRows();
 		
 		$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 		
@@ -472,10 +483,10 @@ class Database {
 	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
 	            break;
 	        default :
-	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
+	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
 	    }
 	    // Check if query resulted in an affected row
-	    if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::addLink({$relation->__toString()},{$srcAtom->__toString()},{$tgtAtom->__toString()})", 500);
+	    $this->checkForAffectedRows();
 	    
 	    $this->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
@@ -518,10 +529,10 @@ class Database {
 	            else throw new Exception ("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
 	            break;
 	        default :
-	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation->name}'", 500);
+	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
 	    }
 	    // Check if query resulted in an affected row
-	    if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records updated in Database::deleteLink({$relation->__toString()},{$srcAtom->__toString()},{$tgtAtom->__toString()})", 500);
+	    $this->checkForAffectedRows();
 	    
 	    $this->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
@@ -539,7 +550,7 @@ class Database {
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
 	    
-		$concept = Concept::getConcept($atom->concept->name);
+		$concept = $atom->concept;
 		
 		// Delete atom from concept table
 		$conceptTable = $concept->getConceptTableInfo();
@@ -547,7 +558,7 @@ class Database {
 		$this->Exe($query);
 		
 		// Check if query resulted in an affected row
-		if($this->db_link->affected_rows == 0) throw new Exception ("Oops.. something went wrong. No records deleted in Database::deleteAtom({$atom->__toString()})", 500);
+		$this->checkForAffectedRows();
 		
 		$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 		
@@ -717,6 +728,21 @@ class Database {
 			$this->affectedRelations[] = $relation;
 		}
 	}
+    
+    /**
+     * Check if insert/update/delete function resulted in updated record(s). If not, report warning (or throw exception) to indicate that something is going wrong
+     * @throws Exception when no records are affected and application is not in production mode
+     * @return void
+     */
+    private function checkForAffectedRows(){
+        if($this->db_link->affected_rows == 0){
+            if(Config::get('productionEnv')){
+                $this->logger->warning("Oops.. something went wrong: No recors affected in database");
+            }else{
+                throw new Exception ("Oops.. something went wrong: No records affected in database", 500);
+            }
+        } 
+    }
 	
 /**************************************************************************************************
  *
