@@ -12,7 +12,8 @@ import Data.List(nub)
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept
-  { cptJSONname              :: String
+  { cptJSONid                :: String
+  , cptJSONlabel             :: String
   , cptJSONtype              :: String
   , cptJSONgeneralizations   :: [String]
   , cptJSONspecializations   :: [String]
@@ -53,10 +54,11 @@ instance JSON FSpec Concepts where
  fromAmpersand fSpec _ = Concepts (map (fromAmpersand fSpec) (concs fSpec))
 instance JSON A_Concept Concept where
  fromAmpersand fSpec cpt = Concept
-  { cptJSONname              = name cpt
+  { cptJSONid                = escapeIdentifier . name $ cpt
+  , cptJSONlabel             = name cpt
   , cptJSONtype              = show . cptTType fSpec $ cpt
-  , cptJSONgeneralizations   = map name . largerConcepts  (vgens fSpec) $ cpt
-  , cptJSONspecializations   = map name . smallerConcepts (vgens fSpec) $ cpt
+  , cptJSONgeneralizations   = map (escapeIdentifier . name) . largerConcepts  (vgens fSpec) $ cpt
+  , cptJSONspecializations   = map (escapeIdentifier . name) . smallerConcepts (vgens fSpec) $ cpt
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
@@ -73,11 +75,11 @@ instance JSON A_Concept TableCols where
                        [t] -> if name t == name cptTable
                               then map (attName . snd) cols
                               else fatal 78 $ "Table names should match: "++name t++" "++name cptTable++"." 
-                       _   -> fatal 79 $ "All concepts in a typology should be in exactly one table."
+                       _   -> fatal 79 "All concepts in a typology should be in exactly one table."
   }
   where
     cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
-    cptTable = case lookupCpt fSpec $ cpt of
+    cptTable = case lookupCpt fSpec cpt of
       [(table,_)] -> table
       []      -> fatal 80 $ "Concept `"++name cpt++"` not found in a table."
       _       -> fatal 81 $ "Concept `"++name cpt++"` found in multiple tables."

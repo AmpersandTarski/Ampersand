@@ -14,15 +14,15 @@ data Rules = Rules
   , rulJSONsignals    :: [JsonRule]
   } deriving (Generic, Show)
 data JsonRule = JsonRule
-  { rulJSONname        :: String
-  , rulJSONruleAdl     :: String
-  , rulJSONorigin      :: String
-  , rulJSONmeaning     :: String
-  , rulJSONmessage     :: String
-  , rulJSONsrcConcept  :: String
-  , rulJSONtgtConcept  :: String
-  , rulJSONconjunctIds :: [String]
-  , rulJSONpairView    :: Maybe JsonPairView
+  { rulJSONname         :: String
+  , rulJSONruleAdl      :: String
+  , rulJSONorigin       :: String
+  , rulJSONmeaning      :: String
+  , rulJSONmessage      :: String
+  , rulJSONsrcConceptId :: String
+  , rulJSONtgtConceptId :: String
+  , rulJSONconjunctIds  :: [String]
+  , rulJSONpairView     :: Maybe JsonPairView
   } deriving (Generic, Show)
 data JsonPairView = JsonPairView [JsonPairViewSegment]
     deriving (Generic, Show)
@@ -33,6 +33,7 @@ data JsonPairViewSegment = JsonPairViewSegment
   , pvsJSONsrcOrTgt    :: Maybe String
   , pvsJSONexpTgt      :: Maybe String
   , pvsJSONexpSQL      :: Maybe String
+  , pvsJSONexpIsIdent  :: Maybe Bool
   } deriving (Generic, Show)
 
 instance ToJSON Rules where
@@ -55,15 +56,15 @@ instance JSON Rule JsonRule where
   , rulJSONorigin      = show.rrfps     $ rule
   , rulJSONmeaning     = showMeaning
   , rulJSONmessage     = showMessage
-  , rulJSONsrcConcept  = name . source . rrexp $ rule
-  , rulJSONtgtConcept  = name . target . rrexp $ rule
+  , rulJSONsrcConceptId = escapeIdentifier . name . source . rrexp $ rule
+  , rulJSONtgtConceptId = escapeIdentifier . name . target . rrexp $ rule
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
   , rulJSONpairView    = fmap (fromAmpersand fSpec) (rrviol rule)
   } 
-   where showMeaning = maybe "" (aMarkup2String HTML) (meaning (fsLang fSpec) rule)
+   where showMeaning = maybe "" (aMarkup2String Markdown) (meaning (fsLang fSpec) rule)
          showMessage = case [ markup | markup <- rrmsg rule, amLang markup == fsLang fSpec ] of
                               []    -> ""
-                              markup:_ -> aMarkup2String HTML markup
+                              markup:_ -> aMarkup2String Markdown markup
 instance JSON (PairView Expression) JsonPairView where
  fromAmpersand fSpec pv = JsonPairView $ map (fromAmpersand fSpec) (zip [0..] (ppv_segs pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
@@ -84,6 +85,9 @@ instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
   , pvsJSONexpSQL      = case pvs of
                            PairViewText{} -> Nothing
                            PairViewExp _ _ e         -> Just . sqlQuery fSpec $ e
+  , pvsJSONexpIsIdent  = case pvs of
+                           PairViewText{} -> Nothing
+                           PairViewExp _ _ e         -> Just . isIdent $ e --show $ e
   } 
  
   

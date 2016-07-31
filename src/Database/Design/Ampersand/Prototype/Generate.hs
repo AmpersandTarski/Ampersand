@@ -58,9 +58,8 @@ generateDBstructQueries fSpec withComment
           <>[" ) ENGINE="<>dbEngine]
          ):
          [ ["CREATE INDEX "<>show (tsName ts<>"_"<>name fld)<>" ON "<>show (tsName ts)<>" ("<>show (name fld)<>")"]
-         | fld <- case tsflds ts of
-                    _:xs -> xs
-                    _ -> fatal 55 $ "A table with no fields found! ("<>show (tsName ts)<>")"
+         | fld <- tsflds ts
+         , not (isPrimaryKey fld)
          , suitableAsKey (attType  fld)
          ]
         fld2sql :: SqlAttribute -> String
@@ -105,12 +104,15 @@ plug2TableSpec plug
      , tsName = name plug
      , tsflds = plugAttributes plug
      , tsKey  = case (plug, (head.plugAttributes) plug) of
-                 (BinSQL{}, _)   -> []
+                 (BinSQL{}, _)   -> [  "PRIMARY KEY (" 
+                                       <> intercalate ", " (map (show . attName) (plugAttributes plug))
+                                       <> ")"
+                                    ]
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
-                         TableKey isPrim _ -> ["PRIMARY " <> "KEY (" <> (show . attName) primFld <> ")" | isPrim]
-                         ForeignKey c  -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
-                         PlainAttr     -> []
+                         PrimaryKey _ -> ["PRIMARY KEY (" <> (show . attName) primFld <> ")" ]
+                         ForeignKey c -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
+                         PlainAttr    -> []
      , tsEngn = dbEngine
      }
 
@@ -128,7 +130,7 @@ generateAllDefPopQueries fSpec
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [Text.Text]
     fillSignalTable [] = []
     fillSignalTable conjSignals 
-     = [Text.unlines $ 
+     = [Text.unlines
             [ "INSERT INTO "<>Text.pack (show (getTableName signalTableSpec))
             , "   ("<>Text.intercalate ", " (map (Text.pack . doubleQuote) ["conjId","src","tgt"])<>")"
             , "VALUES " <> Text.intercalate " , " 
@@ -147,7 +149,7 @@ generateAllDefPopQueries fSpec
           = case tableContents fSpec plug of
              []  -> []
              tblRecords 
-                 -> [Text.unlines $ 
+                 -> [Text.unlines
                        [ "INSERT INTO "<>Text.pack (show (name plug))
                        , "   ("<>Text.intercalate ", " (map (Text.pack . show . attName) (plugAttributes plug))<>") "
                        , "VALUES " <> Text.intercalate " , " 

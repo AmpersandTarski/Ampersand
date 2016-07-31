@@ -4,6 +4,7 @@ use Ampersand\Session;
 use Ampersand\Config;
 use Ampersand\Log\Notifications;
 use Ampersand\Core\Atom;
+use Ampersand\Core\Concept;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
 
 global $app;
@@ -44,7 +45,7 @@ $app->get('/oauthlogin/login', function () use ($app){
 $app->get('/oauthlogin/logout', function () use ($app){
     $session = Session::singleton();
     
-    $session->database->deleteAtom(new Atom($session->id, 'SESSION'));
+    $session->database->deleteAtom(new Atom($session->id, Concept::getConceptByLabel('SESSION')));
         
     $session->database->closeTransaction('Logout successfull', true);
         

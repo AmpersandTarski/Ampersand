@@ -1,8 +1,17 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * [Issue #488](https://github.com/AmpersandTarski/Ampersand/issues/488) Performance enhancement: Added indexes on table columns when possible
   * Enhancement: From now on, default behaviour is that extra information about the model (meta-information) is available. To omit this, the switch `--no-meta-tables` has been introduced. The experimental switch `--meta-tables` has been removed. 
-  * Performance enhancement: Added indexes on table columns when possible
+  * [Issue #486](https://github.com/AmpersandTarski/Ampersand/issues/486) Performance enhancement: Removed DISTINCT in subqueries
+  * [Issue #459](https://github.com/AmpersandTarski/Ampersand/issues/459) fix for underscores in Concept name
+  * [Issue #489](https://github.com/AmpersandTarski/Ampersand/issues/489) Implemented markdown for rule violation messages in frontend
+  * [Issue #412](https://github.com/AmpersandTarski/Ampersand/issues/412) Partial fix for removing rows from COLS template 
+  * [Issue #373](https://github.com/AmpersandTarski/Ampersand/issues/373) Fix breadcrumb
+  * ExecEngine extension: improved logging for debugging
+  * Added new reporting functionality for backend framework
+  * DB performance: less queries because 'I[Concept]'-expression is not queried anymore
+  * Minor backend fixes
 
 ## v3.6.0 (8 july 2016)
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 

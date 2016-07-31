@@ -22,7 +22,7 @@ module Database.Design.Ampersand.FSpec.FSpec
           , lookupCpt, getConceptTableFor
           , RelStore(..)
           , metaValues
-          , SqlAttribute(..)
+          , SqlAttribute(..),isPrimaryKey,isForeignKey
           , Typology(..)
           , Interface(..)
           , Object(..)
@@ -152,8 +152,8 @@ concDefs :: FSpec -> A_Concept -> [ConceptDef]
 concDefs fSpec c = [ cdef | cdef<-conceptDefs fSpec, name cdef==name c ]
 
 instance ConceptStructure FSpec where
-  concs     fSpec = allConcepts fSpec                     -- The set of all concepts used in this FSpec
-  expressionsIn fSpec = allExprs fSpec
+  concs         = allConcepts
+  expressionsIn = allExprs 
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
@@ -232,7 +232,7 @@ dnf2expr dnf
     ([],[]) -> fatal 327 "empty dnf clause"
     ([],cs ) -> foldr1 (.\/.) cs
     (as,[]) -> notCpl (foldr1 (./\.) as)
-    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. (foldr1 (.\/.) cs)
+    (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
 
 data PlugInfo = InternalPlug PlugSQL
               | ExternalPlug ObjectDef
@@ -316,7 +316,7 @@ data RelStore
      , rsSrcAtt    :: SqlAttribute
      , rsTrgAtt    :: SqlAttribute
      } deriving (Show, Typeable)
-data SqlAttributeUsage = TableKey Bool A_Concept  -- The SQL-attribute is the (primary) key of the table. (The boolean tells whether or not it is primary)
+data SqlAttributeUsage = PrimaryKey A_Concept
                        | ForeignKey A_Concept  -- The SQL-attribute is a reference (containing the primary key value of) a TblSQL
                        | PlainAttr             -- None of the above
                        deriving (Eq, Show)
@@ -340,6 +340,15 @@ instance ConceptStructure SqlAttribute where
   concs     f = [target e' |let e'=attExpr f,isSur e']
   expressionsIn   f = expressionsIn   (attExpr f)
 
+isPrimaryKey :: SqlAttribute -> Bool
+isPrimaryKey att = case attUse att of
+                    PrimaryKey _ -> True
+                    _ -> False
+isForeignKey :: SqlAttribute -> Bool
+isForeignKey att = case attUse att of
+                    ForeignKey _ -> True
+                    _ -> False
+
 showSQL :: TType -> String
 showSQL tt =
   case tt of 
@@ -356,5 +365,5 @@ showSQL tt =
      Integer          -> "BIGINT"
      Float            -> "FLOAT"
      Object           -> "VARCHAR(255)"
-     TypeOfOne        -> fatal 461 $ "ONE is not represented in SQL" 
+     TypeOfOne        -> fatal 461 "ONE is not represented in SQL" 
 

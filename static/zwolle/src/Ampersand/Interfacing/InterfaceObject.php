@@ -209,8 +209,8 @@ class InterfaceObject {
 		$this->relationIsFlipped = $ifcDef['relationIsFlipped'];
 		
 		// Interface expression information
-		$this->srcConcept = Concept::getConcept($ifcDef['expr']['srcConcept']);
-		$this->tgtConcept = Concept::getConcept($ifcDef['expr']['tgtConcept']);
+		$this->srcConcept = Concept::getConcept($ifcDef['expr']['srcConceptId']);
+		$this->tgtConcept = Concept::getConcept($ifcDef['expr']['tgtConceptId']);
 		$this->isUni = $ifcDef['expr']['isUni'];
 		$this->isTot = $ifcDef['expr']['isTot'];
 		$this->isIdent = $ifcDef['expr']['isIdent'];
@@ -260,7 +260,16 @@ class InterfaceObject {
 	public function __toString() {
 		return $this->id;
 	}
-	
+    
+    /**
+     * Returns interface relation (when interface expression = relation), throws exception otherwise
+     * @return Relation|Exception
+     */
+	public function relation(){
+        if(is_null($this->relation)) throw new Exception ("Interface expression for '{$this->path}' is not a relation", 500);
+        else return $this->relation;
+    }
+
 	/**
 	 * Returns if interface expression relation is a property
 	 * @return boolean
@@ -284,7 +293,7 @@ class InterfaceObject {
 	 */
 	public function setSrcAtom($atom){
 	    // Check if atom can be used as source for this interface
-	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept [{$this->srcConcept->name}] or any of its generalizations. Interface path: '{$this->path}'", 500);
+	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept '{$this->srcConcept}' or any of its generalizations. Interface path: '{$this->path}'", 500);
 	    
 	    $this->srcAtom = $atom;
 	    $this->path = $this->srcAtom->path . '/' . $this->id;
@@ -302,10 +311,28 @@ class InterfaceObject {
 	    
 	    throw new Exception("Subinterface '{$ifcLabel}' does not exists in interface '{$this->path}'", 500);
 	}
+    
+    /**
+     * Return array with all sub interface recursively (incl. the interface itself)
+     * @return InterfaceObject[]
+     */
+    public function getInterfaceFlattened(){
+        $arr = array();
+        $arr[] = $this;
+        foreach ($this->getSubinterfaces(false) as $ifc){
+            $arr = array_merge($arr, $ifc->getInterfaceFlattened());
+        }
+        return $arr;
+    }
 	
-	private function getSubinterfaces(){
+    /**
+     * @param boolean $inclRefs specifies whether to include subinterfaces from referenced interfaces
+     * @return InterfaceObject[] 
+     */
+	private function getSubinterfaces($inclRefs = true){
 	    if(!$this->isRef()) return $this->subInterfaces;
-	    else return self::getInterface($this->refInterfaceId)->getSubinterfaces();
+	    elseif($inclRefs) return self::getInterface($this->refInterfaceId)->getSubinterfaces();
+        else return array();
 	}
 	
 /**************************************************************************************************
@@ -321,7 +348,7 @@ class InterfaceObject {
 	 * @return Atom
 	 */
 	public function atom($atomId){
-	    $atom = new Atom($atomId, $this->tgtConcept->name, $this);
+	    $atom = new Atom($atomId, $this->tgtConcept, $this);
 	    
 	    // Check if tgtAtom is part of tgtAtoms of interface
         if(array_reduce($this->getTgtAtoms(), function($carry, $tgtAtom) use ($atom){
@@ -331,7 +358,7 @@ class InterfaceObject {
 	    // Check if atom does not exist and if it may be created here
 	    elseif(!$atom->atomExists() && $this->crudC){
 	        // If interface expression is a relation, add tuple($this->srcAtom, $atom) in this relation
-	        if($this->relation) $this->relation->addLink($this->srcAtom, $atom, $this->relationIsFlipped);
+	        if($this->relation) $this->relation()->addLink($this->srcAtom, $atom, $this->relationIsFlipped);
 	        // Else only create atom
 	        else $atom->addAtom();
 	        
@@ -374,14 +401,14 @@ class InterfaceObject {
         try {
             // If interface isIdent (i.e. expr = I[Concept]) we can return the srcAtom
             if($this->isIdent && $this->srcConcept == $this->tgtConcept){
-                $tgtAtoms[] = new Atom($this->srcAtom->id, $this->tgtConcept->name, $this, $this->srcAtom->getQueryData());
+                $tgtAtoms[] = new Atom($this->srcAtom->id, $this->tgtConcept, $this, $this->srcAtom->getQueryData());
                 
             // Else try to get tgt atom from srcAtom query data (in case of uni relation in same table)
             }else{
                 $tgt = $this->srcAtom->getQueryData('ifc_' . $this->id); // column is prefixed with ifc_
                 // $this->logger->debug("#217 One query saved due to reusing data from source atom");
-                if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept->name, $this);
-            }            
+                if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept, $this);
+            }
         }catch (Exception $e) {
             // Column not defined, perform sub interface query
             if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
@@ -391,7 +418,7 @@ class InterfaceObject {
                 if($this->isUni && (count($data) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
                 
                 foreach ($data as $row) {
-                    $tgtAtoms[] = new Atom($row['tgt'], $this->tgtConcept->name, $this, $row);
+                    $tgtAtoms[] = new Atom($row['tgt'], $this->tgtConcept, $this, $row);
                 }
             }else{
                 throw $e;
@@ -521,7 +548,7 @@ class InterfaceObject {
 	public function create($data, $options = array()){	
 	    // CRUD check
 	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
-	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object [{$this->tgtConcept->name}] in '{$this->path}'. Use PATCH add operation instead", 405);
+	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object '{$this->tgtConcept}' in '{$this->path}'. Use PATCH add operation instead", 405);
 	    
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -537,7 +564,7 @@ class InterfaceObject {
 	    }
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
-	    if($this->relation) $this->relation->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
+	    if($this->relation) $this->relation()->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
 	    
 	    // Walk to new atom
 	    $newAtom = $this->atom($newAtom->id);
@@ -548,7 +575,9 @@ class InterfaceObject {
 	
 	    // Special case for file upload. TODO: make extension with hooks
 	    if($this->tgtConcept->name == "FileObject"){
-	         
+	        $conceptFilePath = Concept::getConceptByLabel('FilePath');
+            $conceptFileName = Concept::getConceptByLabel('FileName');
+            
 	        if (is_uploaded_file($_FILES['file']['tmp_name'])){
 	            $tmp_name = $_FILES['file']['tmp_name'];
 	            $new_name = time() . '_' . $_FILES['file']['name'];
@@ -560,11 +589,11 @@ class InterfaceObject {
 	            else throw new Exception ("Error in file upload", 500);
 	
 	            // Populate filePath and originalFileName relations in database
-	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept->name, 'FilePath');
-	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept->name, 'FileName');
+	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept, $conceptFilePath);
+	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept, $conceptFileName);
 	            
-	            $relFilePath->addLink($newAtom, new Atom($relativePath, 'FilePath'));
-	            $relOriginalFileName->addLink($newAtom, new Atom($_FILES['file']['name'], 'FileName'));
+	            $relFilePath->addLink($newAtom, new Atom($relativePath, $conceptFilePath));
+	            $relOriginalFileName->addLink($newAtom, new Atom($_FILES['file']['name'], $conceptFileName));
 	
 	        }else{
 	            throw new Exception ("No file uploaded", 500);
@@ -573,7 +602,7 @@ class InterfaceObject {
 	
 	    // Close transaction
 	    $atomStoreNewContent = $this->crudR ? $newAtom : null; // Get and store new content if interface is readable (crudR)
-	    $this->database->closeTransaction($newAtom->concept->name . ' created', null, $atomStoreNewContent);
+	    $this->database->closeTransaction($newAtom->concept . ' created', null, $atomStoreNewContent);
 	
 	    // Return atom content (can be null)
 	    return $newAtom->getStoredContent();
@@ -633,9 +662,9 @@ class InterfaceObject {
 	        if(!(is_bool($value) || is_null($value))) throw new Exception("Interface '{$this->path}' is property, boolean expected, non-boolean provided");
 	        	
 	        // When true
-	        if($value) $this->relation->addLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
+	        if($value) $this->relation()->addLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
 	        // When false or null
-	        else $this->relation->deleteLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
+	        else $this->relation()->deleteLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
 	        	
 	    // Interface is a relation to an object
 	    }elseif($this->tgtConcept->isObject){
@@ -643,11 +672,10 @@ class InterfaceObject {
 	
 	    // Interface is a relation to a scalar (i.e. not an object)
 	    }elseif(!$this->tgtConcept->isObject){
-	        
 	        // Replace by nothing => deleteLink
-	        if(is_null($value)) $this->relation->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept->name), $this->relationIsFlipped);
+	        if(is_null($value)) $this->relation()->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept), $this->relationIsFlipped);
 	        // Replace by other atom => addLink
-	        else $this->relation->addLink($this->srcAtom, new Atom($value, $this->tgtConcept->name), $this->relationIsFlipped);
+	        else $this->relation()->addLink($this->srcAtom, new Atom($value, $this->tgtConcept), $this->relationIsFlipped);
 	        
 	    }else{
 	        throw new Exception ("Unknown patch replace. Please contact the application administrator", 500);
@@ -667,7 +695,7 @@ class InterfaceObject {
 	    // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied in '{$this->path}'", 400);
 	    
-	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
+	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept);
 	    
 	    // Interface is property
 	    if($this->isProp()){
@@ -676,17 +704,22 @@ class InterfaceObject {
 	
 	    // Interface is a relation to an object
 	    }elseif($this->tgtConcept->isObject){
-	        // Check: If tgtAtom (value) does not exists and there is not crud create right, throw exception
-	        if(!$this->crudC && !$tgtAtom->atomExists()) throw new Exception ("Resource '{$tgtAtom->__toString()}' does not exist and may not be created in {$this->path}", 403);
-	        	
-	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
-	
+	        // Check if atom exists and may be created (crudC)
+	        if(!$tgtAtom->atomExists()){
+                if($this->crudC) $tgtAtom->addAtom();
+                else throw new Exception ("Resource '{$tgtAtom->__toString()}' does not exist and may not be created in {$this->path}", 403);
+            }
+	        
+            // Add link when possible (relation is specified)	
+	        if(is_null($this->relation)) $this->logger->debug("addLink skipped because '{$this->path}' is not an editable expression");
+            else $this->relation()->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+            
 	    // Interface is a relation to a scalar (i.e. not an object)
 	    }elseif(!$this->tgtConcept->isObject){    	
 	        // Check: If interface is univalent, throw exception
 	        if($this->isUni) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
 	        	
-	        $this->relation->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+	        $this->relation()->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 	        
 	    }else{
 	        throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
@@ -706,7 +739,7 @@ class InterfaceObject {
         // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch remove. No 'value' specfied in '{$this->path}'", 400);
         
-        $tgtAtom = new Atom($patch['value'], $this->tgtConcept->name);
+        $tgtAtom = new Atom($patch['value'], $this->tgtConcept);
         
 		// Interface is property
 		if($this->isProp()){
@@ -716,13 +749,13 @@ class InterfaceObject {
 		// Interface is a relation to an object
         }elseif($this->tgtConcept->isObject){
 			
-			$this->relation->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+			$this->relation()->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
         }elseif(!$this->tgtConcept->isObject){
 			if($this->isUni) throw new Exception("Cannot patch remove for univalent interface {$this->path}. Use patch replace instead", 500);
 			
-			$this->relation->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
+			$this->relation()->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 			
 		}else{
 			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);
