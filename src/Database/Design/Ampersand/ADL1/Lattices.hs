@@ -184,7 +184,7 @@ addEquality (set1, set2) eqSys0
    (eqSys1, ns1) = translateWith eqSys0 set1
    (eqSys2, ns2) = translateWith eqSys1 set2
 
-addEquality' :: Ord a => EqualitySystem a -> IntSet.IntSet -> IntSet.IntSet -> EqualitySystem a
+addEquality' :: EqualitySystem a -> IntSet.IntSet -> IntSet.IntSet -> EqualitySystem a
 addEquality' ~(ES nms imap) set1 set2
  = ES nms (addRule (addRule imap set1 set1 uni) set2 (IntSet.difference set2 set1) uni)
  where
