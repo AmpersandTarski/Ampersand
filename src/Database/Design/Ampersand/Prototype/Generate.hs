@@ -28,14 +28,6 @@ generateDBstructQueries fSpec withComment
         , "   , "<>doubleQuote "lastAccess"<>" BIGINT NOT NULL"
         , "   ) ENGINE="<>dbEngine
         ]
-      , [ "CREATE TABLE "<> doubleQuote "__History__"
-        , "   ( "<>doubleQuote "Seconds"<>" VARCHAR(255) DEFAULT NULL"
-        , "   , "<>doubleQuote "Date"<>" VARCHAR(255) DEFAULT NULL"
-        , "   ) ENGINE="<>dbEngine
-        ]
-      , [ "INSERT INTO "<>doubleQuote "__History__"<>" ("<>doubleQuote "Seconds"<>","<>doubleQuote "Date"<>")"
-        , "   VALUES (UNIX_TIMESTAMP(NOW(6)), NOW(6))"
-        ]
       , [ "CREATE TABLE "<> doubleQuote "__all_signals__"
         , "   ( "<>doubleQuote "conjId"<>" VARCHAR(255) NOT NULL"
         , "   , "<>doubleQuote "src"<>" VARCHAR(255) NOT NULL"
