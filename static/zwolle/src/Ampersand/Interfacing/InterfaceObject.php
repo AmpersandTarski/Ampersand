@@ -630,12 +630,10 @@ class InterfaceObject {
 	    }
 	
 	    // Close transaction
-	    $atomStoreNewContent = $this->crudR ? $newAtom : null; // Get and store new content if interface is readable (crudR)
-	    $this->database->closeTransaction($newAtom->concept . ' created', null, $atomStoreNewContent);
+	    $this->database->closeTransaction($newAtom->concept . ' created', null, $newAtom); // temp store content of $newAtom (also when not crudR)
 	
 	    // Return atom content (can be null)
 	    return $newAtom->getStoredContent();
-	
 	}
 	
 	/**
