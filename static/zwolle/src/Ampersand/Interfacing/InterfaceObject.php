@@ -59,10 +59,10 @@ class InterfaceObject {
 	public $label;
 	
 	/**
-	 * Specifies is this interface object is a toplevel interface (true) or subinterface (false)
+	 * Specifies if this interface object is a toplevel interface (true) or subinterface (false)
 	 * @var boolean
 	 */
-	public $isTopLevelIfc = false;
+	private $isRoot;
 	
 	/**
 	 * Roles that have access to this interface
@@ -189,17 +189,19 @@ class InterfaceObject {
 
 	/**
 	 * InterfaceObject constructor
-	 * @param array $ifcDef
+	 * @param array $ifcDef Interface object definition as provided by Ampersand generator
 	 * @param string $pathEntry
+     * @param boolean $rootIfc Specifies if this interface object is a toplevel interface (true) or subinterface (false)
 	 */
-	public function __construct($ifcDef, $pathEntry = null){
+	public function __construct($ifcDef, $pathEntry = null, $rootIfc = false){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
+        $this->isRoot = $rootIfc;
+        
 		// Set attributes from $ifcDef
 		$this->id = $ifcDef['id'];
 		$this->label = $ifcDef['label'];
-		
 		$this->view = is_null($ifcDef['viewId']) ? null : View::getView($ifcDef['viewId']);
 		
 		$this->path = is_null($pathEntry) ? $this->id : "{$pathEntry}/{$this->id}";
@@ -285,7 +287,23 @@ class InterfaceObject {
     public function isRef(){
         return !is_null($this->refInterfaceId);
     }
-	
+    
+    /**
+     * Returns if interface object is a top level interface
+     * @return boolean
+     */
+    public function isRoot(){
+        return $this->isRoot;
+    }
+    
+    /**
+     * Returns if interface is a public interface (i.e. accessible every role, incl. no role)
+	 * @return boolean
+     */
+    public function isPublic(){
+        return empty($this->ifcRoleNames) && $this->isRoot();
+    }
+    
 	/**
 	 * 
 	 * @param Atom $atom
@@ -809,15 +827,13 @@ class InterfaceObject {
 	}
 	
 	/**
-	 * Returns all toplevel interface objects that are not assigned to a role
+	 * Returns all toplevel interface objects that are public (i.e. not assigned to a role)
 	 * @return InterfaceObject[]
 	 */
 	public static function getPublicInterfaces(){
-	    $interfaces = array();
-	    foreach(InterfaceObject::getAllInterfaces() as $ifc){
-	        if (empty($ifc->ifcRoleNames)) $interfaces[] = $ifc;
-	    }
-	    return $interfaces;
+	    return array_values(array_filter(InterfaceObject::getAllInterfaces(), function($ifc){
+            return $ifc->isPublic();
+        }));
 	}
 	
 	/**
@@ -833,10 +849,9 @@ class InterfaceObject {
 	    
 	    
 	    foreach ($allInterfaceDefs as $ifcDef){
-	        $ifc = new InterfaceObject($ifcDef['ifcObject']);
+	        $ifc = new InterfaceObject($ifcDef['ifcObject'], null, true);
 	        
 	        // Set additional information about this toplevel interface object
-	        $ifc->isTopLevelIfc = true; // Specify as top level ifc
 	        $ifc->ifcRoleNames = $ifcDef['interfaceRoles'];
 	        
 	        self::$allInterfaces[$ifc->id] = $ifc;

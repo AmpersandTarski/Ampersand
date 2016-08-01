@@ -385,7 +385,7 @@ class Atom {
 	        $ifc = $atom->ifc($interfaceId);
 	
 	        // Checks
-	        if($ifc->isTopLevelIfc && !$session->isAccessibleIfc($ifc->id)) throw new Exception("Interface is not accessible for session roles", 401); // 401: Unauthorized
+	        if($ifc->isRoot() && !$session->isAccessibleIfc($ifc->id)) throw new Exception("Interface is not accessible for session roles", 401); // 401: Unauthorized
 	        if((!$ifc->crudR) && (count($pathArr) > 1)) throw new Exception ("Read not allowed for interface path '{$ifc->path}'", 405); // crudR required to walk the path further when this is not the last ifc part in the path (count > 1).
 	
 	        // Atom
