@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$<div ng-repeat="(key, row) in resource['$name$']">
+$endif$$if(crudR)$<div ng-repeat="(key, row) in resource['$name$']">
 	<div>$if(crudU)$
 		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$$if(crudD)$
 		<span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(resource, '$name$', row, 'promise')" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
@@ -11,4 +11,4 @@ $endif$<div ng-repeat="(key, row) in resource['$name$']">
 	<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', patchResource); selected.label=''" typeahead-no-results="hasNoResults" ng-init="getTypeahead('$target$')">$if(crudC)$
     <span ng-show="hasNoResults && selected.label" class="glyphicon glyphicon-plus" ng-click="addObject(resource, '$name$', {'_id_' : selected.label}, patchResource); selected.label='';" uib-tooltip="Create new" tooltip-trigger="mouseenter" tooltip-placement="right"></span>$endif$
     <div ng-show="hasNoResults && selected.label" style="color:orangered; font-size:12px;">$target$ not found!</div>
-</div>$endif$
+</div>$endif$$else$<span><i>not readable</i></span>$endif$
