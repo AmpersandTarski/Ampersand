@@ -404,12 +404,14 @@ class Atom {
 	
 	/**
 	 * Store content of atom at a certain point (e.g. before database commit/rollback)
-	 * @return void
+	 * @param array $options
+     * @return void
 	 */
-	public function setStoredContent(){
+	public function setStoredContent($options = []){
 	    $this->logger->debug("Caching new concent for atom '{$this->__toString()}'");
-	    // If parentIfc is null (toplevel) switch to topLevelIfc to be able to return/store the new content
-	    $this->storedContent = is_null($this->parentIfc) ? $this->ifc($this->topLevelIfcId)->getContent() : $this->getContent();
+        if(is_null($this->parentIfc)) throw new Exception("Cannot get content: no interface specified.", 500);
+        
+	    $this->storedContent = $this->getContent($options); // Use getContent() instead of read() to bypass crudR check
 	}
 	
 	/**
