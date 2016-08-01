@@ -430,9 +430,6 @@ class Atom {
 	 * @return mixed
 	 */
 	public function getContent($options = array(), $recursionArr = array(), $depth = null){
-	    // CRUD check
-	    if(!$this->parentIfc->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
-	    
 	    $session = Session::singleton();
 	    
         // Default options

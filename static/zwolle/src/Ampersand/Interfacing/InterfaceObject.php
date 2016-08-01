@@ -455,9 +455,6 @@ class InterfaceObject {
 	 * @return mixed
 	 */
 	public function getContent($options = array(), $recursionArr = array(), $depth = null){
-	    // CRUD check
-	    if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
-	    
         // Default options
 	    $options['arrayType'] = isset($options['arrayType']) ? $options['arrayType'] : 'num';
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
