@@ -567,6 +567,7 @@ class Atom {
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
 	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object '{$this->__toString()}' in '{$this->path}'. Use PATCH remove operation instead", 405);
+        if($this->parentIfc->isRef()) throw new Exception ("Cannot delete on reference interface in '{$this->path}'. See #498", 501);
 	     
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -658,6 +659,7 @@ class Atom {
 	   
 	    // CRUD check
 	    if(!$ifc->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+        if($ifc->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
 	    
 		// Interface is property
 		if($ifc->isProp()){

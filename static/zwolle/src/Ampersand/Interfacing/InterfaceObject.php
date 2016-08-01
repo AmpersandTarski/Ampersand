@@ -578,6 +578,7 @@ class InterfaceObject {
 	    // CRUD check
 	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
 	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object '{$this->tgtConcept}' in '{$this->path}'. Use PATCH add operation instead", 405);
+        if($this->isRef()) throw new Exception ("Cannot create on reference interface in '{$this->path}'. See #498", 501);
 	    
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -678,6 +679,7 @@ class InterfaceObject {
 	public function doPatchReplace($patch){
 	    // CRUD check
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
 	
 	    // PatchReplace only works for UNI expressions. Otherwise, use patch remove and patch add
 	    if(!$this->isUni) throw new Exception("Cannot patch replace for non-univalent interface '{$this->path}'. Use patch remove + add instead", 500);
@@ -721,6 +723,7 @@ class InterfaceObject {
 	public function doPatchAdd($patch){
 	    // CRUD check
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
 	    
 	    // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied in '{$this->path}'", 400);
@@ -765,6 +768,7 @@ class InterfaceObject {
 	public function doPatchRemove($patch){	   
 	    // CRUD check
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
 	    
         // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch remove. No 'value' specfied in '{$this->path}'", 400);
