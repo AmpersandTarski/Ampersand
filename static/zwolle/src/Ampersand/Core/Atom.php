@@ -519,6 +519,7 @@ class Atom {
      * @throws Exception
      */
 	public function create(){
+        $this->logger->debug("create() called on {$this->path}");
 	    throw new Exception ("Cannot create atom at path '{$this->path}'. Add interface identifier behind path", 405);
 	}
 	
@@ -529,6 +530,7 @@ class Atom {
 	 * @return array
 	 */
 	public function update($data, $options){
+        $this->logger->debug("update() called on {$this->path}");
 		throw new Exception ("Not yet implemented", 501);
 	}
 
@@ -539,8 +541,10 @@ class Atom {
 	 * @return mixed updated content of atom
 	 */
 	public function patch($patches, $options = array()){
-	    // CRUD check for patch is performed by Atom->doPatches() method
-	        
+        $this->logger->debug("patch() called on {$this->path}");
+	    
+        // CRUD check for patch is performed by Atom->doPatches() method
+	    
 		// Handle options
 		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
@@ -561,6 +565,8 @@ class Atom {
 	 * @return void
 	 */
 	public function delete($options = array()){
+        $this->logger->debug("delete() called on {$this->path}");
+        
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
 	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object '{$this->__toString()}' in '{$this->path}'. Use PATCH remove operation instead", 405);

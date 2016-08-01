@@ -646,6 +646,7 @@ class InterfaceObject {
 	 * @throws Exception
 	 */
 	public function update(){
+        $this->logger->debug("update() called on {$this->path}");
 	    throw new Exception ("Cannot update from interface '{$this->path}'. Add resource identifier behind path", 405);
 	}
 	
@@ -654,6 +655,7 @@ class InterfaceObject {
 	 * @throws Exception
 	 */
 	public function patch(){
+        $this->logger->debug("patch() called on {$this->path}");
 	    throw new Exception ("Cannot patch from interface '{$this->path}'. Add resource identifier behind path", 405);
 	}
 	
@@ -662,6 +664,7 @@ class InterfaceObject {
 	 * @throws Exception
 	 */
 	public function delete(){
+        $this->logger->debug("delete() called on {$this->path}");
 	    throw new Exception ("Cannot delete from interface '{$this->path}'. Add resource identifier behind path", 405);
 	}
 	
