@@ -322,14 +322,16 @@ where
         | (not.null.elemName) element, (null.elemSrc) element] ++
         [ translate "docu" (elemType element) [(keyArchi element, elemDocu element)]
         | (not.null.elemDocu) element, (null.elemSrc) element] ++
-        (if isRelationship element then []  else    -- do this only for elements which are a relationship.
-         translateRel
-                    elemLookup (keyArchi element)
+        (if isRelationship element
+         then translateRel   -- do this only for elements which are a relationship.
+                    elemLookup
+                    (keyArchi element)
                     (if (null.elemName) element
                      then unfixRel (elemType element)
                      else relCase (elemName element)
                     )
                     (elemSrc element) (elemTgt element)
+         else []
         ) ++
         [ translate "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
         | prop<-elProps element] ++
@@ -339,14 +341,16 @@ where
         | (not.null.elemName) element, (null.elemSrc) element] ++
         [ translateArchiObj "docu" (elemType element) [(keyArchi element, elemDocu element)]
         | (not.null.elemDocu) element, (null.elemSrc) element] ++
-        (if isRelationship element then []  else    -- do this only for elements which are a relationship.
-         translateArchiRel
-                    elemLookup (keyArchi element)
+        (if isRelationship element
+         then translateArchiRel    -- do this only for elements which are a relationship.
+                    elemLookup
+                    (keyArchi element)
                     (if (null.elemName) element
                      then unfixRel (elemType element)
                      else relCase (elemName element)
                     )
                     (elemSrc element) (elemTgt element)
+         else []
         ) ++
         [ translateArchiObj "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
         | prop<-elProps element] ++
@@ -354,7 +358,7 @@ where
      keyArchi = elemId
 
    isRelationship :: Element -> Bool  -- figure out whether this XML-element is an Archimate Relationship.
-   isRelationship element = (null.elemSrc) element
+   isRelationship element = (not.null.elemSrc) element
 
    instance MetaArchi ArchiProp where
      typeMap _
