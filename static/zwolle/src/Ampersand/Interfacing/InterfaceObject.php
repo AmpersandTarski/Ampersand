@@ -572,7 +572,9 @@ class InterfaceObject {
 	 * @throws Exception
 	 * @return mixed
 	 */
-	public function create($data, $options = array()){	
+	public function create($data, $options = array()){
+        $this->logger->debug("create() called on {$this->path}");
+        
 	    // CRUD check
 	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
 	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object '{$this->tgtConcept}' in '{$this->path}'. Use PATCH add operation instead", 405);
