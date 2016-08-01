@@ -496,10 +496,24 @@ class Atom {
 	
 /**************************************************************************************************
  * 
- * CREATE, UPDATE, PATCH and DELETE functions 
+ * READ, CREATE, UPDATE, PATCH and DELETE functions 
  *  
  *************************************************************************************************/
 	
+    /**
+     * @param array $options 
+     * @throws Exception when read is not allowed for parent interface object
+     * @return mixed
+     */
+    public function read($options = []){
+        $this->logger->debug("read() called on {$this->path}");
+        
+        // CRUD check
+	    if(!$this->parentIfc->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
+        
+        return $this->getContent($options);
+    }
+    
     /**
      * Function not implemented. Use InterfaceObject->create() method instead.
      * @throws Exception

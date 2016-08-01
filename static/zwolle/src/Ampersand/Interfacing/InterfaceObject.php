@@ -552,11 +552,25 @@ class InterfaceObject {
 	
 /**************************************************************************************************
  *
- * CREATE, UPDATE, PATCH and DELETE functions
+ * READ, CREATE, UPDATE, PATCH and DELETE functions
  *
  *************************************************************************************************/
-	
-	/**
+    
+    /**
+    * @param array $options 
+    * @throws Exception when read is not allowed for this interface object
+    * @return mixed
+    */
+    public function read($options = []){
+        $this->logger->debug("read() called on {$this->path}");
+        
+        // CRUD check
+        if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
+        
+        return $this->getContent($options);
+    }
+    
+    /**
 	 * Function to create a new Atom at the given interface.
 	 * @param array $data
 	 * @param array $options
