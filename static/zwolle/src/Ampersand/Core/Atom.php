@@ -386,7 +386,7 @@ class Atom {
 	
 	        // Checks
 	        if($ifc->isRoot() && !$session->isAccessibleIfc($ifc->id)) throw new Exception("Interface is not accessible for session roles", 401); // 401: Unauthorized
-	        if((!$ifc->crudR) && (count($pathArr) > 1)) throw new Exception ("Read not allowed for interface path '{$ifc->path}'", 405); // crudR required to walk the path further when this is not the last ifc part in the path (count > 1).
+	        if((!$ifc->crudR) && (count($pathArr) > 0)) throw new Exception ("Read not allowed for interface path '{$ifc->path}'", 405); // crudR required to walk the path further when this is not the last part in the path (count > 0).
 	
 	        // Atom
 	        $atomId = array_shift($pathArr); // returns the shifted value, or NULL if array is empty or is not an array.
@@ -404,12 +404,14 @@ class Atom {
 	
 	/**
 	 * Store content of atom at a certain point (e.g. before database commit/rollback)
-	 * @return void
+	 * @param array $options
+     * @return void
 	 */
-	public function setStoredContent(){
+	public function setStoredContent($options = []){
 	    $this->logger->debug("Caching new concent for atom '{$this->__toString()}'");
-	    // If parentIfc is null (toplevel) switch to topLevelIfc to be able to return/store the new content
-	    $this->storedContent = is_null($this->parentIfc) ? $this->ifc($this->topLevelIfcId)->getContent() : $this->getContent();
+        if(is_null($this->parentIfc)) throw new Exception("Cannot get content: no interface specified.", 500);
+        
+	    $this->storedContent = $this->getContent($options); // Use getContent() instead of read() to bypass crudR check
 	}
 	
 	/**
@@ -430,16 +432,11 @@ class Atom {
 	 * @return mixed
 	 */
 	public function getContent($options = array(), $recursionArr = array(), $depth = null){
-	    // CRUD check
-	    if(!$this->parentIfc->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
-	    
 	    $session = Session::singleton();
 	    
-	    // Default options
-	    $options['arrayType'] = isset($options['arrayType']) ? $options['arrayType'] : 'num';
+        // Default options
 	    $options['metaData'] = isset($options['metaData']) ? filter_var($options['metaData'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
-	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
         if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
 	    
 	    $content = array( '_id_' => $this->getJsonRepresentation()
@@ -496,15 +493,30 @@ class Atom {
 	
 /**************************************************************************************************
  * 
- * CREATE, UPDATE, PATCH and DELETE functions 
+ * READ, CREATE, UPDATE, PATCH and DELETE functions 
  *  
  *************************************************************************************************/
 	
+    /**
+     * @param array $options 
+     * @throws Exception when read is not allowed for parent interface object
+     * @return mixed
+     */
+    public function read($options = []){
+        $this->logger->debug("read() called on {$this->path}");
+        
+        // CRUD check
+	    if(!$this->parentIfc->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
+        
+        return $this->getContent($options);
+    }
+    
     /**
      * Function not implemented. Use InterfaceObject->create() method instead.
      * @throws Exception
      */
 	public function create(){
+        $this->logger->debug("create() called on {$this->path}");
 	    throw new Exception ("Cannot create atom at path '{$this->path}'. Add interface identifier behind path", 405);
 	}
 	
@@ -515,6 +527,7 @@ class Atom {
 	 * @return array
 	 */
 	public function update($data, $options){
+        $this->logger->debug("update() called on {$this->path}");
 		throw new Exception ("Not yet implemented", 501);
 	}
 
@@ -525,8 +538,10 @@ class Atom {
 	 * @return mixed updated content of atom
 	 */
 	public function patch($patches, $options = array()){
-	    // CRUD check for patch is performed by Atom->doPatches() method
-	        
+        $this->logger->debug("patch() called on {$this->path}");
+	    
+        // CRUD check for patch is performed by Atom->doPatches() method
+	    
 		// Handle options
 		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
@@ -547,9 +562,12 @@ class Atom {
 	 * @return void
 	 */
 	public function delete($options = array()){
+        $this->logger->debug("delete() called on {$this->path}");
+        
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
 	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object '{$this->__toString()}' in '{$this->path}'. Use PATCH remove operation instead", 405);
+        if($this->parentIfc->isRef()) throw new Exception ("Cannot delete on reference interface in '{$this->path}'. See #498", 501);
 	     
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
@@ -641,6 +659,7 @@ class Atom {
 	   
 	    // CRUD check
 	    if(!$ifc->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+        if($ifc->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
 	    
 		// Interface is property
 		if($ifc->isProp()){

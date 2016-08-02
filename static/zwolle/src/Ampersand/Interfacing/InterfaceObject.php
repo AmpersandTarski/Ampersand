@@ -455,13 +455,8 @@ class InterfaceObject {
 	 * @return mixed
 	 */
 	public function getContent($options = array(), $recursionArr = array(), $depth = null){
-	    // CRUD check
-	    if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
-	    
-	    // Default options
+        // Default options
 	    $options['arrayType'] = isset($options['arrayType']) ? $options['arrayType'] : 'num';
-	    $options['metaData'] = isset($options['metaData']) ? filter_var($options['metaData'], FILTER_VALIDATE_BOOLEAN) : true;
-	    $options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
 	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
         if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
 	    
@@ -552,28 +547,44 @@ class InterfaceObject {
 	
 /**************************************************************************************************
  *
- * CREATE, UPDATE, PATCH and DELETE functions
+ * READ, CREATE, UPDATE, PATCH and DELETE functions
  *
  *************************************************************************************************/
-	
-	/**
+    
+    /**
+    * @param array $options 
+    * @throws Exception when read is not allowed for this interface object
+    * @return mixed
+    */
+    public function read($options = []){
+        $this->logger->debug("read() called on {$this->path}");
+        
+        // CRUD check
+        if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
+        
+        return $this->getContent($options);
+    }
+    
+    /**
 	 * Function to create a new Atom at the given interface.
 	 * @param array $data
 	 * @param array $options
 	 * @throws Exception
 	 * @return mixed
 	 */
-	public function create($data, $options = array()){	
+	public function create($data, $options = array()){
+        $this->logger->debug("create() called on {$this->path}");
+        
 	    // CRUD check
 	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
 	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object '{$this->tgtConcept}' in '{$this->path}'. Use PATCH add operation instead", 405);
+        if($this->isRef()) throw new Exception ("Cannot create on reference interface in '{$this->path}'. See #498", 501);
 	    
 	    // Handle options
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 	
 	    // Perform create
 	    $newAtom = $this->tgtConcept->createNewAtom();
-	    $newAtom->addAtom();
 	
 	    // Special case for CREATE in I[Concept] interfaces
 	    if($this->srcAtom->id === '_NEW'){
@@ -583,7 +594,8 @@ class InterfaceObject {
 	
 	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
 	    if($this->relation) $this->relation()->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
-	    
+        else $newAtom->addAtom();
+        
 	    // Walk to new atom
 	    $newAtom = $this->atom($newAtom->id);
 	    
@@ -619,12 +631,10 @@ class InterfaceObject {
 	    }
 	
 	    // Close transaction
-	    $atomStoreNewContent = $this->crudR ? $newAtom : null; // Get and store new content if interface is readable (crudR)
-	    $this->database->closeTransaction($newAtom->concept . ' created', null, $atomStoreNewContent);
+	    $this->database->closeTransaction($newAtom->concept . ' created', null, $newAtom); // temp store content of $newAtom (also when not crudR)
 	
 	    // Return atom content (can be null)
 	    return $newAtom->getStoredContent();
-	
 	}
 	
 	/**
@@ -632,6 +642,7 @@ class InterfaceObject {
 	 * @throws Exception
 	 */
 	public function update(){
+        $this->logger->debug("update() called on {$this->path}");
 	    throw new Exception ("Cannot update from interface '{$this->path}'. Add resource identifier behind path", 405);
 	}
 	
@@ -640,6 +651,7 @@ class InterfaceObject {
 	 * @throws Exception
 	 */
 	public function patch(){
+        $this->logger->debug("patch() called on {$this->path}");
 	    throw new Exception ("Cannot patch from interface '{$this->path}'. Add resource identifier behind path", 405);
 	}
 	
@@ -648,6 +660,7 @@ class InterfaceObject {
 	 * @throws Exception
 	 */
 	public function delete(){
+        $this->logger->debug("delete() called on {$this->path}");
 	    throw new Exception ("Cannot delete from interface '{$this->path}'. Add resource identifier behind path", 405);
 	}
 	
@@ -666,6 +679,7 @@ class InterfaceObject {
 	public function doPatchReplace($patch){
 	    // CRUD check
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
 	
 	    // PatchReplace only works for UNI expressions. Otherwise, use patch remove and patch add
 	    if(!$this->isUni) throw new Exception("Cannot patch replace for non-univalent interface '{$this->path}'. Use patch remove + add instead", 500);
@@ -709,6 +723,7 @@ class InterfaceObject {
 	public function doPatchAdd($patch){
 	    // CRUD check
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
 	    
 	    // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied in '{$this->path}'", 400);
@@ -753,6 +768,7 @@ class InterfaceObject {
 	public function doPatchRemove($patch){	   
 	    // CRUD check
 	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
+        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
 	    
         // Check if patch value is provided
 	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch remove. No 'value' specfied in '{$this->path}'", 400);

@@ -80,7 +80,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 
-	$content = $atomOrIfc->getContent($options);
+	$content = $atomOrIfc->read($options);
 	
 	// If force list option is provided, make sure to return an array
 	if($options['forceList'] && isAssoc($content)) $content = array($content);
