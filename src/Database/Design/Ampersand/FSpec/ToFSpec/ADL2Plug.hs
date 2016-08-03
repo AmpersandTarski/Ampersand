@@ -21,7 +21,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
     repr = representationOf (ctxInfo context)
     conceptTables = map makeConceptTable conceptTableParts
     linkTables    = map makeLinkTable    linkTableParts
-    calculatedDecls = map calcProps .filter (not . decplug) . relsDefdIn $ context 
+    calculatedDecls = (map calcProps .filter (not . decplug) . relsDefdIn) context 
     (conceptTableParts, linkTableParts) = dist calculatedDecls (typologies context)
     makeConceptTable :: (Typology, [Declaration]) -> PlugSQL
     makeConceptTable (typ , dcls) = 

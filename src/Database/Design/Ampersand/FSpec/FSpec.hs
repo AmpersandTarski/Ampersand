@@ -127,6 +127,14 @@ instance Unique FSpec where
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
+instance Language FSpec where
+  relsDefdIn = relsDefdIn.originalContext
+  udefrules  = udefrules.originalContext
+  identities = identities.originalContext
+  viewDefs   = viewDefs.originalContext
+  gens       = gens.originalContext
+  patterns   = patterns.originalContext
+
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmIn ::    [A_Concept] -- all concepts the atom is in. (Based on generalizations)
                  , atmVal   :: AAtomValue

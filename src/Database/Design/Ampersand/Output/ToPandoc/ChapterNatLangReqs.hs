@@ -18,35 +18,20 @@ chpNatLangReqs lev fSpec =
    <> --  *** Intro  ***
     case fsLang fSpec of
         Dutch   -> para
-                     (  "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
+                     (  "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
                      <> (singleQuoted.str.name) fSpec
-                     <> " kunnen worden besproken en uitgedrukt. "
-                     <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier begrijpen. "
-                     <> "De taal van "
-                     <> (singleQuoted. str. name) fSpec
-                     <> " bestaat uit begrippen en basiszinnen, "
-                     <> "waarin afspraken worden uitgedrukt. "
-                     <> "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
-                     <> "althans voor zover het "
-                     <> (singleQuoted. str. name) fSpec
-                     <> " betreft, "
-                     <> "delen zij precies voldoende taal om afspraken op dezelfde manier te begrijpen. "
-                     <> "Alle definities zijn genummerd omwille van de traceerbaarheid. "
+                     <> " in natuurlijke taal. "
+                     <> "Het hoofdstuk bevat definities en afspraken. "
+                     <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier kunnen begrijpen. "
+                     <> "Alle definities en afspraken zijn genummerd omwille van de traceerbaarheid. "
                      )
         English -> para
-                     (  "This chapter defines the natural language, in which functional requirements of "
+                     (  "This chapter describes functional requirements for "
                      <> (singleQuoted.str.name) fSpec
-                     <> " can be discussed and expressed. "
+                     <> " in natural language. "
+                     <> "It contains definitions and agreements. "
                      <> "The purpose of this chapter is to create shared understanding among stakeholders. "
-                     <> "The language of "
-                     <> (singleQuoted.str.name) fSpec
-                     <> " consists of concepts and basic sentences. "
-                     <> "All functional requirements are expressed in these terms. "
-                     <> "When stakeholders can agree upon this language, "
-                     <> "at least within the scope of "
-                     <> (singleQuoted.str.name) fSpec
-                     <> ", they share precisely enough language to have meaningful discussions about functional requirements. "
-                     <> "All definitions have been numbered for the sake of traceability. "
+                     <> "All definitions and agreements have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
    (mconcat . map printOneTheme . orderingByTheme) fSpec
@@ -117,6 +102,7 @@ chpNatLangReqs lev fSpec =
                                  ,EN "The sequel introduces the language of ")
                               <> (str.name) pat <> ".")
                 )<>
+{-
                 ( case nCpts of
                    [] 
                      -> fatal 136 "Unexpected. There should be at least one concept to introduce."
@@ -135,6 +121,7 @@ chpNatLangReqs lev fSpec =
                                         ,EN " are given.")
                              )
                )<>
+-}
                ( case filter hasMultipleDefs nCpts of
                    []  -> mempty
                    [x] -> para(  (str.l) (NL "Het begrip "
