@@ -326,6 +326,7 @@ where
          then translateRel   -- do this only for elements which are a relationship.
                     elemLookup
                     (keyArchi element)
+                    (elemType element)
                     (if (null.elemName) element
                      then unfixRel (elemType element)
                      else relCase (elemName element)
@@ -345,6 +346,7 @@ where
          then translateArchiRel    -- do this only for elements which are a relationship.
                     elemLookup
                     (keyArchi element)
+                    (elemType element)
                     (if (null.elemName) element
                      then unfixRel (elemType element)
                      else relCase (elemName element)
@@ -414,10 +416,11 @@ where
    translate _ _ _ = error "fatal 328 non-exhaustive pattern in translate"
 
 -- | The function `translateRel` compiles relationships from archiRepo into a  [Pop].
-   translateRel :: (String -> Maybe String) -> String -> String -> String -> String -> [Pop]
-   translateRel elemLookup relId relLabel x y
+   translateRel :: (String -> Maybe String) -> String -> String -> String -> String -> String -> [Pop]
+   translateRel elemLookup relId relTyp relLabel x y
     = [ Pop relNm xType yType [(x,y)]
       , Pop "source" "Relationship" "ArchiObject" [(relId,x)]
+      , IsaPop relTyp "Relationship" relId
       , Pop "isa" xType "ArchiObject" [(x,x)]
       , Pop "target" "Relationship" "ArchiObject" [(relId,y)]
       , Pop "isa" yType "ArchiObject" [(y,y)]
@@ -481,8 +484,8 @@ where
    translateArchiObj _ _ _ = error "fatal 328 non-exhaustive pattern in translateArchiObj"
 
 -- | The function `translateArchiRel` does the actual compilation of relationships from archiRepo into the Ampersand P-structure.
-   translateArchiRel :: (String -> Maybe String) -> String -> String -> String -> String -> [(P_Population, P_Declaration, [P_Gen])]
-   translateArchiRel elemLookup relId relLabel x y
+   translateArchiRel :: (String -> Maybe String) -> String -> String -> String -> String -> String -> [(P_Population, P_Declaration, [P_Gen])]
+   translateArchiRel elemLookup relId relTyp relLabel x y
     = [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relNm (Just (P_Sign (PCpt xType) (PCpt yType)))) (transTuples [(x,y)])
         , P_Sgn relNm (P_Sign (PCpt xType) (PCpt yType)) [] [] [] [] OriginUnknown False
         , []
@@ -491,6 +494,7 @@ where
         , P_Sgn "source" (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False
         , [] -- [ PGen OriginUnknown (PCpt xType) (PCpt "ArchiObject") ]
         )
+      , IsaPop relTyp "Relationship" relId
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "isa" (Just (P_Sign (PCpt xType) (PCpt "ArchiObject")))) (transTuples [(x,x)])
         , P_Sgn "isa" (P_Sign (PCpt xType) (PCpt "ArchiObject")) [Uni,Inj] [] [] [] OriginUnknown False
         , []
