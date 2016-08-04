@@ -420,7 +420,7 @@ where
    translateRel elemLookup relId relTyp relLabel x y
     = [ Pop relNm xType yType [(x,y)]
       , Pop "source" "Relationship" "ArchiObject" [(relId,x)]
-      , IsaPop relTyp "Relationship" relId
+--      , IsaPop relTyp "Relationship" relId
       , Pop "isa" xType "ArchiObject" [(x,x)]
       , Pop "target" "Relationship" "ArchiObject" [(relId,y)]
       , Pop "isa" yType "ArchiObject" [(y,y)]
@@ -494,7 +494,7 @@ where
         , P_Sgn "source" (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False
         , [] -- [ PGen OriginUnknown (PCpt xType) (PCpt "ArchiObject") ]
         )
-      , IsaPop relTyp "Relationship" relId
+--      , IsaPop relTyp "Relationship" relId
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "isa" (Just (P_Sign (PCpt xType) (PCpt "ArchiObject")))) (transTuples [(x,x)])
         , P_Sgn "isa" (P_Sign (PCpt xType) (PCpt "ArchiObject")) [Uni,Inj] [] [] [] OriginUnknown False
         , []
