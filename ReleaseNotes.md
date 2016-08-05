@@ -1,7 +1,7 @@
 # Release notes of Ampersand
 
 ## unreleased changes
-
+  * [Issue #502](https://github.com/AmpersandTarski/Ampersand/issues/502) More stable way to generate .pdf file (LaTeX output)
 
 
 ## v3.6.1 (5 august 2016)
