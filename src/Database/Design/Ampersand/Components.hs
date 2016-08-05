@@ -101,15 +101,13 @@ doGenUML fSpec =
 doGenDocument :: FSpec -> IO()
 doGenDocument fSpec =
  do { verboseLn (getOpts fSpec) ("Processing "++name fSpec)
-    ; makeOutput
-    ; verboseLn (getOpts fSpec) $ "Document has been written to " ++ outputFile ++ "."
-    ; when (not(null thePictures) && fspecFormat (getOpts fSpec)/=FPandoc) $
+    ; -- First we need to output the pictures, because they should be present before the actual document is written
+      when (not(null thePictures) && fspecFormat (getOpts fSpec)/=FPandoc) $
         mapM_ (writePicture (getOpts fSpec)) thePictures
-     -- postProcessing of the generated output file depends on the format:
-    ; postProcessor
+    ; writepandoc fSpec thePandoc
     }
   where (thePandoc,thePictures) = fSpec2Pandoc fSpec
-        (outputFile,makeOutput,postProcessor) = writepandoc fSpec thePandoc
+        
 
 -- | This function will generate an Excel workbook file, containing an extract from the FSpec
 doGenFPAExcel :: FSpec -> IO()
