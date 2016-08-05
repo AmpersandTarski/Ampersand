@@ -129,8 +129,8 @@ class Relation {
         $this->logger = Logger::getLogger('FW');
         
         $this->name = $relationDef['name'];
-        $this->srcConcept = Concept::getConcept($relationDef['srcConcept']);
-        $this->tgtConcept = Concept::getConcept($relationDef['tgtConcept']);
+        $this->srcConcept = Concept::getConcept($relationDef['srcConceptId']);
+        $this->tgtConcept = Concept::getConcept($relationDef['tgtConceptId']);
         
         $this->signature = $relationDef['signature'];
         
@@ -161,7 +161,7 @@ class Relation {
     }
     
     public function __toString(){
-        return "{$this->name}[{$this->srcConcept->name}*{$this->tgtConcept->name}]";
+        return "{$this->name}[{$this->srcConcept}*{$this->tgtConcept}]";
     }
     
     /**
@@ -267,30 +267,30 @@ class Relation {
     /**
      * Return Relation object
      * @param string $relationSignature
-     * @param string $srcConceptName
-     * @param string $tgtConceptName
+     * @param Concept $srcConcept
+     * @param Concept $tgtConcept
      * @throws Exception if Relation is not defined
      * @return Relation
      */
-    public static function getRelation($relationSignature, $srcConceptName = null, $tgtConceptName = null){
+    public static function getRelation($relationSignature, Concept $srcConcept = null, Concept $tgtConcept = null){
         $relations = self::getAllRelations();
         
-        if(!is_null($srcConceptName)) $srcConcept = Concept::getConcept($srcConceptName);
-        if(!is_null($tgtConceptName)) $tgtConcept = Concept::getConcept($tgtConceptName);
+        if(is_string($srcConcept)) $srcConcept = Concept::getConceptByLabel($srcConcept);
+        if(is_string($tgtConcept)) $tgtConcept = Concept::getConceptByLabel($tgtConcept);
         
         // If relation can be found by its fullRelationSignature return the relation
         if(array_key_exists($relationSignature, $relations)){
             $relation = $relations[$relationSignature];
             
             // If srcConceptName and tgtConceptName are provided, check that they match the found relation
-            if(!is_null($srcConceptName) && !in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())) throw new Exception("Provided src concept [{$srcConceptName}] does not match the found relation '{$relation->__toString()}'", 500);  
-            if(!is_null($tgtConceptName) && !in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())) throw new Exception("Provided tgt concept [{$tgtConceptName}] does not match the found relation '{$relation->__toString()}'", 500);
+            if(!is_null($srcConcept) && !in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())) throw new Exception("Provided src concept '{$srcConcept}' does not match the relation '{$relation->__toString()}'", 500);  
+            if(!is_null($tgtConcept) && !in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())) throw new Exception("Provided tgt concept '{$tgtConcept}' does not match the relation '{$relation->__toString()}'", 500);
             
             return $relation;
         }
         
         // Else try to find the relation by its name, srcConcept and tgtConcept
-        if(!is_null($srcConceptName) && !is_null($tgtConceptName)){
+        if(!is_null($srcConcept) && !is_null($tgtConcept)){
             foreach ($relations as $relation){
                 if($relation->name == $relationSignature 
                         && in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())

@@ -2,10 +2,13 @@
 
 [![Build Status](https://travis-ci.org/AmpersandTarski/Ampersand.svg?branch=master)](https://travis-ci.org/AmpersandTarski/Ampersand)
 [![Build status](https://ci.appveyor.com/api/projects/status/ai0pwvb7corwkjjm?svg=true)](https://ci.appveyor.com/project/hanjoosten/ampersand)
-[![Release](https://img.shields.io/github/release/AmpersandTarski/Ampersand.svg)](https://github.com/AmpersandTarski/Ampersand/releases)
+[![Latest Release](https://img.shields.io/github/release/AmpersandTarski/Ampersand.svg)](https://github.com/AmpersandTarski/Ampersand/releases/latest)
 
 ## Recent activity 
 [![Throughput Graph](https://graphs.waffle.io/AmpersandTarski/Ampersand/throughput.svg)](https://waffle.io/AmpersandTarski/Ampersand/metrics)
+
+## Releases
+Check out the [release notes](https://github.com/AmpersandTarski/Ampersand/blob/development/ReleaseNotes.md) and [![all Releases](https://img.shields.io/github/release/AmpersandTarski/Ampersand.svg)](https://github.com/AmpersandTarski/Ampersand/releases)
 
 ## Documentation
 

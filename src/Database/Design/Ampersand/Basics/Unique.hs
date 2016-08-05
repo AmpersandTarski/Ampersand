@@ -11,7 +11,7 @@ where
 import Data.Typeable
 import Data.List
 import Data.Char
-import Database.Design.Ampersand.Basics.Version
+import Database.Design.Ampersand.Basics.Version(fatal)
 
 -- | anything could have some label, can't it?
 class Named a where
@@ -42,11 +42,11 @@ class (Typeable e, Eq e) => Unique e where
 -- | this is the implementation of the abstract data type. It mustn't be exported
 data UniqueObj a = 
        UniqueObj { theThing :: a
-                 , theShow  :: (a -> String)
+                 , theShow  :: a -> String
                  } deriving (Typeable)
 
 instance Unique a => Unique [a] where
-   showUnique [] = fatal 74 $ "empty list is not unique"
+   showUnique [] = fatal 74 "empty list is not unique"
    showUnique xs = "["++intercalate ", " (map showUnique xs)++"]"
 
 instance Unique Bool where

@@ -3,7 +3,10 @@
 		<ol class="breadcrumb">
 		  <li><a href="#/">Home</a></li>
 		  <li ng-if="morethanfive">...</li>
-		  <li ng-repeat="item in history" ng-class="{'active':$last}"><a ng-if="!$last" ng-href="#{{item.link}}">{{item.resourceId ? item.scope.resourceId : item.interfaceLabel}}</a><span ng-if="$last">{{item.resourceId ? item.resourceId : item.interfaceLabel}}</span></li>
+		  <li ng-repeat="item in history" ng-class="{'active':$last}">
+              <a ng-if="!$last" ng-href="#{{item.link}}">{{item.interfaceData.navLabel ? item.interfaceData.navLabel : item.interfaceLabel}}</a>
+              <span ng-if="$last">{{item.interfaceData.navLabel ? item.interfaceData.navLabel : item.interfaceLabel}}</span>
+          </li>
 		</ol>
 	</div>
 </div>

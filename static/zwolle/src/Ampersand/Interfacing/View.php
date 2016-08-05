@@ -57,7 +57,7 @@ class View {
      */
     private function __construct($viewDef){        
         $this->label = $viewDef['label'];
-        $this->forConcept = $viewDef['concept'];
+        $this->forConcept = $viewDef['conceptId'];
         $this->isDefault = $viewDef['isDefault'];
         
         foreach($viewDef['segments'] as $segment){

@@ -428,12 +428,12 @@ lambda tOp' e' expr' = [reversePrf[(e'',txt,op)
 --      lam tOp e f       = []
 
 -- longstcomn determines the longest prefix common to all xs in xss.
-  longstcomn :: (Eq a) => [[(a, b, c, d)]] -> [(a, b, c, d)]
+  longstcomn :: (Ord a) => [[(a, b, c, d)]] -> [(a, b, c, d)]
   longstcomn xss | or [null xs | xs<-xss]      = []
                  | length (eqCl first xss)==1 = head [head prf | prf<-xss]: longstcomn [tail prf | prf<-xss]
                  | otherwise                  = []
  -- remainders determines the remainders.
-  remainders :: (Eq a) => [[(a, b, c, d)]] -> [[(a, b, c, d)]] -> [[(a, b, c, d)]]
+  remainders :: (Ord a) => [[(a, b, c, d)]] -> [[(a, b, c, d)]] -> [[(a, b, c, d)]]
   remainders _ xss | or [null xs | xs<-xss]      = xss
                    | length (eqCl first xss)==1 = remainders xss [tail prf | prf<-xss]
                    | otherwise                  = xss

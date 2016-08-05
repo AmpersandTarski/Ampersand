@@ -48,7 +48,7 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
     
-	$resource = new Atom($resourceId, $resourceType);
+	$resource = new Atom($resourceId, Concept::getConcept($resourceType));
 	
 	// Checks
 	if(!$session->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
@@ -77,10 +77,10 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	$options = $app->request->params();
 	$ifcPath = implode ('/', $ifcPath);
 
-	$atom = new Atom($resourceId, $resourceType);
+	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 
-	$content = $atomOrIfc->getContent($options);
+	$content = $atomOrIfc->read($options);
 	
 	// If force list option is provided, make sure to return an array
 	if($options['forceList'] && isAssoc($content)) $content = array($content);
@@ -106,7 +106,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	
 	$ifcPath = implode ('/', $ifcPath);
 	
-	$atom = new Atom($resourceId, $resourceType);
+	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
 	$atom->topLevelIfcId = $topLevelIfcId;
 	
 	// Create atom if not exists and crudC is allowed
@@ -138,7 +138,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 	$options = $app->request->params();
 	$ifcPath = implode ('/', $ifcPath);
 
-	$atom = new Atom($resourceId, $resourceType);
+	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 	
 	// Perform create
@@ -163,7 +163,7 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
 	$options = $app->request->params();
 	$ifcPath = implode ('/', $ifcPath);
 
-	$atom = new Atom($resourceId, $resourceType);
+	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 
 	// Perform delete

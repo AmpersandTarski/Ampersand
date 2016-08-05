@@ -3,12 +3,14 @@
 use Ampersand\Config;
 use Ampersand\Database\Database;
 use Ampersand\Session;
+use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Log\Notifications;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
+use Ampersand\Output\OutputCSV;
 
 global $app;
 
@@ -68,9 +70,10 @@ $app->get('/admin/import', function () use ($app){
     foreach((array)$allAtoms as $cpt => $atoms) if(!empty($atoms)) Concept::getConcept($cpt);
     foreach((array)$allLinks as $rel => $links) if(!empty($links)) Relation::getRelation($rel);
     
-    foreach((array)$allAtoms as $cpt => $atoms){        
+    foreach((array)$allAtoms as $cpt => $atoms){
+        $concept = Concept::getConcept($cpt);
         foreach($atoms as $atomId){
-            $atom = new Atom($atomId, $cpt);
+            $atom = new Atom($atomId, $concept);
             $atom->addAtom();
         }
     }
@@ -81,7 +84,7 @@ $app->get('/admin/import', function () use ($app){
         foreach($links as $link){
             if(is_null($link['src']) || is_null($link['tgt'])) continue; // skip
             
-            $relation->addLink(new Atom($link['src'], $relation->srcConcept->name), new Atom($link['tgt'], $relation->tgtConcept->name));
+            $relation->addLink(new Atom($link['src'], $relation->srcConcept), new Atom($link['tgt'], $relation->tgtConcept));
         }
     }
     
@@ -160,8 +163,21 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			throw new Exception ("Unknown groupBy argument", 500);
 			break;
 	}
+    
+    usort($content, function($a, $b){ 
+        // return $b['duration'] <=> $a['duration']; // uses php7 spaceship operator
+        if($b['duration'] < $a['duration']) return -1;
+        elseif($b['duration'] == $a['duration']) return 0;
+        elseif($b['duration'] > $a['duration']) return 1;
+    });
+    
+    // Output
+    $output = new OutputCSV();
+    $output->addColumns(array_keys($content[0]));
+    foreach ($content as $row) $output->addRow($row);
+    $output->render('conj-performance-report.csv');
 	
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+	// print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 	
 });
 
@@ -206,6 +222,43 @@ $app->get('/admin/report/conjuncts', function () use ($app){
     }
     
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
+$app->get('/admin/report/interfaces', function () use ($app){
+    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
+    
+    $arr = array();
+    foreach (InterfaceObject::getAllInterfaces() as $key => $ifc) {
+        $arr = array_merge($arr, $ifc->getInterfaceFlattened());
+    }
+    
+    $content = array_map(function(InterfaceObject $ifc){
+        return array( 'path' => $ifc->path
+                    , 'label' => $ifc->label
+                    , 'crudC' => $ifc->crudC
+                    , 'crudR' => $ifc->crudR
+                    , 'crudU' => $ifc->crudU
+                    , 'crudD' => $ifc->crudD
+                    , 'src' => $ifc->srcConcept->name
+                    , 'tgt' => $ifc->tgtConcept->name
+                    , 'view' => $ifc->view->label
+                    , 'relation' => $ifc->relation->signature
+                    , 'flipped' => $ifc->relationIsFlipped
+                    , 'ref' => $ifc->refInterfaceId
+                    , 'root' => $ifc->isRoot()
+                    , 'public' => $ifc->isPublic()
+                    , 'roles' => implode(',', $ifc->ifcRoleNames)
+                );
+        
+    }, $arr);
+    
+    // Output
+    $output = new OutputCSV();
+    $output->addColumns(array_keys($content[0]));
+    foreach ($content as $row) $output->addRow($row);
+    $output->render('ifc-report.csv');
+    
+    // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 ?>

@@ -37,9 +37,10 @@
 		<div id="invariants" ng-show="$storage.notificationPrefs.switchShowInvariants">
 			<div class="panel panel-danger" ng-repeat="(key, val) in notifications.invariants">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#invariant-{{key}}">
-					<div class="text-left">
-						<span class="glyphicon glyphicon-warning-sign"></span><span> {{val.ruleMessage}}</span>
-						<span class="badge pull-right">{{val.tuples.length}}</span>					
+                    <div class="text-left" style="display:flex; align-items:center;">
+                        <span class="glyphicon glyphicon-warning-sign"></span>
+                        <div marked="val.ruleMessage" style="display:inline-block; margin: 0px 10px;"></div> <!-- uses angular-marked directive -->
+                        <span class="badge" style="margin-left:auto;">{{val.tuples.length}}</span>
 					</div>
 				</div>
 				<ul class="list-group collapse" id="invariant-{{key}}">
@@ -53,9 +54,10 @@
 		<div id="signals" ng-show="$storage.notificationPrefs.switchShowSignals">
 			<div class="panel panel-warning" ng-repeat="(key, val) in notifications.signals">
 				<div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
-					<div class="text-left">
-						<span class="glyphicon glyphicon-bell"></span><span> {{val.ruleMessage}}</span>
-						<span class="badge pull-right">{{val.tuples.length}}</span>					
+                    <div class="text-left" style="display:flex; align-items:center;">
+                        <span class="glyphicon glyphicon-warning-sign"></span>
+                        <div marked="val.ruleMessage" style="display:inline-block; margin: 0px 10px;"></div> <!-- uses angular-marked directive -->
+                        <span class="badge" style="margin-left:auto;">{{val.tuples.length}}</span>
 					</div>
 				</div>
 				<ul class="list-group collapse" id="violation-{{key}}">

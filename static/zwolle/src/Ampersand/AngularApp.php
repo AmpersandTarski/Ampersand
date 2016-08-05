@@ -133,6 +133,8 @@ class AngularApp {
                     if(($ifc->srcConcept->name == 'SESSION' || $ifc->srcConcept->name == 'ONE') && $ifc->crudR) return true;
                     else return false;
                 case 'new':
+                    // crudC, otherwise the atom cannot be created
+                    // isIdent (interface expr = I[Concept]), because otherwise a src atom is necesarry, which we don't have wiht +-menu
                     if($ifc->crudC && $ifc->isIdent) return true;
                     else return false;
                 default:
@@ -218,6 +220,10 @@ class AngularApp {
 		// datetimepicker
 		$this->addHtmlLine('<script src="app/lib/ui-bootstrap/datetimepicker/datetimepicker.js"></script>');
 		$this->addHtmlLine('<link href="app/lib/ui-bootstrap/datetimepicker/datetimepicker.css" rel="stylesheet" media="screen" type="text/css">');
+        
+        // markdown support
+        $this->addHtmlLine('<script src="app/bower_components/marked/lib/marked.js"></script>');
+        $this->addHtmlLine('<script src="app/bower_components/angular-marked/dist/angular-marked.js"></script>');
 
 		/*
 		 ********** CSS *********************************
