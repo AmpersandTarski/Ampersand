@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Atomic-DATETIME.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$<div style="min-width:6em;">
+$endif$$if(crudR)$<div style="min-width:6em;">
 	$if(crudU)$$if(exprIsUni)$<div ng-controller="static_dateTimeController">
 		<datetimepicker ng-model="resource['$name$']" show-meridian="false" date-format="dd-MM-yyyy" placeholder="dd-mm-yyyy" starting-day="1" show-spinners="false"></datetimepicker>
 		<span my-showonhover-box class="glyphicon glyphicon-ok" ng-click="saveDateTimeItem(resource, '$name$', patchResource)" uib-tooltip="Save" tooltip-trigger="mouseenter" tooltip-placement="right"></span>
@@ -11,4 +11,4 @@ $endif$<div style="min-width:6em;">
 		<datetimepicker ng-model="selected.value" show-meridian="false" date-format="dd-MM-yyyy" placeholder="dd-mm-yyyy" starting-day="1" show-spinners="false"></datetimepicker>
 		<span my-showonhover-box class="glyphicon glyphicon-plus" ng-click="addDateTimeItem(resource, '$name$', selected, patchResource)" uib-tooltip="Add datetime" tooltip-trigger="mouseenter" tooltip-placement="right"></span>
 	</div>$endif$$else$$if(exprIsUni)$<div>{{resource['$name$'] | date : 'yyyy-MM-dd HH:mm:ss Z'}}</div>$else$<div ng-repeat="row in resource['$name$'] track by \$index">{{row | date : 'yyyy-MM-dd HH:mm:ss Z'}}</div>$endif$$endif$
-</div>
+</div>$else$<span><i>not readable</i></span>$endif$

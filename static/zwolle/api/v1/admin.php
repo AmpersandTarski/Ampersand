@@ -164,7 +164,12 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 			break;
 	}
     
-    usort($content, function($a, $b){ return $b['duration'] <=> $a['duration'];});
+    usort($content, function($a, $b){ 
+        // return $b['duration'] <=> $a['duration']; // uses php7 spaceship operator
+        if($b['duration'] < $a['duration']) return -1;
+        elseif($b['duration'] == $a['duration']) return 0;
+        elseif($b['duration'] > $a['duration']) return 1;
+    });
     
     // Output
     $output = new OutputCSV();
@@ -228,8 +233,8 @@ $app->get('/admin/report/interfaces', function () use ($app){
     }
     
     $content = array_map(function(InterfaceObject $ifc){
-        return array( 'label' => $ifc->label
-                    , 'path' => $ifc->path
+        return array( 'path' => $ifc->path
+                    , 'label' => $ifc->label
                     , 'crudC' => $ifc->crudC
                     , 'crudR' => $ifc->crudR
                     , 'crudU' => $ifc->crudU
@@ -240,6 +245,9 @@ $app->get('/admin/report/interfaces', function () use ($app){
                     , 'relation' => $ifc->relation->signature
                     , 'flipped' => $ifc->relationIsFlipped
                     , 'ref' => $ifc->refInterfaceId
+                    , 'root' => $ifc->isRoot()
+                    , 'public' => $ifc->isPublic()
+                    , 'roles' => implode(',', $ifc->ifcRoleNames)
                 );
         
     }, $arr);

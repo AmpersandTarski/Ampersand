@@ -1,4 +1,4 @@
 $if(verbose)$<!-- View-PROPERTY.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$ ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$<div class="checkbox" style="margin-top:0px; vertical-align:middle;">
+$endif$$if(crudR)$<div class="checkbox" style="margin-top:0px; vertical-align:middle;">
 	<label><input ng-model="resource['$name$']" type="checkbox"$if(!crudU)$ ng-disabled="true"$endif$ ng-change="saveItem(resource, '$name$', patchResource)"/></label>
-</div>
+</div>$else$<span><i>N/A</i></span>$endif$

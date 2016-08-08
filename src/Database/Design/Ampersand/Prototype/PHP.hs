@@ -26,19 +26,8 @@ createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
         ] <>
-        concatMap createTablePHP [sessionTableSpec, historyTableSpec] <>
-        [ "$time = explode(' ', microTime()); // copied from DatabaseUtils setTimestamp"
-        , "$microseconds = substr($time[0], 2,6);"
-        , "$seconds =$time[1].$microseconds;"
-        , "date_default_timezone_set(\"Europe/Amsterdam\");"
-        -- to prevent a php warning TODO: check if this is ok when Ampersand is used in different timezones
-        , "$date = date(\"j-M-Y, H:i:s.\").$microseconds;"
-        , "mysqli_query($DB_link, \"INSERT INTO `__History__` (`Seconds`,`Date`) VALUES ('$seconds','$date')\");"
-        , "if($err=mysqli_error($DB_link)) {"
-        , "  $error=true; echo $err.'<br />';"
-        , "}"
-        , ""
-        ] <>setSqlModePHP<>
+        createTablePHP sessionTableSpec <>
+        setSqlModePHP<>
         createTablePHP signalTableSpec <>
         [ ""
         , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
@@ -101,14 +90,6 @@ sessionTableSpec
    , "__SessionTimeout__"
    , [ "`SESSION` VARCHAR(255) UNIQUE NOT NULL"
      , "`lastAccess` BIGINT NOT NULL" ]
-   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
-
-historyTableSpec :: TableSpec
-historyTableSpec
- = ( "// Timestamp table"
-   , "__History__"
-   , [ "`Seconds` VARCHAR(255) DEFAULT NULL"
-     , "`Date` VARCHAR(255) DEFAULT NULL" ]
    , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
 
 populateTablesPHP :: FSpec -> [Text.Text]

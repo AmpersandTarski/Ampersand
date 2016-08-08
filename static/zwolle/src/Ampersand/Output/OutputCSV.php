@@ -67,7 +67,7 @@ class OutputCSV {
         $this->headers[] = $header;
     }
     
-    public function render($filename){
+    public function render($filename, $delimiter = ";"){
         $this->addHeader("Content-Disposition: attachment; filename={$filename}");
         
         // set reponse headers
@@ -77,7 +77,7 @@ class OutputCSV {
         $stream = fopen('php://output', 'w');
         
         // output the column headings
-        fputcsv($stream, array_values($this->columns));
+        fputcsv($stream, array_values($this->columns), $delimiter);
         
         // output rows
         foreach ($this->rows as $row) {
@@ -87,7 +87,7 @@ class OutputCSV {
                 else $fields[] = null;
             }
             
-            fputcsv($stream, $fields);
+            fputcsv($stream, $fields, $delimiter);
         }
         
         fclose($stream);

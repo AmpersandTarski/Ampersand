@@ -8,7 +8,7 @@ $if(verbose)$<!-- View-FILEOBJECT.html "$label$" : $expAdl$ :: $source$ * $targe
     originalFileName  		:: FileObject -> FileName
       REPRESENT FileName TYPE ALPHANUMERIC
 -->
-$endif$<div class="input-group">
+$endif$$if(crudR)$<div class="input-group">
 	<div ng-repeat="(key, row) in resource['$name$']">
 		$if(crudU)$<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
 		<a href="{{row['_view_']['filePath']}}" target="_blank">{{row['_view_']['fileName']}}</a>
@@ -16,4 +16,4 @@ $endif$<div class="input-group">
 	$if(crudC)$<div my-showonhover-box ng-controller="uploadFileController" $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$>
 		<input class="form-control input-sm" type="file" nv-file-select uploader="FileUploader" options="{'url' : 'api/v1/' + resource['_path_'] + '/$name$', resource : resource, ifc : '$name$'}"/>
 	</div>$endif$
-</div>
+</div>$else$<span><i>not readable</i></span>$endif$

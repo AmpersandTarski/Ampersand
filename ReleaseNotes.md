@@ -1,6 +1,10 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * [Issue #502](https://github.com/AmpersandTarski/Ampersand/issues/502) More stable way to generate .pdf file (LaTeX output)
+
+
+## v3.6.1 (5 august 2016)
   * [Issue #488](https://github.com/AmpersandTarski/Ampersand/issues/488) Performance enhancement: Added indexes on table columns when possible
   * [Issue #486](https://github.com/AmpersandTarski/Ampersand/issues/486) Performance enhancement: Removed DISTINCT in subqueries
   * [Issue #459](https://github.com/AmpersandTarski/Ampersand/issues/459) fix for underscores in Concept name
@@ -11,6 +15,7 @@
   * Added new reporting functionality for backend framework
   * DB performance: less queries because 'I[Concept]'-expression is not queried anymore
   * Minor backend fixes
+  * Fix issues regarding CRUD specifications: missing interfaces in navbar +menu, missing crudR check in templates, return content after create
 
 ## v3.6.0 (8 july 2016)
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 

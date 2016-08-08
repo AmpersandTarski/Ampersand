@@ -1,3 +1,6 @@
+{-# LANGUAGE DeriveDataTypeable, CPP, MultiParamTypeClasses,
+    FlexibleContexts, ScopedTypeVariables, PatternGuards,
+    ViewPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Database.Design.Ampersand.Output.PandocAux
       ( writepandoc
@@ -19,24 +22,38 @@ module Database.Design.Ampersand.Output.PandocAux
       , newGlossaryEntry
       )
 where
-import Database.Design.Ampersand.Prototype.StaticFiles_Generated
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.FSpec
+import Control.Monad
 import Data.Char hiding    (Space)
-import Text.Pandoc
-import Text.Pandoc.Builder
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Data.List
+import Data.Maybe
+import Database.Design.Ampersand.ADL1
 import Database.Design.Ampersand.Basics hiding (hPutStrLn)
-import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
+import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Database.Design.Ampersand.FSpec
 import Database.Design.Ampersand.Misc
-import System.Process      (system)
+import Database.Design.Ampersand.Prototype.StaticFiles_Generated
+import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Lazy as B
+import qualified Data.ByteString.Lazy as BL
+import qualified Data.ByteString.Lazy.Char8 as BC
+import System.Directory
+import System.Environment
 import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
 import System.FilePath  -- (combine,addExtension,replaceExtension)
-import System.Directory
-import System.Info         (os)
-import Data.List
-import Control.Monad
-import Data.Maybe
+import System.IO (stderr, stdout)
+import Text.Pandoc
+import Text.Pandoc.Builder
+import Text.Pandoc.Process (pipeProcess)
+#ifdef _WINDOWS
+import Data.List (intercalate)
+#endif
+
+#ifdef _WINDOWS
+changePathSeparators :: FilePath -> FilePath
+changePathSeparators = intercalate "/" . splitDirectories
+#endif
+
 
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: FSpec -> [(String , String)]
@@ -144,160 +161,93 @@ defaultWriterVariables fSpec
 
 --DESCR -> functions to write the pandoc
 --         String = the name of the outputfile
---         The first IO() is a Pandoc output format
---         The second IO(): If the output format is latex, then this IO() generates a .pdf from the .ltx
-writepandoc :: FSpec -> Pandoc -> (String,IO(),IO())
-writepandoc fSpec thePandoc = (outputFile,makeOutput,postProcessMonad)
-         where
-         outputFile = addExtension (combine (dirOutput (getOpts fSpec)) (baseName (getOpts fSpec)))
-                                       (case fspecFormat (getOpts fSpec) of
-                                                 Fasciidoc     -> ".txt"
-                                                 Fcontext      -> ".context"
-                                                 Fdocbook      -> ".docbook"
-                                                 Fman          -> ".man"
-                                                 Fmarkdown     -> ".md"
-                                                 Fmediawiki    -> ".mediawiki"
-                                                 Forg          -> ".org"
-                                                 Fplain        -> ".plain"
-                                                 Frst          -> ".rst"
-                                                 FPandoc       -> ".pandoc"
-                                                 Frtf          -> ".rtf"
-                                                 FLatex        -> ".ltx"
-                                                 Fhtml         -> ".html"
-                                                 Fopendocument -> ".odt"
-                                                 Ftexinfo      -> ".texinfo"
-                                                 Ftextile      -> ".textile"
-                                       )
-         makeOutput
-            =  do verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
-                  writeFile outputFile (pandocWriter (writerOptions (readDefaultTemplate fSpecFormatString)) $ thePandoc)
-                  verboseLn (getOpts fSpec) "... done."
-           where
-              pandocWriter :: WriterOptions -> Pandoc -> String
-              pandocWriter =
-                case fspecFormat (getOpts fSpec) of
-                  Fasciidoc -> writeAsciiDoc
-                  FPandoc   -> writeNative
-                  Fcontext  -> writeConTeXt
-                  Fdocbook  -> writeDocbook
-                  Fhtml     -> writeHtmlString
-                  FLatex    -> writeLaTeX
-                  Fman      -> writeMan
-                  Fmarkdown -> writeMarkdown
-                  Fmediawiki -> writeMediaWiki
-                  Fopendocument -> writeOpenDocument
-                  Forg -> writeOrg
-                  Fplain -> writePlain
-                  Frst -> writeRST
-                  Frtf -> writeRTF
-                  Ftexinfo -> writeTexinfo
-                  Ftextile -> writeTextile
-              fSpecFormatString :: String
-              fSpecFormatString =
-                case fspecFormat (getOpts fSpec) of
-                  FPandoc   -> "pandoc"
-                  Fasciidoc -> "asciidoc"
-                  Fcontext  -> "context"
-                  Fdocbook  -> "docbook"
-                  Fhtml     -> "html"
-                  FLatex    -> "latex"
-                  Fman      -> "man"
-                  Fmarkdown -> "markdown"
-                  Fmediawiki -> "mediawiki"
-                  Fopendocument -> "opendocument"
-                  Forg -> "org"
-                  Fplain -> "plain"
-                  Frst -> "rst"
-                  Frtf -> "rtf"
-                  Ftexinfo -> "texinfo"
-                  Ftextile -> "textile"
-              readDefaultTemplate :: String -> Maybe String
-              readDefaultTemplate s = getStaticFileContent PandocTemplates ("default."++s)
-              writerOptions :: Maybe String -> WriterOptions
-              writerOptions template = def
-                            { writerStandalone=isJust template
-                            , writerTableOfContents=True
-                            , writerNumberSections=True
-                            , writerTemplate=fromMaybe "" template
-                            , writerVariables=defaultWriterVariables fSpec
-                            }
-         postProcessMonad :: IO()
-         postProcessMonad =
-           case fspecFormat (getOpts fSpec) of
-               FLatex  -> do
-                          (ready,nrOfRounds) <- doRestOfPdfLatex (False, 0)  -- initialize with: (<NotReady>, <0 rounds so far>)
-                          verboseLn (getOpts fSpec) ("PdfLatex was called "++
-                                          (if nrOfRounds>1 then show nrOfRounds++" times" else "once")++
-                                          if ready then "."
-                                                   else ", but did not solve all references!")
-                             where
-                                doRestOfPdfLatex :: (Bool,Int) -> IO (Bool,Int)
-                                doRestOfPdfLatex (ready, roundsSoFar)
-                                  = if ready || roundsSoFar > 4    -- Make sure we will not hit a loop when something is wrong with call to pdfLatex ...
-                                    then return (ready, roundsSoFar)
-                                    else do result <- callPdfLatexOnce
-                                            let logFileName = replaceExtension outputFile ("log"++show roundsSoFar)
-                                            renameFile (replaceExtension outputFile "log") logFileName
-                                            logFileLines <- fmap lines $ readFile logFileName
-                                            {- Old comment: The log file should be renamed before reading, because readFile opens the file
-                                               for lazy IO. In a next run, pdfLatex will try to write to the log file again. If it
-                                               was read using readFile, it will fail because the file is still open. 8-((
-                                            -}
+--         The IO() creates the actual output
+writepandoc :: FSpec -> Pandoc -> IO()
+writepandoc fSpec thePandoc = 
+  do verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
+     writeFile outputFile (pandocWriter writerOptions thePandoc)
+     
+     case fspecFormat (getOpts fSpec) of
+        FLatex  ->
+           do result <- makePDF writeLaTeX writerOptions thePandoc fSpec
+              case result of 
+                Left err -> do putStrLn ("LaTeX Error: ")
+                               B.putStr err
+                               putStrLn "\n."
+                Right _  -> do let pdfFile = outputFile -<.> "pdf"
+                               verboseLn (getOpts fSpec) $ pdfFile ++" created."
+             
+        _ -> return ()
+ where
+    outputFile = 
+      addExtension (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec))
+                   (case fspecFormat (getOpts fSpec) of
+                      Fasciidoc     -> ".txt"
+                      Fcontext      -> ".context"
+                      Fdocbook      -> ".docbook"
+                      Fman          -> ".man"
+                      Fmarkdown     -> ".md"
+                      Fmediawiki    -> ".mediawiki"
+                      Forg          -> ".org"
+                      Fplain        -> ".plain"
+                      Frst          -> ".rst"
+                      FPandoc       -> ".pandoc"
+                      Frtf          -> ".rtf"
+                      FLatex        -> ".ltx"
+                      Fhtml         -> ".html"
+                      Fopendocument -> ".odt"
+                      Ftexinfo      -> ".texinfo"
+                      Ftextile      -> ".textile"
+                   )
+    pandocWriter :: WriterOptions -> Pandoc -> String
+    pandocWriter =
+       case fspecFormat (getOpts fSpec) of
+            Fasciidoc -> writeAsciiDoc
+            FPandoc   -> writeNative
+            Fcontext  -> writeConTeXt
+            Fdocbook  -> writeDocbook
+            Fhtml     -> writeHtmlString
+            FLatex    -> writeLaTeX
+            Fman      -> writeMan
+            Fmarkdown -> writeMarkdown
+            Fmediawiki -> writeMediaWiki
+            Fopendocument -> writeOpenDocument
+            Forg -> writeOrg
+            Fplain -> writePlain
+            Frst -> writeRST
+            Frtf -> writeRTF
+            Ftexinfo -> writeTexinfo
+            Ftextile -> writeTextile
+    fSpecFormatString :: String
+    fSpecFormatString =
+       case fspecFormat (getOpts fSpec) of
+            FPandoc   -> "pandoc"
+            Fasciidoc -> "asciidoc"
+            Fcontext  -> "context"
+            Fdocbook  -> "docbook"
+            Fhtml     -> "html"
+            FLatex    -> "latex"
+            Fman      -> "man"
+            Fmarkdown -> "markdown"
+            Fmediawiki -> "mediawiki"
+            Fopendocument -> "opendocument"
+            Forg -> "org"
+            Fplain -> "plain"
+            Frst -> "rst"
+            Frtf -> "rtf"
+            Ftexinfo -> "texinfo"
+            Ftextile -> "textile"
+    writerOptions :: WriterOptions
+    writerOptions = def
+                      { writerStandalone=isJust template
+                      , writerTableOfContents=True
+                      , writerNumberSections=True
+                      , writerTemplate=fromMaybe "" template
+                      , writerVariables=defaultWriterVariables fSpec
+                      , writerVerbose=verboseP (getOpts fSpec)
+                      }
+        where template = getStaticFileContent PandocTemplates ("default."++fSpecFormatString)
 
-                                            case result of
-                                              ExitSuccess   -> verboseLn (getOpts fSpec) "PDF file created."
-                                              ExitFailure _ ->
-                                               do { let nrOfErrLines = 15
-                                                  ; putStrLn "----------- LaTeX output-----------"
-
-                                                  -- get rid of latex memory info and take required nr of lines
-                                                  ; let reverseErrLines = take nrOfErrLines . drop 2
-                                                                        . dropWhile (not . ("Here is how much of TeX's memory you used:" `isPrefixOf`))
-                                                                        . reverse $ logFileLines
-                                                  ; putStrLn $ unlines . reverse $ reverseErrLines
-                                                  ; putStrLn "----------------------------------\n"
-                                                  ; putStrLn $ "Warning: Latex execution has warnings."
-                                                  ; putStrLn $ "For more information, run pdflatex on: "++texFilename
-                                                  ; putStrLn $ "Or consult the log file:\n"++logFileName
-                                                  }
-
-                                            -- We need to rerun latex if any of the log lines start with a rerunPrefix
-                                            let notReady = result == ExitSuccess &&
-                                                           or [ rerunPrefix `isPrefixOf` line
-                                                              | line <- logFileLines
-                                                              , rerunPrefix <- [ "LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right."
-                                                                               , "Package longtable Warning: Table widths have changed. Rerun LaTeX."
-                                                                               ]
-                                                              ]
-                                            when notReady (verboseLn (getOpts fSpec) "Another round of pdfLatex is required. Hang on...")
-                                          --  when notReady (dump "log")  -- Need to dump the last log file, otherwise pdfLatex cannot write its log.
-                                            doRestOfPdfLatex (not notReady, roundsSoFar +1)
-
-                                texFilename = addExtension (baseName (getOpts fSpec)) ".ltx"
-
-                                callPdfLatexOnce :: IO ExitCode
-                                callPdfLatexOnce =
-                                   do if os `elem` ["mingw32","mingw64","cygwin","windows"] --REMARK: not a clear enum to check for windows OS
-                                      then do { res <- system ( pdfLatexCommand++"> "++combine (dirOutput (getOpts fSpec)) "pdflog" )
-                                              ; if res /= ExitSuccess then return res else
-                                                  system  makeIndexCommand -- TODO: failure of makeindex is not reported correctly (requires refactoring command execution)
-                                              }
-                                      --REMARK: MikTex is windows; Tex-live does not have the flag -include-directory.
-                                      else system ( "cd "++dirOutput (getOpts fSpec)++
-                                                    " && pdflatex "++commonFlags++
-                                                    texFilename ++ "> "++addExtension(baseName (getOpts fSpec)) ".pdflog" )
-                                           -- >> system makeIndexCommand
-                                           -- disabled makeIndexCommand on non-windows, since it will always fail when absolute paths are used
-                                           -- For some weird Latex reason this can only be avoided by setting an environment variable.
-                                      where
-                                      pdfLatexCommand = "pdflatex "++commonFlags++pdfgetOpts++ outputFile
-                                      --makeIndexCommand = "makeglossaries "++replaceExtension outputFile "glo"
-                                      --makeindex uses the error stream for verbose stuff...
-                                      makeIndexCommand = "makeindex -s "++replaceExtension outputFile "ist"++" -t "++replaceExtension outputFile "glg"++" -o "++replaceExtension outputFile "gls"++" "++replaceExtension outputFile "glo 2> "++combine (dirOutput (getOpts fSpec)) "glossaries.log"
-                                      pdfgetOpts = " -include-directory="++dirOutput (getOpts fSpec)++ " -output-directory="++dirOutput (getOpts fSpec)++" "
-                                      commonFlags = "--halt-on-error --interaction=nonstopmode " -- MacTex options are normally with one '-', but '--interaction' is accepted
-                                      -- we don't do --disable-installer on Windows, so the install dialog will pop up, even when we are in nonstopmode
-               _  -> return()
 
 -----Linguistic goodies--------------------------------------
 
@@ -686,3 +636,104 @@ newGlossaryEntry nm cnt =
     ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
      "     { name={"++latexEscShw nm ++"}\n"++
      "     , description={"++latexEscShw (cnt)++"}}\n")
+
+
+
+-------------------------------------------------
+---temporary from Pandoc:
+------------------------------------------
+
+makePDF :: (WriterOptions -> Pandoc -> String)  -- ^ writer
+        -> WriterOptions       -- ^ options
+        -> Pandoc              -- ^ document
+        -> FSpec
+        -> IO (Either B.ByteString B.ByteString)
+makePDF writer wOpts pandoc fSpec = do
+  tex2pdf' (dirOutput (getOpts fSpec))
+  
+  where 
+    wVerbose = writerVerbose wOpts
+    program  = "pdflatex" 
+    args     = writerLaTeXArgs wOpts
+    wSource  = writer wOpts pandoc
+    tex2pdf' :: FilePath                        -- ^ temp directory for output
+             -> IO (Either B.ByteString B.ByteString)
+    tex2pdf' tmpDir = do
+      let numruns = if "\\tableofcontents" `isInfixOf` wSource
+                       then 3  -- to get page numbers
+                       else 2  -- 1 run won't give you PDF bookmarks
+      (exit, log', mbPdf) <- runTeXProgram 1 numruns tmpDir
+      case (exit, mbPdf) of
+           (ExitFailure _, _)      -> do
+              let logmsg = extractMsg log'
+              return $ Left logmsg
+           (ExitSuccess, Nothing)  -> return $ Left ""
+           (ExitSuccess, Just pdf) -> return $ Right pdf
+
+-- running tex programs
+
+-- Run a TeX program on an input bytestring and return (exit code,
+-- contents of stdout, contents of produced PDF if any).  Rerun
+-- a fixed number of times to resolve references.
+    runTeXProgram :: Int -> Int -> FilePath
+                  -> IO (ExitCode, B.ByteString, Maybe B.ByteString)
+    runTeXProgram runNumber numRuns tmpDir = do
+        let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
+        exists <- doesFileExist file
+        unless exists $ fatal 766 $ "File should be written by now:\n  "++file 
+#ifdef _WINDOWS
+        -- note:  we want / even on Windows, for TexLive
+        let tmpDir' = changePathSeparators tmpDir
+        let file' = changePathSeparators file
+#else
+        let tmpDir' = tmpDir
+        let file' = file
+#endif
+        let programArgs = ["-halt-on-error", "-interaction", "nonstopmode",
+             "-output-directory", tmpDir'] ++ args ++ [file']
+        env' <- getEnvironment
+        let sep = [searchPathSeparator]
+        let texinputs = maybe (tmpDir' ++ sep) ((tmpDir' ++ sep) ++)
+              $ lookup "TEXINPUTS" env'
+        let env'' = ("TEXINPUTS", texinputs) :
+                      [(k,v) | (k,v) <- env', k /= "TEXINPUTS"]
+        when (wVerbose && runNumber == 1) $ do
+          putStrLn "[makePDF] temp dir:"
+          putStrLn tmpDir'
+          putStrLn "[makePDF] Command line:"
+          putStrLn $ program ++ " " ++ unwords (map show programArgs)
+          putStr "\n"
+          putStrLn $ "[makePDF] Processing: " ++ file'
+          putStr "\n"
+        (exit, out, err) <- pipeProcess (Just env'') program programArgs BL.empty
+        when wVerbose $ do
+          putStrLn $ "[makePDF] Run #" ++ show runNumber
+          B.hPutStr stdout out
+          B.hPutStr stderr err
+          putStr "\n"
+        if runNumber <= numRuns
+           then runTeXProgram (runNumber + 1) numRuns tmpDir
+           else do
+             let pdfFile = replaceDirectory (replaceExtension file ".pdf") tmpDir
+             pdfExists <- doesFileExist pdfFile
+             pdf <- if pdfExists
+                       -- We read PDF as a strict bytestring to make sure that the
+                       -- temp directory is removed on Windows.
+                       -- See https://github.com/jgm/pandoc/issues/1192.
+                       then (Just . B.fromChunks . (:[])) `fmap` BS.readFile pdfFile
+                       else return Nothing
+             return (exit, out <> err, pdf)
+
+-- parsing output
+
+extractMsg :: B.ByteString -> B.ByteString
+extractMsg log' = do
+  let msg'  = dropWhile (not . ("!" `BC.isPrefixOf`)) $ BC.lines log'
+  let (msg'',rest) = break ("l." `BC.isPrefixOf`) msg'
+  let lineno = take 1 rest
+  if null msg'
+     then log'
+     else BC.unlines (msg'' ++ lineno)
+
+
+

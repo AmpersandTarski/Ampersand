@@ -282,8 +282,7 @@ class Session {
         if(InterfaceObject::interfaceExists('SessionVars')){
             try {
                 $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionAtom->__toString()}");
-                $options = array('metaData' => false, 'navIfc' => false);
-                return $this->sessionAtom->ifc('SessionVars')->getContent($options);
+                return $this->sessionAtom->ifc('SessionVars')->read(['metaData' => false, 'navIfc' => false]);
             }catch (Exception $e){
                 $this->logger->warning("Error while getting SessionVars interface: " . $e->getMessage());
                 return false;

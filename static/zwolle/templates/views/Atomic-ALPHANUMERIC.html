@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Atomic-ALPHANUMERIC.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$<div class="input-group">
+$endif$$if(crudR)$<div class="input-group">
 	$if(crudU)$$if(exprIsUni)$<input ng-model="resource['$name$']" my-bluronenter type="text" placeholder="Value" class="form-control input-sm" ng-blur="saveItem(resource, '$name$', patchResource)">$else$<div ng-repeat="row in resource['$name$'] track by \$index">
 		<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(resource, '$name$', \$index, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
 		<span class="wordwrap">{{row}}</span>
@@ -7,4 +7,4 @@ $endif$<div class="input-group">
 	<div ng-controller="addItemController">
 		<input ng-model="selected.value" my-bluronenter type="text" placeholder="Add value" class="form-control input-sm" ng-blur="addItem(resource, '$name$', selected, patchResource)">
 	</div>$endif$$else$$if(exprIsUni)$<div class="wordwrap">{{resource['$name$']}}</div>$else$<div ng-repeat="row in resource['$name$'] track by \$index" class="wordwrap">{{row}}</div>$endif$$endif$
-</div>
+</div>$else$<span><i>not readable</i></span>$endif$

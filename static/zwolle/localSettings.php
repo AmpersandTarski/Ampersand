@@ -13,21 +13,29 @@ date_default_timezone_set('Europe/Amsterdam');
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", true);
+set_time_limit (30);
 //Config::set('debugMode', 'global', true); // default = false
 
 // Log file handler
-$fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
+$fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/error.log', 0, \Monolog\Logger::WARNING);
 //$fileHandler->pushProcessor(new \Monolog\Processor\WebProcessor()); // Adds IP adres and url info to log records
 Logger::registerGenericHandler($fileHandler);
 
-// Browsers debuggers
-//$browserHandler = new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Google Chrome
-//$browserHandler = new \Monolog\Handler\FirePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Firebug in Mozilla Firefox
-//Logger::registerGenericHandler($browserHandler);
+if(Config::get('debugMode')){
+    $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/debug.log', 0, \Monolog\Logger::DEBUG);
+    Logger::registerGenericHandler($fileHandler);
+    
+    // Browsers debuggers
+    //$browserHandler = new \Monolog\Handler\ChromePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Google Chrome
+    //$browserHandler = new \Monolog\Handler\FirePHPHandler(\Monolog\Logger::DEBUG); // Log handler for Firebug in Mozilla Firefox
+    //Logger::registerGenericHandler($browserHandler);
+}
+
+$execEngineHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/execengine.log', 0, \Monolog\Logger::INFO);
+Logger::registerHandlerForChannel('EXECENGINE', $execEngineHandler);
 
 // User log handler
 Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Logger::INFO));
-
 
 /**************************************************************************************************
  * SERVER settings
