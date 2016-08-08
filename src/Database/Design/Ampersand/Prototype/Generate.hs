@@ -99,7 +99,8 @@ plug2TableSpec plug
                  (BinSQL{}, _)   -> [  "PRIMARY KEY (" 
                                        <> intercalate ", " (map (show . attName) (plugAttributes plug))
                                        <> ")"
-                                    ]
+                                    | all (suitableAsKey . attType) (plugAttributes plug)
+                                    ] 
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
                          PrimaryKey _ -> ["PRIMARY KEY (" <> (show . attName) primFld <> ")" ]
