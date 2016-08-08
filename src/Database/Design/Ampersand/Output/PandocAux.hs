@@ -19,6 +19,7 @@ module Database.Design.Ampersand.Output.PandocAux
       , texOnly_Id
       , texOnly_fun
       , texOnly_rel
+      , texOnly_marginNote
       , newGlossaryEntry
       )
 where
@@ -107,7 +108,7 @@ defaultWriterVariables fSpec
          , "\\usepackage[all]{hypcap}"
          , ""
 
-         , "% hack1) For the purpose of clear references in Latex. See also https://github.com/AmpersandTarski/ampersand/issues/31"
+         , "% adaptation1) For the purpose of clear references in Latex. See also https://github.com/AmpersandTarski/ampersand/issues/31"
          , "\\makeatletter"
          , "\\let\\orgdescriptionlabel\\descriptionlabel"
          , "\\renewcommand*{\\descriptionlabel}[1]{%"
@@ -120,41 +121,17 @@ defaultWriterVariables fSpec
          , "  \\orgdescriptionlabel{#1}%"
          , "}"
          , "\\makeatother"
-         , "% End-hack1"
+         , "% End-adaptation1"
          , ""
 
-         , "% hack2) The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are"
+         , "% adaptation2) The LaTeX commands \\[ and \\], are redefined in the amsmath package, making sure that equations are"
          , "% not numbered. This is undesireable behaviour. this is fixed with the following hack, inspired on a note"
          , "% found at http://tex.stackexchange.com/questions/40492/what-are-the-differences-between-align-equation-and-displaymath"
          , "\\DeclareRobustCommand{\\[}{\\begin{equation}}"
          , "\\DeclareRobustCommand{\\]}{\\end{equation}}"
-         , "% End-hack2"
+         , "% End-adaptation2"
          , ""
          , ""
-         , "\\def\\id#1{\\mbox{\\em #1\\/}}"
-         , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
-         , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
-         , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}"
-         , "\\newcommand{\\iden}{\\mathbb{I}}"
-         , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
-         , "\\newcommand{\\full}{\\mathbb{V}}"
-         , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
-         , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
-         , "%\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
-         , "%\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
-         , "\\newcommand{\\asterisk}{*}"
-         , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
-         , "\\newcommand{\\subs}{\\vdash}"
-         , "\\newcommand{\\rel}{\\times}"
-         , "\\newcommand{\\fun}{\\rightarrow}"
-         , "\\newcommand{\\isa}{\\sqsubseteq}"
-         , "\\newcommand{\\N}{\\mbox{\\msb N}}"
-         , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
-         , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\fun\\id{#3}}"
-         , "\\newcommand{\\signat}[3]{\\id{#1}:\\id{#2}\\rel\\id{#3}}"
-         , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
-         , "\\newcommand{\\declare}[3]{\\id{#1}:\\ \\id{#2}\\rel\\id{#3}}"
-         , "%\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}"
          , "% ============Ampersand specific End==================="
          ])
     | fspecFormat (getOpts fSpec) == FLatex ]
@@ -580,8 +557,8 @@ mathText :: String -> String
 mathText s = "\\text{"++latexEscShw s++"} "
 
 texOnly_Id :: String -> String
-texOnly_Id s = "\\id{"++latexEscShw s++"} "
-
+texOnly_Id s = "\\mbox{"++latexEscShw s++"} "
+-- \\def\\id#1{\\mbox{\\em #1\\/}}"
 texOnly_fun :: String
 texOnly_fun = "\\rightarrow "
 
@@ -637,7 +614,9 @@ newGlossaryEntry nm cnt =
      "     { name={"++latexEscShw nm ++"}\n"++
      "     , description={"++latexEscShw (cnt)++"}}\n")
 
-
+texOnly_marginNote :: String -> String
+texOnly_marginNote note = 
+   "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "++note++"}\\end{minipage}}"
 
 -------------------------------------------------
 ---temporary from Pandoc:

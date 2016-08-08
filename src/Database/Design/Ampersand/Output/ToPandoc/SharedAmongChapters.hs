@@ -442,7 +442,7 @@ purposes2Blocks opts ps
         ref :: Purpose -> [Inline]
         ref purp = case fspecFormat opts of
                     FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex")
-                                                             ("\\marge{"++intercalate "; " (map latexEscShw (explRefIds purp))++"}\n")]
+                                                             (texOnly_marginNote (intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
                     _                                  -> []
 concatMarkup :: [A_Markup] -> Maybe A_Markup
 concatMarkup es
