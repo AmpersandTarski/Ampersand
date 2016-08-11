@@ -30,25 +30,39 @@ where
          let elemMap = typeMap archiRepo
          let elemLookup atom = (Map.lookup atom . Map.fromList) elemMap
          let archiRepoWithProps = (identifyProps []) archiRepo
-         let pops = (filter (not.null.popPairs) . sortPops . grindArchi elemLookup) archiRepoWithProps
-         let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . countPops) pops
+         let pContext = (mkArchiContext . grindArchiPop elemLookup) archiRepoWithProps
+         let relPops = (filter (not.null.popPairs) . sortRelPops . grindArchi elemLookup) archiRepoWithProps
+         let cptPops = (filter (not.null.popAtoms) . sortCptPops . grindArchi elemLookup) archiRepoWithProps
+         let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . countPops) relPops
          let countPop pop = relNameSrcTgt pop++"\t"++(show.length.popPairs) pop++"\t"++popName pop++"\t"++popSource pop++"\t"++(show.length.eqCl fst.popPairs) pop++"\t"++(showMaybeInt.elemCount.popSource) pop++"\t"++popTarget pop++"\t"++(show.length.eqCl snd.popPairs) pop++"\t"++(showMaybeInt.elemCount.popTarget) pop
-         writeFile "ArchiMetaModel.adl"
-          ( (intercalate "\n\n" . map show) pops  ++
-            "\n\n"                                ++
-            (intercalate "\n" . map showRel) pops
-          )
-         putStrLn ("ArchiMetaModel.adl written")
          writeFile "ArchiCount.txt"
-          ( (intercalate "\n" . map countPop) pops )
+          ( (intercalate "\n" . map countPop) relPops )
          appendFile "ArchiCount.txt"
-          ( (concat . map showArchiElems . atomCount . atomMap ) pops )
+          ( (concat . map showArchiElems . atomCount . atomMap ) (relPops++cptPops ) )
          putStrLn ("ArchiCount.txt written")
-         return ((mkArchiContext . grindArchiPop elemLookup) archiRepoWithProps)
-      where sortPops :: [Pop] -> [Pop] -- assembles Pops with the same signature into one
-            sortPops pops = [ (head cl){popPairs = (foldr uni [] . map popPairs) cl} | cl<-eqCl relNameSrcTgt pops ]
+         return pContext
+{- reminder:
+data P_Population
+  = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+              , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
+              , p_orig  :: Origin       -- the origin
+              , p_nmdr  :: P_NamedRel   -- the named relation
+              , p_popps :: [PAtomPair]  -- the contents
+              }
+  | P_CptPopu { p_orig  :: Origin  -- the origin
+              , p_cnme  :: String  -- the name of a concept
+              , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
+              }
+-}
+      where sortRelPops, sortCptPops :: [Pop] -> [Pop] -- assembles Pops with the same signature into one
+            sortRelPops pops = [ (head cl){popPairs = foldr uni [] [popPairs decl | decl<-cl]} | cl<-eqCl relNameSrcTgt [pop | pop@Pop{}<-pops]    ]
+            sortCptPops pops = [ (head cl){popAtoms = foldr uni [] [popAtoms cpt  | cpt <-cl]} | cl<-eqCl cptName       [pop | pop@IsaPop{}<-pops] ]
             atomMap :: [Pop] -> Map.Map String [String]
-            atomMap pops = Map.fromListWith uni ([ (popSource pop, (nub.map fst.popPairs) pop) | pop<-pops ]++[ (popTarget pop, (nub.map snd.popPairs) pop) | pop<-pops ])
+            atomMap pops = Map.fromListWith uni
+                              ([ (popSource pop, (nub.map fst.popPairs) pop) | pop@Pop{}<-pops ]++
+                               [ (popTarget pop, (nub.map snd.popPairs) pop) | pop@Pop{}<-pops ]++
+                               [ (popSource pop, (nub.popAtoms) pop) | pop@IsaPop{}<-pops ]
+                              )
             atomCount :: Map.Map String [String] -> [(String,Int)]
             atomCount am = [ (archiElem,length atoms) | (archiElem,atoms)<-Map.toList am ]
             countPops :: [Pop] -> [(String,Int)]
@@ -57,14 +71,19 @@ where
             showMaybeInt Nothing = "Err"
             showArchiElems :: (String,Int) -> String
             showArchiElems (archiElem,n) = "\n"++archiElem++"\t"++show n
-            relNameSrcTgt pop = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
+            relNameSrcTgt pop@Pop{} = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
+            relNameSrcTgt IsaPop{} = fatal 66 "not allowed"
+            cptName Pop{} = fatal 66 "not allowed"
+            cptName pop@IsaPop{} = popSource pop
             showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
-            showRel pop = "RELATION "++relNameSrcTgt pop ++
-                          (if popName pop `elem` ["inFolderName", "naam", "type", "level", "documentatie", "folder", "archiLayer"]
-                           || popSource pop `elem` ["Property", "Relationship"]
-                           then " [UNI]" else if popName pop=="isa" then " [UNI,INJ]" else "")
+            showRel pop@Pop{}
+               = "RELATION "++relNameSrcTgt pop ++
+                 (if popName pop `elem` ["inFolderName", "naam", "type", "level", "documentatie", "folder", "archiLayer"]
+                  || popSource pop `elem` ["Property", "Relationship"]
+                  then " [UNI]" else if popName pop=="isa" then " [UNI,INJ]" else "")
+            showRel IsaPop{} = ""
 
-   mkArchiContext :: [(P_Population,P_Declaration,[P_Gen])] -> P_Context
+   mkArchiContext :: [(P_Population,Maybe P_Declaration,[P_Gen])] -> P_Context
    mkArchiContext pops =
      PCtx{ ctx_nm     = "Archimate"
          , ctx_pos    = []
@@ -73,7 +92,7 @@ where
          , ctx_thms   = []
          , ctx_pats   = []
          , ctx_rs     = []
-         , ctx_ds     = nub archiDecls
+         , ctx_ds     = nub [ ad | Just ad<-archiDecls ]
          , ctx_cs     = []
          , ctx_ks     = []
          , ctx_rrules = []
@@ -83,26 +102,37 @@ where
          , ctx_gs     = nub (concat archiGenss)
          , ctx_ifcs   = []
          , ctx_ps     = []
-         , ctx_pops   = archiPops
+         , ctx_pops   = sortRelPops archiPops ++ sortCptPops archiPops
          , ctx_sql    = []
          , ctx_php    = []
          , ctx_metas  = []
          }
      where archiPops ::  [P_Population]
-           archiDecls :: [P_Declaration]
+           archiDecls :: [Maybe P_Declaration]
            archiGenss :: [[P_Gen]]
            (archiPops, archiDecls, archiGenss) = unzip3 pops
+           sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
+           sortRelPops pops = [ (head cl){p_popps = foldr uni [] [p_popps decl | decl<-cl]} | cl<-eqCl p_nmdr [pop | pop@P_RelPopu{}<-pops] ]
+           sortCptPops pops = [ (head cl){p_popas = foldr uni [] [p_popas cpt  | cpt <-cl]} | cl<-eqCl p_cnme [pop | pop@P_CptPopu{}<-pops] ]
 
 -- The datastructure `Pop` is used to generate an Archimate-metamodel in ADL-format from an ArchiRepo
-   data Pop = Pop { popName ::   String
-                  , popSource :: String
-                  , popTarget :: String
-                  , popPairs ::  [(String,String)]
-                  }
+   data Pop = Pop    { popName ::   String
+                     , popSource :: String
+                     , popTarget :: String
+                     , popPairs ::  [(String,String)]
+                     }
+            | IsaPop { popSource :: String  -- the specific Concept S
+                     , popTarget :: String  -- the generic Concept G
+                     , popAtoms ::  [String]  -- an atom a, of which the pair <a,a> belongs to I[S*S]
+                     }
 
    instance Show Pop where
-     show p = "POPULATION "++popName p++"["++popSource p++"*"++popTarget p++"]\n    [ "++
+     show p@Pop{}
+            = "POPULATION "++popName p++"["++popSource p++"*"++popTarget p++"]\n    [ "++
               intercalate "\n    , " [ "("++show x++", "++show y++")" | (x,y)<-popPairs p ]++"\n    ]"
+     show p@IsaPop{}
+            = "POPULATION "++popSource p++"\n    [ "++
+              intercalate "\n    , " [ show x | x<-popAtoms p ]++"\n    ]"
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
@@ -239,7 +269,7 @@ where
      grindArchi ::    (String->Maybe String) -> a -> -- create population for the ADL-formatted  metamodel of Archi
                       [Pop]                         
      grindArchiPop :: (String->Maybe String) -> a -> -- create population and the corresponding metamodel for the P-structure in Ampersand
-                      [(P_Population,P_Declaration,[P_Gen])]
+                      [(P_Population, Maybe P_Declaration, [P_Gen])]
      keyArchi ::       a -> String                   -- get the key value (dirty identifier) of an a.
 
    instance MetaArchi ArchiRepo where
@@ -420,11 +450,11 @@ where
    translateRel elemLookup relId relTyp relLabel x y
     = [ Pop relNm xType yType [(x,y)]
       , Pop "source" "Relationship" "ArchiObject" [(relId,x)]
---      , IsaPop relTyp "Relationship" relId
       , Pop "isa" xType "ArchiObject" [(x,x)]
       , Pop "target" "Relationship" "ArchiObject" [(relId,y)]
       , Pop "isa" yType "ArchiObject" [(y,y)]
       ] ++
+      [ IsaPop relTyp "Relationship" [relId] | relTyp/="Relationship" ] ++
       [ Pop "datatype" "Relationship" "Tekst" [(relId,relLabel)]
       | xType=="ApplicationComponent" && yType=="ApplicationComponent" && relLabel/="flow" ]
       where xType = case elemLookup x of
@@ -441,75 +471,86 @@ where
 -- | The function `translateArchiObj` does the actual compilation of data objects from archiRepo into the Ampersand structure.
 --   It looks redundant to produce both a `P_Population` and a `P_Declaration`, but the first contains the population and the second is used to
 --   include the metamodel of Archimate in the population. This save the author the effort of maintaining an Archimate-metamodel.
-   translateArchiObj :: String -> String -> [(String, String)] -> (P_Population,P_Declaration,[P_Gen])
+   translateArchiObj :: String -> String -> [(String, String)] -> (P_Population,Maybe P_Declaration,[P_Gen])
    translateArchiObj "folderName" _ tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")))) (transTuples tuples)
-      , P_Sgn "naam" (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "naam" (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "name" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "naam" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "naam" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "type" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "type" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "type" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "type" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "level" _ tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "level" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "level" (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "level" (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "sub" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "sub" (Just (P_Sign (PCpt typeLabel) (PCpt typeLabel)))) (transTuples tuples)
-      , P_Sgn "sub" (P_Sign (PCpt typeLabel) (PCpt typeLabel)) [] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "sub" (P_Sign (PCpt typeLabel) (PCpt typeLabel)) [] [] [] [] OriginUnknown False, [] )
    translateArchiObj "in" _ tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "folder" (Just (P_Sign (PCpt "ArchiObject") (PCpt "ArchiFolder")))) (transTuples tuples)
-      , P_Sgn "folder" (P_Sign (PCpt "ArchiObject") (PCpt "ArchiFolder")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "folder" (P_Sign (PCpt "ArchiObject") (PCpt "ArchiFolder")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "cat" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "inFolderName" (Just (P_Sign (PCpt typeLabel) (PCpt "FolderName")))) (transTuples tuples)
-      , P_Sgn "inFolderName" (P_Sign (PCpt typeLabel) (PCpt "FolderName")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "inFolderName" (P_Sign (PCpt typeLabel) (PCpt "FolderName")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "docu" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "documentatie" (Just (P_Sign (PCpt typeLabel) (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "documentatie" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "documentatie" (P_Sign (PCpt typeLabel) (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "inFolder" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "inFolder" (Just (P_Sign (PCpt typeLabel) (PCpt "ArchiObject")))) (transTuples tuples)
-      , P_Sgn "inFolder" (P_Sign (PCpt typeLabel) (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "inFolder" (P_Sign (PCpt typeLabel) (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "key" "Property" tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "key" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "key" (P_Sign (PCpt "Property") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "key" (P_Sign (PCpt "Property") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "value" "Property" tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "value" (Just (P_Sign (PCpt "Property") (PCpt "Tekst")))) (transTuples tuples)
-      , P_Sgn "value" (P_Sign (PCpt "Property") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "value" (P_Sign (PCpt "Property") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "elprop" _ tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "propOf" (Just (P_Sign (PCpt "Property") (PCpt "ArchiObject")))) (transTuples tuples)
-      , P_Sgn "propOf" (P_Sign (PCpt "Property") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "propOf" (P_Sign (PCpt "Property") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "archiLayer" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "archiLayer" (Just (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")))) (transTuples tuples)
-      , P_Sgn "archiLayer" (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")) [Uni] [] [] [] OriginUnknown False, [] )
+      , Just $ P_Sgn "archiLayer" (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj _ _ _ = error "fatal 328 non-exhaustive pattern in translateArchiObj"
 
+
 -- | The function `translateArchiRel` does the actual compilation of relationships from archiRepo into the Ampersand P-structure.
-   translateArchiRel :: (String -> Maybe String) -> String -> String -> String -> String -> String -> [(P_Population, P_Declaration, [P_Gen])]
+   translateArchiRel :: (String -> Maybe String) -> String -> String -> String -> String -> String -> [(P_Population, Maybe P_Declaration, [P_Gen])]
    translateArchiRel elemLookup relId relTyp relLabel x y
     = [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relNm (Just (P_Sign (PCpt xType) (PCpt yType)))) (transTuples [(x,y)])
-        , P_Sgn relNm (P_Sign (PCpt xType) (PCpt yType)) [] [] [] [] OriginUnknown False
+        , Just $ P_Sgn relNm (P_Sign (PCpt xType) (PCpt yType)) [] [] [] [] OriginUnknown False
         , []
         )
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "source" (Just (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")))) (transTuples [(relId,x)])
-        , P_Sgn "source" (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False
+        , Just $ P_Sgn "source" (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False
         , [] -- [ PGen OriginUnknown (PCpt xType) (PCpt "ArchiObject") ]
         )
---      , IsaPop relTyp "Relationship" relId
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "isa" (Just (P_Sign (PCpt xType) (PCpt "ArchiObject")))) (transTuples [(x,x)])
-        , P_Sgn "isa" (P_Sign (PCpt xType) (PCpt "ArchiObject")) [Uni,Inj] [] [] [] OriginUnknown False
+        , Just $ P_Sgn "isa" (P_Sign (PCpt xType) (PCpt "ArchiObject")) [Uni,Inj] [] [] [] OriginUnknown False
         , []
         )
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "target" (Just (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")))) (transTuples [(relId,y)])
-        , P_Sgn "target" (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False
+        , Just $ P_Sgn "target" (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")) [Uni] [] [] [] OriginUnknown False
         , [] -- [ PGen OriginUnknown (PCpt yType) (PCpt "ArchiObject") ]
         )
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "isa" (Just (P_Sign (PCpt yType) (PCpt "ArchiObject")))) (transTuples [(y,y)])
-        , P_Sgn "isa" (P_Sign (PCpt yType) (PCpt "ArchiObject")) [Uni,Inj] [] [] [] OriginUnknown False
+        , Just $ P_Sgn "isa" (P_Sign (PCpt yType) (PCpt "ArchiObject")) [Uni,Inj] [] [] [] OriginUnknown False
         , []
         )
       ] ++
+      [ (   P_CptPopu { p_orig = OriginUnknown
+                      , p_cnme = relTyp 
+                      , p_popas = [ScriptString OriginUnknown relId] 
+                      }
+        , Nothing
+        , [ PGen{ gen_fp  = OriginUnknown
+                , gen_spc = PCpt relTyp           -- ^ specific concept
+                , gen_gen = PCpt "Relationship"   -- ^ generic concept
+                } ]
+        )
+      | relTyp/="Relationship" ] ++
       [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "datatype" (Just (P_Sign (PCpt "Relationship") (PCpt "Tekst")))) (transTuples [(relId,relLabel)])
-        , P_Sgn "datatype" (P_Sign (PCpt "Relationship") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False
+        , Just $ P_Sgn "datatype" (P_Sign (PCpt "Relationship") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False
         , []
         )
       | xType=="ApplicationComponent" && yType=="ApplicationComponent" && relLabel/="flow" ]

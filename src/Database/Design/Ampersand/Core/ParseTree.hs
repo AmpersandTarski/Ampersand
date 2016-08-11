@@ -373,7 +373,7 @@ data TermPrim
    deriving (Show) --For QuickCheck error messages only!
 
 data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
-   deriving Show
+   deriving (Eq,Ord,Show)
 
 {- For whenever it may turn out to be useful
 instance Eq TermPrim where

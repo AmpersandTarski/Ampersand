@@ -98,6 +98,8 @@ parseSingleADL opts useAllStaticFiles singleFile
                 }
          | extension == ".xml" =
              do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
+                ; writeFile "ArchiMetaModel.adl" (prettyPrint ctxFromArchi)
+                ; verboseLn opts ("ArchiMetaModel.adl written")
                 ; verboseLn opts (filePath ++ " has been interpreted as an Archi-repository.")
                 ; return ((\archiContents -> (archiContents,[])) <$> Checked ctxFromArchi)  -- Excel file cannot contain include files
                 }

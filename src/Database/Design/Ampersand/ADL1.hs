@@ -4,6 +4,7 @@ module Database.Design.Ampersand.ADL1
    , module Database.Design.Ampersand.ADL1.Expression
    , module Database.Design.Ampersand.ADL1.ECArule
    , module Database.Design.Ampersand.ADL1.Rule
+   , module Database.Design.Ampersand.ADL1.PrettyPrinters
    )
 where
 import Database.Design.Ampersand.Core.ParseTree (
@@ -68,4 +69,4 @@ import Database.Design.Ampersand.ADL1.ECArule (
 import Database.Design.Ampersand.ADL1.Rule (
           rulefromProp
          ,consequent,antecedent,hasantecedent)
-
+import Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
