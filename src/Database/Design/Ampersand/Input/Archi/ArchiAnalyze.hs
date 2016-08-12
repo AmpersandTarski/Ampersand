@@ -20,27 +20,33 @@ where
    --   A lookup-function, `elemLookup`,is derived from `archiRepo`.
    --   It assigns the Archi-type (e.g. Business Process) to the identifier of an arbitrary Archi-object (e.g. "0957873").
    --   Then, the properties have to be provided with identifiers (see class `WithProperties`), because Archi represents them just as key-value pairs.
-   --   The function `grindArchiPop` retrieves the population of meta-relations
+   --   The function `grindArchi` retrieves the population of meta-relations
    --   It produces the P_Populations and P_Declarations that represent the Archimate model.
    --   Finally, the function `mkArchiContext` produces a `P_Context` ready to be merged into the rest of Ampersand's population.
    archi2PContext :: String -> IO P_Context
    archi2PContext archiRepoFilename  -- e.g. "CA repository.xml"
     = do -- hSetEncoding stdout utf8
          archiRepo <- runX (processStraight archiRepoFilename)
-         let elemMap = typeMap archiRepo
-         let elemLookup atom = (Map.lookup atom . Map.fromList) elemMap
-         let archiRepoWithProps = (identifyProps []) archiRepo
-         let pContext = (mkArchiContext . grindArchiPop elemLookup) archiRepoWithProps
-         let relPops = (filter (not.null.popPairs) . sortRelPops . grindArchi elemLookup) archiRepoWithProps
-         let cptPops = (filter (not.null.popAtoms) . sortCptPops . grindArchi elemLookup) archiRepoWithProps
-         let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . countPops) relPops
-         let countPop pop = relNameSrcTgt pop++"\t"++(show.length.popPairs) pop++"\t"++popName pop++"\t"++popSource pop++"\t"++(show.length.eqCl fst.popPairs) pop++"\t"++(showMaybeInt.elemCount.popSource) pop++"\t"++popTarget pop++"\t"++(show.length.eqCl snd.popPairs) pop++"\t"++(showMaybeInt.elemCount.popTarget) pop
+         let elemLookup atom = (Map.lookup atom . Map.fromList . typeMap) archiRepo
+         let archiRepoWithProps = (grindArchi elemLookup.identifyProps []) archiRepo
+         let relPops = (filter (not.null.p_popps) . sortRelPops . map fst3) archiRepoWithProps
+         let cptPops = (filter (not.null.p_popas) . sortCptPops . map fst3) archiRepoWithProps
+         let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . atomCount . atomMap) relPops
+         let countPop pop = let signature = ((\(Just sgn)->sgn).p_mbSign.p_nmdr) pop in
+                            (show.length.p_popps) pop              ++"\t"++
+                            (p_nrnm.p_nmdr) pop                    ++"\t"++
+                            (p_cptnm.pSrc) signature               ++"\t"++
+                            (show.length.eqCl ppLeft.p_popps) pop  ++"\t"++
+                            (showMaybeInt.elemCount.pSrc) signature++"\t"++
+                            (p_cptnm.pTgt) signature               ++"\t"++
+                            (show.length.eqCl ppRight.p_popps) pop ++"\t"++
+                            (showMaybeInt.elemCount.pTgt) signature
          writeFile "ArchiCount.txt"
           ( (intercalate "\n" . map countPop) relPops )
          appendFile "ArchiCount.txt"
           ( (concat . map showArchiElems . atomCount . atomMap ) (relPops++cptPops ) )
          putStrLn ("ArchiCount.txt written")
-         return pContext
+         return (mkArchiContext archiRepoWithProps)
 {- reminder:
 data P_Population
   = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
@@ -53,35 +59,29 @@ data P_Population
               , p_cnme  :: String  -- the name of a concept
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
+data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
+data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept } deriving (Ord,Eq)
+data PAtomPair
+  = PPair { pppos :: Origin
+          , ppLeft  :: PAtomValue
+          , ppRight :: PAtomValue
+          } deriving (Eq,Ord,Show) -- Show is for QuickCheck error messages and/or input redundancy removal only!
 -}
-      where sortRelPops, sortCptPops :: [Pop] -> [Pop] -- assembles Pops with the same signature into one
-            sortRelPops pops = [ (head cl){popPairs = foldr uni [] [popPairs decl | decl<-cl]} | cl<-eqCl relNameSrcTgt [pop | pop@Pop{}<-pops]    ]
-            sortCptPops pops = [ (head cl){popAtoms = foldr uni [] [popAtoms cpt  | cpt <-cl]} | cl<-eqCl cptName       [pop | pop@IsaPop{}<-pops] ]
-            atomMap :: [Pop] -> Map.Map String [String]
+      where sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
+            sortRelPops pops = [ (head cl){p_popps = foldr uni [] [p_popps decl | decl<-cl]} | cl<-eqCl p_nmdr [pop | pop@P_RelPopu{}<-pops] ]
+            sortCptPops pops = [ (head cl){p_popas = foldr uni [] [p_popas cpt  | cpt <-cl]} | cl<-eqCl p_cnme [pop | pop@P_CptPopu{}<-pops] ]
+            atomMap :: [P_Population] -> Map.Map P_Concept [PAtomValue]
             atomMap pops = Map.fromListWith uni
-                              ([ (popSource pop, (nub.map fst.popPairs) pop) | pop@Pop{}<-pops ]++
-                               [ (popTarget pop, (nub.map snd.popPairs) pop) | pop@Pop{}<-pops ]++
-                               [ (popSource pop, (nub.popAtoms) pop) | pop@IsaPop{}<-pops ]
+                              ([ (pSrc sgn, (nub.map ppLeft.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
+                               [ (pTgt sgn, (nub.map ppRight.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
+                               [ ((PCpt . p_cnme) pop, (nub.p_popas) pop) | pop@P_CptPopu{}<-pops ]
                               )
-            atomCount :: Map.Map String [String] -> [(String,Int)]
+            atomCount :: Map.Map c [a] -> [(c,Int)]
             atomCount am = [ (archiElem,length atoms) | (archiElem,atoms)<-Map.toList am ]
-            countPops :: [Pop] -> [(String,Int)]
-            countPops = atomCount . atomMap
             showMaybeInt (Just n) = show n
             showMaybeInt Nothing = "Err"
-            showArchiElems :: (String,Int) -> String
-            showArchiElems (archiElem,n) = "\n"++archiElem++"\t"++show n
-            relNameSrcTgt pop@Pop{} = popName pop++"["++popSource pop++"*"++popTarget pop++"]"
-            relNameSrcTgt IsaPop{} = fatal 66 "not allowed"
-            cptName Pop{} = fatal 66 "not allowed"
-            cptName pop@IsaPop{} = popSource pop
-            showRel :: Pop -> String  -- Generate Ampersand source code for the relation definition.
-            showRel pop@Pop{}
-               = "RELATION "++relNameSrcTgt pop ++
-                 (if popName pop `elem` ["inFolderName", "naam", "type", "level", "documentatie", "folder", "archiLayer"]
-                  || popSource pop `elem` ["Property", "Relationship"]
-                  then " [UNI]" else if popName pop=="isa" then " [UNI,INJ]" else "")
-            showRel IsaPop{} = ""
+            showArchiElems :: (P_Concept,Int) -> String
+            showArchiElems (c,n) = "\n"++p_cptnm c++"\t"++show n
 
    mkArchiContext :: [(P_Population,Maybe P_Declaration,[P_Gen])] -> P_Context
    mkArchiContext pops =
@@ -112,27 +112,8 @@ data P_Population
            archiGenss :: [[P_Gen]]
            (archiPops, archiDecls, archiGenss) = unzip3 pops
            sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
-           sortRelPops pops = [ (head cl){p_popps = foldr uni [] [p_popps decl | decl<-cl]} | cl<-eqCl p_nmdr [pop | pop@P_RelPopu{}<-pops] ]
-           sortCptPops pops = [ (head cl){p_popas = foldr uni [] [p_popas cpt  | cpt <-cl]} | cl<-eqCl p_cnme [pop | pop@P_CptPopu{}<-pops] ]
-
--- The datastructure `Pop` is used to generate an Archimate-metamodel in ADL-format from an ArchiRepo
-   data Pop = Pop    { popName ::   String
-                     , popSource :: String
-                     , popTarget :: String
-                     , popPairs ::  [(String,String)]
-                     }
-            | IsaPop { popSource :: String  -- the specific Concept S
-                     , popTarget :: String  -- the generic Concept G
-                     , popAtoms ::  [String]  -- an atom a, of which the pair <a,a> belongs to I[S*S]
-                     }
-
-   instance Show Pop where
-     show p@Pop{}
-            = "POPULATION "++popName p++"["++popSource p++"*"++popTarget p++"]\n    [ "++
-              intercalate "\n    , " [ "("++show x++", "++show y++")" | (x,y)<-popPairs p ]++"\n    ]"
-     show p@IsaPop{}
-            = "POPULATION "++popSource p++"\n    [ "++
-              intercalate "\n    , " [ show x | x<-popAtoms p ]++"\n    ]"
+           sortRelPops popus = [ (head cl){p_popps = foldr uni [] [p_popps decl | decl<-cl]} | cl<-eqCl p_nmdr [pop | pop@P_RelPopu{}<-popus] ]
+           sortCptPops popus = [ (head cl){p_popas = foldr uni [] [p_popas cpt  | cpt <-cl]} | cl<-eqCl p_cnme [pop | pop@P_CptPopu{}<-popus] ]
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 
@@ -266,9 +247,7 @@ data P_Population
 --   class MetaArchi, and instantiate it on ArchiRepo and all its constituent types.
    class MetaArchi a where
      typeMap ::        a -> [(String,String)]        -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
-     grindArchi ::    (String->Maybe String) -> a -> -- create population for the ADL-formatted  metamodel of Archi
-                      [Pop]                         
-     grindArchiPop :: (String->Maybe String) -> a -> -- create population and the corresponding metamodel for the P-structure in Ampersand
+     grindArchi :: (String->Maybe String) -> a -> -- create population and the corresponding metamodel for the P-structure in Ampersand
                       [(P_Population, Maybe P_Declaration, [P_Gen])]
      keyArchi ::       a -> String                   -- get the key value (dirty identifier) of an a.
 
@@ -280,10 +259,6 @@ data P_Population
       = (concat.map (grindArchi elemLookup)) backendFolders  ++ 
         (concat.map (grindArchi elemLookup).archProperties) archiRepo
         where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
-     grindArchiPop elemLookup archiRepo
-      = (concat.map (grindArchiPop elemLookup)) backendFolders  ++ 
-        (concat.map (grindArchiPop elemLookup).archProperties) archiRepo
-        where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
      keyArchi = archRepoId
 
    instance MetaArchi Folder where
@@ -291,26 +266,6 @@ data P_Population
       = (typeMap.fldElems)   folder  ++ 
         (typeMap.fldFolders) folder
      grindArchi elemLookup folder
-      = [ translate "folderName" "ArchiFolder" [(keyArchi folder, fldName folder)]] ++
-        [ translate "type" "ArchiFolder" [(keyArchi folder, fldType folder)]] ++
-        [ translate "level" "ArchiFolder" [(keyArchi folder, (show.fldLevel) folder)]] ++
-        [ translate "sub"  "ArchiFolder"
-           [(keyArchi subFolder, keyArchi folder) | subFolder<-fldFolders folder]
-        | (not.null.fldFolders) folder ] ++
-        [ translate "in"   "ArchiFolder"
-           [(keyArchi element, keyArchi folder) | element<-fldElems folder]
-        | (not.null.fldElems) folder ] ++
-        [ translate "cat" (elemType element) [(keyArchi element, fldName folder)]
-        | fldLevel folder>1, element<-fldElems folder] ++
-        [ translate "archiLayer" (elemType element)
-           [(keyArchi element, fldType folder)]
-        | element<-fldElems folder] ++
-        [ translate "inFolder" (fldName folder)
-           [(keyArchi element, fldName folder)]
-        | element<-fldElems folder] ++
-        (concat.map (grindArchi elemLookup)               .fldElems)   folder  ++ 
-        (concat.map (grindArchi elemLookup.insType folder).fldFolders) folder
-     grindArchiPop elemLookup folder
       = [ translateArchiObj "folderName" "ArchiFolder" [(keyArchi folder, fldName folder)]] ++
         [ translateArchiObj "type" "ArchiFolder" [(keyArchi folder, fldType folder)]] ++
         [ translateArchiObj "level" "ArchiFolder" [(keyArchi folder, (show.fldLevel) folder)]] ++
@@ -328,8 +283,8 @@ data P_Population
         [ translateArchiObj "inFolder" (fldName folder)
            [(keyArchi element, fldName folder)]
         | element<-fldElems folder] ++
-        (concat.map (grindArchiPop elemLookup)               .fldElems)   folder  ++ 
-        (concat.map (grindArchiPop elemLookup.insType folder).fldFolders) folder
+        (concat.map (grindArchi elemLookup)               .fldElems)   folder  ++ 
+        (concat.map (grindArchi elemLookup.insType folder).fldFolders) folder
      keyArchi = fldId
 
 
@@ -348,26 +303,6 @@ data P_Population
       = [(keyArchi element, elemType element) | (not.null.elemName) element, (null.elemSrc) element] ++
         typeMap (elProps element)
      grindArchi elemLookup element
-      = [ translate "name" (elemType element) [(keyArchi element, elemName element)]
-        | (not.null.elemName) element, (null.elemSrc) element] ++
-        [ translate "docu" (elemType element) [(keyArchi element, elemDocu element)]
-        | (not.null.elemDocu) element, (null.elemSrc) element] ++
-        (if isRelationship element
-         then translateRel   -- do this only for elements which are a relationship.
-                    elemLookup
-                    (keyArchi element)
-                    (elemType element)
-                    (if (null.elemName) element
-                     then unfixRel (elemType element)
-                     else relCase (elemName element)
-                    )
-                    (elemSrc element) (elemTgt element)
-         else []
-        ) ++
-        [ translate "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
-        | prop<-elProps element] ++
-        (concat.map (grindArchi elemLookup).elProps) element
-     grindArchiPop elemLookup element
       = [ translateArchiObj "name" (elemType element) [(keyArchi element, elemName element)]
         | (not.null.elemName) element, (null.elemSrc) element] ++
         [ translateArchiObj "docu" (elemType element) [(keyArchi element, elemDocu element)]
@@ -386,7 +321,7 @@ data P_Population
         ) ++
         [ translateArchiObj "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
         | prop<-elProps element] ++
-        (concat.map (grindArchiPop elemLookup).elProps) element
+        (concat.map (grindArchi elemLookup).elProps) element
      keyArchi = elemId
 
    isRelationship :: Element -> Bool  -- figure out whether this XML-element is an Archimate Relationship.
@@ -396,12 +331,6 @@ data P_Population
      typeMap _
       = []
      grindArchi _ property
-      = [ translate "key" "Property"
-            [(keyArchi property, archPropKey property) | (not.null.archPropKey) property ]
-        , translate "value" "Property"
-            [(keyArchi property, archPropVal property) | (not.null.archPropVal) property ]
-        ]
-     grindArchiPop _ property
       = [ translateArchiObj "key" "Property"
             [(keyArchi property, archPropKey property) | (not.null.archPropKey) property ]
         , translateArchiObj "value" "Property"
@@ -410,63 +339,9 @@ data P_Population
      keyArchi = fromMaybe (error "fatal 234: No key defined yet") . archPropId
 
    instance MetaArchi a => MetaArchi [a] where
-     typeMap                  xs = concat [ typeMap                  x | x<-xs ]
-     grindArchi elemLookup    xs = concat [ grindArchi    elemLookup x | x<-xs ]
-     grindArchiPop elemLookup xs = concat [ grindArchiPop elemLookup x | x<-xs ]
+     typeMap               xs = concat [ typeMap                  x | x<-xs ]
+     grindArchi elemLookup xs = concat [ grindArchi elemLookup x | x<-xs ]
      keyArchi = error "fatal 269: cannot use keyArchi on a list"
-
--- | The function `translate` compiles data objects from archiRepo into a  [Pop].
-   translate :: String -> String -> [(String, String)] -> Pop
-   translate "folderName" _ tuples
-    = Pop "naam" "ArchiFolder" "FolderName" tuples
-   translate "name" typeLabel tuples
-    = Pop "naam" typeLabel "Tekst" tuples
-   translate "type" typeLabel tuples
-    = Pop "type" typeLabel "Tekst" tuples
-   translate "level" _ tuples
-    = Pop "level" "ArchiFolder" "Tekst" tuples
-   translate "sub" typeLabel tuples
-    = Pop "sub" typeLabel typeLabel tuples
-   translate "in" _ tuples
-    = Pop "folder" "ArchiObject" "ArchiFolder" tuples
-   translate "cat" typeLabel tuples
-    = Pop "inFolderName" typeLabel "FolderName" tuples
-   translate "docu" typeLabel tuples
-    = Pop "documentatie" typeLabel "Tekst" tuples
-   translate "inFolder" typeLabel tuples
-    = Pop "inFolder" typeLabel "FolderName" tuples
-   translate "key" "Property" tuples
-    = Pop "key" "Property" "Tekst" tuples
-   translate "value" "Property" tuples
-    = Pop "value" "Property" "Tekst" tuples
-   translate "elprop" _ tuples
-    = Pop "propOf" "Property" "ArchiObject" tuples
-   translate "archiLayer" typeLabel tuples
-    = Pop "archiLayer" typeLabel "ArchiLayer" tuples
-   translate _ _ _ = error "fatal 328 non-exhaustive pattern in translate"
-
--- | The function `translateRel` compiles relationships from archiRepo into a  [Pop].
-   translateRel :: (String -> Maybe String) -> String -> String -> String -> String -> String -> [Pop]
-   translateRel elemLookup relId relTyp relLabel x y
-    = [ Pop relNm xType yType [(x,y)]
-      , Pop "source" "Relationship" "ArchiObject" [(relId,x)]
-      , Pop "isa" xType "ArchiObject" [(x,x)]
-      , Pop "target" "Relationship" "ArchiObject" [(relId,y)]
-      , Pop "isa" yType "ArchiObject" [(y,y)]
-      ] ++
-      [ IsaPop relTyp "Relationship" [relId] | relTyp/="Relationship" ] ++
-      [ Pop "datatype" "Relationship" "Tekst" [(relId,relLabel)]
-      | xType=="ApplicationComponent" && yType=="ApplicationComponent" && relLabel/="flow" ]
-      where xType = case elemLookup x of
-                      Just str -> str
-                      Nothing -> fatal 292 ("No Archi-object found for Archi-identifier "++show x)
-            yType = case elemLookup y of
-                      Just str -> str
-                      Nothing -> fatal 293 ("No Archi-object found for Archi-identifier "++show y)
-            relNm = if xType=="ApplicationComponent" && yType=="ApplicationComponent"
-                    then "flow"
-                    else relCase relLabel  --  ++"["++xType++"*"++yType++"]"
-
 
 -- | The function `translateArchiObj` does the actual compilation of data objects from archiRepo into the Ampersand structure.
 --   It looks redundant to produce both a `P_Population` and a `P_Declaration`, but the first contains the population and the second is used to
