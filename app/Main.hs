@@ -4,11 +4,7 @@ import Control.Monad
 import Data.List
 import System.Exit
 import Prelude hiding (putStr,putStrLn,readFile,writeFile)
-import Ampersand.Misc
-import Ampersand.Basics
-import Ampersand.Input
-import Ampersand.FSpec
-import Ampersand.Components
+import Ampersand
 
 main :: IO ()
 main =
