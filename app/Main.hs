@@ -1,9 +1,8 @@
 module Main where
 
-import Control.Monad
 import Data.List
 import System.Exit
-import Prelude hiding (putStr,putStrLn,readFile,writeFile)
+import Prelude hiding (putStr,putStrLn)
 import Ampersand
 
 main :: IO ()
