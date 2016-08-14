@@ -1,9 +1,9 @@
-module Database.Design.Ampersand.FSpec.FSpecAux 
+module Ampersand.FSpec.FSpecAux 
   (getDeclarationTableInfo,getConceptTableInfo)
 where
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec.FSpec
+import Ampersand.Basics
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec.FSpec
 
 -- return table name and source and target column names for relation dcl
 getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute) 

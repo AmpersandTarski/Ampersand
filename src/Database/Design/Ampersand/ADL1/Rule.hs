@@ -1,9 +1,9 @@
-module Database.Design.Ampersand.ADL1.Rule 
+module Ampersand.ADL1.Rule 
   (consequent, antecedent, rulefromProp, hasantecedent) where
 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics
+import Ampersand.Misc
 
 hasantecedent :: Rule -> Bool
 hasantecedent r

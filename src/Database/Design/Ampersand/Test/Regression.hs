@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveGeneric #-}
-module Database.Design.Ampersand.Test.Regression 
+module Ampersand.Test.Regression 
   ( DirContent(..)
   , DirData(..)
   , process

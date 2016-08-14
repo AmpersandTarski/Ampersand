@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Input.ADL1.LexerToken
+module Ampersand.Input.ADL1.LexerToken
     ( Token(..)
     , Lexeme(..)
     , lexemeText
@@ -6,7 +6,7 @@ module Database.Design.Ampersand.Input.ADL1.LexerToken
     , FilePos(..)
     ) where
 
-import Database.Design.Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
+import Ampersand.Input.ADL1.FilePos (FilePos(..), initPos)
 import Text.Parsec()
 import Data.Time.Calendar
 import Data.Time.Clock

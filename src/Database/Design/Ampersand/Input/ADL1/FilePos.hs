@@ -1,11 +1,11 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
-module Database.Design.Ampersand.Input.ADL1.FilePos (
+module Ampersand.Input.ADL1.FilePos (
     FilePos(..), Origin(..), Traced(..),
     addPos, initPos, updatePos
 ) where
 
-import Database.Design.Ampersand.Basics
+import Ampersand.Basics
 import Data.Typeable
 import GHC.Generics (Generic)
 import Data.Hashable

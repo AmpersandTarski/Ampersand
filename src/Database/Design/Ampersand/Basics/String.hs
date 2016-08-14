@@ -1,5 +1,5 @@
   -- | This module contains some common String funcions
-module Database.Design.Ampersand.Basics.String (unCap,upCap,escapeNonAlphaNum,escapeIdentifier) where
+module Ampersand.Basics.String (unCap,upCap,escapeNonAlphaNum,escapeIdentifier) where
 
 import Data.Char
 

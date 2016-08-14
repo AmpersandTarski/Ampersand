@@ -1,16 +1,16 @@
-module Database.Design.Ampersand.Output.ToJSON.ToJson
+module Ampersand.Output.ToJSON.ToJson
   (generateJSONfiles)
 where
-import Database.Design.Ampersand.Output.ToJSON.JSONutils
-import Database.Design.Ampersand.Output.ToJSON.Settings
-import Database.Design.Ampersand.Output.ToJSON.MySQLInstaller
-import Database.Design.Ampersand.Output.ToJSON.Relations
-import Database.Design.Ampersand.Output.ToJSON.Rules 
-import Database.Design.Ampersand.Output.ToJSON.Concepts 
-import Database.Design.Ampersand.Output.ToJSON.Conjuncts 
-import Database.Design.Ampersand.Output.ToJSON.Interfaces 
-import Database.Design.Ampersand.Output.ToJSON.Views
-import Database.Design.Ampersand.Output.ToJSON.Roles
+import Ampersand.Output.ToJSON.JSONutils
+import Ampersand.Output.ToJSON.Settings
+import Ampersand.Output.ToJSON.MySQLInstaller
+import Ampersand.Output.ToJSON.Relations
+import Ampersand.Output.ToJSON.Rules 
+import Ampersand.Output.ToJSON.Concepts 
+import Ampersand.Output.ToJSON.Conjuncts 
+import Ampersand.Output.ToJSON.Interfaces 
+import Ampersand.Output.ToJSON.Views
+import Ampersand.Output.ToJSON.Roles
 generateJSONfiles :: FSpec -> IO ()
 generateJSONfiles fSpec =
  sequence_ [ writeJSON "settings"   (fromAmpersand fSpec fSpec :: Settings)

@@ -1,14 +1,14 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-module Database.Design.Ampersand.Output.ToJSON.Interfaces 
+module Ampersand.Output.ToJSON.Interfaces 
    (Interfaces)
 where
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
-import Database.Design.Ampersand.FSpec.ToFSpec.Calc
-import Database.Design.Ampersand.FSpec.ShowADL
+import Ampersand.Output.ToJSON.JSONutils 
+import Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.FSpec.ToFSpec.NormalForms
+import Ampersand.FSpec.ToFSpec.Calc
+import Ampersand.FSpec.ShowADL
 
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface

@@ -1,6 +1,6 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric  #-}
-module Database.Design.Ampersand.Core.ParseTree (
+module Ampersand.Core.ParseTree (
      P_Context(..), mergeContexts, mkContextOfPopsOnly
    , Meta(..)
    , MetaObj(..)
@@ -36,11 +36,11 @@ module Database.Design.Ampersand.Core.ParseTree (
 
    , Prop(..), Props, normalizeProps
    -- Inherited stuff:
-   , module Database.Design.Ampersand.Input.ADL1.FilePos
+   , module Ampersand.Input.ADL1.FilePos
    , gen_concs
   ) where
-import Database.Design.Ampersand.Input.ADL1.FilePos
-import Database.Design.Ampersand.Basics
+import Ampersand.Input.ADL1.FilePos
+import Ampersand.Basics
 import Data.Traversable
 import Data.Foldable hiding (concat)
 import Data.List (nub)

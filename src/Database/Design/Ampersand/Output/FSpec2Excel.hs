@@ -1,12 +1,12 @@
-module Database.Design.Ampersand.Output.FSpec2Excel (fspec2FPA_Excel)
+module Ampersand.Output.FSpec2Excel (fspec2FPA_Excel)
 where
 import Text.XML.SpreadsheetML.Builder
 import Text.XML.SpreadsheetML.Types
 import Text.XML.SpreadsheetML.Writer (showSpreadsheet)
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.FPA
-import Database.Design.Ampersand.Basics
+import Ampersand.Misc
+import Ampersand.FSpec
+import Ampersand.FSpec.FPA
+import Ampersand.Basics
 import Data.Maybe
 
 -- TODO: Get rid of package SpreadsheetML. Use http://hackage.haskell.org/package/xlsx (Reason: SpreadsheetML doesn.t have a writer. xlsx package does.

@@ -1,7 +1,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction
+module Ampersand.Output.ToPandoc.ChapterIntroduction
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Time.Format
 
 chpIntroduction :: FSpec -> Blocks

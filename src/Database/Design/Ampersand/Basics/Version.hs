@@ -1,9 +1,9 @@
 {-# LANGUAGE ImplicitParams #-}
 -- | This module contains Version of Ampersand
-module Database.Design.Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatal) where
+module Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBuildTimeStr, fatal) where
 import GHC.Stack
 import GHC.SrcLoc
-import Database.Design.Ampersand.Basics.BuildInfo_Generated
+import Ampersand.Basics.BuildInfo_Generated
 
 maxLen :: Int
 maxLen = 1500 -- This trick is to make sure the process is terminated after the error.

@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -XFlexibleInstances #-}
-module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
+module Ampersand.FSpec.ToFSpec.NormalForms
   (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify
   ,cfProofs, dfProofs  -- these are for confluence testing.
   , makeAllConjs, conjuncts
@@ -8,16 +8,16 @@ module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
 import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.List (nub, intercalate, permutations,partition)
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.ADL1.ECArule
-import Database.Design.Ampersand.ADL1.Expression
-import Database.Design.Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
-import Database.Design.Ampersand.Classes.Relational
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Misc.Options
-import Database.Design.Ampersand.Input (parseRule)
-import Database.Design.Ampersand.FSpec.ShowADL  -- for debug purposes only
+import Ampersand.Basics
+import Ampersand.ADL1.ECArule
+import Ampersand.ADL1.Expression
+import Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
+import Ampersand.Classes.Relational
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ParseTree
+import Ampersand.Misc.Options
+import Ampersand.Input (parseRule)
+import Ampersand.FSpec.ShowADL  -- for debug purposes only
 import Data.Hashable
 import Data.Text (pack)
 import Prelude hiding (head)

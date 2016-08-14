@@ -1,10 +1,10 @@
 --TODO -> Maybe this module is useful at more places than just func spec rendering.
 --        In that case it's not a Rendering module and it needs to be replaced
-module Database.Design.Ampersand.FSpec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
+module Ampersand.FSpec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
 where
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec.FSpec(FSpec(..),Activity(..)) 
-import Database.Design.Ampersand.Basics
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec.FSpec(FSpec(..),Activity(..)) 
+import Ampersand.Basics
 import Text.Pandoc
 
 -- The general idea is that an Ampersand declaration such as:

@@ -1,16 +1,16 @@
-module Database.Design.Ampersand.Prototype.ValidateEdit where
+module Ampersand.Prototype.ValidateEdit where
 
 import Prelude hiding (putStr, putStrLn)
 import Data.List
 import Data.Maybe
 import System.FilePath hiding (isValid)
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Prototype.PHP
-import Database.Design.Ampersand.FSpec.SQL
-import qualified Database.Design.Ampersand.Misc.Options as Opts
-import Database.Design.Ampersand.Classes.ConceptStructure
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec
+import Ampersand.Basics
+import Ampersand.Prototype.PHP
+import Ampersand.FSpec.SQL
+import qualified Ampersand.Misc.Options as Opts
+import Ampersand.Classes.ConceptStructure
 
 tempDbName :: String
 tempDbName = "ampersand_temporaryeditvalidationdb"

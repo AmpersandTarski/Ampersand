@@ -1,15 +1,15 @@
-module Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces
+module Ampersand.Output.ToPandoc.ChapterInterfaces
   ( 
    chpInterfacesBlocks
   )
 where
 import Data.List
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Classes.Relational
-import Database.Design.Ampersand.FSpec.Crud
-import Database.Design.Ampersand.FSpec.FPA
-import Database.Design.Ampersand.Output.PandocAux
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.ADL1
+import Ampersand.Classes.Relational
+import Ampersand.FSpec.Crud
+import Ampersand.FSpec.FPA
+import Ampersand.Output.PandocAux
+import Ampersand.Output.ToPandoc.SharedAmongChapters
 
 chpInterfacesBlocks :: Int -> FSpec -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)

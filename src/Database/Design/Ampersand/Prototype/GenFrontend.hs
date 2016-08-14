@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
-module Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs) where
+module Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs) where
 
 import Prelude hiding (putStr,putStrLn,readFile)
 import Control.Monad
@@ -10,15 +10,15 @@ import System.Directory
 import System.FilePath
 import Text.StringTemplate
 import Text.StringTemplate.GenericStandard () -- only import instances
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes.Relational
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.ShowADL
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
-import Database.Design.Ampersand.Misc
-import qualified Database.Design.Ampersand.Misc.Options as Opts
-import Database.Design.Ampersand.Prototype.ProtoUtil
+import Ampersand.Basics
+import Ampersand.Classes.Relational
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ShowADL
+import Ampersand.FSpec.ToFSpec.NormalForms
+import Ampersand.Misc
+import qualified Ampersand.Misc.Options as Opts
+import Ampersand.Prototype.ProtoUtil
 
 {- TODO
 - Converse navInterfaces?

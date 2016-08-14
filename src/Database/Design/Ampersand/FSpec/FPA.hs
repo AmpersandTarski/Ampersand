@@ -1,10 +1,10 @@
-module Database.Design.Ampersand.FSpec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze, fpVal, fpaPlugInfo, fpaInterface) where 
+module Ampersand.FSpec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze, fpVal, fpaPlugInfo, fpaInterface) where 
                                            -- fpaPlugInfo and fpaInterface are exported for legacy modules Statistics and FSpec2Excel
 
-import Database.Design.Ampersand.Misc (Lang(..))
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Basics
+import Ampersand.Misc (Lang(..))
+import Ampersand.ADL1
+import Ampersand.FSpec.FSpec
+import Ampersand.Basics
 import Data.Maybe
 
 data FPA = FPA { dataModelFPA :: ([FP], Int), userTransactionFPA :: ([FP],Int) } deriving Show

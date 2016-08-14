@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Prototype.PHP 
+module Ampersand.Prototype.PHP 
          ( evaluateExpSQL, executePHPStr, sqlServerConnectPHP, createTempDbPHP, showPHP
          , setSqlModePHP, createTablesPHP, populateTablesPHP
          , signalTableSpec, getTableName) where
@@ -14,12 +14,12 @@ import qualified Data.Text.IO as Text
 import System.Process
 import System.IO hiding (hPutStr,hGetContents)
 import System.Directory
-import Database.Design.Ampersand.Prototype.ProtoUtil
-import Database.Design.Ampersand.FSpec.SQL
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Basics hiding (putStrLn)
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Prototype.ProtoUtil
+import Ampersand.FSpec.SQL
+import Ampersand.FSpec
+import Ampersand.Basics hiding (putStrLn)
+import Ampersand.Misc
+import Ampersand.Core.AbstractSyntaxTree
 
 createTablesPHP :: FSpec -> [Text.Text]
 createTablesPHP fSpec =

@@ -1,6 +1,6 @@
 -- | This module contains the building blocks that are available in the Ampersand Library. These building blocks will be described further at [ampersand.sourceforge.net |the wiki pages of our project].
 --
-module Database.Design.Ampersand.Components
+module Ampersand.Components
   ( -- * Type checking and calculus
      makeFSpec
     -- * Generators of output
@@ -8,14 +8,14 @@ module Database.Design.Ampersand.Components
   )
 where
 import Prelude hiding (putStr,readFile,writeFile)
-import Database.Design.Ampersand.Misc
+import Ampersand.Misc
 import Text.Pandoc
 import Text.Pandoc.Builder
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.GenerateUML
-import Database.Design.Ampersand.Graphic.Graphics (writePicture)
-import Database.Design.Ampersand.Output
+import Ampersand.Basics
+import Ampersand.FSpec
+import Ampersand.FSpec.GenerateUML
+import Ampersand.Graphic.Graphics (writePicture)
+import Ampersand.Output
 import Control.Monad
 import System.FilePath
 import Data.Time.Clock.POSIX
@@ -25,13 +25,13 @@ import qualified Data.Text.IO as Text
 import Data.Function (on)
 
 import System.Exit
-import Database.Design.Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
-import Database.Design.Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Prototype.GenBericht  (doGenBericht)
-import Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL)
-import Database.Design.Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
-import Database.Design.Ampersand.Prototype.ProtoUtil   (installComposerLibs)
+import Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
+import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Prototype.GenBericht  (doGenBericht)
+import Ampersand.Prototype.ValidateSQL (validateRulesSQL)
+import Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
+import Ampersand.Prototype.ProtoUtil   (installComposerLibs)
 
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.

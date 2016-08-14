@@ -1,5 +1,5 @@
 {-# LANGUAGE NamedFieldPuns #-}
-module Database.Design.Ampersand.Prototype.GenBericht (doGenBericht) where
+module Ampersand.Prototype.GenBericht (doGenBericht) where
 
 import Prelude hiding (writeFile)
 import Data.List
@@ -7,12 +7,12 @@ import Text.CSV
 import System.FilePath
 import System.Directory
 import Control.Monad
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Misc
+import Ampersand.Basics
+import Ampersand.Classes
+import Ampersand.FSpec
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ParseTree
+import Ampersand.Misc
 
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?

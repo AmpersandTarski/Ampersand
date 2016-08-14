@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-module Database.Design.Ampersand.Output.ToJSON.Roles 
+module Ampersand.Output.ToJSON.Roles 
     (Roles)
 where
 
-import Database.Design.Ampersand.Output.ToJSON.JSONutils
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Output.ToJSON.JSONutils
+import Ampersand.Core.AbstractSyntaxTree
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson

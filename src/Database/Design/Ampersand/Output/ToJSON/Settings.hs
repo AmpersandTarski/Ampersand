@@ -1,9 +1,9 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
-module Database.Design.Ampersand.Output.ToJSON.Settings 
+module Ampersand.Output.ToJSON.Settings 
   (Settings)
 where
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
+import Ampersand.Output.ToJSON.JSONutils 
 import qualified Data.Text as Text
 
 data Settings = Settings 

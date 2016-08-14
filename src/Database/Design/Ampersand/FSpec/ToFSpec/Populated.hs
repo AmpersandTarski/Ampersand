@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
+module Ampersand.FSpec.ToFSpec.Populated 
     (fullContents,atomValuesOf
     , smallerConcepts, largerConcepts, sortSpecific2Generic
     , genericAndSpecifics, safePSingleton2AAtomVal
@@ -9,9 +9,9 @@ where
 -}
 
 import Prelude hiding (lookup)
-import Database.Design.Ampersand.ADL1.Expression                 (notCpl)
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics hiding (empty)
+import Ampersand.ADL1.Expression                 (notCpl)
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics hiding (empty)
 import Data.Map as Map hiding (null, unions,delete)
    -- WHY: don't we use strict Maps? Since the sets of atoms and pairs are finite, we might want the efficiency of strictness.
 import qualified Data.Set as Set

@@ -1,8 +1,8 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis where
+module Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis where
 
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.FSpec.FPA
+import Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.FSpec.FPA
 
 -- TODO: add introductory and explanatory text to chapter
 -- TODO: what about KGVs?

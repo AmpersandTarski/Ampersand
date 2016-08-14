@@ -1,12 +1,12 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.Test.Parser.ArbitraryTree () where
+module Ampersand.Test.Parser.ArbitraryTree () where
 
 import Test.QuickCheck
 import Data.Char
 import Data.List (nub)
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Input.ADL1.Lexer (keywords)
+import Ampersand.Core.ParseTree
+import Ampersand.Input.ADL1.Lexer (keywords)
 
 -- Useful functions to build on the quick check functions
 

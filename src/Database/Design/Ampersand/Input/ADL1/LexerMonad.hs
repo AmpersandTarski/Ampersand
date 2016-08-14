@@ -6,16 +6,16 @@
     Portability :  portable
 -}
 
-module Database.Design.Ampersand.Input.ADL1.LexerMonad
+module Ampersand.Input.ADL1.LexerMonad
     ( LexerMonad
     , addPos
     , lexerError, lexerWarning
     , runLexerMonad
     ) where
 
-import Database.Design.Ampersand.Input.ADL1.LexerMessage
-import Database.Design.Ampersand.Input.ADL1.FilePos
-import Database.Design.Ampersand.Misc
+import Ampersand.Input.ADL1.LexerMessage
+import Ampersand.Input.ADL1.FilePos
+import Ampersand.Misc
 
 import Control.Monad
 

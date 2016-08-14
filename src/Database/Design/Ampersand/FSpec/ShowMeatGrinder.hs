@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
-module Database.Design.Ampersand.FSpec.ShowMeatGrinder
+module Ampersand.FSpec.ShowMeatGrinder
   (makeMetaPopulationFile)
 where
 
@@ -11,13 +11,13 @@ import Data.Ord
 import Data.Hashable (hash) -- a not good enouqh function, but used for the time being. 
 import Data.Maybe
 import Data.Typeable
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.FSpecAux
-import Database.Design.Ampersand.FSpec.Motivations
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.ShowADL
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.FSpecAux
+import Ampersand.FSpec.Motivations
+import Ampersand.Basics
+import Ampersand.Misc
+import Ampersand.FSpec.ShowADL
+import Ampersand.Core.AbstractSyntaxTree
 
 
 makeMetaPopulationFile :: FSpec -> (FilePath,String)

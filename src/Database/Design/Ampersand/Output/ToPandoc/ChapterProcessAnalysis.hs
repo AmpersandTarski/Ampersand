@@ -1,8 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis
+module Ampersand.Output.ToPandoc.ChapterProcessAnalysis
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.List
 
 --DESCR -> the process analysis contains a section for each process in the fSpec

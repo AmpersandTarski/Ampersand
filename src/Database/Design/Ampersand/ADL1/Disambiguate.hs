@@ -1,8 +1,8 @@
 {-# OPTIONS_GHC -Wall #-}
-module Database.Design.Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
---import Database.Design.Ampersand.Basics (fatal)
+module Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
+import Ampersand.Core.ParseTree
+import Ampersand.Core.AbstractSyntaxTree
+--import Ampersand.Basics (fatal)
 --import Control.Applicative
 import qualified Data.Set as Set
 

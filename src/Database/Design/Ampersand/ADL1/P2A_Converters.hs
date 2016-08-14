@@ -1,18 +1,18 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE LambdaCase, ImplicitParams #-}
 -- unfortunately not in GHC yet, try to add this line when at GHC 8.0: {-# ApplicativeDo #-}
-module Database.Design.Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
+module Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
-import Database.Design.Ampersand.ADL1.Disambiguate
-import Database.Design.Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
-import Database.Design.Ampersand.Input.ADL1.CtxError
-import Database.Design.Ampersand.ADL1.Lattices -- used for type-checking
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Classes.ViewPoint
-import Database.Design.Ampersand.Classes.ConceptStructure
-import Database.Design.Ampersand.FSpec.ToFSpec.Populated
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc
+import Ampersand.ADL1.Disambiguate
+import Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
+import Ampersand.Input.ADL1.CtxError
+import Ampersand.ADL1.Lattices -- used for type-checking
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Classes.ViewPoint
+import Ampersand.Classes.ConceptStructure
+import Ampersand.FSpec.ToFSpec.Populated
+import Ampersand.Basics
+import Ampersand.Misc
 import Control.Monad (join,unless)
 import Prelude hiding (sequence, mapM)
 import qualified Data.Set as Set

@@ -1,11 +1,11 @@
-module Database.Design.Ampersand.FSpec.GenerateUML (generateUML) where
+module Ampersand.FSpec.GenerateUML (generateUML) where
 
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Purpose(..))
-import Database.Design.Ampersand.Graphic.ClassDiagram
-import Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams 
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Core.ParseTree(PandocFormat(ReST))
+import Ampersand.Basics
+import Ampersand.Core.AbstractSyntaxTree (explMarkup,aMarkup2String,Rule,Purpose(..))
+import Ampersand.Graphic.ClassDiagram
+import Ampersand.Graphic.Fspec2ClassDiagrams 
+import Ampersand.FSpec
+import Ampersand.Core.ParseTree(PandocFormat(ReST))
 import Data.List
 import qualified Data.Map as Map
 import Control.Monad.State.Lazy  (State, gets, evalState, modify)

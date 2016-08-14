@@ -1,11 +1,11 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-module Database.Design.Ampersand.Test.Parser.QuickChecks (parserQuickChecks) where
+module Ampersand.Test.Parser.QuickChecks (parserQuickChecks) where
 
-import Database.Design.Ampersand.Test.Parser.ParserTest (parseReparse)
-import Database.Design.Ampersand.Test.Parser.ArbitraryTree()
-import Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
-import Database.Design.Ampersand.Core.ParseTree (P_Context)
-import Database.Design.Ampersand.Input.ADL1.CtxError (Guarded(..))
+import Ampersand.Test.Parser.ParserTest (parseReparse)
+import Ampersand.Test.Parser.ArbitraryTree()
+import Ampersand.ADL1.PrettyPrinters(prettyPrint)
+import Ampersand.Core.ParseTree (P_Context)
+import Ampersand.Input.ADL1.CtxError (Guarded(..))
 
 import Test.QuickCheck(Args(..), quickCheckWithResult, Testable, Result(..))
 import Debug.Trace

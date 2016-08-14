@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-module Database.Design.Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,Op1EqualitySystem,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem) where
+module Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,Op1EqualitySystem,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem) where
 import qualified Data.IntMap as IntMap
 import qualified Data.Map as Map
 import qualified Data.Set as Set

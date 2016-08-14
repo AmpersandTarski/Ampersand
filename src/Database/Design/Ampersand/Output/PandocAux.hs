@@ -2,7 +2,7 @@
     FlexibleContexts, ScopedTypeVariables, PatternGuards,
     ViewPatterns #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.PandocAux
+module Ampersand.Output.PandocAux
       ( writepandoc
       , XRefObj(..) , xRefTo, xRefToLatexRefString
       , headerWithLabel
@@ -26,12 +26,12 @@ import Control.Monad
 import Data.Char hiding    (Space)
 import Data.List
 import Data.Maybe
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Basics hiding (hPutStrLn)
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.ADL1
+import Ampersand.Basics hiding (hPutStrLn)
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec
+import Ampersand.Misc
+import Ampersand.Prototype.StaticFiles_Generated
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as B

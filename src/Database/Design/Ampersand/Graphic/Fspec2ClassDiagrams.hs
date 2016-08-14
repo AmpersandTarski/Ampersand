@@ -1,15 +1,15 @@
-module Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams (
+module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
 ) 
 where
 import Data.List
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.FSpec
+import Ampersand.ADL1
+import Ampersand.Classes
+import Ampersand.Basics
+import Ampersand.FSpec
 import Data.Maybe
 import Data.Either
-import Database.Design.Ampersand.Graphic.ClassDiagram
+import Ampersand.Graphic.ClassDiagram
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
@@ -212,7 +212,7 @@ tdAnalysis fSpec =
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
            _ -> fatal 200 ("Unexpected expression: "++show expr)
-       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Database.Design.Ampersand.Graphic.ClassDiagram.Association
+       mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Ampersand.Graphic.ClassDiagram.Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t
                     , assSrcPort = attName f

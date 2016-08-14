@@ -1,12 +1,12 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
+module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics
 import Data.List
 import Data.Maybe
-import Database.Design.Ampersand.ADL1.Expression(primitives)
-import Database.Design.Ampersand.Classes.ViewPoint
+import Ampersand.ADL1.Expression(primitives)
+import Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 
 {- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn

@@ -1,6 +1,6 @@
 {- Based on module LexerMessage from Helium (GPL license) -}
 
-module Database.Design.Ampersand.Input.ADL1.LexerMessage
+module Ampersand.Input.ADL1.LexerMessage
     ( LexerError(..)
     , LexerErrorInfo(..)
     , LexerWarning(..)
@@ -10,8 +10,8 @@ module Database.Design.Ampersand.Input.ADL1.LexerMessage
     , showLexerWarningInfo
     ) where
 
-import Database.Design.Ampersand.Input.ADL1.FilePos(FilePos)
-import qualified Database.Design.Ampersand.Input.ADL1.LexerTexts as Texts
+import Ampersand.Input.ADL1.FilePos(FilePos)
+import qualified Ampersand.Input.ADL1.LexerTexts as Texts
 
 -- | Defines a lexer error
 data LexerError = LexerError FilePos LexerErrorInfo -- ^ The lexer file position and error information

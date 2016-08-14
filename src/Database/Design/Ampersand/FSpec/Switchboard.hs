@@ -1,18 +1,18 @@
-module Database.Design.Ampersand.FSpec.Switchboard
+module Ampersand.FSpec.Switchboard
          (SwitchBdDiagram(..),switchboardAct,sbDiagram,processModel) where
 
 import Data.GraphViz
 import Data.GraphViz.Attributes.Complete
 import Data.List
-import Database.Design.Ampersand.Basics        (fatal,Named(..), flp)
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..))
+import Ampersand.Basics        (fatal,Named(..), flp)
+import Ampersand.ADL1
+import Ampersand.Classes
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ShowADL (ShowADL(..))
 import Data.String
 
---import Database.Design.Ampersand.FSpec.ShowECA (showECA) -- for testing purposes
+--import Ampersand.FSpec.ShowECA (showECA) -- for testing purposes
 
 data SwitchBdDiagram
  = SBdgrm { sbName :: String

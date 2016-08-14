@@ -1,32 +1,32 @@
-module Database.Design.Ampersand.FSpec
-   ( module Database.Design.Ampersand.Basics
-   , module Database.Design.Ampersand.FSpec.FSpec
-   , module Database.Design.Ampersand.FSpec.ShowHS
-   , module Database.Design.Ampersand.FSpec.ShowADL
-   , module Database.Design.Ampersand.FSpec.ShowECA
-   , module Database.Design.Ampersand.FSpec.ShowMeatGrinder
-   , module Database.Design.Ampersand.FSpec.ToFSpec.Calc
-   , module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
-   , module Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
-   , module Database.Design.Ampersand.FSpec.Motivations
-   , module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec
+module Ampersand.FSpec
+   ( module Ampersand.Basics
+   , module Ampersand.FSpec.FSpec
+   , module Ampersand.FSpec.ShowHS
+   , module Ampersand.FSpec.ShowADL
+   , module Ampersand.FSpec.ShowECA
+   , module Ampersand.FSpec.ShowMeatGrinder
+   , module Ampersand.FSpec.ToFSpec.Calc
+   , module Ampersand.FSpec.ToFSpec.ADL2FSpec
+   , module Ampersand.FSpec.ToFSpec.NormalForms
+   , module Ampersand.FSpec.Motivations
+   , module Ampersand.FSpec.ToFSpec.CreateFspec
    )
 where
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Basics      (fatal,Collection(..),Named(..))
-import Database.Design.Ampersand.FSpec.ShowHS
+import Ampersand.FSpec.FSpec
+import Ampersand.Basics      (fatal,Collection(..),Named(..))
+import Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
-import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..))
-import Database.Design.Ampersand.FSpec.ShowECA (showECA)
-import Database.Design.Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile)
-import Database.Design.Ampersand.FSpec.ToFSpec.Calc
+import Ampersand.FSpec.ShowADL (ShowADL(..))
+import Ampersand.FSpec.ShowECA (showECA)
+import Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile)
+import Ampersand.FSpec.ToFSpec.Calc
        (showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd,commaPandocOr)
-import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
+import Ampersand.FSpec.ToFSpec.ADL2FSpec
        (makeFSpec)
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
+import Ampersand.FSpec.ToFSpec.NormalForms
        (conjNF, disjNF, cfProof, simplify)
-import Database.Design.Ampersand.FSpec.Motivations
+import Ampersand.FSpec.Motivations
        (Meaning(..),Motivated(..))
-import Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec 
+import Ampersand.FSpec.ToFSpec.CreateFspec 
        (createFSpec)
        

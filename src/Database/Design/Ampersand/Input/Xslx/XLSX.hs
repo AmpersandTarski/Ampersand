@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Input.Xslx.XLSX 
+module Ampersand.Input.Xslx.XLSX 
   (parseXlsxFile)
 where
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc
+import Ampersand.Basics
+import Ampersand.Misc
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
-import Database.Design.Ampersand.Input.ADL1.CtxError
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Core.ParseTree
+import Ampersand.Input.ADL1.CtxError
+import Ampersand.ADL1
+import Ampersand.Core.ParseTree
 import Codec.Xlsx
 import qualified Data.ByteString.Lazy as L
 import Control.Lens
@@ -16,7 +16,7 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Char
 import Data.String
-import Database.Design.Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.Prototype.StaticFiles_Generated
 
 parseXlsxFile :: Options 
               -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 

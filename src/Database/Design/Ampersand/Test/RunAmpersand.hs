@@ -1,8 +1,8 @@
-module Database.Design.Ampersand.Test.RunAmpersand (ampersand) where
+module Ampersand.Test.RunAmpersand (ampersand) where
 
-import Database.Design.Ampersand.Misc.Options(getOptions,Options(..))
-import Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec(createFSpec)
-import Database.Design.Ampersand.Input.ADL1.CtxError
+import Ampersand.Misc.Options(getOptions,Options(..))
+import Ampersand.FSpec.ToFSpec.CreateFspec(createFSpec)
+import Ampersand.Input.ADL1.CtxError
 
 ampersand :: [FilePath] -> IO [(FilePath,[CtxError])]
 ampersand files = 

@@ -1,9 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
+module Ampersand.Output.ToPandoc.ChapterSoftwareMetrics
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
---import Database.Design.Ampersand.Output.Statistics (Statistics(..))
---import Database.Design.Ampersand.Output.PandocAux
+import Ampersand.Output.ToPandoc.SharedAmongChapters
+--import Ampersand.Output.Statistics (Statistics(..))
+--import Ampersand.Output.PandocAux
 
 ------------------ Function Point Analysis --------------------
 -- TODO: Engels en Nederlands netjes scheiden.

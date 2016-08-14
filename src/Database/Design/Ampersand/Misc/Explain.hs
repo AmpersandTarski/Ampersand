@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Misc.Explain
+module Ampersand.Misc.Explain
     ( string2Blocks
     , blocks2String
     , PandocFormat(..)
@@ -6,8 +6,8 @@ module Database.Design.Ampersand.Misc.Explain
 where
 
 import Text.Pandoc
-import Database.Design.Ampersand.Core.ParseTree      (PandocFormat(..))
-import Database.Design.Ampersand.Basics
+import Ampersand.Core.ParseTree      (PandocFormat(..))
+import Ampersand.Basics
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.
 -- | defaultPandocReader getOpts should be used on user-defined strings.

@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.Prototype.ProtoUtil
+module Ampersand.Prototype.ProtoUtil
          ( writePrototypeFile, getGenericsDir
          , writePrototypeAppFile, getAppDir
          , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
@@ -17,9 +17,9 @@ import Data.List
 import qualified Data.Text as Text
 import System.Directory
 import System.FilePath
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Misc.Options
+import Ampersand.Basics
+import Ampersand.FSpec
+import Ampersand.Misc.Options
 import System.Exit --(ExitCode, exitFailure, exitSuccess)
 import System.Process
 

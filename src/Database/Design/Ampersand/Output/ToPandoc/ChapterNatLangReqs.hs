@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs (
+module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
  ) where
 
@@ -8,8 +8,8 @@ import Data.Char hiding (Space)
 import Data.List
 import Data.List.Split
 import Data.Maybe
---import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+--import Ampersand.Basics
+import Ampersand.Output.ToPandoc.SharedAmongChapters
 
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =

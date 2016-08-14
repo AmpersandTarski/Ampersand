@@ -1,5 +1,5 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-module Database.Design.Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
+module Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 
 import Data.List
 import Data.Char(toUpper)
@@ -10,8 +10,8 @@ import System.IO.Error (tryIOError)
 import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
 import Control.Monad.Trans.Class (lift)
 import Data.Conduit
-import Database.Design.Ampersand.Test.RunAmpersand (ampersand)
-import Database.Design.Ampersand.Input.ADL1.CtxError
+import Ampersand.Test.RunAmpersand (ampersand)
+import Ampersand.Input.ADL1.CtxError
 
 --endswith :: String -> String -> Bool
 --endswith a b = drop (length a - length b) a == b

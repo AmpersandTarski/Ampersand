@@ -1,11 +1,11 @@
-module Database.Design.Ampersand.Classes
-   ( module Database.Design.Ampersand.Classes.ConceptStructure
-   , module Database.Design.Ampersand.Classes.Relational
-   , module Database.Design.Ampersand.Classes.ViewPoint
+module Ampersand.Classes
+   ( module Ampersand.Classes.ConceptStructure
+   , module Ampersand.Classes.Relational
+   , module Ampersand.Classes.ViewPoint
    ) where
-import Database.Design.Ampersand.Classes.ConceptStructure
+import Ampersand.Classes.ConceptStructure
        (ConceptStructure(..))
-import Database.Design.Ampersand.Classes.Relational
+import Ampersand.Classes.Relational
        (Relational(..))
-import Database.Design.Ampersand.Classes.ViewPoint
+import Ampersand.Classes.ViewPoint
        (Language(..))

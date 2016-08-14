@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE FlexibleInstances, ScopedTypeVariables #-}
-module Database.Design.Ampersand.Input.ADL1.CtxError
+module Ampersand.Input.ADL1.CtxError
   ( CtxError(PE)
   , showErr, makeError, addError
   , cannotDisamb, cannotDisambRel
@@ -32,15 +32,15 @@ module Database.Design.Ampersand.Input.ADL1.CtxError
 -- for the same reasons, I did this as a quick fix for the parse errors
 where
 --import Control.Applicative
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.FSpec.ShowADL
-import Database.Design.Ampersand.Basics
+import Ampersand.ADL1
+import Ampersand.FSpec.ShowADL
+import Ampersand.Basics
 import Data.Maybe
 import Data.List  (intercalate)
 import GHC.Exts (groupWith)
-import Database.Design.Ampersand.Core.ParseTree
+import Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
-import Database.Design.Ampersand.Input.ADL1.FilePos()
+import Ampersand.Input.ADL1.FilePos()
 import Data.Monoid
 
 

@@ -1,19 +1,19 @@
-module Database.Design.Ampersand.Graphic.ClassDiag2Dot ( 
+module Ampersand.Graphic.ClassDiag2Dot ( 
   classdiagram2dot
 
 ) 
 where
 import Data.List
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.ADL1  hiding (Association,Box)
-import Database.Design.Ampersand.Misc
+import Ampersand.Basics
+import Ampersand.Classes
+import Ampersand.ADL1  hiding (Association,Box)
+import Ampersand.Misc
 import Data.String
 import Data.GraphViz.Types.Canonical hiding (attrs)
 import Data.GraphViz.Attributes.Complete as GVcomp
 import Data.GraphViz.Attributes as GVatt
 import Data.GraphViz.Attributes.HTML as Html
-import Database.Design.Ampersand.Graphic.ClassDiagram
+import Ampersand.Graphic.ClassDiagram
 
 -- | translate a ClassDiagram to a DotGraph, so it can be used to show it as a picture.
 classdiagram2dot :: Options -> ClassDiag -> DotGraph String

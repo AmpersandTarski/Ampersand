@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-module Database.Design.Ampersand.Output.ToJSON.Concepts 
+module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
 where
-import Database.Design.Ampersand.FSpec(showADL)
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.FSpec(showADL)
+import Ampersand.Output.ToJSON.JSONutils 
+import Ampersand.Core.AbstractSyntaxTree 
 import Data.Maybe
 import Data.List(nub)
 

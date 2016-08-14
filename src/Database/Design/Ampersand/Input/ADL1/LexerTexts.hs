@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Input.ADL1.LexerTexts
+module Ampersand.Input.ADL1.LexerTexts
     ( lexerCommentOperator
     , lexerCorrectStrings
     , lexerNestedComment

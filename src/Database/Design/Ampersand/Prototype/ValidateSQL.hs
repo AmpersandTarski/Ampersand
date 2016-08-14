@@ -1,13 +1,13 @@
-module Database.Design.Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
+module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import Prelude hiding (exp)
 import Data.List
 import Control.Monad
 import System.Exit
 import System.IO hiding (hPutStr,hGetContents)
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
+import Ampersand.FSpec
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and

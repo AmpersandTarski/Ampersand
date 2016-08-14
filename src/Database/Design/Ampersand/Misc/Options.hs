@@ -1,14 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PackageImports #-}
 {-# LANGUAGE ScopedTypeVariables #-}
-module Database.Design.Ampersand.Misc.Options
+module Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
         ,verboseLn,verbose,FSpecFormat(..)
         , helpNVersionTexts
         )
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
-import Database.Design.Ampersand.Misc.Languages (Lang(..))
+import Ampersand.Misc.Languages (Lang(..))
 import System.Console.GetOpt
 import System.FilePath
 import System.Directory
@@ -16,7 +16,7 @@ import Data.Time.Clock
 import Data.Time.LocalTime
 import Control.Monad
 import Data.Maybe
-import Database.Design.Ampersand.Basics
+import Ampersand.Basics
 import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
 import Data.List as DL
 import Data.Char

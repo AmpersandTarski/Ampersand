@@ -1,11 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-module Database.Design.Ampersand.Output.ToJSON.MySQLInstaller 
+module Ampersand.Output.ToJSON.MySQLInstaller 
   (MySQLInstaller)
 where
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.Prototype.Generate 
+import Ampersand.Output.ToJSON.JSONutils 
+import Ampersand.Prototype.Generate 
 import qualified Data.Text as Text
  
 data MySQLInstaller = MySQLInstaller

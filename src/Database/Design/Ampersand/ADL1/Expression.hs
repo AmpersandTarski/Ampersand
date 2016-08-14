@@ -1,13 +1,13 @@
 {-# LANGUAGE TypeSynonymInstances #-}
-module Database.Design.Ampersand.ADL1.Expression (
+module Ampersand.ADL1.Expression (
                        subst
                       ,primitives,isMp1, isEEps
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
 where
-import Database.Design.Ampersand.Basics (uni)
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics (uni)
+import Ampersand.Core.AbstractSyntaxTree
 --import Debug.Trace
 
 -- | subst is used to replace each occurrence of a relation

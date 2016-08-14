@@ -1,13 +1,13 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.FSpec2SQL
+module Ampersand.Output.FSpec2SQL
   (dumpSQLqueries)
 where
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Prototype.Generate 
+import Ampersand.Basics
+import Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateAllDefPopQueries
   )
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.SQL
+import Ampersand.FSpec
+import Ampersand.FSpec.SQL
 import Data.Monoid
 import qualified Data.Text as Text
 

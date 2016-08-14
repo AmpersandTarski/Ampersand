@@ -1,15 +1,15 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
-module Database.Design.Ampersand.Test.Parser.ParserTest (
+module Ampersand.Test.Parser.ParserTest (
     parseReparse, parseScripts, showErrors
 ) where
 
 import Prelude hiding (readFile)
-import Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
-import Database.Design.Ampersand.Input.ADL1.Parser
-import Database.Design.Ampersand.Input.Parsing
-import Database.Design.Ampersand.Misc.Options(Options)
+import Ampersand.ADL1.PrettyPrinters(prettyPrint)
+import Ampersand.Core.ParseTree
+import Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
+import Ampersand.Input.ADL1.Parser
+import Ampersand.Input.Parsing
+import Ampersand.Misc.Options(Options)
 import System.IO (hPutStrLn, stderr)
 
 -- Tries to parse all the given files

@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-module Database.Design.Ampersand.Output.ToJSON.Rules 
+module Ampersand.Output.ToJSON.Rules 
   (Rules)
 where
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand.FSpec
+import Ampersand.Output.ToJSON.JSONutils 
+import Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.FSpec
 import Data.Maybe
 
 data Rules = Rules

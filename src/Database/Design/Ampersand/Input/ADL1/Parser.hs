@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
-module Database.Design.Ampersand.Input.ADL1.Parser
+module Ampersand.Input.ADL1.Parser
     ( AmpParser
     , Include(..)
     , pContext
@@ -8,9 +8,9 @@ module Database.Design.Ampersand.Input.ADL1.Parser
     , pRule
     ) where
 
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Input.ADL1.ParsingLib
+import Ampersand.Basics
+import Ampersand.Core.ParseTree
+import Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
 import Prelude hiding ((<$))

@@ -7,15 +7,15 @@
   --                Note that 'parse' and 'semantics' do not exist in this shape, so the actual expression is slightly more complicated.
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
-module Database.Design.Ampersand.FSpec.ShowADL
+module Ampersand.FSpec.ShowADL
     ( ShowADL(..), showPAclause, showREL)
 where
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics      (fatal,Collection(..),Named(..))
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.ADL1 (insParentheses)
-import Database.Design.Ampersand.FSpec.FSpec
+import Ampersand.Core.ParseTree
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics      (fatal,Collection(..),Named(..))
+import Ampersand.Classes
+import Ampersand.ADL1 (insParentheses)
+import Ampersand.FSpec.FSpec
 import Data.List
 import Prelude
 import Data.Char

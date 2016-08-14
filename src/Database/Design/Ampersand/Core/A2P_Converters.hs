@@ -1,12 +1,12 @@
-module Database.Design.Ampersand.Core.A2P_Converters (
+module Ampersand.Core.A2P_Converters (
   aCtx2pCtx
   , aAtomValue2pAtomValue
 ) 
 where
-import Database.Design.Ampersand.ADL1.Expression
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1.Expression
+import Ampersand.Basics
+import Ampersand.Core.ParseTree
+import Ampersand.Core.AbstractSyntaxTree
 import Data.Maybe
 
 aCtx2pCtx :: A_Context -> P_Context

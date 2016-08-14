@@ -8,7 +8,7 @@ In the future, other ways of 'filling' FSpec are foreseen.
 All generators (such as the code generator, the proof generator, the atlas generator, etc.)
 are merely different ways to show FSpec.
 -}
-module Database.Design.Ampersand.FSpec.FSpec
+module Ampersand.FSpec.FSpec
           ( FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Fswitchboard(..), Quad(..)
           , A_Concept, Declaration, A_Gen
@@ -33,23 +33,23 @@ module Database.Design.Ampersand.FSpec.FSpec
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
           , Language(..),AAtomValue
           , showValADL,showValPHP,showValSQL,showSQL
-          , module Database.Design.Ampersand.FSpec.ToFSpec.Populated 
-          , module Database.Design.Ampersand.Classes
+          , module Ampersand.FSpec.ToFSpec.Populated 
+          , module Ampersand.Classes
           ) where
--- TODO: Export module Database.Design.Ampersand.Core.AbstractSyntaxTree in the same way as is done
---       for module Database.Design.Ampersand.Core.ParseTree in that module. Then build to a better
+-- TODO: Export module Ampersand.Core.AbstractSyntaxTree in the same way as is done
+--       for module Ampersand.Core.ParseTree in that module. Then build to a better
 --       hierarchie to reflect the Architecture. 
 import Data.List
 import Data.Text (Text,unpack)
 import Data.Typeable
-import Database.Design.Ampersand.ADL1.Expression (notCpl)
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec.Crud
-import Database.Design.Ampersand.Misc.Options (Options)
+import Ampersand.ADL1.Expression (notCpl)
+import Ampersand.Basics
+import Ampersand.Classes
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec.Crud
+import Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
-import Database.Design.Ampersand.FSpec.ToFSpec.Populated
+import Ampersand.FSpec.ToFSpec.Populated
 
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showADL)  

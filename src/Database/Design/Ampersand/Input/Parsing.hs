@@ -2,28 +2,28 @@
 -- This module provides an interface to be able to parse a script and to
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
-module Database.Design.Ampersand.Input.Parsing (
+module Ampersand.Input.Parsing (
     parseADL,parseMeta , parseADL1pExpr, parseRule, parseCtx, runParser
 ) where
 
 import Control.Applicative
 import Data.List
 import Data.Char(toLower)
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Input.ADL1.CtxError
-import Database.Design.Ampersand.Input.ADL1.Lexer
-import Database.Design.Ampersand.Input.ADL1.Parser
-import Database.Design.Ampersand.Core.ParseTree (mkContextOfPopsOnly)
-import Database.Design.Ampersand.Misc
+import Ampersand.ADL1
+import Ampersand.Basics
+import Ampersand.Input.ADL1.CtxError
+import Ampersand.Input.ADL1.Lexer
+import Ampersand.Input.ADL1.Parser
+import Ampersand.Core.ParseTree (mkContextOfPopsOnly)
+import Ampersand.Misc
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import System.Directory
 import System.FilePath
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
-import Database.Design.Ampersand.Input.Xslx.XLSX
+import Ampersand.Input.Xslx.XLSX
 import Control.Exception
-import Database.Design.Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
+import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line

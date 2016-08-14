@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
+module Ampersand.FSpec.ToFSpec.ADL2FSpec
          (makeFSpec) where
 import Prelude
 import Data.Char
@@ -6,17 +6,17 @@ import Data.List
 import Data.Maybe
 import Text.Pandoc
 import Data.Text (pack)
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.Crud
-import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
-import Database.Design.Ampersand.FSpec.ToFSpec.Calc
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms 
-import Database.Design.Ampersand.FSpec.ShowADL
+import Ampersand.ADL1
+import Ampersand.Basics
+import Ampersand.Classes
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec.FSpec
+import Ampersand.Misc
+import Ampersand.FSpec.Crud
+import Ampersand.FSpec.ToFSpec.ADL2Plug
+import Ampersand.FSpec.ToFSpec.Calc
+import Ampersand.FSpec.ToFSpec.NormalForms 
+import Ampersand.FSpec.ShowADL
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}

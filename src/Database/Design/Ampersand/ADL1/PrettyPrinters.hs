@@ -1,11 +1,11 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Database.Design.Ampersand.ADL1.PrettyPrinters(prettyPrint)
+module Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
-import Database.Design.Ampersand.Basics        (fatal)
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Input.ADL1.Lexer(keywords)
+import Ampersand.Basics        (fatal)
+import Ampersand.Core.ParseTree
+import Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)
 import Data.List.Utils (replace)
 import Data.Char (toUpper)

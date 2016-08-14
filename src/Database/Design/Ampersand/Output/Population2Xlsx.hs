@@ -1,9 +1,9 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.Population2Xlsx
+module Ampersand.Output.Population2Xlsx
   (fSpec2PopulationXlsx)
 where
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Ampersand.FSpec
+import Ampersand.Core.AbstractSyntaxTree
 import qualified Data.Map as M
 import Codec.Xlsx
 import qualified Data.ByteString.Lazy as L

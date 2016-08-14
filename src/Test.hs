@@ -1,9 +1,9 @@
 module Main (main) where
 
-import Database.Design.Ampersand.Misc.Options(getOptions,Options)
-import Database.Design.Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts)
-import Database.Design.Ampersand.Test.Parser.ParserTest (parseScripts)
-import Database.Design.Ampersand.Test.Parser.QuickChecks (parserQuickChecks)
+import Ampersand.Misc.Options(getOptions,Options)
+import Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts)
+import Ampersand.Test.Parser.ParserTest (parseScripts)
+import Ampersand.Test.Parser.QuickChecks (parserQuickChecks)
 import System.Exit (ExitCode, exitFailure, exitSuccess)
 
 testFunctions :: Options -> IO [([String], IO Bool)]

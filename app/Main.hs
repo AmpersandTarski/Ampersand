@@ -4,11 +4,11 @@ import Control.Monad
 import Data.List
 import System.Exit
 import Prelude hiding (putStr,putStrLn,readFile,writeFile)
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Input
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.Components
+import Ampersand.Misc
+import Ampersand.Basics
+import Ampersand.Input
+import Ampersand.FSpec
+import Ampersand.Components
 
 main :: IO ()
 main =

@@ -5,13 +5,13 @@ instance Unique Pattern where
  showUnique = name
 -}
 
-module Database.Design.Ampersand.Basics.Unique 
+module Ampersand.Basics.Unique 
   (Unique(..),Named(..))
 where
 import Data.Typeable
 import Data.List
 import Data.Char
-import Database.Design.Ampersand.Basics.Version(fatal)
+import Ampersand.Basics.Version(fatal)
 
 -- | anything could have some label, can't it?
 class Named a where

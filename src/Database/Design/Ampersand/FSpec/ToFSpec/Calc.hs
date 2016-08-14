@@ -1,5 +1,5 @@
 {-# LANGUAGE ScopedTypeVariables, OverloadedStrings #-}
-module Database.Design.Ampersand.FSpec.ToFSpec.Calc
+module Ampersand.FSpec.ToFSpec.Calc
             ( deriveProofs
             , showProof, showPrf, assembleECAs, conjuncts, genPAclause
             , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd ,commaPandocOr--TODO: this shouldt be here!
@@ -7,21 +7,21 @@ module Database.Design.Ampersand.FSpec.ToFSpec.Calc
           --  , testInterface
             ) where
 
-import Database.Design.Ampersand.Basics
+import Ampersand.Basics
 import Data.List hiding (head)
 import Data.Monoid
 import GHC.Exts (sortWith)
 --import Data.ByteString.Char8
 --import Data.ByteString.Lazy.Char8
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.ADL1.Expression
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.ShowADL (ShowADL(..), showREL)
-import Database.Design.Ampersand.FSpec.ShowECA (showECA)
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms
-import Database.Design.Ampersand.Misc (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1
+import Ampersand.ADL1.Expression
+import Ampersand.Classes
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ShowADL (ShowADL(..), showREL)
+import Ampersand.FSpec.ShowECA (showECA)
+import Ampersand.FSpec.ToFSpec.NormalForms
+import Ampersand.Misc (Lang(..),Options(..),PandocFormat(ReST),string2Blocks)
 import Text.Pandoc.Builder
 import Prelude hiding (head)
 

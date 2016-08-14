@@ -1,16 +1,16 @@
-module Database.Design.Ampersand.FSpec.ToFSpec.CreateFspec
+module Ampersand.FSpec.ToFSpec.CreateFspec
   (createFSpec)
 
 where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.ADL1.P2A_Converters
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.ShowMeatGrinder
-import Database.Design.Ampersand.Input
-import Database.Design.Ampersand.FSpec.ToFSpec.ADL2FSpec
+import Ampersand.Basics
+import Ampersand.Misc
+import Ampersand.ADL1
+import Ampersand.ADL1.P2A_Converters
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ShowMeatGrinder
+import Ampersand.Input
+import Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
 import Control.Monad
 

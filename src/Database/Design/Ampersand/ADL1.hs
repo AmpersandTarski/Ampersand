@@ -1,12 +1,12 @@
-module Database.Design.Ampersand.ADL1
-   ( module Database.Design.Ampersand.Core.ParseTree
-   , module Database.Design.Ampersand.Core.AbstractSyntaxTree
-   , module Database.Design.Ampersand.ADL1.Expression
-   , module Database.Design.Ampersand.ADL1.ECArule
-   , module Database.Design.Ampersand.ADL1.Rule
+module Ampersand.ADL1
+   ( module Ampersand.Core.ParseTree
+   , module Ampersand.Core.AbstractSyntaxTree
+   , module Ampersand.ADL1.Expression
+   , module Ampersand.ADL1.ECArule
+   , module Ampersand.ADL1.Rule
    )
 where
-import Database.Design.Ampersand.Core.ParseTree (
+import Ampersand.Core.ParseTree (
            PPurpose(..), PRef2Obj(..)
          , mkPair
          , FilePos(..), Origin(..), Traced(..)
@@ -34,7 +34,7 @@ import Database.Design.Ampersand.Core.ParseTree (
          , ConceptDef(..)
          , gen_concs
          )
-import Database.Design.Ampersand.Core.AbstractSyntaxTree (
+import Ampersand.Core.AbstractSyntaxTree (
           A_Concept(..)
          ,Signature(..),showSign
          ,A_Context(..)
@@ -59,13 +59,13 @@ import Database.Design.Ampersand.Core.AbstractSyntaxTree (
          , AAtomPair(..), AAtomValue(..), mkAtomPair, ContextInfo(..), representationOf
          , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
          )
-import Database.Design.Ampersand.ADL1.Expression
+import Ampersand.ADL1.Expression
          ( notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
-import Database.Design.Ampersand.ADL1.ECArule (
+import Ampersand.ADL1.ECArule (
          isAll, isCHC, isBlk, isNop, isDo, eventsFrom)
-import Database.Design.Ampersand.ADL1.Rule (
+import Ampersand.ADL1.Rule (
           rulefromProp
          ,consequent,antecedent,hasantecedent)
 

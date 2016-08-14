@@ -1,16 +1,16 @@
-module Database.Design.Ampersand.Output.PredLogic
+module Ampersand.Output.PredLogic
          ( PredLogicShow(..), showLatex, showRtf, mkVar
          ) where
 
 import Data.List
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.FSpec.ShowADL
+import Ampersand.Basics
+import Ampersand.ADL1
+import Ampersand.Classes
+import Ampersand.Misc
+import Ampersand.FSpec.ShowADL
 import Data.Char
 import Data.Text (pack)
-import Database.Design.Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
+import Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
 
 --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
 data PredLogic

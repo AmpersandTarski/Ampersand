@@ -2,7 +2,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE ImplicitParams #-}{-# OPTIONS_GHC -Wall -Werror #-}
-module Database.Design.Ampersand.Core.AbstractSyntaxTree (
+module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
  , Meta(..)
@@ -47,17 +47,17 @@ module Database.Design.Ampersand.Core.AbstractSyntaxTree (
  , showValADL,showValPHP,showValSQL
  , showSign
  , aMarkup2String
- , module Database.Design.Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
+ , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConcept
  , aavstr
  ) where
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
+import Ampersand.Basics
+import Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
                                                 , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
                                                 , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..), PSingleton, makePSingleton
                                                 )
-import Database.Design.Ampersand.Misc
+import Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.Function
 import Data.Typeable
@@ -910,7 +910,7 @@ safePSingleton2AAtomVal ci c val =
 
 -- SJC: Note about this code:
 -- error messages are written here, and later turned into error messages via mkIncompatibleAtomValueError
--- Ideally, this module would import Database.Design.Ampersand.Input.ADL1.CtxError
+-- Ideally, this module would import Ampersand.Input.ADL1.CtxError
 -- that way, unsafePAtomVal2AtomValue could create a 'Origin -> Guarded AAtomValue' instead.
 unsafePAtomVal2AtomValue :: TType -> Maybe A_Concept -> PAtomValue -> Either String AAtomValue
 unsafePAtomVal2AtomValue typ mCpt pav =

@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.Basics.Collection
+module Ampersand.Basics.Collection
   (  Collection ( eleM
                 , uni
                 , isc

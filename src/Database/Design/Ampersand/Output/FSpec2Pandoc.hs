@@ -1,18 +1,18 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Database.Design.Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
+module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterIntroduction          (chpIntroduction)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterNatLangReqs           (chpNatLangReqs)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    (chpConceptualAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterProcessAnalysis       (chpProcessAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterECArules              (chpECArules)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis          (chpDataAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterSoftwareMetrics       (fpAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointAnalysis)
-import Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)
+import Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks)
+import Ampersand.Output.ToPandoc.ChapterIntroduction          (chpIntroduction)
+import Ampersand.Output.ToPandoc.ChapterNatLangReqs           (chpNatLangReqs)
+import Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
+import Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    (chpConceptualAnalysis)
+import Ampersand.Output.ToPandoc.ChapterProcessAnalysis       (chpProcessAnalysis)
+import Ampersand.Output.ToPandoc.ChapterECArules              (chpECArules)
+import Ampersand.Output.ToPandoc.ChapterDataAnalysis          (chpDataAnalysis)
+import Ampersand.Output.ToPandoc.ChapterSoftwareMetrics       (fpAnalysis)
+import Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointAnalysis)
+import Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)
 import Data.Time.Format (formatTime)
 import Data.List (nub)
 --import Debug.Trace

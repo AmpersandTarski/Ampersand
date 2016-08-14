@@ -1,12 +1,12 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
+module Ampersand.Output.ToPandoc.ChapterDataAnalysis (chpDataAnalysis) where
 
-import Database.Design.Ampersand.ADL1 hiding (Association)
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
-import Database.Design.Ampersand.FSpec.Crud
-import Database.Design.Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
-import Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
-import Database.Design.Ampersand.Output.PredLogic
+import Ampersand.ADL1 hiding (Association)
+import Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
+import Ampersand.FSpec.Crud
+import Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
+import Ampersand.Graphic.Fspec2ClassDiagrams
+import Ampersand.Output.PredLogic
 import Data.Char
 import Data.List
 import Data.Function (on)
@@ -181,7 +181,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                          <> orderedList (map assocToRow asscs) 
     where
         
-     assocToRow :: Database.Design.Ampersand.Graphic.ClassDiagram.Association -> Blocks
+     assocToRow :: Ampersand.Graphic.ClassDiagram.Association -> Blocks
      assocToRow assoc  =
          plain (  (text.assrhr) assoc
                 <>(text.l) (NL " (vanaf ",EN " (from ")

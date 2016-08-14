@@ -1,9 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
+module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
+import Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Data.List (intersperse )
 
 chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])

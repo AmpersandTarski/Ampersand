@@ -1,9 +1,9 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterECArules
+module Ampersand.Output.ToPandoc.ChapterECArules
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (proofPA)
+import Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.FSpec.ToFSpec.NormalForms (proofPA)
 
 
 chpECArules :: FSpec -> Blocks

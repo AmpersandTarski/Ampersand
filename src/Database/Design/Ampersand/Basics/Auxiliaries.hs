@@ -1,6 +1,6 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Database.Design.Ampersand.Basics.Auxiliaries 
-         ( module Database.Design.Ampersand.Basics.Auxiliaries
+module Ampersand.Basics.Auxiliaries 
+         ( module Ampersand.Basics.Auxiliaries
          , module Debug.Trace) where
 
 import Data.List

@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.FSpec.SQL
+module Ampersand.FSpec.SQL
   ( placeHolderSQL
   , prettySQLQuery               , sqlQuery
   , prettySQLQueryWithPlaceholder, sqlQueryWithPlaceholder 
@@ -7,14 +7,14 @@ module Database.Design.Ampersand.FSpec.SQL
 where
 import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Pretty
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes.ConceptStructure
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.ADL1.Expression
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.FSpecAux
-import Database.Design.Ampersand.FSpec.ShowADL
-import Database.Design.Ampersand.Misc
+import Ampersand.Basics
+import Ampersand.Classes.ConceptStructure
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1.Expression
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.FSpecAux
+import Ampersand.FSpec.ShowADL
+import Ampersand.Misc
 import Data.List
 import Data.Maybe
 

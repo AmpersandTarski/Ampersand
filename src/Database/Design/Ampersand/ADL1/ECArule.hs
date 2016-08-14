@@ -1,4 +1,4 @@
-module Database.Design.Ampersand.ADL1.ECArule ( isAll
+module Ampersand.ADL1.ECArule ( isAll
                                              , isCHC
                                              , isBlk
                                              , isNop
@@ -6,8 +6,8 @@ module Database.Design.Ampersand.ADL1.ECArule ( isAll
                                              , eventsFrom
                                              )
 where
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics     (fatal)
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics     (fatal)
 
   --   Ampersand derives the process logic from the static logic by interpreting an expression in relation algebra as an invariant.
   --   So how does Ampersand derive dynamic behaviour from static rules? An example may clarify this:

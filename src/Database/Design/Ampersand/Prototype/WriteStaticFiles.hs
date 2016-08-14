@@ -1,12 +1,12 @@
 {-# LANGUAGE CPP #-}
-module Database.Design.Ampersand.Prototype.WriteStaticFiles (writeStaticFiles) where
+module Ampersand.Prototype.WriteStaticFiles (writeStaticFiles) where
 
 import System.FilePath
 import System.Directory
 import qualified Data.ByteString.Char8 as BS
-import Database.Design.Ampersand.Misc (Options(..),verboseLn)
+import Ampersand.Misc (Options(..),verboseLn)
 import Prelude hiding (writeFile,readFile,getContents)
-import Database.Design.Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.Prototype.StaticFiles_Generated
 import qualified Data.Conduit.List as CL
 import Conduit
 

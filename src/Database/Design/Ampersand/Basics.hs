@@ -1,15 +1,15 @@
-module Database.Design.Ampersand.Basics
-  ( module Database.Design.Ampersand.Basics.Auxiliaries
-  , module Database.Design.Ampersand.Basics.Collection
-  , module Database.Design.Ampersand.Basics.String
-  , module Database.Design.Ampersand.Basics.Unique
-  , module Database.Design.Ampersand.Basics.UTF8
-  , module Database.Design.Ampersand.Basics.Version
+module Ampersand.Basics
+  ( module Ampersand.Basics.Auxiliaries
+  , module Ampersand.Basics.Collection
+  , module Ampersand.Basics.String
+  , module Ampersand.Basics.Unique
+  , module Ampersand.Basics.UTF8
+  , module Ampersand.Basics.Version
   ) where
-import Database.Design.Ampersand.Basics.Auxiliaries
-import Database.Design.Ampersand.Basics.Collection
-import Database.Design.Ampersand.Basics.String
-import Database.Design.Ampersand.Basics.Unique
-import Database.Design.Ampersand.Basics.UTF8
-import Database.Design.Ampersand.Basics.Version
+import Ampersand.Basics.Auxiliaries
+import Ampersand.Basics.Collection
+import Ampersand.Basics.String
+import Ampersand.Basics.Unique
+import Ampersand.Basics.UTF8
+import Ampersand.Basics.Version
 

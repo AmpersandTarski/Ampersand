@@ -1,8 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterDiagnosis where
+module Ampersand.Output.ToPandoc.ChapterDiagnosis where
 
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.List(nub,partition)
 import Data.Maybe(isJust)
 

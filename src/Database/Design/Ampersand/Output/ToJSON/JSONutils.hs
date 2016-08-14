@@ -1,28 +1,28 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FunctionalDependencies #-} 
-module Database.Design.Ampersand.Output.ToJSON.JSONutils 
+module Ampersand.Output.ToJSON.JSONutils 
   (writeJSONFile, JSON(..), ToJSON(..)
-  , module Database.Design.Ampersand.FSpec.FSpec
-  , module Database.Design.Ampersand.Misc
-  , module Database.Design.Ampersand.FSpec.SQL
-  , module Database.Design.Ampersand.Basics
-  , module Database.Design.Ampersand.Classes
+  , module Ampersand.FSpec.FSpec
+  , module Ampersand.Misc
+  , module Ampersand.FSpec.SQL
+  , module Ampersand.Basics
+  , module Ampersand.Classes
   , module GHC.Generics
   )
 where
 import Data.Aeson
 import Data.Aeson.Types
 import Data.List
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder)
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder)
+import Ampersand.Misc
+import Ampersand.Basics
+import Ampersand.Classes
 import System.FilePath
 import System.Directory
 import qualified Data.ByteString.Lazy as BS
-import Database.Design.Ampersand.Prototype.ProtoUtil(getGenericsDir)
+import Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import Prelude hiding (writeFile)
 import GHC.Generics
 import Data.Aeson.Encode.Pretty

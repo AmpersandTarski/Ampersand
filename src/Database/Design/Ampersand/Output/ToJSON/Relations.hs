@@ -1,11 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
-module Database.Design.Ampersand.Output.ToJSON.Relations 
+module Ampersand.Output.ToJSON.Relations 
   (Relations)
 where
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand.FSpec.FSpecAux
+import Ampersand.Output.ToJSON.JSONutils 
+import Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.FSpec.FSpecAux
 import Data.Maybe
 
 data Relations = Relations [Relation]deriving (Generic, Show)

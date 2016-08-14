@@ -1,18 +1,18 @@
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Prototype.Generate 
+module Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateAllDefPopQueries
   )
 where
 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.Core.AbstractSyntaxTree 
 import Prelude hiding (writeFile,readFile,getContents,exp)
 import Data.Monoid
 import Data.List
 import Data.String (IsString)
 import qualified Data.Text as Text
-import Database.Design.Ampersand.FSpec
-import Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
-import Database.Design.Ampersand.Prototype.PHP (getTableName, signalTableSpec)
+import Ampersand.FSpec
+import Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
+import Ampersand.Prototype.PHP (getTableName, signalTableSpec)
 
 doubleQuote :: (Data.String.IsString m, Monoid m) => m -> m
 doubleQuote s = "\"" <> s <> "\""

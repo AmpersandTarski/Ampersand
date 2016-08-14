@@ -1,5 +1,5 @@
 {-# OPTIONS_GHC -fno-warn-unused-do-bind #-}
-module Database.Design.Ampersand.Input.ADL1.Lexer
+module Ampersand.Input.ADL1.Lexer
     ( keywords
     , operators
     , symbols
@@ -20,15 +20,15 @@ module Database.Design.Ampersand.Input.ADL1.Lexer
     , FilePos(..)
 ) where
 
-import Database.Design.Ampersand.Input.ADL1.FilePos(updatePos)
-import Database.Design.Ampersand.Input.ADL1.LexerToken
-import Database.Design.Ampersand.Input.ADL1.LexerMonad
-import Database.Design.Ampersand.Input.ADL1.LexerMessage
+import Ampersand.Input.ADL1.FilePos(updatePos)
+import Ampersand.Input.ADL1.LexerToken
+import Ampersand.Input.ADL1.LexerMonad
+import Ampersand.Input.ADL1.LexerMessage
 import Data.Char hiding(isSymbol)
 import Data.Set (member, fromList)
 import Data.List (nub)
-import Database.Design.Ampersand.Basics (fatal)
-import Database.Design.Ampersand.Misc
+import Ampersand.Basics (fatal)
+import Ampersand.Misc
 import Data.Time.Calendar
 import Data.Time.Clock
 import Numeric

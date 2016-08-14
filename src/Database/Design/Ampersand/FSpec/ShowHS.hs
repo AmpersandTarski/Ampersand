@@ -1,15 +1,15 @@
 {-# LANGUAGE FlexibleInstances #-}
-module Database.Design.Ampersand.FSpec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+module Ampersand.FSpec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
+import Ampersand.Core.ParseTree
+import Ampersand.Core.AbstractSyntaxTree
 import Text.Pandoc hiding (Meta)
 import Data.Char                  (isAlphaNum)
-import Database.Design.Ampersand.Basics hiding (indent)
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
---import Database.Design.Ampersand.FSpec.FPA   (fpa)
+import Ampersand.Basics hiding (indent)
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
+--import Ampersand.FSpec.FPA   (fpa)
 import Data.List
-import Database.Design.Ampersand.Misc
+import Ampersand.Misc
 import Data.Hashable
 import Data.Ord
 import Data.Function
@@ -19,7 +19,7 @@ fSpec2Haskell fSpec
         = "{-# OPTIONS_GHC -Wall #-}"
           ++"\n{-Generated code by "++ampersandVersionStr++" at "++show (genTime (getOpts fSpec))++"-}"
           ++"\nmodule Main where\n"
-          ++"\nimport Database.Design.Ampersand"
+          ++"\nimport Ampersand"
           ++"\nimport Text.Pandoc hiding (Meta)"
           ++"\nimport Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
           ++"\n"

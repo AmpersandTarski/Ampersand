@@ -1,15 +1,15 @@
-module Database.Design.Ampersand.Graphic.Graphics
+module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
 import Data.GraphViz
-import Database.Design.Ampersand.ADL1
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.FSpec.Switchboard
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Graphic.Fspec2ClassDiagrams
-import Database.Design.Ampersand.Graphic.ClassDiag2Dot
+import Ampersand.ADL1
+import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.Switchboard
+import Ampersand.Misc
+import Ampersand.Basics
+import Ampersand.Graphic.Fspec2ClassDiagrams
+import Ampersand.Graphic.ClassDiag2Dot
 import Data.GraphViz.Attributes.Complete
 import Data.List
 import Data.String

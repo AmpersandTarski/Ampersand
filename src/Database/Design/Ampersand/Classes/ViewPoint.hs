@@ -1,11 +1,11 @@
-module Database.Design.Ampersand.Classes.ViewPoint (Language(..)) where
-import Database.Design.Ampersand.Core.ParseTree
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+module Ampersand.Classes.ViewPoint (Language(..)) where
+import Ampersand.Core.ParseTree
+import Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (Ord(..))
-import Database.Design.Ampersand.ADL1.Rule
-import Database.Design.Ampersand.Classes.Relational  (Relational(properties))
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Misc.Explain
+import Ampersand.ADL1.Rule
+import Ampersand.Classes.Relational  (Relational(properties))
+import Ampersand.Basics
+import Ampersand.Misc.Explain
 import Data.Maybe
 import Data.List(nub)
 

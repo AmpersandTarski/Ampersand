@@ -1,12 +1,12 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
 {-# LANGUAGE FlexibleInstances #-} 
-module Database.Design.Ampersand.Output.ToJSON.Views 
+module Ampersand.Output.ToJSON.Views 
     (Views)
 where
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree 
-import Database.Design.Ampersand.Output.ToJSON.Concepts 
+import Ampersand.Output.ToJSON.JSONutils 
+import Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.Output.ToJSON.Concepts 
 
 data Views = Views [View] deriving (Generic, Show)
 data View = View

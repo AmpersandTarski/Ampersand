@@ -1,13 +1,13 @@
-module Database.Design.Ampersand.FSpec.ToFSpec.ADL2Plug
+module Ampersand.FSpec.ToFSpec.ADL2Plug
   (makeGeneratedSqlPlugs
   ,typologies
   ,suitableAsKey)
 where
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.FSpec.FSpec
-import Database.Design.Ampersand.Misc
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics
+import Ampersand.Classes
+import Ampersand.FSpec.FSpec
+import Ampersand.Misc
 import Data.Maybe
 import Data.Char
 

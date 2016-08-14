@@ -1,13 +1,13 @@
-module Database.Design.Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrudObjectsForInterface, mkCrudInfo) where
+module Ampersand.FSpec.Crud (CrudInfo(..), showCrudInfo, getCrudObjectsForInterface, mkCrudInfo) where
 
 import Data.Function
 import Data.List
 import Data.Map (Map) 
 import qualified Data.Map as Map 
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Classes.ConceptStructure
-import Database.Design.Ampersand.Classes.Relational
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics
+import Ampersand.Classes.ConceptStructure
+import Ampersand.Classes.Relational
+import Ampersand.Core.AbstractSyntaxTree
 
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 

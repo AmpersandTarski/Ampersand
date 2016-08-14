@@ -1,8 +1,8 @@
 {-# LANGUAGE ScopedTypeVariables #-}
-module Database.Design.Ampersand.Output.ToPandoc.ChapterGlossary
+module Ampersand.Output.ToPandoc.ChapterGlossary
   (chpGlossary)
 where
-import Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.Output.ToPandoc.SharedAmongChapters
 
 chpGlossary :: Int -> FSpec ->  Blocks
 chpGlossary _ fSpec

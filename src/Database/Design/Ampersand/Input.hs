@@ -1,7 +1,7 @@
-module Database.Design.Ampersand.Input
-   ( module Database.Design.Ampersand.Input.ADL1.CtxError
-   , module Database.Design.Ampersand.Input.Parsing
+module Ampersand.Input
+   ( module Ampersand.Input.ADL1.CtxError
+   , module Ampersand.Input.Parsing
    ) where
-import Database.Design.Ampersand.Input.ADL1.CtxError (CtxError,Guarded(..),showErr)
-import Database.Design.Ampersand.Input.Parsing (parseADL,parseMeta,parseADL1pExpr,parseRule,parseCtx)
+import Ampersand.Input.ADL1.CtxError (CtxError,Guarded(..),showErr)
+import Ampersand.Input.Parsing (parseADL,parseMeta,parseADL1pExpr,parseRule,parseCtx)
          

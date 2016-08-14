@@ -1,5 +1,5 @@
 {-# LANGUAGE FlexibleContexts, MultiParamTypeClasses, MagicHash, FlexibleInstances #-}
-module Database.Design.Ampersand.Input.ADL1.ParsingLib(
+module Ampersand.Input.ADL1.ParsingLib(
     AmpParser, pIsThere, optList,
     -- Operators
     --TODO: Maybe we shouldn't export these here, but import in the parser directly
@@ -23,9 +23,9 @@ module Database.Design.Ampersand.Input.ADL1.ParsingLib(
 ) where
 
 import Control.Monad.Identity (Identity)
-import Database.Design.Ampersand.Input.ADL1.FilePos (Origin(..))
-import Database.Design.Ampersand.Input.ADL1.LexerToken
-import Database.Design.Ampersand.Input.ADL1.Lexer (lexer)
+import Ampersand.Input.ADL1.FilePos (Origin(..))
+import Ampersand.Input.ADL1.LexerToken
+import Ampersand.Input.ADL1.Lexer (lexer)
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
@@ -33,7 +33,7 @@ import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
 import Data.Time.Calendar
 import Data.Time.Clock
-import Database.Design.Ampersand.Basics (fatal)
+import Ampersand.Basics (fatal)
 import Data.Maybe
 import Data.Char(toLower)
 import Prelude hiding ((<$))

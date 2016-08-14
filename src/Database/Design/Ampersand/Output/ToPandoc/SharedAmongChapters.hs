@@ -1,19 +1,19 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
-module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
+module Ampersand.Output.ToPandoc.SharedAmongChapters
     ( module Text.Pandoc
     , module Text.Pandoc.Builder
     , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
     , math --
     , module Data.Monoid
-    , module Database.Design.Ampersand.Basics
-    , module Database.Design.Ampersand.FSpec
-    , module Database.Design.Ampersand.Misc
-    , module Database.Design.Ampersand.Core.AbstractSyntaxTree
-    , module Database.Design.Ampersand.ADL1
-    , module Database.Design.Ampersand.Output.PandocAux
-    , module Database.Design.Ampersand.Graphic.Graphics
-    , module Database.Design.Ampersand.Classes
+    , module Ampersand.Basics
+    , module Ampersand.FSpec
+    , module Ampersand.Misc
+    , module Ampersand.Core.AbstractSyntaxTree
+    , module Ampersand.ADL1
+    , module Ampersand.Output.PandocAux
+    , module Ampersand.Graphic.Graphics
+    , module Ampersand.Classes
     , Chapter(..)
     , chaptersInDoc
     , chptHeader
@@ -38,17 +38,17 @@ module Database.Design.Ampersand.Output.ToPandoc.SharedAmongChapters
     , localize
     , sortWith)
 where
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.Core.AbstractSyntaxTree hiding (Meta)
-import Database.Design.Ampersand.ADL1 hiding (Meta)
-import Database.Design.Ampersand.Classes
-import Database.Design.Ampersand.FSpec
+import Ampersand.Basics
+import Ampersand.Core.AbstractSyntaxTree hiding (Meta)
+import Ampersand.ADL1 hiding (Meta)
+import Ampersand.Classes
+import Ampersand.FSpec
 import Text.Pandoc
 import Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder
-import Database.Design.Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
-import Database.Design.Ampersand.Misc
-import Database.Design.Ampersand.Output.PandocAux
+import Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
+import Ampersand.Misc
+import Ampersand.Output.PandocAux
 import Data.List      --       (intercalate,partition)
 import Data.Monoid
 import Data.Maybe
@@ -56,8 +56,8 @@ import Data.Ord
 import qualified Data.Time.Format as DTF
 import System.FilePath
 import GHC.Exts(sortWith)
-import Database.Design.Ampersand.Graphic.Graphics
-import Database.Design.Ampersand.Classes()
+import Ampersand.Graphic.Graphics
+import Ampersand.Classes()
 
 data Chapter = Intro
              | SharedLang

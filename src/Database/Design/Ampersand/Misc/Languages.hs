@@ -1,5 +1,5 @@
 -- | This module does some string manipulation based on natural languages
-module Database.Design.Ampersand.Misc.Languages
+module Ampersand.Misc.Languages
          ( Lang(English,Dutch)
          , allLangs
          , plural
@@ -7,7 +7,7 @@ module Database.Design.Ampersand.Misc.Languages
               
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
-import Database.Design.Ampersand.Core.ParseTree      (Lang(..))
+import Ampersand.Core.ParseTree      (Lang(..))
 
 allLangs :: [Lang]
 allLangs = [Dutch,English] -- All supported natural languages in Ampersand

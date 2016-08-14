@@ -1,11 +1,11 @@
-module Database.Design.Ampersand.Graphic.ClassDiagram
+module Ampersand.Graphic.ClassDiagram
          (ClassDiag(..), Class(..), CdAttribute(..), Association(..),
           Aggregation(..), Generalization(..), Deleting(..), Method(..),
           Multiplicities(..) , MinValue(..), MaxValue(..)
            ) where
 import Data.List
-import Database.Design.Ampersand.Basics
-import Database.Design.Ampersand.FSpec --  hiding (Association,Box)
+import Ampersand.Basics
+import Ampersand.FSpec --  hiding (Association,Box)
 
 data ClassDiag = OOclassdiagram {cdName :: String
                                 ,classes :: [Class]           --

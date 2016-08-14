@@ -1,11 +1,11 @@
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE MultiParamTypeClasses #-} 
-module Database.Design.Ampersand.Output.ToJSON.Conjuncts 
+module Ampersand.Output.ToJSON.Conjuncts 
   (Conjuncts)
 where
-import Database.Design.Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
-import Database.Design.Ampersand.Output.ToJSON.JSONutils 
-import Database.Design.Ampersand.Core.AbstractSyntaxTree 
+import Ampersand.FSpec.ToFSpec.NormalForms (conjNF)
+import Ampersand.Output.ToJSON.JSONutils 
+import Ampersand.Core.AbstractSyntaxTree 
 
 data Conjuncts = Conjuncts [JSONConjunct] deriving (Generic, Show)
 data JSONConjunct = JSONConjunct

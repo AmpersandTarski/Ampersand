@@ -1,11 +1,11 @@
-module Database.Design.Ampersand.Classes.Relational
+module Ampersand.Classes.Relational
    (Relational(..)
    ) where
 
 import Data.Maybe
-import Database.Design.Ampersand.Core.AbstractSyntaxTree
-import Database.Design.Ampersand.ADL1.Expression
-import Database.Design.Ampersand.Basics
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.ADL1.Expression
+import Ampersand.Basics
 
 class Association r => Relational r where
     properties :: r -> [Prop]
