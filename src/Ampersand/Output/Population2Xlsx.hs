@@ -66,22 +66,27 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
            record2Cells :: [Maybe AAtomValue] -> [Cell]
            record2Cells = map record2Cell
            record2Cell :: Maybe AAtomValue -> Cell
-           record2Cell mVal = Cell Nothing (case mVal of
-                                             Nothing -> Nothing
-                                             Just aVal -> Just $
-                                                case aVal of
-                                                  AAVString{} -> CellText $ T.pack (aavstr aVal)
-                                                  AAVInteger _ int -> CellDouble (fromInteger int)
-                                                  AAVFloat _ x -> CellDouble x
-                                                  AAVBoolean _ b -> CellBool b
-                                                  AAVDate _ day -> (CellDouble . fromInteger) (diffDays (fromGregorian 1900 1 1) day)
-                                                  _ -> fatal 87 ( "Content found that cannot be converted to Excel (yet): "++show aVal) 
-                                           )  Nothing
+           record2Cell mVal = 
+              Cell { _cellStyle = Nothing
+                   , _cellValue = case mVal of
+                                    Nothing -> Nothing
+                                    Just aVal -> Just $
+                                      case aVal of
+                                        AAVString{} -> CellText $ T.pack (aavstr aVal)
+                                        AAVInteger _ int -> CellDouble (fromInteger int)
+                                        AAVFloat _ x -> CellDouble x
+                                        AAVBoolean _ b -> CellBool b
+                                        AAVDate _ day -> (CellDouble . fromInteger) (diffDays (fromGregorian 1900 1 1) day)
+                                        _ -> fatal 87 ( "Content found that cannot be converted to Excel (yet): "++show aVal) 
+                   , _cellComment = Nothing
+                   , _cellFormula = Nothing
+                   }
        toCell :: Maybe String -> Cell
        toCell mVal 
         = Cell { _cellStyle = Nothing
                , _cellValue = fmap (\x -> CellText . T.pack $ x) mVal
                , _cellComment = Nothing
+               , _cellFormula = Nothing
                }
        
 

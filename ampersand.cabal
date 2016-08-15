@@ -39,7 +39,7 @@ library
                      aeson-pretty == 0.7.*,
                      base == 4.8.*,
                      bytestring == 0.10.*,
-                     conduit == 1.2.6.*,
+                     conduit == 1.2.7.*,
                      conduit-extra == 1.1.13.*,
                      conduit-combinators == 1.0.4.*,
                      containers == 0.5.*,
@@ -66,7 +66,7 @@ library
                      wl-pprint == 1.2.*,
                      yaml == 0.8.18.*,
                      yaml-config == 0.4.*,
-                     xlsx == 0.2.3.*,
+                     xlsx == 0.2.4.*,
                      zlib == 0.6.*
 
   other-modules:
@@ -179,7 +179,7 @@ Test-Suite regression-test
   default-language:  Haskell2010
   ghc-options:       -rtsopts -Wall
   build-depends:     base == 4.8.*,
-                     conduit == 1.2.6.*,
+                     conduit == 1.2.7.*,
                      conduit-extra == 1.1.13.*,
                      conduit-combinators == 1.0.4.*,
                      yaml == 0.8.18.*,
@@ -250,7 +250,7 @@ Test-Suite ampersand-test
   ghc-options:       -fhpc -with-rtsopts=-M1536m -Wall
   build-depends:     base == 4.8.*,
                      bytestring == 0.10.*,
-                     conduit == 1.2.6.*,
+                     conduit == 1.2.7.*,
                      containers == 0.5.*,
                      data-default >=0.5 && <0.6,
                      directory == 1.2.*,
@@ -269,7 +269,7 @@ Test-Suite ampersand-test
                      transformers == 0.4.*,
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
-                     xlsx == 0.2.3.*,
+                     xlsx == 0.2.4.*,
                      yaml == 0.8.18.*,
                      yaml-config == 0.4.*,
                      zlib == 0.6.*

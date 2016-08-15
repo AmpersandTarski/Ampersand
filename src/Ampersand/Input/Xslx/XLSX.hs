@@ -16,6 +16,7 @@ import qualified Data.Map as M
 import Data.Maybe
 import Data.Char
 import Data.String
+import Data.Tuple
 import Ampersand.Prototype.StaticFiles_Generated
 
 parseXlsxFile :: Options 
@@ -76,7 +77,7 @@ toPops opts file x = map popForColumn (colNrs x)
        (src,trg) = case mTargetConceptName of
                   Just tCptName -> (if isFlipped then swap else id) (Just sourceConceptName, Just tCptName)
                   Nothing -> (Nothing,Nothing)
-          where swap (a,b) = (b,a)
+          
        popOrigin :: Origin
        popOrigin = originOfCell (relNamesRow, targetCol)
        conceptNamesRow = head . tail $ headerRowNrs x
@@ -119,9 +120,9 @@ toPops opts file x = map popForColumn (colNrs x)
                           ) of
                        (Just s,Just t) -> Just $ 
                                             (if isFlipped then map flp else id)
-                                                [mkPair origTrg a b
-                                                | a <- cellToAtomValue mSourceConceptDelimiter s origSrc
-                                                , b <- cellToAtomValue mTargetConceptDelimiter t origTrg
+                                                [mkPair origTrg s' t'
+                                                | s' <- cellToAtomValue mSourceConceptDelimiter s origSrc
+                                                , t' <- cellToAtomValue mTargetConceptDelimiter t origTrg
                                                 ]
                        _               -> Nothing
             where origSrc = XLSXLoc file (theSheetName x) (r,sourceCol)
