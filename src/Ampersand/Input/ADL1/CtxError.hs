@@ -20,7 +20,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkIncompatibleAtomValueError
   , mkTypeMismatchError
   , mkMultipleRootsError
-  , Guarded(..) -- ^ If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
+  , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   )
 -- SJC: I consider it ill practice to export any CtxError constructors
