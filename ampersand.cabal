@@ -27,12 +27,12 @@ executable ampersand
   hs-source-dirs:    app
   main-is:           Main.hs
   default-language:  Haskell2010
-  ghc-options:       -Wall -threaded -rtsopts -with-rtsopts=-N
+  ghc-options:       -rtsopts -Wall
   build-depends:     base == 4.8.*,
                      ampersand
 library
   hs-source-dirs:    src
-  ghc-options:       -Wall
+  ghc-options:       -rtsopts -Wall
   exposed-modules:   Ampersand
   default-language:  Haskell2010
   build-depends:     aeson == 0.11.*,
