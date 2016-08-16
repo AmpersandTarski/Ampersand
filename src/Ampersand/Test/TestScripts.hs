@@ -32,7 +32,9 @@ data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a d
 data DirData = DirData FilePath DirContent       -- path and content of a directory
 
 testAmpersandScripts :: IO ()
-testAmpersandScripts
+testAmpersandScripts = putStrLn "Testscripts of this kind are not available."
+testAmpersandScripts' :: IO ()
+testAmpersandScripts'
  = do 
     walk baseDir $$ myVisitor
  where
