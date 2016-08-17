@@ -45,7 +45,7 @@ generateBuildInfoHook pd  lbi uh bf =
     }
 
 buildInfoModuleName :: String
-buildInfoModuleName = "Database.Design.Ampersand.Basics.BuildInfo_Generated"
+buildInfoModuleName = "Ampersand.Basics.BuildInfo_Generated"
 
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion gitInfo time = unlines
@@ -118,7 +118,7 @@ warnNoCommitInfo =
 -}
 
 staticFileModuleName :: String
-staticFileModuleName = "Database.Design.Ampersand.Prototype.StaticFiles_Generated"
+staticFileModuleName = "Ampersand.Prototype.StaticFiles_Generated"
 
 generateStaticFileModule :: IO ()
 generateStaticFileModule =

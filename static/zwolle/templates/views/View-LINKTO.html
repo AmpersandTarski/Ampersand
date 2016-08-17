@@ -1,4 +1,4 @@
 $if(verbose)$<!-- View-LINKTO.html "$label$" ($name$) : $expAdl$ :: $source$ * $target$ -->
-$endif$<div ng-repeat="(key, row) in resource['$name$'] track by row['_id_']">
+$endif$$if(crudR)$<div ng-repeat="(key, row) in resource['$name$'] track by row['_id_']">
 	<my-nav-to-interfaces ifcs="row['_ifcs_']" resource="row['_id_']">{{row['_label_']}}</my-nav-to-interfaces>
-</div>
+</div>$else$<span><i>not readable</i></span>$endif$

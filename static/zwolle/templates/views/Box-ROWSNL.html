@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Box-ROWSNL.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
-$endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, resource) in resource['$name$']" $if(isRoot)$ng-init="patchResource = resource" ng-class="{'panel-default' : resource['_status_']['default'], 'panel-warning' : resource['_status_']['warning'], 'panel-danger' : resource['_status_']['danger'], 'panel-success' : resource['_status_']['success']}"$endif$>$if(isRoot)$
+$endif$$if(crudR)$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, resource) in resource['$name$']" $if(isRoot)$ng-init="patchResource = resource" ng-class="{'panel-default' : resource['_status_']['default'], 'panel-warning' : resource['_status_']['warning'], 'panel-danger' : resource['_status_']['danger'], 'panel-success' : resource['_status_']['success']}"$endif$>$if(isRoot)$
 	<div class="panel-heading" ng-init="parent = resource">
 		<div class="pull-right panel-heading-options">
 			<button type="button" class="btn btn-sm btn-warning" ng-if="resource['_showButtons_']['save']" ng-click="saveResource(resource, 'promise', true)">Save</button>
@@ -22,4 +22,4 @@ $endif$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, 
 			</div>
 		</div>}$
 	$if(isRoot)$</div>
-$endif$</div>
+$endif$</div>$else$<span><i>not readable</i></span>$endif$

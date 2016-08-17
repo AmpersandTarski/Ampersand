@@ -233,8 +233,8 @@ $app->get('/admin/report/interfaces', function () use ($app){
     }
     
     $content = array_map(function(InterfaceObject $ifc){
-        return array( 'label' => $ifc->label
-                    , 'path' => $ifc->path
+        return array( 'path' => $ifc->path
+                    , 'label' => $ifc->label
                     , 'crudC' => $ifc->crudC
                     , 'crudR' => $ifc->crudR
                     , 'crudU' => $ifc->crudU
@@ -245,6 +245,9 @@ $app->get('/admin/report/interfaces', function () use ($app){
                     , 'relation' => $ifc->relation->signature
                     , 'flipped' => $ifc->relationIsFlipped
                     , 'ref' => $ifc->refInterfaceId
+                    , 'root' => $ifc->isRoot()
+                    , 'public' => $ifc->isPublic()
+                    , 'roles' => implode(',', $ifc->ifcRoleNames)
                 );
         
     }, $arr);
