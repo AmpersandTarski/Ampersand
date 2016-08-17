@@ -13,7 +13,6 @@ import Data.Hashable (hash) -- a not good enouqh function, but used for the time
 import Data.Maybe
 import Data.Typeable
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.FSpecAux
 import Ampersand.FSpec.Motivations
 import Ampersand.Basics
 import Ampersand.Misc
@@ -173,19 +172,11 @@ instance MetaPopulations A_Concept where
      PlainConcept{} ->
       [ Pop "concs" "Context" "Concept" [Sur,Inj]
              [(dirtyId ctx ctx, dirtyId ctx cpt)]
---      , Pop "conceptColumn" "Concept" "SqlAttribute" [Sur,Inj]
---             [(dirtyId ctx cpt, dirtyId ctx att) | att <- tablesAndAttributes]
---      , Pop "cptdf" "Concept" "ConceptDefinition" [Sur,Inj]
---             [(dirtyId ctx cpt,(show.showADL) cdef) | cdef <- conceptDefs  fSpec, name cdef == name cpt]
---      , Pop "cptpurpose" "Concept" "Purpose" []
---             [(dirtyId ctx cpt,(show.showADL) x) | lang <- allLangs, x <- fromMaybe [] (purposeOf fSpec lang cpt) ]
       ]
      ONE -> 
       [ ]
   where
     ctx = originalContext fSpec
-    largerConcs = largerConcepts (vgens fSpec) cpt++[cpt]
-    tablesAndAttributes = nub . concatMap (lookupCpt fSpec) $ largerConcs
 
 instance MetaPopulations Conjunct where
   metaPops fSpec conj =
@@ -218,7 +209,7 @@ instance MetaPopulations PlugInfo where
     ctx = originalContext fSpec
 
 instance MetaPopulations PlugSQL where
-  metaPops fSpec plug = []
+  metaPops _ _ = []
 {-    case plug of 
        TblSQL{} ->
          [ Pop "rootConcept" "TblSQL" "Concept" []
@@ -233,7 +224,7 @@ instance MetaPopulations PlugSQL where
 -}
 
 instance MetaPopulations (PlugSQL,SqlAttribute) where
-  metaPops _ (plug,att) = []
+  metaPops _ (_,_) = []
 {-      [ Pop "table" "SqlAttribute" "SQLPlug" []
                  [(dirtyId ctx (plug,att), dirtyId ctx plug) ]
       , Pop "concept" "SqlAttribute" "Concept" []
@@ -338,10 +329,6 @@ instance MetaPopulations Declaration where
              [(dirtyId ctx dcl,dirtyId ctx ctx)]
       , Pop "name" "Relation" "Name" [Uni,Tot]
              [(dirtyId ctx dcl, (show.name) dcl)]
---      , Pop "srcCol" "Relation" "SqlAttribute" []
---             [(dirtyId ctx dcl,dirtyId ctx (table,srcCol))]
---      , Pop "tgtCol" "Relation" "SqlAttribute" []
---             [(dirtyId ctx dcl,dirtyId ctx (table,tgtCol))]
       , Pop "source" "Relation" "Concept" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx (source dcl))]
       , Pop "target" "Relation" "Concept" [Uni,Tot]
@@ -352,7 +339,6 @@ instance MetaPopulations Declaration where
    metaPops fSpec (sign dcl)
    where
     ctx = originalContext fSpec
-    (table,srcCol,tgtCol) = getDeclarationTableInfo fSpec dcl  -- type: (PlugSQL,SqlAttribute,SqlAttribute)
 
 instance MetaPopulations A_Pair where
  metaPops fSpec pair =
@@ -405,10 +391,8 @@ instance MetaPopulations Expression where
                             ,Pop "userTrg"  (show "V") "Concept"  [Uni,Tot]
                               [(dirtyId ctx expr,dirtyId ctx (target sgn))]
                             ]
-            (EMp1 v c)   -> [ Pop "singleton" "Singleton" "AtomValue" [Uni,Tot]
+            (EMp1 v _)   -> [ Pop "singleton" "Singleton" "AtomValue" [Uni,Tot]
                               [(dirtyId ctx expr,showADL v)]
-                            --,Pop "pop" "Atom" "Concept"
-                              --    [(dirtyId ctx (c,v),dirtyId ctx c)]
                             ]
        ) 
   where
@@ -522,8 +506,10 @@ instance ShowADL Pop where
           prepend str = "-- " ++ str
 
 popNameSignature :: Pop -> String
-popNameSignature pop@Pop{} = popName pop++" ["++popSource pop++" * "++popTarget pop++"]"
-popNameSignature pop@Comment{} = fatal 503 "Must not call popName on a Comment-combinator."
+popNameSignature pop =
+   case pop of
+     Pop{}     -> popName pop++" ["++popSource pop++" * "++popTarget pop++"]"
+     Comment{} -> fatal 503 "Must not call popName on a Comment-combinator."
 
 showRelsFromPops :: [Pop] -> String
 showRelsFromPops pops
@@ -542,12 +528,12 @@ instance AdlId Atom
 instance AdlId ConceptDef
 instance AdlId Declaration
   where dirtyId ctx r
-         = case Map.lookup r (declMap' ctx) of
+         = case Map.lookup r (declMap) of
             Nothing -> fatal 546 ("no relation known as: "++showUnique r)
             Just i  -> show (show i)
           where
-           declMap' :: A_Context -> Map.Map Declaration Int
-           declMap' ctx = Map.fromList (zip (relsDefdIn ctx++[ Isn c | c<-concs ctx]) [1..])
+           declMap :: Map.Map Declaration Int
+           declMap = Map.fromList (zip (relsDefdIn ctx++[ Isn c | c<-concs ctx]) [1..])
 instance AdlId Prop
 instance AdlId Expression
   where dirtyId _ = show . show . hash . camelCase . uniqueShow False  -- Need to hash, because otherwise too long (>255)
@@ -609,20 +595,4 @@ class MetaPopulations a where
  metaPops :: FSpec -> a -> [Pop]
 
 
---------- Below here are some functions copied from Generate.hs TODO: Clean up.
--- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
--- two abstractions to guarantee the same implementation.
-isFrontEndInvariant :: Rule -> Bool
-isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
 
-isFrontEndSignal :: Rule -> Bool
-isFrontEndSignal = isSignal
-
--- NOTE that results from filterFrontEndInvConjuncts and filterFrontEndSigConjuncts may overlap (conjunct appearing in both invariants and signals)
--- and that because of extra condition in isFrontEndInvariant (not (ruleIsInvariantUniOrInj r)), some parameter conjuncts may not be returned
--- as either inv or sig conjuncts (i.e. conjuncts that appear only in uni or inj rules) 
-filterFrontEndInvConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndInvConjuncts = filter (any isFrontEndInvariant . rc_orgRules)
-
-filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndSigConjuncts = filter (any isFrontEndSignal . rc_orgRules)
