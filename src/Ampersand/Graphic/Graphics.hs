@@ -18,7 +18,7 @@ import System.FilePath hiding (addExtension)
 import System.Directory
 import System.Process (callCommand)
 import Control.Exception (catch, IOException)
-
+import Prelude hiding (writeFile)
 
 data PictureReq = PTClassDiagram
                 | PTRelsUsedInPat Pattern
@@ -257,6 +257,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
 writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
+      [dumpShow ]++
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
       [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
       [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
@@ -264,6 +265,11 @@ writePicture opts pict
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
+     dumpShow :: IO()
+     dumpShow = -- This has been hacked in in order to diagnose the issue at: https://github.com/ivan-m/graphviz/issues/13
+       do let path = (imagePath opts) pict -<.> "txt"
+          writeFile path (show . dotSource $ pict)
+          verboseLn opts $ "Dumpfile written: "++path 
      writeDot :: GraphvizOutput -> IO ()
      writeDot = writeDotPostProcess Nothing
      writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor
