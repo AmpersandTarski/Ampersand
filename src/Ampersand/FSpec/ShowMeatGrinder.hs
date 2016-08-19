@@ -61,12 +61,29 @@ with the A-structure. But why?
 instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
+    ( metaPops fSpec ctx
+    ++[ Pop "dbName" "Context" "DatabaseName" [Uni,Tot] [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)] ]
+    ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
+    ++   concatMap extract (allConjuncts fSpec)
+    ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
+    ++   concatMap extract (sortByName (plugInfos fSpec))
+    ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) fSpec++")"]
+    ++   concatMap (extract . fst) (fRoles fSpec)
+    )
+  where 
+    ctx = originalContext fSpec
+    extract :: MetaPopulations a => a -> [Pop]
+    extract = metaPops fSpec
+    sortByName :: Named a => [a] -> [a]
+    sortByName = sortBy (comparing name)
+
+instance MetaPopulations A_Context where
+ metaPops fSpec ctx =
+   filter (not.nullContent)
     (
-    [Comment  " ", Comment $ "PATTERN Context: ('"++name fSpec++"')"]
+    [Comment  " ", Comment $ "PATTERN Context: ('"++name ctx++"')"]
   ++[ Pop "versionInfo" "Context"  "AmpersandVersion" [Uni,Tot]
            [(dirtyId ctx ctx, show ampersandVersionStr)]
-    , Pop "dbName" "Context" "DatabaseName" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)]
     , Pop "name" "Context" "Identifier" [Uni,Tot]
            [(dirtyId ctx ctx, (show.ctxnm) ctx)]
     , Pop "location" "Context" "Location" [Uni,Tot]
@@ -75,48 +92,41 @@ instance MetaPopulations FSpec where
            [(dirtyId ctx ctx, (show.show.ctxlang) ctx)]
     , Pop "markup" "Context" "Markup" [Uni,Tot]
            [(dirtyId ctx ctx, (show.show.ctxmarkup) ctx)]
-    , Pop "context" "Pattern" "Context" [Uni]                      -- The context in which a pattern is defined.
+    , Pop "context" "Pattern" "Context" [Uni]                        -- The context in which a pattern is defined.
            [(dirtyId ctx p, dirtyId ctx ctx) | p<-ctxpats ctx]
-    , Pop "context" "Rule" "Context" [Uni]                         -- The context in which a rule is defined.
+    , Pop "context" "Rule" "Context" [Uni]                           -- The context in which a rule is defined.
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxrs ctx]
-    , Pop "context" "Relation" "Context" [Uni]                         -- The context in which a rule is defined.
+    , Pop "ctxds" "Relation" "Context" [Uni]                         -- The context in which a relation is defined, outside patterns.
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxds ctx]
-    , Pop "context" "Population" "Context" [Uni]                         -- The context in which a rule is defined.
+    , Pop "relDefdIn" "Relation" "Context" [Uni]                     -- The context in which a relation is defined.
+           [(dirtyId ctx r, dirtyId ctx ctx) | r<-relsDefdIn ctx]
+    , Pop "context" "Population" "Context" [Uni]                     -- The context in which a population is defined.
            [(dirtyId ctx pop, dirtyId ctx ctx) | pop<-ctxpopus ctx]
-    , Pop "context" "Concept" "Context" [Uni]                         -- The context in which a rule is defined.
+    , Pop "context" "Concept" "Context" [Uni]                        -- The context in which a concept is defined.
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxcds ctx]
-    , Pop "context" "IdentityDef" "Context" [Uni]                         -- The context in which a rule is defined.
+    , Pop "context" "IdentityDef" "Context" [Uni]                    -- The context in which an identityDef is defined.
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxks ctx]
     , Pop "allRoleRules" "Context" "Role" [Tot]
            [(dirtyId ctx ctx, show "SystemAdmin")]
     , Pop "name"   "Role" "RoleName" [Uni,Tot]
            [(show "SystemAdmin", show "SystemAdmin")]
     ]
-  ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.vpatterns) fSpec++")"]
-  ++   concatMap extract (sortByName (vpatterns fSpec))
-  ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.vgens) fSpec++")"]
-  ++   concatMap extract (vgens fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) fSpec++")"]
-  ++   concatMap extract (sortByName (concs fSpec))
-  ++[ Comment " ", Comment $ "PATTERN Signature: (count="++(show.length.allSigns) fSpec++")"]
-  ++   concatMap extract (allSigns fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.vrels) fSpec++")"]
-  ++   concatMap extract (vrels fSpec ++ [ Isn c | c<-concs fSpec])
-  ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.allExprs) fSpec++")"]
-  ++   concatMap extract (allExprs  fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.fallRules) fSpec++")"]
-  ++   concatMap extract (sortByName (fallRules fSpec))
-  ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
-  ++   concatMap extract (allConjuncts fSpec)
-  ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
-  ++   concatMap extract (sortByName (plugInfos fSpec))
-  ++[ Comment " ", Comment $ "PATTERN Interfaces: (count="++(show.length.interfaceS) fSpec++")"]
-  ++   concatMap extract (sortByName (interfaceS fSpec))
-  ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) fSpec++")"]
-  ++   concatMap (extract . fst) (fRoles fSpec)
+  ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.patterns) ctx++")"]
+  ++   (concatMap extract . sortByName . patterns) ctx
+  ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.gens) ctx++")"]
+  ++   concatMap extract (gens ctx)
+  ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) ctx++")"]
+  ++   (concatMap extract . sortByName . concs) ctx
+  ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.relsDefdIn) ctx++")"]
+  ++   concatMap extract (relsDefdIn ctx ++ [ Isn c | c<-concs (relsDefdIn ctx)])
+  ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.expressionsIn) ctx++")"]
+  ++   concatMap extract (expressionsIn ctx)
+  ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.allRules) ctx++")"]
+  ++   (concatMap extract . sortByName . allRules) ctx
+  ++[ Comment " ", Comment $ "PATTERN Interfaces: (count="++(show.length.ctxifcs) ctx++")"]
+  ++   (concatMap extract . sortByName . ctxifcs) ctx
   )
   where 
-    ctx = originalContext fSpec
     extract :: MetaPopulations a => a -> [Pop]
     extract = metaPops fSpec
     sortByName :: Named a => [a] -> [a]
@@ -133,8 +143,6 @@ instance MetaPopulations Pattern where
 --          [(dirtyId pat,dirtyId x) | x <- ptcds pat]
    , Pop "rules"   "Pattern" "Rule" []
           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptrls pat]
-   , Pop "relsDefdIn"   "Context" "Relation" [Sur,Inj]
-          [(dirtyId ctx ctx,dirtyId ctx x) | x <- (relsDefdIn.originalContext) fSpec]
    , Pop "relsDefdIn"   "Pattern" "Relation" [Sur,Inj]
           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
    , Pop "purpose"   "Pattern" "Purpose" [Uni,Tot]

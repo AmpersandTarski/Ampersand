@@ -20,8 +20,10 @@ PATTERN Context
     MEANING "If a context uses a pattern, everything declared in that pattern is valid within the context."
     RELATION context[Concept*Context] [UNI] -- comes from concs, which is defined in FSpec. This contains all concepts declared inside a context but outside the patterns it contains.
     MEANING "If a concept declaration is used in a context, that concept exists in that context. This is registered in the system."
-    RELATION context[Relation*Context] [UNI] -- comes from ctxds, which is defined in FSpec. This contains all relations declared inside a context but outside the patterns it contains.
-    MEANING "If a relation declaration is used in a context, that relation exists in that context. This is registered in the system."
+    RELATION ctxds[Relation*Context] [UNI] -- comes from ctxds, which is defined in A_Context. This contains all relations declared inside a context but outside the patterns it contains.
+    MEANING "Any relation declared anywhere in a context outside the scope of a pattern is registered in the system."
+    RELATION relsDefdIn[Relation*Context] [UNI] -- comes from relsDefdIn, which is defined in FSpec. This contains all relations declared inside a context including the patterns it contains.
+    MEANING "Any relation declared anywhere in a context is registered in the system."
     RELATION context[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
     MEANING "If a rule is declared in a context, that rule exists in that context. This is registered in the system."
     RELATION context[Pattern*Context] [UNI]  -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
@@ -61,10 +63,10 @@ PATTERN Validity
      - all relation defined in patterns within the context
      - all relation defined in patterns used by the context
     -}
-    RULE validRelations : relsDefdIn~;(context\/uses~) \/ context |- valid[Relation*Context]
+    RULE validRelations : relsDefdIn[Pattern*Relation]~;(context\/uses~) \/ ctxds |- valid[Relation*Context]
     MEANING "Every relation defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
     VIOLATION (TXT "{EX} InsPair;valid;Relation;", SRC I, TXT ";Context;", TGT I)
-    RULE AllValidRelations : valid[Relation*Context] |- relsDefdIn~;(context\/uses~) \/ context[Relation*Context]
+    RULE AllValidRelations : valid[Relation*Context] |- relsDefdIn[Pattern*Relation]~;(context\/uses~) \/ ctxds
     VIOLATION (TXT "Relation ", SRC name, TXT " is not valid in context ", TGT I)
 
     RELATION valid[Rule*Context]

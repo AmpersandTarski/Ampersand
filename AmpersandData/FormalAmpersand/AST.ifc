@@ -21,7 +21,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
              )  INTERFACE GenTree 
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
-  , "Relations" : context[Relation*Context]~  LINKTO INTERFACE "Relation"
+  , "Relations" : relsDefdIn[Relation*Context]~  LINKTO INTERFACE "Relation"
   , "Roles" : allRoles[Context*Role]
   , "allConjuncts" : allConjuncts[Context*Conjunct]
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
@@ -142,7 +142,7 @@ BOX [ "gens~" : gens[Context*Gen]~
 INTERFACE Relation FOR Ampersand : I[Relation]
 BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "affectedSigConjunctIds" : affectedSigConjunctIds[Relation*Conjunct]
-	, "context" : context[Relation*Context]
+	, "defined in context" : relsDefdIn[Relation*Context]
 	, "decmean" : decmean[Relation*Meaning]
 	, "decprL" : decprL[Relation*String]
 	, "decprM" : decprM[Relation*String]
@@ -158,7 +158,7 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
 	, "bind~" : bind[BindedRelation*Relation]~
 	, "declared in pattern" : relsDefdIn[Pattern*Relation]~
-	, "declared in context (outside a pattern)" : context[Relation*Context]
+	, "declared in context (outside a pattern)" : ctxds[Relation*Context]
 	, "in~" : in[Pair*Relation]~
 	      BOX <SHCOLS>
 	        [ l : l
