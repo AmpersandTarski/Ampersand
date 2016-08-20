@@ -1,10 +1,10 @@
 module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
-import Prelude hiding (exp)
+import Prelude hiding (exp,putStrLn,putStr)
 import Data.List
 import Control.Monad
-import System.Exit
-import System.IO hiding (hPutStr,hGetContents)
+import System.IO (hSetBuffering,stdout,BufferMode(NoBuffering))
+import Ampersand.Basics
 import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
@@ -20,9 +20,7 @@ tempDbName = "ampersand_temporaryvalidationdb"
 validateRulesSQL :: FSpec -> IO Bool
 validateRulesSQL fSpec =
  do { when (any (not.isSignal.fst) (allViolations fSpec))
-        (do { putStrLn "The population would violate invariants. Could not generate your database."
-            ; exitWith $ ExitFailure 10
-                 })
+           (exitWith ViolationsInDatabase)
     ; hSetBuffering stdout NoBuffering
 
     ; putStrLn "Initializing temporary database"

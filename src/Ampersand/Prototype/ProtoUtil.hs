@@ -20,7 +20,7 @@ import System.FilePath
 import Ampersand.Basics
 import Ampersand.FSpec
 import Ampersand.Misc.Options
-import System.Exit --(ExitCode, exitFailure, exitSuccess)
+import qualified System.Exit as SE (ExitCode(..))
 import System.Process
 
 writePrototypeFile :: FSpec -> String -> String -> IO ()
@@ -181,10 +181,10 @@ installComposerLibs fSpec =
   do verbose (getOpts fSpec) "  Trying to download and install Composer libraries..."
      (exit_code, stdout, stderr) <- readCreateProcessWithExitCode myProc ""
      case exit_code of
-       ExitSuccess   -> do verboseLn (getOpts fSpec) $
-                             " Succeeded." <> (if null stdout then " (stdout is empty)" else "") 
-                           verboseLn (getOpts fSpec) stdout
-       ExitFailure _ -> failOutput (exit_code, stdout, stderr)
+       SE.ExitSuccess   -> do verboseLn (getOpts fSpec) $
+                               " Succeeded." <> (if null stdout then " (stdout is empty)" else "") 
+                              verboseLn (getOpts fSpec) stdout
+       SE.ExitFailure _ -> failOutput (exit_code, stdout, stderr)
 
    where
      myProc :: CreateProcess
@@ -201,10 +201,14 @@ installComposerLibs fSpec =
        }
      composerTargetPath = dirPrototype (getOpts fSpec)
      failOutput (exit_code, stdout, stderr) =
-        do putStrLn $ "*Failed!*.\n Exit code: "<>show exit_code<>". "
-           putStrLn stdout
-           putStrLn stderr
-           putStrLn "Possible solutions to fix your prototype:"
-           putStrLn "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
-           putStrLn "  2) Make sure you have an active internet connection."
-           putStrLn "  3) If you previously built another Ampersand prototype succesfully, you could try to copy the lib directory from it into you prototype manually."
+        exitWith . FailedToInstallComposer  $
+            [ "*Failed!*."
+            , "Exit code of trying to install Composer: "<>show exit_code<>". "
+            ] ++ 
+            lines stdout ++
+            lines stderr ++
+            [ "Possible solutions to fix your prototype:"
+            , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
+            , "  2) Make sure you have an active internet connection."
+            , "  3) If you previously built another Ampersand prototype succesfully, you could try to copy the lib directory from it into you prototype manually."
+            ]

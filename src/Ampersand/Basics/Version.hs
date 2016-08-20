@@ -4,7 +4,7 @@ module Ampersand.Basics.Version (ampersandVersionStr, ampersandVersionWithoutBui
 import GHC.Stack
 import GHC.SrcLoc
 import Ampersand.Basics.BuildInfo_Generated
-import Ampersand.Basics.Exit(fatalExit)
+import Ampersand.Basics.Exit
 maxLen :: Int
 maxLen = 1500 -- This trick is to make sure the process is terminated after the error.
                   -- If the string is too long, it seems that the sentinel `hangs`.
@@ -14,7 +14,7 @@ maxLen = 1500 -- This trick is to make sure the process is terminated after the 
 --   It throws an error, showing a (module)name and a number. This makes debugging pretty easy.
 fatal :: (?loc :: CallStack) => Int -> String -> a
 fatal lineNr msg
- = fatalExit . lines $
+ = exitWith . Fatal . lines $
         ("!"++ showCS (tail (getCallStack ?loc)) ++
           "             "++ampersandVersionWithoutBuildTimeStr++"\n"++
           "             error nr: "++show lineNr++"\n  "++

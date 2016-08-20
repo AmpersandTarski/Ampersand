@@ -39,7 +39,7 @@ import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.Char8 as BC
 import System.Directory
 import System.Environment
-import System.Exit         (ExitCode(ExitSuccess,ExitFailure))
+import qualified System.Exit as SE (ExitCode(..)) -- These are not considered Ampersand exit codes, but from Pandoc
 import System.FilePath  -- (combine,addExtension,replaceExtension)
 import System.IO (stderr, stdout)
 import Text.Pandoc
@@ -664,11 +664,11 @@ makePDF writer wOpts pandoc fSpec = do
                        else 2  -- 1 run won't give you PDF bookmarks
       (exit, log', mbPdf) <- runTeXProgram 1 numruns tmpDir
       case (exit, mbPdf) of
-           (ExitFailure _, _)      -> do
+           (SE.ExitFailure _, _)      -> do
               let logmsg = extractMsg log'
               return $ Left logmsg
-           (ExitSuccess, Nothing)  -> return $ Left ""
-           (ExitSuccess, Just pdf) -> return $ Right pdf
+           (SE.ExitSuccess, Nothing)  -> return $ Left ""
+           (SE.ExitSuccess, Just pdf) -> return $ Right pdf
 
 -- running tex programs
 
@@ -676,7 +676,7 @@ makePDF writer wOpts pandoc fSpec = do
 -- contents of stdout, contents of produced PDF if any).  Rerun
 -- a fixed number of times to resolve references.
     runTeXProgram :: Int -> Int -> FilePath
-                  -> IO (ExitCode, B.ByteString, Maybe B.ByteString)
+                  -> IO (SE.ExitCode, B.ByteString, Maybe B.ByteString)
     runTeXProgram runNumber numRuns tmpDir = do
         let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
         exists <- doesFileExist file
