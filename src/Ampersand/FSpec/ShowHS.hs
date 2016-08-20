@@ -261,7 +261,7 @@ instance ShowHS FSpec where
         , wrap ", vviews        = " indentA (const showHSName) (vviews fSpec)
         , wrap ", vgens         = " indentA (showHS opts)    (vgens fSpec)
         , wrap ", fsisa         = " indentA (const showHSName) (fsisa fSpec)
-        , wrap ", allConjuncts        = " indentA (const showHSName) (allConjuncts fSpec)
+        , wrap ", allConjuncts  = " indentA (const showHSName) (allConjuncts fSpec)
         , wrap ", vquads        = " indentA (const showHSName) (vquads fSpec)
         , wrap ", vEcas         = " indentA (const showHSName) (vEcas fSpec)
         ,      ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)

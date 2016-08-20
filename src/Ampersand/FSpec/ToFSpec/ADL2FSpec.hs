@@ -73,7 +73,7 @@ makeFSpec opts context
               , grules       = filter (not.isUserDefined) allrules
               , invariants   = filter (not.isSignal)      allrules
               , signals      = filter      isSignal       allrules
-              , allConjuncts       = allConjs
+              , allConjuncts = allConjs
               , allConjsPerRule = fSpecAllConjsPerRule
               , allConjsPerDecl = fSpecAllConjsPerDecl
               , allConjsPerConcept = fSpecAllConjsPerConcept

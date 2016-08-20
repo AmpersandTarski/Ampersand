@@ -67,7 +67,7 @@ combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
 
 -- Convert list of a's with associated b's to a list of b's with associated a's.
 -- Each b in the result is unique, and so is each a per b, eg.: 
--- converse [(1,[2,2,3]),(1,[3,4]),(2,[4,5])]  == [(2,[1]),(3,[1]),(4,[1,2]),(5,[2])]
+-- converse [("foo",[2,2,3]),("foo",[3,4]),("bar",[4,5])]  == [(2,["foo"]),(3,["foo"]),(4,["foo","bar"]),(5,["bar"])]
 converse :: forall a b . (Ord a, Ord b) => [(a, [b])] -> [(b, [a])]
 converse aBss = let asPerB ::(Ord a, Ord b) =>  Map b (Set a)
                     asPerB = foldl (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] $ Map.empty
