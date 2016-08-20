@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * [Issue #483](https://github.com/AmpersandTarski/Ampersand/issues/483) Introduction of proper way to produce exit codes of Ampersand
   * [Issue #502](https://github.com/AmpersandTarski/Ampersand/issues/502) More stable way to generate .pdf file (LaTeX output)
   * [Issue #72](https://github.com/AmpersandTarski/Ampersand/issues/502) Symmetry of relations will be checked by a generated application
   * [Issue #256](https://github.com/AmpersandTarski/Ampersand/issues/502) Surjectivity of relations will be checked by a generated application
