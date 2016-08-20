@@ -24,7 +24,6 @@ import Data.List
 import qualified Data.Text.IO as Text
 import Data.Function (on)
 
-import System.Exit
 import Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import Ampersand.Core.AbstractSyntaxTree
@@ -130,7 +129,7 @@ doValidateSQLTest :: FSpec -> IO ()
 doValidateSQLTest fSpec =
  do { verboseLn (getOpts fSpec) "Validating SQL expressions..."
     ; isValidRule <- validateRulesSQL fSpec
-    ; unless isValidRule (exitWith (ExitFailure 30))
+    ; unless isValidRule (exitWith InvalidSQLExpression)
     }
 
 doGenProto :: FSpec -> IO ()
@@ -148,9 +147,7 @@ doGenProto fSpec =
               ; verboseLn (getOpts fSpec) $ "Prototype files have been written to " ++ dirPrototype (getOpts fSpec)
               ; installComposerLibs fSpec
               }
-      else do { Prelude.putStrLn $ "\nERROR: No prototype generated because of rule violations."
-                                 ++"\n(Compile with --dev to generate a prototype regardless of violations)"
-              ; exitWith $ ExitFailure 40
+      else do { exitWith NoPrototypeBecauseOfRuleViolations
               }
     ; case testRule (getOpts fSpec) of
              Just ruleName -> ruleTest ruleName

@@ -1,8 +1,7 @@
 module Main where
 
 import Data.List
-import System.Exit
-import Prelude hiding (putStr,putStrLn)
+import Prelude hiding (putStr)
 import Ampersand
 
 main :: IO ()
@@ -12,8 +11,7 @@ main =
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
     else do gFSpec <- createFSpec opts
             case gFSpec of
-              Errors err    -> do mapM_ putStrLn (intersperse  (replicate 30 '=') (map showErr err))
-                                  exitWith $ ExitFailure 10
+              Errors err    -> exitWith . NoValidFSpec . intersperse  (replicate 30 '=') . map showErr $ err
               Checked fSpec -> generateAmpersandOutput fSpec
                                   
 

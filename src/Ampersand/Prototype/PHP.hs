@@ -260,7 +260,7 @@ executePHP mWorkingDir phpPath phpArgs =
               ; seq (length errStr) $ return ()
               ; hClose stdErrH
               ; unless (null errStr) $
-                  putStrLn $ "Error during PHP execution:\n" <> errStr
+                  exitWith . PHPExecutionFailed . lines $ "Error during PHP execution:\n" <> errStr
               ; outputStr' <- hGetContents stdOutH --and fetch the results from the output pipe
               ; seq (length outputStr') $ return ()
               ; hClose stdOutH
