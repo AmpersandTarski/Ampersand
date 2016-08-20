@@ -1299,8 +1299,9 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM _      (ECps (l,EUni (q,s))) _                   = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
   nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")
   nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
-  nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
-  nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
+-- Issues #345 and #256: The following two rules may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
+--  nM _      x@(ECps (l@EFlp{},r)) _ | flp l==r && isInj l && isTot l  = (EDcI (source x), ["r~;r=I because r is univalent and surjective"], "<=>")
+--  nM _      x@(ECps (l,       r)) _ | l==flp r && isInj l && isTot l  = (EDcI (source x), ["r;r~=I because r is injective and total"], "<=>")
   nM posCpl (ECps (l,r))           rs                 = (t .:. f, steps++steps', fEqu [equ',equ''])
                                                           where (t,steps, equ')  = nM posCpl l []
                                                                 (f,steps',equ'') = nM posCpl r (l:rs)
@@ -1480,7 +1481,8 @@ Until the new normalizer works, we will have to work with this one. So I have in
             absor0' = [t' | t'<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
             absor1  = [(t', exprIsc2list l>-[t']) | t'<-exprIsc2list l, ECpl f'<-rs++exprUni2list r, t'==f']++[(e, exprIsc2list l>-[e]) | e@(ECpl t')<-exprIsc2list l, f'<-rs++exprUni2list r, t'==f']
             absor1' = [(t', exprIsc2list r>-[t']) | t'<-exprIsc2list r, ECpl f'<-rs++exprUni2list l, t'==f']++[(e, exprIsc2list r>-[e]) | e@(ECpl t')<-exprIsc2list r, f'<-rs++exprUni2list l, t'==f']
-  nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
+-- Issue #72: The following rule may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
+--  nM _ (EFlp e) _ | isSym e =  (e,[shw e++" is symmetric"],"<=>")
   nM _ x _               = (x,[],"<=>")
 
 fEqu :: [String] -> String
