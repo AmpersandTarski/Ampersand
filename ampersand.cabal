@@ -82,6 +82,7 @@ library
                      Ampersand.Basics.Auxiliaries,
                      Ampersand.Basics.BuildInfo_Generated,
                      Ampersand.Basics.Collection,
+                     Ampersand.Basics.Exit,
                      Ampersand.Basics.String,
                      Ampersand.Basics.UTF8,
                      Ampersand.Basics.Unique,
