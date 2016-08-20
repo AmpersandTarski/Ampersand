@@ -10,7 +10,6 @@ module Ampersand.Core.AbstractSyntaxTree (
  , PairView(..)
  , PairViewSegment(..)
  , Rule(..)
- , ruleIsInvariantUniOrInj
  , RuleOrigin(..)
  , Declaration(..)
  , IdentityDef(..)
@@ -180,14 +179,6 @@ instance Named Rule where
   name   = rrnm
 instance Association Rule where
   sign   = rrtyp
-
--- When an invariant rule is univalent or injective, the way it is stored in a table does not allow the univalence or injectivity
--- to be broken. Hence, we need not check these rules in the prototype. (preventing breakage is the responsibility of the front-end)
-ruleIsInvariantUniOrInj :: Rule -> Bool
-ruleIsInvariantUniOrInj rule | not (isSignal rule), Just (p,_) <- rrdcl rule = p `elem` [Uni, Inj]
-                             | otherwise                                     = False
-                             -- NOTE: currently all rules coming from properties are invariants, so the not isSignal
-                             -- condition is unnecessary, but this will change in the future.
 
 data Conjunct = Cjct { rc_id ::         String -- string that identifies this conjunct ('id' rather than 'name', because
                                                -- this is an internal id that has no counterpart at the ADL level)

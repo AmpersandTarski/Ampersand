@@ -528,20 +528,3 @@ class MetaPopulations a where
  metaPops :: FSpec -> a -> [Pop]
 
 
---------- Below here are some functions copied from Generate.hs TODO: Clean up.
--- Because the signal/invariant condition appears both in generateConjuncts and generateInterface, we use
--- two abstractions to guarantee the same implementation.
-isFrontEndInvariant :: Rule -> Bool
-isFrontEndInvariant r = not (isSignal r) && not (ruleIsInvariantUniOrInj r)
-
-isFrontEndSignal :: Rule -> Bool
-isFrontEndSignal = isSignal
-
--- NOTE that results from filterFrontEndInvConjuncts and filterFrontEndSigConjuncts may overlap (conjunct appearing in both invariants and signals)
--- and that because of extra condition in isFrontEndInvariant (not (ruleIsInvariantUniOrInj r)), some parameter conjuncts may not be returned
--- as either inv or sig conjuncts (i.e. conjuncts that appear only in uni or inj rules) 
-filterFrontEndInvConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndInvConjuncts = filter (any isFrontEndInvariant . rc_orgRules)
-
-filterFrontEndSigConjuncts :: [Conjunct] -> [Conjunct]
-filterFrontEndSigConjuncts = filter (any isFrontEndSignal . rc_orgRules)
