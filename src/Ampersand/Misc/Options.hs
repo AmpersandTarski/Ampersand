@@ -113,15 +113,14 @@ getOptions =
       let startOptions :: Options
           startOptions =
                Options {genTime          = localTime
-                      , dirOutput        = fromMaybe "."       (DL.lookup envdirOutput    env)
+                      , dirOutput        = fromMaybe "."  (DL.lookup envdirOutput    env)
                       , outputfile       = fatal 83 "No monadic options available."
-                      , dirPrototype     = fromMaybe ("." </> addExtension (takeBaseName fName) ".proto")
-                                                     (DL.lookup envdirPrototype env) </> addExtension (takeBaseName fName) ".proto"
+                      , dirPrototype     = (fromMaybe "." (DL.lookup envdirPrototype env) ) </> takeBaseName fName <.> ".proto"
                       , dirInclude       = "include"
                       , dbName           = map toLower $ fromMaybe ("ampersand_"++takeBaseName fName) (DL.lookup envdbName env)
                       , dirExec          = takeDirectory exePath
-                      , preVersion       = fromMaybe ""        (DL.lookup "CCPreVersion"  env)
-                      , postVersion      = fromMaybe ""        (DL.lookup "CCPostVersion" env)
+                      , preVersion       = fromMaybe ""   (DL.lookup "CCPreVersion"  env)
+                      , postVersion      = fromMaybe ""   (DL.lookup "CCPostVersion" env)
                       , showVersion      = False
                       , showHelp         = False
                       , verboseP         = False
