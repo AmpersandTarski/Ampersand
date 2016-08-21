@@ -178,7 +178,9 @@ showPhpMaybeBool (Just b) = showPhpBool b
 
 installComposerLibs :: FSpec -> IO()
 installComposerLibs fSpec =
-  do verbose (getOpts fSpec) "  Trying to download and install Composer libraries..."
+  do curPath <- getCurrentDirectory
+     verboseLn (getOpts fSpec) $ "current directory: "++curPath
+     verbose (getOpts fSpec) "  Trying to download and install Composer libraries..."
      (exit_code, stdout, stderr) <- readCreateProcessWithExitCode myProc ""
      case exit_code of
        SE.ExitSuccess   -> do verboseLn (getOpts fSpec) $
@@ -190,7 +192,7 @@ installComposerLibs fSpec =
      myProc :: CreateProcess
      myProc = CreateProcess 
        { cmdspec = ShellCommand $ "composer install --prefer-dist --profile --working-dir="<>composerTargetPath
-       , cwd = Just composerTargetPath
+       , cwd = Nothing
        , env = Nothing
        , std_in = Inherit
        , std_out = Inherit
