@@ -202,11 +202,12 @@ installComposerLibs fSpec =
      composerTargetPath = dirPrototype (getOpts fSpec)
      failOutput (exit_code, stdout, stderr) =
         exitWith . FailedToInstallComposer  $
-            [ "*Failed!*."
+            [ "Failed!"
+            , "composerTargetPath: "++composerTargetPath
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
-            lines stdout ++
-            lines stderr ++
+            (if null stdout then "" else ["stdout:"]++lines stdout) ++
+            (if null stderr then "" else ["stderr:"]++lines stderr) ++
             [ "Possible solutions to fix your prototype:"
             , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
             , "  2) Make sure you have an active internet connection."
