@@ -10,6 +10,7 @@ import Control.Applicative
 import Data.List
 import Data.Char(toLower)
 import Ampersand.ADL1
+import Ampersand.ADL1.PrettyPrinters
 import Ampersand.Basics
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.ADL1.Lexer
@@ -22,6 +23,7 @@ import System.FilePath
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
 import Ampersand.Input.Xslx.XLSX
+import Ampersand.Input.Archi.ArchiAnalyze
 import Control.Exception
 import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
 
