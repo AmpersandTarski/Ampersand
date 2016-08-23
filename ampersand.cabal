@@ -57,7 +57,7 @@ library
                      pandoc-types == 1.16.*,
                      parsec == 3.1.*,
                      process == 1.2.*,
-                     simple-sql-parser == 0.4.1,
+                     simple-sql-parser == 0.4.2,
                      split == 0.2.*,
                      SpreadsheetML ==0.1.*,
                      text == 1.2.*,
@@ -202,6 +202,7 @@ Test-Suite regression-test
                      Ampersand.Basics.Auxiliaries,
                      Ampersand.Basics.BuildInfo_Generated,
                      Ampersand.Basics.Collection,
+                     Ampersand.Basics.Exit,
                      Ampersand.Basics.String,
                      Ampersand.Basics.UTF8,
                      Ampersand.Basics.Unique,
@@ -241,7 +242,8 @@ Test-Suite regression-test
                      Ampersand.Misc,
                      Ampersand.Misc.Explain,
                      Ampersand.Misc.Languages,
-                     Ampersand.Prototype.StaticFiles_Generated
+                     Ampersand.Prototype.StaticFiles_Generated,
+                     Ampersand.Test.Regression
 
 Test-Suite ampersand-test
   type:              exitcode-stdio-1.0
@@ -264,7 +266,7 @@ Test-Suite ampersand-test
                      pandoc-types == 1.16.*,
                      parsec == 3.1.*,
                      QuickCheck == 2.8.*,
-                     simple-sql-parser == 0.4.1,
+                     simple-sql-parser == 0.4.2,
                      text == 1.2.*,
                      time == 1.5.*,
                      transformers == 0.4.*,
@@ -307,6 +309,7 @@ Test-Suite ampersand-test
                      Ampersand.Basics.Auxiliaries,
                      Ampersand.Basics.BuildInfo_Generated,
                      Ampersand.Basics.Collection,
+                     Ampersand.Basics.Exit,
                      Ampersand.Basics.String,
                      Ampersand.Basics.UTF8,
                      Ampersand.Basics.Unique,
