@@ -11,7 +11,7 @@ import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist
 --import Control.Monad.Trans.Class (lift)
 --import Data.Conduit
 import System.Exit --(ExitCode, exitFailure, exitSuccess)
-import Database.Design.Ampersand.Test.Regression
+import Ampersand.Test.Regression
 
 main :: IO ExitCode
 main = do 

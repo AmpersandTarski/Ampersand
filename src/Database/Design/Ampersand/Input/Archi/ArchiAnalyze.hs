@@ -1,16 +1,16 @@
 {-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
-module Database.Design.Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
+module Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
    -- The purpose of this module is to load Archimate content into an Ampersand context.
    -- This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
    -- That `P_Context` contains both the Archimate-metamodel (in the form of declarations) and the Archimate population that represents the model.
    -- In this way, `archi2PContext ` deals with the fact that Archimate produces a mix of model and metamodel.
 where
-   import Database.Design.Ampersand.Basics hiding (writeFile,putStrLn) -- for things such as fatal, eqClass
+   import Ampersand.Basics hiding (writeFile,putStrLn) -- for things such as fatal, eqClass
    import Data.Char                                                    -- for things such as toLower
    import qualified Data.Map.Strict as Map -- import qualified, to avoid name clashes with Prelude functions
    import Data.Tree.NTree.TypeDefs
    import Text.XML.HXT.Core hiding (utf8, fatal,trace)
-   import Database.Design.Ampersand.Core.ParseTree
+   import Ampersand.Core.ParseTree
    import Data.List  -- for things such as nub
    import Data.Maybe
 
