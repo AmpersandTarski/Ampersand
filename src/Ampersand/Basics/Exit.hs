@@ -7,9 +7,6 @@ module Ampersand.Basics.Exit
 import qualified System.Exit as SE
 import System.IO.Unsafe
 
-fatalExit :: [String] -> a
-fatalExit = exitWith . Fatal
-
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a
 exitWith x = unsafePerformIO $ do
