@@ -1,11 +1,12 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * [Issue #506](https://github.com/AmpersandTarski/Ampersand/issues/506) Bugfix in chapter diagnosis of Func. spec. 
   * [Issue #483](https://github.com/AmpersandTarski/Ampersand/issues/483) Introduction of proper way to produce exit codes of Ampersand
   * [Issue #502](https://github.com/AmpersandTarski/Ampersand/issues/502) More stable way to generate .pdf file (LaTeX output)
-  * [Issue #72](https://github.com/AmpersandTarski/Ampersand/issues/502) Symmetry of relations will be checked by a generated application
-  * [Issue #256](https://github.com/AmpersandTarski/Ampersand/issues/502) Surjectivity of relations will be checked by a generated application
-  * [Issue #345](https://github.com/AmpersandTarski/Ampersand/issues/502) Surjectivity of relations will be checked by a generated application
+  * [Issue  #72](https://github.com/AmpersandTarski/Ampersand/issues/72) Symmetry of relations will be checked by a generated application
+  * [Issue #256](https://github.com/AmpersandTarski/Ampersand/issues/256) Surjectivity of relations will be checked by a generated application
+  * [Issue #345](https://github.com/AmpersandTarski/Ampersand/issues/345) Surjectivity of relations will be checked by a generated application
 
 ## v3.6.1 (5 august 2016)
   * [Issue #488](https://github.com/AmpersandTarski/Ampersand/issues/488) Performance enhancement: Added indexes on table columns when possible

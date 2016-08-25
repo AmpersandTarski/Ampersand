@@ -1,10 +1,12 @@
 module Main (main) where
 
-import Ampersand.Misc.Options(getOptions,Options)
-import Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts)
-import Ampersand.Test.Parser.ParserTest (parseScripts)
-import Ampersand.Test.Parser.QuickChecks (parserQuickChecks)
+--import Ampersand.Misc.Options(getOptions,Options)
+--import Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts)
+--import Ampersand.Test.Parser.ParserTest (parseScripts)
+--import Ampersand.Test.Parser.QuickChecks (parserQuickChecks)
 import System.Exit (ExitCode, exitFailure, exitSuccess)
+import Ampersand
+import Prelude hiding (putStrLn)
 
 testFunctions :: Options -> IO [([String], IO Bool)]
 testFunctions opts =
@@ -28,9 +30,9 @@ main = do opts <- getOptions
           tests funcs
     where tests :: [([String], IO Bool)] -> IO ExitCode
           tests [] = exitSuccess
-          tests ((msg,test):xs) =
+          tests ((msg,tst):xs) =
             do mapM_ putStrLn msg
-               success <- test
+               success <- tst
                if success then tests xs
                else do putStrLn "*** Something went wrong here***" 
                        exitFailure

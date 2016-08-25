@@ -1,17 +1,12 @@
 module Main (main) where
 
 import Conduit
---import qualified Data.Conduit.List as CL
---import qualified Data.Conduit.Binary as CB
-
 import System.FilePath ((</>))
 import Control.Monad --(filterM, forM_, foldM,when)
 import System.IO.Error (tryIOError)
 import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
---import Control.Monad.Trans.Class (lift)
---import Data.Conduit
 import System.Exit --(ExitCode, exitFailure, exitSuccess)
-import Ampersand.Test.Regression
+import Ampersand.Test.Regression(DirContent(..),DirData(..),process)
 
 main :: IO ExitCode
 main = do 
