@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * [Issue #506](https://github.com/AmpersandTarski/Ampersand/issues/506) Bugfix in chapter diagnosis of Func. spec. 
   * [Issue #483](https://github.com/AmpersandTarski/Ampersand/issues/483) Introduction of proper way to produce exit codes of Ampersand
   * [Issue #502](https://github.com/AmpersandTarski/Ampersand/issues/502) More stable way to generate .pdf file (LaTeX output)
   * [Issue  #72](https://github.com/AmpersandTarski/Ampersand/issues/72) Symmetry of relations will be checked by a generated application

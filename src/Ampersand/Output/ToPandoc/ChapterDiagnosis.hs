@@ -77,15 +77,9 @@ chpDiagnosis fSpec
                   
       ruls = filter inScopeRule . filter isSignal . vrules $ fSpec                  
       f :: Role -> Rule -> Blocks
-      f rol rul | (rol,rul) `elem` maintained      = (plain.emph.str.l) (NL "ja",EN "yes")
-                | (rol,rul) `elem` dead            = (plain.emph.str.l) (NL "nee",EN "no")
-                | (rol,rul) `elem` fRoleRuls fSpec = (plain.emph.str.l) (NL "part",EN "part")
+      f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
                 | otherwise                      = mempty
-      maintained  -- (r,rul) `elem` maintained means that r can maintain rul without restrictions.
-        = [ (role,rul)
-          | (role,rul)<-fRoleRuls fSpec
-          , and (map (mayedit role) (relsUsedIn rul))
-          ]
+          where timesSymbol = toEnum 215      
       mayedit :: Role -> Declaration -> Bool
       mayedit role decl = decl `elem` ((snd.unzip) (filter (\x -> role == fst x) (fRoleRels fSpec)))
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
