@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
-        ,verboseLn,verbose,FSpecFormat(..)
+        ,verboseLn,verbose,FSpecFormat(..),showFormat
         , helpNVersionTexts
         )
 where
@@ -256,16 +256,17 @@ canBeYamlSwitch str =
    takeWhile (/= '=') str `notElem` ["version","help","config","sampleConfigFile"]  
 data DisplayMode = Public | Hidden deriving Eq
 
-data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
+data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fdocx | Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
 allFSpecFormats :: String
 allFSpecFormats = "["++intercalate ", " 
-    ((sort . map f) [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fhtml, 
+    ((sort . map showFormat) 
+        [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fdocx, Fhtml, 
                 FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument
                 , Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile]) ++"]"
-    where f:: Show a => a -> String
-          f fmt = case show fmt of
-                    _:h:t -> toUpper h : map toLower t
-                    x     -> x 
+showFormat :: FSpecFormat -> String
+showFormat fmt = case show fmt of
+                  _:h:t -> toUpper h : map toLower t
+                  x     -> x 
 
 type OptionDef = OptDescr (Options -> IO Options)
 options :: [(OptionDef, DisplayMode) ]
@@ -367,7 +368,8 @@ options = [ (Option ['v']   ["version"]
                                 , fspecFormat= case map toUpper w of
                                     ('A': _ )             -> Fasciidoc
                                     ('C': _ )             -> Fcontext
-                                    ('D': _ )             -> Fdocbook
+                                    ('D':'O':'C':'B': _ ) -> Fdocbook
+                                    ('D':'O':'C':'X': _ ) -> Fdocx
                                     ('H': _ )             -> Fhtml
                                     ('L': _ )             -> FLatex
                                     ('M':'A':'N': _ )     -> Fman

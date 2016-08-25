@@ -46,6 +46,7 @@ import System.IO (stderr, stdout)
 import Text.Pandoc
 import Text.Pandoc.Builder
 import Text.Pandoc.Process (pipeProcess)
+import Text.Pandoc.MediaBag
 #ifdef _WINDOWS
 import Data.List (intercalate)
 #endif
@@ -142,11 +143,14 @@ defaultWriterVariables fSpec
 writepandoc :: FSpec -> Pandoc -> IO()
 writepandoc fSpec thePandoc = 
   do verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
-     writeFile outputFile (pandocWriter writerOptions thePandoc)
-     
+     media <- collectMedia
+     verboseLn (getOpts fSpec) "Media collected"
+     let wOpts = writerOptions media
+     writeToFile wOpts
+     -- In case of Latex, we need to postprocess the .ltx file to pdf:
      case fspecFormat (getOpts fSpec) of
         FLatex  ->
-           do result <- makePDF writeLaTeX writerOptions thePandoc fSpec
+           do result <- makePDF writeLaTeX wOpts thePandoc fSpec
               case result of 
                 Left err -> do putStrLn ("LaTeX Error: ")
                                B.putStr err
@@ -156,12 +160,28 @@ writepandoc fSpec thePandoc =
              
         _ -> return ()
  where
+    writeToFile :: WriterOptions -> IO()
+    writeToFile wOpts = do
+      when (fspecFormat (getOpts fSpec) == Fdocx)
+           writeReferenceFileDocx
+      case getWriter fSpecFormatString of
+        Left msg -> fatal 162 . unlines $
+                        ["Something wrong with format "++show(fspecFormat (getOpts fSpec))++":"]
+                        ++ map ("  "++) (lines msg)
+        Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
+                                                writeFile outputFile content
+        Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
+                                                writeFile outputFile content
+        Right (IOByteStringWriter worker) -> do content <- worker wOpts thePandoc
+                                                BC.writeFile outputFile content
+
     outputFile = 
       addExtension (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec))
                    (case fspecFormat (getOpts fSpec) of
                       Fasciidoc     -> ".txt"
                       Fcontext      -> ".context"
                       Fdocbook      -> ".docbook"
+                      Fdocx         -> ".docx"
                       Fman          -> ".man"
                       Fmarkdown     -> ".md"
                       Fmediawiki    -> ".mediawiki"
@@ -176,25 +196,6 @@ writepandoc fSpec thePandoc =
                       Ftexinfo      -> ".texinfo"
                       Ftextile      -> ".textile"
                    )
-    pandocWriter :: WriterOptions -> Pandoc -> String
-    pandocWriter =
-       case fspecFormat (getOpts fSpec) of
-            Fasciidoc -> writeAsciiDoc
-            FPandoc   -> writeNative
-            Fcontext  -> writeConTeXt
-            Fdocbook  -> writeDocbook
-            Fhtml     -> writeHtmlString
-            FLatex    -> writeLaTeX
-            Fman      -> writeMan
-            Fmarkdown -> writeMarkdown
-            Fmediawiki -> writeMediaWiki
-            Fopendocument -> writeOpenDocument
-            Forg -> writeOrg
-            Fplain -> writePlain
-            Frst -> writeRST
-            Frtf -> writeRTF
-            Ftexinfo -> writeTexinfo
-            Ftextile -> writeTextile
     fSpecFormatString :: String
     fSpecFormatString =
        case fspecFormat (getOpts fSpec) of
@@ -202,6 +203,7 @@ writepandoc fSpec thePandoc =
             Fasciidoc -> "asciidoc"
             Fcontext  -> "context"
             Fdocbook  -> "docbook"
+            Fdocx     -> "docx"
             Fhtml     -> "html"
             FLatex    -> "latex"
             Fman      -> "man"
@@ -214,17 +216,47 @@ writepandoc fSpec thePandoc =
             Frtf -> "rtf"
             Ftexinfo -> "texinfo"
             Ftextile -> "textile"
-    writerOptions :: WriterOptions
-    writerOptions = def
+    writerOptions :: MediaBag-> WriterOptions
+    writerOptions bag = def
                       { writerStandalone=isJust template
                       , writerTableOfContents=True
                       , writerNumberSections=True
                       , writerTemplate=fromMaybe "" template
                       , writerVariables=defaultWriterVariables fSpec
+                      , writerMediaBag=bag
+                      , writerReferenceDocx=Just docxStyleUserPath
                       , writerVerbose=verboseP (getOpts fSpec)
                       }
-        where template = getStaticFileContent PandocTemplates ("default."++fSpecFormatString)
-
+     where template  = getStaticFileContent PandocTemplates ("default."++fSpecFormatString)
+    docxStyleContent :: BC.ByteString 
+    docxStyleContent = 
+      case getStaticFileContent PandocTemplates "defaultStyle.docx" of
+         Just cont -> BC.pack cont
+         Nothing -> fatal 0 ("Cannot find the statically included default defaultStyle.docx.")
+    docxStyleUserPath = dirOutput (getOpts fSpec) </> "reference.docx" -- this is the place where the file is written if it doesn't exist.
+    writeReferenceFileDocx :: IO()
+    writeReferenceFileDocx = do
+         exists <- doesFileExist docxStyleUserPath
+         if exists 
+             then do verboseLn (getOpts fSpec) 
+                           "Existing style file is used for generating .docx file:"
+             else (do verboseLn (getOpts fSpec)
+                           "Default style file is written. this can be changed to fit your own style:"
+                      BC.writeFile docxStyleUserPath docxStyleContent
+                  )
+         verboseLn (getOpts fSpec) docxStyleUserPath
+    collectMedia :: IO MediaBag
+    collectMedia = do files <- listDirectory . dirOutput . getOpts $ fSpec
+                      let graphicsForDotx = map (dirOutput (getOpts fSpec) </>) . filter isGraphic $ files 
+                      foldM addToBag mempty graphicsForDotx                                  
+       where addToBag :: MediaBag -> FilePath -> IO MediaBag
+             addToBag bag fullPath = do
+                verboseLn (getOpts fSpec) $ "Collect: "++fullPath
+                verboseLn (getOpts fSpec) $ "  as: "++(takeFileName fullPath)
+                contents <- BC.readFile fullPath
+                return $ insertMedia (takeFileName fullPath) Nothing contents bag 
+             isGraphic :: FilePath -> Bool
+             isGraphic f = takeExtension f `elem` [".png"]
 
 -----Linguistic goodies--------------------------------------
 
@@ -380,7 +412,7 @@ instance ShowMath Expression where
           showExpr (EKl0 e)     = showExpr (addParensToSuper e)++"^{"++texOnly_star++"}"
           showExpr (EKl1 e)     = showExpr (addParensToSuper e)++"^{"++texOnly_plus++"}"
           showExpr (EFlp e)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
-          showExpr (ECpl e)     = "\\cmpl{"++showExpr e++"}"
+          showExpr (ECpl e)     = "\\overline{"++showExpr e++"}"
           showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (EDcD d)     = "\\text{"++latexEscShw (name d)++"}"
           showExpr (EDcI c)     = "I_{[\\text{"++latexEscShw (name c)++"}]}"
@@ -714,5 +746,9 @@ extractMsg log' = do
      then log'
      else BC.unlines (msg'' ++ lineno)
 
-
+-- This will be included in directory-1.2.5.0 : 
+listDirectory :: FilePath -> IO [FilePath]
+listDirectory path =
+  (filter f) <$> (getDirectoryContents path)
+  where f filename = filename /= "." && filename /= ".."
 
