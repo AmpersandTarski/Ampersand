@@ -256,7 +256,7 @@ writepandoc fSpec thePandoc =
                 contents <- BC.readFile fullPath
                 return $ insertMedia (takeFileName fullPath) Nothing contents bag 
              isGraphic :: FilePath -> Bool
-             isGraphic f = takeExtension f `elem` [".png"]
+             isGraphic f = takeExtension f `elem` [".svg"]
 
 -----Linguistic goodies--------------------------------------
 
