@@ -13,7 +13,9 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 
 chpInterfacesBlocks :: Int -> FSpec -> Blocks
 chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
-  mconcat $ map interfaceChap regularInterfaces
+     --  *** Header ***
+      xDef fSpec Interfaces
+   <> (mconcat $ map interfaceChap regularInterfaces)
   where
     regularInterfaces :: [Interface]
     regularInterfaces = interfaceS fSpec
@@ -22,7 +24,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       
     interfaceChap :: Interface -> Blocks
     interfaceChap ifc
-     =  headerWithLabel (XRefInterfacesInterface ifc) (lev+1) (text ("Interface: " ++ quoteName ifc)) <>
+     =  xDef fSpec (XRefInterfacesInterface ifc)  <>
         ifcIntro ifc <>
         docInterface ifc
       

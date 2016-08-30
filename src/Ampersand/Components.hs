@@ -101,8 +101,7 @@ doGenDocument :: FSpec -> IO()
 doGenDocument fSpec =
  do { verboseLn (getOpts fSpec) ("Processing "++name fSpec)
     ; -- First we need to output the pictures, because they should be present before the actual document is written
-      when (not(null thePictures) && fspecFormat (getOpts fSpec)/=FPandoc) $
-        mapM_ (writePicture (getOpts fSpec)) thePictures
+      mapM_ (writePicture (getOpts fSpec)) thePictures
     ; writepandoc fSpec thePandoc
     }
   where (thePandoc,thePictures) = fSpec2Pandoc fSpec

@@ -16,11 +16,11 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Ampersand.Classes
     , Chapter(..)
     , chaptersInDoc
-    , chptHeader
     , chptTitle
-    , Xreferencable(..)
-    , showImage
+    , Xreferenceble(..)
+  --  , showImage
     , canXRefer
+    , Xreferenceble(..)
     , Purpose(..)
     , purposes2Blocks
     , isMissing
@@ -59,19 +59,6 @@ import GHC.Exts(sortWith)
 import Ampersand.Graphic.Graphics
 import Ampersand.Classes()
 
-data Chapter = Intro
-             | SharedLang
-             | Diagnosis
-             | ConceptualAnalysis
-             | ProcessAnalysis
-             | DataAnalysis
-             | SoftwareMetrics
-             | EcaRules
-             | Interfaces
-             | FunctionPointAnalysis
-             | Glossary
-             deriving (Eq, Show)
-
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]
 chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
@@ -95,75 +82,12 @@ chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
                                      [ Glossary
                                      ]
 
--- | This function returns a header of a chapter
-chptHeader :: Lang -> Chapter -> Blocks
-chptHeader lang chap
- = header 1 (chptTitle lang chap ) <> (para (xrefLabel chap))
 
-chptTitle :: Lang -> Chapter -> Inlines
-chptTitle lang cpt =
-     (case (cpt,lang) of
-        (Intro                 , Dutch  ) -> text "Inleiding"
-        (Intro                 , English) -> text "Introduction"
-        (SharedLang            , Dutch  ) -> text "Gemeenschappelijke taal"
-        (SharedLang            , English) -> text "Shared Language"
-        (Diagnosis             , Dutch  ) -> text "Diagnose"
-        (Diagnosis             , English) -> text "Diagnosis"
-        (ConceptualAnalysis    , Dutch  ) -> text "Conceptuele Analyse"
-        (ConceptualAnalysis    , English) -> text "Conceptual Analysis"
-        (ProcessAnalysis       , Dutch  ) -> text "Procesanalyse"
-        (ProcessAnalysis       , English) -> text "Process Analysis"
-        (DataAnalysis          , Dutch  ) -> text "Gegevensstructuur"
-        (DataAnalysis          , English) -> text "Data structure"
-        (SoftwareMetrics       , Dutch  ) -> text "Functiepunt Analyse"
-        (SoftwareMetrics       , English) -> text "Function Point Analysis"
-        (EcaRules              , Dutch  ) -> text "ECA regels"
-        (EcaRules              , English) -> text "ECA rules (Flash points)"
-        (Interfaces            , Dutch  ) -> text "Koppelvlakken"
-        (Interfaces            , English) -> text "Interfaces"
-        (FunctionPointAnalysis , Dutch  ) -> text "Functiepuntanalyse"
-        (FunctionPointAnalysis , English) -> text "Function point analysis"
-        (Glossary              , Dutch  ) -> text "Begrippen"
-        (Glossary              , English) -> text "Glossary"
-     )
-
-class Xreferencable a where
-  xLabel :: a  -> String
-  xRefReference :: Options -> a -> Inlines
-  xRefReference opts a
-    | canXRefer opts = rawInline "latex" ("\\ref{"++xLabel a++"}")
-    | otherwise       = mempty -- "fatal 89 xreferencing is not supported!"
-  xrefLabel :: a -> Inlines
-  xrefLabel a = rawInline "latex" ("\\label{"++xLabel a++"}")
 
 canXRefer :: Options -> Bool
-canXRefer opts = fspecFormat opts `elem` [FLatex]
+canXRefer opts = True
 
-instance Xreferencable Chapter where
-  xLabel a = "chapter" ++ escapeNonAlphaNum (show a)
 
-instance Xreferencable Picture where
-  xLabel a = "figure" ++ escapeNonAlphaNum (caption a)
-
-showImage :: Options -> Picture -> Inlines
-showImage opts pict =
-      case fspecFormat opts of
-         FLatex  -> rawInline "latex" ("\\begin{figure}[htb]\n\\begin{center}\n\\scalebox{"++scale pict++"}["++scale pict++"]{")
-         _       -> mempty
-   <> image fileOnly (xLabel pict) (text $ "Here, the image `"++caption pict++"` should be visible" )
-   <> case fspecFormat opts of
-         FLatex  -> rawInline "latex" "}\n"
-                  <>rawInline "latex" ("\\caption{"++latexEscShw (caption pict)++"}\n")
-         _       -> mempty
-   <> (xrefLabel pict)
-   <> case fspecFormat opts of
-         FLatex  -> rawInline "latex" "\n\\end{center}\n\\end{figure}"
-         _       -> mempty
-  where
-    fileOnly = ((case fspecFormat opts of
-         FLatex  -> dropExtension -- let pdflatex figure out the optimal extension
-         _ -> id
-      ) . takeFileName . imagePath opts) pict
 
 -- | This function orders the content to print by theme. It returns a list of
 --   tripples by theme. The last tripple might not have a theme, but will contain everything
@@ -355,13 +279,14 @@ dpRule' fSpec = dpR
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
              (_  ,English) -> plain ("To arrive at the formalization of "   <> xRefTo (XRefNaturalLanguageRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
-         <> (fromList $
-                  pandocEqnArray
-                      [ [ "("++xRefToLatexRefString (XRefConceptualAnalysisDeclaration d) ++ ")\\;\\;"
-                        ,  texOnly_Id(name d)
-                        , ":"
-                        , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
-                        ] |d<-nds])
+         <> plain "FIXME! (Hier is wat omgevallen, dient te worden hersteld in de generator.)"
+  --       <> (fromList $
+  --                pandocEqnArray
+  --                    [ [ "("++xRefToLatexRefString (XRefConceptualAnalysisDeclaration d) ++ ")\\;\\;"
+  --                      ,  texOnly_Id(name d)
+  --                      , ":"
+  --                      , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
+  --                      ] |d<-nds])
          <> (case nds of
               [] -> case rds of
                        []   -> mempty

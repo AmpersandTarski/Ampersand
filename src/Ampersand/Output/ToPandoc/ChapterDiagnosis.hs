@@ -8,7 +8,7 @@ import Data.Maybe(isJust)
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
- = (  chptHeader (fsLang fSpec) Diagnosis
+ = (  xDef fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
             <> (emph.singleQuoted.str.name) fSpec 
@@ -233,20 +233,18 @@ chpDiagnosis fSpec
                       ) 
        ) <>
        ( case pictsWithUnusedRels of
-          [pict] -> para (    (str.l) (NL "Figuur ", EN "Figure ")
-                           <> xRefReference (getOpts fSpec) pict 
+          [pict] -> para (    xRef fSpec pict 
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          ) <>
-                    plain((showImage (getOpts fSpec)) pict)
+                         (xDef fSpec pict)
           picts  -> mconcat
-                       [ para (   (str.l) (NL "Figuur ", EN "Figure ")
-                               <> xRefReference (getOpts fSpec) pict
+                       [ para (   xRef fSpec pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
                               )
-                       <>(plain . showImage (getOpts fSpec)) pict
+                       <>(xDef fSpec pict)
                        | (pict,pat)<-zip picts pats
                        ]
        )

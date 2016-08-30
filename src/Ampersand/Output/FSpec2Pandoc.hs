@@ -15,6 +15,8 @@ import Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointA
 import Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)
 import Data.Time.Format (formatTime)
 import Data.List (nub)
+import Text.Pandoc.CrossRef
+
 --import Debug.Trace
 --DESCR ->
 --The functional specification starts with an introduction
@@ -61,10 +63,12 @@ import Data.List (nub)
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
 fSpec2Pandoc :: FSpec -> (Pandoc, [Picture])
-fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
+fSpec2Pandoc fSpec = (thePandoc,thePictures)
   where
-    myDoc =
-      ( (setTitle
+    wrap :: Pandoc -> Pandoc
+    wrap (Pandoc m bs) = Pandoc m $ runCrossRef m Nothing crossRefBlocks bs 
+    thePandoc = wrap $
+        (setTitle
            (case metaValues "title" fSpec of
                 [] -> text (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                                  (Dutch  , False) -> "Functionele Specificatie van "
@@ -85,11 +89,12 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
 
         )
       . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec)))))
-      )
-      (doc (foldr (<>) mempty docContents))
-    docContents :: [Blocks]
+      . doc . mconcat $ blocksByChapter
+    
+    thePictures = concat picturesByChapter
+    blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (getOpts fSpec)]
+    (blocksByChapter, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (getOpts fSpec)]
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
     fspec2Blocks Intro                 = (chpIntroduction           fSpec, [])

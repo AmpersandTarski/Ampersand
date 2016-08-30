@@ -27,7 +27,7 @@ chpProcessAnalysis lev fSpec
 
   headerBlocks :: Blocks
   headerBlocks
-   = (chptHeader (fsLang fSpec) ProcessAnalysis) <>
+   = xDef fSpec ProcessAnalysis <>
      purposes2Blocks (getOpts fSpec) purps <> -- This explains the purpose of this context.
      fromList(
      [ case fsLang fSpec of
@@ -127,7 +127,7 @@ chpProcessAnalysis lev fSpec
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenDeclarations
      = (
-           headerWithLabel (XRefProcessAnalysis fproc) (lev+2) (text(name fproc))
+           xDef fSpec (XRefProcessAnalysis fproc) 
         <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc))
    --    <> (txtProcessModel fproc)
         <> (if null sctRules then mempty else definitionList sctRules)

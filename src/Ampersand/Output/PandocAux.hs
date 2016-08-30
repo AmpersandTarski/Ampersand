@@ -4,8 +4,9 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.PandocAux
       ( writepandoc
-      , XRefObj(..) , xRefTo, xRefToLatexRefString
-      , headerWithLabel
+      , Chapter(..), chptTitle
+      , XRefSection(..) , xRefTo
+      , Xreferenceble(..)
       , definitionListItemLabel
       , pandocEqnArray
       , pandocEqnArrayWithLabels
@@ -15,7 +16,6 @@ module Ampersand.Output.PandocAux
       , count
       , ShowMath(..)
       , latexEscShw, escapeNonAlphaNum
-      , xrefCitation
       , texOnly_Id
       , texOnly_fun
       , texOnly_rel
@@ -33,6 +33,7 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec
 import Ampersand.Misc
 import Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.Graphic.Graphics
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as B
@@ -280,57 +281,162 @@ count    lang    n      x
       (English, 6) -> "six "++plural English x
       (English, _) -> show n++" "++plural English x
 
------- Symbolic referencing ---------------------------------
-data XRefObj = XRefNaturalLanguageDeclaration Declaration
-             | XRefPredicateXpression Rule
+data Chapter = Intro
+             | SharedLang
+             | Diagnosis
+             | ConceptualAnalysis
+             | ProcessAnalysis
+             | DataAnalysis
+             | SoftwareMetrics
+             | EcaRules
+             | Interfaces
+             | FunctionPointAnalysis
+             | Glossary
+             deriving (Eq, Show)
+
+
+------ Symbolic referencing to a chapter/section. ---------------------------------
+class Xreferenceble a where
+  xLabel :: a  -> String
+  xRef :: FSpec -> a -> Inlines
+  xDef :: FSpec -> a -> Blocks
+     
+instance Xreferenceble Chapter where
+  xLabel = show
+  xRef fSpec a = citeGen "sec:" [xLabel a]
+  xDef fSpec a = headerWith ("sec:"<> xLabel a,[],[]) 1 (chptTitle (fsLang fSpec) a)
+    
+instance Xreferenceble Picture where
+  xLabel = caption
+  xRef _ a = citeGen "fig:" [xLabel a]
+  xDef fSpec a = para $ imageWith ("fig:"++xLabel a, [], []) src ("fig:"++xLabel a)(text (caption a))
+   where
+    opts = getOpts fSpec
+    src = ((case fspecFormat opts of
+             FLatex  -> dropExtension -- let pdflatex figure out the optimal extension
+             _ -> id
+           ) . takeFileName . imagePath opts) a
+
+citeGen :: String -> [String] -> Inlines
+citeGen p l = cite (mconcat $ map (cit . (p++) . show) l) $ text $
+  "[" ++ intercalate "; " (map (("@"++) . (p++) . show) l) ++ "]"
+  where
+    cit :: String -> [Citation]
+    cit r = 
+      [Citation { citationId = r
+                , citationPrefix = []
+                , citationSuffix = []
+                , citationHash = 0
+                , citationNoteNum = 0
+                , citationMode = NormalCitation
+                }]
+chptTitle :: Lang -> Chapter -> Inlines
+chptTitle lang cpt =
+     (case (cpt,lang) of
+        (Intro                 , Dutch  ) -> text "Inleiding"
+        (Intro                 , English) -> text "Introduction"
+        (SharedLang            , Dutch  ) -> text "Gemeenschappelijke taal"
+        (SharedLang            , English) -> text "Shared Language"
+        (Diagnosis             , Dutch  ) -> text "Diagnose"
+        (Diagnosis             , English) -> text "Diagnosis"
+        (ConceptualAnalysis    , Dutch  ) -> text "Conceptuele Analyse"
+        (ConceptualAnalysis    , English) -> text "Conceptual Analysis"
+        (ProcessAnalysis       , Dutch  ) -> text "Procesanalyse"
+        (ProcessAnalysis       , English) -> text "Process Analysis"
+        (DataAnalysis          , Dutch  ) -> text "Gegevensstructuur"
+        (DataAnalysis          , English) -> text "Data structure"
+        (SoftwareMetrics       , Dutch  ) -> text "Functiepunt Analyse"
+        (SoftwareMetrics       , English) -> text "Function Point Analysis"
+        (EcaRules              , Dutch  ) -> text "ECA regels"
+        (EcaRules              , English) -> text "ECA rules (Flash points)"
+        (Interfaces            , Dutch  ) -> text "Koppelvlakken"
+        (Interfaces            , English) -> text "Interfaces"
+        (FunctionPointAnalysis , Dutch  ) -> text "Functiepuntanalyse"
+        (FunctionPointAnalysis , English) -> text "Function point analysis"
+        (Glossary              , Dutch  ) -> text "Begrippen"
+        (Glossary              , English) -> text "Glossary"
+     )
+
+data XRefSection
+             = XRefNaturalLanguageDeclaration Declaration
              | XRefDataAnalRule Rule
              | XRefNaturalLanguageRule Rule
              | XRefProcessAnalysis Pattern
-             | XRefProcessAnalysisDeclaration Declaration
              | XRefConceptualAnalysisPattern Pattern
              | XRefConceptualAnalysisDeclaration Declaration
              | XRefConceptualAnalysisRuleA Rule
              | XRefConceptualAnalysisRuleB Rule
              | XRefInterfacesInterface Interface
              | XRefNaturalLanguageTheme (Maybe Pattern)
-xRefTo :: XRefObj -> Inlines
-xRefTo x = rawInline "latex"  $ xRefToLatexRefString x
-xRefToLatexRefString :: XRefObj -> String
-xRefToLatexRefString x = "\\ref{"++xRefRawLabel x++"}"
-xRefRawLabel :: XRefObj -> String
+
+xRefTo :: XRefSection -> Inlines
+xRefTo x = cite [cit] . text . nameOfThing $ x
+  where cit = Citation { citationId = xRefRawLabel x
+                       , citationPrefix = []
+                       , citationSuffix = [Str "citationSuffix"]
+                       , citationMode = NormalCitation
+                       , citationNoteNum = 0
+                       , citationHash = 0}  
+xRefRawLabel :: XRefSection -> String
 xRefRawLabel x
- = case x of
-     XRefNaturalLanguageDeclaration d -> "natLangDcl:"++(escapeNonAlphaNum.fullName) d
-     XRefPredicateXpression r     -> "pex:"++(escapeNonAlphaNum.name) r
-     XRefDataAnalRule r           -> "dataAnalRule:"++(escapeNonAlphaNum.name) r
-     XRefNaturalLanguageRule r    -> "natLangRule:"++(escapeNonAlphaNum.name) r
-     XRefProcessAnalysis p        -> "prcAnal:"++(escapeNonAlphaNum.name) p
-     XRefProcessAnalysisDeclaration d
-                                  -> "prcAnalDcl:"++(escapeNonAlphaNum.fullName) d
+ = show (chapterOfSection x)++typeOfSection x++":"++escapeNonAlphaNum (nameOfThing x)
+
+instance Xreferenceble XRefSection where
+  xLabel = xRefRawLabel
+  xRef fSpec a = citeGen "sec:" [xLabel a]
+  xDef fSpec a 
+     | lev == 2 = headerWith (xRefRawLabel a, [],[]) lev (text (nameOfThing a)) 
+     | otherwise  = fatal 389 $ "xDef not yet defined for "++show (refStuff a)
+    where lev :: Int
+          lev = levOfSection a
+typeOfSection    x = a where (a,_,_,_) = refStuff x
+chapterOfSection x = a where (_,a,_,_) = refStuff x
+nameOfThing      x = a where (_,_,a,_) = refStuff x
+levOfSection :: XRefSection -> Int
+levOfSection     x = a where (_,_,_,a) = refStuff x
+refStuff x  = 
+   case x of
+     XRefNaturalLanguageDeclaration d 
+       -> ("declaration" , SharedLang         , fullName d, 0) --definitionListItemLabel
+     XRefDataAnalRule r
+       -> ("rule"        , DataAnalysis       , name r    , 0) --pandocEqnArrayWithLabel
+     XRefNaturalLanguageRule r
+       -> ("rule"        , SharedLang         , name r    , 0) --definitionListItemLabel
+     XRefProcessAnalysis p
+       -> ("process"     , ProcessAnalysis    , name p    , 2) -- sectionWithLabel --(text(name fproc))
      XRefConceptualAnalysisPattern p
-                                  -> "cptAnalPat:"++(escapeNonAlphaNum.name) p
+       -> ("pattern"     , ConceptualAnalysis , name p    , 2) -- sectionWithLabel -- ((text.name) pat)
      XRefConceptualAnalysisDeclaration d
-                                  -> "cptAnalDcl:"++(escapeNonAlphaNum.fullName) d
-     XRefConceptualAnalysisRuleA r -> "cptAnalRuleA:"++(escapeNonAlphaNum.name) r
-     XRefConceptualAnalysisRuleB r -> "cptAnalRuleB:"++(escapeNonAlphaNum.name) r
-     XRefInterfacesInterface i    -> "interface:"++(escapeNonAlphaNum.name) i
-     XRefNaturalLanguageTheme (Just t)
-                                  -> "theme:"++(escapeNonAlphaNum.name) t
-     XRefNaturalLanguageTheme Nothing
-                                  -> ":losseEindjes"
+       -> ("declaration" , ConceptualAnalysis , fullName d, 0) --pandocEqnArrayWithLabel
+     XRefConceptualAnalysisRuleA r 
+       -> ("rule"        , ConceptualAnalysis , name r    , 0) --pandocEquationWithLabel
+     XRefConceptualAnalysisRuleB r 
+       -> ("expression"  , ConceptualAnalysis , name r    , 0) --pandocEqnArrayWithLabel en pandocEquationWithLabel
+     XRefInterfacesInterface i    
+       -> ("interface"   , Interfaces         , name i    , 2) -- sectionWithLabel --(text ("Interface: " ++ quoteName ifc))
+     XRefNaturalLanguageTheme mt
+       -> ("theme"       , SharedLang         , case mt of
+                                                 Nothing -> ":losseEindjes"
+                                                 Just t  -> name t
+                                                          , 2) -- sectionWithLabel
+--                     (case (patOfTheme tc,fsLang fSpec) of
+--                         (Nothing, Dutch  ) -> "Losse eindjes..."
+--                         (Nothing, English) -> "Loose ends..."
+--                         (Just pat, _     ) -> text (name pat)
+--                     )
+
+
     where
-      fullName d = name d++"*"++(name.source) d++"*"++(name.target) d
+      fullName d = name d++"["++(name.source) d++"*"++(name.target) d++"]"
 
-headerWithLabel :: XRefObj -> Int -> Inlines -> Blocks
-headerWithLabel x = headerWith (xRefRawLabel x, [],[])
 
-definitionListItemLabel :: XRefObj -> String -> Inlines
+sectionWithLabel :: XRefSection -> Int -> Inlines -> Blocks
+sectionWithLabel x = headerWith (xRefRawLabel x, [],[])
+
+definitionListItemLabel :: XRefSection -> String -> Inlines
 definitionListItemLabel x prefix
   = str prefix <> rawInline "latex" ("\\label{"++xRefRawLabel x++"}")
 
-
-xrefCitation :: String -> Inline    -- uitbreidbaar voor andere rendering dan LaTeX
-xrefCitation myLabel = RawInline (Text.Pandoc.Builder.Format "latex") ("\\cite{"++escapeNonAlphaNum myLabel++"}")
 
 pandocEqnArray :: [[String]] -> [Block]
 pandocEqnArray [] = []
@@ -341,7 +447,7 @@ pandocEqnArray xs
          ++"\n\\end{aligned}"
        )
 
-pandocEqnArrayWithLabels :: [(XRefObj,[String])] -> Blocks
+pandocEqnArrayWithLabels :: [(XRefSection,[String])] -> Blocks
 pandocEqnArrayWithLabels [] = mempty
 pandocEqnArrayWithLabels rows
  = (para .displayMath)
@@ -350,7 +456,7 @@ pandocEqnArrayWithLabels rows
          ++"\n\\end{aligned}"
        )
 
-pandocEqnArrayWithLabel :: XRefObj -> [[String]] -> Blocks
+pandocEqnArrayWithLabel :: XRefSection -> [[String]] -> Blocks
 pandocEqnArrayWithLabel _ [] = mempty
 pandocEqnArrayWithLabel xref rows
  = (para . displayMath)
@@ -362,7 +468,7 @@ pandocEqnArrayWithLabel xref rows
 pandocEquation :: String -> [Block]
 pandocEquation x = toList . para . displayMath $ x
 
-pandocEquationWithLabel :: XRefObj -> String -> Blocks
+pandocEquationWithLabel :: XRefSection -> String -> Blocks
 pandocEquationWithLabel xref x =
    para . displayMath $
         ( "\\begin{aligned}\\label{"++xRefRawLabel xref++"}\\\\\n"

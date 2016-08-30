@@ -9,7 +9,7 @@ import Data.List (intersperse )
 chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis lev fSpec = (
       --  *** Header ***
-   chptHeader (fsLang fSpec) ConceptualAnalysis
+   xDef fSpec ConceptualAnalysis
    <> --  *** Intro  ***
    caIntro
    <> --  *** For all themes, a section containing the conceptual analysis for that theme  ***
@@ -64,17 +64,17 @@ chpConceptualAnalysis lev fSpec = (
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern
-        headerWithLabel (XRefConceptualAnalysisPattern pat) (lev+2) ((text.name) pat)
+        xDef fSpec (XRefConceptualAnalysisPattern pat)
         -- The section starts with the reason why this pattern exists
      <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat))
         -- followed by a conceptual model for this pattern
      <> ( case (fsLang fSpec) of
                (Dutch  ) -> -- announce the conceptual diagram
-                            para ("Figuur " <> xRefReference (getOpts fSpec) (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
+                            para (xRef fSpec (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                             -- draw the conceptual diagram
-                          <>((plain . showImage (getOpts fSpec) . pictOfPat) pat)
-               (English) -> para ("Figure " <> xRefReference (getOpts fSpec) (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
-                          <>((plain . showImage (getOpts fSpec) . pictOfPat) pat)
+                          <>((xDef fSpec . pictOfPat) pat)
+               (English) -> para (xRef fSpec (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
+                          <>((xDef fSpec . pictOfPat) pat)
         ) <>
     (
         -- now provide the text of this pattern.
@@ -177,11 +177,10 @@ chpConceptualAnalysis lev fSpec = (
                   )
                -- followed by a conceptual model for this rule
                <> para
-                     (   str (l (NL "Figuur ", EN "Figure "))
-                      <> xRefReference (getOpts fSpec) (pictOfRule r)
+                     (   xRef fSpec (pictOfRule r)
                       <> str (l (NL " geeft een conceptueel diagram van deze regel."
                                 ,EN " shows a conceptual diagram of this rule."))
                      )
-               <>plain (showImage (getOpts fSpec) (pictOfRule r))
+               <> xDef fSpec (pictOfRule r)
                ]
              )

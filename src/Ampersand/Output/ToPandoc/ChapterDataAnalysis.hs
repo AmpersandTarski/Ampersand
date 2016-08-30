@@ -24,7 +24,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   sectionLevel = 2
  
   theBlocks
-    =  chptHeader (fsLang fSpec) DataAnalysis  -- The header
+    =  xDef fSpec DataAnalysis  -- The header
     <> (case fsLang fSpec of
              Dutch   -> para ( "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
                             <> "De opbouw is als volgt:"
@@ -50,16 +50,16 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
            <> para (case fsLang fSpec of
                      Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
                               <> (if canXRefer (getOpts fSpec)
-                                  then  "Deze is in figuur " <> xRefReference (getOpts fSpec) classificationPicture <> "weergegeven."
+                                  then  "Deze is in " <> xRef fSpec classificationPicture <> "weergegeven."
                                   else "Deze is in onderstaand figuur weergegeven."
                                  )
                      English -> "A number of concepts is organized in a classification structure. "
                               <> (if canXRefer (getOpts fSpec)
-                                  then "This is shown in figure " <> xRefReference (getOpts fSpec) classificationPicture <> "."
+                                  then "This is shown in " <> xRef fSpec classificationPicture <> "."
                                   else "This is shown in the figure below."
                                  )
                    )
-                <> para (showImage (getOpts fSpec) classificationPicture)
+                <> xDef fSpec classificationPicture
            )
 
     <> daRulesSection
@@ -81,16 +81,16 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
       <> para (case fsLang fSpec of
                  Dutch   -> text "De afspraken zijn vertaald naar een gegevensmodel. "
                            <> ( if canXRefer (getOpts fSpec)
-                                then text "Dit gegevensmodel is in figuur " <> xRefReference (getOpts fSpec) logicalDataModelPicture <> text " weergegeven."
+                                then text "Dit gegevensmodel is in " <> xRef fSpec logicalDataModelPicture <> text " weergegeven."
                                 else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
                               )
                  English -> text "The functional requirements have been translated into a data model. "
                            <> ( if canXRefer (getOpts fSpec)
-                                then text "This model is shown by figure " <> xRefReference (getOpts fSpec) logicalDataModelPicture <> text "."
+                                then text "This model is shown by " <> xRef fSpec logicalDataModelPicture <> text "."
                                 else text "This model is shown by the figure below. "
                               )
               )
-       <> para (showImage (getOpts fSpec) logicalDataModelPicture)
+       <> xDef fSpec logicalDataModelPicture
        <> let nrOfClasses = length (classes oocd)
           in case fsLang fSpec of
                Dutch   -> para (case nrOfClasses of
@@ -241,16 +241,16 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
     <> para (case fsLang fSpec of
                Dutch   ->   "De afspraken zijn vertaald naar een technisch datamodel. "
                          <> ( if canXRefer (getOpts fSpec)
-                              then "Dit model is in figuur " <> xRefReference (getOpts fSpec) technicalDataModelPicture <> " weergegeven."
+                              then "Dit model is in " <> xRef fSpec technicalDataModelPicture <> " weergegeven."
                               else "Dit model is in onderstaand figuur weergegeven. "
                             )
                English ->   "The functional requirements have been translated into a technical data model. "
                          <> ( if canXRefer (getOpts fSpec)
-                              then "This model is shown by figure " <> xRefReference (getOpts fSpec) technicalDataModelPicture <> "."
+                              then "This model is shown by " <> xRef fSpec technicalDataModelPicture <> "."
                               else "This model is shown by the figure below. "
                             )
             )
-    <> para (showImage (getOpts fSpec) technicalDataModelPicture)
+    <> xDef fSpec technicalDataModelPicture
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec))
              in
              case fsLang fSpec of

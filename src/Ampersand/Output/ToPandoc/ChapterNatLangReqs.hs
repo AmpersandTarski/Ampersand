@@ -14,7 +14,7 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
       --  *** Header ***
-   chptHeader (fsLang fSpec) SharedLang
+   xDef fSpec SharedLang
    <> --  *** Intro  ***
     case fsLang fSpec of
         Dutch   -> para
@@ -82,13 +82,7 @@ chpNatLangReqs lev fSpec =
         = mempty   -- The document is partial (because themes have been defined), so we don't print loose ends.
     | otherwise 
         =   --  *** Header of the theme: ***
-            headerWithLabel (XRefNaturalLanguageTheme (patOfTheme tc))
-                            (lev+2)
-                            (case (patOfTheme tc,fsLang fSpec) of
-                                (Nothing, Dutch  ) -> "Losse eindjes..."
-                                (Nothing, English) -> "Loose ends..."
-                                (Just pat, _     ) -> text (name pat)
-                            )
+            xDef fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
                  Nothing  -> 

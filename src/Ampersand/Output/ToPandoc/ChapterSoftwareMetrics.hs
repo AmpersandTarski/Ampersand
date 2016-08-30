@@ -13,7 +13,7 @@ fpAnalysis :: FSpec -> Blocks
 fpAnalysis _ = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
  where
 --  header :: Blocks
---  header = chptHeader (fsLang fSpec) SoftwareMetrics
+--  header = xDef fSpec SoftwareMetrics
 --  caIntro :: [Block]
 --  caIntro =
 --   case fsLang fSpec of
