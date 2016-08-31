@@ -22,6 +22,13 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
   , "Relations" : relsDefdIn[Relation*Context]~  LINKTO INTERFACE "Relation"
+  , "Gens" : concs ; (I[Concept] 
+          /\
+                (gengen[Gen*Concept]~;gengen[Gen*Concept]) /\
+                ( -(genspc[Gen*Concept]~;genspc[Gen*Concept]))) 
+         INTERFACE GenTree 
+  , "Concepts" : concs[Context*Concept]
+  , "Relations" : relations  LINKTO INTERFACE "Relation"
   , "Roles" : allRoles[Context*Role]
   , "allConjuncts" : allConjuncts[Context*Conjunct]
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
@@ -143,6 +150,7 @@ INTERFACE Relation FOR Ampersand : I[Relation]
 BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "affectedSigConjunctIds" : affectedSigConjunctIds[Relation*Conjunct]
 	, "defined in context" : relsDefdIn[Relation*Context]
+	, "context" : relations[Context*Relation]~
 	, "decmean" : decmean[Relation*Meaning]
 	, "decprL" : decprL[Relation*String]
 	, "decprM" : decprM[Relation*String]

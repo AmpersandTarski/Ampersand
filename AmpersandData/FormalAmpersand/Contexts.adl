@@ -1,4 +1,29 @@
 CONTEXT RAP IN ENGLISH
+INCLUDE "Rules.adl"
+INCLUDE "Relations.adl"
+--! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
+
+RELATION name[Concept*Identifier] [UNI,TOT]
+
+VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , tgt;name[Concept*Identifier] , TXT "]" )
+
+
+--PATTERN Authorizations
+--PURPOSE PATTERN Authorizations
+--{+
+---}
+--PURPOSE RELATION owner[Context*Account]
+--{+In RAP, every context must have one owner, who can exercise all ownership rights that contexts have.
+--Initially, the creator of a context is its owner.
+---}
+--    RELATION owner[Context*Account] [UNI]
+--    MEANING "A context has an owner, which is an account."
+--    ROLE ExecEngine MAINTAINS TOTowner
+--    RULE TOTowner : (I[Context]#'_SESSION'[SESSION]);ingelogd |- owner
+--    MEANING "The creator of a context is the account that was logged in when the context was created."
+--    VIOLATION ( TXT "{EX} InsPair;owner;Context;", SRC I, TXT ";Account;", TGT I )
+--ENDPATTERN
+
 PATTERN Context
     CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
     IDENT Context: Context(name[Context*ContextIdentifier])  
@@ -84,6 +109,83 @@ PATTERN Validity
     VIOLATION (TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I)
     RULE AllValidRules : valid[Rule*Context] |- rules~;(context\/uses~) \/ context[Rule*Context]
     VIOLATION (TXT "Rule ", SRC name, TXT " is not valid in context ", TGT I)
+
+    RELATION relations[Context*Relation] [INJ]
+
+    ROLE ExecEngine MAINTAINS "validity of concepts in a context"
+    RULE "validity of concepts in a context" : patterns;declarations;sign;(tgt\/src) |- concs
+    MEANING "Every concept in the signature of relations is valid in every context that uses the pattern in which that relation is declared.."
+    VIOLATION ( TXT "{EX} InsPair;concs;Context;", SRC I, TXT ";Concept;", TGT I )
+
+    ROLE ExecEngine MAINTAINS "validity of relations in a context"
+    RULE "validity of relations in a context" : patterns;declarations |- relations
+    MEANING "All rules that are declared in a pattern, which is used in a context ar valid in that context."
+    VIOLATION ( TXT "{EX} InsPair;relations;Context;", SRC I, TXT ";Relation;", TGT I )
+
+    ROLE ExecEngine MAINTAINS "validity of rules in a context"
+    RULE "validity of rules in a context" : declaredIn;patterns~ |- valid
+    MEANING "All rules that are declared in a pattern, which is used in a context ar valid in that context."
+    VIOLATION ( TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I )
+ENDPATTERN
+
+PATTERN Patterns
+    CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
+    IDENT Pattern: Pattern(name[Pattern*PatternIdentifier])
+    REPRESENT PatternIdentifier TYPE ALPHANUMERIC
+    RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
+    MEANING "The name of a pattern."
+    RELATION declaredIn[Rule*Pattern] [UNI]
+    MEANING "The user-defined rules in a pattern."
+    RELATION declarations[Pattern*Relation]
+    MEANING "The relations that are declared in a pattern."
+    RELATION purpose[Pattern*Purpose]
+    MEANING "The purposes of a pattern."
+
+--    ROLE ExecEngine MAINTAINS "TOT declaredIn"
+--    RULE "TOT declaredIn" : I[Rule] |- declaredIn;declaredIn~
+--    MEANING "A rule is declared in a pattern, otherwise it will be removed."
+--    VIOLATION ( TXT "{EX} DelPair;declaredIn;Rule;", SRC I, TXT ";Pattern;", SRC declaredIn )
+
+    ROLE ExecEngine MAINTAINS "Remove rule atom"
+    RULE "Remove rule atom" : I[Rule]- declaredIn;declaredIn~ |- -V
+    MEANING "A relation without declaration will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+
+--    ROLE ExecEngine MAINTAINS "SUR declarations"
+--    RULE "SUR declarations" : I[Relation] |- declarations~;declarations
+--    MEANING "A relation is declared in a pattern, otherwise it will be removed."
+--    VIOLATION ( TXT "{EX} DelPair;declarations;Pattern;", SRC declarations~, TXT ";Relation;", SRC I )
+
+    ROLE ExecEngine MAINTAINS "Remove relation atom"
+    RULE "Remove relation atom" : I[Relation]- declarations~;declarations |- -V
+    MEANING "A relation without declaration will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;Relation;", SRC I )
+
+    ROLE User MAINTAINS "self-sustained rules"
+    RULE "self-sustained rules" : usedIn;term~;declaredIn |- declarations~
+    MEANING "A relation that is used in a rule, which is declared in a pattern, must be declared in that same pattern."
+    VIOLATION ( TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I )
+
+ENDPATTERN
+
+PATTERN Specialization
+    VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*Identifier]-} , TXT " ISA " , gengen;name{-[Concept*Identifier]-} )
+    RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
+    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
+
+    RELATION gengen[Gen*Concept] [UNI,TOT]
+    MEANING "A generalization rule refers to one more generic concept."
+    RELATION genspc[Gen*Concept] [UNI,TOT]
+    MEANING "A generalization rule refers to one more specific concept."
+
+--PURPOSE RULE specialization
+--{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
+--If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
+---}
+--RELATION instanceOf[Atom*Concept] [TOT] 
+--RULE specialization : instanceOf;genspc~;gengen |- instanceOf
+--MEANING "Every instance of a specialized concept is an instance of the generic concept too."
+
 ENDPATTERN
 
 ENDCONTEXT

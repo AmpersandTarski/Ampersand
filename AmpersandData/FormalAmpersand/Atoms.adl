@@ -1,19 +1,23 @@
-﻿CONTEXT AST IN ENGLISH 
+CONTEXT AST IN ENGLISH 
 
-PROCESS Atoms
+PATTERN Concepts
     RELATION name[Concept*Identifier] [UNI,TOT]
     RELATION source[Relation*Concept] [UNI,TOT]
     RELATION target[Relation*Concept] [UNI,TOT]
 
     REPRESENT Identifier TYPE ALPHANUMERIC
+ENDPATTERN
 
-    RULE "Identifiability of concepts": name[Concept*Identifier];name[Concept*Identifier]~ |- I[Concept]
+--    RULE "Identifiability of concepts": name[Concept*Identifier];name[Concept*Identifier]~ |- I[Concept]
+
+PATTERN Atoms
+    RULE "Identifiability of concepts": name;name~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
     RELATION in[Pair*Relation] [UNI,TOT] -- TOT is maintained by the exec-engine
     RELATION l[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
     RELATION r[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
-ENDPROCESS
+ENDPATTERN
 
 PROCESS "Compute populations"
     RELATION pop[Atom*Concept]

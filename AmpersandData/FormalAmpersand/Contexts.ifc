@@ -1,9 +1,10 @@
-﻿CONTEXT RAP IN ENGLISH
+CONTEXT RAP IN ENGLISH
 INCLUDE "Contexts.adl"
+INCLUDE "ContextsTry.xlsx"
 
 VIEW Context : Context(name)
-INTERFACE Contexts (valid,relations) : '_SESSION'
-TABS[ "Contexts" : ingelogd;owner~
+INTERFACE Contexts (valid,relations) : '_SESSION'[SESSION]
+TABS[ "Contexts" : V[SESSION*Context]
       BOX<SCOLS>
            [ context        : I
            , "valid rules"  : valid~
@@ -11,12 +12,34 @@ TABS[ "Contexts" : ingelogd;owner~
            ]
     ]
 
-INTERFACE Context (valid,relations,name[Context*ContextIdentifier]) : I[Context]
-      BOX<SCOLS>
-           [ context        : name[Context*ContextIdentifier]
-           , "valid rules"  : valid~
-           , relations      : relations
+
+INTERFACE "Context" FOR Ampersand : I[Context] TABS
+  [ "About" : I BOX
+    [ "name"  : name[Context*ContextIdentifier]
+--    , "versionInfo" : versionInfo
+--    , "dbName" : dbName
+--    , "owner" : owner[Context*Account]
+    , "valid~" : valid[Rule*Context]~
+    ]
+  , "Patterns" : patterns[Context*Pattern] BOX 
+    [ "Pattern" : I CRuD -- INTERFACE Pattern
+    ]
+  , "Gens" : concs ; (I[Concept] 
+          /\
+                (gengen[Gen*Concept]~;gengen[Gen*Concept]) /\
+                ( -(genspc[Gen*Concept]~;genspc[Gen*Concept]))) 
+         -- INTERFACE GenTree 
+  , "Concepts" : concs[Context*Concept]
+  , "Relations" : relations  -- LINKTO INTERFACE "Relation"
+       BOX<SCOLS>
+           [ relation        : I
+           , "declarations~" : declarations~
+           , contexts        : relations~
            ]
+--  , "Roles" : allRoles[Context*Role]
+--  , "allConjuncts" : allConjuncts[Context*Conjunct]
+--  , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
+  ]
 
 ENDCONTEXT
 

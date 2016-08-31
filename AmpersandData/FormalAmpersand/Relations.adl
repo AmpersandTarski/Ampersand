@@ -18,8 +18,6 @@ MEANING "The signature of a relation."
 RELATION decprps[Relation*PropertyRule] [INJ,SUR]
 MEANING "The properties of a relation."
 
-VIEW Signature: Signature( TXT "[" , src[Signature*Concept];name[Concept*Identifier] , TXT "*" , tgt[Signature*Concept];name[Concept*Identifier] , TXT "]" )
-
 RELATION src[Signature*Concept] [UNI,TOT]
 MEANING "The source of a signature."
 ROLE Ampersand MAINTAINS "TOT src[Signature*Concept]", "TOT tgt[Signature*Concept]"
@@ -41,8 +39,6 @@ RELATION decmean[Relation * Meaning]
 MEANING "The meanings of a relation."
 RELATION decpurpose[Relation * Purpose]
 MEANING "The purposes of a relation."
-RELATION in[Pair*Relation]
-MEANING "The population of a relation."
 
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE "entity integrity of relation": left;left~ /\ right;right~ /\ in;in~ |- I
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "There cannot be two relationships in the population of a relation with the same source and same target."
