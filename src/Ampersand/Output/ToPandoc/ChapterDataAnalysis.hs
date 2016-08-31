@@ -24,7 +24,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   sectionLevel = 2
  
   theBlocks
-    =  xDef fSpec DataAnalysis  -- The header
+    =  xDefBlck fSpec DataAnalysis  -- The header
     <> (case fsLang fSpec of
              Dutch   -> para ( "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
                             <> "De opbouw is als volgt:"
@@ -59,7 +59,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                                   else "This is shown in the figure below."
                                  )
                    )
-                <> xDef fSpec classificationPicture
+                <> xDefBlck fSpec classificationPicture
            )
 
     <> daRulesSection
@@ -90,7 +90,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                                 else text "This model is shown by the figure below. "
                               )
               )
-       <> xDef fSpec logicalDataModelPicture
+       <> xDefBlck fSpec logicalDataModelPicture
        <> let nrOfClasses = length (classes oocd)
           in case fsLang fSpec of
                Dutch   -> para (case nrOfClasses of
@@ -250,7 +250,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                               else "This model is shown by the figure below. "
                             )
             )
-    <> xDef fSpec technicalDataModelPicture
+    <> xDefBlck fSpec technicalDataModelPicture
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec))
              in
              case fsLang fSpec of
@@ -372,7 +372,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
               in  if format == Frtf then
                      plain $ linebreak <> singleton (RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                   else
-                    pandocEqnArrayWithLabel (XRefDataAnalRule rule) (showLatex predicate)
+                    pandocEqnArrayWithLabel (XRefDataAnalysisRule rule) (showLatex predicate)
          else if format == FLatex
               then fromList $ pandocEquation (showMath rule)
               else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>

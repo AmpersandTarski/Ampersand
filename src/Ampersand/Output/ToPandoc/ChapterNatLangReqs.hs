@@ -14,7 +14,7 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
       --  *** Header ***
-   xDef fSpec SharedLang
+   xDefBlck fSpec SharedLang
    <> --  *** Intro  ***
     case fsLang fSpec of
         Dutch   -> para
@@ -82,7 +82,7 @@ chpNatLangReqs lev fSpec =
         = mempty   -- The document is partial (because themes have been defined), so we don't print loose ends.
     | otherwise 
         =   --  *** Header of the theme: ***
-            xDef fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
+            xDefBlck fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
                  Nothing  -> 
@@ -199,8 +199,8 @@ chpNatLangReqs lev fSpec =
   printRel nDcl
        =   (printPurposes . cDclPurps . theLoad) nDcl
         <> case (cDclMeaning . theLoad) nDcl of
-              Just m -> definitionList [( definitionListItemLabel 
-                                           (XRefNaturalLanguageDeclaration dcl)
+              Just m -> definitionList [( definitionListItemLabel fSpec
+                                           (XRefSharedLangDeclaration dcl)
                                               (l (NL "Afspraak ", EN "Agreement ")++show(theNr nDcl)
                                                ++if development (getOpts fSpec)
                                                  then (" ("++name nDcl++")") 
@@ -232,8 +232,8 @@ chpNatLangReqs lev fSpec =
           -> mempty
         Just m
           -> definitionList 
-               [(definitionListItemLabel
-                   (XRefNaturalLanguageRule . cRul . theLoad $ nRul)
+               [(definitionListItemLabel fSpec
+                   (XRefSharedLangRule . cRul . theLoad $ nRul)
                    ((case fsLang fSpec of
                        Dutch   -> "Afspraak "
                        English -> "Agreement "

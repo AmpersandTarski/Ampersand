@@ -65,8 +65,24 @@ import Text.Pandoc.CrossRef
 fSpec2Pandoc :: FSpec -> (Pandoc, [Picture])
 fSpec2Pandoc fSpec = (thePandoc,thePictures)
   where
+    -- shorthand for easy localizing    
+    l :: LocalizedStr -> String
+    l lstr = localize (fsLang fSpec) lstr
+    
     wrap :: Pandoc -> Pandoc
-    wrap (Pandoc m bs) = Pandoc m $ runCrossRef m Nothing crossRefBlocks bs 
+    wrap (Pandoc m bs) = Pandoc m $ runCrossRef m' Nothing crossRefBlocks bs 
+      where 
+        m' =   (figureTitle $ (str.l) (NL "Figuur" ,EN "Figure"))
+            <> (tableTitle  $ (str.l) (NL "Tabel"  ,EN "Table" ))
+            <> figPrefix [str "fig.", str "figs."]
+            <> eqnPrefix [str "eq." , str "eqns."]
+            <> tblPrefix [str "tbl.", str "tbls."]
+            <> lstPrefix [str "lst.", str "lsts."]
+            <> secPrefix [(str.l) (NL "hoofdstuk",EN "chapter")
+                         ,(str.l) (NL "hoofdstukken", EN "chapters")]
+            <> cref True
+            <> chapters True
+
     thePandoc = wrap $
         (setTitle
            (case metaValues "title" fSpec of

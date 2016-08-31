@@ -32,10 +32,6 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , ThemeContent(..), orderingByTheme
     , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
     , plainText
-    , NLString(..)
-    , ENString(..)
-    , LocalizedStr
-    , localize
     , sortWith)
 where
 import Ampersand.Basics
@@ -273,12 +269,12 @@ dpRule' fSpec = dpR
          <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
          <> case (nds, fsLang fSpec) of
              ([] ,_)       -> mempty
-             ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
-             ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
-             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> xRefTo (XRefNaturalLanguageRule r)
+             ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> xRefTo (XRefSharedLangDeclaration d) <> "):")
+             ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> xRefTo (XRefSharedLangDeclaration d) <> "):")
+             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> xRefTo (XRefSharedLangRule r)
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
-             (_  ,English) -> plain ("To arrive at the formalization of "   <> xRefTo (XRefNaturalLanguageRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
+             (_  ,English) -> plain ("To arrive at the formalization of "   <> xRefTo (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
          <> plain "FIXME! (Hier is wat omgevallen, dient te worden hersteld in de generator.)"
   --       <> (fromList $
   --                pandocEqnArray
@@ -314,7 +310,7 @@ dpRule' fSpec = dpR
                                            )
                                    )
                                  <> l (NL " om ", EN " to formalize ")
-                                 <> xRefTo (XRefNaturalLanguageRule r)
+                                 <> xRefTo (XRefSharedLangRule r)
                                  <> l (NL " te formaliseren: ", EN ": ")
                                  )
                          )
@@ -325,13 +321,13 @@ dpRule' fSpec = dpR
                    else l (NL "De regel luidt: ", EN "This means: ")
                   )
          <> (if showPredExpr (getOpts fSpec)
-             then pandocEqnArrayWithLabel (XRefConceptualAnalysisRuleB r) ((showLatex.toPredLogic) r)
-             else pandocEquationWithLabel (XRefConceptualAnalysisRuleB r) (showMath r)
+             then pandocEqnArrayWithLabel (XRefConceptualAnalysisExpression r) ((showLatex.toPredLogic) r)
+             else pandocEquationWithLabel (XRefConceptualAnalysisExpression r) (showMath r)
             )
          <> (if length nds<=1
              then mempty
              else plain (  l (NL "Dit komt overeen met ", EN "This corresponds to ")
-                        <> xRefTo (XRefNaturalLanguageRule r)
+                        <> xRefTo (XRefSharedLangRule r)
                         <> " (" <> (singleQuoted.str.name) r  <> ")."
 
                         )
@@ -420,17 +416,3 @@ math :: String -> Inlines
 math s = BuggyBuilder.math ("{"++s++"}")
 
 
--- Utility types and functions for handling multiple-language strings
-
--- If you declare a local function:   l lstr = localize (fsLang fSpec) lstr
--- you can use:  l (NL "Nederlandse tekst", EN "English text")
--- to specify strings in multiple languages.
-
-newtype NLString = NL String
-newtype ENString = EN String
-
-type LocalizedStr = (NLString, ENString)
-
-localize :: Lang -> LocalizedStr -> String
-localize Dutch   (NL s, _) = s
-localize English (_, EN s) = s

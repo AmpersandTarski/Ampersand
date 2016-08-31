@@ -9,7 +9,7 @@ import Data.List (intersperse )
 chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])
 chpConceptualAnalysis lev fSpec = (
       --  *** Header ***
-   xDef fSpec ConceptualAnalysis
+   xDefBlck fSpec ConceptualAnalysis
    <> --  *** Intro  ***
    caIntro
    <> --  *** For all themes, a section containing the conceptual analysis for that theme  ***
@@ -64,7 +64,7 @@ chpConceptualAnalysis lev fSpec = (
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern
-        xDef fSpec (XRefConceptualAnalysisPattern pat)
+        xDefBlck fSpec (XRefConceptualAnalysisPattern pat)
         -- The section starts with the reason why this pattern exists
      <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat))
         -- followed by a conceptual model for this pattern
@@ -72,9 +72,9 @@ chpConceptualAnalysis lev fSpec = (
                (Dutch  ) -> -- announce the conceptual diagram
                             para (xRef fSpec (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                             -- draw the conceptual diagram
-                          <>((xDef fSpec . pictOfPat) pat)
+                          <>((xDefBlck fSpec . pictOfPat) pat)
                (English) -> para (xRef fSpec (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
-                          <>((xDef fSpec . pictOfPat) pat)
+                          <>((xDefBlck fSpec . pictOfPat) pat)
         ) <>
     (
         -- now provide the text of this pattern.
@@ -153,10 +153,10 @@ chpConceptualAnalysis lev fSpec = (
                   -- Then the rule as a requirement
                <> plain
                    ( if isNull purp
-                     then (xRefTo . XRefNaturalLanguageRule) r
+                     then (xRefTo . XRefSharedLangRule) r
                        <> str (l (NL " is gemaakt :" ,EN " has been made:"))
                      else str (l (NL "Daarom bestaat ", EN "Therefore "))
-                       <> (xRefTo . XRefNaturalLanguageRule) r
+                       <> (xRefTo . XRefSharedLangRule) r
                        <> str (l (NL ":", EN " exists:"))
                    )
                <> fromList (meaning2Blocks  (fsLang fSpec) r)
@@ -172,14 +172,14 @@ chpConceptualAnalysis lev fSpec = (
                               ,EN ", this is formalized as "))
                    )
                <> (if showPredExpr (getOpts fSpec)
-                   then pandocEqnArrayWithLabel (XRefConceptualAnalysisRuleA r) ((showLatex.toPredLogic) r)
-                   else pandocEquationWithLabel (XRefConceptualAnalysisRuleA r) (showMath r)
+                   then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
+                   else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
                   )
                -- followed by a conceptual model for this rule
                <> para (   xRef fSpec (pictOfRule r)
                         <> str (l (NL " geeft een conceptueel diagram van deze regel."
                                   ,EN " shows a conceptual diagram of this rule."))
                        )
-               <> xDef fSpec (pictOfRule r)
+               <> xDefBlck fSpec (pictOfRule r)
                ]
              )

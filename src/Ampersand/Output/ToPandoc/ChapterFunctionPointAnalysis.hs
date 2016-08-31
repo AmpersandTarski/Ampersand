@@ -9,7 +9,7 @@ import Ampersand.FSpec.FPA
 
 chpFunctionPointAnalysis :: FSpec -> Blocks
 chpFunctionPointAnalysis fSpec
- =    xDef fSpec FunctionPointAnalysis
+ =    xDefBlck fSpec FunctionPointAnalysis
    <> para (   (str.l) (NL "Dit hoofdstuk ..."
                        ,EN "This chapter ...")
            )

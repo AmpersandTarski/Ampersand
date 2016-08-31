@@ -8,7 +8,7 @@ import Data.Maybe(isJust)
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
- = (  xDef fSpec Diagnosis
+ = (  xDefBlck fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
             <> (emph.singleQuoted.str.name) fSpec 
@@ -237,14 +237,14 @@ chpDiagnosis fSpec
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          ) <>
-                         (xDef fSpec pict)
+                         (xDefBlck fSpec pict)
           picts  -> mconcat
                        [ para (   xRef fSpec pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
                               )
-                       <>(xDef fSpec pict)
+                       <>(xDefBlck fSpec pict)
                        | (pict,pat)<-zip picts pats
                        ]
        )
@@ -404,7 +404,7 @@ chpDiagnosis fSpec
      mconcat
      [    para (  (str.l) (NL "Regel", EN "Rule")
                <> quoterule r
-               <> xRefTo (XRefNaturalLanguageRule r)
+               <> xRefTo (XRefSharedLangRule r)
                <> (str.l) (NL " luidt: ", EN "says: ")
                )
        <> fromList (meaning2Blocks (fsLang fSpec) r)

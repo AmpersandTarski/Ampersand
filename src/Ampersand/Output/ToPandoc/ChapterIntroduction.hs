@@ -6,7 +6,7 @@ import Data.Time.Format
 
 chpIntroduction :: FSpec -> Blocks
 chpIntroduction fSpec =
-      xDef fSpec Intro
+      xDefBlck fSpec Intro
    <> fromList purposesOfContext  -- the motivation(s) of this context
    <> readingGuide                -- tells what can be expected in this document.
   where

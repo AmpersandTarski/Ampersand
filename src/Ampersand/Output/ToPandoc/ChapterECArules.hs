@@ -10,7 +10,7 @@ chpECArules :: FSpec -> Blocks
 chpECArules fSpec
  | (not.genEcaDoc.getOpts) fSpec = mempty
  | otherwise = 
-     xDef fSpec EcaRules
+     xDefBlck fSpec EcaRules
   <> (para.str.l) (NL "Dit hoofdstuk bevat de ECA regels."
                   ,EN "This chapter lists the ECA rules.")
   <> para (  (str.l) (NL "ECA regels:"                 , EN "ECA rules:")
