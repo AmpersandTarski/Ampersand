@@ -176,11 +176,10 @@ chpConceptualAnalysis lev fSpec = (
                    else pandocEquationWithLabel (XRefConceptualAnalysisRuleA r) (showMath r)
                   )
                -- followed by a conceptual model for this rule
-               <> para
-                     (   xRef fSpec (pictOfRule r)
-                      <> str (l (NL " geeft een conceptueel diagram van deze regel."
-                                ,EN " shows a conceptual diagram of this rule."))
-                     )
+               <> para (   xRef fSpec (pictOfRule r)
+                        <> str (l (NL " geeft een conceptueel diagram van deze regel."
+                                  ,EN " shows a conceptual diagram of this rule."))
+                       )
                <> xDef fSpec (pictOfRule r)
                ]
              )

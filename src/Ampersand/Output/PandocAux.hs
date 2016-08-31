@@ -103,10 +103,19 @@ defaultWriterVariables fSpec
          , "% colonequals – Colon equals symbols"
          , "\\usepackage{colonequals}"
          , ""
+         , "% caption – Customising captions in floating environments"
+         , "\\usepackage{caption}"
+         , "\\captionsetup{format=plain"
+         , "              ,textfont=bf,labelfont=small"
+         , "              ,labelsep=none"
+         , "              ,labelformat=empty"
+         , "              ,width=.85\\textwidth"
+         , "              }"
          , ""
-         , "\\usepackage{textcomp}"
-         , "% == [all]{hypcap} after {hyperref} shows the ref'd picture i.o. the caption @ click =="
+         , "% textcomp – LATEX support for the Text Companion fonts -- Disabled because obsolete."
+         , "% \\usepackage{textcomp}"
          , ""
+         , "% hypcap – Adjusting the anchors of captions"
          , "\\usepackage[all]{hypcap}"
          , ""
 
@@ -318,8 +327,7 @@ instance Xreferenceble Picture where
            ) . takeFileName . imagePath opts) a
 
 citeGen :: String -> [String] -> Inlines
-citeGen p l = cite (mconcat $ map (cit . (p++) . show) l) $ text $
-  "[" ++ intercalate "; " (map (("@"++) . (p++) . show) l) ++ "]"
+citeGen p l = cite (mconcat $ map (cit . (p++) ) l) mempty
   where
     cit :: String -> [Citation]
     cit r = 
