@@ -21,14 +21,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
              )  INTERFACE GenTree 
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
-  , "Relations" : relsDefdIn[Relation*Context]~  LINKTO INTERFACE "Relation"
-  , "Gens" : concs ; (I[Concept] 
-          /\
-                (gengen[Gen*Concept]~;gengen[Gen*Concept]) /\
-                ( -(genspc[Gen*Concept]~;genspc[Gen*Concept]))) 
-         INTERFACE GenTree 
-  , "Concepts" : concs[Context*Concept]
-  , "Relations" : relations  LINKTO INTERFACE "Relation"
+  , "Relations" : declaredIn[Relation*Context]~  LINKTO INTERFACE "Relation"
   , "Roles" : allRoles[Context*Role]
   , "allConjuncts" : allConjuncts[Context*Conjunct]
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
@@ -42,8 +35,8 @@ INTERFACE GenTree FOR Ampersand : I[Concept]
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternIdentifier]
     , "patterns~" : context[Pattern*Context]
-    , "Relations" : relsDefdIn[Pattern*Relation]  LINKTO INTERFACE "Relation"
-    , "rules"  : rules[Pattern*Rule]
+    , "Relations" : declaredIn[Relation*Pattern]~  LINKTO INTERFACE "Relation"
+    , "rules"  : declaredIn[Rule*Pattern]~
     , "purpose" : purpose[Pattern*Purpose]
     ]
 
@@ -52,7 +45,7 @@ BOX [ "name" : name[Rule*RuleID]
     , "valid" : valid[Rule*Context]
     , "allRules~" : allRules[Context*Rule]~
     , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
-    , "rules~"  : rules[Pattern*Rule]~
+    , "rules~"  : declaredIn[Rule*Pattern]
     , "maintains~ (Role)" : maintains[Role*Rule]~
     , "tgtConcept" : tgtConcept[Rule*Concept]
     , "srcConcept" : srcConcept[Rule*Concept]
@@ -149,15 +142,14 @@ BOX [ "gens~" : gens[Context*Gen]~
 INTERFACE Relation FOR Ampersand : I[Relation]
 BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "affectedSigConjunctIds" : affectedSigConjunctIds[Relation*Conjunct]
-	, "defined in context" : relsDefdIn[Relation*Context]
-	, "context" : relations[Context*Relation]~
+	, "declared in context" : declaredIn[Relation*Context]
 	, "decmean" : decmean[Relation*Meaning]
 	, "decprL" : decprL[Relation*String]
 	, "decprM" : decprM[Relation*String]
 	, "decprR" : decprR[Relation*String]
 	, "decprps" : decprps[Relation*PropertyRule]
 	, "decpurpose" : decpurpose[Relation*Purpose]
-	, "name" : name[Relation*Name]
+	, "name" : name[Relation*Identifier]
 	, "prop" : prop[Relation*Property]
 	, "sign" : sign[Relation*Signature]
 	, "source" : source[Relation*Concept]
@@ -165,7 +157,7 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "target" : target[Relation*Concept]
 	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
 	, "bind~" : bind[BindedRelation*Relation]~
-	, "declared in pattern" : relsDefdIn[Pattern*Relation]~
+	, "declared in pattern" : declaredIn[Relation*Pattern]
 	, "declared in context (outside a pattern)" : ctxds[Relation*Context]
 	, "in~" : in[Pair*Relation]~
 	      BOX <SHCOLS>

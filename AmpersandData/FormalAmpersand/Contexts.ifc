@@ -7,8 +7,8 @@ INTERFACE Contexts (valid,relations) : '_SESSION'[SESSION]
 TABS[ "Contexts" : V[SESSION*Context]
       BOX<SCOLS>
            [ context        : I
-           , "valid rules"  : valid~
-           , relations      : relations
+           , "valid rules"  : valid[Rule*Context]~
+           , relations      : declaredIn[Relation*Context]~
            ]
     ]
 
@@ -21,20 +21,23 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
 --    , "owner" : owner[Context*Account]
     , "valid~" : valid[Rule*Context]~
     ]
-  , "Patterns" : patterns[Context*Pattern] BOX 
+  , "Patterns defined" : context[Pattern*Context]~ BOX 
     [ "Pattern" : I CRuD -- INTERFACE Pattern
     ]
-  , "Gens" : concs ; (I[Concept] 
+  , "Patterns used" : uses[Context*Pattern] BOX 
+    [ "Pattern" : I CRuD -- INTERFACE Pattern
+    ]
+  , "Gens" : context[Concept*Context]~ ; (I[Concept] 
           /\
                 (gengen[Gen*Concept]~;gengen[Gen*Concept]) /\
                 ( -(genspc[Gen*Concept]~;genspc[Gen*Concept]))) 
          -- INTERFACE GenTree 
-  , "Concepts" : concs[Context*Concept]
-  , "Relations" : relations  -- LINKTO INTERFACE "Relation"
+  , "Concepts" : context[Concept*Context]~
+  , "Relations" : declaredIn[Relation*Context]~  -- LINKTO INTERFACE "Relation"
        BOX<SCOLS>
-           [ relation        : I
-           , "declarations~" : declarations~
-           , contexts        : relations~
+           [ relation   : I
+           , "declared in pattern" : declaredIn[Relation*Pattern]
+           , "declared in context" : declaredIn[Relation*Context]
            ]
 --  , "Roles" : allRoles[Context*Role]
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]

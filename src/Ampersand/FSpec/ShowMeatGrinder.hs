@@ -116,6 +116,8 @@ instance MetaPopulations A_Context where
   ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.gens) ctx++")"]
   ++   concatMap extract (gens ctx)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) ctx++")"]
+  ++[ Pop "context" "Concept" "Context" [Uni]                        -- The context in which a concept is defined.
+           [(dirtyId ctx c, dirtyId ctx ctx) | c<-concs ctx]
   ++   (concatMap extract . sortByName . concs) ctx
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.relsDefdIn) ctx++")"]
   ++   concatMap extract (relsDefdIn ctx ++ [ Isn c | c<-concs (relsDefdIn ctx)])
@@ -178,7 +180,7 @@ instance MetaPopulations A_Concept where
    ]++
    case cpt of
      PlainConcept{} ->
-      [ Pop "concs" "Context" "Concept" [Sur,Inj]
+      [ Pop "context" "Concept" "Context" [Uni]
              [(dirtyId ctx ctx, dirtyId ctx cpt)]
       ]
      ONE -> 
@@ -303,7 +305,7 @@ instance MetaPopulations Declaration where
       , Comment $ " Relation `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
       , Pop "context" "Relation" "Context" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx ctx)] 
-      , Pop "name" "Relation" "Name" [Uni,Tot]
+      , Pop "name" "Relation" "Identifier" [Uni,Tot]
              [(dirtyId ctx dcl, (show.name) dcl)]
 --      , Pop "srcCol" "Relation" "SqlAttribute" []
 --             [(dirtyId ctx dcl,dirtyId ctx (table,srcCol))]
@@ -335,7 +337,7 @@ instance MetaPopulations Declaration where
              [(dirtyId ctx dcl,dirtyId ctx (sign dcl))]
       , Pop "context" "Relation" "Context" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx ctx)]
-      , Pop "name" "Relation" "Name" [Uni,Tot]
+      , Pop "name" "Relation" "Identifier" [Uni,Tot]
              [(dirtyId ctx dcl, (show.name) dcl)]
       , Pop "source" "Relation" "Concept" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx (source dcl))]
