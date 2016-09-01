@@ -4,9 +4,9 @@ import Prelude hiding (exp,putStrLn,putStr)
 import Data.List
 import Control.Monad
 import System.IO (hSetBuffering,stdout,BufferMode(NoBuffering))
-import Ampersand.Basics
 import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Basics
 import Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
@@ -19,8 +19,15 @@ tempDbName = "ampersand_temporaryvalidationdb"
 
 validateRulesSQL :: FSpec -> IO Bool
 validateRulesSQL fSpec =
- do { when (any (not.isSignal.fst) (allViolations fSpec))
-           (exitWith ViolationsInDatabase)
+ do { let invViols = filter (not.isSignal.fst) (allViolations fSpec)
+    ; unless (null invViols)
+        (do { mapM_ putStrLn $
+               "The population would violate invariants. Could not generate your database." : 
+               ["  Rule `"++name rul++"`: "++show (length vs)++" violations."
+               | (rul,vs) <- invViols
+               ]
+            ; exitWith $ ExitFailure 10
+            })
     ; hSetBuffering stdout NoBuffering
 
     ; putStrLn "Initializing temporary database"
@@ -112,10 +119,11 @@ validateExp fSpec vExp@(exp, orig) =
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
-                                     createTempDbPHP tempDbName ++
-                                     createTablesPHP fSpec ++
-                                     populateTablesPHP fSpec
+ do { _ <- executePHPStr . showPHP $ php
     ; return ()
     }
- 
+   where 
+    php = sqlServerConnectPHP fSpec ++
+          createTempDbPHP tempDbName ++
+          createTablesPHP fSpec ++
+          populateTablesPHP fSpec

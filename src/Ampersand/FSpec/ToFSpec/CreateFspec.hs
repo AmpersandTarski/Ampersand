@@ -31,29 +31,34 @@ createFSpec :: Options  -- ^The options derived from the command line
             -> IO(Guarded FSpec)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     let fsp = pCtx2Fspec userP_Ctx
-     genFiles fsp >> genTables fsp userP_Ctx
+     let gFSpec = pCtx2Fspec userP_Ctx
+     let (filePath,metaContents)
+          = case gFSpec of
+             Checked fSpec -> makeMetaPopulationFile fSpec
+             _ -> fatal 38 "errors in gFSpec"
+--     when (genMetaFile opts)
+     verboseLn opts ("Generating meta file in path "++dirOutput opts)
+     writeFile (combine (dirOutput opts) filePath) metaContents      
+     verboseLn opts ("\""++filePath++"\" written")
+     genFiles gFSpec >> genTables gFSpec userP_Ctx
    where
     genFiles :: Guarded FSpec -> IO(Guarded ())
-    genFiles fsp
-      = case fsp of
+    genFiles gFSpec
+      = case gFSpec of
           Errors es -> return(Errors es)
-          Checked uFspec
-            ->   when (genASTFile opts) (doGenMetaFile uFspec)
-              >> return (Checked ())
+          _ -> return (Checked ())
 
     genTables :: Guarded FSpec -> Guarded P_Context -> IO(Guarded FSpec)
-    genTables fsp uCtx = case genASTTables opts of
+    genTables gFSpec uCtx = case genMetaTables opts of
        False
-         -> return fsp
+         -> return gFSpec
        True
          -> do rapP_Ctx <- parseMeta opts -- the P_Context of the
-               let populationPctx       = join ( grind <$> fsp)
+               let populationPctx       = join ( grind <$> gFSpec)
                    populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
                    metaPopulatedRapPctx = populatedRapPctx
                    allCombinedPctx      = merge.sequenceA $ [uCtx, metaPopulatedRapPctx]
                return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
-
 
 
     toFspec :: A_Context -> Guarded FSpec
@@ -67,20 +72,9 @@ createFSpec opts =
        f (c:cs) = foldr mergeContexts c cs
     grind :: FSpec -> Guarded P_Context
     grind fSpec
-      = fmap fstIfNoIncludes $ parseCtx f c
-      where (f,c) = makeMetaPopulationFile fSpec
+      = fmap fstIfNoIncludes $ parseCtx filePath metaContents
+      where (filePath,metaContents) = makeMetaPopulationFile fSpec
             fstIfNoIncludes (a,includes)
              = case includes of
                [] -> a
                _  -> fatal 83 "Meatgrinder returns included file. That isn't anticipated."
-
-
-
-doGenMetaFile :: FSpec -> IO()
-doGenMetaFile fSpec =
- do { verboseLn (getOpts fSpec) $ "Generating meta file for "++name fSpec
-    ; writeFile outputFile contents
-    ; verboseLn (getOpts fSpec) $ "Meatgrinder output written into " ++ outputFile ++ ""
-    }
- where outputFile = combine (dirOutput (getOpts fSpec)) $ fpath
-       (fpath,contents) = makeMetaPopulationFile fSpec

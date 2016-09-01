@@ -15,21 +15,21 @@ PATTERN Hello
 
 ENDPATTERN
 
-INTERFACE Overview  : I[ONE]
-  BOX [ identifiers : V[ONE*Identifier]
-      , things      : V[ONE*Thing]
+INTERFACE Overview  : '_SESSION'[SESSION]
+  BOX [ identifiers : V[SESSION*Identifier]
+      , things      : V[SESSION*Thing]
       ]
 
 INTERFACE Id : I[Identifier]
   BOX [ id         : I[Identifier]
       , identifies : identifies
-      , back       : V[Identifier*ONE]
+      , back       : V[Identifier*SESSION];'_SESSION'[SESSION]
       ]
 
 INTERFACE Th : I[Thing]
   BOX [ id                 : I[Thing]
       , "is identified by" : identifies~
-      , back               : V[Thing*ONE]
+      , back               : I[Thing]#'_SESSION'[SESSION]
       ]
 
 POPULATION identifies[Identifier*Thing] CONTAINS

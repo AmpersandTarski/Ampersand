@@ -1,4 +1,4 @@
-﻿CONTEXT RAP IN ENGLISH
+CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "AST.ifc"
 --INCLUDE "MinimalAST.xlsx" -- Contains minimal population. Anything discarded from it must break an invariant
@@ -31,7 +31,7 @@ RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
 MEANING "The name of a pattern."
 RELATION rules[Pattern*Rule]
 MEANING "The user-defined rules in a pattern."
-RELATION declarations[Pattern*Relation]
+RELATION relsDefdIn[Pattern*Relation]
 MEANING "The relations that are declared in a pattern."
 RELATION purpose[Pattern*Purpose]
 MEANING "The purposes of a pattern."
@@ -39,11 +39,11 @@ MEANING "The purposes of a pattern."
 ENDPATTERN
 
 PATTERN Specialization
-VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*Identifier]-} , TXT " ISA " , gengen;name{-[Concept*Identifier]-} )
-RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
+VIEW Gen: Gen( TXT "CLASSIFY ", genspc[Gen*Concept];name[Concept*Identifier] , TXT " ISA " , gengen[Gen*Concept];name[Concept*Identifier] )
+RULE "eq gen": gengen[Gen*Concept];gengen[Gen*Concept]~ /\ genspc[Gen*Concept];genspc[Gen*Concept]~ |- I
 MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 
-RELATION gengen[Gen*Concept] [UNI,TOT]
+RELATION gengen[Gen*Concept] [TOT]
 MEANING "A generalization rule refers to one more generic concept."
 RELATION genspc[Gen*Concept] [UNI,TOT]
 MEANING "A generalization rule refers to one more specific concept."
@@ -53,7 +53,7 @@ MEANING "A generalization rule refers to one more specific concept."
 --If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
 ---}
 --RELATION instanceOf[Atom*Concept] [TOT] 
---RULE specialization : instanceOf;genspc~;gengen |- instanceOf
+--RULE specialization : instanceOf;genspc[Gen*Concept]~;gengen[Gen*Concept] |- instanceOf
 --MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN
@@ -65,7 +65,7 @@ RELATION relsInPlug[Plug*Relation] --FIXME [SUR] -- Note: Declared relations onl
 
 -- Rules
 ROLE Ampersand MAINTAINS "All isas in one plug"
-RULE "All isas in one plug" : (-(genspc~;gengen;in[Concept*Plug]) \/ in[Concept*Plug]) /\ (-(gengen~;genspc;in[Concept*Plug]) \/ in[Concept*Plug])
+RULE "All isas in one plug" : (-(genspc[Gen*Concept]~;gengen[Gen*Concept];in[Concept*Plug]) \/ in[Concept*Plug]) /\ (-(gengen[Gen*Concept]~;genspc[Gen*Concept];in[Concept*Plug]) \/ in[Concept*Plug])
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
 ENDPROCESS
 

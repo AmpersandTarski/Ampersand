@@ -2,13 +2,12 @@
 
 PROCESS Atoms
     RELATION name[Concept*Identifier] [UNI,TOT]
-    RELATION name[Relation*Identifier] [UNI,TOT]
     RELATION source[Relation*Concept] [UNI,TOT]
     RELATION target[Relation*Concept] [UNI,TOT]
 
     REPRESENT Identifier TYPE ALPHANUMERIC
 
-    RULE "Identifiability of concepts": name;name~ |- I[Concept]
+    RULE "Identifiability of concepts": name[Concept*Identifier];name[Concept*Identifier]~ |- I[Concept]
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
     RELATION in[Pair*Relation] [UNI,TOT] -- TOT is maintained by the exec-engine
@@ -21,15 +20,15 @@ PROCESS "Compute populations"
     MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
     ROLE ExecEngine MAINTAINS insPop, delPop
-    RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop
-    VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-    RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
-    VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
+    RULE insPop : l~;in[Pair*Relation];source[Relation*Concept];isaStar \/ r~;in[Pair*Relation];target[Relation*Concept];isaStar |- pop[Atom*Concept]
+    VIOLATION (TXT "{EX} InsPair;pop[Atom*Concept];Atom;", SRC I, TXT ";Concept;", TGT I)
+    RULE delPop : pop[Atom*Concept] |- l~;in[Pair*Relation];source[Relation*Concept];isaStar \/ r~;in[Pair*Relation];target[Relation*Concept];isaStar
+    VIOLATION (TXT "{EX} DelPair;pop[Atom*Concept];Atom;", SRC I, TXT ";Concept;", TGT I)
 
     ROLE ExecEngine MAINTAINS "TOT in", "TOT in[Pair*Relation]"
-    RULE "TOT in" : I[Pair] |- in;in~
-    VIOLATION ( TXT "{EX} DelPair;l;Pair;", SRC I, TXT ";Atom;", TGT in
-              , TXT "{EX} DelPair;r;Pair;", SRC I, TXT ";Atom;", TGT in
+    RULE "TOT in" : I[Pair] |- in[Pair*Relation];in[Pair*Relation]~
+    VIOLATION ( TXT "{EX} DelPair;l;Pair;", SRC I, TXT ";Atom;", TGT in[Pair*Relation]
+              , TXT "{EX} DelPair;r;Pair;", SRC I, TXT ";Atom;", TGT in[Pair*Relation]
               , TXT "{EX} DelAtom;Pair;", SRC I
               )
 
@@ -49,8 +48,8 @@ PROCESS "Compute Closures"
 
     RELATION isaCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
     ROLE ExecEngine MAINTAINS "Compute transitive closure of isa"
-    RULE "Compute transitive closure of isa" : isa = isaCopy
-    VIOLATION (TXT "{EX} TransitiveClosure;isa;Concept;isaCopy;isaPlus")
+    RULE "Compute transitive closure of isa" : isa[Concept*Concept] = isaCopy[Concept*Concept]
+    VIOLATION (TXT "{EX} TransitiveClosure;isa[Concept*Concept];Concept;isaCopy[Concept*Concept];isaPlus")
 
     ROLE ExecEngine MAINTAINS "Compute transitive closure of isa by Ins", "Compute transitive closure of isa by Del"
     RULE "Compute transitive closure of isa by Ins" : isaPlus\/I |- isaStar
@@ -60,28 +59,28 @@ PROCESS "Compute Closures"
 ENDPROCESS
 
 PROCESS "Reflexive isa closures"
-    RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa\/isa~
+    RELATION isaRfxStar[Concept*Concept] -- Transitive, reflexive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxStar g  means that  s  is  g  or  each element of concept s  is an element of concept  g  or vice-versa."
-    RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa\/isa~
+    RELATION isaRfxPlus[Concept*Concept] -- Transitive closure of isa[Concept*Concept]\/isa[Concept*Concept]~
     MEANING "s isaRfxPlus g  means that each element of concept  s  is an element of concept  g  or vice-versa."
 
-    RELATION isaRfx[Concept*Concept] -- isaRfx=isa\/isa~
+    RELATION isaRfx[Concept*Concept] -- isaRfx[Concept*Concept]=isa[Concept*Concept]\/isa[Concept*Concept]~
     ROLE ExecEngine MAINTAINS "Compute isaRfxIns", "Compute isaRfxDel"
-    RULE "Compute isaRfxIns" : isa\/isa~ |- isaRfx
-    VIOLATION (TXT "{EX} InsPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE "Compute isaRfxDel" : isaRfx |- isa\/isa~
-    VIOLATION (TXT "{EX} DelPair;isaRfx;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxIns" : isa[Concept*Concept]\/isa[Concept*Concept]~ |- isaRfx[Concept*Concept]
+    VIOLATION (TXT "{EX} InsPair;isaRfx[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxDel" : isaRfx[Concept*Concept] |- isa[Concept*Concept]\/isa[Concept*Concept]~
+    VIOLATION (TXT "{EX} DelPair;isaRfx[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
 
     RELATION isaRfxCopy[Concept*Concept] -- necessary only for calling the Transitive closure function.
-    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa\\/isa~"
-    RULE "Compute transitive closure of isa\\/isa~" : isaRfx = isaRfxCopy
-    VIOLATION (TXT "{EX} TransitiveClosure;isaRfx;Concept;isaRfxCopy;isaRfxPlus")
+    ROLE ExecEngine MAINTAINS "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~"
+    RULE "Compute transitive closure of isa[Concept*Concept]\\/isa[Concept*Concept]~" : isaRfx[Concept*Concept] = isaRfxCopy[Concept*Concept]
+    VIOLATION (TXT "{EX} TransitiveClosure;isaRfx[Concept*Concept];Concept;isaRfxCopy[Concept*Concept];isaRfxPlus[Concept*Concept]")
 
     ROLE ExecEngine MAINTAINS "Compute isaRfxStar by Ins", "Compute isaRfxStar by Del"
-    RULE "Compute isaRfxStar by Ins" : isaRfxPlus\/I |- isaRfxStar
-    VIOLATION (TXT "{EX} InsPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
-    RULE "Compute isaRfxStar by Del" : isaRfxStar |- isaRfxPlus\/I
-    VIOLATION (TXT "{EX} DelPair;isaRfxStar;Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxStar by Ins" : isaRfxPlus[Concept*Concept]\/I |- isaRfxStar[Concept*Concept]
+    VIOLATION (TXT "{EX} InsPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
+    RULE "Compute isaRfxStar by Del" : isaRfxStar[Concept*Concept] |- isaRfxPlus[Concept*Concept]\/I
+    VIOLATION (TXT "{EX} DelPair;isaRfxStar[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPROCESS
 
 ENDCONTEXT

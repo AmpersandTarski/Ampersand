@@ -1,13 +1,105 @@
 ﻿CONTEXT AST IN ENGLISH LATEX
-INCLUDE "TryTables.adl"
+INCLUDE "Tables.adl"
+
+PURPOSE PATTERN Persistence
+{+This pattern describes how pairs can be stored in a persistent storage system (PSS), such as a relational database.
+The assumption is that the elements of a pair are stored in fields of a record, and records are stored in a table-like structure called SQLPlug.
+This pattern guarantees a sound definition of the relation in[Pair*Relation].
+In doing so, the specification leaves certain choices open for the implementation.
+They can be made for reasons of performance, for instance.
+These choices considered to be outside the scope of this pattern.
+This pattern only defines the relation ``in[Pair*Relation] in terms of PlugInfos.
+The challenge is to translate a partial order of concepts together with a set of binary relations to a SQLPlug.
+-}
+PURPOSE CONCEPT Field
+{+A record contains fields in which atoms can be stored. If a field contains no atom, we call it empty. There can be at most one atom in a field.
+-}
+PURPOSE CONCEPT Record
+{+A SQLPlug contains records, each of which can store multiple pairs.
+The purpose of a record is to store facts about a single object.
+A reservation record is an example, in which facts about one particular reservation are stored in one record.
+-}
+PURPOSE CONCEPT Field
+{+A record contains fields in which atoms can be stored. If a field contains no atom, we call it empty. There can be at most one atom in a field.
+-}
 
 PURPOSE CONCEPT SQLPlug
 {+Ampersand uses tables to store population in a relational database.
-They are called "SQLPlug".
+They are called "SQLPlug". This corresponds to PlugInfo in the Haskell source code.
 The challenge is to translate a partial order of concepts together with a set of binary relations
 to a tabular structure that corresponds to a relational database.
+This concept generalizes to other persistent structures, but it is currently used for SQL-tables only.
 -}
 CONCEPT SQLPlug "AnSQLPlug SQLPlug is either a TblSQL or a BinSQL."
+PURPOSE RELATION val[Field*Atom]
+{+Which atom resides in a particula field is determined by the relation `val`.
+It is not total. It contains a pair `(f,a)` only if field `f` contains atom `a`.-}
+
+PURPOSE RELATION val[Field*Atom]
+{+
+-}
+RELATION val[Field*Atom] [UNI] -- the record in which a field resides
+MEANING "The relation `val` determines which atom is stored in any particular field."
+PURPOSE RELATION rec[Field*Record]
+{+
+-}
+RELATION rec[Field*Record] [UNI,TOT] -- the record in which a field resides
+MEANING ""
+PURPOSE RELATION att[Field*SqlAttribute]
+{+
+-}
+RELATION att[Field*SqlAttribute] [UNI,TOT] -- the attribute in which a field resides
+MEANING ""
+RELATION in[Record*SQLPlug] [UNI,TOT] -- the record in which a field resides
+MEANING ""
+PURPOSE RELATION table[SqlAttribute*SQLPlug]
+{+This function `table` exists to determine the attributes of every SQLPlug.
+This knowledge can be used to generate database tables.
+-}
+RELATION table[SqlAttribute*SQLPlug] [UNI]
+MEANING "Each SqlAttribute is a column in precisely one SQLPlug. So, the relation `table~` associates a set of SqlAttributes with every `SQLPlug`."
+
+PURPOSE RELATION srcAtt[Relation*SqlAttribute]
+{+The source and target of a relation are administered in designated attributes (i.e. columns of a table).
+That column is registered in the relation srcAtt.
+`srcAtt` and `tgtAtt` must be functions, i.e. univalent and total.
+-}
+RELATION srcAtt[Relation*SqlAttribute]
+MEANING "Function `srcAtt` determines the source attribute of a relation."
+RELATION tgtAtt[Relation*SqlAttribute]
+MEANING "Function `tgtAtt` determines the target attribute of a relation."
+PURPOSE RELATION l[Pair*Atom]
+{+Functions `l` and `r` exist for the purpose of taking atoms from pairs.
+-}
+RELATION l[Pair*Atom] [UNI] -- should be TOT as well...
+MEANING "Function `l` determines the left atom of a pair."
+RELATION r[Pair*Atom] [UNI] -- should be TOT as well...
+MEANING "Function `r` determines the right atom of a pair."
+
+-- the following are duplicated from Atoms.adl
+RELATION in[Pair*Relation] [UNI] -- should be TOT as well...
+RELATION fst[SRFP*Field] [UNI] -- should be TOT as well...
+RELATION snd[SRFP*Field] [UNI] -- should be TOT as well...
+
+PURPOSE RULE sameTable   -- srcAtt;table = tgtAtt;table
+{+The PSS must ensure that a relation is stored in attributes of the same table.
+-}
+PURPOSE RULE sameRecord   -- fst;rec = snd;rec
+{+The PSS must ensure that every SRFP is stored in one record.
+-}
+PURPOSE RULE inRelation   -- in = (l;val~;fst~/\r;val~;snd~) ; (fst;att;srcAtt~/\snd;att;tgtAtt~)
+{+The following rule is needed by the PSS to compute whether a pair is in a relation.
+As a consequence, users can be assured that the PSS stores pairs correctly.
+-}
+PURPOSE RULE identifyField   -- rec;rec~/\att;att~ |- I[Field]
+{+In order to retrieve atoms from fields, every field must be identified uniquely.
+-}
+PURPOSE RULE inTable   -- in = rec~;att;table
+{+The following rule is needed by the PSS to compute whether a Record is in a SQLPlug.
+As a consequence, users can be assured that the PSS stores records in the right table.
+-}
+
+CONCEPT SQLPlug "A SQLPlug is either a TblSQL or a BinSQL."
 PURPOSE CONCEPT TblSQL
 {+Ampersand translates the partial order of concepts to a TblSQL, which is a specific form of SQLPlug.
 Relations that are either univalent or injective store its population in the same tables.
@@ -75,14 +167,9 @@ In this way, the administration contains sufficient information to generate data
 -}
 RELATION table[SqlAttribute*SQLPlug] [UNI]
 MEANING "Each SqlAttribute is a column in precisely one SQLPlug."
-
 PURPOSE RULE "Assign attributes to tables"
 {+When SqlAttributes come into existence, they must be assigned to a SQLPlug.
 -}
-PURPOSE RULE "Remove attributes from tables"
-{+Consequently, when an SqlAttribute ceases to exist, its assignment to the table must be undone.
--}
-
 PURPOSE RELATION key[TblSQL*SqlAttribute]
 {+One of the attributes of a TblSQL is designated as key.
 Its atoms can be used to identify an entire row in the TblSQL
@@ -97,7 +184,7 @@ PURPOSE RULE "Insert key of a TblSQL"
 
 
 
-PURPOSE PATTERN "Attributes for univalent relations"
+PURPOSE PATTERN "Attributes for univalent relations" LATEX
 {+After translating the partial order of concepts to a table structure,
 the relations must be translated
 There are three different situations:
@@ -112,31 +199,18 @@ the population of a univalent relation can be kept in the same table as its sour
 Injective relations that are not univalent can be treated symmetrically.
 Relations that are neither univalent nor injective are administered separately in a BinSQL table.
 -}
-PATTERN "Attributes for univalent relations"
+
 PURPOSE RELATION prop[Relation*Property]
 {+Multiplicity properties of relations have consequences for the way Ampersand generates database tables.
 For this reason, Ampersand keeps these properties in the system.
 -}
 RELATION prop[Relation*Property]
-PURPOSE RELATION srcAtt[Relation*SqlAttribute]
-{+The source of a relation is administered in one of the columns of a table.
-That column is registered in the relation srcAtt.
--}
-RELATION srcAtt[Relation*SqlAttribute] [UNI]
-PURPOSE RELATION tgtAtt[Relation*SqlAttribute]
-{+The target of a relation is administered in one of the columns of a table.
-That column is registered in the relation tgtAtt.
--}
-RELATION tgtAtt[Relation*SqlAttribute] [UNI]
 
 PURPOSE RULE "fill srcAtt for univalent relations"
 {+An atom in the domain of a univalent relation has one related atom in the target (by the definition of univalence).
 Therefore, the pair can be stored in the same table in which Ampersand keeps the source concept.
 For this purpose, that table is expanded with one column, in which the target atoms of that relation are stored.
 -}
-RULE "fill srcAtt for univalent relations" : (I/\prop;'UNI';prop~);source;conceptAttribute |- srcAtt
-MEANING "The concept-table of the source of a univalent relation is the source attribute of that relation."
-VIOLATION ( TXT "{EX} InsPair;srcAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
 PURPOSE RULE "fill tgtAtt for univalent relations"
 {+For univalent relations of which the srcAtt is defined,
 Ampersand defines the tgtAtt by introducing a new SqlAttribute.
@@ -168,18 +242,13 @@ ROLE ExecEngine MAINTAINS
 ENDPATTERN
 
 
-
-PATTERN "Attributes for injective relations"
 PURPOSE RULE "fill tgtAtt for injective relations"
 {+An atom in the domain of an injective relation has one related atom in the source (by the definition of injectivity).
 Therefore, the pair can be stored in the same table in which Ampersand keeps the target concept.
 Since univalent relations are already stored in the table of the source atom,
 this rule applies only to relations that are injective and not univalent.
 -}
-RULE "fill tgtAtt for injective relations" : ((I/\prop;'INJ';prop~)-prop;'UNI';prop~);target;conceptAttribute |- tgtAtt
-MEANING "The concept-table of the target of a univalent relation is the target attribute of that relation."
-VIOLATION ( TXT "{EX} InsPair;tgtAtt;Relation;", SRC I, TXT ";SqlAttribute;", TGT I )
-PURPOSE RULE "fill tgtAtt for injective relations"
+PURPOSE RULE "fill srcAtt for injective relations"
 {+For injective relations of which the tgtAtt is defined,
 Ampersand defines the srcAtt by introducing a new SqlAttribute.
 This effectively adds one column to the table.

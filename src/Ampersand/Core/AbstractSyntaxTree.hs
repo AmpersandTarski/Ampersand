@@ -295,6 +295,8 @@ instance Named IdentityDef where
   name = idLbl
 instance Traced IdentityDef where
   origin = idPos
+instance Unique IdentityDef where
+  showUnique = idLbl
 
 data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
@@ -364,7 +366,8 @@ instance Named Interface where
   name = name . ifcObj
 instance Traced Interface where
   origin = ifcPos
-
+instance Unique Interface where
+  showUnique = name
 -- Utility function for looking up interface refs
 getInterfaceByName :: [Interface] -> String -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
@@ -531,12 +534,20 @@ data Population -- The user defined populations
              , popas ::  [AAtomValue]  -- The user-defined atoms that populate the concept
              } deriving (Eq,Ord)
 
+instance Unique Population where
+  showUnique pop@ARelPopu{} = (showUnique.popdcl) pop ++ (showUnique.popps) pop
+  showUnique pop@ACptPopu{} = (showUnique.popcpt) pop ++ (showUnique.popas) pop
+
 data AAtomPair
   = APair { apLeft  :: AAtomValue
           , apRight :: AAtomValue
-          }deriving(Eq,Prelude.Ord)
+          } deriving(Eq,Prelude.Ord)
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
+
+instance Unique AAtomPair where
+  showUnique apair = "("++(showUnique.apLeft) apair ++","++ (showUnique.apRight) apair++")"
+
 data AAtomValue
   = AAVString  { aavhash :: Int
                , aavtyp :: TType
@@ -558,6 +569,15 @@ data AAtomValue
                 , aadatetime ::  UTCTime
                 }
   | AtomValueOfONE deriving (Eq,Prelude.Ord, Show)
+
+instance Unique AAtomValue where   -- TODO:  this in incorrect!
+  showUnique pop@AAVString{}   = (show.aavhash) pop
+  showUnique pop@AAVInteger{}  = (show.aavint) pop
+  showUnique pop@AAVFloat{}    = (show.aavflt) pop
+  showUnique pop@AAVBoolean{}  = (show.aavbool) pop
+  showUnique pop@AAVDate{}     = (show.aadateDay) pop
+  showUnique pop@AAVDateTime{} = (show.aadatetime) pop
+  showUnique AtomValueOfONE    = "ONE"
 
 aavstr :: AAtomValue -> String
 aavstr = unpack.aavtxt

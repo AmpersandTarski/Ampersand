@@ -16,7 +16,7 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 --    ();
 
 --[Relations]--
---IDENT Relations: Relation(name,source,target,context) -- the name of the relation must be unique; it is therefore not the same as a RAP:Relation.
+--IDENT Relations: Relation(name,source[Relation*Concept],target[Relation*Concept],context) -- the name of the relation must be unique; it is therefore not the same as a RAP:Relation.
 RELATION affectedInvConjunctIds[Relation*Conjunct]
 MEANING "When a pair in a relation is edited (created, updated or deleted), an (invariant) conjunct may be affected"
 RELATION affectedSigConjunctIds[Relation*Conjunct]
@@ -41,29 +41,7 @@ RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 RELATION conjunctIds[Rule*Conjunct] -- e.g. 'conj_159'
 RELATION pairView[Rule*PairView] -- e.g. 
---                  array
---                    ( array ( 'segmentType' => 'Text', 'Text' => '{EX} DelPair;rliAcceptableRiskLevel;RLI;')
---                    , array ( 'segmentType' => 'Exp'
---                            , 'srcOrTgt' => 'Src'
---                            , 'expTgt' => 'RLI'
---                            , 'expSQL' =>
---                                '/* I[RLI] */
---                                   SELECT `RLI` AS `src`, `RLI` AS `tgt`
---                                   FROM `RLI`
---                                   WHERE `RLI` IS NOT NULL'
---                            )
---                    , array ( 'segmentType' => 'Text', 'Text' => ';Risk;')
---                    , array ( 'segmentType' => 'Exp'
---                            , 'srcOrTgt' => 'Tgt'
---                            , 'expTgt' => 'Risk'
---                            , 'expSQL' =>
---                                '/* I[Risk] */
---                                   SELECT `Risk` AS `src`, `Risk` AS `tgt`
---                                   FROM `Risk`
---                                   WHERE `Risk` IS NOT NULL'
---                            )
---                    )
---              )
+
 RELATION segment[PairView*PairViewSegment] [SUR,INJ]
 RELATION sequenceNr[PairViewSegment*Int] [UNI,TOT]
 RELATION segmentType[PairViewSegment*PairViewSegmentType]  [UNI,TOT]  -- 'Text' or 'Exp'
@@ -81,128 +59,14 @@ RELATION conjunct[Conjunct*Expression] [TOT]
 
 --[Roles]--
 
+IDENT Role : Role(name)
 RELATION allRoles[Context*Role] [SUR,INJ]
 RELATION name[Role*RoleName] [UNI,TOT]
 REPRESENT RoleName TYPE ALPHANUMERIC
 RELATION maintains[Role*Rule] -- e.g. ("ExecEngine", "Activeren van rollen") (was "ruleNames")
+RELATION interfaces[Role*Interface]
 
---[
---//RELATION generics_allViews is sorted from spec to gen such that the first match for a concept will be the most specific (e.g. see DatabaseUtils.getView()).
---RELATION generics_allViews =
---  array
---    (   array ( 'label' => 'OrgUnits'
---              , 'concept' => 'OrgUnit'
---              , 'segments' =>
---                  array
---                    ( array ( 'segmentType' => 'Exp'
---                            , 'label' => '1' // view exp: ouID
---                            , 'expSQL' =>
---                                'SELECT DISTINCT `OrgUnit` AS `src`, `tgt_ouID` AS `tgt`
---                                 FROM `OrgUnit`
---                                 WHERE `OrgUnit` IS NOT NULL AND `tgt_ouID` IS NOT NULL'
---                            )
---                    )
---              )
---    ,   array ( 'label' => 'Person'
---              , 'concept' => 'Person'
---              , 'segments' =>
---                  array
---                    ( array ( 'segmentType' => 'Exp'
---                            , 'label' => '1' // view exp: personFirstName
---                            , 'expSQL' =>
---                                'SELECT DISTINCT `Person` AS `src`, `tgt_personFirstName` AS `tgt`
---                                 FROM `Person`
---                                 WHERE `Person` IS NOT NULL AND `tgt_personFirstName` IS NOT NULL'
---                            )
---                    , array ( 'segmentType' => 'Text', 'Text' => ' ')
---                    , array ( 'segmentType' => 'Exp'
---                            , 'label' => '3' // view exp: personLastName
---                            , 'expSQL' =>
---                                'SELECT DISTINCT `Person` AS `src`, `tgt_personLastName` AS `tgt`
---                                 FROM `Person`
---                                 WHERE `Person` IS NOT NULL AND `tgt_personLastName` IS NOT NULL'
---                            )
---                    )
---              )
-
---[InterfaceObjects]--
---RELATION generics_allInterfaceObjects =
---  array
---    ( // Top-level interface RLI for all roles:
---      'RLI' => 
---        array ( 'name' => 'RLI'
---              // Normalized interface expression (== expressionSQL): I[RLI]
---              , 'interfaceRoles' => array ()
---              , 'invConjunctIds' => array ()
---              , 'sigConjunctIds' => array ()
---              , 'relation' => '' // this interface expression does not represent a declared relation
---              , 'relationIsFlipped' => ''
---              , 'srcConcept' => 'RLI'
---              , 'tgtConcept' => 'RLI'
---              , 'expressionSQL' => '/* I[RLI] */
---                                      SELECT `RLI` AS `src`, `RLI` AS `tgt`
---                                      FROM `RLI`
---                                      WHERE `RLI` IS NOT NULL'
---              // Box
---              , 'boxSubInterfaces' =>
---                  array
---                    ( array ( 'name' => 'Risk'
---                            // Normalized interface expression (== expressionSQL): rliRisk
---                            , 'relation' => 'rel_rliRisk_RLI_Risk' // this interface represents a declared relation
---                            , 'relationIsEditable' => false
---                            , 'relationIsFlipped' => False
---                            , 'min' => 'Zero'
---                            , 'max' => 'One'
---                            , 'srcConcept' => 'RLI'
---                            , 'tgtConcept' => 'Risk'
---                            , 'expressionSQL' => 'SELECT DISTINCT `RLI` AS `src`, `tgt_rliRisk` AS `tgt`
---                                                  FROM `RLI`
---                                                  WHERE `RLI` IS NOT NULL AND `tgt_rliRisk` IS NOT NULL'
---                            // No subinterfaces
---                            )
---                    , array ( 'name' => 'Kans'
---                            // Normalized interface expression (== expressionSQL): rliLikelihood
---                            , 'relation' => 'rel_rliLikelihood_RLI_Likelihood' // this interface represents a declared relation
---                            , 'relationIsEditable' => false
---                            , 'relationIsFlipped' => False
---                            , 'min' => 'Zero'
---                            , 'max' => 'One'
---                            , 'srcConcept' => 'RLI'
---                            , 'tgtConcept' => 'Likelihood'
---                            , 'expressionSQL' => 'SELECT DISTINCT `RLI` AS `src`, `tgt_rliLikelihood` AS `tgt`
---                                                  FROM `RLI`
---                                                  WHERE `RLI` IS NOT NULL AND `tgt_rliLikelihood` IS NOT NULL'
---                            // No subinterfaces
---                            )
---                    , array ( 'name' => 'Impact'
---                            // Normalized interface expression (== expressionSQL): rliImpact
---                            , 'relation' => 'rel_rliImpact_RLI_Impact' // this interface represents a declared relation
---                            , 'relationIsEditable' => false
---                            , 'relationIsFlipped' => False
---                            , 'min' => 'Zero'
---                            , 'max' => 'One'
---                            , 'srcConcept' => 'RLI'
---                            , 'tgtConcept' => 'Impact'
---                            , 'expressionSQL' => 'SELECT DISTINCT `RLI` AS `src`, `tgt_rliImpact` AS `tgt`
---                                                  FROM `RLI`
---                                                  WHERE `RLI` IS NOT NULL AND `tgt_rliImpact` IS NOT NULL'
---                            // No subinterfaces
---                            )
---                    , array ( 'name' => 'A-lvl'
---                            // Normalized interface expression (== expressionSQL): rliAcceptableRiskLevel
---                            , 'relation' => 'rel_rliAcceptableRiskLevel_RLI_Risk' // this interface represents a declared relation
---                            , 'relationIsEditable' => false
---                            , 'relationIsFlipped' => False
---                            , 'min' => 'Zero'
---                            , 'max' => 'One'
---                            , 'srcConcept' => 'RLI'
---                            , 'tgtConcept' => 'Risk'
---                            , 'expressionSQL' => 'SELECT DISTINCT `RLI` AS `src`, `tgt_rliAcceptableRiskLevel` AS `tgt`
---                                                  FROM `RLI`
---                                                  WHERE `RLI` IS NOT NULL AND `tgt_rliAcceptableRiskLevel` IS NOT NULL'
---                            // No subinterfaces
---                            )
---                    )
---              )
+--[Roles]--
+RELATION interfaces[Context*Interface][SUR,INJ]
 
 ENDCONTEXT

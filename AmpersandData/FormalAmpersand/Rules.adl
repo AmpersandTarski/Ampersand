@@ -2,12 +2,12 @@
 -- The comments for this script can be found in Rules.doc
 
 PATTERN Rules
-IDENT Rule: Rule(name)
+IDENT Rule: Rule(name[Rule*RuleID])
 REPRESENT RuleID TYPE ALPHANUMERIC
 RELATION name[Rule*RuleID] [UNI,TOT,INJ]
 MEANING "The name of a rule."
 RELATION sign[Rule*Signature] [UNI,TOT]
-RELATION term[Rule*Expression] [UNI,TOT]
+RELATION formalExpression[Rule*Expression] [UNI,TOT]
 MEANING "The rule expressed in relation algebra."
 RELATION rrmean[Rule * Meaning]
 MEANING "The meanings of a rule."

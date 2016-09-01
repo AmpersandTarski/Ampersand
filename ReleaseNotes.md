@@ -23,8 +23,8 @@
 
 ## v3.6.0 (8 july 2016)
   * [Issue #406](https://github.com/AmpersandTarski/Ampersand/issues/406) Minor changes on syntax of INTERFACE statement. 
-  * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) New switch: --include
-  * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) Enhancement: Introduction of a configuration file. A sample configuration file is generated when you use the switch --sampleConfigFile. To use a config file, use the switch --config=MyConfig.yaml
+  * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) New switch: `--include`
+  * [Issue #438](https://github.com/AmpersandTarski/Ampersand/issues/438) Enhancement: Introduction of a configuration file. A sample configuration file is generated when you use the switch `--sampleConfigFile`. To use a config file, use the switch `--config=MyConfig.yaml`
   * [Issue #468](https://github.com/AmpersandTarski/Ampersand/issues/468) Enhancement: default configuration file (when it exists)
   * [Issue #414](https://github.com/AmpersandTarski/Ampersand/issues/414) Enhancement: From now on, all text values read from .xlsx files are trimmed (leading and trailing spaces are removed), unless the switch --do-not-trim-cellvalues is given. 
   * More automation on releasing Ampersand.
@@ -45,7 +45,7 @@
 ## v3.5.1 (17 may 2016)
   * Minor enhancement of generation of Logical Data Model
   * More consisten use of views in interface definitions: [Issue #416](https://github.com/AmpersandTarski/Ampersand/issues/416)
-  * Re-enabled output format for --fSpec=asciidoc
+  * Re-enabled output format for `--fSpec=asciidoc`
   * Added depth parameter in API resources call (?depth=<int>). This provides functionality to specify the depth of subinterfaces for which the content must be returned and is especially usefull for recursive (sub)interfaces using the LINKTO statement.
   * Added this release notes file. 
   * Bug fixes: [Issue #413](https://github.com/AmpersandTarski/Ampersand/issues/413) 

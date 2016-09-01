@@ -68,7 +68,7 @@ makeFSpec opts context
                                                   concatMap ifcRoles (ctxifcs context )
                                                  )
                                    ) [0..] 
-              , fallRules = allrules
+              , fallRules    = allrules
               , vrules       = filter      isUserDefined  allrules
               , grules       = filter (not.isUserDefined) allrules
               , invariants   = filter (not.isSignal)      allrules
@@ -102,7 +102,6 @@ makeFSpec opts context
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context
-              , allSigns     = nub $ map sign calculatedDecls ++ map sign (expressionsIn context)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
