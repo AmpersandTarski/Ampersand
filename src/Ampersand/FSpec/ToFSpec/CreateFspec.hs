@@ -51,9 +51,7 @@ createFSpec opts =
        | otherwise          = gFSpec
       where
          populationPctx       = join ( grind <$> gFSpec)
-         populatedRapPctx     = merge.sequenceA $ [gRapP_Ctx,populationPctx]
-         metaPopulatedRapPctx = populatedRapPctx
-         allCombinedPctx      = merge.sequenceA $ [gUserCtx, metaPopulatedRapPctx]
+         allCombinedPctx      = merge.sequenceA $ [gUserCtx, gRapP_Ctx, populationPctx]
          
 
 
