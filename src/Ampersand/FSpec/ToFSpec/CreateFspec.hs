@@ -32,7 +32,7 @@ createFSpec :: Options  -- ^The options derived from the command line
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let gFSpec = pCtx2Fspec userP_Ctx
-     case fmap makeMetaPopulationFile gFSpec of
+     case makeMetaPopulationFile <$> gFSpec of
              Checked (filePath,metaContents)
               -> aap gFSpec userP_Ctx (filePath,metaContents)
              Errors errs   -> return (Errors errs)
@@ -42,19 +42,19 @@ createFSpec opts =
         = do  verboseLn opts ("Generating meta file in path "++dirOutput opts)
               writeFile (combine (dirOutput opts) filePath) metaContents      
               verboseLn opts ("\""++filePath++"\" written")
-              genTables userP_Ctx gFSpec
+              rapP_Ctx <- parseMeta opts -- the P_Context of the formalAmpersand metamodel
+              return (genTables rapP_Ctx userP_Ctx gFSpec)
 
-    genTables :: Guarded P_Context -> Guarded FSpec -> IO(Guarded FSpec)
-    genTables gUserCtx gFSpec = case genMetaTables opts of
-       False
-         -> return gFSpec
-       True
-         -> do rapP_Ctx <- parseMeta opts -- the P_Context of the
-               let populationPctx       = join ( grind <$> gFSpec)
-                   populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
-                   metaPopulatedRapPctx = populatedRapPctx
-                   allCombinedPctx      = merge.sequenceA $ [gUserCtx, metaPopulatedRapPctx]
-               return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
+    genTables :: Guarded P_Context -> Guarded P_Context -> Guarded FSpec -> Guarded FSpec
+    genTables gRapP_Ctx gUserCtx gFSpec  
+       | genMetaTables opts = pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
+       | otherwise          = gFSpec
+      where
+         populationPctx       = join ( grind <$> gFSpec)
+         populatedRapPctx     = merge.sequenceA $ [gRapP_Ctx,populationPctx]
+         metaPopulatedRapPctx = populatedRapPctx
+         allCombinedPctx      = merge.sequenceA $ [gUserCtx, metaPopulatedRapPctx]
+         
 
 
     toFspec :: A_Context -> Guarded FSpec
@@ -62,13 +62,13 @@ createFSpec opts =
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
     pCtx2Fspec c = join $ toFspec <$> (join $ pCtx2aCtx opts <$> c)
     merge :: Guarded [P_Context] -> Guarded P_Context
-    merge ctxs = fmap f ctxs
+    merge ctxs = f <$> ctxs
       where
        f []     = fatal 77 $ "merge must not be applied to an empty list"
        f (c:cs) = foldr mergeContexts c cs
     grind :: FSpec -> Guarded P_Context
     grind fSpec
-      = fmap fstIfNoIncludes $ parseCtx filePath metaContents
+      = fstIfNoIncludes <$> parseCtx filePath metaContents
       where (filePath,metaContents) = makeMetaPopulationFile fSpec
             fstIfNoIncludes (a,includes)
              = case includes of
