@@ -68,6 +68,8 @@ install:
        cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0;;
    esac
 
+before_script: composer install
+
 script:
  - case "$BUILD" in 
      stack)
