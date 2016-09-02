@@ -11,10 +11,6 @@ RELATION formalExpression[Rule*Expression] [UNI,TOT]
 MEANING "The rule expressed in relation algebra."
 RELATION usedIn[Relation*Expression]
 MEANING "The rule expressed in relation algebra."
-RELATION rrmean[Rule * Meaning]
-MEANING "The meanings of a rule."
-RELATION rrpurpose[Rule * Purpose]
-MEANING "The purposes of a rule."
 RELATION declaredthrough[PropertyRule*Property] [TOT]
 MEANING "A property is defined as part of the declaration of relation."
 ENDPATTERN

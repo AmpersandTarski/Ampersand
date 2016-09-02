@@ -1,0 +1,23 @@
+CONTEXT RAP IN ENGLISH
+PURPOSE PATTERN Documentation
+{+
+-}
+PATTERN Documentation
+    RELATION purpose[Pattern*Purpose]
+    MEANING "The purposes of a pattern."
+    RELATION decprps[Relation*PropertyRule] [INJ,SUR]
+    MEANING "The properties of a relation."
+    RELATION decmean[Relation * Meaning]
+    MEANING "The meanings of a relation."
+    RELATION decpurpose[Relation * Purpose]
+    MEANING "The purposes of a relation."
+    RELATION rrmean[Rule * Meaning]
+    MEANING "The meanings of a rule."
+    RELATION rrpurpose[Rule * Purpose]
+    MEANING "The purposes of a rule."
+ENDPATTERN
+
+
+ENDCONTEXT
+
+

@@ -84,7 +84,7 @@ instance MetaPopulations A_Context where
     [Comment  " ", Comment $ "PATTERN Context: ('"++name ctx++"')"]
   ++[ Pop "versionInfo" "Context"  "AmpersandVersion" [Uni,Tot]
            [(dirtyId ctx ctx, show ampersandVersionStr)]
-    , Pop "name" "Context" "Identifier" [Uni,Tot]
+    , Pop "name" "Context" "ContextIdentifier" [Uni,Tot]
            [(dirtyId ctx ctx, (show.ctxnm) ctx)]
     , Pop "location" "Context" "Location" [Uni,Tot]
            [(dirtyId ctx ctx, (show.showUnique.ctxpos) ctx)]
@@ -92,13 +92,15 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx ctx, (show.show.ctxlang) ctx)]
     , Pop "markup" "Context" "Markup" [Uni,Tot]
            [(dirtyId ctx ctx, (show.show.ctxmarkup) ctx)]
-    , Pop "context" "Pattern" "Context" [Uni]                        -- The context in which a pattern is defined.
+    , Pop "context" "Pattern" "Context" [Uni]                        -- The context in which a pattern is declared.
            [(dirtyId ctx p, dirtyId ctx ctx) | p<-ctxpats ctx]
-    , Pop "context" "Rule" "Context" [Uni]                           -- The context in which a rule is defined.
+    , Pop "ctxrs" "Rule" "Context" [Uni]                        -- The context in which a rule is declared.
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxrs ctx]
-    , Pop "ctxds" "Relation" "Context" [Uni]                         -- The context in which a relation is defined, outside patterns.
+    , Pop "declaredIn" "Rule" "Context" [Uni]                        -- The context in which a rule is declared.
+           [(dirtyId ctx r, dirtyId ctx ctx) | r<-udefrules ctx]
+    , Pop "ctxds" "Relation" "Context" [Uni]                         -- The context in which a relation is declared, outside patterns.
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxds ctx]
-    , Pop "relDefdIn" "Relation" "Context" [Uni]                     -- The context in which a relation is defined.
+    , Pop "declaredIn" "Relation" "Context" [Uni]                    -- The context in which a relation is declared.
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-relsDefdIn ctx]
     , Pop "context" "Population" "Context" [Uni]                     -- The context in which a population is defined.
            [(dirtyId ctx pop, dirtyId ctx ctx) | pop<-ctxpopus ctx]
@@ -117,7 +119,7 @@ instance MetaPopulations A_Context where
   ++   concatMap extract (gens ctx)
   ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) ctx++")"]
   ++[ Pop "context" "Concept" "Context" [Uni]                        -- The context in which a concept is defined.
-           [(dirtyId ctx c, dirtyId ctx ctx) | c<-concs ctx]
+           [(dirtyId ctx c, dirtyId ctx ctx) | c<-concs ctx] ]
   ++   (concatMap extract . sortByName . concs) ctx
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.relsDefdIn) ctx++")"]
   ++   concatMap extract (relsDefdIn ctx ++ [ Isn c | c<-concs (relsDefdIn ctx)])
@@ -330,7 +332,9 @@ instance MetaPopulations Declaration where
       , Pop "decpurpose" "Relation" "Purpose" []
              [(dirtyId ctx dcl, (show.showADL) x) | x <- explanations dcl]
       ]
-     Isn{} -> 
+     Isn{} -> -- fatal 335 "Isn should not be populated by the meatgrinder."
+{- SJ sept 2nd, 2016: I don't think we should populate the I-relation from the meatgrinder,
+but I'm not sure why. -}
       [ Comment " "
       , Comment $ " Relation `I["++name (source dcl)++"]`"
       , Pop "sign" "Relation" "Signature" [Uni,Tot]
@@ -344,7 +348,8 @@ instance MetaPopulations Declaration where
       , Pop "target" "Relation" "Concept" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx (target dcl))]
       ]
-     Vs{}  -> fatal 158 "Vs is not implemented yet"
+
+     Vs{}  -> fatal 158 "Vs should not be populated by the meatgrinder."
    )++
    metaPops fSpec (sign dcl)
    where

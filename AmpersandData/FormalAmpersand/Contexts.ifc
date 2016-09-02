@@ -1,6 +1,5 @@
 CONTEXT RAP IN ENGLISH
 INCLUDE "Contexts.adl"
-INCLUDE "ContextsTry.xlsx"
 
 VIEW Context : Context(name)
 INTERFACE Contexts (valid,relations) : '_SESSION'[SESSION]
@@ -19,7 +18,9 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
 --    , "versionInfo" : versionInfo
 --    , "dbName" : dbName
 --    , "owner" : owner[Context*Account]
-    , "valid~" : valid[Rule*Context]~
+    , "valid rules" : valid[Rule*Context]~
+    , "valid relations" : valid[Relation*Context]~
+    , "valid concepts" : valid[Concept*Context]~
     ]
   , "Patterns defined" : context[Pattern*Context]~ BOX 
     [ "Pattern" : I CRuD -- INTERFACE Pattern

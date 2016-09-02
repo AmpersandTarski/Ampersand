@@ -46,10 +46,36 @@ PATTERN Context
     MEANING "Any relation declared anywhere in a context outside the scope of a pattern is registered in the system."
     RELATION declaredIn[Relation*Context] [UNI] -- comes from relsDefdIn, which is defined in FSpec. This contains all relations declared inside a context including the patterns it contains.
     MEANING "Any relation declared anywhere in a context is registered in the system."
-    RELATION declaredIn[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
-    MEANING "If a rule is declared in a context, that rule exists in that context. This is registered in the system."
+    RELATION ctxrs[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
+    MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
+    RELATION declaredIn[Rule*Context] [UNI]  -- This contains all rules declared inside a context. This contains all rules declared inside a context including the patterns it contains.
+    MEANING "If a rule is declared anywhere in a context, that rule exists in that context. This is registered in the system."
     RELATION context[Pattern*Context] [UNI]  -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
     MEANING "If a pattern is declared inside a context, this is registered in the system."
+
+    PURPOSE RULE "rule declared outside pattern"
+    {+Ampersand allows its users to declare rules in a context, outside the scope of a pattern.
+    -}
+    ROLE ExecEngine MAINTAINS "rule declared outside pattern"
+    RULE "rule declared outside pattern" : ctxrs[Rule*Context] |- declaredIn[Rule*Context]
+    MEANING "A rule declared in a context outside the scope of a pattern is registered in the system."
+    VIOLATION (TXT "{EX} InsPair;declaredIn;Rule;", SRC I, TXT ";Context;", TGT I)
+
+    PURPOSE RULE "relation declared outside pattern"
+    {+Ampersand allows its users to declare relations in a context, outside the scope of a pattern.
+    -}
+    ROLE ExecEngine MAINTAINS "relation declared outside pattern"
+    RULE "relation declared outside pattern" : ctxds[Relation*Context] |- declaredIn[Relation*Context]
+    MEANING "A relation declared in a context outside the scope of a pattern is registered in the system."
+    VIOLATION (TXT "{EX} InsPair;declaredIn;Relation;", SRC I, TXT ";Context;", TGT I)
+
+    PURPOSE RULE "pat defined in means used in"
+    {+Patterns can be defined inside a context. This means that all declarations in that pattern are used in that context.
+    -}
+    ROLE ExecEngine MAINTAINS "pat defined in means used in"
+    RULE "pat defined in means used in" : context[Pattern*Context] |- uses[Context*Pattern]~
+    MEANING "Every pattern defined in a context is used in that context."
+    VIOLATION (TXT "{EX} InsPair;uses;Context;", TGT I, TXT ";Pattern;", SRC I)
 ENDPATTERN
 
 PURPOSE PATTERN Validity
@@ -88,6 +114,8 @@ PATTERN Validity
     RULE validRelations : declaredIn[Relation*Pattern];(context\/uses~) \/ ctxds |- valid[Relation*Context]
     MEANING "Every relation defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
     VIOLATION (TXT "{EX} InsPair;valid;Relation;", SRC I, TXT ";Context;", TGT I)
+
+    ROLE User MAINTAINS AllValidRelations
     RULE AllValidRelations : valid[Relation*Context] |- declaredIn[Relation*Pattern];(context\/uses~) \/ ctxds
     VIOLATION (TXT "Relation ", SRC name, TXT " is not valid in context ", TGT I)
 
@@ -112,11 +140,6 @@ PATTERN Validity
     MEANING "Every concept in the signature of relations is valid in every context that uses the pattern in which that relation is declared.."
     VIOLATION ( TXT "{EX} InsPair;context;Concept;", TGT I, TXT ";Context;", SRC I )
 
-    ROLE ExecEngine MAINTAINS "validity of relations in a context"
-    RULE "validity of relations in a context" : declaredIn[Relation*Pattern];uses~ |- valid
-    MEANING "All rules that are declared in a pattern, which is used in a context ar valid in that context."
-    VIOLATION ( TXT "{EX} InsPair;valid;Relation;", SRC I, TXT ";Context;", TGT I )
-
     ROLE ExecEngine MAINTAINS "validity of rules in a context"
     RULE "validity of rules in a context" : declaredIn;uses~ \/ declaredIn |- valid[Rule*Context]
     MEANING "All rules that are declared in a pattern, which is used in a context ar valid in that context."
@@ -133,8 +156,6 @@ PATTERN Patterns
     MEANING "The user-defined rules in a pattern."
     RELATION declaredIn[Relation*Pattern]
     MEANING "The relations that are declared in a pattern."
-    RELATION purpose[Pattern*Purpose]
-    MEANING "The purposes of a pattern."
 
     ROLE ExecEngine MAINTAINS "Remove rule atom"
     RULE "Remove rule atom" : I[Rule]- (declaredIn;I[Pattern];declaredIn~\/declaredIn;I[Context];declaredIn~) |- -V
@@ -149,7 +170,6 @@ PATTERN Patterns
     ROLE User MAINTAINS "self-sustained rules"
     RULE "self-sustained rules" : usedIn;formalExpression~;declaredIn |- declaredIn[Relation*Pattern]
     MEANING "A relation that is used in a rule, which is declared in a pattern, must be declared in that same pattern."
-    VIOLATION ( TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I )
 
 ENDPATTERN
 

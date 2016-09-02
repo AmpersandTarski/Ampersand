@@ -4,6 +4,7 @@ INCLUDE "AST.ifc"
 --INCLUDE "MinimalAST.xlsx" -- Contains minimal population. Anything discarded from it must break an invariant
 INCLUDE "Contexts.adl"
 INCLUDE "Relations.adl"
+INCLUDE "Documentation.adl"
 INCLUDE "Rules.adl"
 INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
@@ -29,7 +30,7 @@ RELATION in[Concept*Plug] --TODO: 'Nearly TOT: All concepts are in a plug, excep
 RELATION relsInPlug[Plug*Relation] --FIXME [SUR] -- Note: Declared relations only. This excludes I and V relations!
 
 -- Rules
-ROLE Ampersand MAINTAINS "All isas in one plug"
+--ROLE Ampersand MAINTAINS "All isas in one plug"
 RULE "All isas in one plug" : (-(genspc[Gen*Concept]~;gengen[Gen*Concept];in[Concept*Plug]) \/ in[Concept*Plug]) /\ (-(gengen[Gen*Concept]~;genspc[Gen*Concept];in[Concept*Plug]) \/ in[Concept*Plug])
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
 ENDPROCESS
