@@ -62,7 +62,12 @@ instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
     ( metaPops fSpec ctx
-    ++[ Pop "dbName" "Context" "DatabaseName" [Uni,Tot] [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)] ]
+    ++[ Pop "dbName" "Context" "DatabaseName" [Uni,Tot] [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)]
+      , Pop "maintains" "Role" "Rule" []
+                 [(dirtyId ctx rol, dirtyId ctx rul) | (rol,rul) <-  fRoleRuls fSpec ]
+      , Pop "interfaces" "Role" "Interface" []
+                 [(dirtyId ctx rol, dirtyId ctx ifc) | ifc <- ctxifcs ctx, rol<-ifcRoles ifc]
+      ]
     ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
     ++   concatMap extract (allConjuncts fSpec)
     ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
@@ -108,7 +113,7 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxcds ctx]
     , Pop "context" "IdentityDef" "Context" [Uni]                    -- The context in which an identityDef is defined.
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxks ctx]
-    , Pop "allRoleRules" "Context" "Role" [Tot]
+    , Pop "allRoles" "Context" "Role" [Tot]
            [(dirtyId ctx ctx, show "SystemAdmin")]
     , Pop "name"   "Role" "RoleName" [Uni,Tot]
            [(show "SystemAdmin", show "SystemAdmin")]
@@ -122,7 +127,7 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-concs ctx] ]
   ++   (concatMap extract . sortByName . concs) ctx
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.relsDefdIn) ctx++")"]
-  ++   concatMap extract (relsDefdIn ctx ++ [ Isn c | c<-concs (relsDefdIn ctx)])
+  ++   concatMap extract (relsDefdIn ctx)  -- SJ 2 sept 2016: I don't think we should populate I-relations and V-relations. But why?
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.expressionsIn) ctx++")"]
   ++   concatMap extract (expressionsIn ctx)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.allRules) ctx++")"]
@@ -147,7 +152,7 @@ instance MetaPopulations Pattern where
 --          [(dirtyId pat,dirtyId x) | x <- ptcds pat]
    , Pop "rules"   "Pattern" "Rule" []
           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptrls pat]
-   , Pop "relsDefdIn"   "Pattern" "Relation" [Sur,Inj]
+   , Pop "relsDefdIn"   "Pattern" "Relation" []
           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
    , Pop "purpose"   "Pattern" "Purpose" [Uni,Tot]
           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptxps pat]
@@ -183,7 +188,7 @@ instance MetaPopulations A_Concept where
    case cpt of
      PlainConcept{} ->
       [ Pop "context" "Concept" "Context" [Uni]
-             [(dirtyId ctx ctx, dirtyId ctx cpt)]
+             [(dirtyId ctx cpt, dirtyId ctx ctx)]
       ]
      ONE -> 
       [ ]
@@ -258,14 +263,10 @@ instance MetaPopulations (PlugSQL,SqlAttribute) where
 
 instance MetaPopulations Role where
   metaPops fSpec rol =
-      [ Pop "allRoles" "Context" "Role" [Sur,Inj]
+      [ Pop "allRoles" "Context" "Role" []
                  [(dirtyId ctx ctx, dirtyId ctx rol) ]
       , Pop "name" "Role" "RoleName" [Uni,Tot]
                  [(dirtyId ctx rol, dirtyId ctx rol) ]
-      , Pop "maintains" "Role" "Rule" []
-                 [(dirtyId ctx rol, dirtyId ctx rul) | (rol',rul) <-  fRoleRuls fSpec, rol==rol' ]
-      , Pop "interfaces" "Role" "Interface" []
-                 [(dirtyId ctx rol, dirtyId ctx ifc) | ifc <- roleInterfaces fSpec rol]
       ]
    where
     ctx = originalContext fSpec
@@ -321,13 +322,13 @@ instance MetaPopulations Declaration where
              [(dirtyId ctx dcl,dirtyId ctx (target dcl))]
       , Pop "prop" "Relation" "Property" []
              [(dirtyId ctx dcl, dirtyId ctx x) | x <- decprps dcl]  -- decprps gives the user defined properties; not the derived properties.
-      , Pop "decprL" "Relation" "String" [Uni,Tot]
+      , Pop "decprL" "Relation" "String" [Uni]
              [(dirtyId ctx dcl,(show.decprL) dcl)]
-      , Pop "decprM" "Relation" "String" [Uni,Tot]
+      , Pop "decprM" "Relation" "String" [Uni]
              [(dirtyId ctx dcl,(show.decprM) dcl)]
-      , Pop "decprR" "Relation" "String" [Uni,Tot]
+      , Pop "decprR" "Relation" "String" [Uni]
              [(dirtyId ctx dcl,(show.decprR) dcl)]
-      , Pop "decmean" "Relation" "Meaning" [Uni,Tot]
+      , Pop "decmean" "Relation" "Meaning" [Uni]
              [(dirtyId ctx dcl, (show.concatMap showADL.ameaMrk.decMean) dcl)]
       , Pop "decpurpose" "Relation" "Purpose" []
              [(dirtyId ctx dcl, (show.showADL) x) | x <- explanations dcl]
