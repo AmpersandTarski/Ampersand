@@ -39,16 +39,17 @@ createFSpec opts =
    where
     aap :: Guarded FSpec -> Guarded P_Context -> (FilePath,String) -> IO(Guarded FSpec)
     aap gFSpec userP_Ctx (filePath,metaContents)
-        = do  verboseLn opts ("Generating meta file in path "++dirOutput opts)
+      | genMetaTables opts =
+          do  verboseLn opts ("Generating meta file in path "++dirOutput opts)
               writeFile (combine (dirOutput opts) filePath) metaContents      
               verboseLn opts ("\""++filePath++"\" written")
               rapP_Ctx <- parseMeta opts -- the P_Context of the formalAmpersand metamodel
               return (genTables rapP_Ctx userP_Ctx gFSpec)
+      | otherwise          = return gFSpec
 
     genTables :: Guarded P_Context -> Guarded P_Context -> Guarded FSpec -> Guarded FSpec
     genTables gRapP_Ctx gUserCtx gFSpec  
-       | genMetaTables opts = pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
-       | otherwise          = gFSpec
+       = pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
       where
          populationPctx       = join ( grind <$> gFSpec)
          allCombinedPctx      = merge.sequenceA $ [gUserCtx, gRapP_Ctx, populationPctx]
