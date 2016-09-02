@@ -1,6 +1,9 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+
+
+## v3.7.0 (2 september 2016)
   * [Issue #506](https://github.com/AmpersandTarski/Ampersand/issues/506) Bugfix in chapter diagnosis of Func. spec. 
   * [Issue #483](https://github.com/AmpersandTarski/Ampersand/issues/483) Introduction of proper way to produce exit codes of Ampersand
   * [Issue #502](https://github.com/AmpersandTarski/Ampersand/issues/502) More stable way to generate .pdf file (LaTeX output)
