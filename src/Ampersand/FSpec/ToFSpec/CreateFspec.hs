@@ -32,24 +32,20 @@ createFSpec :: Options  -- ^The options derived from the command line
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let gFSpec = pCtx2Fspec userP_Ctx
-     let (filePath,metaContents)
-          = case gFSpec of
-             Checked fSpec -> makeMetaPopulationFile fSpec
-             _ -> fatal 38 "errors in gFSpec"
---     when (genMetaFile opts)
-     verboseLn opts ("Generating meta file in path "++dirOutput opts)
-     writeFile (combine (dirOutput opts) filePath) metaContents      
-     verboseLn opts ("\""++filePath++"\" written")
-     genFiles gFSpec >> genTables gFSpec userP_Ctx
+     case fmap makeMetaPopulationFile gFSpec of
+             Checked (filePath,metaContents)
+              -> aap gFSpec userP_Ctx (filePath,metaContents)
+             Errors errs   -> return (Errors errs)
    where
-    genFiles :: Guarded FSpec -> IO(Guarded ())
-    genFiles gFSpec
-      = case gFSpec of
-          Errors es -> return(Errors es)
-          _ -> return (Checked ())
+    aap :: Guarded FSpec -> Guarded P_Context -> (FilePath,String) -> IO(Guarded FSpec)
+    aap gFSpec userP_Ctx (filePath,metaContents)
+        = do  verboseLn opts ("Generating meta file in path "++dirOutput opts)
+              writeFile (combine (dirOutput opts) filePath) metaContents      
+              verboseLn opts ("\""++filePath++"\" written")
+              genTables userP_Ctx gFSpec
 
-    genTables :: Guarded FSpec -> Guarded P_Context -> IO(Guarded FSpec)
-    genTables gFSpec uCtx = case genMetaTables opts of
+    genTables :: Guarded P_Context -> Guarded FSpec -> IO(Guarded FSpec)
+    genTables gUserCtx gFSpec = case genMetaTables opts of
        False
          -> return gFSpec
        True
@@ -57,7 +53,7 @@ createFSpec opts =
                let populationPctx       = join ( grind <$> gFSpec)
                    populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
                    metaPopulatedRapPctx = populatedRapPctx
-                   allCombinedPctx      = merge.sequenceA $ [uCtx, metaPopulatedRapPctx]
+                   allCombinedPctx      = merge.sequenceA $ [gUserCtx, metaPopulatedRapPctx]
                return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
 
 

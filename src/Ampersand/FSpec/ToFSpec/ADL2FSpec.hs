@@ -517,7 +517,7 @@ tblcontents ci ps plug
  --where NULL in a kernel attribute implies NULL in the following kernel attributes
  --and the first attribute is unique and not null
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
-       case attributes plug of 
+        case attributes plug of 
          []   -> fatal 593 "no attributes in plug."
          f:fs -> (nub.transpose)
                  ( map Just cAtoms
