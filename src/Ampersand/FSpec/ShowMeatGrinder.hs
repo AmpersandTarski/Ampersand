@@ -395,12 +395,15 @@ instance MetaPopulations Expression where
             (EFlp e)     -> makeUnaryTerm  Converse   e
             (ECpl e)     -> makeUnaryTerm  UnaryMinus e
             (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
-            (EDcD dcl)   -> [Pop "bind" "BindedRelation" "Relation" [Uni,Tot]
+            (EDcD dcl)   -> [Pop "bind" "BindedRelation" "Relation" [Uni]
                               [(dirtyId ctx expr,dirtyId ctx dcl)]
                             ]
-            (EDcI cpt)   -> [Pop "bind" "BindedRelation" "Relation" [Uni,Tot]  -- SJ 2016-07-24 TODO: Here is something fishy going on...
-                              [(dirtyId ctx expr,dirtyId ctx (Isn cpt))]
-                            ]
+            (EDcI cpt)   -> -- HJO, 2016-09-03: I think the fishy part is, that I[X] isn't a Relation. (See the LDM of formalAmpersand)
+                            -- Hence, `EDcI cpt` isn't bound to a Relation. It isn't bound at all. It is just what it is: I[Cpt] 
+                            []
+                            --[Pop "bind" "BindedRelation" "Relation" [Uni,Tot]  -- SJ 2016-07-24 TODO: Here is something fishy going on...
+                            --  [(dirtyId ctx expr,dirtyId ctx (Isn cpt))]
+                            --]
             EEps{}       -> []
             (EDcV sgn)   -> [Pop "userSrc"  (show "V") "Concept"  [Uni,Tot]
                               [(dirtyId ctx expr,dirtyId ctx (source sgn))]
