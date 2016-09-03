@@ -204,9 +204,14 @@ instance MetaPopulations Conjunct where
              [(dirtyId ctx conj, dirtyId ctx rul) | rul <- rc_orgRules conj]
     , Pop "conjunct" "Conjunct" "Expression" [Uni,Tot]
              [(dirtyId ctx conj, dirtyId ctx (rc_conjunct conj))]
+    , Pop "src" "Expression" "Concept" []
+             [(dirtyId ctx cExpr, dirtyId ctx (source cExpr))]  
+    , Pop "tgt" "Expression" "Concept" []
+             [(dirtyId ctx cExpr, dirtyId ctx (target cExpr))]
     ] 
    where
     ctx = originalContext fSpec
+    cExpr = rc_conjunct conj
 
 instance MetaPopulations PlugInfo where
   metaPops fSpec plug = 
