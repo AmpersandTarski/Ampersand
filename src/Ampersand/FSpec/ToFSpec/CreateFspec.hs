@@ -47,11 +47,11 @@ createFSpec opts =
     aap gFSpec userP_Ctx
       | genMetaTables opts =
           do  rapP_Ctx <- parseMeta opts -- the P_Context of the formalAmpersand metamodel
-              return (genTables rapP_Ctx userP_Ctx gFSpec)
+              return (genTables userP_Ctx gFSpec rapP_Ctx)
       | otherwise          = return gFSpec
 
-    genTables :: Guarded P_Context -> Guarded P_Context -> Guarded FSpec -> Guarded FSpec
-    genTables gRapP_Ctx gUserCtx gFSpec  
+    genTables :: Guarded P_Context -> Guarded FSpec -> Guarded P_Context -> Guarded FSpec
+    genTables gUserCtx gFSpec gRapP_Ctx
        = pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
       where
          populationPctx       = join ( grind <$> gFSpec)
