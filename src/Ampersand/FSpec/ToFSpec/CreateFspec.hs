@@ -32,15 +32,17 @@ createFSpec :: Options  -- ^The options derived from the command line
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let gFSpec = pCtx2Fspec userP_Ctx
+     when (genMetaFile opts) (dumpMetaFile gFSpec)
      if genMetaTables opts
      then do rapP_Ctx <- parseMeta opts -- the P_Context of the formalAmpersand metamodel
-             case makeMetaPopulationFile <$> gFSpec of
-               Checked (filePath,metaContents)
-                 -> do writeMetaFile (filePath,metaContents)
-                       return $ genMeta userP_Ctx gFSpec rapP_Ctx
-               Errors errs   -> return (Errors errs)
+             return $ genMeta userP_Ctx gFSpec rapP_Ctx
      else return gFSpec        
    where
+    dumpMetaFile :: Guarded FSpec -> IO()
+    dumpMetaFile a = case a of
+              Checked fSpec -> let (filePath,metaContents) = makeMetaPopulationFile fSpec 
+                               in writeMetaFile (filePath,metaContents)
+              _ -> return ()
     writeMetaFile :: (FilePath,String) -> IO ()
     writeMetaFile (filePath,metaContents) = do
         verboseLn opts ("Generating meta file in path "++dirOutput opts)
