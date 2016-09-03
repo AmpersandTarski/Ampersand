@@ -52,17 +52,15 @@ createFSpec opts =
     genMeta gUserCtx gFSpec gRapP_Ctx
        = pCtx2Fspec . merge . sequenceA $ [gUserCtx, gRapP_Ctx, join (grind <$> gFSpec)]
          
-    toFspec :: A_Context -> Guarded FSpec
-    toFspec = pure . makeFSpec opts
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
-    pCtx2Fspec c = join $ toFspec <$> (join $ pCtx2aCtx opts <$> c)
+    pCtx2Fspec c = makeFSpec opts <$> join (pCtx2aCtx opts <$> c)
     merge :: Guarded [P_Context] -> Guarded P_Context
     merge ctxs = f <$> ctxs
       where
        f []     = fatal 77 $ "merge must not be applied to an empty list"
        f (c:cs) = foldr mergeContexts c cs
     grind :: FSpec -> Guarded P_Context
-    grind fSpec = f <$> parseCtx filePath metaContents
-      where (filePath,metaContents) = makeMetaPopulationFile fSpec
-            f (a,[]) = a
-            f _      = fatal 83 "Meatgrinder returns included file. That isn't anticipated."
+    grind fSpec = f <$> uncurry parseCtx (makeMetaPopulationFile fSpec)
+      where
+       f (a,[]) = a
+       f _      = fatal 83 "Meatgrinder returns included file. That isn't anticipated."
