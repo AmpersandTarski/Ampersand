@@ -34,16 +34,19 @@ createFSpec opts =
      let gFSpec = pCtx2Fspec userP_Ctx
      case makeMetaPopulationFile <$> gFSpec of
              Checked (filePath,metaContents)
-              -> aap gFSpec userP_Ctx (filePath,metaContents)
+              -> do writeMetaFile (filePath,metaContents)
+                    aap gFSpec userP_Ctx
              Errors errs   -> return (Errors errs)
    where
-    aap :: Guarded FSpec -> Guarded P_Context -> (FilePath,String) -> IO(Guarded FSpec)
-    aap gFSpec userP_Ctx (filePath,metaContents)
+    writeMetaFile :: (FilePath,String) -> IO ()
+    writeMetaFile (filePath,metaContents) = do
+        verboseLn opts ("Generating meta file in path "++dirOutput opts)
+        writeFile (dirOutput opts </> filePath) metaContents      
+        verboseLn opts ("\""++filePath++"\" written")
+    aap :: Guarded FSpec -> Guarded P_Context -> IO(Guarded FSpec)
+    aap gFSpec userP_Ctx
       | genMetaTables opts =
-          do  verboseLn opts ("Generating meta file in path "++dirOutput opts)
-              writeFile (combine (dirOutput opts) filePath) metaContents      
-              verboseLn opts ("\""++filePath++"\" written")
-              rapP_Ctx <- parseMeta opts -- the P_Context of the formalAmpersand metamodel
+          do  rapP_Ctx <- parseMeta opts -- the P_Context of the formalAmpersand metamodel
               return (genTables rapP_Ctx userP_Ctx gFSpec)
       | otherwise          = return gFSpec
 
