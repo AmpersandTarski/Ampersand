@@ -35,7 +35,7 @@ TABS[ relations : V[SESSION*Relation]
 REPRESENT Atom TYPE ALPHANUMERIC
 --VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 VIEW Concept : Concept(name)
-VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
+VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 VIEW Equivalence : Equivalence(TXT "RULE ", first, TXT " = ", second)
 
@@ -45,10 +45,10 @@ ROWS [ name             : name
      , specializations  : isa~
      ]
 
-INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
 ROWS [ "relation(s)"  : in
-     , l              : l
-     , r              : r
+     , lAtom          : lAtom
+     , rAtom          : rAtom
      ]
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]

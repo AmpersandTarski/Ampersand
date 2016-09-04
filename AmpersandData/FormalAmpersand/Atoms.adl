@@ -15,8 +15,8 @@ PATTERN Atoms
     VIOLATION (TXT "The name \"", SRC I, TXT "\" is already in use")
 
     RELATION in[Pair*Relation] [UNI,TOT] -- TOT is maintained by the exec-engine
-    RELATION l[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
-    RELATION r[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
+    RELATION lAtom[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
+    RELATION rAtom[Pair*Atom] [UNI,TOT,SUR]  -- SUR is maintained by the exec-engine
 ENDPATTERN
 
 PROCESS "Compute populations"
@@ -24,20 +24,20 @@ PROCESS "Compute populations"
     MEANING "If a pop c, we say that atom  a  is in the population of concept  c."
 
     ROLE ExecEngine MAINTAINS insPop, delPop
-    RULE insPop : l~;in[Pair*Relation];source[Relation*Concept];isaStar \/ r~;in[Pair*Relation];target[Relation*Concept];isaStar |- pop[Atom*Concept]
+    RULE insPop : lAtom~;in[Pair*Relation];source[Relation*Concept];isaStar \/ rAtom~;in[Pair*Relation];target[Relation*Concept];isaStar |- pop[Atom*Concept]
     VIOLATION (TXT "{EX} InsPair;pop[Atom*Concept];Atom;", SRC I, TXT ";Concept;", TGT I)
-    RULE delPop : pop[Atom*Concept] |- l~;in[Pair*Relation];source[Relation*Concept];isaStar \/ r~;in[Pair*Relation];target[Relation*Concept];isaStar
+    RULE delPop : pop[Atom*Concept] |- lAtom~;in[Pair*Relation];source[Relation*Concept];isaStar \/ rAtom~;in[Pair*Relation];target[Relation*Concept];isaStar
     VIOLATION (TXT "{EX} DelPair;pop[Atom*Concept];Atom;", SRC I, TXT ";Concept;", TGT I)
 
     ROLE ExecEngine MAINTAINS "TOT in", "TOT in[Pair*Relation]"
     RULE "TOT in" : I[Pair] |- in[Pair*Relation];in[Pair*Relation]~
-    VIOLATION ( TXT "{EX} DelPair;l;Pair;", SRC I, TXT ";Atom;", TGT in[Pair*Relation]
-              , TXT "{EX} DelPair;r;Pair;", SRC I, TXT ";Atom;", TGT in[Pair*Relation]
+    VIOLATION ( TXT "{EX} DelPair;lAtom;Pair;", SRC I, TXT ";Atom;", TGT in[Pair*Relation]
+              , TXT "{EX} DelPair;rAtom;Pair;", SRC I, TXT ";Atom;", TGT in[Pair*Relation]
               , TXT "{EX} DelAtom;Pair;", SRC I
               )
 
-    ROLE ExecEngine MAINTAINS "SUR l and r", "SUR l[Pair*Atom]", "SUR r[Pair*Atom]"
-    RULE "SUR l and r" : I[Atom] |- l~;l \/ r~;r
+    ROLE ExecEngine MAINTAINS "SUR lAtom and rAtom", "SUR lAtom[Pair*Atom]", "SUR rAtom[Pair*Atom]"
+    RULE "SUR lAtom and rAtom" : I[Atom] |- lAtom~;lAtom \/ rAtom~;rAtom
     VIOLATION ( TXT "{EX} DelAtom;Atom;", SRC I
               )
 ENDPROCESS

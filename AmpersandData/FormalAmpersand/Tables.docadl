@@ -68,13 +68,13 @@ RELATION srcAtt[Relation*SqlAttribute]
 MEANING "Function `srcAtt` determines the source attribute of a relation."
 RELATION tgtAtt[Relation*SqlAttribute]
 MEANING "Function `tgtAtt` determines the target attribute of a relation."
-PURPOSE RELATION l[Pair*Atom]
-{+Functions `l` and `r` exist for the purpose of taking atoms from pairs.
+PURPOSE RELATION lAtom[Pair*Atom]
+{+Functions `lAtom` and `rAtom` exist for the purpose of taking atoms from pairs.
 -}
-RELATION l[Pair*Atom] [UNI] -- should be TOT as well...
-MEANING "Function `l` determines the left atom of a pair."
-RELATION r[Pair*Atom] [UNI] -- should be TOT as well...
-MEANING "Function `r` determines the right atom of a pair."
+RELATION lAtom[Pair*Atom] [UNI] -- should be TOT as well...
+MEANING "Function `lAtom` determines the left atom of a pair."
+RELATION rAtom[Pair*Atom] [UNI] -- should be TOT as well...
+MEANING "Function `rAtom` determines the right atom of a pair."
 
 -- the following are duplicated from Atoms.adl
 RELATION in[Pair*Relation] [UNI] -- should be TOT as well...
@@ -87,7 +87,7 @@ PURPOSE RULE sameTable   -- srcAtt;table = tgtAtt;table
 PURPOSE RULE sameRecord   -- fst;rec = snd;rec
 {+The PSS must ensure that every SRFP is stored in one record.
 -}
-PURPOSE RULE inRelation   -- in = (l;val~;fst~/\r;val~;snd~) ; (fst;att;srcAtt~/\snd;att;tgtAtt~)
+PURPOSE RULE inRelation   -- in = (lAtom;val~;fst~/\rAtom;val~;snd~) ; (fst;att;srcAtt~/\snd;att;tgtAtt~)
 {+The following rule is needed by the PSS to compute whether a pair is in a relation.
 As a consequence, users can be assured that the PSS stores pairs correctly.
 -}

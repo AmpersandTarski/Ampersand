@@ -381,9 +381,9 @@ instance MetaPopulations A_Pair where
  metaPops fSpec pair =
       [ Pop "in" "Pair" "Relation" []
              [(dirtyId ctx pair, dirtyId ctx (lnkDcl pair))]
-      , Pop "l" "Pair" "Atom" [Uni,Tot]
+      , Pop "lAtom" "Pair" "Atom" [Uni,Tot]
              [(dirtyId ctx pair, dirtyId ctx (lnkLeft pair))]
-      , Pop "r" "Pair" "Atom" [Uni,Tot]
+      , Pop "rAtom" "Pair" "Atom" [Uni,Tot]
              [(dirtyId ctx pair, dirtyId ctx (lnkRight pair))]
       ]
   where

@@ -111,8 +111,8 @@ TABS[ Atoms : V[SESSION*Atom]
          ]
     , Pairs  : V[SESSION*Pair]
     COLS [ "Pair" : I
-         , l : l
-         , r : r
+         , lAtom : lAtom
+         , rAtom : rAtom
          , in : in[Pair*Relation]
          ]
     , Relations : V[SESSION*Relation]
@@ -162,8 +162,8 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "declared in context (outside a pattern)" : ctxds[Relation*Context]
 	, "in~" : in[Pair*Relation]~
 	      BOX <SHCOLS>
-	        [ l : l
-	        , r : r
+	        [ lAtom : lAtom
+	        , rAtom : rAtom
 	        ]
 	, "valid in (context)" : valid[Relation*Context]
 	, "relsInPlug~" : relsInPlug[Plug*Relation]~
