@@ -390,7 +390,6 @@ instance MetaPopulations A_Pair where
   where
     ctx = originalContext fSpec
 
-{-
 instance MetaPopulations Expression where
  metaPops fSpec expr =
   case expr of 
@@ -457,7 +456,7 @@ instance MetaPopulations Expression where
       , Pop "operator"  "UnaryTerm" "Operator" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx op)]
       ]++metaPops fSpec arg
--}
+
 data UnaryOp = 
              KleeneStar
            | KleenePlus
