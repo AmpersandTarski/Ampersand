@@ -452,6 +452,8 @@ instance MetaPopulations Expression where
     makeUnaryTerm op arg =
       [ Pop "arg" "UnaryTerm" "Expression" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx arg)]
+      , Pop "operator"  "BinaryTerm" "Operator" [Uni,Tot]
+             [(dirtyId ctx expr,dirtyId ctx op)]
       ]++metaPops fSpec arg
 
 data UnaryOp = 
