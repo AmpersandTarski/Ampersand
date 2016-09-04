@@ -394,7 +394,8 @@ instance MetaPopulations Expression where
   case expr of 
     EBrk e -> metaPops fSpec e
     _      ->
-      [ Pop "src" "Expression" "Concept" [Uni,Tot]
+      [ Comment $ "Expression: "++showADL expr++" ("++show (sign expr)++")"
+      , Pop "src" "Expression" "Concept" [Uni,Tot]
              [(dirtyId ctx expr, dirtyId ctx (source expr))]
       , Pop "tgt" "Expression" "Concept" [Uni,Tot]
              [(dirtyId ctx expr, dirtyId ctx (target expr))]
