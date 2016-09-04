@@ -1,5 +1,5 @@
-﻿CONTEXT AST IN ENGLISH
-INCLUDE "Atoms.adl"
+CONTEXT AST IN ENGLISH
+INCLUDE "Concepts.adl"
 
 PATTERN Views
     RELATION default[View*Concept] [UNI] -- TOT is maintained by RULE TOTdefault, by deleting all views without a default concept.

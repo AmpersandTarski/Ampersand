@@ -1,6 +1,6 @@
-﻿CONTEXT AST IN ENGLISH 
-INCLUDE "Atoms.adl"
-INCLUDE "Atoms.xlsx"
+CONTEXT AST IN ENGLISH 
+INCLUDE "Concepts.adl"
+--INCLUDE "Atoms.xlsx"
 
 INTERFACE Overview : '_SESSION'[SESSION]
 TABS[ atoms : V[SESSION*Atom]

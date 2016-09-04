@@ -1,6 +1,6 @@
 CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
-INCLUDE "Atoms.adl"
+INCLUDE "Concepts.adl"
 
 
 PROCESS "Expression definitions"
