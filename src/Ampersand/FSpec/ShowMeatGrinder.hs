@@ -29,7 +29,7 @@ I would have expected a P-structure (of even an A-structure) instead.
 Is there a reason? 
 Answer: HJO: By directly generate a string, the resulting file can contain comment, which is 
              useful for debugging. However, the idea is good. In future, we might change
-             it to create a P_Context in stead of a String.
+             it to create a P_Context instead of a String.
 -} 
 content :: FSpec -> String
 content fSpec = unlines
@@ -136,8 +136,6 @@ instance MetaPopulations A_Context where
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.relsDefdIn) ctx++")"]
   ++   concatMap extract (relsDefdIn ctx)  -- SJ 2 sept 2016: I don't think we should populate I-relations and V-relations. But why?
                                            -- HJO 4 sept 2016: I agree. This is, because I and V are not Relations, but Expressions. See the current version of FormalAmpersand. We have to fix this some day in the Haskell source too. 
-  ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.expressionsIn) ctx++")"]
-  ++   concatMap extract (expressionsIn ctx)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.allRules) ctx++")"]
   ++   (concatMap extract . sortByName . allRules) ctx
   ++[ Comment " ", Comment $ "PATTERN Interfaces: (count="++(show.length.ctxifcs) ctx++")"]
