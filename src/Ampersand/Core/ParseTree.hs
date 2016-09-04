@@ -811,14 +811,10 @@ data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand 
             | PGen{ gen_fp  :: Origin         -- ^ the position of the GEN-rule
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
-                  }
-instance Ord P_Gen where
- compare p1 p2 = compare (gen_spc p1,gen_gen p1, origin p1) (gen_spc p2,gen_gen p2,origin p2)
-instance Eq P_Gen where
- p1 == p2 = (compare p1 p2 == EQ)
+                  } deriving (Eq, Ord)
 
 gen_concs :: P_Gen -> [P_Concept]
-gen_concs (P_Cy {gen_rhs=x}) = x
+gen_concs (P_Cy {gen_rhs=x,gen_spc=y}) = y:x
 gen_concs (PGen {gen_gen=x,gen_spc=y}) = [x,y]
 
 instance Show P_Gen where
