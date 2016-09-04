@@ -135,6 +135,7 @@ instance MetaPopulations A_Context where
   ++   (concatMap extract . sortByName . concs) ctx
   ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.relsDefdIn) ctx++")"]
   ++   concatMap extract (relsDefdIn ctx)  -- SJ 2 sept 2016: I don't think we should populate I-relations and V-relations. But why?
+                                           -- HJO 4 sept 2016: I agree. This is, because I and V are not Relations, but Expressions. See the current version of FormalAmpersand. We have to fix this some day in the Haskell source too. 
   ++[ Comment " ", Comment $ "PATTERN Expression: (count="++(show.length.expressionsIn) ctx++")"]
   ++   concatMap extract (expressionsIn ctx)
   ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.allRules) ctx++")"]
@@ -389,6 +390,7 @@ instance MetaPopulations A_Pair where
   where
     ctx = originalContext fSpec
 
+{-
 instance MetaPopulations Expression where
  metaPops fSpec expr =
   case expr of 
@@ -420,7 +422,7 @@ instance MetaPopulations Expression where
             (EDcD dcl)   -> [Pop "bind" "BindedRelation" "Relation" [Uni]
                               [(dirtyId ctx expr,dirtyId ctx dcl)]
                             ]
-            (EDcI cpt)   -> -- HJO, 2016-09-03: I think the fishy part is, that I[X] isn't a Relation. (See the LDM of formalAmpersand)
+            (EDcI _)   -> -- HJO, 2016-09-03: I think the fishy part is, that I[X] isn't a Relation. (See the LDM of formalAmpersand)
                             -- Hence, `EDcI cpt` isn't bound to a Relation. It isn't bound at all. It is just what it is: I[Cpt] 
                             []
                             --[Pop "bind" "BindedRelation" "Relation" [Uni,Tot]  -- SJ 2016-07-24 TODO: Here is something fishy going on...
@@ -455,7 +457,7 @@ instance MetaPopulations Expression where
       , Pop "operator"  "UnaryTerm" "Operator" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx op)]
       ]++metaPops fSpec arg
-
+-}
 data UnaryOp = 
              KleeneStar
            | KleenePlus
