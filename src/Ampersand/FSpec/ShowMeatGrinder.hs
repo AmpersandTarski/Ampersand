@@ -101,8 +101,15 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx p, dirtyId ctx ctx) | p<-ctxpats ctx]
     , Pop "ctxrs" "Rule" "Context" [Uni]                        -- The context in which a rule is declared.
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxrs ctx]
-    , Pop "declaredIn" "Rule" "Context" [Uni]                        -- The context in which a rule is declared.
+    , Pop "udefrules" "Rule" "Context" [Uni]                         -- ^ all rules the user has declared within this viewpoint,
+                                     --   which are not multiplicity- and not identity rules. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-udefrules ctx]
+    , Pop "multrules" "Rule" "Context" [Uni]                         -- ^ all multiplicityrules the user has declared within this viewpoint. See ViewPoint.hs
+           [(dirtyId ctx r, dirtyId ctx ctx) | r<-multrules ctx]
+    , Pop "identityRules" "Rule" "Context" [Uni]                     -- all identity rules the user has declared within this viewpoint. See ViewPoint.hs
+           [(dirtyId ctx r, dirtyId ctx ctx) | r<-identityRules ctx]
+    , Pop "allRules" "Rule" "Context" [Uni]                          -- all rules the user has declared within this viewpoint. See ViewPoint.hs
+           [(dirtyId ctx r, dirtyId ctx ctx) | r<-allRules ctx]
     , Pop "ctxds" "Relation" "Context" [Uni]                         -- The context in which a relation is declared, outside patterns.
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxds ctx]
     , Pop "declaredIn" "Relation" "Context" [Uni]                    -- The context in which a relation is declared.
@@ -143,20 +150,29 @@ instance MetaPopulations A_Context where
 
 instance MetaPopulations Pattern where
  metaPops fSpec pat =
-   [ Comment " "
-   , Comment $ " Pattern `"++name pat++"` "
-   , Pop "name"    "Pattern" "PatternIdentifier" [Uni,Tot]
-          [(dirtyId ctx pat, (show.name) pat)]
+    [ Comment " "
+    , Comment $ " Pattern `"++name pat++"` "
+    , Pop "name"    "Pattern" "PatternIdentifier" [Uni,Tot]
+           [(dirtyId ctx pat, (show.name) pat)]
 --  Activate this code when concept definitions are allowed inside a pattern
 --   , Pop "concepts"   "Pattern" "Concept" []
 --          [(dirtyId pat,dirtyId x) | x <- ptcds pat]
-   , Pop "rules"   "Pattern" "Rule" []
-          [(dirtyId ctx pat,dirtyId ctx x) | x <- ptrls pat]
-   , Pop "relsDefdIn"   "Pattern" "Relation" []
-          [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
-   , Pop "purpose"   "Pattern" "Purpose" [Uni,Tot]
-          [(dirtyId ctx pat,dirtyId ctx x) | x <- ptxps pat]
-   ]
+    , Pop "udefrules" "Rule" "Pattern" [Uni]                         -- ^ all rules the user has declared within this viewpoint,
+                                     --   which are not multiplicity- and not identity rules. See ViewPoint.hs
+           [(dirtyId ctx r, dirtyId ctx pat) | r<-udefrules ctx]
+    , Pop "multrules" "Rule" "Pattern" [Uni]                         -- ^ all multiplicityrules the user has declared within this viewpoint. See ViewPoint.hs
+           [(dirtyId ctx r, dirtyId ctx pat) | r<-multrules ctx]
+    , Pop "identityRules" "Rule" "Pattern" [Uni]                     -- all identity rules the user has declared within this viewpoint. See ViewPoint.hs
+           [(dirtyId ctx r, dirtyId ctx pat) | r<-identityRules ctx]
+    , Pop "allRules" "Rule" "Pattern" [Uni]                          -- all rules the user has declared within this viewpoint. See ViewPoint.hs
+           [(dirtyId ctx r, dirtyId ctx pat) | r<-allRules ctx]
+--    , Pop "rules"   "Pattern" "Rule" []
+--           [(dirtyId ctx pat,dirtyId ctx r) | r <- allRules pat]
+    , Pop "relsDefdIn"   "Pattern" "Relation" []
+           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
+    , Pop "purpose"   "Pattern" "Purpose" [Uni,Tot]
+           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptxps pat]
+    ]
   where 
     ctx = originalContext fSpec
 
