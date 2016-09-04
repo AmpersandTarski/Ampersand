@@ -87,9 +87,10 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
 INTERFACE Expression FOR Ampersand : I[Expression]
 BOX [ expression: I[Expression]
     , first : first[BinaryTerm*Expression] LINKTO INTERFACE Expression
-    , operator : operator
+    , binaryOperator : operator[BinaryTerm*Operator]
     , second : second[BinaryTerm*Expression] LINKTO INTERFACE Expression
     , arg : arg[UnaryTerm*Expression]
+    , unaryOperator : operator[UnaryTerm*Operator]
     , "formalExpression~" : formalExpression[Rule*Expression]~
     , bind  : bind[BindedRelation*Relation] LINKTO INTERFACE Relation
     , singleton : singleton[Singleton*AtomValue] 

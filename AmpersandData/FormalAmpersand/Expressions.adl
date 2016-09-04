@@ -42,6 +42,7 @@ PROCESS "Expression definitions"
     CONCEPT UnaryTerm ""
     CLASSIFY UnaryTerm ISA Expression
     RELATION arg[UnaryTerm*Expression] [UNI]
+    RELATION operator[UnaryTerm*Operator] [UNI]
 
     CONCEPT AtomValue "A value can exist on it's own, without having one or more concepts, where it is a value of an atom in it."
     RELATION singleton[Singleton*AtomValue] [UNI,INJ]
