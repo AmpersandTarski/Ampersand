@@ -401,7 +401,7 @@ instance MetaPopulations Expression where
       , Pop "tgt" "Expression" "Concept" [Uni,Tot]
              [(dirtyId ctx expr, dirtyId ctx (target expr))]
       ]++
-      ( case expr of
+      ( case skipEpsilon expr of
             (EEqu (l,r)) -> makeBinaryTerm Equivalence l r
             (EInc (l,r)) -> makeBinaryTerm Inclusion l r
             (EIsc (l,r)) -> makeBinaryTerm Intersection l r
@@ -427,7 +427,8 @@ instance MetaPopulations Expression where
                             --[Pop "bind" "BindedRelation" "Relation" [Uni,Tot]  -- SJ 2016-07-24 TODO: Here is something fishy going on...
                             --  [(dirtyId ctx expr,dirtyId ctx (Isn cpt))]
                             --]
-            EEps{}       -> []
+            EEps{}       -> fatal 430 $ "EEps is not an expression in FormalAmpersand.\n"++
+                                  "  Expression: "++showADL expr++" ("++show (sign expr)++")" 
             (EDcV sgn)   -> [Pop "userSrc"  (show "V") "Concept"  [Uni,Tot]
                               [(dirtyId ctx expr,dirtyId ctx (source sgn))]
                             ,Pop "userTrg"  (show "V") "Concept"  [Uni,Tot]
@@ -456,6 +457,16 @@ instance MetaPopulations Expression where
       , Pop "operator"  "UnaryTerm" "Operator" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx op)]
       ]++metaPops fSpec arg
+
+    -- | As long as FormalAmpersand doesn't need/know about Epsilons, 
+    --   we cannot inject epsilon expressions into it. Hence
+    --   the epsilon expression must be skipped over.  
+    skipEpsilon :: Expression -> Expression
+    skipEpsilon e =
+      case e of
+        (ECps (EEps{}, e') ) -> skipEpsilon e'
+        (ECps (e', EEps{}) ) -> skipEpsilon e'
+        _                          -> e
 
 data UnaryOp = 
              KleeneStar
