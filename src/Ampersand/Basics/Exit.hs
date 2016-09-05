@@ -7,14 +7,11 @@ module Ampersand.Basics.Exit
 import qualified System.Exit as SE
 import System.IO.Unsafe
 
-fatalExit :: [String] -> a
-fatalExit = exitWith . Fatal
-
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a
 exitWith x = unsafePerformIO $ do
-	exitIO message
-	SE.exitWith exitcode
+  exitIO message
+  SE.exitWith exitcode
  where (exitcode,message) = info x
 
 exitIO :: [String] -> IO()
@@ -34,7 +31,7 @@ info :: AmpersandExit -> (SE.ExitCode, [String])
 info x = 
   case x of
     Succes    -> (SE.ExitSuccess     , [])
-    Fatal msg -> (SE.ExitFailure   1 , msg)	-- These specific errors are due to some bug in the Ampersand code. Please report such bugs!
+    Fatal msg -> (SE.ExitFailure   1 , msg) -- These specific errors are due to some bug in the Ampersand code. Please report such bugs!
     NoValidFSpec msg
               -> (SE.ExitFailure  10 , msg) 
     ViolationsInDatabase

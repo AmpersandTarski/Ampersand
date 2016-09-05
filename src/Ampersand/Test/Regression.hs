@@ -7,15 +7,8 @@ module Ampersand.Test.Regression
 where 
 import Conduit
 import qualified Data.Conduit.List as CL
---import qualified Data.Conduit.Binary as CB
-
 import Data.Char
 import System.FilePath ((</>),takeExtension)
---import Control.Monad --(filterM, forM_, foldM,when)
---import System.IO.Error (tryIOError)
---import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
---import Control.Monad.Trans.Class (lift)
---import Data.Conduit
 import System.Exit --(ExitCode, exitFailure, exitSuccess)
 import System.Process
 

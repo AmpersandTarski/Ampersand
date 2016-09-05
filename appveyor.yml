@@ -41,11 +41,12 @@ build_script:
 # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
 artifacts:
 - path: ampersand.exe
-  name: Windows binary
+  name: 'Windows binary'
 
 # Auto-deploy
 # specify that, for each build that completes, AppVeyor should push
 # a release with the right tag to the GitHub releases page! 
+# We only release when the branch == master.
 # (Note: probably we would want to be a bit more 
 # elaborate about when we push to the releases page; making sure 
 # that we include proper release notes, etc.)
@@ -55,7 +56,8 @@ deploy:
     release: '$(AMPERSAND_VERSION)'
     auth_token:
       secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
-    artifact: Windows binary
-      
+    artifact: 'Windows binary'
+    on:
+      branch: master  
 
     
