@@ -1,0 +1,32 @@
+CONTEXT RAP IN ENGLISH
+    PURPOSE RULE "validity of concepts in a context"
+    {+The relation `context[Concept*Context]` represents all concepts that are valid within a context.
+    Valid concepts can be used in the natural language and the formal language, which makes it relevant to register which concepts are valid within a context.
+    -}
+
+    PURPOSE RULE "validity of relations in a context"
+    {+The relation `relations` represents all relations that are valid within a context.
+    A valid relation defines binary sentences in natural language. We say that it "makes sense" within the context.
+    This makes it relevant to register which relations are valid within a context.
+    -}
+
+    PURPOSE RULE "validity of rules in a context"
+    {+The relation `valid` represents all rules that are valid within a context.
+    Validity of a rule means that it is meant to remain satisfied within the context, regardless of the state of the system.
+    This makes it relevant to register which rules are valid within a context.
+    -}
+
+    PURPOSE RULE "Remove relation atom"
+    {+Because every relation must be declared somewhere, the relation must be removed when its declaration ceases to exist.
+    A relation can be declared by multiple patterns, so as long as one of these declarations exist, the relation remains extant.
+    -}
+
+    PURPOSE RULE "self-sustained rules"
+    {+For a rule to make sense means that its natural language representation makes sense.
+    Ampersand urges its user to declare all relations used in a rule in the same pattern as the rule itself.
+    As a result, whenever this pattern is used in a context, all relations are valid in the same context as the rule.
+    Currently, it is the user's responsibility to make sure this happens.
+    -}
+ENDCONTEXT
+
+
