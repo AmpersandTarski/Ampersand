@@ -7,13 +7,13 @@ RELATION r[G*G]
 RELATION s[A*B]
 RELATION name[G*Text] [UNI]
 
-RULE PeterRule : r;(I/\name;'Peter';name~) |- s
+RULE PeterRule : r;(I[G]/\name;'Peter';name~) |- s
 VIOLATION ( TXT "{EX} InsPair;s;A;", SRC I[G], TXT ";B;", TGT I[G])
 ROLE ExecEngine MAINTAINS PeterRule
 
-RULE verify : s |- r;(I/\name;'Peter';name~)
+RULE verify : s |- r;(I[G]/\name;'Peter';name~)
 
-POPULATION name CONTAINS
+POPULATION name[G*Text] CONTAINS
   [ ("0", "Jack")
   ; ("1", "Peter")
   ]
