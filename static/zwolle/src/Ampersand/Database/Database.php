@@ -313,7 +313,6 @@ class Database {
 	
 	/**
 	 * Check if atom exists in database
-	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
 	 * @param Atom $atom
 	 * @return boolean
 	 */
