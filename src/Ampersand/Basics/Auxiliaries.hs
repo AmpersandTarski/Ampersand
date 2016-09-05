@@ -96,6 +96,12 @@ thd3 (_,_,c) = c
 class Flippable a where
   flp :: a -> a
 
+instance Flippable a => Flippable (Maybe a) where
+ flp (Just a) = Just (flp a)
+ flp Nothing = Nothing
+
+instance Flippable a => Flippable [a] where
+ flp xs = map flp xs
 
 -- Trace shorthands
 

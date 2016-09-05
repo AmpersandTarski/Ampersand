@@ -233,6 +233,13 @@ instance Named P_Declaration where
  name = dec_nm
 instance Traced P_Declaration where
  origin = dec_fpos
+instance Flippable P_Declaration where
+ flp d@P_Sgn{}
+   = d { dec_sign   = flp (dec_sign d)
+       , dec_prps   = flp (dec_prps d)
+       , dec_pragma = []
+       , dec_popu   = flp (dec_popu d)
+       }
 
 data PAtomPair
   = PPair { pppos :: Origin
@@ -602,6 +609,14 @@ instance Eq P_Population where --Required for merge of P_Contexts  -- see also t
 instance Named P_Population where
  name P_RelPopu{p_nmdr = nr} = name nr
  name P_CptPopu{p_cnme = nm} = nm
+
+instance Flippable P_Population where
+ flp p@P_RelPopu{}
+   = p { p_src   = p_tgt p
+       , p_tgt   = p_src p
+       , p_popps = flp (p_popps p)
+       }
+ flp p = p
 
 instance Traced P_Population where
  origin = p_orig

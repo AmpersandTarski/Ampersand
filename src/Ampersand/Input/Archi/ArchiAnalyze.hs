@@ -246,10 +246,19 @@ data PAtomPair
 --   we must grind that contents into binary tables. For that purpose, we define the
 --   class MetaArchi, and instantiate it on ArchiRepo and all its constituent types.
    class MetaArchi a where
-     typeMap ::        a -> [(String,String)]        -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
-     grindArchi :: (String->Maybe String) -> a -> -- create population and the corresponding metamodel for the P-structure in Ampersand
+     typeMap    :: a -> [(String,String)]           -- the map that determines the type (xsi:type) of every atom (id-field) in the repository
+     grindArchi :: (String->Maybe String) -> a ->   -- create population and the corresponding metamodel for the P-structure in Ampersand
                       [(P_Population, Maybe P_Declaration, [P_Gen])]
-     keyArchi ::       a -> String                   -- get the key value (dirty identifier) of an a.
+     keyArchi   :: a -> String                      -- get the key value (dirty identifier) of an a.
+
+   eqAsy :: [(P_Population, Maybe P_Declaration, [P_Gen])] -> [[(P_Population, Maybe P_Declaration, [P_Gen])]]
+   eqAsy ((pPop, maybeDecl, pgens): rest)
+    = ( (pPop, maybeDecl, pgens) : [ (pPop', maybeDecl', pgens')
+                                   | (pPop', maybeDecl', pgens')<-rest
+                                   , pPop'==flp pPop, maybeDecl'==flp maybeDecl
+                                   ] )
+      : eqAsy [ (pPop', maybeDecl', pgens')
+              | (pPop', maybeDecl', pgens')<-rest, pPop/=flp pPop'||maybeDecl/=flp maybeDecl' ]
 
    instance MetaArchi ArchiRepo where
      typeMap archiRepo
