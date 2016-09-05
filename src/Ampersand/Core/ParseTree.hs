@@ -814,7 +814,7 @@ data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand 
                   } deriving (Eq, Ord)
 
 gen_concs :: P_Gen -> [P_Concept]
-gen_concs (P_Cy {gen_rhs=x,gen_spc=y}) = y:x
+gen_concs (P_Cy {gen_rhs=x,gen_spc=y}) = x
 gen_concs (PGen {gen_gen=x,gen_spc=y}) = [x,y]
 
 instance Show P_Gen where
