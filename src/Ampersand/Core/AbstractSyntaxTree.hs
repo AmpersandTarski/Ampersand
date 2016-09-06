@@ -515,8 +515,8 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explRefIds :: [String]     -- ^ The references of the explaination
                      } deriving (Show, Typeable)
 instance Eq Purpose where
-  x0 == x1  =  explObj x0 == explObj x1 &&  -- TODO: check if this definition is right.
-                                            -- I(Han) suspect that the Origin should be part of it.
+  x0 == x1  =  explObj x0 == explObj x1 &&  
+               origin x0  == origin x1 &&
                (amLang . explMarkup) x0 == (amLang . explMarkup) x1
 instance Unique Purpose where
   showUnique p = uniqueShow True (explObj p)++" in "++(show.amLang.explMarkup) p
