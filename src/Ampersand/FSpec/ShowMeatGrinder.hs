@@ -159,13 +159,13 @@ instance MetaPopulations Pattern where
 --          [(dirtyId pat,dirtyId x) | x <- ptcds pat]
     , Pop "udefrules" "Rule" "Pattern" [Uni]                         -- ^ all rules the user has declared within this viewpoint,
                                      --   which are not multiplicity- and not identity rules. See ViewPoint.hs
-           [(dirtyId ctx r, dirtyId ctx pat) | r<-udefrules ctx]
+           [(dirtyId ctx r, dirtyId ctx pat) | r<-udefrules pat]
     , Pop "multrules" "Rule" "Pattern" [Uni]                         -- ^ all multiplicityrules the user has declared within this viewpoint. See ViewPoint.hs
-           [(dirtyId ctx r, dirtyId ctx pat) | r<-multrules ctx]
+           [(dirtyId ctx r, dirtyId ctx pat) | r<-multrules pat]
     , Pop "identityRules" "Rule" "Pattern" [Uni]                     -- all identity rules the user has declared within this viewpoint. See ViewPoint.hs
-           [(dirtyId ctx r, dirtyId ctx pat) | r<-identityRules ctx]
+           [(dirtyId ctx r, dirtyId ctx pat) | r<-identityRules pat]
     , Pop "allRules" "Rule" "Pattern" [Uni]                          -- all rules the user has declared within this viewpoint. See ViewPoint.hs
-           [(dirtyId ctx r, dirtyId ctx pat) | r<-allRules ctx]
+           [(dirtyId ctx r, dirtyId ctx pat) | r<-allRules pat]
 --    , Pop "rules"   "Pattern" "Rule" []
 --           [(dirtyId ctx pat,dirtyId ctx r) | r <- allRules pat]
     , Pop "relsDefdIn"   "Pattern" "Relation" []
