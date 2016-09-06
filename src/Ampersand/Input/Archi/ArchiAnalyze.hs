@@ -268,19 +268,19 @@ data PAtomPair
        (pPp@P_RelPopu{}, mDecl, pgns) `squash` (pPp'@P_RelPopu{}, mDecl', pgns')
         = ( pPp{p_popps = p_popps pPp `uni` p_popps pPp'}
           , case (mDecl, mDecl') of
-                 (Just _, Just _ )   -> mDecl
-                 (Just _, Nothing)   -> mDecl
-                 (Nothing,   Just _) -> mDecl'
-                 _                   -> Nothing
+                 (Just decl, Just decl') -> Just (decl {dec_nm = dec_nm decl++"!"})
+                 (Just decl, Nothing)    -> Just (decl {dec_nm = dec_nm decl++"!"})
+                 (Nothing,   Just decl') -> Just (decl'{dec_nm = dec_nm decl'++"!"})
+                 _                       -> Nothing
           , pgns `uni` pgns'
           )
        (pPp@P_CptPopu{}, mDecl, pgns) `squash` (pPp'@P_CptPopu{}, mDecl', pgns')
         = ( pPp{p_popas = p_popas pPp `uni` p_popas pPp'}
           , case (mDecl, mDecl') of
-                 (Just _, Just _ )   -> mDecl
-                 (Just _, Nothing)   -> mDecl
-                 (Nothing,   Just _) -> mDecl'
-                 _                   -> Nothing
+                 (Just decl, Just decl') -> Just (decl {dec_nm = dec_nm decl++"!"})
+                 (Just decl, Nothing)    -> Just (decl {dec_nm = dec_nm decl++"!"})
+                 (Nothing,   Just decl') -> Just (decl'{dec_nm = dec_nm decl'++"!"})
+                 _                       -> Nothing
           , pgns `uni` pgns'
           )
        _ `squash` _ = fatal 285 "error in squash"
