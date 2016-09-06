@@ -58,7 +58,7 @@ BOX [ "name" : name[Rule*RuleID]
     , "message" : message
     , "conjunctIds" : conjunctIds
     , "rrmean" : rrmean[Rule * Meaning]
-    , "rrpurpose" : rrpurpose[Rule * Purpose]
+    , "purpose" : purpose[Rule * Purpose]
     ]
     
 INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
@@ -149,7 +149,7 @@ BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
 	, "decprM" : decprM[Relation*String]
 	, "decprR" : decprR[Relation*String]
 	, "decprps" : decprps[Relation*PropertyRule]
-	, "decpurpose" : decpurpose[Relation*Purpose]
+	, "purpose" : purpose[Relation*Purpose]
 	, "name" : name[Relation*Identifier]
 	, "prop" : prop[Relation*Property]
 	, "sign" : sign[Relation*Signature]

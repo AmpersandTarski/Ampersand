@@ -33,7 +33,7 @@ TABS[ atoms : V[SESSION*Atom]
            , signature : sign
            , term : term[Rule*Expression]
            , meaning : rrmean
-           , purpose : rrpurpose
+           , purpose : purpose
            ]
     ]
 

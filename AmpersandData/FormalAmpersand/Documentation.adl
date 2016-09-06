@@ -9,14 +9,24 @@ PATTERN Documentation
     MEANING "The properties of a relation."
     RELATION decmean[Relation * Meaning]
     MEANING "The meanings of a relation."
-    RELATION decpurpose[Relation * Purpose]
+    RELATION purpose[Relation * Purpose]
     MEANING "The purposes of a relation."
     RELATION rrmean[Rule * Meaning]
     MEANING "The meanings of a rule."
-    RELATION rrpurpose[Rule * Purpose]
+    RELATION purpose[Rule * Purpose]
     MEANING "The purposes of a rule."
-ENDPATTERN
 
+    RELATION purpose[Identity * Purpose]
+    MEANING "The purposes of an identity."
+    RELATION purpose[View * Purpose]
+    MEANING "The purposes of a view."
+    RELATION purpose[Concept * Purpose]
+    MEANING "The purposes of a concept."
+    RELATION purpose[Interface * Purpose]
+    MEANING "The purposes of an interface."
+    RELATION purpose[Context * Purpose]
+    MEANING "The purposes of a context."
+ENDPATTERN
 
 ENDCONTEXT
 
