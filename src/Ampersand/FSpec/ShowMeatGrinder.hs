@@ -169,8 +169,8 @@ instance MetaPopulations Pattern where
 --           [(dirtyId ctx pat,dirtyId ctx r) | r <- allRules pat]
     , Pop "relsDefdIn"   "Pattern" "Relation" []
            [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
-    , Pop "purpose"   "Pattern" "Purpose" [Uni,Tot]
-           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptxps pat]
+    , Pop "purpose"   "Pattern" "Purpose" [] --Not UNI! depending on the language there may be several purposes.
+           [(dirtyId ctx pat,dirtyId ctx x) | x <- explanations pat]
     ]
   where 
     ctx = originalContext fSpec
