@@ -28,7 +28,7 @@ where
     = do -- hSetEncoding stdout utf8
          archiRepo <- runX (processStraight archiRepoFilename)
          let elemLookup atom = (Map.lookup atom . Map.fromList . typeMap) archiRepo
-         let archiRepoWithProps = (grindArchi elemLookup.identifyProps []) archiRepo
+         let archiRepoWithProps = (eqAsy.grindArchi elemLookup.identifyProps []) archiRepo
          let relPops = (filter (not.null.p_popps) . sortRelPops . map fst3) archiRepoWithProps
          let cptPops = (filter (not.null.p_popas) . sortCptPops . map fst3) archiRepoWithProps
          let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . atomCount . atomMap) relPops
@@ -251,14 +251,39 @@ data PAtomPair
                       [(P_Population, Maybe P_Declaration, [P_Gen])]
      keyArchi   :: a -> String                      -- get the key value (dirty identifier) of an a.
 
-   eqAsy :: [(P_Population, Maybe P_Declaration, [P_Gen])] -> [[(P_Population, Maybe P_Declaration, [P_Gen])]]
+   eqAsy :: [(P_Population, Maybe P_Declaration, [P_Gen])] -> [(P_Population, Maybe P_Declaration, [P_Gen])]
+   eqAsy [] = []
    eqAsy ((pPop, maybeDecl, pgens): rest)
-    = ( (pPop, maybeDecl, pgens) : [ (pPop', maybeDecl', pgens')
-                                   | (pPop', maybeDecl', pgens')<-rest
-                                   , pPop'==flp pPop, maybeDecl'==flp maybeDecl
-                                   ] )
+    = ( foldr1 squash
+        ( (pPop, maybeDecl, pgens) : [ (flp pPop', flp maybeDecl', pgens')
+                                     | (pPop', maybeDecl', pgens')<-rest
+                                     , name pPop'==name pPop, p_src pPop'==p_tgt pPop, p_tgt pPop'==p_src pPop, flp maybeDecl'==maybeDecl
+                                     ] ) )
       : eqAsy [ (pPop', maybeDecl', pgens')
-              | (pPop', maybeDecl', pgens')<-rest, pPop/=flp pPop'||maybeDecl/=flp maybeDecl' ]
+              | (pPop', maybeDecl', pgens')<-rest, name pPop'/=name pPop||p_src pPop'/=p_tgt pPop||p_tgt pPop'/=p_src pPop||flp maybeDecl'/=maybeDecl ]
+      where
+       squash :: (P_Population, Maybe P_Declaration, [P_Gen]) ->
+                 (P_Population, Maybe P_Declaration, [P_Gen]) ->
+                 (P_Population, Maybe P_Declaration, [P_Gen])
+       (pPp@P_RelPopu{}, mDecl, pgns) `squash` (pPp'@P_RelPopu{}, mDecl', pgns')
+        = ( pPp{p_popps = p_popps pPp `uni` p_popps pPp'}
+          , case (mDecl, mDecl') of
+                 (Just _, Just _ )   -> mDecl
+                 (Just _, Nothing)   -> mDecl
+                 (Nothing,   Just _) -> mDecl'
+                 _                   -> Nothing
+          , pgns `uni` pgns'
+          )
+       (pPp@P_CptPopu{}, mDecl, pgns) `squash` (pPp'@P_CptPopu{}, mDecl', pgns')
+        = ( pPp{p_popas = p_popas pPp `uni` p_popas pPp'}
+          , case (mDecl, mDecl') of
+                 (Just _, Just _ )   -> mDecl
+                 (Just _, Nothing)   -> mDecl
+                 (Nothing,   Just _) -> mDecl'
+                 _                   -> Nothing
+          , pgns `uni` pgns'
+          )
+       _ `squash` _ = fatal 285 "error in squash"
 
    instance MetaArchi ArchiRepo where
      typeMap archiRepo
@@ -272,7 +297,7 @@ data PAtomPair
 
    instance MetaArchi Folder where
      typeMap folder
-      = (typeMap.fldElems)   folder  ++ 
+      = (typeMap.fldElems)   folder ++ 
         (typeMap.fldFolders) folder
      grindArchi elemLookup folder
       = [ translateArchiObj "folderName" "ArchiFolder" [(keyArchi folder, fldName folder)]] ++
