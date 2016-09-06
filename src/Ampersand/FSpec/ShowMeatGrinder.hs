@@ -524,7 +524,8 @@ instance MetaPopulations Rule where
              [(dirtyId ctx rul, dirtyId ctx prp) | Just(prp,_) <- [rrdcl rul]]
       , Pop "decprps" "Relation" "PropertyRule" []
              [(dirtyId ctx dcl, dirtyId ctx rul) | Just(_,dcl) <- [rrdcl rul]]
-      ]
+      ] ++ 
+      metaPops fSpec (sign rul)
   where
     ctx = originalContext fSpec
 
