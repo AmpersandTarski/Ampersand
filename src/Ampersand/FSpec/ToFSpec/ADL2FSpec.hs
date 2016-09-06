@@ -523,24 +523,27 @@ tblcontents ci ps plug
                  ( map Just cAtoms
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
-                       _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
+                       _      -> [ (lkp att a . fullContents ci ps) fExp | a<-cAtoms ]
                    | att<-fs, let fExp=attExpr att
                    ]
                  )
                  where
                    cAtoms = (atomValuesOf ci ps. source . attExpr) f
-                   lkp a pairs
+                   lkp :: SqlAttribute -> AAtomValue -> [AAtomPair] -> Maybe AAtomValue
+                   lkp att a pairs
                     = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
-                       ps' -> trace ("Plug: "++name plug) $
-                             trace ("Attibutes: "++(show . map name)(f:fs)) $
-                             trace ("Atoms: "++(intercalate "\n       " . map show) cAtoms) $
-                             trace ("Pairs: "++(intercalate "\n       " . map showADL) pairs) $
-                             trace ("ps'  : "++(intercalate "\n       " . map showADL) ps') $
-                             fatal 428 ("(this could happen when using --dev flag, when there are violations, or if you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)\n"++
-                               "Looking for: '"++showValADL a++"'.\n"++
-                               "Multiple values in one attribute. \n"
-                               )
+                       ps' -> fatal 428 . unlines $ 
+                                [ "There is an attempt to populate multiple values into "
+                                , "     the row of table `"++name plug++"`, where id = "++show(showValADL a)++":"
+                                , "     Values to be inserted in field `"++name att++"` are: "++show (map (showValADL . apRight) ps')
+                                ] --this has happend before due to:
+                                  --    when using --dev flag
+                                  --  , when there are violations
+                                  --  , when you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)
+                                  --  , when a relation in formalAmpersand is declared UNI, but actually it isn't.
+
+                               
                         
                         
