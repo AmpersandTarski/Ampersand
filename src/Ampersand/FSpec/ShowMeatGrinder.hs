@@ -279,7 +279,9 @@ instance MetaPopulations PlugInfo where
       , Pop "maintains" "Plug" "Rule" []
              [{-STILL TODO. -}] --HJO, 20150205: Waar halen we deze info vandaan??
       , Pop "in" "Concept" "Plug" []
-             [(dirtyId ctx cpt,dirtyId ctx plug)| cpt <- concs plug]  
+             [(dirtyId ctx cpt,dirtyId ctx plug)
+             | cpt <- filter isKernelConcept (concs plug)
+             ]
 --      , Pop "relsInPlug" "Plug" "Relation" []
 --             [(dirtyId ctx plug,dirtyId ctx dcl)| dcl <- relsMentionedIn plug]
       ]++
@@ -289,6 +291,10 @@ instance MetaPopulations PlugInfo where
       )      
    where
     ctx = originalContext fSpec
+    isKernelConcept :: A_Concept -> Bool
+    isKernelConcept cpt = case plug of 
+                           InternalPlug sqlTable -> cpt `elem` map fst (cLkpTbl sqlTable)
+                           _                     -> False
 
 instance MetaPopulations PlugSQL where
   metaPops _ _ = []
