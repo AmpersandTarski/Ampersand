@@ -183,14 +183,14 @@ PATTERN Patterns
 ENDPATTERN
 
 PATTERN Specialization
-    VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*Identifier]-} , TXT " ISA " , gengen;name{-[Concept*Identifier]-} )
-    RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
-    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
-
+--    VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*Identifier]-} , TXT " ISA " , gengen;name{-[Concept*Identifier]-} )
+--    RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
+--    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
+-- HJO, 20160906: Disabled above rule and view, because a generalisation can currently have more than one generic concepts (CLASSIFY A IS B /\ C )
     RELATION gengen[Gen*Concept] [TOT]
-    MEANING "A generalization rule refers to one more generic concept."
+    MEANING "A generalization rule refers to one or more generic concepts."
     RELATION genspc[Gen*Concept] [TOT]
-    MEANING "A generalization rule refers to one more specific concept."
+    MEANING "A generalization rule refers to one or more specific concepts."
 
 --PURPOSE RULE specialization
 --{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
