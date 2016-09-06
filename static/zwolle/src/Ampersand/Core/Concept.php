@@ -375,6 +375,16 @@ class Concept {
     public function addToAtomCache($atom){
         $this->atomCache[] = $atom->id;
     }
+    
+    /**
+     * @param Atom $atom atom to remove from atom cache
+     * @return void
+     */
+    public function removeFromAtomCache($atom){
+        if(($key = array_search($atom->id, $this->atomCache)) !== false) {
+            unset($this->atomCache[$key]);
+        }
+    }
 	
     /**********************************************************************************************
      * 

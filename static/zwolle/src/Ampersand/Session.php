@@ -133,7 +133,8 @@ class Session {
      */
     private function destroyAmpersandSession($sessionAtomId){
         $this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '{$sessionAtomId}'");
-        $this->database->deleteAtom(new Atom($sessionAtomId, Concept::getConceptByLabel('SESSION')));
+        $atom = new Atom($sessionAtomId, Concept::getConceptByLabel('SESSION'));
+        $atom->deleteAtom();
         $this->database->commitTransaction();
     }
     
