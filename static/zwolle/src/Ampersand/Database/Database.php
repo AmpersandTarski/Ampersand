@@ -16,6 +16,7 @@ use Ampersand\Hooks;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
+use Ampersand\Core\Atom;
 use Ampersand\Rule\RuleEngine;
 
 /**
