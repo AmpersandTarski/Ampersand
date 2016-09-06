@@ -23,7 +23,7 @@ PATTERN Documentation
     MEANING "The purposes of a concept."
     RELATION purpose[Interface * Purpose] [INJ]
     MEANING "The purposes of an interface."
-    RELATION purpose[Context * Purpose] [INJ]
+    RELATION purpose[Context * Purpose] [{-This is currently *NOT* INJ, see issue https://github.com/AmpersandTarski/Ampersand/issues/46 -}]
     MEANING "The purposes of a context."
 ENDPATTERN
 
