@@ -177,7 +177,8 @@ instance MetaPopulations Pattern where
 instance MetaPopulations Purpose where
   metaPops fSpec purp = 
     [ Pop "purpose"  metaType "Purpose" [Inj]
-       [(dirtyId ctx purp, motivatedThing)]   
+       [(motivatedThing, dirtyId ctx purp)]   
+      --TODO (HJO 20160906): How are we going to deal with Markup and Lang?
     ]
    where 
      ctx = originalContext fSpec
