@@ -312,6 +312,10 @@ instance Named ViewDef where
   name = vdlbl
 instance Traced ViewDef where
   origin = vdpos
+instance Unique ViewDef where
+  showUnique vd = vdlbl vd++"_"++name (vdcpt vd) 
+instance Eq ViewDef where
+  a == b = vdlbl a == vdlbl b && vdcpt a == vdcpt b 
 data ViewSegment = ViewSegment
      { vsmpos :: Origin
      , vsmlabel :: Maybe String

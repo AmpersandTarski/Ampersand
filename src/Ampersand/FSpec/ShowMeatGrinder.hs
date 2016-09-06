@@ -140,6 +140,7 @@ instance MetaPopulations A_Context where
   ++   (concatMap extract . sortByName . allRules) ctx
   ++[ Comment " ", Comment $ "PATTERN Interfaces: (count="++(show.length.ctxifcs) ctx++")"]
   ++   (concatMap extract . sortByName . ctxifcs) ctx
+  ++ metaPops fSpec (ctxps ctx)
   )
   where 
     extract :: MetaPopulations a => a -> [Pop]
@@ -169,11 +170,54 @@ instance MetaPopulations Pattern where
 --           [(dirtyId ctx pat,dirtyId ctx r) | r <- allRules pat]
     , Pop "relsDefdIn"   "Pattern" "Relation" []
            [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
-    , Pop "purpose"   "Pattern" "Purpose" [] --Not UNI! depending on the language there may be several purposes.
-           [(dirtyId ctx pat,dirtyId ctx x) | x <- explanations pat]
-    ]
+    ]++ metaPops fSpec (ptxps pat)
   where 
     ctx = originalContext fSpec
+
+instance MetaPopulations Purpose where
+  metaPops fSpec purp = 
+    [ Pop "purpose"  metaType "Purpose" [Inj]
+       [(dirtyId ctx purp, motivatedThing)]   
+    ]
+   where 
+     ctx = originalContext fSpec
+     metaType :: String
+     motivatedThing :: String 
+     (metaType, motivatedThing) = 
+       case explObj purp of
+          ExplConceptDef x 
+            -> ( "Concept"  , case filter (\cpt -> name cpt == name x) (concs ctx) of
+                                [cpt]  -> dirtyId ctx cpt
+                                ys -> fatal 192 $ show (length ys)++" concepts found that match `"++name x++"`")
+          ExplDeclaration x
+            -> ( "Relation" , case filter (x == ) (relsMentionedIn ctx) of
+                                [rel]  -> dirtyId ctx rel
+                                ys -> fatal 196 $ show (length ys)++" relations found that match `"++show x++"`")
+          ExplRule x
+            -> ( "Rule"     , case filter (\rul -> name rul == x) (allRules ctx) of
+                                [rul]  -> dirtyId ctx rul
+                                ys -> fatal 200 $ show (length ys)++" rules found that match `"++show x++"`")
+          ExplIdentityDef x
+            -> ( "Identity" , case filter (\idn -> name idn == x) (identities ctx) of
+                                [idn]  -> dirtyId ctx idn
+                                ys -> fatal 200 $ show (length ys)++" identities found that match `"++show x++"`")
+          ExplViewDef x
+            -> ( "View"     , case filter (\view -> name view == x) (viewDefs ctx) of
+                                [idn]  -> dirtyId ctx idn
+                                ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
+          ExplPattern x
+            -> ( "Pattern"  , case filter (\pat -> name pat == x) (patterns ctx) of
+                                [pat]  -> dirtyId ctx pat
+                                ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
+          ExplInterface x
+            -> ( "Interface", case filter (\ifc -> name ifc == x) (ctxifcs ctx) of
+                                [ifc]  -> dirtyId ctx ifc
+                                ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
+          ExplContext x 
+            -> ( "Context"  , case filter (\y -> name y == x) [ctx] of
+                                [y]  -> dirtyId ctx y
+                                ys -> fatal 200 $ show (length ys)++" contexts found that match `"++show x++"`")
+
 
 instance MetaPopulations A_Gen where
  metaPops fSpec gen =
@@ -350,8 +394,6 @@ instance MetaPopulations Declaration where
              [(dirtyId ctx dcl,(show.decprR) dcl)]
       , Pop "decmean" "Relation" "Meaning" [Uni]
              [(dirtyId ctx dcl, (show.concatMap showADL.ameaMrk.decMean) dcl)]
-      , Pop "decpurpose" "Relation" "Purpose" []
-             [(dirtyId ctx dcl, (show.showADL) x) | x <- explanations dcl]
       ]
      Isn{} -> -- fatal 335 "Isn should not be populated by the meatgrinder."
 {- SJ sept 2nd, 2016: I don't think we should populate the I-relation from the meatgrinder,
@@ -515,8 +557,6 @@ instance MetaPopulations Rule where
              [(dirtyId ctx rul, dirtyId ctx (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning" []
              [(dirtyId ctx rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
-      , Pop "rrpurpose"  "Rule" "Purpose" []
-             [(dirtyId ctx rul, (show.showADL) x) | x <- explanations rul]
       , -- The next population is from the adl pattern 'Plugs':
         Pop "sign" "Rule" "Signature" [Uni,Tot]
              [(dirtyId ctx rul, dirtyId ctx (sign rul))]
@@ -605,6 +645,7 @@ instance AdlId Rule
 instance AdlId Role
 instance AdlId Population
 instance AdlId IdentityDef
+instance AdlId ViewDef
 instance AdlId Interface
 instance AdlId Signature
 instance AdlId TType
@@ -616,7 +657,6 @@ instance AdlId (PairViewSegment Expression)
 instance AdlId Bool
   where dirtyId _ = map toUpper . show
 instance AdlId a => AdlId [a] where
---instance AdlId (Declaration,Paire)
 
 
 
