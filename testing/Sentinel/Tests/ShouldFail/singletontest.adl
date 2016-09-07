@@ -1,0 +1,9 @@
+﻿CONTEXT SingletonTest IN DUTCH
+
+RULE "Er is een koning" : 'De koning'[Koning]
+
+ENDCONTEXT
+
+{- Purpose:
+This script should fail, because there is no population specified explicitly, so the rule is violated. 
+-}
