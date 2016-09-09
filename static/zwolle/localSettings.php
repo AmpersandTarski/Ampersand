@@ -71,5 +71,9 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
 
+/**************************************************************************************************
+ * Execution time limit is set to a default of 30 seconds. Use 0 to have no time limit. (not advised)
+ *************************************************************************************************/
+// set_time_limit (30);  // Execution time limit in seconds.
 
 ?>

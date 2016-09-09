@@ -19,3 +19,5 @@ instance JSON FSpec MySQLInstaller where
   { msiJSONallDBstructQueries = map Text.pack$ generateDBstructQueries  fSpec False
   , msiJSONallDefPopQueries   = generateAllDefPopQueries fSpec
   }
+
+-- TODO: zie Github issue #521
