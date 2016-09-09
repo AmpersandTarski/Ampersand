@@ -28,7 +28,7 @@ where
     = do -- hSetEncoding stdout utf8
          archiRepo <- runX (processStraight archiRepoFilename)
          let elemLookup atom = (Map.lookup atom . Map.fromList . typeMap) archiRepo
-         let archiRepoWithProps = (eqAsy.grindArchi elemLookup.identifyProps []) archiRepo
+         let archiRepoWithProps = (grindArchi elemLookup.identifyProps []) archiRepo
          let relPops = (filter (not.null.p_popps) . sortRelPops . map fst3) archiRepoWithProps
          let cptPops = (filter (not.null.p_popas) . sortCptPops . map fst3) archiRepoWithProps
          let elemCount archiConcept = (Map.lookup archiConcept . Map.fromList . atomCount . atomMap) relPops
@@ -256,11 +256,11 @@ data PAtomPair
    eqAsy ((pPop, maybeDecl, pgens): rest)
     = ( foldr1 squash
         ( (pPop, maybeDecl, pgens) : [ (flp pPop', flp maybeDecl', pgens')
-                                     | (pPop', maybeDecl', pgens')<-rest
+                                     | (pPop'@P_RelPopu{}, maybeDecl', pgens')<-rest
                                      , name pPop'==name pPop, p_src pPop'==p_tgt pPop, p_tgt pPop'==p_src pPop, flp maybeDecl'==maybeDecl
                                      ] ) )
       : eqAsy [ (pPop', maybeDecl', pgens')
-              | (pPop', maybeDecl', pgens')<-rest, name pPop'/=name pPop||p_src pPop'/=p_tgt pPop||p_tgt pPop'/=p_src pPop||flp maybeDecl'/=maybeDecl ]
+              | (pPop'@P_RelPopu{}, maybeDecl', pgens')<-rest, name pPop'/=name pPop||p_src pPop'/=p_tgt pPop||p_tgt pPop'/=p_src pPop||flp maybeDecl'/=maybeDecl ]
       where
        squash :: (P_Population, Maybe P_Declaration, [P_Gen]) ->
                  (P_Population, Maybe P_Declaration, [P_Gen]) ->
@@ -268,7 +268,7 @@ data PAtomPair
        (pPp@P_RelPopu{}, mDecl, pgns) `squash` (pPp'@P_RelPopu{}, mDecl', pgns')
         = ( pPp{p_popps = p_popps pPp `uni` p_popps pPp'}
           , case (mDecl, mDecl') of
-                 (Just decl, Just decl') -> Just (decl {dec_nm = dec_nm decl++"!"})
+                 (Just decl, Just _)     -> Just (decl {dec_nm = dec_nm decl++"!"})
                  (Just decl, Nothing)    -> Just (decl {dec_nm = dec_nm decl++"!"})
                  (Nothing,   Just decl') -> Just (decl'{dec_nm = dec_nm decl'++"!"})
                  _                       -> Nothing
@@ -277,7 +277,7 @@ data PAtomPair
        (pPp@P_CptPopu{}, mDecl, pgns) `squash` (pPp'@P_CptPopu{}, mDecl', pgns')
         = ( pPp{p_popas = p_popas pPp `uni` p_popas pPp'}
           , case (mDecl, mDecl') of
-                 (Just decl, Just decl') -> Just (decl {dec_nm = dec_nm decl++"!"})
+                 (Just decl, Just _)     -> Just (decl {dec_nm = dec_nm decl++"!"})
                  (Just decl, Nothing)    -> Just (decl {dec_nm = dec_nm decl++"!"})
                  (Nothing,   Just decl') -> Just (decl'{dec_nm = dec_nm decl'++"!"})
                  _                       -> Nothing
