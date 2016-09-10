@@ -101,7 +101,7 @@ doGenFrontend fSpec =
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
-    ; putStrLn "..done."
+    ; putStrLn "frontend generated."
     }
 
 copyIncludes :: FSpec -> IO ()

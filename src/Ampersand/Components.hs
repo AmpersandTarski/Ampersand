@@ -23,7 +23,7 @@ import qualified Data.ByteString.Lazy as L
 import Data.List
 import qualified Data.Text.IO as Text
 import Data.Function (on)
-
+import Data.Maybe (maybeToList)
 import Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import Ampersand.Core.AbstractSyntaxTree
@@ -61,7 +61,7 @@ generateAmpersandOutput multi =
     do { writeFile outputFile . showADL . originalContext $ fSpec
        ; verboseLn opts $ ".adl-file written to " ++ outputFile ++ "."
        }
-    where outputFile = combine (dirOutput opts) (outputfile opts)
+    where outputFile = dirOutput opts </> outputfile opts
 
    doGenProofs :: IO()
    doGenProofs =
@@ -70,7 +70,7 @@ generateAmpersandOutput multi =
        ; writeFile outputFile $ writeHtmlString def thePandoc
        ; verboseLn opts "Proof written."
        }
-    where outputFile = combine (dirOutput opts) $ replaceExtension ("proofs_of_"++baseName opts) ".html"
+    where outputFile = dirOutput opts </> "proofs_of_"++baseName opts -<.> ".html"
           thePandoc = setTitle title (doc theDoc)
           title  = text $ "Proofs for "++name fSpec
           theDoc = fDeriveProofs fSpec
@@ -83,14 +83,14 @@ generateAmpersandOutput multi =
        ; writeFile outputFile (fSpec2Haskell fSpec)
        ; verboseLn opts $ "Haskell written into " ++ outputFile ++ "."
        }
-    where outputFile = combine (dirOutput opts) $ replaceExtension (baseName opts) ".hs"
+    where outputFile = dirOutput opts </> baseName opts -<.> ".hs"
    doGenSQLdump :: IO()
    doGenSQLdump =
     do { verboseLn opts $ "Generating SQL queries dumpfile for "++name fSpec
        ; Text.writeFile outputFile (dumpSQLqueries multi)
        ; verboseLn opts $ "SQL queries dumpfile written into " ++ outputFile ++ "."
        }
-    where outputFile = combine (dirOutput opts) $ replaceExtension (baseName opts) ".sqlDump"
+    where outputFile = dirOutput opts </> baseName opts -<.> ".sqlDump"
 
    doGenUML :: IO()
    doGenUML =
@@ -98,7 +98,7 @@ generateAmpersandOutput multi =
        ; writeFile outputFile $ generateUML fSpec
        ; Prelude.putStrLn $ "Generated file: " ++ outputFile ++ "."
        }
-      where outputFile = combine (dirOutput opts) $ replaceExtension (baseName opts) ".xmi"
+      where outputFile = dirOutput opts </> baseName opts -<.> ".xmi"
 
    -- This function will generate all Pictures for a given FSpec.
    -- the returned FSpec contains the details about the Pictures, so they
@@ -121,7 +121,7 @@ generateAmpersandOutput multi =
     do { verboseLn opts "Generating Excel containing FPA..."
        ; writeFile outputFile $ fspec2FPA_Excel fSpec
        }
-      where outputFile = combine (dirOutput opts) $ replaceExtension ("FPA_"++baseName opts) ".xml"  -- Do not use .xls here, because that generated document contains xml.
+      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
@@ -130,7 +130,7 @@ generateAmpersandOutput multi =
        ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
        ; Prelude.putStrLn $ "Generated file: " ++ outputFile
        }
-      where outputFile = combine (dirOutput opts) $ replaceExtension (baseName opts++ "_generated_pop") ".xlsx"
+      where outputFile = dirOutput opts </> baseName opts ++ "_generated_pop" -<.> ".xlsx"
 
    doValidateSQLTest :: IO ()
    doValidateSQLTest =
@@ -141,26 +141,29 @@ generateAmpersandOutput multi =
 
    doGenProto :: IO ()
    doGenProto =
-    do { verboseLn opts "Checking on rule violations..."
-       ; reportViolations violationsOfInvariants
-       ; reportSignals (initialConjunctSignals fSpec)
-       ; if null violationsOfInvariants || development opts
-         then do { verboseLn opts "Generating prototype..."
-                 ; clearTemplateDirs fSpec
-                 ; writeStaticFiles opts
-                 ; generateJSONfiles multi
-                 ; doGenFrontend fSpec
-                 ; verboseLn opts "\n"
-                 ; verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                 ; installComposerLibs opts
-                 }
-         else do { exitWith NoPrototypeBecauseOfRuleViolations
-                 }
-       ; case testRule opts of
-                Just ruleName -> ruleTest ruleName
-                Nothing       -> return ()
-       }
-    where violationsOfInvariants :: [(Rule,[AAtomPair])]
+    sequence_ $
+       [ verboseLn opts "Checking on rule violations..."
+       , reportViolations violationsOfInvariants
+       , reportSignals (initialConjunctSignals fSpec)
+       ]++
+       if null violationsOfInvariants || development opts
+       then if genRap
+            then [ generateJSONfiles multi]
+            else [ verboseLn opts "Generating prototype..."
+                 , clearTemplateDirs fSpec
+                 , writeStaticFiles opts
+                 , generateJSONfiles multi
+                 , doGenFrontend fSpec
+                 , verboseLn opts "\n"
+                 , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
+                 , installComposerLibs opts
+                 ]
+       else [exitWith NoPrototypeBecauseOfRuleViolations]
+       ++
+       maybeToList (fmap ruleTest (testRule opts))
+
+    where genRap = genRapPopulationOnly (getOpts fSpec)
+          violationsOfInvariants :: [(Rule,[AAtomPair])]
           violationsOfInvariants
             = [(r,vs) |(r,vs) <- allViolations fSpec
                       , not (isSignal r)
