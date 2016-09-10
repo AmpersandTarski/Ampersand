@@ -41,10 +41,10 @@ instance ToJSON RelTableInfo where
   toJSON = amp2Jason
 instance ToJSON TableCol where
   toJSON = amp2Jason
-instance JSON FSpec Relations where
- fromAmpersand fSpec _ = Relations (map (fromAmpersand fSpec) (vrels fSpec))
+instance JSON MultiFSpecs Relations where
+ froMAmpersand multi _ = Relations (map (froMAmpersand multi) (vrels (userFSpec multi)))
 instance JSON Declaration Relation where
- fromAmpersand fSpec dcl = Relation 
+ froMAmpersand multi dcl = Relation 
          { relJSONname       = name dcl
          , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConceptId  = escapeIdentifier . name . source $ dcl 
@@ -55,16 +55,19 @@ instance JSON Declaration Relation where
          , relJSONsur      = isSur dcl
          , relJSONprop     = isProp dcl
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
-         , relJSONmysqlTable = fromAmpersand fSpec dcl
+         , relJSONmysqlTable = froMAmpersand multi dcl
          }
+      where fSpec = userFSpec multi
+         
 instance JSON Declaration RelTableInfo where
- fromAmpersand fSpec dcl = RelTableInfo
+ froMAmpersand multi dcl = RelTableInfo
   { rtiJSONname    = name plug
   , rtiJSONtableOf = srcOrtgt
-  , rtiJSONsrcCol  = fromAmpersand fSpec srcAtt
-  , rtiJSONtgtCol  = fromAmpersand fSpec trgAtt
+  , rtiJSONsrcCol  = froMAmpersand multi srcAtt
+  , rtiJSONtgtCol  = froMAmpersand multi trgAtt
   }
-   where (plug,srcAtt,trgAtt) = getDeclarationTableInfo fSpec dcl
+   where fSpec = userFSpec multi
+         (plug,srcAtt,trgAtt) = getDeclarationTableInfo fSpec dcl
          (plugSrc,_)          = getConceptTableInfo fSpec (source dcl)
          (plugTrg,_)          = getConceptTableInfo fSpec (target dcl)
          srcOrtgt
@@ -72,7 +75,7 @@ instance JSON Declaration RelTableInfo where
            | plug == plugTrg = Just "tgt"
            | otherwise       = Nothing 
 instance JSON SqlAttribute TableCol where
- fromAmpersand _ att = TableCol
+ froMAmpersand _ att = TableCol
   { tcJSONname   = attName att
   , tcJSONnull   = attDBNull att
   , tcJSONunique = attUniq att

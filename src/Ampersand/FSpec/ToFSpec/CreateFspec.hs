@@ -28,16 +28,21 @@ import Control.Monad
 --   The combination of model and populated metamodel results in the Guarded FSpec,
 --   which is the result of createFSpec.
 createFSpec :: Options  -- ^The options derived from the command line
-            -> IO(Guarded FSpec)
+            -> IO(Guarded MultiFSpecs)
 createFSpec opts =
   do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let gFSpec = pCtx2Fspec userP_Ctx
      when (genMetaFile opts) (dumpMetaFile gFSpec)
      if genMetaTables opts
      then do rapP_Ctx <- parseMeta opts -- the P_Context of the formalAmpersand metamodel
-             return $ genMeta userP_Ctx gFSpec rapP_Ctx
-     else return gFSpec        
+             return . fmap (mkMulti Nothing) $ genMeta userP_Ctx gFSpec rapP_Ctx
+     else    return . fmap (mkMulti Nothing) $ gFSpec
    where
+    mkMulti :: Maybe FSpec -> FSpec -> MultiFSpecs
+    mkMulti y x = MultiFSpecs
+               { userFSpec = x
+               , metaFSpec = y
+               }
     dumpMetaFile :: Guarded FSpec -> IO()
     dumpMetaFile a = case a of
               Checked fSpec -> let (filePath,metaContents) = makeMetaPopulationFile fSpec 

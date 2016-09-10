@@ -73,7 +73,7 @@ data Options = Options { showVersion :: Bool
                        , test :: Bool
                        , genMetaTables :: Bool -- When set, generate the meta-tables of AST into the prototype
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
-                       , genRapPopulation :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
+                       , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
@@ -162,7 +162,7 @@ getOptions =
                       , test             = False
                       , genMetaTables    = False
                       , genMetaFile      = False
-                      , genRapPopulation        = False
+                      , genRapPopulationOnly = False
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
@@ -483,7 +483,7 @@ options = [ (Option ['v']   ["version"]
                "Generate the meta-population in AST format and output it to an .adl file"
             , Hidden)
           , (Option []        ["gen-as-rap-model"]
-               (NoArg (\opts -> return opts{genRapPopulation = True}))
+               (NoArg (\opts -> return opts{genRapPopulationOnly = True}))
                "Generate populations for use in RAP3."
             , Hidden)
           , (Option []        ["no-static-files"]

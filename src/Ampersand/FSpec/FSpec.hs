@@ -9,7 +9,8 @@ All generators (such as the code generator, the proof generator, the atlas gener
 are merely different ways to show FSpec.
 -}
 module Ampersand.FSpec.FSpec
-          ( FSpec(..), concDefs, Atom(..), A_Pair(..)
+          ( MultiFSpecs(..)
+          , FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Fswitchboard(..), Quad(..)
           , A_Concept, Declaration, A_Gen
           , FSid(..)
@@ -51,6 +52,10 @@ import Ampersand.Misc.Options (Options)
 import Text.Pandoc.Builder (Blocks)
 import Ampersand.FSpec.ToFSpec.Populated
 
+data MultiFSpecs = MultiFSpecs
+                   { userFSpec :: FSpec        -- ^ The FSpec based on the user's script only.
+                   , metaFSpec :: Maybe FSpec  -- ^ The FormalAmpersand metamodel, populated with the items from the user's script 
+                   }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
                    , originalContext :: A_Context             -- ^ the original context. (for showADL)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
