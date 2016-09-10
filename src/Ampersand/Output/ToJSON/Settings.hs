@@ -14,10 +14,10 @@ data Settings = Settings
 instance ToJSON Settings where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Settings where
- froMAmpersand multi _ = Settings 
+ fromAmpersand multi _ = Settings 
   { sngJSONversionInfo   = ampersandVersionStr
   , sngJSONcontextName   = Text.unpack (fsName fSpec)
-  , sngJSONmysqlSettings = froMAmpersand multi multi
+  , sngJSONmysqlSettings = fromAmpersand multi multi
   } 
    where fSpec = userFSpec multi
 
@@ -31,7 +31,7 @@ data MySQLSettings = MySQLSettings
 instance ToJSON MySQLSettings where
   toJSON = amp2Jason
 instance JSON MultiFSpecs MySQLSettings where
- froMAmpersand multi _ = MySQLSettings 
+ fromAmpersand multi _ = MySQLSettings 
   { msqlJSONdbHost = sqlHost  opts
   , msqlJSONdbName = dbName   opts
   , msqlJSONdbUser = sqlLogin opts

@@ -19,9 +19,9 @@ instance ToJSON JSONConjunct where
 instance ToJSON Conjuncts where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Conjuncts where
- froMAmpersand multi _ = Conjuncts . map (froMAmpersand multi) . allConjuncts . userFSpec $ multi
+ fromAmpersand multi _ = Conjuncts . map (fromAmpersand multi) . allConjuncts . userFSpec $ multi
 instance JSON Conjunct JSONConjunct where
- froMAmpersand multi conj = JSONConjunct
+ fromAmpersand multi conj = JSONConjunct
   { cnjJSONid                  = rc_id conj
   , cnjJSONsignalRuleNames     = map name . filter        isSignal  . rc_orgRules $ conj
   , cnjJSONinvariantRuleNames  = map name . filter (not . isSignal) . rc_orgRules $ conj

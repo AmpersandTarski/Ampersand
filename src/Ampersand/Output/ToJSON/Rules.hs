@@ -45,15 +45,15 @@ instance ToJSON JsonPairView where
 instance ToJSON JsonPairViewSegment where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Rules where
- froMAmpersand multi _ = Rules
-   { rulJSONinvariants = map (froMAmpersand multi) (invariants fSpec)
-   , rulJSONsignals    = map (froMAmpersand multi) (signals fSpec)
+ fromAmpersand multi _ = Rules
+   { rulJSONinvariants = map (fromAmpersand multi) (invariants fSpec)
+   , rulJSONsignals    = map (fromAmpersand multi) (signals fSpec)
    }
   where
    fSpec = userFSpec multi
     
 instance JSON Rule JsonRule where
- froMAmpersand multi rule = JsonRule
+ fromAmpersand multi rule = JsonRule
   { rulJSONname        = rrnm         rule
   , rulJSONruleAdl     = showADL.rrexp $ rule
   , rulJSONorigin      = show.rrfps     $ rule
@@ -62,7 +62,7 @@ instance JSON Rule JsonRule where
   , rulJSONsrcConceptId = escapeIdentifier . name . source . rrexp $ rule
   , rulJSONtgtConceptId = escapeIdentifier . name . target . rrexp $ rule
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
-  , rulJSONpairView    = fmap (froMAmpersand multi) (rrviol rule)
+  , rulJSONpairView    = fmap (fromAmpersand multi) (rrviol rule)
   } 
    where 
     fSpec = userFSpec multi
@@ -71,9 +71,9 @@ instance JSON Rule JsonRule where
                               []    -> ""
                               markup:_ -> aMarkup2String Markdown markup
 instance JSON (PairView Expression) JsonPairView where
- froMAmpersand multi pv = JsonPairView $ map (froMAmpersand multi) (zip [0..] (ppv_segs pv))
+ fromAmpersand multi pv = JsonPairView $ map (fromAmpersand multi) (zip [0..] (ppv_segs pv))
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
- froMAmpersand multi (nr,pvs) = JsonPairViewSegment
+ fromAmpersand multi (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr
   , pvsJSONsegmentType = case pvs of
                            PairViewText{} -> "Text"

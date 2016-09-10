@@ -172,8 +172,8 @@ comp :: "Application interface" * "Application component" [SUR] PRAGMA "Applicat
 use :: "Application component" * "Application interface" PRAGMA "Application component " " may use Application interface ".
 comp :: "Application component" * "Application component" [RFX,TRN,ASY] PRAGMA "Application component " " is a component of Application component ".
 
-CLASSIFY "Application Function" ISA "Application behavioural concept"
-CLASSIFY "Application Interaction" ISA "Application behavioural concept"
+CLASSIFY "Application function" ISA "Application behavioural concept"
+CLASSIFY "Application interaction" ISA "Application behavioural concept"
 CLASSIFY "Application behavioural concept" ISA "Concept"
 
 triggers :: "Application behavioural concept" * "Application behavioural concept" PRAGMA "Application behavioural concept " " triggers Application behavioural concept ".

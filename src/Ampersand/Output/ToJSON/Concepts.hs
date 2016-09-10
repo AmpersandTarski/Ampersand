@@ -51,10 +51,10 @@ instance ToJSON Segment where
 instance ToJSON TableCols where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Concepts where
- froMAmpersand multi _ = Concepts (map (froMAmpersand multi) (concs fSpec))
+ fromAmpersand multi _ = Concepts (map (fromAmpersand multi) (concs fSpec))
    where fSpec = userFSpec multi
 instance JSON A_Concept Concept where
- froMAmpersand multi cpt = Concept
+ fromAmpersand multi cpt = Concept
   { cptJSONid                = escapeIdentifier . name $ cpt
   , cptJSONlabel             = name cpt
   , cptJSONtype              = show . cptTType fSpec $ cpt
@@ -63,7 +63,7 @@ instance JSON A_Concept Concept where
   , cptJSONaffectedConjuncts = map rc_id . fromMaybe [] . lookup cpt . allConjsPerConcept $ fSpec
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
-  , cptJSONconceptTable = froMAmpersand multi cpt
+  , cptJSONconceptTable = fromAmpersand multi cpt
   } 
   where
     fSpec = userFSpec multi
@@ -71,7 +71,7 @@ instance JSON A_Concept Concept where
     hasAsSourceCpt ifc = (source . objctx . ifcObj) ifc `elem` cpts
     cpts = cpt : largerConcepts  (vgens fSpec) cpt
 instance JSON A_Concept TableCols where
- froMAmpersand multi cpt = TableCols
+ fromAmpersand multi cpt = TableCols
   { tclJSONname    = name cptTable
   , tclJSONcols    = case nub . map fst $ cols of
                        [t] -> if name t == name cptTable
@@ -87,15 +87,15 @@ instance JSON A_Concept TableCols where
       []      -> fatal 80 $ "Concept `"++name cpt++"` not found in a table."
       _       -> fatal 81 $ "Concept `"++name cpt++"` found in multiple tables."
 instance JSON ViewDef View where
- froMAmpersand multi vd = View
+ fromAmpersand multi vd = View
   { vwJSONlabel        = name vd
   , vwJSONisDefault    = vdIsDefault vd
   , vwJSONhtmlTemplate = fmap templateName . vdhtml $ vd
-  , vwJSONsegments     = map (froMAmpersand multi) . vdats $ vd
+  , vwJSONsegments     = map (fromAmpersand multi) . vdats $ vd
   }
   where templateName (ViewHtmlTemplateFile fn) = fn
 instance JSON ViewSegment Segment where
- froMAmpersand multi seg = Segment
+ fromAmpersand multi seg = Segment
   { segJSONseqNr = vsmSeqNr seg
   , segJSONlabel = vsmlabel seg
   , segJSONsegType = case vsmLoad seg of

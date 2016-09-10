@@ -42,9 +42,9 @@ instance ToJSON RelTableInfo where
 instance ToJSON TableCol where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Relations where
- froMAmpersand multi _ = Relations (map (froMAmpersand multi) (vrels (userFSpec multi)))
+ fromAmpersand multi _ = Relations (map (fromAmpersand multi) (vrels (userFSpec multi)))
 instance JSON Declaration Relation where
- froMAmpersand multi dcl = Relation 
+ fromAmpersand multi dcl = Relation 
          { relJSONname       = name dcl
          , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConceptId  = escapeIdentifier . name . source $ dcl 
@@ -55,16 +55,16 @@ instance JSON Declaration Relation where
          , relJSONsur      = isSur dcl
          , relJSONprop     = isProp dcl
          , relJSONaffectedConjuncts = map rc_id  $ fromMaybe [] (lookup dcl $ allConjsPerDecl fSpec)
-         , relJSONmysqlTable = froMAmpersand multi dcl
+         , relJSONmysqlTable = fromAmpersand multi dcl
          }
       where fSpec = userFSpec multi
          
 instance JSON Declaration RelTableInfo where
- froMAmpersand multi dcl = RelTableInfo
+ fromAmpersand multi dcl = RelTableInfo
   { rtiJSONname    = name plug
   , rtiJSONtableOf = srcOrtgt
-  , rtiJSONsrcCol  = froMAmpersand multi srcAtt
-  , rtiJSONtgtCol  = froMAmpersand multi trgAtt
+  , rtiJSONsrcCol  = fromAmpersand multi srcAtt
+  , rtiJSONtgtCol  = fromAmpersand multi trgAtt
   }
    where fSpec = userFSpec multi
          (plug,srcAtt,trgAtt) = getDeclarationTableInfo fSpec dcl
@@ -75,7 +75,7 @@ instance JSON Declaration RelTableInfo where
            | plug == plugTrg = Just "tgt"
            | otherwise       = Nothing 
 instance JSON SqlAttribute TableCol where
- froMAmpersand _ att = TableCol
+ fromAmpersand _ att = TableCol
   { tcJSONname   = attName att
   , tcJSONnull   = attDBNull att
   , tcJSONunique = attUniq att

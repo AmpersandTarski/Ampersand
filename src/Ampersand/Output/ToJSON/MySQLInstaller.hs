@@ -21,7 +21,7 @@ data MySQLInstaller =
 instance ToJSON MySQLInstaller where
   toJSON = amp2Jason
 instance JSON MultiFSpecs MySQLInstaller where
- froMAmpersand _ multi
+ fromAmpersand _ multi
    | genRap = ExtraPopulation
         { msiJSONrapPopulation = generateAllDefPopQueries grindedFSpec
         }

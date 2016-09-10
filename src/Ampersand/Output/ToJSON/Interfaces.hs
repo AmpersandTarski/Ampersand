@@ -63,15 +63,15 @@ instance ToJSON JSONexpr where
   toJSON = amp2Jason
   
 instance JSON MultiFSpecs Interfaces where
- froMAmpersand multi _ = Interfaces (map (froMAmpersand multi) (interfaceS fSpec ++ interfaceG fSpec))
+ fromAmpersand multi _ = Interfaces (map (fromAmpersand multi) (interfaceS fSpec ++ interfaceG fSpec))
    where fSpec = userFSpec multi
 
 instance JSON SubInterface JSONSubInterface where
- froMAmpersand multi si = 
+ fromAmpersand multi si = 
    case si of 
      Box{} -> JSONSubInterface
        { subJSONboxClass           = siMClass si
-       , subJSONifcObjects         = Just . map (froMAmpersand multi) . siObjs $ si
+       , subJSONifcObjects         = Just . map (fromAmpersand multi) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinTo         = Nothing
        , subJSONcrud               = Nothing
@@ -81,18 +81,18 @@ instance JSON SubInterface JSONSubInterface where
        , subJSONifcObjects         = Nothing
        , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
        , subJSONrefIsLinTo         = Just . siIsLink $ si
-       , subJSONcrud               = Just . froMAmpersand multi . siCruds $ si
+       , subJSONcrud               = Just . fromAmpersand multi . siCruds $ si
        }
  
 instance JSON Interface JSONInterface where
- froMAmpersand multi interface = JSONInterface
+ fromAmpersand multi interface = JSONInterface
   { ifcJSONinterfaceRoles     = map name . ifcRoles $ interface
   , ifcJSONboxClass           = Nothing -- todo, fill with box class of toplevel ifc box
-  , ifcJSONifcObject          = froMAmpersand multi (ifcObj interface)
+  , ifcJSONifcObject          = fromAmpersand multi (ifcObj interface)
   }
 
 instance JSON Cruds JSONCruds where
- froMAmpersand _ crud = JSONCruds
+ fromAmpersand _ crud = JSONCruds
   { crudJSONread              = crudR crud
   , crudJSONcreate            = crudC crud
   , crudJSONupdate            = crudU crud
@@ -100,7 +100,7 @@ instance JSON Cruds JSONCruds where
   }
   
 instance JSON ObjectDef JSONexpr where
- froMAmpersand multi object = JSONexpr
+ fromAmpersand multi object = JSONexpr
   { exprJSONsrcConceptId      = escapeIdentifier . name $ srcConcept
   , exprJSONtgtConceptId      = escapeIdentifier . name $ tgtConcept
   , exprJSONisUni             = isUni normalizedInterfaceExp
@@ -120,16 +120,16 @@ instance JSON ObjectDef JSONexpr where
         Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
 instance JSON ObjectDef JSONObjectDef where
- froMAmpersand multi object = JSONObjectDef
+ fromAmpersand multi object = JSONObjectDef
   { ifcJSONid                 = escapeIdentifier . name $ object
   , ifcJSONlabel              = name object
   , ifcJSONviewId             = fmap name viewToUse
   , ifcJSONNormalizationSteps = showPrf showADL.cfProof opts.objctx $ object 
   , ifcJSONrelation           = fmap (showDcl . fst) mEditableDecl
   , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
-  , ifcJSONcrud               = froMAmpersand multi (objcrud object)
-  , ifcJSONexpr               = froMAmpersand multi object
-  , ifcJSONsubinterfaces      = fmap (froMAmpersand multi) (objmsub object)
+  , ifcJSONcrud               = fromAmpersand multi (objcrud object)
+  , ifcJSONexpr               = fromAmpersand multi object
+  , ifcJSONsubinterfaces      = fmap (fromAmpersand multi) (objmsub object)
   }
   where
     opts = getOpts fSpec

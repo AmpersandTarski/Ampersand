@@ -16,17 +16,17 @@ generateJSONfiles multi =
  sequence_ $
   if genRap
   then [ writeJSON "extraPopulation"
-                                (froMAmpersand multi multi :: MySQLInstaller)]
-  else [ writeJSON "settings"   (froMAmpersand multi multi :: Settings)
+                                (fromAmpersand multi multi :: MySQLInstaller)]
+  else [ writeJSON "settings"   (fromAmpersand multi multi :: Settings)
        , writeJSON "mysql-installer"
-                                (froMAmpersand multi multi :: MySQLInstaller)
-       , writeJSON "relations"  (froMAmpersand multi multi :: Relations)
-       , writeJSON "rules"      (froMAmpersand multi multi :: Rules)
-       , writeJSON "concepts"   (froMAmpersand multi multi :: Concepts)
-       , writeJSON "conjuncts"  (froMAmpersand multi multi :: Conjuncts)
-       , writeJSON "interfaces" (froMAmpersand multi multi :: Interfaces)
-       , writeJSON "views"      (froMAmpersand multi multi :: Views)
-       , writeJSON "roles"      (froMAmpersand multi multi :: Roles)
+                                (fromAmpersand multi multi :: MySQLInstaller)
+       , writeJSON "relations"  (fromAmpersand multi multi :: Relations)
+       , writeJSON "rules"      (fromAmpersand multi multi :: Rules)
+       , writeJSON "concepts"   (fromAmpersand multi multi :: Concepts)
+       , writeJSON "conjuncts"  (fromAmpersand multi multi :: Conjuncts)
+       , writeJSON "interfaces" (fromAmpersand multi multi :: Interfaces)
+       , writeJSON "views"      (fromAmpersand multi multi :: Views)
+       , writeJSON "roles"      (fromAmpersand multi multi :: Roles)
        ]
 
   where 

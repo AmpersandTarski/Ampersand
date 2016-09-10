@@ -20,10 +20,10 @@ instance ToJSON RoleJson where
 instance ToJSON Roles where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Roles where
- froMAmpersand multi _ = Roles . map (froMAmpersand multi) . fRoles $ fSpec
+ fromAmpersand multi _ = Roles . map (fromAmpersand multi) . fRoles $ fSpec
    where fSpec = userFSpec multi
 instance JSON (Role,Int) RoleJson where
- froMAmpersand multi (role,i) = RoleJson
+ fromAmpersand multi (role,i) = RoleJson
   { roleJSONid         = i
   , roleJSONname       = name role
   , roleJSONmaintains  = map name . fMaintains     fSpec $ role
