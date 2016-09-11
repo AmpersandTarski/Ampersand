@@ -111,8 +111,8 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-relsDefdIn ctx]
     , Pop "context" "Population" "Context" [Uni]                     -- The context in which a population is defined.
            [(dirtyId ctx pop, dirtyId ctx ctx) | pop<-ctxpopus ctx]
-    , Pop "context" "Concept" "Context" [Uni]                        -- The context in which a concept is defined.
-           [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxcds ctx]
+--    , Pop "context" "Concept" "Context" [Uni]                        -- The context in which a concept is defined.
+--           [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxcds ctx]
     , Pop "context" "IdentityDef" "Context" [Uni]                    -- The context in which an identityDef is defined.
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxks ctx]
     , Pop "allRoles" "Context" "Role" [Tot]
