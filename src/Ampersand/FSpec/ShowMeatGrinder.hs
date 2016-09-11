@@ -40,11 +40,6 @@ content fSpec = unlines
     , "The populations defined in this file are the populations from the user's"
     , "model named '"++name fSpec++"'."
     , ""
-    , "The order in which these populations are defined correspond with the order "
-    , "in which Ampersand is defined in itself. Currently (Feb. 2015), this is hard-"
-    , "coded. This means, that whenever Formal Ampersand changes, it might have "
-    , "impact on the generator of this file. "
-    , ""
     , "-}"
     , "CONTEXT FormalAmpersand IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."
     , showRelsFromPops pops
@@ -556,8 +551,6 @@ instance MetaPopulations Rule where
              [(dirtyId ctx rul, (dirtyId ctx.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept" [Uni,Tot]
              [(dirtyId ctx rul, (dirtyId ctx.target.rrexp) rul)]
-      , Pop "conjunctIds"  "Rule" "Conjunct" [Tot,Sur,Inj]
-             [(dirtyId ctx rul, dirtyId ctx conj) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "originatesFrom" "Conjunct" "Rule" [Uni,Tot]
              [(dirtyId ctx conj,dirtyId ctx rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "formalExpression"  "Rule" "Expression" [Uni,Tot]
@@ -615,9 +608,10 @@ popNameSignature pop =
 showRelsFromPops :: [Pop] -> String
 showRelsFromPops pops
   = intercalate "\n" [ "RELATION "++popNameSignature (head cl)++show (props cl)
-                     | cl<-eqCl popNameSignature [p | p@Pop{} <- pops] ]
+                     | cl<-eqCl popNameSignature . filter isPop $ pops]
     where props cl = (foldr1 uni . map popMult) cl
-
+          isPop Pop{}     = True
+          isPop Comment{} = False
 class Unique a => AdlId a where
  dirtyId :: A_Context -> a -> String
  dirtyId _ = show . camelCase . uniqueShow False

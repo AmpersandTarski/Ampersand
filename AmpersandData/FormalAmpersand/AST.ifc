@@ -56,7 +56,6 @@ BOX [ "name" : name[Rule*RuleID]
     , "rrviols" : rrviols
     , "pairView" : pairView
     , "message" : message
-    , "conjunctIds" : conjunctIds
     , "rrmean" : rrmean[Rule * Meaning]
     , "purpose" : purpose[Rule * Purpose]
     ]
@@ -141,9 +140,7 @@ BOX [ "gens~" : gens[Context*Gen]~
     ]
 
 INTERFACE Relation FOR Ampersand : I[Relation]
-BOX [ "affectedInvConjunctIds" : affectedInvConjunctIds[Relation*Conjunct]
-	, "affectedSigConjunctIds" : affectedSigConjunctIds[Relation*Conjunct]
-	, "declared in context" : declaredIn[Relation*Context]
+BOX [ "declared in context" : declaredIn[Relation*Context]
 	, "decmean" : decmean[Relation*Meaning]
 	, "decprL" : decprL[Relation*String]
 	, "decprM" : decprM[Relation*String]
