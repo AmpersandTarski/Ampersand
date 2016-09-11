@@ -8,7 +8,7 @@ INCLUDE "Documentation.adl"
 INCLUDE "Rules.adl"
 INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
-INCLUDE "Generics.adl"
+-- INCLUDE "Generics.adl"
 INCLUDE "Tables.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand

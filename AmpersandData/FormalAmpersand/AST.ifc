@@ -8,8 +8,8 @@ BOX <SHCOLS>
 INTERFACE "Context" FOR Ampersand : I[Context] TABS
   [ "About" : I BOX
     [ "name"  : name[Context*ContextIdentifier]
-    , "versionInfo" : versionInfo
-    , "dbName" : dbName
+--    , "versionInfo" : versionInfo
+--    , "dbName" : dbName
     , "valid~" : valid[Rule*Context]~
     ]
   , "Patterns" : context[Pattern*Context]~ BOX 
@@ -22,8 +22,8 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
   , "Relations" : declaredIn[Relation*Context]~  LINKTO INTERFACE "Relation"
-  , "Roles" : allRoles[Context*Role]
-  , "allConjuncts" : allConjuncts[Context*Conjunct]
+--  , "Roles" : allRoles[Context*Role]
+--  , "allConjuncts" : allConjuncts[Context*Conjunct]
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
   ]
 INTERFACE GenTree FOR Ampersand : I[Concept]
@@ -44,26 +44,26 @@ INTERFACE "Rule" FOR Ampersand : I[Rule]
 BOX [ "name" : name[Rule*RuleID]
     , "valid" : valid[Rule*Context]
     , "context" : allRules[Context*Rule]~
-    , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
+ --   , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
     , "pattern"  : allRules[Pattern*Rule]~
-    , "maintains~ (Role)" : maintains[Role*Rule]~
-    , "tgtConcept" : tgtConcept[Rule*Concept]
-    , "srcConcept" : srcConcept[Rule*Concept]
+ --   , "maintains~ (Role)" : maintains[Role*Rule]~
+ --   , "tgtConcept" : tgtConcept[Rule*Concept]
+ --   , "srcConcept" : srcConcept[Rule*Concept]
     , "formalExpression" : formalExpression[Rule*Expression]
     , "sign" : sign[Rule*Signature]
     , "maintains~ (Plug)" : maintains[Plug*Rule]~
-    , "origin" : origin[Rule*Origin]
+ --   , "origin" : origin[Rule*Origin]
     , "rrviols" : rrviols
-    , "pairView" : pairView
-    , "message" : message
+ --   , "pairView" : pairView
+ --   , "message" : message
     , "rrmean" : rrmean[Rule * Meaning]
     , "purpose" : purpose[Rule * Purpose]
     ]
     
 INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
     [ "ID" : I
-    , "originatesFrom" : originatesFrom[Conjunct*Rule]
-    , "conjunct"       : conjunct[Conjunct*Expression]
+--    , "originatesFrom" : originatesFrom[Conjunct*Rule]
+--    , "conjunct"       : conjunct[Conjunct*Expression]
     ]
 INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
@@ -180,13 +180,13 @@ BOX [ "table" : table
     , "srcAtt~" : srcAtt~
     ]
 
-INTERFACE Role FOR Ampersand : I[Role]
-BOX [ "name" : name[Role*RoleName]
-    , "interfaces" : interfaces[Role*Interface] 
-    ]
-INTERFACE Interface FOR Ampersand : I[Interface]
-BOX [ "interfaces~"  : interfaces[Role*Interface]~
-    ]
+--INTERFACE Role FOR Ampersand : I[Role]
+--BOX [ "name" : name[Role*RoleName]
+--    , "interfaces" : interfaces[Role*Interface] 
+--    ]
+--INTERFACE Interface FOR Ampersand : I[Interface]
+--BOX [ "interfaces~"  : interfaces[Role*Interface]~
+--    ]
 ENDCONTEXT
 
 

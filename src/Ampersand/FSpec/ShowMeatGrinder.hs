@@ -63,8 +63,8 @@ instance MetaPopulations FSpec where
       , Pop "interfaces" "Role" "Interface" []
                  [(dirtyId ctx rol, dirtyId ctx ifc) | ifc <- ctxifcs ctx, rol<-ifcRoles ifc]
       ]
-    ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
-    ++   concatMap extract (allConjuncts fSpec)
+--    ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
+--    ++   concatMap extract (allConjuncts fSpec)
     ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
     ++   concatMap extract (sortByName (plugInfos fSpec))
     ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) fSpec++")"]
@@ -254,6 +254,7 @@ instance MetaPopulations A_Concept where
   where
     ctx = originalContext fSpec
 
+{-
 instance MetaPopulations Conjunct where
   metaPops fSpec conj =
     [ Comment $ " Conjunct `"++rc_id conj++"` "
@@ -271,6 +272,7 @@ instance MetaPopulations Conjunct where
    where
     ctx = originalContext fSpec
     cExpr = rc_conjunct conj
+-}
 
 instance MetaPopulations PlugInfo where
   metaPops fSpec plug = 
@@ -553,8 +555,8 @@ instance MetaPopulations Rule where
              [(dirtyId ctx rul, (dirtyId ctx.source.rrexp) rul)]
       , Pop "tgtConcept"  "Rule" "Concept" [Uni,Tot]
              [(dirtyId ctx rul, (dirtyId ctx.target.rrexp) rul)]
-      , Pop "originatesFrom" "Conjunct" "Rule" [Uni,Tot]
-             [(dirtyId ctx conj,dirtyId ctx rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
+--      , Pop "originatesFrom" "Conjunct" "Rule" [Uni,Tot]
+--             [(dirtyId ctx conj,dirtyId ctx rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "formalExpression"  "Rule" "Expression" [Uni,Tot]
              [(dirtyId ctx rul, dirtyId ctx (rrexp rul))]
       , Pop "rrmean"  "Rule" "Meaning" []
