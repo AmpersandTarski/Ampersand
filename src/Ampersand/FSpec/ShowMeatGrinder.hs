@@ -537,8 +537,8 @@ instance MetaPopulations Rule where
  metaPops fSpec rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "allRules" "Context" "Rule" [Sur]
-             [(dirtyId ctx ctx, dirtyId ctx rul)] 
+      , Pop "allRules" "Rule" "Context"  [Uni]
+             [(dirtyId ctx rul, dirtyId ctx ctx)] 
       , Pop "name"  "Rule" "RuleID" [Uni,Tot]
              [(dirtyId ctx rul, (show.name) rul)]
       , Pop "ruleAdl"  "Rule" "Adl" [Uni,Tot]
