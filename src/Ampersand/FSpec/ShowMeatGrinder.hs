@@ -159,8 +159,8 @@ instance MetaPopulations Pattern where
            [(dirtyId ctx r, dirtyId ctx pat) | r<-multrules pat]
     , Pop "identityRules" "Rule" "Pattern" [Uni]                     -- all identity rules the user has declared within this viewpoint. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-identityRules pat]
-    , Pop "allRules" "Pattern" "Rule" [Inj]                          -- all rules within this viewpoint. See ViewPoint.hs
-           [(dirtyId ctx r, dirtyId ctx pat) | r<-allRules pat]
+    , Pop "allRules" "Pattern" "Rule" []                          -- all rules within this viewpoint. See ViewPoint.hs
+           [(dirtyId ctx pat, dirtyId ctx r) | r<-allRules pat]
 --    , Pop "rules"   "Pattern" "Rule" []
 --           [(dirtyId ctx pat,dirtyId ctx r) | r <- allRules pat]
     , Pop "relsDefdIn"   "Pattern" "Relation" []
