@@ -39,7 +39,7 @@ $app->error(function (Exception $e) use ($app) {
 // Not found handler
 $app->notFound(function () use ($app) {
 	$app->response->setStatus(404);
-	print json_encode(array('error' => 404, 'msg' => "API call not found"));
+	print json_encode(array('error' => 404, 'msg' => "API call not found: {$app->request->getMethod()} {$app->request->getUrl()}{$app->request->getPath()}"));
 });
 
 include (__DIR__ . '/resources.php'); // API calls starting with '/resources/'

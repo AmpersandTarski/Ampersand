@@ -189,6 +189,28 @@ class Relation {
     }
     
     /**
+     * Check if link (tuple of src and tgt atom) exists in relation
+     * @param Atom $leftAtom
+     * @param Atom $rightAtom
+     * @param boolean $isFlipped
+     * @return boolean
+     */
+    public function linkExists(Atom $leftAtom, Atom $rightAtom, $isFlipped = false){
+        // Determine src and tgt atom based on $isFlipped
+        $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
+        $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
+        
+        $this->logger->debug("Checking if link ({$srcAtom},{$tgtAtom}) exists in relation '{$this}'");
+        
+        // Checks
+        if(!in_array($srcAtom->concept, $this->srcConcept->getSpecializationsIncl())) throw new Exception ("Cannot check if link ({$srcAtom},{$tgtAtom}) exists in relation '{$this}', because source atom does not match relation source concept or any of its specializations", 500);
+        if(!in_array($tgtAtom->concept, $this->tgtConcept->getSpecializationsIncl())) throw new Exception ("Cannot check if link ({$srcAtom},{$tgtAtom}) exists in relation '{$this}', because target atom does not match relation target concept or any of its specializations", 500);
+        if(is_null($srcAtom->id) || is_null($tgtAtom->id)) throw new Exception ("Cannot check if link ({$srcAtom},{$tgtAtom}) exists in relation '{$this}', because src and or tgt atom is not specified", 500);
+        
+        return $this->db->linkExists($this, $srcAtom, $tgtAtom);
+    }
+    
+    /**
      * How to use Relation::addLink() to add link (a1,b1) into r:
 	 * r :: A * B
 	 * addLink(a1[A], b1[B], false);
