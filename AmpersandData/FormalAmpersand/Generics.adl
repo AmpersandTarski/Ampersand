@@ -17,7 +17,6 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 
 --[Rules]--
 --IDENT Rules: Rule(ruleContext,ruleID)
-RELATION allRules[Context*Rule] [SUR,INJ] -- Rule is part of context
 RELATION name[Rule*RuleID] [UNI,TOT,SUR] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
 RELATION ruleAdl[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[BusinessFunction]'
 RELATION origin[Rule*Origin] [TOT] -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'

@@ -50,7 +50,7 @@ PATTERN Context
                                                 --   which are not multiplicity- and not identity rules. See ViewPoint.hs
     RELATION multrules[Rule*Context] [UNI]      -- ^ all multiplicityrules the user has declared within this context including the patterns it contains.
     RELATION identityRules[Rule*Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
-    RELATION allRules[Rule*Context] [UNI]       -- This contains all rules declared inside a context. This contains all rules declared inside a context including the patterns it contains.
+    RELATION allRules[Context*Rule] [INJ]       -- This contains all rules declared inside a context. This contains all rules declared inside a context including the patterns it contains.
     MEANING "If a rule is declared anywhere in a context, that rule exists in that context. This is registered in the system."
     RELATION context[Pattern*Context] [UNI]  -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
     MEANING "If a pattern is declared inside a context, this is registered in the system."
@@ -67,9 +67,9 @@ PATTERN Context
     {+It is convenient to have one relation to contain all rules in a context. TODO: delete rules from allRules.
     -}
     ROLE ExecEngine MAINTAINS "all rules"
-    RULE "all rules" : udefrules[Rule*Context] \/ multrules \/ identityRules |- allRules[Rule*Context]
+    RULE "all rules" : udefrules[Rule*Context] \/ multrules \/ identityRules |- allRules[Context*Rule]~
     MEANING "All rules in a context consist of the user-defined rules, the multiplicity rules, and the identity rules."
-    VIOLATION (TXT "{EX} InsPair;allRules;Rule;", SRC I, TXT ";Context;", TGT I)
+    VIOLATION (TXT "{EX} InsPair;allRules;Context;", TGT I, TXT ";Rule;", SRC I)
 
     PURPOSE RULE "relation declared outside pattern"
     {+Ampersand allows its users to declare relations in a context, outside the scope of a pattern.
@@ -143,11 +143,11 @@ PATTERN Validity
      - all rules defined in patterns used by the context
     -}
     ROLE ExecEngine MAINTAINS validRules
-    RULE validRules : allRules[Rule*Pattern];(context\/uses~) \/ allRules[Rule*Context] |- valid[Rule*Context]
+    RULE validRules : allRules[Pattern*Rule]~;(context\/uses~) \/ allRules[Context*Rule]~ |- valid[Rule*Context]
     MEANING "Every rule defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
     VIOLATION (TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I)
     ROLE User MAINTAINS AllValidRules
-    RULE AllValidRules : valid[Rule*Context] |- allRules[Rule*Pattern];(context\/uses~) \/ allRules[Rule*Context]
+    RULE AllValidRules : valid[Rule*Context] |- allRules[Pattern*Rule]~;(context\/uses~) \/ allRules[Context*Rule]~
     VIOLATION (TXT "Rule ", SRC name, TXT " is not valid in context ", TGT I)
 ENDPATTERN
 
@@ -161,13 +161,13 @@ PATTERN Patterns
                                                 --   which are not multiplicity- and not identity rules. See ViewPoint.hs
     RELATION multrules[Rule*Pattern] [UNI]      -- ^ all multiplicityrules the user has declared within this pattern including the patterns it contains.
     RELATION identityRules[Rule*Pattern] [UNI]  -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
-    RELATION allRules[Rule*Pattern] [UNI]       -- This contains all rules declared inside a pattern. This contains all rules declared inside a pattern including the patterns it contains.
+    RELATION allRules[Pattern*Rule] [UNI]       -- This contains all rules declared inside a pattern. This contains all rules declared inside a pattern including the patterns it contains.
     MEANING "The user-defined rules in a pattern."
     RELATION declaredIn[Relation*Pattern]  -- comes from class Language. This contains all relations declared inside a pattern.
     MEANING "The relations that are declared in a pattern."
 
     ROLE ExecEngine MAINTAINS "Remove rule atom"
-    RULE "Remove rule atom" : I[Rule]- (allRules;I[Pattern];allRules~\/allRules;I[Context];allRules~) |- -V
+    RULE "Remove rule atom" : I[Rule]- (allRules~;I[Pattern];allRules\/allRules~;I[Context];allRules) |- -V
     MEANING "A rule without declaration will be removed."
     VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
 
@@ -177,7 +177,7 @@ PATTERN Patterns
     VIOLATION ( TXT "{EX} DelAtom;Relation;", SRC I )
 
     ROLE User MAINTAINS "self-sustained rules"
-    RULE "self-sustained rules" : usedIn;formalExpression~;allRules |- declaredIn[Relation*Pattern]
+    RULE "self-sustained rules" : usedIn;formalExpression~;allRules~ |- declaredIn[Relation*Pattern]
     MEANING "A relation that is used in a rule, which is declared in a pattern, must be declared in that same pattern."
 
 ENDPATTERN

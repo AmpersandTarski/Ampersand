@@ -103,8 +103,8 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-multrules ctx]
     , Pop "identityRules" "Rule" "Context" [Uni]                     -- all identity rules the user has declared within this viewpoint. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-identityRules ctx]
-    , Pop "allRules" "Rule" "Context" [Uni]                          -- all rules the user has declared within this viewpoint. See ViewPoint.hs
-           [(dirtyId ctx r, dirtyId ctx ctx) | r<-allRules ctx]
+    , Pop "allRules" "Context" "Rule" [Inj]                          -- all rules within this viewpoint. See ViewPoint.hs
+           [(dirtyId ctx ctx, dirtyId ctx r) | r<-allRules ctx]
     , Pop "ctxds" "Relation" "Context" [Uni]                         -- The context in which a relation is declared, outside patterns.
            [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxds ctx]
     , Pop "declaredIn" "Relation" "Context" [Uni]                    -- The context in which a relation is declared.
@@ -159,7 +159,7 @@ instance MetaPopulations Pattern where
            [(dirtyId ctx r, dirtyId ctx pat) | r<-multrules pat]
     , Pop "identityRules" "Rule" "Pattern" [Uni]                     -- all identity rules the user has declared within this viewpoint. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-identityRules pat]
-    , Pop "allRules" "Rule" "Pattern" [Uni]                          -- all rules the user has declared within this viewpoint. See ViewPoint.hs
+    , Pop "allRules" "Pattern" "Rule" [Inj]                          -- all rules within this viewpoint. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-allRules pat]
 --    , Pop "rules"   "Pattern" "Rule" []
 --           [(dirtyId ctx pat,dirtyId ctx r) | r <- allRules pat]
@@ -171,48 +171,52 @@ instance MetaPopulations Pattern where
 
 instance MetaPopulations Purpose where
   metaPops fSpec purp = 
-    [ Pop "purpose"  metaType "Purpose" [Inj]
-       [(motivatedThing, dirtyId ctx purp)]   
+    case mMotivatedThing of
+       Nothing -> []
+       Just motivatedThing ->
+         [ Pop "purpose"  metaType "Purpose" [Inj]
+          [(motivatedThing, dirtyId ctx purp)]   
       --TODO (HJO 20160906): How are we going to deal with Markup and Lang?
-    ]
+          ]
    where 
      ctx = originalContext fSpec
      metaType :: String
-     motivatedThing :: String 
-     (metaType, motivatedThing) = 
+     mMotivatedThing :: Maybe String 
+     (metaType, mMotivatedThing) = 
        case explObj purp of
           ExplConceptDef x 
             -> ( "Concept"  , case filter (\cpt -> name cpt == name x) (concs ctx) of
-                                [cpt]  -> dirtyId ctx cpt
+                                [cpt]  -> Just $ dirtyId ctx cpt
                                 ys -> fatal 192 $ show (length ys)++" concepts found that match `"++name x++"`")
           ExplDeclaration x
             -> ( "Relation" , case filter (x == ) (relsMentionedIn ctx) of
-                                [rel]  -> dirtyId ctx rel
+                                [rel]  -> Just $ dirtyId ctx rel
                                 ys -> fatal 196 $ show (length ys)++" relations found that match `"++show x++"`")
           ExplRule x
             -> ( "Rule"     , case filter (\rul -> name rul == x) (allRules ctx) of
-                                [rul]  -> dirtyId ctx rul
+                                [rul]  -> Just $ dirtyId ctx rul
                                 ys -> fatal 200 $ show (length ys)++" rules found that match `"++show x++"`")
           ExplIdentityDef x
             -> ( "Identity" , case filter (\idn -> name idn == x) (identities ctx) of
-                                [idn]  -> dirtyId ctx idn
+                                [idn]  -> Just $ dirtyId ctx idn
                                 ys -> fatal 200 $ show (length ys)++" identities found that match `"++show x++"`")
           ExplViewDef x
             -> ( "View"     , case filter (\view -> name view == x) (viewDefs ctx) of
-                                [idn]  -> dirtyId ctx idn
+                                [idn]  -> Just $ dirtyId ctx idn
                                 ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
           ExplPattern x
             -> ( "Pattern"  , case filter (\pat -> name pat == x) (patterns ctx) of
-                                [pat]  -> dirtyId ctx pat
+                                [pat]  -> Just $ dirtyId ctx pat
                                 ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
           ExplInterface x
             -> ( "Interface", case filter (\ifc -> name ifc == x) (ctxifcs ctx) of
-                                [ifc]  -> dirtyId ctx ifc
+                                [ifc]  -> Just $ dirtyId ctx ifc
                                 ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
           ExplContext x 
             -> ( "Context"  , case filter (\y -> name y == x) [ctx] of
-                                [y]  -> dirtyId ctx y
-                                ys -> fatal 200 $ show (length ys)++" contexts found that match `"++show x++"`")
+                                []  -> Nothing
+                                [y] -> Just $ dirtyId ctx y
+                                ys  -> fatal 200 $ show (length ys)++" contexts found that match `"++show x++"`")
 
 
 instance MetaPopulations A_Gen where
@@ -537,8 +541,6 @@ instance MetaPopulations Rule where
  metaPops fSpec rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "allRules" "Rule" "Context"  [Uni]
-             [(dirtyId ctx rul, dirtyId ctx ctx)] 
       , Pop "name"  "Rule" "RuleID" [Uni,Tot]
              [(dirtyId ctx rul, (show.name) rul)]
       , Pop "ruleAdl"  "Rule" "Adl" [Uni,Tot]

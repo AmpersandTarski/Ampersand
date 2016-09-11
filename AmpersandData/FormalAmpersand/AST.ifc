@@ -36,16 +36,16 @@ INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternIdentifier]
     , "patterns~" : context[Pattern*Context]
     , "Relations" : declaredIn[Relation*Pattern]~  LINKTO INTERFACE "Relation"
-    , "rules"  : allRules[Rule*Pattern]~
+    , "rules"  : allRules[Pattern*Rule]
     , "purpose" : purpose[Pattern*Purpose]
     ]
 
 INTERFACE "Rule" FOR Ampersand : I[Rule]
 BOX [ "name" : name[Rule*RuleID]
     , "valid" : valid[Rule*Context]
-    , "allRules~" : allRules[Context*Rule]~
+    , "context" : allRules[Context*Rule]~
     , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
-    , "rules~"  : allRules[Rule*Pattern]
+    , "pattern"  : allRules[Pattern*Rule]~
     , "maintains~ (Role)" : maintains[Role*Rule]~
     , "tgtConcept" : tgtConcept[Rule*Concept]
     , "srcConcept" : srcConcept[Rule*Concept]
