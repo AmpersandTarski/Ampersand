@@ -28,5 +28,5 @@ import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.Motivations
        (Meaning(..),Motivated(..))
 import Ampersand.FSpec.ToFSpec.CreateFspec 
-       (createFSpec)
+       (createMulti)
        

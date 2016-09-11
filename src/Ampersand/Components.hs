@@ -53,7 +53,7 @@ generateAmpersandOutput multi =
       , ( validateSQL , doValidateSQLTest  )
       , ( genPrototype, doGenProto         )
       , ( genBericht  , doGenBericht fSpec )
-      ]
+      , ( const True  , verboseLn opts "Finished processing your model.")]
    opts = getOpts fSpec
    fSpec = userFSpec multi
    doGenADL :: IO()

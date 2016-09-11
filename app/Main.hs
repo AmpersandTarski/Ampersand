@@ -9,9 +9,9 @@ main =
  do opts <- getOptions
     if showVersion opts || showHelp opts
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
-    else do gFSpec <- createFSpec opts
-            case gFSpec of
+    else do gMulti <- createMulti opts
+            case gMulti of
               Errors err    -> exitWith . NoValidFSpec . intersperse  (replicate 30 '=') . map showErr $ err
-              Checked fSpec -> generateAmpersandOutput fSpec
+              Checked multi -> generateAmpersandOutput multi
                                   
 

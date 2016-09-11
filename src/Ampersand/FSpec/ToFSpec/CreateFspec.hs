@@ -1,5 +1,5 @@
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  (createFSpec)
+  (createMulti)
 
 where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
@@ -26,18 +26,21 @@ import Control.Monad
 --   This metamodel is populated with the result of grinding userP_Ctx, being populationPctx.
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
---   which is the result of createFSpec.
-createFSpec :: Options  -- ^The options derived from the command line
+--   which is the result of createMulti.
+createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
-createFSpec opts =
-  do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     let gFSpec = pCtx2Fspec userP_Ctx
+createMulti opts =
+  do userP_Ctx <- parseADL opts (fileName opts)     -- the P_Context of the user's sourceFile
+     let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
      when (genMetaFile opts) (dumpMetaFile gFSpec)
-     if genMetaTables opts
-     then do rapP_Ctx <- parseMeta opts -- the P_Context of the formalAmpersand metamodel
-             return . fmap (mkMulti Nothing) $ genMeta userP_Ctx gFSpec rapP_Ctx
-     else    return . fmap (mkMulti Nothing) $ gFSpec
+     if genMetaTables opts || genRap
+     then do rapP_Ctx <- parseMeta opts             -- the P_Context of the formalAmpersand metamodel
+             let gGrinded = join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+             let metaPopFSpec = pCtx2Fspec gGrinded
+             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, rapP_Ctx]
+     else    return $ mkMulti <$> pure Nothing <*> gFSpec
    where
+    genRap = genRapPopulationOnly opts
     mkMulti :: Maybe FSpec -> FSpec -> MultiFSpecs
     mkMulti y x = MultiFSpecs
                { userFSpec = x
@@ -54,10 +57,8 @@ createFSpec opts =
         writeFile (dirOutput opts </> filePath) metaContents      
         verboseLn opts ("\""++filePath++"\" written")
 
-    -- | Combine the original user's context with
-    genMeta :: Guarded P_Context -> Guarded FSpec -> Guarded P_Context -> Guarded FSpec
-    genMeta gUserCtx gFSpec gRapP_Ctx
-       = pCtx2Fspec . merge . sequenceA $ [gUserCtx, gRapP_Ctx, join (grind <$> gFSpec)]
+    combineAll :: [Guarded P_Context] -> Guarded FSpec
+    combineAll = pCtx2Fspec . merge . sequenceA
          
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
     pCtx2Fspec c = makeFSpec opts <$> join (pCtx2aCtx opts <$> c)
