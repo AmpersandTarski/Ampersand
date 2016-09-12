@@ -177,6 +177,17 @@ class Concept {
 	public function isInteger(){
 	    return $this->type == "INTEGER";
 	}
+    
+    /**
+     * Check if concept is file object
+     * @return boolean
+     */
+    public function isFileObject(){
+        foreach ($this->getGeneralizationsIncl() as $concept) {
+            if ($concept->label == 'FileObject') return true;
+        }
+        return false;
+    }
 	
 	/**
 	 * Check if this concept is a generalization of another given concept
