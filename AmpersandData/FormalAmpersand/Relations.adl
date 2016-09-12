@@ -33,7 +33,7 @@ RELATION decprM[Relation*String] [UNI]
 MEANING "The infix of the pragma of a relation."
 RELATION decprR[Relation*String] [UNI]
 MEANING "The suffix of the pragma of a relation."
-
+REPRESENT String TYPE BIGALPHANUMERIC
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: RULE "entity integrity of relation": left;left~ /\ right;right~ /\ in;in~ |- I
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MEANING "There cannot be two relationships in the population of a relation with the same source and same target."
 --HJO,20150420, uitgezet, vanwege gebruik van Atoms.adl: MESSAGE "Every tuple in a relation is unique, or, no two tuples in the population of a relation may have the same source and target atoms. Addition of a duplicate tuple is not permitted. It is a violation of the <b>Entity integrity</b> rule for this relation."
