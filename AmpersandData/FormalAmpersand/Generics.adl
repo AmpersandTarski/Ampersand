@@ -19,6 +19,7 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 --IDENT Rules: Rule(ruleContext,ruleID)
 RELATION name[Rule*RuleID] [UNI,TOT,SUR] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
 RELATION ruleAdl[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[BusinessFunction]'
+REPRESENT Adl TYPE HUGEALPHANUMERIC
 RELATION origin[Rule*Origin] [TOT] -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
 RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
 RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'

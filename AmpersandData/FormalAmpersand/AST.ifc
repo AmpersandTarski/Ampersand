@@ -1,5 +1,15 @@
 CONTEXT "AST Interface" IN ENGLISH
 
+-- START The following is inserted for test-purposes only: (HJO, 20160912)
+INTERFACE TestExpression FOR Ampersand : I[Expression]
+BOX [ "Expression" : I
+    , "ShowADL" : showADL 
+    ]
+RELATION showADL[Expression*ShowADL] [UNI]
+REPRESENT ShowADL TYPE HUGEALPHANUMERIC
+-- END The previous is inserted for test-purposes only.
+
+
 INTERFACE Ampersand FOR Ampersand : '_SESSION';V[SESSION*Context]
 BOX <SHCOLS>
     [ "Context" : I

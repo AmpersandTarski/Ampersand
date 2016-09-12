@@ -448,6 +448,8 @@ instance MetaPopulations Expression where
              [(dirtyId ctx expr, dirtyId ctx (source expr))]
       , Pop "tgt" "Expression" "Concept" [Uni,Tot]
              [(dirtyId ctx expr, dirtyId ctx (target expr))]
+      , Pop "showADL" "Expression" "ShowADL" [Uni,Tot]
+             [(dirtyId ctx expr, show (showADL expr))]
       ]++
       ( case skipEpsilon expr of
             (EEqu (l,r)) -> makeBinaryTerm Equivalence l r
@@ -490,7 +492,10 @@ instance MetaPopulations Expression where
     ctx = originalContext fSpec
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
     makeBinaryTerm op lhs rhs = 
-      [ Pop "first"  "BinaryTerm" "Expression" [Uni,Tot]
+      [ Comment $ "BinOperator: "++show op
+      , Comment $ "  First : "++showADL lhs++" ("++dirtyId ctx lhs++")"
+      , Comment $ "  Second: "++showADL rhs++" ("++dirtyId ctx rhs++")"
+      , Pop "first"  "BinaryTerm" "Expression" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx lhs)]
       , Pop "second" "BinaryTerm" "Expression" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx rhs)]
@@ -500,7 +505,9 @@ instance MetaPopulations Expression where
        ++metaPops fSpec rhs
     makeUnaryTerm :: UnaryOp -> Expression -> [Pop]
     makeUnaryTerm op arg =
-      [ Pop "arg" "UnaryTerm" "Expression" [Uni,Tot]
+      [ Comment $ "UnaOperator: "++show op
+      , Comment $ "  Arg : "++showADL arg++" ("++dirtyId ctx arg++")"
+      , Pop "arg" "UnaryTerm" "Expression" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx arg)]
       , Pop "operator"  "UnaryTerm" "Operator" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx op)]
@@ -545,8 +552,8 @@ instance MetaPopulations Rule where
       , Comment $ " Rule `"++name rul++"` "
       , Pop "name"  "Rule" "RuleID" [Uni,Tot]
              [(dirtyId ctx rul, (show.name) rul)]
-      , Pop "ruleAdl"  "Rule" "Adl" [Uni,Tot]
-             [(dirtyId ctx rul, (show.showADL.rrexp) rul)]
+  --    , Pop "ruleAdl"  "Rule" "Adl" [Uni,Tot]
+  --           [(dirtyId ctx rul, (show.showADL.rrexp) rul)]
       , Pop "origin"  "Rule" "Origin" [Uni,Tot]
              [(dirtyId ctx rul, (show.show.origin) rul)]
       , Pop "message"  "Rule" "Message" []
@@ -569,7 +576,8 @@ instance MetaPopulations Rule where
       , Pop "decprps" "Relation" "PropertyRule" []
              [(dirtyId ctx dcl, dirtyId ctx rul) | Just(_,dcl) <- [rrdcl rul]]
       ] ++ 
-      metaPops fSpec (sign rul)
+      metaPops fSpec (sign rul) ++
+      metaPops fSpec (rrexp rul)
   where
     ctx = originalContext fSpec
 
@@ -635,7 +643,9 @@ instance AdlId Declaration
            declMap = Map.fromList (zip (relsDefdIn ctx++[ Isn c | c<-concs ctx]) [1..])
 instance AdlId Prop
 instance AdlId Expression
-  where dirtyId _ = show . show . hash . camelCase . uniqueShow False  -- Need to hash, because otherwise too long (>255)
+  where dirtyId ctx (EEps _ e') = dirtyId ctx e'
+        dirtyId ctx (EBrk e') = dirtyId ctx e'
+        dirtyId _ e  = show . show . abs . hash . camelCase . uniqueShow True $ e -- Need to hash, because otherwise too long (>255)
 instance AdlId BinOp
 instance AdlId UnaryOp
 instance AdlId A_Context
