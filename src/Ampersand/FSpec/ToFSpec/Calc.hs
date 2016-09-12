@@ -241,14 +241,13 @@ checkMono :: Options
           -> Declaration
           -> Bool
 checkMono opts expr ev dcl
-  = case ruleType conclusion of
-     Truth -> fatal 247 "derivMono came up with a Truth!"
-     _     -> simplify expr == simplify (antecedent conclusion) &&
-              simplify (subst (dcl, actSem opts ev (EDcD dcl) (delta (sign dcl))) expr) ==
-              simplify (consequent conclusion)
+  = if hasantecedent conclusion 
+    then simplify expr == simplify (antecedent conclusion) &&
+         simplify (subst (dcl, actSem opts ev (EDcD dcl) (delta (sign dcl))) expr) ==
+         simplify (consequent conclusion)
+    else fatal 247 "derivMono came up with a Truth!"
   where (conclusion,_,_) = last (derivMono expr ev dcl)
 
-data RuleType = Inclusion | Equivalence | Truth  deriving (Eq,Show)
 
 type Proof expr = [(expr,[String],String)]
 reversePrf :: Proof e -> Proof e
@@ -455,11 +454,6 @@ lambda tOp' e' expr' = [reversePrf[(e'',txt,op)
   first ((e'',_,_,_):_) = e''
   first _ = fatal 472 "wrong pattern in first"
 
-ruleType :: Rule -> RuleType
-ruleType r = case rrexp r of
-              EEqu{} -> Equivalence
-              EInc{} -> Inclusion
-              _      -> Truth
 
 -- | Action semantics for inserting a delta into a relation dcl.
 actSem :: Options -> InsDel -> Expression -> Expression -> Expression

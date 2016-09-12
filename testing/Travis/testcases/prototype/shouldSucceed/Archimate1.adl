@@ -29,7 +29,7 @@ CLASSIFY "Business event" ISA "Behavioural concept"
 CLASSIFY "Business process" ISA "Behavioural concept"
 CLASSIFY "Business function" ISA "Behavioural concept"
 CLASSIFY "Business interaction" ISA "Behavioural concept"
-CLASSIFY "Behavioural concept" ISA "Concept"
+CLASSIFY "Behavioural concept" ISA "ConceptX"
 
 CONCEPT "Business event" "Something that happens (internally or externally) and influences behaviour (business process, business function, business interaction). An (internal or external) business event may trigger or interrupt. Business processes and other business behaviour may be triggered or interrupted by an event. Moreover, business processes may also raise events that trigger other business processes, functions or interactions. The name of a business event should preferably be a verb." "Archimate"
 CLASSIFY "Business event" ISA "Business concept"
@@ -97,11 +97,11 @@ CLASSIFY Contract ISA "Business object"
 comp :: Contract * Contract [RFX,TRN,ASY] PRAGMA "Contract " " is a component of Contract ".
 aggr :: Contract * Product PRAGMA "Contract " " takes part in Product ".
 
-CONCEPT Meaning "the knowledge or expertise present in the representation of a business object, given a particular context. A meaning is the representation-related counterpart of “Purpose”: it represents the functionality of a representation (for example, a document, message; the representations related to a business object). It is a use case- like functional description that expresses what some representation is for, i.e. how it informs the external user. It is possible that different users view the informative functionality of a representation differently. For example, what may be a “registration confirmation” for a client could be a “Client Mutation” for a CRM department (assuming for sake of the argument that it is modelled as an external user). Also, various different representations may carry essentially the same meaning. For example, various different documents (a web document, a filled-in paper form, a “client contact” report from the call centre) may essentially carry the same meaning. In general, the name should be a noun or noun phrase." "Archimate"
-CLASSIFY Meaning ISA "Business concept"
+CONCEPT MeaningX "the knowledge or expertise present in the representation of a business object, given a particular context. A meaning is the representation-related counterpart of “Purpose”: it represents the functionality of a representation (for example, a document, message; the representations related to a business object). It is a use case- like functional description that expresses what some representation is for, i.e. how it informs the external user. It is possible that different users view the informative functionality of a representation differently. For example, what may be a “registration confirmation” for a client could be a “Client Mutation” for a CRM department (assuming for sake of the argument that it is modelled as an external user). Also, various different representations may carry essentially the same meaning. For example, various different documents (a web document, a filled-in paper form, a “client contact” report from the call centre) may essentially carry the same meaning. In general, the name should be a noun or noun phrase." "Archimate"
+CLASSIFY MeaningX ISA "Business concept"
 
-associate :: Meaning * Representation PRAGMA "Meaning " " is associated with representation " " that carries this meaning".
-comp :: Meaning * Meaning [RFX,TRN,ASY] PRAGMA "Meaning " " is a component of Meaning ".
+associate :: MeaningX * Representation PRAGMA "MeaningX " " is associated with representation " " that carries this meaning".
+comp :: MeaningX * MeaningX [RFX,TRN,ASY] PRAGMA "MeaningX " " is a component of MeaningX ".
 
 CONCEPT Product "A coherent collection of services, accompanied by a contract/set of agreements, which is offered as a whole to (internal or external) customers. A (financial or information) product consists of a collection of services, and a contract that specifies the characteristics, rights and requirements associated with the product. ‘Buying’ a product gives the customer the right to use the associated services. Generally, the product concept is used to specify a product type. The number of product types in an organisation are typically relatively stable compared to, e.g., the processes that realise or support the products. ‘Buying’ is usually one of the services associated with a product, which results in a new instance of that product (belonging to a specific customer). Similarly, there may be services to modify or ‘destroy’ a product. The name of a product is usually the name which is used in the communication with customers, or possibly a more generic term (e.g., ‘travel insurance’)." "Archimate"
 CLASSIFY Product ISA "Business concept"
@@ -172,9 +172,9 @@ comp :: "Application interface" * "Application component" [SUR] PRAGMA "Applicat
 use :: "Application component" * "Application interface" PRAGMA "Application component " " may use Application interface ".
 comp :: "Application component" * "Application component" [RFX,TRN,ASY] PRAGMA "Application component " " is a component of Application component ".
 
-CLASSIFY "Application Function" ISA "Application behavioural concept"
-CLASSIFY "Application Interaction" ISA "Application behavioural concept"
-CLASSIFY "Application behavioural concept" ISA "Concept"
+CLASSIFY "Application function" ISA "Application behavioural concept"
+CLASSIFY "Application interaction" ISA "Application behavioural concept"
+CLASSIFY "Application behavioural concept" ISA "ConceptX"
 
 triggers :: "Application behavioural concept" * "Application behavioural concept" PRAGMA "Application behavioural concept " " triggers Application behavioural concept ".
 flow :: "Application behavioural concept" * "Application behavioural concept" PRAGMA "Data objects may flow between Application behavioural concept " " and Application behavioural concept ".
@@ -303,13 +303,13 @@ use :: "Node" * "Infrastructure service" [TOT,SUR] PRAGMA "Node " " may use Infr
 ENDPATTERN
 
 PATTERN Group
-CLASSIFY "Business concept" ISA Concept
-CLASSIFY "Application concept" ISA Concept
-CLASSIFY "Technology concept" ISA Concept
-group :: Concept * Group [UNI] PRAGMA "Concept " " is member of Group ".
-from :: Junction * Concept [TOT] PRAGMA "There is an arrow to Junction " " from Concept ".
-to :: Junction * Concept [TOT] PRAGMA "There is an arrow from Junction " " to Concept ".
-type :: Concept * Type [UNI,TOT] PRAGMA "Concept " " has Type ".
+CLASSIFY "Business concept" ISA ConceptX
+CLASSIFY "Application concept" ISA ConceptX
+CLASSIFY "Technology concept" ISA ConceptX
+group :: ConceptX * Group [UNI] PRAGMA "ConceptX " " is member of Group ".
+from :: Junction * ConceptX [TOT] PRAGMA "There is an arrow to Junction " " from ConceptX ".
+to :: Junction * ConceptX [TOT] PRAGMA "There is an arrow from Junction " " to ConceptX ".
+type :: ConceptX * Type [UNI,TOT] PRAGMA "ConceptX " " has Type ".
 RULE R007: from~;to |- type;type~
  MEANING "two concepts linked by a junction have the same type."
 RULE R008: to~;to |- type;type~

@@ -35,8 +35,8 @@ PURPOSE INTERFACE Gs
 {+Here is an experiment you can do.
 1. Run this script and inspect the initial database through interface Gs. You will see two atoms, 0 and 1.
 2. Notice that pair (1,1) is in relation s. This means that 1 has been specialized to A and B by the execengine.
-3. Now insert pair (1,3) into relation r. Study the results and verify that atom 3 is a G.
-4. Now insert pair (1,3) into relation s. Study the results and verify that atom 3 is a B.
+3. Now insert pair (1,3) into relation r. Study the results and verify that atom 3 is not a B but a G.
+4. Now insert pair (1,3) into relation s. Study the results and verify that atom 3 is both A and B .
 -}
 INTERFACE Gs : V[SESSION*G]
 BOX [ name : name

@@ -1,22 +1,49 @@
-﻿CONTEXT RAP IN ENGLISH
+CONTEXT RAP IN ENGLISH
 INCLUDE "Contexts.adl"
 
 VIEW Context : Context(name)
-INTERFACE Contexts (valid,relations) : '_SESSION'
-TABS[ "Contexts" : ingelogd;owner~
+INTERFACE Contexts (valid,relations) : '_SESSION'[SESSION]
+TABS[ "Contexts" : V[SESSION*Context]
       BOX<SCOLS>
            [ context        : I
-           , "valid rules"  : valid~
-           , relations      : relations
+           , "valid rules"  : valid[Rule*Context]~
+           , relations      : declaredIn[Relation*Context]~
            ]
     ]
 
-INTERFACE Context (valid,relations,name[Context*ContextIdentifier]) : I[Context]
-      BOX<SCOLS>
-           [ context        : name[Context*ContextIdentifier]
-           , "valid rules"  : valid~
-           , relations      : relations
+
+INTERFACE "Context" FOR Ampersand : I[Context] TABS
+  [ "About" : I BOX
+    [ "name"  : name[Context*ContextIdentifier]
+--    , "versionInfo" : versionInfo
+    , "dbName" : dbName
+--    , "owner" : owner[Context*Account]
+    , "valid rules" : valid[Rule*Context]~
+    , "valid relations" : valid[Relation*Context]~
+    , "valid concepts" : valid[Concept*Context]~
+    ]
+  , "Patterns defined" : context[Pattern*Context]~ BOX 
+    [ "Pattern" : I CRuD -- INTERFACE Pattern
+    ]
+  , "Patterns used" : uses[Context*Pattern] BOX 
+    [ "Pattern" : I CRuD -- INTERFACE Pattern
+    ]
+  , "Gens" : context[Concept*Context]~ ; (I[Concept] 
+          /\
+                (gengen[Gen*Concept]~;gengen[Gen*Concept]) /\
+                ( -(genspc[Gen*Concept]~;genspc[Gen*Concept]))) 
+         -- INTERFACE GenTree 
+  , "Concepts" : context[Concept*Context]~
+  , "Relations" : declaredIn[Relation*Context]~  -- LINKTO INTERFACE "Relation"
+       BOX<SCOLS>
+           [ relation   : I
+           , "declared in pattern" : declaredIn[Relation*Pattern]
+           , "declared in context" : declaredIn[Relation*Context]
            ]
+--  , "Roles" : allRoles[Context*Role]
+--  , "allConjuncts" : allConjuncts[Context*Conjunct]
+--  , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
+  ]
 
 ENDCONTEXT
 

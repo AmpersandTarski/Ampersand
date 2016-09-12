@@ -69,12 +69,12 @@ ROWS [ name             : name
      , specializations  : isa~
      ]
 
-VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
+VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
 
-INTERFACE Pair(l,r,in[Pair*Relation]) FOR Ampersand: I[Pair]
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) FOR Ampersand: I[Pair]
 ROWS [ pair           : I
-     , l              : l
-     , r              : r
+     , lAtom          : lAtom
+     , rAtom          : rAtom
      , "relation(s)"  : in
      ]
 
