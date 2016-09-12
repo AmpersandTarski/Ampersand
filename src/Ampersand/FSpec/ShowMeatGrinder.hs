@@ -515,13 +515,15 @@ instance MetaPopulations Expression where
 
     -- | As long as FormalAmpersand doesn't need/know about Epsilons, 
     --   we cannot inject epsilon expressions into it. Hence
-    --   the epsilon expression must be skipped over.  
+    --   the epsilon expression must be skipped over.
+    --   This goes for brackets as well.   
     skipEpsilon :: Expression -> Expression
     skipEpsilon e =
       case e of
         (ECps (EEps{}, e') ) -> skipEpsilon e'
         (ECps (e', EEps{}) ) -> skipEpsilon e'
-        _                          -> e
+        (EBrk e'           ) -> skipEpsilon e'
+        _                    -> e
 
 data UnaryOp = 
              KleeneStar
