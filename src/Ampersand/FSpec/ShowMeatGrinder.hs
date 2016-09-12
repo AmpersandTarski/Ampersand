@@ -189,7 +189,7 @@ instance MetaPopulations Purpose where
                                 [cpt]  -> Just $ dirtyId ctx cpt
                                 ys -> fatal 192 $ show (length ys)++" concepts found that match `"++name x++"`")
           ExplDeclaration x
-            -> ( "Relation" , case filter (x == ) (relsMentionedIn ctx) of
+            -> ( "Relation" , case filter (x == ) (relsDefdIn ctx) of
                                 [rel]  -> Just $ dirtyId ctx rel
                                 ys -> fatal 196 $ show (length ys)++" relations found that match `"++show x++"`")
           ExplRule x
