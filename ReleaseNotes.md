@@ -1,7 +1,7 @@
 # Release notes of Ampersand
 
 ## unreleased changes
-
+  * Progress on meatgrinder. Basic meatgrinder functionality is available now. 
 
 ## v3.7.0 (2 september 2016)
   * [Issue #506](https://github.com/AmpersandTarski/Ampersand/issues/506) Bugfix in chapter diagnosis of Func. spec. 
