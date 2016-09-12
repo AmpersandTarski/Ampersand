@@ -29,7 +29,7 @@ PATTERN EscapeTest
     MEANING IN ENGLISH "Every Id identifies precisely one Thing"
 ENDPATTERN
 
-INTERFACE "interface ' \"  $ \\ < > &  ? % end" : '_Session';I[SESSION]
+INTERFACE "interface ' \"  $ \\ < > &  ? % end" : '_SESSION';I[SESSION]
   BOX [ "label ' \"  $ \\ < > & / ? % end" : V[SESSION*Id]
       , bs : V[SESSION*Thing]
       ]
