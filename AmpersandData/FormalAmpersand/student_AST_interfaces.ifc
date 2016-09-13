@@ -26,7 +26,7 @@ BOX [ "concepts without definition": V[ONE*Concept];(-(cptdf;cptdf~) /\ I) -- TH
 --SECOND CHOICE: V[ONE*Concept];-(cptdf;cptdf~) <= results in SQL with empty atoms => see test2 below in comments
 --FIRST CHOICE: -(V[ONE*Blob];cptdf~) <= results in:fatal error 583 (module RelBinGenSQL, Prototype v2.2.0.2100M (lib: Ampersand v2.2.0.578:579M)) A_Concept ONE may not be represented in SQL
     , "relations without MEANING": V[ONE*Relation];(-(decmean;decmean~) /\ I) -- -(V[ONE*Blob];decmean~)
-    , "RULEs without MEANING": V[ONE*Rule];(-(rrmean;rrmean~) /\ I) -- -(V[ONE*Blob];rrmean~)
+    , "RULEs without MEANING": V[ONE*Rule];(-(meaning;meaning~) /\ I) -- -(V[ONE*Blob];meaning~)
     , "populated relations": V[ONE*Pair];decpopu~
     , "unpopulated relations": V[ONE*Relation];(-(decpopu;decpopu~) /\ I) -- -(V[ONE*Pair];decpopu~)
 --INCORRECT    , "relations not in any RULE (provided that a RULE exists)": V[ONE*Rule];(I[Rule] /\ -I[PropertyRule]);-(rrexp;relsInPlug;reldcl)
@@ -188,7 +188,7 @@ BOX ["PURPOSEs" :purpose
     ]
 INTERFACE "RULE" FOR Student: I[Rule]
 BOX ["PURPOSEs" :purpose
-    ,"MEANING" :rrmean
+    ,"MEANING" :meaning
     ,"name" :rrnm
     ,"assertion" :rrexp
     ,"uses":rrexp;relsInPlug BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;tgt]

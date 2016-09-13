@@ -563,7 +563,7 @@ instance MetaPopulations Rule where
 --             [(dirtyId ctx conj,dirtyId ctx rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "formalExpression"  "Rule" "Expression" [Uni,Tot]
              [(dirtyId ctx rul, dirtyId ctx (rrexp rul))]
-      , Pop "rrmean"  "Rule" "Meaning" []
+      , Pop "meaning"  "Rule" "Meaning" []
              [(dirtyId ctx rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , -- The next population is from the adl pattern 'Plugs':
         Pop "sign" "Rule" "Signature" [Uni,Tot]

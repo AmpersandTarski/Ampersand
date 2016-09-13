@@ -66,7 +66,7 @@ BOX [ "name" : name[Rule*RuleID]
     , "rrviols" : rrviols
  --   , "pairView" : pairView
  --   , "message" : message
-    , "rrmean" : rrmean[Rule * Meaning]
+    , "meaning" : meaning[Rule * Meaning]
     , "purpose" : purpose[Rule * Purpose]
     ]
     

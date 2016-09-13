@@ -11,7 +11,7 @@ PATTERN Documentation
     MEANING "The meanings of a relation."
     RELATION purpose[Relation * Purpose] [INJ]
     MEANING "The purposes of a relation."
-    RELATION rrmean[Rule * Meaning]
+    RELATION meaning[Rule * Meaning]
     MEANING "The meanings of a rule."
     RELATION purpose[Rule * Purpose] [INJ]
     MEANING "The purposes of a rule."
