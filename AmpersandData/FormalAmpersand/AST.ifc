@@ -138,7 +138,7 @@ TABS[ Atoms : V[SESSION*Atom]
 
 INTERFACE PropertyRule FOR Ampersand : I[PropertyRule]
 BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
-	, "decprps~" : decprps[Relation*PropertyRule]~  LINKTO INTERFACE "Relation"
+	, "propertyRule~" : propertyRule[Relation*PropertyRule]~  LINKTO INTERFACE "Relation"
 	]
 	 
 
@@ -155,7 +155,7 @@ BOX [ "declared in context" : declaredIn[Relation*Context]
 	, "decprL" : decprL[Relation*String]
 	, "decprM" : decprM[Relation*String]
 	, "decprR" : decprR[Relation*String]
-	, "decprps" : decprps[Relation*PropertyRule]
+	, "propertyRule" : propertyRule[Relation*PropertyRule]
 	, "purpose" : purpose[Relation*Purpose]
 	, "name" : name[Relation*Identifier]
 	, "prop" : prop[Relation*Property]

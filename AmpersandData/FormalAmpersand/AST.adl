@@ -16,7 +16,7 @@ INCLUDE "Tables.adl"
       Reactie HJO/20150207: Die snap ik niet. Twee Concepten met dezelfde naam zijn hetzelfde Concept. Een Pattern mag dezelfde naam hebben als een Concept. Daarmee zijn de uiteraard niet identiek. Een Pattern is nou een maal geen Concept. Dit is nu zo geregeld in RAP. Als je punt is, dat twee verschillende Concepten best dezelfde naam zouden mogen hebben, dan hebben we een issue. Maar ik denk niet dat je dit bedoelt.
 2) VIEWs (zoals 'VIEW Gen') horen m.i. niet in dit bestand thuis, maar daar waar de UI wordt gespecificeerd. IDENTs horen wel in dit bestand thuis.
       Reactie HJO/20150207: Helemaal mee eens. Gaan we doen. 
-3) Van "RELATION decprps[Relation*PropertyRule]" zou ik denken dat hij niet alleen INJ, maar ook SUR moet zijn.
+3) Van "RELATION propertyRule[Relation*PropertyRule]" zou ik denken dat hij niet alleen INJ, maar ook SUR moet zijn.
       Reactie HJO/20150207: Dat denk ik ook. Leuk is, dat dit geen invloed heeft op de meatgrinder. Immers, die zorgt alleen maar voor de juiste populatie van Relations. Als blijkt dat we dan overtredingen krijgen, dan gaan we dat meemaken...
 -}
 

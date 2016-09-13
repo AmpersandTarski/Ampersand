@@ -570,7 +570,7 @@ instance MetaPopulations Rule where
              [(dirtyId ctx rul, dirtyId ctx (sign rul))]
       , Pop "declaredthrough" "PropertyRule" "Property" []
              [(dirtyId ctx rul, dirtyId ctx prp) | Just(prp,_) <- [rrdcl rul]]
-      , Pop "decprps" "Relation" "PropertyRule" []
+      , Pop "propertyRule" "Relation" "PropertyRule" []
              [(dirtyId ctx dcl, dirtyId ctx rul) | Just(_,dcl) <- [rrdcl rul]]
       ] ++ 
       metaPops fSpec (sign rul) ++

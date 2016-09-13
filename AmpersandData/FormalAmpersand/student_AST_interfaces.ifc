@@ -4,7 +4,7 @@ BOX ["CONTEXT" : V[ONE*Context] BOX ["name":ctxnm,"number of RULEs":countrules,"
     ,"PATTERNs" : V[ONE*Context];ctxpats
     ,"concepts" : V[ONE*Context];ctxcs
     ,"ISA-relations" : V[ONE*Context];ctxpats;ptgns 
-    ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough] 
+    ,"relations" : V[ONE*Context];ctxpats;ptdcs  BOX ["relation":I, "with properties": propertyRule;declaredthrough] 
     ,"RULEs" : V[ONE*Context];ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule])
     ]
 INTERFACE "Validate" FOR Student: I[ONE]
@@ -144,14 +144,14 @@ BOX ["name" : ctxnm
     ,"PATTERNs" : ctxpats
     ,"concepts" : ctxcs 
     ,"ISA-relations" : ctxpats;ptgns 
-    ,"relations" : ctxpats;ptdcs BOX ["relation":I, "with properties": decprps;declaredthrough]
+    ,"relations" : ctxpats;ptdcs BOX ["relation":I, "with properties": propertyRule;declaredthrough]
     ,"RULEs" : ctxpats;ptrls;(I[Rule] /\ -I[PropertyRule]) 
     ]
 INTERFACE "PATTERN" FOR Student: I[Pattern]
 BOX ["PURPOSEs" :ptxps
     ,"name" :ptnm
     ,"RULEs" :ptrls;(I[Rule] /\ -I[PropertyRule])
-    ,"relations" :ptdcs  BOX ["relation":I, "with properties": decprps;declaredthrough]
+    ,"relations" :ptdcs  BOX ["relation":I, "with properties": propertyRule;declaredthrough]
     ,"ISA-relations" :ptgns
     ,"diagram" : ptpic
     ]
@@ -181,7 +181,7 @@ BOX ["PURPOSEs" :purpose
     ,"example of basic sentence" :decexample
     ,"name" :decnm
     ,"type" :decsgn BOX ["source":src , "target":tgt]
-    ,"properties" :decprps;declaredthrough
+    ,"properties" :propertyRule;declaredthrough
     ,"from PATTERN" :ptdcs~
     ,"POPULATION" :decpopu BOX ["source":left , "target":right] --select existing atoms only!
     ,"used in RULEs": (rrexp;relsInPlug;reldcl)~;(I[Rule] /\ -I[PropertyRule])
@@ -191,7 +191,7 @@ BOX ["PURPOSEs" :purpose
     ,"MEANING" :meaning
     ,"name" :rrnm
     ,"assertion" :rrexp
-    ,"uses":rrexp;relsInPlug BOX ["relation":reldcl, "with properties": reldcl;decprps;declaredthrough, "source":relsgn;src, "target":relsgn;tgt]
+    ,"uses":rrexp;relsInPlug BOX ["relation":reldcl, "with properties": reldcl;propertyRule;declaredthrough, "source":relsgn;src, "target":relsgn;tgt]
     ,"in PATTERN":ptrls~
     ,"diagram" : rrpic
     ]
