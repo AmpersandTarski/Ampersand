@@ -23,11 +23,11 @@ instance ToJSON MySQLInstaller where
 instance JSON MultiFSpecs MySQLInstaller where
  fromAmpersand _ multi
    | genRap = MetaPopulation
-        { msiJSONmetaPopulation = generateAllDefPopQueries grindedFSpec
+        { msiJSONmetaPopulation = generateMetaPopQueries grindedFSpec
         }
    | otherwise = CompleteDB
-        { msiJSONallDBstructQueries = map Text.pack $ generateDBstructQueries  fSpec False
-        , msiJSONallDefPopQueries = generateAllDefPopQueries fSpec
+        { msiJSONallDBstructQueries = map Text.pack $ generateDBstructQueries fSpec False
+        , msiJSONallDefPopQueries = generateInitialPopQueries fSpec
         }
   where
     genRap = genRapPopulationOnly (getOpts fSpec)
