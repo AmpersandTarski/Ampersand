@@ -14,16 +14,16 @@ data MySQLInstaller =
           { msiJSONallDBstructQueries :: [Text.Text]
           , msiJSONallDefPopQueries   :: [Text.Text]
           }
-      | ExtraPopulation
-          { msiJSONrapPopulation      :: [Text.Text]
+      | MetaPopulation
+          { msiJSONmetaPopulation      :: [Text.Text]
           } 
         deriving (Generic, Show)
 instance ToJSON MySQLInstaller where
   toJSON = amp2Jason
 instance JSON MultiFSpecs MySQLInstaller where
  fromAmpersand _ multi
-   | genRap = ExtraPopulation
-        { msiJSONrapPopulation = generateAllDefPopQueries grindedFSpec
+   | genRap = MetaPopulation
+        { msiJSONmetaPopulation = generateAllDefPopQueries grindedFSpec
         }
    | otherwise = CompleteDB
         { msiJSONallDBstructQueries = map Text.pack $ generateDBstructQueries  fSpec False

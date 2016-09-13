@@ -15,7 +15,7 @@ generateJSONfiles :: MultiFSpecs -> IO ()
 generateJSONfiles multi =
  sequence_ $
   if genRap
-  then [ writeJSON "extraPopulation"
+  then [ writeJSON "metaPopulation"
                                 (fromAmpersand multi multi :: MySQLInstaller)]
   else [ writeJSON "settings"   (fromAmpersand multi multi :: Settings)
        , writeJSON "mysql-installer"

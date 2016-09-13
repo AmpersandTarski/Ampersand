@@ -86,12 +86,12 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx ctx, show ampersandVersionStr)]
     , Pop "name" "Context" "ContextIdentifier" [Uni,Tot]
            [(dirtyId ctx ctx, (show.ctxnm) ctx)]
-    , Pop "location" "Context" "Location" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.showUnique.ctxpos) ctx)]
+  --  , Pop "location" "Context" "Location" [Uni,Tot]
+  --         [(dirtyId ctx ctx, (show.showUnique.ctxpos) ctx)]
     , Pop "language" "Context" "Language" [Uni,Tot]
            [(dirtyId ctx ctx, (show.show.ctxlang) ctx)]
-    , Pop "markup" "Context" "Markup" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.show.ctxmarkup) ctx)]
+  --  , Pop "markup" "Context" "Markup" [Uni,Tot]
+  --         [(dirtyId ctx ctx, (show.show.ctxmarkup) ctx)]
     , Pop "context" "Pattern" "Context" [Uni]                        -- The context in which a pattern is declared.
            [(dirtyId ctx p, dirtyId ctx ctx) | p<-ctxpats ctx]
     , Pop "ctxrs" "Rule" "Context" [Uni]                        -- The context in which a rule is declared.
