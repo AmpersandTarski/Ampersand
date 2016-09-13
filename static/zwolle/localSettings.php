@@ -13,7 +13,12 @@ date_default_timezone_set('Europe/Amsterdam');
  *************************************************************************************************/
 error_reporting(E_ALL & ~E_NOTICE);
 ini_set("display_errors", true);
+
+/**************************************************************************************************
+ * Execution time limit is set to a default of 30 seconds. Use 0 to have no time limit. (not advised)
+ *************************************************************************************************/
 set_time_limit (30);
+
 //Config::set('debugMode', 'global', true); // default = false
 
 // Log file handler

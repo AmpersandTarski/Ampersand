@@ -1,35 +1,36 @@
-﻿CONTEXT AST IN ENGLISH LATEX
+CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
-INCLUDE "Atoms.adl"
+INCLUDE "Concepts.adl"
 
 
 PROCESS "Expression definitions"
-    RELATION patterns[Context*Pattern]
+    RELATION context[Pattern*Context] -- copied from Contexts.adl
     RELATION src[Expression*Concept]
     RELATION tgt[Expression*Concept]
-    RELATION bind[Expression*Relation]
-    RELATION term[Rule*Expression]
+    RELATION bind[BindedRelation*Relation]
+    RELATION formalExpression[Rule*Expression]
+    RELATION in[Pair*Expression]
     
-    VIEW Equivalence        : Equivalence(TXT "RULE ", first, TXT " = ", second)
-    VIEW Inclusion          : Inclusion  (TXT "RULE ", first, TXT " |- ", second)
-    VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
-    VIEW Relation           : Relation(name, TXT "[", source;name, TXT "*", target;name, TXT "]")
+    VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Expression], TXT " = ", second[BinaryTerm*Expression])
+    VIEW Inclusion          : Inclusion  (TXT "RULE ", first[BinaryTerm*Expression], TXT " |- ", second[BinaryTerm*Expression])
+  --  VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
+    VIEW Relation           : Relation(name[Relation*Identifier], TXT "[", source[Relation*Concept];name[Concept*Identifier], TXT "*", target[Relation*Concept];name[Concept*Identifier], TXT "]")
     VIEW UnaryMinus         : UnaryMinus(TXT "-", arg[UnaryTerm*Expression])
     VIEW Converse           : Converse  (arg[UnaryTerm*Expression], TXT "~")
     VIEW KleeneStar         : KleeneStar(arg[UnaryTerm*Expression], TXT "*")
     VIEW KleenePlus         : KleenePlus(arg[UnaryTerm*Expression], TXT "+")
-    VIEW Intersection       : Intersection      (TXT "(", first, TXT "/\\", second, TXT ")")
-    VIEW Union              : Union             (TXT "(", first, TXT "\\/", second, TXT ")")
-    VIEW Minus              : Minus             (TXT "(", first, TXT  "-" , second, TXT ")")
-    VIEW Composition        : Composition       (TXT "(", first, TXT  ";" , second, TXT ")")
-    VIEW CartesianProduct   : CartesianProduct  (TXT "(", first, TXT  "#" , second, TXT ")")
-    VIEW RelationalAddition : RelationalAddition(TXT "(", first, TXT  "!" , second, TXT ")")
-    VIEW LeftResidual       : LeftResidual      (TXT "(", first, TXT  "/" , second, TXT ")")
-    VIEW RightResidual      : RightResidual     (TXT "(", first, TXT "\\" , second, TXT ")")
+    VIEW Intersection       : Intersection      (TXT "(", first[BinaryTerm*Expression], TXT "/\\", second[BinaryTerm*Expression], TXT ")")
+    VIEW Union              : Union             (TXT "(", first[BinaryTerm*Expression], TXT "\\/", second[BinaryTerm*Expression], TXT ")")
+    VIEW BinaryMinus        : BinaryMinus       (TXT "(", first[BinaryTerm*Expression], TXT  "-" , second[BinaryTerm*Expression], TXT ")")
+    VIEW Composition        : Composition       (TXT "(", first[BinaryTerm*Expression], TXT  ";" , second[BinaryTerm*Expression], TXT ")")
+    VIEW CartesianProduct   : CartesianProduct  (TXT "(", first[BinaryTerm*Expression], TXT  "#" , second[BinaryTerm*Expression], TXT ")")
+    VIEW RelationalAddition : RelationalAddition(TXT "(", first[BinaryTerm*Expression], TXT  "!" , second[BinaryTerm*Expression], TXT ")")
+    VIEW LeftResidual       : LeftResidual      (TXT "(", first[BinaryTerm*Expression], TXT  "/" , second[BinaryTerm*Expression], TXT ")")
+    VIEW RightResidual      : RightResidual     (TXT "(", first[BinaryTerm*Expression], TXT "\\" , second[BinaryTerm*Expression], TXT ")")
 
 
     CONCEPT Rule ""
-    RELATION term[Rule*Expression] [UNI,TOT]
+    RELATION formalExpression[Rule*Expression] [UNI,TOT]
 
     CONCEPT Operator ""
     CONCEPT BinaryTerm ""
@@ -41,31 +42,34 @@ PROCESS "Expression definitions"
     CONCEPT UnaryTerm ""
     CLASSIFY UnaryTerm ISA Expression
     RELATION arg[UnaryTerm*Expression] [UNI]
+    RELATION operator[UnaryTerm*Operator] [UNI]
 
-    CONCEPT Atom ""
-    CLASSIFY Atom ISA Expression
-    RELATION singleton[Atom*Expression] [UNI]
+    CONCEPT AtomValue "A value can exist on it's own, without having one or more concepts, where it is a value of an atom in it."
+    RELATION singleton[Singleton*AtomValue] [UNI,INJ]
     
     CONCEPT "V" "The cartesian product."
     CLASSIFY "V" ISA Expression
     RELATION userSrc["V"*Concept] [UNI]
     RELATION userTrg["V"*Concept] [UNI]
     
-    CLASSIFY Equivalence ISA Rule
-    CLASSIFY Inclusion   ISA Rule
-    CLASSIFY Truth       ISA Rule
-    CLASSIFY Rule        ISA BinaryTerm
+    CONCEPT "I" "The identity expression on a concept."
+    CLASSIFY "I" ISA BindedRelation
+    RELATION userCpt["I"*Concept] [UNI]
+    
+    CLASSIFY Equivalence ISA BinaryTerm
+    CLASSIFY Inclusion   ISA BinaryTerm
+    
     --RELATION repr[Expression*Representation] [UNI, TOT, INJ]
     --The relation repr, i.e. the representation of terms, is supplied by a spreadsheet or by the meatgrinder. Make sure it is injective.
-    CLASSIFY Relation           ISA Expression
+    CLASSIFY Singleton          ISA Expression
+    CLASSIFY BindedRelation     ISA Expression
     CLASSIFY Converse           ISA UnaryTerm
     CLASSIFY KleeneStar         ISA UnaryTerm
     CLASSIFY KleenePlus         ISA UnaryTerm
     CLASSIFY UnaryMinus         ISA UnaryTerm
-    CLASSIFY UnaryMinus         ISA Minus
     CLASSIFY Intersection       ISA BinaryTerm
     CLASSIFY Union              ISA BinaryTerm
-    CLASSIFY Minus              ISA BinaryTerm
+    CLASSIFY BinaryMinus        ISA BinaryTerm
     CLASSIFY Composition        ISA BinaryTerm
     CLASSIFY CartesianProduct   ISA BinaryTerm
     CLASSIFY RelationalAddition ISA BinaryTerm

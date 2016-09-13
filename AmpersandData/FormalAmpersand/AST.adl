@@ -1,13 +1,14 @@
-﻿CONTEXT RAP IN ENGLISH
+CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "AST.ifc"
 --INCLUDE "MinimalAST.xlsx" -- Contains minimal population. Anything discarded from it must break an invariant
 INCLUDE "Contexts.adl"
 INCLUDE "Relations.adl"
+INCLUDE "Documentation.adl"
 INCLUDE "Rules.adl"
 INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
-INCLUDE "Generics.adl"
+-- INCLUDE "Generics.adl"
 INCLUDE "Tables.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
@@ -23,49 +24,14 @@ REPRESENT Purpose TYPE BIGALPHANUMERIC
 REPRESENT Meaning TYPE BIGALPHANUMERIC
 REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
 
-PATTERN Patterns
-CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
-IDENT Pattern: Pattern(name[Pattern*PatternIdentifier])
-REPRESENT PatternIdentifier TYPE ALPHANUMERIC
-RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
-MEANING "The name of a pattern."
-RELATION rules[Pattern*Rule]
-MEANING "The user-defined rules in a pattern."
-RELATION declarations[Pattern*Relation]
-MEANING "The relations that are declared in a pattern."
-RELATION purpose[Pattern*Purpose]
-MEANING "The purposes of a pattern."
-
-ENDPATTERN
-
-PATTERN Specialization
-VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*Identifier]-} , TXT " ISA " , gengen;name{-[Concept*Identifier]-} )
-RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
-MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
-
-RELATION gengen[Gen*Concept] [UNI,TOT]
-MEANING "A generalization rule refers to one more generic concept."
-RELATION genspc[Gen*Concept] [UNI,TOT]
-MEANING "A generalization rule refers to one more specific concept."
-
---PURPOSE RULE specialization
---{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
---If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
----}
---RELATION instanceOf[Atom*Concept] [TOT] 
---RULE specialization : instanceOf;genspc~;gengen |- instanceOf
---MEANING "Every instance of a specialized concept is an instance of the generic concept too."
-
-ENDPATTERN
-
 PROCESS Plugs -- This pattern documents the semantics of plugs as of november 2014.
 RELATION maintains[Plug*Rule]
 RELATION in[Concept*Plug] --TODO: 'Nearly TOT: All concepts are in a plug, except ONE".
 RELATION relsInPlug[Plug*Relation] --FIXME [SUR] -- Note: Declared relations only. This excludes I and V relations!
 
 -- Rules
-ROLE Ampersand MAINTAINS "All isas in one plug"
-RULE "All isas in one plug" : (-(genspc~;gengen;in[Concept*Plug]) \/ in[Concept*Plug]) /\ (-(gengen~;genspc;in[Concept*Plug]) \/ in[Concept*Plug])
+--ROLE Ampersand MAINTAINS "All isas in one plug"
+RULE "All isas in one plug" : (-(genspc[Gen*Concept]~;gengen[Gen*Concept];in[Concept*Plug]) \/ in[Concept*Plug]) /\ (-(gengen[Gen*Concept]~;genspc[Gen*Concept];in[Concept*Plug]) \/ in[Concept*Plug])
 MEANING "If a concept is stored in a plug, then every generalization of that concept is stored in the same plug."
 ENDPROCESS
 

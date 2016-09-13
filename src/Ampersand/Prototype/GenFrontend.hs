@@ -101,7 +101,7 @@ doGenFrontend fSpec =
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
-    ; putStrLn "..done."
+    ; putStrLn "frontend generated."
     }
 
 copyIncludes :: FSpec -> IO ()
@@ -291,17 +291,17 @@ buildInterface fSpec allIfcs ifc =
 
 genRouteProvider :: FSpec -> [FEInterface] -> IO ()
 genRouteProvider fSpec ifcs =
- do { --verboseLn (getOpts fSpec) $ show $ map name (interfaceS fSpec)
+ do { --verboseLn opts $ show $ map name (interfaceS fSpec)
     ; template <- readTemplate fSpec "RouteProvider.js"
     ; let contents = renderTemplate template $
                        setAttribute "contextName"         (fsName fSpec)
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "ifcs"                ifcs
-                     . setAttribute "verbose"             (verboseP (getOpts fSpec))
+                     . setAttribute "verbose"             (verboseP opts)
 
-    ; writePrototypeAppFile fSpec "RouteProvider.js" contents 
+    ; writePrototypeAppFile opts "RouteProvider.js" contents 
     }
-
+  where opts = getOpts fSpec
     
 ------ Generate view html code
 
@@ -327,12 +327,12 @@ genViewInterface fSpec interf =
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"               (objCrudD (_ifcObj interf))
                      . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
-                     . setAttribute "verbose"             (verboseP (getOpts fSpec))
+                     . setAttribute "verbose"             (verboseP opts)
 
     ; let filename = ifcName interf ++ ".html" 
-    ; writePrototypeAppFile fSpec ("views" </> filename) contents 
+    ; writePrototypeAppFile opts ("views" </> filename) contents 
     }
-
+   where opts = getOpts fSpec
 -- Helper data structure to pass attribute values to HStringTemplate
 data SubObjectAttr = SubObjAttr { subObjName :: String
                                 , subObjLabel :: String
@@ -443,12 +443,13 @@ genControllerInterface fSpec interf =
                      . setAttribute "crudR"                    (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"                    (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
-                     . setAttribute "verbose"                  (verboseP (getOpts fSpec))
+                     . setAttribute "verbose"                  (verboseP opts)
                      . setAttribute "usedTemplate"             controlerTemplateName
     ; let filename = ifcName interf ++ ".js"
-    ; writePrototypeAppFile fSpec ("controllers" </> filename) contents 
+    ; writePrototypeAppFile opts ("controllers" </> filename) contents 
     }
-    
+    where 
+      opts = getOpts fSpec
 ------ Utility functions
 -- data type to keep template and source file together for better errors
 data Template = Template (StringTemplate String) String

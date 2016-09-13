@@ -23,29 +23,29 @@ import Ampersand.Misc.Options
 import qualified System.Exit as SE (ExitCode(..))
 import System.Process
 
-writePrototypeFile :: FSpec -> String -> String -> IO ()
-writePrototypeFile fSpec relFilePath content =
- do { verboseLn (getOpts fSpec) ("  Generating "<>relFilePath)
-    ; let filePath = getGenericsDir fSpec </> relFilePath
+writePrototypeFile :: Options -> String -> String -> IO ()
+writePrototypeFile opts relFilePath content =
+ do { verboseLn opts ("  Generating "<>relFilePath)
+    ; let filePath = getGenericsDir opts </> relFilePath
     ; createDirectoryIfMissing True (takeDirectory filePath)
     ; writeFile filePath content
     }
 
-getGenericsDir :: FSpec -> String
-getGenericsDir fSpec = 
-  dirPrototype (getOpts fSpec) </> "generics" 
+getGenericsDir :: Options -> String
+getGenericsDir opts = 
+  dirPrototype opts </> "generics" 
 
-writePrototypeAppFile :: FSpec -> String -> String -> IO ()
-writePrototypeAppFile fSpec relFilePath content =
- do { verboseLn (getOpts fSpec) ("  Generating "<>relFilePath)
-    ; let filePath = getAppDir fSpec </> relFilePath
+writePrototypeAppFile :: Options -> String -> String -> IO ()
+writePrototypeAppFile opts relFilePath content =
+ do { verboseLn opts ("  Generating "<>relFilePath)
+    ; let filePath = getAppDir opts </> relFilePath
     ; createDirectoryIfMissing True (takeDirectory filePath)
     ; writeFile filePath content
     }
    
-getAppDir :: FSpec -> String
-getAppDir fSpec =
-  dirPrototype (getOpts fSpec) </> "app"
+getAppDir :: Options -> String
+getAppDir opts =
+  dirPrototype opts </> "app"
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
@@ -176,16 +176,16 @@ showPhpMaybeBool Nothing = "null"
 showPhpMaybeBool (Just b) = showPhpBool b
 
 
-installComposerLibs :: FSpec -> IO()
-installComposerLibs fSpec =
+installComposerLibs :: Options -> IO()
+installComposerLibs opts =
   do curPath <- getCurrentDirectory
-     verboseLn (getOpts fSpec) $ "current directory: "++curPath
-     verbose (getOpts fSpec) "  Trying to download and install Composer libraries..."
+     verboseLn opts $ "current directory: "++curPath
+     verbose opts "  Trying to download and install Composer libraries..."
      (exit_code, stdout, stderr) <- readCreateProcessWithExitCode myProc ""
      case exit_code of
-       SE.ExitSuccess   -> do verboseLn (getOpts fSpec) $
+       SE.ExitSuccess   -> do verboseLn opts $
                                " Succeeded." <> (if null stdout then " (stdout is empty)" else "") 
-                              verboseLn (getOpts fSpec) stdout
+                              verboseLn opts stdout
        SE.ExitFailure _ -> failOutput (exit_code, stdout, stderr)
 
    where
@@ -201,7 +201,7 @@ installComposerLibs fSpec =
        , create_group = False
        , delegate_ctlc = True
        }
-     composerTargetPath = dirPrototype (getOpts fSpec)
+     composerTargetPath = dirPrototype opts
      failOutput (exit_code, stdout, stderr) =
         exitWith . FailedToInstallComposer  $
             [ "Failed!"

@@ -168,14 +168,26 @@ class Atom {
 	 */
 	public function addAtom(){
         if($this->atomExists()){
-            $this->logger->debug("Atom '{$this->__toString()}' already exists in database");
+            $this->logger->debug("Atom '{$this}' already exists in database");
         }else{
             $this->database->addAtomToConcept($this);
             $this->concept->addToAtomCache($this);
         }
 	    return $this;
 	}
-	
+    
+    /**
+     * 
+     * @return void
+     */
+    public function deleteAtom(){
+        if($this->atomExists()){
+            $this->database->deleteAtom($this);
+            $this->concept->removeFromAtomCache($this);
+        }else{
+            $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
+        }
+    }
 	
 	/**
 	 * Returns basic information about this atom
@@ -573,7 +585,7 @@ class Atom {
 	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 	
 	    // Perform delete
-	    $this->database->deleteAtom($this);
+	    $this->deleteAtom();
 	
 	    // Close transaction
 	    $this->database->closeTransaction($this->concept . ' deleted');
