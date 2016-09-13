@@ -94,7 +94,7 @@ data ThemeContent =
            , patOfTheme ::   Maybe Pattern -- A theme is about either a pattern or about everything outside patterns
            , rulesOfTheme :: [Numbered RuleCont] -- The (numbered) rules of that theme
            , dclsOfTheme ::  [Numbered DeclCont] -- The (numbered) relations that are used in a rule of this theme, but not in any rule of a previous theme.
-           , cptsOfTheme ::  [Numbered CptCont]   -- The (numbered) concepts that are used in a rule of this theme, but not in any rule of a previous theme.
+           , cptsOfTheme ::  [Numbered CptCont]  -- The (numbered) concepts that are used in a rule of this theme, but not in any rule of a previous theme.
            }
 data Numbered t =
  Nr { theNr ::   Int
@@ -126,17 +126,20 @@ data Counters
             , definitionNr :: Int --For Concepts
             , agreementNr ::  Int --For declarations andrules
             }
+
+-- orderingByTheme organizes the content of a specification in themes according to a define-before-use policy.
+-- It must ensure that all rules, relations and concepts from the context are included in the specification.
 orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
  = f ( Counter 1 1 1 --the initial numbers of the countes
-     , (sortWith origin . filter rulMustBeShown . fallRules)       fSpec
-     , (sortWith origin . filter relMustBeShown . relsMentionedIn) fSpec
-     , (sortBy conceptOrder . filter cptMustBeShown . concs)     fSpec
+     , (sortWith origin . filter rulMustBeShown . fallRules)  fSpec
+     , (sortWith origin . filter relMustBeShown . relsDefdIn) fSpec 
+     , (sortBy conceptOrder . filter cptMustBeShown . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
-        ,    null (themes fSpec)        -- all patterns if no specific themes are requested
-          || name pat  `elem` themes fSpec  -- otherwise the requested ones only
-        ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
+               , null (themes fSpec)        -- all patterns if no specific themes are requested
+                 || name pat  `elem` themes fSpec  -- otherwise the requested ones only
+     ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
  where
   conceptOrder :: A_Concept -> A_Concept -> Ordering
   conceptOrder a b =
@@ -175,15 +178,14 @@ orderingByTheme fSpec
            Nothing -> False
            Just (_,x) -> x == d
   cptMustBeShown = not . null . concDefs fSpec
-  f ::
-   (Counters, [Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
-  f stuff ts
-   = case ts of
-       t:ts' -> let ( thm, rest) = partitionByTheme t stuff
-                in thm : f rest ts'
-       []    -> case stuff of
-                  (_,[],[],[]) -> []
-                  _ -> fatal 247 "No stuff should be left over."
+  f :: (Counters, [Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
+  f stuff pats
+   = case pats of
+       pat:pats' -> let ( thm, rest) = partitionByTheme pat stuff
+                    in thm : f rest pats'
+       []        -> case stuff of
+                      (_,[],[],[]) -> []
+                      _ -> fatal 247 "No stuff should be left over."
 
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
@@ -220,13 +222,13 @@ orderingByTheme fSpec
   -- | This function takes care of partitioning each of the
   --   lists in a pair of lists of elements which do and do not belong
   --   to the theme, respectively
-  partitionByTheme :: Maybe Pattern
+  partitionByTheme :: Maybe Pattern  -- Just pat if this theme is from a pattern, otherwise this stuff comes from outside a pattern (but inside a context).
                    -> ( Counters, [Rule], [Declaration], [A_Concept])
                    -> ( ThemeContent , ( Counters ,[Rule], [Declaration], [A_Concept])
                       )
-  partitionByTheme t (cnt, ruls, rels, cpts)
+  partitionByTheme mPat (cnt, ruls, rels, cpts)
       = ( Thm { themeNr      = pNr cnt
-              , patOfTheme   = t
+              , patOfTheme   = mPat
               , rulesOfTheme = setNumbers (agreementNr cnt + length themeDcls ) rul2rulCont thmRuls
               , dclsOfTheme  = setNumbers (agreementNr cnt) dcl2dclCont themeDcls
               , cptsOfTheme  = setNumbers (definitionNr cnt) cpt2cptCont themeCpts
@@ -235,7 +237,7 @@ orderingByTheme fSpec
                    ,definitionNr = definitionNr cnt + length themeCpts
                    ,agreementNr = agreementNr cnt + length themeDcls + length thmRuls
                    }
-          , restRuls, restDcls, restCpts)
+        , restRuls, restDcls, restCpts)
         )
      where
        (thmRuls,restRuls) = partition (inThisTheme ptrls) ruls
@@ -244,9 +246,10 @@ orderingByTheme fSpec
        (themeCpts,restCpts) = partition (inThisTheme concs) cpts
        inThisTheme :: Eq a => (Pattern -> [a]) -> a -> Bool
        inThisTheme allElemsOf x
-         = case t of
-             Nothing -> True
+         = case mPat of
+             Nothing  -> True
              Just pat -> x `elem` allElemsOf pat
+
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
 dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Declaration]
           -> ([(Inlines, [Blocks])], Int, [A_Concept], [Declaration])
