@@ -37,13 +37,12 @@ module Ampersand.Core.ParseTree (
    , Prop(..), Props, normalizeProps
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
-   , gen_concs
   ) where
 import Ampersand.Input.ADL1.FilePos
 import Ampersand.Basics
 import Data.Traversable
 import Data.Foldable hiding (concat)
-import Data.List (nub)
+import Data.List (nub,intercalate)
 import Prelude hiding (foldr, sequence, foldl, concatMap)
 import Data.Typeable
 import Data.Data
@@ -811,19 +810,17 @@ data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand 
             | PGen{ gen_fp  :: Origin         -- ^ the position of the GEN-rule
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
-                  }
-instance Ord P_Gen where
- compare p1 p2 = compare (gen_spc p1,gen_gen p1, origin p1) (gen_spc p2,gen_gen p2,origin p2)
-instance Eq P_Gen where
- p1 == p2 = (compare p1 p2 == EQ)
-
-gen_concs :: P_Gen -> [P_Concept]
+                  } deriving (Eq, Ord)
 gen_concs (P_Cy {gen_rhs=x}) = x
-gen_concs (PGen {gen_gen=x,gen_spc=y}) = [x,y]
 
 instance Show P_Gen where
  -- This show is used in error messages.
- showsPrec _ g = showString ("CLASSIFY "++show (gen_spc g)++" IS "++show (gen_concs g))
+ showsPrec _ g = 
+   case g of
+     P_Cy{} -> showString $ "CLASSIFY "++show (gen_spc g)++" IS "++
+                  (intercalate " /\\ " . map show . gen_rhs $ g)
+     PGen{} -> showString $ "CLASSIFY "++show (gen_spc g)++" ISA "++
+                  (show . gen_gen $ g)
 
 instance Traced P_Gen where
  origin = gen_fp

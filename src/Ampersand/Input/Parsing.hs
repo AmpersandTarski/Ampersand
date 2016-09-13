@@ -3,7 +3,7 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Ampersand.Input.Parsing (
-    parseADL,parseMeta , parseADL1pExpr, parseRule, parseCtx, runParser
+    parseADL,parseMeta, parseRule, parseCtx, runParser
 ) where
 
 import Control.Applicative
@@ -164,15 +164,6 @@ parseRule str
    = case  runParser pRule "inside Haskell code" str of
        Checked result -> result
        Errors  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
-
--- | Parses an isolated ADL1 expression string
-parseADL1pExpr :: String            -- ^ The string to be parsed
-               -> FilePath          -- ^ The name of the file (used for error messages)
-               -> Either String (Term TermPrim)  -- ^ The result: Either an error message, or a good result
-parseADL1pExpr str fn =
-  case runParser pTerm fn str of
-      Checked result -> Right result
-      Errors  msg    -> Left $ "Parse errors:\n"++show msg
 
 -- | Parses an Ampersand context
 parseCtx :: FilePath -- ^ The file name (used for error messages)

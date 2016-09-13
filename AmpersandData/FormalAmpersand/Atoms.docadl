@@ -104,11 +104,11 @@ Each atom in the right hand side of a pair in that relation, is said to be of ty
 PURPOSE RELATION in[Pair*Relation]
 {+The pair that is stored in a relation, is linked to it by means of in.
 -}
-PURPOSE RELATION l[Pair*Atom]
-{+The atom on the left hand side of a pair is linked to that pair via the relation l.
+PURPOSE RELATION lAtom[Pair*Atom]
+{+The atom on the left hand side of a pair is linked to that pair via the relation lAtom.
 -}
-PURPOSE RELATION r[Pair*Atom]
-{+The atom on the right hand side of a pair is linked to that pair via the relation r.
+PURPOSE RELATION rAtom[Pair*Atom]
+{+The atom on the right hand side of a pair is linked to that pair via the relation rAtom.
 -}
 
 PURPOSE RELATION pop
@@ -126,9 +126,9 @@ PURPOSE RULE "TOT in"
 This rule is automated.
 When a relation ceases to exist, the application deletes all pairs in that relation.
 -}
-PURPOSE RULE "SUR l and r"
-{+To ensure that atoms only exist in pairs, Ampersand automates the surjectivity of l and r.
-When an atom no longer resides in l or r, the application deletes that atom.
+PURPOSE RULE "SUR lAtom and rAtom"
+{+To ensure that atoms only exist in pairs, Ampersand automates the surjectivity of lAtom and rAtom.
+When an atom no longer resides in lAtom or rAtom, the application deletes that atom.
 -}
 
 PURPOSE RULE "equality on Atoms"

@@ -176,7 +176,7 @@ BOX ["PURPOSEs" :cptpurpose
 INTERFACE "Atom"(cptos) FOR Student: I[Atom];atomvalue~
 BOX ["in POPULATION of": cptos~]
 INTERFACE Relation(decpopu,left,right) FOR Student: I[Relation]
-BOX ["PURPOSEs" :decpurpose
+BOX ["PURPOSEs" :purpose
     ,"MEANING" :decmean
     ,"example of basic sentence" :decexample
     ,"name" :decnm
@@ -187,7 +187,7 @@ BOX ["PURPOSEs" :decpurpose
     ,"used in RULEs": (rrexp;relsInPlug;reldcl)~;(I[Rule] /\ -I[PropertyRule])
     ]
 INTERFACE "RULE" FOR Student: I[Rule]
-BOX ["PURPOSEs" :rrpurpose
+BOX ["PURPOSEs" :purpose
     ,"MEANING" :rrmean
     ,"name" :rrnm
     ,"assertion" :rrexp

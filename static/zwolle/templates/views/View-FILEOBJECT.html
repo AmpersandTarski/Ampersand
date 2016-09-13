@@ -12,8 +12,13 @@ $endif$$if(crudR)$<div class="input-group">
 	<div ng-repeat="(key, row) in resource['$name$']">
 		$if(crudU)$<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
 		<a href="{{row['_view_']['filePath']}}" target="_blank">{{row['_view_']['fileName']}}</a>
-	</div>
-	$if(crudC)$<div my-showonhover-box ng-controller="uploadFileController" $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$>
-		<input class="form-control input-sm" type="file" nv-file-select uploader="FileUploader" options="{'url' : 'api/v1/' + resource['_path_'] + '/$name$', resource : resource, ifc : '$name$'}"/>
+	</div>$if(crudU)$$if(verbose)$
+    <!-- Input to add new link to another resource -->$endif$
+    <div $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-controller="addObjectController">
+    	<input ng-model="selected.label" type="text" class="input-sm" placeholder="Add existing $target$" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', patchResource); selected.label=''" typeahead-no-results="hasNoResults" ng-init="getTypeahead('$target$')">
+    </div>$endif$$if(crudC)$$if(verbose)$
+    <!-- Input to create and upload a new file -->$endif$
+    <div my-showonhover-box ng-controller="uploadFileController" $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$>
+		<span>Upload new $target$: </span><input class="form-control input-sm" type="file" nv-file-select uploader="FileUploader" options="{'url' : 'api/v1/' + resource['_path_'] + '/$name$', resource : resource, ifc : '$name$'}"/>
 	</div>$endif$
 </div>$else$<span><i>not readable</i></span>$endif$
