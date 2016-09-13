@@ -811,7 +811,6 @@ data P_Gen =  P_Cy{ gen_fp ::  Origin            -- ^ Position in the Ampersand 
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
                   } deriving (Eq, Ord)
-gen_concs (P_Cy {gen_rhs=x}) = x
 
 instance Show P_Gen where
  -- This show is used in error messages.
