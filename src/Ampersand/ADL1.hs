@@ -32,7 +32,6 @@ import Ampersand.Core.ParseTree (
          , P_Gen(..)
          , P_Declaration(..)
          , ConceptDef(..)
-         , gen_concs
          )
 import Ampersand.Core.AbstractSyntaxTree (
           A_Concept(..)

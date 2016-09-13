@@ -1,36 +1,205 @@
-﻿CONTEXT RAP IN ENGLISH
-INCLUDE "Login.adl"
+CONTEXT RAP IN ENGLISH
+INCLUDE "Rules.adl"
+INCLUDE "Relations.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
-PATTERN Authorizations
-PURPOSE PATTERN Authorizations
-{+
--}
-PURPOSE RELATION owner[Context*Account]
-{+In RAP, every context must have one owner, who can exercise all ownership rights that contexts have.
-Initially, the creator of a context is its owner.
--}
-    RELATION owner[Context*Account] [UNI]
-    MEANING "A context has an owner, which is an account."
-    ROLE ExecEngine MAINTAINS TOTowner
-    RULE TOTowner : (I[Context]#'_SESSION'[SESSION]);ingelogd |- owner
-    MEANING "The creator of a context is the account that was logged in when the context was created."
-    VIOLATION ( TXT "{EX} InsPair;owner;Context;", SRC I, TXT ";Account;", TGT I )
-ENDPATTERN
+
+RELATION name[Concept*Identifier] [UNI,TOT]
+
+VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , tgt;name[Concept*Identifier] , TXT "]" )
+
+
+--PATTERN Authorizations
+--PURPOSE PATTERN Authorizations
+--{+
+---}
+--PURPOSE RELATION owner[Context*Account]
+--{+In RAP, every context must have one owner, who can exercise all ownership rights that contexts have.
+--Initially, the creator of a context is its owner.
+---}
+--    RELATION owner[Context*Account] [UNI]
+--    MEANING "A context has an owner, which is an account."
+--    ROLE ExecEngine MAINTAINS TOTowner
+--    RULE TOTowner : (I[Context]#'_SESSION'[SESSION]);ingelogd |- owner
+--    MEANING "The creator of a context is the account that was logged in when the context was created."
+--    VIOLATION ( TXT "{EX} InsPair;owner;Context;", SRC I, TXT ";Account;", TGT I )
+--ENDPATTERN
 
 PATTERN Context
     CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
     IDENT Context: Context(name[Context*ContextIdentifier])  
     REPRESENT ContextIdentifier TYPE ALPHANUMERIC
-    RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ,SUR]
+    RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ]
     MEANING "The name of a context."
-    RELATION valid[Rule*Context]
-    RELATION patterns[Context*Pattern]
-    MEANING "The patterns in a context."
-    RELATION concs[Context*Concept]
-    MEANING "A concept, mentioned anywhere in a context."
+    RELATION name[Rule*RuleID] [UNI,TOT,INJ]
+    RELATION name[Concept*Identifier] [UNI,TOT,INJ] 
+    MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     RELATION gens[Context*Gen]
     MEANING "The user-defined generalization rules in a context."
-    RELATION relations[Context*Relation] [INJ] -- SUR is maintained by RULE SURrelations FIX: Compare with context[Relation*Context]
+    RELATION concepts[Pattern*Concept]
+    RELATION uses[Context*Pattern]
+    MEANING "If a context uses a pattern, everything declared in that pattern is valid within the context."
+    RELATION context[Concept*Context] [UNI] -- comes from concs, which is defined in FSpec. This contains all concepts declared inside a context but outside the patterns it contains.
+    MEANING "If a concept declaration is used in a context, that concept exists in that context. This is registered in the system."
+    RELATION ctxds[Relation*Context] [UNI] -- comes from ctxds, which is defined in A_Context. This contains all relations declared inside a context but outside the patterns it contains.
+    MEANING "Any relation declared anywhere in a context outside the scope of a pattern is registered in the system."
+    RELATION declaredIn[Relation*Context] [UNI] -- comes from relsDefdIn, which is defined in FSpec. This contains all relations declared inside a context including the patterns it contains.
+    MEANING "Any relation declared anywhere in a context is registered in the system."
+    RELATION ctxrs[Rule*Context] [UNI]  -- This contains all rules declared inside a context but outside the patterns it contains.
+    MEANING "If a rule is declared in a context outside any pattern, that rule exists in that context. This is registered in the system."
+    RELATION udefrules[Rule*Context] [UNI]      -- ^ all rules the user has declared within this context including the patterns it contains,
+                                                --   which are not multiplicity- and not identity rules. See ViewPoint.hs
+    RELATION multrules[Rule*Context] [UNI]      -- ^ all multiplicityrules the user has declared within this context including the patterns it contains.
+    RELATION identityRules[Rule*Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
+    RELATION allRules[Context*Rule] [INJ]       -- This contains all rules declared inside a context. This contains all rules declared inside a context including the patterns it contains.
+    MEANING "If a rule is declared anywhere in a context, that rule exists in that context. This is registered in the system."
+    RELATION context[Pattern*Context] [UNI]  -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
+    MEANING "If a pattern is declared inside a context, this is registered in the system."
+
+    PURPOSE RULE "rule declared outside pattern"
+    {+Ampersand allows its users to declare rules in a context, outside the scope of a pattern.
+    -}
+    ROLE ExecEngine MAINTAINS "rule declared outside pattern"
+    RULE "rule declared outside pattern" : ctxrs[Rule*Context] |- udefrules[Rule*Context]
+    MEANING "A rule declared in a context outside the scope of a pattern is registered in the system."
+    VIOLATION (TXT "{EX} InsPair;udefrules;Rule;", SRC I, TXT ";Context;", TGT I)
+
+    PURPOSE RULE "all rules"
+    {+It is convenient to have one relation to contain all rules in a context. TODO: delete rules from allRules.
+    -}
+    ROLE ExecEngine MAINTAINS "all rules"
+    RULE "all rules" : udefrules[Rule*Context] \/ multrules \/ identityRules |- allRules[Context*Rule]~
+    MEANING "All rules in a context consist of the user-defined rules, the multiplicity rules, and the identity rules."
+    VIOLATION (TXT "{EX} InsPair;allRules;Context;", TGT I, TXT ";Rule;", SRC I)
+
+    PURPOSE RULE "relation declared outside pattern"
+    {+Ampersand allows its users to declare relations in a context, outside the scope of a pattern.
+    -}
+    ROLE ExecEngine MAINTAINS "relation declared outside pattern"
+    RULE "relation declared outside pattern" : ctxds[Relation*Context] |- declaredIn[Relation*Context]
+    MEANING "A relation declared in a context outside the scope of a pattern is registered in the system."
+    VIOLATION (TXT "{EX} InsPair;declaredIn;Relation;", SRC I, TXT ";Context;", TGT I)
+
+    PURPOSE RULE "pat defined in means used in"
+    {+Patterns can be defined inside a context. This means that all declarations in that pattern are used in that context.
+    -}
+    ROLE ExecEngine MAINTAINS "pat defined in means used in"
+    RULE "pat defined in means used in" : context[Pattern*Context] |- uses[Context*Pattern]~
+    MEANING "Every pattern defined in a context is used in that context."
+    VIOLATION (TXT "{EX} InsPair;uses;Context;", TGT I, TXT ";Pattern;", SRC I)
+ENDPATTERN
+
+PURPOSE PATTERN Validity
+{+The mechanism to define truth within context is represented by the relation `valid`.
+The idea is that a context determines concepts, relations and rules, all of which we say are `valid` in the context.
+For this purpose we define three relations, `valid[Concept*Context]`, `valid[Relation*Context]`, and `valid[Rule*Context]`.
+-}
+PATTERN Validity
+    RELATION valid[Concept*Context]
+    MEANING "A concept/context pair in the relation `valid[Concept*Context]` means that this concept exists with the context."
+    PURPOSE RULE validRelations MARKDOWN
+    {+In order to compute validity of concepts within a context,
+    three categories of concepts are taken into account:
+     - the concept defined in the context
+     - all concept defined in patterns within the context
+     - all concept defined in patterns used by the context
+    -}
+    ROLE ExecEngine MAINTAINS validConcepts
+    RULE validConcepts : concepts~;(context\/uses~) \/ context |- valid[Concept*Context]
+    MEANING "Every concept defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
+    VIOLATION (TXT "{EX} InsPair;valid;Concept;", SRC I, TXT ";Context;", TGT I)
+    RULE AllValidConcepts : valid[Concept*Context] |- concepts~;(context\/uses~) \/ context[Concept*Context]
+    VIOLATION (TXT "Concept ", SRC name, TXT " is not valid in context ", TGT I)
+
+    ROLE ExecEngine MAINTAINS "validity of concepts in a context"
+    RULE "validity of concepts in a context" : uses;declaredIn~;I[Relation];sign;(tgt\/src) |- context[Concept*Context]~
+    MEANING "Every concept in the signature of relations is valid in every context that uses the pattern in which that relation is declared.."
+    VIOLATION ( TXT "{EX} InsPair;context;Concept;", TGT I, TXT ";Context;", SRC I )
+
+    RELATION valid[Relation*Context]
+    MEANING "A relation/context pair in the relation `valid[Relation*Context]` means that this relation exists with the context."
+    PURPOSE RULE validRelations MARKDOWN
+    {+In order to compute validity of relations within a context,
+    three categories of relations are taken into account:
+     - the relation defined in the context
+     - all relation defined in patterns within the context
+     - all relation defined in patterns used by the context
+    -}
+    ROLE ExecEngine MAINTAINS validRelations
+    RULE validRelations : declaredIn[Relation*Pattern];(context\/uses~) \/ ctxds |- valid[Relation*Context]
+    MEANING "Every relation defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
+    VIOLATION (TXT "{EX} InsPair;valid;Relation;", SRC I, TXT ";Context;", TGT I)
+
+    ROLE User MAINTAINS AllValidRelations
+    RULE AllValidRelations : valid[Relation*Context] |- declaredIn[Relation*Pattern];(context\/uses~) \/ ctxds
+    VIOLATION (TXT "Relation ", SRC name, TXT " is not valid in context ", TGT I)
+
+    RELATION valid[Rule*Context]
+    MEANING "A rule/context pair in the relation `valid[Rule*Context]` means that this rule exists with the context."
+    PURPOSE RULE validRules MARKDOWN
+    {+In order to compute validity of rules within a context,
+    three categories of rules are taken into account:
+     - the rules defined in the context
+     - all rules defined in patterns within the context
+     - all rules defined in patterns used by the context
+    -}
+    ROLE ExecEngine MAINTAINS validRules
+    RULE validRules : allRules[Pattern*Rule]~;(context\/uses~) \/ allRules[Context*Rule]~ |- valid[Rule*Context]
+    MEANING "Every rule defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
+    VIOLATION (TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I)
+    ROLE User MAINTAINS AllValidRules
+    RULE AllValidRules : valid[Rule*Context] |- allRules[Pattern*Rule]~;(context\/uses~) \/ allRules[Context*Rule]~
+    VIOLATION (TXT "Rule ", SRC name, TXT " is not valid in context ", TGT I)
+ENDPATTERN
+
+PATTERN Patterns
+    CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
+    IDENT Pattern: Pattern(name[Pattern*PatternIdentifier])
+    REPRESENT PatternIdentifier TYPE ALPHANUMERIC
+    RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
+    MEANING "The name of a pattern."
+    RELATION udefrules[Rule*Pattern] [UNI]      -- ^ all rules the user has declared within this pattern including the patterns it contains,
+                                                --   which are not multiplicity- and not identity rules. See ViewPoint.hs
+    RELATION multrules[Rule*Pattern] [UNI]      -- ^ all multiplicityrules the user has declared within this pattern including the patterns it contains.
+    RELATION identityRules[Rule*Pattern] [UNI]  -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
+    RELATION allRules[Pattern*Rule]        -- This contains all rules declared inside a pattern. This contains all rules declared inside a pattern including the patterns it contains.
+    MEANING "The user-defined rules in a pattern."
+    RELATION declaredIn[Relation*Pattern]  -- comes from class Language. This contains all relations declared inside a pattern.
+    MEANING "The relations that are declared in a pattern."
+
+    ROLE ExecEngine MAINTAINS "Remove rule atom"
+    RULE "Remove rule atom" : I[Rule]- (allRules~;I[Pattern];allRules\/allRules~;I[Context];allRules) |- -V
+    MEANING "A rule without declaration will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;Rule;", SRC I )
+
+    ROLE ExecEngine MAINTAINS "Remove relation atom"
+    RULE "Remove relation atom" : I[Relation] - (declaredIn;I[Pattern];declaredIn~\/declaredIn;I[Context];declaredIn~) |- -V
+    MEANING "A relation without declaration will be removed."
+    VIOLATION ( TXT "{EX} DelAtom;Relation;", SRC I )
+
+    ROLE User MAINTAINS "self-sustained rules"
+    RULE "self-sustained rules" : usedIn;formalExpression~;allRules~ |- declaredIn[Relation*Pattern]
+    MEANING "A relation that is used in a rule, which is declared in a pattern, must be declared in that same pattern."
+
+ENDPATTERN
+
+PATTERN Specialization
+--    VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*Identifier]-} , TXT " ISA " , gengen;name{-[Concept*Identifier]-} )
+--    RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
+--    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
+-- HJO, 20160906: Disabled above rule and view, because a generalisation can currently have more than one generic concepts (CLASSIFY A IS B /\ C )
+    RELATION gengen[Gen*Concept] [TOT]
+    MEANING "A generalization rule refers to one or more generic concepts."
+    RELATION genspc[Gen*Concept] [TOT]
+    MEANING "A generalization rule refers to one or more specific concepts."
+
+--PURPOSE RULE specialization
+--{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
+--If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
+---}
+--RELATION instanceOf[Atom*Concept] [TOT] 
+--RULE specialization : instanceOf;genspc~;gengen |- instanceOf
+--MEANING "Every instance of a specialized concept is an instance of the generic concept too."
+
 ENDPATTERN
 
 ENDCONTEXT

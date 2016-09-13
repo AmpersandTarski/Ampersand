@@ -1,5 +1,5 @@
-﻿CONTEXT AST IN ENGLISH 
-INCLUDE "Atoms.adl"
+CONTEXT AST IN ENGLISH 
+INCLUDE "Concepts.adl"
 INCLUDE "Atoms.xlsx"
 
 REPRESENT Atom TYPE ALPHANUMERIC
@@ -35,7 +35,7 @@ TABS[ relations : V[SESSION*Relation]
     ]
 
 VIEW Concept : Concept(name)
-VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
+VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
@@ -44,10 +44,10 @@ ROWS [ name             : name
      , specializations  : isa~
      ]
 
-INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
 ROWS [ "relation(s)"  : in
-     , l              : l
-     , r              : r
+     , lAtom          : lAtom
+     , rAtom          : rAtom
      ]
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
@@ -55,5 +55,37 @@ ROWS [ name    : name
      , source  : source
      , target  : target
      ]
+
+--VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
+--
+--INTERFACE Atom(repr) : I[Atom]
+--ROWS [ repr : repr
+--     , pop  : pop
+--     ]
+--
+--VIEW Concept : Concept(name)
+--
+--INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
+--ROWS [ name             : name
+--     , generalizations  : isa
+--     , specializations  : isa~
+--     ]
+--
+--VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
+--
+--INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
+--ROWS [ pair           : I
+--     , lAtom          : lAtom
+--     , rAtom          : rAtom
+--     , "relation(s)"  : in
+--     ]
+--
+--VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
+--
+--INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
+--ROWS [ name    : name
+--     , source  : source
+--     , target  : target
+--     ]
 
 ENDCONTEXT

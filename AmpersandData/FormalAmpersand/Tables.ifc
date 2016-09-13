@@ -65,7 +65,7 @@ TABS[ relations : V[SESSION*Relation] CRUD
     ]
 
 VIEW Concept : Concept(name)
-VIEW Pair : Pair(TXT "(",l,TXT ",",r,TXT ")")
+VIEW Pair : Pair(TXT "(",lAtom,TXT ",",rAtom,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept] CRUD
@@ -74,10 +74,10 @@ ROWS [ name             : name
      , specializations  : isa~
      ]
 
-INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair] CRUD
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair] CRUD
 ROWS [ "relation(s)"  : in
-     , l              : l
-     , r              : r
+     , lAtom          : lAtom
+     , rAtom          : rAtom
      ]
 
 INTERFACE RelTable(name[Relation*Identifier],source,target) : I[Relation] CRUD

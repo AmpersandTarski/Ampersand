@@ -13,13 +13,13 @@ data Settings = Settings
   } deriving (Generic, Show)
 instance ToJSON Settings where
   toJSON = amp2Jason
-instance JSON FSpec Settings where
- fromAmpersand fSpec _ = Settings 
+instance JSON MultiFSpecs Settings where
+ fromAmpersand multi _ = Settings 
   { sngJSONversionInfo   = ampersandVersionStr
   , sngJSONcontextName   = Text.unpack (fsName fSpec)
-  , sngJSONmysqlSettings = fromAmpersand fSpec fSpec
+  , sngJSONmysqlSettings = fromAmpersand multi multi
   } 
-
+   where fSpec = userFSpec multi
 
 data MySQLSettings = MySQLSettings
   { msqlJSONdbHost :: String
@@ -30,11 +30,12 @@ data MySQLSettings = MySQLSettings
   } deriving (Generic, Show)
 instance ToJSON MySQLSettings where
   toJSON = amp2Jason
-instance JSON FSpec MySQLSettings where
- fromAmpersand fSpec _ = MySQLSettings 
-  { msqlJSONdbHost = sqlHost  . getOpts $ fSpec
-  , msqlJSONdbName = dbName   . getOpts $ fSpec
-  , msqlJSONdbUser = sqlLogin . getOpts $ fSpec
-  , msqlJSONdbPass = sqlPwd   . getOpts $ fSpec
+instance JSON MultiFSpecs MySQLSettings where
+ fromAmpersand multi _ = MySQLSettings 
+  { msqlJSONdbHost = sqlHost  opts
+  , msqlJSONdbName = dbName   opts
+  , msqlJSONdbUser = sqlLogin opts
+  , msqlJSONdbPass = sqlPwd   opts
   , msqlJSONdbsignalTableName = "__all_signals__"
   }
+   where opts = getOpts $ userFSpec multi

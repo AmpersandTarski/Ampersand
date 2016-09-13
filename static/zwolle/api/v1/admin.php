@@ -54,7 +54,7 @@ $app->get('/admin/export/all', function () use ($app){
                      .'$allLinks = ' . var_export($allLinks, true) . ';' .PHP_EOL
                      .'?>';
     
-    file_put_contents(Config::get('logPath') . "/export-" . date('Y-m-d_H-i-s') . ".php", $strFileContent);
+    file_put_contents(Config::get('absolutePath') . Config::get('logPath') . "export-" . date('Y-m-d_H-i-s') . ".php", $strFileContent);
 });
 
 $app->get('/admin/import', function () use ($app){
@@ -64,7 +64,7 @@ $app->get('/admin/import', function () use ($app){
     
     $database = Database::singleton();
     
-    include_once (Config::get('logPath') . "/{$file}");
+    include_once (Config::get('absolutePath') . Config::get('logPath') . "{$file}");
     
     // check if all concepts and relations are defined
     foreach((array)$allAtoms as $cpt => $atoms) if(!empty($atoms)) Concept::getConcept($cpt);

@@ -1,5 +1,5 @@
 module Ampersand.FSpec.ToFSpec.CreateFspec
-  (createFSpec)
+  (createMulti)
 
 where
 import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
@@ -26,61 +26,49 @@ import Control.Monad
 --   This metamodel is populated with the result of grinding userP_Ctx, being populationPctx.
 --   Grinding means to analyse the script down to the binary relations that constitute the metamodel.
 --   The combination of model and populated metamodel results in the Guarded FSpec,
---   which is the result of createFSpec.
-createFSpec :: Options  -- ^The options derived from the command line
-            -> IO(Guarded FSpec)
-createFSpec opts =
-  do userP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     let fsp = pCtx2Fspec userP_Ctx
-     genFiles fsp >> genTables fsp userP_Ctx
+--   which is the result of createMulti.
+createMulti :: Options  -- ^The options derived from the command line
+            -> IO(Guarded MultiFSpecs)
+createMulti opts =
+  do userP_Ctx <- parseADL opts (fileName opts)     -- the P_Context of the user's sourceFile
+     let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
+     when (genMetaFile opts) (dumpMetaFile gFSpec)
+     if genMetaTables opts || genRap
+     then do rapP_Ctx <- parseMeta opts             -- the P_Context of the formalAmpersand metamodel
+             let gGrinded = join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+             let metaPopFSpec = pCtx2Fspec gGrinded
+             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, rapP_Ctx]
+     else    return $ mkMulti <$> pure Nothing <*> gFSpec
    where
-    genFiles :: Guarded FSpec -> IO(Guarded ())
-    genFiles fsp
-      = case fsp of
-          Errors es -> return(Errors es)
-          Checked uFspec
-            ->   when (genASTFile opts) (doGenMetaFile uFspec)
-              >> return (Checked ())
+    genRap = genRapPopulationOnly opts
+    mkMulti :: Maybe FSpec -> FSpec -> MultiFSpecs
+    mkMulti y x = MultiFSpecs
+               { userFSpec = x
+               , metaFSpec = y
+               }
+    dumpMetaFile :: Guarded FSpec -> IO()
+    dumpMetaFile a = case a of
+              Checked fSpec -> let (filePath,metaContents) = makeMetaPopulationFile fSpec 
+                               in writeMetaFile (filePath,metaContents)
+              _ -> return ()
+    writeMetaFile :: (FilePath,String) -> IO ()
+    writeMetaFile (filePath,metaContents) = do
+        verboseLn opts ("Generating meta file in path "++dirOutput opts)
+        writeFile (dirOutput opts </> filePath) metaContents      
+        verboseLn opts ("\""++filePath++"\" written")
 
-    genTables :: Guarded FSpec -> Guarded P_Context -> IO(Guarded FSpec)
-    genTables fsp uCtx = case genASTTables opts of
-       False
-         -> return fsp
-       True
-         -> do rapP_Ctx <- parseMeta opts -- the P_Context of the
-               let populationPctx       = join ( grind <$> fsp)
-                   populatedRapPctx     = merge.sequenceA $ [rapP_Ctx,populationPctx]
-                   metaPopulatedRapPctx = populatedRapPctx
-                   allCombinedPctx      = merge.sequenceA $ [uCtx, metaPopulatedRapPctx]
-               return $ pCtx2Fspec allCombinedPctx -- the RAP specification that is populated with the user's 'things' is returned.
-
-
-
-    toFspec :: A_Context -> Guarded FSpec
-    toFspec = pure . makeFSpec opts
+    combineAll :: [Guarded P_Context] -> Guarded FSpec
+    combineAll = pCtx2Fspec . merge . sequenceA
+         
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
-    pCtx2Fspec c = join $ toFspec <$> (join $ pCtx2aCtx opts <$> c)
+    pCtx2Fspec c = makeFSpec opts <$> join (pCtx2aCtx opts <$> c)
     merge :: Guarded [P_Context] -> Guarded P_Context
-    merge ctxs = fmap f ctxs
+    merge ctxs = f <$> ctxs
       where
        f []     = fatal 77 $ "merge must not be applied to an empty list"
        f (c:cs) = foldr mergeContexts c cs
     grind :: FSpec -> Guarded P_Context
-    grind fSpec
-      = fmap fstIfNoIncludes $ parseCtx f c
-      where (f,c) = makeMetaPopulationFile fSpec
-            fstIfNoIncludes (a,includes)
-             = case includes of
-               [] -> a
-               _  -> fatal 83 "Meatgrinder returns included file. That isn't anticipated."
-
-
-
-doGenMetaFile :: FSpec -> IO()
-doGenMetaFile fSpec =
- do { verboseLn (getOpts fSpec) $ "Generating meta file for "++name fSpec
-    ; writeFile outputFile contents
-    ; verboseLn (getOpts fSpec) $ "Meatgrinder output written into " ++ outputFile ++ ""
-    }
- where outputFile = combine (dirOutput (getOpts fSpec)) $ fpath
-       (fpath,contents) = makeMetaPopulationFile fSpec
+    grind fSpec = f <$> uncurry parseCtx (makeMetaPopulationFile fSpec)
+      where
+       f (a,[]) = a
+       f _      = fatal 83 "Meatgrinder returns included file. That isn't anticipated."

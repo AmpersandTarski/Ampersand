@@ -12,7 +12,7 @@ module Ampersand.Output.ToJSON.JSONutils
   )
 where
 import Data.Aeson
-import Data.Aeson.Types
+import qualified Data.Aeson.Types as AT 
 import Data.List
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder)
@@ -27,21 +27,21 @@ import Prelude hiding (writeFile)
 import GHC.Generics
 import Data.Aeson.Encode.Pretty
 
-writeJSONFile :: ToJSON a => FSpec -> FilePath -> a -> IO()
-writeJSONFile fSpec fName x 
-  = do verboseLn (getOpts fSpec) ("  Generating "++file)
+writeJSONFile :: ToJSON a => Options -> FilePath -> a -> IO()
+writeJSONFile opts fName x 
+  = do verboseLn opts ("  Generating "++file)
        createDirectoryIfMissing True (takeDirectory fullFile)
        BS.writeFile fullFile (encodePretty x)
   where file = fName <.> "json"
-        fullFile = getGenericsDir fSpec </> file
+        fullFile = getGenericsDir opts </> file
 
 class (GToJSON (Rep b), Generic b) => JSON a b | b -> a where
-  fromAmpersand :: FSpec -> a -> b
+  fromAmpersand :: MultiFSpecs -> a -> b
   amp2Jason :: b -> Value
   amp2Jason = genericToJSON ampersandDefault
 
-ampersandDefault :: Data.Aeson.Types.Options
-ampersandDefault = defaultOptions {fieldLabelModifier = stripLabel}
+ampersandDefault :: AT.Options
+ampersandDefault = defaultOptions {AT.fieldLabelModifier = stripLabel}
   where stripLabel str 
           = case filter (isPrefixOf pfx) (tails str) of
                 [] -> fatal 71 $ "Label at Haskell side must contain `JSON`: "++str

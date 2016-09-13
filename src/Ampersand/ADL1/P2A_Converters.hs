@@ -388,9 +388,14 @@ pCtx2aCtx opts
     -- story about genRules and genLattice
     -- the genRules is a list of equalities between concept sets, in which every set is interpreted as a conjunction of concepts
     -- the genLattice is the resulting optimized structure
-    genRules = [ ( Set.singleton (pConcToType (gen_spc x)), Set.fromList (map pConcToType (gen_concs x)))
+    genRules :: [(Set.Set Type, Set.Set Type)]
+    genRules = [ ( Set.singleton (pConcToType (gen_spc x)), Set.fromList (map pConcToType (gen_generics x)))
                | x <- allGens
                ]
+      where
+        gen_generics :: P_Gen -> [P_Concept]
+        gen_generics (P_Cy {gen_rhs=x}) = x
+        gen_generics (PGen {gen_gen=x,gen_spc=y}) = [x,y]
 
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )

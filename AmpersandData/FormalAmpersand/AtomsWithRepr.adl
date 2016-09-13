@@ -35,7 +35,7 @@ TABS[ relations : V[SESSION*Relation]
 
 VIEW Atom : Atom(repr)  -- When observing an atom, its representation is what you can see.
 VIEW Concept : Concept(name)
-VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
+VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
 VIEW Relation : Relation(name,TXT "[",source;name,TXT "*",target;name,TXT "]")
 
 INTERFACE Concept(name[Concept*Identifier],isa) : I[Concept]
@@ -46,8 +46,8 @@ ROWS [ name             : name
 
 INTERFACE Pair(lRepr,rRepr,in[Pair*Relation]) : I[Pair]
 ROWS [ "relation(s)"  : in
-     , l              : lRepr
-     , r              : rRepr
+     , lRepr          : lRepr
+     , rRepr          : rRepr
      ]
 
 INTERFACE Relation(name[Relation*Identifier],source,target) : I[Relation]
@@ -109,32 +109,32 @@ VIOLATION (TXT "{EX} DelPair;targets;Relation;", SRC I, TXT ";Concept;", TGT I)
 
 RELATION in[Pair*Relation] [UNI]
 RELATION lRepr[Pair*Representation] [UNI]
-RELATION l[Pair*Atom] [UNI]
-RULE "select left atom"  : in;source;pop~/\lRepr;repr~ |- l
-VIOLATION (TXT "{EX} InsPair;l;Pair;", SRC I, TXT ";Atom;", TGT I)
-RULE "create left atom"  : in;source;V /\ lRepr;V - (lRepr;repr~/\in;source;pop~) |- l
+RELATION lAtom[Pair*Atom] [UNI]
+RULE "select left atom"  : in;source;pop~/\lRepr;repr~ |- lAtom
+VIOLATION (TXT "{EX} InsPair;lAtom;Pair;", SRC I, TXT ";Atom;", TGT I)
+RULE "create left atom"  : in;source;V /\ lRepr;V - (lRepr;repr~/\in;source;pop~) |- lAtom
 VIOLATION ( TXT "{EX} NewStruct;Atom"
-          , TXT ";l;Pair;", SRC I, TXT ";Atom;_NEW"
+          , TXT ";lAtom;Pair;", SRC I, TXT ";Atom;_NEW"
           , TXT ";repr;Atom;_NEW;Representation;", SRC lRepr
           )
 ROLE ExecEngine MAINTAINS "select left atom", "create left atom"
 
 RELATION rRepr[Pair*Representation] [UNI]
-RELATION r[Pair*Atom] [UNI]
-RULE "select right atom"  : in;target;pop~/\rRepr;repr~ |- r
-VIOLATION (TXT "{EX} InsPair;r;Pair;", SRC I, TXT ";Atom;", TGT I)
-RULE "create right atom"  : in;target;V /\ rRepr;V - (in;target;pop~/\rRepr;repr~) |- r
+RELATION rAtom[Pair*Atom] [UNI]
+RULE "select right atom"  : in;target;pop~/\rRepr;repr~ |- rAtom
+VIOLATION (TXT "{EX} InsPair;rAtom;Pair;", SRC I, TXT ";Atom;", TGT I)
+RULE "create right atom"  : in;target;V /\ rRepr;V - (in;target;pop~/\rRepr;repr~) |- rAtom
 VIOLATION ( TXT "{EX} NewStruct;Atom"
-          , TXT ";r;Pair;", SRC I, TXT ";Atom;_NEW"
+          , TXT ";rAtom;Pair;", SRC I, TXT ";Atom;_NEW"
           , TXT ";repr;Atom;_NEW;Representation;", SRC rRepr
           )
 ROLE ExecEngine MAINTAINS "select right atom", "create right atom"
 
 
 ROLE ExecEngine MAINTAINS insPop, delPop
-RULE insPop : l~;in;source;isaStar \/ r~;in;target;isaStar |- pop
+RULE insPop : lAtom~;in;source;isaStar \/ rAtom~;in;target;isaStar |- pop
 VIOLATION (TXT "{EX} InsPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
-RULE delPop : pop |- l~;in;source;isaStar \/ r~;in;target;isaStar
+RULE delPop : pop |- lAtom~;in;source;isaStar \/ rAtom~;in;target;isaStar
 VIOLATION (TXT "{EX} DelPair;pop;Atom;", SRC I, TXT ";Concept;", TGT I)
 
 ENDPROCESS

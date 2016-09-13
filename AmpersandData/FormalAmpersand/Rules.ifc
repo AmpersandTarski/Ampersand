@@ -1,6 +1,6 @@
-﻿CONTEXT AST IN ENGLISH 
-INCLUDE "Atoms.adl"
-INCLUDE "Atoms.xlsx"
+CONTEXT AST IN ENGLISH 
+INCLUDE "Concepts.adl"
+--INCLUDE "Atoms.xlsx"
 
 INTERFACE Overview : '_SESSION'[SESSION]
 TABS[ atoms : V[SESSION*Atom]
@@ -33,7 +33,7 @@ TABS[ atoms : V[SESSION*Atom]
            , signature : sign
            , term : term[Rule*Expression]
            , meaning : rrmean
-           , purpose : rrpurpose
+           , purpose : purpose
            ]
     ]
 
@@ -52,12 +52,12 @@ ROWS [ name             : name
      , specializations  : isa~
      ]
 
-VIEW Pair : Pair(TXT "(",l;repr,TXT ",",r;repr,TXT ")")
+VIEW Pair : Pair(TXT "(",lAtom;repr,TXT ",",rAtom;repr,TXT ")")
 
-INTERFACE Pair(l,r,in[Pair*Relation]) : I[Pair]
+INTERFACE Pair(lAtom,rAtom,in[Pair*Relation]) : I[Pair]
 ROWS [ pair           : I
-     , l              : l
-     , r              : r
+     , lAtom          : lAtom
+     , rAtom          : rAtom
      , "relation(s)"  : in
      ]
 
