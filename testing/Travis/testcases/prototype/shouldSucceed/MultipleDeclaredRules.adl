@@ -5,13 +5,15 @@ There is also a propertyrule created because of the UNI. Hence, a (property)rule
 -}
 
 RELATION r[A*B][UNI]
-
+RULE dummy : r |- r
 PATTERN Foo
   RELATION r[A*B][UNI]
+  RULE dummy : r |- r
 ENDPATTERN
 
 PATTERN Bar
   RELATION r[A*B][UNI]
+  RULE dummy : r |- r
 ENDPATTERN
 
 ENDCONTEXT

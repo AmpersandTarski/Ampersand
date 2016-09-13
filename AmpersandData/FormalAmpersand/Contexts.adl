@@ -157,10 +157,10 @@ PATTERN Patterns
     REPRESENT PatternIdentifier TYPE ALPHANUMERIC
     RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
     MEANING "The name of a pattern."
-    RELATION udefrules[Rule*Pattern] [UNI]      -- ^ all rules the user has declared within this pattern including the patterns it contains,
+    RELATION udefrules[Rule*Pattern] []         -- ^ all rules the user has declared within this pattern including the patterns it contains,
                                                 --   which are not multiplicity- and not identity rules. See ViewPoint.hs
-    RELATION multrules[Rule*Pattern] [UNI]      -- ^ all multiplicityrules the user has declared within this pattern including the patterns it contains.
-    RELATION identityRules[Rule*Pattern] [UNI]  -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
+    RELATION multrules[Rule*Pattern] []         -- ^ all multiplicityrules the user has declared within a pattern.
+    RELATION identityRules[Rule*Pattern] []     -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
     RELATION allRules[Pattern*Rule]        -- This contains all rules declared inside a pattern. This contains all rules declared inside a pattern including the patterns it contains.
     MEANING "The user-defined rules in a pattern."
     RELATION declaredIn[Relation*Pattern]  -- comes from class Language. This contains all relations declared inside a pattern.
