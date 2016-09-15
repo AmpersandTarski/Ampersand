@@ -75,7 +75,7 @@ instance JSON Declaration PairsOfRelation where
      where ftl = fatal 88 "There is no grinded fSpec."
 instance JSON AAtomPair JPair where
   fromAmpersand _ p = JPair
-    { prJSONsrc = showValPHP . apLeft $ p 
-    , prJSONtgt = showValPHP . apRight $ p
+    { prJSONsrc = Text.pack . showValADL . apLeft $ p 
+    , prJSONtgt = Text.pack . showValADL . apRight $ p
     }
 
