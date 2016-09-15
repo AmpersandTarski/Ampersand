@@ -11,7 +11,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , RuleOrigin(..)
- , Declaration(..)
+ , Declaration(..), showDcl
  , IdentityDef(..)
  , IdentitySegment(..)
  , ViewDef(..)
@@ -266,6 +266,12 @@ instance Show Declaration where  -- For debugging purposes only (and fatal messa
 
   showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
   showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
+showDcl :: Bool -> Declaration -> String
+showDcl forceBoth dcl = name dcl++"["++cpts++"]"
+  where 
+    cpts
+     | forceBoth || source dcl /= target dcl = show (source dcl) ++ "*"++ show (target dcl)
+     | otherwise                             = show (source dcl)
 
 aMarkup2String :: PandocFormat -> A_Markup -> String
 aMarkup2String fmt a = blocks2String fmt False (amPandoc a)
