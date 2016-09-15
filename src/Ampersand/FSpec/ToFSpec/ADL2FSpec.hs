@@ -95,7 +95,11 @@ makeFSpec opts context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
-              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript
+              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
+              , atomsBySmallestConcept = \cpt -> map apLeft . pairsinexpr 
+                                               . foldr (.-.) (EDcI cpt) 
+                                               . map EDcI 
+                                               . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
               , allViolations  = [ (r,vs)
