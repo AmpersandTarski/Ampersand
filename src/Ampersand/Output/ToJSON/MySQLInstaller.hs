@@ -59,7 +59,7 @@ instance JSON MultiFSpecs MetaPopulation where
 instance JSON A_Concept AtomValuesOfConcept where
  fromAmpersand multi cpt = AtomValuesOfConcept
    { avcJSONconcept = Text.pack (name cpt)
-   , avcJSONatoms   = map showValPHP (atomsBySmallestConcept grindedFSpec cpt)
+   , avcJSONatoms   = map (Text.pack . showValADL) (atomsBySmallestConcept grindedFSpec cpt)
    }
   where 
    grindedFSpec = fromMaybe ftl (metaFSpec multi)
