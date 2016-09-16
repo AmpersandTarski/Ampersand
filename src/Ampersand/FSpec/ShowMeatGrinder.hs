@@ -236,7 +236,7 @@ instance MetaPopulations A_Concept where
    , Comment $ " Concept `"++name cpt++"` "
    , Pop "ttype" "Concept" "TType" [Uni,Tot]
              [(dirtyId ctx cpt, dirtyId ctx (cptTType fSpec cpt))] 
-   , Pop "name" "Concept" "ConceptName" [Uni,Tot,Sur]
+   , Pop "name" "Concept" "ConceptName" [Uni,Tot]
              [(dirtyId ctx cpt, (show . name) cpt)]
    ]++
    case cpt of

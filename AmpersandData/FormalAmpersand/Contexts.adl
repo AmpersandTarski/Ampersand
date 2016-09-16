@@ -32,7 +32,7 @@ PATTERN Context
     MEANING "The name of a context."
     RELATION name[Rule*RuleName] [UNI,TOT]
     REPRESENT RuleName TYPE ALPHANUMERIC
-    RELATION name[Concept*ConceptName] [UNI,TOT,SUR] 
+    RELATION name[Concept*ConceptName] [UNI,TOT] 
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     REPRESENT ConceptName TYPE ALPHANUMERIC
     RELATION gens[Context*Gen]
