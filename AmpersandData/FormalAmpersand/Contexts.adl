@@ -30,7 +30,6 @@ PATTERN Context
     REPRESENT ContextName TYPE ALPHANUMERIC
     RELATION name[Context*ContextName] [UNI,TOT,SUR]
     MEANING "The name of a context."
-    REPRESENT ContextName TYPE ALPHANUMERIC
     RELATION name[Rule*RuleName] [UNI,TOT]
     REPRESENT RuleName TYPE ALPHANUMERIC
     RELATION name[Concept*ConceptName] [UNI,TOT,SUR] 
