@@ -84,8 +84,8 @@ instance MetaPopulations A_Context where
     [Comment  " ", Comment $ "PATTERN Context: ('"++name ctx++"')"]
   ++[ Pop "versionInfo" "Context"  "AmpersandVersion" [Uni,Tot]
            [(dirtyId ctx ctx, show ampersandVersionStr)]
-    , Pop "name" "Context" "ContextIdentifier" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.ctxnm) ctx)]
+    , Pop "name" "Context" "ContextName" [Uni,Tot,Sur]
+           [(dirtyId ctx ctx, (show.name) ctx)]
   --  , Pop "location" "Context" "Location" [Uni,Tot]
   --         [(dirtyId ctx ctx, (show.showUnique.ctxpos) ctx)]
     , Pop "language" "Context" "Language" [Uni,Tot]
@@ -117,7 +117,7 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxks ctx]
     , Pop "allRoles" "Context" "Role" [Tot]
            [(dirtyId ctx ctx, show "SystemAdmin")]
-    , Pop "name"   "Role" "RoleName" [Uni,Tot]
+    , Pop "name"   "Role" "RoleName" [Uni,Tot,Sur]
            [(show "SystemAdmin", show "SystemAdmin")]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.patterns) ctx++")"]
@@ -147,7 +147,7 @@ instance MetaPopulations Pattern where
  metaPops fSpec pat =
     [ Comment " "
     , Comment $ " Pattern `"++name pat++"` "
-    , Pop "name"    "Pattern" "PatternIdentifier" [Uni,Tot]
+    , Pop "name"    "Pattern" "PatternName" [Uni,Tot,Sur]
            [(dirtyId ctx pat, (show.name) pat)]
     , Pop "udefrules" "Rule" "Pattern" []                         -- all rules the user has declared within this viewpoint,
                                      --   which are not multiplicity- and not identity rules. See ViewPoint.hs
@@ -236,8 +236,8 @@ instance MetaPopulations A_Concept where
    , Comment $ " Concept `"++name cpt++"` "
    , Pop "ttype" "Concept" "TType" [Uni,Tot]
              [(dirtyId ctx cpt, dirtyId ctx (cptTType fSpec cpt))] 
-   , Pop "name" "Concept" "Identifier" [Uni,Tot]
-             [(dirtyId ctx cpt, show . name $ cpt)]
+   , Pop "name" "Concept" "ConceptName" [Uni,Tot,Sur]
+             [(dirtyId ctx cpt, (show . name) cpt)]
    ]++
    case cpt of
      PlainConcept{} ->
@@ -333,7 +333,7 @@ instance MetaPopulations Role where
       [ Pop "allRoles" "Context" "Role" []
                  [(dirtyId ctx ctx, dirtyId ctx rol) ]
       , Pop "name" "Role" "RoleName" [Uni,Tot]
-                 [(dirtyId ctx rol, dirtyId ctx rol) ]
+                 [(dirtyId ctx rol, (show . name) rol) ]
       ]
    where
     ctx = originalContext fSpec
@@ -375,8 +375,8 @@ instance MetaPopulations Declaration where
       , Comment $ " Relation `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
       , Pop "context" "Relation" "Context" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx ctx)] 
-      , Pop "name" "Relation" "Identifier" [Uni,Tot]
-             [(dirtyId ctx dcl, (show.name) dcl)]
+      , Pop "name" "Relation" "RelationName" [Uni,Tot,Sur]
+             [(dirtyId ctx dcl, (show . name) dcl)]
 --      , Pop "srcCol" "Relation" "SqlAttribute" []
 --             [(dirtyId ctx dcl,dirtyId ctx (table,srcCol))]
 --      , Pop "tgtCol" "Relation" "SqlAttribute" []
@@ -407,8 +407,8 @@ but I'm not sure why. -}
              [(dirtyId ctx dcl,dirtyId ctx (sign dcl))]
       , Pop "context" "Relation" "Context" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx ctx)]
-      , Pop "name" "Relation" "Identifier" [Uni,Tot]
-             [(dirtyId ctx dcl, (show.name) dcl)]
+      , Pop "name" "Relation" "RelationName" [Uni,Tot,Sur]
+             [(dirtyId ctx dcl, (show . name) dcl)]
       , Pop "source" "Relation" "Concept" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx (source dcl))]
       , Pop "target" "Relation" "Concept" [Uni,Tot]
@@ -547,7 +547,7 @@ instance MetaPopulations Rule where
  metaPops fSpec rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "name"  "Rule" "RuleID" [Uni,Tot]
+      , Pop "name"  "Rule" "RuleName" [Uni,Tot,Sur]
              [(dirtyId ctx rul, (show.name) rul)]
   --    , Pop "ruleAdl"  "Rule" "Adl" [Uni,Tot]
   --           [(dirtyId ctx rul, (show.showADL.rrexp) rul)]
