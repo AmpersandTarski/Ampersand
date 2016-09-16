@@ -2,6 +2,8 @@ CONTEXT AST IN ENGLISH
 
 PATTERN Concepts
     RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
+    
+
     RELATION name[Relation*RelationName] [UNI,TOT]
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     RELATION source[Relation*Concept] [UNI,TOT]
@@ -9,6 +11,7 @@ PATTERN Concepts
 
     REPRESENT ConceptName,RelationName TYPE ALPHANUMERIC
 ENDPATTERN
+VIEW Concept: Concept(name[Concept*ConceptName])
 
 --    RULE "Identifiability of concepts": name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 

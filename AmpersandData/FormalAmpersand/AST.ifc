@@ -43,11 +43,11 @@ INTERFACE GenTree FOR Ampersand : I[Concept]
     , "Kinds" : gengen[Gen*Concept]~;genspc[Gen*Concept] LINKTO INTERFACE GenTree
     ] 
 INTERFACE Pattern FOR Ampersand : I[Pattern]
-BOX [ Pattern : name[Pattern*PatternName]
-    , "patterns~" : context[Pattern*Context]
+BOX [ Pattern : name[Pattern*PatternName] cRud
+    , "context" : context[Pattern*Context] cRud
     , "Relations" : declaredIn[Relation*Pattern]~  LINKTO INTERFACE "Relation"
-    , "rules"  : allRules[Pattern*Rule]
-    , "purpose" : purpose[Pattern*Purpose]
+    , "rules"  : allRules[Pattern*Rule] cRud
+    , "purpose" : purpose[Pattern*Purpose] cRud
     ]
 
 INTERFACE "Rule" FOR Ampersand : I[Rule]
