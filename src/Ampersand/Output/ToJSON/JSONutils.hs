@@ -19,7 +19,6 @@ import Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broa
 import Ampersand.Misc
 import Ampersand.Basics
 import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree
 import System.FilePath
 import System.Directory
 import qualified Data.ByteString.Lazy as BS
