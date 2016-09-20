@@ -97,8 +97,8 @@ makeFSpec opts context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
               , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
               , atomsBySmallestConcept = \cpt -> map apLeft . pairsinexpr 
-                                               . foldr (.-.) (EDcI cpt) 
-                                               . map EDcI 
+                                               . foldl (.-.) (EDcI cpt) 
+                                               . map (handleType cpt)
                                                . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
@@ -121,6 +121,8 @@ makeFSpec opts context
      getLargestConcept cpt = case largerConcepts (gens context) cpt of
                               [] -> cpt
                               x:_ -> getLargestConcept x
+     handleType :: A_Concept -> A_Concept -> Expression
+     handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
      fMaintains' :: Role -> [Rule]
      fMaintains' role = nub [ rule 
                             | rule <- allrules
