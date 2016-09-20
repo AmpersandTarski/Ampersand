@@ -34,12 +34,18 @@ createMulti opts =
      let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
      when (genMetaFile opts) (dumpMetaFile gFSpec)
      if genMetaTables opts || genRap
-     then do rapP_Ctx <- parseMeta opts             -- the P_Context of the formalAmpersand metamodel
-             let gGrinded = join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+     then do fAmpP_Ctx <- parseMeta opts             -- the P_Context of the formalAmpersand metamodel
+             let gGrinded :: Guarded P_Context
+                 gGrinded = addGens <$> fAmpP_Ctx <*> join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
              let metaPopFSpec = pCtx2Fspec gGrinded
-             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, rapP_Ctx]
+             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, fAmpP_Ctx]
      else    return $ mkMulti <$> pure Nothing <*> gFSpec
    where
+    -- The gens from FromalAmpersand must be available in the result of grinded 
+    addGens :: P_Context -> P_Context -> P_Context
+    addGens fa grinded = grinded{ctx_gs=gs fa++gs grinded}
+     where
+      gs pCtx = ctx_gs pCtx ++ concatMap pt_gns (ctx_pats pCtx)
     genRap = genRapPopulationOnly opts
     mkMulti :: Maybe FSpec -> FSpec -> MultiFSpecs
     mkMulti y x = MultiFSpecs
