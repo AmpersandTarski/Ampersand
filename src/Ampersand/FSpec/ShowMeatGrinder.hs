@@ -642,7 +642,7 @@ instance AdlId Prop
 instance AdlId Expression
   where dirtyId ctx (EEps _ e') = dirtyId ctx e'
         dirtyId ctx (EBrk e') = dirtyId ctx e'
-        dirtyId _ e  = show . show . abs . hash . camelCase . uniqueShow True $ e -- Need to hash, because otherwise too long (>255)
+        dirtyId _ e = show $ take 150 (showADL e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
 instance AdlId BinOp
 instance AdlId UnaryOp
 instance AdlId A_Context
