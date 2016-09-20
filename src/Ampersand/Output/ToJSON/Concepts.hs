@@ -21,6 +21,7 @@ data Concept = Concept
   , cptJSONinterfaces        :: [String]
   , cptJSONdefaultViewId     :: Maybe String 
   , cptJSONconceptTable      :: TableCols
+  , cptJSONlargestConcept    :: String
   } deriving (Generic, Show)
 data TableCols = TableCols
   { tclJSONname              :: String
@@ -64,6 +65,7 @@ instance JSON A_Concept Concept where
   , cptJSONinterfaces        = map name . filter hasAsSourceCpt . interfaceS $ fSpec
   , cptJSONdefaultViewId     = fmap name . getDefaultViewForConcept fSpec $ cpt
   , cptJSONconceptTable = fromAmpersand multi cpt
+  , cptJSONlargestConcept = escapeIdentifier . name . largestConcept fSpec $ cpt
   } 
   where
     fSpec = userFSpec multi

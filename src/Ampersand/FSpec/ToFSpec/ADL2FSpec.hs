@@ -113,10 +113,14 @@ makeFSpec opts context
               , fcontextInfo = contextinfo
               , ftypologies   = typologies context
               , typologyOf = typologyOf'
+              , largestConcept = getLargestConcept 
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
               }
    where           
+     getLargestConcept cpt = case largerConcepts (gens context) cpt of
+                              [] -> cpt
+                              x:_ -> getLargestConcept x
      fMaintains' :: Role -> [Rule]
      fMaintains' role = nub [ rule 
                             | rule <- allrules
