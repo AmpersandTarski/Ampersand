@@ -345,6 +345,8 @@ class Concept {
 	 * @return string
 	 */
 	public function createNewAtomId(){
+        static $prevTime = null;
+        
 	    if(strpos($this->name, '_AI') !== false && $this->isInteger()){
 	        $firstCol = current($this->mysqlConceptTable->getCols());
 	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
@@ -355,8 +357,14 @@ class Concept {
 	        else $atomId = $result[0] + 1;
 	
 	    }else{
-	        $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-	        $atomId = $this->name.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds
+            $now = explode(' ', microTime()); // yields ["microseconds", "seconds"] both in seconds, e.g. ["0.85629400", "1322761879"]
+            $time = $now[1] . substr($now[0], 2,6); // we drop the leading "0." and trailing "00"  from the microseconds
+            
+            // Guarantee that time is increased
+            if($time <= $prevTime) $time = ++$prevTime; 
+            else $prevTime = $time;
+            
+            $atomId = $this->name . '_' . $time;
 	    }
 	    return $atomId;
 	}
