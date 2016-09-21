@@ -30,6 +30,7 @@ import Control.Monad
 import Data.Char hiding    (Space)
 import Data.List
 import Data.Maybe
+import Data.Typeable
 import Ampersand.ADL1
 import Ampersand.Basics hiding (hPutStrLn)
 import Ampersand.Core.AbstractSyntaxTree
@@ -320,14 +321,15 @@ data Chapter = Intro
 
 
 ------ Symbolic referencing to a chapter/section. ---------------------------------
-class Xreferenceble a where
+class Typeable a => Xreferenceble a where
   xLabel :: a  -> String
   xRef :: FSpec -> a -> Inlines
   xDefBlck :: FSpec -> a -> Blocks
-  --xDefBlck _ a = fatal 310 $ "This thing cannot be labeld in <Blocks>." ++ --you should use xDefInln instead. One of both must be defined.
+  xDefBlck _ a = fatal 310 $ "A "++show (typeOf a)++" cannot be labeld in <Blocks>." --you should use xDefInln instead.
   xDefInln :: FSpec -> a -> Inlines
-  --xDefInln _ a = fatal 312 $ "This thing cannot be labeld in an <Inlines>." --you should use xDefBlck instead. One of both must be defined.
-     
+  xDefInln _ a = fatal 312 $ "A "++show (typeOf a)++" cannot be labeld in an <Inlines>." --you should use xDefBlck instead.
+  {-# MINIMAL xLabel, xRef, (xDefBlck | xDefInln) #-}
+
 instance Xreferenceble Chapter where
   xLabel = show
   xRef fSpec a = citeGen "sec:" [xLabel a]
@@ -786,8 +788,8 @@ newGlossaryEntry nm cnt =
      "     , description={"++latexEscShw (cnt)++"}}\n")
 
 texOnly_marginNote :: String -> String
-texOnly_marginNote note = 
-   "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "++note++"}\\end{minipage}}"
+texOnly_marginNote mgn = 
+   "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "++mgn++"}\\end{minipage}}"
 
 -------------------------------------------------
 ---temporary from Pandoc:
@@ -884,10 +886,4 @@ extractMsg log' = do
   if null msg'
      then log'
      else BC.unlines (msg'' ++ lineno)
-
--- This will be included in directory-1.2.5.0 : 
-listDirectory :: FilePath -> IO [FilePath]
-listDirectory path =
-  (filter f) <$> (getDirectoryContents path)
-  where f filename = filename /= "." && filename /= ".."
 

@@ -117,11 +117,11 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
     fspec2Blocks SharedLang            = (chpNatLangReqs          0 fSpec, [])
     fspec2Blocks Diagnosis             = chpDiagnosis               fSpec
     fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis    0 fSpec
-    fspec2Blocks ProcessAnalysis       = (chpProcessAnalysis      0 fSpec, [])
+    fspec2Blocks ProcessAnalysis       = (chpProcessAnalysis        fSpec, [])
     fspec2Blocks DataAnalysis          = chpDataAnalysis            fSpec
     fspec2Blocks SoftwareMetrics       = (fpAnalysis                fSpec, [])
     fspec2Blocks EcaRules              = (chpECArules               fSpec, [])
-    fspec2Blocks Interfaces            = (chpInterfacesBlocks     0 fSpec, [])
+    fspec2Blocks Interfaces            = (chpInterfacesBlocks       fSpec, [])
     fspec2Blocks FunctionPointAnalysis = (chpFunctionPointAnalysis  fSpec, [])
     fspec2Blocks Glossary              = (chpGlossary             0 fSpec, [])
 

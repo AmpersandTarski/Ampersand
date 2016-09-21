@@ -16,7 +16,6 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Ampersand.Classes
     , Chapter(..)
     , chaptersInDoc
-    , chptTitle
     , Xreferenceble(..)
   --  , showImage
     , canXRefer
@@ -50,7 +49,6 @@ import Data.Monoid
 import Data.Maybe
 import Data.Ord
 import qualified Data.Time.Format as DTF
-import System.FilePath
 import GHC.Exts(sortWith)
 import Ampersand.Graphic.Graphics
 import Ampersand.Classes()

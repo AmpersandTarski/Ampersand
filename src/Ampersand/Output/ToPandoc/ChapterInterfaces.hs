@@ -11,8 +11,8 @@ import Ampersand.FSpec.FPA
 import Ampersand.Output.PandocAux
 import Ampersand.Output.ToPandoc.SharedAmongChapters
 
-chpInterfacesBlocks :: Int -> FSpec -> Blocks
-chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
+chpInterfacesBlocks :: FSpec -> Blocks
+chpInterfacesBlocks fSpec = 
      --  *** Header ***
       xDefBlck fSpec Interfaces
    <> (mconcat $ map interfaceChap regularInterfaces)

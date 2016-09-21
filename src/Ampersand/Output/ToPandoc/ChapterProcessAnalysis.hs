@@ -12,8 +12,8 @@ import Data.List
 noProcesses :: FSpec -> Bool
 noProcesses fSpec = null (fRoles fSpec)
 
-chpProcessAnalysis :: Int -> FSpec -> Blocks
-chpProcessAnalysis lev fSpec
+chpProcessAnalysis :: FSpec -> Blocks
+chpProcessAnalysis fSpec
  = if null procs
    then mempty
    else headerBlocks <> roleRuleBlocks <> fromList roleRelationBlocks <> processSections
