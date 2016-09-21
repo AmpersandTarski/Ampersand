@@ -482,7 +482,7 @@ pCtx2aCtx opts
                      , genspc = pCpt2aCpt (gen_spc pg)
                      }
 
-    castSign :: (?loc :: CallStack) => A_Concept -> A_Concept -> Signature
+    castSign :: A_Concept -> A_Concept -> Signature
     castSign = Sign
 
     leastConcept :: A_Concept -> A_Concept -> A_Concept

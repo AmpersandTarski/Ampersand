@@ -2,9 +2,9 @@ CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Rules.doc
 
 PATTERN Rules
-IDENT Rule: Rule(name[Rule*RuleID])
-REPRESENT RuleID TYPE ALPHANUMERIC
-RELATION name[Rule*RuleID] [UNI,TOT,INJ]
+VIEW Rule: Rule(name[Rule*RuleName])
+REPRESENT RuleName TYPE ALPHANUMERIC
+RELATION name[Rule*RuleName] [UNI,TOT]
 MEANING "The name of a rule."
 RELATION sign[Rule*Signature] [UNI,TOT]
 RELATION formalExpression[Rule*Expression] [UNI,TOT]

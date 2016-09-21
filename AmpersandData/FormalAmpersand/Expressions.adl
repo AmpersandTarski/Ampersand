@@ -14,7 +14,7 @@ PROCESS "Expression definitions"
     VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Expression], TXT " = ", second[BinaryTerm*Expression])
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first[BinaryTerm*Expression], TXT " |- ", second[BinaryTerm*Expression])
   --  VIEW Truth              : Truth      (TXT "RULE ", I[Expression])
-    VIEW Relation           : Relation(name[Relation*Identifier], TXT "[", source[Relation*Concept];name[Concept*Identifier], TXT "*", target[Relation*Concept];name[Concept*Identifier], TXT "]")
+    VIEW Relation           : Relation(name[Relation*RelationName], TXT "[", source[Relation*Concept];name[Concept*ConceptName], TXT "*", target[Relation*Concept];name[Concept*ConceptName], TXT "]")
     VIEW UnaryMinus         : UnaryMinus(TXT "-", arg[UnaryTerm*Expression])
     VIEW Converse           : Converse  (arg[UnaryTerm*Expression], TXT "~")
     VIEW KleeneStar         : KleeneStar(arg[UnaryTerm*Expression], TXT "*")

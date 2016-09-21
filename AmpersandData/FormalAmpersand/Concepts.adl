@@ -1,16 +1,19 @@
 CONTEXT AST IN ENGLISH 
 
 PATTERN Concepts
-    RELATION name[Concept*Identifier] [UNI,TOT]
-    RELATION name[Relation*Identifier] [UNI,TOT]
+    RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
+    
+
+    RELATION name[Relation*RelationName] [UNI,TOT]
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     RELATION source[Relation*Concept] [UNI,TOT]
     RELATION target[Relation*Concept] [UNI,TOT]
 
-    REPRESENT Identifier TYPE ALPHANUMERIC
+    REPRESENT ConceptName,RelationName TYPE ALPHANUMERIC
 ENDPATTERN
+VIEW Concept: Concept(name[Concept*ConceptName])
 
---    RULE "Identifiability of concepts": name[Concept*Identifier];name[Concept*Identifier]~ |- I[Concept]
+--    RULE "Identifiability of concepts": name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 
 PROCESS "Compute Closures"
     RELATION isa[Concept*Concept] [IRF,ASY]

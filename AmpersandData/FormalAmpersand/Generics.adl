@@ -16,7 +16,7 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 --    ();
 
 --[Rules]--
---IDENT Rules: Rule(ruleContext,ruleID)
+--HJO20160916: Dit zou moeten gelden: IDENT Rules: Rule(ctxrs[Context*Rule]~,name[Rule*RuleID])
 RELATION name[Rule*RuleID] [UNI,TOT,SUR] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
 RELATION ruleAdl[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[BusinessFunction]'
 REPRESENT Adl TYPE HUGEALPHANUMERIC
@@ -45,7 +45,8 @@ RELATION conjunct[Conjunct*Expression] [TOT]
 
 --[Roles]--
 
-IDENT Role : Role(name)
+VIEW Role : Role(name)
+-- TODO: IDENT: name and context
 RELATION allRoles[Context*Role] [SUR,INJ]
 RELATION name[Role*RoleName] [UNI,TOT]
 REPRESENT RoleName TYPE ALPHANUMERIC

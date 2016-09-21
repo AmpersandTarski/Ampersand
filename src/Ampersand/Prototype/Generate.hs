@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.Generate 
-  (generateDBstructQueries, generateAllDefPopQueries
+  (generateDBstructQueries, generateInitialPopQueries, generateMetaPopQueries
   )
 where
 
@@ -114,11 +114,10 @@ commentBlockSQL xs =
    map (\cmmnt -> "/* "<>cmmnt<>" */") $ hbar <> xs <> hbar
   where hbar = [replicate (maximum . map length $ xs) '-']
   
-generateAllDefPopQueries :: FSpec -> [Text.Text]
-generateAllDefPopQueries fSpec 
+generateInitialPopQueries :: FSpec -> [Text.Text]
+generateInitialPopQueries fSpec 
   = fillSignalTable (initialConjunctSignals fSpec) <>
-    populateTablesWithPops
-        
+    populateTablesWithPops False fSpec
   where
     fillSignalTable :: [(Conjunct, [AAtomPair])] -> [Text.Text]
     fillSignalTable [] = []
@@ -133,8 +132,11 @@ generateAllDefPopQueries fSpec
                   ]
             ]
        ]
-    populateTablesWithPops :: [Text.Text]
-    populateTablesWithPops =
+generateMetaPopQueries :: FSpec -> [Text.Text]
+generateMetaPopQueries = populateTablesWithPops True
+
+populateTablesWithPops :: Bool -> FSpec -> [Text.Text]
+populateTablesWithPops ignoreDoubles fSpec =
       concatMap populatePlug [p | InternalPlug p <- plugInfos fSpec]
       where
         populatePlug :: PlugSQL -> [Text.Text]
@@ -143,7 +145,8 @@ generateAllDefPopQueries fSpec
              []  -> []
              tblRecords 
                  -> [Text.unlines
-                       [ "INSERT INTO "<>Text.pack (show (name plug))
+                       [ "INSERT "<> (if ignoreDoubles then "IGNORE " else "") <>"INTO "
+                             <>Text.pack (show (name plug))
                        , "   ("<>Text.intercalate ", " (map (Text.pack . show . attName) (plugAttributes plug))<>") "
                        , "VALUES " <> Text.intercalate " , " 
                           [ "(" <>valuechain md<> ")" | md<-tblRecords]
