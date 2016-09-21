@@ -7,7 +7,7 @@ module Ampersand.Components
    , generateAmpersandOutput
   )
 where
-import Prelude hiding (putStr,readFile,writeFile)
+import Prelude hiding (putStr,putStrLn,readFile,writeFile)
 import Ampersand.Misc
 import Text.Pandoc
 import Text.Pandoc.Builder
@@ -53,7 +53,7 @@ generateAmpersandOutput multi =
       , ( validateSQL , doValidateSQLTest  )
       , ( genPrototype, doGenProto         )
       , ( genBericht  , doGenBericht fSpec )
-      , ( const True  , verboseLn opts "Finished processing your model.")]
+      , ( const True  , putStrLn "Finished processing your model.")]
    opts = getOpts fSpec
    fSpec = userFSpec multi
    doGenADL :: IO()
@@ -96,7 +96,7 @@ generateAmpersandOutput multi =
    doGenUML =
     do { verboseLn opts "Generating UML..."
        ; writeFile outputFile $ generateUML fSpec
-       ; Prelude.putStrLn $ "Generated file: " ++ outputFile ++ "."
+       ; verboseLn opts $ "Generated file: " ++ outputFile ++ "."
        }
       where outputFile = dirOutput opts </> baseName opts -<.> ".xmi"
 
@@ -128,7 +128,7 @@ generateAmpersandOutput multi =
     do { verboseLn opts "Generating .xlsx file containing the population "
        ; ct <- getPOSIXTime 
        ; L.writeFile outputFile $ fSpec2PopulationXlsx ct fSpec
-       ; Prelude.putStrLn $ "Generated file: " ++ outputFile
+       ; verboseLn opts $ "Generated file: " ++ outputFile
        }
       where outputFile = dirOutput opts </> baseName opts ++ "_generated_pop" -<.> ".xlsx"
 
@@ -172,7 +172,7 @@ generateAmpersandOutput multi =
           reportViolations []    = verboseLn opts "No violations found."
           reportViolations viols =
             let ruleNamesAndViolStrings = [ (name r, showprs p) | (r,p) <- viols ]
-            in  Prelude.putStrLn $ 
+            in  putStrLn $ 
                          intercalate "\n"
                              [ "Violations of rule "++show r++":\n"++ concatMap (\(_,p) -> "- "++ p ++"\n") rps
                              | rps@((r,_):_) <- groupBy (on (==) fst) $ sort ruleNamesAndViolStrings
@@ -192,13 +192,13 @@ generateAmpersandOutput multi =
           ruleTest :: String -> IO ()
           ruleTest ruleName =
            case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
-             [] -> Prelude.putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-             (rule:_) -> do { Prelude.putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
-                            ; Prelude.putStrLn $ showContents rule
+             [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
+             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+                            ; putStrLn $ showContents rule
                             ; let rExpr = rrexp rule
                             ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
-                            ; Prelude.putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
-                            ; Prelude.putStrLn $ showContents ruleComplement
+                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                            ; putStrLn $ showContents ruleComplement
                             }
            where showContents rule = "[" ++ intercalate ", " pairs ++ "]"
                    where pairs = [ "("++(show.showValADL.apLeft) v++"," ++(show.showValADL.apRight) v++")" 

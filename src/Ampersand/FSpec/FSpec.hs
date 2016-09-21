@@ -111,6 +111,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , crudInfo ::     CrudInfo                 -- ^ Information for CRUD matrices 
                --    , popsOfCptWithoutSmaller :: A_Concept -> [Population]  -- ^ All user defined populations of an A_concept, WITHOUT the populations of smaller A_Concepts
                    , atomsInCptIncludingSmaller :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
+                   , atomsBySmallestConcept :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
                    , tableContents :: PlugSQL -> [[Maybe AAtomValue]] -- ^ tableContents is meant to compute the contents of an entity table.
                                                                       --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
                                                                       -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
@@ -123,6 +124,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , fcontextInfo   :: ContextInfo 
                    , ftypologies   :: [Typology]
                    , typologyOf :: A_Concept -> Typology
+                   , largestConcept :: A_Concept -> A_Concept
                    , specializationsOf :: A_Concept -> [A_Concept]    
                    , generalizationsOf :: A_Concept -> [A_Concept]
                    } deriving Typeable

@@ -5,13 +5,13 @@ PURPOSE PATTERN Documentation
 PATTERN Documentation
     RELATION purpose[Pattern*Purpose] [INJ]
     MEANING "The purposes of a pattern."
-    RELATION decprps[Relation*PropertyRule] [INJ,SUR]
+    RELATION propertyRule[Relation*PropertyRule] [INJ,SUR]
     MEANING "The properties of a relation."
     RELATION decmean[Relation * Meaning]
     MEANING "The meanings of a relation."
     RELATION purpose[Relation * Purpose] [INJ]
     MEANING "The purposes of a relation."
-    RELATION rrmean[Rule * Meaning]
+    RELATION meaning[Rule * Meaning]
     MEANING "The meanings of a rule."
     RELATION purpose[Rule * Purpose] [INJ]
     MEANING "The purposes of a rule."

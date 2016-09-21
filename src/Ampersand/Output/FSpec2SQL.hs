@@ -4,7 +4,7 @@ module Ampersand.Output.FSpec2SQL
 where
 import Ampersand.Basics
 import Ampersand.Prototype.Generate 
-  (generateDBstructQueries, generateAllDefPopQueries
+  (generateDBstructQueries, generateInitialPopQueries
   )
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
@@ -18,7 +18,7 @@ dumpSQLqueries multi
        <>header "Database structure queries"
        <>map Text.pack (generateDBstructQueries fSpec True)
        <>header "Initial population queries"
-       <>generateAllDefPopQueries fSpec
+       <>generateInitialPopQueries fSpec
        <>header "Violations of conjuncts"
        <>concatMap showConjunct (allConjuncts fSpec)
        <>header "Queries per declaration"

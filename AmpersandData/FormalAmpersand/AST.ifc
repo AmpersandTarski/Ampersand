@@ -13,11 +13,11 @@ REPRESENT ShowADL TYPE HUGEALPHANUMERIC
 INTERFACE Ampersand FOR Ampersand : '_SESSION';V[SESSION*Context]
 BOX <SHCOLS>
     [ "Context" : I
-    , "name" : name[Context*ContextIdentifier]
+    , "name" : name[Context*ContextName]
     ]
 INTERFACE "Context" FOR Ampersand : I[Context] TABS
   [ "About" : I BOX
-    [ "name"  : name[Context*ContextIdentifier]
+    [ "name"  : name[Context*ContextName]
 --    , "versionInfo" : versionInfo
 --    , "dbName" : dbName
     , "valid~" : valid[Rule*Context]~
@@ -43,15 +43,15 @@ INTERFACE GenTree FOR Ampersand : I[Concept]
     , "Kinds" : gengen[Gen*Concept]~;genspc[Gen*Concept] LINKTO INTERFACE GenTree
     ] 
 INTERFACE Pattern FOR Ampersand : I[Pattern]
-BOX [ Pattern : name[Pattern*PatternIdentifier]
-    , "patterns~" : context[Pattern*Context]
+BOX [ Pattern : name[Pattern*PatternName] cRud
+    , "context" : context[Pattern*Context] cRud
     , "Relations" : declaredIn[Relation*Pattern]~  LINKTO INTERFACE "Relation"
-    , "rules"  : allRules[Pattern*Rule]
-    , "purpose" : purpose[Pattern*Purpose]
+    , "rules"  : allRules[Pattern*Rule] cRud
+    , "purpose" : purpose[Pattern*Purpose] cRud
     ]
 
 INTERFACE "Rule" FOR Ampersand : I[Rule]
-BOX [ "name" : name[Rule*RuleID]
+BOX [ "name" : name[Rule*RuleName]
     , "valid" : valid[Rule*Context]
     , "context" : allRules[Context*Rule]~
  --   , "originatesFrom~" : originatesFrom[Conjunct*Rule]~
@@ -66,7 +66,7 @@ BOX [ "name" : name[Rule*RuleID]
     , "rrviols" : rrviols
  --   , "pairView" : pairView
  --   , "message" : message
-    , "rrmean" : rrmean[Rule * Meaning]
+    , "meaning" : meaning[Rule * Meaning]
     , "purpose" : purpose[Rule * Purpose]
     ]
     
@@ -77,7 +77,7 @@ INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
     ]
 INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
-    , name    : name[Concept*Identifier]
+    , name    : name[Concept*ConceptName]
     , ttype   : ttype
     , "source~" : source[Relation*Concept]~ LINKTO INTERFACE Relation
     , "target~" : target[Relation*Concept]~ LINKTO INTERFACE Relation
@@ -131,14 +131,14 @@ TABS[ Atoms : V[SESSION*Atom]
          ]
     , Concepts : V[SESSION*Concept]
     COLS [ "Concept" : I 
-         , name : name[Concept*Identifier]
+         , name : name[Concept*ConceptName]
          ]
     ]
     
 
 INTERFACE PropertyRule FOR Ampersand : I[PropertyRule]
 BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
-	, "decprps~" : decprps[Relation*PropertyRule]~  LINKTO INTERFACE "Relation"
+	, "propertyRule~" : propertyRule[Relation*PropertyRule]~  LINKTO INTERFACE "Relation"
 	]
 	 
 
@@ -155,9 +155,9 @@ BOX [ "declared in context" : declaredIn[Relation*Context]
 	, "decprL" : decprL[Relation*String]
 	, "decprM" : decprM[Relation*String]
 	, "decprR" : decprR[Relation*String]
-	, "decprps" : decprps[Relation*PropertyRule]
+	, "propertyRule" : propertyRule[Relation*PropertyRule]
 	, "purpose" : purpose[Relation*Purpose]
-	, "name" : name[Relation*Identifier]
+	, "name" : name[Relation*RelationName]
 	, "prop" : prop[Relation*Property]
 	, "sign" : sign[Relation*Signature]
 	, "source" : source[Relation*Concept]
