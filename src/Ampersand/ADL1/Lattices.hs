@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveFunctor #-}
-module Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,Op1EqualitySystem,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem) where
+module Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,Op1EqualitySystem,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem,SetLike(..)) where
 import qualified Data.IntMap as IntMap
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -184,7 +184,7 @@ addEquality (set1, set2) eqSys0
    (eqSys1, ns1) = translateWith eqSys0 set1
    (eqSys2, ns2) = translateWith eqSys1 set2
 
-addEquality' :: Ord a => EqualitySystem a -> IntSet.IntSet -> IntSet.IntSet -> EqualitySystem a
+addEquality' :: EqualitySystem a -> IntSet.IntSet -> IntSet.IntSet -> EqualitySystem a
 addEquality' ~(ES nms imap) set1 set2
  = ES nms (addRule (addRule imap set1 set1 uni) set2 (IntSet.difference set2 set1) uni)
  where

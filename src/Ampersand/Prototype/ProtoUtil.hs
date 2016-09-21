@@ -200,6 +200,11 @@ installComposerLibs opts =
        , close_fds = False
        , create_group = False
        , delegate_ctlc = True
+       , detach_console = False
+       , create_new_console = False
+       , new_session = False
+       , child_group = Nothing
+       , child_user = Nothing
        }
      composerTargetPath = dirPrototype opts
      failOutput (exit_code, stdout, stderr) =
