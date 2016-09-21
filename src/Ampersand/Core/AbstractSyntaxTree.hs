@@ -68,7 +68,6 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.Default
-import GHC.Stack
 import Data.Hashable
 import Data.Text (Text,unpack,pack)
 import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
@@ -703,7 +702,7 @@ instance Unique (PairViewSegment Expression) where
   showUnique = show
 
 
-(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: (?loc :: CallStack) => Expression -> Expression -> Expression
+(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 infixl 1 .==.   -- equivalence
 infixl 1 .|-.   -- inclusion
 infixl 2 ./\.   -- intersection
