@@ -95,7 +95,11 @@ makeFSpec opts context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
-              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript
+              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
+              , atomsBySmallestConcept = \cpt -> map apLeft . pairsinexpr 
+                                               . foldl (.-.) (EDcI cpt) 
+                                               . map (handleType cpt)
+                                               . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
               , allViolations  = [ (r,vs)
@@ -109,10 +113,16 @@ makeFSpec opts context
               , fcontextInfo = contextinfo
               , ftypologies   = typologies context
               , typologyOf = typologyOf'
+              , largestConcept = getLargestConcept 
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
               }
    where           
+     getLargestConcept cpt = case largerConcepts (gens context) cpt of
+                              [] -> cpt
+                              x:_ -> getLargestConcept x
+     handleType :: A_Concept -> A_Concept -> Expression
+     handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
      fMaintains' :: Role -> [Rule]
      fMaintains' role = nub [ rule 
                             | rule <- allrules

@@ -79,7 +79,7 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
    contents :: Expression -> Map AAtomValue (Set.Set AAtomValue)
    contents expr
     = let aVals = atomValuesOf ci ps 
-          lkp :: (Ord k,Ord a) => k -> Map k (Set.Set a) -> [a]
+          lkp :: (Ord k) => k -> Map k (Set.Set a) -> [a]
           lkp x contMap = Set.toList (Map.findWithDefault Set.empty x contMap) in
       case expr of
          EEqu (l,r) -> contents ((l .|-. r) ./\. (r .|-. l))

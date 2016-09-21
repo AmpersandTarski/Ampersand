@@ -161,12 +161,12 @@ chpDiagnosis fSpec
       _ ->(case bothMissing of
             []  -> mempty
             [d] -> para (   (str.l) (NL "Van de relatie ",EN "The relation ")
-                         <> showDcl d
+                         <> showDclMath d
                          <> (str.l) (NL " ontbreekt zowel de betekenis (meaning) als de reden van bestaan (purpose)."
                                     ,EN " lacks both a purpose as well as a meaning.")
                         )
             ds  -> para (   (str.l) (NL "Van de relaties ",EN "The relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDcl ds) 
+                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
                           <>(str.l) (NL " ontbreken zowel de betekenis (meaning) als de reden van bestaan (purpose)."
                                     ,EN " all lack both a purpose and a meaning.")
                         )
@@ -174,12 +174,12 @@ chpDiagnosis fSpec
           (case purposeOnlyMissing of
             []  -> mempty
             [d] -> para (   (str.l) (NL "De reden waarom relatie ",EN "The purpose of relation ")
-                         <> showDcl d
+                         <> showDclMath d
                          <> (str.l) (NL " bestaat wordt niet uitgelegd."
                                     ,EN " remains unexplained.")
                         )
             ds  -> para (   (str.l) (NL "Relaties ",EN "The purpose of relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDcl ds) 
+                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
                           <>(str.l) (NL " zijn niet voorzien van een reden van bestaan (purpose)."
                                     ,EN " is not documented.")
                         )
@@ -187,12 +187,12 @@ chpDiagnosis fSpec
           (case meaningOnlyMissing of
             []  -> mempty
             [d] -> para (   (str.l) (NL "De betekenis van relatie ",EN "The meaning of relation ")
-                         <> showDcl d
+                         <> showDclMath d
                          <> (str.l) (NL " is niet gedocumenteerd."
                                     ,EN " is not documented.")
                         )
             ds  -> para (   (str.l) (NL "De betekenis van relaties ",EN "The meaning of relations ")
-                          <> commaPandocAnd (fsLang fSpec) (map showDcl ds) 
+                          <> commaPandocAnd (fsLang fSpec) (map showDclMath ds) 
                           <>(str.l) (NL " zijn niet gedocumenteerd."
                                     ,EN " is not documented.")
                         )
@@ -204,7 +204,7 @@ chpDiagnosis fSpec
            decls = vrels fSpec  -- A restriction on only themes that the user wants the document for is not supported, 
                                    -- because it is possible that declarations from other themes are required in the
                                    -- generated document. 
-           showDcl = math . showMath . EDcD
+           showDclMath = math . showDcl False
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning :: Meaning a => a -> Bool

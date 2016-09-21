@@ -146,7 +146,7 @@ AmpersandApp.directive('myShowonhoverBox', function (){
 	
 	return {
 		  restrict		: 'E'
-		, scope 		: {ifcs : '=', resource : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+		, scope 		: {ifcs : '=', resource : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
 		, templateUrl	: 'app/views/partials/my_nav_to_interfaces.html'
 		, transclude	: true
 	};
@@ -154,7 +154,7 @@ AmpersandApp.directive('myShowonhoverBox', function (){
 	
 	return {
 		  restrict		: 'E'
-		, scope 		: {ifcs : '=', resource : '=', label : '='} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+		, scope 		: {ifcs : '=', resource : '=', label : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
 		, templateUrl	: 'app/views/partials/my_nav_to_other_interfaces.html'
 	};
 }).filter('unsafe', function($sce){

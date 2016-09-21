@@ -102,11 +102,11 @@ testAdlfile indent path adl tinfo = runMyProc myProc
                             , close_fds = False
                             , create_group = False
                             , delegate_ctlc = True
-                      --      , detach_console = False
-                      --      , create_new_console = False
-                      --      , new_session = False
-                      --      , child_group = Nothing
-                      --      , child_user = Nothing
+                            , detach_console = False
+                            , create_new_console = False
+                            , new_session = False
+                            , child_group = Nothing
+                            , child_user = Nothing
                             }
      runMyProc :: CreateProcess -> IO (Bool)
      runMyProc x = do 

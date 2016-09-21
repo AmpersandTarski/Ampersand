@@ -102,6 +102,12 @@ class Concept {
 	 * @var string[]
 	 */
 	private $generalizations = array();
+    
+    /**
+     * Concept identifier of largest generalization for this concept
+     * @var string
+     */
+    private $largestConceptId;
 	
 	/**
 	 * Array of interface identifiers that have this concept as src concept
@@ -156,6 +162,7 @@ class Concept {
 		$this->specializations = (array)$conceptDef['specializations'];
 		$this->generalizations = (array)$conceptDef['generalizations'];
 		$this->interfaceIds = (array)$conceptDef['interfaces'];
+        $this->largestConceptId = $conceptDef['largestConcept'];
 		
 		if(!is_null($conceptDef['defaultViewId'])) $this->defaultView = View::getView($conceptDef['defaultViewId']);
 		
@@ -246,6 +253,14 @@ class Concept {
 	    $generalizations[] = $this;
 	    return $generalizations;
 	}
+    
+    /**
+     * Returns largest generalization concept (can be itself)
+     * @return Concept
+     */
+    public function getLargestConcept(){
+        return Concept::getConcept($this->largestConceptId);
+    }
 	
 	/**
 	 * Checks if this concept is in same classification tree as the provided concept
@@ -345,6 +360,8 @@ class Concept {
 	 * @return string
 	 */
 	public function createNewAtomId(){
+        static $prevTime = null;
+        
 	    if(strpos($this->name, '_AI') !== false && $this->isInteger()){
 	        $firstCol = current($this->mysqlConceptTable->getCols());
 	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
@@ -355,8 +372,14 @@ class Concept {
 	        else $atomId = $result[0] + 1;
 	
 	    }else{
-	        $time = explode(' ', microTime()); // yields [seconds,microseconds] both in seconds, e.g. ["1322761879", "0.85629400"]
-	        $atomId = $this->name.'_'.$time[1]."_".substr($time[0], 2,6);  // we drop the leading "0." and trailing "00"  from the microseconds
+            $now = explode(' ', microTime()); // yields ["microseconds", "seconds"] both in seconds, e.g. ["0.85629400", "1322761879"]
+            $time = $now[1] . substr($now[0], 2,6); // we drop the leading "0." and trailing "00"  from the microseconds
+            
+            // Guarantee that time is increased
+            if($time <= $prevTime) $time = ++$prevTime; 
+            else $prevTime = $time;
+            
+            $atomId = $this->name . '_' . $time;
 	    }
 	    return $atomId;
 	}
@@ -405,14 +428,14 @@ class Concept {
 	
 	/**
 	 * Return concept object given a concept identifier
-	 * @param string $conceptName Escaped concept name
+	 * @param string $conceptId Escaped concept name
 	 * @throws Exception if concept is not defined
 	 * @return Concept
 	 */
-	public static function getConcept($conceptName){
-	    if(!array_key_exists($conceptName, $concepts = self::getAllConcepts())) throw new Exception("Concept '{$conceptName}' is not defined", 500);
+	public static function getConcept($conceptId){
+	    if(!array_key_exists($conceptId, $concepts = self::getAllConcepts())) throw new Exception("Concept '{$conceptId}' is not defined", 500);
 	     
-	    return $concepts[$conceptName];
+	    return $concepts[$conceptId];
 	}
     
     /**

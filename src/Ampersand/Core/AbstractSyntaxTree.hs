@@ -11,7 +11,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , RuleOrigin(..)
- , Declaration(..)
+ , Declaration(..), showDcl
  , IdentityDef(..)
  , IdentitySegment(..)
  , ViewDef(..)
@@ -68,7 +68,6 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.Default
-import GHC.Stack
 import Data.Hashable
 import Data.Text (Text,unpack,pack)
 import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
@@ -266,6 +265,12 @@ instance Show Declaration where  -- For debugging purposes only (and fatal messa
 
   showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
   showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
+showDcl :: Bool -> Declaration -> String
+showDcl forceBoth dcl = name dcl++"["++cpts++"]"
+  where 
+    cpts
+     | forceBoth || source dcl /= target dcl = show (source dcl) ++ "*"++ show (target dcl)
+     | otherwise                             = show (source dcl)
 
 aMarkup2String :: PandocFormat -> A_Markup -> String
 aMarkup2String fmt a = blocks2String fmt False (amPandoc a)
@@ -703,7 +708,7 @@ instance Unique (PairViewSegment Expression) where
   showUnique = show
 
 
-(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: (?loc :: CallStack) => Expression -> Expression -> Expression
+(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 infixl 1 .==.   -- equivalence
 infixl 1 .|-.   -- inclusion
 infixl 2 ./\.   -- intersection

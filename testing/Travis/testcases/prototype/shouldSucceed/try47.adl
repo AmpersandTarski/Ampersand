@@ -1,10 +1,10 @@
 ﻿CONTEXT Try47 IN ENGLISH
 
-IDENT Context: Context(name[Context*ContextIdentifier])
-RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ]
+IDENT Context: ContextX(name[ContextX*ContextIdentifier])
+RELATION name[ContextX*ContextIdentifier] [UNI,TOT,INJ]
 
-IDENT Pattern: Pattern(name[Pattern*PatternIdentifier])
-RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
+IDENT Pattern: PatternX(name[PatternX*PatternIdentifier])
+RELATION name[PatternX*PatternIdentifier] [UNI,TOT,INJ]
 
 ENDCONTEXT
 
