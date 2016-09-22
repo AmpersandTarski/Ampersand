@@ -2,17 +2,18 @@ CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Rules.doc
 
 PATTERN Relations
---VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*Identifier] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*Identifier] )
---IDENT Relation: Relation( name, sign[Relation*Signature];src;name[Concept*Identifier], sign[Relation*Signature];tgt[Signature*Concept];name[Concept*Identifier] )
-RULE "eq relation": name[Relation*Identifier];name[Relation*Identifier]~ 
+--VIEW Relation: Relation( name , TXT "::", sign[Relation*Signature];src;name[Concept*ConceptName] ,TXT " * ", sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
+--IDENT Relation: Relation( name, sign[Relation*Signature];src;name[Concept*ConceptName], sign[Relation*Signature];tgt[Signature*Concept];name[Concept*ConceptName] )
+RULE "eq relation": name[Relation*RelationName];name[Relation*RelationName]~ 
                  /\ sign[Relation*Signature];src[Signature*Concept];(sign[Relation*Signature];src[Signature*Concept])~ 
                  /\ sign[Relation*Signature];tgt[Signature*Concept];(sign[Relation*Signature];tgt[Signature*Concept])~ 
                  |- I[Relation]
 MEANING "The unique signature of a relation consists of a relation name, a source concept, and a target concept."
 
 
-RELATION name[Relation*Identifier] [UNI,TOT]
+RELATION name[Relation*RelationName] [UNI,TOT,SUR]
 MEANING "Every relation has a name by which it can be referenced within its Context(s)."
+REPRESENT RelationName TYPE ALPHANUMERIC
 RELATION sign[Relation*Signature] [UNI,TOT] 
 MEANING "The signature of a relation."
 
@@ -27,6 +28,7 @@ CLASSIFY PropertyRule ISA Rule
 CONCEPT Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
 RULE "property enum": I[Property] |- 'UNI' \/ 'TOT' \/ 'INJ' \/ 'SUR' \/ 'RFX' \/ 'IRF' \/ 'SYM' \/ 'ASY' \/ 'TRN' \/ 'PROP'
 MEANING "There are nine tokens, that can be used to define properties on a relation. -> is syntactic suger for UNI and TOT; UNI means univalent; TOT means total; INJ means injective; SUR means surjective; RFX means reflexive; IRF means irreflexive; SYM means symmetric; ASY means antisymmetric; TRN means transitive; and PROP means symmetric and antisymmetric."
+REPRESENT Property TYPE ALPHANUMERIC
 RELATION decprL[Relation*String] [UNI]
 MEANING "The prefix of the pragma of a relation."
 RELATION decprM[Relation*String] [UNI]

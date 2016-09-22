@@ -254,6 +254,11 @@ executePHP phpPath =
                 , close_fds     = False -- no need to close all other file descriptors
                 , create_group  = False
                 , delegate_ctlc = False -- don't let php handle ctrl-c
+                , detach_console = False
+                , create_new_console = False
+                , new_session   = False
+                , child_group   = Nothing
+                , child_user    = Nothing
                 }
     ; (_, mStdOut, mStdErr, _) <- createProcess cp
     ; outputStr <-

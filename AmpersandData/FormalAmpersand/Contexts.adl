@@ -3,9 +3,9 @@ INCLUDE "Rules.adl"
 INCLUDE "Relations.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
-RELATION name[Concept*Identifier] [UNI,TOT]
+RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
 
-VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , tgt;name[Concept*Identifier] , TXT "]" )
+VIEW Signature: Signature( TXT "[" , src;name[Concept*ConceptName] , TXT "*" , tgt;name[Concept*ConceptName] , TXT "]" )
 
 
 --PATTERN Authorizations
@@ -26,13 +26,15 @@ VIEW Signature: Signature( TXT "[" , src;name[Concept*Identifier] , TXT "*" , tg
 
 PATTERN Context
     CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
-    IDENT Context: Context(name[Context*ContextIdentifier])  
-    REPRESENT ContextIdentifier TYPE ALPHANUMERIC
-    RELATION name[Context*ContextIdentifier] [UNI,TOT,INJ]
+    VIEW Context: Context(name[Context*ContextName])  
+    REPRESENT ContextName TYPE ALPHANUMERIC
+    RELATION name[Context*ContextName] [UNI,TOT,SUR]
     MEANING "The name of a context."
-    RELATION name[Rule*RuleID] [UNI,TOT,INJ]
-    RELATION name[Concept*Identifier] [UNI,TOT,INJ] 
+    RELATION name[Rule*RuleName] [UNI,TOT]
+    REPRESENT RuleName TYPE ALPHANUMERIC
+    RELATION name[Concept*ConceptName] [UNI,TOT] 
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
+    REPRESENT ConceptName TYPE ALPHANUMERIC
     RELATION gens[Context*Gen]
     MEANING "The user-defined generalization rules in a context."
     RELATION concepts[Pattern*Concept]
@@ -153,14 +155,15 @@ ENDPATTERN
 
 PATTERN Patterns
     CONCEPT Pattern "A pattern is a container for relation declarations and rule definitions"
-    IDENT Pattern: Pattern(name[Pattern*PatternIdentifier])
-    REPRESENT PatternIdentifier TYPE ALPHANUMERIC
-    RELATION name[Pattern*PatternIdentifier] [UNI,TOT,INJ]
+    VIEW Pattern: Pattern(name[Pattern*PatternName])
+    IDENT Pattern: Pattern(name[Pattern*PatternName],context[Pattern*Context])
+    REPRESENT PatternName TYPE ALPHANUMERIC
+    RELATION name[Pattern*PatternName] [UNI,TOT]
     MEANING "The name of a pattern."
-    RELATION udefrules[Rule*Pattern] [UNI]      -- ^ all rules the user has declared within this pattern including the patterns it contains,
+    RELATION udefrules[Rule*Pattern] []         -- ^ all rules the user has declared within this pattern including the patterns it contains,
                                                 --   which are not multiplicity- and not identity rules. See ViewPoint.hs
-    RELATION multrules[Rule*Pattern] [UNI]      -- ^ all multiplicityrules the user has declared within this pattern including the patterns it contains.
-    RELATION identityRules[Rule*Pattern] [UNI]  -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
+    RELATION multrules[Rule*Pattern] []         -- ^ all multiplicityrules the user has declared within a pattern.
+    RELATION identityRules[Rule*Pattern] []     -- ^ all identity rules the user has declared within this pattern. This contains all rules declared inside a pattern including the patterns it contains.
     RELATION allRules[Pattern*Rule]        -- This contains all rules declared inside a pattern. This contains all rules declared inside a pattern including the patterns it contains.
     MEANING "The user-defined rules in a pattern."
     RELATION declaredIn[Relation*Pattern]  -- comes from class Language. This contains all relations declared inside a pattern.
@@ -183,7 +186,7 @@ PATTERN Patterns
 ENDPATTERN
 
 PATTERN Specialization
---    VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*Identifier]-} , TXT " ISA " , gengen;name{-[Concept*Identifier]-} )
+--    VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*ConceptName]-} , TXT " ISA " , gengen;name{-[Concept*ConceptName]-} )
 --    RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
 --    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
 -- HJO, 20160906: Disabled above rule and view, because a generalisation can currently have more than one generic concepts (CLASSIFY A IS B /\ C )

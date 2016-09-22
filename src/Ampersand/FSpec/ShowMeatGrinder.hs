@@ -84,14 +84,14 @@ instance MetaPopulations A_Context where
     [Comment  " ", Comment $ "PATTERN Context: ('"++name ctx++"')"]
   ++[ Pop "versionInfo" "Context"  "AmpersandVersion" [Uni,Tot]
            [(dirtyId ctx ctx, show ampersandVersionStr)]
-    , Pop "name" "Context" "ContextIdentifier" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.ctxnm) ctx)]
-    , Pop "location" "Context" "Location" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.showUnique.ctxpos) ctx)]
+    , Pop "name" "Context" "ContextName" [Uni,Tot,Sur]
+           [(dirtyId ctx ctx, (show.name) ctx)]
+  --  , Pop "location" "Context" "Location" [Uni,Tot]
+  --         [(dirtyId ctx ctx, (show.showUnique.ctxpos) ctx)]
     , Pop "language" "Context" "Language" [Uni,Tot]
            [(dirtyId ctx ctx, (show.show.ctxlang) ctx)]
-    , Pop "markup" "Context" "Markup" [Uni,Tot]
-           [(dirtyId ctx ctx, (show.show.ctxmarkup) ctx)]
+  --  , Pop "markup" "Context" "Markup" [Uni,Tot]
+  --         [(dirtyId ctx ctx, (show.show.ctxmarkup) ctx)]
     , Pop "context" "Pattern" "Context" [Uni]                        -- The context in which a pattern is declared.
            [(dirtyId ctx p, dirtyId ctx ctx) | p<-ctxpats ctx]
     , Pop "ctxrs" "Rule" "Context" [Uni]                        -- The context in which a rule is declared.
@@ -117,7 +117,7 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxks ctx]
     , Pop "allRoles" "Context" "Role" [Tot]
            [(dirtyId ctx ctx, show "SystemAdmin")]
-    , Pop "name"   "Role" "RoleName" [Uni,Tot]
+    , Pop "name"   "Role" "RoleName" [Uni,Tot,Sur]
            [(show "SystemAdmin", show "SystemAdmin")]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.patterns) ctx++")"]
@@ -147,22 +147,17 @@ instance MetaPopulations Pattern where
  metaPops fSpec pat =
     [ Comment " "
     , Comment $ " Pattern `"++name pat++"` "
-    , Pop "name"    "Pattern" "PatternIdentifier" [Uni,Tot]
+    , Pop "name"    "Pattern" "PatternName" [Uni,Tot,Sur]
            [(dirtyId ctx pat, (show.name) pat)]
---  Activate this code when concept definitions are allowed inside a pattern
---   , Pop "concepts"   "Pattern" "Concept" []
---          [(dirtyId pat,dirtyId x) | x <- ptcds pat]
-    , Pop "udefrules" "Rule" "Pattern" [Uni]                         -- ^ all rules the user has declared within this viewpoint,
+    , Pop "udefrules" "Rule" "Pattern" []                         -- all rules the user has declared within this viewpoint,
                                      --   which are not multiplicity- and not identity rules. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-udefrules pat]
-    , Pop "multrules" "Rule" "Pattern" [Uni]                         -- ^ all multiplicityrules the user has declared within this viewpoint. See ViewPoint.hs
+    , Pop "multrules" "Rule" "Pattern" []                            -- all multiplicityrules the user has declared within this viewpoint. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-multrules pat]
-    , Pop "identityRules" "Rule" "Pattern" [Uni]                     -- all identity rules the user has declared within this viewpoint. See ViewPoint.hs
+    , Pop "identityRules" "Rule" "Pattern" []                     -- all identity rules the user has declared within this viewpoint. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-identityRules pat]
     , Pop "allRules" "Pattern" "Rule" []                          -- all rules within this viewpoint. See ViewPoint.hs
            [(dirtyId ctx pat, dirtyId ctx r) | r<-allRules pat]
---    , Pop "rules"   "Pattern" "Rule" []
---           [(dirtyId ctx pat,dirtyId ctx r) | r <- allRules pat]
     , Pop "relsDefdIn"   "Pattern" "Relation" []
            [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
     ]++ metaPops fSpec (ptxps pat)
@@ -241,8 +236,8 @@ instance MetaPopulations A_Concept where
    , Comment $ " Concept `"++name cpt++"` "
    , Pop "ttype" "Concept" "TType" [Uni,Tot]
              [(dirtyId ctx cpt, dirtyId ctx (cptTType fSpec cpt))] 
-   , Pop "name" "Concept" "Identifier" [Uni,Tot]
-             [(dirtyId ctx cpt, show . name $ cpt)]
+   , Pop "name" "Concept" "ConceptName" [Uni,Tot]
+             [(dirtyId ctx cpt, (show . name) cpt)]
    ]++
    case cpt of
      PlainConcept{} ->
@@ -338,7 +333,7 @@ instance MetaPopulations Role where
       [ Pop "allRoles" "Context" "Role" []
                  [(dirtyId ctx ctx, dirtyId ctx rol) ]
       , Pop "name" "Role" "RoleName" [Uni,Tot]
-                 [(dirtyId ctx rol, dirtyId ctx rol) ]
+                 [(dirtyId ctx rol, (show . name) rol) ]
       ]
    where
     ctx = originalContext fSpec
@@ -380,8 +375,8 @@ instance MetaPopulations Declaration where
       , Comment $ " Relation `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
       , Pop "context" "Relation" "Context" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx ctx)] 
-      , Pop "name" "Relation" "Identifier" [Uni,Tot]
-             [(dirtyId ctx dcl, (show.name) dcl)]
+      , Pop "name" "Relation" "RelationName" [Uni,Tot,Sur]
+             [(dirtyId ctx dcl, (show . name) dcl)]
 --      , Pop "srcCol" "Relation" "SqlAttribute" []
 --             [(dirtyId ctx dcl,dirtyId ctx (table,srcCol))]
 --      , Pop "tgtCol" "Relation" "SqlAttribute" []
@@ -412,8 +407,8 @@ but I'm not sure why. -}
              [(dirtyId ctx dcl,dirtyId ctx (sign dcl))]
       , Pop "context" "Relation" "Context" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx ctx)]
-      , Pop "name" "Relation" "Identifier" [Uni,Tot]
-             [(dirtyId ctx dcl, (show.name) dcl)]
+      , Pop "name" "Relation" "RelationName" [Uni,Tot,Sur]
+             [(dirtyId ctx dcl, (show . name) dcl)]
       , Pop "source" "Relation" "Concept" [Uni,Tot]
              [(dirtyId ctx dcl,dirtyId ctx (source dcl))]
       , Pop "target" "Relation" "Concept" [Uni,Tot]
@@ -552,7 +547,7 @@ instance MetaPopulations Rule where
  metaPops fSpec rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "name"  "Rule" "RuleID" [Uni,Tot]
+      , Pop "name"  "Rule" "RuleName" [Uni,Tot,Sur]
              [(dirtyId ctx rul, (show.name) rul)]
   --    , Pop "ruleAdl"  "Rule" "Adl" [Uni,Tot]
   --           [(dirtyId ctx rul, (show.showADL.rrexp) rul)]
@@ -568,14 +563,14 @@ instance MetaPopulations Rule where
 --             [(dirtyId ctx conj,dirtyId ctx rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "formalExpression"  "Rule" "Expression" [Uni,Tot]
              [(dirtyId ctx rul, dirtyId ctx (rrexp rul))]
-      , Pop "rrmean"  "Rule" "Meaning" []
+      , Pop "meaning"  "Rule" "Meaning" []
              [(dirtyId ctx rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , -- The next population is from the adl pattern 'Plugs':
         Pop "sign" "Rule" "Signature" [Uni,Tot]
              [(dirtyId ctx rul, dirtyId ctx (sign rul))]
       , Pop "declaredthrough" "PropertyRule" "Property" []
              [(dirtyId ctx rul, dirtyId ctx prp) | Just(prp,_) <- [rrdcl rul]]
-      , Pop "decprps" "Relation" "PropertyRule" []
+      , Pop "propertyRule" "Relation" "PropertyRule" []
              [(dirtyId ctx dcl, dirtyId ctx rul) | Just(_,dcl) <- [rrdcl rul]]
       ] ++ 
       metaPops fSpec (sign rul) ++
@@ -647,7 +642,7 @@ instance AdlId Prop
 instance AdlId Expression
   where dirtyId ctx (EEps _ e') = dirtyId ctx e'
         dirtyId ctx (EBrk e') = dirtyId ctx e'
-        dirtyId _ e  = show . show . abs . hash . camelCase . uniqueShow True $ e -- Need to hash, because otherwise too long (>255)
+        dirtyId _ e = show $ take 150 (showADL e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
 instance AdlId BinOp
 instance AdlId UnaryOp
 instance AdlId A_Context
