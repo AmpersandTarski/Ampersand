@@ -101,7 +101,10 @@ chpConceptualAnalysis lev fSpec = (
                 )
                   -- Then the declaration of the relation with its properties and its intended meaning
                <> pandocEqnArrayWithLabel (XRefConceptualAnalysisDeclaration d)
-                     [ [showMathWithSign d]
+                     [ [ texOnly_Id(name d)
+                       , ":"
+                       , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
+                       ]
                      ]
                <> case meaning2Blocks (fsLang fSpec) d of
                     [] -> case fsLang fSpec of
