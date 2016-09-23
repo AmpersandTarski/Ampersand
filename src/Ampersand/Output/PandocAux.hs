@@ -135,7 +135,26 @@ defaultWriterVariables fSpec
          , "\\newcommand{\\marge}[1]{\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em #1}\\end{minipage}}}"
          , "\\def\\define#1{\\label{dfn:#1}\\index{#1}{\\em #1}}"
          , "\\def\\defmar#1{\\label{dfn:#1}\\index{#1}\\marge{#1}{\\em #1}}"
+         , "\\newcommand{\\iden}{\\mathbb{I}}"
+         , "\\newcommand{\\ident}[1]{\\mathbb{I}_{#1}}"
+         , "\\newcommand{\\full}{\\mathbb{V}}"
+         , "\\newcommand{\\fullt}[1]{\\mathbb{V}_{[#1]}}"
+         , "\\newcommand{\\flip}[1]{{#1}^\\smallsmile} %formerly:  {#1}^\\backsim"
+         , "%\\newcommand{\\kleeneplus}[1]{{#1}^{+}}"
+         , "%\\newcommand{\\kleenestar}[1]{{#1}^{*}}"
+         , "\\newcommand{\\asterisk}{*}"
+         , "\\newcommand{\\cmpl}[1]{\\overline{#1}}"
+         , "\\newcommand{\\subs}{\\vdash}"
          , "\\newcommand{\\rel}{\\times}"
+         , "\\newcommand{\\fun}{\\rightarrow}"
+         , "\\newcommand{\\isa}{\\sqsubseteq}"
+         , "\\newcommand{\\N}{\\mbox{\\msb N}}"
+         , "\\newcommand{\\disjn}[1]{\\id{disjoint}(#1)}"
+         , "\\newcommand{\\fsignat}[3]{\\id{#1}:\\id{#2}\\fun\\id{#3}}"
+         , "\\newcommand{\\signat}[3]{\\id{#1}:\\id{#2}\\rel\\id{#3}}"
+         , "\\newcommand{\\signt}[2]{\\mbox{\\({#1}_{[{#2}]}\\)}}"
+         , "\\newcommand{\\declare}[3]{\\id{#1}:\\ \\id{#2}\\rel\\id{#3}}"
+         , "%\\newcommand{\\fdeclare}[3]{\\id{#1}:\\ \\id{#2}\\fun\\id{#3}}"
          , "% ============Ampersand specific End==================="
          ])
     | fspecFormat (getOpts fSpec) == FLatex ]
@@ -350,46 +369,48 @@ pandocEquationWithLabel xref x =
 
 class ShowMath a where
  showMath :: a -> String
- showMathWithSign :: a -> String 
 
 instance ShowMath A_Concept where
  showMath c = texOnly_Id (name c)
- showMathWithSign = showMath
 
 instance ShowMath A_Gen where
  showMath g@Isa{} = showMath (genspc g)++"\\ \\le\\ "++showMath (gengen g)
  showMath g@IsE{} = showMath (genspc g)++"\\ =\\ "++intercalate "\\cap" (map showMath (genrhs g))
 
 instance ShowMath Rule where
- showMath = showMath . rrexp
+ showMath r = showMath (rrexp r)
+
+instance ShowMath Signature where
+ showMath (Sign s t) = showMath s++"\\rel"++showMath t
 
 instance ShowMath Expression where
  showMath = showExpr . insParentheses
-   where  showExpr (EEqu (l,r)) = showExpr l++inMathEquals++showExpr r
-          showExpr (EInc (l,r)) = showExpr l++inMathInclusion++showExpr r
-          showExpr (EIsc (l,r)) = showExpr l++inMathIntersect++showExpr r
-          showExpr (EUni (l,r)) = showExpr l++inMathUnion++showExpr r
-          showExpr (EDif (l,r)) = showExpr l++inMathDifference ++showExpr r
-          showExpr (ELrs (l,r)) = showExpr l++inMathLeftResidu++showExpr r
-          showExpr (ERrs (l,r)) = showExpr l++inMathRightResidu++showExpr r
-          showExpr (EDia (l,r)) = showExpr l++inMathDiamond++showExpr r
+   where  showExpr (EEqu (l,r)) = showExpr l++texOnly_equals++showExpr r
+          showExpr (EInc (l,r)) = showExpr l++texOnly_subs++showExpr r
+          showExpr (EIsc (l,r)) = showExpr l++texOnly_inter++showExpr r
+          showExpr (EUni (l,r)) = showExpr l++texOnly_union++showExpr r
+          showExpr (EDif (l,r)) = showExpr l++texOnly_bx ++showExpr r
+          showExpr (ELrs (l,r)) = showExpr l++texOnly_lRes++showExpr r
+          showExpr (ERrs (l,r)) = showExpr l++texOnly_rRes++showExpr r
+          showExpr (EDia (l,r)) = showExpr l++texOnly_dia++showExpr r
           showExpr (ECps (EEps i sgn,r)) | i==source sgn||i==target sgn = showExpr  r
                                          | otherwise                    = showExpr (ECps (EDcI i,r))
           showExpr (ECps (l,EEps i sgn)) | i==source sgn||i==target sgn = showExpr  l
                                          | otherwise                    = showExpr (ECps (l,EDcI i))
-          showExpr (ECps (l,r)) = showExpr l++inMathCompose++showExpr r
-          showExpr (ERad (l,r)) = showExpr l++inMathRelativeAddition++showExpr r
-          showExpr (EPrd (l,r)) = showExpr l++inMathCartesianProduct++showExpr r
-          showExpr (EKl0 e)     = showExpr (addParensToSuper e)++inMathStar
-          showExpr (EKl1 e)     = showExpr (addParensToSuper e)++inMathPlus
-          showExpr (EFlp e)     = showExpr (addParensToSuper e)++inMathFlip
-          showExpr (ECpl e)     = "\\overline{"++showExpr e++"}"
+          showExpr (ECps (l,r)) = showExpr l++texOnly_compose++showExpr r
+          showExpr (ERad (l,r)) = showExpr l++texOnly_relAdd++showExpr r
+          showExpr (EPrd (l,r)) = showExpr l++texOnly_crtPrd++showExpr r
+          showExpr (EKl0 e)     = showExpr (addParensToSuper e)++"^{"++texOnly_star++"}"
+          showExpr (EKl1 e)     = showExpr (addParensToSuper e)++"^{"++texOnly_plus++"}"
+          showExpr (EFlp e)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
+          showExpr (ECpl e)     = "\\cmpl{"++showExpr e++"}"
           showExpr (EBrk e)     = "("++showExpr e++")"
-          showExpr (EDcD d)     = inMathText (name d)
-          showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
+          showExpr (EDcD d)     = "\\text{"++latexEscShw (name d)++"}"
+          showExpr (EDcI c)     = "I_{[\\text{"++latexEscShw (name c)++"}]}"
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-          showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
-          showExpr (EMp1 val _) = inMathText $ showADL val
+          showExpr (EDcV sgn)   = "V_{[\\text{"++latexEscShw (name (source sgn))++"}"++"*"
+                                   ++"\\text{"++latexEscShw (name (target sgn))++"}]}"
+          showExpr (EMp1 val _) = "`\\text{"++(latexEscShw . showADL $ val)++"}`"
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -401,15 +422,12 @@ addParensToSuper e        = e
 
 instance ShowMath Declaration where
  showMath decl@(Sgn{})
-  = "\\id{"++latexEscShw(name decl)++"}:\\ \\id{"++latexEscShw(name (source decl))++"}*\\id{"++latexEscShw(name (target decl))++"}}"
+  = "\\declare{"++latexEscShw(name decl)++"}{"++latexEscShw(name (source decl))++"}{"++latexEscShw(name (target decl))++"}"
  showMath Isn{}
   = "\\mathbb{I}"
  showMath Vs{}
-  = "\\mathbb{V}"
- showMathWithSign decl = math $
-        inMathText (name decl)++"["
-     ++(inMathText . name . source $ decl)++"*"
-     ++(inMathText . name . target $ decl)++"]"
+  = "\\full"
+
 -- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
 --   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
@@ -555,14 +573,11 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 
 
 ---------------------------
---- Math related stuff ---
+--- LaTeX related stuff ---
 ---------------------------
 -- safe function to have plain text in a piece of Math
-inMathText :: String -> String
-inMathText s = "\\text{"++latexEscShw s++"} "
-
-inMathCartesianProduct :: String
-inMathCartesianProduct = "\\times "
+mathText :: String -> String
+mathText s = "\\text{"++latexEscShw s++"} "
 
 texOnly_Id :: String -> String
 texOnly_Id s = "\\id{"++latexEscShw s++"} "
@@ -573,44 +588,47 @@ texOnly_fun = "\\rightarrow "
 texOnly_rel :: String
 texOnly_rel = "\\times "
 
-inMathCompose :: String
-inMathCompose = ";"
+texOnly_compose :: String
+texOnly_compose = ";"
 
-inMathRelativeAddition :: String
-inMathRelativeAddition = "\\dagger "
+texOnly_relAdd :: String
+texOnly_relAdd = "\\dagger "
 
-inMathIntersect :: String
-inMathIntersect = "\\cap "
+texOnly_crtPrd :: String
+texOnly_crtPrd = "\\asterisk "
 
-inMathUnion :: String
-inMathUnion = "\\cup "
+texOnly_inter :: String
+texOnly_inter = "\\cap "
 
-inMathInclusion :: String
-inMathInclusion = "\\vdash "
+texOnly_union :: String
+texOnly_union = "\\cup "
 
-inMathEquals :: String
-inMathEquals = "="
+texOnly_subs :: String
+texOnly_subs = "\\vdash "
 
-inMathStar :: String
-inMathStar = "^{*}"
+texOnly_equals :: String
+texOnly_equals = "="
 
-inMathPlus :: String
-inMathPlus = "^{+}"
+texOnly_star :: String
+texOnly_star = "^* "
 
-inMathDifference :: String
-inMathDifference = " - "
+texOnly_plus :: String
+texOnly_plus = "^+ "
 
-inMathLeftResidu :: String
-inMathLeftResidu = " / "
+texOnly_bx :: String
+texOnly_bx = " - "
 
-inMathRightResidu :: String
-inMathRightResidu = " \\backslash "
+texOnly_lRes :: String
+texOnly_lRes = " / "
 
-inMathDiamond :: String
-inMathDiamond = " \\Diamond "
+texOnly_rRes :: String
+texOnly_rRes = " \\backslash "
 
-inMathFlip :: String
-inMathFlip = "^{\\smallsmile}"
+texOnly_dia :: String
+texOnly_dia = " \\Diamond "
+
+texOnly_flip :: String
+texOnly_flip = "\\smallsmile "
 
 newGlossaryEntry :: String -> String -> Inlines
 newGlossaryEntry nm cnt =
