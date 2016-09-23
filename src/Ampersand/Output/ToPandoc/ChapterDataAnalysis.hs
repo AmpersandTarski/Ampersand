@@ -373,10 +373,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                      plain $ linebreak <> singleton (RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
                   else
                     pandocEqnArrayWithLabel (XRefDataAnalRule rule) (showLatex predicate)
-         else if format == FLatex
-              then fromList $ pandocEquation (showMath rule)
-              else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>
-                   (plain . code $ showADL (rrexp rule))
+         else para (showMath rule)
        , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
        , if isSignal rule
          then mempty

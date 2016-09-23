@@ -10,7 +10,6 @@ module Ampersand.Output.PandocAux
       , pandocEqnArray
       , pandocEqnArrayWithLabels
       , pandocEqnArrayWithLabel
-      , pandocEquation
       , pandocEquationWithLabel
       , count
       , ShowMath(..)
@@ -331,15 +330,12 @@ pandocEqnArrayWithLabel xref rows
          ++"\n\\end{aligned}"
        )
 
-pandocEquation :: String -> [Block]
-pandocEquation x = toList . para . displayMath $ x
-
-pandocEquationWithLabel :: XRefObj -> String -> Blocks
+pandocEquationWithLabel :: XRefObj -> Inlines -> Blocks
 pandocEquationWithLabel xref x =
-   para . displayMath $
-        ( "\\begin{aligned}\\label{"++xRefRawLabel xref++"}\\\\\n"
-           ++x
-           ++"\n\\end{aligned}"
+   para 
+        (  rawInline "Latex" ("\\begin{aligned}\\label{"++xRefRawLabel xref++"}\\\\\n")
+        <> x
+        <> rawInline "Latex" "\n\\end{aligned}"
         )
 
 
@@ -349,22 +345,22 @@ pandocEquationWithLabel xref x =
 ---------------------------------------
 
 class ShowMath a where
- showMath :: a -> String
+ showMath :: a -> Inlines
  showMathWithSign :: a -> String 
 
-instance ShowMath A_Concept where
- showMath c = texOnly_Id (name c)
- showMathWithSign = showMath
+--instance ShowMath A_Concept where
+-- showMath c = texOnly_Id (name c)
+-- showMathWithSign = showMath
 
-instance ShowMath A_Gen where
- showMath g@Isa{} = showMath (genspc g)++"\\ \\le\\ "++showMath (gengen g)
- showMath g@IsE{} = showMath (genspc g)++"\\ =\\ "++intercalate "\\cap" (map showMath (genrhs g))
+--instance ShowMath A_Gen where
+-- showMath g@Isa{} = showMath (genspc g)++"\\ \\le\\ "++showMath (gengen g)
+-- showMath g@IsE{} = showMath (genspc g)++"\\ =\\ "++intercalate "\\cap" (map showMath (genrhs g))
 
 instance ShowMath Rule where
  showMath = showMath . rrexp
 
 instance ShowMath Expression where
- showMath = showExpr . insParentheses
+ showMath = math . showExpr . insParentheses
    where  showExpr (EEqu (l,r)) = showExpr l++inMathEquals++showExpr r
           showExpr (EInc (l,r)) = showExpr l++inMathInclusion++showExpr r
           showExpr (EIsc (l,r)) = showExpr l++inMathIntersect++showExpr r
@@ -400,13 +396,15 @@ addParensToSuper e@EFlp{} = EBrk e
 addParensToSuper e        = e
 
 instance ShowMath Declaration where
- showMath decl@(Sgn{})
-  = "\\id{"++latexEscShw(name decl)++"}:\\ \\id{"++latexEscShw(name (source decl))++"}*\\id{"++latexEscShw(name (target decl))++"}}"
+ showMath decl@(Sgn{})  = math $ 
+        inMathText (name decl)++":\\ "
+     ++(inMathText . name . source $ decl)++(if isFunction decl then "\\mapsto" else "*")
+     ++(inMathText . name . target $ decl)++"]"
  showMath Isn{}
-  = "\\mathbb{I}"
+  = math $ "\\mathbb{I}"
  showMath Vs{}
-  = "\\mathbb{V}"
- showMathWithSign decl = math $
+  = math $ "\\mathbb{V}"
+ showMathWithSign decl =
         inMathText (name decl)++"["
      ++(inMathText . name . source $ decl)++"*"
      ++(inMathText . name . target $ decl)++"]"
