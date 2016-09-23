@@ -1,5 +1,15 @@
-{-# LANGUAGE DeriveFunctor #-}
-module Ampersand.ADL1.Lattices (findExact,findSubsets,optimize1,Op1EqualitySystem,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem,SetLike(..)) where
+{-|
+Module      : Lattices
+Description : Efficient membership for a lattice
+Copyright   : (c) Sebastiaan Joosten, 2014 - 2015
+License     : same as the rest of Ampersand
+Maintainer  : sjcjoosten
+
+This module allows you to build a finite semi-Lattice using equalities over intersections of atoms, see @addEquality@.
+After changing the data type, see @optimize1@, the structure allows you to perform several queries, such as finding (sets of) least/greatests bounds.
+-}
+{-# LANGUAGE DeriveFunctor, ApplicativeDo #-}
+module Ampersand.ADL1.Lattices (findExact,findUpperbounds,optimize1,Op1EqualitySystem,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem,SetLike(..)) where
 import qualified Data.IntMap as IntMap
 import qualified Data.Map as Map
 import qualified Data.Set as Set
@@ -17,9 +27,12 @@ data EqualitySystem a
           )]
       )
 
+-- | An empty system of equalities, that is: x ~ y only if x = y.
 emptySystem :: EqualitySystem a
 emptySystem = ES Map.empty IntMap.empty
 
+-- | Test whether the given concept is present in the equality system.
+--   This is important when using getGroups, since that function only returns concepts @x@ for which @isInSystem x@ (and exactly those).
 isInSystem :: (Ord a) => Op1EqualitySystem a -> a -> Bool
 isInSystem (ES1 t _ _) a = Map.member a t
 
@@ -53,10 +66,14 @@ getGroups (ES1 tran _ imap)
       newRev = IntMap.insert newKey newItm newRev'
       newElems = IntMap.union (IntMap.fromSet (const newKey) newItm) allElems -- overwrites some of the allElems items with the new key
 
+-- | Find all concepts equal to some concept-expression.
+--   Equality is decided according to the concept-system given in the first argument.
+--   If there are no concepts equal to the expression, the empty set is returned.
 findExact :: (Ord a) => Op1EqualitySystem a -> FreeLattice a -> Set.Set a -- returns the empty set on a failure, returns all sets equivalent to "FreeLattice a" according to the equalitysystem
 findExact = findWith lookupInRevMap (\x -> fromList [x])
-findSubsets :: (Ord a) => Op1EqualitySystem a -> FreeLattice a -> [Set.Set a] -- returns a list of largest subsets
-findSubsets = findWith findSubsetInRevMap (\x -> [fromList [x]])
+-- | Find the least concepts that are greater or equal to some concept-equation.
+findUpperbounds :: (Ord a) => Op1EqualitySystem a -> FreeLattice a -> [Set.Set a] -- returns a list of largest subsets
+findUpperbounds = findWith findSubsetInRevMap (\x -> [fromList [x]])
 
 findWith :: Ord a
   => ([Int] -> RevMap a -> b) -- Function that finds the normalized form
@@ -141,6 +158,7 @@ data RevMap a
           (IntMap.IntMap (RevMap a)) -- recursive
           deriving Show
 
+-- | An optimized structure that expressed equality in a finite semi-lattice
 data Op1EqualitySystem a
  = ES1 (Map.Map a (IntSet.IntSet))
        (RevMap a)
@@ -162,6 +180,7 @@ reverseMap lst
      where tail2 (a,b) = (a, tail b)
            (h,tl) = partition ((== f) . head . snd) o
 
+-- | Change the system into one with fast reverse lookups
 optimize1 :: Ord a => EqualitySystem a -> Op1EqualitySystem a
 optimize1 (ES oldmap oldimap)
  = ES1 newmap
@@ -177,6 +196,7 @@ optimize1 (ES oldmap oldimap)
                                 ]
        newmap = Map.map (\x -> imapTranslate oldimap (IntSet.singleton x) (IntSet.empty)) oldmap
 
+-- | Add an equality to a system of equalities.
 addEquality :: (Ord a, SetLike x) => (x a, x a) -> EqualitySystem a -> EqualitySystem a
 addEquality (set1, set2) eqSys0
  = addEquality' eqSys2 ns1 ns2
@@ -184,6 +204,7 @@ addEquality (set1, set2) eqSys0
    (eqSys1, ns1) = translateWith eqSys0 set1
    (eqSys2, ns2) = translateWith eqSys1 set2
 
+-- Only adds forward arcs in the lattice-graph. Computing backward arcs is slow, so we do that in a single step.
 addEquality' :: EqualitySystem a -> IntSet.IntSet -> IntSet.IntSet -> EqualitySystem a
 addEquality' ~(ES nms imap) set1 set2
  = ES nms (addRule (addRule imap set1 set1 uni) set2 (IntSet.difference set2 set1) uni)
@@ -217,6 +238,7 @@ imapTranslate imap tds doneSet
        Nothing -> set
        Just lst -> IntSet.unions (set:[IntSet.difference tl doneSet | (fl,tl) <- lst, IntSet.isSubsetOf fl doneSet])
 
+-- | Data structure to capture an expression in a lattice
 data FreeLattice a
  = Join (FreeLattice a) (FreeLattice a)
  | Meet (FreeLattice a) (FreeLattice a)
@@ -249,6 +271,7 @@ instance SetLike Set.Set where
   slInsert = Set.insert
   toSet = id
 
+-- | A single set of operations to use both for ordered lists and for sets
 class SetLike x where -- I dislike having to put Ord everywhere, is there another way? (Without including a in the class)
   slIsect :: Ord a => x a -> x a -> x a
   slUnion :: Ord a => x a -> x a -> x a

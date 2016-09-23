@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE LambdaCase, ImplicitParams #-}
--- unfortunately not in GHC yet, try to add this line when at GHC 8.0: {-# ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo #-}
 module Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
 import Ampersand.ADL1.Disambiguate
@@ -75,20 +75,6 @@ instance Ord SignOrd where
   compare (SignOrd (Sign a b)) (SignOrd (Sign c d)) = compare (name a,name b) (name c,name d)
 instance Eq SignOrd where
   (==) (SignOrd (Sign a b)) (SignOrd (Sign c d)) = (name a,name b) == (name c,name d)
-
--- pCtx2aCtx has three tasks:
--- 1) Disambiguate the structures.
---    Disambiguation means replacing every "TermPrim" (the parsed expression) with the correct Expression (available through DisambPrim)
---    This is done by using the function "disambiguate" on the outer-most structure.
---    In order to do this, its data type must be polymorphic, as in "P_ViewSegmt a".
---    After parsing, the type has TermPrim for the type variable. In our example: "P_ViewSegmt TermPrim". Note that "type P_ViewSegment = P_ViewSegmt TermPrim".
---    After disambiguation, the type variable is (TermPrim, DisambPrim), as in "P_ViewSegmt (TermPrim, DisambPrim)"
--- 2) Typecheck the structures.
---    This changes the data-structure entirely, changing the P_ into the A_
---    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
---    Using the Applicative operations <$> and <*> causes these errors to be in parallel
--- 3) Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
--- Part 3 is done below, the other two are done in pCtx2aCtx'
 
 
 -- NOTE: Static checks like checkPurposes should ideally occur on the P-structure before type-checking, as it makes little
@@ -197,6 +183,18 @@ findDeclsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[])
 onlyUserConcepts :: [[Type]] -> [[A_Concept]]
 onlyUserConcepts = fmap userList
 
+-- | pCtx2aCtx has three tasks:
+-- 1. Disambiguate the structures.
+--    Disambiguation means replacing every "TermPrim" (the parsed expression) with the correct Expression (available through DisambPrim)
+--    This is done by using the function "disambiguate" on the outer-most structure.
+--    In order to do this, its data type must be polymorphic, as in "P_ViewSegmt a".
+--    After parsing, the type has TermPrim for the type variable. In our example: "P_ViewSegmt TermPrim". Note that "type P_ViewSegment = P_ViewSegmt TermPrim".
+--    After disambiguation, the type variable is (TermPrim, DisambPrim), as in "P_ViewSegmt (TermPrim, DisambPrim)"
+-- 2. Typecheck the structures.
+--    This changes the data-structure entirely, changing the P_ into the A_
+--    A "Guarded" will be added on the outside, in order to catch both type errors and disambiguation errors.
+--    Using the Applicative operations <$> and <*> causes these errors to be in parallel
+-- 3. Check everything else on the A_-structure: interface references should not be cyclic, rules e.a. must have unique names, etc.
 pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts
  PCtx { ctx_nm     = n1
@@ -375,7 +373,7 @@ pCtx2aCtx opts
 {-
     findType :: A_Concept -> Guarded (Maybe (A_Concept, TType))
     findType h
-     = case (map toList)$ toList$ findSubsets genLattice (lJoin (aConcToType h) RepresentSeparator) of
+     = case (map toList)$ toList$ findUpperbounds genLattice (lJoin (aConcToType h) RepresentSeparator) of
            [] -> pure$ Nothing -- use default
            o@[[r]] -> representAs <$> getAsType (fatal 293 (show o++", A custom type found for "++show h++" turned out to be above the RepresentSeparator, which is wrong")) r
            lst' -> multipleRepresentTypes OriginUnknown h (concatMap (take 1 . lefts . map typeOrConcept) lst')
@@ -811,7 +809,7 @@ pCtx2aCtx opts
           [] -> mustBeOrdered o (p1,e1) (p2,e2)
           r  -> pure$ head r
       getAndCheckType flf (p1,b1,e1) (p2,b2,e2)
-       = case fmap (userList . toList)$toList$ findSubsets genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
+       = case fmap (userList . toList)$toList$ findUpperbounds genLattice (flType$ flf (getAConcept p1 e1) (getAConcept p2 e2)) of -- note: we could have used GetOneGuarded, but this yields more specific error messages
           []  -> mustBeOrdered o (p1,e1) (p2,e2)
           [r@(h:_)]
               -> case (b1 || elem (getAConcept p1 e1) r,b2 || elem (getAConcept p2 e2) r ) of
@@ -936,7 +934,7 @@ pCtx2aCtx opts
     typeCheckPairViewSeg _ _ (PairViewText orig x) = pure (PairViewText orig x)
     typeCheckPairViewSeg o t (PairViewExp orig s x)
      = do (e,(b,_)) <- typecheckTerm x
-          case toList . findSubsets genLattice . lJoin (aConcToType (source e)) $ getConcept s t of
+          case toList . findUpperbounds genLattice . lJoin (aConcToType (source e)) $ getConcept s t of
                           [] -> mustBeOrdered o (Src, origin (fmap fst x), e) (s,t)
                           lst -> if b || all (aConcToType (source e) `elem`) lst
                                  then pure (PairViewExp orig s (addEpsilonLeft (getAConcept s t) e))

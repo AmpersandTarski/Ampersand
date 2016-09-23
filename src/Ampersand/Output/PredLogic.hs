@@ -54,7 +54,7 @@ instance PredLogicShow Expression where
 -- TODO when PanDoc is up to the job.
 showLatex :: PredLogic -> [[String]]
 showLatex x 
- = chop (predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\ \\wedge\t", "^{\\asterisk}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x)
+ = chop (predLshow ("\\forall", "\\exists", implies, "\\Leftrightarrow", "\\vee", "\\ \\wedge\t", "^{*}", "^{+}", "\\neg", rel, fun, mathVars, "", " ", apply, "\\in") x)
    where rel r lhs rhs  -- TODO: the stuff below is very sloppy. This ought to be derived from the stucture, instead of by this naming convention.
            = if isIdent r then lhs++"\\ =\\ "++rhs else
              case name r of

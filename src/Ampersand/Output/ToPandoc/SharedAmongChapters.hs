@@ -270,8 +270,8 @@ dpRule' fSpec = dpR
          <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
          <> case (nds, fsLang fSpec) of
              ([] ,_)       -> mempty
-             ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> str (name d) <> " nodig ("         <> xRefTo (XRefSharedLangDeclaration d) <> "):")
-             ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> str (name d) <> " is introduced (" <> xRefTo (XRefSharedLangDeclaration d) <> "):")
+             ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig ("         <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
+             ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced (" <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
              (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> xRefTo (XRefSharedLangRule r)
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
@@ -279,9 +279,7 @@ dpRule' fSpec = dpR
          <> plain "FIXME! (Hier is wat omgevallen, dient te worden hersteld in de generator.)"
   --       <> (fromList $
   --                pandocEqnArray
-  --                    [ [ "("++xRefToLatexRefString (XRefConceptualAnalysisDeclaration d) ++ ")\\;\\;"
-  --                      ,  texOnly_Id(name d)
-  --                      , ":"
+                        , showMathWithSign d
   --                      , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
   --                      ] |d<-nds])
          <> (case nds of

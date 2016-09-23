@@ -10,7 +10,6 @@ module Ampersand.Output.PandocAux
       , definitionListItemLabel
       , pandocEqnArray
       , pandocEqnArrayWithLabel
-      , pandocEquation
       , pandocEquationWithLabel
       , count
       , ShowMath(..)
@@ -500,15 +499,12 @@ pandocEqnArrayWithLabel xref rows
          ++"\n\\end{aligned}"
        )
 
-pandocEquation :: String -> [Block]
-pandocEquation x = toList . para . displayMath $ x
-
-pandocEquationWithLabel :: XRefSection -> String -> Blocks
+pandocEquationWithLabel :: XRefObj -> Inlines -> Blocks
 pandocEquationWithLabel xref x =
-   para . displayMath $
-        ( "\\begin{aligned}\\label{"++xRefRawLabel xref++"}\\\\\n"
-           ++x
-           ++"\n\\end{aligned}"
+   para 
+        (  rawInline "Latex" ("\\begin{aligned}\\label{"++xRefRawLabel xref++"}\\\\\n")
+        <> x
+        <> rawInline "Latex" "\n\\end{aligned}"
         )
 
 
@@ -518,49 +514,47 @@ pandocEquationWithLabel xref x =
 ---------------------------------------
 
 class ShowMath a where
- showMath :: a -> String
+ showMath :: a -> Inlines
+ showMathWithSign :: a -> String 
 
-instance ShowMath A_Concept where
- showMath c = texOnly_Id (name c)
+--instance ShowMath A_Concept where
+-- showMath c = texOnly_Id (name c)
+-- showMathWithSign = showMath
 
-instance ShowMath A_Gen where
- showMath g@Isa{} = showMath (genspc g)++"\\ \\le\\ "++showMath (gengen g)
- showMath g@IsE{} = showMath (genspc g)++"\\ =\\ "++intercalate "\\cap" (map showMath (genrhs g))
+--instance ShowMath A_Gen where
+-- showMath g@Isa{} = showMath (genspc g)++"\\ \\le\\ "++showMath (gengen g)
+-- showMath g@IsE{} = showMath (genspc g)++"\\ =\\ "++intercalate "\\cap" (map showMath (genrhs g))
 
 instance ShowMath Rule where
- showMath r = showMath (rrexp r)
-
-instance ShowMath Signature where
- showMath (Sign s t) = showMath s++"\\rel"++showMath t
+ showMath = showMath . rrexp
 
 instance ShowMath Expression where
- showMath = showExpr . insParentheses
-   where  showExpr (EEqu (l,r)) = showExpr l++texOnly_equals++showExpr r
-          showExpr (EInc (l,r)) = showExpr l++texOnly_subs++showExpr r
-          showExpr (EIsc (l,r)) = showExpr l++texOnly_inter++showExpr r
-          showExpr (EUni (l,r)) = showExpr l++texOnly_union++showExpr r
-          showExpr (EDif (l,r)) = showExpr l++texOnly_bx ++showExpr r
-          showExpr (ELrs (l,r)) = showExpr l++texOnly_lRes++showExpr r
-          showExpr (ERrs (l,r)) = showExpr l++texOnly_rRes++showExpr r
-          showExpr (EDia (l,r)) = showExpr l++texOnly_dia++showExpr r
+ showMath = math . showExpr . insParentheses
+   where  showExpr (EEqu (l,r)) = showExpr l++inMathEquals++showExpr r
+          showExpr (EInc (l,r)) = showExpr l++inMathInclusion++showExpr r
+          showExpr (EIsc (l,r)) = showExpr l++inMathIntersect++showExpr r
+          showExpr (EUni (l,r)) = showExpr l++inMathUnion++showExpr r
+          showExpr (EDif (l,r)) = showExpr l++inMathDifference ++showExpr r
+          showExpr (ELrs (l,r)) = showExpr l++inMathLeftResidu++showExpr r
+          showExpr (ERrs (l,r)) = showExpr l++inMathRightResidu++showExpr r
+          showExpr (EDia (l,r)) = showExpr l++inMathDiamond++showExpr r
           showExpr (ECps (EEps i sgn,r)) | i==source sgn||i==target sgn = showExpr  r
                                          | otherwise                    = showExpr (ECps (EDcI i,r))
           showExpr (ECps (l,EEps i sgn)) | i==source sgn||i==target sgn = showExpr  l
                                          | otherwise                    = showExpr (ECps (l,EDcI i))
-          showExpr (ECps (l,r)) = showExpr l++texOnly_compose++showExpr r
-          showExpr (ERad (l,r)) = showExpr l++texOnly_relAdd++showExpr r
-          showExpr (EPrd (l,r)) = showExpr l++texOnly_crtPrd++showExpr r
-          showExpr (EKl0 e)     = showExpr (addParensToSuper e)++"^{"++texOnly_star++"}"
-          showExpr (EKl1 e)     = showExpr (addParensToSuper e)++"^{"++texOnly_plus++"}"
-          showExpr (EFlp e)     = showExpr (addParensToSuper e)++"^{"++texOnly_flip++"}"
+          showExpr (ECps (l,r)) = showExpr l++inMathCompose++showExpr r
+          showExpr (ERad (l,r)) = showExpr l++inMathRelativeAddition++showExpr r
+          showExpr (EPrd (l,r)) = showExpr l++inMathCartesianProduct++showExpr r
+          showExpr (EKl0 e)     = showExpr (addParensToSuper e)++inMathStar
+          showExpr (EKl1 e)     = showExpr (addParensToSuper e)++inMathPlus
+          showExpr (EFlp e)     = showExpr (addParensToSuper e)++inMathFlip
           showExpr (ECpl e)     = "\\overline{"++showExpr e++"}"
           showExpr (EBrk e)     = "("++showExpr e++")"
-          showExpr (EDcD d)     = "\\text{"++latexEscShw (name d)++"}"
-          showExpr (EDcI c)     = "I_{[\\text{"++latexEscShw (name c)++"}]}"
+          showExpr (EDcD d)     = inMathText (name d)
+          showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
-          showExpr (EDcV sgn)   = "V_{[\\text{"++latexEscShw (name (source sgn))++"}"++"*"
-                                   ++"\\text{"++latexEscShw (name (target sgn))++"}]}"
-          showExpr (EMp1 val _) = "`\\text{"++(latexEscShw . showADL $ val)++"}`"
+          showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
+          showExpr (EMp1 val _) = inMathText $ showADL val
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -571,13 +565,18 @@ addParensToSuper e@EFlp{} = EBrk e
 addParensToSuper e        = e
 
 instance ShowMath Declaration where
- showMath decl@(Sgn{})
-  = "\\declare{"++latexEscShw(name decl)++"}{"++latexEscShw(name (source decl))++"}{"++latexEscShw(name (target decl))++"}"
+ showMath decl@(Sgn{})  = math $ 
+        inMathText (name decl)++":\\ "
+     ++(inMathText . name . source $ decl)++(if isFunction decl then "\\mapsto" else "*")
+     ++(inMathText . name . target $ decl)++"]"
  showMath Isn{}
-  = "\\mathbb{I}"
+  = math $ "\\mathbb{I}"
  showMath Vs{}
-  = "\\full"
-
+  = math $ "\\mathbb{V}"
+ showMathWithSign decl =
+        inMathText (name decl)++"["
+     ++(inMathText . name . source $ decl)++"*"
+     ++(inMathText . name . target $ decl)++"]"
 -- | latexEscShw escapes to LaTeX encoding. It is intended to be used in LaTeX text mode.
 --   For more elaborate info on LaTeX encoding, consult the The Comprehensive LATEX Symbol List
 --   on:    http://ftp.snt.utwente.nl/pub/software/tex/info/symbols/comprehensive/symbols-a4.pdf
@@ -723,11 +722,14 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
 
 
 ---------------------------
---- LaTeX related stuff ---
+--- Math related stuff ---
 ---------------------------
 -- safe function to have plain text in a piece of Math
-mathText :: String -> String
-mathText s = "\\text{"++latexEscShw s++"} "
+inMathText :: String -> String
+inMathText s = "\\text{"++latexEscShw s++"} "
+
+inMathCartesianProduct :: String
+inMathCartesianProduct = "\\times "
 
 texOnly_Id :: String -> String
 texOnly_Id s = "\\mbox{"++latexEscShw s++"} "
@@ -738,47 +740,44 @@ texOnly_fun = "\\rightarrow "
 texOnly_rel :: String
 texOnly_rel = "\\times "
 
-texOnly_compose :: String
-texOnly_compose = ";"
+inMathCompose :: String
+inMathCompose = ";"
 
-texOnly_relAdd :: String
-texOnly_relAdd = "\\dagger "
+inMathRelativeAddition :: String
+inMathRelativeAddition = "\\dagger "
 
-texOnly_crtPrd :: String
-texOnly_crtPrd = "\\asterisk "
+inMathIntersect :: String
+inMathIntersect = "\\cap "
 
-texOnly_inter :: String
-texOnly_inter = "\\cap "
+inMathUnion :: String
+inMathUnion = "\\cup "
 
-texOnly_union :: String
-texOnly_union = "\\cup "
+inMathInclusion :: String
+inMathInclusion = "\\vdash "
 
-texOnly_subs :: String
-texOnly_subs = "\\vdash "
+inMathEquals :: String
+inMathEquals = "="
 
-texOnly_equals :: String
-texOnly_equals = "="
+inMathStar :: String
+inMathStar = "^{*}"
 
-texOnly_star :: String
-texOnly_star = "^* "
+inMathPlus :: String
+inMathPlus = "^{+}"
 
-texOnly_plus :: String
-texOnly_plus = "^+ "
+inMathDifference :: String
+inMathDifference = " - "
 
-texOnly_bx :: String
-texOnly_bx = " - "
+inMathLeftResidu :: String
+inMathLeftResidu = " / "
 
-texOnly_lRes :: String
-texOnly_lRes = " / "
+inMathRightResidu :: String
+inMathRightResidu = " \\backslash "
 
-texOnly_rRes :: String
-texOnly_rRes = " \\backslash "
+inMathDiamond :: String
+inMathDiamond = " \\Diamond "
 
-texOnly_dia :: String
-texOnly_dia = " \\Diamond "
-
-texOnly_flip :: String
-texOnly_flip = "\\smallsmile "
+inMathFlip :: String
+inMathFlip = "^{\\smallsmile}"
 
 newGlossaryEntry :: String -> String -> Inlines
 newGlossaryEntry nm cnt =
