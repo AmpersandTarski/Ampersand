@@ -253,7 +253,7 @@ chpDiagnosis fSpec
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
      where notUsed :: [Inlines]
-           notUsed = [ showMath (EDcD d)
+           notUsed = [(math . showMath) (EDcD d)
                      | d@Sgn{} <- nub (relsInThemes fSpec) -- only signal relations that are used or defined in the selected themes
                      , decusr d
                      , d `notElem` (relsMentionedIn . vrules) fSpec
