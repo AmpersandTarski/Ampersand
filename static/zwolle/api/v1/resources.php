@@ -4,6 +4,7 @@ use Ampersand\Config;
 use Ampersand\Core\Concept;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
+use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Notifications;
 use Ampersand\Interfacing\InterfaceObject;
 use function Ampersand\Helper\isAssoc;
@@ -73,8 +74,14 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
-
-	$options = $app->request->params();
+    
+    // Options
+    $options = 0;
+	if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $options = $options | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
+    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $options = $options | Resource::INCLUDE_NAV_IFCS;
+    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $options = $options | Resource::INCLUDE_LINKTO_DATA;
+    $depth = $app->request->params('depth');
+    
 	$ifcPath = implode ('/', $ifcPath);
 
 	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
@@ -83,7 +90,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	$content = $atomOrIfc->read($options);
 	
 	// If force list option is provided, make sure to return an array
-	if($options['forceList'] && isAssoc($content)) $content = array($content);
+	if(filter_var($app->request->params('forceList'), FILTER_VALIDATE_BOOLEAN) && isAssoc($content)) $content = array($content);
 
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 

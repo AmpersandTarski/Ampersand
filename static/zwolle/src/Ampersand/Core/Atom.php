@@ -48,24 +48,6 @@ class Atom {
 	public $idEsc;
 	
 	/**
-	 * Url to this atom (i.e. <serverUrl>/<apiPath>/resource/<conceptName>/<atomId>)
-	 * @var string
-	 */
-	public $url;
-	
-	/**
-	 * Specifies path (interface + atom) from which this atom is instantiated
-	 * @var string
-	 */
-	public $path;
-	
-	/**
-	 * Specifies the interface from which this atom is instantiated
-	 * @var InterfaceObject
-	 */
-	private $parentIfc;
-	
-	/**
 	 * Label of atom to be displayed in user interfaces
 	 * @var string
 	 */
@@ -94,11 +76,6 @@ class Atom {
 	 * @var mixed
 	 */
 	private $storedContent = null;
-	
-    /**
-     * @var array|null $qData The row data (from database query) from which this atom is created
-     */
-    private $qData = null;
     
 	/**
 	 * Atom constructor
@@ -108,18 +85,13 @@ class Atom {
      * @param array $qData the row data (from database query) from which this atom is created
 	 * @return void
 	 */
-	public function __construct($atomId, Concept $concept, InterfaceObject $ifc = null, array $qData = null){
+	public function __construct($atomId, Concept $concept, InterfaceObject $ifc = null){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
         $this->concept = $concept;
-		$this->parentIfc = $ifc;
-        $this->qData = $qData;
 		
 		$this->setId($atomId);
-		
-		// JSON-LD attributes
-		$this->url = Config::get('serverURL') . Config::get('apiPath') . '/resource/' . $this->concept->name . '/' . $this->getJsonRepresentation();
 
 	}
 	
@@ -134,14 +106,8 @@ class Atom {
 	 * @param string $id
 	 */
 	public function setId($id){
-	    // Decode url encoding for objects
-	    $this->id = $this->concept->isObject ? rawurldecode($id) : $id;
-	    
-	    // Escape id for database queries
-		$this->idEsc = $this->database->escape($this->getMysqlRepresentation());
-		
-        $this->path = is_null($this->parentIfc) ? 'resources/' . $this->concept->name : $this->parentIfc->path;
-        $this->path .= '/' . $this->getJsonRepresentation();
+	    $this->id = $id;
+		$this->idEsc = $this->database->escape($this->getMysqlRepresentation()); // Escape id for database queries
 	}
 	
 	/**
@@ -271,17 +237,6 @@ class Atom {
         }
         return $this->view;
 	}
-    
-    public function getQueryData($colName = null){
-        if(is_null($colName)){
-            if(is_null($this->qData)) return array();
-            else return $this->qData;
-        }else{
-            // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
-            if(!array_key_exists($colName, (array)$this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
-            return $this->qData[$colName];
-        }
-    }
 	
 	/**
 	 * Return json representation of Atom (identifier) according to Ampersand technical types (TTypes)
@@ -358,20 +313,13 @@ class Atom {
  *************************************************************************************************/
 
 	/**
+     * TODO: opruimen
 	 * Chains this atom to an interface as srcAtom 
 	 * @param string $ifcId
 	 * @throws Exception
 	 * @return InterfaceObject
 	 */
 	public function ifc($ifcId){
-	    if(is_null($this->parentIfc)) $ifc = InterfaceObject::getInterface($ifcId);
-        elseif($this->parentIfc->isRef()) $ifc = InterfaceObject::getInterface($ifcId);
-	    else $ifc = $this->parentIfc->getSubinterface($ifcId);
-	    
-	    $clone = clone $ifc;
-	    $clone->setSrcAtom($this);
-	     
-	    return $clone;
 	}
 	
 	/**
@@ -436,7 +384,8 @@ class Atom {
 	}
 	
 	/**
-	 * Returns the content of this atom given the parentIfc object
+	 * TODO: opruimen
+     * Returns the content of this atom given the parentIfc object
 	 * @param array $options
 	 * @param array $recursionArr
      * @param int $depth specifies the number subinterface levels to get the content for
@@ -444,62 +393,7 @@ class Atom {
 	 * @return mixed
 	 */
 	public function getContent($options = array(), $recursionArr = array(), $depth = null){
-	    $session = Session::singleton();
 	    
-        // Default options
-	    $options['metaData'] = isset($options['metaData']) ? filter_var($options['metaData'], FILTER_VALIDATE_BOOLEAN) : true;
-	    $options['navIfc'] = isset($options['navIfc']) ? filter_var($options['navIfc'], FILTER_VALIDATE_BOOLEAN) : true;
-        if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
-	    
-	    $content = array( '_id_' => $this->getJsonRepresentation()
-	                    , '_label_' => $this->getLabel()
-	                    , '_view_' => $this->getView()
-	                    );
-	     
-	    // Meta data
-	    if($options['metaData']){
-	        $content['_path_'] = $this->path;
-	    }
-	    
-	    // Define interface(s) to navigate to for this tgtAtom
-	    if($options['navIfc']){
-	        $ifcs = array();
-	        if($this->parentIfc->isLinkTo){
-                if ($session->isAccessibleIfc($this->parentIfc->refInterfaceId)) $ifcs[] = array('id' => $this->parentIfc->refInterfaceId, 'label' => $this->parentIfc->refInterfaceId, 'url' => $this->url . '/' . $this->parentIfc->refInterfaceId);
-	        }else{
-                $ifcs = array_map(function($o) {
-	                   return array('id' => $o->id, 'label' => $o->label, 'url' => $this->url . '/' . $o->id);
-	            }, $session->getInterfacesToReadConcept($this->concept));
-            }
-	        $content['_ifcs_'] = $ifcs;
-	    }
-	    
-        // Get content of subinterfaces if depth is not provided or max depth not yet reached
-        if(is_null($depth) || $depth > 0) {
-    	    // Decrease depth by 1
-            if(!is_null($depth)) $depth--;
-            
-            // Subinterfaces
-    	    foreach($this->parentIfc->subInterfaces as $subinterface){
-    	        // Skip subinterface if not given read rights
-    	        if(!$subinterface->crudR) continue;
-    	         
-    	        $subcontent = $this->ifc($subinterface->id)->getContent($options, $recursionArr, $depth);
-    	        
-    	        $content[$subinterface->id] = $subcontent;
-    	    
-    	        // _sortValues_ (if subInterface is uni)
-    	        if($subinterface->isUni && $options['metaData']){
-    	            if(is_bool($subcontent)) $sortValue = $subcontent; // property
-    	            elseif($subinterface->tgtConcept->isObject) $sortValue = current((array)$subcontent)['_label_']; // use label to sort objects
-    	            else $sortValue = $subcontent; // scalar
-    	    
-    	            $content['_sortValues_'][$subinterface->id] = $sortValue;
-    	        }
-    	    }
-        }
-	    
-	    return $content;
 			
 	}
 	
@@ -578,7 +472,7 @@ class Atom {
         
 	    // CRUD check
 	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
-	    if(!$this->parentIfc->tgtConcept->isObject) throw new Exception ("Cannot delete non-object '{$this->__toString()}' in '{$this->path}'. Use PATCH remove operation instead", 405);
+	    if(!$this->parentIfc->tgtConcept->isObject()) throw new Exception ("Cannot delete non-object '{$this->__toString()}' in '{$this->path}'. Use PATCH remove operation instead", 405);
         if($this->parentIfc->isRef()) throw new Exception ("Cannot delete on reference interface in '{$this->path}'. See #498", 501);
 	     
 	    // Handle options
@@ -679,12 +573,12 @@ class Atom {
 			throw new Exception("Cannot patch remove for property '{$ifc->path}'. Use patch replace instead", 500);
 		
 		// Interface is a relation to an object
-		}elseif($ifc->tgtConcept->isObject){
+        }elseif($ifc->tgtConcept->isObject()){
 			
 			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
-		}elseif(!$ifc->tgtConcept->isObject){
+        }elseif(!$ifc->tgtConcept->isObject()){
 			if($ifc->isUni) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
 			
 			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);

@@ -7,6 +7,7 @@
 
 namespace Ampersand\Interfacing;
 
+use Ampersand\Session;
 use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
@@ -172,7 +173,7 @@ class InterfaceObject {
 	 * 
 	 * @var InterfaceObject[]
 	 */
-	public $subInterfaces = array();
+	private $subInterfaces = array();
 	
 	/**
 	 * 
@@ -229,7 +230,7 @@ class InterfaceObject {
 		if($this->crudU && is_null($this->relation)) $this->logger->warning("Update rights (crUd) specified while interface expression is not an editable relation for (sub)interface: {$this->path}");
 		    
 		// Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318
-		if(!is_null($this->relation) && $this->crudU && !$this->tgtConcept->isObject && $this->isUni){
+		if(!is_null($this->relation) && $this->crudU && !$this->tgtConcept->isObject() && $this->isUni){
 		    // Only applies to editable relations
 		    // Only applies to crudU, because issue is with patchReplace, not with add/remove
 		    // Only applies to scalar, because objects don't use patchReplace, but Remove and Add
@@ -244,16 +245,16 @@ class InterfaceObject {
 		// Subinterfacing
 		if(!is_null($ifcDef['subinterfaces'])){
 		    // Subinterfacing is not supported/possible for tgt concepts with a scalar representation type (i.e. non-objects)
-		    if(!$this->tgtConcept->isObject) throw new Exception ("Subinterfacing is not supported for concepts with a scalar representation type (i.e. non-objects). (Sub)Interface '{$this->path}' with target {$this->tgtConcept->__toString()} (type:{$this->tgtConcept->type}) has subinterfaces specified", 501);
+		    if(!$this->tgtConcept->isObject()) throw new Exception ("Subinterfacing is not supported for concepts with a scalar representation type (i.e. non-objects). (Sub)Interface '{$this->path}' with target {$this->tgtConcept->__toString()} (type:{$this->tgtConcept->type}) has subinterfaces specified", 501);
 		    
 		    // Reference to top level interface
 		    $this->refInterfaceId = $ifcDef['subinterfaces']['refSubInterfaceId'];
-		    $this->isLinkTo = $ifcDef['subinterfaces']['refIsLinTo'];
+		    $this->isLinkTo = $ifcDef['subinterfaces']['refIsLinTo']; // not refIsLinkTo? no! typo in generics/interfaces.json
 		    
 		    // Inline subinterface definitions
 		    foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef){
 		        $ifc = new InterfaceObject($subIfcDef, $this->path);
-		        $this->subInterfaces[$ifc->id] = $ifc;
+		        $this->subInterfaces[] = $ifc;
 		        $this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
 		    }
 		}
@@ -288,12 +289,20 @@ class InterfaceObject {
         return !is_null($this->refInterfaceId);
     }
     
+    public function isLinkTo(){
+        return $this->isLinkTo;
+    }
+    
     /**
      * Returns if interface object is a top level interface
      * @return boolean
      */
     public function isRoot(){
         return $this->isRoot;
+    }
+    
+    public function isLeaf(){
+        return empty($this->getSubinterfaces());
     }
     
     /**
@@ -304,25 +313,41 @@ class InterfaceObject {
         return empty($this->ifcRoleNames) && $this->isRoot();
     }
     
-	/**
-	 * 
-	 * @param Atom $atom
-     * @return void
-	 */
-	public function setSrcAtom($atom){
-	    // Check if atom can be used as source for this interface
-	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept '{$this->srcConcept}' or any of its generalizations. Interface path: '{$this->path}'", 500);
-	    
-	    $this->srcAtom = $atom;
-	    $this->path = $this->srcAtom->path . '/' . $this->id;
-	}
+    public function isIdent(){
+        return $this->isIdent && $this->srcConcept == $this->tgtConcept;
+    }
+    
+    public function isUni(){
+        return $this->isUni;
+    }
+    
+    public function isTot(){
+        return $this->isTot;
+    }
+    
+    public function path(){
+        return $this->path;
+    }
+    
+    public function crudC(){ return $this->crudC;}
+    public function crudR(){ return $this->crudR;}
+    public function crudU(){ return $this->crudU;}
+    public function crudD(){ return $this->crudD;}
 	
+    /**
+     * @param string $ifcId
+     * @return InterfaceObject
+     */
 	public function getSubinterface($ifcId){	    
 	    if(!array_key_exists($ifcId, $subifcs = $this->getSubinterfaces())) throw new Exception("Subinterface '{$ifcId}' does not exists in interface '{$this->path}'", 500);
 	
 	    return $subifcs[$ifcId];
 	}
 	
+    /**
+     * @param string $ifcLabel
+     * @return InterfaceObject
+     */
 	public function getSubinterfaceByLabel($ifcLabel){
 	    foreach ($this->getSubinterfaces() as $ifc)
 	        if($ifc->label == $ifcLabel) return $ifc;
@@ -347,11 +372,23 @@ class InterfaceObject {
      * @param boolean $inclRefs specifies whether to include subinterfaces from referenced interfaces
      * @return InterfaceObject[] 
      */
-	private function getSubinterfaces($inclRefs = true){
-	    if(!$this->isRef()) return $this->subInterfaces;
-	    elseif($inclRefs) return self::getInterface($this->refInterfaceId)->getSubinterfaces();
-        else return array();
+	public function getSubinterfaces($inclRefs = true){
+	    if($this->isRef() && $inclRefs) return [self::getInterface($this->refInterfaceId)];
+	    else return $this->subInterfaces;
 	}
+    
+    /**
+     * @return InterfaceObject[]
+     */
+    public function getNavInterfacesForTgt(){
+        $session = Session::singleton();
+        $ifcs = array();
+        
+        if($this->isLinkTo() && $session->isAccessibleIfc($this->refInterfaceId)) $ifcs[] = self::getInterface($this->refInterfaceId);
+        else $ifcs = $session->getInterfacesToReadConcept($this->tgtConcept);
+        
+        return $ifcs;
+    }
 	
 /**************************************************************************************************
  * 
@@ -410,43 +447,17 @@ class InterfaceObject {
     }
     
 	/**
+     * TODO: opruimen
 	 * Returns list of target atoms given the srcAtom for this interface
 	 * @throws Exception
 	 * @return Atom[] [description]
 	 */
-	public function getTgtAtoms(){
-        $tgtAtoms = array();
-        try {
-            // If interface isIdent (i.e. expr = I[Concept]) we can return the srcAtom
-            if($this->isIdent && $this->srcConcept == $this->tgtConcept){
-                $tgtAtoms[] = new Atom($this->srcAtom->id, $this->tgtConcept, $this, $this->srcAtom->getQueryData());
-                
-            // Else try to get tgt atom from srcAtom query data (in case of uni relation in same table)
-            }else{
-                $tgt = $this->srcAtom->getQueryData('ifc_' . $this->id); // column is prefixed with ifc_
-                // $this->logger->debug("#217 One query saved due to reusing data from source atom");
-                if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->tgtConcept, $this);
-            }
-        }catch (Exception $e) {
-            // Column not defined, perform sub interface query
-            if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                $data = (array)$this->database->Exe($this->getQuery($this->srcAtom));
-                
-                // Integrity check
-                if($this->isUni && (count($data) > 1)) throw new Exception("Univalent (sub)interface returns more than 1 resource: '{$this->path}'", 500);
-                
-                foreach ($data as $row) {
-                    $tgtAtoms[] = new Atom($row['tgt'], $this->tgtConcept, $this, $row);
-                }
-            }else{
-                throw $e;
-            }
-        }
+	public function getTgtAtoms(Atom $srcAtom){
         
-        return $tgtAtoms;
     }
 	
 	/**
+     * TODO: opruimen
 	 * Returns the content of this interface given the srcAtom of this interface object
 	 * @param array $options
 	 * @param array $recursionArr
@@ -455,94 +466,7 @@ class InterfaceObject {
 	 * @return mixed
 	 */
 	public function getContent($options = array(), $recursionArr = array(), $depth = null){
-        // Default options
-	    $options['arrayType'] = isset($options['arrayType']) ? $options['arrayType'] : 'num';
-	    $options['inclLinktoData'] = isset($options['inclLinktoData']) ? filter_var($options['inclLinktoData'], FILTER_VALIDATE_BOOLEAN) : false;
-        if(isset($options['depth']) && is_null($depth)) $depth = $options['depth']; // initialize depth, if specified in options array
-	    
-	    // Initialize result
-        if($this->isProp() && empty($this->getSubinterfaces())) $result = false; // leaf properties are false by default (overwritten when tgt atom found)
-	    elseif($this->tgtConcept->isObject) $result = array(); // array if tgtConcept is an object, even if result is empty
-	    elseif(!$this->isUni) $result = array(); // array for non-univalent interfaces
-	    else $result = null; // else (i.e. univalent scalars)
         
-        // Loop over target atoms
-        foreach ($this->getTgtAtoms() as $tgtAtom){
-            
-            // Reference to other interface
-            if($this->isRef()
-                && (!$this->isLinkTo || $options['inclLinktoData'])  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
-                && (!is_null($depth) || !in_array($tgtAtom->id, (array)$recursionArr[$this->refInterfaceId]))){ // Prevent infinite loops
-                
-                $ifc = $tgtAtom->ifc($this->refInterfaceId);
-                
-                // Skip ref interface if not given read rights to prevent Exception
-    	        if(!$ifc->crudR) break; // breaks foreach loop
-                
-                foreach($ifc->getTgtAtoms() as $refTgtAtom){
-                    
-                    // Add target atom to $recursionArr to prevent infinite loops
-        	        if($options['inclLinktoData']) $recursionArr[$this->refInterfaceId][] = $refTgtAtom->id;
-                    
-                    $content = $refTgtAtom->getContent($options, $recursionArr, $depth);
-                    
-                    // Add target atom to result array
-                    switch($options['arrayType']){
-                        case 'num' :
-                            $result[] = $content;
-                            break;
-                        case 'assoc' :
-                            $result[$refTgtAtom->getJsonRepresentation()] = $content;
-                            break;
-                        default :
-                            throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
-                    }
-                }
-            }else{
-	        		
-    	        // Object
-    	        if($this->tgtConcept->isObject){
-    	            // Property leaf: a property at a leaf of a (sub)interface is presented as true/false (false by default, see init above)
-    	            if($this->isProp() && empty($this->getSubinterfaces())){
-    	                $result = true; // convert into true
-    	    
-    	            // Regular object, with or without subinterfaces
-    	            }else{
-    	                $content = $tgtAtom->getContent($options, $recursionArr, $depth);
-    	                	
-    	                // Add target atom to result array
-    	                switch($options['arrayType']){
-    	                    case 'num' :
-    	                        $result[] = $content;
-    	                        break;
-    	                    case 'assoc' :
-    	                        $result[$tgtAtom->getJsonRepresentation()] = $content;
-    	                        break;
-    	                    default :
-    	                        throw new Exception ("Unknown arrayType specified: '{$options['arrayType']}'", 500);
-    	                }
-    	                	
-    	            }
-    	    
-    	        // Scalar
-    	        }else{
-    	            // Leaf
-    	            if(empty($this->getSubinterfaces())){
-    	                $content = $tgtAtom->getJsonRepresentation();
-    	                	
-    	                if($this->isUni) $result = $content;
-    	                else $result[] = $content;
-    	                	
-    	            // Tree
-    	            }else{
-    	                throw new Exception("Scalar cannot have a subinterface (box) defined: '{$this->path}'", 500);
-    	            }
-    	        }
-            }
-	    }
-	    
-	    // Return result
-	    return $result;
 	}
 	
 /**************************************************************************************************
@@ -577,7 +501,7 @@ class InterfaceObject {
         
 	    // CRUD check
 	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
-	    if(!$this->tgtConcept->isObject) throw new Exception ("Cannot create non-object '{$this->tgtConcept}' in '{$this->path}'. Use PATCH add operation instead", 405);
+	    if(!$this->tgtConcept->isObject()) throw new Exception ("Cannot create non-object '{$this->tgtConcept}' in '{$this->path}'. Use PATCH add operation instead", 405);
         if($this->isRef()) throw new Exception ("Cannot create on reference interface in '{$this->path}'. See #498", 501);
 	    
 	    // Handle options
@@ -699,11 +623,11 @@ class InterfaceObject {
 	        else $this->relation()->deleteLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
 	        	
 	    // Interface is a relation to an object
-	    }elseif($this->tgtConcept->isObject){
+        }elseif($this->tgtConcept->isObject()){
 	        throw new Exception("Cannot patch replace for object reference in interface '{$this->this}'. Use patch remove + add instead", 500);
 	
 	    // Interface is a relation to a scalar (i.e. not an object)
-	    }elseif(!$this->tgtConcept->isObject){
+        }elseif(!$this->tgtConcept->isObject()){
 	        // Replace by nothing => deleteLink
 	        if(is_null($value)) $this->relation()->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept), $this->relationIsFlipped);
 	        // Replace by other atom => addLink
@@ -736,7 +660,7 @@ class InterfaceObject {
 	        throw new Exception("Cannot patch add for property '{$this->path}'. Use patch replace instead", 500);
 	
 	    // Interface is a relation to an object
-	    }elseif($this->tgtConcept->isObject){
+        }elseif($this->tgtConcept->isObject()){
 	        // Check if atom exists and may be created (crudC)
 	        if(!$tgtAtom->atomExists()){
                 if($this->crudC) $tgtAtom->addAtom();
@@ -748,7 +672,7 @@ class InterfaceObject {
             else $this->relation()->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
             
 	    // Interface is a relation to a scalar (i.e. not an object)
-	    }elseif(!$this->tgtConcept->isObject){    	
+        }elseif(!$this->tgtConcept->isObject()){    	
 	        // Check: If interface is univalent, throw exception
 	        if($this->isUni) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
 	        	
@@ -781,12 +705,12 @@ class InterfaceObject {
 			throw new Exception("Cannot patch remove for property '{$this->path}'. Use patch replace instead", 500);
 		
 		// Interface is a relation to an object
-        }elseif($this->tgtConcept->isObject){
+        }elseif($this->tgtConcept->isObject()){
 			
 			$this->relation()->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
 		
 		// Interface is a relation to a scalar (i.e. not an object)
-        }elseif(!$this->tgtConcept->isObject){
+        }elseif(!$this->tgtConcept->isObject()){
 			if($this->isUni) throw new Exception("Cannot patch remove for univalent interface {$this->path}. Use patch replace instead", 500);
 			
 			$this->relation()->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
