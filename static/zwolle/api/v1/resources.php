@@ -76,10 +76,10 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	$session->activateRoles($roleIds);
     
     // Options
-    $options = 0;
-	if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $options = $options | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
-    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $options = $options | Resource::INCLUDE_NAV_IFCS;
-    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $options = $options | Resource::INCLUDE_LINKTO_DATA;
+    $rcOptions = 0;
+	if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
+    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
+    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
     $depth = $app->request->params('depth');
     
 	$ifcPath = implode ('/', $ifcPath);

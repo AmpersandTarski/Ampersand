@@ -244,7 +244,7 @@ $app->get('/admin/report/interfaces', function () use ($app){
                     , 'view' => $ifc->view->label
                     , 'relation' => $ifc->relation->signature
                     , 'flipped' => $ifc->relationIsFlipped
-                    , 'ref' => $ifc->refInterfaceId
+                    , 'ref' => $ifc->getRefToIfcId()
                     , 'root' => $ifc->isRoot()
                     , 'public' => $ifc->isPublic()
                     , 'roles' => implode(',', $ifc->ifcRoleNames)

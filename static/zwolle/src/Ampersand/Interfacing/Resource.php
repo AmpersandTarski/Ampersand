@@ -26,11 +26,8 @@ class Resource extends Atom {
         
         INCLUDE_NAV_IFCS    = 0b00000010,
         
-        INCLUDE_SORT_DATA   = 0b00000100,
+        INCLUDE_SORT_DATA   = 0b00000100;
         
-        INCLUDE_LINKTO_DATA = 0b00001000;
-        
-    
     /**
      * @var InterfaceObject $parentIfc specifies the interface from which this atom is instantiated
      */
@@ -111,11 +108,13 @@ class Resource extends Atom {
     }
     
     /**
-     * @param int $options
+     * @param int $rcOptions
+     * @param int $ifcOptions
      * @param int $depth
+     * @param array $recursionArr
      * @return stdClass representation of resource content of current interface
      */
-    public function get($options = self::DEFAULT_OPTIONS, $depth = null){
+    public function get($rcOptions = self::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
         if(isset($this->parentIfc) && !$this->parentIfc->crudR()) throw new Exception ("Read not allowed for ". $this->parentIfc->path(), 403);
         $content = new stdClass();
         
@@ -124,10 +123,10 @@ class Resource extends Atom {
         $content->_view_ = $this->getView();
          
         // Meta data
-        if($options & self::INCLUDE_META_DATA) $content->_path_ = $this->path;
+        if($rcOptions & self::INCLUDE_META_DATA) $content->_path_ = $this->path;
         
         // Interface(s) to navigate to for this resource
-        if($options & self::INCLUDE_NAV_IFCS){
+        if($rcOptions & self::INCLUDE_NAV_IFCS){
             $content->_ifcs_ = array_map(function($o) {
                    return array('id' => $o->id, 'label' => $o->label);
             }, $this->parentIfc->getNavInterfacesForTgt());
@@ -137,14 +136,23 @@ class Resource extends Atom {
         if(isset($this->parentIfc) && (is_null($depth) || $depth > 0)) {
             if(!is_null($depth)) $depth--; // decrease depth by 1
             
-            foreach($this->parentIfc->getSubinterfaces() as $subifc){
-                if(!$subifc->crudR()) continue; // skip subinterface if not given read rights (otherwise exception will be thrown when getting content)
-                
-                // Add content of subifc
-                $content->{$subifc->id} = $subcontent = $this->all($subifc->id)->getList($options, $depth);
+            // Prevent infinite loops for reference interfaces when no depth is provided
+            // We only need to check LINKTO ref interfaces, because cycles may not exists in regular references (enforced by Ampersand generator)
+            // If $depth is provided, no check is required, because recursion is finite
+            if($this->parentIfc->isLinkTo() && is_null($depth)){
+                if(in_array($this->id, $recursionArr[$this->parentIfc->getRefToIfcId()])) throw new Exception ("Infinite loop detected for {$this} in " . $this->parentIfc->path(), 500);
+                else $recursionArr[$this->parentIfc->getRefToIfcId()][] = $this->id;
+            }
             
+            // 
+            foreach($this->parentIfc->getSubinterfaces($ifcOptions) as $subifc){
+                if(!$subifc->crudR()) continue; // skip subinterface if not given read rights (otherwise exception will be thrown when getting content)
+                    
+                // Add content of subifc
+                $content->{$subifc->id} = $subcontent = $this->all($subifc->id)->getList($rcOptions, $ifcOptions, $depth, $recursionArr);
+                
                 // Add sort data if subIfc is univalent
-                if($subifc->isUni() && ($options & self::INCLUDE_SORT_DATA)){
+                if($subifc->isUni() && ($rcOptions & self::INCLUDE_SORT_DATA)){
                     // If subifc is PROP (i.e. content is boolean)
                     if($subinteface->isProp()) $content->_sortValues_[$subifc->id] = $subcontent;
                     // Elseif subifc points to object
@@ -162,8 +170,8 @@ class Resource extends Atom {
      * @param string $ifcId
      * @return array representation of resource content of given interface
      */
-    public function getList($ifcId){
-        return $this->all($ifcId)->get();
+    public function getList($ifcId, $rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
+        return $this->all($ifcId)->getList($rcOptions, $ifcOptions, $depth, $recursionArr);
     }
     
     /**

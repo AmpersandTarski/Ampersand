@@ -124,7 +124,14 @@ class ResourceList {
         
     }
     
-    public function getList($options = Resource::DEFAULT_OPTIONS, $depth = null){
+    /**
+     * @param int $rcOptions
+     * @param int $ifcOptions
+     * @param int $depth
+     * @param array $recursionArr
+     * @return mixed[]
+     */
+    public function getList($rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
         if(!$this->parentIfc->crudR()) throw new Exception ("Read not allowed for ". $this->parentIfc->path(), 403);
         
         // Initialize result
@@ -134,7 +141,7 @@ class ResourceList {
         if($this->parentIfc->tgtConcept->isObject()){
             
             foreach ($this->getTgtResources() as $resource){
-                $result[] = $resource->get($options, $depth);
+                $result[] = $resource->get($rcOptions, $ifcOptions, $depth, $recursionArr);
             }
             
             // Special case for leave PROP: return false when result is empty, otherwise true (i.e. I atom must be present)
@@ -154,30 +161,6 @@ class ResourceList {
         elseif($this->parentIfc->isUni()) return current($result);
         else return $result;
         
-        
-        // TODO: check what to do with code below
-        // Loop over target atoms
-        foreach ($this->getTgtResources() as $tgtResource){
-            
-            // Reference to other interface
-            if($this->parentIfc->isRef()
-                && (!$this->parentIfc->isLinkTo || ($options & Resource::INCLUDE_LINKTO_DATA))  // Include content is interface is not LINKTO or inclLinktoData is explicitly requested via the options
-                && (!is_null($depth) || !in_array($tgtResource->id, (array)$recursionArr[$this->parentIfc->refInterfaceId]))){ // Prevent infinite loops
-                
-                $ifc = $tgtResource->ifc($this->parentIfc->refInterfaceId);
-                
-                // Skip ref interface if not given read rights to prevent Exception
-                if(!$ifc->crudR) break; // breaks foreach loop
-                
-                foreach($ifc->getTgtAtoms() as $refTgtAtom){
-                    
-                    // Add target atom to $recursionArr to prevent infinite loops
-                    if($options['inclLinktoData']) $recursionArr[$this->parentIfc->refInterfaceId][] = $refTgtAtom->id;
-                    
-                    $result[] = $refTgtAtom->getContent($options, $recursionArr, $depth);
-                }
-            }
-        }
     }
 }
 

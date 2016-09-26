@@ -23,6 +23,15 @@ use Ampersand\Config;
  *
  */
 class InterfaceObject {
+    
+    const
+        /** Default options */
+        DEFAULT_OPTIONS     = 0b00000001,
+        
+        INCLUDE_REF_IFCS    = 0b00000001,
+        
+        INCLUDE_LINKTO_IFCS = 0b00000011; // linkto ifcs are ref(erence) interfaces
+    
     /**
      * Contains all interface definitions
      * @var InterfaceObject[]
@@ -161,7 +170,7 @@ class InterfaceObject {
 	 * 
 	 * @var string
 	 */
-	public $refInterfaceId;
+	private $refInterfaceId;
 	
 	/**
 	 * 
@@ -289,6 +298,18 @@ class InterfaceObject {
         return !is_null($this->refInterfaceId);
     }
     
+    /**
+     * Returns identifier of interface object to which this interface refers to (or null if not set)
+     * @return string|null
+     */
+    public function getRefToIfcId(){
+        return $this->refInterfaceId;
+    }
+    
+    /**
+     * Returns if interface is a LINKTO reference to another interface
+     * @return boolean
+     */
     public function isLinkTo(){
         return $this->isLinkTo;
     }
@@ -301,6 +322,10 @@ class InterfaceObject {
         return $this->isRoot;
     }
     
+    /**
+     * Returns if interface object is a leaf node
+     * @return boolean
+     */
     public function isLeaf(){
         return empty($this->getSubinterfaces());
     }
@@ -362,18 +387,20 @@ class InterfaceObject {
     public function getInterfaceFlattened(){
         $arr = array();
         $arr[] = $this;
-        foreach ($this->getSubinterfaces(false) as $ifc){
+        foreach ($this->getSubinterfaces(self::DEFAULT_OPTIONS & ~self::INCLUDE_REF_IFCS) as $ifc){
             $arr = array_merge($arr, $ifc->getInterfaceFlattened());
         }
         return $arr;
     }
 	
     /**
-     * @param boolean $inclRefs specifies whether to include subinterfaces from referenced interfaces
+     * @param int $options
      * @return InterfaceObject[] 
      */
-	public function getSubinterfaces($inclRefs = true){
-	    if($this->isRef() && $inclRefs) return [self::getInterface($this->refInterfaceId)];
+	public function getSubinterfaces($options = self::DEFAULT_OPTIONS){
+	    if($this->isRef() && ($options & self::INCLUDE_REF_IFCS) // if ifc is reference to other root ifc, option to include refs must be set (= default)
+            && (!$this->isLinkTo() || ($options & self::INCLUDE_LINKTO_IFCS))) // this ref ifc must not be a LINKTO ór option is set to explicitly include linkto ifcs
+                return [self::getInterface($this->refInterfaceId)];
 	    else return $this->subInterfaces;
 	}
     
