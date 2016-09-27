@@ -138,13 +138,20 @@ checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
 checkOtherAtomsInSessionConcept ctx = case [mkOtherAtomInSessionError atom
                                            | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
                                            , name cpt == "SESSION"
-                                           , atom <- filter (not.isPermittedSessionValue) (popas pop)
-                                           ] of
+                                           , atom <- popas pop
+                                           -- SJC: I think we should not allow _SESSION in a POPULATION statement, as there is no current session at that time (_SESSION should only be allowed as Atom in expressions)
+                                           -- , not (_isPermittedSessionValue (popas pop))
+                                           ] ++
+                                           [ mkOtherTupleInSessionError d
+                                           | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d} <- ctxpopus ctx
+                                           , name src == "SESSION" || name tgt == "SESSION"
+                                           ]
+                                           of
                                         [] -> return ()
                                         errs -> Errors errs
-        where isPermittedSessionValue :: AAtomValue -> Bool
-              isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
-              isPermittedSessionValue _                 = False
+        where _isPermittedSessionValue :: AAtomValue -> Bool
+              _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
+              _isPermittedSessionValue _                 = False
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
