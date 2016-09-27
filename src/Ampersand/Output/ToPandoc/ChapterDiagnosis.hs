@@ -233,13 +233,13 @@ chpDiagnosis fSpec
                       ) 
        ) <>
        ( case pictsWithUnusedRels of
-          [pict] -> para (    xRef fSpec pict 
+          [pict] -> para (    xRef pict 
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          ) <>
                          (xDefBlck fSpec pict)
           picts  -> mconcat
-                       [ para (   xRef fSpec pict
+                       [ para (   xRef pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
@@ -402,10 +402,10 @@ chpDiagnosis fSpec
      <>
 -- the tables containing the actual work in progress population
      mconcat
-     [    para (  (str.l) (NL "Regel", EN "Rule")
-               <> quoterule r
-               <> xRefTo (XRefSharedLangRule r)
-               <> (str.l) (NL " luidt: ", EN "says: ")
+     [    para (  str (l (NL "Afspraak ", EN "Agreement "))
+               <> xRef (XRefSharedLangRule r)
+               <> " " <> quoterule r
+               <> (str.l) (NL " luidt: ", EN " says: ")
                )
        <> fromList (meaning2Blocks (fsLang fSpec) r)
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "

@@ -6,7 +6,7 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
 import Ampersand.FSpec.Crud
 import Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Ampersand.Graphic.Fspec2ClassDiagrams
-import Ampersand.Output.PredLogic
+-- import Ampersand.Output.PredLogic
 import Data.Char
 import Data.List
 import Data.Function (on)
@@ -41,7 +41,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                             <>  "Finally, the logical and technical data model are discussed."
                              )
        )
-    <>  if null (classes $ clAnalysis fSpec) 
+    <> (if null (classes $ clAnalysis fSpec) 
         then mempty
         else 
           (   header sectionLevel
@@ -49,19 +49,15 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                   )
            <> para (case fsLang fSpec of
                      Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                              <> (if canXRefer (getOpts fSpec)
-                                  then  "Deze is in " <> xRef fSpec classificationPicture <> "weergegeven."
-                                  else "Deze is in onderstaand figuur weergegeven."
+                              <> ("Deze is in " <> xRef classificationPicture <> "weergegeven."
                                  )
                      English -> "A number of concepts is organized in a classification structure. "
-                              <> (if canXRefer (getOpts fSpec)
-                                  then "This is shown in " <> xRef fSpec classificationPicture <> "."
-                                  else "This is shown in the figure below."
+                              <> ("This is shown in " <> xRef classificationPicture <> "."
                                  )
                    )
                 <> xDefBlck fSpec classificationPicture
            )
-
+       )
     <> daRulesSection
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
@@ -80,14 +76,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                     )
       <> para (case fsLang fSpec of
                  Dutch   -> text "De afspraken zijn vertaald naar een gegevensmodel. "
-                           <> ( if canXRefer (getOpts fSpec)
-                                then text "Dit gegevensmodel is in " <> xRef fSpec logicalDataModelPicture <> text " weergegeven."
-                                else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
+                           <> ( text "Dit gegevensmodel is in " <> xRef logicalDataModelPicture <> text " weergegeven."
                               )
                  English -> text "The functional requirements have been translated into a data model. "
-                           <> ( if canXRefer (getOpts fSpec)
-                                then text "This model is shown by " <> xRef fSpec logicalDataModelPicture <> text "."
-                                else text "This model is shown by the figure below. "
+                           <> ( text "This model is shown by " <> xRef logicalDataModelPicture <> text "."
                               )
               )
        <> xDefBlck fSpec logicalDataModelPicture
@@ -240,14 +232,10 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                 )
     <> para (case fsLang fSpec of
                Dutch   ->   "De afspraken zijn vertaald naar een technisch datamodel. "
-                         <> ( if canXRefer (getOpts fSpec)
-                              then "Dit model is in " <> xRef fSpec technicalDataModelPicture <> " weergegeven."
-                              else "Dit model is in onderstaand figuur weergegeven. "
+                         <> ( "Dit model is in " <> xRef technicalDataModelPicture <> " weergegeven."
                             )
                English ->   "The functional requirements have been translated into a technical data model. "
-                         <> ( if canXRefer (getOpts fSpec)
-                              then "This model is shown by " <> xRef fSpec technicalDataModelPicture <> "."
-                              else "This model is shown by the figure below. "
+                         <> ( "This model is shown by " <> xRef technicalDataModelPicture <> "."
                             )
             )
     <> xDefBlck fSpec technicalDataModelPicture
@@ -367,13 +355,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
        [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
        , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) rule
        , fromList $ meaning2Blocks (fsLang fSpec) rule
-       , if showPredExpr (getOpts fSpec)
-         then let predicate = toPredLogic rule
-              in  if format == Frtf then
-                     plain $ linebreak <> singleton (RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
-                  else
-                    pandocEqnArrayWithLabel (XRefDataAnalysisRule rule) (showLatex predicate)
-         else para (showMath rule)
+       , para (showMath rule)
        , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
        , if isSignal rule
          then mempty
@@ -384,7 +366,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                           ++"\"TODO\"."
                 )   
        ]   
-      where format = fspecFormat (getOpts fSpec) -- todo: bit hacky to use the output format here, but otherwise we need a major refactoring
   
 primExpr2pandocMath :: Lang -> Expression -> Inlines
 primExpr2pandocMath lang e =

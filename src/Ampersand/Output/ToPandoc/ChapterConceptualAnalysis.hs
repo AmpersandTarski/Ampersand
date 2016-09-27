@@ -3,7 +3,7 @@
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
 import Ampersand.Output.ToPandoc.SharedAmongChapters
-import Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
+--import Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Data.List (intersperse )
 
 chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])
@@ -70,10 +70,10 @@ chpConceptualAnalysis lev fSpec = (
         -- followed by a conceptual model for this pattern
      <> ( case (fsLang fSpec) of
                (Dutch  ) -> -- announce the conceptual diagram
-                            para (xRef fSpec (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
+                            para (xRef (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
                             -- draw the conceptual diagram
                           <>((xDefBlck fSpec . pictOfPat) pat)
-               (English) -> para (xRef fSpec (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
+               (English) -> para (xRef (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
                           <>((xDefBlck fSpec . pictOfPat) pat)
         ) <>
     (
@@ -100,9 +100,7 @@ chpConceptualAnalysis lev fSpec = (
                    (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the declaration of the relation with its properties and its intended meaning
-               <> pandocEqnArrayWithLabel (XRefConceptualAnalysisDeclaration d)
-                     [ [showMathWithSign d]
-                     ]
+               <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisDeclaration d) (showMathWithSign d)
                <> case meaning2Blocks (fsLang fSpec) d of
                     [] -> case fsLang fSpec of
                            Dutch   -> case commaNL  "en"  [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
@@ -150,10 +148,10 @@ chpConceptualAnalysis lev fSpec = (
                   -- Then the rule as a requirement
                <> plain
                    ( if isNull purp
-                     then (xRefTo . XRefSharedLangRule) r
+                     then (xRef . XRefSharedLangRule) r
                        <> str (l (NL " is gemaakt :" ,EN " has been made:"))
                      else str (l (NL "Daarom bestaat ", EN "Therefore "))
-                       <> (xRefTo . XRefSharedLangRule) r
+                       <> (xRef . XRefSharedLangRule) r
                        <> str (l (NL ":", EN " exists:"))
                    )
                <> fromList (meaning2Blocks  (fsLang fSpec) r)
@@ -162,18 +160,15 @@ chpConceptualAnalysis lev fSpec = (
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
                     <>(mconcat (intersperse  (str ", ")
-                                [   xRefTo (XRefConceptualAnalysisDeclaration d)
+                                [   xRef (XRefConceptualAnalysisDeclaration d)
                                  <> text (" ("++name d++")")
                                 | d@Sgn{}<-relsMentionedIn r]))
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )
-               <> (if showPredExpr (getOpts fSpec)
-                   then pandocEqnArrayWithLabel (XRefConceptualAnalysisRule r) ((showLatex.toPredLogic) r)
-                   else pandocEquationWithLabel (XRefConceptualAnalysisRule r) (showMath r)
-                  )
+               <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisRule r) (showMath r) 
                -- followed by a conceptual model for this rule
-               <> para (   xRef fSpec (pictOfRule r)
+               <> para (   xRef (pictOfRule r)
                         <> str (l (NL " geeft een conceptueel diagram van deze regel."
                                   ,EN " shows a conceptual diagram of this rule."))
                        )

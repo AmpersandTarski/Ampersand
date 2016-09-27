@@ -153,6 +153,7 @@ chpNatLangReqs lev fSpec =
                     [printCDef cd (Just ("."++ [suffx])) 
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
+         <> someWhiteSpace 
         where
          printCDef :: ConceptDef -- the definition to print
                 -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
@@ -186,15 +187,12 @@ chpNatLangReqs lev fSpec =
   printRel nDcl
        =   (printPurposes . cDclPurps . theLoad) nDcl
         <> case (cDclMeaning . theLoad) nDcl of
-              Just m -> definitionList [( definitionListItemLabel fSpec
-                                           (XRefSharedLangDeclaration dcl)
-                                              (l (NL "Afspraak ", EN "Agreement ")++show(theNr nDcl)
-                                               ++if development (getOpts fSpec)
-                                                 then (" ("++name nDcl++")") 
-                                                 else ""
-                                              )
-                                        , [printMeaning m]
-                                        )]
+              Just m -> definitionList 
+                    [(   str (l (NL "Afspraak ", EN "Agreement "))
+                      <> xDefInln fSpec (XRefSharedLangDeclaration dcl)
+                     , [printMeaning m]
+                     )
+                    ]
               _      -> mempty
         <> case samples of
               []  -> mempty
@@ -207,7 +205,7 @@ chpNatLangReqs lev fSpec =
         <> if null samples then mempty
            else bulletList [ plain $ mkPhrase dcl sample
                            | sample <- samples]
-         
+        <> someWhiteSpace 
          where dcl = cDcl . theLoad $ nDcl
                samples = take 3 . cDclPairs . theLoad $ nDcl
 
@@ -219,21 +217,13 @@ chpNatLangReqs lev fSpec =
           -> mempty
         Just m
           -> definitionList 
-               [(definitionListItemLabel fSpec
-                   (XRefSharedLangRule . cRul . theLoad $ nRul)
-                   ((case fsLang fSpec of
-                       Dutch   -> "Afspraak "
-                       English -> "Agreement "
-                    )++
-                    show (theNr nRul)++
-                    if development (getOpts fSpec)  
-                    then (" ("++name nRul++")")
-                    else ""
-                   )
+               [(   str (l (NL "Afspraak ", EN "Agreement "))
+                 <> xDefInln fSpec
+                       (XRefSharedLangRule . cRul . theLoad $ nRul)
                 , [printMeaning m]
                 ) 
                ]
-      
+    <> someWhiteSpace      
 
   mkPhrase :: Declaration -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
@@ -271,7 +261,8 @@ chpNatLangReqs lev fSpec =
          pragmaShow = emph . str
          devShow c = if (development (getOpts fSpec)) then "("<> (str.name) c <> ")" else mempty
                    
-
+someWhiteSpace :: Blocks  --TODO: This doesn't seem to have any effect. (At least not in the LaTeX output)
+someWhiteSpace = para (linebreak <> linebreak <> linebreak <> linebreak)
 
 data LawRef = LawRef { lawRef :: String}
 data ArticleOfLaw = ArticleOfLaw { aOlLaw :: String

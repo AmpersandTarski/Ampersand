@@ -53,7 +53,6 @@ data Options = Options { showVersion :: Bool
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
                        , blackWhite :: Bool   -- only use black/white in graphics
                        , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
-                       , showPredExpr :: Bool   -- for generated output, show predicate logic?
                        , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional specification document
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional specification document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
@@ -142,7 +141,6 @@ getOptions =
                       , crowfoot         = False
                       , blackWhite       = False
                       , doubleEdges      = True
-                      , showPredExpr     = False
                       , noDiagnosis      = False
                       , diagnosisOnly    = False
                       , genLegalRefs     = False
@@ -426,10 +424,6 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{doubleEdges = not (doubleEdges opts)}))
                "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
             , Public)
-          , (Option []        ["predLogic"]
-               (NoArg (\opts -> return opts{showPredExpr = True}))
-               "show logical expressions in the form of predicate logic."
-            , Hidden)
           , (Option []        ["noDiagnosis"]
                (NoArg (\opts -> return opts{noDiagnosis = True}))
                "omit the diagnosis chapter from the functional specification document."

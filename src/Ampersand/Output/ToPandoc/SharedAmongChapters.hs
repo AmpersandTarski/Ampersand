@@ -17,9 +17,9 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , Chapter(..)
     , chaptersInDoc
     , Xreferenceble(..)
-  --  , showImage
-    , canXRefer
-    , Xreferenceble(..)
+    , XRefSection(..)
+    , pandocEqnArray
+    , pandocEquationWithLabel
     , Purpose(..)
     , purposes2Blocks
     , isMissing
@@ -41,17 +41,18 @@ import Ampersand.FSpec
 import Text.Pandoc
 import Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder
-import Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Ampersand.Misc
 import Ampersand.Output.PandocAux
 import Data.List      --       (intercalate,partition)
 import Data.Monoid
 import Data.Maybe
 import Data.Ord
+import Data.Typeable
 import qualified Data.Time.Format as DTF
 import GHC.Exts(sortWith)
 import Ampersand.Graphic.Graphics
 import Ampersand.Classes()
+import System.FilePath  -- (combine,addExtension,replaceExtension)
 
 -- | Define the order of the chapters in the document.
 chaptersInDoc :: Options -> [Chapter]
@@ -77,10 +78,215 @@ chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
                                      ]
 
 
+data XRefSection
+             = XRefSharedLangDeclaration Declaration
+             | XRefDataAnalysisRule Rule
+             | XRefSharedLangRule Rule
+             | XRefProcessAnalysis Pattern
+             | XRefConceptualAnalysisPattern Pattern
+             | XRefConceptualAnalysisDeclaration Declaration
+             | XRefConceptualAnalysisRule Rule
+             | XRefConceptualAnalysisExpression Rule
+             | XRefInterfacesInterface Interface
+             | XRefNaturalLanguageTheme (Maybe Pattern)
 
-canXRefer :: Options -> Bool
-canXRefer opts = True
+xRefRawLabel :: XRefSection -> String
+xRefRawLabel x'
+ = show (chapterOfSection x)++typeOfSection x++":"++escapeNonAlphaNum (nameOfThing x)
+  where x = refStuff x'
+instance Xreferenceble XRefSection where
+  xLabel = xRefRawLabel
+  xRef a = citeGen (xrefPrefix (refStuff a)) a
+  xDefBlck fSpec a = either id (fatal 397 $ "You should use xDefInln for:\n  "++show (refStuff a)) (xDef fSpec a)
+  xDefInln fSpec a = either (fatal 398 $ "You should use xDefBlck for:\n  "++show (refStuff a)) id (xDef fSpec a)
 
+xDef :: FSpec -> XRefSection -> Either Blocks Inlines 
+xDef fSpec a =
+    case a of
+      XRefProcessAnalysis{}           -> Left . hdr $ (text.l) (NL "Proces: ",EN "Process: ")   <> (singleQuoted . str . nameOfThing . refStuff $ a)
+      XRefConceptualAnalysisPattern{} -> Left . hdr $ (text.l) (NL "Thema: ",EN "Theme: ")      <> (singleQuoted . str . nameOfThing . refStuff $ a)
+      XRefInterfacesInterface ifc     -> Left . hdr $ (text.l) (NL "Koppelvlak: ",EN "Interface: ") <> (singleQuoted . str . name $ ifc)
+      XRefNaturalLanguageTheme mPat   -> Left . hdr $ 
+                                       (case mPat of
+                                          Nothing  -> (text.l) (NL "Losse eindjes...",EN "Loose ends...")
+                                          Just pat -> text (name pat)
+                                       )
+      XRefSharedLangDeclaration d     -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ d)
+      XRefSharedLangRule r            -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ r)
+      XRefConceptualAnalysisDeclaration d 
+                                      -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
+                                              (    (text.l) (NL "Relatie ",EN "Relation ")
+                                                <> (str . showMaybe . numberOf fSpec $ d)
+                                              )  
+      XRefConceptualAnalysisRule r    -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
+                                              (    (text.l) (NL "Regel ",EN "Rule ")
+                                                <> (str . showMaybe . numberOf fSpec $ r)
+                                              ) 
+      XRefConceptualAnalysisExpression r
+                                      -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
+                                              (    (text.l) (NL "Regel ",EN "Rule ")
+                                                <> (str . showMaybe . numberOf fSpec $ r)
+                                              )
+      _ ->  fatal 389 $ "xDef not yet defined for "++show (refStuff a)
+   where
+    showMaybe Nothing = "???"
+    showMaybe (Just i)= show i
+    hdr = headerWith (xRefRawLabel a, [], []) 2
+    -- shorthand for easy localizing    
+    l :: LocalizedStr -> String
+    l lstr = localize (fsLang fSpec) lstr
+
+------ Symbolic referencing to a chapter/section. ---------------------------------
+class Typeable a => Xreferenceble a where
+  xLabel :: a  -> String
+  xRef :: a -> Inlines
+  xDefBlck :: FSpec -> a -> Blocks
+  xDefBlck _ a = fatal 310 $ "A "++show (typeOf a)++" cannot be labeld in <Blocks>." --you should use xDefInln instead.
+  xDefInln :: FSpec -> a -> Inlines
+  xDefInln _ a = fatal 312 $ "A "++show (typeOf a)++" cannot be labeld in an <Inlines>." --you should use xDefBlck instead.
+  {-# MINIMAL xLabel, xRef, (xDefBlck | xDefInln) #-}
+
+instance Xreferenceble Chapter where
+  xLabel = show
+  xRef a = citeGen "sec:" a
+  xDefBlck fSpec a = headerWith ("sec:"<> xLabel a,[],[]) 1 (chptTitle (fsLang fSpec) a)
+  
+instance Xreferenceble Picture where
+  xLabel = caption
+  xRef a = citeGen "fig:" a
+  xDefBlck fSpec a = para $ imageWith ("fig:"++xLabel a, [], []) src ("fig:"++xLabel a)(text (caption a))
+   where
+    opts = getOpts fSpec
+    src = ((case fspecFormat opts of
+             FLatex  -> dropExtension -- let pdflatex figure out the optimal extension
+             _ -> id
+           ) . takeFileName . imagePath opts) a
+
+citeGen :: Xreferenceble a => String -> a -> Inlines
+citeGen p l = cite cit mempty
+  where
+    cit :: [Citation]
+    cit = 
+      [Citation { citationId = p++xLabel l
+                , citationPrefix = []
+                , citationSuffix = []
+                , citationHash = 0
+                , citationNoteNum = 0
+                , citationMode = NormalCitation
+                }]
+
+pandocEqnArray :: [Inlines] -> Blocks
+pandocEqnArray [] = mempty
+pandocEqnArray xs
+ = orderedList (map para xs)
+
+
+pandocEquationWithLabel :: FSpec -> XRefSection -> Inlines -> Blocks
+pandocEquationWithLabel fSpec xref x = 
+  para (x <> " (" <> xDefInln fSpec xref <> ")")
+
+data RefStuff = 
+  RefStuff { typeOfSection    :: String
+           , chapterOfSection :: Chapter
+           , nameOfThing      :: String
+           , xrefPrefix       :: String
+           } deriving Show
+refStuff :: XRefSection -> RefStuff
+refStuff x  = 
+   case x of
+     XRefSharedLangDeclaration d 
+       -> RefStuff { typeOfSection    = "declaration"
+                   , chapterOfSection = SharedLang
+                   , nameOfThing      = fullName d
+                   , xrefPrefix       = "lst:"
+                   }
+     XRefDataAnalysisRule r
+       -> RefStuff { typeOfSection    = "rule"
+                   , chapterOfSection = DataAnalysis
+                   , nameOfThing      = name r
+                   , xrefPrefix       = "eq:"
+                   }
+     XRefSharedLangRule r
+       -> RefStuff { typeOfSection    = "rule"
+                   , chapterOfSection = SharedLang
+                   , nameOfThing      = name r
+                   , xrefPrefix       = "lst:"
+                   }
+     XRefProcessAnalysis p
+       -> RefStuff { typeOfSection    = "process"
+                   , chapterOfSection = ProcessAnalysis
+                   , nameOfThing      = name p
+                   , xrefPrefix       = "sec:"
+                   }
+     XRefConceptualAnalysisPattern p
+       -> RefStuff { typeOfSection    = "pattern"
+                   , chapterOfSection = ConceptualAnalysis
+                   , nameOfThing      = name p
+                   , xrefPrefix       = "sec:"
+                   }
+     XRefConceptualAnalysisDeclaration d
+       -> RefStuff { typeOfSection    = "declaration"
+                   , chapterOfSection = ConceptualAnalysis
+                   , nameOfThing      = fullName d
+                   , xrefPrefix       = "eq:"
+                   }
+     XRefConceptualAnalysisRule r 
+       -> RefStuff { typeOfSection    = "rule"
+                   , chapterOfSection = ConceptualAnalysis
+                   , nameOfThing      = name r
+                   , xrefPrefix       = "eq:"
+                   }
+     XRefConceptualAnalysisExpression r 
+       -> RefStuff { typeOfSection    = "expression"
+                   , chapterOfSection = ConceptualAnalysis
+                   , nameOfThing      = name r
+                   , xrefPrefix       = "eq:"
+                   }
+     XRefInterfacesInterface i    
+       -> RefStuff { typeOfSection    = "interface"
+                   , chapterOfSection = Interfaces
+                   , nameOfThing      = name i
+                   , xrefPrefix       = "sec:"
+                   }
+     XRefNaturalLanguageTheme mt
+       -> RefStuff { typeOfSection    = "theme"
+                   , chapterOfSection = SharedLang
+                   , nameOfThing      = case mt of
+                                          Nothing -> ":losseEindjes"
+                                          Just t  -> name t
+                   , xrefPrefix       = "sec:"
+                   }
+    where
+      fullName d = name d++"["++(name.source) d++"*"++(name.target) d++"]"
+
+
+class NumberedThing a where
+  numberOf :: FSpec -> a -> Maybe Int
+
+instance NumberedThing Rule where
+  numberOf fSpec r = case filter isTheOne ns of
+                      [] -> Nothing -- fatal 88 $ "Rule has not been numbered: "++name r
+                      [nr] -> Just $ theNr nr 
+                      _ -> fatal 90 $ "Rule has been numbered multiple times: "++name r
+    where ns = concatMap rulesOfTheme (orderingByTheme fSpec)
+          isTheOne :: Numbered RuleCont -> Bool
+          isTheOne x = (r ==) . cRul . theLoad $ x 
+instance NumberedThing Declaration where
+  numberOf fSpec d = case filter isTheOne ns of
+                      [] -> Nothing -- fatal 88 $ "Declaration has not been numbered: "++showDcl d
+                      [nr] -> Just $ theNr nr 
+                      _ -> fatal 90 $ "Declaration has been numbered multiple times: "++showDcl True d
+    where ns = concatMap dclsOfTheme (orderingByTheme fSpec)
+          isTheOne :: Numbered DeclCont -> Bool
+          isTheOne x = (d ==) . cDcl . theLoad $ x 
+instance NumberedThing A_Concept where
+  numberOf fSpec c = case filter isTheOne ns of
+                      [] -> Nothing -- fatal 88 $ "Concept has not been numbered: "++name c
+                      [nr] -> Just $ theNr nr 
+                      _ -> fatal 90 $ "Concept has been numbered multiple times: "++name c
+    where ns = concatMap cptsOfTheme (orderingByTheme fSpec)
+          isTheOne :: Numbered CptCont -> Bool
+          isTheOne x = (c ==) . cCpt . theLoad $ x 
 
 
 -- | This function orders the content to print by theme. It returns a list of
@@ -270,46 +476,41 @@ dpRule' fSpec = dpR
          <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
          <> case (nds, fsLang fSpec) of
              ([] ,_)       -> mempty
-             ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig ("         <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
-             ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced (" <> xRefTo (XRefNaturalLanguageDeclaration d) <> "):")
-             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> xRefTo (XRefSharedLangRule r)
+             ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
+             ([d],English) -> plain ("In order to formalize this, a " <> (if isFunction d then "function" else "relation") <> " is introduced:")
+             (_  ,Dutch)   -> plain ("Om te komen tot de formalisatie van " <> xRef (XRefSharedLangRule r)
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
-             (_  ,English) -> plain ("To arrive at the formalization of "   <> xRefTo (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
-         <> plain "FIXME! (Hier is wat omgevallen, dient te worden hersteld in de generator.)"
-  --       <> (fromList $
-  --                pandocEqnArray
-                        , showMathWithSign d
-  --                      , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
-  --                      ] |d<-nds])
+             (_  ,English) -> plain ("To arrive at the formalization of "   <> xRef (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
+         <> pandocEqnArray (map showMathWithSign nds)
          <> (case nds of
               [] -> case rds of
                        []   -> mempty
                        [rd] -> plain (  l (NL "Relatie ", EN "We use relations ")
-                                     <> xRefTo (XRefConceptualAnalysisDeclaration rd) <> "(" <> (emph.str.name) rd <> ")"
+                                     <> xRef (XRefConceptualAnalysisDeclaration rd) <> "(" <> (emph.str.name) rd <> ")"
                                      <> l (NL " wordt gebruikt.", EN ".")
                                      )
                        _    -> plain (  (case fsLang fSpec of
                                           Dutch   ->  "We gebruiken de relaties "
-                                                     <> commaNLPandoc'  "en"  [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
+                                                     <> commaNLPandoc'  "en"  [xRef (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
                                           English ->   "We use relations "
-                                                     <> commaEngPandoc' "and" [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
+                                                     <> commaEngPandoc' "and" [xRef (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
                                         )
                                      )
               _  -> if null rds then mempty
                     else ( plain ( ( case rds of
                                       []   -> mempty
                                       [rd] ->   l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
-                                              <> xRefTo (XRefConceptualAnalysisDeclaration rd) <> "(" <> (str.name) rd <> ")"
+                                              <> xRef (XRefConceptualAnalysisDeclaration rd) <> "(" <> (str.name) rd <> ")"
                                       _ -> (case fsLang fSpec of
                                           Dutch   ->   "Ook gebruiken we relaties "
-                                                     <> commaNLPandoc'  "en"  [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
+                                                     <> commaNLPandoc'  "en"  [xRef (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
                                           English ->   "We also use relations "
-                                                     <> commaEngPandoc' "and" [xRefTo (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
+                                                     <> commaEngPandoc' "and" [xRef (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
                                            )
                                    )
                                  <> l (NL " om ", EN " to formalize ")
-                                 <> xRefTo (XRefSharedLangRule r)
+                                 <> xRef (XRefSharedLangRule r)
                                  <> l (NL " te formaliseren: ", EN ": ")
                                  )
                          )
@@ -319,14 +520,11 @@ dpRule' fSpec = dpR
                           , EN "Activities that are defined by this rule are finished when: ")
                    else l (NL "De regel luidt: ", EN "This means: ")
                   )
-         <> (if showPredExpr (getOpts fSpec)
-             then pandocEqnArrayWithLabel (XRefConceptualAnalysisExpression r) ((showLatex.toPredLogic) r)
-             else pandocEquationWithLabel (XRefConceptualAnalysisExpression r) (showMath r)
-            )
+         <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisExpression r) (showMath r)
          <> (if length nds<=1
              then mempty
              else plain (  l (NL "Dit komt overeen met ", EN "This corresponds to ")
-                        <> xRefTo (XRefSharedLangRule r)
+                        <> xRef (XRefSharedLangRule r)
                         <> " (" <> (singleQuoted.str.name) r  <> ")."
 
                         )
@@ -351,13 +549,12 @@ relsInThemes fSpec
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks opts ps
- = fromList $
-     case ps of
-      [] -> []
+ = case ps of
+      [] -> mempty
             -- by putting the ref after the first inline of the definition, it aligns nicely with the definition
       _  -> case concatMarkup [expl{amPandoc = insertAfterFirstInline (ref purp) $ amPandoc expl} | purp<-ps, let expl=explMarkup purp] of
-             Nothing -> []
-             Just p  -> amPandoc p
+             Nothing -> mempty
+             Just p  -> fromList $ amPandoc p
        where   -- The reference information, if available for this purpose, is put
         ref :: Purpose -> [Inline]
         ref purp = case fspecFormat opts of
@@ -413,5 +610,4 @@ bulletList xs = BuggyBuilder.bulletList xs
 
 math :: String -> Inlines
 math s = BuggyBuilder.math ("{"++s++"}")
-
 
