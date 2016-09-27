@@ -356,6 +356,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
        , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) rule
        , fromList $ meaning2Blocks (fsLang fSpec) rule
        , para (showMath rule)
+              fromList $ pandocEquation (showMath rule)
        , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
        , if isSignal rule
          then mempty

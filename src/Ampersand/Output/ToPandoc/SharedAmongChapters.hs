@@ -483,6 +483,8 @@ dpRule' fSpec = dpR
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
              (_  ,English) -> plain ("To arrive at the formalization of "   <> xRef (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
          <> pandocEqnArray (map showMathWithSign nds)
+                        , ":"
+                        , texOnly_Id(name (source d))++(if isFunction d then texOnly_fun else texOnly_rel)++texOnly_Id(name(target d))
          <> (case nds of
               [] -> case rds of
                        []   -> mempty

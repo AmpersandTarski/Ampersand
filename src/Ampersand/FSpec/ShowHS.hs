@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances,DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.FSpec.ShowHS (ShowHS(..),ShowHSName(..),fSpec2Haskell,haskellIdentifier) where
 import Ampersand.Core.ParseTree
 import Ampersand.Core.AbstractSyntaxTree
@@ -395,7 +395,7 @@ instance ShowHS Role where
  
 instance ShowHS P_RoleRule where
  showHS opts ind rs
-  = "Maintain "++show (mRoles rs)++" "++show (mRules rs)++" "++showHS opts (ind++"    ") (mPos rs)
+  = "Maintain "++show (mRoles rs)++" "++show (mRules rs)++" "++showHS opts (ind++"    ") (origin rs)
 instance ShowHS (Role,Rule) where
  showHS _ _ (rol,rul)
   = "("++show rol++", "++showHSName rul++")"
@@ -442,7 +442,7 @@ instance ShowHS Activity where
 
 instance ShowHS PPurpose where
  showHS opts _ expl =
-    "PRef2 ("++showHS opts "" (pexPos     expl)++") "++
+    "PRef2 ("++showHS opts "" (origin     expl)++") "++
           "("++showHS opts "" (pexObj     expl)++") "++
           "("++showHS opts "" (pexMarkup  expl)++") "
              ++show (intercalate ";" (pexRefIDs expl))++" "
@@ -681,7 +681,7 @@ instance ShowHS Declaration where
 
 instance ShowHS ConceptDef where
  showHS opts _ cd
-  = " Cd ("++showHS opts "" (cdpos cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
+  = " Cd ("++showHS opts "" (origin cd)++") "++show (cdcpt cd)++" "++show (cdplug cd)++" "++show (cddef cd)++" "++show (cdref cd)++" "++show (cdfrom cd)
 instance ShowHSName Char where
  showHSName = show
 instance ShowHS Char where
