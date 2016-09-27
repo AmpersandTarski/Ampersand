@@ -442,8 +442,8 @@ instance Traced (P_SubIfc a) where
 instance Functor P_ObjDef where fmap = fmapDefault
 instance Foldable P_ObjDef where foldMap = foldMapDefault
 instance Traversable P_ObjDef where
- traverse f (P_Obj nm pos ctx mCrud mView msub)
-  = (\ctx' msub'->(P_Obj nm pos ctx' mCrud mView msub')) <$>
+ traverse f (P_Obj nm pos' ctx mCrud mView msub)
+  = (\ctx' msub'->(P_Obj nm pos' ctx' mCrud mView msub')) <$>
      traverse f ctx <*> traverse (traverse f) msub
 
 instance Traced TermPrim where

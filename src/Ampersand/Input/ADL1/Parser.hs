@@ -212,7 +212,7 @@ pRuleDef =  P_Ru <$> currPos
                  <*> many pMeaning
                  <*> many pMessage
                  <*> pMaybe pViolation
-           where rulid (FileLoc pos _) = show("rule@" ++show pos)
+           where rulid (FileLoc pos' _) = show("rule@" ++show pos')
                  rulid _ = fatal 226 "pRuleDef is expecting a file location."
 
                  --- Violation ::= 'VIOLATION' PairView
@@ -241,10 +241,10 @@ pRelationDef = reorder <$> currPos
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
-            where reorder pos (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
+            where reorder pos' (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
                     let plug = bp1 || bp2
                         props = prop ++ fun
-                    in P_Sgn nm sign props pragma meanings popu pos plug
+                    in P_Sgn nm sign props pragma meanings popu pos' plug
 
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (String,P_Sign,Props)
@@ -384,12 +384,10 @@ pViewSegmentLoad = P_ViewExp  <$> pTerm
 --- ViewSegment ::= Label ViewSegmentLoad
 pViewSegment :: Bool -> AmpParser (P_ViewSegment  TermPrim)
 pViewSegment labelIsOptional
-       = build <$> currPos
-               <*> (if labelIsOptional then pMaybe (try pLabel) else Just <$> try pLabel)
+       = P_ViewSegment
+               <$> (if labelIsOptional then pMaybe (try pLabel) else Just <$> try pLabel)
+               <*> currPos
                <*> pViewSegmentLoad
-   where build :: Origin -> Maybe String -> P_ViewSegmtPayLoad TermPrim -> P_ViewSegment TermPrim
-         build pos lab =
-            P_ViewSegment lab pos
 
 --- ViewDefLegacy ::= 'VIEW' Label ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
