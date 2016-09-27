@@ -371,7 +371,7 @@ instance ShowHS FSpec where
                      ]
 
 instance ShowHS Meta where
- showHS f i (Meta pos obj nm val) = "Meta ("++showHS f i pos ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val
+ showHS f i (Meta pos' obj nm val) = "Meta ("++showHS f i pos' ++ ") "++ show obj ++ " " ++ show nm ++ " " ++ show val
 
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
