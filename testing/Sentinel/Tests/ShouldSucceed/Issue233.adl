@@ -4,9 +4,11 @@
 sum :: Sum * Integer [UNI]
 arg :: Sum * Integer
 
-IDENT "Sums are identified by their arguments": Sum (arg)
 -- In other words:
-RULE "Sums are id'd by their args": arg <> arg~ |- I[Sum]
+RULE "Sums are id'd by their args 1": arg <> arg~ |- I[Sum]
+
+
+RULE "Sums are id'd by their args 2": (-arg ! arg~) /\ (arg ! -arg~) |- I[Sum]
 
 RULE "Test equivalence": arg <> arg~ = (-arg ! arg~) /\ (arg ! -arg~)
 

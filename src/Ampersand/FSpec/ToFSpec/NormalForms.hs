@@ -1234,9 +1234,6 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM posCpl (ERrs (l,r)) _     | simpl = (t .\. f, steps++steps', fEqu [equ',equ''])
                                          where (t,steps, equ')  = nM (not posCpl) l []
                                                (f,steps',equ'') = nM posCpl r []
-  nM posCpl (EDia (l,r)) _     | simpl = (t .<>. f, steps++steps', fEqu [equ',equ''])
-                                         where (t,steps, equ')  = nM posCpl l []  -- TODO: the use of posCpl is erroneous
-                                               (f,steps',equ'') = nM posCpl r []  -- TODO: the use of posCpl is erroneous
   nM posCpl (ERad (ERad (l,k),r)) rs   = nM posCpl (l .!. (k .!. r)) rs  -- standardize, using associativity of .!.
   nM posCpl (ERad (l,r)) rs    | simpl = (t .!. f, steps++steps', fEqu [equ',equ''])
                                          where (t,steps, equ')    = nM posCpl l []

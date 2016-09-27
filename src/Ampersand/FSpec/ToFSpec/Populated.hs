@@ -98,9 +98,9 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
                                 , null (lkp x (contents (EFlp l)) >- lkp y (contents (EFlp r)))
                                 ]
          EDia (l,r) -> fromListWith Set.union
-                       [(x,Set.singleton y) | x<-aVals (source l), y<-aVals (source r)
-                                , null (lkp y (contents r) >- lkp x (contents l))
-                                , null (lkp y (contents l) >- lkp x (contents r))
+                       [(x,Set.singleton y) | x <- aVals (source l), y <- aVals (target r)
+                                , null (lkp y (contents (EFlp r)) >- lkp x (contents l))
+                                , null (lkp x (contents l) >- lkp y (contents (EFlp r)))
                                 ]
          ERad (l,r) -> fromListWith Set.union
                        [(x,Set.singleton y) | x<-aVals (source l), y<-aVals (target r)
