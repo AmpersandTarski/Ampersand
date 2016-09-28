@@ -140,11 +140,15 @@ checkOtherAtomsInSessionConcept ctx = case [mkOtherAtomInSessionError atom
                                            , name cpt == "SESSION"
                                            , atom <- popas pop
                                            -- SJC: I think we should not allow _SESSION in a POPULATION statement, as there is no current session at that time (_SESSION should only be allowed as Atom in expressions)
-                                           -- , not (_isPermittedSessionValue (popas pop))
+                                           , not (_isPermittedSessionValue atom)
                                            ] ++
-                                           [ mkOtherTupleInSessionError d
-                                           | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d} <- ctxpopus ctx
+                                           [ mkOtherTupleInSessionError d pr
+                                           | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
                                            , name src == "SESSION" || name tgt == "SESSION"
+                                           , pr <- ps
+                                           , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
+                                             ||
+                                             (name tgt == "SESSION" && not (_isPermittedSessionValue (apRight pr)))
                                            ]
                                            of
                                         [] -> return ()
