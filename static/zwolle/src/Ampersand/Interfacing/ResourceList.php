@@ -6,8 +6,14 @@
  */
 
 namespace Ampersand\Interfacing;
+use stdClass;
+use Exception;
+use Ampersand\Config;
 use Ampersand\Core\Atom;
+use Ampersand\Core\Concept;
+use Ampersand\Core\Relation;
 use Ampersand\Database\Database;
+use Ampersand\Log\Logger;
 
 /**
  *
@@ -42,9 +48,25 @@ class ResourceList {
      * @return Resource
      */
     public function one($tgtId){
-        if(!in_array($tgtId, $arr = $this->getTgtResources())) throw new Exception ("Resource not found", 404);
+        // Functionality to automatically add/create resource if allowed
+        if(!in_array($tgtId, $arr = $this->getTgtResources())){
+            $resource = new Resource($tgtId, $this->parentIfc->tgtConcept->name);
+            
+            // If resource already exists and may be added (crudU)
+            if($resource->atomExists() && $this->parentIfc->crudU()) $this->add($resource);
+            // Elseif resource not yet exists and may be created (crudC) 
+            elseif(!$resource->atomExists() && $this->parentIfc->crudC()){
+                $obj = new stdClass();
+                $obj->_id_ = $resource->id;
+                $this->post($obj);
+            }
+            // Else: return not found
+            else throw new Exception ("Resource '{$resource}' not found", 404);
+            
+            // Reevaluate interface expression, tgt should now be there, otherwise throw exception
+            if(!in_array($tgtId, $arr = $this->getTgtResources(false))) throw new Exception ("Oeps.. something went wrong", 500);
+        }
         else return $arr[$tgtId];
-        
     }
     
     /**
@@ -160,6 +182,68 @@ class ResourceList {
         if($this->parentIfc->isUni() && empty($result)) return null;
         elseif($this->parentIfc->isUni()) return current($result);
         else return $result;
+        
+    }
+    
+    /**
+     * @param stdClass $resourceToPost
+     * @return stdClass representation of newly created resource
+     */
+    public function post(stdClass $resourceToPost){
+        if(!$this->parentIfc->crudC()) throw new Exception ("Create not allowed for ". $this->parentIfc->path(), 403);
+        
+        // Use attribute '_id_' if provided
+        if(isset($resourceToPost->_id_)){
+            $resource = new Resource($resourceToPost->_id_, $this->parentIfc->tgtConcept->name, $this->parentIfc, $this->src);
+            if($resource->atomExists()) throw new Exception ("Cannot create resource that already exists", 403);
+        }else{
+            $id = $this->parentIfc->tgtConcept->createNewAtomId();
+            $resource = new Resource($id, $this->parentIfc->tgtConcept->name, $this->parentIfc, $this->src);
+        }
+        
+        // If interface is editable, also add tuple(src, tgt) in interface relation
+        if($this->parentIfc->isEditable() && $this->parentIfc->crudU()) $this->add($resource);
+        else $resource->addAtom();
+        
+        // Put resource attributes
+        $resource->put($resourceToPost);
+        
+        // Special case for file upload. TODO: make extension with hooks
+        if($this->parentIfc->tgtConcept->isFileObject()){
+            $conceptFilePath = Concept::getConceptByLabel('FilePath');
+            $conceptFileName = Concept::getConceptByLabel('FileName');
+            
+            if (is_uploaded_file($_FILES['file']['tmp_name'])){
+                $tmp_name = $_FILES['file']['tmp_name'];
+                $new_name = time() . '_' . $_FILES['file']['name'];
+                $absolutePath = Config::get('absolutePath') . Config::get('uploadPath') . $new_name;
+                $relativePath = Config::get('uploadPath') . $new_name;
+                $result = move_uploaded_file($tmp_name, $absolutePath);
+                 
+                if($result) Logger::getUserLogger()->notice("File '{$new_name}' uploaded");
+                else throw new Exception ("Error in file upload", 500);
+                
+                // Populate filePath and originalFileName relations in database
+                $relFilePath = Relation::getRelation('filePath', $newAtom->concept, $conceptFilePath);
+                $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept, $conceptFileName);
+                
+                $relFilePath->addLink($resource, new Atom($relativePath, $conceptFilePath));
+                $relOriginalFileName->addLink($resource, new Atom($_FILES['file']['name'], $conceptFileName));
+                
+            }else{
+                throw new Exception ("No file uploaded", 500);
+            }
+        }
+        
+        return $resource->get();
+    }
+    
+    
+    public function add($resource){
+        if($this->relation) $this->relation()->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
+    }
+    
+    public function remove($resource){
         
     }
 }

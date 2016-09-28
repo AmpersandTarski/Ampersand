@@ -404,87 +404,32 @@ class Atom {
  *************************************************************************************************/
 	
     /**
+     * TODO: opruimen
      * @param array $options 
      * @throws Exception when read is not allowed for parent interface object
      * @return mixed
      */
     public function read($options = []){
-        $this->logger->debug("read() called on {$this->path}");
         
-        // CRUD check
-	    if(!$this->parentIfc->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
-        
-        return $this->getContent($options);
     }
     
     /**
+     * TODO: opruimen
      * Function not implemented. Use InterfaceObject->create() method instead.
      * @throws Exception
      */
 	public function create(){
-        $this->logger->debug("create() called on {$this->path}");
-	    throw new Exception ("Cannot create atom at path '{$this->path}'. Add interface identifier behind path", 405);
-	}
-	
-	/**
-	 * Update atom properties in database. Function not (yet) implemented.
-	 * @param mixed $data contains the data of this atom to put
-	 * @param array $options
-	 * @return array
-	 */
-	public function update($data, $options){
-        $this->logger->debug("update() called on {$this->path}");
-		throw new Exception ("Not yet implemented", 501);
+        
 	}
 
 	/**
-	 * Performs given patches on this atom and returns updated content
+	 * TODO: opruimen
+     * Performs given patches on this atom and returns updated content
 	 * @param array $patches
 	 * @param array $options
 	 * @return mixed updated content of atom
 	 */
 	public function patch($patches, $options = array()){
-        $this->logger->debug("patch() called on {$this->path}");
-	    
-        // CRUD check for patch is performed by Atom->doPatches() method
-	    
-		// Handle options
-		if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
-		$successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
-		
-		// Perform patches
-		$this->doPatches($patches);
-		
-		// Close transaction
-		$this->database->closeTransaction($successMessage, null, $this);
-		
-		return $this->getStoredContent();
-	}
-	
-	/**
-	 * Function to delete an atom from Concept collection
-	 * @param array $options
-	 * @throws Exception when delete is not allowed/possible
-	 * @return void
-	 */
-	public function delete($options = array()){
-        $this->logger->debug("delete() called on {$this->path}");
-        
-	    // CRUD check
-	    if(!$this->parentIfc->crudD) throw new Exception("Delete not allowed for '{$this->path}'", 405);
-	    if(!$this->parentIfc->tgtConcept->isObject()) throw new Exception ("Cannot delete non-object '{$this->__toString()}' in '{$this->path}'. Use PATCH remove operation instead", 405);
-        if($this->parentIfc->isRef()) throw new Exception ("Cannot delete on reference interface in '{$this->path}'. See #498", 501);
-	     
-	    // Handle options
-	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
-	
-	    // Perform delete
-	    $this->deleteAtom();
-	
-	    // Close transaction
-	    $this->database->closeTransaction($this->concept . ' deleted');
-	
-	    return;
 	}
 	
 /**************************************************************************************************
@@ -533,25 +478,6 @@ class Atom {
 			$processed = $totalPatches - $errorCount;
 			Logger::getUserLogger()->warning("{$processed}/{$totalPatches} patches processed. {$errorCount} errors.");
 		}
-	}
-	
-    /**
-     * Function not implemented. Use InterfaceObject->doPatchReplace() method instead.
-     * @var array $patch
-     * @throws Exception
-     */
-	public function doPatchReplace($patch){
-	    throw new Exception ("Cannot patch replace from '{$this->path}'. Path ends with resource", 405);
-	}
-	
-    /**
-     * Function not implemented. Use InterfaceObject->doPatchAdd() method instead.
-     * @var array $patch
-     * @throws Exception
-     */
-	public function doPatchAdd($patch){
-	    throw new Exception ("Cannot patch add from '{$this->path}'. Path ends with resource", 405);
-	    
 	}
 	
     /**

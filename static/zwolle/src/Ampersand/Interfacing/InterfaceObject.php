@@ -281,6 +281,14 @@ class InterfaceObject {
         if(is_null($this->relation)) throw new Exception ("Interface expression for '{$this->path}' is not a relation", 500);
         else return $this->relation;
     }
+    
+    /**
+     * Returns if interface expression is editable (i.e. expression = relation)
+     * @return boolean
+     */
+    public function isEditable(){
+        return !is_null($this->relation);
+    }
 
 	/**
 	 * Returns if interface expression relation is a property
@@ -424,32 +432,14 @@ class InterfaceObject {
  *************************************************************************************************/
 	
 	/**
-	 * * Chains an atom to this interface as tgtAtom
+	 * TODO: opruimen
+     * * Chains an atom to this interface as tgtAtom
 	 * @param string $atomId
 	 * @throws Exception
 	 * @return Atom
 	 */
 	public function atom($atomId){
-	    $atom = new Atom($atomId, $this->tgtConcept, $this);
 	    
-	    // Check if tgtAtom is part of tgtAtoms of interface
-        if(array_reduce($this->getTgtAtoms(), function($carry, $tgtAtom) use ($atom){
-            return $carry || ($tgtAtom->id == $atom->id);
-        }, false)) $this->tgtAtom = $atom;
-	    
-	    // Check if atom does not exist and if it may be created here
-	    elseif(!$atom->atomExists() && $this->crudC){
-	        // If interface expression is a relation, add tuple($this->srcAtom, $atom) in this relation
-	        if($this->relation) $this->relation()->addLink($this->srcAtom, $atom, $this->relationIsFlipped);
-	        // Else only create atom
-	        else $atom->addAtom();
-	        
-	        $this->tgtAtom = $atom;
-	    }
-	    // Else throw exception
-	    else throw new Exception ("Resource '{$atom->__toString()}' not found", 404);
-	    
-	    return $this->tgtAtom;
 	}
 
 /**************************************************************************************************
@@ -503,20 +493,7 @@ class InterfaceObject {
  *************************************************************************************************/
     
     /**
-    * @param array $options 
-    * @throws Exception when read is not allowed for this interface object
-    * @return mixed
-    */
-    public function read($options = []){
-        $this->logger->debug("read() called on {$this->path}");
-        
-        // CRUD check
-        if(!$this->crudR) throw new Exception("Read not allowed for '{$this->path}'", 405);
-        
-        return $this->getContent($options);
-    }
-    
-    /**
+     * TODO: opruimen
 	 * Function to create a new Atom at the given interface.
 	 * @param array $data
 	 * @param array $options
@@ -524,96 +501,9 @@ class InterfaceObject {
 	 * @return mixed
 	 */
 	public function create($data, $options = array()){
-        $this->logger->debug("create() called on {$this->path}");
-        
-	    // CRUD check
-	    if(!$this->crudC) throw new Exception ("Create not allowed for '{$this->path}'", 405);
-	    if(!$this->tgtConcept->isObject()) throw new Exception ("Cannot create non-object '{$this->tgtConcept}' in '{$this->path}'. Use PATCH add operation instead", 405);
-        if($this->isRef()) throw new Exception ("Cannot create on reference interface in '{$this->path}'. See #498", 501);
-	    
-	    // Handle options
-	    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
-	
-	    // Perform create
-	    $newAtom = $this->tgtConcept->createNewAtom();
-	
-	    // Special case for CREATE in I[Concept] interfaces
-	    if($this->srcAtom->id === '_NEW'){
-	        $this->srcAtom->setId($newAtom->id);
-	        $this->path = str_replace('_NEW', $newAtom->getJsonRepresentation(), $this->path);
-	    }
-	
-	    // If interface expression is a relation, also add tuple(this, newAtom) in this relation
-	    if($this->relation) $this->relation()->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
-        else $newAtom->addAtom();
-        
-	    // Walk to new atom
-	    $newAtom = $this->atom($newAtom->id);
-	    
-	    // Set requested state (using patches)
-	    $patches = is_array($data) ? $data['patches'] : array();
-	    $newAtom->doPatches($patches);
-	
-	    // Special case for file upload. TODO: make extension with hooks
-	    if($this->tgtConcept->isFileObject()){
-	        $conceptFilePath = Concept::getConceptByLabel('FilePath');
-            $conceptFileName = Concept::getConceptByLabel('FileName');
-            
-	        if (is_uploaded_file($_FILES['file']['tmp_name'])){
-	            $tmp_name = $_FILES['file']['tmp_name'];
-	            $new_name = time() . '_' . $_FILES['file']['name'];
-	            $absolutePath = Config::get('absolutePath') . Config::get('uploadPath') . $new_name;
-	            $relativePath = Config::get('uploadPath') . $new_name;
-	            $result = move_uploaded_file($tmp_name, $absolutePath);
-	             
-	            if($result) Logger::getUserLogger()->notice("File '{$new_name}' uploaded");
-	            else throw new Exception ("Error in file upload", 500);
-	
-	            // Populate filePath and originalFileName relations in database
-	            $relFilePath = Relation::getRelation('filePath', $newAtom->concept, $conceptFilePath);
-	            $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept, $conceptFileName);
-	            
-	            $relFilePath->addLink($newAtom, new Atom($relativePath, $conceptFilePath));
-	            $relOriginalFileName->addLink($newAtom, new Atom($_FILES['file']['name'], $conceptFileName));
-	
-	        }else{
-	            throw new Exception ("No file uploaded", 500);
-	        }
-	    }
-	
-	    // Close transaction
-	    $this->database->closeTransaction($newAtom->concept . ' created', null, $newAtom); // temp store content of $newAtom (also when not crudR)
-	
-	    // Return atom content (can be null)
-	    return $newAtom->getStoredContent();
 	}
 	
-	/**
-	 * Function not implemented. Use Atom->update() method instead.
-	 * @throws Exception
-	 */
-	public function update(){
-        $this->logger->debug("update() called on {$this->path}");
-	    throw new Exception ("Cannot update from interface '{$this->path}'. Add resource identifier behind path", 405);
-	}
-	
-	/**
-	 * Function not implemented. Use Atom->patch() method instead.
-	 * @throws Exception
-	 */
-	public function patch(){
-        $this->logger->debug("patch() called on {$this->path}");
-	    throw new Exception ("Cannot patch from interface '{$this->path}'. Add resource identifier behind path", 405);
-	}
-	
-	/**
-	 * Function not implemented. Use Atom->delete() method instead.
-	 * @throws Exception
-	 */
-	public function delete(){
-        $this->logger->debug("delete() called on {$this->path}");
-	    throw new Exception ("Cannot delete from interface '{$this->path}'. Add resource identifier behind path", 405);
-	}
+
 	
 /**************************************************************************************************
  *

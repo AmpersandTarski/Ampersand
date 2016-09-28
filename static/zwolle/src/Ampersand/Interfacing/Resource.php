@@ -14,7 +14,7 @@ use Ampersand\Core\Concept;
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
- *
+ * 
  */
 class Resource extends Atom {
     
@@ -182,12 +182,13 @@ class Resource extends Atom {
     }
     
     /**
-     * Create a new resource and add as target atom to given interface
+     * Create a new resource as target atom to given interface
      * @param string $ifcId
+     * @param stdClass $resourceToPost
      * @return stdClass representation newly created resource
      */
-    public function post($ifcId){
-        
+    public function post($ifcId, stdClass $resourceToPost){
+        return $this->all($ifcId)->post($resourceToPost);
     }
     
     /**
@@ -212,7 +213,11 @@ class Resource extends Atom {
      * @return boolean
      */
     public function delete(){
+        if(!isset($this->parentIfc)) throw new Exception("Cannot perform delete without interface specification", 500);
+        if(!$this->parentIfc->crudD()) throw new Exception ("Delete not allowed for ". $this->parentIfc->path(), 403);
         
+        // Perform delete
+	    $this->deleteAtom();
     }
     
     /**

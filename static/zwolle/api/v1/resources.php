@@ -87,7 +87,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 
-	$content = $atomOrIfc->read($options);
+// TODO:	$content = $atomOrIfc->read($options);
 	
 	// If force list option is provided, make sure to return an array
 	if(filter_var($app->request->params('forceList'), FILTER_VALIDATE_BOOLEAN) && isAssoc($content)) $content = array($content);
@@ -119,11 +119,18 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	// Create atom if not exists and crudC is allowed
 	if(!$atom->atomExists() && InterfaceObject::getInterface($topLevelIfcId)->crudC) $atom->addAtom();
 	
+    // Handle options
+    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
+    
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 	
 	// Perform patch(es)
 	$content = $atomOrIfc->patch($app->request->getBody(), $options);
 	
+    // Close transaction
+    $successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
+    $this->database->closeTransaction($successMessage, null, $this);
+    
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
 					, 'content' 			=> $content
@@ -147,10 +154,22 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 
 	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
+    
+    // Handle options
+    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
+    
+    // Special case for CREATE in I[Concept] interfaces
+    if($this->srcAtom->id === '_NEW'){
+        $this->srcAtom->setId($newAtom->id);
+        $this->path = str_replace('_NEW', $newAtom->getJsonRepresentation(), $this->path);
+    }
 	
 	// Perform create
 	$content = $atomOrIfc->create($app->request->getBody(), $options);
-
+    
+    // Close transaction TODO: copied from InterfaceObject::create()
+    $this->database->closeTransaction($newAtom->concept . ' created', null, $newAtom); // temp store content of $newAtom (also when not crudR)
+    
 	// Return result
 	$result = array ( 'content' 			=> $content
 					, 'notifications' 		=> Notifications::getAll()
@@ -173,9 +192,13 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
 	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
 	$atomOrIfc = $atom->walkIfcPath($ifcPath);
 
+    // Handle options
+    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
+    
 	// Perform delete
 	$atomOrIfc->delete($options);
-
+    // Close transaction
+    $this->database->closeTransaction($this->concept . ' deleted');
 	// Return result
 	$result = array ( 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
