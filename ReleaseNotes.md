@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * Several changes in the generation of the functional specification document. (Less LaTex specific)
   * Upgrade version of Haskell compiler to 8.0.1 (automatically used via Stack)
   * Progress on meatgrinder. Basic meatgrinder functionality is available now. 
 
