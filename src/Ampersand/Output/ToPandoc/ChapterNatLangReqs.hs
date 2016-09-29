@@ -211,16 +211,18 @@ chpNatLangReqs lev fSpec =
 
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul
-   =  (printPurposes . cRulPurps . theLoad) nRul
-    <> case (cRulMeaning . theLoad) nRul of
-        Nothing 
-          -> mempty
-        Just m
-          -> definitionList 
+   = -- (plain . strong . str $ "**** "<>name nRul<>" ("<>show (theNr nRul)<>") ****" ) <>
+       (printPurposes . cRulPurps . theLoad) nRul
+    <> definitionList 
                [(   str (l (NL "Afspraak ", EN "Agreement "))
                  <> xDefInln fSpec
-                       (XRefSharedLangRule . cRul . theLoad $ nRul)
-                , [printMeaning m]
+                       (XRefSharedLangRule . cRul . theLoad $ nRul) <> ": "
+                , case (cRulMeaning . theLoad) nRul of
+                    Nothing 
+                      -> -- We need the number, because otherwise we get broken references. 
+                         mempty  
+                    Just m
+                      -> [printMeaning m]
                 ) 
                ]
     <> someWhiteSpace      

@@ -404,7 +404,7 @@ chpDiagnosis fSpec
      mconcat
      [    para (  str (l (NL "Afspraak ", EN "Agreement "))
                <> xRef (XRefSharedLangRule r)
-               <> " " <> quoterule r
+               <> " ( " <> quoterule r <> " )"
                <> (str.l) (NL " luidt: ", EN " says: ")
                )
        <> fromList (meaning2Blocks (fsLang fSpec) r)
