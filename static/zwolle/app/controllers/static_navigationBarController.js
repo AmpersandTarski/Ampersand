@@ -105,6 +105,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	};
 	
 	$scope.reload = function(){
+		$scope.refreshNavBar();
 		$route.reload();
 	};
 	

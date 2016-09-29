@@ -15,6 +15,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
+use Ampersand\Session;
 
 /**
  *
@@ -241,6 +242,9 @@ class Relation {
         
         // Insert link in relation table
         $this->db->addLink($this, $srcAtom, $tgtAtom);
+        
+        // Flag session var as affected when src or tgt concept of this relation is SESSION
+        if($srcAtom->concept->isSession() || $srcAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
     }
     
     /**
@@ -268,6 +272,9 @@ class Relation {
         
         // Delete link from relation table
         $this->db->deleteLink($this, $srcAtom, $tgtAtom);
+        
+        // Flag session var as affected when src or tgt concept of this relation is SESSION
+        if($srcAtom->concept->isSession() || $srcAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
     }
     
     /**
