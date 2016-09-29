@@ -114,19 +114,29 @@ xDef fSpec a =
       XRefSharedLangDeclaration d     -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ d)
       XRefSharedLangRule r            -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ r)
       XRefConceptualAnalysisDeclaration d 
-                                      -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
+            -> Right $ case numberOf fSpec $ d of
+                         Nothing -> (text.l) ( NL "een ongedocumenteerde relatie"
+                                             , EN "an undocumented relation")
+                         Just i  -> spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
                                               (    (text.l) (NL "Relatie ",EN "Relation ")
-                                                <> (str . showMaybe . numberOf fSpec $ d)
+                                                <> str (show i) <> ": "
                                               )  
-      XRefConceptualAnalysisRule r    -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
+      XRefConceptualAnalysisRule r    
+            -> Right $ case numberOf fSpec $ r of
+                         Nothing -> (text.l) ( NL "een ongedocumenteerde afspraak"
+                                             , EN "an undocumented agreement")
+                         Just i  -> spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
                                               (    (text.l) (NL "Regel ",EN "Rule ")
-                                                <> (str . showMaybe . numberOf fSpec $ r)
+                                                <> str (show i) <> ": "
                                               ) 
       XRefConceptualAnalysisExpression r
-                                      -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
+            -> Right $ case numberOf fSpec $ r of
+                         Nothing -> (text.l) ( NL "een ongedocumenteerde afspraak"
+                                             , EN "an undocumented agreement")
+                         Just i  -> spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
                                               (    (text.l) (NL "Regel ",EN "Rule ")
-                                                <> (str . showMaybe . numberOf fSpec $ r)
-                                              )
+                                                <> str (show i) <> ": "
+                                              ) 
       _ ->  fatal 389 $ "xDef not yet defined for "++show (refStuff a)
    where
     showMaybe Nothing = "???"
@@ -183,7 +193,7 @@ pandocEqnArray xs
 
 pandocEquationWithLabel :: FSpec -> XRefSection -> Inlines -> Blocks
 pandocEquationWithLabel fSpec xref x = 
-  para (x <> " (" <> xDefInln fSpec xref <> ")")
+  para (strong (xDefInln fSpec xref) <> ": " <> x)
 
 data RefStuff = 
   RefStuff { typeOfSection    :: String
@@ -257,7 +267,7 @@ refStuff x  =
                    , xrefPrefix       = "sec:"
                    }
     where
-      fullName d = name d++"["++(name.source) d++"*"++(name.target) d++"]"
+      fullName = showDcl True
 
 
 class NumberedThing a where
@@ -482,38 +492,32 @@ dpRule' fSpec = dpR
                                     <>  " (" <> (singleQuoted.str.name) r  <> ") "
                                     <> str (" zijn de volgende "++count Dutch (length nds) "in deze paragraaf geformaliseerde relatie"++" nodig."))
              (_  ,English) -> plain ("To arrive at the formalization of "   <> xRef (XRefSharedLangRule r) <> str (", the following "++count English (length nds) "relation"++" are introduced."))
-         <> pandocEqnArray (map showMathWithSign nds)
+         <> (bulletList . map (plain . showRef) $ nds)
          <> (case nds of
               [] -> case rds of
                        []   -> mempty
-                       [rd] -> plain (  l (NL "Relatie ", EN "We use relations ")
-                                     <> xRef (XRefConceptualAnalysisDeclaration rd) <> "(" <> (emph.str.name) rd <> ")"
-                                     <> l (NL " wordt gebruikt.", EN ".")
+                       [rd] -> plain (  l (NL "Om dit te formalizeren maken we gebruik van relatie "
+                                          ,EN "We use relation ")
+                                     <> showRef rd 
+                                     <> l (NL ".", EN " to formalize this.")
                                      )
-                       _    -> plain (  (case fsLang fSpec of
-                                          Dutch   ->  "We gebruiken de relaties "
-                                                     <> commaNLPandoc'  "en"  [xRef (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
-                                          English ->   "We use relations "
-                                                     <> commaEngPandoc' "and" [xRef (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
-                                        )
-                                     )
-              _  -> if null rds then mempty
-                    else ( plain ( ( case rds of
-                                      []   -> mempty
-                                      [rd] ->   l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
-                                              <> xRef (XRefConceptualAnalysisDeclaration rd) <> "(" <> (str.name) rd <> ")"
-                                      _ -> (case fsLang fSpec of
-                                          Dutch   ->   "Ook gebruiken we relaties "
-                                                     <> commaNLPandoc'  "en"  [xRef (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
-                                          English ->   "We also use relations "
-                                                     <> commaEngPandoc' "and" [xRef (XRefConceptualAnalysisDeclaration rd) <> " (" <> (emph.str.name) rd <> ")" |rd<-rds]
-                                           )
-                                   )
-                                 <> l (NL " om ", EN " to formalize ")
-                                 <> xRef (XRefSharedLangRule r)
-                                 <> l (NL " te formaliseren: ", EN ": ")
-                                 )
-                         )
+                       _    ->    plain (  l (NL "Dit formaliseren we door gebruik te maken van de volgende relaties: "
+                                             ,EN "We formalize this using relations "))
+                               <> (bulletList  . map (plain . showRef) $ rds)
+              _  -> case rds of
+                       []   -> mempty
+                       [rd] -> plain (  l (NL "Daarnaast gebruiken we relatie ", EN "Beside that, we use relation ")
+                                      <> showRef rd 
+                                      <> l (NL " om ", EN " to formalize ")
+                                      <> xRef (XRefSharedLangRule r)
+                                      <> l (NL " te formaliseren: ", EN ": ")
+                                     ) 
+                       _    -> plain (   l (NL " Om ", EN " To formalize ")
+                                      <> xRef (XRefSharedLangRule r)
+                                      <> l (NL " te formaliseren, gebruiken we daarnaast ook de relaties: "
+                                           ,EN " we also use relations ")
+                                     ) <>
+                               (bulletList  . map (plain . showRef) $ rds)
            )
          <> plain (if isSignal r
                    then l ( NL "Activiteiten, die door deze regel zijn gedefinieerd, zijn afgerond zodra: "
@@ -530,6 +534,9 @@ dpRule' fSpec = dpR
                         )
             )
          )
+        showRef :: Declaration -> Inlines
+        showRef dcl = xRef (XRefConceptualAnalysisDeclaration dcl) <> "(" <> (str.showDcl False) dcl <> ")"
+        
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r

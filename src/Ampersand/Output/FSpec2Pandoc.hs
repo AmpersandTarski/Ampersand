@@ -75,9 +75,11 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
         m' =   (figureTitle $ (str.l) (NL "Figuur" ,EN "Figure"))
             <> (tableTitle  $ (str.l) (NL "Tabel"  ,EN "Table" ))
             <> figPrefix [str "fig.", str "figs."]
-            <> eqnPrefix [str "eq." , str "eqns."]
+            <> eqnPrefix [(str.l) (NL "relatie",EN "relation")
+                         ,(str.l) (NL "relaties", EN "relations")]
             <> tblPrefix [str "tbl.", str "tbls."]
-            <> lstPrefix [str "lst.", str "lsts."]
+            <> lstPrefix [(str.l) (NL "afspraak",EN "agreement")
+                         ,(str.l) (NL "afspraken", EN "agreements")]
             <> secPrefix [(str.l) (NL "hoofdstuk",EN "chapter")
                          ,(str.l) (NL "hoofdstukken", EN "chapters")]
             <> cref True
