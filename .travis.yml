@@ -93,6 +93,7 @@ before_install:
 
 install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+- chmod +x ./travis_long
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - |
   case "$BUILD" in
