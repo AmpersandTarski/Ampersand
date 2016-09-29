@@ -352,5 +352,20 @@ class Session {
     public function getSessionVarAffected(){
         return $this->sessionVarAffected;
     }
+    
+    /**
+     * Returns if session refresh is adviced in frontend
+     * True when
+     * - session variable is affected (otherwise nothing to update)
+     * - AND transaction request is 'promise' (otherwise rollback)
+     * - AND invariant rules hold (otherwise rollback)
+     * False otherwise
+     * @return boolean
+     */
+    public function getSessionRefreshAdvice(){
+        return $this->getSessionVarAffected() 
+                && ($this->database->getRequestType() == 'promise')
+                && $this->database->getInvariantRulesHold();
+    }
 }
 ?>
