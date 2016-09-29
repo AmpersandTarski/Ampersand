@@ -281,9 +281,9 @@ mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showADL atomValue++"`."
 
-mkOtherTupleInSessionError :: Declaration -> CtxError
-mkOtherTupleInSessionError r =
-  CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated by populating the relation `"++showADL r++"`."
+mkOtherTupleInSessionError :: Declaration -> AAtomPair -> CtxError
+mkOtherTupleInSessionError r pr =
+  CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showADL pr++"` by populating the relation `"++showADL r++"`."
 
 class ErrorConcept a where
   showEC :: a -> String
