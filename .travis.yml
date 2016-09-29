@@ -93,6 +93,7 @@ before_install:
 
 install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+- chmod +x ./travis_long
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - |
   case "$BUILD" in
@@ -113,13 +114,13 @@ script:
 - |
   case "$BUILD" in
     stack)
-    stack --no-terminal $ARGS test
+    ./travis_long stack --no-terminal $ARGS test
       ;;
     cabal)
       cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 "
-      cabal build
+      ./travis_long cabal build
       cabal check
-      cabal test
+      ./travis_long cabal test
       cabal copy
       cabal sdist
       SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && \
