@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -Wall #-}
+{-# OPTIONS_GHC -Wall #-}{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
 import Ampersand.Core.ParseTree
 import Ampersand.Core.AbstractSyntaxTree
@@ -102,7 +102,7 @@ instance Disambiguatable PairViewSegmentTerm where
                                             Src -> sourceConstraintsOf constraints
                                             Tgt -> targetConstraintsOf constraints) [])
 instance Disambiguatable P_ViewD where
-  disambInfo (P_Vd { vd_pos  = o
+  disambInfo (P_Vd { pos  = o
                    , vd_lbl  = s
                    , vd_cpt  = c
                    , vd_isDefault = d

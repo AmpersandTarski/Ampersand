@@ -185,14 +185,14 @@ instance Pretty a => Pretty (Term a) where
        PRad _ t1 t2 -> two t1 t2 "!"
        PPrd _ t1 t2 -> two t1 t2 "#"
        -- level 5
-       PKl0 _ t -> pos t "*"
-       PKl1 _ t -> pos t "+"
-       PFlp _ t -> pos t "~"
+       PKl0 _ t -> pos' t "*"
+       PKl1 _ t -> pos' t "+"
+       PFlp _ t -> pos' t "~"
        PCpl _ t -> pre t " -" -- a double dash can happen when combined with PDif, therefore the extra space
        -- level 6
        PBrk _ t -> parens $ pretty t
        
-       where pos t op     = pretty t <> text op
+       where pos' t op    = pretty t <> text op
              pre t op     = text op <> pretty t
              two t1 t2 op = pretty t1 <> text op <> pretty t2
 

@@ -12,7 +12,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
   , mkMultipleDefaultError, mkDanglingRefError
-  , mkIncompatibleViewError, mkOtherAtomInSessionError
+  , mkIncompatibleViewError, mkOtherAtomInSessionError, mkOtherTupleInSessionError
   , mkInvalidCRUDError
   , mkMultipleRepresentTypesError, nonMatchingRepresentTypes
   , mkEndoPropertyError
@@ -279,7 +279,11 @@ mkIncompatibleViewError objDef viewId viewRefCptStr viewCptStr =
 
 mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
-  CTXE OriginUnknown $ "The special concept `SESSION` must not contain anything else then `_SESSION`. However it is populated with `"++showADL atomValue++"`."
+  CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showADL atomValue++"`."
+
+mkOtherTupleInSessionError :: Declaration -> AAtomPair -> CtxError
+mkOtherTupleInSessionError r pr =
+  CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showADL pr++"` by populating the relation `"++showADL r++"`."
 
 class ErrorConcept a where
   showEC :: a -> String
