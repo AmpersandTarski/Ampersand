@@ -244,7 +244,7 @@ class Relation {
         $this->db->addLink($this, $srcAtom, $tgtAtom);
         
         // Flag session var as affected when src or tgt concept of this relation is SESSION
-        if($srcAtom->concept->isSession() || $srcAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
+        if($srcAtom->concept->isSession() || $tgtAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
     }
     
     /**
@@ -274,7 +274,7 @@ class Relation {
         $this->db->deleteLink($this, $srcAtom, $tgtAtom);
         
         // Flag session var as affected when src or tgt concept of this relation is SESSION
-        if($srcAtom->concept->isSession() || $srcAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
+        if($srcAtom->concept->isSession() || $tgtAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
     }
     
     /**
