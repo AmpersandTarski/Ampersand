@@ -226,6 +226,8 @@ class Database {
             
             foreach($queries['allDefPopQueries'] as $query){
                 $this->Exe($query);
+                
+                set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
             }
         }else{
             $this->logger->info("Skip default population");
