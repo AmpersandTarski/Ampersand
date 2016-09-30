@@ -1,5 +1,8 @@
 # Release notes of Ampersand
 
+## unreleased changes
+
+
 ## v3.7.1 (30 september 2016)
   * Upgrade version of Haskell compiler to 8.0.1 (automatically used via Stack)
   * Progress on meatgrinder. Basic meatgrinder functionality is available now. 
