@@ -604,7 +604,7 @@ class InterfaceObject {
 	    $newAtom->doPatches($patches);
 	
 	    // Special case for file upload. TODO: make extension with hooks
-	    if($this->tgtConcept->name == "FileObject"){
+	    if($this->tgtConcept->isFileObject()){
 	        $conceptFilePath = Concept::getConceptByLabel('FilePath');
             $conceptFileName = Concept::getConceptByLabel('FileName');
             

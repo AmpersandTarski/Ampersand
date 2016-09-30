@@ -68,7 +68,7 @@ makeFSpec opts context
                                                   concatMap ifcRoles (ctxifcs context )
                                                  )
                                    ) [0..] 
-              , fallRules = allrules
+              , fallRules    = allrules
               , vrules       = filter      isUserDefined  allrules
               , grules       = filter (not.isUserDefined) allrules
               , invariants   = filter (not.isSignal)      allrules
@@ -95,14 +95,17 @@ makeFSpec opts context
               , fSexpls      = ctxps context
               , metas        = ctxmetas context
               , crudInfo     = mkCrudInfo fSpecAllConcepts calculatedDecls fSpecAllInterfaces
-              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript
+              , atomsInCptIncludingSmaller = atomValuesOf contextinfo initialpopsDefinedInScript --TODO: Write in a nicer way, like `atomsBySmallestConcept`
+              , atomsBySmallestConcept = \cpt -> map apLeft . pairsinexpr 
+                                               . foldl (.-.) (EDcI cpt) 
+                                               . map (handleType cpt)
+                                               . smallerConcepts (gens context) $ cpt
               , tableContents = tblcontents contextinfo initialpopsDefinedInScript
               , pairsInExpr  = pairsinexpr
               , allViolations  = [ (r,vs)
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
               , allExprs     = expressionsIn context
-              , allSigns     = nub $ map sign calculatedDecls ++ map sign (expressionsIn context)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
@@ -110,10 +113,16 @@ makeFSpec opts context
               , fcontextInfo = contextinfo
               , ftypologies   = typologies context
               , typologyOf = typologyOf'
+              , largestConcept = getLargestConcept 
               , specializationsOf = smallerConcepts (gens context)
               , generalizationsOf = largerConcepts  (gens context)
               }
    where           
+     getLargestConcept cpt = case largerConcepts (gens context) cpt of
+                              [] -> cpt
+                              x:_ -> getLargestConcept x
+     handleType :: A_Concept -> A_Concept -> Expression
+     handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
      fMaintains' :: Role -> [Rule]
      fMaintains' role = nub [ rule 
                             | rule <- allrules
@@ -518,30 +527,33 @@ tblcontents ci ps plug
  --where NULL in a kernel attribute implies NULL in the following kernel attributes
  --and the first attribute is unique and not null
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
-       case attributes plug of 
+        case attributes plug of 
          []   -> fatal 593 "no attributes in plug."
          f:fs -> (nub.transpose)
                  ( map Just cAtoms
                  : [case fExp of
                        EDcI c -> [ if a `elem` atomValuesOf ci ps c then Just a else Nothing | a<-cAtoms ]
-                       _      -> [ (lkp a . fullContents ci ps) fExp | a<-cAtoms ]
+                       _      -> [ (lkp att a . fullContents ci ps) fExp | a<-cAtoms ]
                    | att<-fs, let fExp=attExpr att
                    ]
                  )
                  where
                    cAtoms = (atomValuesOf ci ps. source . attExpr) f
-                   lkp a pairs
+                   lkp :: SqlAttribute -> AAtomValue -> [AAtomPair] -> Maybe AAtomValue
+                   lkp att a pairs
                     = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
-                       ps' -> trace ("Plug: "++name plug) $
-                             trace ("Attibutes: "++(show . map name)(f:fs)) $
-                             trace ("Atoms: "++(intercalate "\n       " . map show) cAtoms) $
-                             trace ("Pairs: "++(intercalate "\n       " . map showADL) pairs) $
-                             trace ("ps'  : "++(intercalate "\n       " . map showADL) ps') $
-                             fatal 428 ("(this could happen when using --dev flag, when there are violations, or if you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)\n"++
-                               "Looking for: '"++showValADL a++"'.\n"++
-                               "Multiple values in one attribute. \n"
-                               )
+                       ps' -> fatal 428 . unlines $ 
+                                [ "There is an attempt to populate multiple values into "
+                                , "     the row of table `"++name plug++"`, where id = "++show(showValADL a)++":"
+                                , "     Values to be inserted in field `"++name att++"` are: "++show (map (showValADL . apRight) ps')
+                                ] --this has happend before due to:
+                                  --    when using --dev flag
+                                  --  , when there are violations
+                                  --  , when you have INCLUDE \"MinimalAST.xlsx\" in formalampersand.)
+                                  --  , when a relation in formalAmpersand is declared UNI, but actually it isn't.
+
+                               
                         
                         

@@ -1,2 +1,2 @@
-command : ampersand --proto --verbose --validate --sqlLogin="root" --sqlPwd=""
+command : ampersand --proto --verbose --validate --sqlLogin="root" --sqlPwd="" --meta-tables
 shouldSucceed : yes

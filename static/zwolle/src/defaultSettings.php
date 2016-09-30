@@ -30,9 +30,9 @@ try{
     Config::set('productionEnv', 'global', false); // set environment as production deployment (or not = default)
     Config::set('debugMode', 'global', false); // set debugMode (or not = default). Impacts the way errors are returned by API
 
-    Config::set('absolutePath', 'global', __DIR__ . '/../');
-    Config::set('uploadPath', 'global', 'uploads/'); // absolute path to folder, without trailing slash
-    Config::set('logPath', 'global', __DIR__ . '/../log');
+    Config::set('absolutePath', 'global', dirname(__DIR__) . DIRECTORY_SEPARATOR);
+    Config::set('uploadPath', 'global', 'uploads/');
+    Config::set('logPath', 'global', 'log/');
     Config::set('allowedMimeTypes', 'global', array('application/vnd.ms-excel'
             ,'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             ,'application/excel'
@@ -65,7 +65,12 @@ try{
     Config::set('defaultShowInvariants', 'notifications', true);
     
     // Navigation menu settings
-    AngularApp::addMenuItem('refresh', 'app/views/partials/installerMenuItem.html', 
+    AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
+        function($session){
+            return !Config::get('productionEnv');
+        });
+    
+    AngularApp::addMenuItem('refresh', 'app/views/menu/checkAllRules.html',
         function($session){
             return !Config::get('productionEnv');
         });

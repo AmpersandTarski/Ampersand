@@ -4,28 +4,30 @@ module Ampersand.Output.FSpec2SQL
 where
 import Ampersand.Basics
 import Ampersand.Prototype.Generate 
-  (generateDBstructQueries, generateAllDefPopQueries
+  (generateDBstructQueries, generateInitialPopQueries
   )
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Data.Monoid
 import qualified Data.Text as Text
 
-dumpSQLqueries :: FSpec -> Text.Text
-dumpSQLqueries fSpec = Text.intercalate "\n" $ 
-                         header (Text.pack ampersandVersionStr)
-                       <>header "Database structure queries"
-                       <>map Text.pack (generateDBstructQueries fSpec True)
-                       <>header "Initial population queries"
-                       <>generateAllDefPopQueries fSpec
-                       <>header "Violations of conjuncts"
-                       <>concatMap showConjunct (allConjuncts fSpec)
-                       <>header "Queries per declaration"
-                       <>concatMap showDecl (vrels fSpec)
-                       <>header "Queries of interfaces"
-                       <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)
+dumpSQLqueries :: MultiFSpecs -> Text.Text
+dumpSQLqueries multi
+   = Text.intercalate "\n" $ 
+         header (Text.pack ampersandVersionStr)
+       <>header "Database structure queries"
+       <>map Text.pack (generateDBstructQueries fSpec True)
+       <>header "Initial population queries"
+       <>generateInitialPopQueries fSpec
+       <>header "Violations of conjuncts"
+       <>concatMap showConjunct (allConjuncts fSpec)
+       <>header "Queries per declaration"
+       <>concatMap showDecl (vrels fSpec)
+       <>header "Queries of interfaces"
+       <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)
     
    where
+     fSpec = userFSpec multi
      showInterface :: Interface -> [Text.Text]
      showInterface ifc 
         = header ("INTERFACE: "<>Text.pack (name ifc))

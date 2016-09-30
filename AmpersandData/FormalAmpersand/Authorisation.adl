@@ -1,0 +1,20 @@
+﻿CONTEXT Authorisation IN ENGLISH
+
+INCLUDE "Login.adl"
+PATTERN Authorizations
+PURPOSE PATTERN Authorizations
+{+
+-}
+PURPOSE RELATION owner[Context*Account]
+{+In RAP, every context must have one owner, who can exercise all ownership rights that contexts have.
+Initially, the creator of a context is its owner.
+-}
+    RELATION owner[Context*Account] [UNI]
+    MEANING "A context has an owner, which is an account."
+    ROLE ExecEngine MAINTAINS TOTowner
+    RULE TOTowner : (I[Context]#'_SESSION'[SESSION]);ingelogd |- owner[Context*Account]
+    MEANING "The creator of a context is the account that was logged in when the context was created."
+    VIOLATION ( TXT "{EX} InsPair;owner[Context*Account];Context;", SRC I, TXT ";Account;", TGT I )
+ENDPATTERN
+
+ENDCONTEXT

@@ -71,8 +71,9 @@ data Options = Options { showVersion :: Bool
                        , genTime :: LocalTime
                        , export2adl :: Bool
                        , test :: Bool
-                       , genASTTables :: Bool -- When set, generate the meta-tables of AST into the prototype
-                       , genASTFile :: Bool  -- When set, the standard RAP is 'merged' into the generated prototype.(experimental)
+                       , genMetaTables :: Bool -- When set, generate the meta-tables of AST into the prototype
+                       , genMetaFile :: Bool  -- When set, output the meta-population as a file
+                       , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
@@ -159,8 +160,9 @@ getOptions =
                       , baseName         = takeBaseName fName
                       , export2adl       = False
                       , test             = False
-                      , genASTTables     = False
-                      , genASTFile       = False
+                      , genMetaTables    = False
+                      , genMetaFile      = False
+                      , genRapPopulationOnly = False
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
@@ -473,12 +475,16 @@ options = [ (Option ['v']   ["version"]
                "Used for test purposes only."
             , Hidden)
           , (Option []        ["meta-tables"]
-               (NoArg (\opts -> return opts{genASTTables = True}))
-               "When set, generate the meta-tables of AST into the prototype"
+               (NoArg (\opts -> return opts{genMetaTables = True}))
+               "When set, generate the meta-tables of ampersand into the prototype"
             , Hidden)
           , (Option []        ["meta-file"]
-               (NoArg (\opts -> return opts{genASTFile = True}))
+               (NoArg (\opts -> return opts{genMetaFile = True}))
                "Generate the meta-population in AST format and output it to an .adl file"
+            , Hidden)
+          , (Option []        ["gen-as-rap-model"]
+               (NoArg (\opts -> return opts{genRapPopulationOnly = True}))
+               "Generate populations for use in RAP3."
             , Hidden)
           , (Option []        ["no-static-files"]
                (NoArg  (\opts -> return opts{genStaticFiles = False}))

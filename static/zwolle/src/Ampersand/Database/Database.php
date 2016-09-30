@@ -16,6 +16,7 @@ use Ampersand\Hooks;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
+use Ampersand\Core\Atom;
 use Ampersand\Rule\RuleEngine;
 
 /**
@@ -313,7 +314,6 @@ class Database {
 	
 	/**
 	 * Check if atom exists in database
-	 * Note! Mysql is case insensitive for primary keys, e.g. atom 'True' ==  'TRUE'
 	 * @param Atom $atom
 	 * @return boolean
 	 */
@@ -327,6 +327,22 @@ class Database {
 	    if(empty($result)) return false;
 	    else return true;
 	}
+    
+    /**
+     * Check if link exists in database
+     * @param Relation $relation
+     * @param Atom $srcAtom
+     * @param Atom $tgtAtom
+     * @return boolean
+     */
+    public function linkExists(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
+        $relTable = $relation->getMysqlTable();
+        
+        $result = $this->Exe("/* Check if link exists */ SELECT * FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+        
+        if(empty($result)) return false;
+        else return true;
+    }
 
 /**************************************************************************************************
  *

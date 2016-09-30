@@ -3,7 +3,7 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Ampersand.Input.Parsing (
-    parseADL,parseMeta , parseADL1pExpr, parseRule, parseCtx, runParser
+    parseADL,parseMeta, parseRule, parseCtx, runParser
 ) where
 
 import Control.Applicative
@@ -126,17 +126,17 @@ parseErrors lang err = [PE (Message msg)]
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =
       -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
-    case runP p pos fn ts of
+    case runP p pos' fn ts of
         --TODO: Add language support to the parser errors
         Left err -> Errors $ parseErrors English err
         Right a -> Checked a
-    where pos | null ts   = initPos fn
-              | otherwise = tokPos (head ts)
+    where pos' | null ts   = initPos fn
+               | otherwise = tokPos (head ts)
 
 --TODO: Give the errors in a better way
 lexerError2CtxError :: LexerError -> CtxError
-lexerError2CtxError (LexerError pos err) =
-   PE (Message ("Lexer error at "++show pos++"\n  "
+lexerError2CtxError (LexerError pos' err) =
+   PE (Message ("Lexer error at "++show pos'++"\n  "
                 ++ intercalate "\n    " (showLexerErrorInfo err)
                )
       )
@@ -164,15 +164,6 @@ parseRule str
    = case  runParser pRule "inside Haskell code" str of
        Checked result -> result
        Errors  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
-
--- | Parses an isolated ADL1 expression string
-parseADL1pExpr :: String            -- ^ The string to be parsed
-               -> FilePath          -- ^ The name of the file (used for error messages)
-               -> Either String (Term TermPrim)  -- ^ The result: Either an error message, or a good result
-parseADL1pExpr str fn =
-  case runParser pTerm fn str of
-      Checked result -> Right result
-      Errors  msg    -> Left $ "Parse errors:\n"++show msg
 
 -- | Parses an Ampersand context
 parseCtx :: FilePath -- ^ The file name (used for error messages)

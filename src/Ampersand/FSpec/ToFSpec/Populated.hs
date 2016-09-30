@@ -79,7 +79,7 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
    contents :: Expression -> Map AAtomValue (Set.Set AAtomValue)
    contents expr
     = let aVals = atomValuesOf ci ps 
-          lkp :: (Ord k,Ord a) => k -> Map k (Set.Set a) -> [a]
+          lkp :: (Ord k) => k -> Map k (Set.Set a) -> [a]
           lkp x contMap = Set.toList (Map.findWithDefault Set.empty x contMap) in
       case expr of
          EEqu (l,r) -> contents ((l .|-. r) ./\. (r .|-. l))
@@ -98,9 +98,9 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
                                 , null (lkp x (contents (EFlp l)) >- lkp y (contents (EFlp r)))
                                 ]
          EDia (l,r) -> fromListWith Set.union
-                       [(x,Set.singleton y) | x<-aVals (source l), y<-aVals (source r)
-                                , null (lkp y (contents r) >- lkp x (contents l))
-                                , null (lkp y (contents l) >- lkp x (contents r))
+                       [(x,Set.singleton y) | x <- aVals (source l), y <- aVals (target r)
+                                , null (lkp y (contents (EFlp r)) >- lkp x (contents l))
+                                , null (lkp x (contents l) >- lkp y (contents (EFlp r)))
                                 ]
          ERad (l,r) -> fromListWith Set.union
                        [(x,Set.singleton y) | x<-aVals (source l), y<-aVals (target r)
@@ -125,9 +125,10 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
          EDcI c     -> fromList [(a, Set.singleton a) | a <- aVals c]
          EEps i _   -> fromList [(a, Set.singleton a) | a <- aVals i]
          EDcV sgn   -> fromList [(s, Set.fromList cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
-         EMp1 val c -> if name c == "SESSION" -- prevent populating SESSION
-                                  then Map.empty
-                                  else Map.singleton av (Set.singleton av)
+         EMp1 val c -> if name c == "SESSION" -- prevent populating SESSION with "_SESSION"
+                          && val == PSingleton undefined "_SESSION" undefined
+                        then Map.empty
+                        else Map.singleton av (Set.singleton av)
                          where 
                            av = safePSingleton2AAtomVal ci c val
 

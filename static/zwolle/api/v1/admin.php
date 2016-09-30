@@ -36,6 +36,21 @@ $app->get('/admin/installer', function () use ($app){
 
 });
 
+$app->get('/admin/checks/rules/evaluate/all', function() use ($app){
+    if(Config::get('productionEnv')) throw new Exception ("Database reinstall not allowed in production environment", 403);
+    
+    foreach (Rule::getAllInvRules() as $rule) {
+        foreach ($rule->getViolations() as $violation) Notifications::addInvariant($violation);
+    }
+    foreach (Rule::getAllSigRules() as $rule) {
+        foreach ($rule->getViolations() as $violation) Notifications::addSignal($violation);
+    }
+    
+    $content = Notifications::getAll(); // Return all notifications
+    
+    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
 $app->get('/admin/export/all', function () use ($app){
     if(Config::get('productionEnv')) throw new Exception ("Export not allowed in production environment", 403);
     
@@ -54,7 +69,7 @@ $app->get('/admin/export/all', function () use ($app){
                      .'$allLinks = ' . var_export($allLinks, true) . ';' .PHP_EOL
                      .'?>';
     
-    file_put_contents(Config::get('logPath') . "/export-" . date('Y-m-d_H-i-s') . ".php", $strFileContent);
+    file_put_contents(Config::get('absolutePath') . Config::get('logPath') . "export-" . date('Y-m-d_H-i-s') . ".php", $strFileContent);
 });
 
 $app->get('/admin/import', function () use ($app){
@@ -64,7 +79,7 @@ $app->get('/admin/import', function () use ($app){
     
     $database = Database::singleton();
     
-    include_once (Config::get('logPath') . "/{$file}");
+    include_once (Config::get('absolutePath') . Config::get('logPath') . "{$file}");
     
     // check if all concepts and relations are defined
     foreach((array)$allAtoms as $cpt => $atoms) if(!empty($atoms)) Concept::getConcept($cpt);

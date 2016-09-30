@@ -82,6 +82,12 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
 			$rootScope.updateNotifications(data);
 		});
 	}
+    
+    $rootScope.checkAllRules = function(){
+        Restangular.all('admin/checks/rules/evaluate').one('all').get().then(function(data){
+            $rootScope.updateNotifications(data);
+        });
+    }
 	
 	// Hide success-, error-, warnings-, info- and invariant violation messages (not signals) upon route change
 	$scope.$on("$routeChangeSuccess", function(){

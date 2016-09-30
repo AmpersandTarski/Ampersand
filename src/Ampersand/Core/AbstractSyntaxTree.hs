@@ -11,7 +11,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , RuleOrigin(..)
- , Declaration(..)
+ , Declaration(..), showDcl
  , IdentityDef(..)
  , IdentitySegment(..)
  , ViewDef(..)
@@ -68,7 +68,6 @@ import Data.Maybe
 import Data.Time.Calendar
 import Data.Time.Clock
 import Data.Default
-import GHC.Stack
 import Data.Hashable
 import Data.Text (Text,unpack,pack)
 import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
@@ -266,6 +265,12 @@ instance Show Declaration where  -- For debugging purposes only (and fatal messa
 
   showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
   showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
+showDcl :: Bool -> Declaration -> String
+showDcl forceBoth dcl = name dcl++"["++cpts++"]"
+  where 
+    cpts
+     | forceBoth || source dcl /= target dcl = show (source dcl) ++ "*"++ show (target dcl)
+     | otherwise                             = show (source dcl)
 
 aMarkup2String :: PandocFormat -> A_Markup -> String
 aMarkup2String fmt a = blocks2String fmt False (amPandoc a)
@@ -295,6 +300,8 @@ instance Named IdentityDef where
   name = idLbl
 instance Traced IdentityDef where
   origin = idPos
+instance Unique IdentityDef where
+  showUnique = idLbl
 
 data IdentitySegment = IdentityExp ObjectDef deriving (Eq, Show)  -- TODO: refactor to a list of terms
 
@@ -310,6 +317,10 @@ instance Named ViewDef where
   name = vdlbl
 instance Traced ViewDef where
   origin = vdpos
+instance Unique ViewDef where
+  showUnique vd = vdlbl vd++"_"++name (vdcpt vd) 
+instance Eq ViewDef where
+  a == b = vdlbl a == vdlbl b && vdcpt a == vdcpt b 
 data ViewSegment = ViewSegment
      { vsmpos :: Origin
      , vsmlabel :: Maybe String
@@ -364,7 +375,8 @@ instance Named Interface where
   name = name . ifcObj
 instance Traced Interface where
   origin = ifcPos
-
+instance Unique Interface where
+  showUnique = name
 -- Utility function for looking up interface refs
 getInterfaceByName :: [Interface] -> String -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
@@ -512,8 +524,8 @@ data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand 
                      , explRefIds :: [String]     -- ^ The references of the explaination
                      } deriving (Show, Typeable)
 instance Eq Purpose where
-  x0 == x1  =  explObj x0 == explObj x1 &&  -- TODO: check if this definition is right.
-                                            -- I(Han) suspect that the Origin should be part of it.
+  x0 == x1  =  explObj x0 == explObj x1 &&  
+               origin x0  == origin x1 &&
                (amLang . explMarkup) x0 == (amLang . explMarkup) x1
 instance Unique Purpose where
   showUnique p = uniqueShow True (explObj p)++" in "++(show.amLang.explMarkup) p
@@ -531,12 +543,20 @@ data Population -- The user defined populations
              , popas ::  [AAtomValue]  -- The user-defined atoms that populate the concept
              } deriving (Eq,Ord)
 
+instance Unique Population where
+  showUnique pop@ARelPopu{} = (showUnique.popdcl) pop ++ (showUnique.popps) pop
+  showUnique pop@ACptPopu{} = (showUnique.popcpt) pop ++ (showUnique.popas) pop
+
 data AAtomPair
   = APair { apLeft  :: AAtomValue
           , apRight :: AAtomValue
-          }deriving(Eq,Prelude.Ord)
+          } deriving(Eq,Prelude.Ord)
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
+
+instance Unique AAtomPair where
+  showUnique apair = "("++(showUnique.apLeft) apair ++","++ (showUnique.apRight) apair++")"
+
 data AAtomValue
   = AAVString  { aavhash :: Int
                , aavtyp :: TType
@@ -558,6 +578,15 @@ data AAtomValue
                 , aadatetime ::  UTCTime
                 }
   | AtomValueOfONE deriving (Eq,Prelude.Ord, Show)
+
+instance Unique AAtomValue where   -- TODO:  this in incorrect!
+  showUnique pop@AAVString{}   = (show.aavhash) pop
+  showUnique pop@AAVInteger{}  = (show.aavint) pop
+  showUnique pop@AAVFloat{}    = (show.aavflt) pop
+  showUnique pop@AAVBoolean{}  = (show.aavbool) pop
+  showUnique pop@AAVDate{}     = (show.aadateDay) pop
+  showUnique pop@AAVDateTime{} = (show.aadatetime) pop
+  showUnique AtomValueOfONE    = "ONE"
 
 aavstr :: AAtomValue -> String
 aavstr = unpack.aavtxt
@@ -679,7 +708,7 @@ instance Unique (PairViewSegment Expression) where
   showUnique = show
 
 
-(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: (?loc :: CallStack) => Expression -> Expression -> Expression
+(.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.) :: Expression -> Expression -> Expression
 infixl 1 .==.   -- equivalence
 infixl 1 .|-.   -- inclusion
 infixl 2 ./\.   -- intersection

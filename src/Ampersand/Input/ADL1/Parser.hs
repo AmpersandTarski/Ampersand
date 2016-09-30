@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleContexts, DuplicateRecordFields #-}
 module Ampersand.Input.ADL1.Parser
     ( AmpParser
     , Include(..)
@@ -31,9 +31,9 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                     <*  pKey "ENDCONTEXT"
   where
     rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
-    rebuild    pos       nm        lang          fmt                   ces
+    rebuild    pos'      nm        lang          fmt                   ces
      = (PCtx{ ctx_nm     = nm
-            , ctx_pos    = [pos]
+            , ctx_pos    = [pos']
             , ctx_lang   = lang
             , ctx_markup = fmt
             , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns to be printed in the functional specification. (For partial documents.)
@@ -141,7 +141,7 @@ pPatternDef' (beginKeyword,endKeyword)
   where
     rebuild :: Origin -> String -> [PatElem] -> Origin -> P_Pattern
     rebuild pos' nm pes end
-     = P_Pat { pt_pos = pos'
+     = P_Pat { pos = pos'
              , pt_nm  = nm
              , pt_rls = [r | Pr r<-pes]
              , pt_gns = [y | Py y<-pes] ++ [g | Pg g<-pes]
@@ -212,7 +212,7 @@ pRuleDef =  P_Ru <$> currPos
                  <*> many pMeaning
                  <*> many pMessage
                  <*> pMaybe pViolation
-           where rulid (FileLoc pos _) = show("rule@" ++show pos)
+           where rulid (FileLoc pos' _) = show("rule@" ++show pos')
                  rulid _ = fatal 226 "pRuleDef is expecting a file location."
 
                  --- Violation ::= 'VIOLATION' PairView
@@ -241,10 +241,10 @@ pRelationDef = reorder <$> currPos
                        <*> many pMeaning
                        <*> optList (pOperator "=" *> pContent)
                        <*  optList (pOperator ".")
-            where reorder pos (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
+            where reorder pos' (nm,sign,fun) bp1 prop bp2 pragma meanings popu =
                     let plug = bp1 || bp2
                         props = prop ++ fun
-                    in P_Sgn nm sign props pragma meanings popu pos plug
+                    in P_Sgn nm sign props pragma meanings popu pos' plug
 
 --- RelationNew ::= 'RELATION' Varid Signature
 pRelationNew :: AmpParser (String,P_Sign,Props)
@@ -364,8 +364,8 @@ pFancyViewDef  = mkViewDef <$> currPos
                       <*> pBraces (pViewSegment False `sepBy` pComma) `opt` []
                       <*> pMaybe pHtmlView
                       <*  pKey "ENDVIEW"
-    where mkViewDef pos nm cpt isDef ats html =
-            P_Vd { vd_pos = pos
+    where mkViewDef pos' nm cpt isDef ats html =
+            P_Vd { pos = pos'
                  , vd_lbl = nm
                  , vd_cpt = cpt
                  , vd_isDefault = isDef
@@ -384,12 +384,10 @@ pViewSegmentLoad = P_ViewExp  <$> pTerm
 --- ViewSegment ::= Label ViewSegmentLoad
 pViewSegment :: Bool -> AmpParser (P_ViewSegment  TermPrim)
 pViewSegment labelIsOptional
-       = build <$> currPos
-               <*> (if labelIsOptional then pMaybe (try pLabel) else Just <$> try pLabel)
+       = P_ViewSegment
+               <$> (if labelIsOptional then pMaybe (try pLabel) else Just <$> try pLabel)
+               <*> currPos
                <*> pViewSegmentLoad
-   where build :: Origin -> Maybe String -> P_ViewSegmtPayLoad TermPrim -> P_ViewSegment TermPrim
-         build pos lab =
-            P_ViewSegment lab pos
 
 --- ViewDefLegacy ::= 'VIEW' Label ConceptOneRef '(' ViewSegmentList ')'
 pViewDefLegacy :: AmpParser P_ViewDef
@@ -417,13 +415,13 @@ pInterface = lbl <$> currPos
              = P_Ifc { ifc_Name   = nm
                      , ifc_Roles  = roles
                      , ifc_Obj    = P_Obj { obj_nm   = nm
-                                          , obj_pos  = p
+                                          , pos      = p
                                           , obj_ctx  = ctx
                                           , obj_crud = mCrud
                                           , obj_mView = mView
                                           , obj_msub = Just sub
                                           }
-                     , ifc_Pos    = p
+                     , pos        = p
                      , ifc_Prp    = ""   --TODO: Nothing in syntax defined for the purpose of the interface.
                      }
           --- Params ::= '(' NamedRel ')'
@@ -453,9 +451,9 @@ pObjDef = obj <$> currPos
               <*> pMaybe pCruds
               <*> pMaybe (pChevrons pConid)
               <*> pMaybe pSubInterface  -- the optional subinterface
-         where obj pos nm ctx mCrud mView msub =
+         where obj p nm ctx mCrud mView msub =
                  P_Obj { obj_nm   = nm
-                       , obj_pos  = pos
+                       , pos      = p
                        , obj_ctx  = ctx
                        , obj_crud = mCrud
                        , obj_mView = mView
@@ -672,13 +670,13 @@ value2PAtomValue o v = case v of
 pAtt :: AmpParser P_ObjectDef
 -- There's an ambiguity in the grammar here: If we see an identifier, we don't know whether it's a label followed by ':' or a term name.
 pAtt = rebuild <$> currPos <*> try pLabel `opt` "" <*> try pTerm
-  where rebuild pos nm ctx = P_Obj { obj_nm   = nm
-                                   , obj_pos  = pos
-                                   , obj_ctx  = ctx
-                                   , obj_crud = Nothing
-                                   , obj_mView = Nothing
-                                   , obj_msub = Nothing
-                                   }
+  where rebuild pos' nm ctx = P_Obj { obj_nm   = nm
+                                    , pos      = pos'
+                                    , obj_ctx  = ctx
+                                    , obj_crud = Nothing
+                                    , obj_mView = Nothing
+                                    , obj_msub = Nothing
+                                    }
 
 --- NamedRelList ::= NamedRel (',' NamedRel)*
 --- NamedRel ::= Varid Signature?
