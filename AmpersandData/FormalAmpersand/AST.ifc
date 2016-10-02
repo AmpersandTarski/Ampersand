@@ -1,4 +1,4 @@
-CONTEXT "AST Interface" IN ENGLISH
+﻿CONTEXT "AST Interface" IN ENGLISH
 
 -- START The following is inserted for test-purposes only: (HJO, 20160912)
 INTERFACE TestExpression FOR Ampersand : I[Expression]
@@ -83,13 +83,13 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     , "target~" : target[Relation*Concept]~ LINKTO INTERFACE Relation
     , "gengen~" : gengen[Gen*Concept]~
     , "genspc~" : genspc[Gen*Concept]~
-    , "rootConcept~" : rootConcept~
+--    , "rootConcept~" : rootConcept~
     , "src of expression~" : src[Expression*Concept]~
     , "tgt of expression~" : tgt[Expression*Concept]~
     , "src of sign~" : src[Signature*Concept]~
     , "tgt of sign~" : tgt[Signature*Concept]~
-    , "concept~" : concept~
-    , "conceptAttribute" : conceptAttribute
+--    , "concept~" : concept~
+--    , "conceptAttribute" : conceptAttribute
     , "in" : in[Concept*Plug]
     ]
 
@@ -118,12 +118,14 @@ INTERFACE Atoms FOR Ampersand : I[SESSION];'_SESSION'
 TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Atom" : I
          ]
+{- HJO, 20161002: Excluded, for these relations are from Tables
     , Pairs  : V[SESSION*Pair]
     COLS [ "Pair" : I
          , lAtom : lAtom
          , rAtom : rAtom
          , in : in[Pair*Relation]
          ]
+-}
     , Relations : V[SESSION*Relation]
     COLS [ "Relation" : I 
          , source : source[Relation*Concept]
@@ -161,21 +163,22 @@ BOX [ "declared in context" : declaredIn[Relation*Context]
 	, "prop" : prop[Relation*Property]
 	, "sign" : sign[Relation*Signature]
 	, "source" : source[Relation*Concept]
-	, "srcAtt" : srcAtt[Relation*SqlAttribute]
+--	, "srcAtt" : srcAtt[Relation*SqlAttribute]
 	, "target" : target[Relation*Concept]
-	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
+--	, "tgtAtt" : tgtAtt[Relation*SqlAttribute]
 	, "bind~" : bind[BindedRelation*Relation]~
 	, "declared in pattern" : declaredIn[Relation*Pattern]
 	, "declared in context (outside a pattern)" : ctxds[Relation*Context]
-	, "in~" : in[Pair*Relation]~
-	      BOX <SHCOLS>
-	        [ lAtom : lAtom
-	        , rAtom : rAtom
-	        ]
+--	, "in~" : in[Pair*Relation]~
+--	      BOX <SHCOLS->
+--	        [ lAtom : lAtom
+--	        , rAtom : rAtom
+--	        ]
 	, "valid in (context)" : valid[Relation*Context]
 	, "relsInPlug~" : relsInPlug[Plug*Relation]~
     ]
 
+{-
 INTERFACE TblSQL FOR Ampersand : I[TblSQL]
 BOX [ "rootConcept" : rootConcept[TblSQL*Concept]
     , "key" : key[TblSQL*SqlAttribute]
@@ -189,7 +192,7 @@ BOX [ "table" : table
     , "tgtAtt~" : tgtAtt~
     , "srcAtt~" : srcAtt~
     ]
-
+-}
 --INTERFACE Role FOR Ampersand : I[Role]
 --BOX [ "name" : name[Role*RoleName]
 --    , "interfaces" : interfaces[Role*Interface] 

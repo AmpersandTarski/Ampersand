@@ -65,8 +65,8 @@ instance MetaPopulations FSpec where
       ]
 --    ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
 --    ++   concatMap extract (allConjuncts fSpec)
-    ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
-    ++   concatMap extract (sortByName (plugInfos fSpec))
+--    ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
+--    ++   concatMap extract (sortByName (plugInfos fSpec))
     ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) fSpec++")"]
     ++   concatMap (extract . fst) (fRoles fSpec)
     )
@@ -269,6 +269,7 @@ instance MetaPopulations Conjunct where
     cExpr = rc_conjunct conj
 -}
 
+{-
 instance MetaPopulations PlugInfo where
   metaPops fSpec plug = 
       [ Comment $ " Plug `"++name plug++"` "
@@ -291,9 +292,9 @@ instance MetaPopulations PlugInfo where
     isKernelConcept cpt = case plug of 
                            InternalPlug sqlTable -> cpt `elem` map fst (cLkpTbl sqlTable)
                            _                     -> False
-
-instance MetaPopulations PlugSQL where
-  metaPops _ _ = []
+-}
+--instance MetaPopulations PlugSQL where
+--  metaPops _ _ = []
 {-    case plug of 
        TblSQL{} ->
          [ Pop "rootConcept" "TblSQL" "Concept" []
@@ -307,8 +308,8 @@ instance MetaPopulations PlugSQL where
     ctx = originalContext fSpec
 -}
 
-instance MetaPopulations (PlugSQL,SqlAttribute) where
-  metaPops _ (_,_) = []
+--instance MetaPopulations (PlugSQL,SqlAttribute) where
+--  metaPops _ (_,_) = []
 {-      [ Pop "table" "SqlAttribute" "SQLPlug" []
                  [(dirtyId ctx (plug,att), dirtyId ctx plug) ]
       , Pop "concept" "SqlAttribute" "Concept" []
