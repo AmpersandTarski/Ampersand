@@ -78,7 +78,7 @@ INTERFACE "Conjunct" FOR Ampersand : I[Conjunct] BOX
 INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     [ concept : I
     , name    : name[Concept*ConceptName]
-    , ttype   : ttype
+--    , ttype   : ttype
     , "source~" : source[Relation*Concept]~ LINKTO INTERFACE Relation
     , "target~" : target[Relation*Concept]~ LINKTO INTERFACE Relation
     , "gengen~" : gengen[Gen*Concept]~
