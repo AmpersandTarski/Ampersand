@@ -117,7 +117,7 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxks ctx]
     , Pop "allRoles" "Context" "Role" [Tot]
            [(dirtyId ctx ctx, show "SystemAdmin")]
-    , Pop "name"   "Role" "RoleName" [Uni,Tot,Sur]
+    , Pop "name"   "Role" "RoleName" [Uni,Tot]
            [(show "SystemAdmin", show "SystemAdmin")]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.patterns) ctx++")"]
