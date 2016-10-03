@@ -16,7 +16,7 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   [ "About" : I BOX
     [ "name"  : name[Context*ContextIdentifier]
 --    , "versionInfo" : versionInfo
-    , "dbName" : dbName
+--    , "dbName" : dbName
 --    , "owner" : owner[Context*Account]
     , "valid rules" : valid[Rule*Context]~
     , "valid relations" : valid[Relation*Context]~

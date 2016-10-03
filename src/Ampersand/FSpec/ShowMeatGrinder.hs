@@ -57,8 +57,8 @@ instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
     ( metaPops fSpec ctx
-    ++[ Pop "dbName" "Context" "DatabaseName" [Uni,Tot] [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)]
-      , Pop "maintains" "Role" "Rule" []
+    ++[ --Pop "dbName" "Context" "DatabaseName" [Uni,Tot] [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)]
+        Pop "maintains" "Role" "Rule" []
                  [(dirtyId ctx rol, dirtyId ctx rul) | (rol,rul) <-  fRoleRuls fSpec ]
       , Pop "interfaces" "Role" "Interface" []
                  [(dirtyId ctx rol, dirtyId ctx ifc) | ifc <- ctxifcs ctx, rol<-ifcRoles ifc]
