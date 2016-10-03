@@ -1,4 +1,4 @@
-CONTEXT AST IN ENGLISH LATEX
+﻿CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Concepts.adl"
 
@@ -33,6 +33,7 @@ PROCESS "Expression definitions"
     RELATION formalExpression[Rule*Expression] [UNI,TOT]
 
     CONCEPT Operator ""
+    REPRESENT Operator TYPE ALPHANUMERIC
     CONCEPT BinaryTerm ""
     CLASSIFY BinaryTerm ISA Expression
     RELATION first[BinaryTerm*Expression] [UNI]
