@@ -79,6 +79,13 @@ PROCESS "Expression definitions"
     CLASSIFY RightResidual      ISA BinaryTerm
 ENDPROCESS
 
+RELATION showADL[Expression*ShowADL] [UNI,TOT,SUR]
+REPRESENT ShowADL TYPE BIGALPHANUMERIC
+      ROLE ExecEngine MAINTAINS "del unused ShowADL"
+      RULE "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
+      MEANING "A ShowADL without Expression will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;ShowADL;", SRC I )
+
 
 {- I can't get the following to work...  Grrr!
 PROCESS "Type graph"
