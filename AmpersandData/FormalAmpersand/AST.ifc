@@ -85,21 +85,22 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
     , "in" : in[Concept*Plug]
     ]
 
-INTERFACE Expression FOR Ampersand : I[Expression]
-BOX [ expression: I[Expression]
-    , first : first[BinaryTerm*Expression] LINKTO INTERFACE Expression
-    , binaryOperator : operator[BinaryTerm*Operator]
-    , second : second[BinaryTerm*Expression] LINKTO INTERFACE Expression
-    , arg : arg[UnaryTerm*Expression]
-    , unaryOperator : operator[UnaryTerm*Operator]
-    , "formalExpression~" : formalExpression[Rule*Expression]~
-    , bind  : bind[BindedRelation*Relation] LINKTO INTERFACE Relation
-    , singleton : singleton[Singleton*AtomValue] 
-    , "user defined src" : userSrc["V"*Concept]
-    , "user defined trg" : userTrg["V"*Concept]
-    , "user defined cpt" : userCpt["I"*Concept]
+INTERFACE Expression FOR Ampersand : I[Expression] cRud
+BOX [ up : first~ \/ second~ \/ arg~ cRud LINKTO INTERFACE Expression
+    , expression: I[Expression] cRud LINKTO INTERFACE Expression
+    , first : first[BinaryTerm*Expression] cRud LINKTO INTERFACE Expression
+    , binaryOperator : operator[BinaryTerm*Operator] cRud
+    , second : second[BinaryTerm*Expression] cRud LINKTO INTERFACE Expression
+    , arg : arg[UnaryTerm*Expression] cRud LINKTO INTERFACE Expression
+    , unaryOperator : operator[UnaryTerm*Operator] cRud
+    , "formalExpression~" : formalExpression[Rule*Expression]~ cRud
+    , bind  : bind[BindedRelation*Relation] cRud LINKTO INTERFACE Relation
+    , singleton : singleton[Singleton*AtomValue] cRud 
+--    , "user defined src" : userSrc["V"*Concept]cRud
+--    , "user defined trg" : userTrg["V"*Concept]cRud
+--    , "user defined cpt" : userCpt["I"*Concept]cRud
     ]
-INTERFACE Signature FOR Ampersand : I[Signature]
+INTERFACE Signature FOR Ampersand : I[Signature] cRud
 BOX [ Signature: I[Signature]
     , src : src[Signature*Concept] LINKTO INTERFACE "Concept"
     , tgt : tgt[Signature*Concept] LINKTO INTERFACE "Concept"
