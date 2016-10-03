@@ -1,7 +1,11 @@
-CONTEXT AST IN ENGLISH 
+﻿CONTEXT AST IN ENGLISH 
 
 PATTERN Concepts
     RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
+      ROLE ExecEngine MAINTAINS "del unused ConceptName"
+      RULE "del unused ConceptName" : I[ConceptName] |- name~;name
+      MEANING "A ConceptName without Concept will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;ConceptName;", SRC I )
     
 
     RELATION name[Relation*RelationName] [UNI,TOT]
