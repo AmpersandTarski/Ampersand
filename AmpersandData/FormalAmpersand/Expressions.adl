@@ -54,7 +54,7 @@ PROCESS "Expression definitions"
     RELATION userTrg["V"*Concept] [UNI]
     
     CONCEPT "I" "The identity expression on a concept."
-    CLASSIFY "I" ISA BindedRelation
+    CLASSIFY "I" ISA Expression
     RELATION userCpt["I"*Concept] [UNI]
     
     CLASSIFY Equivalence ISA BinaryTerm
