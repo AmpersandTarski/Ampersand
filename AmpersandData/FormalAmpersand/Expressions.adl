@@ -7,9 +7,10 @@ PROCESS "Expression definitions"
     RELATION context[Pattern*Context] -- copied from Contexts.adl
     RELATION src[Expression*Concept]
     RELATION tgt[Expression*Concept]
-    RELATION bind[BindedRelation*Relation]
+    RELATION bind[BindedRelation*Relation][UNI,TOT]
     RELATION formalExpression[Rule*Expression]
     RELATION in[Pair*Expression]
+    VIEW BindedRelation     : BindedRelation (bind)
     
     VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Expression], TXT " = ", second[BinaryTerm*Expression])
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first[BinaryTerm*Expression], TXT " |- ", second[BinaryTerm*Expression])
