@@ -19,6 +19,11 @@ CONCEPT Role "Een eigenschap waarmee kan worden bepaald welke functionaliteit to
 RULE 'SystemAdmin' |- I[Role]
 POPULATION Role CONTAINS [ "SystemAdmin" ]
 
+RELATION name[Role*RoleName] [UNI,TOT]
+POPULATION name[Role*RoleName] CONTAINS [ ("SystemAdmin","SystemAdmin")]
+VIEW Role : Role(name)
+REPRESENT RoleName ALPHANUMERIC
+
 RELATION sessionLoginnaam[SESSION*Loginnaam] [UNI]
 MEANING "Het systeem onthoudt de loginnaam van elke lopende sessie, zolang die sessie leeft."
 REPRESENT Loginnaam TYPE ALPHANUMERIC

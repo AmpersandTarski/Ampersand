@@ -1,4 +1,4 @@
-CONTEXT AST IN ENGLISH LATEX
+﻿CONTEXT AST IN ENGLISH LATEX
 -- The comments for this script can be found in Atoms.doc
 INCLUDE "Concepts.adl"
 
@@ -7,9 +7,10 @@ PROCESS "Expression definitions"
     RELATION context[Pattern*Context] -- copied from Contexts.adl
     RELATION src[Expression*Concept]
     RELATION tgt[Expression*Concept]
-    RELATION bind[BindedRelation*Relation]
+    RELATION bind[BindedRelation*Relation][UNI,TOT]
     RELATION formalExpression[Rule*Expression]
     RELATION in[Pair*Expression]
+    VIEW BindedRelation     : BindedRelation (bind)
     
     VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Expression], TXT " = ", second[BinaryTerm*Expression])
     VIEW Inclusion          : Inclusion  (TXT "RULE ", first[BinaryTerm*Expression], TXT " |- ", second[BinaryTerm*Expression])
@@ -33,6 +34,7 @@ PROCESS "Expression definitions"
     RELATION formalExpression[Rule*Expression] [UNI,TOT]
 
     CONCEPT Operator ""
+    REPRESENT Operator TYPE ALPHANUMERIC
     CONCEPT BinaryTerm ""
     CLASSIFY BinaryTerm ISA Expression
     RELATION first[BinaryTerm*Expression] [UNI]
@@ -53,7 +55,7 @@ PROCESS "Expression definitions"
     RELATION userTrg["V"*Concept] [UNI]
     
     CONCEPT "I" "The identity expression on a concept."
-    CLASSIFY "I" ISA BindedRelation
+    CLASSIFY "I" ISA Expression
     RELATION userCpt["I"*Concept] [UNI]
     
     CLASSIFY Equivalence ISA BinaryTerm
@@ -77,6 +79,13 @@ PROCESS "Expression definitions"
     CLASSIFY RightResidual      ISA BinaryTerm
 ENDPROCESS
 
+RELATION showADL[Expression*ShowADL] [UNI,TOT,SUR]
+REPRESENT ShowADL TYPE BIGALPHANUMERIC
+      ROLE ExecEngine MAINTAINS "del unused ShowADL"
+      RULE "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
+      MEANING "A ShowADL without Expression will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;ShowADL;", SRC I )
+VIEW Expression : Expression(showADL)
 
 {- I can't get the following to work...  Grrr!
 PROCESS "Type graph"

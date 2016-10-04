@@ -1,4 +1,4 @@
-{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings #-}
+{-# LANGUAGE Arrows, NoMonomorphismRestriction, OverloadedStrings, DuplicateRecordFields #-}
 module Ampersand.Input.Archi.ArchiAnalyze (archi2PContext)
    -- The purpose of this module is to load Archimate content into an Ampersand context.
    -- This module parses an Archi-repository by means of function `archi2PContext`, which produces a `P_Context` for merging into Ampersand.
@@ -447,12 +447,12 @@ data PAtomPair
         , []
         )
       ] ++
-      [ (   P_CptPopu { p_orig = OriginUnknown
-                      , p_cnme = relTyp 
+      [ (   P_CptPopu { pos     = OriginUnknown
+                      , p_cnme  = relTyp 
                       , p_popas = [ScriptString OriginUnknown relId] 
                       }
         , Nothing
-        , [ PGen{ gen_fp  = OriginUnknown
+        , [ PGen{ pos     = OriginUnknown
                 , gen_spc = PCpt relTyp           -- ^ specific concept
                 , gen_gen = PCpt "Relationship"   -- ^ generic concept
                 } ]

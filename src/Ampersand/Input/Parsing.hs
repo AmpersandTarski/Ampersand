@@ -138,17 +138,17 @@ parseErrors lang err = [PE (Message msg)]
 parse :: AmpParser a -> FilePath -> [Token] -> Guarded a
 parse p fn ts =
       -- runP :: Parsec s u a -> u -> FilePath -> s -> Either ParseError a
-    case runP p pos fn ts of
+    case runP p pos' fn ts of
         --TODO: Add language support to the parser errors
         Left err -> Errors $ parseErrors English err
         Right a -> Checked a
-    where pos | null ts   = initPos fn
-              | otherwise = tokPos (head ts)
+    where pos' | null ts   = initPos fn
+               | otherwise = tokPos (head ts)
 
 --TODO: Give the errors in a better way
 lexerError2CtxError :: LexerError -> CtxError
-lexerError2CtxError (LexerError pos err) =
-   PE (Message ("Lexer error at "++show pos++"\n  "
+lexerError2CtxError (LexerError pos' err) =
+   PE (Message ("Lexer error at "++show pos'++"\n  "
                 ++ intercalate "\n    " (showLexerErrorInfo err)
                )
       )

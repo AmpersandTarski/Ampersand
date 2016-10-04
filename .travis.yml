@@ -13,74 +13,117 @@ cache:
 services:
   - mysql
 
+# The different configurations we want to test. We have BUILD=cabal which uses
+# cabal-install, and BUILD=stack which uses Stack. More documentation on each
+# of those below.
+#
+# We set the compiler values here to tell Travis to use a different
+# cache file per set of arguments.
+#
+# If you need to have different apt packages for each combination in the
+# matrix, you can use a line such as:
+#     addons: {apt: {packages: [libfcgi-dev,libgmp-dev]}}
 matrix:
   include:
-    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.3
-      compiler: ": #GHC 7.10.3"
-      addons: {apt: {packages: [cabal-install-1.22,ghc-7.10.3], sources: [hvr-ghc]}}
+  # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
+  # https://github.com/hvr/multi-ghc-travis
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
+    compiler: ": #GHC 8.0.1"
+    addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
 
-    - env: BUILD=stack GHCVER=7.10.3 STACK_YAML=stack.yaml
-      compiler: ": #stack 7.10.3"
-      addons: {apt: {packages: [cabal-install-head,ghc-7.10.3], sources: [hvr-ghc]}}
+  # Build with the newest GHC and cabal-install. This is an accepted failure,
+  # see below.
+  - env: BUILD=cabal GHCVER=head  CABALVER=head
+    compiler: ": #GHC HEAD"
+    addons: {apt: {packages: [cabal-install-head,ghc-head], sources: [hvr-ghc]}}
 
-    - env: BUILD=cabal CABALVER=head GHCVER=head
-      compiler: ": #GHC head"
-      addons: {apt: {packages: [cabal-install-head,ghc-head], sources: [hvr-ghc]}}
+  # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
+  # variable, such as using --stack-yaml to point to a different file.
+  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml"
+    compiler: ": #stack 8.0.1"
+    addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
 
-    - env: BUILD=stack STACK_YAML=stack.yaml
-      compiler: ": #stack 7.10.3 osx"
-      os: osx
+  # Nightly builds are allowed to fail
+  - env: BUILD=stack ARGS="--resolver nightly"
+    compiler: ": #stack nightly"
+    addons: {apt: {packages: [libgmp-dev]}}
+
+  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml osx"
+    compiler: ": #stack 8.0.1 osx"
+    os: osx
+
+  - env: BUILD=stack ARGS="--resolver nightly osx"
+    compiler: ": #stack nightly osx"
+    os: osx
+
+  allow_failures:
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
+  - env: BUILD=cabal GHCVER=head  CABALVER=head
+
+  - env: BUILD=stack ARGS="--resolver nightly"
+  # OSX builds currently (sept 2016) do not work, because PHP isn't available
+  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml osx"
+  - env: BUILD=stack ARGS="--resolver nightly osx"
 
   fast_finish: true
-  allow_failures:
-    - env: BUILD=cabal CABALVER=1.22 GHCVER=7.10.3
-#    - env: BUILD=stack GHCVER=7.10.3 STACK_YAML=stack.yaml
-    - env: BUILD=cabal CABALVER=head GHCVER=head
-    - env: BUILD=stack STACK_YAML=stack.yaml
+
+
 
 # Note: the distinction between `before_install` and `install` is not important.
 # - in before_install we install build tools
 # - in install we install (haskell) dependencies
 before_install:
- - unset CC
- - case "$BUILD" in
-     stack)
-       export PATH=$HOME/.local/bin:/opt/ghc/$GHCVER/bin:$PATH;;
-     cabal)
-       export PATH=$HOME/.cabal/bin:/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$PATH;;
-   esac
- - chmod +x ./.travis-setup.sh  # There should be some possibility to do this permenently in Github, but I do not know how to do so.
- - ./.travis-setup.sh
+# Using compiler above sets CC to an invalid value, so unset it
+- unset CC
+
+# We want to always allow newer versions of packages when building on GHC HEAD
+- CABALARGS=""
+- if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
+
+# Download and unpack the stack executable
+- export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
+- mkdir -p ~/.local/bin
+- |
+  if [ `uname` = "Darwin" ]
+  then
+    curl --insecure -L https://www.stackage.org/stack/osx-x86_64 | tar xz --strip-components=1 --include '*/stack' -C ~/.local/bin
+  else
+    curl -L https://www.stackage.org/stack/linux-x86_64 | tar xz --wildcards --strip-components=1 -C ~/.local/bin '*/stack'
+  fi
 
 install:
- - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
- - case "$BUILD" in
-     stack)
-       stack --no-terminal test --only-dependencies;;
-     cabal)
-       cabal --version;
-       echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]";
-       ghc --info;
-       travis_retry cabal update;
-       rm -f $(stack path --dist-dir)/stack-*.tar.gz;
-       stack sdist --pvp-bounds=both;
-       tar xf $(stack path --dist-dir)/stack-*.tar.gz --wildcards --strip-components=1 '*/stack.cabal';
-       cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0;;
-   esac
+- echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
+- chmod +x ./travis_long
+- if [ -f configure.ac ]; then autoreconf -i; fi
+- |
+  case "$BUILD" in
+    stack)
+      stack --no-terminal --install-ghc $ARGS test --only-dependencies
+      ;;
+    cabal)
+      cabal --version
+      travis_retry cabal update
+      cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0
+      ;;
+  esac
 
+# We need composer for the Ampersand Prototypes to be installed.
 before_script: composer install
 
 script:
- - case "$BUILD" in 
-     stack)
-       stack --no-terminal test;;
-     cabal)
-       cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0";
-       cabal build;
-       cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0";
-       cabal test;
-       cabal check;
-       cabal sdist;
-       cabal copy;
-       SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && (cd dist && cabal install --force-reinstalls "$SRC_TGZ");;
-   esac
+- |
+  case "$BUILD" in
+    stack)
+    ./travis_long stack --no-terminal $ARGS test
+      ;;
+    cabal)
+      cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 "
+      ./travis_long cabal build
+      cabal check
+      ./travis_long cabal test
+      cabal copy
+      cabal sdist
+      SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && \
+        (cd dist && cabal install --enable-tests --force-reinstalls "$SRC_TGZ")
+      ;;
+  esac

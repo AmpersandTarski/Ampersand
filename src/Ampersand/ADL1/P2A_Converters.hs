@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE LambdaCase, ImplicitParams #-}
-{-# LANGUAGE ApplicativeDo #-}
+{-# LANGUAGE ApplicativeDo, DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
 where
 import Ampersand.ADL1.Disambiguate
@@ -138,13 +138,24 @@ checkOtherAtomsInSessionConcept :: A_Context -> Guarded ()
 checkOtherAtomsInSessionConcept ctx = case [mkOtherAtomInSessionError atom
                                            | pop@ACptPopu{popcpt =cpt} <- ctxpopus ctx
                                            , name cpt == "SESSION"
-                                           , atom <- filter (not.isPermittedSessionValue) (popas pop)
-                                           ] of
+                                           , atom <- popas pop
+                                           -- SJC: I think we should not allow _SESSION in a POPULATION statement, as there is no current session at that time (_SESSION should only be allowed as Atom in expressions)
+                                           , not (_isPermittedSessionValue atom)
+                                           ] ++
+                                           [ mkOtherTupleInSessionError d pr
+                                           | ARelPopu{popsrc = src,poptgt = tgt,popdcl = d,popps = ps} <- ctxpopus ctx
+                                           , name src == "SESSION" || name tgt == "SESSION"
+                                           , pr <- ps
+                                           , (name src == "SESSION" && not (_isPermittedSessionValue (apLeft pr)))
+                                             ||
+                                             (name tgt == "SESSION" && not (_isPermittedSessionValue (apRight pr)))
+                                           ]
+                                           of
                                         [] -> return ()
                                         errs -> Errors errs
-        where isPermittedSessionValue :: AAtomValue -> Bool
-              isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
-              isPermittedSessionValue _                 = False
+        where _isPermittedSessionValue :: AAtomValue -> Bool
+              _isPermittedSessionValue v@AAVString{} = aavstr v == "_SESSION"
+              _isPermittedSessionValue _                 = False
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
@@ -309,7 +320,7 @@ pCtx2aCtx opts
               reprTrios :: [(A_Concept,TType,Origin)]
               reprTrios = nub $ concatMap toReprs reprs
                 where toReprs :: Representation -> [(A_Concept,TType,Origin)]
-                      toReprs r = [ (makeConcept str,reprdom r,reprpos r) | str <- reprcpts r]
+                      toReprs r = [ (makeConcept str,reprdom r,origin r) | str <- reprcpts r]
               conceptsOfGroups :: [A_Concept]
               conceptsOfGroups = nub (concat groups)
               conceptsOfReprs :: [A_Concept]
@@ -445,7 +456,7 @@ pCtx2aCtx opts
                      , decprM  = prM
                      , decprR  = prR
                      , decMean = pMean2aMean defLanguage defFormat (dec_Mean pd)
-                     , decfpos = dec_fpos pd
+                     , decfpos = origin pd
                      , decusr  = True
                      , decpat  = patNm
                      , decplug = dec_plug pd
@@ -552,7 +563,7 @@ pCtx2aCtx opts
 
     typecheckViewDef :: DeclMap -> P_ViewD (TermPrim, DisambPrim) -> Guarded ViewDef
     typecheckViewDef _
-       o@P_Vd { vd_pos = orig
+       o@P_Vd { pos = orig
               , vd_lbl  = lbl   -- String
               , vd_cpt  = cpt   -- Concept
               , vd_isDefault = isDefault
@@ -572,7 +583,7 @@ pCtx2aCtx opts
        typeCheckViewSegment :: (Integer, P_ViewSegment (TermPrim, DisambPrim)) -> Guarded ViewSegment
        typeCheckViewSegment (seqNr, seg)
         = do payload <- typecheckPayload (vsm_load seg)
-             return ViewSegment { vsmpos   = vsm_org seg
+             return ViewSegment { vsmpos   = origin seg
                                 , vsmlabel = vsm_labl seg
                                 , vsmSeqNr = seqNr
                                 , vsmLoad  = payload
@@ -598,7 +609,7 @@ pCtx2aCtx opts
     typecheckObjDef :: DeclMap -> P_ObjDef (TermPrim, DisambPrim) -> Guarded (ObjectDef, Bool)
     typecheckObjDef declMap
        o@P_Obj { obj_nm = nm
-               , obj_pos = orig
+               , pos = orig
                , obj_ctx = ctx
                , obj_crud = mCrud
                , obj_mView = mView
@@ -835,7 +846,7 @@ pCtx2aCtx opts
     pIfc2aIfc declMap
              (P_Ifc { ifc_Roles = rols
                     , ifc_Obj = _
-                    , ifc_Pos = orig
+                    , pos = orig
                     , ifc_Prp = prp
                     }, objDisamb)
         = (\ obj'
@@ -852,13 +863,13 @@ pCtx2aCtx opts
      = (\ ds' 
         -> RR { rrRoles = rr_Roles prr
               , rrRels  = ds'
-              , rrPos   = rr_Pos prr
+              , rrPos   = origin prr
               }) <$> traverse (namedRel2Decl declMap) (rr_Rels prr)
     pRoleRule2aRoleRule :: P_RoleRule -> A_RoleRule
     pRoleRule2aRoleRule prr
      = A_RoleRule { arRoles = mRoles prr
                   , arRules = mRules prr
-                  , arPos   = mPos prr
+                  , arPos   = origin prr
                   }
     
     pPat2aPat :: DeclMap -> ContextInfo -> P_Pattern -> Guarded Pattern
@@ -872,7 +883,7 @@ pCtx2aCtx opts
        where
         f rules' keys' pops' views' xpls declsAndPops
            = A_Pat { ptnm  = name ppat
-                   , ptpos = pt_pos ppat
+                   , ptpos = origin ppat
                    , ptend = pt_end ppat
                    , ptrls = rules'
                    , ptgns = map pGen2aGen (pt_gns ppat)
@@ -888,7 +899,7 @@ pCtx2aCtx opts
     typeCheckRul :: 
                  String -- environment name (pattern / proc name)
               -> P_Rule (TermPrim, DisambPrim) -> Guarded Rule
-    typeCheckRul env P_Ru { rr_fps = orig
+    typeCheckRul env P_Ru { pos = orig
                           , rr_nm = nm
                           , rr_exp = expr
                           , rr_mean = meanings
@@ -920,7 +931,7 @@ pCtx2aCtx opts
                                     , identityAts = isegs'
                                     }) <$> traverse pIdentSegment2IdentSegment isegs
      where conc = pCpt2aCpt (ix_cpt pidt)
-           orig = ix_pos pidt
+           orig = origin pidt
            pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
               do o <- pObjDefDisamb2aObjDef declMap ojd
@@ -941,7 +952,7 @@ pCtx2aCtx opts
                                  else mustBeBound (origin (fmap fst x)) [(Src, e)]
     pPurp2aPurp :: DeclMap -> PPurpose -> Guarded Purpose
     pPurp2aPurp declMap
-                PRef2 { pexPos    = orig     -- :: Origin
+                PRef2 { pos    = orig     -- :: Origin
                       , pexObj    = objref   -- :: PRefObj
                       , pexMarkup = pmarkup  -- :: P_Markup
                       , pexRefIDs  = refIds  -- :: [String]
@@ -965,7 +976,7 @@ pCtx2aCtx opts
     lookupConceptDef :: String -> ConceptDef
     lookupConceptDef s
      = case filter (\cd -> name cd == s) allConceptDefs of
-        []    -> Cd{cdpos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdref="", cdfrom=n1} 
+        []    -> Cd{pos=OriginUnknown, cdcpt=s, cdplug=True, cddef="", cdref="", cdfrom=n1} 
         (x:_) -> x
     allConceptDefs :: [ConceptDef]
     allConceptDefs = p_conceptdefs++concatMap pt_cds p_patterns

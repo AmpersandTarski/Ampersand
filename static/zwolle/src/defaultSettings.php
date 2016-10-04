@@ -65,7 +65,12 @@ try{
     Config::set('defaultShowInvariants', 'notifications', true);
     
     // Navigation menu settings
-    AngularApp::addMenuItem('refresh', 'app/views/partials/installerMenuItem.html', 
+    AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
+        function($session){
+            return !Config::get('productionEnv');
+        });
+    
+    AngularApp::addMenuItem('refresh', 'app/views/menu/checkAllRules.html',
         function($session){
             return !Config::get('productionEnv');
         });
