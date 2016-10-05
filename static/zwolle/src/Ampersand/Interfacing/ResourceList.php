@@ -177,7 +177,7 @@ class ResourceList {
      * @param array $recursionArr
      * @return mixed[]
      */
-    public function getList($rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
+    public function get($rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
         if(!$this->ifc->crudR()) throw new Exception ("Read not allowed for ". $this->ifc->getPath(), 405);
         
         // Initialize result
@@ -379,9 +379,6 @@ class ResourceList {
  * Redirect for methods to call on Resource
  *************************************************************************************************/
     
-    public function get($tgtId, $rcOptions = self::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
-        return $this->one($tgtId)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
-    }
 }
 
 ?>

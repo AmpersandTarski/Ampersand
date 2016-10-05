@@ -180,7 +180,7 @@ class Resource extends Atom {
                 if(!$subifc->crudR()) continue; // skip subinterface if not given read rights (otherwise exception will be thrown when getting content)
                     
                 // Add content of subifc
-                $content->{$subifc->id} = $subcontent = $this->all($subifc->id)->getList($rcOptions, $ifcOptions, $depth, $recursionArr);
+                $content->{$subifc->id} = $subcontent = $this->all($subifc->id)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
                 
                 // Add sort data if subIfc is univalent
                 if($subifc->isUni() && ($rcOptions & self::INCLUDE_SORT_DATA)){
@@ -277,7 +277,7 @@ class Resource extends Atom {
      * @return array representation of resource content of given interface
      */
     public function getList($ifcId, $rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
-        return $this->all($ifcId)->getList($rcOptions, $ifcOptions, $depth, $recursionArr);
+        return $this->all($ifcId)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
     }
     
     /**
