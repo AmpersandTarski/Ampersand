@@ -82,10 +82,10 @@ ENDPROCESS
 RELATION showADL[Expression*ShowADL] [UNI,TOT]
 REPRESENT ShowADL TYPE BIGALPHANUMERIC
 --HJI20161004: This execEngine rule doesn't work, because of the ';'-characters that may be in the ShowADL expression
---      ROLE ExecEngine MAINTAINS "del unused ShowADL"
---      RULE "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
---      MEANING "A ShowADL without Expression will be removed."
---      VIOLATION ( TXT "{EX} DelAtom;ShowADL;", SRC I )
+      ROLE ExecEngine MAINTAINS "del unused ShowADL"
+      RULE "del unused ShowADL" : I[ShowADL] |- showADL~;showADL
+      MEANING "A ShowADL without Expression will be removed."
+      VIOLATION ( TXT "{EX}_;DelAtom _;ShowADL _;", SRC I )
 VIEW Expression : Expression(showADL)
 
 {- I can't get the following to work...  Grrr!
