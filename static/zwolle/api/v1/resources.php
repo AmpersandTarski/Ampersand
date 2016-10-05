@@ -84,13 +84,15 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     
 	$ifcPath = implode ('/', $ifcPath);
 
-	$atom = new Atom($resourceId, Concept::getConcept($resourceType));
-	$atomOrIfc = $atom->walkIfcPath($ifcPath);
+    $resource = new Resource($resourceId, $resourceType);
 
-// TODO:	$content = $atomOrIfc->read($options);
+    $content = $resource->walkPath($ifcPath)->get($rcOptions, $ifcOptions);
 	
-	// If force list option is provided, make sure to return an array
-	if(filter_var($app->request->params('forceList'), FILTER_VALIDATE_BOOLEAN) && isAssoc($content)) $content = array($content);
+    // If force list option is provided, make sure to return a numeric array
+    if(filter_var($app->request->params('forceList'), FILTER_VALIDATE_BOOLEAN)){
+        if(!is_array($content)) $content = array($content); // not an array => put content in list
+        elseif(isAssoc($content)) $content = array_values($content); // associative array => make numeric
+    }
 
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 

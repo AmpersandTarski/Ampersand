@@ -9,6 +9,7 @@ namespace Ampersand;
 
 use Exception;
 use Ampersand\Database\Database;
+use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
@@ -72,30 +73,26 @@ class Session {
      * private to prevent any outside instantiation of this object
      */
     private function __construct(){
-        $this->logger = Logger::getLogger('FW');
+        $this->logger = Logger::getLogger('SESSION');
         $this->database = Database::singleton();
         
-        $conceptSession = Concept::getConceptByLabel('SESSION'); // Also checks if 'SESSION' is defined as concept in Ampersand script
-        
         $this->id = session_id();
-        $this->sessionAtom = new Atom($this->id, $conceptSession);
+        $this->sessionAtom = new Resource($this->id, 'SESSION');
         
         $this->logger->debug("Session id: {$this->id}");
         
         // Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
         $expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
         foreach ($expiredSessionsAtoms as $expiredSessionAtom){
-            if($expiredSessionAtom == $this->id){
-                // Notify user that session is expired when login functionality is enabled 
-                if(Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again"); // 440 Login Timeout -> is redirected by frontend to login page
-            }
+            // Notify user that session is expired when login functionality is enabled 
+            if($expiredSessionAtom == $this->id && Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again");
+            
             $this->destroyAmpersandSession($expiredSessionAtom);
         }
         
         // Create a new Ampersand session atom if not yet in SESSION table (browser started a new session or Ampersand session was expired)
-        $sessionAtom = new Atom($this->id, $conceptSession);
-        if (!$sessionAtom->atomExists()){ 
-            $sessionAtom->addAtom();
+        if (!$this->sessionAtom->atomExists()){ 
+            $this->sessionAtom->addAtom();
             $this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
         }
 
@@ -283,7 +280,7 @@ class Session {
         if(InterfaceObject::interfaceExists('SessionVars')){
             try {
                 $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionAtom->__toString()}");
-// TODO:        return $this->sessionAtom->ifc('SessionVars')->read(['metaData' => false, 'navIfc' => false]);
+                return $this->sessionAtom->all('SessionVars')->get();
             }catch (Exception $e){
                 $this->logger->warning("Error while getting SessionVars interface: " . $e->getMessage());
                 return false;

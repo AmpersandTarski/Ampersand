@@ -381,16 +381,6 @@ class Atom {
  * READ, CREATE, UPDATE, PATCH and DELETE functions 
  *  
  *************************************************************************************************/
-	
-    /**
-     * TODO: opruimen
-     * @param array $options 
-     * @throws Exception when read is not allowed for parent interface object
-     * @return mixed
-     */
-    public function read($options = []){
-        
-    }
     
     /**
      * TODO: opruimen
