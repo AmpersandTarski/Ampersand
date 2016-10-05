@@ -39,8 +39,26 @@ class ResourceList {
     
     
     public function __construct(Resource $src, InterfaceObject $parentIfc){
+        $session = Session::singleton();
+        
+        if($parentIfc->isRoot() && !$session->isAccessibleIfc($parentIfc)) throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
+        
         $this->src = $src;
-        $this->parentIfc = $parentIfc;
+        $this->ifc = $parentIfc;
+    }
+    
+    /**
+     * @return string
+     */
+    public function getPath(){
+        return $this->src->getPath() . '/' . $this->ifc->label;
+    }
+    
+    /**
+     * @return InterfaceObject
+     */
+    public function getIfc(){
+        return $this->ifc;
     }
     
     /**
@@ -50,16 +68,18 @@ class ResourceList {
     public function one($tgtId){
         // Functionality to automatically add/create resource if allowed
         if(!in_array($tgtId, $arr = $this->getTgtResources())){
-            $resource = new Resource($tgtId, $this->parentIfc->tgtConcept->name);
+            $resource = new Resource($tgtId, $this->ifc->tgtConcept->name);
             
             // If resource already exists and may be added (crudU)
-            if($resource->atomExists() && $this->parentIfc->crudU()) $this->add($resource);
+            if($this->ifc->crudU() && $resource->atomExists()) $this->add($resource->id);
+            
             // Elseif resource not yet exists and may be created (crudC) 
-            elseif(!$resource->atomExists() && $this->parentIfc->crudC()){
+            elseif($this->ifc->crudC() && !$resource->atomExists()){
                 $obj = new stdClass();
                 $obj->_id_ = $resource->id;
                 $this->post($obj);
             }
+            
             // Else: return not found
             else throw new Exception ("Resource '{$resource}' not found", 404);
             
@@ -78,25 +98,25 @@ class ResourceList {
             $this->tgtResources = array();
             try {
                 // If interface isIdent (i.e. expr = I[Concept]) we can return the src
-                if($this->parentIfc->isIdent()){
-                    $this->tgtResources[$this->src->id] = new Resource($this->src->id, $this->parentIfc->tgtConcept->name, $this->parentIfc, $this->src);
+                if($this->ifc->isIdent()){
+                    $this->tgtResources[$this->src->id] = new Resource($this->src->id, $this->ifc->tgtConcept->name, $this);
                     
                 // Else try to get tgt atom from src query data (in case of uni relation in same table)
                 }else{
-                    $tgt = $this->src->getQueryData('ifc_' . $this->parentIfc->id); // column is prefixed with ifc_ in query data
-                    if(!is_null($tgt)) $this->tgtResources[$tgt] = new Resource($tgt, $this->parentIfc->tgtConcept->name, $this->parentIfc, $this->src);
+                    $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id); // column is prefixed with ifc_ in query data
+                    if(!is_null($tgt)) $this->tgtResources[$tgt] = new Resource($tgt, $this->ifc->tgtConcept->name, $this);
                 }
             }catch (Exception $e) {
                 // Column not defined, perform sub interface query
                 if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
                     $db = Database::singleton();
-                    $data = (array) $db->Exe($this->parentIfc->getQuery($this->src));
+                    $data = (array) $db->Exe($this->ifc->getQuery($this->src));
                     
                     // Integrity check
-                    if($this->parentIfc->isUni() && count($data) > 1) throw new Exception("Univalent (sub)interface returns more than 1 resource: " . $this->parentIfc->path(), 500);
+                    if($this->ifc->isUni() && count($data) > 1) throw new Exception("Univalent (sub)interface returns more than 1 resource: " . $this->ifc->getPath(), 500);
                     
                     foreach ($data as $row) {
-                        $r = new Resource($row['tgt'], $this->parentIfc->tgtConcept->name, $this->parentIfc, $this->src);
+                        $r = new Resource($row['tgt'], $this->ifc->tgtConcept->name, $this);
                         $r->setQData($row);
                         $this->tgtResources[$r->id] = $r;
                     }
@@ -116,26 +136,26 @@ class ResourceList {
      */
     private function getTgtAtoms($fromCache = true){
         if(isset($this->tgtResources) && $fromCache) return $this->tgtResources;
-        elseif($this->parentIfc->tgtConcept->isObject()) return $this->getTgtResources($fromCache);
+        elseif($this->ifc->tgtConcept->isObject()) return $this->getTgtResources($fromCache);
         
         // Otherwise (i.e. non-object atoms) get atoms from database. This is never cached. We only cache resources (i.e. object atoms)
         else{
             
             try {
                 // Try to get tgt atom from src query data (in case of uni relation in same table)
-                $tgt = $this->src->getQueryData('ifc_' . $this->parentIfc->id); // column is prefixed with ifc_ in query data
-                if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->parentIfc->tgtConcept);
+                $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id); // column is prefixed with ifc_ in query data
+                if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->ifc->tgtConcept);
                 
             }catch (Exception $e) {
                 // Column not defined, perform sub interface query
                 if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
                     $db = Database::singleton();
-                    $data = (array) $db->Exe($this->parentIfc->getQuery($this->src));
+                    $data = (array) $db->Exe($this->ifc->getQuery($this->src));
                     
                     // Integrity check
-                    if($this->parentIfc->isUni() && count($data) > 1) throw new Exception("Univalent (sub)interface returns more than 1 resource: " . $this->parentIfc->path(), 500);
+                    if($this->ifc->isUni() && count($data) > 1) throw new Exception("Univalent (sub)interface returns more than 1 resource: " . $this->ifc->getPath(), 500);
                     
-                    foreach ($data as $row) $tgtAtoms[] = new Atom($row['tgt'], $this->parentIfc->tgtConcept);
+                    foreach ($data as $row) $tgtAtoms[] = new Atom($row['tgt'], $this->ifc->tgtConcept);
                     
                 }else{
                     throw $e;
@@ -145,7 +165,11 @@ class ResourceList {
         }
         
     }
-    
+
+/**************************************************************************************************
+ * Methods to call on ResourceList
+ *************************************************************************************************/
+     
     /**
      * @param int $rcOptions
      * @param int $ifcOptions
@@ -154,13 +178,13 @@ class ResourceList {
      * @return mixed[]
      */
     public function getList($rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
-        if(!$this->parentIfc->crudR()) throw new Exception ("Read not allowed for ". $this->parentIfc->path(), 403);
+        if(!$this->ifc->crudR()) throw new Exception ("Read not allowed for ". $this->ifc->getPath(), 405);
         
         // Initialize result
         $result = [];
         
         // Object nodes
-        if($this->parentIfc->tgtConcept->isObject()){
+        if($this->ifc->tgtConcept->isObject()){
             
             foreach ($this->getTgtResources() as $resource){
                 $result[] = $resource->get($rcOptions, $ifcOptions, $depth, $recursionArr);
@@ -168,7 +192,7 @@ class ResourceList {
             
             // Special case for leave PROP: return false when result is empty, otherwise true (i.e. I atom must be present)
             // Enables boolean functionality for editing ampersand property relations
-            if($this->parentIfc->isLeaf() && $this->parentIfc->isProp()){
+            if($this->ifc->isLeaf() && $this->ifc->isProp()){
                 if(empty($result)) return false;
                 else return true;
             }
@@ -179,8 +203,8 @@ class ResourceList {
         }
         
         // Return result using UNI-aspect (univalent-> value/object, non-univalent -> list of values/objects)
-        if($this->parentIfc->isUni() && empty($result)) return null;
-        elseif($this->parentIfc->isUni()) return current($result);
+        if($this->ifc->isUni() && empty($result)) return null;
+        elseif($this->ifc->isUni()) return current($result);
         else return $result;
         
     }
@@ -190,26 +214,26 @@ class ResourceList {
      * @return stdClass representation of newly created resource
      */
     public function post(stdClass $resourceToPost){
-        if(!$this->parentIfc->crudC()) throw new Exception ("Create not allowed for ". $this->parentIfc->path(), 403);
+        if(!$this->ifc->crudC()) throw new Exception ("Create not allowed for ". $this->ifc->getPath(), 405);
         
         // Use attribute '_id_' if provided
         if(isset($resourceToPost->_id_)){
-            $resource = new Resource($resourceToPost->_id_, $this->parentIfc->tgtConcept->name, $this->parentIfc, $this->src);
-            if($resource->atomExists()) throw new Exception ("Cannot create resource that already exists", 403);
+            $resource = new Resource($resourceToPost->_id_, $this->ifc->tgtConcept->name, $this);
+            if($resource->atomExists()) throw new Exception ("Cannot create resource that already exists", 400);
         }else{
-            $id = $this->parentIfc->tgtConcept->createNewAtomId();
-            $resource = new Resource($id, $this->parentIfc->tgtConcept->name, $this->parentIfc, $this->src);
+            $id = $this->ifc->tgtConcept->createNewAtomId();
+            $resource = new Resource($id, $this->ifc->tgtConcept->name, $this);
         }
         
         // If interface is editable, also add tuple(src, tgt) in interface relation
-        if($this->parentIfc->isEditable() && $this->parentIfc->crudU()) $this->add($resource);
+        if($this->ifc->isEditable() && $this->ifc->crudU()) $this->add($resource->id);
         else $resource->addAtom();
         
         // Put resource attributes
         $resource->put($resourceToPost);
         
         // Special case for file upload. TODO: make extension with hooks
-        if($this->parentIfc->tgtConcept->isFileObject()){
+        if($this->ifc->tgtConcept->isFileObject()){
             $conceptFilePath = Concept::getConceptByLabel('FilePath');
             $conceptFileName = Concept::getConceptByLabel('FileName');
             
@@ -238,13 +262,125 @@ class ResourceList {
         return $resource->get();
     }
     
-    
-    public function add($resource){
-        if($this->relation) $this->relation()->addLink($this->srcAtom, $newAtom, $this->relationIsFlipped);
+    /**
+     * Update a complete resource list (updates only this subinterface, not any level(s) deeper for now)
+     * @param mixed $value
+     * @return boolean
+     */
+    public function put($value){
+        
+        if($this->ifc->isUni()){ // expect value to be object or literal
+            if(is_array($value)) throw new Exception("Non-array expected but array provided while updating " . $this->ifc->getPath(), 400);
+            
+            if($this->ifc->tgtConcept->isObject()){ // expect value to be object or null
+                if(!is_object($value) && !is_null($value)) throw new Exception("Object (or null) expected but " . gettype($value) . " provided while updating " . $this->ifc->getPath(), 400);
+                
+                if(is_null($value)) $this->set($value);
+                elseif(isset($value->_id_)) $this->set($value->_id_);
+                else throw new Exception("No object identifier (_id_) provided while updating " . $this->ifc->getPath(), 400);
+                
+            }else{ // expect value to be literal (i.e. non-object) or null
+                $this->set($value);
+            }
+            
+        }else{ // expect value to be array
+            if(!is_array($value)) throw new Exception("Array expected but not provided while updating " . $this->ifc->getPath(), 400);
+            
+            // First empty existing list
+            $this->removeAll();
+            
+            // Add provided values
+            foreach($value as $item){
+                if($this->ifc->tgtConcept->isObject()){ // expect item to be object
+                    if(!is_object($item)) throw new Exception("Object expected but " . gettype($item) . " provided while updating " . $this->ifc->getPath(), 400);
+                    
+                    if(isset($item->_id_)) $this->add($item->_id_);
+                    else throw new Exception("No object identifier (_id_) provided while updating " . $this->ifc->getPath(), 400);
+                }else{ // expect item to be literal (i.e. non-object) or null
+                    $this->add($item);
+                }
+            }
+        }
+        
+        return true;
     }
     
-    public function remove($resource){
+    /**
+     * Alias of set() method. Used by Resource::patch() method
+     * @param string $value
+     * @return boolean
+     */
+    public function replace($value){
+        if(!$this->ifc->isUni()) throw new Exception ("Cannot use replace for non-univalent interface " . $this->ifc->getPath() . ". Use add or remove instead", 400);
+        return $this->set($value);
+    }
+    
+    /**
+     * Set provided value (for univalent interfaces)
+     * @param string $value (value null is supported)
+     * @return boolean
+     */
+    public function set($value){
+        if(!$this->ifc->isUni()) throw new Exception ("Cannot use set() for non-univalent interface " . $this->ifc->getPath() . ". Use add or remove instead", 400);
         
+        if(is_null($value)) $this->remove(null);
+        else $this->add($value);
+        
+        return true;
+    }
+    
+    /**
+     * Add value to resource list
+     * @param string $value
+     * @return boolean
+     */
+    public function add($value){
+        if(!isset($value)) throw new Exception ("Cannot add item. Value not provided", 400);
+        if(is_object($value) || is_array($value)) throw new Exception("Literal expected but " . gettype($value) . " provided while updating " . $this->ifc->getPath(), 400);
+        
+        if(!$this->ifc->isEditable()) throw new Exception ("Interface is not editable " . $this->ifc->getPath(), 405);
+        if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
+        
+        $tgt = new Atom($value, $this->ifc->tgtConcept);
+        if($tgt->concept->isObject() && !$this->ifc->crudC() && !$tgt->atomExists()) throw new Exception ("Create not allowed for " . $this->ifc->getPath(), 405);
+        
+        $this->ifc->relation()->addLink($this, $tgt, $this->ifc->relationIsFlipped);
+        
+        return true;
+    }
+    
+    /**
+     * Remove value from resource list
+     * @param string $value
+     * @return boolean
+     */
+    public function remove($value){
+        if(!isset($value) && !$this->ifc->isUni()) throw new Exception ("Cannot remove item. Value not provided", 400);
+        if(is_object($value) || is_array($value)) throw new Exception("Literal expected but " . gettype($value) . " provided while updating " . $this->ifc->getPath(), 400);
+        
+        if(!$this->ifc->isEditable()) throw new Exception ("Interface is not editable " . $this->ifc->getPath(), 405);
+        if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
+        
+        $this->ifc->relation()->deleteLink($this->src, new Atom($value, $this->ifc->tgtConcept), $ifc->relationIsFlipped);
+        
+        return true;
+    }
+    
+    public function removeAll(){
+        if(!$this->ifc->isEditable()) throw new Exception ("Interface is not editable " . $this->ifc->getPath(), 405);
+        if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
+        
+        foreach ($this->getTgtAtoms() as $tgt) {
+            $this->ifc->relation()->deleteLink($this->src, $tgt, $ifc->relationIsFlipped);
+        }
+    }
+
+/**************************************************************************************************
+ * Redirect for methods to call on Resource
+ *************************************************************************************************/
+    
+    public function get($tgtId, $rcOptions = self::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
+        return $this->one($tgtId)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
     }
 }
 

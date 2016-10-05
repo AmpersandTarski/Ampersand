@@ -322,11 +322,11 @@ class Session {
     
     /**
      * Determine if provided interface is accessible in the current session
-     * @param string $interfaceId
+     * @param InterfaceObject $ifc
      * @return boolean
      */
-    public function isAccessibleIfc($interfaceId){
-        return in_array($interfaceId, array_map(function($o) { return $o->id; }, $this->accessibleInterfaces));
+    public function isAccessibleIfc($ifc){
+        return in_array($ifc, $this->accessibleInterfaces, true);
     }
 }
 ?>

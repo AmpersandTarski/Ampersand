@@ -87,7 +87,7 @@ class Atom {
 	 */
 	public function __construct($atomId, Concept $concept, InterfaceObject $ifc = null){
 		$this->database = Database::singleton();
-		$this->logger = Logger::getLogger('FW');
+		$this->logger = Logger::getLogger('ATOM');
 		
         $this->concept = $concept;
 		
@@ -323,37 +323,16 @@ class Atom {
 	}
 	
 	/**
+     * TODO: opruimen
 	 * Walks a given interface path starting with this atom as src. Returns the final InterfaceObject or target atom (depending on the last path parameter)
 	 * @param string $path (e.g. /ifc/atom/ifc/atom/ifc)
 	 * @throws Exception when path is not accessible within current session
 	 * @return Atom|InterfaceObject
 	 */
 	public function walkIfcPath($path){
-	    $session = Session::singleton();
+	    
 	
-	    if(!$this->atomExists()) throw new Exception ("Resource '{$this->__toString()}' not found", 404);
-	     
-	    $atom = $this; // starting point
-	     
-	    $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
-	    if($path == '') return $this; // if no path is specified, return $this (atom)
-	     
-	    $pathArr = explode('/', $path);
-	    while (count($pathArr)){
-	        // Ifc
-	        $interfaceId = array_shift($pathArr); // returns the shifted value, or NULL if array is empty or is not an array.
-	        $ifc = $atom->ifc($interfaceId);
-	
-	        // Checks
-	        if($ifc->isRoot() && !$session->isAccessibleIfc($ifc->id)) throw new Exception("Interface is not accessible for session roles", 401); // 401: Unauthorized
-	        if((!$ifc->crudR) && (count($pathArr) > 0)) throw new Exception ("Read not allowed for interface path '{$ifc->path}'", 405); // crudR required to walk the path further when this is not the last part in the path (count > 0).
-	
-	        // Atom
-	        $atomId = array_shift($pathArr); // returns the shifted value, or NULL if array is empty or is not an array.
-	        $atom = is_null($atomId) ? null : $ifc->atom($atomId);
-	    }
-	     
-	    return is_null($atom) ? $ifc : $atom;
+	    
 	}
 	
 /**************************************************************************************************
@@ -430,89 +409,6 @@ class Atom {
 	 * @return mixed updated content of atom
 	 */
 	public function patch($patches, $options = array()){
-	}
-	
-/**************************************************************************************************
- *
- * Functions to perform patches on atom, i.e. add, replace, remove tuples in relations
- *
- *************************************************************************************************/
-	
-	/**
-	 * Performs given patches on atom, i.e. add, replace, remove tuples in relations
-	 * @param array $patches
-	 * @throws Exception
-	 * @return void
-	 */
-	public function doPatches($patches = array()){	    
-		$errorCount = 0;
-		foreach ((array)$patches as $key => $patch){
-			try{
-				// Check patch
-				if(!array_key_exists('op', $patch)) throw new Exception ("No 'op' (i.e. operation) specfied for patch #{$key}", 400);
-				if(!array_key_exists('path', $patch)) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
-				
-				$atomOrIfc = $this->walkIfcPath($patch['path']);
-		
-				switch($patch['op']){
-					case "replace" :
-						$atomOrIfc->doPatchReplace($patch);
-						break;
-					case "add" :
-						$atomOrIfc->doPatchAdd($patch);
-						break;
-					case "remove" :
-						$atomOrIfc->doPatchRemove($patch);
-						break;
-					default :
-						throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
-				}
-			}catch (Exception $e){
-				Logger::getUserLogger()->error($e->getMessage());
-				$errorCount++;
-			}
-		}
-		
-		if($errorCount){
-			$totalPatches = count($patches);
-			$processed = $totalPatches - $errorCount;
-			Logger::getUserLogger()->warning("{$processed}/{$totalPatches} patches processed. {$errorCount} errors.");
-		}
-	}
-	
-    /**
-     * Remove (src,tgt) tuple from relation provided in $this->parentIfc
-     * @var array $patch
-     * @throws Exception
-     * @return void
-     */
-	public function doPatchRemove($patch){
-	    $ifc = $this->parentIfc;
-	   
-	    // CRUD check
-	    if(!$ifc->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
-        if($ifc->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
-	    
-		// Interface is property
-		if($ifc->isProp()){
-			// Properties must be treated as a 'replace', so not handled here
-			throw new Exception("Cannot patch remove for property '{$ifc->path}'. Use patch replace instead", 500);
-		
-		// Interface is a relation to an object
-        }elseif($ifc->tgtConcept->isObject()){
-			
-			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
-		
-		// Interface is a relation to a scalar (i.e. not an object)
-        }elseif(!$ifc->tgtConcept->isObject()){
-			if($ifc->isUni) throw new Exception("Cannot patch remove for univalent interface {$ifc->path}. Use patch replace instead", 500);
-			
-			$ifc->relation()->deleteLink($this->parentIfc->srcAtom, $this, $ifc->relationIsFlipped);
-			
-		}else{
-			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);
-		}
-		
 	}
 	
 }

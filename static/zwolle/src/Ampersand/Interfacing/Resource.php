@@ -29,23 +29,9 @@ class Resource extends Atom {
         INCLUDE_SORT_DATA   = 0b00000100;
         
     /**
-     * @var InterfaceObject $parentIfc specifies the interface from which this atom is instantiated
+     * @var ResourceList $parentList specifies the resource list in which this resource is a tgt atom
      */
-    private $parentIfc = null;
-    
-    /**
-     * @var Resource $parentResource
-     */
-    private $parentResource = null;
-    
-    /**
-     * @var string url to this resource (i.e. <serverUrl>/<apiPath>/resource/<resourceType>/<resourceId>/<ifc>/<resource>/<etc>)
-     */
-    private $url = null;
-    
-    private $uri = null;
-    
-    private $path = null;
+    private $parentList = null;
     
     /**
      * @var array|null $qData the row data (from database query) from which this resource is created
@@ -55,30 +41,34 @@ class Resource extends Atom {
     /**
      * @param string $resourceId Ampersand atom identifier
      * @param string $resourceType Ampersand concept name
-     * @param InterfaceObject $parentIfc
-     * @param Resource $parentResource
+     * @param ResourceList $parentList
      */
-    public function __construct($resourceId, $resourceType, InterfaceObject $parentIfc = null, Resource $parentResource = null){
-        if(isset($parentResource) && !isset($parentIfc)) throw new Exception ("Parent interface must be specified when parent resource is provided", 500);
-        
-        $this->parentIfc = $parentIfc;
-        $this->parentResource = $parentResource;
+    public function __construct($resourceId, $resourceType, ResourceList $parentList = null){
+        // Set parentList
+        $this->parentList = $parentList;
         
         // Get Ampersand concept for this resourceType
         $cpt = Concept::getConceptByLabel($resourceType);
         if(!$cpt->isObject()) throw new Exception ("Cannot instantiate resource given non-object concept {$cpt->name}.");
         
+        // Call Atom constructor
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
-        
-        // Set path
-        if(isset($parentResource)) $this->path .= '/' . $parentResource->path; // start path with path of parent resource (if specified)
-        if(isset($parentIfc)) $this->path .= '/' . $parentIfc->label; // add label of parent interface (if specified) TODO: what if only parentIfc is specified??
-        if(!isset($this->path)) $this->path = "/resources/{$this->concept->name}"; // case when path is still empty (i.e. no parent resource nor ifc)
-        $this->path .= '/' . $this->getJsonRepresentation(); // add resource identifier to end of path
-        
-        // Set URL and URI
-        $this->url = Config::get('serverURL') . Config::get('apiPath') . $this->path;
-        $this->uri = Config::get('serverURL') . Config::get('apiPath') . "/resources/{$this->concept->name}/" . $this->getJsonRepresentation();
+    }
+    
+    /**
+     * @return string
+     */
+    public function getPath(){
+        if(isset($this->parentList)) return $parentList->getPath() . '/' . $this->getJsonRepresentation();
+        else return "/resources/{$this->concept->name}/" . $this->getJsonRepresentation();
+    }
+    
+    public function getURL(){
+        return Config::get('serverURL') . Config::get('apiPath') . $this->getPath();
+    }
+    
+    public function getURI(){
+        return Config::get('serverURL') . Config::get('apiPath') . "/resources/{$this->concept->name}/" . $this->getJsonRepresentation();
     }
     
     /**
@@ -96,17 +86,52 @@ class Resource extends Atom {
      * @return ResourceList resource list with target atoms of given interface
      */
     public function all($ifcId){
-        if(isset($this->parentIfc)){
-            if(!$this->parentIfc->crudR()) throw new Exception ("Read not allowed for " . $this->parentIfc->path(), 403);
+        if(isset($this->parentList)){
+            $parentIfc = $this->parentList->getIfc();
+            if(!$parentIfc->crudR()) throw new Exception ("Read not allowed for " . $parentIfc->getPath(), 405);
             
-            $ifc = $this->parentIfc->getSubinterface($ifcId);
+            $ifc = $parentIfc->getSubinterface($ifcId);
         }
         else $ifc = InterfaceObject::getInterface($ifcId);
         
         return new ResourceList($this, $ifc);
-        
     }
     
+    /**
+     * @param string $path
+     * @param string $returnType
+     * @return Resource|ResourceList
+     */
+    public function walkPath($path, &$returnType = null){
+        if(!$this->atomExists()) throw new Exception ("Resource '{$this}' not found", 404);
+        
+        // Prepare path list
+        $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
+        if($path == '') return $this; // if no path is specified, return $this (atom)
+        $pathList = explode('/', $path);
+        
+        $r = $this;
+        while (count($pathList)){
+            switch(get_class($r)){
+                case 'Resource' :
+                    $r = $r->all(array_shift($pathList));
+                    break;
+                case 'ResourceList' :
+                    $r = $r->one(array_shift($pathList));
+                    break;
+            }
+        }
+        
+        if(isset($returnType) && $returnType != get_class($r)) throw new Exception ("Provided path results in '" . get_class($r) . "' while '{$returnType}' requested", 500);
+        else $returnType = get_class($r);
+        
+        return $r;
+    }
+
+/**************************************************************************************************
+ * Methods to call on Resource
+ *************************************************************************************************/
+ 
     /**
      * @param int $rcOptions
      * @param int $ifcOptions
@@ -115,37 +140,43 @@ class Resource extends Atom {
      * @return stdClass representation of resource content of current interface
      */
     public function get($rcOptions = self::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
-        if(isset($this->parentIfc) && !$this->parentIfc->crudR()) throw new Exception ("Read not allowed for ". $this->parentIfc->path(), 403);
+        if(isset($this->parentList)){
+            $parentIfc = $this->parentList->getIfc();
+            if(!$parentIfc->crudR()) throw new Exception ("Read not allowed for ". $parentIfc->getPath(), 405);
+        }
+        
+        // Initialize object to return
         $content = new stdClass();
         
+        // Add Ampersand atom attributes
         $content->_id_ = $this->getJsonRepresentation();
         $content->_label_ = $this->getLabel();
         $content->_view_ = $this->getView();
-         
+        
         // Meta data
-        if($rcOptions & self::INCLUDE_META_DATA) $content->_path_ = $this->path;
+        if($rcOptions & self::INCLUDE_META_DATA) $content->_path_ = $this->getPath();
         
         // Interface(s) to navigate to for this resource
-        if($rcOptions & self::INCLUDE_NAV_IFCS){
+        if(($rcOptions & self::INCLUDE_NAV_IFCS) && isset($parentIfc)){
             $content->_ifcs_ = array_map(function($o) {
                    return array('id' => $o->id, 'label' => $o->label);
-            }, $this->parentIfc->getNavInterfacesForTgt());
+            }, $parentIfc->getNavInterfacesForTgt());
         }
         
         // Get content of subinterfaces if depth is not provided or max depth not yet reached
-        if(isset($this->parentIfc) && (is_null($depth) || $depth > 0)) {
+        if(isset($parentIfc) && (is_null($depth) || $depth > 0)) {
             if(!is_null($depth)) $depth--; // decrease depth by 1
             
             // Prevent infinite loops for reference interfaces when no depth is provided
             // We only need to check LINKTO ref interfaces, because cycles may not exists in regular references (enforced by Ampersand generator)
             // If $depth is provided, no check is required, because recursion is finite
-            if($this->parentIfc->isLinkTo() && is_null($depth)){
-                if(in_array($this->id, $recursionArr[$this->parentIfc->getRefToIfcId()])) throw new Exception ("Infinite loop detected for {$this} in " . $this->parentIfc->path(), 500);
-                else $recursionArr[$this->parentIfc->getRefToIfcId()][] = $this->id;
+            if($parentIfc->isLinkTo() && is_null($depth)){
+                if(in_array($this->id, $recursionArr[$parentIfc->getRefToIfcId()])) throw new Exception ("Infinite loop detected for {$this} in " . $parentIfc->getPath(), 500);
+                else $recursionArr[$parentIfc->getRefToIfcId()][] = $this->id;
             }
             
             // 
-            foreach($this->parentIfc->getSubinterfaces($ifcOptions) as $subifc){
+            foreach($parentIfc->getSubinterfaces($ifcOptions) as $subifc){
                 if(!$subifc->crudR()) continue; // skip subinterface if not given read rights (otherwise exception will be thrown when getting content)
                     
                 // Add content of subifc
@@ -167,18 +198,86 @@ class Resource extends Atom {
     }
     
     /**
+     * Update a resource (updates only first level of subinterfaces, for now)
+     * @param stdClass $resourceToPut
+     * @return boolean
+     */
+    public function put(stdClass $resourceToPut = null){
+        if(!isset($this->parentList)) throw new Exception("Cannot perform put without interface specification", 400);
+        if(!isset($resourceToPut)) return $this->get(); // nothing to do
+        
+        foreach ($resourceToPut as $ifcId => $value){
+            if(substr($ifcId, 0, 1) == '_' && substr($ifcId, -1) == '_') continue; // skip special internal attributes
+            try{
+                $rl = $this->all($ifcId);
+            }catch (Exception $e) {
+                $this->logger->warning("Skipping unknown subinterface: '{$ifcId}'");
+                continue;
+            }
+            
+            $rl->put($value);
+        }
+        
+        return true;
+    }
+    
+    /**
+     * Path this resource with provided patches
+     * @param array $patches
+     * @return stdClass representation updated resource
+     */
+    public function patch(array $patches){
+        foreach ($patches as $key => $patch){
+            if(!array_key_exists('op', $patch)) throw new Exception ("No 'op' (i.e. operation) specfied for patch #{$key}", 400);
+            if(!array_key_exists('path', $patch)) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
+        
+            // Walk path to lowest level
+            $resourceOrList = $this->walkPath($patch['path'], $returnType = null);
+            
+            // Process patch
+            switch($patch['op']){
+                case "replace" :
+                    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch replace. No 'value' specfied for patch #{$key}", 400);
+                    if($returnType != 'ResourceList') throw new Exception ("Cannot patch replace on resource, path must end with an interface");
+                    $resourceOrList->replace($patch['value']);
+                    break;
+                case "add" :
+                    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied for patch #{$key}", 400);
+                    if($returnType != 'ResourceList') throw new Exception ("Cannot patch add on resource, path must end with an interface");
+                    $resourceOrList->add($patch['value']);
+                    break;
+                case "remove" :
+                    if($returnType != 'Resource') throw new Exception("Cannot patch remove on resource list, path must end with a resource", 400);
+                    $resourceOrList->remove();
+                    break;
+                default :
+                    throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
+            }
+        }
+    }
+    
+    /**
+     * Delete this resource and remove as target atom from current interface
+     * @return boolean
+     */
+    public function delete(){
+        if(!isset($this->parentList)) throw new Exception("Cannot perform delete without interface specification", 400);
+        if(!$this->parentList->getIfc()->crudD()) throw new Exception ("Delete not allowed for ". $this->parentList->getIfc()->getPath(), 405);
+        
+        // Perform delete
+        $this->deleteAtom();
+    }
+    
+/**************************************************************************************************
+ * Redirect for methods to call on ResourceList
+ *************************************************************************************************/
+    
+    /**
      * @param string $ifcId
      * @return array representation of resource content of given interface
      */
     public function getList($ifcId, $rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
         return $this->all($ifcId)->getList($rcOptions, $ifcOptions, $depth, $recursionArr);
-    }
-    
-    /**
-     * @return ??
-     */
-    public function put(){
-        
     }
     
     /**
@@ -192,33 +291,53 @@ class Resource extends Atom {
     }
     
     /**
-     * Path this resource with provided patches
-     * @param array $patches
-     * @return stdClass representation updated resource
+     * Set provided value for univalent sub interface
+     * @param string $ifcId
+     * @param string $value (value null is supported)
+     * @return boolean
      */
-    public function patch($patches){
-        
+    public function set($ifcId, $value){
+        return $this->all($ifcId)->set($value);
     }
     
     /**
-     * Remove this resource as target atom from current interface
+     * Set sub interface to null
+     * @param string $ifcId
      * @return boolean
      */
-    public function remove(){
-        
+    public function unset($ifcId){
+        return $this->all($ifcId)->set(null);
     }
     
     /**
-     * Delete this resource and remove as target atom from current interface
+     * Add provided value to sub interface
+     * @param string $ifcId
+     * @param string $value
      * @return boolean
      */
-    public function delete(){
-        if(!isset($this->parentIfc)) throw new Exception("Cannot perform delete without interface specification", 500);
-        if(!$this->parentIfc->crudD()) throw new Exception ("Delete not allowed for ". $this->parentIfc->path(), 403);
-        
-        // Perform delete
-	    $this->deleteAtom();
+    public function add($ifcId, $value){
+        return $this->all($ifcId)->add($value);
     }
+    
+    /**
+     * Remove provided value from sub interface
+     * OR remove this resource as from parent list (when no params provided)
+     * @param string $ifcId
+     * @param string $value
+     * @return boolean
+     */
+    public function remove($ifcId = null, $value = null){
+        if(is_null($ifcId)){
+            if(!isset($this->parentList)) throw new Exception ("Cannot remove this resource because no parent resource list is provided", 400);
+            else return $this->parentList->remove($this); // Remove this resource from the parent list
+        }else{
+            return $this->all($ifcId)->remove($value); // Remove tgt atom from provided ifc
+        }
+    }
+    
+/**************************************************************************************************
+ * Helper functions
+ *************************************************************************************************/
     
     /**
      * Save query row data (can be used for subinterfaces)

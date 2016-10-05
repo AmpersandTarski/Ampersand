@@ -203,7 +203,7 @@ class InterfaceObject {
 	 * @param string $pathEntry
      * @param boolean $rootIfc Specifies if this interface object is a toplevel interface (true) or subinterface (false)
 	 */
-	public function __construct($ifcDef, $pathEntry = null, $rootIfc = false){
+	private function __construct($ifcDef, $pathEntry = null, $rootIfc = false){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('FW');
 		
@@ -358,7 +358,7 @@ class InterfaceObject {
         return $this->isTot;
     }
     
-    public function path(){
+    public function getPath(){
         return $this->path;
     }
     
@@ -371,7 +371,7 @@ class InterfaceObject {
      * @param string $ifcId
      * @return InterfaceObject
      */
-	public function getSubinterface($ifcId){	    
+	public function getSubinterface($ifcId){
 	    if(!array_key_exists($ifcId, $subifcs = $this->getSubinterfaces())) throw new Exception("Subinterface '{$ifcId}' does not exists in interface '{$this->path}'", 500);
 	
 	    return $subifcs[$ifcId];
@@ -405,12 +405,17 @@ class InterfaceObject {
      * @param int $options
      * @return InterfaceObject[] 
      */
-	public function getSubinterfaces($options = self::DEFAULT_OPTIONS){
-	    if($this->isRef() && ($options & self::INCLUDE_REF_IFCS) // if ifc is reference to other root ifc, option to include refs must be set (= default)
+    public function getSubinterfaces($options = self::DEFAULT_OPTIONS){
+        if($this->isRef() && ($options & self::INCLUDE_REF_IFCS) // if ifc is reference to other root ifc, option to include refs must be set (= default)
             && (!$this->isLinkTo() || ($options & self::INCLUDE_LINKTO_IFCS))) // this ref ifc must not be a LINKTO ór option is set to explicitly include linkto ifcs
-                return [self::getInterface($this->refInterfaceId)];
-	    else return $this->subInterfaces;
-	}
+        {
+            $ifc = clone self::getInterface($this->refInterfaceId);
+            $ifc->isRoot = false; // interfaces are not considered root interfaces when used by reference
+            $ifc->path = "{$this->path}/{$ifc->path}"; // prefix path with current path
+            return [ $this->refInterfaceId => self::getInterface($this->refInterfaceId) ];
+        }
+        else return $this->subInterfaces;
+    }
     
     /**
      * @return InterfaceObject[]
@@ -419,7 +424,7 @@ class InterfaceObject {
         $session = Session::singleton();
         $ifcs = array();
         
-        if($this->isLinkTo() && $session->isAccessibleIfc($this->refInterfaceId)) $ifcs[] = self::getInterface($this->refInterfaceId);
+        if($this->isLinkTo() && $session->isAccessibleIfc($refIfc = self::getInterface($this->refInterfaceId))) $ifcs[] = $refIfc;
         else $ifcs = $session->getInterfacesToReadConcept($this->tgtConcept);
         
         return $ifcs;
@@ -518,15 +523,7 @@ class InterfaceObject {
 	 * @return void
 	 */
 	public function doPatchReplace($patch){
-	    // CRUD check
-	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
-        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
-	
-	    // PatchReplace only works for UNI expressions. Otherwise, use patch remove and patch add
-	    if(!$this->isUni) throw new Exception("Cannot patch replace for non-univalent interface '{$this->path}'. Use patch remove + add instead", 500);
 	    
-	    // Check if patch value is provided
-	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch replace. No 'value' specfied for patch with path '{$this->path}'", 400);
 	    $value = $patch['value'];
 	
 	    // Interface is property
@@ -598,44 +595,6 @@ class InterfaceObject {
 	    }else{
 	        throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
 	    }
-	}
-	
-    /**
-     * Remove (src,tgt) tuple from relation provided in $this->parentIfc
-     * @var array $patch
-     * @throws Exception
-     * @return void
-     */
-	public function doPatchRemove($patch){	   
-	    // CRUD check
-	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
-        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
-	    
-        // Check if patch value is provided
-	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch remove. No 'value' specfied in '{$this->path}'", 400);
-        
-        $tgtAtom = new Atom($patch['value'], $this->tgtConcept);
-        
-		// Interface is property
-		if($this->isProp()){
-			// Properties must be treated as a 'replace', so not handled here
-			throw new Exception("Cannot patch remove for property '{$this->path}'. Use patch replace instead", 500);
-		
-		// Interface is a relation to an object
-        }elseif($this->tgtConcept->isObject()){
-			
-			$this->relation()->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
-		
-		// Interface is a relation to a scalar (i.e. not an object)
-        }elseif(!$this->tgtConcept->isObject()){
-			if($this->isUni) throw new Exception("Cannot patch remove for univalent interface {$this->path}. Use patch replace instead", 500);
-			
-			$this->relation()->deleteLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
-			
-		}else{
-			throw new Exception ("Unknown patch remove. Please contact the application administrator", 500);
-		}
-		
 	}
 	
 /**************************************************************************************************
