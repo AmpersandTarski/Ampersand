@@ -67,15 +67,16 @@ chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
                                      , SharedLang
                                      , Diagnosis
                                      , ConceptualAnalysis
-                                     , ProcessAnalysis
+                                  --   , ProcessAnalysis
                                      , DataAnalysis
-                                     , SoftwareMetrics
-                                     , EcaRules
-                                     , Interfaces
-                                     ] ++
-                                     [ FunctionPointAnalysis | genFPAChap opts ] ++
-                                     [ Glossary
-                                     ]
+                                  --   , SoftwareMetrics
+                                  --   , EcaRules
+                                  --   , Interfaces
+                                     ]  
+                                  --   ++
+                                  --   [ FunctionPointAnalysis | genFPAChap opts ] ++
+                                  --   [ Glossary
+                                  --   ]
 
 
 data XRefSection
