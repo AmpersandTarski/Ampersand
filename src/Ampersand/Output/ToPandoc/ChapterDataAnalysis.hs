@@ -344,7 +344,6 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                  (invariants fSpec)
       ]
    where
-    (prcssRules, userInvariants) = partition isSignal $ vrules fSpec
     docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> [Rule] -> Blocks
     docRules title intro noRules heading rules = 
       case rules of 
@@ -364,12 +363,19 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
        , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
        , if isSignal rule
          then mempty
-         else (para.text.l)
-                (NL $ "Overtredingen van deze regel leiden tot een foutmelding aan de gebruiker: "
-                          ++"\"TODO\"."
-                ,EN $ "Violations of this rule will result in an error message for the user: "
-                          ++"\"TODO\"."
-                )   
+         else case rrviol rule of
+                Nothing  -> mempty
+                Just sgmts -> 
+                    para (if isSignal rule 
+                          then (text.l)(NL "Een overtreding van deze regel wordt gesignaleerd door middel van de melding: "
+                                       ,EN "Violations of this rule are reported with the following message: "
+                                       )
+                          else (text.l)(NL "Een overtreding van deze regel resulteert in de volgende foutmelding aan de gebruiker: "
+                                       ,EN "Violations of this rule will result in an error message for the user: "
+                                       )
+                         )
+                  <>bulletList [para $ violation2Inlines fSpec sgmts]
+                   
        ]   
   
 primExpr2pandocMath :: Lang -> Expression -> Inlines

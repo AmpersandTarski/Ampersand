@@ -22,6 +22,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , pandocEquationWithLabel
     , Purpose(..)
     , purposes2Blocks
+    , violation2Inlines
     , isMissing
     , lclForLang
     , dpRule'
@@ -619,3 +620,9 @@ bulletList xs = BuggyBuilder.bulletList xs
 math :: String -> Inlines
 math s = BuggyBuilder.math ("{"++s++"}")
 
+violation2Inlines :: FSpec -> PairView Expression -> Inlines
+violation2Inlines fSpec pVws = (text.l) (NL "<meldingstekst moet hier nog worden gegenereerd>"
+                                        ,EN "<violation message should be printed here>"
+                                        )
+  where
+    l lstr = localize (fsLang fSpec) lstr
