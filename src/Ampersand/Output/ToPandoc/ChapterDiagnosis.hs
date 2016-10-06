@@ -339,21 +339,22 @@ chpDiagnosis fSpec
 
   processrulesInPatterns :: Blocks
   processrulesInPatterns = 
-       para ("TODO: Inleiding bij de rol-regel tabel")
-    <> if null (fRoleRuls fSpec)
+       if null (fRoleRuls fSpec)
        then mempty
-       else table -- No caption:
+       else (para.str.l) (NL "Onderstaande tabel bevat een overzicht van de signaalregels per rol."
+                         ,EN "The table below shows the signal rules per role."
+                         ) 
+         <> table -- No caption:
                   mempty
                   -- Alignment:
                   ( if multProcs
-                    then replicate 4 (AlignLeft,1/4)
-                    else replicate 3 (AlignLeft,1/3)
+                    then replicate 3 (AlignLeft,1/3)
+                    else replicate 2 (AlignLeft,1/2)
                   )
                   -- Headers:
                   (  [ (plain.str.l) (NL "rol"      , EN "role")]
-                   ++[ (plain.str.l) (NL "in proces", EN "in process") | multProcs]
+                   ++[ (plain.str.l) (NL "thema", EN "in pattern") | multProcs]
                    ++[ (plain.str.l) (NL "regel"    , EN "rule")
-                     , (plain.str.l) (NL "uit"      , EN "from")
                      ]
                   )
                   -- Rows:
@@ -363,6 +364,7 @@ chpDiagnosis fSpec
                      , (plain.str.r_env) rul
                      ]
                   | (rol,rul)<-fRoleRuls fSpec]
+          
      where multProcs = length procsInScope>1
            procsInScope = filter inScopePat (vpatterns fSpec)
 
