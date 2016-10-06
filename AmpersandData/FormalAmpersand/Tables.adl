@@ -1,4 +1,4 @@
-CONTEXT AST IN ENGLISH
+﻿CONTEXT AST IN ENGLISH
 INCLUDE "Concepts.adl"
 --INCLUDE "Tables.xlsx"
 
@@ -83,7 +83,6 @@ ENDPATTERN
 
 
 PATTERN "Attributes for univalent relations"
-RELATION prop[Relation*Property]
 
 RULE "fill srcAtt for univalent relations" : (I/\prop;'UNI';prop~);source;conceptAttribute |- srcAtt
 MEANING "The concept-table of the source of a univalent relation is the source attribute of that relation."

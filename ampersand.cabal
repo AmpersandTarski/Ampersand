@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.7.0
+version:        3.7.1
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -7,8 +7,8 @@ description:    You can define your business processes by means of rules, writte
 homepage:       http://wiki.tarski.nl
 category:       Database Design
 stability:      alpha
-cabal-version:  >= 1.22
-tested-with:    GHC == 7.10.3
+cabal-version:  >= 1.24
+tested-with:    GHC == 8.0.1
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE

@@ -2,8 +2,11 @@
 
 ## unreleased changes
   * Several changes in the generation of the functional specification document. (Less LaTex specific)
+
+## v3.7.1 (30 september 2016)
   * Upgrade version of Haskell compiler to 8.0.1 (automatically used via Stack)
   * Progress on meatgrinder. Basic meatgrinder functionality is available now. 
+  * Several bugfixes
 
 ## v3.7.0 (2 september 2016)
   * [Issue #506](https://github.com/AmpersandTarski/Ampersand/issues/506) Bugfix in chapter diagnosis of Func. spec. 

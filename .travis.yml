@@ -39,7 +39,7 @@ matrix:
 
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
   # variable, such as using --stack-yaml to point to a different file.
-  - env: BUILD=stack ARGS="--resolver lts-7 --stack-yaml stack.lts7.yaml"
+  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml"
     compiler: ": #stack 8.0.1"
     addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
 
@@ -48,7 +48,7 @@ matrix:
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
-  - env: BUILD=stack ARGS="--resolver lts-7 --stack-yaml stack.lts7.yaml osx"
+  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml osx"
     compiler: ": #stack 8.0.1 osx"
     os: osx
 
@@ -62,7 +62,7 @@ matrix:
 
   - env: BUILD=stack ARGS="--resolver nightly"
   # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - env: BUILD=stack ARGS="--resolver lts-7 --stack-yaml stack.lts7.yaml osx"
+  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml osx"
   - env: BUILD=stack ARGS="--resolver nightly osx"
 
   fast_finish: true
