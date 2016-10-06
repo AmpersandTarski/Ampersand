@@ -49,7 +49,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                   )
            <> para (case fsLang fSpec of
                      Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                              <> ("Deze is in " <> xRef classificationPicture <> "weergegeven."
+                              <> ("Deze is weergegeven in " <> xRef classificationPicture <> "."
                                  )
                      English -> "A number of concepts is organized in a classification structure. "
                               <> ("This is shown in " <> xRef classificationPicture <> "."
@@ -324,32 +324,37 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   daRulesSection :: Blocks
   daRulesSection = mconcat 
       [ header sectionLevel . text $ l (NL "Regels", EN "Rules")
-      , para . text $ l (NL "TODO: uitleg paragraaf", EN "TODO: explain section")
+      , para . text $ l ( NL $ "Nu volgt een opsomming van alle regels. Per regel wordt de formele expressie ervan gegeven. " <>
+                               "Eerst worden de procesregels gegeven, vervolgens de invarianten."
+                        , EN $ "In this section an overview of all rules is given. For every rule, the formal expression is shown. " <>
+                               "The process rules are given first, followed by the invariants.")
       , docRules (NL "Procesregels", EN "Process rules")
-                 ( NL "TODO: uitleg procesregels"
-                 , EN "TODO: explain process rules")
+                 ( NL "Procesregels zijn regels waarvan de overtredingen worden gesignaleerd."
+                 , EN "Process rules are rules that are signalled. ")
                  ( NL "Deze specificatie bevat geen procesregels."
                  , EN "This specification does not contain any process rules.")
                  (NL "Procesregel", EN "Process rule")
-                 prcssRules
+                 (signals fSpec)
       , docRules (NL "Invarianten", EN "Invariants")
-                 ( NL "TODO: uitleg invarianten"
-                 , EN "TODO: explain invariants")
+                 ( NL "Invarianten zijn regels die door de database worden afgedwongen. Er wordt gegarandeerd dat overtredingen niet kunnen voorkomen in de database."
+                 , EN "Invariants are rules that are enforced by the database. It is guaranteed that violations cannot occur in the database.")
                  ( NL "Deze specificatie bevat geen invarianten."
                  , EN "This specification does not contain any invariants.")
                  (NL "Invariant", EN "Invariant")
-                 userInvariants
+                 (invariants fSpec)
       ]
    where
     (prcssRules, userInvariants) = partition isSignal $ vrules fSpec
     docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> [Rule] -> Blocks
-    docRules _     _     noRules _       []    = para . text $ l noRules
-    docRules title intro _       heading rules = mconcat $
-      [ header (sectionLevel+1) . text $ l title 
-      , para . text $ l intro
-      ] ++
-      map (docRule heading) rules
-  
+    docRules title intro noRules heading rules = 
+      case rules of 
+         [] -> (para . text . l) noRules
+         _  -> mconcat $
+                 [ header (sectionLevel+1) . text $ l title 
+                 , para . text $ l intro
+                 ] ++
+                 map (docRule heading) rules
+    
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat
        [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
