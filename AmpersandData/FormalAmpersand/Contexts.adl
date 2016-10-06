@@ -166,8 +166,14 @@ PATTERN Patterns
     VIEW Pattern: Pattern(name[Pattern*PatternName])
     IDENT Pattern: Pattern(name[Pattern*PatternName],context[Pattern*Context])
     REPRESENT PatternName TYPE ALPHANUMERIC
-    RELATION name[Pattern*PatternName] [UNI,TOT]
+    RELATION name[Pattern*PatternName] [UNI,TOT,SUR]
     MEANING "The name of a pattern."
+      ROLE ExecEngine MAINTAINS "del unused PatternName"
+      RULE "del unused PatternName" : I[PatternName] |- name~;name
+      MEANING "A PatternName without Pattern will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;PatternName;", SRC I )
+
+
     RELATION udefrules[Rule*Pattern] []         -- ^ all rules the user has declared within this pattern including the patterns it contains,
                                                 --   which are not multiplicity- and not identity rules. See ViewPoint.hs
     RELATION multrules[Rule*Pattern] []         -- ^ all multiplicityrules the user has declared within a pattern.
