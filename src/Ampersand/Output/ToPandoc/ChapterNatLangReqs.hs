@@ -14,39 +14,24 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
       --  *** Header ***
-   chptHeader (fsLang fSpec) SharedLang
+   xDefBlck fSpec SharedLang
    <> --  *** Intro  ***
     case fsLang fSpec of
         Dutch   -> para
-                     (  "Dit hoofdstuk beschrijft een natuurlijke taal, waarin functionele eisen ten behoeve van "
+                     (  "Dit hoofdstuk beschrijft functionele eisen ten behoeve van "
                      <> (singleQuoted.str.name) fSpec
-                     <> " kunnen worden besproken en uitgedrukt. "
-                     <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier begrijpen. "
-                     <> "De taal van "
-                     <> (singleQuoted. str. name) fSpec
-                     <> " bestaat uit begrippen en basiszinnen, "
-                     <> "waarin afspraken worden uitgedrukt. "
-                     <> "Wanneer alle belanghebbenden afspreken dat zij deze basiszinnen gebruiken, "
-                     <> "althans voor zover het "
-                     <> (singleQuoted. str. name) fSpec
-                     <> " betreft, "
-                     <> "delen zij precies voldoende taal om afspraken op dezelfde manier te begrijpen. "
-                     <> "Alle definities zijn genummerd omwille van de traceerbaarheid. "
+                     <> " in natuurlijke taal. "
+                     <> "Het hoofdstuk bevat definities en afspraken. "
+                     <> "Hiermee wordt beoogd dat verschillende belanghebbenden hun afspraken op dezelfde manier kunnen begrijpen. "
+                     <> "Alle definities en afspraken zijn genummerd omwille van de traceerbaarheid. "
                      )
         English -> para
-                     (  "This chapter defines the natural language, in which functional requirements of "
+                     (  "This chapter describes functional requirements for "
                      <> (singleQuoted.str.name) fSpec
-                     <> " can be discussed and expressed. "
+                     <> " in natural language. "
+                     <> "It contains definitions and agreements. "
                      <> "The purpose of this chapter is to create shared understanding among stakeholders. "
-                     <> "The language of "
-                     <> (singleQuoted.str.name) fSpec
-                     <> " consists of concepts and basic sentences. "
-                     <> "All functional requirements are expressed in these terms. "
-                     <> "When stakeholders can agree upon this language, "
-                     <> "at least within the scope of "
-                     <> (singleQuoted.str.name) fSpec
-                     <> ", they share precisely enough language to have meaningful discussions about functional requirements. "
-                     <> "All definitions have been numbered for the sake of traceability. "
+                     <> "All definitions and agreements have been numbered for the sake of traceability. "
                      )
    <> --  *** Requirements ***
    (mconcat . map printOneTheme . orderingByTheme) fSpec
@@ -82,13 +67,7 @@ chpNatLangReqs lev fSpec =
         = mempty   -- The document is partial (because themes have been defined), so we don't print loose ends.
     | otherwise 
         =   --  *** Header of the theme: ***
-            headerWithLabel (XRefNaturalLanguageTheme (patOfTheme tc))
-                            (lev+2)
-                            (case (patOfTheme tc,fsLang fSpec) of
-                                (Nothing, Dutch  ) -> "Losse eindjes..."
-                                (Nothing, English) -> "Loose ends..."
-                                (Just pat, _     ) -> text (name pat)
-                            )
+            xDefBlck fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
              (case patOfTheme tc of
                  Nothing  -> 
@@ -117,6 +96,7 @@ chpNatLangReqs lev fSpec =
                                  ,EN "The sequel introduces the language of ")
                               <> (str.name) pat <> ".")
                 )<>
+{-
                 ( case nCpts of
                    [] 
                      -> fatal 136 "Unexpected. There should be at least one concept to introduce."
@@ -135,6 +115,7 @@ chpNatLangReqs lev fSpec =
                                         ,EN " are given.")
                              )
                )<>
+-}
                ( case filter hasMultipleDefs nCpts of
                    []  -> mempty
                    [x] -> para(  (str.l) (NL "Het begrip "
@@ -172,6 +153,7 @@ chpNatLangReqs lev fSpec =
                     [printCDef cd (Just ("."++ [suffx])) 
                     |(cd,suffx) <- zip cds ['a' ..]  -- There are multiple definitions. Which one is the correct one?
                     ]
+         <> someWhiteSpace 
         where
          printCDef :: ConceptDef -- the definition to print
                 -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
@@ -186,8 +168,12 @@ chpNatLangReqs lev fSpec =
                , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
                         <> (case fspecFormat (getOpts fSpec) of
                                     FLatex -> rawInline "latex"
-                                                ("~\\marge{\\gls{"++escapeNonAlphaNum 
-                                                      (name cDef++fromMaybe "" suffx)++"}}")
+                                                ("~"++texOnly_marginNote 
+                                                        ("\\gls{"++escapeNonAlphaNum 
+                                                                   (name cDef++fromMaybe "" suffx)
+                                                            ++"}"
+                                                        )
+                                                )
                                     _      -> mempty)
                         <> str (cddef cDef)
                         <> if null (cdref cDef) then mempty
@@ -201,15 +187,12 @@ chpNatLangReqs lev fSpec =
   printRel nDcl
        =   (printPurposes . cDclPurps . theLoad) nDcl
         <> case (cDclMeaning . theLoad) nDcl of
-              Just m -> definitionList [( definitionListItemLabel 
-                                           (XRefNaturalLanguageDeclaration dcl)
-                                              (l (NL "Afspraak ", EN "Agreement ")++show(theNr nDcl)
-                                               ++if development (getOpts fSpec)
-                                                 then (" ("++name nDcl++")") 
-                                                 else ""
-                                              )
-                                        , [printMeaning m]
-                                        )]
+              Just m -> definitionList 
+                    [(   str (l (NL "Afspraak ", EN "Agreement "))
+                      <> xDefInln fSpec (XRefSharedLangDeclaration dcl)
+                     , [printMeaning m]
+                     )
+                    ]
               _      -> mempty
         <> case samples of
               []  -> mempty
@@ -222,33 +205,27 @@ chpNatLangReqs lev fSpec =
         <> if null samples then mempty
            else bulletList [ plain $ mkPhrase dcl sample
                            | sample <- samples]
-         
+        <> someWhiteSpace 
          where dcl = cDcl . theLoad $ nDcl
                samples = take 3 . cDclPairs . theLoad $ nDcl
 
   printRule :: Numbered RuleCont -> Blocks
   printRule nRul
-   =  (printPurposes . cRulPurps . theLoad) nRul
-    <> case (cRulMeaning . theLoad) nRul of
-        Nothing 
-          -> mempty
-        Just m
-          -> definitionList 
-               [(definitionListItemLabel
-                   (XRefNaturalLanguageRule . cRul . theLoad $ nRul)
-                   ((case fsLang fSpec of
-                       Dutch   -> "Afspraak "
-                       English -> "Agreement "
-                    )++
-                    show (theNr nRul)++
-                    if development (getOpts fSpec)  
-                    then (" ("++name nRul++")")
-                    else ""
-                   )
-                , [printMeaning m]
+   = -- (plain . strong . str $ "**** "<>name nRul<>" ("<>show (theNr nRul)<>") ****" ) <>
+       (printPurposes . cRulPurps . theLoad) nRul
+    <> definitionList 
+               [(   str (l (NL "Afspraak ", EN "Agreement "))
+                 <> xDefInln fSpec
+                       (XRefSharedLangRule . cRul . theLoad $ nRul) <> ": "
+                , case (cRulMeaning . theLoad) nRul of
+                    Nothing 
+                      -> -- We need the number, because otherwise we get broken references. 
+                         mempty  
+                    Just m
+                      -> [printMeaning m]
                 ) 
                ]
-      
+    <> someWhiteSpace      
 
   mkPhrase :: Declaration -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
@@ -286,7 +263,8 @@ chpNatLangReqs lev fSpec =
          pragmaShow = emph . str
          devShow c = if (development (getOpts fSpec)) then "("<> (str.name) c <> ")" else mempty
                    
-
+someWhiteSpace :: Blocks  --TODO: This doesn't seem to have any effect. (At least not in the LaTeX output)
+someWhiteSpace = para (linebreak <> linebreak <> linebreak <> linebreak)
 
 data LawRef = LawRef { lawRef :: String}
 data ArticleOfLaw = ArticleOfLaw { aOlLaw :: String

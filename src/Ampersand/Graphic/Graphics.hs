@@ -261,7 +261,7 @@ writePicture opts pict
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
       [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
       [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
-      [writeDot Svg    | genFSpec opts ] ++
+      [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
@@ -311,16 +311,16 @@ class Named a => Navigatable a where
    interfacename :: a -> String
    itemstring :: a -> String
    theURL :: Options -> a -> EscString    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
-   theURL opts x
-     = fromString ("Atlas.php?content=" ++ interfacename x
-                   ++  "&User=" ++ user
-                   ++  "&Script=" ++ script
-                   ++  "&"++interfacename x ++"="++qualify++itemstring x
-                  )
-      where --copied from atlas.hs
-      script = fileName opts
-      user = namespace opts
-      qualify = "("++user ++ "." ++ script ++ ")"
+   theURL _ x = fromString $ "HIER KAN EEN URL WORDEN GEBOUWD voor "++ interfacename x++" "++itemstring x
+--     = fromString ("Atlas.php?content=" ++ interfacename x
+--                   ++  "&User=" ++ user
+--                   ++  "&Script=" ++ script
+--                   ++  "&"++interfacename x ++"="++qualify++itemstring x
+--                  )
+--      where --copied from atlas.hs
+--      script = fileName opts
+--      user = namespace opts
+--      qualify = "("++user ++ "." ++ script ++ ")"
 
 instance Navigatable A_Concept where
    interfacename _ = "Concept" --see Atlas.adl

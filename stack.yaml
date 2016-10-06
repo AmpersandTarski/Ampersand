@@ -13,7 +13,10 @@ extra-deps:
 - SpreadsheetML-0.1
 - simple-sql-parser-0.4.2
 - yaml-config-0.4.0
-
+- pandoc-crossref-0.2.3.0
+- data-accessor-template-0.2.1.13
+- data-accessor-transformers-0.2.1.7
+- roman-numerals-0.5.1.5
 # Override default flag values for local packages and extra-deps
 flags: {}
 
