@@ -79,23 +79,14 @@ class Atom {
 		
         $this->concept = $concept;
 		
-		$this->setId($atomId);
-
+        $this->id = $atomId;
+		$this->idEsc = $this->database->escape($this->getMysqlRepresentation()); // Escape id for database queries
 	}
 	
 	public function __toString(){
         // if atom id is longer than 40 chars, display first and last 20 chars
         $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
 	    return "{$id}[{$this->concept}]";
-	}
-	
-	/**
-	 * Set identifier of atom
-	 * @param string $id
-	 */
-	public function setId($id){
-	    $this->id = $id;
-		$this->idEsc = $this->database->escape($this->getMysqlRepresentation()); // Escape id for database queries
 	}
 	
 	/**
