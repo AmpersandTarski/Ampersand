@@ -123,13 +123,13 @@ script:
     ./travis_long stack --no-terminal $ARGS test
       ;;
     cabal)
-      cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 "
+      cabal configure --enable-tests 
       ./travis_long cabal build
       cabal check
       ./travis_long cabal test
       cabal copy
       cabal sdist
       SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && \
-        (cd dist && cabal install --enable-tests --force-reinstalls "$SRC_TGZ")
+        (cd dist && ./travis_long cabal install --enable-tests --force-reinstalls "$SRC_TGZ")
       ;;
   esac
