@@ -70,12 +70,6 @@ class Atom {
 	 * @var string
 	 */
 	public $topLevelIfcId = null;
-	
-	/**
-	 * Variable to temporarily store changed atom content
-	 * @var mixed
-	 */
-	private $storedContent = null;
     
 	/**
 	 * Atom constructor
@@ -304,33 +298,6 @@ class Atom {
 	        default :
 	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
 	    }
-	}
-	
-/**************************************************************************************************
- *
- * Functions to get content of atom using interfaces
- *
- *************************************************************************************************/
-	
-	/**
-	 * Store content of atom at a certain point (e.g. before database commit/rollback)
-	 * @param array $options
-     * @return void
-	 */
-	public function setStoredContent($options = []){
-	    $this->logger->debug("Caching new concent for atom '{$this->__toString()}'");
-        if(is_null($this->parentIfc)) throw new Exception("Cannot get content: no interface specified.", 500);
-        
-	    // $this->storedContent = $this->getContent($options);
-	}
-	
-	/**
-	 * Return the stored content
-	 * @return mixed
-	 */
-	public function getStoredContent(){
-	    $this->logger->debug("Getting cached concent for atom '{$this->__toString()}'");
-	    return $this->storedContent;
 	}
 
 }

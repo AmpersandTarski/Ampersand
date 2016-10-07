@@ -117,7 +117,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	
     // Close transaction
     $successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
-    $this->database->closeTransaction($successMessage, null, $this);
+    $this->database->closeTransaction($successMessage, null);
     
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
@@ -147,7 +147,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $content = $resource->walkPath($ifcPath)->post($app->request->getBody());
     
     // Close transaction TODO: copied from InterfaceObject::create()
-    $this->database->closeTransaction($newAtom->concept . ' created', null, $newAtom); // temp store content of $newAtom (also when not crudR)
+    $this->database->closeTransaction($newAtom->concept . ' created', null); // temp store content of $newAtom (also when not crudR)
     
 	// Return result
 	$result = array ( 'content' 			=> $content

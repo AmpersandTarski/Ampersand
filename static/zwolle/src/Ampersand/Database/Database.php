@@ -654,10 +654,9 @@ class Database {
 	 * Function to request closing the open database transaction
 	 * @param string $succesMessage specifies success/info message when invariants hold
 	 * @param boolean $databaseCommit specifies to commit (true) or rollback (false) when all invariants hold
-	 * @param Atom $atomStoreNewContent specifies to store the new content for the updated/created atom
 	 * @return boolean specifies if invariant rules hold (true) or not (false)
 	 */
-	public function closeTransaction($succesMessage = 'Updated', $databaseCommit = null, &$atomStoreNewContent = null){		
+	public function closeTransaction($succesMessage = 'Updated', $databaseCommit = null){		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
 		
 		$this->logger->info("Closing database transaction");
@@ -673,8 +672,6 @@ class Database {
 		
 		unset($this->affectedConcepts, $this->affectedRelations);
 		$this->affectedConcepts = array(); $this->affectedRelations = array();
-		
-		if(!is_null($atomStoreNewContent)) $atomStoreNewContent->setStoredContent();
 		
 		// Determine if transaction should be committed or not when all invariant rules hold based on $requestType
 		if(is_null($databaseCommit)) $databaseCommit = $this->processRequestType();
