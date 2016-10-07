@@ -2,7 +2,7 @@
 # (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
 #
 language: php
-sudo: false
+sudo: true
 
 cache:
     directories:
