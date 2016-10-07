@@ -189,7 +189,7 @@ class OAuthLoginController {
         
         // Set sessionUser
         $atom = new Atom($email, $conceptUserID);
-        $accounts = $atom->ifc('AccountForUserid')->getTgtAtoms();
+        $accounts = $atom->all('AccountForUserid')->getTgtAtoms();
 
         // create new user
         if(empty($accounts)){
@@ -202,7 +202,7 @@ class OAuthLoginController {
             // If possible, add account to organization(s) based on domain name
             $domain = explode('@', $email)[1];
             $atom = new Atom($domain, $conceptDomain);
-            $orgs = $atom->ifc('DomainOrgs')->getTgtAtoms();
+            $orgs = $atom->all('DomainOrgs')->getTgtAtoms();
             $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, $conceptOrg);
             foreach ($orgs as $org){
                 $relAccOrg->addLink($newAccount, $org, false, 'OAuthLoginExtension');

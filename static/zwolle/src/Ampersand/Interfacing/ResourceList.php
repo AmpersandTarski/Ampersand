@@ -95,7 +95,7 @@ class ResourceList {
      */
     private function getTgtResources($fromCache = true){
         if(!isset($this->tgtResources) || !$fromCache){
-            $this->tgtResources = array();
+            $this->tgtResources = [];
             try {
                 // If interface isIdent (i.e. expr = I[Concept]) we can return the src
                 if($this->ifc->isIdent()){
@@ -140,7 +140,7 @@ class ResourceList {
         
         // Otherwise (i.e. non-object atoms) get atoms from database. This is never cached. We only cache resources (i.e. object atoms)
         else{
-            
+            $tgtAtoms = [];
             try {
                 // Try to get tgt atom from src query data (in case of uni relation in same table)
                 $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id); // column is prefixed with ifc_ in query data

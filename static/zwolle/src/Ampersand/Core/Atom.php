@@ -308,22 +308,6 @@ class Atom {
 	
 /**************************************************************************************************
  *
- * Fuctions related to chaining interfaces and atoms
- *
- *************************************************************************************************/
-
-	/**
-     * TODO: opruimen
-	 * Chains this atom to an interface as srcAtom 
-	 * @param string $ifcId
-	 * @throws Exception
-	 * @return InterfaceObject
-	 */
-	public function ifc($ifcId){
-	}
-	
-/**************************************************************************************************
- *
  * Functions to get content of atom using interfaces
  *
  *************************************************************************************************/

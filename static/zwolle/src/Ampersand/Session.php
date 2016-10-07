@@ -204,9 +204,9 @@ class Session {
             if(Config::get('loginEnabled')){
                 $this->logger->debug("Getting interface 'SessionRoles' for {$this->sessionAtom->__toString()}");
                 $sessionRoleLabels = array_map(
-                    function($o){
-                        return $o->id;
-                    }, $this->sessionAtom->ifc('SessionRoles')->getTgtAtoms()
+                    function($role){
+                        return $role->id;
+                    }, $this->sessionAtom->all('SessionRoles')->get()
                 );
                 foreach(Role::getAllRoles() as $role){
                     if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
@@ -243,7 +243,7 @@ class Session {
                 $this->logger->debug("Set sessionAccount: login not enabled");
             }else{
                 $this->logger->debug("Getting interface 'SessionAccount' for {$this->sessionAtom->__toString()}");
-                $sessionAccounts = $this->sessionAtom->ifc('SessionAccount')->getTgtAtoms();
+                $sessionAccounts = $this->sessionAtom->all('SessionAccount')->get();
                 
                 if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
                 if(empty($sessionAccounts)){
