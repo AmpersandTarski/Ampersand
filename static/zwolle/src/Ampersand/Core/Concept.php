@@ -11,6 +11,7 @@ use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Database\DatabaseTable;
 use Ampersand\Database\DatabaseTableCol;
+use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Interfacing\View;
 use Ampersand\Log\Logger;
@@ -278,6 +279,7 @@ class Concept {
 	}
 	
 	/**
+	 * TODO: move this function to Interfacing namespace
 	 * Return content of all atoms for this concept
 	 * @return mixed[]
 	 */
@@ -291,7 +293,8 @@ class Concept {
         
         $arr = array();
 	    foreach ((array)$this->database->Exe($query) as $row){
-	        $tgtAtom = new Atom($row['atomId'], $this, null, $row);
+	        $tgtAtom = new Resource($row['atomId'], $this->label);
+            $tgtAtom->setQData($row);
 	        $arr[] = $tgtAtom->getAtom();
 	    }
 	    return $arr;

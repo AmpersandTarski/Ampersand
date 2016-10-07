@@ -69,11 +69,9 @@ class Atom {
 	 * Atom constructor
 	 * @param string $atomId
 	 * @param Concept $concept
-	 * @param InterfaceObject $ifc
-     * @param array $qData the row data (from database query) from which this atom is created
 	 * @return void
 	 */
-	public function __construct($atomId, Concept $concept, InterfaceObject $ifc = null){
+	public function __construct($atomId, Concept $concept){
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('ATOM');
 		
