@@ -322,19 +322,6 @@ class Atom {
 	public function ifc($ifcId){
 	}
 	
-	/**
-     * TODO: opruimen
-	 * Walks a given interface path starting with this atom as src. Returns the final InterfaceObject or target atom (depending on the last path parameter)
-	 * @param string $path (e.g. /ifc/atom/ifc/atom/ifc)
-	 * @throws Exception when path is not accessible within current session
-	 * @return Atom|InterfaceObject
-	 */
-	public function walkIfcPath($path){
-	    
-	
-	    
-	}
-	
 /**************************************************************************************************
  *
  * Functions to get content of atom using interfaces
@@ -350,7 +337,7 @@ class Atom {
 	    $this->logger->debug("Caching new concent for atom '{$this->__toString()}'");
         if(is_null($this->parentIfc)) throw new Exception("Cannot get content: no interface specified.", 500);
         
-	    $this->storedContent = $this->getContent($options); // Use getContent() instead of read() to bypass crudR check
+	    // $this->storedContent = $this->getContent($options);
 	}
 	
 	/**
@@ -361,46 +348,7 @@ class Atom {
 	    $this->logger->debug("Getting cached concent for atom '{$this->__toString()}'");
 	    return $this->storedContent;
 	}
-	
-	/**
-	 * TODO: opruimen
-     * Returns the content of this atom given the parentIfc object
-	 * @param array $options
-	 * @param array $recursionArr
-     * @param int $depth specifies the number subinterface levels to get the content for
-	 * @throws Exception
-	 * @return mixed
-	 */
-	public function getContent($options = array(), $recursionArr = array(), $depth = null){
-	    
-			
-	}
-	
-/**************************************************************************************************
- * 
- * READ, CREATE, UPDATE, PATCH and DELETE functions 
- *  
- *************************************************************************************************/
-    
-    /**
-     * TODO: opruimen
-     * Function not implemented. Use InterfaceObject->create() method instead.
-     * @throws Exception
-     */
-	public function create(){
-        
-	}
 
-	/**
-	 * TODO: opruimen
-     * Performs given patches on this atom and returns updated content
-	 * @param array $patches
-	 * @param array $options
-	 * @return mixed updated content of atom
-	 */
-	public function patch($patches, $options = array()){
-	}
-	
 }
 
 ?>

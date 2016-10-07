@@ -478,19 +478,6 @@ class InterfaceObject {
         
     }
 	
-	/**
-     * TODO: opruimen
-	 * Returns the content of this interface given the srcAtom of this interface object
-	 * @param array $options
-	 * @param array $recursionArr
-     * @param int $depth specifies the number subinterface levels to get the content for
-	 * @throws Exception
-	 * @return mixed
-	 */
-	public function getContent($options = array(), $recursionArr = array(), $depth = null){
-        
-	}
-	
 /**************************************************************************************************
  *
  * READ, CREATE, UPDATE, PATCH and DELETE functions

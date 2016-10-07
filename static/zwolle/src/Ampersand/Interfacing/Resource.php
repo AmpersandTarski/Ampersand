@@ -98,7 +98,7 @@ class Resource extends Atom {
     }
     
     /**
-     * @param string $path
+     * @param string|array $path
      * @param string $returnType
      * @return Resource|ResourceList
      */
@@ -106,6 +106,7 @@ class Resource extends Atom {
         if(!$this->atomExists()) throw new Exception ("Resource '{$this}' not found", 404);
         
         // Prepare path list
+        if(is_array($path)) $path = implode ('/', $path);
         $path = trim($path, '/'); // remove root slash (e.g. '/Projects/xyz/..') and trailing slash (e.g. '../Projects/xyz/')
         if($path == '') return $this; // if no path is specified, return $this (atom)
         $pathList = explode('/', $path);
@@ -218,7 +219,7 @@ class Resource extends Atom {
             $rl->put($value);
         }
         
-        return true;
+        return $this->get();
     }
     
     /**
@@ -254,6 +255,7 @@ class Resource extends Atom {
                     throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
             }
         }
+        return $this->get();
     }
     
     /**
@@ -266,6 +268,8 @@ class Resource extends Atom {
         
         // Perform delete
         $this->deleteAtom();
+        
+        return true;
     }
     
 /**************************************************************************************************
