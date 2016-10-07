@@ -88,9 +88,9 @@ before_install:
 
 # We need to ensure that there is enough memory. See:
 # http://stackoverflow.com/questions/13104630/exitfailure-9-when-trying-to-install-ghc-mod-using-cabal 
--- dd if=/dev/zero of=/swapfile bs=1M count=1024
--- mkswap /swapfile
--- swapon /swapfile
+- dd if=/dev/zero of=/swapfile bs=1M count=1024
+- mkswap /swapfile
+- swapon /swapfile
 
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
