@@ -20,9 +20,14 @@ data-files:
                 LICENSE
 
 custom-setup
-  setup-depends: base == 4.9.*,
-                 Cabal == 1.24.*
-
+  setup-depends:     base == 4.9.*,
+                     bytestring == 0.10.*,
+                     Cabal == 1.24.*,
+                     directory == 1.2.*,
+                     filepath == 1.4.*,
+                     process == 1.4.*,
+                     time == 1.6.*,
+                     zlib == 0.6.*
 source-repository head
   type:      git
   location:  https://github.com/AmpersandTarski/ampersand.git
