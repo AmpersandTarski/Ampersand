@@ -64,12 +64,6 @@ class Atom {
 	 * @var Concept
 	 */
 	public $concept;
-	
-	/**
-	 * Specifies interface id to be used to get/set stored content if no $parentIfc is applicable (i.e. atom is src of toplevel interface)
-	 * @var string
-	 */
-	public $topLevelIfcId = null;
     
 	/**
 	 * Atom constructor
