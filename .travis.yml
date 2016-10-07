@@ -30,40 +30,46 @@ matrix:
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
     compiler: ": #GHC 8.0.1"
     addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
+    compiler: ": #GHC 8.0.1"
+    os: osx
+
+  # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
+  # variable, such as using --stack-yaml to point to a different file.
+  - env: BUILD=stack ARGS=""
+    compiler: ": #stack 8.0.1"
+    addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
+  - env: BUILD=stack ARGS="" osx
+    compiler: ": #stack 8.0.1"
+    os: osx
+
 
   # Build with the newest GHC and cabal-install. This is an accepted failure,
   # see below.
   - env: BUILD=cabal GHCVER=head  CABALVER=head
     compiler: ": #GHC HEAD"
     addons: {apt: {packages: [cabal-install-head,ghc-head], sources: [hvr-ghc]}}
-
-  # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
-  # variable, such as using --stack-yaml to point to a different file.
-  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml"
-    compiler: ": #stack 8.0.1"
-    addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
-
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
-
-  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml osx"
-    compiler: ": #stack 8.0.1 osx"
+  - env: BUILD=stack ARGS="--resolver nightly" osx
+    compiler: ": #stack nightly"
     os: osx
 
-  - env: BUILD=stack ARGS="--resolver nightly osx"
-    compiler: ": #stack nightly osx"
-    os: osx
 
   allow_failures:
-  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
   - env: BUILD=cabal GHCVER=head  CABALVER=head
-
   - env: BUILD=stack ARGS="--resolver nightly"
+  - env: BUILD=stack ARGS="--resolver nightly" osx
+
   # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml osx"
-  - env: BUILD=stack ARGS="--resolver nightly osx"
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
+  - env: BUILD=stack ARGS="" osx
+
+
+  # under investigation: This shouldn't fail:
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
 
   fast_finish: true
 
