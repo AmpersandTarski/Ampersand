@@ -3,7 +3,7 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Misc.Options
         (Options(..),getOptions,usageInfo'
-        ,verboseLn,verbose,FSpecFormat(..)
+        ,verboseLn,verbose,FSpecFormat(..),showFormat
         , helpNVersionTexts
         )
 where
@@ -53,7 +53,6 @@ data Options = Options { showVersion :: Bool
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
                        , blackWhite :: Bool   -- only use black/white in graphics
                        , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
-                       , showPredExpr :: Bool   -- for generated output, show predicate logic?
                        , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional specification document
                        , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional specification document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
@@ -142,7 +141,6 @@ getOptions =
                       , crowfoot         = False
                       , blackWhite       = False
                       , doubleEdges      = True
-                      , showPredExpr     = False
                       , noDiagnosis      = False
                       , diagnosisOnly    = False
                       , genLegalRefs     = False
@@ -258,16 +256,17 @@ canBeYamlSwitch str =
    takeWhile (/= '=') str `notElem` ["version","help","config","sampleConfigFile"]  
 data DisplayMode = Public | Hidden deriving Eq
 
-data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
+data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fdocx | Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
 allFSpecFormats :: String
 allFSpecFormats = "["++intercalate ", " 
-    ((sort . map f) [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fhtml, 
+    ((sort . map showFormat) 
+        [FPandoc, Fasciidoc, Fcontext, Fdocbook, Fdocx, Fhtml, 
                 FLatex, Fman, Fmarkdown, Fmediawiki, Fopendocument
                 , Forg, Fplain, Frst, Frtf, Ftexinfo, Ftextile]) ++"]"
-    where f:: Show a => a -> String
-          f fmt = case show fmt of
-                    _:h:t -> toUpper h : map toLower t
-                    x     -> x 
+showFormat :: FSpecFormat -> String
+showFormat fmt = case show fmt of
+                  _:h:t -> toUpper h : map toLower t
+                  x     -> x 
 
 type OptionDef = OptDescr (Options -> IO Options)
 options :: [(OptionDef, DisplayMode) ]
@@ -373,7 +372,8 @@ options = [ (Option ['v']   ["version"]
                                 , fspecFormat= case map toUpper w of
                                     ('A': _ )             -> Fasciidoc
                                     ('C': _ )             -> Fcontext
-                                    ('D': _ )             -> Fdocbook
+                                    ('D':'O':'C':'B': _ ) -> Fdocbook
+                                    ('D':'O':'C':'X': _ ) -> Fdocx
                                     ('H': _ )             -> Fhtml
                                     ('L': _ )             -> FLatex
                                     ('M':'A':'N': _ )     -> Fman
@@ -428,10 +428,6 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> return opts{doubleEdges = not (doubleEdges opts)}))
                "generate graphics in an alternate way. (you may experiment with this option to see the differences for yourself)"
             , Public)
-          , (Option []        ["predLogic"]
-               (NoArg (\opts -> return opts{showPredExpr = True}))
-               "show logical expressions in the form of predicate logic."
-            , Hidden)
           , (Option []        ["noDiagnosis"]
                (NoArg (\opts -> return opts{noDiagnosis = True}))
                "omit the diagnosis chapter from the functional specification document."

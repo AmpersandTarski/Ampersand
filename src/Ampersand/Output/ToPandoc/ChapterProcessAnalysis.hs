@@ -12,8 +12,8 @@ import Data.List
 noProcesses :: FSpec -> Bool
 noProcesses fSpec = null (fRoles fSpec)
 
-chpProcessAnalysis :: Int -> FSpec -> Blocks
-chpProcessAnalysis lev fSpec
+chpProcessAnalysis :: FSpec -> Blocks
+chpProcessAnalysis fSpec
  = if null procs
    then mempty
    else headerBlocks <> roleRuleBlocks <> fromList roleRelationBlocks <> processSections
@@ -27,7 +27,7 @@ chpProcessAnalysis lev fSpec
 
   headerBlocks :: Blocks
   headerBlocks
-   = (chptHeader (fsLang fSpec) ProcessAnalysis) <>
+   = xDefBlck fSpec ProcessAnalysis <>
      purposes2Blocks (getOpts fSpec) purps <> -- This explains the purpose of this context.
      fromList(
      [ case fsLang fSpec of
@@ -85,37 +85,37 @@ chpProcessAnalysis lev fSpec
 
 -- the table containing the role-relation assignments
   roleRelationBlocks :: [Block]
-  roleRelationBlocks
-   = if null (fRoleRels fSpec) then [] else
-     [ case fsLang fSpec of
-          Dutch   ->
-            Para [ Str $ upCap (name fSpec)++" kent rollen aan relaties toe. "
-                 , Str "De volgende tabel toont de relaties waarvan de inhoud gewijzigd kan worden door iemand die een bepaalde rol vervult."
-                 ]
-          English ->
-            Para [ Str $ upCap (name fSpec)++" assigns roles to relations. "
-                 , Str "The following table shows the relations, the content of which can be altered by anyone who fulfills a given role."
-                 ]
-     , Para  $ [ RawInline (Format "latex") "\\begin{tabular}{|l|l|}\\hline\n"
-               , RawInline (Format "latex")
-                    (case  fsLang fSpec of
-                       Dutch   -> "Rol&Relatie\\\\ \\hline\n"
-                       English -> "Role&Relation\\\\ \\hline\n")
-               ]++
-               [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   "
-                       [ name role++" & $"++showMath r++"$"++
-                         concat[ "\\\\\n   &$"++showMath (snd rs)++"$" | rs<-tail rrClass]
-                       | rrClass<-eqCl fst (fRoleRels fSpec)
-                       , let role=fst (head rrClass), let r=snd (head rrClass)
-                       ]
-               ]++
-               [ RawInline (Format "latex") "\\\\ \\hline\n" | not (null rolelessRels)]++
-               [ RawInline (Format "latex") $ intercalate "\\\\\n   " [ "&$"++showMath d++"$" | d<-rolelessRels] | not (null rolelessRels)]++
-               [ RawInline (Format "latex") "\\\\ \\hline\n\\end{tabular}"
-               ]
-     ]
-     where
-      rolelessRels = [ d | d<-vrels fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
+  roleRelationBlocks = [] --BITROTTED (because to much specific LaTeX stuff, in a chapter that isn't fit for use at the moment.)
+   -- = if null (fRoleRels fSpec) then [] else
+   --   [ case fsLang fSpec of
+   --        Dutch   ->
+   --          Para [ Str $ upCap (name fSpec)++" kent rollen aan relaties toe. "
+   --               , Str "De volgende tabel toont de relaties waarvan de inhoud gewijzigd kan worden door iemand die een bepaalde rol vervult."
+   --               ]
+   --        English ->
+   --          Para [ Str $ upCap (name fSpec)++" assigns roles to relations. "
+   --               , Str "The following table shows the relations, the content of which can be altered by anyone who fulfills a given role."
+   --               ]
+   --   , Para  $ [ RawInline (Format "latex") "\\begin{tabular}{|l|l|}\\hline\n"
+   --             , RawInline (Format "latex")
+   --                  (case  fsLang fSpec of
+   --                     Dutch   -> "Rol&Relatie\\\\ \\hline\n"
+   --                     English -> "Role&Relation\\\\ \\hline\n")
+   --             ]++
+   --             [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   "
+   --                     [ name role++" & $"++showMath r++"$"++
+   --                       concat[ "\\\\\n   &$"++showMath (snd rs)++"$" | rs<-tail rrClass]
+   --                     | rrClass<-eqCl fst (fRoleRels fSpec)
+   --                     , let role=fst (head rrClass), let r=snd (head rrClass)
+   --                     ]
+   --             ]++
+   --             [ RawInline (Format "latex") "\\\\ \\hline\n" | not (null rolelessRels)]++
+   --             [ RawInline (Format "latex") $ intercalate "\\\\\n   " [ "&$"++showMath d++"$" | d<-rolelessRels] | not (null rolelessRels)]++
+   --             [ RawInline (Format "latex") "\\\\ \\hline\n\\end{tabular}"
+   --             ]
+   --   ]
+   --   where
+   --    rolelessRels = [ d | d<-vrels fSpec, d `notElem` (nub.map snd) (fRoleRels fSpec) ]
 
 -- the sections in which processes are analyzed
   procSections :: [Pattern] -> [Blocks]
@@ -127,12 +127,12 @@ chpProcessAnalysis lev fSpec
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenDeclarations
      = (
-           headerWithLabel (XRefProcessAnalysis fproc) (lev+2) (text(name fproc))
+           xDefBlck fSpec (XRefProcessAnalysis fproc) 
         <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc))
    --    <> (txtProcessModel fproc)
         <> (if null sctRules then mempty else definitionList sctRules)
          ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec(udefrules fproc) i seenConcepts seenDeclarations
+         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec (udefrules fproc) i seenConcepts seenDeclarations
 

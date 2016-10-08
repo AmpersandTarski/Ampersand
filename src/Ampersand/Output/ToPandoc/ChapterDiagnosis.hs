@@ -8,7 +8,7 @@ import Data.Maybe(isJust)
 
 chpDiagnosis :: FSpec -> (Blocks,[Picture])
 chpDiagnosis fSpec
- = (  chptHeader (fsLang fSpec) Diagnosis
+ = (  xDefBlck fSpec Diagnosis
    <> para (   (str.l) (NL "Dit hoofdstuk geeft een analyse van het Ampersand-script van "
                        ,EN "This chapter provides an analysis of the Ampersand script of ")
             <> (emph.singleQuoted.str.name) fSpec 
@@ -233,27 +233,25 @@ chpDiagnosis fSpec
                       ) 
        ) <>
        ( case pictsWithUnusedRels of
-          [pict] -> para (    (str.l) (NL "Figuur ", EN "Figure ")
-                           <> xRefReference (getOpts fSpec) pict 
+          [pict] -> para (    xRef pict 
                            <> (str.l) (NL " geeft een conceptueel diagram met alle relaties."
                                       ,EN " shows a conceptual diagram with all relations.")
                          ) <>
-                    plain((showImage (getOpts fSpec)) pict)
+                         (xDefBlck fSpec pict)
           picts  -> mconcat
-                       [ para (   (str.l) (NL "Figuur ", EN "Figure ")
-                               <> xRefReference (getOpts fSpec) pict
+                       [ para (   xRef pict
                                <> (str.l) (NL " geeft een conceptueel diagram met alle relaties die gedeclareerd zijn in "
                                           ,EN " shows a conceptual diagram with all relations declared in ")
                                <> (singleQuoted.str.name) pat <> "."
                               )
-                       <>(plain . showImage (getOpts fSpec)) pict
+                       <>(xDefBlck fSpec pict)
                        | (pict,pat)<-zip picts pats
                        ]
        )
        , pictsWithUnusedRels           -- draw the conceptual diagram
      )
      where notUsed :: [Inlines]
-           notUsed = [(math . showMath) (EDcD d)
+           notUsed = [ showMath (EDcD d)
                      | d@Sgn{} <- nub (relsInThemes fSpec) -- only signal relations that are used or defined in the selected themes
                      , decusr d
                      , d `notElem` (relsMentionedIn . vrules) fSpec
@@ -341,21 +339,22 @@ chpDiagnosis fSpec
 
   processrulesInPatterns :: Blocks
   processrulesInPatterns = 
-       para ("TODO: Inleiding bij de rol-regel tabel")
-    <> if null (fRoleRuls fSpec)
+       if null (fRoleRuls fSpec)
        then mempty
-       else table -- No caption:
+       else (para.str.l) (NL "Onderstaande tabel bevat een overzicht van de signaalregels per rol."
+                         ,EN "The table below shows the signal rules per role."
+                         ) 
+         <> table -- No caption:
                   mempty
                   -- Alignment:
                   ( if multProcs
-                    then replicate 4 (AlignLeft,1/4)
-                    else replicate 3 (AlignLeft,1/3)
+                    then replicate 3 (AlignLeft,1/3)
+                    else replicate 2 (AlignLeft,1/2)
                   )
                   -- Headers:
                   (  [ (plain.str.l) (NL "rol"      , EN "role")]
-                   ++[ (plain.str.l) (NL "in proces", EN "in process") | multProcs]
+                   ++[ (plain.str.l) (NL "thema", EN "in pattern") | multProcs]
                    ++[ (plain.str.l) (NL "regel"    , EN "rule")
-                     , (plain.str.l) (NL "uit"      , EN "from")
                      ]
                   )
                   -- Rows:
@@ -365,6 +364,7 @@ chpDiagnosis fSpec
                      , (plain.str.r_env) rul
                      ]
                   | (rol,rul)<-fRoleRuls fSpec]
+          
      where multProcs = length procsInScope>1
            procsInScope = filter inScopePat (vpatterns fSpec)
 
@@ -404,10 +404,10 @@ chpDiagnosis fSpec
      <>
 -- the tables containing the actual work in progress population
      mconcat
-     [    para (  (str.l) (NL "Regel", EN "Rule")
-               <> quoterule r
-               <> xRefTo (XRefNaturalLanguageRule r)
-               <> (str.l) (NL " luidt: ", EN "says: ")
+     [    para (  str (l (NL "Afspraak ", EN "Agreement "))
+               <> xRef (XRefSharedLangRule r)
+               <> " ( " <> quoterule r <> " )"
+               <> (str.l) (NL " luidt: ", EN " says: ")
                )
        <> fromList (meaning2Blocks (fsLang fSpec) r)
        <> para (  (str.l) (NL "Deze regel bevat nog werk (voor "

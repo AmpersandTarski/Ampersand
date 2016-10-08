@@ -11,9 +11,11 @@ import Ampersand.FSpec.FPA
 import Ampersand.Output.PandocAux
 import Ampersand.Output.ToPandoc.SharedAmongChapters
 
-chpInterfacesBlocks :: Int -> FSpec -> Blocks
-chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
-  mconcat $ map interfaceChap regularInterfaces
+chpInterfacesBlocks :: FSpec -> Blocks
+chpInterfacesBlocks fSpec = 
+     --  *** Header ***
+      xDefBlck fSpec Interfaces
+   <> (mconcat $ map interfaceChap regularInterfaces)
   where
     regularInterfaces :: [Interface]
     regularInterfaces = interfaceS fSpec
@@ -22,7 +24,7 @@ chpInterfacesBlocks lev fSpec = -- lev is the header level (0 is chapter level)
       
     interfaceChap :: Interface -> Blocks
     interfaceChap ifc
-     =  headerWithLabel (XRefInterfacesInterface ifc) (lev+1) (text ("Interface: " ++ quoteName ifc)) <>
+     =  xDefBlck fSpec (XRefInterfacesInterface ifc)  <>
         ifcIntro ifc <>
         docInterface ifc
       
@@ -145,5 +147,6 @@ showRoles roles = case roles of
                     (rl1:rls) -> "de rollen " ++ quoteName rl1 ++ 
                                  (concat . reverse $ zipWith (++) (", en ": repeat ", ") $ reverse $ map quoteName rls)
 
+--TODO: make inlines, then use singleQuoted 
 quoteName :: Named a => a -> String
 quoteName x = "``"++name x++"''"

@@ -87,6 +87,7 @@ instance ConceptStructure ViewDef where
 instance ConceptStructure ViewSegment where
   concs  = concs . vsmLoad
   expressionsIn = expressionsIn . vsmLoad
+
 instance ConceptStructure ViewSegmentPayLoad where
   concs  (ViewExp e) = concs e
   concs  _           = []
