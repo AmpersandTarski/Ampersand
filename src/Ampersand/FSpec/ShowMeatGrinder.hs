@@ -149,6 +149,8 @@ instance MetaPopulations Pattern where
     , Comment $ " Pattern `"++name pat++"` "
     , Pop "name"    "Pattern" "PatternName" [Uni,Tot,Sur]
            [(dirtyId ctx pat, (show.name) pat)]
+    , Pop "urlEncodedName" "Pattern" "EncodedName" [Uni]
+             [(dirtyId ctx pat, (show . escapeIdentifier . name) pat)]
     , Pop "udefrules" "Rule" "Pattern" []                         -- all rules the user has declared within this viewpoint,
                                      --   which are not multiplicity- and not identity rules. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-udefrules pat]
@@ -238,6 +240,8 @@ instance MetaPopulations A_Concept where
              [(dirtyId ctx cpt, dirtyId ctx (cptTType fSpec cpt))] 
    , Pop "name" "Concept" "ConceptName" [Uni,Tot]
              [(dirtyId ctx cpt, (show . name) cpt)]
+   , Pop "urlEncodedName" "Concept" "EncodedName" [Uni]
+             [(dirtyId ctx cpt, (show . escapeIdentifier . name) cpt)]
    ]++
    case cpt of
      PlainConcept{} ->
@@ -550,8 +554,8 @@ instance MetaPopulations Rule where
       , Comment $ " Rule `"++name rul++"` "
       , Pop "name"  "Rule" "RuleName" [Uni,Tot,Sur]
              [(dirtyId ctx rul, (show.name) rul)]
-  --    , Pop "ruleAdl"  "Rule" "Adl" [Uni,Tot]
-  --           [(dirtyId ctx rul, (show.showADL.rrexp) rul)]
+      , Pop "urlEncodedName" "Rule" "EncodedName" [Uni]
+             [(dirtyId ctx rul, (show . escapeIdentifier . name) rul)]
       , Pop "origin"  "Rule" "Origin" [Uni,Tot]
              [(dirtyId ctx rul, (show.show.origin) rul)]
       , Pop "message"  "Rule" "Message" []
