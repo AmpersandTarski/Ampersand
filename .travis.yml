@@ -136,6 +136,6 @@ script:
       cabal copy
       cabal sdist
       SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && \
-        (cd dist && ./travis_long cabal install --enable-tests --force-reinstalls "$SRC_TGZ")
+        (cd dist && cabal install --enable-tests --force-reinstalls "$SRC_TGZ")
       ;;
   esac
