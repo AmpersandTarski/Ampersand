@@ -301,19 +301,6 @@ class Concept {
 	}
 	
 	/**
-	 * Return array with all atom identifiers for this concept
-	 * @return string[]
-	 */
-	public function getAllAtomIds(){
-	    $firstCol = current($this->mysqlConceptTable->getCols()); // We can query an arbitrary concept col for checking the existence of an atom
-	
-	    // Query all atoms in table
-	    $query = "SELECT DISTINCT `{$firstCol->name}` as `atom` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
-	    return array_column((array)$this->database->Exe($query), 'atom'); // no need to filter duplicates and NULLs
-	
-	}
-	
-	/**
 	 * Returns default view for this concept (or null if no default view defined)
 	 * @return View|NULL
 	 */

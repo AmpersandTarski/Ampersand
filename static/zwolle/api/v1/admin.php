@@ -56,7 +56,9 @@ $app->get('/admin/export/all', function () use ($app){
     
     $allAtoms = array();
     foreach (Concept::getAllConcepts() as $concept){
-        $allAtoms[$concept->name] = $concept->getAllAtomIds();
+        $allAtoms[$concept->name] = array_map(function($atom){
+            return $atom->id;
+        }, $concept->getAllAtomObjects());
     }
     
     $allLinks = array();
