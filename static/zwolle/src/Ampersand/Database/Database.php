@@ -244,7 +244,42 @@ class Database {
 		$this->closeTransaction('Database successfully reinstalled', true);
 		
 	}
-	
+    
+    /**
+    * Return escaped mysql representation of Atom (identifier) according to Ampersand technical types (TTypes)
+     * @throws Exception when technical type is not (yet) supported
+     * @return mixed
+     */
+    public static function getDBRepresentation($atom){
+        if(is_null($atom->id)) return null;
+        
+        switch($atom->concept->type){
+            case "ALPHANUMERIC" :
+            case "BIGALPHANUMERIC" :
+            case "HUGEALPHANUMERIC" :
+            case "PASSWORD" :
+            case "TYPEOFONE" :
+                return (string) $this->escape($atom->id);
+            case "BOOLEAN" :
+                return (int) $atom->id; // booleans are stored as tinyint(1) in the database. false = 0, true = 1
+            case "DATE" :
+                $datetime = new DateTime($atom->id);
+                return $datetime->format('Y-m-d'); // format to store in database
+            case "DATETIME" :
+                $datetime = new DateTime($atom->id); // $atom->id can include timezone, e.g. 2005-08-15T15:52:01+00:00 (DATE_ATOM format)
+                $datetime->setTimezone(new DateTimeZone('UTC')); // convert to UTC to store in database
+                return $datetime->format('Y-m-d H:i:s'); // format to store in database (UTC)
+            case "FLOAT" :
+                return (float) $atom->id;
+            case "INTEGER" :
+                return (int) $atom->id;
+            case "OBJECT" :
+                return $this->escape($atom->id);
+            default :
+                throw new Exception("Unknown/unsupported representation type '{$atom->concept->type}' for concept '[{$atom->concept}]'", 501);
+        }
+    }
+    
 	/**
 	 * Execute query on database. Function replaces reserved words by their corresponding value (e.g. _SESSION)
 	 * @param string $query

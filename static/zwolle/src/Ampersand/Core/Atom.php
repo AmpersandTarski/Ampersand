@@ -79,7 +79,7 @@ class Atom implements JsonSerializable {
         $this->concept = $concept;
 		
         $this->id = $atomId;
-		$this->idEsc = $this->database->escape($this->getMysqlRepresentation()); // Escape id for database queries
+        $this->idEsc = Database::getDBRepresentation($this); // Escape and transform id for (mysql) database queries
 	}
 	
 	public function __toString(){
@@ -249,42 +249,6 @@ class Atom implements JsonSerializable {
 	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
 	    }
 	}
-	
-	/**
-	 * Return mysql representation of Atom (identifier) according to Ampersand technical types (TTypes)
-	 * @throws Exception when technical type is not (yet) supported
-	 * @return mixed
-	 */
-	public function getMysqlRepresentation(){
-	    if(is_null($this->id)) return null;
-	    
-	    switch($this->concept->type){
-	        case "ALPHANUMERIC" :
-	        case "BIGALPHANUMERIC" :
-	        case "HUGEALPHANUMERIC" :
-	        case "PASSWORD" :
-	        case "TYPEOFONE" :
-	            return (string) $this->id;
-	        case "BOOLEAN" :
-	            return (int) $this->id; // booleans are stored as tinyint(1) in the database. false = 0, true = 1
-	        case "DATE" :
-	            $datetime = new DateTime($this->id);
-	            return $datetime->format('Y-m-d'); // format to store in database
-	        case "DATETIME" :
-	            $datetime = new DateTime($this->id); // $this->id can include timezone, e.g. 2005-08-15T15:52:01+00:00 (DATE_ATOM format)
-	            $datetime->setTimezone(new DateTimeZone('UTC')); // convert to UTC to store in database
-	            return $datetime->format('Y-m-d H:i:s'); // format to store in database (UTC)
-	        case "FLOAT" :
-	            return (float) $this->id;
-	        case "INTEGER" :
-	            return (int) $this->id;
-	        case "OBJECT" :
-	            return $this->id;
-	        default :
-	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
-	    }
-	}
-
 }
 
 ?>
