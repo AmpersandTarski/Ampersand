@@ -85,7 +85,7 @@ class Resource extends Atom {
         return $this->label;
     }
     
-    public function jsonSerializable(){
+    public function jsonSerialize(){
         $content = [];
         
         // Add Ampersand atom attributes

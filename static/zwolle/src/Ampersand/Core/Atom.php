@@ -90,7 +90,7 @@ class Atom implements JsonSerializable {
      * @throws Exception when technical type is not (yet) supported
      * @return mixed
      */
-    public function jsonSerializable(){
+    public function jsonSerialize(){
         switch($this->concept->type){
             case "ALPHANUMERIC" :
             case "BIGALPHANUMERIC" :
