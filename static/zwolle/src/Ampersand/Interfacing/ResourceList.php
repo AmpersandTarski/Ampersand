@@ -66,8 +66,10 @@ class ResourceList {
      * @return Resource
      */
     public function one($tgtId){
+        $arr = $this->getTgtResources();
+        
         // Functionality to automatically add/create resource if allowed
-        if(!in_array($tgtId, $arr = $this->getTgtResources())){
+        if(!array_key_exists($tgtId, $arr)){
             $resource = new Resource($tgtId, $this->ifc->tgtConcept->name);
             
             // If resource already exists and may be added (crudU)
@@ -84,9 +86,10 @@ class ResourceList {
             else throw new Exception ("Resource '{$resource}' not found", 404);
             
             // Reevaluate interface expression, tgt should now be there, otherwise throw exception
-            if(!in_array($tgtId, $arr = $this->getTgtResources(false))) throw new Exception ("Oeps.. something went wrong", 500);
+            if(!array_key_exists($tgtId, $arr = $this->getTgtResources(false))) throw new Exception ("Oeps.. something went wrong", 500);
         }
-        else return $arr[$tgtId];
+        
+        return $arr[$tgtId];
     }
     
     /**
@@ -187,7 +190,7 @@ class ResourceList {
         if($this->ifc->tgtConcept->isObject()){
             
             foreach ($this->getTgtResources() as $resource){
-                $result[] = $resource->get($rcOptions, $ifcOptions, $depth, $recursionArr);
+                $result[] = $resource->get($rcOptions, $ifcOptions, $depth, $recursionArr); // for json_encode $resource->jsonSerializable() is called
             }
             
             // Special case for leave PROP: return false when result is empty, otherwise true (i.e. I atom must be present)
@@ -199,7 +202,7 @@ class ResourceList {
             
         // Non-object nodes (leaves, because subinterfaces are not allowed for non-objects)
         }else{
-            foreach ($this->getTgtAtoms() as $atom) $result[] = $atom->getJsonRepresentation();
+            foreach ($this->getTgtAtoms() as $atom) $result[] = $atom; // for json_encode $atom->jsonSerializable() is called
         }
         
         // Return result using UNI-aspect (univalent-> value/object, non-univalent -> list of values/objects)
@@ -211,7 +214,7 @@ class ResourceList {
     
     /**
      * @param stdClass $resourceToPost
-     * @return stdClass representation of newly created resource
+     * @return Resource
      */
     public function post(stdClass $resourceToPost){
         if(!$this->ifc->crudC()) throw new Exception ("Create not allowed for ". $this->ifc->getPath(), 405);
@@ -259,7 +262,7 @@ class ResourceList {
             }
         }
         
-        return $resource->get();
+        return $resource;
     }
     
     /**

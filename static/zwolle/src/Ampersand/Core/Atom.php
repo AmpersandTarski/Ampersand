@@ -10,6 +10,7 @@ namespace Ampersand\Core;
 use Exception;
 use DateTime;
 use DateTimeZone;
+use JsonSerializable;
 use Ampersand\Database\Database;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
@@ -22,7 +23,7 @@ use Ampersand\Session;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Atom {
+class Atom implements JsonSerializable {
     /**
      * Dependency injection of a database connection class
      * @var Database
@@ -133,12 +134,13 @@ class Atom {
     }
 	
 	/**
+	 * TODO: move to Interfacing namespace
 	 * Returns basic information about this atom
 	 * @param array $options
 	 * @return array
 	 */
 	public function getAtom($options = array()){
-		$result = array('_id_' => $this->getJsonRepresentation(), '_label_' => $this->getLabel(), '_view_' => $this->getView());
+		$result = array('_id_' => $this->jsonSerializable(), '_label_' => $this->getLabel(), '_view_' => $this->getView());
 		
 		if($options['navIfc']){
 		    $ifcs = array();
@@ -220,7 +222,7 @@ class Atom {
 	 * @throws Exception when technical type is not (yet) supported
 	 * @return mixed
 	 */
-	public function getJsonRepresentation(){
+	public function jsonSerializable(){
 	    switch($this->concept->type){
 	        case "ALPHANUMERIC" :
 	        case "BIGALPHANUMERIC" :

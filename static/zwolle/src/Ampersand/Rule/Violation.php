@@ -115,10 +115,10 @@ class Violation {
 
         $links = array();
         foreach ($session->getInterfacesToReadConcept($this->src->concept) as $interface){
-            $links[] = "#/{$interface->id}/{$this->src->getJsonRepresentation()}";
+            $links[] = "#/{$interface->id}/{$this->src->id}";
         }
         foreach ($session->getInterfacesToReadConcept($this->tgt->concept) as $interface){
-            $links[] = "#/{$interface->id}/{$this->tgt->getJsonRepresentation()}";
+            $links[] = "#/{$interface->id}/{$this->tgt->id}";
         }
         return array_unique($links);
     }

@@ -39,6 +39,11 @@ class Resource extends Atom {
     private $qData = null;
     
     /**
+     * @var array $data contains the interface data filled by the get() method
+     */
+    private $data = [];
+    
+    /**
      * @param string $resourceId Ampersand atom identifier
      * @param string $resourceType Ampersand concept name
      * @param ResourceList $parentList
@@ -55,12 +60,25 @@ class Resource extends Atom {
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
     }
     
+    public function jsonSerializable(){
+        $content = [];
+        
+        // Add Ampersand atom attributes
+        $content['_id_'] = $this->id;
+        $content['_label_'] = $this->getLabel();
+        $this->data['_view_'] = $this->getView();
+        
+        // Merge with interface data (only when get() method is called before)
+        return array_merge($content, $this->data);
+        
+    }
+    
     /**
      * @return string
      */
     public function getPath(){
-        if(isset($this->parentList)) return $parentList->getPath() . '/' . $this->getJsonRepresentation();
-        else return "/resources/{$this->concept->name}/" . $this->getJsonRepresentation();
+        if(isset($this->parentList)) return $parentList->getPath() . '/' . $this->id;
+        else return "/resources/{$this->concept->name}/" . $this->id;
     }
     
     public function getURL(){
@@ -68,7 +86,7 @@ class Resource extends Atom {
     }
     
     public function getURI(){
-        return Config::get('serverURL') . Config::get('apiPath') . "/resources/{$this->concept->name}/" . $this->getJsonRepresentation();
+        return Config::get('serverURL') . Config::get('apiPath') . "/resources/{$this->concept->name}/" . $this->id;
     }
     
     /**
@@ -138,7 +156,7 @@ class Resource extends Atom {
      * @param int $ifcOptions
      * @param int $depth
      * @param array $recursionArr
-     * @return stdClass representation of resource content of current interface
+     * @return Resource $this
      */
     public function get($rcOptions = self::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
         if(isset($this->parentList)){
@@ -146,20 +164,12 @@ class Resource extends Atom {
             if(!$parentIfc->crudR()) throw new Exception ("Read not allowed for ". $parentIfc->getPath(), 405);
         }
         
-        // Initialize object to return
-        $content = new stdClass();
-        
-        // Add Ampersand atom attributes
-        $content->_id_ = $this->getJsonRepresentation();
-        $content->_label_ = $this->getLabel();
-        $content->_view_ = $this->getView();
-        
         // Meta data
-        if($rcOptions & self::INCLUDE_META_DATA) $content->_path_ = $this->getPath();
+        if($rcOptions & self::INCLUDE_META_DATA) $this->data['_path_'] = rawurlencode($this->getPath());
         
         // Interface(s) to navigate to for this resource
         if(($rcOptions & self::INCLUDE_NAV_IFCS) && isset($parentIfc)){
-            $content->_ifcs_ = array_map(function($o) {
+            $this->data['_ifcs_'] = array_map(function($o) {
                    return array('id' => $o->id, 'label' => $o->label);
             }, $parentIfc->getNavInterfacesForTgt());
         }
@@ -181,31 +191,33 @@ class Resource extends Atom {
                 if(!$subifc->crudR()) continue; // skip subinterface if not given read rights (otherwise exception will be thrown when getting content)
                     
                 // Add content of subifc
-                $content->{$subifc->id} = $subcontent = $this->all($subifc->id)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
+                $this->data[$subifc->id] = $subcontent = $this->all($subifc->id)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
                 
                 // Add sort data if subIfc is univalent
                 if($subifc->isUni() && ($rcOptions & self::INCLUDE_SORT_DATA)){
+                    $this->data['_sortValues'] = [];
+                    
                     // If subifc is PROP (i.e. content is boolean)
-                    if($subinteface->isProp()) $content->_sortValues_[$subifc->id] = $subcontent;
+                    if($subinteface->isProp()) $this->data['_sortValues_'][$subifc->id] = $subcontent;
                     // Elseif subifc points to object
-                    elseif($subifc->tgtConcept->isObject()) $content->_sortValues_[$subifc->id] = current($subcontent)->_label_; // use label to sort objects. We can use current() because subifc is univalent
+                    elseif($subifc->tgtConcept->isObject()) $this->data['_sortValues_'][$subifc->id] = current($subcontent)->getLabel(); // use label to sort objects. We can use current() because subifc is univalent
                     // Else scalar
-                    else $content->_sortValues_[$subifc->id] = $subcontent;
+                    else $this->data['_sortValues_'][$subifc->id] = $subcontent;
                 }
             }
         }
         
-        return $content;
+        return $this;
     }
     
     /**
      * Update a resource (updates only first level of subinterfaces, for now)
      * @param stdClass $resourceToPut
-     * @return boolean
+     * @return Resource $this
      */
     public function put(stdClass $resourceToPut = null){
         if(!isset($this->parentList)) throw new Exception("Cannot perform put without interface specification", 400);
-        if(!isset($resourceToPut)) return $this->get(); // nothing to do
+        if(!isset($resourceToPut)) return $this; // nothing to do
         
         foreach ($resourceToPut as $ifcId => $value){
             if(substr($ifcId, 0, 1) == '_' && substr($ifcId, -1) == '_') continue; // skip special internal attributes
@@ -219,13 +231,13 @@ class Resource extends Atom {
             $rl->put($value);
         }
         
-        return $this->get();
+        return $this;
     }
     
     /**
      * Path this resource with provided patches
      * @param array $patches
-     * @return stdClass representation updated resource
+     * @return Resource $this
      */
     public function patch(array $patches){
         foreach ($patches as $key => $patch){
@@ -255,12 +267,12 @@ class Resource extends Atom {
                     throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
             }
         }
-        return $this->get();
+        return $this;
     }
     
     /**
      * Delete this resource and remove as target atom from current interface
-     * @return boolean
+     * @return Resource $this
      */
     public function delete(){
         if(!isset($this->parentList)) throw new Exception("Cannot perform delete without interface specification", 400);
@@ -269,7 +281,7 @@ class Resource extends Atom {
         // Perform delete
         $this->deleteAtom();
         
-        return true;
+        return $this;
     }
     
 /**************************************************************************************************
@@ -288,7 +300,7 @@ class Resource extends Atom {
      * Create a new resource as target atom to given interface
      * @param string $ifcId
      * @param stdClass $resourceToPost
-     * @return stdClass representation newly created resource
+     * @return Resource newly created resource
      */
     public function post($ifcId, stdClass $resourceToPost){
         return $this->all($ifcId)->post($resourceToPost);

@@ -20,7 +20,11 @@ global $app;
 $app->get('/resources', function() use ($app) {
 	if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
 	
-	$content = array_keys(Concept::getAllConcepts()); // Return list of all concepts
+	$content = array_map(function($cpt){
+        return $cpt->label; // only show label of resource types
+    }, array_filter(Concept::getAllConcepts(), function($cpt){
+        return $cpt->isObject(); // filter concepts without a representation (i.e. resource types)
+    }));
 	
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
@@ -34,9 +38,10 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app) {
 	$concept = Concept::getConcept($resourceType);
 	
 	// Checks
+    if(!$concept->isObject()) throw new Exception ("Resource type not found", 404);
 	if(!$session->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
 	
-	// Get list of all atoms for $resourceType (i.e. concept)
+	// Get list of all atoms
 	$content = $concept->getAllAtomObjects(); 
 	
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -83,8 +88,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $depth = $app->request->params('depth');
 
     // Get content
-    $resource = new Resource($resourceId, $resourceType);
-    $content = $resource->walkPath($ifcPath)->get($rcOptions, $ifcOptions);
+    $content = (new Resource($resourceId, $resourceType))->walkPath($ifcPath)->get($rcOptions, $ifcOptions);
 	
     // If force list option is provided, make sure to return a numeric array
     if(filter_var($app->request->params('forceList'), FILTER_VALIDATE_BOOLEAN)){
@@ -112,8 +116,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 	
 	// Perform patch(es)
-    $resource = new Resource($resourceId, $resourceType);
-    $content = $resource->walkPath($ifcPath)->patch($app->request->getBody());
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Resource')->patch($app->request->getBody())->get();
 	
     // Close transaction
     $successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
@@ -121,7 +124,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
-					, 'content' 			=> $content
+					, 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
 					, 'requestType'			=> $session->database->getRequestType()
@@ -143,14 +146,13 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
     
     // Perform create
-    $resource = new Resource($resourceId, $resourceType);
-    $content = $resource->walkPath($ifcPath)->post($app->request->getBody());
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'ResourceList')->post($app->request->getBody())->get();
     
     // Close transaction TODO: copied from InterfaceObject::create()
     $this->database->closeTransaction($newAtom->concept . ' created', null); // temp store content of $newAtom (also when not crudR)
     
 	// Return result
-	$result = array ( 'content' 			=> $content
+	$result = array ( 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
 					, 'requestType'			=> $session->database->getRequestType()
@@ -171,8 +173,7 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
     
 	// Perform delete
-    $resource = new Resource($resourceId, $resourceType);
-    $resource->walkPath($ifcPath)->delete();
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Resource')->delete();
     
     // Close transaction
     $this->database->closeTransaction($this->concept . ' deleted');
