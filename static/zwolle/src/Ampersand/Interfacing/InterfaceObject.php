@@ -220,7 +220,7 @@ class InterfaceObject {
 		$this->crudR = $ifcDef['crud']['read'];
 		$this->crudU = $ifcDef['crud']['update'];
 		$this->crudD = $ifcDef['crud']['delete'];
-		if($this->crudU && $this->tgtConcept->isObject) $this->editableConcepts[] = $this->tgtConcept;
+		if($this->crudU && $this->tgtConcept->isObject()) $this->editableConcepts[] = $this->tgtConcept;
 		
 		// Interface expression must equal (editable) relation when crudU is specified
 		if($this->crudU && is_null($this->relation)) $this->logger->warning("Update rights (crUd) specified while interface expression is not an editable relation for (sub)interface: {$this->path}");
@@ -250,7 +250,7 @@ class InterfaceObject {
 		    // Inline subinterface definitions
 		    foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef){
 		        $ifc = new InterfaceObject($subIfcDef, $this->path);
-		        $this->subInterfaces[] = $ifc;
+		        $this->subInterfaces[$ifc->id] = $ifc;
 		        $this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
 		    }
 		}
@@ -426,7 +426,7 @@ class InterfaceObject {
      * @param Atom $srcAtom atom to take as source atom for this interface expression query
      * @return string
      */
-    private function getQuery($srcAtom){
+    public function getQuery($srcAtom){
         if(strpos($this->query, '_SRCATOM') !== false){
             $query = str_replace('_SRCATOM', $srcAtom->idEsc, $this->query);
             // $this->logger->debug("#426 Faster query because subquery saved by _SRCATOM placeholder");

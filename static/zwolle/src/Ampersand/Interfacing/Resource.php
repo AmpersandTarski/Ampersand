@@ -204,12 +204,14 @@ class Resource extends Atom {
         $r = $this;
         while (count($pathList)){
             switch(get_class($r)){
-                case 'Resource' :
+                case 'Ampersand\Interfacing\Resource' :
                     $r = $r->all(array_shift($pathList));
                     break;
-                case 'ResourceList' :
+                case 'Ampersand\Interfacing\ResourceList' :
                     $r = $r->one(array_shift($pathList));
                     break;
+                default:
+                    throw new Exception("Unknown class type: " . get_class($r), 500);
             }
         }
         

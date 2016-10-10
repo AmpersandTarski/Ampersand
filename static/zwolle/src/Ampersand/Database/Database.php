@@ -9,6 +9,8 @@ namespace Ampersand\Database;
 
 use Exception;
 use mysqli;
+use DateTime;
+use DateTimeZone;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
 use Ampersand\Session;
@@ -246,11 +248,11 @@ class Database {
 	}
     
     /**
-    * Return escaped mysql representation of Atom (identifier) according to Ampersand technical types (TTypes)
+     * Return escaped mysql representation of Atom (identifier) according to Ampersand technical types (TTypes)
      * @throws Exception when technical type is not (yet) supported
      * @return mixed
      */
-    public static function getDBRepresentation($atom){
+    public function getDBRepresentation($atom){
         if(is_null($atom->id)) return null;
         
         switch($atom->concept->type){

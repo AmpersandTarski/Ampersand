@@ -63,7 +63,7 @@ class Atom implements JsonSerializable {
         $this->concept = $concept;
 		
         $this->id = $atomId;
-        $this->idEsc = Database::getDBRepresentation($this); // Escape and transform id for (mysql) database queries
+        $this->idEsc = $this->database->getDBRepresentation($this); // Escape and transform id for (mysql) database queries
 	}
 	
 	public function __toString(){

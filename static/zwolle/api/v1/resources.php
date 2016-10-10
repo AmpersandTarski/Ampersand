@@ -74,7 +74,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 	$session->activateRoles($roleIds);
     
     // Options
-    $rcOptions = 0;
+    $rcOptions = $ifcOptions = 0;
 	if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
     if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
     if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
@@ -109,7 +109,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
 	
 	// Perform patch(es)
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Resource')->patch($app->request->getBody())->get();
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($app->request->getBody())->get();
 	
     // Close transaction
     $successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
@@ -139,7 +139,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
     
     // Perform create
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'ResourceList')->post($app->request->getBody())->get();
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get();
     
     // Close transaction TODO: copied from InterfaceObject::create()
     $this->database->closeTransaction($newAtom->concept . ' created', null); // temp store content of $newAtom (also when not crudR)
@@ -166,7 +166,7 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
     
 	// Perform delete
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Resource')->delete();
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
     
     // Close transaction
     $this->database->closeTransaction($this->concept . ' deleted');
