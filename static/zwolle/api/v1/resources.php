@@ -20,11 +20,12 @@ global $app;
 $app->get('/resources', function() use ($app) {
 	if(Config::get('productionEnv')) throw new Exception ("List of all resource types is not available in production environment", 403);
 	
-	$content = array_map(function($cpt){
-        return $cpt->label; // only show label of resource types
-    }, array_filter(Concept::getAllConcepts(), function($cpt){
-        return $cpt->isObject(); // filter concepts without a representation (i.e. resource types)
-    }));
+    $content = array_values(
+        array_map(function($cpt){
+            return $cpt->label; // only show label of resource types
+        }, array_filter(Concept::getAllConcepts(), function($cpt){
+            return $cpt->isObject(); // filter concepts without a representation (i.e. resource types)
+    })));
 	
 	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
