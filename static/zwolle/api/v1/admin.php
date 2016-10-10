@@ -256,7 +256,7 @@ $app->get('/admin/report/interfaces', function () use ($app){
                     , 'crudD' => $ifc->crudD
                     , 'src' => $ifc->srcConcept->name
                     , 'tgt' => $ifc->tgtConcept->name
-                    , 'view' => $ifc->view->label
+                    , 'view' => $ifc->getView()->label
                     , 'relation' => $ifc->relation->signature
                     , 'flipped' => $ifc->relationIsFlipped
                     , 'ref' => $ifc->getRefToIfcId()

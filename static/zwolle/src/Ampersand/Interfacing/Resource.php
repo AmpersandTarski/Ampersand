@@ -45,9 +45,16 @@ class Resource extends Atom {
     private $label = null;
     
     /**
-     * @var array $data contains the interface data filled by the get() method
+     * Contains view data of this resource for the UI templates
+     * @var array $viewData
      */
-    private $data = [];
+    private $viewData = [];
+    
+    /**
+     * Contains the interface data filled by the get() method
+     * @var array $ifcData
+     */
+    private $ifcData = [];
     
     /**
      * @param string $resourceId Ampersand atom identifier
@@ -84,12 +91,59 @@ class Resource extends Atom {
         // Add Ampersand atom attributes
         $content['_id_'] = $this->id;
         $content['_label_'] = $this->getLabel();
-        $this->data['_view_'] = $this->getView();
+        $content['_view_'] = $this->getView();
         
         // Merge with interface data (only when get() method is called before)
-        return array_merge($content, $this->data);
+        return array_merge($content, $this->ifcData);
         
     }
+    
+	/**
+	 * Returns view array of key-value pairs for this atom
+	 * @return array
+	 */
+	private function getView(){
+        // If view is not already set
+        if(!isset($this->viewData)){
+            $this->logger->debug("Get view for atom '{$this}'");
+            
+            if(isset($this->parentList)) $viewDef = $this->parentList->ifc->getView(); // if parentList is defined, use view of ifc (can be null)
+            else $viewDef = $this->concept->getDefaultView(); // else use default view of concept (can be null)
+            
+            $this->viewData = [];
+            if(!is_null($viewDef)){ // If there is a view definition
+                foreach ($viewDef->segments as $viewSegment){
+                    $key = is_null($viewSegment->label) ? $viewSegment->seqNr : $viewSegment->label;
+                    
+                    switch ($viewSegment->segType){
+                        case "Text":
+                            $this->viewData[$key] = $viewSegment->text;
+                            break;
+                        case "Exp":
+                            try {
+                                // Try to get view segment from atom query data
+                                $this->viewData[$key] = $this->getQueryData('view_' . $key); // column is prefixed with view_
+                            
+                            }catch (Exception $e) {
+                                // Column not defined, perform query
+                                if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
+                                    $query = "/* VIEW <{$viewDef->label}:{$key}> */ SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
+                                    $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
+                                    $this->viewData[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
+                                }else{
+                                    throw $e;
+                                }
+                            }
+                            break;
+                        default:
+                            throw new Exception("Unsupported segmentType '{$viewSegment->segType}' in VIEW <{$viewDef->label}:{$key}>", 501); // 501: Not implemented
+                            break;
+                    }
+                }
+            }
+        }
+        return $this->viewData;
+	}
     
     /**
      * @return string
@@ -183,11 +237,11 @@ class Resource extends Atom {
         }
         
         // Meta data
-        if($rcOptions & self::INCLUDE_META_DATA) $this->data['_path_'] = rawurlencode($this->getPath());
+        if($rcOptions & self::INCLUDE_META_DATA) $this->ifcData['_path_'] = rawurlencode($this->getPath());
         
         // Interface(s) to navigate to for this resource
         if(($rcOptions & self::INCLUDE_NAV_IFCS) && isset($parentIfc)){
-            $this->data['_ifcs_'] = array_map(function($o) {
+            $this->ifcData['_ifcs_'] = array_map(function($o) {
                    return array('id' => $o->id, 'label' => $o->label);
             }, $parentIfc->getNavInterfacesForTgt());
         }
@@ -209,18 +263,18 @@ class Resource extends Atom {
                 if(!$subifc->crudR()) continue; // skip subinterface if not given read rights (otherwise exception will be thrown when getting content)
                     
                 // Add content of subifc
-                $this->data[$subifc->id] = $subcontent = $this->all($subifc->id)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
+                $this->ifcData[$subifc->id] = $subcontent = $this->all($subifc->id)->get($rcOptions, $ifcOptions, $depth, $recursionArr);
                 
                 // Add sort data if subIfc is univalent
                 if($subifc->isUni() && ($rcOptions & self::INCLUDE_SORT_DATA)){
-                    $this->data['_sortValues'] = [];
+                    $this->ifcData['_sortValues'] = [];
                     
                     // If subifc is PROP (i.e. content is boolean)
-                    if($subinteface->isProp()) $this->data['_sortValues_'][$subifc->id] = $subcontent;
+                    if($subinteface->isProp()) $this->ifcData['_sortValues_'][$subifc->id] = $subcontent;
                     // Elseif subifc points to object
-                    elseif($subifc->tgtConcept->isObject()) $this->data['_sortValues_'][$subifc->id] = current($subcontent)->getLabel(); // use label to sort objects. We can use current() because subifc is univalent
+                    elseif($subifc->tgtConcept->isObject()) $this->ifcData['_sortValues_'][$subifc->id] = current($subcontent)->getLabel(); // use label to sort objects. We can use current() because subifc is univalent
                     // Else scalar
-                    else $this->data['_sortValues_'][$subifc->id] = $subcontent;
+                    else $this->ifcData['_sortValues_'][$subifc->id] = $subcontent;
                 }
             }
         }

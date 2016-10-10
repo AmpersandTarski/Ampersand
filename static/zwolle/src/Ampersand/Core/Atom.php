@@ -49,12 +49,6 @@ class Atom implements JsonSerializable {
 	public $idEsc;
 	
 	/**
-	 * Array of attributes of this atom to be used by the user interface frontend templates
-	 * @var array
-	 */
-	private $view;
-	
-	/**
 	 * Specifies the concept of which this atom is an instance
 	 * @var Concept
 	 */
@@ -168,57 +162,6 @@ class Atom implements JsonSerializable {
             $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
         }
     }
-	
-	/**
-	 * Returns view array of key-value pairs for this atom
-	 * @return array
-	 */
-	private function getView(){        
-        // If view is not already set
-        if(!isset($this->view)){
-            $this->logger->debug("Get view for atom '{$this}'");
-            $this->view = [];
-            
-            // If parentIfc is set, use view as defined by interface (can be null)
-            if(isset($this->parentIfc)) $viewDef = $this->parentIfc->view;
-            // Else use default view of concept (can be null)
-            else $viewDef = $this->concept->getDefaultView();
-            
-            // If there is a view definition
-            if(!is_null($viewDef)){
-                foreach ($viewDef->segments as $viewSegment){
-                    $key = is_null($viewSegment->label) ? $viewSegment->seqNr : $viewSegment->label;
-                    
-                    switch ($viewSegment->segType){
-                        case "Text" :
-                            $this->view[$key] = $viewSegment->text;
-                            break;
-                        case "Exp" :
-                            try {
-                                // Try to get view segment from atom query data
-                                $this->view[$key] = $this->getQueryData('view_' . $key); // column is prefixed with view_
-                                // $this->logger->debug("VIEW <{$viewDef->label}:{$key}> #217 Query saved due to reusing data from source atom");                                
-                            
-                            }catch (Exception $e) {
-                                // Column not defined, perform query
-                                if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                                    $query = "/* VIEW <{$viewDef->label}:{$key}> */ SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
-                                    $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
-                                    $this->view[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
-                                }else{
-                                    throw $e;
-                                }
-                            }
-                            break;
-                        default :
-                            throw new Exception("Unsupported segmentType '{$viewSegment->segType}' in VIEW <{$viewDef->label}:{$key}>", 501); // 501: Not implemented
-                            break;
-                    }
-                }
-            }
-        }
-        return $this->view;
-	}
 }
 
 ?>

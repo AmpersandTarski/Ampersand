@@ -164,7 +164,7 @@ class InterfaceObject {
 	 * 
 	 * @var View
 	 */
-	public $view;
+	private $view;
 	
 	/**
 	 * 
@@ -360,6 +360,10 @@ class InterfaceObject {
     
     public function getPath(){
         return $this->path;
+    }
+    
+    public function getView(){
+        return $this->view;
     }
     
     public function crudC(){ return $this->crudC;}
