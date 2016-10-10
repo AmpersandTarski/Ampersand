@@ -183,19 +183,6 @@ class InterfaceObject {
 	 * @var InterfaceObject[]
 	 */
 	private $subInterfaces = array();
-	
-	/**
-	 * 
-	 * @var Atom
-	 */
-	public $srcAtom = null;
-	
-	/**
-	 * 
-	 * @var Atom
-	 */
-	public $tgtAtom = null;
-	
 
 	/**
 	 * InterfaceObject constructor
@@ -433,30 +420,7 @@ class InterfaceObject {
         
         return $ifcs;
     }
-	
-/**************************************************************************************************
- * 
- * Fuctions related to chaining interfaces and atoms
- * 
- *************************************************************************************************/
-	
-	/**
-	 * TODO: opruimen
-     * * Chains an atom to this interface as tgtAtom
-	 * @param string $atomId
-	 * @throws Exception
-	 * @return Atom
-	 */
-	public function atom($atomId){
-	    
-	}
-
-/**************************************************************************************************
- *
- * Functions to get content of interface
- *
- *************************************************************************************************/
-	
+    
     /**
      * Returns query to get target atoms for this interface
      * @param Atom $srcAtom atom to take as source atom for this interface expression query
@@ -471,122 +435,6 @@ class InterfaceObject {
         }
         return $query;
     }
-    
-	/**
-     * TODO: opruimen
-	 * Returns list of target atoms given the srcAtom for this interface
-	 * @throws Exception
-	 * @return Atom[] [description]
-	 */
-	public function getTgtAtoms(Atom $srcAtom){
-        
-    }
-	
-/**************************************************************************************************
- *
- * READ, CREATE, UPDATE, PATCH and DELETE functions
- *
- *************************************************************************************************/
-    
-    /**
-     * TODO: opruimen
-	 * Function to create a new Atom at the given interface.
-	 * @param array $data
-	 * @param array $options
-	 * @throws Exception
-	 * @return mixed
-	 */
-	public function create($data, $options = array()){
-	}
-	
-
-	
-/**************************************************************************************************
- *
- * Functions to perform patches (on relations): add, replace, remove
- *
- *************************************************************************************************/
-	
-	/**
-	 * Replace (src,tgt) tuple by (src,tgt') in relation provided in this interface
-     * @var array $patch
-	 * @throws Exception
-	 * @return void
-	 */
-	public function doPatchReplace($patch){
-	    
-	    $value = $patch['value'];
-	
-	    // Interface is property
-	    if($this->isProp()){
-	        // Throw error when patch value is something else then true, false or null
-	        if(!(is_bool($value) || is_null($value))) throw new Exception("Interface '{$this->path}' is property, boolean expected, non-boolean provided");
-	        	
-	        // When true
-	        if($value) $this->relation()->addLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
-	        // When false or null
-	        else $this->relation()->deleteLink($this->srcAtom, $this->srcAtom, $this->relationIsFlipped);
-	        	
-	    // Interface is a relation to an object
-        }elseif($this->tgtConcept->isObject()){
-	        throw new Exception("Cannot patch replace for object reference in interface '{$this->this}'. Use patch remove + add instead", 500);
-	
-	    // Interface is a relation to a scalar (i.e. not an object)
-        }elseif(!$this->tgtConcept->isObject()){
-	        // Replace by nothing => deleteLink
-	        if(is_null($value)) $this->relation()->deleteLink($this->srcAtom, new Atom(null, $this->tgtConcept), $this->relationIsFlipped);
-	        // Replace by other atom => addLink
-	        else $this->relation()->addLink($this->srcAtom, new Atom($value, $this->tgtConcept), $this->relationIsFlipped);
-	        
-	    }else{
-	        throw new Exception ("Unknown patch replace. Please contact the application administrator", 500);
-	    }
-	}
-	
-	/**
-	 * Add (src,tgt) tuple in relation provided in this interface
-     * @var array $patch
-	 * @throws Exception
-	 * @return void
-	 */
-	public function doPatchAdd($patch){
-	    // CRUD check
-	    if(!$this->crudU) throw new Exception("Update is not allowed for path '{$this->path}'", 403);
-        if($this->isRef()) throw new Exception ("Cannot update on reference interface in '{$this->path}'. See #498", 501);
-	    
-	    // Check if patch value is provided
-	    if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied in '{$this->path}'", 400);
-	    
-	    $tgtAtom = new Atom($patch['value'], $this->tgtConcept);
-	    
-	    // Interface is property
-	    if($this->isProp()){
-	        // Properties must be treated as a 'replace', so not handled here
-	        throw new Exception("Cannot patch add for property '{$this->path}'. Use patch replace instead", 500);
-	
-	    // Interface is a relation to an object
-        }elseif($this->tgtConcept->isObject()){
-	        // Check if atom exists and may be created (crudC)
-	        if(!$tgtAtom->atomExists()){
-                if($this->crudC) $tgtAtom->addAtom();
-                else throw new Exception ("Resource '{$tgtAtom->__toString()}' does not exist and may not be created in {$this->path}", 403);
-            }
-	        
-            // Add link when possible (relation is specified)	
-	        if(is_null($this->relation)) $this->logger->debug("addLink skipped because '{$this->path}' is not an editable expression");
-            else $this->relation()->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
-            
-	    // Interface is a relation to a scalar (i.e. not an object)
-        }elseif(!$this->tgtConcept->isObject()){    	
-	        // Check: If interface is univalent, throw exception
-	        if($this->isUni) throw new Exception("Cannot patch add for univalent interface {$this->path}. Use patch replace instead", 500);
-	        	
-	        $this->relation()->addLink($this->srcAtom, $tgtAtom, $this->relationIsFlipped);
-	        
-	    }else{
-	        throw new Exception ("Unknown patch add. Please contact the application administrator", 500);
-	    }
-	}
 	
 /**************************************************************************************************
  *
