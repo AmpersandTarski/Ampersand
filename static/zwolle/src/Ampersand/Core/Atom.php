@@ -50,6 +50,11 @@ class Atom implements JsonSerializable {
 	 */
 	public $concept;
     
+    /**
+     * @var array|null $queryData the row data (from database query) from which this resource is created
+     */
+    protected $queryData = null;
+    
 	/**
 	 * Atom constructor
 	 * @param string $atomId
@@ -156,6 +161,31 @@ class Atom implements JsonSerializable {
             $this->concept->removeFromAtomCache($this);
         }else{
             $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
+        }
+    }
+    
+    /**
+     * Save query row data (can be used for subinterfaces)
+     * @param arry $queryData 
+     * @return void
+     */
+    public function setQueryData($data){
+        $this->queryData = $data;
+    }
+    
+    /**
+     * 
+     * @param string $colName
+     * @throws Exception when column is not defined in query data
+     * @return string
+     */
+    public function getQueryData($colName = null){
+        if(is_null($colName)){
+            return (array) $this->queryData;
+        }else{
+            // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
+            if(!array_key_exists($colName, (array) $this->queryData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
+            return $this->queryData[$colName];
         }
     }
 }

@@ -131,7 +131,7 @@ class ResourceList implements IteratorAggregate {
                     
                     foreach ($data as $row) {
                         $r = new Resource($row['tgt'], $this->ifc->tgtConcept->name, $this);
-                        $r->setQData($row);
+                        $r->setQueryData($row);
                         $this->tgtResources[$r->id] = $r;
                     }
                 }else{

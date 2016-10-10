@@ -279,7 +279,7 @@ class Concept {
 	}
 	
 	/**
-	 * TODO: move this function to Interfacing namespace
+     * TODO: refactor when resources (e.g. for update field in UI) can be requested with interface definition
 	 * Return content of all atoms for this concept
 	 * @return Atom[]
 	 */
@@ -294,7 +294,7 @@ class Concept {
         $arr = [];
 	    foreach ((array)$this->database->Exe($query) as $row){
             $tgtAtom = new Atom($row['atomId'], $this);
-            $tgtAtom->setQData($row);
+            $tgtAtom->setQueryData($row);
             $arr[] = $tgtAtom;
         }
         return $arr;

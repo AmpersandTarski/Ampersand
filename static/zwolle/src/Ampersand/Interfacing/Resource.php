@@ -34,11 +34,6 @@ class Resource extends Atom {
     private $parentList = null;
     
     /**
-     * @var array|null $qData the row data (from database query) from which this resource is created
-     */
-    private $qData = null;
-    
-    /**
      * Label of resource to be displayed in user interfaces
      * @var string
      */
@@ -422,35 +417,6 @@ class Resource extends Atom {
             else return $this->parentList->remove($this); // Remove this resource from the parent list
         }else{
             return $this->all($ifcId)->remove($value); // Remove tgt atom from provided ifc
-        }
-    }
-    
-/**************************************************************************************************
- * Helper functions
- *************************************************************************************************/
-    
-    /**
-     * Save query row data (can be used for subinterfaces)
-     * @param arry $qData 
-     * @return void
-     */
-    public function setQData($qData){
-        $this->qData = $qData;
-    }
-    
-    /**
-     * 
-     * @param string $colName
-     * @throws Exception when column is not defined in query data
-     * @return string
-     */
-    public function getQueryData($colName = null){
-        if(is_null($colName)){
-            return (array) $this->qData;
-        }else{
-            // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
-            if(!array_key_exists($colName, (array) $this->qData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
-            return $this->qData[$colName];
         }
     }
 }
