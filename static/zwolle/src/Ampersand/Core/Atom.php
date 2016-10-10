@@ -165,27 +165,6 @@ class Atom implements JsonSerializable {
             $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
         }
     }
-	
-	/**
-	 * TODO: move to Interfacing namespace
-	 * Returns basic information about this atom
-	 * @param array $options
-	 * @return array
-	 */
-	public function getAtom($options = array()){
-		$result = array('_id_' => $this->jsonSerializable(), '_label_' => $this->getLabel(), '_view_' => $this->getView());
-		
-		if($options['navIfc']){
-		    $ifcs = array();
-			foreach($this->concept->getInterfaces() as $ifc){
-				$ifcs[] = array('id' => $ifc->id, 'label' => $ifc->label, 'url' => $this->url . '/' . $ifc->id);
-			}
-			
-			$result['_ifcs_'] = $ifcs;
-		}
-		
-		return $result;
-	}
     
     /**
      * Returns label (from view or atom id) for this atom

@@ -41,10 +41,7 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app) {
     if(!$concept->isObject()) throw new Exception ("Resource type not found", 404);
 	if(!$session->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
 	
-	// Get list of all atoms
-	$content = $concept->getAllAtomObjects(); 
-	
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    print json_encode($concept->getAllAtomObjects(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 
@@ -54,17 +51,13 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
     
-	$resource = new Atom($resourceId, Concept::getConcept($resourceType));
+	$resource = new Resource($resourceId, $resourceType);
 	
 	// Checks
 	if(!$session->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
+	if(!$resource->atomExists()) throw new Exception("Resource '{$resource}' not found", 404);
 
-	// Get specific resource (i.e. atom)
-	if(!$resource->atomExists()) throw new Exception("Resource '{$resource->__toString()}' not found", 404);
-	
-	$content = $resource->getAtom();
-
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+	print json_encode($resource, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 

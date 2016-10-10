@@ -281,7 +281,7 @@ class Concept {
 	/**
 	 * TODO: move this function to Interfacing namespace
 	 * Return content of all atoms for this concept
-	 * @return mixed[]
+	 * @return Atom[]
 	 */
 	public function getAllAtomObjects(){
         // Query all atoms in table
@@ -291,13 +291,13 @@ class Concept {
 	        $query = "SELECT DISTINCT `{$firstCol->name}` as `atomId` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
         }
         
-        $arr = array();
+        $arr = [];
 	    foreach ((array)$this->database->Exe($query) as $row){
-	        $tgtAtom = new Resource($row['atomId'], $this->label);
+            $tgtAtom = new Atom($row['atomId'], $this);
             $tgtAtom->setQData($row);
-	        $arr[] = $tgtAtom->getAtom();
-	    }
-	    return $arr;
+            $arr[] = $tgtAtom;
+        }
+        return $arr;
 	}
 	
 	/**
