@@ -388,10 +388,6 @@ class ResourceList implements IteratorAggregate {
             $this->ifc->relation()->deleteLink($this->src, $tgt, $ifc->relationIsFlipped);
         }
     }
-
-/**************************************************************************************************
- * Redirect for methods to call on Resource
- *************************************************************************************************/
     
 }
 
