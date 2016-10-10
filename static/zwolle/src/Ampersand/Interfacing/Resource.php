@@ -39,6 +39,12 @@ class Resource extends Atom {
     private $qData = null;
     
     /**
+     * Label of resource to be displayed in user interfaces
+     * @var string
+     */
+    private $label = null;
+    
+    /**
      * @var array $data contains the interface data filled by the get() method
      */
     private $data = [];
@@ -58,6 +64,18 @@ class Resource extends Atom {
         
         // Call Atom constructor
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
+    }
+    
+    /**
+     * Returns label (from view or atom id) for this atom
+     * @return string
+     */
+    public function getLabel(){
+        if(!isset($this->label)){
+            $viewStr = implode($this->getView());
+            $this->label = empty(trim($viewStr)) ? $this->id : $viewStr; // empty view => label = id
+        }
+        return $this->label;
     }
     
     public function jsonSerializable(){

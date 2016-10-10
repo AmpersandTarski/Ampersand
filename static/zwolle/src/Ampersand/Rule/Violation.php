@@ -52,8 +52,8 @@ class Violation {
     /**
      * Constructor of violation
      * @param Rule\Rule $rule
-     * @param string $srcAtom
-     * @param string $tgtAtom
+     * @param string $srcAtomId
+     * @param string $tgtAtomId
      */
     public function __construct($rule, $srcAtomId, $tgtAtomId){
         $this->rule = $rule;
@@ -100,8 +100,8 @@ class Violation {
             }
         }
 
-        // If empty array of strings (i.e. no violation segments defined), use default violation representation: '<srcAtom>,<tgtAtom>'
-        $this->message = empty($strArr) ? "{$this->src->getLabel()},{$this->tgt->getLabel()}" : implode($strArr);
+        // If empty array of strings (i.e. no violation segments defined), use default violation representation: '<src>,<tgt>'
+        $this->message = empty($strArr) ? "{$this->src},{$this->tgt}" : implode($strArr);
 
         return $this->message;
     }

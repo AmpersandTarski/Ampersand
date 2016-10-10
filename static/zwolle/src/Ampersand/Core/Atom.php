@@ -49,12 +49,6 @@ class Atom implements JsonSerializable {
 	public $idEsc;
 	
 	/**
-	 * Label of atom to be displayed in user interfaces
-	 * @var string
-	 */
-	private $label;
-	
-	/**
 	 * Array of attributes of this atom to be used by the user interface frontend templates
 	 * @var array
 	 */
@@ -87,6 +81,15 @@ class Atom implements JsonSerializable {
         $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
 	    return "{$id}[{$this->concept}]";
 	}
+    
+    /**
+     * Return label of atom to be displayed in user interfaces
+     * for Atoms this is the same as the Atom identifier
+     * @return string
+     */
+    public function getLabel(){
+        return $this->id;
+    }
     
     /**
      * Return json representation of Atom (identifier) according to Ampersand technical types (TTypes)
@@ -165,18 +168,6 @@ class Atom implements JsonSerializable {
             $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
         }
     }
-    
-    /**
-     * Returns label (from view or atom id) for this atom
-     * @return string
-     */
-    public function getLabel(){
-        if(!isset($this->label)){
-            $viewStr = implode($this->getView());
-            $this->label = empty(trim($viewStr)) ? $this->id : $viewStr; // empty view => label = id
-        }
-        return $this->label;
-    }
 	
 	/**
 	 * Returns view array of key-value pairs for this atom
@@ -185,8 +176,8 @@ class Atom implements JsonSerializable {
 	private function getView(){        
         // If view is not already set
         if(!isset($this->view)){
-            $this->logger->debug("Get view for atom '{$this->__toString()}'");
-            $this->view = array();
+            $this->logger->debug("Get view for atom '{$this}'");
+            $this->view = [];
             
             // If parentIfc is set, use view as defined by interface (can be null)
             if(isset($this->parentIfc)) $viewDef = $this->parentIfc->view;
