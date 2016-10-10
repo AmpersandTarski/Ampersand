@@ -87,7 +87,40 @@ class Atom implements JsonSerializable {
         $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
 	    return "{$id}[{$this->concept}]";
 	}
-	
+    
+    /**
+     * Return json representation of Atom (identifier) according to Ampersand technical types (TTypes)
+     * @throws Exception when technical type is not (yet) supported
+     * @return mixed
+     */
+    public function jsonSerializable(){
+        switch($this->concept->type){
+            case "ALPHANUMERIC" :
+            case "BIGALPHANUMERIC" :
+            case "HUGEALPHANUMERIC" :
+            case "PASSWORD" :
+            case "TYPEOFONE" :
+                return (string) $this->id;
+            case "BOOLEAN" :
+                return (bool) $this->id;
+            case "DATE" :
+                $datetime = new DateTime($this->id);
+                return $datetime->format('Y-m-d'); // format in ISO-8601 standard
+            case "DATETIME" :
+                $datetime = new DateTime($this->id, new DateTimeZone('UTC')); // datetimes are stored in UTC in database
+                $datetime->setTimezone(new DateTimeZone(date_default_timezone_get())); // convert back to systemtime
+                return $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
+            case "FLOAT" :
+                return (float) $this->id;
+            case "INTEGER" :
+                return (int) $this->id;
+            case "OBJECT" :
+                return rawurlencode($this->id);
+            default :
+                throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
+        }
+    }
+    
 	/**
 	 * Checks if atom exists in database
 	 * @return boolean
@@ -215,39 +248,6 @@ class Atom implements JsonSerializable {
             }
         }
         return $this->view;
-	}
-	
-	/**
-	 * Return json representation of Atom (identifier) according to Ampersand technical types (TTypes)
-	 * @throws Exception when technical type is not (yet) supported
-	 * @return mixed
-	 */
-	public function jsonSerializable(){
-	    switch($this->concept->type){
-	        case "ALPHANUMERIC" :
-	        case "BIGALPHANUMERIC" :
-	        case "HUGEALPHANUMERIC" :
-	        case "PASSWORD" :
-	        case "TYPEOFONE" :
-	            return (string) $this->id;
-	        case "BOOLEAN" :
-	            return (bool) $this->id;
-	        case "DATE" :
-	            $datetime = new DateTime($this->id);
-	            return $datetime->format('Y-m-d'); // format in ISO-8601 standard
-	        case "DATETIME" :
-	            $datetime = new DateTime($this->id, new DateTimeZone('UTC')); // datetimes are stored in UTC in database
-	            $datetime->setTimezone(new DateTimeZone(date_default_timezone_get())); // convert back to systemtime
-	            return $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
-	        case "FLOAT" :
-	            return (float) $this->id;
-	        case "INTEGER" :
-	            return (int) $this->id;
-	        case "OBJECT" :
-	            return rawurlencode($this->id);
-	        default :
-	            throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
-	    }
 	}
 }
 
