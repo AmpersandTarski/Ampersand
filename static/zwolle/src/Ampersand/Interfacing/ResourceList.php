@@ -8,6 +8,8 @@
 namespace Ampersand\Interfacing;
 use stdClass;
 use Exception;
+use ArrayIterator;
+use IteratorAggregate;
 use Ampersand\Config;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
@@ -20,7 +22,7 @@ use Ampersand\Log\Logger;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class ResourceList {
+class ResourceList implements IteratorAggregate {
     
     /**
      * @var Resource $src source of resource list
@@ -45,6 +47,14 @@ class ResourceList {
         
         $this->src = $src;
         $this->ifc = $parentIfc;
+    }
+    
+    /**
+     * @return ArrayIterator
+     */
+    public function getIterator(){
+        if($this->ifc->tgtConcept->isObject()) return new ArrayIterator($this->getTgtResources());
+        else return new ArrayIterator($this->getTgtAtoms());
     }
     
     /**

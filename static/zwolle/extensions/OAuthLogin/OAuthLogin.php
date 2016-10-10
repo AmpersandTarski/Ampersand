@@ -189,10 +189,10 @@ class OAuthLoginController {
         
         // Set sessionUser
         $atom = new Atom($email, $conceptUserID);
-        $accounts = $atom->all('AccountForUserid')->getTgtAtoms();
-
+        $accounts = $atom->all('AccountForUserid');
+        
         // create new user
-        if(empty($accounts)){
+        if(iterator_count($accounts) == 0){
             $newAccount = Concept::getConceptByLabel('Account')->createNewAtom();
             
             // Save email as accUserid
@@ -202,7 +202,7 @@ class OAuthLoginController {
             // If possible, add account to organization(s) based on domain name
             $domain = explode('@', $email)[1];
             $atom = new Atom($domain, $conceptDomain);
-            $orgs = $atom->all('DomainOrgs')->getTgtAtoms();
+            $orgs = $atom->all('DomainOrgs');
             $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, $conceptOrg);
             foreach ($orgs as $org){
                 $relAccOrg->addLink($newAccount, $org, false, 'OAuthLoginExtension');
@@ -211,9 +211,7 @@ class OAuthLoginController {
             // Account created, add to $accounts list (used lateron)
             $accounts[] = $newAccount;
 
-        }
-
-        if(count($accounts) > 1) throw new Exception("Multiple users registered with email $email", 401);
+        }elseif(iterator_count($accounts) > 1) throw new Exception("Multiple users registered with email $email", 401);
         
         $relSessionAccount = Relation::getRelation('sessionAccount', $conceptSession, $conceptAccount);
         $relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', $conceptAccount, $conceptDateTime);
