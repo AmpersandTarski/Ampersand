@@ -10,6 +10,7 @@ use stdClass;
 use Exception;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
+use Ampersand\Log\Logger;
 
 /**
  *
@@ -41,9 +42,10 @@ class Resource extends Atom {
     
     /**
      * Contains view data of this resource for the UI templates
+     * DO NOT initialize var here, isset() is used below
      * @var array $viewData
      */
-    private $viewData = [];
+    private $viewData;
     
     /**
      * Contains the interface data filled by the get() method
@@ -66,6 +68,8 @@ class Resource extends Atom {
         
         // Call Atom constructor
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
+        
+        $this->logger = Logger::getLogger('INTERFACING');
     }
     
     /**
@@ -187,7 +191,7 @@ class Resource extends Atom {
      * @param string $returnType
      * @return Resource|ResourceList
      */
-    public function walkPath($path, &$returnType = null){
+    public function walkPath($path, $returnType = null){
         if(!$this->atomExists()) throw new Exception ("Resource '{$this}' not found", 404);
         
         // Prepare path list
@@ -211,7 +215,6 @@ class Resource extends Atom {
         }
         
         if(isset($returnType) && $returnType != get_class($r)) throw new Exception ("Provided path results in '" . get_class($r) . "' while '{$returnType}' requested", 500);
-        else $returnType = get_class($r);
         
         return $r;
     }
@@ -228,6 +231,7 @@ class Resource extends Atom {
      * @return Resource $this
      */
     public function get($rcOptions = self::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
+        $this->logger->debug("get() called for {$this}");
         if(isset($this->parentList)){
             $parentIfc = $this->parentList->getIfc();
             if(!$parentIfc->crudR()) throw new Exception ("Read not allowed for ". $parentIfc->getPath(), 405);
@@ -300,6 +304,9 @@ class Resource extends Atom {
             $rl->put($value);
         }
         
+        // Clear query data
+        $this->setQueryData(null);
+        
         return $this;
     }
     
@@ -314,28 +321,32 @@ class Resource extends Atom {
             if(!array_key_exists('path', $patch)) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
         
             // Walk path to lowest level
-            $resourceOrList = $this->walkPath($patch['path'], $returnType = null);
+            $resourceOrList = $this->walkPath($patch['path']);
             
             // Process patch
             switch($patch['op']){
                 case "replace" :
                     if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch replace. No 'value' specfied for patch #{$key}", 400);
-                    if($returnType != 'ResourceList') throw new Exception ("Cannot patch replace on resource, path must end with an interface");
+                    if(get_class($resourceOrList) != 'Ampersand\Interfacing\ResourceList') throw new Exception ("Cannot patch replace on resource, path must end with an interface");
                     $resourceOrList->replace($patch['value']);
                     break;
                 case "add" :
                     if(!array_key_exists('value', $patch)) throw new Exception ("Cannot patch add. No 'value' specfied for patch #{$key}", 400);
-                    if($returnType != 'ResourceList') throw new Exception ("Cannot patch add on resource, path must end with an interface");
+                    if(get_class($resourceOrList) != 'Ampersand\Interfacing\ResourceList') throw new Exception ("Cannot patch add on resource, path must end with an interface");
                     $resourceOrList->add($patch['value']);
                     break;
                 case "remove" :
-                    if($returnType != 'Resource') throw new Exception("Cannot patch remove on resource list, path must end with a resource", 400);
+                    if(get_class($resourceOrList) != 'Ampersand\Interfacing\Resource') throw new Exception("Cannot patch remove on resource list, path must end with a resource", 400);
                     $resourceOrList->remove();
                     break;
                 default :
                     throw new Exception("Unknown patch operation '" . $patch['op'] ."'. Supported are: 'replace', 'add' and 'remove'", 501);
             }
         }
+        
+        // Clear query data
+        $this->setQueryData(null);
+        
         return $this;
     }
     

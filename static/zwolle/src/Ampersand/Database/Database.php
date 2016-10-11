@@ -711,7 +711,7 @@ class Database {
 		$this->affectedConcepts = array(); $this->affectedRelations = array();
 		
 		// Determine if transaction should be committed or not when all invariant rules hold based on $requestType
-		if(is_null($databaseCommit)) $databaseCommit = $this->processRequestType();
+		if(!isset($databaseCommit)) $databaseCommit = $this->processRequestType();
 		
 		if($invariantRulesHold && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction

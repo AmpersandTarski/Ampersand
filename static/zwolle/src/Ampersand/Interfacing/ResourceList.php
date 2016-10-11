@@ -26,6 +26,12 @@ use Ampersand\Log\Logger;
 class ResourceList implements IteratorAggregate {
     
     /**
+    *
+    * @var \Psr\Log\LoggerInterface
+    */
+    protected $logger;
+    
+    /**
      * @var Resource $src source of resource list
      */
     private $src = null;
@@ -43,6 +49,7 @@ class ResourceList implements IteratorAggregate {
     
     public function __construct(Resource $src, InterfaceObject $parentIfc){
         $session = Session::singleton();
+        $this->logger = Logger::getLogger('INTERFACING');
         
         if($parentIfc->isRoot() && !$session->isAccessibleIfc($parentIfc)) throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
         
@@ -192,6 +199,7 @@ class ResourceList implements IteratorAggregate {
      * @return mixed[]
      */
     public function get($rcOptions = Resource::DEFAULT_OPTIONS, $ifcOptions = InterfaceObject::DEFAULT_OPTIONS, $depth = null, $recursionArr = []){
+        $this->logger->debug("get() called for {$this->src} / {$this->ifc}");
         if(!$this->ifc->crudR()) throw new Exception ("Read not allowed for ". $this->ifc->getPath(), 405);
         
         // Initialize result
@@ -358,7 +366,7 @@ class ResourceList implements IteratorAggregate {
         $tgt = new Atom($value, $this->ifc->tgtConcept);
         if($tgt->concept->isObject() && !$this->ifc->crudC() && !$tgt->atomExists()) throw new Exception ("Create not allowed for " . $this->ifc->getPath(), 405);
         
-        $this->ifc->relation()->addLink($this, $tgt, $this->ifc->relationIsFlipped);
+        $this->ifc->relation()->addLink($this->src, $tgt, $this->ifc->relationIsFlipped);
         
         return true;
     }

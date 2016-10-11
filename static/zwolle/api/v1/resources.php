@@ -107,14 +107,13 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	$session->activateRoles($roleIds);
 	
     // Handle options
-    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
+    if(isset($options['requestType'])) $session->database->setRequestType($options['requestType']);
 	
 	// Perform patch(es)
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($app->request->getBody())->get();
 	
     // Close transaction
-    $successMessage = isset($options['successMessage']) ? $options['successMessage'] : $this->concept . ' updated';
-    $this->database->closeTransaction($successMessage, null);
+    $session->database->closeTransaction("{$resource} updated");
     
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
@@ -137,13 +136,13 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 	$options = $app->request->params();
     
     // Handle options
-    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
+    if(isset($options['requestType'])) $session->database->setRequestType($options['requestType']);
     
     // Perform create
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get();
     
-    // Close transaction TODO: copied from InterfaceObject::create()
-    $this->database->closeTransaction($newAtom->concept . ' created', null); // temp store content of $newAtom (also when not crudR)
+    // Close transaction
+    $session->database->closeTransaction("{$resource} created");
     
 	// Return result
 	$result = array ( 'content' 			=> $resource
@@ -164,13 +163,14 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
 	$options = $app->request->params();
 
     // Handle options
-    if(isset($options['requestType'])) $this->database->setRequestType($options['requestType']);
+    if(isset($options['requestType'])) $session->database->setRequestType($options['requestType']);
     
 	// Perform delete
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
     
     // Close transaction
-    $this->database->closeTransaction($this->concept . ' deleted');
+    $session->database->closeTransaction("{$resource} deleted");
+    
 	// Return result
 	$result = array ( 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()

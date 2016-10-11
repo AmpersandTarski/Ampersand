@@ -24,13 +24,13 @@ class Atom implements JsonSerializable {
      * Dependency injection of a database connection class
      * @var Database
      */
-	private $database;
+	protected $database;
 	
 	/**
 	 *
 	 * @var \Psr\Log\LoggerInterface
 	 */
-	private $logger;
+	protected $logger;
 	
 	/**
 	 * Ampersand identifier of the atom
