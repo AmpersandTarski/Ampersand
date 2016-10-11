@@ -95,7 +95,29 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 });
 
 $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-	throw new Exception ("Not implemented yet", 501);
+    $session = Session::singleton();
+    
+    $roleIds = $app->request->params('roleIds');
+    $options = $app->request->params();
+    
+    $session->activateRoles($roleIds);
+    
+    // Handle options
+    if(isset($options['requestType'])) $session->database->setRequestType($options['requestType']);
+    
+    // Perform put
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put((object) $app->request->getBody())->get();
+    
+    // Close transaction
+    $session->database->closeTransaction("{$resource} updated");
+    
+    // Return result
+    $result =   [ 'content'             => $resource
+                , 'notifications'       => Notifications::getAll()
+                , 'invariantRulesHold'  => $session->database->getInvariantRulesHold()
+                , 'requestType'         => $session->database->getRequestType()
+                ];
+    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app) {
