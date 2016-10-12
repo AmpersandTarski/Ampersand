@@ -130,8 +130,8 @@ class Atom implements JsonSerializable {
 	}
 	
 	/**
-	 * Add atom to concept in database
-	 * @return void
+	 * Add atom to concept
+	 * @return Atom $this
 	 */
 	public function add(){
         if($this->exists()){
@@ -144,8 +144,8 @@ class Atom implements JsonSerializable {
 	}
     
     /**
-     * 
-     * @return void
+     * Delete atom from concept
+     * @return Atom $this
      */
     public function delete(){
         if($this->exists()){
@@ -154,6 +154,7 @@ class Atom implements JsonSerializable {
         }else{
             $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
         }
+        return $this;
     }
     
     /**
@@ -180,10 +181,10 @@ class Atom implements JsonSerializable {
     }
     
     /**
-     * 
+     * Get (column of) query data
      * @param string $colName
      * @throws Exception when column is not defined in query data
-     * @return string
+     * @return string|array
      */
     public function getQueryData($colName = null){
         if(is_null($colName)){
