@@ -91,7 +91,7 @@ $app->get('/admin/import', function () use ($app){
         $concept = Concept::getConcept($cpt);
         foreach($atoms as $atomId){
             $atom = new Atom($atomId, $concept);
-            $atom->addAtom();
+            $atom->add();
         }
     }
     

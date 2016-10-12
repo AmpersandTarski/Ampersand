@@ -246,7 +246,7 @@ class ResourceList implements IteratorAggregate {
         
         // If interface is editable, also add tuple(src, tgt) in interface relation
         if($this->ifc->isEditable() && $this->ifc->crudU()) $this->add($resource->id);
-        else $resource->addAtom();
+        else $resource->add();
         
         // Put resource attributes
         $resource->put($resourceToPost);

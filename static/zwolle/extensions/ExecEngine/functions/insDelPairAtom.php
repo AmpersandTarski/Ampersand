@@ -147,7 +147,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		elseif(func_num_args() % 5 != 1) throw new Exception("Wrong number of arguments supplied for function Newstruct(): ".func_num_args()." arguments", 500);
 		
 		// Add atom to concept
-		$atom->addAtom();
+		$atom->add();
 	
 		// Next, for every relation that follows in the argument list, we create a link
 		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
@@ -190,7 +190,7 @@ function InsAtom($conceptName){
 		
 		$concept = Concept::getConceptByLabel($conceptName);
         $atom = $concept->createNewAtom();
-		$atom->addAtom(); // insert new atom in database
+		$atom->add(); // insert new atom in database
 		
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' created and added to database");
 		

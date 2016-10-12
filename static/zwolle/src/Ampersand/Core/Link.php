@@ -64,8 +64,8 @@ class Link implements JsonSerializable {
         $logger = Logger::getLogger("CORE")->debug("Add link {$this} to database");
         
         // Ensure that atoms exists in their concept tables
-        $this->src->addAtom();
-        $this->tgt->addAtom();
+        $this->src->add();
+        $this->tgt->add();
         
         $this->db->addLink($this->rel, $this->src, $this->tgt);
         

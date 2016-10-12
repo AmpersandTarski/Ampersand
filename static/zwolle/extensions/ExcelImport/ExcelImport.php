@@ -131,11 +131,11 @@ class ExcelImport {
 	        if($firstCol == '') continue; // Skip this row
 	        elseif($firstCol == '_NEW'){
 	            if(!$ifc->crudC) throw new Exception("Trying to create new atom in cell A{$row}. This is not allowed.", 403);
-	            $leftAtom = $leftConcept->createNewAtom()->addAtom();
+	            $leftAtom = $leftConcept->createNewAtom()->add();
 	        }else{
 	            $leftAtom = new Atom($firstCol, $leftConcept);
 	            if(!$leftAtom->exists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
-	            $leftAtom->addAtom();
+	            $leftAtom->add();
 	        }
 	        
 	        for ($columnnr = 1; $columnnr < $highestcolumnnr; $columnnr++){
@@ -275,7 +275,7 @@ class ExcelImport {
 				else $leftAtom = new Atom($line[0], $concept[0]);
 				
 				// Insert $leftAtom into the DB if it does not yet exist
-				$leftAtom->addAtom();
+				$leftAtom->add();
 				
 				// Process other columns of line
 				for ($col = 1; $col < $totalcolumns; $col++){
