@@ -89,10 +89,10 @@ class ResourceList implements IteratorAggregate {
             $resource = new Resource($tgtId, $this->ifc->tgtConcept->name);
             
             // If resource already exists and may be added (crudU)
-            if($this->ifc->crudU() && $resource->atomExists()) $this->add($resource->id);
+            if($this->ifc->crudU() && $resource->exists()) $this->add($resource->id);
             
             // Elseif resource not yet exists and may be created (crudC) 
-            elseif($this->ifc->crudC() && !$resource->atomExists()){
+            elseif($this->ifc->crudC() && !$resource->exists()){
                 $obj = new stdClass();
                 $obj->_id_ = $resource->id;
                 $this->post($obj);
@@ -239,7 +239,7 @@ class ResourceList implements IteratorAggregate {
         // Use attribute '_id_' if provided
         if(isset($resourceToPost->_id_)){
             $resource = new Resource($resourceToPost->_id_, $this->ifc->tgtConcept->name, $this);
-            if($resource->atomExists()) throw new Exception ("Cannot create resource that already exists", 400);
+            if($resource->exists()) throw new Exception ("Cannot create resource that already exists", 400);
         }else{
             $resource = new Resource(null, $this->ifc->tgtConcept->name, $this);
         }
@@ -354,7 +354,7 @@ class ResourceList implements IteratorAggregate {
         if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
         
         $tgt = new Atom($value, $this->ifc->tgtConcept);
-        if($tgt->concept->isObject() && !$this->ifc->crudC() && !$tgt->atomExists()) throw new Exception ("Create not allowed for " . $this->ifc->getPath(), 405);
+        if($tgt->concept->isObject() && !$this->ifc->crudC() && !$tgt->exists()) throw new Exception ("Create not allowed for " . $this->ifc->getPath(), 405);
         
         $this->src->link($tgt, $this->ifc->relation(), $this->ifc->relationIsFlipped)->add();
         

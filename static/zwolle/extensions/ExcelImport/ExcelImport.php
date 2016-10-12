@@ -134,7 +134,7 @@ class ExcelImport {
 	            $leftAtom = $leftConcept->createNewAtom()->addAtom();
 	        }else{
 	            $leftAtom = new Atom($firstCol, $leftConcept);
-	            if(!$leftAtom->atomExists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
+	            if(!$leftAtom->exists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
 	            $leftAtom->addAtom();
 	        }
 	        
@@ -153,7 +153,7 @@ class ExcelImport {
 	            if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
 	            
 	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept);
-	            if(!$rightAtom->atomExists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
+	            if(!$rightAtom->exists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
 	            
 	            $header[$columnletter]->relation()->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
 	        }

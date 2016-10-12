@@ -193,7 +193,7 @@ class Resource extends Atom {
      * @return Resource|ResourceList
      */
     public function walkPath($path, $returnType = null){
-        if(!$this->atomExists()) throw new Exception ("Resource '{$this}' not found", 404);
+        if(!$this->exists()) throw new Exception ("Resource '{$this}' not found", 404);
         
         // Prepare path list
         if(is_array($path)) $path = implode ('/', $path);

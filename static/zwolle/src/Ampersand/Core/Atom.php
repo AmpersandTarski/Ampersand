@@ -123,7 +123,7 @@ class Atom implements JsonSerializable {
 	 * Checks if atom exists in database
 	 * @return boolean
 	 */
-	public function atomExists(){
+	public function exists(){
         if($this->concept->inAtomCache($this)){
             // $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
             return true;
@@ -142,7 +142,7 @@ class Atom implements JsonSerializable {
 	 * @return void
 	 */
 	public function addAtom(){
-        if($this->atomExists()){
+        if($this->exists()){
             $this->logger->debug("Atom '{$this}' already exists in database");
         }else{
             $this->database->addAtomToConcept($this);
@@ -156,7 +156,7 @@ class Atom implements JsonSerializable {
      * @return void
      */
     public function deleteAtom(){
-        if($this->atomExists()){
+        if($this->exists()){
             $this->database->deleteAtom($this);
             $this->concept->removeFromAtomCache($this);
         }else{

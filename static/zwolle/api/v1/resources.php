@@ -56,7 +56,7 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
 	
 	// Checks
 	if(!$session->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
-	if(!$resource->atomExists()) throw new Exception("Resource '{$resource}' not found", 404);
+	if(!$resource->exists()) throw new Exception("Resource '{$resource}' not found", 404);
 
 	print json_encode($resource, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
