@@ -165,6 +165,20 @@ class Atom implements JsonSerializable {
     }
     
     /**
+     * @param string $tgtAtom
+     * @param string $relation when provided as string, use relation signature
+     * @param boolean $isFlipped specifies if $this and $tgtAtom must be flipped to match the relation
+     * @return Link
+     */
+    public function link($tgtAtom, $relation, $isFlipped = false){
+        if(is_string($relation)) $relation = Relation::getRelation($relation);
+        if(is_string($tgtAtom)) $tgtAtom = $isFlipped ? new Atom($tgtAtom, $relation->srcConcept) : new Atom($tgtAtom, $relation->tgtConcept);        
+        
+        if($isFlipped) return new Link($relation, $tgtAtom, $this);
+        else return new Link($relation, $this, $tgtAtom);
+    }
+    
+    /**
      * Save query row data (can be used for subinterfaces)
      * @param arry $queryData 
      * @return void

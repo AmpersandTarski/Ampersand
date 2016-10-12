@@ -98,11 +98,7 @@ $app->get('/admin/import', function () use ($app){
     foreach ((array)$allLinks as $rel => $links){
         if(!empty($links)) $relation = Relation::getRelation($rel);
         
-        foreach($links as $link){
-            if(is_null($link['src']) || is_null($link['tgt'])) continue; // skip
-            
-            $relation->addLink(new Atom($link['src'], $relation->srcConcept), new Atom($link['tgt'], $relation->tgtConcept));
-        }
+        foreach($links as $link) $link->add();
     }
     
     $database->closeTransaction("Imported successfully", true);	

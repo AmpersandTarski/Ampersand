@@ -11,6 +11,7 @@ use Exception;
 use mysqli;
 use DateTime;
 use DateTimeZone;
+use Ampersand\Core\Link;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
 use Ampersand\Session;
@@ -379,6 +380,25 @@ class Database {
         
         if(empty($result)) return false;
         else return true;
+    }
+    
+    /**
+     * Get all links given a relation
+     * @param Relation $relation
+     * @return Link[]
+     */
+    public function getAllLinks(Relation $relation){
+        $relTable = $relation->getMysqlTable();
+        
+        // Query all atoms in table
+        $query = "SELECT `{$relTable->srcCol()->name}` as `src`, `{$relTable->tgtCol()->name}` as `tgt` FROM `{$relTable->name}`";
+        
+        $links = [];
+        foreach((array)$this->Exe($query) as $row){
+            $links[] = new Link($relation, new Atom($row['src'], $relation->srcConcept), new Atom($row['tgt'], $relation->tgtConcept));
+        }
+        
+        return $links;
     }
 
 /**************************************************************************************************
