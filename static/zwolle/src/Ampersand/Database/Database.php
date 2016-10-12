@@ -289,7 +289,7 @@ class Database {
 	 * @return boolean|array
 	 * 
 	 * TODO:
-	 * Create private equivalent that is used by addAtomToConcept(), addLink(), deleteLink() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
+	 * Create private equivalent that is used by addAtom(), addLink(), deleteLink() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
 	 * The public version should be allowed to only do SELECT queries.
 	 * This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
 	 */
@@ -412,8 +412,8 @@ class Database {
 	 * @param Atom $atom
 	 * @return void
 	 */
-	public function addAtomToConcept($atom){
-	    $this->logger->debug("addAtomToConcept({$atom->__toString()})");
+	public function addAtom($atom){
+	    $this->logger->debug("addAtom({$atom})");
 	    
 		// This function is under control of transaction check!
 		if (!isset($this->transaction)) $this->startTransaction();

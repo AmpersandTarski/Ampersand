@@ -145,7 +145,7 @@ class Atom implements JsonSerializable {
         if($this->exists()){
             $this->logger->debug("Atom '{$this}' already exists in database");
         }else{
-            $this->database->addAtomToConcept($this);
+            $this->database->addAtom($this);
             $this->concept->addToAtomCache($this);
         }
 	    return $this;
