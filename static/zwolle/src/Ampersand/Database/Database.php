@@ -492,7 +492,7 @@ class Database {
 		
 		$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 		
-		$this->logger->debug("Atom '{$atom->__toString()}' added as member to concept '{$conceptB->__toString()}'");
+		$this->logger->debug("Atom '{$atom}' added as member to concept '{$conceptB}'");
 	}
 	
 	/**
@@ -538,7 +538,7 @@ class Database {
 		
 		$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 		
-		$this->logger->debug("Atom '{$atom->__toString()}' removed as member from concept '{$atom->concept->__toString()}'");
+		$this->logger->debug("Atom '{$atom}' removed as member from concept '{$atom->concept}'");
 	}
 	
 	/**
@@ -596,7 +596,7 @@ class Database {
 	            $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
 	            break;
 	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
-	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({$srcAtom},{$tgtAtom}) from relation '{$relation}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
 	            // Source atom can be used in WHERE statement
 	            if(!is_null($srcAtomId)) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
@@ -606,7 +606,7 @@ class Database {
 	            else throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
 	            break;
 	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
-	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({$srcAtom},{$tgtAtom}) from relation '{$relation}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
 	            // Target atom can be used in WHERE statement
 	            if(!is_null(($tgtAtomId))) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
@@ -672,7 +672,7 @@ class Database {
 		    }
 		}
 		
-		$this->logger->debug("Atom '{$atom->__toString()}' (and all related links) deleted in database");
+		$this->logger->debug("Atom '{$atom}' (and all related links) deleted in database");
 		
 		Hooks::callHooks('postDatabaseDeleteAtom', get_defined_vars());
 	}
@@ -796,7 +796,7 @@ class Database {
 	private function addAffectedConcept($concept){
 		
 		if($this->trackAffectedConjuncts && !in_array($concept, $this->affectedConcepts)){
-			$this->logger->debug("Mark concept '{$concept->__toString()}' as affected concept");
+			$this->logger->debug("Mark concept '{$concept}' as affected concept");
 			$this->affectedConcepts[] = $concept; // add concept to affected concepts. Needed for conjunct evaluation.
 		}
 		
@@ -810,7 +810,7 @@ class Database {
 	private function addAffectedRelations($relation){
 	
 		if($this->trackAffectedConjuncts && !in_array($relation, $this->affectedRelations)){
-			$this->logger->debug("Mark relation '{$relation->__toString()}' as affected relation");
+			$this->logger->debug("Mark relation '{$relation}' as affected relation");
 			$this->affectedRelations[] = $relation;
 		}
 	}

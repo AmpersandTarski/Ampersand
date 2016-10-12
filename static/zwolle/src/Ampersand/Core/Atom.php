@@ -196,7 +196,7 @@ class Atom implements JsonSerializable {
             return (array) $this->queryData;
         }else{
             // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
-            if(!array_key_exists($colName, (array) $this->queryData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this->__toString()}'", 1001);
+            if(!array_key_exists($colName, (array) $this->queryData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this}'", 1001);
             return $this->queryData[$colName];
         }
     }

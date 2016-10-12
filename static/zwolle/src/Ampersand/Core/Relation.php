@@ -140,7 +140,7 @@ class Relation {
         
             if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
             if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
-            // if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for relation '{$this->__toString()}') is not part of an invariant or signal rule");
+            // if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for relation '{$this}') is not part of an invariant or signal rule");
         }
         
         // Specify mysql table information
@@ -272,8 +272,8 @@ class Relation {
             $relation = $relations[$relationSignature];
             
             // If srcConceptName and tgtConceptName are provided, check that they match the found relation
-            if(!is_null($srcConcept) && !in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())) throw new Exception("Provided src concept '{$srcConcept}' does not match the relation '{$relation->__toString()}'", 500);  
-            if(!is_null($tgtConcept) && !in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())) throw new Exception("Provided tgt concept '{$tgtConcept}' does not match the relation '{$relation->__toString()}'", 500);
+            if(!is_null($srcConcept) && !in_array($srcConcept, $relation->srcConcept->getSpecializationsIncl())) throw new Exception("Provided src concept '{$srcConcept}' does not match the relation '{$relation}'", 500);  
+            if(!is_null($tgtConcept) && !in_array($tgtConcept, $relation->tgtConcept->getSpecializationsIncl())) throw new Exception("Provided tgt concept '{$tgtConcept}' does not match the relation '{$relation}'", 500);
             
             return $relation;
         }

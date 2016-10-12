@@ -234,14 +234,14 @@ class InterfaceObject {
 		    
 		    if((!$this->relationIsFlipped && $this->relation->getMysqlTable()->tableOf == 'tgt')
 		            || ($this->relationIsFlipped && $this->relation->getMysqlTable()->tableOf == 'src'))
-		        $this->logger->warning("Unsupported edit functionality due to combination of factors for (sub)interface: '{$this->path}' - {$this->relation->__toString()}" . ($this->relationIsFlipped ? '~' : '') . " administrated in table of '{$this->relation->getMysqlTable()->tableOf}'");
+		        $this->logger->warning("Unsupported edit functionality due to combination of factors for (sub)interface: '{$this->path}' - {$this->relation}" . ($this->relationIsFlipped ? '~' : '') . " administrated in table of '{$this->relation->getMysqlTable()->tableOf}'");
 		}
 		    
 		
 		// Subinterfacing
 		if(!is_null($ifcDef['subinterfaces'])){
 		    // Subinterfacing is not supported/possible for tgt concepts with a scalar representation type (i.e. non-objects)
-		    if(!$this->tgtConcept->isObject()) throw new Exception ("Subinterfacing is not supported for concepts with a scalar representation type (i.e. non-objects). (Sub)Interface '{$this->path}' with target {$this->tgtConcept->__toString()} (type:{$this->tgtConcept->type}) has subinterfaces specified", 501);
+		    if(!$this->tgtConcept->isObject()) throw new Exception ("Subinterfacing is not supported for concepts with a scalar representation type (i.e. non-objects). (Sub)Interface '{$this->path}' with target {$this->tgtConcept} (type:{$this->tgtConcept->type}) has subinterfaces specified", 501);
 		    
 		    // Reference to top level interface
 		    $this->refInterfaceId = $ifcDef['subinterfaces']['refSubInterfaceId'];

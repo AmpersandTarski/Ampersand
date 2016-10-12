@@ -202,7 +202,7 @@ class Session {
         if(!isset($this->sessionRoles)){
             $sessionRoles = array();
             if(Config::get('loginEnabled')){
-                $this->logger->debug("Getting interface 'SessionRoles' for {$this->sessionAtom->__toString()}");
+                $this->logger->debug("Getting interface 'SessionRoles' for {$this->sessionAtom}");
                 $sessionRoleLabels = array_map(
                     function($role){
                         return $role->id;
@@ -242,7 +242,7 @@ class Session {
                 $this->sessionAccount = false;
                 $this->logger->debug("Set sessionAccount: login not enabled");
             }else{
-                $this->logger->debug("Getting interface 'SessionAccount' for {$this->sessionAtom->__toString()}");
+                $this->logger->debug("Getting interface 'SessionAccount' for {$this->sessionAtom}");
                 $sessionAccounts = $this->sessionAtom->all('SessionAccount')->get();
                 
                 if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
@@ -279,7 +279,7 @@ class Session {
     public function getSessionVars(){
         if(InterfaceObject::interfaceExists('SessionVars')){
             try {
-                $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionAtom->__toString()}");
+                $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionAtom}");
                 return $this->sessionAtom->all('SessionVars')->get();
             }catch (Exception $e){
                 $this->logger->warning("Error while getting SessionVars interface: " . $e->getMessage());
