@@ -77,9 +77,9 @@ class Conjunct {
     }
     
     /**
-     * Returns identifier of conjunct
+     * Function is called when object is treated as a string
      * This method is required for array_unique() to work elsewhere in the code
-     * @return string
+     * @return string identifier of conjunct
      */
     public function __toString(){
         return $this->id;

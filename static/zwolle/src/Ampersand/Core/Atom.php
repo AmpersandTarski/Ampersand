@@ -63,6 +63,10 @@ class Atom implements JsonSerializable {
         $this->concept = $concept;
 	}
 	
+    /**
+     * Function is called when object is treated as a string
+     * @return string
+     */
 	public function __toString(){
         // if atom id is longer than 40 chars, display first and last 20 chars
         $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
@@ -79,7 +83,8 @@ class Atom implements JsonSerializable {
     }
     
     /**
-     * Return json representation of Atom (identifier) according to Ampersand technical types (TTypes)
+     * Returns json representation of Atom (identifier) according to Ampersand technical types (TTypes)
+     * Function is called when object encoded to json with json_encode()
      * @throws Exception when technical type is not (yet) supported
      * @return mixed
      */

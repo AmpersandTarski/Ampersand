@@ -256,6 +256,10 @@ class InterfaceObject {
 		}
 	}
 	
+    /**
+     * Function is called when object is treated as a string
+     * @return string
+     */
 	public function __toString() {
 		return $this->id;
 	}

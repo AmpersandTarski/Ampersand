@@ -153,6 +153,10 @@ class Relation {
         $this->mysqlTable->addTgtCol(new DatabaseTableCol($tgtCol['name'], $tgtCol['null'], $tgtCol['unique']));
     }
     
+    /**
+     * Function is called when object is treated as a string
+     * @return string
+     */
     public function __toString(){
         return $this->getSignature();
     }

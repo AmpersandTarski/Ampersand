@@ -85,6 +85,10 @@ class Resource extends Atom {
         return $this->label;
     }
     
+    /**
+     * Function is called when object encoded to json with json_encode()
+     * @return array
+     */
     public function jsonSerialize(){
         $content = [];
         

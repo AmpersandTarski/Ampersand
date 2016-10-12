@@ -60,11 +60,15 @@ class Violation {
         $this->src = new Atom($srcAtomId, $rule->srcConcept);
         $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept);
     }
-
+    
+    /**
+     * Function is called when object is treated as a string
+     * @return string role label
+     */
     public function __toString(){
-
+        return "({$this->src},{$this->tgt})";
     }
-
+    
     /**
      *
      * @throws Exception when segment type is unknown

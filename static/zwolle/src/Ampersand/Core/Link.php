@@ -38,10 +38,18 @@ class Link implements JsonSerializable {
         
     }
     
+    /**
+     * Function is called when object is treated as a string
+     * @return string
+     */
     public function __toString(){
         return "({$this->src},{$this->tgt})[{$this->rel}]";
     }
     
+    /**
+     * Function is called when object encoded to json with json_encode()
+     * @return array
+     */
     public function jsonSerialize(){
         return ['rel' => $this->rel->getSignature(),  'src' => $this->src, 'tgt' => $this->tgt];
     }

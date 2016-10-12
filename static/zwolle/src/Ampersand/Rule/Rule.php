@@ -144,6 +144,10 @@ class Rule {
         }
     }
     
+    /**
+     * Function is called when object is treated as a string
+     * @return string role label
+     */
     public function __toString(){
         return $this->id;
     }
