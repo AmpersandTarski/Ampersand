@@ -67,6 +67,7 @@ class Resource extends Atom {
         if(!$cpt->isObject()) throw new Exception ("Cannot instantiate resource given non-object concept {$cpt->name}.");
         
         // Call Atom constructor
+        if(is_null($resourceId)) $resourceId = $cpt->createNewAtomId();
         parent::__construct(rawurldecode($resourceId), $cpt); // url decode resource identifier
         
         $this->logger = Logger::getLogger('INTERFACING');

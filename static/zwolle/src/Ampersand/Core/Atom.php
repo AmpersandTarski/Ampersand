@@ -165,8 +165,8 @@ class Atom implements JsonSerializable {
     }
     
     /**
-     * @param string $tgtAtom
-     * @param string $relation when provided as string, use relation signature
+     * @param string|Atom $tgtAtom
+     * @param string|Relation $relation when provided as string, use relation signature
      * @param boolean $isFlipped specifies if $this and $tgtAtom must be flipped to match the relation
      * @return Link
      */

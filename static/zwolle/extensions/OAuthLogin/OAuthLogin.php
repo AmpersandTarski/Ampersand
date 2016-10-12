@@ -7,9 +7,7 @@ use Ampersand\AngularApp;
 use Ampersand\Config;
 use Ampersand\Session;
 use Ampersand\Database\Database;
-use Ampersand\Core\Atom;
-use Ampersand\Core\Concept;
-use Ampersand\Core\Relation;
+use Ampersand\Interfacing\Resource;
 
 // UI
 AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function($session){ return true;});
@@ -180,52 +178,33 @@ class OAuthLoginController {
         $session = Session::singleton();
         $db = Database::singleton();
         
-        $conceptUserID = Concept::getConceptByLabel('UserID');
-        $conceptDomain = Concept::getConceptByLabel('Domain');
-        $conceptDateTime = Concept::getConceptByLabel('DateTime');
-        $conceptOrg = Concept::getConceptByLabel('Organization');
-        $conceptAccount = Concept::getConceptByLabel('Account');
-        $conceptSession = Concept::getConceptByLabel('SESSION');
+        $accounts = (new Resource($email, 'UserID'))->all('AccountForUserid');
         
-        // Set sessionUser
-        $atom = new Atom($email, $conceptUserID);
-        $accounts = $atom->all('AccountForUserid');
-        
-        // create new user
+        // Create new account
         if(iterator_count($accounts) == 0){
-            $newAccount = Concept::getConceptByLabel('Account')->createNewAtom();
+            $account = new Resource(null, 'Account');
             
             // Save email as accUserid
-            $relAccUserid = Relation::getRelation('accUserid', $newAccount->concept, $conceptUserID);
-            $relAccUserid->addLink($newAccount, new Atom($email, $conceptUserID), false, 'OAuthLoginExtension');
-
+            $account->link($email, 'accUserid[Account*UserID]')->add();
+            
             // If possible, add account to organization(s) based on domain name
             $domain = explode('@', $email)[1];
-            $atom = new Atom($domain, $conceptDomain);
-            $orgs = $atom->all('DomainOrgs');
-            $relAccOrg = Relation::getRelation('accOrg', $newAccount->concept, $conceptOrg);
-            foreach ($orgs as $org){
-                $relAccOrg->addLink($newAccount, $org, false, 'OAuthLoginExtension');
-            }
-            
-            // Account created, add to $accounts list (used lateron)
-            $accounts[] = $newAccount;
+            $orgs = (new Resource($domain, 'Domain'))->all('DomainOrgs');
+            foreach ($orgs as $org) $account->link($org, 'accOrg[Account*Organization]')->add();
 
-        }elseif(iterator_count($accounts) > 1) throw new Exception("Multiple users registered with email $email", 401);
-        
-        $relSessionAccount = Relation::getRelation('sessionAccount', $conceptSession, $conceptAccount);
-        $relAccMostRecentLogin = Relation::getRelation('accMostRecentLogin', $conceptAccount, $conceptDateTime);
-        $relAccLoginTimestamps = Relation::getRelation('accLoginTimestamps', $conceptAccount, $conceptDateTime);
-        
-        foreach ($accounts as $account){				    
-            // Set sessionAccount
-            $relSessionAccount->addLink($session->sessionAtom, $account, false, 'OAuthLoginExtension');
-
-            // Timestamps
-            $ts = new Atom(date(DATE_ISO8601), $conceptDateTime);
-            $relAccMostRecentLogin->addLink($account, $ts, false, 'OAuthLoginExtension');
-            $relAccLoginTimestamps->addLink($account, $ts, false, 'OAuthLoginExtension');
+        }elseif(iterator_count($accounts) == 1){
+            $account = current($accounts);
+        }else{
+            throw new Exception("Multiple users registered with email $email", 401);
         }
+        
+        // Set sessionAccount
+        $session->sessionAtom->link($account, 'sessionAccount[SESSION*Account]')->add();
+            
+        // Login timestamps
+        $ts = date(DATE_ISO8601);
+        $account->link($ts, 'accMostRecentLogin[Account*DateTime]')->add();
+        $account->link($ts, 'accLoginTimestamps[Account*DateTime]')->add();
 
         $db->closeTransaction('Login successfull', true);
     }

@@ -60,12 +60,12 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		foreach($srcAtomIds as $a){
 			$src = new Atom($a, $srcConcept);
 		    foreach($tgtAtomIds as $b){
-				$tgt = new Atom($b, $tgtConcept);
-				$relation->addLink($src, $tgt, false, 'ExecEngine');
+                $tgt = new Atom($b, $tgtConcept);
+                $link = $src->link($tgt, $relation)->add();
+                Logger::getLogger('EXECENGINE')->debug("Added {$link}");
 			}
 		}
 		
-		Logger::getLogger('EXECENGINE')->debug("Tuple ('{$srcAtom}', '{$tgtAtom}') inserted into '{$relation->__toString()}'");
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('InsPair: ' . $e->getMessage());
 	}
@@ -105,11 +105,10 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 		    $src = new Atom($a, $srcConcept);
 		    foreach($tgtAtoms as $b){
 				$tgt = new Atom($b, $tgtConcept);
-		        $relation->deleteLink($src, $tgt, false, 'ExecEngine');
+                $link = $src->link($tgt, $relation)->delete();
+                Logger::getLogger('EXECENGINE')->debug("Deleted {$link}");
 			}
 		}
-		
-		Logger::getLogger('EXECENGINE')->debug("Tuple ('{$srcAtom}', '{$tgtAtom}') deleted from '{$relation->__toString()}'");
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('DelPair: ' . $e->getMessage());
 	}

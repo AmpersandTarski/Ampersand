@@ -13,8 +13,6 @@ use IteratorAggregate;
 use Ampersand\Session;
 use Ampersand\Config;
 use Ampersand\Core\Atom;
-use Ampersand\Core\Concept;
-use Ampersand\Core\Relation;
 use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 
@@ -243,8 +241,7 @@ class ResourceList implements IteratorAggregate {
             $resource = new Resource($resourceToPost->_id_, $this->ifc->tgtConcept->name, $this);
             if($resource->atomExists()) throw new Exception ("Cannot create resource that already exists", 400);
         }else{
-            $id = $this->ifc->tgtConcept->createNewAtomId();
-            $resource = new Resource($id, $this->ifc->tgtConcept->name, $this);
+            $resource = new Resource(null, $this->ifc->tgtConcept->name, $this);
         }
         
         // If interface is editable, also add tuple(src, tgt) in interface relation
@@ -256,9 +253,6 @@ class ResourceList implements IteratorAggregate {
         
         // Special case for file upload. TODO: make extension with hooks
         if($this->ifc->tgtConcept->isFileObject()){
-            $conceptFilePath = Concept::getConceptByLabel('FilePath');
-            $conceptFileName = Concept::getConceptByLabel('FileName');
-            
             if (is_uploaded_file($_FILES['file']['tmp_name'])){
                 $tmp_name = $_FILES['file']['tmp_name'];
                 $new_name = time() . '_' . $_FILES['file']['name'];
@@ -270,12 +264,8 @@ class ResourceList implements IteratorAggregate {
                 else throw new Exception ("Error in file upload", 500);
                 
                 // Populate filePath and originalFileName relations in database
-                $relFilePath = Relation::getRelation('filePath', $newAtom->concept, $conceptFilePath);
-                $relOriginalFileName = Relation::getRelation('originalFileName', $newAtom->concept, $conceptFileName);
-                
-                $relFilePath->addLink($resource, new Atom($relativePath, $conceptFilePath));
-                $relOriginalFileName->addLink($resource, new Atom($_FILES['file']['name'], $conceptFileName));
-                
+                $resource->link($relativePath, 'filePath[FileObject*FilePath]')->add();
+                $resource->link($_FILES['file']['name'], 'originalFileName[FileObject*FileName]')->add();
             }else{
                 throw new Exception ("No file uploaded", 500);
             }
@@ -366,7 +356,7 @@ class ResourceList implements IteratorAggregate {
         $tgt = new Atom($value, $this->ifc->tgtConcept);
         if($tgt->concept->isObject() && !$this->ifc->crudC() && !$tgt->atomExists()) throw new Exception ("Create not allowed for " . $this->ifc->getPath(), 405);
         
-        $this->ifc->relation()->addLink($this->src, $tgt, $this->ifc->relationIsFlipped);
+        $this->src->link($tgt, $this->ifc->relation(), $this->ifc->relationIsFlipped)->add();
         
         return true;
     }
@@ -383,7 +373,8 @@ class ResourceList implements IteratorAggregate {
         if(!$this->ifc->isEditable()) throw new Exception ("Interface is not editable " . $this->ifc->getPath(), 405);
         if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
         
-        $this->ifc->relation()->deleteLink($this->src, new Atom($value, $this->ifc->tgtConcept), $ifc->relationIsFlipped);
+        $tgt = new Atom($value, $this->ifc->tgtConcept);
+        $this->src->link($tgt, $this->ifc->relation(), $ifc->relationIsFlipped)->delete();
         
         return true;
     }
@@ -393,7 +384,7 @@ class ResourceList implements IteratorAggregate {
         if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
         
         foreach ($this->getTgtAtoms() as $tgt) {
-            $this->ifc->relation()->deleteLink($this->src, $tgt, $ifc->relationIsFlipped);
+            $this->src->link($tgt, $this->ifc->relation(), $ifc->relationIsFlipped)->delete();
         }
     }
     
