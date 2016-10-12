@@ -155,7 +155,7 @@ class Atom implements JsonSerializable {
      * 
      * @return void
      */
-    public function deleteAtom(){
+    public function delete(){
         if($this->exists()){
             $this->database->deleteAtom($this);
             $this->concept->removeFromAtomCache($this);

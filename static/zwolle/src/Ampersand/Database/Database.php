@@ -618,7 +618,7 @@ class Database {
 	 * @return void
 	 */
 	function deleteAtom($atom){
-		$this->logger->debug("deleteAtom({$atom->__toString()})");
+		$this->logger->debug("deleteAtom({$atom})");
 		
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();

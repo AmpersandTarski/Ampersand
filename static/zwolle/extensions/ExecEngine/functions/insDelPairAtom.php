@@ -211,7 +211,7 @@ function DelAtom($concept, $atomId){
     if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function DelAtom(): ".func_num_args()." arguments", 500);
 	try{		
 		$atom = new Atom($atomId, Concept::getConceptByLabel($concept));
-		$atom->deleteAtom(); // delete atom + all relations with other atoms
+		$atom->delete(); // delete atom + all relations with other atoms
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom}' deleted");
 	
 	}catch(Exception $e){
