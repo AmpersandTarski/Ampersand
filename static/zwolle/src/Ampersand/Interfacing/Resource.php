@@ -127,7 +127,8 @@ class Resource extends Atom {
                             }catch (Exception $e) {
                                 // Column not defined, perform query
                                 if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                                    $query = "/* VIEW <{$viewDef->label}:{$key}> */ SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$this->idEsc}' AND `tgt` IS NOT NULL";
+                                    $srcAtomId = $this->database->getDBRepresentation($this);
+                                    $query = "/* VIEW <{$viewDef->label}:{$key}> */ SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
                                     $tgtAtoms = array_column((array)$this->database->Exe($query), 'tgt');
                                     $this->viewData[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
                                 }else{

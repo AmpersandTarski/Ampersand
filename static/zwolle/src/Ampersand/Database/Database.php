@@ -6,20 +6,19 @@
  */
 
 namespace Ampersand\Database;
-
-use Exception;
 use mysqli;
 use DateTime;
+use Exception;
 use DateTimeZone;
-use Ampersand\Core\Link;
-use Ampersand\Log\Logger;
+use Ampersand\Hooks;
 use Ampersand\Config;
 use Ampersand\Session;
-use Ampersand\Hooks;
-use Ampersand\Rule\Conjunct;
+use Ampersand\Core\Atom;
+use Ampersand\Core\Link;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
-use Ampersand\Core\Atom;
+use Ampersand\Log\Logger;
+use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\RuleEngine;
 
 /**
@@ -355,11 +354,12 @@ class Database {
 	 * @param Atom $atom
 	 * @return boolean
 	 */
-	public function atomExists($atom){
+	public function atomExists(Atom $atom){
 	    $tableInfo = $atom->concept->getConceptTableInfo();
 	    $firstCol = current($tableInfo->getCols());
+        $atomId = $this->getDBRepresentation($atom);
 	
-	    $query = "/* Check if atom exists */ SELECT `$firstCol->name` FROM `{$tableInfo->name}` WHERE `$firstCol->name` = '{$atom->idEsc}'";
+	    $query = "/* Check if atom exists */ SELECT `$firstCol->name` FROM `{$tableInfo->name}` WHERE `$firstCol->name` = '{$atomId}'";
 	    $result = $this->Exe($query);
 	
 	    if(empty($result)) return false;
@@ -375,8 +375,10 @@ class Database {
      */
     public function linkExists(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
         $relTable = $relation->getMysqlTable();
+        $srcAtomId = $this->getDBRepresentation($srcAtom);
+        $tgtAtomId = $this->getDBRepresentation($tgtAtom);
         
-        $result = $this->Exe("/* Check if link exists */ SELECT * FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+        $result = $this->Exe("/* Check if link exists */ SELECT * FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
         
         if(empty($result)) return false;
         else return true;
@@ -412,11 +414,13 @@ class Database {
 	 * @param Atom $atom
 	 * @return void
 	 */
-	public function addAtom($atom){
+	public function addAtom(Atom $atom){
 	    $this->logger->debug("addAtom({$atom})");
 	    
 		// This function is under control of transaction check!
 		if (!isset($this->transaction)) $this->startTransaction();
+        
+        $atomId = $this->getDBRepresentation($atom);
 	    			    
 		// Get table properties
 		$conceptTableInfo = $atom->concept->getConceptTableInfo();
@@ -428,10 +432,10 @@ class Database {
 		
 		
 		// Create query string: '<newAtom>', '<newAtom', etc
-		$atomIdsArray = array_fill(0, count($conceptCols), $atom->idEsc);
+		$atomIdsArray = array_fill(0, count($conceptCols), $atomId);
 		$allValues = "'".implode("', '", $atomIdsArray)."'";
 		
-		foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atom->idEsc}'";
+		foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atomId}'";
 		$duplicateStatement = substr($str, 1);
 		
 		$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
@@ -442,7 +446,7 @@ class Database {
 		
 		$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 		
-		$this->logger->debug("Atom '{$atom->__toString()}' added to database");
+		$this->logger->debug("Atom '{$atom}' added to database");
 		
 		Hooks::callHooks('postDatabaseAddAtomToConceptInsert', get_defined_vars());
 	}
@@ -455,11 +459,13 @@ class Database {
 	 * @throws Exception
 	 * @return void
 	 */
-	public function atomSetConcept($atom, $conceptB){
-	    $this->logger->debug("atomSetConcept({$atom->__toString()}, {$conceptB})");
+	public function atomSetConcept(Atom $atom, Concept $conceptB){
+	    $this->logger->debug("atomSetConcept({$atom}, {$conceptB})");
 	    
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
+        
+        $atomId = $this->getDBRepresentation($atom);
 	    
 		// Check if conceptA and conceptB are in the same classification tree
 		if(!$atom->concept->inSameClassificationTree($conceptB)) throw new Exception("Concepts '[{$atom->concept}]' and '[{$conceptB}]' are not in the same classification tree", 500);
@@ -473,13 +479,13 @@ class Database {
 		$conceptColsB = $conceptTableInfoB->getColNames(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
 		
 		// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-		$queryString = "\"" . implode("\" = '{$atom->idEsc}', \"", $conceptColsB) . "\" = '{$atom->idEsc}'";
+		$queryString = "\"" . implode("\" = '{$atomId}', \"", $conceptColsB) . "\" = '{$atomId}'";
 		
 		$conceptTableInfoA = $atom->concept->getConceptTableInfo();
 		$anyConceptColForA = current($conceptTableInfoA->getCols());
 		
 		// Perform update
-		$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atom->idEsc}'");
+		$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atomId}'");
 		
 		// Check if query resulted in an affected row
 		$this->checkForAffectedRows();
@@ -496,11 +502,13 @@ class Database {
 	 * @throws Exception
 	 * @return void
 	 */
-	public function atomClearConcept($atom){
-		$this->logger->debug("atomClearConcept({$atom->__toString()})");
+	public function atomClearConcept(Atom $atom){
+		$this->logger->debug("atomClearConcept({$atom})");
 		
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
+        
+        $atomId = $this->getDBRepresentation($atom);
 	    
 		// Check if concept is a specialization of another concept
 		if(empty($atom->concept->getGeneralizations())) throw new Exception("Concept '{$atom->concept}' has no generalizations, atom can therefore not be removed as member from this set", 500);
@@ -523,7 +531,7 @@ class Database {
 		// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
 		$queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
 		
-		$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atom->idEsc}'");
+		$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atomId}'");
 		
 		// Check if query resulted in an affected row
 		$this->checkForAffectedRows();
@@ -539,21 +547,24 @@ class Database {
 	 * @param Atom $srcAtom
 	 * @param Atom $tgtAtom
 	 */
-	public function addLink($relation, $srcAtom, $tgtAtom){
+	public function addLink(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
+        
+        $srcAtomId = $this->getDBRepresentation($srcAtom);
+        $tgtAtomId = $this->getDBRepresentation($tgtAtom);
 	    
 	    $relTable = $relation->getMysqlTable();
 	    
 	    switch ($relTable->tableOf){
 	        case null : // Relation is administrated in n-n table
-	            $this->Exe("INSERT INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtom->idEsc}', '{$tgtAtom->idEsc}')");
+	            $this->Exe("INSERT INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtomId}', '{$tgtAtomId}')");
 	            break;
 	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
-	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
+	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtomId}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
 	            break;
 	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
-	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtomId}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
 	            break;
 	        default :
 	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
@@ -570,24 +581,27 @@ class Database {
 	 * @param Atom $srcAtom
 	 * @param Atom $tgtAtom
 	 */
-	public function deleteLink($relation, $srcAtom, $tgtAtom){
+	public function deleteLink(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
+        
+        $srcAtomId = $this->getDBRepresentation($srcAtom);
+        $tgtAtomId = $this->getDBRepresentation($tgtAtom);
 	     
 	    $relTable = $relation->getMysqlTable();
 	     
 	    switch ($relTable->tableOf){
 	        case null : // Relation is administrated in n-n table
-	            if(is_null($srcAtom->id) || is_null($tgtAtom->id)) throw new Exception ("Cannot delete from relation table '{$relTable->name}', because srcAtom or tgtAtom is null", 500);
-	            $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            if(is_null($srcAtomId) || is_null($tgtAtomId)) throw new Exception ("Cannot delete from relation table '{$relTable->name}', because srcAtom or tgtAtom is null", 500);
+	            $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
 	            break;
 	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
 	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
 	            // Source atom can be used in WHERE statement
-	            if(!is_null($srcAtom->id)) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
+	            if(!is_null($srcAtomId)) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
 	            // Target can be used in WHERE statement, because tgtCol is unique
-	            elseif($relTable->tgtCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            elseif($relTable->tgtCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
 	            // Else update cannot be performed, because of missing target
 	            else throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
 	            break;
@@ -595,9 +609,9 @@ class Database {
 	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$relation->__toString()}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
 	            // Target atom can be used in WHERE statement
-	            if(!is_null(($tgtAtom->id))) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}'");
+	            if(!is_null(($tgtAtomId))) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
 	            // Source can be used in WHERE statement, because srcCol is unique
-	            elseif($relTable->srcCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
+	            elseif($relTable->srcCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
 	            // Else update cannot be performed, because of missing target
 	            else throw new Exception ("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
 	            break;
@@ -617,17 +631,19 @@ class Database {
 	 * @param \Ampersand\Core\Atom $atom
 	 * @return void
 	 */
-	function deleteAtom($atom){
+	function deleteAtom(Atom $atom){
 		$this->logger->debug("deleteAtom({$atom})");
 		
 	    // This function is under control of transaction check!
 	    if (!isset($this->transaction)) $this->startTransaction();
+        
+        $atomId = $this->getDBRepresentation($atom);
 	    
 		$concept = $atom->concept;
 		
 		// Delete atom from concept table
 		$conceptTable = $concept->getConceptTableInfo();
-		$query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atom->idEsc}' LIMIT 1";
+		$query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atomId}' LIMIT 1";
 		$this->Exe($query);
 		
 		// Check if query resulted in an affected row
@@ -645,11 +661,11 @@ class Database {
 		    
 		    foreach($cols as $col){
 		        // If n-n table, remove row
-		        if(is_null($relation->getMysqlTable()->tableOf)) $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atom->idEsc}'";
+		        if(is_null($relation->getMysqlTable()->tableOf)) $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atomId}'";
 		        // Elseif column may be set to null, update
-		        elseif($col->null) $query = "UPDATE `{$tableName}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atom->idEsc}'";
+		        elseif($col->null) $query = "UPDATE `{$tableName}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atomId}'";
 		        // Else, we remove the entire row (cascades delete for TOT and SUR relations)
-		        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atom->idEsc}'";
+		        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atomId}'";
 		        
 		        $this->Exe($query);
 		        $this->addAffectedRelations($relation);

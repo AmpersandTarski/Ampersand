@@ -427,11 +427,12 @@ class InterfaceObject {
      * @return string
      */
     public function getQuery($srcAtom){
+        $srcAtomId = $this->database->getDBRepresentation($srcAtom);
         if(strpos($this->query, '_SRCATOM') !== false){
-            $query = str_replace('_SRCATOM', $srcAtom->idEsc, $this->query);
+            $query = str_replace('_SRCATOM', $srcAtomId, $this->query);
             // $this->logger->debug("#426 Faster query because subquery saved by _SRCATOM placeholder");
         }else{
-            $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$srcAtom->idEsc}' AND `tgt` IS NOT NULL";
+            $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
         }
         return $query;
     }

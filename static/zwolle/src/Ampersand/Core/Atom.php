@@ -39,12 +39,6 @@ class Atom implements JsonSerializable {
 	public $id;
 	
 	/**
-	 * Escaped identifier for use in database queries
-	 * @var string 
-	 */
-	public $idEsc;
-	
-	/**
 	 * Specifies the concept of which this atom is an instance
 	 * @var Concept
 	 */
@@ -65,10 +59,8 @@ class Atom implements JsonSerializable {
 		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('ATOM');
 		
-        $this->concept = $concept;
-		
         $this->id = $atomId;
-        $this->idEsc = $this->database->getDBRepresentation($this); // Escape and transform id for (mysql) database queries
+        $this->concept = $concept;
 	}
 	
 	public function __toString(){
