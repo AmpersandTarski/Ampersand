@@ -84,7 +84,7 @@ class ExecEngine {
 			$logger->notice("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '{$role->label}'");
 			
 			// Determine affected rules that must be checked by the exec engine
-			$affectedConjuncts = RuleEngine::getAffectedConjuncts($database->getAffectedConcepts(), $database->getAffectedRelations(), 'sig');
+			$affectedConjuncts = RuleEngine::getAffectedConjuncts($database->transaction()->getAffectedConcepts(), $database->transaction()->getAffectedRelations(), 'sig');
 			
 			$affectedRules = array();
 			foreach($affectedConjuncts as $conjunct) $affectedRules = array_merge($affectedRules, $conjunct->sigRuleNames);

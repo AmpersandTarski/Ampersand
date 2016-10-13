@@ -109,12 +109,12 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put((object) $app->request->getBody())->get();
     
     // Close transaction
-    $session->database->closeTransaction("{$resource} updated");
+    $transaction = $session->database->closeTransaction("{$resource} updated");
     
     // Return result
     $result =   [ 'content'             => $resource
                 , 'notifications'       => Notifications::getAll()
-                , 'invariantRulesHold'  => $session->database->getInvariantRulesHold()
+                , 'invariantRulesHold'  => $transaction->invariantRulesHold()
                 , 'requestType'         => $session->database->getRequestType()
                 ];
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -135,13 +135,13 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($app->request->getBody())->get();
 	
     // Close transaction
-    $session->database->closeTransaction("{$resource} updated");
+    $transaction = $session->database->closeTransaction("{$resource} updated");
     
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
 					, 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
-					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
+					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
 					, 'requestType'			=> $session->database->getRequestType()
 					);
 	
@@ -164,12 +164,12 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get();
     
     // Close transaction
-    $session->database->closeTransaction("{$resource} created");
+    $transaction = $session->database->closeTransaction("{$resource} created");
     
 	// Return result
 	$result = array ( 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
-					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
+					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
 					, 'requestType'			=> $session->database->getRequestType()
 					);
 
@@ -191,11 +191,11 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
     
     // Close transaction
-    $session->database->closeTransaction("{$resource} deleted");
+    $transaction = $session->database->closeTransaction("{$resource} deleted");
     
 	// Return result
 	$result = array ( 'notifications' 		=> Notifications::getAll()
-					, 'invariantRulesHold'	=> $session->database->getInvariantRulesHold()
+					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
 					, 'requestType'			=> $session->database->getRequestType()
 					);
 

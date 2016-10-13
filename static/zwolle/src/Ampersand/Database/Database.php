@@ -17,6 +17,7 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Link;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
+use Ampersand\Storage\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\RuleEngine;
@@ -63,41 +64,17 @@ class Database {
 	private $db_name;
 	
 	/**
-	 * Specifies transaction number (random int) when a transaction is started
-	 * @var int
+	 * Reference to a transaction object
+     * There must always be a transaction object set
+	 * @var Transaction
 	 */
 	private $transaction;
-	
-	/**
-	 * Specifes if affected conjuncts should be registered
-	 * @var boolean
-	 */
-	private $trackAffectedConjuncts = true;
-	
-	/**
-	 * Contains all affected Concepts during a transaction
-	 * @var Concept[]
-	 */
-	private $affectedConcepts = array();
-	
-	/**
-	 * Contains all affected relations during a transaction
-	 * Relations are specified with their 'fullRelationSignature' (i.e. 'rel_<relationName>_<srcConcept>_<tgtConcept>')
-	 * @var array
-	 */
-	private $affectedRelations = array(); // 
-	
-	/**
-	 * Specifies if invariant rules hold. Null if no transaction has occurred (yet)
-	 * @var boolean|NULL
-	 */
-	private $invariantRulesHold = null;
-	
-	/**
-	 * Specifies requested transaction type (i.e. 'feedback' or 'promise')
-	 * @var string
-	 */
-	private $requestType = 'feedback';
+    
+    /**
+     * Specifies if database transaction is active
+     * @var boolean $dbTransaction
+     */
+    private $dbTransaction = false;
 	
 	/**
 	 * Contains reference to database instance (singleton pattern)
@@ -127,6 +104,8 @@ class Database {
 		
 		// Set sql_mode to ANSI
 		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+        
+        $this->transaction = new Transaction();
 	}
 	
 	/**
@@ -418,7 +397,7 @@ class Database {
 	    $this->logger->debug("addAtom({$atom})");
 	    
 		// This function is under control of transaction check!
-		if (!isset($this->transaction)) $this->startTransaction();
+        if (!$this->dbTransaction) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
 	    			    
@@ -444,7 +423,7 @@ class Database {
 		// Check if query resulted in an affected row
         $this->checkForAffectedRows();
 		
-		$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
+		$this->transaction->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 		
 		$this->logger->debug("Atom '{$atom}' added to database");
 		
@@ -463,7 +442,7 @@ class Database {
 	    $this->logger->debug("atomSetConcept({$atom}, {$conceptB})");
 	    
 	    // This function is under control of transaction check!
-	    if (!isset($this->transaction)) $this->startTransaction();
+        if (!$this->dbTransaction) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
 	    
@@ -490,7 +469,7 @@ class Database {
 		// Check if query resulted in an affected row
 		$this->checkForAffectedRows();
 		
-		$this->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
+		$this->transaction->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
 		
 		$this->logger->debug("Atom '{$atom}' added as member to concept '{$conceptB}'");
 	}
@@ -506,7 +485,7 @@ class Database {
 		$this->logger->debug("atomClearConcept({$atom})");
 		
 	    // This function is under control of transaction check!
-	    if (!isset($this->transaction)) $this->startTransaction();
+        if (!$this->dbTransaction) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
 	    
@@ -536,7 +515,7 @@ class Database {
 		// Check if query resulted in an affected row
 		$this->checkForAffectedRows();
 		
-		$this->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
+		$this->transaction->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
 		
 		$this->logger->debug("Atom '{$atom}' removed as member from concept '{$atom->concept}'");
 	}
@@ -549,7 +528,7 @@ class Database {
 	 */
 	public function addLink(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
 	    // This function is under control of transaction check!
-	    if (!isset($this->transaction)) $this->startTransaction();
+        if (!$this->dbTransaction) $this->startTransaction();
         
         $srcAtomId = $this->getDBRepresentation($srcAtom);
         $tgtAtomId = $this->getDBRepresentation($tgtAtom);
@@ -572,7 +551,7 @@ class Database {
 	    // Check if query resulted in an affected row
 	    $this->checkForAffectedRows();
 	    
-	    $this->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
+	    $this->transaction->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
 	
 	/**
@@ -583,7 +562,7 @@ class Database {
 	 */
 	public function deleteLink(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
 	    // This function is under control of transaction check!
-	    if (!isset($this->transaction)) $this->startTransaction();
+        if (!$this->dbTransaction) $this->startTransaction();
         
         $srcAtomId = $this->getDBRepresentation($srcAtom);
         $tgtAtomId = $this->getDBRepresentation($tgtAtom);
@@ -621,7 +600,7 @@ class Database {
 	    // Check if query resulted in an affected row
 	    $this->checkForAffectedRows();
 	    
-	    $this->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
+	    $this->transaction->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
 	    
 	/**
@@ -635,7 +614,7 @@ class Database {
 		$this->logger->debug("deleteAtom({$atom})");
 		
 	    // This function is under control of transaction check!
-	    if (!isset($this->transaction)) $this->startTransaction();
+        if (!$this->dbTransaction) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
 	    
@@ -649,7 +628,7 @@ class Database {
 		// Check if query resulted in an affected row
 		$this->checkForAffectedRows();
 		
-		$this->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
+		$this->transaction->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
 		
 		// Delete atom from relation tables where atom is mentioned as src or tgt atom
 		foreach (Relation::getAllRelations() as $relation){
@@ -668,7 +647,7 @@ class Database {
 		        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atomId}'";
 		        
 		        $this->Exe($query);
-		        $this->addAffectedRelations($relation);
+		        $this->transaction->addAffectedRelations($relation);
 		    }
 		}
 		
@@ -683,6 +662,14 @@ class Database {
  *
  *************************************************************************************************/
 	
+    /**
+     * Get current transaction
+     * @return Transaction
+     */
+    public function transaction(){
+        return $this->transaction;
+    }
+    
 	/**
 	 * Function to start/open a database transaction to track of all changes and be able to rollback
 	 * @return void
@@ -690,7 +677,8 @@ class Database {
 	private function startTransaction(){
 		$this->logger->info("Starting database transaction");
 		$this->Exe("START TRANSACTION"); // start database transaction
-		$this->transaction = rand();
+        $this->dbTransaction = true;
+        $this->transaction = new Transaction();
 		
 		Hooks::callHooks('postDatabaseStartTransaction', get_defined_vars());
 	}
@@ -705,7 +693,7 @@ class Database {
 		$this->logger->info("Commit database transaction");
 		
 		$this->Exe("COMMIT"); // commit database transaction
-		unset($this->transaction);
+        $this->dbTransaction = false;
 		
 		Hooks::callHooks('postDatabaseCommitTransaction', get_defined_vars());
 	}
@@ -718,7 +706,7 @@ class Database {
 		$this->logger->info("Rollback database transaction");
 		
 		$this->Exe("ROLLBACK"); // rollback database transaction
-		unset($this->transaction);
+        $this->dbTransaction = false;
 		
 		Hooks::callHooks('postDatabaseRollbackTransaction', get_defined_vars());
 	}
@@ -727,35 +715,25 @@ class Database {
 	 * Function to request closing the open database transaction
 	 * @param string $succesMessage specifies success/info message when invariants hold
 	 * @param boolean $databaseCommit specifies to commit (true) or rollback (false) when all invariants hold
-	 * @return boolean specifies if invariant rules hold (true) or not (false)
+	 * @return Transaction the closed transaction
 	 */
 	public function closeTransaction($succesMessage = 'Updated', $databaseCommit = null){		
 		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
 		
 		$this->logger->info("Closing database transaction");
 		
-		$this->logger->info("Checking all affected conjuncts");
-		
-		// Check invariant rules (we only have to check the affected invariant rules)
-		$affectedConjuncts = RuleEngine::getAffectedConjuncts($this->affectedConcepts, $this->affectedRelations, 'inv'); // Get affected invariant conjuncts
-		$invariantRulesHold = RuleEngine::checkInvariantRules($affectedConjuncts, true);
-		
-		// Check all process rules that are relevant for the activate roles
-		RuleEngine::checkProcessRules();
-		
-		unset($this->affectedConcepts, $this->affectedRelations);
-		$this->affectedConcepts = array(); $this->affectedRelations = array();
-		
+        $this->transaction->close();
+        
 		// Determine if transaction should be committed or not when all invariant rules hold based on $requestType
-		if(!isset($databaseCommit)) $databaseCommit = $this->processRequestType();
+		if(!isset($databaseCommit)) $databaseCommit = $this->transaction->getRequestType() == 'promise';
 		
-		if($invariantRulesHold && $databaseCommit){
+		if($this->transaction->invariantRulesHold() && $databaseCommit){
 			$this->commitTransaction(); // commit database transaction
 			Logger::getUserLogger()->notice($succesMessage);
 		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && $databaseCommit){
 			$this->commitTransaction();
 			Logger::getUserLogger()->warning("Transaction committed with invariant violations");
-		}elseif($invariantRulesHold){
+		}elseif($this->transaction->invariantRulesHold()){
 		    $this->logger->info("Invariant rules hold, but no database commit requested");
 		    $this->rollbackTransaction(); // rollback database transaction			
 		}else{
@@ -765,8 +743,7 @@ class Database {
 		
 		Hooks::callHooks('postDatabaseCloseTransaction', get_defined_vars());
 		
-		return $this->invariantRulesHold = $invariantRulesHold;
-		
+		return $this->transaction;
 	}
 	
 /**************************************************************************************************
@@ -774,46 +751,6 @@ class Database {
  * Helper functions
  *
  *************************************************************************************************/
-	
-	/**
-	 * Checks request type and returns boolean to determine database commit
-	 * @throws Exception when unknown request type specified (allowed: 'feedback' and 'promise')
-	 * @return boolean (true for 'promise', false for 'feedback')
-	 */
-	private function processRequestType(){
-		switch($this->requestType){
-			case 'feedback' : return false;
-			case 'promise' : return true;
-			default : throw new Exception("Unkown request type '$this->requestType'. Supported are: 'feedback', 'promise'", 500);
-		}
-	}
-    
-	/**
-	 * Mark a concept as affected within the open transaction
-	 * @param Concept $concept
-	 * @return void
-	 */
-	private function addAffectedConcept($concept){
-		
-		if($this->trackAffectedConjuncts && !in_array($concept, $this->affectedConcepts)){
-			$this->logger->debug("Mark concept '{$concept}' as affected concept");
-			$this->affectedConcepts[] = $concept; // add concept to affected concepts. Needed for conjunct evaluation.
-		}
-		
-	}
-	
-	/**
-	 * Mark a relation as affected within the open transaction
-	 * @param Relation $relation
-	 * @return void
-	 */
-	private function addAffectedRelations($relation){
-	
-		if($this->trackAffectedConjuncts && !in_array($relation, $this->affectedRelations)){
-			$this->logger->debug("Mark relation '{$relation}' as affected relation");
-			$this->affectedRelations[] = $relation;
-		}
-	}
     
     /**
      * Check if insert/update/delete function resulted in updated record(s). If not, report warning (or throw exception) to indicate that something is going wrong
@@ -829,36 +766,6 @@ class Database {
             }
         } 
     }
-	
-/**************************************************************************************************
- *
- * GETTERS and SETTERS
- *
- *************************************************************************************************/
-	
-	public function getAffectedConcepts(){
-		return $this->affectedConcepts;	
-	}
-	
-	public function getAffectedRelations(){
-		return $this->affectedRelations;
-	}
-	
-	public function getInvariantRulesHold(){
-		return $this->invariantRulesHold;
-	}
-	
-	public function getRequestType(){
-		return $this->requestType;
-	}
-	
-	public function setTrackAffectedConjuncts($bool){
-		$this->trackAffectedConjuncts = $bool;
-	}
-	
-	public function setRequestType($requestType){
-		$this->requestType = $requestType;
-	}	
 }
 
 ?>
