@@ -6,8 +6,8 @@
  */
 
 namespace Ampersand\Core;
+use Exception;
 use JsonSerializable;
-use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 
 /**
@@ -16,8 +16,6 @@ use Ampersand\Log\Logger;
  *
  */
 class Link implements JsonSerializable {
-    private $db;
-    
     public $rel;
     
     public $src;
@@ -33,8 +31,6 @@ class Link implements JsonSerializable {
         if(is_null($this->src->id) || is_null($this->tgt->id)) throw new Exception ("Cannot instantiate link {$this}, because src and/or tgt atom is not specified", 500);
         if(!in_array($this->src->concept, $this->rel->srcConcept->getSpecializationsIncl())) throw new Exception ("Cannot instantiate link {$this}, because source atom does not match relation source concept or any of its specializations", 500);
         if(!in_array($this->tgt->concept, $this->rel->tgtConcept->getSpecializationsIncl())) throw new Exception ("Cannot instantiate link {$this}, because target atom does not match relation target concept or any of its specializations", 500);
-        
-        $this->db = Database::singleton();
         
     }
     
@@ -61,7 +57,7 @@ class Link implements JsonSerializable {
     public function exists(){
         $logger = Logger::getLogger("CORE")->debug("Checking if link {$this} exists in database");
         
-        return $this->db->linkExists($this->rel, $this->src, $this->tgt);
+        return $this->rel->storage->linkExists($this->rel, $this->src, $this->tgt);
     }
     
     /**
@@ -75,7 +71,7 @@ class Link implements JsonSerializable {
         $this->src->add();
         $this->tgt->add();
         
-        $this->db->addLink($this->rel, $this->src, $this->tgt);
+        $this->rel->storage->addLink($this->rel, $this->src, $this->tgt);
         
         return $this;
     }
@@ -87,7 +83,7 @@ class Link implements JsonSerializable {
     public function delete(){
         $logger = Logger::getLogger("CORE")->debug("Delete link {$this} from database");
         
-        $this->db->deleteLink($this->rel, $this->src, $this->tgt);
+        $this->rel->storage->deleteLink($this->rel, $this->src, $this->tgt);
         
         return $this;
     }

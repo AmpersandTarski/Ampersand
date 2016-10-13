@@ -36,6 +36,12 @@ class Relation {
     private $logger;
     
     /**
+     * Dependency injection of storage implementation
+     * @var \Ampersand\Storage\StorageInterface
+     */
+    public $storage;
+    
+    /**
      * 
      * @var string
      */
@@ -120,6 +126,7 @@ class Relation {
      */
     public function __construct($relationDef){
         $this->logger = Logger::getLogger('FW');
+        $this->storage = Database::singleton();
         
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConceptId']);
