@@ -17,6 +17,7 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Link;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
+use Ampersand\Storage\StorageInterface;
 use Ampersand\Storage\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
@@ -27,7 +28,7 @@ use Ampersand\Rule\RuleEngine;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Database {
+class Database implements StorageInterface{
     /**
      * 
      * @var \Psr\Log\LoggerInterface
@@ -610,7 +611,7 @@ class Database {
 	 * @param \Ampersand\Core\Atom $atom
 	 * @return void
 	 */
-	function deleteAtom(Atom $atom){
+	public function deleteAtom(Atom $atom){
 		$this->logger->debug("deleteAtom({$atom})");
 		
 	    // This function is under control of transaction check!
@@ -674,7 +675,7 @@ class Database {
 	 * Function to start/open a database transaction to track of all changes and be able to rollback
 	 * @return void
 	 */
-	private function startTransaction(){
+	public function startTransaction(){
 		$this->logger->info("Starting database transaction");
 		$this->Exe("START TRANSACTION"); // start database transaction
         $this->dbTransaction = true;
@@ -702,7 +703,7 @@ class Database {
 	 * Function to rollback changes made in the open database transaction
 	 * @return void
 	 */
-	private function rollbackTransaction(){
+	public function rollbackTransaction(){
 		$this->logger->info("Rollback database transaction");
 		
 		$this->Exe("ROLLBACK"); // rollback database transaction
