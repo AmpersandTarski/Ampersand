@@ -38,10 +38,10 @@ class Concept {
     private $logger;
     
     /**
-     * Dependency injection of a database connection class
-     * @var Database
+     * Dependency injection of storage implementation
+     * @var \Ampersand\Storage\StorageInterface
      */
-    private $database;
+    public $storage;
     
     /**
      * Definition from which Concept object is created
@@ -123,8 +123,8 @@ class Concept {
 	private $mysqlConceptTable;
     
     /**
-     * @var string[] $atomCache array with atomids that exist in the concept (within database transaction)
-     * used to prevent unnecessary queries to check if atom is already in database
+     * @var string[] $atomCache array with atomids that exist in the concept
+     * used to prevent unnecessary checks if atom exists in storage
      */
     private $atomCache = array();
 	
@@ -135,7 +135,7 @@ class Concept {
 	 * @param array $conceptDef
 	 */
 	private function __construct($conceptDef){
-	    $this->database = Database::singleton();
+        $this->storage = Database::singleton(); // For now, the mysql database is the only supported storage implementation
 	    $this->logger = Logger::getLogger('FW');
 	    
         $this->def = $conceptDef;
@@ -296,7 +296,7 @@ class Concept {
         }
         
         $arr = [];
-	    foreach ((array)$this->database->Exe($query) as $row){
+	    foreach ((array)$this->storage->Exe($query) as $row){
             $tgtAtom = new Atom($row['atomId'], $this);
             $tgtAtom->setQueryData($row);
             $arr[] = $tgtAtom;
@@ -361,7 +361,7 @@ class Concept {
 	        $firstCol = current($this->mysqlConceptTable->getCols());
 	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
 	         
-	        $result = array_column((array)$this->database->Exe($query), 'MAX');
+	        $result = array_column((array)$this->storage->Exe($query), 'MAX');
 	
 	        if(empty($result)) $atomId = 1;
 	        else $atomId = $result[0] + 1;

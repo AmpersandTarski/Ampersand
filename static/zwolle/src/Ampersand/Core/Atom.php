@@ -11,7 +11,6 @@ use Exception;
 use DateTime;
 use DateTimeZone;
 use JsonSerializable;
-use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 
 /**
@@ -20,12 +19,6 @@ use Ampersand\Log\Logger;
  *
  */
 class Atom implements JsonSerializable {
-    /**
-     * Dependency injection of a database connection class
-     * @var Database
-     */
-	protected $database;
-	
 	/**
 	 *
 	 * @var \Psr\Log\LoggerInterface
@@ -56,7 +49,6 @@ class Atom implements JsonSerializable {
 	 * @return void
 	 */
 	public function __construct($atomId, Concept $concept){
-		$this->database = Database::singleton();
 		$this->logger = Logger::getLogger('ATOM');
 		
         $this->id = $atomId;
@@ -117,16 +109,15 @@ class Atom implements JsonSerializable {
     }
     
 	/**
-	 * Checks if atom exists in database
+	 * Checks if atom exists in storage
 	 * @return boolean
 	 */
 	public function exists(){
         if($this->concept->inAtomCache($this)){
-            // $this->logger->debug("#217 One query saved due to caching existing atoms that exist in database");
             return true;
         }elseif($this->id === '_NEW'){
             return true; // Return true if id is '_NEW' (special case)
-        }elseif($this->database->atomExists($this)){
+        }elseif($this->concept->storage->atomExists($this)){
             $this->concept->addToAtomCache($this);
     		return true;
         }else{
@@ -140,9 +131,9 @@ class Atom implements JsonSerializable {
 	 */
 	public function add(){
         if($this->exists()){
-            $this->logger->debug("Atom '{$this}' already exists in database");
+            $this->logger->debug("Atom '{$this}' already exists in concept");
         }else{
-            $this->database->addAtom($this);
+            $this->concept->storage->addAtom($this);
             $this->concept->addToAtomCache($this);
         }
 	    return $this;
@@ -154,7 +145,7 @@ class Atom implements JsonSerializable {
      */
     public function delete(){
         if($this->exists()){
-            $this->database->deleteAtom($this);
+            $this->concept->storage->deleteAtom($this);
             $this->concept->removeFromAtomCache($this);
         }else{
             $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
