@@ -2,10 +2,10 @@
 
 use Ampersand\Session;
 use Ampersand\Config;
+use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
-use Ampersand\Core\Atom;
-use Ampersand\Core\Concept;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
+use Ampersand\Storage\Transaction;
 
 global $app;
 
@@ -47,7 +47,8 @@ $app->get('/oauthlogin/logout', function () use ($app){
     
     $session->sessionAtom->delete();
         
-    $session->database->closeTransaction('Logout successfull', true);
+    $transaction = Transaction::getCurrentTransaction()->close(true);
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Logout successfull");
         
     $result = array('notifications' => Notifications::getAll());
     

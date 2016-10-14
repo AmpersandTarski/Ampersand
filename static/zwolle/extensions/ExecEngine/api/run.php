@@ -4,6 +4,7 @@ use Ampersand\Config;
 use Ampersand\Extension\ExecEngine\ExecEngine;
 use Ampersand\Log\Notifications;
 use Ampersand\Session;
+use Ampersand\Storage\Transaction;
 
 global $app;
 
@@ -27,7 +28,8 @@ $app->get('/execengine/run', function () use ($app){
 		
 	ExecEngine::run(true);
 	
-	$session->database->closeTransaction('Run completed', true);
+    $transaction = Transaction::getCurrentTransaction()->close(true);
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Run completed");
 		
 	$result = array('notifications' => Notifications::getAll());
 	

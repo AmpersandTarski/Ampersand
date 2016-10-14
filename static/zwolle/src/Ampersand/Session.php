@@ -15,6 +15,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
 use Ampersand\Rule\Rule;
 use Ampersand\Log\Logger;
+use Ampersand\Storage\Transaction;
 
 /**
  * Class of session objects
@@ -93,7 +94,7 @@ class Session {
         // Create a new Ampersand session atom if not yet in SESSION table (browser started a new session or Ampersand session was expired)
         if (!$this->sessionAtom->exists()){ 
             $this->sessionAtom->add();
-            $this->database->commitTransaction(); //TODO: ook door Database->closeTransaction() laten doen, maar die verwijst terug naar Session class voor de checkrules. Oneindige loop
+            Transaction::getCurrentTransaction()->close(true);
         }
 
         $this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");

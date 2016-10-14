@@ -18,6 +18,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Atom;
 use Ampersand\Config;
+use Ampersand\Storage\Transaction;
 
 /**
  * 
@@ -39,7 +40,7 @@ class Concept {
     
     /**
      * Dependency injection of storage implementation
-     * @var \Ampersand\Storage\StorageInterface
+     * @var \Ampersand\Storage\ConceptStorageInterface
      */
     public $storage;
     

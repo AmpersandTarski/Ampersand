@@ -5,8 +5,10 @@ use Ampersand\Core\Concept;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
 use Ampersand\Interfacing\Resource;
+use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Interfacing\InterfaceObject;
+use Ampersand\Storage\Transaction;
 use function Ampersand\Helper\isAssoc;
 
 global $app;
@@ -96,6 +98,7 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 
 $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
     $session = Session::singleton();
+    $transaction = Transaction::getCurrentTransaction();
     
     $roleIds = $app->request->params('roleIds');
     $options = $app->request->params();
@@ -103,25 +106,27 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $session->activateRoles($roleIds);
     
     // Handle options
-    if(isset($options['requestType'])) $session->database->setRequestType($options['requestType']);
+    if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
     // Perform put
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put((object) $app->request->getBody())->get();
     
     // Close transaction
-    $transaction = $session->database->closeTransaction("{$resource} updated");
+    $transaction->close();
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("{$resource} updated");
     
     // Return result
     $result =   [ 'content'             => $resource
                 , 'notifications'       => Notifications::getAll()
                 , 'invariantRulesHold'  => $transaction->invariantRulesHold()
-                , 'requestType'         => $session->database->getRequestType()
+                , 'requestType'         => $transaction->getRequestType()
                 ];
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app) {
 	$session = Session::singleton();
+    $transaction = Transaction::getCurrentTransaction();
 	
 	$roleIds = $app->request->params('roleIds');
 	$options = $app->request->params();
@@ -129,20 +134,21 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	$session->activateRoles($roleIds);
 	
     // Handle options
-    if(isset($options['requestType'])) $session->database->setRequestType($options['requestType']);
+    if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
 	
 	// Perform patch(es)
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($app->request->getBody())->get();
 	
     // Close transaction
-    $transaction = $session->database->closeTransaction("{$resource} updated");
+    $transaction->close();
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("{$resource} updated");
     
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
 					, 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'requestType'			=> $session->database->getRequestType()
+					, 'requestType'			=> $transaction->getRequestType()
 					);
 	
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -151,6 +157,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 
 $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
 	$session = Session::singleton();
+    $transaction = Transaction::getCurrentTransaction();
 
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
@@ -158,19 +165,20 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 	$options = $app->request->params();
     
     // Handle options
-    if(isset($options['requestType'])) $session->database->setRequestType($options['requestType']);
+    if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
     // Perform create
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get();
     
     // Close transaction
-    $transaction = $session->database->closeTransaction("{$resource} created");
+    $transaction->close();
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("{$resource} created");
     
 	// Return result
 	$result = array ( 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'requestType'			=> $session->database->getRequestType()
+					, 'requestType'			=> $transaction->getRequestType()
 					);
 
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -178,6 +186,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 
 $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
 	$session = Session::singleton();
+    $transaction = Transaction::getCurrentTransaction();
 
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
@@ -185,18 +194,19 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
 	$options = $app->request->params();
 
     // Handle options
-    if(isset($options['requestType'])) $session->database->setRequestType($options['requestType']);
+    if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
 	// Perform delete
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
     
     // Close transaction
-    $transaction = $session->database->closeTransaction("{$resource} deleted");
+    $transaction->close();
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("{$resource} deleted");
     
 	// Return result
 	$result = array ( 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'requestType'			=> $session->database->getRequestType()
+					, 'requestType'			=> $transaction->getRequestType()
 					);
 
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

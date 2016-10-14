@@ -6,8 +6,9 @@ use Exception;
 use Ampersand\AngularApp;
 use Ampersand\Config;
 use Ampersand\Session;
-use Ampersand\Database\Database;
 use Ampersand\Interfacing\Resource;
+use Ampersand\Log\Logger;
+use Ampersand\Storage\Transaction;
 
 // UI
 AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function($session){ return true;});
@@ -176,7 +177,6 @@ class OAuthLoginController {
         if(empty($email)) throw new Exception("No emailaddress provided to login", 500);
         
         $session = Session::singleton();
-        $db = Database::singleton();
         
         $accounts = (new Resource($email, 'UserID'))->all('AccountForUserid');
         
@@ -206,7 +206,8 @@ class OAuthLoginController {
         $account->link($ts, 'accMostRecentLogin[Account*DateTime]')->add();
         $account->link($ts, 'accLoginTimestamps[Account*DateTime]')->add();
 
-        $db->closeTransaction('Login successfull', true);
+        $transaction = Transaction::getCurrentTransaction()->close(true);
+        if($transaction->isCommitted()) Logger::getUserLogger()->notice("Login successfull");
     }
 }
 ?>

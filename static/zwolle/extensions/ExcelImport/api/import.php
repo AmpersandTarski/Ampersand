@@ -5,7 +5,7 @@ use Ampersand\Config;
 use Ampersand\Log\Logger;
 use Ampersand\Extension\ExcelImport\ExcelImport;
 use Ampersand\Log\Notifications;
-use Ampersand\Database\Database;
+use Ampersand\Storage\Transaction;
 
 global $app;
 
@@ -32,7 +32,8 @@ $app->post('/excelimport/import', function () use ($app){
 		$parser = new ExcelImport();
 		$parser->ParseFile($_FILES['file']['tmp_name']);
 		
-		Database::singleton()->closeTransaction("File {$_FILES['file']['tmp_name']} imported successfully", true);
+        $transaction = Transaction::getCurrentTransaction()->close(true);
+        if($transaction->isCommitted()) Logger::getUserLogger()->notice("File {$_FILES['file']['tmp_name']} imported successfully");
 		
 		unlink($_FILES['file']['tmp_name']);
 	}else{

@@ -37,7 +37,7 @@ class Relation {
     
     /**
      * Dependency injection of storage implementation
-     * @var \Ampersand\Storage\StorageInterface
+     * @var \Ampersand\Storage\RelationStorageInterface
      */
     public $storage;
     
@@ -218,6 +218,7 @@ class Relation {
      */
     public function addLink(Link $link){
         $this->logger->debug("Add link {$link} to storage");
+        Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
         
         // Ensure that atoms exists in their concept tables
         $link->src()->add();
@@ -233,6 +234,7 @@ class Relation {
      */
     public function deleteLink(Link $link){
         $this->logger->debug("Delete link {$link} from storage");
+        Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
         
         $this->storage->deleteLink($link);
     }

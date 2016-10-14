@@ -12,11 +12,12 @@ use Ampersand\Log\Logger;
 use Ampersand\Rule\Rule;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Rule\Violation;
+use Ampersand\Storage\Transaction;
 use function Ampersand\Helper\getDirectoryList;
 
 // Define hooks
 $hook1 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());
-Hooks::addHook('preDatabaseCloseTransaction', $hook1);
+Hooks::addHook('preCloseTransaction', $hook1);
 $hook2 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array(true));
 Hooks::addHook('postDatabaseReinstallDB', $hook2);
 
@@ -44,7 +45,6 @@ class ExecEngine {
 	public static $runCount;
 	
 	public static function run($allRules = false){
-		$database = Database::singleton();
 		$logger = Logger::getLogger('EXECENGINE');
 		
 		$logger->info("ExecEngine run started");
@@ -84,7 +84,7 @@ class ExecEngine {
 			$logger->notice("ExecEngine run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ") for role '{$role->label}'");
 			
 			// Determine affected rules that must be checked by the exec engine
-			$affectedConjuncts = RuleEngine::getAffectedConjuncts($database->transaction()->getAffectedConcepts(), $database->transaction()->getAffectedRelations(), 'sig');
+			$affectedConjuncts = RuleEngine::getAffectedConjuncts(Transaction::getCurrentTransaction()->getAffectedConcepts(), Transaction::getCurrentTransaction()->getAffectedRelations(), 'sig');
 			
 			$affectedRules = array();
 			foreach($affectedConjuncts as $conjunct) $affectedRules = array_merge($affectedRules, $conjunct->sigRuleNames);

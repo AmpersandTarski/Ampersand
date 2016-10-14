@@ -4,6 +4,7 @@ use Ampersand\Config;
 use Ampersand\Database\Database;
 use Ampersand\Session;
 use Ampersand\Interfacing\InterfaceObject;
+use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\Rule;
@@ -11,6 +12,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Output\OutputCSV;
+use Ampersand\Storage\Transaction;
 
 global $app;
 
@@ -79,8 +81,6 @@ $app->get('/admin/import', function () use ($app){
 
     $file = $app->request->params('file'); if(is_null($file)) throw new Exception("Import file not specified",500);
     
-    $database = Database::singleton();
-    
     include_once (Config::get('absolutePath') . Config::get('logPath') . "{$file}");
     
     // check if all concepts and relations are defined
@@ -101,7 +101,8 @@ $app->get('/admin/import', function () use ($app){
         foreach($links as $link) $link->add();
     }
     
-    $database->closeTransaction("Imported successfully", true);	
+    $transaction = Transaction::getCurrentTransaction()->close(true);
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported successfully");
     
     $content = Notifications::getAll(); // Return all notifications
     

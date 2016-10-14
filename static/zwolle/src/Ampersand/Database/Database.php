@@ -16,18 +16,18 @@ use Ampersand\Session;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Link;
 use Ampersand\Core\Relation;
-use Ampersand\Storage\StorageInterface;
 use Ampersand\Storage\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
-use Ampersand\Rule\RuleEngine;
+use Ampersand\Storage\ConceptStorageInterface;
+use Ampersand\Storage\RelationStorageInterface;
 
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Database implements StorageInterface{
+class Database implements ConceptStorageInterface, RelationStorageInterface {
     /**
      * 
      * @var \Psr\Log\LoggerInterface
@@ -62,19 +62,12 @@ class Database implements StorageInterface{
 	 * @var string
 	 */
 	private $db_name;
-	
-	/**
-	 * Reference to a transaction object
-     * There must always be a transaction object set
-	 * @var Transaction
-	 */
-	private $transaction;
     
     /**
      * Specifies if database transaction is active
-     * @var boolean $dbTransaction
+     * @var boolean $dbTransactionActive
      */
-    private $dbTransaction = false;
+    private $dbTransactionActive = false;
 	
 	/**
 	 * Contains reference to database instance (singleton pattern)
@@ -104,8 +97,6 @@ class Database implements StorageInterface{
 		
 		// Set sql_mode to ANSI
 		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-        
-        $this->transaction = new Transaction();
 	}
 	
 	/**
@@ -115,6 +106,14 @@ class Database implements StorageInterface{
 	private function __clone(){
 		
 	}
+    
+    /**
+     * Returns name of storage implementation
+     * @return string
+     */
+    public function getLabel(){
+        return "MySQL database {$this->db_host} - {$this->db_name}";
+    }
 	
 	/**
 	 * Function to return the database instance
@@ -220,9 +219,10 @@ class Database implements StorageInterface{
 		$this->logger->info("Database reinstalled");
 		
 		// Initial conjunct evaluation
-		Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts, not only those that are affected (done by closeTransaction() function)
+		Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
 		
-		$this->closeTransaction('Database successfully reinstalled', true);
+        $transaction = Transaction::getCurrentTransaction()->close(true);
+        if($transaction->isCommitted()) Logger::getUserLogger()->notice("Database successfully reinstalled");
 		
 	}
     
@@ -395,7 +395,7 @@ class Database implements StorageInterface{
 	    $this->logger->debug("addAtom({$atom})");
 	    
 		// This function is under control of transaction check!
-        if (!$this->dbTransaction) $this->startTransaction();
+        if (!$this->dbTransactionActive) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
 	    			    
@@ -452,13 +452,9 @@ class Database implements StorageInterface{
 		$queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
 		
 		$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atomId}'");
-		
-		// Check if query resulted in an affected row
-		$this->checkForAffectedRows();
-		
-		$this->transaction->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
-		
-		$this->logger->debug("Atom '{$atom}' removed as member from concept '{$atom->concept}'");
+        
+        // Check if query resulted in an affected row
+        $this->checkForAffectedRows();
 	}
 	
 	/**
@@ -467,8 +463,10 @@ class Database implements StorageInterface{
      * @return void
 	 */
 	public function addLink(Link $link){
+        $this->logger->debug("addLink({$link})");
+        
 	    // This function is under control of transaction check!
-        if (!$this->dbTransaction) $this->startTransaction();
+        if (!$this->dbTransactionActive) $this->startTransaction();
         
         $relation = $link->relation();
         $srcAtomId = $this->getDBRepresentation($link->src());
@@ -489,10 +487,9 @@ class Database implements StorageInterface{
 	        default :
 	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
 	    }
+        
 	    // Check if query resulted in an affected row
 	    $this->checkForAffectedRows();
-	    
-	    $this->transaction->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
 	}
 	
 	/**
@@ -501,8 +498,10 @@ class Database implements StorageInterface{
      * @return void
 	 */
 	public function deleteLink(Link $link){
+        $this->logger->debug("deleteLink({$link})");
+        
 	    // This function is under control of transaction check!
-        if (!$this->dbTransaction) $this->startTransaction();
+        if (!$this->dbTransactionActive) $this->startTransaction();
         
         $relation = $link->relation();
         $srcAtomId = $this->getDBRepresentation($link->src());
@@ -538,10 +537,8 @@ class Database implements StorageInterface{
 	        default :
 	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
 	    }
-	    // Check if query resulted in an affected row
-	    $this->checkForAffectedRows();
 	    
-	    $this->transaction->addAffectedRelations($relation); // Add relation to affected relations. Needed for conjunct evaluation.
+	    $this->checkForAffectedRows(); // Check if query resulted in an affected row
 	}
 	    
 	/**
@@ -555,7 +552,7 @@ class Database implements StorageInterface{
 		$this->logger->debug("deleteAtom({$atom})");
 		
 	    // This function is under control of transaction check!
-        if (!$this->dbTransaction) $this->startTransaction();
+        if (!$this->dbTransactionActive) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
 	    
@@ -569,8 +566,8 @@ class Database implements StorageInterface{
 		// Check if query resulted in an affected row
 		$this->checkForAffectedRows();
 		
-		$this->transaction->addAffectedConcept($concept); // add concept to affected concepts. Needed for conjunct evaluation.
-		
+        // TODO : move code below to Concept::deleteAtom() method
+        
 		// Delete atom from relation tables where atom is mentioned as src or tgt atom
 		foreach (Relation::getAllRelations() as $relation){
 		    $tableName = $relation->getMysqlTable()->name;
@@ -588,13 +585,8 @@ class Database implements StorageInterface{
 		        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atomId}'";
 		        
 		        $this->Exe($query);
-		        $this->transaction->addAffectedRelations($relation);
 		    }
 		}
-		
-		$this->logger->debug("Atom '{$atom}' (and all related links) deleted in database");
-		
-		Hooks::callHooks('postDatabaseDeleteAtom', get_defined_vars());
 	}
 	
 /**************************************************************************************************
@@ -602,41 +594,27 @@ class Database implements StorageInterface{
  * Database transaction handling
  *
  *************************************************************************************************/
-	
-    /**
-     * Get current transaction
-     * @return Transaction
-     */
-    public function transaction(){
-        return $this->transaction;
-    }
     
 	/**
 	 * Function to start/open a database transaction to track of all changes and be able to rollback
 	 * @return void
 	 */
-	public function startTransaction(){
-		$this->logger->info("Starting database transaction");
-		$this->Exe("START TRANSACTION"); // start database transaction
-        $this->dbTransaction = true;
-        $this->transaction = new Transaction();
-		
-		Hooks::callHooks('postDatabaseStartTransaction', get_defined_vars());
+	private function startTransaction(){
+        Transaction::registerStorageTransaction($this);
+        
+        $this->Exe("START TRANSACTION"); // start database transaction
+        $this->dbTransactionActive = true; // set flag dbTransactionActive
 	}
 	
 	/**
 	 * Function to commit the open database transaction
 	 * @return void
-	 * 
-	 * TODO: make private function, now also used by in Session class for session atom initiation
 	 */
 	public function commitTransaction(){
 		$this->logger->info("Commit database transaction");
 		
 		$this->Exe("COMMIT"); // commit database transaction
-        $this->dbTransaction = false;
-		
-		Hooks::callHooks('postDatabaseCommitTransaction', get_defined_vars());
+        $this->dbTransactionActive = false;
 	}
 	
 	/**
@@ -647,44 +625,7 @@ class Database implements StorageInterface{
 		$this->logger->info("Rollback database transaction");
 		
 		$this->Exe("ROLLBACK"); // rollback database transaction
-        $this->dbTransaction = false;
-		
-		Hooks::callHooks('postDatabaseRollbackTransaction', get_defined_vars());
-	}
-	
-	/**
-	 * Function to request closing the open database transaction
-	 * @param string $succesMessage specifies success/info message when invariants hold
-	 * @param boolean $databaseCommit specifies to commit (true) or rollback (false) when all invariants hold
-	 * @return Transaction the closed transaction
-	 */
-	public function closeTransaction($succesMessage = 'Updated', $databaseCommit = null){		
-		Hooks::callHooks('preDatabaseCloseTransaction', get_defined_vars());
-		
-		$this->logger->info("Closing database transaction");
-		
-        $this->transaction->close();
-        
-		// Determine if transaction should be committed or not when all invariant rules hold based on $requestType
-		if(!isset($databaseCommit)) $databaseCommit = $this->transaction->getRequestType() == 'promise';
-		
-		if($this->transaction->invariantRulesHold() && $databaseCommit){
-			$this->commitTransaction(); // commit database transaction
-			Logger::getUserLogger()->notice($succesMessage);
-		}elseif(Config::get('ignoreInvariantViolations', 'transactions') && $databaseCommit){
-			$this->commitTransaction();
-			Logger::getUserLogger()->warning("Transaction committed with invariant violations");
-		}elseif($this->transaction->invariantRulesHold()){
-		    $this->logger->info("Invariant rules hold, but no database commit requested");
-		    $this->rollbackTransaction(); // rollback database transaction			
-		}else{
-		    $this->logger->info("Invariant rules do not hold");
-			$this->rollbackTransaction(); // rollback database transaction
-		}
-		
-		Hooks::callHooks('postDatabaseCloseTransaction', get_defined_vars());
-		
-		return $this->transaction;
+        $this->dbTransactionActive = false;
 	}
 	
 /**************************************************************************************************
