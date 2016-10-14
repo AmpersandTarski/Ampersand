@@ -407,16 +407,56 @@ class Concept {
     }
     
     /**
+     * Creating and adding a new atom to the storage 
+     * ór adding an existing atom to another concept set (making it a specialization)
      * @param Atom $atom
      * @return void
      */
     public function addAtom(Atom $atom){
-        if($atom->exists()){
-            $this->logger->debug("Atom '{$atom}' already exists in concept");
+        // Adding atom[A] to [A] ($this)
+        if($atom->concept == $this){
+            if($atom->exists()){
+                $this->logger->debug("Atom {$atom} already exists in concept");
+            }else{
+                $this->logger->debug("Add atom {$atom} to storage");
+                Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
+                
+                $this->storage->addAtom($atom); // Add to storage
+                $this->atomCache[] = $atom->id; // Add to cache
+            }
+        // Adding atom[A] to another concept [B] ($this)
         }else{
-            $this->storage->addAtom($atom); // Add to storage
+            // Check if concept A and concept B are in the same classification tree
+            if(!$this->inSameClassificationTree($atom->concept)) throw new Exception("Cannot add {$atom} to concept {$this}, because concepts are not in the same classification tree", 500);
             
-            $this->atomCache[] = $atom->id; // Add to cache
+            // Check if atom[A] exists. Otherwise it may not be added to concept B
+            if(!$atom->exists()) throw new Exception("Cannot add {$atom} to concept {$this}, because atom does not exists", 500);
+            
+            $atom->concept = $this; // Change concept definition
+            $this->addAtom($atom);
+        }
+    }
+    
+    /**
+     * Remove an existing atom from a concept set (i.e. removing specialization)
+     * @param Atom $atom
+     * @return void
+     */
+    public function removeAtom(Atom $atom){
+        if($atom->concept != $this) throw new Exception("Cannot remove {$atom} from concept {$this}, because concepts don't match", 500);
+        
+        // Check if concept is a specialization of another concept
+        if(empty($this->getGeneralizations())) throw new Exception("Cannot remove {$atom} from concept {$this}, because no generalizations exists", 500);
+        
+        // Check if atom exists
+        if($atom->exists()){
+            $this->logger->debug("Remove atom {$atom} from {$this} in storage");
+            Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
+            
+            $this->storage->removeAtom($atom); // Remove from concept in storage
+            if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
+        }else{
+            $this->logger->debug("Cannot remove atom {$atom} from {$this}, because atom does not exists");
         }
     }
     
@@ -426,13 +466,13 @@ class Concept {
      */
     public function deleteAtom(Atom $atom){
         if($atom->exists()){
-            $this->storage->deleteAtom($atom); // Delete from storage
+            $this->logger->debug("Delete atom {$atom} from storage");
+            Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
             
-            if(($key = array_search($atom->id, $this->atomCache)) !== false) {
-                unset($this->atomCache[$key]); // Delete from cache
-            }
+            $this->storage->deleteAtom($atom); // Delete from storage
+            if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
         }else{
-            $this->logger->debug("Cannot delete atom '{$atom}', because it does not exists");
+            $this->logger->debug("Cannot delete atom {$atom}, because it does not exists");
         }
     }
     

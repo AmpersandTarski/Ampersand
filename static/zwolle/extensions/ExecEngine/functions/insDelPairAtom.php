@@ -230,11 +230,9 @@ function SetConcept($conceptA, $conceptB, $atom){
 	Logger::getLogger('EXECENGINE')->info("SetConcept($conceptA,$conceptB,$atom)");
     if(func_num_args() != 3) throw new Exception("Wrong number of arguments supplied for function SetConcept(): ".func_num_args()." arguments", 500);
 	try{
-		$database = Database::singleton();
-		
 		$atom = new Atom($atom, Concept::getConceptByLabel($conceptA));
         $conceptB = Concept::getConceptByLabel($conceptB);
-		$database->atomSetConcept($atom, $conceptB);
+		$conceptB->addAtom($atom);
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom}' added as member to concept '{$conceptB}'");
 	
 	}catch(Exception $e){
@@ -252,10 +250,9 @@ function ClearConcept($concept, $atom){
 	Logger::getLogger('EXECENGINE')->info("ClearConcept($concept,$atom)");
     if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function ClearConcept(): ".func_num_args()." arguments", 500);
 	try{
-		$database = Database::singleton();
-        
-		$atom = new Atom($atom, Concept::getConceptByLabel($concept));
-		$database->atomClearConcept($atom);
+        $concept = Concept::getConceptByLabel($concept);
+		$atom = new Atom($atom, $concept);
+		$concept->removeAtom($atom);
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom}' removed as member from concept '$concept'");
 
 	}catch(Exception $e){

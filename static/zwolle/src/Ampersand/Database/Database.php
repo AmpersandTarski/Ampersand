@@ -15,7 +15,6 @@ use Ampersand\Config;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Link;
-use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
 use Ampersand\Storage\StorageInterface;
 use Ampersand\Storage\Transaction;
@@ -421,87 +420,30 @@ class Database implements StorageInterface{
 		
 		// Check if query resulted in an affected row
         $this->checkForAffectedRows();
-		
-		$this->transaction->addAffectedConcept($atom->concept); // add concept to affected concepts. Needed for conjunct evaluation.
-		
-		$this->logger->debug("Atom '{$atom}' added to database");
-		
-		Hooks::callHooks('postDatabaseAddAtomToConceptInsert', get_defined_vars());
 	}
 	
 	/**
-	 * Adding an atom[ConceptA] as member to ConceptB set. 
-	 * This can only be done when concept of atom (ConceptA) and ConceptB are in the same classification tree.
-	 * @param Atom $atom
-	 * @param Concept $conceptB
-	 * @throws Exception
-	 * @return void
-	 */
-	public function atomSetConcept(Atom $atom, Concept $conceptB){
-	    $this->logger->debug("atomSetConcept({$atom}, {$conceptB})");
-	    
-	    // This function is under control of transaction check!
-        if (!$this->dbTransaction) $this->startTransaction();
-        
-        $atomId = $this->getDBRepresentation($atom);
-	    
-		// Check if conceptA and conceptB are in the same classification tree
-		if(!$atom->concept->inSameClassificationTree($conceptB)) throw new Exception("Concepts '[{$atom->concept}]' and '[{$conceptB}]' are not in the same classification tree", 500);
-		
-		// Check if atom is part of conceptA
-		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom}' does not exists", 500);
-		
-		// Get table info
-		$conceptTableInfoB = $conceptB->getConceptTableInfo();
-		$conceptTableB = $conceptTableInfoB->name;
-		$conceptColsB = $conceptTableInfoB->getColNames(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
-		
-		// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-		$queryString = "\"" . implode("\" = '{$atomId}', \"", $conceptColsB) . "\" = '{$atomId}'";
-		
-		$conceptTableInfoA = $atom->concept->getConceptTableInfo();
-		$anyConceptColForA = current($conceptTableInfoA->getCols());
-		
-		// Perform update
-		$this->Exe("UPDATE \"$conceptTableB\" SET $queryString WHERE \"{$anyConceptColForA->name}\" = '{$atomId}'");
-		
-		// Check if query resulted in an affected row
-		$this->checkForAffectedRows();
-		
-		$this->transaction->addAffectedConcept($conceptB); // add concept to affected concepts. Needed for conjunct evaluation.
-		
-		$this->logger->debug("Atom '{$atom}' added as member to concept '{$conceptB}'");
-	}
-	
-	/**
-	 * Removing an atom as member from a Concept set. 
-	 * This can only be done when the concept is a specialization of another concept.
+	 * Removing an atom as member from a concept set. 
 	 * @param Atom $atom
 	 * @throws Exception
 	 * @return void
 	 */
-	public function atomClearConcept(Atom $atom){
-		$this->logger->debug("atomClearConcept({$atom})");
-		
-	    // This function is under control of transaction check!
-        if (!$this->dbTransaction) $this->startTransaction();
+	public function removeAtom(Atom $atom){
+        $this->logger->debug("removeAtom({$atom})");
+	    
+		// This function is under control of transaction check!
+        if (!$this->dbTransactionActive) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
-	    
-		// Check if concept is a specialization of another concept
-		if(empty($atom->concept->getGeneralizations())) throw new Exception("Concept '{$atom->concept}' has no generalizations, atom can therefore not be removed as member from this set", 500);
-			
-		// Check if atom is part of conceptA
-		if(!$this->atomExists($atom)) throw new Exception("Atom '{$atom}' does not exists", 500);
-			
+        
 		// Get col information for concept and its specializations
 		$colNames = array();
-		$conceptTableInfo = $atom->concept->getConceptTableInfo();
+		$conceptTableInfo = $concept->getConceptTableInfo();
 		$conceptTable = $conceptTableInfo->name;
 		$conceptCol = reset($conceptTableInfo->getCols());
 		
 		$colNames[] = $conceptCol->name;
-		foreach($atom->concept->getSpecializations() as $specConcept){
+		foreach($concept->getSpecializations() as $specConcept){
 			$conceptTableInfo = $specConcept->getConceptTableInfo();
 			$colNames[] = reset($conceptTableInfo->getColNames);
 		}

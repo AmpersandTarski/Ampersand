@@ -8,7 +8,6 @@
 namespace Ampersand\Storage;
 use Ampersand\Core\Link;
 use Ampersand\Core\Atom;
-use Ampersand\Core\Concept;
 
 /**
  * 
@@ -23,15 +22,13 @@ interface StorageInterface {
     
     public function addAtom(Atom $atom);
     
-    public function atomSetConcept(Atom $atom, Concept $conceptB);
+    public function removeAtom(Atom $atom);
     
-    public function atomClearConcept(Atom $atom);
+    public function deleteAtom(Atom $atom);
     
     public function addLink(Link $link);
     
     public function deleteLink(Link $link);
-    
-    public function deleteAtom(Atom $atom);
     
     public function startTransaction();
     
