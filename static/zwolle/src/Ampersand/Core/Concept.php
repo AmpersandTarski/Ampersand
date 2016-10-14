@@ -390,31 +390,52 @@ class Concept {
 	}
     
     /**
-     * @param Atom $atom check if atom exists in concept atom cache
+     * @param Atom $atom
      * @return boolean
      */
-    public function inAtomCache($atom){
-        return in_array($atom->id, $this->atomCache, true); // strict mode to prevent 'Nesting level too deep' error
-    }
-    
-    /**
-     * @param Atom $atom atom to add to concept atom cache
-     * @return void
-     */
-    public function addToAtomCache($atom){
-        $this->atomCache[] = $atom->id;
-    }
-    
-    /**
-     * @param Atom $atom atom to remove from atom cache
-     * @return void
-     */
-    public function removeFromAtomCache($atom){
-        if(($key = array_search($atom->id, $this->atomCache)) !== false) {
-            unset($this->atomCache[$key]);
+    public function atomExists(Atom $atom){
+        if(in_array($atom->id, $this->atomCache, true)){ // strict mode to prevent 'Nesting level too deep' error
+            return true;
+        }elseif($atom->id === '_NEW'){
+            return true; // Return true if id is '_NEW' (special case)
+        }elseif($this->storage->atomExists($atom)){
+            $this->atomCache[] = $atom->id; // Add to cache
+    		return true;
+        }else{
+            return false;
         }
     }
-	
+    
+    /**
+     * @param Atom $atom
+     * @return void
+     */
+    public function addAtom(Atom $atom){
+        if($atom->exists()){
+            $this->logger->debug("Atom '{$atom}' already exists in concept");
+        }else{
+            $this->storage->addAtom($atom); // Add to storage
+            
+            $this->atomCache[] = $atom->id; // Add to cache
+        }
+    }
+    
+    /**
+     * @param Atom $atom
+     * @return void
+     */
+    public function deleteAtom(Atom $atom){
+        if($atom->exists()){
+            $this->storage->deleteAtom($atom); // Delete from storage
+            
+            if(($key = array_search($atom->id, $this->atomCache)) !== false) {
+                unset($this->atomCache[$key]); // Delete from cache
+            }
+        }else{
+            $this->logger->debug("Cannot delete atom '{$atom}', because it does not exists");
+        }
+    }
+    
     /**********************************************************************************************
      * 
      * Static functions

@@ -113,16 +113,7 @@ class Atom implements JsonSerializable {
 	 * @return boolean
 	 */
 	public function exists(){
-        if($this->concept->inAtomCache($this)){
-            return true;
-        }elseif($this->id === '_NEW'){
-            return true; // Return true if id is '_NEW' (special case)
-        }elseif($this->concept->storage->atomExists($this)){
-            $this->concept->addToAtomCache($this);
-    		return true;
-        }else{
-            return false;
-        }
+        return $this->concept->atomExists($this);
 	}
 	
 	/**
@@ -130,12 +121,7 @@ class Atom implements JsonSerializable {
 	 * @return Atom $this
 	 */
 	public function add(){
-        if($this->exists()){
-            $this->logger->debug("Atom '{$this}' already exists in concept");
-        }else{
-            $this->concept->storage->addAtom($this);
-            $this->concept->addToAtomCache($this);
-        }
+        $this->concept->addAtom($this);
 	    return $this;
 	}
     
@@ -144,12 +130,7 @@ class Atom implements JsonSerializable {
      * @return Atom $this
      */
     public function delete(){
-        if($this->exists()){
-            $this->concept->storage->deleteAtom($this);
-            $this->concept->removeFromAtomCache($this);
-        }else{
-            $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
-        }
+        $this->concept->deleteAtom($this);
         return $this;
     }
     
