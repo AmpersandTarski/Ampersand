@@ -417,7 +417,7 @@ class Resource extends Atom {
      * @param string $value
      * @return boolean
      */
-    public function add($ifcId, $value){
+    public function push($ifcId, $value){
         return $this->all($ifcId)->add($value);
     }
     

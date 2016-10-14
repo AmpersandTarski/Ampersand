@@ -95,7 +95,7 @@ class Transaction {
         $this->logger->debug("Checking all affected conjuncts");
         
         // Check invariant rules (we only have to check the affected invariant rules)
-        $affectedConjuncts = RuleEngine::getAffectedConjuncts($this->getAffectedConcepts, $this->getAffectedRelations, 'inv'); // Get affected invariant conjuncts
+        $affectedConjuncts = RuleEngine::getAffectedConjuncts($this->affectedConcepts, $this->affectedRelations, 'inv'); // Get affected invariant conjuncts
         $this->invariantRulesHold = RuleEngine::checkInvariantRules($affectedConjuncts, true);
         
         // Check all process rules that are relevant for the activate roles
@@ -136,10 +136,10 @@ class Transaction {
      * @param StorageInterface $storage
      * @return void
      */
-    public function addStorage(StorageInterface $storge){
+    public function addStorage(StorageInterface $storage){
         if(!in_array($storage, $this->storages)){
             $this->logger->debug("Add storage: " . $storage->getLabel());
-            $this->$storages[] = $storage;
+            $this->storages[] = $storage;
         }
     }
     
