@@ -136,7 +136,7 @@ class Concept {
 	 */
 	private function __construct($conceptDef){
         $this->storage = Database::singleton(); // For now, the mysql database is the only supported storage implementation
-	    $this->logger = Logger::getLogger('FW');
+	    $this->logger = Logger::getLogger('CORE');
 	    
         $this->def = $conceptDef;
         

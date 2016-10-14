@@ -46,7 +46,7 @@ class AngularApp {
     private static $roleMenu = array();
 
 	public function __construct(){
-	    $this->logger = Logger::getLogger('FW');
+	    $this->logger = Logger::getLogger('APP');
 	    $this->logger->debug("## BUILD ANGULAR APP ##################################################");
 		$this->buildHtml();
 	}

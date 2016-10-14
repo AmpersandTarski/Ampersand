@@ -111,7 +111,7 @@ class Rule {
      * @param boolean $type
     */
     private function __construct($ruleDef, $type = null){
-        $this->logger = Logger::getLogger('FW');
+        $this->logger = Logger::getLogger('RULE');
         
         $this->id = $ruleDef['name'];
         

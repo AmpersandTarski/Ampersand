@@ -68,7 +68,7 @@ class Conjunct {
      * @param array $conjDef
      */
     private function __construct($conjDef){
-        $this->logger = Logger::getLogger('FW');
+        $this->logger = Logger::getLogger('RULE');
         
         $this->id = $conjDef['id'];
         $this->query = $conjDef['violationsSQL'];

@@ -125,7 +125,7 @@ class Relation {
      * @param array $relationDef
      */
     public function __construct($relationDef){
-        $this->logger = Logger::getLogger('FW');
+        $this->logger = Logger::getLogger('CORE');
         $this->storage = Database::singleton();
         
         $this->name = $relationDef['name'];

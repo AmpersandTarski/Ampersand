@@ -26,7 +26,7 @@ class RuleEngine {
      * @return boolean
      */
     public static function checkInvariantRules($conjuncts, $cacheConjuncts = true){
-        $logger = Logger::getLogger('FW');
+        $logger = Logger::getLogger('RULE');
         $invariantRulesHold = true;
     
         // check invariant rules
@@ -52,7 +52,7 @@ class RuleEngine {
 	 * @return void
 	 */
 	public static function checkProcessRules($cacheConjuncts = true){
-	    $logger = Logger::getLogger('FW');
+	    $logger = Logger::getLogger('RULE');
 	    $session = Session::singleton();
 		
 		$logger->debug("Checking process rules for active roles: " . implode(', ', array_column($session->getActiveRoles(), 'label')));
@@ -98,7 +98,7 @@ class RuleEngine {
 	 * @return Violation[]
 	 */
 	public static function getSignalViolationsFromDB(){
-	    $logger = Logger::getLogger('FW');
+	    $logger = Logger::getLogger('RULE');
 	    $session = Session::singleton();
 	    $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 	    

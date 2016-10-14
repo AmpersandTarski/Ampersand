@@ -192,7 +192,7 @@ class InterfaceObject {
 	 */
 	private function __construct($ifcDef, $pathEntry = null, $rootIfc = false){
 		$this->database = Database::singleton();
-		$this->logger = Logger::getLogger('FW');
+		$this->logger = Logger::getLogger('INTERFACING');
 		
         $this->isRoot = $rootIfc;
         
