@@ -113,7 +113,7 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     
     // Close transaction
     $transaction->close();
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("{$resource} updated");
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " updated");
     
     // Return result
     $result =   [ 'content'             => $resource
@@ -141,7 +141,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	
     // Close transaction
     $transaction->close();
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("{$resource} updated");
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " updated");
     
 	// Return result
 	$result = array ( 'patches'				=> $app->request->getBody()
@@ -172,7 +172,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     
     // Close transaction
     $transaction->close();
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("{$resource} created");
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " created");
     
 	// Return result
 	$result = array ( 'content' 			=> $resource
@@ -201,7 +201,7 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     
     // Close transaction
     $transaction->close();
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("{$resource} deleted");
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Resource deleted");
     
 	// Return result
 	$result = array ( 'notifications' 		=> Notifications::getAll()
