@@ -348,15 +348,13 @@ class Database implements StorageInterface{
     
     /**
      * Check if link exists in database
-     * @param Relation $relation
-     * @param Atom $srcAtom
-     * @param Atom $tgtAtom
+     * @param Link $link
      * @return boolean
      */
-    public function linkExists(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
-        $relTable = $relation->getMysqlTable();
-        $srcAtomId = $this->getDBRepresentation($srcAtom);
-        $tgtAtomId = $this->getDBRepresentation($tgtAtom);
+    public function linkExists(Link $link){
+        $relTable = $link->relation()->getMysqlTable();
+        $srcAtomId = $this->getDBRepresentation($link->src());
+        $tgtAtomId = $this->getDBRepresentation($link->tgt());
         
         $result = $this->Exe("/* Check if link exists */ SELECT * FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
         
@@ -523,16 +521,16 @@ class Database implements StorageInterface{
 	
 	/**
 	 * Add link (srcAtom,tgtAtom) into database table for relation r
-	 * @param Relation $relation
-	 * @param Atom $srcAtom
-	 * @param Atom $tgtAtom
+     * @param Link $link
+     * @return void
 	 */
-	public function addLink(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
+	public function addLink(Link $link){
 	    // This function is under control of transaction check!
         if (!$this->dbTransaction) $this->startTransaction();
         
-        $srcAtomId = $this->getDBRepresentation($srcAtom);
-        $tgtAtomId = $this->getDBRepresentation($tgtAtom);
+        $relation = $link->relation();
+        $srcAtomId = $this->getDBRepresentation($link->src());
+        $tgtAtomId = $this->getDBRepresentation($link->tgt());
 	    
 	    $relTable = $relation->getMysqlTable();
 	    
@@ -557,16 +555,16 @@ class Database implements StorageInterface{
 	
 	/**
 	 * Delete link (srcAtom,tgtAtom) into database table for relation r
-	 * @param Relation $relation
-	 * @param Atom $srcAtom
-	 * @param Atom $tgtAtom
+     * @param Link $link
+     * @return void
 	 */
-	public function deleteLink(Relation $relation, Atom $srcAtom, Atom $tgtAtom){
+	public function deleteLink(Link $link){
 	    // This function is under control of transaction check!
         if (!$this->dbTransaction) $this->startTransaction();
         
-        $srcAtomId = $this->getDBRepresentation($srcAtom);
-        $tgtAtomId = $this->getDBRepresentation($tgtAtom);
+        $relation = $link->relation();
+        $srcAtomId = $this->getDBRepresentation($link->src());
+        $tgtAtomId = $this->getDBRepresentation($link->tgt());
 	     
 	    $relTable = $relation->getMysqlTable();
 	     
@@ -576,7 +574,7 @@ class Database implements StorageInterface{
 	            $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
 	            break;
 	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
-	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link ({$srcAtom},{$tgtAtom}) from relation '{$relation}' because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link {$link} because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
 	            // Source atom can be used in WHERE statement
 	            if(!is_null($srcAtomId)) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
@@ -586,7 +584,7 @@ class Database implements StorageInterface{
 	            else throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
 	            break;
 	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
-	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link ({$srcAtom},{$tgtAtom}) from relation '{$relation}' because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link {$link} because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
 	            
 	            // Target atom can be used in WHERE statement
 	            if(!is_null(($tgtAtomId))) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");

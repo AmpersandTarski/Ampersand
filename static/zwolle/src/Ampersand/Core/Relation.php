@@ -202,47 +202,39 @@ class Relation {
     
     /**
      * Check if link (tuple of src and tgt atom) exists in this relation
-     * @param Atom $leftAtom
-     * @param Atom $rightAtom
-     * @param boolean $isFlipped specifies if $leftAtom and $rightAtom must be flipped to match the relation
+     * @param Link $link
      * @return boolean
      */
-    public function linkExists(Atom $leftAtom, Atom $rightAtom, $isFlipped = false){
-        // Determine src and tgt atom based on $isFlipped
-        $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
-        $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
+    public function linkExists(Link $link){
+        $this->logger->debug("Checking if link {$link} exists in storage");
         
-        return (new Link($this, $srcAtom, $tgtAtom))->exists();
+        return $this->storage->linkExists($link);
     }
     
     /**
      * Add link to this relation
-     * @param Atom $leftAtom
-     * @param Atom $rightAtom
-     * @param boolean $isFlipped specifies if $leftAtom and $rightAtom must be flipped to match the relation
+     * @param Link $link
      * @return void
      */
-    public function addLink(Atom $leftAtom, Atom $rightAtom, $isFlipped = false){
-        // Determine src and tgt atom based on $isFlipped
-        $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
-        $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
+    public function addLink(Link $link){
+        $this->logger->debug("Add link {$link} to storage");
         
-        (new Link($this, $srcAtom, $tgtAtom))->add();
+        // Ensure that atoms exists in their concept tables
+        $link->src()->add();
+        $link->tgt()->add();
+        
+        $this->storage->addLink($link);
     }
     
     /**
      * Delete link from this relation
-     * @param Atom $leftAtom
-     * @param Atom $rightAtom
-     * @param boolean $isFlipped specifies if $leftAtom and $rightAtom must be flipped to match the relation
+     * @param Link $link
      * @return void
      */
-    public function deleteLink(Atom $leftAtom, Atom $rightAtom, $isFlipped = false){
-        // Determine src and tgt atom based on $isFlipped
-        $srcAtom = $isFlipped ? $rightAtom : $leftAtom;
-        $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
+    public function deleteLink(Link $link){
+        $this->logger->debug("Delete link {$link} from storage");
         
-        (new Link($this, $srcAtom, $tgtAtom))->delete();
+        $this->storage->deleteLink($link);
     }
     
     /**

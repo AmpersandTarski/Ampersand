@@ -4,6 +4,7 @@ namespace Ampersand\Extension\ExcelImport;
 
 use Exception;
 use Ampersand\AngularApp;
+use Ampersand\Core\Link;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Config;
@@ -155,7 +156,8 @@ class ExcelImport {
 	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept);
 	            if(!$rightAtom->exists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
 	            
-	            $header[$columnletter]->relation()->addLink($leftAtom, $rightAtom, $header[$columnletter]->relationIsFlipped, 'ExcelImport');
+                if($header[$columnletter]->relationIsFlipped) (new Link($header[$columnletter]->relation(), $rightAtom, $leftAtom))->add();
+                else (new Link($header[$columnletter]->relation(), $leftAtom, $rightAtom))->add();
 	        }
 	    }
 	}
@@ -297,7 +299,8 @@ class ExcelImport {
 					}
 					
 					foreach ($rightAtoms as $rightAtom){
-					    $relations[$col]->addLink($leftAtom, $rightAtom, $flipped[$col], 'ExcelImport');
+                        if($flipped[$col]) (new Link($relations[$col], $rightAtom, $leftAtom))->add();
+                        else (new Link($relations[$col], $leftAtom, $rightAtom))->add();
 					}
 				}
 			}

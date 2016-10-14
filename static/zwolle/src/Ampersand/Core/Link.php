@@ -16,11 +16,11 @@ use Ampersand\Log\Logger;
  *
  */
 class Link implements JsonSerializable {
-    public $rel;
+    protected $rel;
     
-    public $src;
+    protected $src;
     
-    public $tgt;
+    protected $tgt;
     
     public function __construct(Relation $rel, Atom $src, Atom $tgt){
         $this->rel = $rel;
@@ -55,9 +55,7 @@ class Link implements JsonSerializable {
      * @return boolean
      */
     public function exists(){
-        $logger = Logger::getLogger("CORE")->debug("Checking if link {$this} exists in database");
-        
-        return $this->rel->storage->linkExists($this->rel, $this->src, $this->tgt);
+        return $this->rel->linkExists($this);
     }
     
     /**
@@ -65,14 +63,7 @@ class Link implements JsonSerializable {
      * @return Link $this
      */
     public function add(){
-        $logger = Logger::getLogger("CORE")->debug("Add link {$this} to database");
-        
-        // Ensure that atoms exists in their concept tables
-        $this->src->add();
-        $this->tgt->add();
-        
-        $this->rel->storage->addLink($this->rel, $this->src, $this->tgt);
-        
+        $this->rel->addLink($this);
         return $this;
     }
     
@@ -81,11 +72,16 @@ class Link implements JsonSerializable {
      * @return Link $this
      */
     public function delete(){
-        $logger = Logger::getLogger("CORE")->debug("Delete link {$this} from database");
-        
-        $this->rel->storage->deleteLink($this->rel, $this->src, $this->tgt);
-        
+        $this->rel->deleteLink($this);
         return $this;
+    }
+    
+    /**
+     * Return relation
+     * @return Relation $this->rel
+     */
+    public function relation(){
+        return $this->rel;
     }
     
     /**
