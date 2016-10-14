@@ -62,7 +62,7 @@ class Transaction {
      * Specifies requested transaction type (i.e. 'feedback' or 'promise')
      * @var string
      */
-    private $requestType = 'feedback';
+    private $requestType = 'promise';
     
     /**
      * Specifies if the transaction is committed or rolled back
