@@ -40,9 +40,16 @@ class Concept {
     
     /**
      * Dependency injection of storage implementation
+     * There must at least be one storage implementation for every concept
+     * @var \Ampersand\Storage\ConceptStorageInterface[]
+     */
+    protected $storages;
+    
+    /**
+     *
      * @var \Ampersand\Storage\ConceptStorageInterface
      */
-    protected $storage;
+    protected $primaryStorage;
     
     /**
      * Definition from which Concept object is created
@@ -134,12 +141,16 @@ class Concept {
 	 * Private function to prevent outside instantiation of concepts. Use Concept::getConcept($conceptName)
 	 * 
 	 * @param array $conceptDef
+     * @param ConceptStorageInterface[] $storages
 	 */
-	private function __construct($conceptDef){
-        $this->storage = Database::singleton(); // For now, the mysql database is the only supported storage implementation
+	private function __construct(array $conceptDef, array $storages){
 	    $this->logger = Logger::getLogger('CORE');
 	    
         $this->def = $conceptDef;
+        
+        if(empty($storages)) throw new Exception("No storage(s) provided for concept {$conceptDef['label']}", 500);
+        $this->storages = $storages;
+        $this->primaryStorage = current($this->storages); // For now, we just pick the first storage as primary storage
         
 		$this->name = $conceptDef['id'];
         $this->label = $conceptDef['label'];
@@ -341,11 +352,12 @@ class Concept {
 	public function createNewAtomId(){
         static $prevTime = null;
         
+        // TODO: remove this hack with _AI (autoincrement feature)
 	    if(strpos($this->name, '_AI') !== false && $this->isInteger()){
 	        $firstCol = current($this->mysqlConceptTable->getCols());
 	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
 	         
-	        $result = array_column((array)$this->storage->Exe($query), 'MAX');
+	        $result = array_column((array)$this->primaryStorage->Exe($query), 'MAX');
 	
 	        if(empty($result)) $atomId = 1;
 	        else $atomId = $result[0] + 1;
@@ -382,7 +394,7 @@ class Concept {
             return true;
         }elseif($atom->id === '_NEW'){
             return true; // Return true if id is '_NEW' (special case)
-        }elseif($this->storage->atomExists($atom)){
+        }elseif($this->primaryStorage->atomExists($atom)){
             $this->atomCache[] = $atom->id; // Add to cache
     		return true;
         }else{
@@ -396,7 +408,7 @@ class Concept {
      * @return Atom[]
      */
      public function getAllAtomObjects(){
-        return $this->storage->getAllAtoms();
+        return $this->primaryStorage->getAllAtoms();
     }
     
     /**
@@ -414,7 +426,7 @@ class Concept {
                 $this->logger->debug("Add atom {$atom} to storage");
                 Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
                 
-                $this->storage->addAtom($atom); // Add to storage
+                foreach($this->storages as $storage) $storage->addAtom($atom); // Add to storage
                 $this->atomCache[] = $atom->id; // Add to cache
             }
         // Adding atom[A] to another concept [B] ($this)
@@ -446,7 +458,7 @@ class Concept {
             $this->logger->debug("Remove atom {$atom} from {$this} in storage");
             Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
             
-            $this->storage->removeAtom($atom); // Remove from concept in storage
+            foreach($this->storages as $storage) $storage->removeAtom($atom); // Remove from concept in storage
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
         }else{
             $this->logger->debug("Cannot remove atom {$atom} from {$this}, because atom does not exists");
@@ -462,7 +474,7 @@ class Concept {
             $this->logger->debug("Delete atom {$atom} from storage");
             Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
             
-            $this->storage->deleteAtom($atom); // Delete from storage
+            foreach($this->storages as $storage) $storage->deleteAtom($atom); // Delete from storage
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
             
             // Delete all links where $atom is used as src or tgt
@@ -523,8 +535,9 @@ class Concept {
 	    // import json file
 	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'concepts.json');
 	    $allConceptDefs = (array)json_decode($file, true);
+        $storages = [Database::singleton()];
 	
-	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef);
+	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $storages);
 	}
 }
 
