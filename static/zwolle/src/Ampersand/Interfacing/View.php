@@ -8,6 +8,7 @@
 namespace Ampersand\Interfacing;
 
 use Exception;
+use Ampersand\Core\Atom;
 use Ampersand\Interfacing\ViewSegment;
 use Ampersand\Config;
 
@@ -46,7 +47,7 @@ class View {
      * Array with view segments that are used to build the view
      * @var ViewSegment[]
      */
-    public $segments = array();
+    public $segments = [];
     
     
     /**
@@ -55,14 +56,28 @@ class View {
      *
      * @param array $viewDef
      */
-    private function __construct($viewDef){        
+    private function __construct($viewDef){
         $this->label = $viewDef['label'];
         $this->forConcept = $viewDef['conceptId'];
         $this->isDefault = $viewDef['isDefault'];
         
         foreach($viewDef['segments'] as $segment){
-            $this->segments[] = new ViewSegment($segment);
+            $this->segments[] = new ViewSegment($segment, $this);
         }
+    }
+    
+    public function getLabel(){
+        return $this->label;
+    }
+    
+    /**
+     * @param Atom $srcAtom the atom for which to get the view data
+     * @return array
+     */
+    public function getViewData(Atom $srcAtom){
+        $viewData = [];
+        foreach ($this->segments as $viewSegment) $viewData[$viewSegment->label] = $viewSegment->getData($srcAtom);
+        return $viewData;
     }
     
     /**********************************************************************************************

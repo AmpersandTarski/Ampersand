@@ -114,41 +114,11 @@ class Resource extends Atom {
             if(isset($this->parentList)) $viewDef = $this->parentList->ifc->getView(); // if parentList is defined, use view of ifc (can be null)
             else $viewDef = $this->concept->getDefaultView(); // else use default view of concept (can be null)
             
-            $this->viewData = [];
-            if(!is_null($viewDef)){ // If there is a view definition
-                foreach ($viewDef->segments as $viewSegment){
-                    $key = is_null($viewSegment->label) ? $viewSegment->seqNr : $viewSegment->label;
-                    
-                    switch ($viewSegment->segType){
-                        case "Text":
-                            $this->viewData[$key] = $viewSegment->text;
-                            break;
-                        case "Exp":
-                            try {
-                                // Try to get view segment from atom query data
-                                $this->viewData[$key] = $this->getQueryData('view_' . $key); // column is prefixed with view_
-                            
-                            }catch (Exception $e) {
-                                // Column not defined, perform query
-                                if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                                    $srcAtomId = $this->concept->storage->getDBRepresentation($this);
-                                    $query = "/* VIEW <{$viewDef->label}:{$key}> */ SELECT DISTINCT `tgt` FROM ({$viewSegment->expSQL}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
-                                    $tgtAtoms = array_column((array)$this->concept->storage->Exe($query), 'tgt');
-                                    $this->viewData[$key] = count($tgtAtoms) ? $tgtAtoms[0] : null;
-                                }else{
-                                    throw $e;
-                                }
-                            }
-                            break;
-                        default:
-                            throw new Exception("Unsupported segmentType '{$viewSegment->segType}' in VIEW <{$viewDef->label}:{$key}>", 501); // 501: Not implemented
-                            break;
-                    }
-                }
-            }
+            if(!is_null($viewDef)) $this->viewData = $viewDef->getViewData($this); // if there is a view definition
+            else $this->viewData = [];
         }
         return $this->viewData;
-	}
+    }
     
     /**
      * @return string
