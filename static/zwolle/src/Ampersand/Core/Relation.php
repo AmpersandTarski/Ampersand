@@ -43,6 +43,12 @@ class Relation {
     protected $storage;
     
     /**
+     *
+     * @var \Ampersand\Storage\RelationStorageInterface
+     */
+    protected $primaryStorage;
+    
+    /**
      * 
      * @var string
      */
@@ -124,10 +130,14 @@ class Relation {
      * Private function to prevent outside instantiation of Relations. Use Relation::getRelation($relationSignature)
      *
      * @param array $relationDef
+     * @param RelationStorageInterface[] $storages
      */
-    public function __construct($relationDef){
+    public function __construct($relationDef, array $storages){
         $this->logger = Logger::getLogger('CORE');
-        $this->storage = Database::singleton();
+        
+        if(empty($storages)) throw new Exception("No storage(s) provided for relation {$relationDef['signature']}", 500);
+        $this->storages = $storages;
+        $this->primaryStorage = current($this->storages); // For now, we just pick the first storage as primary storage
         
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConceptId']);
@@ -209,7 +219,15 @@ class Relation {
     public function linkExists(Link $link){
         $this->logger->debug("Checking if link {$link} exists in storage");
         
-        return $this->storage->linkExists($link);
+        return $this->primaryStorage->linkExists($link);
+    }
+    
+    /**
+     * Returns all links (pair of Atoms) in this relation
+     * @return Link[]
+     */
+    public function getAllLinks(){    
+        return $this->primaryStorage->getAllLinks($this);
     }
     
     /**
@@ -225,7 +243,7 @@ class Relation {
         $link->src()->add();
         $link->tgt()->add();
         
-        $this->storage->addLink($link);
+        foreach($this->storages as $storage) $storage->addLink($link);
     }
     
     /**
@@ -237,36 +255,32 @@ class Relation {
         $this->logger->debug("Delete link {$link} from storage");
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
         
-        $this->storage->deleteLink($link);
+        foreach($this->storages as $storage) $storage->deleteLink($link);
     }
     
+    /**
+     * @param Atom $atom atom for which to delete all links
+     * @param string $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
+     * @return void
+     */
     public function deleteAllLinks(Atom $atom, $srcOrTgt = null){        
         switch ($srcOrTgt) {
             case 'src':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src");
-                $this->storage->deleteAllLinks($this, $atom, 'src');
+                foreach($this->storages as $storage) $storage->deleteAllLinks($this, $atom, 'src');
                 break;
             case 'tgt':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as tgt");
-                $this->storage->deleteAllLinks($this, $atom, 'tgt');
+                foreach($this->storages as $storage) $storage->deleteAllLinks($this, $atom, 'tgt');
                 break;
             case null:
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src or tgt");
-                $this->storage->deleteAllLinks($this, $atom, null);
+                foreach($this->storages as $storage) $storage->deleteAllLinks($this, $atom, null);
                 break;
             default:
                 throw new Exception("Unknown/unsupported param option '{$srcOrTgt}'. Supported options are 'src', 'tgt' or null", 500);
                 break;
         }
-    }
-    
-    /**
-     * Returns all links (pair of Atoms) in this relation
-     * @return Link[]
-     */
-    public function getAllLinks(){    
-        $db = Database::singleton();
-        return $db->getAllLinks($this);
     }
     
     /**********************************************************************************************
@@ -341,9 +355,10 @@ class Relation {
         // import json file
         $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'relations.json');
         $allRelationDefs = (array)json_decode($file, true);
+        $storages = [Database::singleton()];
     
         foreach ($allRelationDefs as $relationDef){
-            $relation = new Relation($relationDef);
+            $relation = new Relation($relationDef, $storages);
             self::$allRelations[$relation->signature] = $relation; 
         }
     }
