@@ -42,7 +42,7 @@ class Concept {
      * Dependency injection of storage implementation
      * @var \Ampersand\Storage\ConceptStorageInterface
      */
-    public $storage;
+    protected $storage;
     
     /**
      * Definition from which Concept object is created

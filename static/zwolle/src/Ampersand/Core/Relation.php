@@ -40,7 +40,7 @@ class Relation {
      * Dependency injection of storage implementation
      * @var \Ampersand\Storage\RelationStorageInterface
      */
-    public $storage;
+    protected $storage;
     
     /**
      * 
