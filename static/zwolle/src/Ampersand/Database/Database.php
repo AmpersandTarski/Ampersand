@@ -100,12 +100,10 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
 	}
 	
 	/**
-	 * Singleton pattern: private function to prevent any copy/clone of database instance
 	 * Use Database::singleton() instead
+	 * Singleton pattern: private function to prevent any copy/clone of database instance
 	 */
-	private function __clone(){
-		
-	}
+	private function __clone(){}
     
     /**
      * Returns name of storage implementation
@@ -117,6 +115,7 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
 	
 	/**
 	 * Function to return the database instance
+     * Singleton pattern: use this static function to get the single instance of this class
 	 * @return Database
 	 */
 	public static function singleton(){
