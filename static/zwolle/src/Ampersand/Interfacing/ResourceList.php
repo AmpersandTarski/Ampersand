@@ -13,7 +13,6 @@ use IteratorAggregate;
 use Ampersand\Session;
 use Ampersand\Config;
 use Ampersand\Core\Atom;
-use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 
 /**
@@ -127,14 +126,8 @@ class ResourceList implements IteratorAggregate {
                 }
             }catch (Exception $e) {
                 // Column not defined, perform sub interface query
-                if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                    $db = Database::singleton();
-                    $data = (array) $db->Exe($this->ifc->getQuery($this->src));
-                    
-                    // Integrity check
-                    if($this->ifc->isUni() && count($data) > 1) throw new Exception("Univalent (sub)interface returns more than 1 resource: " . $this->ifc->getPath(), 500);
-                    
-                    foreach ($data as $row) {
+                if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct                    
+                    foreach ($this->ifc->getIfcData($this->src) as $row) {
                         $r = new Resource($row['tgt'], $this->ifc->tgtConcept->name, $this);
                         $r->setQueryData($row);
                         $this->tgtResources[$r->id] = $r;
@@ -168,14 +161,7 @@ class ResourceList implements IteratorAggregate {
             }catch (Exception $e) {
                 // Column not defined, perform sub interface query
                 if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                    $db = Database::singleton();
-                    $data = (array) $db->Exe($this->ifc->getQuery($this->src));
-                    
-                    // Integrity check
-                    if($this->ifc->isUni() && count($data) > 1) throw new Exception("Univalent (sub)interface returns more than 1 resource: " . $this->ifc->getPath(), 500);
-                    
-                    foreach ($data as $row) $tgtAtoms[] = new Atom($row['tgt'], $this->ifc->tgtConcept);
-                    
+                    foreach ($this->ifc->getIfcData($this->src) as $row) $tgtAtoms[] = new Atom($row['tgt'], $this->ifc->tgtConcept);
                 }else{
                     throw $e;
                 }

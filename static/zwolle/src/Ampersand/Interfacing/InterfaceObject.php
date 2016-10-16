@@ -426,11 +426,11 @@ class InterfaceObject {
     }
     
     /**
-     * Returns query to get target atoms for this interface
+     * Returns interface data (tgt atoms) for given src atom
      * @param Atom $srcAtom atom to take as source atom for this interface expression query
-     * @return string
+     * @return array
      */
-    public function getQuery($srcAtom){
+    public function getIfcData($srcAtom){
         $srcAtomId = $this->database->getDBRepresentation($srcAtom);
         if(strpos($this->query, '_SRCATOM') !== false){
             $query = str_replace('_SRCATOM', $srcAtomId, $this->query);
@@ -438,7 +438,12 @@ class InterfaceObject {
         }else{
             $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
         }
-        return $query;
+        $data = (array) $this->database->Exe($query);
+        
+        // Integrity check
+        if($this->isUni() && count($data) > 1) throw new Exception("Univalent (sub)interface returns more than 1 resource: " . $this->getPath(), 500);
+        
+        return $data; 
     }
 	
 /**************************************************************************************************
