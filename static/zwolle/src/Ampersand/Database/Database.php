@@ -297,6 +297,7 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
 	    try{
 	        return $this->db_link->query($query);
         }catch (Exception $e){
+            $this->logger->error($e->getMessage());
             if(!Config::get('productionEnv')){
                 // Convert mysqli_sql_exceptions into 500 errors
                 switch ($e->getCode()){
@@ -326,65 +327,69 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
 		if(is_null($escapestr)) return null;
 		else return $this->db_link->real_escape_string($escapestr);
 	}
+
+/**************************************************************************************************
+ *
+ * Implementation of StorageInterface methods (incl. database transaction handling)
+ *
+ *************************************************************************************************/
+        
+	/**
+	 * Function to start/open a database transaction to track of all changes and be able to rollback
+	 * @return void
+	 */
+	private function startTransaction(){
+        Transaction::registerStorageTransaction($this);
+        
+        $this->Exe("START TRANSACTION"); // start database transaction
+        $this->dbTransactionActive = true; // set flag dbTransactionActive
+	}
 	
 	/**
-	 * Check if atom exists in database
-	 * @param Atom $atom
-	 * @return boolean
+	 * Function to commit the open database transaction
+	 * @return void
 	 */
-	public function atomExists(Atom $atom){
-	    $tableInfo = $atom->concept->getConceptTableInfo();
-	    $firstCol = current($tableInfo->getCols());
-        $atomId = $this->getDBRepresentation($atom);
+	public function commitTransaction(){
+		$this->logger->info("Commit database transaction");
+		
+		$this->Exe("COMMIT"); // commit database transaction
+        $this->dbTransactionActive = false;
+	}
 	
-	    $query = "/* Check if atom exists */ SELECT `$firstCol->name` FROM `{$tableInfo->name}` WHERE `$firstCol->name` = '{$atomId}'";
-	    $result = $this->Exe($query);
-	
-	    if(empty($result)) return false;
-	    else return true;
+	/**
+	 * Function to rollback changes made in the open database transaction
+	 * @return void
+	 */
+	public function rollbackTransaction(){
+		$this->logger->info("Rollback database transaction");
+		
+		$this->Exe("ROLLBACK"); // rollback database transaction
+        $this->dbTransactionActive = false;
 	}
     
+/**************************************************************************************************
+ * 
+ * Implementation of ConceptStorageInterface methods
+ *
+ *************************************************************************************************/
+
     /**
-     * Check if link exists in database
-     * @param Link $link
-     * @return boolean
-     */
-    public function linkExists(Link $link){
-        $relTable = $link->relation()->getMysqlTable();
-        $srcAtomId = $this->getDBRepresentation($link->src());
-        $tgtAtomId = $this->getDBRepresentation($link->tgt());
+    * Check if atom exists in database
+    * @param Atom $atom
+    * @return boolean
+    */
+    public function atomExists(Atom $atom){
+        $tableInfo = $atom->concept->getConceptTableInfo();
+        $firstCol = current($tableInfo->getCols());
+        $atomId = $this->getDBRepresentation($atom);
         
-        $result = $this->Exe("/* Check if link exists */ SELECT * FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+        $query = "/* Check if atom exists */ SELECT `$firstCol->name` FROM `{$tableInfo->name}` WHERE `$firstCol->name` = '{$atomId}'";
+        $result = $this->Exe($query);
         
         if(empty($result)) return false;
         else return true;
     }
     
-    /**
-     * Get all links given a relation
-     * @param Relation $relation
-     * @return Link[]
-     */
-    public function getAllLinks(Relation $relation){
-        $relTable = $relation->getMysqlTable();
-        
-        // Query all atoms in table
-        $query = "SELECT `{$relTable->srcCol()->name}` as `src`, `{$relTable->tgtCol()->name}` as `tgt` FROM `{$relTable->name}`";
-        
-        $links = [];
-        foreach((array)$this->Exe($query) as $row){
-            $links[] = new Link($relation, new Atom($row['src'], $relation->srcConcept), new Atom($row['tgt'], $relation->tgtConcept));
-        }
-        
-        return $links;
-    }
-
-/**************************************************************************************************
- *
- * Functions to perform database transactions
- *
- *************************************************************************************************/
-	
 	/**
 	 * Add atom to database
 	 * @param Atom $atom
@@ -455,7 +460,70 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();
 	}
-	
+    
+    /**
+	 * Delete atom from concept table in the database
+	 * @param \Ampersand\Core\Atom $atom
+	 * @return void
+	 */
+	public function deleteAtom(Atom $atom){
+		$this->logger->debug("deleteAtom({$atom})");
+		
+	    // This function is under control of transaction check!
+        if (!$this->dbTransactionActive) $this->startTransaction();
+        
+        $atomId = $this->getDBRepresentation($atom);
+        
+        // Delete atom from concept table
+        $conceptTable = $atom->concept->getConceptTableInfo();
+        $query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atomId}' LIMIT 1";
+        $this->Exe($query);
+        
+        // Check if query resulted in an affected row
+        $this->checkForAffectedRows();
+	}
+    
+/**************************************************************************************************
+ *
+ * Implementation of RelationStorageInterface methods
+ *
+ *************************************************************************************************/
+    
+    /**
+    * Check if link exists in database
+    * @param Link $link
+    * @return boolean
+    */
+    public function linkExists(Link $link){
+        $relTable = $link->relation()->getMysqlTable();
+        $srcAtomId = $this->getDBRepresentation($link->src());
+        $tgtAtomId = $this->getDBRepresentation($link->tgt());
+        
+        $result = $this->Exe("/* Check if link exists */ SELECT * FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+        
+        if(empty($result)) return false;
+        else return true;
+    }
+    
+    /**
+    * Get all links given a relation
+    * @param Relation $relation
+    * @return Link[]
+    */
+    public function getAllLinks(Relation $relation){
+        $relTable = $relation->getMysqlTable();
+        
+        // Query all atoms in table
+        $query = "SELECT `{$relTable->srcCol()->name}` as `src`, `{$relTable->tgtCol()->name}` as `tgt` FROM `{$relTable->name}`";
+        
+        $links = [];
+        foreach((array)$this->Exe($query) as $row){
+            $links[] = new Link($relation, new Atom($row['src'], $relation->srcConcept), new Atom($row['tgt'], $relation->tgtConcept));
+        }
+        
+        return $links;
+    }
+    
 	/**
 	 * Add link (srcAtom,tgtAtom) into database table for relation r
      * @param Link $link
@@ -607,67 +675,6 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
         }
         
     }
-	    
-	/**
-	 * Delete atom from concept table in the database
-	 * @param \Ampersand\Core\Atom $atom
-	 * @return void
-	 */
-	public function deleteAtom(Atom $atom){
-		$this->logger->debug("deleteAtom({$atom})");
-		
-	    // This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
-        
-        $atomId = $this->getDBRepresentation($atom);
-        
-        // Delete atom from concept table
-        $conceptTable = $atom->concept->getConceptTableInfo();
-        $query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atomId}' LIMIT 1";
-        $this->Exe($query);
-        
-        // Check if query resulted in an affected row
-        $this->checkForAffectedRows();
-	}
-	
-/**************************************************************************************************
- *
- * Database transaction handling
- *
- *************************************************************************************************/
-    
-	/**
-	 * Function to start/open a database transaction to track of all changes and be able to rollback
-	 * @return void
-	 */
-	private function startTransaction(){
-        Transaction::registerStorageTransaction($this);
-        
-        $this->Exe("START TRANSACTION"); // start database transaction
-        $this->dbTransactionActive = true; // set flag dbTransactionActive
-	}
-	
-	/**
-	 * Function to commit the open database transaction
-	 * @return void
-	 */
-	public function commitTransaction(){
-		$this->logger->info("Commit database transaction");
-		
-		$this->Exe("COMMIT"); // commit database transaction
-        $this->dbTransactionActive = false;
-	}
-	
-	/**
-	 * Function to rollback changes made in the open database transaction
-	 * @return void
-	 */
-	public function rollbackTransaction(){
-		$this->logger->info("Rollback database transaction");
-		
-		$this->Exe("ROLLBACK"); // rollback database transaction
-        $this->dbTransactionActive = false;
-	}
 	
 /**************************************************************************************************
  *
