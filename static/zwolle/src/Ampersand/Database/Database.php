@@ -540,11 +540,77 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
 	    
 	    $this->checkForAffectedRows(); // Check if query resulted in an affected row
 	}
+    
+    /**
+     * @param Relation $relation relation from which to delete all links
+     * @param Atom $atom atom for which to delete all links
+     * @param string $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
+     * @return void
+     */
+    public function deleteAllLinks(Relation $relation, Atom $atom = null, $srcOrTgt = null){
+        // This function is under control of transaction check!
+        if (!$this->dbTransactionActive) $this->startTransaction();
+        
+        $relationTable = $relation->getMysqlTable();
+        
+        // Delete links for given atom
+        if(isset($atom)){
+            $atomId = $this->getDBRepresentation($atom);
+            
+            $cols = [];
+            switch ($srcOrTgt) {
+                case 'src':
+                    $cols[] = $relationTable->srcCol();
+                    break;
+                case 'tgt':
+                    $cols[] = $relationTable->tgtCol();
+                    break;
+                case null:
+                    $cols[] = $relationTable->srcCol();
+                    $cols[] = $relationTable->tgtCol();
+                    breal;
+                default:
+                    throw new Exception("Unknown/unsupported param option '{$srcOrTgt}'. Supported options are 'src', 'tgt' or null", 500);
+                    break;
+            }
+            
+            foreach($cols as $col){
+                // If n-n table, remove row
+                if(is_null($relationTable->tableOf)) $query = "DELETE FROM `{$relationTable->name}` WHERE `{$col->name}` = '{$atomId}'";
+                
+                // Elseif column may be set to null, update
+                elseif($col->null) $query = "UPDATE `{$relationTable->name}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atomId}'";
+                
+                // Else, we remove the entire row (cascades delete for TOT and SUR relations)
+                else $query = "DELETE FROM `{$relationTable->name}` WHERE `{$col->name}` = '{$atomId}'";
+                
+                $this->Exe($query);
+            }
+            
+        // Delete all links
+        }else{
+            // If n-n table, remove all rows
+            if(is_null($relationTable->tableOf)){
+                $query = "DELETE FROM `{$relationTable->name}`";
+            
+            // Else if in table of src concept, set tgt col to null
+            }elseif($relationTable->tableOf == 'src'){ 
+                $col = $relationTable->tgtCol();
+                $query = "UPDATE `{$relationTable->name}` SET `{$col->name}` = NULL";
+            
+            // Else if in table of tgt concept, set src col to null
+            }elseif($relationTable->tableOf == 'tgt'){ 
+                $col = $relationTable->srcCol();
+                $query = "UPDATE `{$relationTable->name}` SET `{$col->name}` = NULL";
+            }
+            
+            $this->Exe($query);
+        }
+        
+    }
 	    
 	/**
-	 * Remove all occurrences of $atom in the database (all concept tables and all relation tables)
-	 * In tables where the atom may not be null, the entire row is removed.
-	 * TODO: If all relation fields in a wide table are null, the entire row could be deleted, but this doesn't happen now. As a result, relation queries may return some nulls, but these are filtered out anyway.
+	 * Delete atom from concept table in the database
 	 * @param \Ampersand\Core\Atom $atom
 	 * @return void
 	 */
@@ -555,38 +621,14 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
         if (!$this->dbTransactionActive) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
-	    
-		$concept = $atom->concept;
-		
-		// Delete atom from concept table
-		$conceptTable = $concept->getConceptTableInfo();
-		$query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atomId}' LIMIT 1";
-		$this->Exe($query);
-		
-		// Check if query resulted in an affected row
-		$this->checkForAffectedRows();
-		
-        // TODO : move code below to Concept::deleteAtom() method
         
-		// Delete atom from relation tables where atom is mentioned as src or tgt atom
-		foreach (Relation::getAllRelations() as $relation){
-		    $tableName = $relation->getMysqlTable()->name;
-		    
-		    $cols = array();
-		    if($relation->srcConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->srcCol();
-		    if($relation->tgtConcept->inSameClassificationTree($concept)) $cols[] = $relation->getMysqlTable()->tgtCol();
-		    
-		    foreach($cols as $col){
-		        // If n-n table, remove row
-		        if(is_null($relation->getMysqlTable()->tableOf)) $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atomId}'";
-		        // Elseif column may be set to null, update
-		        elseif($col->null) $query = "UPDATE `{$tableName}` SET `{$col->name}` = NULL WHERE `{$col->name}` = '{$atomId}'";
-		        // Else, we remove the entire row (cascades delete for TOT and SUR relations)
-		        else $query = "DELETE FROM `{$tableName}` WHERE `{$col->name}` = '{$atomId}'";
-		        
-		        $this->Exe($query);
-		    }
-		}
+        // Delete atom from concept table
+        $conceptTable = $atom->concept->getConceptTableInfo();
+        $query = "DELETE FROM `{$conceptTable->name}` WHERE `{$conceptTable->getFirstCol()->name}` = '{$atomId}' LIMIT 1";
+        $this->Exe($query);
+        
+        // Check if query resulted in an affected row
+        $this->checkForAffectedRows();
 	}
 	
 /**************************************************************************************************

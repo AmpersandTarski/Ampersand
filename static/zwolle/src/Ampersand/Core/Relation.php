@@ -240,6 +240,26 @@ class Relation {
         $this->storage->deleteLink($link);
     }
     
+    public function deleteAllLinks(Atom $atom, $srcOrTgt = null){        
+        switch ($srcOrTgt) {
+            case 'src':
+                $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src");
+                $this->storage->deleteAllLinks($this, $atom, 'src');
+                break;
+            case 'tgt':
+                $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as tgt");
+                $this->storage->deleteAllLinks($this, $atom, 'tgt');
+                break;
+            case null:
+                $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src or tgt");
+                $this->storage->deleteAllLinks($this, $atom, null);
+                break;
+            default:
+                throw new Exception("Unknown/unsupported param option '{$srcOrTgt}'. Supported options are 'src', 'tgt' or null", 500);
+                break;
+        }
+    }
+    
     /**
      * Returns all links (pair of Atoms) in this relation
      * @return Link[]
@@ -254,6 +274,13 @@ class Relation {
      * Static functions
      *
      *********************************************************************************************/
+    
+    public static function deleteAllLinksWithAtom(Atom $atom){
+        foreach (self::getAllRelations() as $relation){
+            if($relation->srcConcept->inSameClassificationTree($atom->concept)) $relation->deleteAllLinks($atom, 'src');
+            if($relation->tgtConcept->inSameClassificationTree($atom->concept)) $relation->deleteAllLinks($atom, 'tgt');
+        }
+    }
     
     /**
      * Return Relation object

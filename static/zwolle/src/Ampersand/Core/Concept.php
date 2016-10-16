@@ -472,6 +472,9 @@ class Concept {
             
             $this->storage->deleteAtom($atom); // Delete from storage
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
+            
+            // Delete all links where $atom is used as src or tgt
+            Relation::deleteAllLinksWithAtom($atom);
         }else{
             $this->logger->debug("Cannot delete atom {$atom}, because it does not exists");
         }
