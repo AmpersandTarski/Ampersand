@@ -20,6 +20,13 @@ interface RelationStorageInterface extends StorageInterface {
     
     public function linkExists(Link $link);
     
+    /**
+    * Get all links given a relation
+    * @param Relation $relation
+    * @return Link[]
+    */
+    public function getAllLinks(Relation $relation);
+    
     public function addLink(Link $link);
     
     public function deleteLink(Link $link);
