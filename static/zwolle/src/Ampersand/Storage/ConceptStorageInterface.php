@@ -8,6 +8,7 @@
 namespace Ampersand\Storage;
 
 use Ampersand\Core\Atom;
+use Ampersand\Core\Concept;
 
 /**
  * 
@@ -17,6 +18,8 @@ use Ampersand\Core\Atom;
 interface ConceptStorageInterface extends StorageInterface {
     
     public function atomExists(Atom $atom);
+    
+    public function getAllAtoms(Concept $concept);
     
     public function addAtom(Atom $atom);
     

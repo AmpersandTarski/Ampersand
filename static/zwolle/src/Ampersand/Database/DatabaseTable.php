@@ -27,6 +27,12 @@ class DatabaseTable
      * @var array
      */
     private $cols = array();
+    
+    /**
+     *
+     * @var string $allAtomsQuery
+     */
+    public $allAtomsQuery;
 
     /**
      * Constructor of Database table

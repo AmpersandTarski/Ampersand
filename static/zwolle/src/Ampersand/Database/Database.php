@@ -15,6 +15,7 @@ use Ampersand\Config;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Link;
+use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
 use Ampersand\Storage\Transaction;
 use Ampersand\Log\Logger;
@@ -388,6 +389,30 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
         
         if(empty($result)) return false;
         else return true;
+    }
+    
+    /**
+     * Get all atoms for given concept
+     * @param Concept $concept
+     * @return Atom[]
+     */
+    public function getAllAtoms(Concept $concept){
+        $tableInfo = $concept->getConceptTableInfo();
+        
+        // Query all atoms in table
+        if(isset($tableInfo->allAtomsQuery)) $query = $tableInfo->allAtomsQuery;
+        else{
+            $firstCol = current($tableInfo->getCols()); // We can query an arbitrary concept col for checking the existence of an atom
+            $query = "SELECT DISTINCT `{$firstCol->name}` as `atomId` FROM `{$tableInfo->name}` WHERE `{$firstCol->name}` IS NOT NULL";
+        }
+        
+        $arr = [];
+        foreach ((array)$this->Exe($query) as $row){
+            $tgtAtom = new Atom($row['atomId'], $concept);
+            $tgtAtom->setQueryData($row);
+            $arr[] = $tgtAtom;
+        }
+        return $arr;
     }
     
 	/**

@@ -165,6 +165,11 @@ class Concept {
 		foreach ($conceptDef['conceptTable']['cols'] as $colName){
 		    $this->mysqlConceptTable->addCol(new DatabaseTableCol($colName));
 		}
+        
+        // All atoms query is a hack which allows to manually add a more efficient query to get all atoms in Concepts.json
+        // E.g. to include already some (default) view variables
+        // TODO: replace hack by propert implementation
+        if(isset($this->def['allAtomsQuery'])) $this->mysqlConceptTable->allAtomsQuery = $this->def['allAtomsQuery'];
 		
 	}
 	
@@ -284,28 +289,6 @@ class Concept {
 	}
 	
 	/**
-     * TODO: refactor when resources (e.g. for update field in UI) can be requested with interface definition
-	 * Return content of all atoms for this concept
-	 * @return Atom[]
-	 */
-	public function getAllAtomObjects(){
-        // Query all atoms in table
-        if(isset($this->def['allAtomsQuery'])) $query = $this->def['allAtomsQuery'];
-        else{
-            $firstCol = current($this->mysqlConceptTable->getCols()); // We can query an arbitrary concept col for checking the existence of an atom
-	        $query = "SELECT DISTINCT `{$firstCol->name}` as `atomId` FROM `{$this->mysqlConceptTable->name}` WHERE `{$firstCol->name}` IS NOT NULL";
-        }
-        
-        $arr = [];
-	    foreach ((array)$this->storage->Exe($query) as $row){
-            $tgtAtom = new Atom($row['atomId'], $this);
-            $tgtAtom->setQueryData($row);
-            $arr[] = $tgtAtom;
-        }
-        return $arr;
-	}
-	
-	/**
 	 * Returns default view for this concept (or null if no default view defined)
 	 * @return View|NULL
 	 */
@@ -405,6 +388,15 @@ class Concept {
         }else{
             return false;
         }
+    }
+    
+    /**
+     * Return content of all atoms for this concept
+     * TODO: refactor when resources (e.g. for update field in UI) can be requested with interface definition
+     * @return Atom[]
+     */
+     public function getAllAtomObjects(){
+        return $this->storage->getAllAtoms();
     }
     
     /**
