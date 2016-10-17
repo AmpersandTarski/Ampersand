@@ -301,16 +301,16 @@ class Relation {
     /**
      * Return Relation object
      * @param string $relationSignature
-     * @param Concept $srcConcept
-     * @param Concept $tgtConcept
+     * @param string|Concept $srcConcept
+     * @param string|Concept $tgtConcept
      * @throws Exception if Relation is not defined
      * @return Relation
      */
     public static function getRelation($relationSignature, Concept $srcConcept = null, Concept $tgtConcept = null){
         $relations = self::getAllRelations();
         
-        if(is_string($srcConcept)) $srcConcept = Concept::getConceptByLabel($srcConcept);
-        if(is_string($tgtConcept)) $tgtConcept = Concept::getConceptByLabel($tgtConcept);
+        if(isset($srcConcept) && !($srcConcept instanceof Concept)) $srcConcept = Concept::getConceptByLabel($srcConcept);
+        if(isset($srcConcept) && !($tgtConcept instanceof Concept)) $tgtConcept = Concept::getConceptByLabel($tgtConcept);
         
         // If relation can be found by its fullRelationSignature return the relation
         if(array_key_exists($relationSignature, $relations)){
