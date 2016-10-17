@@ -8,7 +8,6 @@
 namespace Ampersand;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
@@ -38,11 +37,6 @@ class Session {
      * @var Atom $sessionAtom reference to corresponding session object (Atom) in &-domain
      */
     public $sessionAtom;
-    
-    /**
-     * @var Database $database reference to database object
-     */
-    public $database;
     
     /**
      * @var Role[] $sessionRoles contains roles for loggedin user when login is enabled, otherwise all roles
@@ -75,7 +69,6 @@ class Session {
      */
     private function __construct(){
         $this->logger = Logger::getLogger('SESSION');
-        $this->database = Database::singleton();
         
         $this->initSession();
         

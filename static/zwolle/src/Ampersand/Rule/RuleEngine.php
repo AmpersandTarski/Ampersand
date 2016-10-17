@@ -100,6 +100,7 @@ class RuleEngine {
 	public static function getSignalViolationsFromDB(){
 	    $logger = Logger::getLogger('RULE');
 	    $session = Session::singleton();
+        $database = Database::singleton();
 	    $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
 	    
 		$conjuncts = array();
@@ -114,7 +115,7 @@ class RuleEngine {
     	if(count($conjuncts) > 0){
     	    $q = implode(',', array_map( function($conj){ return "'{$conj->id}'";}, $conjuncts)); // returns string "<conjId1>,<conjId2>,<etc>"
     	    $query = "SELECT * FROM `{$dbsignalTableName}` WHERE `conjId` IN ({$q})";
-    	    $result = $session->database->Exe($query); // array(array('conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
+    	    $result = $database->Exe($query); // array(array('conjId' => '<conjId>', 'src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
     	    foreach ($result as $row){
     	        foreach($conjunctRuleMap[$row['conjId']] as $rule){
     	           $violations[] = new Violation($rule, $row['src'], $row['tgt']);
