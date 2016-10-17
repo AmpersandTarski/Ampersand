@@ -21,18 +21,20 @@ use Ampersand\Config;
 class RuleEngine {
     
     /**
-     *
-     * @param Conjunct[] $conjuncts
+     * Evaluate invariant rules for the provided affected concepts and relations
+     * @param Concept[] $affectedConcepts
+     * @param Relation[] $affectedRelations
      * @param boolean $cacheConjuncts
-     * @return boolean
+     * @return boolean if invariant rules hold
      */
-    public static function checkInvariantRules($conjuncts, $cacheConjuncts = true){
+    public static function checkInvariantRules($affectedConcepts = [], $affectedRelations = [], $cacheConjuncts = true){
         $logger = Logger::getLogger('RULE');
-        $invariantRulesHold = true;
+        $conjuncts = self::getAffectedConjuncts($affectedConcepts, $affectedRelations, 'inv'); // Get affected invariant conjuncts
     
         // check invariant rules
         $logger->debug("Checking invariant rules for provided conjuncts: " . implode(', ', array_column($conjuncts, 'id')));
         
+        $invariantRulesHold = true;
         foreach ($conjuncts as $conjunct){
             if($conjunct->isInvConj()){
                 foreach ($conjunct->evaluateConjunct($cacheConjuncts) as $violation){

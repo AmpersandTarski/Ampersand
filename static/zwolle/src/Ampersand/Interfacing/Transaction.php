@@ -95,9 +95,8 @@ class Transaction {
         
         $this->logger->debug("Checking all affected conjuncts");
         
-        // Check invariant rules (we only have to check the affected invariant rules)
-        $affectedConjuncts = RuleEngine::getAffectedConjuncts($this->affectedConcepts, $this->affectedRelations, 'inv'); // Get affected invariant conjuncts
-        $this->invariantRulesHold = RuleEngine::checkInvariantRules($affectedConjuncts, true);
+        // Check invariant rules (we only have to check the affected invariant rules) 
+        $this->invariantRulesHold = RuleEngine::checkInvariantRules($this->affectedConcepts, $this->affectedRelations, true);
         
         // Check all process rules that are relevant for the activate roles
         RuleEngine::checkProcessRules();
