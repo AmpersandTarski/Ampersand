@@ -148,8 +148,8 @@ class Concept {
         $this->def = $conceptDef;
         
         if(empty($plugs)) throw new Exception("No plug(s) provided for concept {$conceptDef['label']}", 500);
-        $this->$plugs = $plugs;
-        $this->primaryPlug = current($this->$plugs); // For now, we just pick the first plug as primary plug
+        $this->plugs = $plugs;
+        $this->primaryPlug = current($this->plugs); // For now, we just pick the first plug as primary plug
         
 		$this->name = $conceptDef['id'];
         $this->label = $conceptDef['label'];

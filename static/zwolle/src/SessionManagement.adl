@@ -5,7 +5,7 @@ CONTEXT SessionManagement IN ENGLISH
   CONCEPT DateTime ""
   REPRESENT DateTime TYPE DATETIME
   
-  RELATION lastAccess[SESSION*DateTime] UNI
+  RELATION lastAccess[SESSION*DateTime] [UNI]
   
   RELATION sessionAllowedRoles[SESSION*Role]
   RELATION sessionActiveRoles[SESSION*Role]
