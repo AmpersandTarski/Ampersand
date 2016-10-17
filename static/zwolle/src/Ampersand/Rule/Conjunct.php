@@ -126,20 +126,16 @@ class Conjunct {
                 
                 // Cache violations in php Conjunct object
                 if($cacheConjuncts) $this->conjunctViolations = $violations;
-    
+                
+                // Remove "old" conjunct violations from database
+                $query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '{$this->id}'";
+                $db->Exe($query);
+                
                 if(count($violations) == 0){
                     $this->logger->debug("Conjunct '{$this->id}' holds");
-                    	
-                    // Remove "old" conjunct violations from database
-                    $query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '{$this->id}'";
-                    $db->Exe($query);
-                    	
+                    
                 }else{
                     $this->logger->debug("Conjunct '{$this->id}' broken, updating violations in database");
-                    
-                    // Remove "old" conjunct violations from database
-                    $query = "DELETE FROM `$dbsignalTableName` WHERE `conjId` = '{$this->id}'";
-                    $db->Exe($query);
                     	
                     // Add new conjunct violation to database
                     $query = "INSERT IGNORE INTO `$dbsignalTableName` (`conjId`, `src`, `tgt`) VALUES ";
