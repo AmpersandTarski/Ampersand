@@ -514,6 +514,10 @@ class Concept {
 	    
 	    throw new Exception("Concept '{$conceptLabel}' is not defined", 500);
 	}
+    
+    public static function getSessionConcept(){
+        return self::getConcept('SESSION');
+    }
 	
 	/**
 	 * Returns array with all concept objects

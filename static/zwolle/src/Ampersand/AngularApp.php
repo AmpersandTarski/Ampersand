@@ -131,10 +131,11 @@ class AngularApp {
         $interfaces = array_unique($interfaces); 
         
         // Filter interfaces for requested part of navbar
+        $sessionCpt = Concept::getSessionConcept();
         $interfaces = array_filter($interfaces, function($ifc) use ($menu){
             switch ($menu) {
                 case 'top':
-                    if(($ifc->srcConcept->name == 'SESSION' || $ifc->srcConcept->name == 'ONE') && $ifc->crudR) return true;
+                    if(($ifc->srcConcept == $sessionCpt || $ifc->srcConcept->name == 'ONE') && $ifc->crudR) return true;
                     else return false;
                 case 'new':
                     // crudC, otherwise the atom cannot be created
