@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand\Storage;
+namespace Ampersand\Plugs;
 
 use Ampersand\Core\Atom;
 use Ampersand\Core\Link;
@@ -16,7 +16,7 @@ use Ampersand\Core\Relation;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-interface RelationStorageInterface extends StorageInterface {
+interface RelationPlugInterface extends StorageInterface {
     
     public function linkExists(Link $link);
     

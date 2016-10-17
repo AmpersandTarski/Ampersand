@@ -12,6 +12,7 @@ use Ampersand\Config;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
 use Ampersand\Log\Logger;
+use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\RuleEngine;
 
 /**
@@ -72,7 +73,7 @@ class Transaction {
     
     /**
      * List with storages that are registered in this transaction
-     * @var StorageInterface[] $storages
+     * @var \Ampersand\Plugs\StorageInterface[] $storages
      */
     private $storages = [];
     
@@ -133,7 +134,7 @@ class Transaction {
     
     /**
      * Add storage implementation to this transaction
-     * @param StorageInterface $storage
+     * @param \Ampersand\Plugs\StorageInterface $storage
      * @return void
      */
     public function addStorage(StorageInterface $storage){
@@ -223,7 +224,7 @@ class Transaction {
     /**
      * Register storage implementation in current transaction
      * Used to close all open storage transactions lateron
-     * @param StorageInterface $storage
+     * @param \Ampersand\Plugs\StorageInterface $storage
      * @return Transaction
      */
     public static function registerStorageTransaction(StorageInterface $storage){

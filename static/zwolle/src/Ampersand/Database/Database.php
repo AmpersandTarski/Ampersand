@@ -18,20 +18,20 @@ use Ampersand\Core\Link;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
 use Ampersand\Interfacing\ViewSegment;
+use Ampersand\Plugs\ConceptPlugInterface;
 use Ampersand\Plugs\IfcPlugInterface;
+use Ampersand\Plugs\RelationPlugInterface;
 use Ampersand\Plugs\ViewPlugInterface;
 use Ampersand\Storage\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
-use Ampersand\Storage\ConceptStorageInterface;
-use Ampersand\Storage\RelationStorageInterface;
 
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Database implements ConceptStorageInterface, RelationStorageInterface, IfcPlugInterface, ViewPlugInterface {
+class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugInterface, ViewPlugInterface {
     /**
      * 
      * @var \Psr\Log\LoggerInterface
@@ -109,14 +109,6 @@ class Database implements ConceptStorageInterface, RelationStorageInterface, Ifc
 	 */
 	private function __clone(){}
     
-    /**
-     * Returns name of storage implementation
-     * @return string
-     */
-    public function getLabel(){
-        return "MySQL database {$this->db_host} - {$this->db_name}";
-    }
-	
 	/**
 	 * Function to return the database instance
      * Singleton pattern: use this static function to get the single instance of this class
@@ -337,7 +329,15 @@ class Database implements ConceptStorageInterface, RelationStorageInterface, Ifc
  * Implementation of StorageInterface methods (incl. database transaction handling)
  *
  *************************************************************************************************/
-        
+    
+    /**
+     * Returns name of storage implementation
+     * @return string
+     */
+    public function getLabel(){
+        return "MySQL database {$this->db_host} - {$this->db_name}";
+    }
+    
 	/**
 	 * Function to start/open a database transaction to track of all changes and be able to rollback
 	 * @return void
@@ -373,7 +373,7 @@ class Database implements ConceptStorageInterface, RelationStorageInterface, Ifc
     
 /**************************************************************************************************
  * 
- * Implementation of ConceptStorageInterface methods
+ * Implementation of ConceptPlugInterface methods
  *
  *************************************************************************************************/
 
@@ -513,7 +513,7 @@ class Database implements ConceptStorageInterface, RelationStorageInterface, Ifc
     
 /**************************************************************************************************
  *
- * Implementation of RelationStorageInterface methods
+ * Implementation of RelationPlugInterface methods
  *
  *************************************************************************************************/
     

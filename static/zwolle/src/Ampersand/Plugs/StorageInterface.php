@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand\Storage;
+namespace Ampersand\Plugs;
 
 /**
  * Interface for storage implementations

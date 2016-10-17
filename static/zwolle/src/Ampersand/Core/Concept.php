@@ -39,17 +39,17 @@ class Concept {
     private $logger;
     
     /**
-     * Dependency injection of storage implementation
-     * There must at least be one storage implementation for every concept
-     * @var \Ampersand\Storage\ConceptStorageInterface[]
+     * Dependency injection of ConceptPlug implementation
+     * There must at least be one plug for every concept
+     * @var \Ampersand\Plugs\ConceptPlugInterface[]
      */
-    protected $storages;
+    protected $plugs;
     
     /**
      *
-     * @var \Ampersand\Storage\ConceptStorageInterface
+     * @var \Ampersand\Plugs\ConceptPlugInterface
      */
-    protected $primaryStorage;
+    protected $primaryPlug;
     
     /**
      * Definition from which Concept object is created
@@ -132,25 +132,24 @@ class Concept {
     
     /**
      * @var string[] $atomCache array with atomids that exist in the concept
-     * used to prevent unnecessary checks if atom exists in storage
+     * used to prevent unnecessary checks if atom exists in plug
      */
     private $atomCache = array();
 	
 	/**
 	 * Concept constructor
 	 * Private function to prevent outside instantiation of concepts. Use Concept::getConcept($conceptName)
-	 * 
 	 * @param array $conceptDef
-     * @param ConceptStorageInterface[] $storages
+     * @param ConceptPlugInterface[] $plugs
 	 */
-	private function __construct(array $conceptDef, array $storages){
+	private function __construct(array $conceptDef, array $plugs){
 	    $this->logger = Logger::getLogger('CORE');
 	    
         $this->def = $conceptDef;
         
-        if(empty($storages)) throw new Exception("No storage(s) provided for concept {$conceptDef['label']}", 500);
-        $this->storages = $storages;
-        $this->primaryStorage = current($this->storages); // For now, we just pick the first storage as primary storage
+        if(empty($plugs)) throw new Exception("No plug(s) provided for concept {$conceptDef['label']}", 500);
+        $this->$plugs = $plugs;
+        $this->primaryPlug = current($this->$plugs); // For now, we just pick the first plug as primary plug
         
 		$this->name = $conceptDef['id'];
         $this->label = $conceptDef['label'];
@@ -357,7 +356,7 @@ class Concept {
 	        $firstCol = current($this->mysqlConceptTable->getCols());
 	        $query = "SELECT MAX(`$firstCol->name`) as `MAX` FROM `{$this->mysqlConceptTable->name}`";
 	         
-	        $result = array_column((array)$this->primaryStorage->Exe($query), 'MAX');
+	        $result = array_column((array)$this->primaryPlug->Exe($query), 'MAX');
 	
 	        if(empty($result)) $atomId = 1;
 	        else $atomId = $result[0] + 1;
@@ -394,7 +393,7 @@ class Concept {
             return true;
         }elseif($atom->id === '_NEW'){
             return true; // Return true if id is '_NEW' (special case)
-        }elseif($this->primaryStorage->atomExists($atom)){
+        }elseif($this->primaryPlug->atomExists($atom)){
             $this->atomCache[] = $atom->id; // Add to cache
     		return true;
         }else{
@@ -408,11 +407,11 @@ class Concept {
      * @return Atom[]
      */
      public function getAllAtomObjects(){
-        return $this->primaryStorage->getAllAtoms();
+        return $this->primaryPlug->getAllAtoms();
     }
     
     /**
-     * Creating and adding a new atom to the storage 
+     * Creating and adding a new atom to the plug 
      * ór adding an existing atom to another concept set (making it a specialization)
      * @param Atom $atom
      * @return void
@@ -423,10 +422,10 @@ class Concept {
             if($atom->exists()){
                 $this->logger->debug("Atom {$atom} already exists in concept");
             }else{
-                $this->logger->debug("Add atom {$atom} to storage");
+                $this->logger->debug("Add atom {$atom} to plug");
                 Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
                 
-                foreach($this->storages as $storage) $storage->addAtom($atom); // Add to storage
+                foreach($this->plugs as $plug) $plug->addAtom($atom); // Add to plug
                 $this->atomCache[] = $atom->id; // Add to cache
             }
         // Adding atom[A] to another concept [B] ($this)
@@ -455,10 +454,10 @@ class Concept {
         
         // Check if atom exists
         if($atom->exists()){
-            $this->logger->debug("Remove atom {$atom} from {$this} in storage");
+            $this->logger->debug("Remove atom {$atom} from {$this} in plug");
             Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
             
-            foreach($this->storages as $storage) $storage->removeAtom($atom); // Remove from concept in storage
+            foreach($this->plugs as $plug) $plug->removeAtom($atom); // Remove from concept in plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
         }else{
             $this->logger->debug("Cannot remove atom {$atom} from {$this}, because atom does not exists");
@@ -471,10 +470,10 @@ class Concept {
      */
     public function deleteAtom(Atom $atom){
         if($atom->exists()){
-            $this->logger->debug("Delete atom {$atom} from storage");
+            $this->logger->debug("Delete atom {$atom} from plug");
             Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
             
-            foreach($this->storages as $storage) $storage->deleteAtom($atom); // Delete from storage
+            foreach($this->plugs as $plug) $plug->deleteAtom($atom); // Delete from plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
             
             // Delete all links where $atom is used as src or tgt
@@ -539,9 +538,9 @@ class Concept {
 	    // import json file
 	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'concepts.json');
 	    $allConceptDefs = (array)json_decode($file, true);
-        $storages = [Database::singleton()];
+        $plugs = [Database::singleton()];
 	
-	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $storages);
+	    foreach ($allConceptDefs as $conceptDef) self::$allConcepts[$conceptDef['id']] = new Concept($conceptDef, $plugs);
 	}
 }
 

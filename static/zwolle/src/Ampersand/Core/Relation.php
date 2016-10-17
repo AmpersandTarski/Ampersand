@@ -37,16 +37,16 @@ class Relation {
     private $logger;
     
     /**
-     * Dependency injection of storage implementation
-     * @var \Ampersand\Storage\RelationStorageInterface
+     * Dependency injection of plug implementation
+     * @var \Ampersand\Plug\RelationPlugInterface
      */
-    protected $storage;
+    protected $plug;
     
     /**
      *
-     * @var \Ampersand\Storage\RelationStorageInterface
+     * @var \Ampersand\Plug\RelationPlugInterface
      */
-    protected $primaryStorage;
+    protected $primaryPlug;
     
     /**
      * 
@@ -130,14 +130,14 @@ class Relation {
      * Private function to prevent outside instantiation of Relations. Use Relation::getRelation($relationSignature)
      *
      * @param array $relationDef
-     * @param RelationStorageInterface[] $storages
+     * @param RelationPlugInterface[] $plugs
      */
-    public function __construct($relationDef, array $storages){
+    public function __construct($relationDef, array $plugs){
         $this->logger = Logger::getLogger('CORE');
         
-        if(empty($storages)) throw new Exception("No storage(s) provided for relation {$relationDef['signature']}", 500);
-        $this->storages = $storages;
-        $this->primaryStorage = current($this->storages); // For now, we just pick the first storage as primary storage
+        if(empty($plugs)) throw new Exception("No plug(s) provided for relation {$relationDef['signature']}", 500);
+        $this->plugs = $plugs;
+        $this->primaryPlug = current($this->plugs); // For now, we just pick the first plug as primary plug
         
         $this->name = $relationDef['name'];
         $this->srcConcept = Concept::getConcept($relationDef['srcConceptId']);
@@ -217,9 +217,9 @@ class Relation {
      * @return boolean
      */
     public function linkExists(Link $link){
-        $this->logger->debug("Checking if link {$link} exists in storage");
+        $this->logger->debug("Checking if link {$link} exists in plug");
         
-        return $this->primaryStorage->linkExists($link);
+        return $this->primaryPlug->linkExists($link);
     }
     
     /**
@@ -229,7 +229,7 @@ class Relation {
     * @return Link[]
     */
     public function getAllLinks(Atom $srcAtom = null, Atom $tgtAtom = null){
-        return $this->primaryStorage->getAllLinks($this, $srcAtom, $tgtAtom);
+        return $this->primaryPlug->getAllLinks($this, $srcAtom, $tgtAtom);
     }
     
     /**
@@ -238,14 +238,14 @@ class Relation {
      * @return void
      */
     public function addLink(Link $link){
-        $this->logger->debug("Add link {$link} to storage");
+        $this->logger->debug("Add link {$link} to plug");
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
         
         // Ensure that atoms exists in their concept tables
         $link->src()->add();
         $link->tgt()->add();
         
-        foreach($this->storages as $storage) $storage->addLink($link);
+        foreach($this->plugs as $plug) $plug->addLink($link);
     }
     
     /**
@@ -254,10 +254,10 @@ class Relation {
      * @return void
      */
     public function deleteLink(Link $link){
-        $this->logger->debug("Delete link {$link} from storage");
+        $this->logger->debug("Delete link {$link} from plug");
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
         
-        foreach($this->storages as $storage) $storage->deleteLink($link);
+        foreach($this->plugs as $plug) $plug->deleteLink($link);
     }
     
     /**
@@ -269,15 +269,15 @@ class Relation {
         switch ($srcOrTgt) {
             case 'src':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src");
-                foreach($this->storages as $storage) $storage->deleteAllLinks($this, $atom, 'src');
+                foreach($this->plugs as $plug) $plug->deleteAllLinks($this, $atom, 'src');
                 break;
             case 'tgt':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as tgt");
-                foreach($this->storages as $storage) $storage->deleteAllLinks($this, $atom, 'tgt');
+                foreach($this->plugs as $plug) $plug->deleteAllLinks($this, $atom, 'tgt');
                 break;
             case null:
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src or tgt");
-                foreach($this->storages as $storage) $storage->deleteAllLinks($this, $atom, null);
+                foreach($this->plugs as $plug) $plug->deleteAllLinks($this, $atom, null);
                 break;
             default:
                 throw new Exception("Unknown/unsupported param option '{$srcOrTgt}'. Supported options are 'src', 'tgt' or null", 500);
@@ -357,10 +357,10 @@ class Relation {
         // import json file
         $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'relations.json');
         $allRelationDefs = (array)json_decode($file, true);
-        $storages = [Database::singleton()];
+        $plugs = [Database::singleton()];
     
         foreach ($allRelationDefs as $relationDef){
-            $relation = new Relation($relationDef, $storages);
+            $relation = new Relation($relationDef, $plugs);
             self::$allRelations[$relation->signature] = $relation; 
         }
     }

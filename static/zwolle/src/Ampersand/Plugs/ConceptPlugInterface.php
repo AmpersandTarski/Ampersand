@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand\Storage;
+namespace Ampersand\Plugs;
 
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
@@ -15,7 +15,7 @@ use Ampersand\Core\Concept;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-interface ConceptStorageInterface extends StorageInterface {
+interface ConceptPlugInterface extends StorageInterface {
     
     public function atomExists(Atom $atom);
     
