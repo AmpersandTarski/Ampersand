@@ -5,7 +5,7 @@ use Ampersand\Config;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 
 global $app;
 

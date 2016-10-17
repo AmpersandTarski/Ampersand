@@ -4,7 +4,7 @@ use Ampersand\Config;
 use Ampersand\Extension\ExecEngine\ExecEngine;
 use Ampersand\Log\Notifications;
 use Ampersand\Session;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 
 global $app;
 

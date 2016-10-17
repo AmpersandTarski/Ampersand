@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand\Storage;
+namespace Ampersand\Interfacing;
 
 use Ampersand\Hooks;
 use Ampersand\Config;

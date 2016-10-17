@@ -12,7 +12,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Rule\Rule;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Rule\Violation;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 use function Ampersand\Helper\getDirectoryList;
 
 // Define hooks

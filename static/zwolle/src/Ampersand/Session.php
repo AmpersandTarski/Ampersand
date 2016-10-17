@@ -14,7 +14,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
 use Ampersand\Rule\Rule;
 use Ampersand\Log\Logger;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 
 /**
  * Class of session objects

@@ -8,7 +8,7 @@ use Ampersand\Config;
 use Ampersand\Session;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 
 // UI
 AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function($session){ return true;});

@@ -5,7 +5,7 @@ use Ampersand\AngularApp;
 use Ampersand\Log\Notifications;
 use Ampersand\Config;
 use Ampersand\Rule\RuleEngine;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 
 global $app;
 

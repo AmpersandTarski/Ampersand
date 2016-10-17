@@ -12,7 +12,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Output\OutputCSV;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 
 global $app;
 

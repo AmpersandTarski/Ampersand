@@ -22,7 +22,7 @@ use Ampersand\Plugs\ConceptPlugInterface;
 use Ampersand\Plugs\IfcPlugInterface;
 use Ampersand\Plugs\RelationPlugInterface;
 use Ampersand\Plugs\ViewPlugInterface;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
 

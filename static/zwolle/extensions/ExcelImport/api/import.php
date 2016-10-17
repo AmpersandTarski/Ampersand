@@ -5,7 +5,7 @@ use Ampersand\Config;
 use Ampersand\Log\Logger;
 use Ampersand\Extension\ExcelImport\ExcelImport;
 use Ampersand\Log\Notifications;
-use Ampersand\Storage\Transaction;
+use Ampersand\Interfacing\Transaction;
 
 global $app;
 
