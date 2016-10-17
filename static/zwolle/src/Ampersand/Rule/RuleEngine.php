@@ -7,6 +7,7 @@
 
 namespace Ampersand\Rule;
 
+use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Session;
