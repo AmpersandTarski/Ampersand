@@ -16,6 +16,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Interfacing\View;
 use Ampersand\Core\Atom;
 use Ampersand\Config;
+use Ampersand\Plugs\IfcPlugInterface;
 
 /**
  *
@@ -39,10 +40,10 @@ class InterfaceObject {
 	private static $allInterfaces; // contains all interface objects
 	
 	/**
-	 * Dependency injection of a database connection class
-	 * @var Database
+	 * Dependency injection of an IfcPlug implementation
+	 * @var \Ampersand\Plugs\IfcPlugInterface
 	 */
-	private $database;
+	private $plug;
 	
 	/**
 	 *
@@ -190,10 +191,10 @@ class InterfaceObject {
 	 * @param string $pathEntry
      * @param boolean $rootIfc Specifies if this interface object is a toplevel interface (true) or subinterface (false)
 	 */
-	private function __construct($ifcDef, $pathEntry = null, $rootIfc = false){
-		$this->database = Database::singleton();
+	private function __construct($ifcDef, IfcPlugInterface $plug, $pathEntry = null, $rootIfc = false){
 		$this->logger = Logger::getLogger('INTERFACING');
 		
+        $this->plug = $plug;
         $this->isRoot = $rootIfc;
         
 		// Set attributes from $ifcDef
@@ -249,7 +250,7 @@ class InterfaceObject {
 		    
 		    // Inline subinterface definitions
 		    foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef){
-		        $ifc = new InterfaceObject($subIfcDef, $this->path);
+		        $ifc = new InterfaceObject($subIfcDef, $this->plug, $this->path);
 		        $this->subInterfaces[$ifc->id] = $ifc;
 		        $this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
 		    }
@@ -431,19 +432,12 @@ class InterfaceObject {
      * @return array
      */
     public function getIfcData($srcAtom){
-        $srcAtomId = $this->database->getDBRepresentation($srcAtom);
-        if(strpos($this->query, '_SRCATOM') !== false){
-            $query = str_replace('_SRCATOM', $srcAtomId, $this->query);
-            // $this->logger->debug("#426 Faster query because subquery saved by _SRCATOM placeholder");
-        }else{
-            $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
-        }
-        $data = (array) $this->database->Exe($query);
+        $data = (array) $this->plug->executeIfcExpression($this, $srcAtom);
         
         // Integrity check
         if($this->isUni() && count($data) > 1) throw new Exception("Univalent (sub)interface returns more than 1 resource: " . $this->getPath(), 500);
         
-        return $data; 
+        return $data;
     }
 	
 /**************************************************************************************************
@@ -512,9 +506,9 @@ class InterfaceObject {
 	    $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'interfaces.json');
 	    $allInterfaceDefs = (array)json_decode($file, true);
 	    
-	    
+	    $plug = Database::singleton();
 	    foreach ($allInterfaceDefs as $ifcDef){
-	        $ifc = new InterfaceObject($ifcDef['ifcObject'], null, true);
+	        $ifc = new InterfaceObject($ifcDef['ifcObject'], $plug, null, true);
 	        
 	        // Set additional information about this toplevel interface object
 	        $ifc->ifcRoleNames = $ifcDef['interfaceRoles'];

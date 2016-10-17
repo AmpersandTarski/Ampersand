@@ -17,6 +17,7 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Link;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
+use Ampersand\Plugs\IfcPlugInterface;
 use Ampersand\Storage\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
@@ -28,7 +29,7 @@ use Ampersand\Storage\RelationStorageInterface;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Database implements ConceptStorageInterface, RelationStorageInterface {
+class Database implements ConceptStorageInterface, RelationStorageInterface, IfcPlugInterface {
     /**
      * 
      * @var \Psr\Log\LoggerInterface
@@ -713,6 +714,28 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
         }
         
     }
+    
+/**************************************************************************************************
+ *
+ * Implementation of PlugInterface methods
+ *
+ *************************************************************************************************/
+    
+    /**
+     * @param InterfaceObject $ifc
+     * @param Atom $srcAtom
+     * @return mixed
+     */
+    public function executeIfcExpression(InterfaceObject $ifc, Atom $srcAtom = null){
+        $srcAtomId = $this->getDBRepresentation($srcAtom);
+        if(strpos($ifc->query, '_SRCATOM') !== false){
+            $query = str_replace('_SRCATOM', $srcAtomId, $ifc->query);
+        }else{
+            $query = "SELECT DISTINCT * FROM ({$ifc->query}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
+        }
+        return $this->Exe($query);
+    }
+    
 	
 /**************************************************************************************************
  *
