@@ -5,8 +5,19 @@ use Ampersand\AngularApp;
 use Ampersand\Log\Notifications;
 use Ampersand\Config;
 use Ampersand\Rule\RuleEngine;
+use Ampersand\Storage\Transaction;
 
 global $app;
+
+$app->get('/admin/sessions/delete/all', function () use ($app) {
+    throw new Exception("Not implemented", 501);
+    if(Config::get('productionEnv')) throw new Exception ("Deleting all sessions is not allowed in production environment", 403);
+});
+
+$app->get('/admin/sessions/delete/expired', function () use ($app) {
+    Session::deleteExpiredSessions();
+    Transaction::getCurrentTransaction()->close(true);
+});
 
 $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 	$session = Session::singleton();

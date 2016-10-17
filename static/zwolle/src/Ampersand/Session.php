@@ -77,30 +77,36 @@ class Session {
         $this->logger = Logger::getLogger('SESSION');
         $this->database = Database::singleton();
         
-        $this->id = session_id();
-        $this->sessionAtom = new Resource($this->id, 'SESSION');
+        $this->initSession();
         
-        $this->logger->debug("Session id: {$this->id}");
-        
-        // Remove expired Ampersand sessions from __SessionTimeout__ and all concept tables and relations where it appears.
-        $expiredSessionsAtoms = array_column((array)$this->database->Exe("SELECT SESSION FROM `__SessionTimeout__` WHERE `lastAccess` < ".(time() - Config::get('sessionExpirationTime'))), 'SESSION');
-        foreach ($expiredSessionsAtoms as $expiredSessionAtom){
-            // Notify user that session is expired when login functionality is enabled 
-            if($expiredSessionAtom == $this->id && Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again");
-            
-            $this->destroyAmpersandSession($expiredSessionAtom);
-        }
-        
-        // Create a new Ampersand session atom if not yet in SESSION table (browser started a new session or Ampersand session was expired)
+        // Create a new Ampersand session atom if not yet in SESSION table (i.e. new php session)
         if (!$this->sessionAtom->exists()){ 
             $this->sessionAtom->add();
-            Transaction::getCurrentTransaction()->close(true);
+        }else{
+            $experationTimeStamp = time() - Config::get('sessionExpirationTime');
+            $lastAccessTime = $this->sessionAtom->getLinks('lastAccess[SESSION*DateTime]'); // lastAccess is UNI, therefore we expect max one DateTime from getLinks()
+            
+            if(count($lastAccessTime) && current($lastAccessTime)->getLabel() < $experationTimeStamp){
+                $this->logger->debug("Session expired");
+                $this->destroySession();
+                
+                if(Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again");
+            }
         }
-
-        $this->database->Exe("INSERT INTO `__SessionTimeout__` (`SESSION`,`lastAccess`) VALUES ('".$this->id."', '".time()."') ON DUPLICATE KEY UPDATE `lastAccess` = '".time()."'");
+        
+        // Set lastAccess time
+        $this->sessionAtom->link(time(), 'lastAccess[SESSION*DateTime]', false)->add(); 
+        
+        Transaction::getCurrentTransaction()->close(true);
         
         // Add public interfaces
         $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
+    }
+    
+    private function initSession(){
+        $this->id = session_id();
+        $this->sessionAtom = new Resource($this->id, Concept::getSessionConcept());
+        $this->logger->debug("Session id: {$this->id}");
     }
     
     /**
@@ -117,33 +123,13 @@ class Session {
     }
     
     /**
-     * Function reinitializes the Session object (calls constructor again)
-     * @return Session
-     */
-    public static function reInit(){
-        return self::$_instance = new Session();
-    }
-    
-    /**
-     * Delete provided Ampersand session atom from database
-     * @param string $sessionAtomId ampersand session atom id
-     * @return void
-     */
-    private function destroyAmpersandSession($sessionAtomId){
-        $this->database->Exe("DELETE FROM `__SessionTimeout__` WHERE SESSION = '{$sessionAtomId}'");
-        $atom = new Atom($sessionAtomId, Concept::getConceptByLabel('SESSION'));
-        $atom->delete();
-        $this->database->commitTransaction();
-    }
-    
-    /**
      * Destroy php session, delete Ampersand session atom from db and reinitialize Session object
      * @return void
      */
     public function destroySession(){
-        $this->destroyAmpersandSession($this->id);
+        $this->sessionAtom->delete();
         session_regenerate_id(true);
-        $this->reInit();
+        $this->initSession();
     }
     
     /**
@@ -325,6 +311,23 @@ class Session {
      */
     public function isAccessibleIfc($ifc){
         return in_array($ifc, $this->accessibleInterfaces, true);
+    }
+    
+/**********************************************************************************************
+ * 
+ * Static functions
+ * 
+ *********************************************************************************************/
+     
+    public static function deleteExpiredSessions(){
+        $experationTimeStamp = time() - Config::get('sessionExpirationTime');
+        
+        $links = Relation::getRelation('lastAccess[SESSION*DateTime]')->getAllLinks();
+        foreach ($links as $link){
+            if($link->tgt()->getLabel() < $experationTimeStamp){
+                $link->src()->delete();
+            }
+        }
     }
 }
 ?>

@@ -212,7 +212,7 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
         }
 		
 		// Ininiate new session
-		Session::reInit();
+		Session::singleton();
 		
 		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
 		
