@@ -186,8 +186,6 @@ function InsAtom($conceptName){
 	Logger::getLogger('EXECENGINE')->info("InsAtom($conceptName)");
     if(func_num_args() != 1) throw new Exception("Wrong number of arguments supplied for function InsAtom(): ".func_num_args()." arguments", 500);
 	try{
-		$database = Database::singleton();
-		
 		$concept = Concept::getConceptByLabel($conceptName);
         $atom = $concept->createNewAtom();
 		$atom->add(); // insert new atom in database
