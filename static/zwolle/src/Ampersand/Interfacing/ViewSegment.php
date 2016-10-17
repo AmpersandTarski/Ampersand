@@ -6,7 +6,6 @@
  */
 
 namespace Ampersand\Interfacing;
-use Ampersand\Database\Database;
 
 /**
  *
@@ -93,11 +92,7 @@ class ViewSegment {
                 }catch (Exception $e) {
                     // Column not defined, perform query
                     if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                        $db = Database::singleton();
-                        $srcAtomId = $db->getDBRepresentation($srcAtom);
-                        
-                        $query = "SELECT DISTINCT `tgt` FROM ({$this->expSQL}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
-                        $tgtAtoms = array_column((array)$db->Exe($query), 'tgt');
+                        $tgtAtoms = $this->view->plug->executeViewExpression($this, $srcAtom);
                         return count($tgtAtoms) ? $tgtAtoms[0] : null;
                     }else{
                         throw $e;

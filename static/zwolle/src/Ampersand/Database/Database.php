@@ -17,7 +17,9 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Link;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
+use Ampersand\Interfacing\ViewSegment;
 use Ampersand\Plugs\IfcPlugInterface;
+use Ampersand\Plugs\ViewPlugInterface;
 use Ampersand\Storage\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
@@ -29,7 +31,7 @@ use Ampersand\Storage\RelationStorageInterface;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class Database implements ConceptStorageInterface, RelationStorageInterface, IfcPlugInterface {
+class Database implements ConceptStorageInterface, RelationStorageInterface, IfcPlugInterface, ViewPlugInterface {
     /**
      * 
      * @var \Psr\Log\LoggerInterface
@@ -736,6 +738,16 @@ class Database implements ConceptStorageInterface, RelationStorageInterface, Ifc
         return $this->Exe($query);
     }
     
+    /**
+     * @param ViewSegment $view
+     * @param Atom $srcAtom
+     * @return mixed
+     */
+    public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null){
+        $srcAtomId = $this->getDBRepresentation($srcAtom);
+        $query = "SELECT DISTINCT `tgt` FROM ({$view->expSQL}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
+        return array_column((array) $this->Exe($query), 'tgt');
+    }
 	
 /**************************************************************************************************
  *

@@ -9,8 +9,10 @@ namespace Ampersand\Interfacing;
 
 use Exception;
 use Ampersand\Core\Atom;
+use Ampersand\Database\Database;
 use Ampersand\Interfacing\ViewSegment;
 use Ampersand\Config;
+use Ampersand\Plugs\ViewPlugInterface;
 
 /**
  *
@@ -24,6 +26,12 @@ class View {
      * @var View[]
      */
     private static $allViews; 
+    
+    /**
+     * Dependency injection of an ViewPlug implementation
+     * @var \Ampersand\Plugs\ViewPlugInterface
+     */
+    public $plug;
     
     /**
      * Name (and unique identifier) of view
@@ -56,7 +64,9 @@ class View {
      *
      * @param array $viewDef
      */
-    private function __construct($viewDef){
+    private function __construct($viewDef, ViewPlugInterface $plug){
+        $this->plug = $plug;
+        
         $this->label = $viewDef['label'];
         $this->forConcept = $viewDef['conceptId'];
         $this->isDefault = $viewDef['isDefault'];
@@ -118,8 +128,9 @@ class View {
         // import json file
         $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'views.json');
         $allViewDefs = (array)json_decode($file, true);
-    
-        foreach ($allViewDefs as $viewDef) self::$allViews[$viewDef['label']] = new View($viewDef);
+        $plug = Database::singleton();
+        
+        foreach ($allViewDefs as $viewDef) self::$allViews[$viewDef['label']] = new View($viewDef, $plug);
     }
     
 }
