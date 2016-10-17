@@ -149,6 +149,18 @@ class Atom implements JsonSerializable {
     }
     
     /**
+     * @param string|Relation $relation when provided as string, use relation signature
+     * @param boolean $isFlipped specifies if relation must be flipped
+     * @return Link[]
+     */
+    public function getLinks($relation, $isFlipped = false){
+        if(is_string($relation)) $relation = Relation::getRelation($relation);
+        
+        if($isFlipped) return $relation->getAllLinks(null, $this);
+        else return $relation->getAllLinks($this, null);
+    }
+    
+    /**
      * Save query row data (can be used for subinterfaces)
      * @param arry $queryData 
      * @return void

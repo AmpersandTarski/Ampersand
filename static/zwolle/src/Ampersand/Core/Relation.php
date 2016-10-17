@@ -223,11 +223,13 @@ class Relation {
     }
     
     /**
-     * Returns all links (pair of Atoms) in this relation
-     * @return Link[]
-     */
-    public function getAllLinks(){    
-        return $this->primaryStorage->getAllLinks($this);
+    * Get all links for this relation
+    * @param Atom $srcAtom if specified get all links with $srcAtom as source
+    * @param Atom $tgtAtom if specified get all links with $tgtAtom as tgt
+    * @return Link[]
+    */
+    public function getAllLinks(Atom $srcAtom = null, Atom $tgtAtom = null){
+        return $this->primaryStorage->getAllLinks($this, $srcAtom, $tgtAtom);
     }
     
     /**
@@ -263,7 +265,7 @@ class Relation {
      * @param string $srcOrTgt specifies to delete all link with $atom as src, tgt or both (null/not provided)
      * @return void
      */
-    public function deleteAllLinks(Atom $atom, $srcOrTgt = null){        
+    public function deleteAllLinks(Atom $atom, $srcOrTgt = null){
         switch ($srcOrTgt) {
             case 'src':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src");

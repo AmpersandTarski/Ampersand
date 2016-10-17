@@ -533,13 +533,26 @@ class Database implements ConceptStorageInterface, RelationStorageInterface {
     /**
     * Get all links given a relation
     * @param Relation $relation
+    * @param Atom $srcAtom if specified get all links with $srcAtom as source
+    * @param Atom $tgtAtom if specified get all links with $tgtAtom as tgt
     * @return Link[]
     */
-    public function getAllLinks(Relation $relation){
+    public function getAllLinks(Relation $relation, Atom $srcAtom = null, Atom $tgtAtom = null){
         $relTable = $relation->getMysqlTable();
         
         // Query all atoms in table
         $query = "SELECT `{$relTable->srcCol()->name}` as `src`, `{$relTable->tgtCol()->name}` as `tgt` FROM `{$relTable->name}`";
+        
+        // Construct WHERE-clause if applicable
+        if(isset($srcAtom)){
+            $srcAtomId = $this->getDBRepresentation($srcAtom);
+            $query .= " WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'";
+        }
+        if(isset($tgtAtom)){
+            $tgtAtomId = $this->getDBRepresentation($tgtAtom);
+            if(isset($srcAtom)) $query .= " AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'";
+            else $query .= " WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'";
+        }
         
         $links = [];
         foreach((array)$this->Exe($query) as $row){
