@@ -39,6 +39,11 @@ class Session {
     public $sessionAtom;
     
     /**
+     * @var Resource $sessionResource reference to corresponding session object which can be used with interfaces
+     */
+    public $sessionResource;
+    
+    /**
      * @var Role[] $sessionRoles contains roles for loggedin user when login is enabled, otherwise all roles
      */
     private $sessionRoles; 
@@ -98,7 +103,8 @@ class Session {
     
     private function initSession(){
         $this->id = session_id();
-        $this->sessionAtom = new Resource($this->id, Concept::getSessionConcept());
+        $this->sessionAtom = new Atom($this->id, Concept::getSessionConcept());
+        $this->sessionResource = new Resource($this->id, Concept::getSessionConcept());
         $this->logger->debug("Session id: {$this->id}");
     }
     
@@ -182,11 +188,11 @@ class Session {
         if(!isset($this->sessionRoles)){
             $sessionRoles = array();
             if(Config::get('loginEnabled')){
-                $this->logger->debug("Getting interface 'SessionRoles' for {$this->sessionAtom}");
+                $this->logger->debug("Getting interface 'SessionRoles' for {$this->sessionResource}");
                 $sessionRoleLabels = array_map(
                     function($role){
                         return $role->id;
-                    }, $this->sessionAtom->all('SessionRoles')->get()
+                    }, $this->sessionResource->all('SessionRoles')->get()
                 );
                 foreach(Role::getAllRoles() as $role){
                     if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
@@ -222,8 +228,8 @@ class Session {
                 $this->sessionAccount = false;
                 $this->logger->debug("Set sessionAccount: login not enabled");
             }else{
-                $this->logger->debug("Getting interface 'SessionAccount' for {$this->sessionAtom}");
-                $sessionAccounts = $this->sessionAtom->all('SessionAccount')->get();
+                $this->logger->debug("Getting interface 'SessionAccount' for {$this->sessionResource}");
+                $sessionAccounts = $this->sessionResource->all('SessionAccount')->get();
                 
                 if(count($sessionAccounts) > 1) throw new Exception('Multiple session users found. This is not allowed.', 500);
                 if(empty($sessionAccounts)){
@@ -259,8 +265,8 @@ class Session {
     public function getSessionVars(){
         if(InterfaceObject::interfaceExists('SessionVars')){
             try {
-                $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionAtom}");
-                return $this->sessionAtom->all('SessionVars')->get();
+                $this->logger->debug("Getting interface 'SessionVars' for {$this->sessionResource}");
+                return $this->sessionResource->all('SessionVars')->get();
             }catch (Exception $e){
                 $this->logger->warning("Error while getting SessionVars interface: " . $e->getMessage());
                 return false;
