@@ -407,7 +407,7 @@ class Concept {
      * @return Atom[]
      */
      public function getAllAtomObjects(){
-        return $this->primaryPlug->getAllAtoms();
+        return $this->primaryPlug->getAllAtoms($this);
     }
     
     /**
