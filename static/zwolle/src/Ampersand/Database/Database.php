@@ -243,7 +243,8 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
                 $datetime = new DateTime($atom->id);
                 return $datetime->format('Y-m-d'); // format to store in database
             case "DATETIME" :
-                $datetime = new DateTime($atom->id); // $atom->id can include timezone, e.g. 2005-08-15T15:52:01+00:00 (DATE_ATOM format)
+                // DateTime atom(s) may contain a timezone, otherwise UTC is asumed.
+                $datetime = new DateTime($atom->id);
                 $datetime->setTimezone(new DateTimeZone('UTC')); // convert to UTC to store in database
                 return $datetime->format('Y-m-d H:i:s'); // format to store in database (UTC)
             case "FLOAT" :

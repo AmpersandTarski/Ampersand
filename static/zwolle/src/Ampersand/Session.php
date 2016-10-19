@@ -84,7 +84,8 @@ class Session {
             $experationTimeStamp = time() - Config::get('sessionExpirationTime');
             $lastAccessTime = $this->sessionAtom->getLinks('lastAccess[SESSION*DateTime]'); // lastAccess is UNI, therefore we expect max one DateTime from getLinks()
             
-            if(count($lastAccessTime) && current($lastAccessTime)->getLabel() < $experationTimeStamp){
+            // strtotime() returns Unix timestamp. time() does also. Those can be compared
+            if(count($lastAccessTime) && strtotime(current($lastAccessTime)->tgt()->getLabel()) < $experationTimeStamp){
                 $this->logger->debug("Session expired");
                 $this->destroySession();
                 
@@ -93,7 +94,7 @@ class Session {
         }
         
         // Set lastAccess time
-        $this->sessionAtom->link(time(), 'lastAccess[SESSION*DateTime]', false)->add(); 
+        $this->sessionAtom->link(date(DATE_ATOM), 'lastAccess[SESSION*DateTime]', false)->add(); 
         
         Transaction::getCurrentTransaction()->close(true);
         
@@ -323,7 +324,7 @@ class Session {
         
         $links = Relation::getRelation('lastAccess[SESSION*DateTime]')->getAllLinks();
         foreach ($links as $link){
-            if($link->tgt()->getLabel() < $experationTimeStamp){
+            if(strtotime($link->tgt()->getLabel()) < $experationTimeStamp){
                 $link->src()->delete();
             }
         }

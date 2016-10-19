@@ -94,7 +94,8 @@ class Atom implements JsonSerializable {
                 $datetime = new DateTime($this->id);
                 return $datetime->format('Y-m-d'); // format in ISO-8601 standard
             case "DATETIME" :
-                $datetime = new DateTime($this->id, new DateTimeZone('UTC')); // datetimes are stored in UTC in database
+                // DateTime(s) may contain a timezone, otherwise UTC is asumed.
+                $datetime = new DateTime($this->id, new DateTimeZone('UTC')); // The $timezone parameter is ignored when the $time parameter either is a UNIX timestamp (e.g. @946684800) or specifies a timezone (e.g. 2010-01-28T15:00:00+02:00).
                 $datetime->setTimezone(new DateTimeZone(date_default_timezone_get())); // convert back to systemtime
                 return $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
             case "FLOAT" :
