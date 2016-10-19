@@ -18,6 +18,7 @@ use Ampersand\Core\Link;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
 use Ampersand\Interfacing\ViewSegment;
+use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Plugs\ConceptPlugInterface;
 use Ampersand\Plugs\IfcPlugInterface;
 use Ampersand\Plugs\RelationPlugInterface;

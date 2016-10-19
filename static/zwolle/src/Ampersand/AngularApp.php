@@ -8,6 +8,7 @@
 namespace Ampersand;
 
 use Exception;
+use Ampersand\Core\Concept;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Log\Logger;
 use function Ampersand\Helper\getDirectoryList;
