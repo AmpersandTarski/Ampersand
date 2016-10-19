@@ -173,15 +173,15 @@ class Atom implements JsonSerializable {
     /**
      * Get (column of) query data
      * @param string $colName
-     * @throws Exception when column is not defined in query data
+     * @param boolean $exists reference var that returns if column exists
      * @return string|array
      */
-    public function getQueryData($colName = null){
+    public function getQueryData($colName = null, &$exists = null){
         if(is_null($colName)){
             return (array) $this->queryData;
         }else{
             // column name is prefixed with 'ifc_' to prevent duplicates with 'src' and 'tgt' cols, which are standard added to query data
-            if(!array_key_exists($colName, (array) $this->queryData)) throw new Exception("Column '{$colName}' not defined in query data of atom '{$this}'", 1001);
+            $exists = array_key_exists($colName, (array) $this->queryData);
             return $this->queryData[$colName];
         }
     }

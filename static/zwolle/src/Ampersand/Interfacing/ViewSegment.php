@@ -86,17 +86,13 @@ class ViewSegment {
                 return $this->text;
                 break;
             case "Exp":
-                try {
-                    // Try to get view segment from atom query data
-                    return $srcAtom->getQueryData('view_' . $this->label); // column is prefixed with view_
-                }catch (Exception $e) {
-                    // Column not defined, perform query
-                    if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                        $tgtAtoms = $this->view->plug->executeViewExpression($this, $srcAtom);
-                        return count($tgtAtoms) ? $tgtAtoms[0] : null;
-                    }else{
-                        throw $e;
-                    }
+                // Try to get view segment from atom query data
+                $data = $srcAtom->getQueryData('view_' . $this->label, $exists); // column is prefixed with view_
+                if($exists){
+                    return $data;
+                }else{
+                    $tgtAtoms = $this->view->plug->executeViewExpression($this, $srcAtom);
+                    return count($tgtAtoms) ? $tgtAtoms[0] : null;
                 }
                 break;
             default:

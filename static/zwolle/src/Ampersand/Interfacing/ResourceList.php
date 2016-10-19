@@ -114,26 +114,21 @@ class ResourceList implements IteratorAggregate {
     private function getTgtResources($fromCache = true){
         if(!isset($this->tgtResources) || !$fromCache){
             $this->tgtResources = [];
-            try {
-                // If interface isIdent (i.e. expr = I[Concept]) we can return the src
-                if($this->ifc->isIdent()){
-                    $this->tgtResources[$this->src->id] = new Resource($this->src->id, $this->ifc->tgtConcept->name, $this);
-                    
-                // Else try to get tgt atom from src query data (in case of uni relation in same table)
-                }else{
-                    $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id); // column is prefixed with ifc_ in query data
+            // If interface isIdent (i.e. expr = I[Concept]) we can return the src
+            if($this->ifc->isIdent()){
+                $this->tgtResources[$this->src->id] = new Resource($this->src->id, $this->ifc->tgtConcept->name, $this);
+                
+            // Else try to get tgt atom from src query data (in case of uni relation in same table)
+            }else{
+                $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id, $exists); // column is prefixed with ifc_ in query data
+                if($exists){
                     if(!is_null($tgt)) $this->tgtResources[$tgt] = new Resource($tgt, $this->ifc->tgtConcept->name, $this);
-                }
-            }catch (Exception $e) {
-                // Column not defined, perform sub interface query
-                if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct                    
+                }else{
                     foreach ($this->ifc->getIfcData($this->src) as $row) {
                         $r = new Resource($row['tgt'], $this->ifc->tgtConcept->name, $this);
                         $r->setQueryData($row);
                         $this->tgtResources[$r->id] = $r;
                     }
-                }else{
-                    throw $e;
                 }
             }
         }
@@ -153,18 +148,12 @@ class ResourceList implements IteratorAggregate {
         // Otherwise (i.e. non-object atoms) get atoms from database. This is never cached. We only cache resources (i.e. object atoms)
         else{
             $tgtAtoms = [];
-            try {
-                // Try to get tgt atom from src query data (in case of uni relation in same table)
-                $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id); // column is prefixed with ifc_ in query data
+            // Try to get tgt atom from src query data (in case of uni relation in same table)
+            $tgt = $this->src->getQueryData('ifc_' . $this->ifc->id, $exists); // column is prefixed with ifc_ in query data
+            if($exists){
                 if(!is_null($tgt)) $tgtAtoms[] = new Atom($tgt, $this->ifc->tgtConcept);
-                
-            }catch (Exception $e) {
-                // Column not defined, perform sub interface query
-                if($e->getCode() == 1001){ // TODO: fix this 1001 exception code handling by proper construct
-                    foreach ($this->ifc->getIfcData($this->src) as $row) $tgtAtoms[] = new Atom($row['tgt'], $this->ifc->tgtConcept);
-                }else{
-                    throw $e;
-                }
+            }else{
+                foreach ($this->ifc->getIfcData($this->src) as $row) $tgtAtoms[] = new Atom($row['tgt'], $this->ifc->tgtConcept);
             }
             return $tgtAtoms;
         }
