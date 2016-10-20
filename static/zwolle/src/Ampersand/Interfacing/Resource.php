@@ -124,7 +124,7 @@ class Resource extends Atom {
      * @return string
      */
     public function getPath(){
-        if(isset($this->parentList)) return $parentList->getPath() . '/' . $this->id;
+        if(isset($this->parentList)) return $this->parentList->getPath() . '/' . $this->id;
         else return "/resources/{$this->concept->name}/" . $this->id;
     }
     
