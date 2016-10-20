@@ -74,8 +74,22 @@ class Session {
      */
     private function __construct(){
         $this->logger = Logger::getLogger('SESSION');
+        $this->id = session_id();
+        $this->logger->debug("Session id set to: {$this->id}");
         
-        $this->initSession();
+        /* Don't put anymore logic here, to prevent multiple Session objects
+         * Instead use initSession(), called by singleton() right after initiation
+         * E.g. within initSession, a Transaction close is requested, 
+         * which kicks in the RuleEngine, which instantiatates a 
+         * Session with Session::singleton(). If this code is placed
+         * in this constructor, the constructor is not yet finished
+         * and singleton() creates another Session object
+         */
+    }
+    
+    private function initSession(){
+        $this->sessionAtom = new Atom($this->id, Concept::getSessionConcept());
+        $this->sessionResource = new Resource($this->id, Concept::getSessionConcept());
         
         // Create a new Ampersand session atom if not yet in SESSION table (i.e. new php session)
         if (!$this->sessionAtom->exists()){ 
@@ -102,13 +116,6 @@ class Session {
         $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
     }
     
-    private function initSession(){
-        $this->id = session_id();
-        $this->sessionAtom = new Atom($this->id, Concept::getSessionConcept());
-        $this->sessionResource = new Resource($this->id, Concept::getSessionConcept());
-        $this->logger->debug("Session id: {$this->id}");
-    }
-    
     /**
      * private method to prevent any copy of this object
      */
@@ -118,18 +125,22 @@ class Session {
      * @return Session
      */
     public static function singleton(){
-        if(is_null (self::$_instance) ) self::$_instance = new Session();
+        if(is_null(self::$_instance)){
+            self::$_instance = new Session();
+            self::$_instance->initSession();
+        }
         return self::$_instance;
     }
     
     /**
-     * Destroy php session, delete Ampersand session atom from db and reinitialize Session object
+     * Delete Ampersand session atom (transaction is not automatically closed), destroy php session
      * @return void
      */
     public function destroySession(){
-        $this->sessionAtom->delete();
-        session_regenerate_id(true);
-        $this->initSession();
+        $this->sessionAtom->delete(); // Delete Ampersand representation of session
+        
+        session_regenerate_id(true); // Create new php session identifier
+        self::$_instance = null; // Set $_instance to null. Next call to Session::singleton() will initialize new Session object
     }
     
     /**
