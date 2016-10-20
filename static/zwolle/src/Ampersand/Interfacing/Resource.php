@@ -336,7 +336,7 @@ class Resource extends Atom {
         if(!$this->parentList->getIfc()->crudD()) throw new Exception ("Delete not allowed for ". $this->parentList->getIfc()->getPath(), 405);
         
         // Perform delete
-        $this->delete();
+        parent::delete();
         
         return $this;
     }
