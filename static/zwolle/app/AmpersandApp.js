@@ -43,6 +43,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 		});
 		
 		params['roleIds[]'] = roleIds; // the '[]' in param 'roleIds[]' is needed by the API to process it as array
+        params['navIfc'] = true;
+        params['metaData'] = true;
 		return params;
 	});
 	
