@@ -51,8 +51,37 @@ class Atom implements JsonSerializable {
 	public function __construct($atomId, Concept $concept){
 		$this->logger = Logger::getLogger('ATOM');
 		
-        $this->id = $atomId;
         $this->concept = $concept;
+        
+        switch($this->concept->type){
+            case "ALPHANUMERIC" :
+            case "BIGALPHANUMERIC" :
+            case "HUGEALPHANUMERIC" :
+            case "PASSWORD" :
+            case "TYPEOFONE" :
+            case "BOOLEAN" :
+                $this->id = $atomId;
+                break;
+            case "DATE" :
+                // In php backend, all Dates are kept in ISO-8601 format
+                $datetime = new DateTime($atomId);
+                $this->id = $datetime->format('Y-m-d'); // format in ISO-8601 standard
+                break;
+            case "DATETIME" :
+                // In php backend, all DateTimes are kept in DateTimeZone::UTC and DateTime::ATOM format
+                // $atomId may contain a timezone, otherwise UTC is asumed.
+                $datetime = new DateTime($atomId, new DateTimeZone('UTC')); // The $timezone parameter is ignored when the $time parameter either is a UNIX timestamp (e.g. @946684800) or specifies a timezone (e.g. 2010-01-28T15:00:00+02:00).
+                $datetime->setTimezone(new DateTimeZone('UTC')); // if not yet UTC, convert to UTC
+                $this->id = $datetime->format(DateTime::ATOM); // format in ISO-8601 standard, i.e. 2005-08-15T15:52:01+00:00 (DateTime::ATOM)
+                break;
+            case "FLOAT" :
+            case "INTEGER" :
+            case "OBJECT" :
+                $this->id = $atomId;
+                break;
+            default :
+                throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
+        }
 	}
 	
     /**

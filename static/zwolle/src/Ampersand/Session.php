@@ -98,7 +98,7 @@ class Session {
             $experationTimeStamp = time() - Config::get('sessionExpirationTime');
             $lastAccessTime = $this->sessionAtom->getLinks('lastAccess[SESSION*DateTime]'); // lastAccess is UNI, therefore we expect max one DateTime from getLinks()
             
-            // strtotime() returns Unix timestamp. time() does also. Those can be compared
+            // strtotime() returns Unix timestamp of lastAccessTime (in UTC). time() does also. Those can be compared
             if(count($lastAccessTime) && strtotime(current($lastAccessTime)->tgt()->getLabel()) < $experationTimeStamp){
                 $this->logger->debug("Session expired");
                 $this->destroySession();
