@@ -247,9 +247,9 @@ class Resource extends Atom {
                     $this->ifcData['_sortValues'] = [];
                     
                     // If subifc is PROP (i.e. content is boolean)
-                    if($subinteface->isProp()) $this->ifcData['_sortValues_'][$subifc->id] = $subcontent;
+                    if($subifc->isProp()) $this->ifcData['_sortValues_'][$subifc->id] = $subcontent;
                     // Elseif subifc points to object
-                    elseif($subifc->tgtConcept->isObject()) $this->ifcData['_sortValues_'][$subifc->id] = current($subcontent)->getLabel(); // use label to sort objects. We can use current() because subifc is univalent
+                    elseif($subifc->tgtConcept->isObject()) $this->ifcData['_sortValues_'][$subifc->id] = $subcontent->getLabel(); // use label to sort objects. We can use current() because subifc is univalent
                     // Else scalar
                     else $this->ifcData['_sortValues_'][$subifc->id] = $subcontent;
                 }
