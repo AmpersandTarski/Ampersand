@@ -70,6 +70,8 @@ $app->delete('/sessions/:sessionId', function ($sessionId) use ($app) {
 	
 	// Destroy session
 	$session->destroySession();
+    
+    Transaction::getCurrentTransaction()->close(true);
 	
 	// Return result
 	$content = array('notifications' => Notifications::getAll());
