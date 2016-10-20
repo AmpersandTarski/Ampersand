@@ -105,11 +105,16 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     
     $session->activateRoles($roleIds);
     
-    // Handle options
+    // Options
+    $rcOptions = $ifcOptions = 0;
+	if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
+    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
+    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
+    $depth = $app->request->params('depth');
     if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
     // Perform put
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put((object) $app->request->getBody())->get();
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put((object) $app->request->getBody())->get($rcOptions, $ifcOptions);
     
     // Close transaction
     $transaction->close();
@@ -133,11 +138,16 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 	
 	$session->activateRoles($roleIds);
 	
-    // Handle options
+    // Options
+    $rcOptions = $ifcOptions = 0;
+	if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
+    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
+    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
+    $depth = $app->request->params('depth');
     if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
 	
 	// Perform patch(es)
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($app->request->getBody())->get();
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($app->request->getBody())->get($rcOptions, $ifcOptions);
 	
     // Close transaction
     $transaction->close();
@@ -164,11 +174,16 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 
 	$options = $app->request->params();
     
-    // Handle options
+    // Options
+    $rcOptions = $ifcOptions = 0;
+	if (filter_var($app->request->params('metaData'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_META_DATA | Resource::INCLUDE_SORT_DATA;
+    if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
+    if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
+    $depth = $app->request->params('depth');
     if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
     // Perform create
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get();
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get($rcOptions, $ifcOptions);
     
     // Close transaction
     $transaction->close();
