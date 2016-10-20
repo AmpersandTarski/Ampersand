@@ -118,7 +118,6 @@ class AngularApp {
     
     public static function getNavBarIfcs($menu){
         $session = Session::singleton();
-        $navBarIfcs = array();
         
         // Add public interfaces
         $interfaces = InterfaceObject::getPublicInterfaces();
@@ -133,7 +132,7 @@ class AngularApp {
         
         // Filter interfaces for requested part of navbar
         $sessionCpt = Concept::getSessionConcept();
-        $interfaces = array_filter($interfaces, function($ifc) use ($menu){
+        $interfaces = array_filter($interfaces, function($ifc) use ($menu, $sessionCpt){
             switch ($menu) {
                 case 'top':
                     if(($ifc->srcConcept == $sessionCpt || $ifc->srcConcept->name == 'ONE') && $ifc->crudR) return true;
