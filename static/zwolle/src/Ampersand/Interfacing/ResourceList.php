@@ -342,7 +342,7 @@ class ResourceList implements IteratorAggregate {
      * @return boolean
      */
     public function remove($value){
-        if(!isset($value) && !$this->ifc->isUni()) throw new Exception ("Cannot remove item. Value not provided", 400);
+        if(!isset($value)) throw new Exception ("Cannot remove item. Value not provided", 400);
         if(is_object($value) || is_array($value)) throw new Exception("Literal expected but " . gettype($value) . " provided while updating " . $this->ifc->getPath(), 400);
         
         if(!$this->ifc->isEditable()) throw new Exception ("Interface is not editable " . $this->ifc->getPath(), 405);

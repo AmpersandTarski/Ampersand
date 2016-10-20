@@ -402,7 +402,7 @@ class Resource extends Atom {
     public function remove($ifcId = null, $value = null){
         if(is_null($ifcId)){
             if(!isset($this->parentList)) throw new Exception ("Cannot remove this resource because no parent resource list is provided", 400);
-            else return $this->parentList->remove($this); // Remove this resource from the parent list
+            else return $this->parentList->remove($this->id); // Remove this resource from the parent list
         }else{
             return $this->all($ifcId)->remove($value); // Remove tgt atom from provided ifc
         }
