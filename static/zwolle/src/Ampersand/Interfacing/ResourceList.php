@@ -66,7 +66,7 @@ class ResourceList implements IteratorAggregate {
      * @return string
      */
     public function getPath(){
-        return $this->src->getPath() . '/' . $this->ifc->label;
+        return $this->src->getPath() . '/' . $this->ifc->id;
     }
     
     /**

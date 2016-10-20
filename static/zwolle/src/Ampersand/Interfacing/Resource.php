@@ -214,7 +214,7 @@ class Resource extends Atom {
         }
         
         // Meta data
-        if($rcOptions & self::INCLUDE_META_DATA) $this->ifcData['_path_'] = rawurlencode($this->getPath());
+        if($rcOptions & self::INCLUDE_META_DATA) $this->ifcData['_path_'] = $this->getPath();
         
         // Interface(s) to navigate to for this resource
         if(($rcOptions & self::INCLUDE_NAV_IFCS) && isset($parentIfc)){
