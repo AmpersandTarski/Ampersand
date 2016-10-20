@@ -168,7 +168,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
     // Perform create
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get();
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post((object) $app->request->getBody())->get();
     
     // Close transaction
     $transaction->close();
