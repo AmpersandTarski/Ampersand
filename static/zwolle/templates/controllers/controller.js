@@ -211,13 +211,14 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
 		if(typeof obj['_id_'] === 'undefined' || obj['_id_'] == ''){
 			console.log('Selected object id is undefined');
 		}else{
-			// Adapt js model
-			if(typeof resource[ifc] === 'undefined' || resource[ifc] === null) resource[ifc] = [];
-			try {
-				resource[ifc].push(obj.plain()); // plain is Restangular function
-			}catch(e){
-				resource[ifc].push(obj); // when plain() does not exists (i.e. object is not restangular object) 
-			}
+            try {
+                obj = obj.plain(); // plain is Restangular function
+            }catch(e){} // when plain() does not exists (i.e. object is not restangular object)
+            
+            // Adapt js model
+            if(resource[ifc] === null) resource[ifc] = obj;
+            else if(Array.isArray(resource[ifc])) resource[ifc].push(obj);
+            else console.log('Cannot add object. Resource[ifc] already set and/or not defined');
 			
 			// Construct path
 			pathLength = patchResource['_path_'].length;
