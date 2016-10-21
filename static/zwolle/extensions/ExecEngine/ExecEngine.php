@@ -40,12 +40,13 @@ Config::set('maxRunCount', 'execEngine', 10);
 class ExecEngine {
 	
 	private static $roleName;
-	public static $doRun = true;
+	public static $doRun;
 	public static $autoRerun;
 	public static $runCount;
 	
 	public static function run($allRules = false){
 		$logger = Logger::getLogger('EXECENGINE');
+        self::$doRun = true;
 		
 		$logger->info("ExecEngine run started");
 		

@@ -2,6 +2,7 @@
 
 use Ampersand\Config;
 use Ampersand\Extension\ExecEngine\ExecEngine;
+use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Session;
 use Ampersand\Interfacing\Transaction;
@@ -30,6 +31,7 @@ $app->get('/execengine/run', function () use ($app){
 	
     $transaction = Transaction::getCurrentTransaction()->close(true);
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Run completed");
+    else Logger::getUserLogger()->warning("Run completed but transaction not committed");
 		
 	$result = array('notifications' => Notifications::getAll());
 	
