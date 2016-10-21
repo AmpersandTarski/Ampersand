@@ -173,7 +173,7 @@ class AngularApp {
 
 		// JQuery
 		$this->addHtmlLine('<script src="app/lib/jquery/jquery-1.11.0.min.js"></script>');
-		$this->addHtmlLine('<script src="app/lib/jquery/jquery-migrate-1.2.1.js"></script>');
+		//$this->addHtmlLine('<script src="app/lib/jquery/jquery-migrate-1.2.1.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/jquery/jquery-ui-1.10.4.custom.js"></script>');
 
 		// Bootstrap (requires Jquery, loaded above)
