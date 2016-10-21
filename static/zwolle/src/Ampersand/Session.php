@@ -104,6 +104,10 @@ class Session {
                 $this->destroySession();
                 
                 if(Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again");
+                
+                self::$_instance = new Session();
+                self::$_instance->initSession();
+                return;
             }
         }
         
@@ -139,8 +143,7 @@ class Session {
     public function destroySession(){
         $this->sessionAtom->delete(); // Delete Ampersand representation of session
         
-        session_regenerate_id(true); // Create new php session identifier
-        self::$_instance = null; // Set $_instance to null. Next call to Session::singleton() will initialize new Session object
+        session_regenerate_id(); // Create new php session identifier
     }
     
     /**
