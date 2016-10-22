@@ -159,6 +159,18 @@ AmpersandApp.directive('myShowonhoverBox', function (){
 		, scope 		: {ifcs : '=', resource : '=', label : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
 		, templateUrl	: 'app/views/partials/my_nav_to_other_interfaces.html'
 	};
+}).directive('myAlias', function() {
+    return {
+        // adapted from: http://stackoverflow.com/questions/31857845/does-angular-have-a-syntax-to-alias-a-property-within-a-div
+        // use e.g.: <div my-alias="resource['Project'] as test">{{test}}</div>
+        restrict: 'A',
+        scope: true,
+        link: function(scope, element, attrs) {
+            var args = attrs.myAlias.split(' as ');
+            if(!args[1]) throw "No 'as' specified for my-alias directive";
+            scope[args[1]] = scope.$eval(args[0]);
+        }
+    };
 }).filter('unsafe', function($sce){
 	return $sce.trustAsHtml;
 });

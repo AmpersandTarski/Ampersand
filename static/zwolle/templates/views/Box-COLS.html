@@ -10,7 +10,7 @@ $endif$$if(crudR)$<table class="table table-striped table-hover table-condensed"
 		</tr>
 	</thead>
 	<tbody ng-init="parent = resource">
-		<tr class="box" ng-repeat="(key, resource) in resource['$name$']" $if(isRoot)$ng-init="patchResource = resource" ng-class="resource['_status_']"$endif$>$subObjects:{subObj|
+        <tr class="box" $if(exprIsUni)$my-alias="resource['$name$'] as resource"$else$ng-repeat="(key, resource) in resource['$name$']"$endif$$if(isRoot)$ ng-init="patchResource = resource" ng-class="resource['_status_']"$endif$>$subObjects:{subObj|
 			$if(verbose)$<!-- $subObj.subObjLabel$ -->
 			$endif$<td class="row-content">
 				$subObj.subObjContents$
