@@ -1,41 +1,41 @@
 $if(verbose)$<!-- Box-HCOLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
 $endif$$if(crudR)$<table class="table table-striped table-hover table-condensed" ng-show="resource['$name$'].length">
-	<thead>
-		<tr>$subObjects:{subObj|
-			<th>$subObj.subObjLabel$</th>}$
-			<th style="text-align:right;">$if(crudC)$
-				<a $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-show="noPendingPromises(resource['_loading_'])" href="" ng-click="createResource(resource, '$name$', true, 'promise')"><span class="glyphicon glyphicon-plus"></span></a>
-				<span cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></span>$endif$
-			</th>
-		</tr>
-	</thead>
-	<tbody ng-init="parent = resource">
-		<tr class="box" ng-repeat="(key, resource) in resource['$name$']" $if(isRoot)$ng-init="patchResource = resource" ng-class="resource['_status_']"$endif$>$subObjects:{subObj|
-			$if(verbose)$<!-- $subObj.subObjLabel$ -->
-			$endif$<td class="row-content">
-				$subObj.subObjContents$
-			</td>}$
-			<td>$if(isRoot)$
-				<button type="button" class="btn btn-warning btn-xs" ng-if="resource['_showButtons_']['save']" ng-click="saveResource(resource, 'promise', true)">Save</button>
-				<button type="button" class="btn btn-danger btn-xs" ng-if="resource['_showButtons_']['cancel']" ng-click="cancelResource(resource)">Cancel</button>$endif$$if(crudU)$
-				<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(parent, '$name$', key, parent)"></span>$endif$$if(crudD)$
-				<span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(parent, '$name$', resource, 'promise')"></span>$endif$
-				<div style="float:right;" cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
-			</td>
-		</tr>$if(crudU)$
-		<tr$if(exprIsUni)$ ng-if="!resource['$name$'].length" $endif$>
-			<td colspan="42" ng-controller="addObjectController" $if(crudU)$ng-init="getTypeahead('$target$')"$endif$>
-				<input ng-model="selected.label" type="text" class="input-sm" placeholder="Select" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, parent, '$name$', parent); selected.label=''">
-			</td>
-		</tr>$endif$
-	</tbody>$if(crudC)$ <!-- <tfoot> only needed if crudC -->
-	<tfoot>
-		<tr>$subObjects:{subObj|
-			<td></td>}$
-			<td style="text-align:right;">$if(crudC)$
-				<a $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-show="noPendingPromises(resource['_loading_'])" href="" ng-click="createResource(resource, '$name$', false, 'promise')"><span class="glyphicon glyphicon-plus"></span></a>
-				<span cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></span>$endif$
-			</td>
-		</tr>
-	</tfoot>$endif$
+    <thead>
+        <tr>$subObjects:{subObj|
+            <th>$subObj.subObjLabel$</th>}$
+            <th style="text-align:right;">$if(crudC)$
+                <a $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-show="noPendingPromises(resource['_loading_'])" href="" ng-click="createResource(resource, '$name$', true, 'promise')"><span class="glyphicon glyphicon-plus"></span></a>
+                <span cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></span>$endif$
+            </th>
+        </tr>
+    </thead>
+    <tbody ng-init="parent = resource">
+        <tr class="box" ng-repeat="(key, resource) in resource['$name$']" $if(isRoot)$ng-init="patchResource = resource" ng-class="resource['_status_']"$endif$>$subObjects:{subObj|
+            $if(verbose)$<!-- $subObj.subObjLabel$ -->
+            $endif$<td class="row-content">
+                $subObj.subObjContents$
+            </td>}$
+            <td>$if(isRoot)$
+                <button type="button" class="btn btn-warning btn-xs" ng-if="resource['_showButtons_']['save']" ng-click="saveResource(resource, 'promise', true)">Save</button>
+                <button type="button" class="btn btn-danger btn-xs" ng-if="resource['_showButtons_']['cancel']" ng-click="cancelResource(resource)">Cancel</button>$endif$$if(crudU)$
+                <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(parent, '$name$', key, parent)"></span>$endif$$if(crudD)$
+                <span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(parent, '$name$', resource, 'promise')"></span>$endif$
+                <div style="float:right;" cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
+            </td>
+        </tr>$if(crudU)$
+        <tr$if(exprIsUni)$ ng-if="!resource['$name$'].length" $endif$>
+            <td colspan="42" ng-controller="addObjectController" $if(crudU)$ng-init="getTypeahead('$target$')"$endif$>
+                <input ng-model="selected.label" type="text" class="input-sm" placeholder="Select" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, parent, '$name$', parent); selected.label=''">
+            </td>
+        </tr>$endif$
+    </tbody>$if(crudC)$ <!-- <tfoot> only needed if crudC -->
+    <tfoot>
+        <tr>$subObjects:{subObj|
+            <td></td>}$
+            <td style="text-align:right;">$if(crudC)$
+                <a $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-show="noPendingPromises(resource['_loading_'])" href="" ng-click="createResource(resource, '$name$', false, 'promise')"><span class="glyphicon glyphicon-plus"></span></a>
+                <span cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></span>$endif$
+            </td>
+        </tr>
+    </tfoot>$endif$
 </table>$else$<span><i>not readable</i></span>$endif$
