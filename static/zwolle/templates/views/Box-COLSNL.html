@@ -4,7 +4,7 @@ $endif$$if(crudR)$<table class="table table-striped table-hover table-condensed"
 		<tr class="box" ng-repeat="(key, resource) in resource['$name$']" $if(isRoot)$ng-init="patchResource = resource" ng-class="resource['_status_']"$endif$>$subObjects:{subObj|
 			$if(verbose)$<!-- $subObj.subObjLabel$ -->
 			$endif$<td class="row-content">
-				$subObj.subObjContents$
+$subObj.subObjContents$
 			</td>}$
 			<td>$if(isRoot)$
 				<button type="button" class="btn btn-warning btn-xs" ng-if="resource['_showButtons_']['save']" ng-click="saveResource(resource, 'promise', true)">Save</button>
