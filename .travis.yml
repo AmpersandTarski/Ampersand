@@ -133,7 +133,7 @@ script:
       cabal configure --enable-tests 
       ./travis_long cabal build
       cabal check
-      cabal test
+      ./travis_long cabal test
       cabal copy
       cabal sdist
       SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && \
