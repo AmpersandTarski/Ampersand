@@ -130,7 +130,7 @@ script:
       ;;
     cabal)
       cabal configure --enable-tests 
-      ./travis_long cabal build
+      ./travis_long cabal install
       cabal check
       cabal test
       cabal copy
