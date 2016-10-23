@@ -23,6 +23,7 @@ environment:
 before_build:
 - curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
 - 7z x stack.zip stack.exe
+- set PATH=%PATH%;C:\stack\
 
 # prevent AppVeyor from building when it sees a new tag (later
 # in this script we end up making a new tag when we push a release)
