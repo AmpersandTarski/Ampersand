@@ -107,6 +107,7 @@ install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - chmod +x ./travis_long
 - if [ -f configure.ac ]; then autoreconf -i; fi
+- PATH=$PATH:~/.cabal/bin
 - |
   case "$BUILD" in
     stack)
@@ -130,10 +131,7 @@ script:
       ;;
     cabal)
       cabal configure --enable-tests 
-      ./travis_long cabal install
-      path
-      which ampersand
-      find / -type f -name "ampersand"
+      ./travis_long cabal build
       cabal check
       cabal test
       cabal copy
