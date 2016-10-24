@@ -433,7 +433,7 @@ handleFlags po opts =
                  [ (Label . StrLabel . fromString . name) c
                  , Shape PlainText
                  , Style [filled]
-                 , URL (theURL opts c)
+             --    , URL (theURL opts c)
                  ]
             else [ Shape PointShape
                  , Style [filled]
@@ -445,7 +445,7 @@ handleFlags po opts =
                              [ (Label . StrLabel . fromString . name) c
                              , Shape PlainText
                              , Style [filled]
-                             , URL (theURL opts c)
+               --              , URL (theURL opts c)
                              ]
       CptEdge    -> [Style [invis]
                     ]
@@ -453,13 +453,11 @@ handleFlags po opts =
                           [(Label . StrLabel . fromString . name) c
                           , Shape BoxShape
                           , Style [filled]
-                          , URL (theURL opts c)
+                    --      , URL (theURL opts c)
                           ]
-      RelOnlyOneEdge r -> [ URL (theURL opts r)
-                          , (XLabel . StrLabel .fromString.name) r
+      RelOnlyOneEdge r -> [ (XLabel . StrLabel .fromString.name) r
+                       --   , URL (theURL opts r)
                           ]
-                    --    ++[ (HeadLabel . StrLabel .fromString) "1" | isTot r && isUni r]
-                    --    ++[ (TailLabel . StrLabel .fromString) "1" | isSur r && isInj r]
                         ++[ ArrowTail noArrow, ArrowHead noArrow
                           , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
@@ -493,7 +491,7 @@ handleFlags po opts =
                        [ Label (StrLabel (fromString("")))
                        , Shape PlainText
                        , bgColor White
-                       , URL (theURL opts r)
+                    --   , URL (theURL opts r)
                        ]
       IsaOnlyOneEdge-> [ ArrowHead (AType [(open,Normal)])
                        , ArrowTail noArrow
