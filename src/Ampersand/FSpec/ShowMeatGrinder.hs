@@ -171,10 +171,13 @@ instance MetaPopulations Purpose where
     case mMotivatedThing of
        Nothing -> []
        Just motivatedThing ->
-         [ Pop "purpose"  metaType "Purpose" [Inj]
-          [(motivatedThing, dirtyId ctx purp)]   
-      --TODO (HJO 20160906): How are we going to deal with Markup and Lang?
-          ]
+         if explUserdefd purp -- Only supply userdefined purposes for now
+         then [ Pop "purpose"  metaType "Purpose" [Inj]
+                [(motivatedThing, dirtyId ctx purp)]   
+              , Pop "markupText" "Purpose" "MarkupText" []
+                [(dirtyId ctx purp, show . aMarkup2String Markdown . explMarkup $ purp)]
+              ]
+         else []
    where 
      ctx = originalContext fSpec
      metaType :: String
