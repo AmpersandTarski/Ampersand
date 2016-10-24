@@ -134,4 +134,4 @@ addToLastLine str [] = [str]
 addToLastLine str liness = init liness ++ [last liness ++ str]
 
 indent :: Int -> [String] -> [String]
-indent n liness = [ replicate n ' ' ++ line | line <- liness ]
+indent n = map ((replicate n ' ') ++)

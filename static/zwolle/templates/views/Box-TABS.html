@@ -17,7 +17,7 @@ $endif$$if(crudR)$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-rep
 	<div class="panel-body" cg-busy="resource['_loading_']">$endif$
         <uib-tabset>$subObjects:{subObj|$if(verbose)$<!-- TAB: $subObj.subObjLabel$ -->$endif$
             <uib-tab heading="$subObj.subObjLabel$">
-                $subObj.subObjContents$
+$subObj.subObjContents$
             </uib-tab>}$
         </uib-tabset>
 	$if(isRoot)$</div>

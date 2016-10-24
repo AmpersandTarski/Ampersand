@@ -51,16 +51,17 @@ chpConceptualAnalysis lev fSpec = (
         )
       <> definitionList (map caRelation [d | d@Sgn{}<-vrels fSpec])
      
-  pictures = concatMap patPicts (vpatterns fSpec)
+  pictures = map pictOfPat (vpatterns fSpec)
+          ++ map pictOfConcept (concs fSpec)
+          ++ map pictOfRule (vrules fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
-  patPicts :: Pattern -> [Picture]
-  patPicts pat = pictOfPat pat :
-                (map pictOfRule (invariants fSpec `isc` udefrules pat))
   pictOfPat ::  Pattern ->  Picture
-  pictOfPat  = makePicture fSpec . PTRelsUsedInPat
+  pictOfPat  = makePicture fSpec . PTCDPattern
   pictOfRule :: Rule -> Picture
-  pictOfRule = makePicture fSpec . PTSingleRule
+  pictOfRule = makePicture fSpec . PTCDRule
+  pictOfConcept :: A_Concept -> Picture
+  pictOfConcept = makePicture fSpec . PTCDConcept
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern

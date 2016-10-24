@@ -326,7 +326,7 @@ genViewInterface fSpec interf =
                      . setAttribute "crudR"               (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"               (objCrudD (_ifcObj interf))
-                     . setAttribute "contents"            (intercalate "\n" . indent 4 $ lns) -- intercalate, because unlines introduces a trailing \n
+                     . setAttribute "contents"            (intercalate "\n"$ lns) -- intercalate, because unlines introduces a trailing \n
                      . setAttribute "verbose"             (verboseP opts)
 
     ; let filename = ifcName interf ++ ".html" 
@@ -373,9 +373,10 @@ genViewObject fSpec depth obj =
             --                                      | NavInterface n rs <- navInterfaces ]
             ; let mNavInterface = listToMaybe (objNavInterfaces obj) -- TODO: can also be deleted, not used anymore?
                                                                                   
-            ; return $ lines $ renderTemplate template $ 
+            ; return . indentation
+                     . lines 
+                     . renderTemplate template $ 
                                  atomicAndBoxAttrs
-                               -- . setManyAttrib [(viewAttr, "{{row['@view']['"++viewAttr++"']}}") | viewAttr <- viewAttrs ] -- TODO: delete this, not used anymore
                                . setAttribute "navInterface" (fmap (escapeIdentifier . navIfcName) mNavInterface) -- TODO: can also be deleted, not used anymore?
             }
         FEBox { objMClass  = mClass
@@ -390,19 +391,21 @@ genViewObject fSpec depth obj =
             ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
             ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ ".html"
             
-            ; return $ lines $ renderTemplate parentTemplate $ 
+            ; return . indentation
+                     . lines 
+                     . renderTemplate parentTemplate $ 
                                  atomicAndBoxAttrs
                                . setAttribute "isRoot"     (depth == 0)
                                . setAttribute "subObjects" subObjAttrs
             }
-  where genView_SubObject subObj = 
+  where indentation :: [String] -> [String]
+        indentation = indent (if depth == 0 then 4 else 16) 
+        genView_SubObject subObj = 
          do { lns <- genViewObject fSpec (depth + 1) subObj
             ; return SubObjAttr{ subObjName = escapeIdentifier $ objName subObj
                                , subObjLabel = objName subObj -- no escaping for labels in templates needed
-                               , subObjContents = intercalate "\n" $ indent 8 lns
+                               , subObjContents = intercalate "\n" lns
                                , subObjExprIsUni = exprIsUni subObj
-                               -- Indentation is not context sensitive, so some templates will
-                               -- be indented a bit too much (we take the maximum necessary value now)
                                } 
             }
         getTemplateForObject :: IO FilePath
@@ -412,7 +415,6 @@ genViewObject fSpec depth obj =
            | otherwise = getTemplateForConcept (objTarget obj)
         getTemplateForConcept :: A_Concept -> IO FilePath
         getTemplateForConcept cpt = do exists <- doesTemplateExist fSpec cptfn
-                                   --    verboseLn (getOpts fSpec) $ "Looking for: " ++cptfn ++ "("++(if exists then "" else " not")++ " found.)" 
                                        return $ if exists
                                                 then cptfn
                                                 else templatePath </> "Atomic-"++show ttp++".html" 
