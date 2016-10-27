@@ -113,7 +113,7 @@ install:
     cabal)
       cabal --version
       travis_retry cabal update
-      cabal install --only-dependencies --enable-tests --force-reinstalls
+      cabal install --enable-tests 
       ;;
   esac
 
