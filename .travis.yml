@@ -131,12 +131,8 @@ script:
       ;;
     cabal)
       cabal configure --enable-tests 
-      ./travis_long cabal build
+      cabal build
       cabal check
       ./travis_long cabal test
-      cabal copy
-      cabal sdist
-      SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && \
-        (cd dist && cabal install --enable-tests --force-reinstalls "$SRC_TGZ")
       ;;
   esac
