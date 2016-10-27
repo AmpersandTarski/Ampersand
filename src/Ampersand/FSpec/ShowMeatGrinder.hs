@@ -150,7 +150,7 @@ instance MetaPopulations Pattern where
     , Pop "name"    "Pattern" "PatternName" [Uni,Tot,Sur]
            [(dirtyId ctx pat, (show.name) pat)]
     , Pop "urlEncodedName" "Pattern" "EncodedName" [Uni]
-             [(dirtyId ctx pat, (show . escapeIdentifier . name) pat)]
+             [(dirtyId ctx pat, (show . escapeNonAlphaNum . name) pat)]
     , Pop "udefrules" "Rule" "Pattern" []                         -- all rules the user has declared within this viewpoint,
                                      --   which are not multiplicity- and not identity rules. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-udefrules pat]
@@ -171,10 +171,13 @@ instance MetaPopulations Purpose where
     case mMotivatedThing of
        Nothing -> []
        Just motivatedThing ->
-         [ Pop "purpose"  metaType "Purpose" [Inj]
-          [(motivatedThing, dirtyId ctx purp)]   
-      --TODO (HJO 20160906): How are we going to deal with Markup and Lang?
-          ]
+         if explUserdefd purp -- Only supply userdefined purposes for now
+         then [ Pop "purpose"  metaType "Purpose" [Inj]
+                [(motivatedThing, dirtyId ctx purp)]   
+              , Pop "markupText" "Purpose" "MarkupText" []
+                [(dirtyId ctx purp, show . aMarkup2String Markdown . explMarkup $ purp)]
+              ]
+         else []
    where 
      ctx = originalContext fSpec
      metaType :: String
@@ -241,7 +244,7 @@ instance MetaPopulations A_Concept where
    , Pop "name" "Concept" "ConceptName" [Uni,Tot]
              [(dirtyId ctx cpt, (show . name) cpt)]
    , Pop "urlEncodedName" "Concept" "EncodedName" [Uni]
-             [(dirtyId ctx cpt, (show . escapeIdentifier . name) cpt)]
+             [(dirtyId ctx cpt, (show . escapeNonAlphaNum . name) cpt)]
    ]++
    case cpt of
      PlainConcept{} ->
@@ -555,7 +558,9 @@ instance MetaPopulations Rule where
       , Pop "name"  "Rule" "RuleName" [Uni,Tot,Sur]
              [(dirtyId ctx rul, (show.name) rul)]
       , Pop "urlEncodedName" "Rule" "EncodedName" [Uni]
-             [(dirtyId ctx rul, (show . escapeIdentifier . name) rul)]
+             [(dirtyId ctx rul, (show . escapeNonAlphaNum . name) rul) 
+             | rul `elem` vrules fSpec --Rule must be user defined to show graphic 
+             ]
       , Pop "origin"  "Rule" "Origin" [Uni,Tot]
              [(dirtyId ctx rul, (show.show.origin) rul)]
       , Pop "message"  "Rule" "Message" []
