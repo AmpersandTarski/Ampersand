@@ -68,7 +68,7 @@ library
                      transformers == 0.5.*,
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
-                     yaml == 0.8.18.*,
+                     yaml == 0.8.20.*,
                      yaml-config == 0.4.*,
                      xlsx == 0.2.4.*,
                      zlib == 0.6.*
@@ -205,7 +205,7 @@ Test-Suite regression-test
                      filepath == 1.4.*,
                      process == 1.4.*,
                      transformers == 0.5.*,
-                     yaml == 0.8.18.*
+                     yaml == 0.8.20.*
                     
 Test-Suite ampersand-test
   type:              exitcode-stdio-1.0
@@ -243,7 +243,7 @@ Test-Suite ampersand-test
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
                      xlsx == 0.2.4.*,
-                     yaml == 0.8.18.*,
+                     yaml == 0.8.20.*,
                      yaml-config == 0.4.*,
                      zlib == 0.6.*
 
