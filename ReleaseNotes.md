@@ -1,6 +1,8 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+
+## v3.7.2 (28 october 2016)
   * Some updates in the meatgrinder. (still experimental)
   * Several changes in the generation of the functional specification document. (Less LaTex specific)
 
