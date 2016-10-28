@@ -57,16 +57,16 @@ instance MetaPopulations FSpec where
  metaPops _ fSpec =
    filter (not.nullContent)
     ( metaPops fSpec ctx
-    ++[ Pop "dbName" "Context" "DatabaseName" [Uni,Tot] [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)]
-      , Pop "maintains" "Role" "Rule" []
+    ++[ --Pop "dbName" "Context" "DatabaseName" [Uni,Tot] [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)]
+        Pop "maintains" "Role" "Rule" []
                  [(dirtyId ctx rol, dirtyId ctx rul) | (rol,rul) <-  fRoleRuls fSpec ]
       , Pop "interfaces" "Role" "Interface" []
                  [(dirtyId ctx rol, dirtyId ctx ifc) | ifc <- ctxifcs ctx, rol<-ifcRoles ifc]
       ]
 --    ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
 --    ++   concatMap extract (allConjuncts fSpec)
-    ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
-    ++   concatMap extract (sortByName (plugInfos fSpec))
+--    ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
+--    ++   concatMap extract (sortByName (plugInfos fSpec))
     ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) fSpec++")"]
     ++   concatMap (extract . fst) (fRoles fSpec)
     )
@@ -117,7 +117,7 @@ instance MetaPopulations A_Context where
            [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxks ctx]
     , Pop "allRoles" "Context" "Role" [Tot]
            [(dirtyId ctx ctx, show "SystemAdmin")]
-    , Pop "name"   "Role" "RoleName" [Uni,Tot,Sur]
+    , Pop "name"   "Role" "RoleName" [Uni,Tot]
            [(show "SystemAdmin", show "SystemAdmin")]
     ]
   ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.patterns) ctx++")"]
@@ -149,6 +149,8 @@ instance MetaPopulations Pattern where
     , Comment $ " Pattern `"++name pat++"` "
     , Pop "name"    "Pattern" "PatternName" [Uni,Tot,Sur]
            [(dirtyId ctx pat, (show.name) pat)]
+    , Pop "urlEncodedName" "Pattern" "EncodedName" [Uni]
+             [(dirtyId ctx pat, (show . escapeNonAlphaNum . name) pat)]
     , Pop "udefrules" "Rule" "Pattern" []                         -- all rules the user has declared within this viewpoint,
                                      --   which are not multiplicity- and not identity rules. See ViewPoint.hs
            [(dirtyId ctx r, dirtyId ctx pat) | r<-udefrules pat]
@@ -169,10 +171,13 @@ instance MetaPopulations Purpose where
     case mMotivatedThing of
        Nothing -> []
        Just motivatedThing ->
-         [ Pop "purpose"  metaType "Purpose" [Inj]
-          [(motivatedThing, dirtyId ctx purp)]   
-      --TODO (HJO 20160906): How are we going to deal with Markup and Lang?
-          ]
+         if explUserdefd purp -- Only supply userdefined purposes for now
+         then [ Pop "purpose"  metaType "Purpose" [Inj]
+                [(motivatedThing, dirtyId ctx purp)]   
+              , Pop "markupText" "Purpose" "MarkupText" []
+                [(dirtyId ctx purp, show . aMarkup2String Markdown . explMarkup $ purp)]
+              ]
+         else []
    where 
      ctx = originalContext fSpec
      metaType :: String
@@ -238,6 +243,8 @@ instance MetaPopulations A_Concept where
              [(dirtyId ctx cpt, dirtyId ctx (cptTType fSpec cpt))] 
    , Pop "name" "Concept" "ConceptName" [Uni,Tot]
              [(dirtyId ctx cpt, (show . name) cpt)]
+   , Pop "urlEncodedName" "Concept" "EncodedName" [Uni]
+             [(dirtyId ctx cpt, (show . escapeNonAlphaNum . name) cpt)]
    ]++
    case cpt of
      PlainConcept{} ->
@@ -269,6 +276,7 @@ instance MetaPopulations Conjunct where
     cExpr = rc_conjunct conj
 -}
 
+{-
 instance MetaPopulations PlugInfo where
   metaPops fSpec plug = 
       [ Comment $ " Plug `"++name plug++"` "
@@ -291,9 +299,9 @@ instance MetaPopulations PlugInfo where
     isKernelConcept cpt = case plug of 
                            InternalPlug sqlTable -> cpt `elem` map fst (cLkpTbl sqlTable)
                            _                     -> False
-
-instance MetaPopulations PlugSQL where
-  metaPops _ _ = []
+-}
+--instance MetaPopulations PlugSQL where
+--  metaPops _ _ = []
 {-    case plug of 
        TblSQL{} ->
          [ Pop "rootConcept" "TblSQL" "Concept" []
@@ -307,8 +315,8 @@ instance MetaPopulations PlugSQL where
     ctx = originalContext fSpec
 -}
 
-instance MetaPopulations (PlugSQL,SqlAttribute) where
-  metaPops _ (_,_) = []
+--instance MetaPopulations (PlugSQL,SqlAttribute) where
+--  metaPops _ (_,_) = []
 {-      [ Pop "table" "SqlAttribute" "SQLPlug" []
                  [(dirtyId ctx (plug,att), dirtyId ctx plug) ]
       , Pop "concept" "SqlAttribute" "Concept" []
@@ -549,8 +557,10 @@ instance MetaPopulations Rule where
       , Comment $ " Rule `"++name rul++"` "
       , Pop "name"  "Rule" "RuleName" [Uni,Tot,Sur]
              [(dirtyId ctx rul, (show.name) rul)]
-  --    , Pop "ruleAdl"  "Rule" "Adl" [Uni,Tot]
-  --           [(dirtyId ctx rul, (show.showADL.rrexp) rul)]
+      , Pop "urlEncodedName" "Rule" "EncodedName" [Uni]
+             [(dirtyId ctx rul, (show . escapeNonAlphaNum . name) rul) 
+             | rul `elem` vrules fSpec --Rule must be user defined to show graphic 
+             ]
       , Pop "origin"  "Rule" "Origin" [Uni,Tot]
              [(dirtyId ctx rul, (show.show.origin) rul)]
       , Pop "message"  "Rule" "Message" []

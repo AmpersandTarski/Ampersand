@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.7.1
+version:        3.7.2
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -19,6 +19,15 @@ bug-reports:    https://github.com/AmpersandTarski/ampersand/issues
 data-files:
                 LICENSE
 
+custom-setup
+  setup-depends:     base == 4.9.*,
+                     bytestring == 0.10.*,
+                     Cabal == 1.24.*,
+                     directory == 1.2.*,
+                     filepath == 1.4.*,
+                     process == 1.4.*,
+                     time == 1.6.*,
+                     zlib == 0.6.*
 source-repository head
   type:      git
   location:  https://github.com/AmpersandTarski/ampersand.git
@@ -31,7 +40,7 @@ library
                      aeson-pretty == 0.8.*,
                      base == 4.9.*,
                      bytestring == 0.10.*,
-                     conduit == 1.2.7.*,
+                     conduit == 1.2.*,
                      conduit-extra == 1.1.13.*,
                      conduit-combinators == 1.0.*,
                      containers == 0.5.*,
@@ -46,6 +55,7 @@ library
                      MissingH == 1.4.*,
                      mtl == 2.2.*,
                      pandoc == 1.17.*,
+                     pandoc-crossref == 0.2.*,
                      pandoc-types == 1.16.*,
                      parsec == 3.1.*,
                      process == 1.4.*,
@@ -189,7 +199,7 @@ Test-Suite regression-test
   ghc-options:       -rtsopts -Wall
   build-depends:     ampersand,
                      base == 4.9.*,
-                     conduit == 1.2.7.*,
+                     conduit == 1.2.*,
                      conduit-combinators == 1.0.*,
                      directory == 1.2.*,
                      filepath == 1.4.*,
@@ -208,7 +218,7 @@ Test-Suite ampersand-test
                      aeson == 0.11.*,
                      aeson-pretty == 0.8.*,
                      bytestring == 0.10.*,
-                     conduit == 1.2.7.*,
+                     conduit == 1.2.*,
                      conduit-combinators == 1.0.*,
                      containers == 0.5.*,
                      data-default == 0.7.*,

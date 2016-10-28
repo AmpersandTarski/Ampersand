@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Prototype.ProtoUtil
-         ( writePrototypeFile, getGenericsDir
-         , writePrototypeAppFile, getAppDir
+         ( getGenericsDir
+         , writePrototypeAppFile
          , copyDirRecursively, copyDeepFile, removeAllDirectoryFiles, getProperDirectoryContents
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
@@ -22,14 +22,6 @@ import Ampersand.FSpec
 import Ampersand.Misc.Options
 import qualified System.Exit as SE (ExitCode(..))
 import System.Process
-
-writePrototypeFile :: Options -> String -> String -> IO ()
-writePrototypeFile opts relFilePath content =
- do { verboseLn opts ("  Generating "<>relFilePath)
-    ; let filePath = getGenericsDir opts </> relFilePath
-    ; createDirectoryIfMissing True (takeDirectory filePath)
-    ; writeFile filePath content
-    }
 
 getGenericsDir :: Options -> String
 getGenericsDir opts = 

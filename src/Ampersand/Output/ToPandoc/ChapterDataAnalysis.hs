@@ -6,7 +6,7 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters hiding (Association)
 import Ampersand.FSpec.Crud
 import Ampersand.Graphic.ClassDiagram --(Class(..),CdAttribute(..))
 import Ampersand.Graphic.Fspec2ClassDiagrams
-import Ampersand.Output.PredLogic
+-- import Ampersand.Output.PredLogic
 import Data.Char
 import Data.List
 import Data.Function (on)
@@ -24,7 +24,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   sectionLevel = 2
  
   theBlocks
-    =  chptHeader (fsLang fSpec) DataAnalysis  -- The header
+    =  xDefBlck fSpec DataAnalysis  -- The header
     <> (case fsLang fSpec of
              Dutch   -> para ( "Dit hoofdstuk bevat het resultaat van de gegevensanalyse. "
                             <> "De opbouw is als volgt:"
@@ -41,7 +41,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                             <>  "Finally, the logical and technical data model are discussed."
                              )
        )
-    <>  if null (classes $ clAnalysis fSpec) 
+    <> (if null (classes $ clAnalysis fSpec) 
         then mempty
         else 
           (   header sectionLevel
@@ -49,19 +49,15 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                   )
            <> para (case fsLang fSpec of
                      Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                              <> (if canXRefer (getOpts fSpec)
-                                  then  "Deze is in figuur " <> xRefReference (getOpts fSpec) classificationPicture <> "weergegeven."
-                                  else "Deze is in onderstaand figuur weergegeven."
+                              <> ("Deze is weergegeven in " <> xRef classificationPicture <> "."
                                  )
                      English -> "A number of concepts is organized in a classification structure. "
-                              <> (if canXRefer (getOpts fSpec)
-                                  then "This is shown in figure " <> xRefReference (getOpts fSpec) classificationPicture <> "."
-                                  else "This is shown in the figure below."
+                              <> ("This is shown in " <> xRef classificationPicture <> "."
                                  )
                    )
-                <> para (showImage (getOpts fSpec) classificationPicture)
+                <> xDefBlck fSpec classificationPicture
            )
-
+       )
     <> daRulesSection
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
@@ -80,17 +76,13 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                     )
       <> para (case fsLang fSpec of
                  Dutch   -> text "De afspraken zijn vertaald naar een gegevensmodel. "
-                           <> ( if canXRefer (getOpts fSpec)
-                                then text "Dit gegevensmodel is in figuur " <> xRefReference (getOpts fSpec) logicalDataModelPicture <> text " weergegeven."
-                                else text "Dit gegevensmodel is in onderstaand figuur weergegeven. "
+                           <> ( text "Dit gegevensmodel is in " <> xRef logicalDataModelPicture <> text " weergegeven."
                               )
                  English -> text "The functional requirements have been translated into a data model. "
-                           <> ( if canXRefer (getOpts fSpec)
-                                then text "This model is shown by figure " <> xRefReference (getOpts fSpec) logicalDataModelPicture <> text "."
-                                else text "This model is shown by the figure below. "
+                           <> ( text "This model is shown by " <> xRef logicalDataModelPicture <> text "."
                               )
               )
-       <> para (showImage (getOpts fSpec) logicalDataModelPicture)
+       <> xDefBlck fSpec logicalDataModelPicture
        <> let nrOfClasses = length (classes oocd)
           in case fsLang fSpec of
                Dutch   -> para (case nrOfClasses of
@@ -240,17 +232,13 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                 )
     <> para (case fsLang fSpec of
                Dutch   ->   "De afspraken zijn vertaald naar een technisch datamodel. "
-                         <> ( if canXRefer (getOpts fSpec)
-                              then "Dit model is in figuur " <> xRefReference (getOpts fSpec) technicalDataModelPicture <> " weergegeven."
-                              else "Dit model is in onderstaand figuur weergegeven. "
+                         <> ( "Dit model is in " <> xRef technicalDataModelPicture <> " weergegeven."
                             )
                English ->   "The functional requirements have been translated into a technical data model. "
-                         <> ( if canXRefer (getOpts fSpec)
-                              then "This model is shown by figure " <> xRefReference (getOpts fSpec) technicalDataModelPicture <> "."
-                              else "This model is shown by the figure below. "
+                         <> ( "This model is shown by " <> xRef technicalDataModelPicture <> "."
                             )
             )
-    <> para (showImage (getOpts fSpec) technicalDataModelPicture)
+    <> xDefBlck fSpec technicalDataModelPicture
     <> para (let nrOfTables = length (filter isTable (plugInfos fSpec))
              in
              case fsLang fSpec of
@@ -336,58 +324,59 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
   daRulesSection :: Blocks
   daRulesSection = mconcat 
       [ header sectionLevel . text $ l (NL "Regels", EN "Rules")
-      , para . text $ l (NL "TODO: uitleg paragraaf", EN "TODO: explain section")
+      , para . text $ l ( NL $ "Nu volgt een opsomming van alle regels. Per regel wordt de formele expressie ervan gegeven. " <>
+                               "Eerst worden de procesregels gegeven, vervolgens de invarianten."
+                        , EN $ "In this section an overview of all rules is given. For every rule, the formal expression is shown. " <>
+                               "The process rules are given first, followed by the invariants.")
       , docRules (NL "Procesregels", EN "Process rules")
-                 ( NL "TODO: uitleg procesregels"
-                 , EN "TODO: explain process rules")
+                 ( NL "Procesregels zijn regels waarvan de overtredingen worden gesignaleerd."
+                 , EN "Process rules are rules that are signalled. ")
                  ( NL "Deze specificatie bevat geen procesregels."
                  , EN "This specification does not contain any process rules.")
                  (NL "Procesregel", EN "Process rule")
-                 prcssRules
+                 (signals fSpec)
       , docRules (NL "Invarianten", EN "Invariants")
-                 ( NL "TODO: uitleg invarianten"
-                 , EN "TODO: explain invariants")
+                 ( NL "Invarianten zijn regels die door de database worden afgedwongen. Er wordt gegarandeerd dat overtredingen niet kunnen voorkomen in de database."
+                 , EN "Invariants are rules that are enforced by the database. It is guaranteed that violations cannot occur in the database.")
                  ( NL "Deze specificatie bevat geen invarianten."
                  , EN "This specification does not contain any invariants.")
                  (NL "Invariant", EN "Invariant")
-                 userInvariants
+                 (invariants fSpec)
       ]
    where
-    (prcssRules, userInvariants) = partition isSignal $ vrules fSpec
     docRules :: LocalizedStr -> LocalizedStr -> LocalizedStr -> LocalizedStr -> [Rule] -> Blocks
-    docRules _     _     noRules _       []    = para . text $ l noRules
-    docRules title intro _       heading rules = mconcat $
-      [ header (sectionLevel+1) . text $ l title 
-      , para . text $ l intro
-      ] ++
-      map (docRule heading) rules
-  
+    docRules title intro noRules heading rules = 
+      case rules of 
+         [] -> (para . text . l) noRules
+         _  -> mconcat $
+                 [ header (sectionLevel+1) . text $ l title 
+                 , para . text $ l intro
+                 ] ++
+                 map (docRule heading) rules
+    
     docRule :: LocalizedStr -> Rule -> Blocks
     docRule heading rule = mconcat
        [ plain $ strong (text (l heading ++ ": ") <> emph (text (rrnm rule)))
        , fromList $ maybe mempty (concatMap $ amPandoc . explMarkup) $ purposeOf fSpec (fsLang fSpec) rule
        , fromList $ meaning2Blocks (fsLang fSpec) rule
-       , if showPredExpr (getOpts fSpec)
-         then let predicate = toPredLogic rule
-              in  if format == Frtf then
-                     plain $ linebreak <> singleton (RawInline (Text.Pandoc.Builder.Format "rtf") (showRtf predicate)) 
-                  else
-                    pandocEqnArrayWithLabel (XRefDataAnalRule rule) (showLatex predicate)
-         else if format == FLatex
-              then fromList $ pandocEquation (showMath rule)
-              else (plain . text $ l (NL "Ampersand expressie:", EN "Ampersand expression:")) <>
-                   (plain . code $ showADL (rrexp rule))
+       , para (showMath rule)
        , plain $ singleton $ RawInline (Text.Pandoc.Builder.Format "latex") "\\bigskip" -- also causes a skip in rtf (because of non-empty plain)
        , if isSignal rule
          then mempty
-         else (para.text.l)
-                (NL $ "Overtredingen van deze regel leiden tot een foutmelding aan de gebruiker: "
-                          ++"\"TODO\"."
-                ,EN $ "Violations of this rule will result in an error message for the user: "
-                          ++"\"TODO\"."
-                )   
+         else case rrviol rule of
+                Nothing  -> mempty
+                Just sgmts -> 
+                    para (if isSignal rule 
+                          then (text.l)(NL "Een overtreding van deze regel wordt gesignaleerd door middel van de melding: "
+                                       ,EN "Violations of this rule are reported with the following message: "
+                                       )
+                          else (text.l)(NL "Een overtreding van deze regel resulteert in de volgende foutmelding aan de gebruiker: "
+                                       ,EN "Violations of this rule will result in an error message for the user: "
+                                       )
+                         )
+                  <>bulletList [para $ violation2Inlines fSpec sgmts]
+                   
        ]   
-      where format = fspecFormat (getOpts fSpec) -- todo: bit hacky to use the output format here, but otherwise we need a major refactoring
   
 primExpr2pandocMath :: Lang -> Expression -> Inlines
 primExpr2pandocMath lang e =

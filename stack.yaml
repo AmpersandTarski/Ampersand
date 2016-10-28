@@ -2,7 +2,7 @@
 
 # Specifies the GHC version and set of packages available (e.g., lts-3.5, nightly-2015-09-21, ghc-7.10.2)
 # resolver: lts-3.18
-resolver: lts-7.0
+resolver: lts-7.2
 
 # Local packages, usually specified by relative directory name
 packages:
@@ -13,7 +13,10 @@ extra-deps:
 - SpreadsheetML-0.1
 - simple-sql-parser-0.4.2
 - yaml-config-0.4.0
-
+- pandoc-crossref-0.2.3.0
+- data-accessor-template-0.2.1.13
+- data-accessor-transformers-0.2.1.7
+- roman-numerals-0.5.1.5
 # Override default flag values for local packages and extra-deps
 flags: {}
 

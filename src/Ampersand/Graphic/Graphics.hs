@@ -21,13 +21,13 @@ import Control.Exception (catch, IOException)
 import Prelude hiding (writeFile)
 
 data PictureReq = PTClassDiagram
-                | PTRelsUsedInPat Pattern
+                | PTCDPattern Pattern
                 | PTDeclaredInPat Pattern
-                | PTConcept A_Concept
+                | PTCDConcept A_Concept
                 | PTSwitchBoard Activity
                 | PTFinterface Activity
                 | PTIsaInPattern Pattern  -- Not used at all...
-                | PTSingleRule Rule
+                | PTCDRule Rule
                 | PTLogicalDM
                 | PTTechnicalDM
 
@@ -68,7 +68,7 @@ makePicture fSpec pr =
                                       English -> "Technical data model of " ++ name fSpec
                                       Dutch   -> "Technisch gegevensmodel van " ++ name fSpec
                                }
-   PTConcept cpt       -> Pict { pType = pr
+   PTCDConcept cpt     -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
@@ -95,7 +95,7 @@ makePicture fSpec pr =
                                       English -> "Classifications of " ++ name pat
                                       Dutch   -> "Classificaties van " ++ name pat
                                }
-   PTRelsUsedInPat pat -> Pict { pType = pr
+   PTCDPattern pat     -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
@@ -113,7 +113,7 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of interface " ++ name act
                                       Dutch   -> "Conceptueel diagram van interface " ++ name act
                                }
-   PTSingleRule rul    -> Pict { pType = pr
+   PTCDRule rul        -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = conceptualGraph' fSpec pr
                                , dotProgName = graphVizCmdForConceptualGraph
@@ -135,12 +135,12 @@ makePicture fSpec pr =
    scale' =
       case pr of
             PTClassDiagram -> "1.0"
-            PTRelsUsedInPat{}-> "0.7"
+            PTCDPattern{}-> "0.7"
             PTDeclaredInPat{}-> "0.6"
             PTSwitchBoard{}  -> "0.4"
             PTIsaInPattern{} -> "0.7"
-            PTSingleRule{}   -> "0.7"
-            PTConcept{}      -> "0.7"
+            PTCDRule{}   -> "0.7"
+            PTCDConcept{}      -> "0.7"
             PTFinterface{}   -> "0.7"
             PTLogicalDM    -> "1.2"
             PTTechnicalDM  -> "1.2"
@@ -152,20 +152,20 @@ pictureID pr =
       PTClassDiagram   -> "Classification"
       PTLogicalDM      -> "LogicalDataModel"
       PTTechnicalDM    -> "TechnicalDataModel"
-      PTConcept cpt    -> "RulesWithConcept"++name cpt
+      PTCDConcept cpt     -> "CDConcept"++name cpt
       PTDeclaredInPat pat -> "RelationsInPattern"++name pat
       PTIsaInPattern  pat -> "IsasInPattern"++name pat
-      PTRelsUsedInPat pat -> "RulesInPattern"++name pat
+      PTCDPattern pat     -> "CDPattern"++name pat
       PTFinterface act    -> "KnowledgeGraph"++name act
       PTSwitchBoard x     -> "SwitchBoard"++name x
-      PTSingleRule r      -> "SingleRule"++name r
+      PTCDRule r          -> "CDRule"++name r
 
 conceptualGraph' :: FSpec -> PictureReq -> DotGraph String
 conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
   where
     cstruct =
       case pr of
-        PTConcept c ->
+        PTCDConcept c ->
           let gs = fsisa fSpec
               cpts' = concs rs
               rs    = [r | r<-vrules fSpec, c `elem` concs r]
@@ -176,10 +176,10 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                              ]
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
-        --  PTRelsUsedInPat makes a picture of at least the relations within pat;
+        --  PTCDPattern makes a picture of at least the relations within pat;
         --  extended with a limited number of more general concepts;
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
-        PTRelsUsedInPat pat ->
+        PTCDPattern pat ->
           let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
               xrels = nub [r | c<-orphans, r@Sgn{}<-vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
@@ -242,7 +242,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                   , csRels = rels
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
-        PTSingleRule r ->
+        PTCDRule r ->
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
@@ -261,7 +261,7 @@ writePicture opts pict
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
       [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
       [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
-      [writeDot Svg    | genFSpec opts ] ++
+      [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
@@ -311,16 +311,16 @@ class Named a => Navigatable a where
    interfacename :: a -> String
    itemstring :: a -> String
    theURL :: Options -> a -> EscString    -- url of the web page in Atlas used when clicked on a node or edge in a .map file
-   theURL opts x
-     = fromString ("Atlas.php?content=" ++ interfacename x
-                   ++  "&User=" ++ user
-                   ++  "&Script=" ++ script
-                   ++  "&"++interfacename x ++"="++qualify++itemstring x
-                  )
-      where --copied from atlas.hs
-      script = fileName opts
-      user = namespace opts
-      qualify = "("++user ++ "." ++ script ++ ")"
+   theURL _ x = fromString $ "HIER KAN EEN URL WORDEN GEBOUWD voor "++ interfacename x++" "++itemstring x
+--     = fromString ("Atlas.php?content=" ++ interfacename x
+--                   ++  "&User=" ++ user
+--                   ++  "&Script=" ++ script
+--                   ++  "&"++interfacename x ++"="++qualify++itemstring x
+--                  )
+--      where --copied from atlas.hs
+--      script = fileName opts
+--      user = namespace opts
+--      qualify = "("++user ++ "." ++ script ++ ")"
 
 instance Navigatable A_Concept where
    interfacename _ = "Concept" --see Atlas.adl
@@ -433,7 +433,7 @@ handleFlags po opts =
                  [ (Label . StrLabel . fromString . name) c
                  , Shape PlainText
                  , Style [filled]
-                 , URL (theURL opts c)
+             --    , URL (theURL opts c)
                  ]
             else [ Shape PointShape
                  , Style [filled]
@@ -445,7 +445,7 @@ handleFlags po opts =
                              [ (Label . StrLabel . fromString . name) c
                              , Shape PlainText
                              , Style [filled]
-                             , URL (theURL opts c)
+               --              , URL (theURL opts c)
                              ]
       CptEdge    -> [Style [invis]
                     ]
@@ -453,13 +453,11 @@ handleFlags po opts =
                           [(Label . StrLabel . fromString . name) c
                           , Shape BoxShape
                           , Style [filled]
-                          , URL (theURL opts c)
+                    --      , URL (theURL opts c)
                           ]
-      RelOnlyOneEdge r -> [ URL (theURL opts r)
-                          , (XLabel . StrLabel .fromString.name) r
+      RelOnlyOneEdge r -> [ (XLabel . StrLabel .fromString.name) r
+                       --   , URL (theURL opts r)
                           ]
-                    --    ++[ (HeadLabel . StrLabel .fromString) "1" | isTot r && isUni r]
-                    --    ++[ (TailLabel . StrLabel .fromString) "1" | isSur r && isInj r]
                         ++[ ArrowTail noArrow, ArrowHead noArrow
                           , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
@@ -493,7 +491,7 @@ handleFlags po opts =
                        [ Label (StrLabel (fromString("")))
                        , Shape PlainText
                        , bgColor White
-                       , URL (theURL opts r)
+                    --   , URL (theURL opts r)
                        ]
       IsaOnlyOneEdge-> [ ArrowHead (AType [(open,Normal)])
                        , ArrowTail noArrow

@@ -244,7 +244,7 @@ class Relation {
         $this->db->addLink($this, $srcAtom, $tgtAtom);
         
         // Flag session var as affected when src or tgt concept of this relation is SESSION
-        if($srcAtom->concept->isSession() || $srcAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
+        if($srcAtom->concept->isSession() || $tgtAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
     }
     
     /**
@@ -267,14 +267,14 @@ class Relation {
         $tgtAtom = $isFlipped ? $leftAtom : $rightAtom;
          
         // Checks
-        if(!in_array($srcAtom->concept, $this->srcConcept->getSpecializationsIncl())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
-        if(!in_array($tgtAtom->concept, $this->tgtConcept->getSpecializationsIncl())) throw new Exception ("Cannot insert link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) into relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
+        if(!in_array($srcAtom->concept, $this->srcConcept->getSpecializationsIncl())) throw new Exception ("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$this->__toString()}', because source concept does not match relation source or its specializations", 500);
+        if(!in_array($tgtAtom->concept, $this->tgtConcept->getSpecializationsIncl())) throw new Exception ("Cannot delete link ({$srcAtom->__toString()},{$tgtAtom->__toString()}) from relation '{$this->__toString()}', because target concept does not match relation target or its specializations", 500);
         
         // Delete link from relation table
         $this->db->deleteLink($this, $srcAtom, $tgtAtom);
         
         // Flag session var as affected when src or tgt concept of this relation is SESSION
-        if($srcAtom->concept->isSession() || $srcAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
+        if($srcAtom->concept->isSession() || $tgtAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
     }
     
     /**

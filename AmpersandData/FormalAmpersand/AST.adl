@@ -1,6 +1,6 @@
-CONTEXT RAP IN ENGLISH
+﻿CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
-INCLUDE "AST.ifc"
+--INCLUDE "AST.ifc"
 --INCLUDE "MinimalAST.xlsx" -- Contains minimal population. Anything discarded from it must break an invariant
 INCLUDE "Contexts.adl"
 INCLUDE "Relations.adl"
@@ -9,7 +9,7 @@ INCLUDE "Rules.adl"
 INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
 -- INCLUDE "Generics.adl"
-INCLUDE "Tables.adl"
+-- INCLUDE "Tables.adl"
 
 {-RJ/20150207: Opmerkingen n.a.v. een vluchtige code-inspectie van dit bestand
 1) Het is nu nog wel, maar binnen RAP niet meer, mogelijk om een Pattern, Context en/of Concept dezelfde naam te geven (vanwege de INJectiviteit van relaties als name, ptnm). Deze nieuwe beperking lijkt me onwenselijk.

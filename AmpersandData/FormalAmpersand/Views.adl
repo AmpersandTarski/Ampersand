@@ -1,28 +1,34 @@
-CONTEXT AST IN ENGLISH
+﻿CONTEXT AST IN ENGLISH
 INCLUDE "Concepts.adl"
 
 PATTERN Views
     RELATION default[View*Concept] [UNI] -- TOT is maintained by RULE TOTdefault, by deleting all views without a default concept.
     RULE "TOTdefault" : I[View] |- default[View*Concept];default[View*Concept]~
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelAtom;View;", SRC I) -- all links in other relations in which the atom occurs are deleted as well.
     ROLE ExecEngine MAINTAINS "TOTdefault"
 
     RELATION hasView[Concept*Concept] -- hasView = default[View*Concept]~;default[View*Concept]/\I
     ROLE ExecEngine MAINTAINS "ins hasView", "del hasView"
     RULE "ins hasView" : default[View*Concept]~;default[View*Concept]/\I |- hasView[Concept*Concept]
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX}_; InsPair_;hasView_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
     RULE "del hasView" : hasView[Concept*Concept] |- default[View*Concept]~;default[View*Concept]/\I
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX}_; DelPair_;hasView_;Concept_;", SRC I, TXT "_;Concept_;", TGT I)
 
     RELATION viewBy[Concept*Concept] -- viewBy[Concept*Concept] = isaStar;hasView[Concept*Concept] - isaPlus
     ROLE ExecEngine MAINTAINS "ins viewBy", "del viewBy"
     RULE "ins viewBy" : isaStar;hasView[Concept*Concept] - isaPlus |- viewBy[Concept*Concept]
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} InsPair;viewBy[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
     RULE "del viewBy" : viewBy[Concept*Concept] |- isaStar;hasView[Concept*Concept] - isaPlus
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "{EX} DelPair;viewBy[Concept*Concept];Concept;", SRC I, TXT ";Concept;", TGT I)
 
     ROLE "Type Checker" MAINTAINS "deterministic choice of View"
     RULE "deterministic choice of View" : viewBy[Concept*Concept]~;viewBy[Concept*Concept] |- I
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (SRC viewBy[Concept*Concept]~, TXT " has both ", SRC default[View*Concept]~, TXT " and ", TGT default[View*Concept]~, TXT " as view.")
 ENDPATTERN
 
