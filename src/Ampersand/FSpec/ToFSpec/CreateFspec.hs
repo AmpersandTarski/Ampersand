@@ -10,6 +10,7 @@ import Ampersand.ADL1.P2A_Converters
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ShowMeatGrinder
 import Ampersand.Input
+import Ampersand.Input.ADL1.CtxError
 import Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
 import Control.Monad
@@ -29,17 +30,21 @@ import Control.Monad
 --   which is the result of createMulti.
 createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
-createMulti opts =
-  do userP_Ctx <- parseADL opts (fileName opts)     -- the P_Context of the user's sourceFile
-     let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
-     when (genMetaFile opts) (dumpMetaFile gFSpec)
-     if genMetaTables opts || genRap
-     then do fAmpP_Ctx <- parseMeta opts             -- the P_Context of the formalAmpersand metamodel
-             let gGrinded :: Guarded P_Context
-                 gGrinded = addGens <$> fAmpP_Ctx <*> join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
-             let metaPopFSpec = pCtx2Fspec gGrinded
-             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, fAmpP_Ctx]
-     else    return $ mkMulti <$> pure Nothing <*> gFSpec
+createMulti opts = do 
+  gSystemP_Ctx <- parseSystemContext opts
+  whenCheckedIO (parseADL opts (fileName opts)) $ \userP_Ctx ->
+    do let systemP_Ctx = case gSystemP_Ctx of
+                          Errors err -> fatal 36 $ "Errors found while parsing SystemContext!"++show err
+                          Checked ctx -> ctx
+       let gFSpec = pCtx2Fspec . merge . pure $ [userP_Ctx,systemP_Ctx]  -- the FSpec resulting from the user's souceFile
+       when (genMetaFile opts) (dumpMetaFile gFSpec)
+       if genMetaTables opts || genRap
+       then do fAmpP_Ctx <- parseMeta opts             -- the P_Context of the formalAmpersand metamodel
+               let gGrinded :: Guarded P_Context
+                   gGrinded = addGens <$> fAmpP_Ctx <*> join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+               let metaPopFSpec = pCtx2Fspec gGrinded
+               return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [pure userP_Ctx, gGrinded, fAmpP_Ctx]
+       else    return $ mkMulti <$> pure Nothing <*> gFSpec
    where
     -- The gens from FromalAmpersand must be available in the result of grinded 
     addGens :: P_Context -> P_Context -> P_Context
