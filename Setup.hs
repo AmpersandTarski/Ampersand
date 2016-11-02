@@ -156,10 +156,11 @@ readAllStaticFiles =
   do { zwolleFrontEndFiles  <- readStaticFiles ZwolleFrontEnd   "static/zwolle" "."  -- files that define the Zwolle Frontend
      ; pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
      ; formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand" "."  --meta information about Ampersand
-     ; return $ mkStaticFileModule $ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles
+     ; systemContextFiles   <- readStaticFiles SystemContext    "AmpersandData/SystemContext" "."  --Special system context for Ampersand
+     ; return $ mkStaticFileModule $ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles ++ systemContextFiles
      }
 
-readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [String]
+readStaticFiles :: StaticFileKind -> FilePath -> FilePath -> IO [String]
 readStaticFiles fkind base fileOrDirPth =
   do { let path = combine base fileOrDirPth
      ; isDir <- doesDirectoryExist path
@@ -178,7 +179,7 @@ readStaticFiles fkind base fileOrDirPth =
   where utcToEpochTime :: UTCTime -> String
         utcToEpochTime utcTime = DTF.formatTime DTF.defaultTimeLocale "%s" utcTime
 
-data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand deriving (Show, Eq)
+data StaticFileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)
 
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
@@ -194,14 +195,14 @@ staticFileModuleHeader =
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"
   , ""
-  , "data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)"
-  , "data StaticFile = SF { fileKind      :: FileKind"
+  , "data StaticFileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
+  , "data StaticFile = SF { fileKind      :: StaticFileKind"
   , "                     , filePath      :: FilePath -- relative path, including extension"
   , "                     , timeStamp     :: Integer  -- unix epoch time"
   , "                     , contentString :: String"
   , "                     }"
   , ""
-  , "getStaticFileContent :: FileKind -> FilePath -> Maybe String"
+  , "getStaticFileContent :: StaticFileKind -> FilePath -> Maybe String"
   , "getStaticFileContent fk fp ="
   , "     case filter isRightFile allStaticFiles of"
   , "        [x] -> Just (contentString x)"
