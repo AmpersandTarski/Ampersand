@@ -479,6 +479,10 @@ class Concept {
             
             foreach($this->plugs as $plug) $plug->removeAtom($atom); // Remove from concept in plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
+            
+            // Delete all links where $atom is used as src or tgt atom
+            // from relations where $this concept (or any of its specializations) is used as src or tgt concept
+            Relation::deleteAllSpecializationLinks($atom);
         }else{
             $this->logger->debug("Cannot remove atom {$atom} from {$this}, because atom does not exists");
         }
@@ -496,7 +500,7 @@ class Concept {
             foreach($this->plugs as $plug) $plug->deleteAtom($atom); // Delete from plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
             
-            // Delete all links where $atom is used as src or tgt
+            // Delete all links where $atom is used as src or tgt atom
             Relation::deleteAllLinksWithAtom($atom);
         }else{
             $this->logger->debug("Cannot delete atom {$atom}, because it does not exists");

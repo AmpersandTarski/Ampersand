@@ -298,6 +298,13 @@ class Relation {
         }
     }
     
+    public static function deleteAllSpecializationLinks(Atom $atom){
+        foreach (self::getAllRelations() as $relation){
+            if($relation->srcConcept->hasSpecialization($atom->concept)) $relation->deleteAllLinks($atom, 'src');
+            if($relation->tgtConcept->hasSpecialization($atom->concept)) $relation->deleteAllLinks($atom, 'tgt');
+        }
+    }
+    
     /**
      * Return Relation object
      * @param string $relationSignature
