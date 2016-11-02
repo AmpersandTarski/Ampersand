@@ -99,12 +99,24 @@ class Concept {
 	 * @var string[]
 	 */
 	private $specializations = array();
+    
+    /**
+	 * Array of concepts (name) that are direct specializations of this concept
+	 * @var string[]
+	 */
+    private $directSpecs = array();
 	
 	/**
 	 * Array of concepts (name) that are generalizations of this concept
 	 * @var string[]
 	 */
 	private $generalizations = array();
+    
+    /**
+     * Array of concepts (name) that are direct generalizations of this concept
+     * @var string[]
+     */
+    private $directGens = array();
     
     /**
      * Concept identifier of largest generalization for this concept
@@ -166,6 +178,8 @@ class Concept {
 		
 		$this->specializations = (array)$conceptDef['specializations'];
 		$this->generalizations = (array)$conceptDef['generalizations'];
+        $this->directSpec = (array)$conceptDef['directSpecs'];
+        $this->directGens = (array)$conceptDef['directGens'];
 		$this->interfaceIds = (array)$conceptDef['interfaces'];
         $this->largestConceptId = $conceptDef['largestConcept'];
 		
@@ -450,7 +464,8 @@ class Concept {
         if($atom->concept != $this) throw new Exception("Cannot remove {$atom} from concept {$this}, because concepts don't match", 500);
         
         // Check if concept is a specialization of another concept
-        if(empty($this->getGeneralizations())) throw new Exception("Cannot remove {$atom} from concept {$this}, because no generalizations exists", 500);
+        if(empty($this->directGens)) throw new Exception("Cannot remove {$atom} from concept {$this}, because no generalizations exists", 500);
+        if(count($this->directGens) > 1) throw new Exception("Cannot remove {$atom} from concept {$this}, because multiple generalizations exists", 500);
         
         // Check if atom exists
         if($atom->exists()){
