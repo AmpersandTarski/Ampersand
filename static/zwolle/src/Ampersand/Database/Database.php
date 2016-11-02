@@ -194,6 +194,8 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
 		$this->logger->info("Execute database structure queries");
 		foreach($queries['allDBstructQueries'] as $query){
 			$this->Exe($query);
+                
+            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of create table / index queries.
 		}
 		
         if($installDefaultPop){
@@ -202,6 +204,8 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
             
             foreach($queries['allDefPopQueries'] as $query){
                 $this->Exe($query);
+                
+                set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
             }
         }else{
             $this->logger->info("Skip default population");

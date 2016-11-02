@@ -23,6 +23,7 @@ environment:
 before_build:
 - curl -sS -ostack.zip -L --insecure http://www.stackage.org/stack/windows-i386
 - 7z x stack.zip stack.exe
+- set PATH=%PATH%;C:\stack\
 
 # prevent AppVeyor from building when it sees a new tag (later
 # in this script we end up making a new tag when we push a release)
@@ -41,7 +42,7 @@ build_script:
 # mark the file(s) as an artifact; this means AppVeyor will hang on to it after the build completes:
 artifacts:
 - path: ampersand.exe
-  name: 'Windows binary'
+  name: Windows_binary
 
 # Auto-deploy
 # specify that, for each build that completes, AppVeyor should push
@@ -56,7 +57,7 @@ deploy:
     release: '$(AMPERSAND_VERSION)'
     auth_token:
       secure: B9wxH2Me3jIbEn9xlvIY9SEWdELRgKMtEZeQZmJQm5wMGjp4YF4wQmAHCy3ofTJG
-    artifact: 'Windows binary'
+    artifact: Windows_binary
     on:
       branch: master  
 

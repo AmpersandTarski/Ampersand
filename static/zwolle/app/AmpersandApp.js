@@ -49,6 +49,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 	});
 	
 	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
+		if(operation != 'get' && operation != 'getList' && data.sessionRefreshAdvice) $rootScope.refreshNavBar();
 		
 		return data;
 	});

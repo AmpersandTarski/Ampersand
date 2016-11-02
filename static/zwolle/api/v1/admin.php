@@ -78,6 +78,7 @@ $app->get('/admin/export/all', function () use ($app){
 
 $app->get('/admin/import', function () use ($app){
     if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
+    $logger = Logger::getLogger('ADMIN');
 
     $file = $app->request->params('file'); if(is_null($file)) throw new Exception("Import file not specified",500);
     
@@ -88,15 +89,24 @@ $app->get('/admin/import', function () use ($app){
     foreach((array)$allLinks as $rel => $links) if(!empty($links)) Relation::getRelation($rel);
     
     foreach((array)$allAtoms as $cpt => $atoms){
+        $logger->info("Importing atoms for concept {$cpt}");
+        if(empty($atoms)) continue;
+        
         $concept = Concept::getConcept($cpt);
+        $total = count($atoms); 
+        $i = 1;
         foreach($atoms as $atomId){
+            $logger->debug("Importing {$cpt}: atom {$i}/{$total}");
+            $i++;
+            
             $atom = new Atom($atomId, $concept);
             $atom->add();
         }
     }
     
     foreach ((array)$allLinks as $rel => $links){
-        if(!empty($links)) $relation = Relation::getRelation($rel);
+        $logger->info("Importing links for relation {$rel}");
+        if(empty($links)) continue;
         
         foreach($links as $link) $link->add();
     }

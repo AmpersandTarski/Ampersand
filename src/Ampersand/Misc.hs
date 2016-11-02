@@ -7,7 +7,7 @@ import Ampersand.Misc.Languages
        (Lang(..), plural, allLangs)
 import Ampersand.Misc.Options
        (getOptions, Options(..),
-        verboseLn, verbose, FSpecFormat(..),
+        verboseLn, verbose, FSpecFormat(..),showFormat,
         helpNVersionTexts)
 import Ampersand.Misc.Explain
        (string2Blocks, blocks2String, PandocFormat(..))

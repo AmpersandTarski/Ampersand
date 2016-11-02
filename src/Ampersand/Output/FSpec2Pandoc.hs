@@ -15,6 +15,8 @@ import Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointA
 import Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)
 import Data.Time.Format (formatTime)
 import Data.List (nub)
+import Text.Pandoc.CrossRef
+
 --import Debug.Trace
 --DESCR ->
 --The functional specification starts with an introduction
@@ -61,10 +63,30 @@ import Data.List (nub)
 --Annexes and Appendices that are expand details, add clarification, or offer options.
 
 fSpec2Pandoc :: FSpec -> (Pandoc, [Picture])
-fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
+fSpec2Pandoc fSpec = (thePandoc,thePictures)
   where
-    myDoc =
-      ( (setTitle
+    -- shorthand for easy localizing    
+    l :: LocalizedStr -> String
+    l lstr = localize (fsLang fSpec) lstr
+    
+    wrap :: Pandoc -> Pandoc
+    wrap (Pandoc m bs) = Pandoc m $ runCrossRef m' Nothing crossRefBlocks bs 
+      where 
+        m' =   (figureTitle $ (str.l) (NL "Figuur" ,EN "Figure"))
+            <> (tableTitle  $ (str.l) (NL "Tabel"  ,EN "Table" ))
+            <> figPrefix [str "fig.", str "figs."]
+            <> eqnPrefix [(str.l) (NL "relatie",EN "relation")
+                         ,(str.l) (NL "relaties", EN "relations")]
+            <> tblPrefix [str "tbl.", str "tbls."]
+            <> lstPrefix [(str.l) (NL "afspraak",EN "agreement")
+                         ,(str.l) (NL "afspraken", EN "agreements")]
+            <> secPrefix [(str.l) (NL "hoofdstuk",EN "chapter")
+                         ,(str.l) (NL "hoofdstukken", EN "chapters")]
+            <> cref True
+            <> chapters True
+
+    thePandoc = wrap $
+        (setTitle
            (case metaValues "title" fSpec of
                 [] -> text (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                                  (Dutch  , False) -> "Functionele Specificatie van "
@@ -85,22 +107,23 @@ fSpec2Pandoc fSpec = ( myDoc , concat picturesByChapter )
 
         )
       . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec)))))
-      )
-      (doc (foldr (<>) mempty docContents))
-    docContents :: [Blocks]
+      . doc . mconcat $ blocksByChapter
+    
+    thePictures = concat picturesByChapter
+    blocksByChapter :: [Blocks]
     picturesByChapter :: [[Picture]]
-    (docContents, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (getOpts fSpec)]
+    (blocksByChapter, picturesByChapter) = unzip [fspec2Blocks chp | chp<-chaptersInDoc (getOpts fSpec)]
 
     fspec2Blocks :: Chapter -> (Blocks, [Picture])
     fspec2Blocks Intro                 = (chpIntroduction           fSpec, [])
     fspec2Blocks SharedLang            = (chpNatLangReqs          0 fSpec, [])
     fspec2Blocks Diagnosis             = chpDiagnosis               fSpec
     fspec2Blocks ConceptualAnalysis    = chpConceptualAnalysis    0 fSpec
-    fspec2Blocks ProcessAnalysis       = (chpProcessAnalysis      0 fSpec, [])
+    fspec2Blocks ProcessAnalysis       = (chpProcessAnalysis        fSpec, [])
     fspec2Blocks DataAnalysis          = chpDataAnalysis            fSpec
     fspec2Blocks SoftwareMetrics       = (fpAnalysis                fSpec, [])
     fspec2Blocks EcaRules              = (chpECArules               fSpec, [])
-    fspec2Blocks Interfaces            = (chpInterfacesBlocks     0 fSpec, [])
+    fspec2Blocks Interfaces            = (chpInterfacesBlocks       fSpec, [])
     fspec2Blocks FunctionPointAnalysis = (chpFunctionPointAnalysis  fSpec, [])
     fspec2Blocks Glossary              = (chpGlossary             0 fSpec, [])
 

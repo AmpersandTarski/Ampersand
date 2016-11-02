@@ -1,4 +1,4 @@
-CONTEXT RAP IN ENGLISH
+﻿CONTEXT RAP IN ENGLISH
 INCLUDE "Rules.adl"
 INCLUDE "Relations.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
@@ -30,6 +30,11 @@ PATTERN Context
     REPRESENT ContextName TYPE ALPHANUMERIC
     RELATION name[Context*ContextName] [UNI,TOT,SUR]
     MEANING "The name of a context."
+      ROLE ExecEngine MAINTAINS "del unused ContextName"
+      RULE "del unused ContextName" : I[ContextName] |- name~;name
+      MEANING "A ContextName without Context will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;ContextName;", SRC I )
+
     RELATION name[Rule*RuleName] [UNI,TOT]
     REPRESENT RuleName TYPE ALPHANUMERIC
     RELATION name[Concept*ConceptName] [UNI,TOT] 
@@ -110,6 +115,7 @@ PATTERN Validity
     MEANING "Every concept defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
     VIOLATION (TXT "{EX} InsPair;valid;Concept;", SRC I, TXT ";Context;", TGT I)
     RULE AllValidConcepts : valid[Concept*Context] |- concepts~;(context\/uses~) \/ context[Concept*Context]
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "Concept ", SRC name, TXT " is not valid in context ", TGT I)
 
     ROLE ExecEngine MAINTAINS "validity of concepts in a context"
@@ -133,6 +139,7 @@ PATTERN Validity
 
     ROLE User MAINTAINS AllValidRelations
     RULE AllValidRelations : valid[Relation*Context] |- declaredIn[Relation*Pattern];(context\/uses~) \/ ctxds
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "Relation ", SRC name, TXT " is not valid in context ", TGT I)
 
     RELATION valid[Rule*Context]
@@ -150,6 +157,7 @@ PATTERN Validity
     VIOLATION (TXT "{EX} InsPair;valid;Rule;", SRC I, TXT ";Context;", TGT I)
     ROLE User MAINTAINS AllValidRules
     RULE AllValidRules : valid[Rule*Context] |- allRules[Pattern*Rule]~;(context\/uses~) \/ allRules[Context*Rule]~
+    MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (TXT "Rule ", SRC name, TXT " is not valid in context ", TGT I)
 ENDPATTERN
 
@@ -158,8 +166,14 @@ PATTERN Patterns
     VIEW Pattern: Pattern(name[Pattern*PatternName])
     IDENT Pattern: Pattern(name[Pattern*PatternName],context[Pattern*Context])
     REPRESENT PatternName TYPE ALPHANUMERIC
-    RELATION name[Pattern*PatternName] [UNI,TOT]
+    RELATION name[Pattern*PatternName] [UNI,TOT,SUR]
     MEANING "The name of a pattern."
+      ROLE ExecEngine MAINTAINS "del unused PatternName"
+      RULE "del unused PatternName" : I[PatternName] |- name~;name
+      MEANING "A PatternName without Pattern will be removed."
+      VIOLATION ( TXT "{EX} DelAtom;PatternName;", SRC I )
+
+
     RELATION udefrules[Rule*Pattern] []         -- ^ all rules the user has declared within this pattern including the patterns it contains,
                                                 --   which are not multiplicity- and not identity rules. See ViewPoint.hs
     RELATION multrules[Rule*Pattern] []         -- ^ all multiplicityrules the user has declared within a pattern.

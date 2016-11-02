@@ -231,6 +231,17 @@ class Concept {
         }
         return false;
     }
+    
+    /**
+     * Returns if concept is the ampersand SESSION concept
+     * @return boolean
+     */
+    public function isSession(){
+        foreach ($this->getGeneralizationsIncl() as $concept) {
+            if ($concept->label == 'SESSION') return true;
+        }
+        return false;
+    }
 	
 	/**
 	 * Check if this concept is a generalization of another given concept

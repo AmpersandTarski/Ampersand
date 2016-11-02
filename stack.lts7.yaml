@@ -1,7 +1,0 @@
-packages:
-- '.'
-extra-deps: 
-- SpreadsheetML-0.1
-- simple-sql-parser-0.4.2
-- yaml-config-0.4.0
-resolver: lts-7.0
