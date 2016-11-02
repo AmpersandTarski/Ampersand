@@ -235,21 +235,40 @@ class Concept {
 	/**
 	 * Check if this concept is a generalization of another given concept
 	 * @param Concept $concept
+     * @param boolean $thisIncluded specifies if $this concept is included in comparison
 	 * @return boolean
 	 */
-	public function hasSpecialization($concept){
+	public function hasSpecialization($concept, $thisIncluded = false){
+        if($thisIncluded && $concept == $this) return true;
+        
 		return in_array($concept->name, $this->specializations);
 	}
 	
 	/**
 	 * Check if this concept is a specialization of another given concept
 	 * @param Concept $concept
+     * @param boolean $thisIncluded specifies if $this concept is included in comparison
 	 * @return boolean
 	 */
-	public function hasGeneralization($concept){
+	public function hasGeneralization($concept, $thisIncluded = false){
+        if($thisIncluded && $concept == $this) return true;
+        
 		return in_array($concept->name, $this->generalizations);
 	}
 	
+    /**
+     * Checks if this concept is in same classification tree as the provided concept
+     * @param Concept $concept
+     * @return boolean
+     */
+    public function inSameClassificationTree($concept){
+        if($this->hasSpecialization($concept, true)) return true;
+        if($this->hasGeneralization($concept, true)) return true;
+         
+        // else
+        return false;
+    }
+    
 	/**
 	 * Array of all concepts of which this concept is a generalization.
 	 * @return Concept[]
@@ -297,20 +316,6 @@ class Concept {
     public function getLargestConcept(){
         return Concept::getConcept($this->largestConceptId);
     }
-	
-	/**
-	 * Checks if this concept is in same classification tree as the provided concept
-	 * @param Concept $concept
-	 * @return boolean
-	 */
-	public function inSameClassificationTree($concept){
-	    if($this->name == $concept->name) return true;
-	    if($this->hasSpecialization($concept)) return true;
-	    if($this->hasGeneralization($concept)) return true;
-	     
-	    // else
-	    return false;
-	}
 	
 	/**
 	 * Returns default view for this concept (or null if no default view defined)
