@@ -1,5 +1,6 @@
 CONTEXT SystemContext IN ENGLISH
   
+PATTERN SystemSpecific
   CONCEPT SESSION ""
   CONCEPT Role ""
   CONCEPT DateTime ""
@@ -9,5 +10,6 @@ CONTEXT SystemContext IN ENGLISH
   RELATION lastAccess[SESSION*DateTime] [UNI]
   RELATION sessionAllowedRoles[SESSION*Role]
   RELATION sessionActiveRoles[SESSION*Role]
+ENDPATTERN
   
 ENDCONTEXT
