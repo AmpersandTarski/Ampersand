@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * Other definition of univalence and injectivity to get better violations on runtime.
 
 ## v3.7.2 (28 october 2016)
   * Some updates in the meatgrinder. (still experimental)
