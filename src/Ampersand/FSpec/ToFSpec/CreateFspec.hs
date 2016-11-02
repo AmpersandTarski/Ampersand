@@ -31,9 +31,9 @@ import Control.Monad
 createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
 createMulti opts = do 
-  gSystemP_Ctx <- parseSystemContext opts
   whenCheckedIO (parseADL opts (fileName opts)) $ \userP_Ctx ->
-    do let systemP_Ctx = case gSystemP_Ctx of
+    do gSystemP_Ctx <- parseSystemContext opts
+       let systemP_Ctx = case gSystemP_Ctx of
                           Errors err -> fatal 36 $ "Errors found while parsing SystemContext!"++show err
                           Checked ctx -> ctx
        let gFSpec = pCtx2Fspec . merge . pure $ [userP_Ctx,systemP_Ctx]  -- the FSpec resulting from the user's souceFile
