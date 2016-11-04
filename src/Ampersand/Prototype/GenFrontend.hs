@@ -247,7 +247,7 @@ buildInterface fSpec allIfcs ifc =
                            then do { let templatePath = "views" </> "View-LINKTO.html"
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
                                             , iExp
-                                            , objcrud object)
+                                            , objcrud (ifcObj i))
                                    }
                            else do { refObj <- buildObject  (ifcObj i)
                                    ; let comp = iExp .:. objExp refObj 
