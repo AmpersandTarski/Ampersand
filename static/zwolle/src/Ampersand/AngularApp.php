@@ -135,12 +135,12 @@ class AngularApp {
         $interfaces = array_filter($interfaces, function($ifc) use ($menu, $sessionCpt){
             switch ($menu) {
                 case 'top':
-                    if(($ifc->srcConcept == $sessionCpt || $ifc->srcConcept->name == 'ONE') && $ifc->crudR) return true;
+                    if(($ifc->srcConcept == $sessionCpt || $ifc->srcConcept->name == 'ONE') && $ifc->crudR()) return true;
                     else return false;
                 case 'new':
                     // crudC, otherwise the atom cannot be created
                     // isIdent (interface expr = I[Concept]), because otherwise a src atom is necesarry, which we don't have wiht +-menu
-                    if($ifc->crudC && $ifc->isIdent) return true;
+                    if($ifc->crudC() && $ifc->isIdent) return true;
                     else return false;
                 default:
                     throw new Exception("Cannot get navbar interfaces. Unknown menu: '{$menu}'", 500);

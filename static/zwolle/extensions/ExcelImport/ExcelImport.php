@@ -121,7 +121,7 @@ class ExcelImport {
 	        if($cellvalue == '') $header[$columnletter] = null; // will be skipped
 	        else{
 	            $subIfc = $ifc->getSubinterfaceByLabel($cellvalue);
-	            if(!$subIfc->crudU || !$subIfc->relation) throw new Exception ("Update not allowed/possible for {$subIfc->label} as specified in cell {$columnletter}1", 403);
+	            if(!$subIfc->crudU() || !$subIfc->relation) throw new Exception ("Update not allowed/possible for {$subIfc->label} as specified in cell {$columnletter}1", 403);
 	            $header[$columnletter] = $subIfc;
 	            
 	        }
@@ -131,11 +131,11 @@ class ExcelImport {
 	        $firstCol = (string)$worksheet->getCell('A'.$row)->getCalculatedValue();
 	        if($firstCol == '') continue; // Skip this row
 	        elseif($firstCol == '_NEW'){
-	            if(!$ifc->crudC) throw new Exception("Trying to create new atom in cell A{$row}. This is not allowed.", 403);
+	            if(!$ifc->crudC()) throw new Exception("Trying to create new atom in cell A{$row}. This is not allowed.", 403);
 	            $leftAtom = $leftConcept->createNewAtom()->add();
 	        }else{
 	            $leftAtom = new Atom($firstCol, $leftConcept);
-	            if(!$leftAtom->exists() && !$ifc->crudC) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
+	            if(!$leftAtom->exists() && !$ifc->crudC()) throw new Exception("Trying to create new {$leftConcept} in cell A{$row}. This is not allowed.", 403);
 	            $leftAtom->add();
 	        }
 	        
@@ -154,7 +154,7 @@ class ExcelImport {
 	            if(PHPExcel_Shared_Date::isDateTime($cell) && !empty($cellvalue)) $cellvalue = '@'.(string)PHPExcel_Shared_Date::ExcelToPHP($cellvalue);
 	            
 	            $rightAtom = new Atom($cellvalue, $header[$columnletter]->tgtConcept);
-	            if(!$rightAtom->exists() && !$header[$columnletter]->crudC) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
+	            if(!$rightAtom->exists() && !$header[$columnletter]->crudC()) throw new Exception("Trying to create new {$header[$columnletter]->tgtConcept} in cell {$columnletter}{$row}. This is not allowed.", 403);
 	            
                 if($header[$columnletter]->relationIsFlipped) (new Link($header[$columnletter]->relation(), $rightAtom, $leftAtom))->add();
                 else (new Link($header[$columnletter]->relation(), $leftAtom, $rightAtom))->add();

@@ -93,25 +93,25 @@ class InterfaceObject {
 	 * 
 	 * @var boolean
 	 */
-	public $crudC;
+	private $crudC;
 	
 	/**
 	 * 
 	 * @var boolean
 	 */
-	public $crudR;
+	private $crudR;
 	
 	/**
 	 * 
 	 * @var boolean
 	 */
-	public $crudU;
+	private $crudU;
 	
 	/**
 	 * 
 	 * @var boolean
 	 */
-	public $crudD;
+	private $crudD;
 	
 	/**
 	 * 
