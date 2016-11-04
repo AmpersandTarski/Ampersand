@@ -20,6 +20,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkIncompatibleAtomValueError
   , mkTypeMismatchError
   , mkMultipleRootsError
+  , mkCrudForRefInterfaceError
   , Guarded(..) -- If you use Guarded in a monad, make sure you use "ApplicativeDo" in order to get error messages in parallel.
   , whenCheckedIO, whenChecked, whenError
   )
@@ -249,6 +250,9 @@ mkMultipleInterfaceError role ifc duplicateIfcs =
 
 mkInvalidCRUDError :: Origin -> String -> CtxError
 mkInvalidCRUDError o str = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `"++str++"`."
+
+mkCrudForRefInterfaceError :: Origin -> CtxError
+mkCrudForRefInterfaceError o = CTXE o $ "Crud specification is not allowed in combination with a reference to an interface."
 
 mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
 mkIncompatibleAtomValueError pav msg= CTXE (origin pav) msg

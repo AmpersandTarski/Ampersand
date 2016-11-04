@@ -615,7 +615,8 @@ pCtx2aCtx opts
                , obj_mView = mView
                , obj_msub = subs
                }
-     = do (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
+     = do checkCrudForRefInterface 
+          (objExpr,(srcBounded,tgtBounded)) <- typecheckTerm ctx
           crud <- pCruds2aCruds mCrud
           maybeObj <- case subs of
                         Just P_Box{si_box=[]} -> pure Nothing
@@ -629,6 +630,11 @@ pCtx2aCtx opts
                             []   -> Nothing
                             vd:_ -> Just vd -- return the first one, if there are more, this is caught later on by uniqueness static check
                         
+      checkCrudForRefInterface :: Guarded()
+      checkCrudForRefInterface = 
+         case (mCrud, subs) of
+           (Just _ , Just P_InterfaceRef{}) -> Errors [mkCrudForRefInterfaceError orig]
+           _                              -> pure ()
       typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
       typeCheckViewAnnotation _       Nothing       = pure ()
       typeCheckViewAnnotation objExpr (Just viewId) =
