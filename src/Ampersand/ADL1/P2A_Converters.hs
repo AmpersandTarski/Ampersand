@@ -691,11 +691,9 @@ pCtx2aCtx opts
            ->  do (refIfcExpr,_) <- case lookupDisambIfcObj declMap ifcId of
                                          Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
                                          Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
-                  cs <- pCruds2aCruds (si_crud x)
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
                   return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
                                                  , siIfcId  = ifcId
-                                                 , siCruds  = cs
                                                  }
                          )
          P_Box{}

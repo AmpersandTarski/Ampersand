@@ -122,7 +122,7 @@ instance Disambiguatable P_ViewSegmtPayLoad where
     where (a',r) = disambInfo a i
 
 instance Disambiguatable P_SubIfc where
-  disambInfo (P_InterfaceRef o a b cs) _      = (P_InterfaceRef o a b cs,noConstraints)
+  disambInfo (P_InterfaceRef o a b) _      = (P_InterfaceRef o a b,noConstraints)
   disambInfo (P_Box o cl []   ) _        = (P_Box o cl [],noConstraints)
   disambInfo (P_Box o cl (a:lst)) env1  =
      (P_Box o cl' (a':lst'),Cnstr (sourceConstraintsOf envA++sourceConstraintsOf envB) [])

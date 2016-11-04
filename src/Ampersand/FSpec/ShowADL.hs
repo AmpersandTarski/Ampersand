@@ -26,7 +26,7 @@ class ShowADL a where
 
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
-  showADL (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
+  showADL (P_InterfaceRef _ isLink nm) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
 
 instance ShowADL (Maybe TType) where
   showADL (Just v) = show v
@@ -43,7 +43,7 @@ instance ShowADL ObjectDef where
                recur "\n  " (objmsub obj)
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
-        recur ind (Just (InterfaceRef isLink nm cruds)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm++showADL cruds
+        recur ind (Just (InterfaceRef isLink nm)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
         recur ind (Just (Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")

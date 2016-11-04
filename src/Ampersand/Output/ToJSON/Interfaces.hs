@@ -32,7 +32,6 @@ data JSONSubInterface = JSONSubInterface
   , subJSONifcObjects         :: Maybe [JSONObjectDef]
   , subJSONrefSubInterfaceId  :: Maybe String
   , subJSONrefIsLinTo         :: Maybe Bool
-  , subJSONcrud               :: Maybe JSONCruds
   } deriving (Generic, Show)
 data JSONCruds = JSONCruds
   { crudJSONread              :: Bool
@@ -74,14 +73,12 @@ instance JSON SubInterface JSONSubInterface where
        , subJSONifcObjects         = Just . map (fromAmpersand multi) . siObjs $ si
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinTo         = Nothing
-       , subJSONcrud               = Nothing
        }
      InterfaceRef{} -> JSONSubInterface
        { subJSONboxClass           = Nothing
        , subJSONifcObjects         = Nothing
        , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
        , subJSONrefIsLinTo         = Just . siIsLink $ si
-       , subJSONcrud               = Just . fromAmpersand multi . siCruds $ si
        }
  
 instance JSON Interface JSONInterface where

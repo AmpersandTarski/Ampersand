@@ -425,7 +425,6 @@ data SubInterface = Box { siConcept :: A_Concept
                   | InterfaceRef 
                         { siIsLink :: Bool
                         , siIfcId  :: String  --id of the interface that is referenced to
-                        , siCruds  :: Cruds
                         } deriving (Eq, Show)
 
 data InsDel   = Ins | Del

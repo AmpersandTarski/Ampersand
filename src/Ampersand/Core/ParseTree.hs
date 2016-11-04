@@ -433,7 +433,7 @@ instance Traversable Term where
 instance Functor P_SubIfc where fmap = fmapDefault
 instance Foldable P_SubIfc where foldMap = foldMapDefault
 instance Traversable P_SubIfc where
-  traverse _ (P_InterfaceRef o a b cs) = pure (P_InterfaceRef o a b cs)
+  traverse _ (P_InterfaceRef o a b) = pure (P_InterfaceRef o a b)
   traverse f (P_Box o c lst) = P_Box o c <$> traverse (traverse f) lst
 
 instance Traced (P_SubIfc a) where
@@ -633,7 +633,6 @@ data P_SubIfc a
               | P_InterfaceRef { pos :: Origin
                                , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
                                , si_str :: String  -- Name of the interface that is reffered to
-                               , si_crud :: Maybe P_Cruds -- ^ string containing the CRUD actions as required by the user
                                } 
                 deriving (Show)
 

@@ -72,7 +72,7 @@ genIfc = subIfc genObj
 
 subIfc :: (Int -> Gen (P_ObjDef a)) -> Int -> Gen (P_SubIfc a)
 subIfc objGen n =
-    if n == 0 then P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1 <*> arbitrary
+    if n == 0 then P_InterfaceRef <$> arbitrary <*> arbitrary <*> safeStr1
     else P_Box          <$> arbitrary <*> boxKey   <*> vectorOf n (objGen$ n`div`2)
     where boxKey = elements [Nothing, Just "ROWS", Just "COLS", Just "TABS"]
 

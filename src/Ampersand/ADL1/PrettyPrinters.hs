@@ -272,7 +272,7 @@ instance Pretty P_Cruds where
 instance Pretty a => Pretty (P_SubIfc a) where
     pretty p = case p of
                 P_Box _ c bs         -> box_type c <+> text "[" <> listOf bs <> text "]"
-                P_InterfaceRef _ isLink str crud -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str <+> pretty crud
+                P_InterfaceRef _ isLink str -> text ((if isLink then "LINKTO "else "")++"INTERFACE") <+> maybeQuote str
             where box_type Nothing  = text "BOX"
                   box_type (Just x) = text x -- ROWS, COLS, TABS
 
