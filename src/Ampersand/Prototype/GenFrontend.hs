@@ -250,7 +250,7 @@ buildInterface fSpec allIfcs ifc =
                                             , objcrud object)
                                    }
                            else do { refObj <- buildObject  (ifcObj i)
-                                   ; let comp = ECps (iExp, objExp refObj) 
+                                   ; let comp = iExp .:. objExp refObj 
                                          -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                                    ; return ( atomicOrBox refObj
                                             , comp
