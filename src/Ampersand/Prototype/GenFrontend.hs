@@ -208,7 +208,7 @@ buildInterface fSpec allIfcs ifc =
     buildObject object =
      do { let iExp = conjNF (getOpts fSpec) $ objctx object
               
-        ; (aOrB, iExp') <-
+        ; (aOrB, iExp', cruds) <-
             case objmsub object of
               Nothing                  ->
                do { let mView = case objmView object of
@@ -225,7 +225,8 @@ buildInterface fSpec allIfcs ifc =
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
-                           , iExp)
+                           , iExp
+                           , objcrud object)
                   }
               Just si ->
                 case si of
@@ -234,7 +235,8 @@ buildInterface fSpec allIfcs ifc =
                       ; return (FEBox { objMClass  = siMClass si
                                       , ifcSubObjs = subObjs
                                       }
-                               , iExp)
+                               , iExp
+                               , objcrud object)
                       }
                   InterfaceRef{} -> 
                    case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
@@ -244,13 +246,16 @@ buildInterface fSpec allIfcs ifc =
                            if siIsLink si
                            then do { let templatePath = "views" </> "View-LINKTO.html"
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
-                                            , iExp)
+                                            , iExp
+                                            , objcrud object)
                                    }
                            else do { refObj <- buildObject  (ifcObj i)
                                    ; let comp = ECps (iExp, objExp refObj) 
                                          -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
-                                   ; return (atomicOrBox refObj, comp)
-                                   } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
+                                   ; return ( atomicOrBox refObj
+                                            , comp
+                                            , objcrud refObj)
+                                   } 
 
         ; let (src, mDecl, tgt) = getSrcDclTgt iExp'
         ; let navIfcs = [ NavInterface { navIfcName  = name nIfc
@@ -264,10 +269,10 @@ buildInterface fSpec allIfcs ifc =
                          , objExp = iExp'
                          , objSource = src
                          , objTarget = tgt
-                         , objCrudC = crudC . objcrud $ object
-                         , objCrudR = crudR . objcrud $ object
-                         , objCrudU = crudU . objcrud $ object
-                         , objCrudD = crudD . objcrud $ object
+                         , objCrudC = crudC cruds
+                         , objCrudR = crudR cruds
+                         , objCrudU = crudU cruds
+                         , objCrudD = crudD cruds
                          , exprIsUni = isUni iExp'
                          , exprIsTot = isTot iExp'
                          , relIsProp  = case mDecl of
