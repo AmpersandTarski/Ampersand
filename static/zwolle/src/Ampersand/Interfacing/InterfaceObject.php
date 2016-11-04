@@ -61,7 +61,7 @@ class InterfaceObject {
 	 * 
 	 * @var string
 	 */
-	public $path;
+	private $path;
 	
 	/**
 	 * Interface name to show in UI

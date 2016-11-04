@@ -277,7 +277,7 @@ $app->get('/admin/report/interfaces', function () use ($app){
     }
     
     $content = array_map(function(InterfaceObject $ifc){
-        return array( 'path' => $ifc->path
+        return array( 'path' => $ifc->getPath()
                     , 'label' => $ifc->label
                     , 'crudC' => $ifc->crudC()
                     , 'crudR' => $ifc->crudR()

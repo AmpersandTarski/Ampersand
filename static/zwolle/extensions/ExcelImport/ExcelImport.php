@@ -108,7 +108,7 @@ class ExcelImport {
 	    $highestcolumnnr = PHPExcel_Cell::columnIndexFromString($highestcolumn);
 	    
 	    $leftConcept = Concept::getConceptByLabel((string)$worksheet->getCell('A1'));
-	    if($leftConcept != $ifc->tgtConcept) throw new Exception("Target concept of interface '{$ifc->path}' does not match concept specified in cell {$worksheet->getTitle()}:A1", 500);
+	    if($leftConcept != $ifc->tgtConcept) throw new Exception("Target concept of interface '". $ifc->getPath() ."' does not match concept specified in cell {$worksheet->getTitle()}:A1", 500);
 	    
 	    // Parse other columns of first row
 	    $header = array();
