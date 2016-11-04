@@ -140,7 +140,7 @@ class AngularApp {
                 case 'new':
                     // crudC, otherwise the atom cannot be created
                     // isIdent (interface expr = I[Concept]), because otherwise a src atom is necesarry, which we don't have wiht +-menu
-                    if($ifc->crudC() && $ifc->isIdent) return true;
+                    if($ifc->crudC() && $ifc->isIdent()) return true;
                     else return false;
                 default:
                     throw new Exception("Cannot get navbar interfaces. Unknown menu: '{$menu}'", 500);

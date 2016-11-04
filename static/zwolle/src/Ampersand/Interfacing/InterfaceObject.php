@@ -129,19 +129,19 @@ class InterfaceObject {
 	 * 
 	 * @var boolean
 	 */
-	public $isUni;
+	private $isUni;
 	
 	/**
 	 * 
 	 * @var boolean
 	 */
-	public $isTot;
+	private $isTot;
 	
 	/**
 	 * 
 	 * @var boolean
 	 */
-	public $isIdent;
+	private $isIdent;
 	
 	/**
 	 * 
@@ -271,7 +271,7 @@ class InterfaceObject {
 	 * @return boolean
 	 */
 	public function isProp(){
-	    return is_null($this->relation) ? false : ($this->relation->isProp && !$this->isIdent);
+	    return is_null($this->relation) ? false : ($this->relation->isProp && !$this->isIdent());
 	}
     
     /**
