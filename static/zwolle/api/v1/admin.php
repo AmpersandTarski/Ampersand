@@ -31,6 +31,26 @@ $app->get('/admin/installer', function () use ($app){
 
 	$roleIds = $app->request->params('roleIds');
 	$session->activateRoles($roleIds);
+    
+    // Checks
+    $logger = Logger::getUserLogger();
+    foreach (InterfaceObject::getAllInterfaces() as $key => $interface) {
+        foreach($interface->getInterfaceFlattened() as $ifc){
+            if($ifc->crudU() && !$ifc->isEditable()) $logger->warning("Update rights (crUd) specified while interface expression is not an editable relation for (sub)interface: ". $ifc->getPath());
+            
+            // Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318. TODO: still needed??
+            if($ifc->isEditable() && $ifc->crudU() && !$ifc->tgtConcept->isObject() && $ifc->isUni()){
+                // Only applies to editable relations
+                // Only applies to crudU, because issue is with patchReplace, not with add/remove
+                // Only applies to scalar, because objects don't use patchReplace, but Remove and Add
+                // Only if interface expression (not! the relation) is univalent, because else a add/remove option is used in the UI
+                
+                if((!$ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'tgt')
+                        || ($ifc->relationIsFlipped && $ifc->relation()->getMysqlTable()->tableOf == 'src'))
+                    $logger->warning("Unsupported edit functionality due to combination of factors for (sub)interface: " . $ifc->getPath());
+            }
+        }
+    }
 
 	$content = Notifications::getAll(); // Return all notifications
 
