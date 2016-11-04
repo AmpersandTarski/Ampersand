@@ -254,7 +254,7 @@ buildInterface fSpec allIfcs ifc =
                                          -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
                                    ; return ( atomicOrBox refObj
                                             , comp
-                                            , objcrud refObj)
+                                            , objcrud (ifcObj i))
                                    } 
 
         ; let (src, mDecl, tgt) = getSrcDclTgt iExp'
