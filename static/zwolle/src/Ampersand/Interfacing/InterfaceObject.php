@@ -216,13 +216,6 @@ class InterfaceObject {
 		$this->isIdent = $ifcDef['expr']['isIdent'];
 		$this->query = $ifcDef['expr']['query'];
 		
-		// CRUD rights
-		$this->crudC = $ifcDef['crud']['create'];
-		$this->crudR = $ifcDef['crud']['read'];
-		$this->crudU = $ifcDef['crud']['update'];
-		$this->crudD = $ifcDef['crud']['delete'];
-		if($this->crudU && $this->tgtConcept->isObject()) $this->editableConcepts[] = $this->tgtConcept;
-		
 		// Subinterfacing
 		if(!is_null($ifcDef['subinterfaces'])){
 		    // Subinterfacing is not supported/possible for tgt concepts with a scalar representation type (i.e. non-objects)
@@ -239,6 +232,13 @@ class InterfaceObject {
 		        $this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
 		    }
 		}
+        
+        // CRUD rights
+		$this->crudC = $this->isRef() ? null : $ifcDef['crud']['create'];
+		$this->crudR = $this->isRef() ? null : $ifcDef['crud']['read'];
+		$this->crudU = $this->isRef() ? null : $ifcDef['crud']['update'];
+		$this->crudD = $this->isRef() ? null : $ifcDef['crud']['delete'];
+		if($this->crudU && $this->tgtConcept->isObject()) $this->editableConcepts[] = $this->tgtConcept;
 	}
 	
     /**
