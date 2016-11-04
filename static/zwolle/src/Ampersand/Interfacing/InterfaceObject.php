@@ -177,7 +177,7 @@ class InterfaceObject {
 	 * 
 	 * @var boolean
 	 */
-	public $isLinkTo;
+	private $isLinkTo;
 	
 	/**
 	 * 
