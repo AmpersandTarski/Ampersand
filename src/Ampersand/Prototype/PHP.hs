@@ -4,16 +4,16 @@ module Ampersand.Prototype.PHP
          , setSqlModePHP, createTablesPHP, populateTablesPHP
          , signalTableSpec, getTableName) where
 
-import Prelude hiding (exp,putStrLn)
+import Prelude hiding (exp,putStrLn,readFile)
 import Control.Exception
-import Control.Monad
 import Data.Monoid
 import Data.List
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import System.Process
-import System.IO hiding (hPutStr,hGetContents)
+import System.IO hiding (hPutStr,hGetContents,readFile)
 import System.Directory
+import System.FilePath
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.FSpec.SQL
 import Ampersand.FSpec
@@ -190,15 +190,13 @@ evaluateExpSQL fSpec dbNm exp =
 
 performQuery :: FSpec -> String -> Text.Text -> IO [(String,String)]
 performQuery fSpec dbNm queryStr =
- do { verboseLn (getOpts fSpec) ("performQuery: "++Text.unpack queryStr)
-    ; queryResult <- (executePHPStr (getOpts fSpec) . showPHP) php
-    ; verboseLn (getOpts fSpec) ("queryResult: "++queryResult)
+ do { queryResult <- (executePHPStr (getOpts fSpec) . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn opts{verboseP=True} (Text.unpack$ "\n******Problematic query:\n"<>queryStr<>"\n******")
               fatal 141 $ "PHP/SQL problem: "<>queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal 143 $ "Parse error on php result: "<>show queryResult
+             _            -> fatal 143 $ "Parse error on php result: \n"<>show queryResult
     } 
    where
     opts = getOpts fSpec
@@ -236,62 +234,30 @@ performQuery fSpec dbNm queryStr =
 -- call the command-line php with phpStr as input
 executePHPStr :: Options -> Text.Text -> IO String
 executePHPStr opts phpStr =
- do { verboseLn opts ("executePHPStr: 0")
-    ; tempdir <- catch getTemporaryDirectory
+ do { tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                                  return ".")
-    ; verboseLn opts ("executePHPStr: 1")
-    ; (tempPhpFile, temph) <- openTempFile tempdir "phpInput"
-    ; verboseLn opts ("executePHPStr: 2")
+    ; (tempPhpFile, temph) <- openTempFile tempdir "tmpPhpQueryOfAmpersand"
     ; Text.hPutStr temph phpStr
-    ; verboseLn opts ("executePHPStr: 3")
     ; hClose temph
-    ; verboseLn opts ("executePHPStr: 4")
-    ; results <- executePHP tempPhpFile
-    ; verboseLn opts ("executePHPStr: 5")
+    ; results <- executePHP opts tempPhpFile
     ; removeFile tempPhpFile
-    ; verboseLn opts ("executePHPStr: 6")
     ; return results
     }
-    
-executePHP :: String -> IO String
-executePHP phpPath =
- do { let cp = CreateProcess
-                { cmdspec       = ShellCommand $ "php "++phpPath 
-                , cwd           = Nothing
-                , env           = Nothing -- Just [("TERM","dumb")] -- environment
-                , std_in        = Inherit
-                , std_out       = CreatePipe
-                , std_err       = CreatePipe
-                , close_fds     = False -- no need to close all other file descriptors
-                , create_group  = False
-                , delegate_ctlc = False -- don't let php handle ctrl-c
-                , detach_console = False
-                , create_new_console = False
-                , new_session   = False
-                , child_group   = Nothing
-                , child_user    = Nothing
-                }
-    ; (_, mStdOut, mStdErr, _) <- createProcess cp
-    ; outputStr <-
-        case (mStdOut, mStdErr) of
-          (Nothing, _) -> fatal 44 "no output handle"
-          (_, Nothing) -> fatal 45 "no error handle"
-          (Just stdOutH, Just stdErrH) ->
-           do { --putStrLn "done"
-              ; errStr <- hGetContents stdErrH
-              ; seq (length errStr) $ return ()
-              ; hClose stdErrH
-              ; unless (null errStr) $
-                  exitWith . PHPExecutionFailed . lines $ "Error during PHP execution:\n" <> errStr
-              ; outputStr' <- hGetContents stdOutH --and fetch the results from the output pipe
-              ; seq (length outputStr') $ return ()
-              ; hClose stdOutH
-              ; return outputStr'
-              }
---    ; putStrLn $ "Results:\n" <> outputStr
-    ; return outputStr
+
+executePHP :: Options -> String -> IO String
+executePHP opts phpPath =
+ do { let cp = (shell command) 
+                   { cwd = Just (takeDirectory phpPath)
+                   }
+          inputFile = phpPath
+          outputFile = inputFile++"Result"
+          command = "php "++show inputFile++" > "++show outputFile
+    ; _ <- readCreateProcess cp ""
+    ; result <- readFile outputFile
+    ; removeFile outputFile
+    ; return result
     }
 
 showPHP :: [Text.Text] -> Text.Text

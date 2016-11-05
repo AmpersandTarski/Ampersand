@@ -5,7 +5,7 @@ import GHC.Stack
 import Ampersand.Basics.BuildInfo_Generated
 import Ampersand.Basics.Exit
 maxLen :: Int
-maxLen = 1500 -- This trick is to make sure the process is terminated after the error.
+maxLen = 1500000 -- This trick is to make sure the process is terminated after the error.
                   -- If the string is too long, it seems that the sentinel `hangs`.
                   -- But what is too long???
 
