@@ -271,6 +271,7 @@ showProof shw ((expr,ss,equ):prf) = shw expr<>
                                     --where e'= if null prf then "" else let (expr,_,_):_ = prf in showHS options "" expr
 showProof _  []                   = fromList []
 
+-- showPrf is meant to circumvent Pandoc. For example when a proof needs to be shown in debugging texts.
 showPrf :: (expr->String) -> Proof expr -> [String]
 showPrf shw [(expr,_ ,_)]       = [ "    "++shw expr]
 showPrf shw ((expr,ss,equ):prf) = [ "    "++shw expr] ++

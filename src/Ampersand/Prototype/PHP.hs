@@ -179,13 +179,20 @@ createTempDbPHP dbNm =
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: FSpec -> String -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
-  fmap sort (performQuery fSpec dbNm violationsQuery)
- where violationsExpr = conjNF (getOpts fSpec) exp
-       violationsQuery = Text.pack$ prettySQLQuery 26 fSpec violationsExpr
+ do { -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showADL exp)
+    ; -- verboseLn (getOpts fSpec) proofTxt
+    ; -- verboseLn (getOpts fSpec) "End of proof"
+    ; performQuery fSpec dbNm (Text.pack violationsQuery)
+    }
+ where proofTxt = (intercalate "\n" . showPrf showADL . cfProof (getOpts fSpec)) exp
+       violationsExpr = conjNF (getOpts fSpec) exp
+       violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 
 performQuery :: FSpec -> String -> Text.Text -> IO [(String,String)]
 performQuery fSpec dbNm queryStr =
- do { queryResult <- (executePHPStr . showPHP) php
+ do { verboseLn (getOpts fSpec) ("performQuery: "++Text.unpack queryStr)
+    ; queryResult <- (executePHPStr (getOpts fSpec) . showPHP) php
+    ; verboseLn (getOpts fSpec) ("queryResult: "++queryResult)
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn opts{verboseP=True} (Text.unpack$ "\n******Problematic query:\n"<>queryStr<>"\n******")
               fatal 141 $ "PHP/SQL problem: "<>queryResult
@@ -227,18 +234,24 @@ performQuery fSpec dbNm queryStr =
       ]
 
 -- call the command-line php with phpStr as input
-executePHPStr :: Text.Text -> IO String
-executePHPStr phpStr =
- do { tempdir <- catch getTemporaryDirectory
+executePHPStr :: Options -> Text.Text -> IO String
+executePHPStr opts phpStr =
+ do { verboseLn opts ("executePHPStr: 0")
+    ; tempdir <- catch getTemporaryDirectory
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                                  return ".")
-
+    ; verboseLn opts ("executePHPStr: 1")
     ; (tempPhpFile, temph) <- openTempFile tempdir "phpInput"
+    ; verboseLn opts ("executePHPStr: 2")
     ; Text.hPutStr temph phpStr
+    ; verboseLn opts ("executePHPStr: 3")
     ; hClose temph
+    ; verboseLn opts ("executePHPStr: 4")
     ; results <- executePHP tempPhpFile
+    ; verboseLn opts ("executePHPStr: 5")
     ; removeFile tempPhpFile
+    ; verboseLn opts ("executePHPStr: 6")
     ; return results
     }
     

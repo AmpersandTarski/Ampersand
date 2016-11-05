@@ -91,17 +91,16 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
     ; return (vExp, True)
     }
 validateExp fSpec vExp@(exp, orig) =
- do { --putStr $ "Checking "++orig ++": expression = "++showADL exp
-    ; violationsSQL <- fmap sort . evaluateExpSQL fSpec tempDbName $ exp
-    ; let violationsAmp = sort [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- pairsInExpr fSpec exp]
-
-    ; if violationsSQL == violationsAmp
+ do { putStr $ "Checking "++orig ++": "++showADL exp
+    ; violationsSQL <- evaluateExpSQL fSpec tempDbName $ exp
+    ; let violationsAmp = [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- pairsInExpr fSpec exp]
+    ; if sort violationsSQL == sort violationsAmp
       then
-       do { putStr "." -- ++show violationsSQL
+       do { putStrLn ("."  ++show violationsSQL)
           ; return (vExp, True)
           }
       else
-       do { putStr $ "Checking "++orig ++": expression = "++showADL exp
+       do { putStrLn $ "Checking "++orig ++": expression = "++showADL exp
           ; putStrLn "\nMismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
           ; putStrLn $ "SQL violations:\n"++show violationsSQL
@@ -112,7 +111,8 @@ validateExp fSpec vExp@(exp, orig) =
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
+ do { _ <- executePHPStr (getOpts fSpec) .
+                                     showPHP $ sqlServerConnectPHP fSpec ++
                                      createTempDbPHP tempDbName ++
                                      createTablesPHP fSpec ++
                                      populateTablesPHP fSpec
