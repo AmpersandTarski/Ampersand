@@ -563,8 +563,9 @@ verbose opts x
 
 verboseLn :: Options -> String -> IO ()
 verboseLn opts x
-   | verboseP opts = -- each line is handled separately, so the buffer will be flushed in time. (see ticket #179)
-                     mapM_ putStrLn (lines x)
+   | verboseP opts = -- Since verbose is for debugging purposes in general, we want no buffering, because it is confusing while debugging.
+                     do hSetBuffering stdout NoBuffering
+                        mapM_ putStrLn (lines x)
    | otherwise     = return ()
 helpNVersionTexts :: String -> Options -> [String]
 helpNVersionTexts vs opts = ["Executable: "++show (dirExec opts)++"\n"   | test opts       ]++
