@@ -221,7 +221,14 @@ class InterfaceObject {
 		    // Subinterfacing is not supported/possible for tgt concepts with a scalar representation type (i.e. non-objects)
 		    if(!$this->tgtConcept->isObject()) throw new Exception ("Subinterfacing is not supported for concepts with a scalar representation type (i.e. non-objects). (Sub)Interface '{$this->path}' with target {$this->tgtConcept} (type:{$this->tgtConcept->type}) has subinterfaces specified", 501);
 		    
-		    // Reference to top level interface
+		    /* Reference to top level interface
+             * e.g.:
+             * INTERFACE "A" : expr1 INTERFACE "B"
+             * INTERFACE "B" : expr2 BOX ["label" : expr3]
+             * 
+             * is interpreted as:
+             * INTERFACE "A" : expr1;epxr2 BOX ["label" : expr3]
+             */
 		    $this->refInterfaceId = $ifcDef['subinterfaces']['refSubInterfaceId'];
 		    $this->isLinkTo = $ifcDef['subinterfaces']['refIsLinTo']; // not refIsLinkTo? no! typo in generics/interfaces.json
 		    
@@ -389,10 +396,15 @@ class InterfaceObject {
         if($this->isRef() && ($options & self::INCLUDE_REF_IFCS) // if ifc is reference to other root ifc, option to include refs must be set (= default)
             && (!$this->isLinkTo() || ($options & self::INCLUDE_LINKTO_IFCS))) // this ref ifc must not be a LINKTO ór option is set to explicitly include linkto ifcs
         {
-            $ifc = clone self::getInterface($this->refInterfaceId);
-            $ifc->isRoot = false; // interfaces are not considered root interfaces when used by reference
-            $ifc->path = "{$this->path}/{$ifc->path}"; // prefix path with current path
-            return [ $this->refInterfaceId => self::getInterface($this->refInterfaceId) ];
+            /* Return the subinterfaces of the reference interface. This skips the referenced toplevel interface. 
+             * e.g.:
+             * INTERFACE "A" : expr1 INTERFACE "B"
+             * INTERFACE "B" : expr2 BOX ["label" : expr3]
+             * 
+             * is interpreted as:
+             * INTERFACE "A" : expr1;epxr2 BOX ["label" : expr3]
+             */
+            return self::getInterface($this->refInterfaceId)->getSubinterfaces($options);
         }
         else return $this->subInterfaces;
     }
