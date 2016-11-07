@@ -398,6 +398,8 @@ nonSpecialSelectExpr fSpec expr=
                             _      -> makeNormalFence
                      where
                        makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
+                       
+                                                                  
                                     
                     -- | between two fences there is a pole. The pole holds the constraint(s) between these fences.
                     polesConstraints :: [Maybe ValueExpr]
@@ -428,9 +430,7 @@ nonSpecialSelectExpr fSpec expr=
                                     _         -> fatal 432 "there is no reason for having no fenceTable!"
 
                              (Nothing, Nothing) -> 
-                                 case (fenceExpr i,fenceExpr (i+1)) of 
-                                    (ECpl (EDcI{}), ECpl (EDcI{})) -> Nothing
-                                   -- This must be the special case: ...;V[A*B];V[B*C];....
+                                  -- This must be the special case: ...;V[A*B];V[B*C];....
                                  Just . SubQueryExpr SqExists . toSQL 
                                   . BQEComment [BlockComment "Case: ...;V[A*B];V[B*C];...."]
                                   . selectExpr fSpec . EDcI . target . fenceExpr $ i
