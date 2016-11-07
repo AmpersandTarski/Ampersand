@@ -394,6 +394,7 @@ nonSpecialSelectExpr fSpec expr=
                         case fenceExpr i of 
                        -- In some cases of a non-outer expression, a fence need not be generated, to get better SQL queries. 
                             EDcV{} -> Nothing  
+                            ECpl (EDcI{}) -> Nothing  -- in case of r;-I;s
                             _      -> makeNormalFence
                      where
                        makeNormalFence = Just $ (TRQueryExpr . toSQL . selectExpr fSpec) (fenceExpr i) `as` fenceName i
@@ -416,11 +417,17 @@ nonSpecialSelectExpr fSpec expr=
                              (Just _ , Nothing) -> 
                                   case fenceExpr (i+1) of 
                                     EDcV _    -> Nothing
-                                    _         -> fatal 251 "there is no reason for having no fenceTable!"
+                                    ECpl (EDcI{})  -- in case of r;-I;s
+                                              -> Just (BinOp (Iden [fenceName i,targetAlias])
+                                                             [Name "<>"]
+                                                             (Iden [fenceName (i+2) ,sourceAlias])) 
+                                    _         -> fatal 424 "there is no reason for having no fenceTable!"
                              (Nothing, Just _ ) ->
                                   case fenceExpr i of 
                                     EDcV _    -> Nothing
-                                    _         -> fatal 258 "there is no reason for having no fenceTable!"
+                                    ECpl (EDcI{})  -- in case of r;-I;s
+                                              -> Nothing 
+                                    _         -> fatal 432 "there is no reason for having no fenceTable!"
 
                              (Nothing, Nothing) -> 
                                   -- This must be the special case: ...;V[A*B];V[B*C];....

@@ -51,7 +51,7 @@ dumpSQLqueries multi
      showConjunct :: Conjunct -> [Text.Text]
      showConjunct conj 
         = header (Text.pack$ rc_id conj)
-        <>["Rules for this conjunc:"]
+        <>["Rules for this conjunct:"]
         <>map showRule (rc_orgRules conj)
         <>[Text.pack$ prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj,""]
         where
