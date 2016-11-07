@@ -298,6 +298,16 @@ class InterfaceObject {
     }
     
     /**
+     * Returns referenced interface object
+     * @throws Exception when $this is not a reference interface
+     * @return InterfaceObject
+     */
+    public function getRefToIfc(){
+        if($this->isRef()) return self::getInterface($this->refInterfaceId);
+        else throw new Exception ("Interface is not a reference interface: " . $this->getPath(), 500); 
+    }
+    
+    /**
      * Returns if interface is a LINKTO reference to another interface
      * @return boolean
      */
@@ -349,10 +359,44 @@ class InterfaceObject {
         return $this->view;
     }
     
-    public function crudC(){ return $this->crudC;}
-    public function crudR(){ return $this->crudR;}
-    public function crudU(){ return $this->crudU;}
-    public function crudD(){ return $this->crudD;}
+    public function crudC(){
+        // If crudC not specified during object construction (e.g. in case of ref interface)
+        if(is_null($this->crudC)){
+            if($this->isRef()) $this->crudC = $this->getRefToIfc()->crudC();
+            else throw new Exception ("Create rights not specified for interface " . $this->getPath(), 500);
+        }
+        
+        return $this->crudC;
+    }
+    
+    public function crudR(){
+        // If crudR not specified during object construction (e.g. in case of ref interface)
+        if(is_null($this->crudR)){
+            if($this->isRef()) $this->crudR = $this->getRefToIfc()->crudR();
+            else throw new Exception ("Read rights not specified for interface " . $this->getPath(), 500);
+        }
+        
+        return $this->crudR;
+    }
+    
+    public function crudU(){
+        // If crudU not specified during object construction (e.g. in case of ref interface)
+        if(is_null($this->crudU)){
+            if($this->isRef()) $this->crudU = $this->getRefToIfc()->crudU();
+            else throw new Exception ("Read rights not specified for interface " . $this->getPath(), 500);
+        }
+        
+        return $this->crudU;
+    }
+    public function crudD(){
+        // If crudD not specified during object construction (e.g. in case of ref interface)
+        if(is_null($this->crudD)){
+            if($this->isRef()) $this->crudD = $this->getRefToIfc()->crudD();
+            else throw new Exception ("Read rights not specified for interface " . $this->getPath(), 500);
+        }
+        
+        return $this->crudD;
+    }
 	
     /**
      * @param string $ifcId
