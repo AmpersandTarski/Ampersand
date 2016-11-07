@@ -321,7 +321,7 @@ class Session {
      */
     public function isEditableConcept($concept){
         return array_reduce($this->accessibleInterfaces, function($carry, $ifc) use ($concept){
-            return ($carry || in_array($concept, $ifc->editableConcepts));
+            return ($carry || in_array($concept, $ifc->getEditableConcepts()));
         }, false);
     }
     

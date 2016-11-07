@@ -83,13 +83,6 @@ class InterfaceObject {
 	public $ifcRoleNames = array();
 	
 	/**
-	 * Array with concepts for which all atoms may be get with the api
-	 * This applies to all concepts that are used as target of a (sub)interface expression that may be updated (crudU)
-	 * @var Concept[]
-	 */
-	public $editableConcepts = array();
-	
-	/**
 	 * 
 	 * @var boolean
 	 */
@@ -236,7 +229,6 @@ class InterfaceObject {
 		    foreach ((array)$ifcDef['subinterfaces']['ifcObjects'] as $subIfcDef){
 		        $ifc = new InterfaceObject($subIfcDef, $this->plug, $this->path);
 		        $this->subInterfaces[$ifc->id] = $ifc;
-		        $this->editableConcepts = array_merge($this->editableConcepts, $ifc->editableConcepts);
 		    }
 		}
         
@@ -245,7 +237,6 @@ class InterfaceObject {
 		$this->crudR = $this->isRef() ? null : $ifcDef['crud']['read'];
 		$this->crudU = $this->isRef() ? null : $ifcDef['crud']['update'];
 		$this->crudD = $this->isRef() ? null : $ifcDef['crud']['delete'];
-		if($this->crudU && $this->tgtConcept->isObject()) $this->editableConcepts[] = $this->tgtConcept;
 	}
 	
     /**
@@ -271,6 +262,24 @@ class InterfaceObject {
      */
     public function isEditable(){
         return !is_null($this->relation);
+    }
+    
+    /**
+     * Array with all editable concepts for this interface and all sub interfaces
+     * @var Concept[]
+     */
+    public function getEditableConcepts(){
+        $arr = [];
+        
+        // Determine editable concept for this interface
+        if($this->crudU() && $this->tgtConcept->isObject()) $arr[] = $this->tgtConcept;
+        
+        // Add editable concepts for subinterfaces
+        foreach($this->getSubinterfaces(self::DEFAULT_OPTIONS | self::INCLUDE_REF_IFCS) as $ifc){
+            $arr = array_merge($arr, $ifc->getEditableConcepts());
+        }
+        
+        return $arr;
     }
 
 	/**
