@@ -25,15 +25,6 @@ services:
 #     addons: {apt: {packages: [libfcgi-dev,libgmp-dev]}}
 matrix:
   include:
-  # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
-  # https://github.com/hvr/multi-ghc-travis
-  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
-    compiler: ": #GHC 8.0.1"
-    addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
-  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
-    compiler: ": #GHC 8.0.1"
-    os: osx
-
   # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
   # variable, such as using --stack-yaml to point to a different file.
   - env: BUILD=stack ARGS=""
@@ -44,6 +35,15 @@ matrix:
     os: osx
 
 
+  # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
+  # https://github.com/hvr/multi-ghc-travis
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
+    compiler: ": #GHC 8.0.1"
+    addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
+    compiler: ": #GHC 8.0.1"
+    os: osx
+
   # Build with the newest GHC and cabal-install. This is an accepted failure,
   # see below.
   - env: BUILD=cabal GHCVER=head  CABALVER=head
@@ -53,19 +53,16 @@ matrix:
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
-  - env: BUILD=stack ARGS="--resolver nightly" osx
-    compiler: ": #stack nightly"
-    os: osx
 
 
   allow_failures:
-  - env: BUILD=cabal GHCVER=head  CABALVER=head
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
   - env: BUILD=stack ARGS="--resolver nightly"
-  - env: BUILD=stack ARGS="--resolver nightly" osx
+  - env: BUILD=cabal GHCVER=head  CABALVER=head
 
   # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
   - env: BUILD=stack ARGS="" osx
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
 
 
   fast_finish: true
@@ -130,6 +127,6 @@ script:
       cabal configure --enable-tests 
       cabal build
       cabal check
-      ./travis_long cabal test
+      cabal test
       ;;
   esac
