@@ -71,11 +71,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					if($scope.$storage.notificationPrefs === undefined){
 						$scope.resetNotificationSettings();
 					}
-					// Default setting for switchAutoCommit
-					if($scope.$storage.switchAutoCommit === undefined){
-						$scope.resetSwitchAutoCommit();
-					}
-                    // Default setting for switchAutoCommit
+                    // Default setting for switchAutoSave
 					if($scope.$storage.switchAutoSave === undefined){
 						$scope.resetSwitchAutoSave();
 					}
@@ -112,13 +108,11 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$scope.resetSettings = function(){
 		// all off
         $.each($scope.$storage.notificationPrefs, function(index, value){ $scope.$storage.notificationPrefs[index] = false });
-		$scope.$storage.switchAutoCommit = false;
         $scope.$storage.switchAutoSave = false;
 		
 		$timeout(function() {
 			// reset to default		
 			$scope.resetNotificationSettings();
-			$scope.resetSwitchAutoCommit();
             $scope.resetSwitchAutoSave();
 		}, 500);
 	};
@@ -126,20 +120,10 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$scope.resetNotificationSettings = function(){
 		$scope.$storage.notificationPrefs = $.extend($scope.$storage.notificationPrefs, $scope.defaultSettings.notifications);
 	};
-	
-	$scope.resetSwitchAutoCommit = function(){
-		$scope.$storage.switchAutoCommit = $scope.defaultSettings.switchAutoCommit;
-	};
     
     $scope.resetSwitchAutoSave = function(){
 		$scope.$storage.switchAutoSave = $scope.defaultSettings.switchAutoSave;
 	};
-	
-	// Set request type based upon switchAutoCommit
-	$rootScope.defaultRequestType = $scope.$storage.switchAutoCommit ? 'promise' : 'feedback';
-	$scope.$watch('$storage.switchAutoCommit', function() {
-		$rootScope.defaultRequestType = $scope.$storage.switchAutoCommit ? 'promise' : 'feedback';
-	});
 	
 	$scope.$watch('$storage.cacheGetCalls', function() {
 		Restangular.setDefaultHttpFields({cache: $scope.$storage.cacheGetCalls });

@@ -104,7 +104,6 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
     if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
     $depth = $app->request->params('depth');
-    if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
     // Perform put
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put((object) $app->request->getBody())->get($rcOptions, $ifcOptions);
@@ -117,7 +116,6 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $result =   [ 'content'             => $resource
                 , 'notifications'       => Notifications::getAll()
                 , 'invariantRulesHold'  => $transaction->invariantRulesHold()
-                , 'requestType'         => $transaction->getRequestType()
                 ];
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
@@ -137,7 +135,6 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
     if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
     $depth = $app->request->params('depth');
-    if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
 	
 	// Perform patch(es)
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($app->request->getBody())->get($rcOptions, $ifcOptions);
@@ -151,7 +148,6 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 					, 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'requestType'			=> $transaction->getRequestType()
 					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
 					);
 	
@@ -174,7 +170,6 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     if (filter_var($app->request->params('navIfc'), FILTER_VALIDATE_BOOLEAN)) $rcOptions = $rcOptions | Resource::INCLUDE_NAV_IFCS;
     if (filter_var($app->request->params('inclLinktoData'), FILTER_VALIDATE_BOOLEAN)) $ifcOptions = $ifcOptions | InterfaceObject::INCLUDE_LINKTO_IFCS;
     $depth = $app->request->params('depth');
-    if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
     // Perform create
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get($rcOptions, $ifcOptions);
@@ -187,7 +182,6 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 	$result = array ( 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'requestType'			=> $transaction->getRequestType()
 					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
 					);
 
@@ -202,9 +196,6 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
 	$session->activateRoles($roleIds);
 
 	$options = $app->request->params();
-
-    // Handle options
-    if(isset($options['requestType'])) $transaction->setRequestType($options['requestType']);
     
 	// Perform delete
     $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->delete();
@@ -216,7 +207,6 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
 	// Return result
 	$result = array ( 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'requestType'			=> $transaction->getRequestType()
 					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
 					);
 

@@ -33,7 +33,6 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 					 ,'extMenu' => AngularApp::getMenuItems('ext')
 					 ,'roleMenu' => AngularApp::getMenuItems('role')
 					 ,'defaultSettings' => array ('notifications' => Notifications::getDefaultSettings()
-					                             ,'switchAutoCommit' => Config::get('interfaceAutoCommitChanges', 'transactions')
 					                             ,'cacheGetCalls' => Config::get('interfaceCacheGetCalls', 'transactions')
                                                  ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
                                                  )

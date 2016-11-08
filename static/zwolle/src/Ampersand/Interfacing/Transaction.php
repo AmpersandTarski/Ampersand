@@ -60,12 +60,6 @@ class Transaction {
     private $invariantRulesHold = null;
     
     /**
-     * Specifies requested transaction type (i.e. 'feedback' or 'promise')
-     * @var string
-     */
-    private $requestType = 'promise';
-    
-    /**
      * Specifies if the transaction is committed or rolled back
      * @var boolean
      */
@@ -101,8 +95,7 @@ class Transaction {
         // Check all process rules that are relevant for the activate roles
         RuleEngine::checkProcessRules();
         
-        // Determine if transaction should be committed or not when all invariant rules hold based on $requestType
-        if(!isset($commit)) $commit = $this->requestType == 'promise';
+        if(!isset($commit)) $commit = true;
         
         if($this->invariantRulesHold && $commit){
             $this->logger->debug("Commit transaction");
@@ -140,20 +133,6 @@ class Transaction {
         if(!in_array($storage, $this->storages)){
             $this->logger->debug("Add storage: " . $storage->getLabel());
             $this->storages[] = $storage;
-        }
-    }
-    
-    public function getRequestType(){
-        return $this->requestType;
-    }
-    
-    public function setRequestType($requestType){
-        switch($requestType){
-            case 'feedback':
-            case 'promise':
-                $this->requestType = $requestType;
-                break;
-            default : throw new Exception("Unkown request type '$requestType'. Supported are: 'feedback', 'promise'", 500);
         }
     }
     
