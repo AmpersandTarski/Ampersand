@@ -243,8 +243,14 @@ executePHPStr opts phpStr =
     ; hClose temph
     ; results <- executePHP opts tempPhpFile
     ; removeFile tempPhpFile
-    ; return results
+    ; return (normalizeNewLines results)
     }
+normalizeNewLines :: String -> String
+normalizeNewLines = f . intercalate "\n" . lines
+  where 
+    f [] = []
+    f ('\r':'\n':rest) = '\n':f rest
+    f (c:cs) = c: f cs 
 
 executePHP :: Options -> String -> IO String
 executePHP opts phpPath =
