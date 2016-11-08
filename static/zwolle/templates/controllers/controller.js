@@ -137,124 +137,123 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         }
     };
     
-    // Function to change certain attributes of a resource (PATCH)
-	\$scope.patchResource = function(resource, patches){		
+    const addPatch = function(resource, patches){
         $if(verbose)$console.log(patches);$endif$
-		if(typeof resource['_patchesCache_'] === 'undefined') resource['_patchesCache_'] = []; // new array
-		resource['_patchesCache_'] = resource['_patchesCache_'].concat(patches); // add new patches
-		
-		\$scope.save(resource);
-	};
-	
-	// Function to send all patches
-	\$scope.save = function(resource){
+        if(typeof resource['_patchesCache_'] === 'undefined') resource['_patchesCache_'] = []; // new array
+        resource['_patchesCache_'] = resource['_patchesCache_'].concat(patches); // add new patches
+        
+        \$scope.save(resource);
+    };
+    
+    // Function to change certain attributes of a resource (PATCH)
+    \$scope.save = function(resource){
         // Add resource to \$scope.updatedResources
         if(\$scope.updatedResources.indexOf(resource) === -1) \$scope.updatedResources.push(resource);
-		
+        
         if(\$localStorage.switchAutoSave){
-    		if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
-    		resource['_loading_'].push( // shows loading indicator
-    			Restangular.one(resource['_path_'])
-    				.patch(resource['_patchesCache_'], {topLevelIfc : '$interfaceName$'})
-    				.then(function(data) {
-    					// Update resource data
-    					if(resource['_ifcEntryResource_']){
-    						resource['$interfaceName$'] = data.content;
-    						//tlResource = resource;
-    					}
-    					else resource = \$.extend(resource, data.content);
-    					
-    					// Update visual feedback (notifications and buttons)
-    					\$rootScope.updateNotifications(data.notifications);
-    					processResponse(resource, data.invariantRulesHold);					
-    				})
-    		);
+            if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
+            resource['_loading_'].push( // shows loading indicator
+                Restangular.one(resource['_path_'])
+                    .patch(resource['_patchesCache_'], {topLevelIfc : '$interfaceName$'})
+                    .then(function(data) {
+                        // Update resource data
+                        if(resource['_ifcEntryResource_']){
+                            resource['$interfaceName$'] = data.content;
+                            //tlResource = resource;
+                        }
+                        else resource = \$.extend(resource, data.content);
+                        
+                        // Update visual feedback (notifications and buttons)
+                        \$rootScope.updateNotifications(data.notifications);
+                        processResponse(resource, data.invariantRulesHold);
+                    })
+            );
         }else{
             processResponse(resource, true);
         }
-	
-	/**********************************************************************************************
-	 * 
-	 *	Edit functions on scalar
-	 * 
-	 *********************************************************************************************/
-	
-	// Function to save item (non-array)
-	\$scope.saveItem = function(resource, ifc, patchResource){		
-		if(typeof resource[ifc] === 'undefined' || resource[ifc] === '') value = null;
-		else value = resource[ifc];
-		
-		// Construct path
-		pathLength = patchResource['_path_'].length;
-		path = resource['_path_'].substring(pathLength) + '/' + ifc;
-		
-		// Construct patch
-		patches = [{ op : 'replace', path : path, value : value}];
-		
-		// Patch!
-		\$scope.patchResource(patchResource, patches);
-	};
-	
-	// Function to add item to array
-	\$scope.addItem = function(resource, ifc, selected, patchResource){		
-		if(typeof selected.value === 'undefined'){
-			console.log('Value undefined');
-		}else if(selected.value !== ''){
-			// Adapt in js model
-			if(typeof resource[ifc] === 'undefined' || resource[ifc] === null) resource[ifc] = [];
-			resource[ifc].push(selected.value);
-			
-			// Construct path
-			pathLength = patchResource['_path_'].length;
-			path = resource['_path_'].substring(pathLength) + '/' + ifc;
-			
-			// Construct patch
-			patches = [{ op : 'add', path : path, value : selected.value}];
-			
-			// Reset selected value
-			selected.value = '';			
-			
-			// Patch!
-			\$scope.patchResource(patchResource, patches);
-		}else{
-			console.log('Empty value selected');
-		}
-	};
-	
-	// Function to remove item from array
-	\$scope.removeItem = function(resource, ifc, key, patchResource){		
-		// Adapt js model
-		value = resource[ifc][key];
-		resource[ifc].splice(key, 1);
-		
-		// Construct path
-		pathLength = patchResource['_path_'].length;
-		path = resource['_path_'].substring(pathLength) + '/' + ifc;
-		
-		// Construct patch
-		patches = [{ op : 'remove', path : path, value: value}];
-		
-		// Patch!
-		\$scope.patchResource(patchResource, patches);
-	};
-	
-	
-	/**********************************************************************************************
-	 * 
-	 *	Edit functions on objects
-	 * 
-	 *********************************************************************************************/
-	
-	// Function to add an object to a certain interface (array) of a resource
-	\$scope.addObject = function(resource, ifc, obj, patchResource){
-		// If patchResource is undefined, the patchResource equals the resource
-		if(typeof patchResource === 'undefined'){
-			patchResource = resource
-		}
-		
-		if(typeof obj['_id_'] === 'undefined' || obj['_id_'] == ''){
-			console.log('Selected object id is undefined');
-		}else{
+    
+    /**********************************************************************************************
+     * 
+     *    Edit functions on scalar
+     * 
+     *********************************************************************************************/
+    
+    // Function to save item (non-array)
+    \$scope.saveItem = function(resource, ifc, patchResource){
+        if(typeof resource[ifc] === 'undefined' || resource[ifc] === '') value = null;
+        else value = resource[ifc];
+        
+        // Construct path
+        pathLength = patchResource['_path_'].length;
+        path = resource['_path_'].substring(pathLength) + '/' + ifc;
+        
+        // Construct patch
+        patches = [{ op : 'replace', path : path, value : value}];
+        
+        // Patch!
+        \$scope.patchResource(patchResource, patches);
+    };
+    
+    // Function to add item to array
+    \$scope.addItem = function(resource, ifc, selected, patchResource){
+        if(typeof selected.value === 'undefined'){
+            console.log('Value undefined');
+        }else if(selected.value !== ''){
+            // Adapt in js model
+            if(typeof resource[ifc] === 'undefined' || resource[ifc] === null) resource[ifc] = [];
+            resource[ifc].push(selected.value);
+            
+            // Construct path
+            pathLength = patchResource['_path_'].length;
+            path = resource['_path_'].substring(pathLength) + '/' + ifc;
+            
+            // Construct patch
+            patches = [{ op : 'add', path : path, value : selected.value}];
+            
+            // Reset selected value
+            selected.value = '';
+            
+            // Patch!
+            \$scope.patchResource(patchResource, patches);
+        }else{
+            console.log('Empty value selected');
+        }
+    };
+    
+    // Function to remove item from array
+    \$scope.removeItem = function(resource, ifc, key, patchResource){
+        // Adapt js model
+        value = resource[ifc][key];
+        resource[ifc].splice(key, 1);
+        
+        // Construct path
+        pathLength = patchResource['_path_'].length;
+        path = resource['_path_'].substring(pathLength) + '/' + ifc;
+        
+        // Construct patch
+        patches = [{ op : 'remove', path : path, value: value}];
+        
+        // Patch!
+        \$scope.patchResource(patchResource, patches);
+    };
+    
+    
+    /**********************************************************************************************
+     * 
+     *    Edit functions on objects
+     * 
+     *********************************************************************************************/
+    
+    // Function to add an object to a certain interface (array) of a resource
+    \$scope.addObject = function(resource, ifc, obj, patchResource){
+        // If patchResource is undefined, the patchResource equals the resource
+        if(typeof patchResource === 'undefined'){
+            patchResource = resource
+        }
+        
+        if(typeof obj['_id_'] === 'undefined' || obj['_id_'] == ''){
+            console.log('Selected object id is undefined');
+        }else{
             try {
                 obj = obj.plain(); // plain is Restangular function
             }catch(e){} // when plain() does not exists (i.e. object is not restangular object)
@@ -263,44 +262,44 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
             if(resource[ifc] === null) resource[ifc] = obj;
             else if(Array.isArray(resource[ifc])) resource[ifc].push(obj);
             else console.log('Cannot add object. Resource[ifc] already set and/or not defined');
-			
-			// Construct path
-			pathLength = patchResource['_path_'].length;
-			path = resource['_path_'].substring(pathLength) + '/' + ifc;
-			
-			// Construct patch
-			patches = [{ op : 'add', path : path, value : obj['_id_']}];
-			
-			// Patch!
-			\$scope.patchResource(patchResource, patches);
-		}
-	};
-	
-	// Function to remove an object from a certain interface (array) of a resource
-	\$scope.removeObject = function(resource, ifc, key, patchResource){		
-		// Adapt js model
-		id = resource[ifc][key]['_id_'];
-		resource[ifc].splice(key, 1);
-		
-		// Construct path
-		pathLength = patchResource['_path_'].length;
-		path = resource['_path_'].substring(pathLength) + '/' + ifc + '/' + id;
-		
-		// Construct patch
-		patches = [{ op : 'remove', path : path}];
-		
-		// Patch!
-		\$scope.patchResource(patchResource, patches);
-	};
-	
-	// Typeahead functionality
-	\$scope.typeahead = {}; // an empty object for typeahead
-	\$scope.getTypeahead = function(resourceType){
-		// Only if not yet set
-		if(typeof \$scope.typeahead[resourceType] === 'undefined'){
-			\$scope.typeahead[resourceType] = Restangular.all('resources/' + resourceType).getList().\$object;
-		}
-	};
+            
+            // Construct path
+            pathLength = patchResource['_path_'].length;
+            path = resource['_path_'].substring(pathLength) + '/' + ifc;
+            
+            // Construct patch
+            patches = [{ op : 'add', path : path, value : obj['_id_']}];
+            
+            // Patch!
+            \$scope.patchResource(patchResource, patches);
+        }
+    };
+    
+    // Function to remove an object from a certain interface (array) of a resource
+    \$scope.removeObject = function(resource, ifc, key, patchResource){
+        // Adapt js model
+        id = resource[ifc][key]['_id_'];
+        resource[ifc].splice(key, 1);
+        
+        // Construct path
+        pathLength = patchResource['_path_'].length;
+        path = resource['_path_'].substring(pathLength) + '/' + ifc + '/' + id;
+        
+        // Construct patch
+        patches = [{ op : 'remove', path : path}];
+        
+        // Patch!
+        \$scope.patchResource(patchResource, patches);
+    };
+    
+    // Typeahead functionality
+    \$scope.typeahead = {}; // an empty object for typeahead
+    \$scope.getTypeahead = function(resourceType){
+        // Only if not yet set
+        if(typeof \$scope.typeahead[resourceType] === 'undefined'){
+            \$scope.typeahead[resourceType] = Restangular.all('resources/' + resourceType).getList().\$object;
+        }
+    };
     
     /**********************************************************************************************
      * Helper functions
