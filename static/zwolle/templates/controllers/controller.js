@@ -101,11 +101,13 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
                     // Update visual feedback (notifications and buttons)
                     processResponse(callingObj, data);
                     
-                    // Add new resource to collection/list
-                    if(!Array.isArray(obj[ifc])) obj[ifc] = [];
-                    if(prepend) obj[ifc].unshift(data.content);
-                    else obj[ifc].push(data.content);
-                    
+                    // Add new resource to ifc
+                    if(!Array.isArray(obj[ifc])){ // non-uni -> list
+                        if(prepend) obj[ifc].unshift(data.content);
+                        else obj[ifc].push(data.content);
+                    }else{ // uni
+                        obj[ifc] = data.content;
+                    }
                 }, function(reason){
                     \$rootScope.addError('Failed to create resource: ' + reason);
                 }
@@ -123,12 +125,12 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
                 .remove({})
                 .then(
                     function(data){
-                        // Remove resource from collection/list
-                        if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1);
-                        else parent[ifc] = null;
-                        
                         // Update visual feedback (notifications and buttons)
                         \$rootScope.updateNotifications(data.notifications);
+                        
+                        // Remove resource from ifc
+                        if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni -> list
+                        else parent[ifc] = null; // uni
                     }, function(reason){
                         \$rootScope.addError('Failed to delete resource: ' + reason);
                     }
@@ -137,40 +139,26 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         }
     };
     
-    const addPatch = function(resource, patches){
-        $if(verbose)$console.log(patches);$endif$
-        if(typeof resource['_patchesCache_'] === 'undefined') resource['_patchesCache_'] = []; // new array
-        resource['_patchesCache_'] = resource['_patchesCache_'].concat(patches); // add new patches
-        
-        \$scope.save(resource);
-    };
-    
     // Function to change certain attributes of a resource (PATCH)
     \$scope.save = function(resource){
-        // Add resource to \$scope.updatedResources
-        if(\$scope.updatedResources.indexOf(resource) === -1) \$scope.updatedResources.push(resource);
+        if(!Array.isArray(resource._loading_)) resource._loading_) = []; // list with promises
         
-        if(\$localStorage.switchAutoSave){
-            if(!Array.isArray(resource['_loading_'])) resource['_loading_'] = new Array();
-            resource['_loading_'].push( // shows loading indicator
-                Restangular.one(resource['_path_'])
-                    .patch(resource['_patchesCache_'], {topLevelIfc : '$interfaceName$'})
-                    .then(function(data) {
-                        // Update resource data
-                        if(resource['_ifcEntryResource_']){
-                            resource['$interfaceName$'] = data.content;
-                            //tlResource = resource;
-                        }
-                        else resource = \$.extend(resource, data.content);
-                        
-                        // Update visual feedback (notifications and buttons)
-                        \$rootScope.updateNotifications(data.notifications);
-                        processResponse(resource, data.invariantRulesHold);
-                    })
-            );
-        }else{
-            processResponse(resource, true);
-        }
+        resource._loading_.push(
+            Restangular.one(resource._path_)
+            .patch(resource._patchesCache_, {topLevelIfc : '$interfaceName$'})
+            .then(
+                function(data) {
+                    // Update resource data
+                    if(resource._isRoot_) resource['$interfaceName$'] = data.content;
+                    else resource = \$.extend(resource, data.content);
+                    
+                    // Update visual feedback (notifications and buttons)
+                    processResponse(resource, data);
+                },function(reason){
+                    \$rootScope.addError('Failed to save resource: ' + reason);
+                }
+            )
+        );
     
     /**********************************************************************************************
      * 
@@ -191,7 +179,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         patches = [{ op : 'replace', path : path, value : value}];
         
         // Patch!
-        \$scope.patchResource(patchResource, patches);
+        addPatches(patchResource, patches);
     };
     
     // Function to add item to array
@@ -214,7 +202,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
             selected.value = '';
             
             // Patch!
-            \$scope.patchResource(patchResource, patches);
+            addPatches(patchResource, patches);
         }else{
             console.log('Empty value selected');
         }
@@ -234,7 +222,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         patches = [{ op : 'remove', path : path, value: value}];
         
         // Patch!
-        \$scope.patchResource(patchResource, patches);
+        addPatches(patchResource, patches);
     };
     
     
@@ -271,7 +259,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
             patches = [{ op : 'add', path : path, value : obj['_id_']}];
             
             // Patch!
-            \$scope.patchResource(patchResource, patches);
+            addPatches(patchResource, patches);
         }
     };
     
@@ -289,7 +277,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         patches = [{ op : 'remove', path : path}];
         
         // Patch!
-        \$scope.patchResource(patchResource, patches);
+        addPatches(patchResource, patches);
     };
     
     // Typeahead functionality
@@ -323,6 +311,25 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
             if (event && !confirmed) event.preventDefault();
         }
     });
+    
+    const addPatches = function(resource, patches){
+        $if(verbose)$console.log(patches);$endif$
+        if(!Array.isArray(resource._patchesCache_)) resource._patchesCache_) = [];
+        
+        // Add new patches to resource
+        resource._patchesCache_ = resource._patchesCache_.concat(patches);
+        
+        // Add resource to updatedResources
+        if(updatedResources.indexOf(resource) === -1) updatedResources.push(resource);
+        
+        // Save if autoSave is enabled
+        if(\$localStorage.switchAutoSave) \$scope.save(resource);
+        else {
+            // Update visual feedback
+            setResourceStatus(resource, 'warning');
+            resource._showButtons_ = {'save' : true, 'cancel' : true};
+        }
+    };
     
     // Init/reset resource meta data
     const initResourceMetaData = function(resource){
