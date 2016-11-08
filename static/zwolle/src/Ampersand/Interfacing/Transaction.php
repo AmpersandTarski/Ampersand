@@ -54,6 +54,13 @@ class Transaction {
     private $affectedRelations = [];
     
     /**
+     * @var boolean $sessionVarAffected flag that is set when session variable is changed
+     * a session variable is a relation with SESSION as src or tgt concept
+     * this flag is returned to frontend to trigger a navigation bar refresh (e.g. after a user login)
+     */
+    private $sessionVarAffected = false;
+    
+    /**
      * Specifies if invariant rules hold. Null if no transaction has occurred (yet)
      * @var boolean|NULL
      */
@@ -162,10 +169,16 @@ class Transaction {
      * @return void
      */
     public function addAffectedRelations(Relation $relation){
+        static $skipRels = ['lastAccess[SESSION*DateTime]']; // these relations do not result in a session refresh advice
+        
         if(!in_array($relation, $this->affectedRelations)){
             $this->logger->debug("Mark relation '{$relation}' as affected relation");
             $this->affectedRelations[] = $relation;
         }
+        
+        // Flag session var as affected when src or tgt concept of this relation is SESSION
+        if(($relation->srcConcept->isSession() || $relation->tgtConcept->isSession())
+            && !in_array($relation->getSignature(), $skipRels)) $this->sessionVarAffected = true;
     }
     
     public function invariantRulesHold(){
@@ -186,6 +199,18 @@ class Transaction {
     
     public function isClosed(){
         return $this->isCommitted !== null;
+    }
+    
+    /**
+     * Returns if session refresh is adviced in frontend
+     * True when session variable is affected AND transaction is committed
+     * False otherwise
+     * @return boolean
+     */
+    public function getSessionRefreshAdvice(){
+        if($this->isOpen()) throw new Exception("Cannot determine session refresh advice, because transaction is not closed (yet).", 500);
+        
+        return $this->sessionVarAffected && $this->isCommitted();
     }
     
 /**********************************************************************************************

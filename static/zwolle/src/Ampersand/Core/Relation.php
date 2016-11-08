@@ -16,7 +16,6 @@ use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
 use Ampersand\Interfacing\Transaction;
-use Ampersand\Session;
 
 /**
  *
@@ -247,9 +246,6 @@ class Relation {
         $link->tgt()->add();
         
         foreach($this->plugs as $plug) $plug->addLink($link);
-        
-        // Flag session var as affected when src or tgt concept of this relation is SESSION
-        if($srcAtom->concept->isSession() || $tgtAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
     }
     
     /**
@@ -262,9 +258,6 @@ class Relation {
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
         
         foreach($this->plugs as $plug) $plug->deleteLink($link);
-        
-        // Flag session var as affected when src or tgt concept of this relation is SESSION
-        if($srcAtom->concept->isSession() || $tgtAtom->concept->isSession()) Session::singleton()->setSessionVarAffected();
     }
     
     /**

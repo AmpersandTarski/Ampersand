@@ -116,6 +116,7 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $result =   [ 'content'             => $resource
                 , 'notifications'       => Notifications::getAll()
                 , 'invariantRulesHold'  => $transaction->invariantRulesHold()
+                , 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
                 ];
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
@@ -148,7 +149,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 					, 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
+					, 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
 					);
 	
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -182,7 +183,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 	$result = array ( 'content' 			=> $resource
 					, 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
+					, 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
 					);
 
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -207,7 +208,7 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
 	// Return result
 	$result = array ( 'notifications' 		=> Notifications::getAll()
 					, 'invariantRulesHold'	=> $transaction->invariantRulesHold()
-					, 'sessionRefreshAdvice' => $session->getSessionRefreshAdvice()
+					, 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
 					);
 
 	print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

@@ -64,13 +64,6 @@ class Session {
     private $sessionAccount;
     
     /**
-     * @var boolean $sessionVarAffected flag that is set when session variable is changed
-     * a session variable is a relation with SESSION as src or tgt)
-     * this flag is returned to frontend to trigger a navigation bar refresh (e.g. after a user login)
-     */
-    private $sessionVarAffected;
-    
-    /**
      * @var Session $_instance needed for singleton() pattern of Session class
      */
     private static $_instance = null;
@@ -349,36 +342,6 @@ class Session {
                 $link->src()->delete();
             }
         }
-    }
-    
-    /**
-     * Flag session variable as affected
-     * @param boolean $bool
-     * @return void
-     */
-    public function setSessionVarAffected($bool = true){
-        $this->sessionVarAffected = $bool;
-    }
-    
-    /**
-     * Returns if flag for session var affected is set
-     * @return boolean
-     */
-    public function getSessionVarAffected(){
-        return $this->sessionVarAffected;
-    }
-    
-    /**
-     * Returns if session refresh is adviced in frontend
-     * True when
-     * - session variable is affected (otherwise nothing to update)
-     * - AND invariant rules hold (otherwise rollback)
-     * False otherwise
-     * @return boolean
-     */
-    public function getSessionRefreshAdvice(){
-        return $this->getSessionVarAffected() 
-                && $this->database->getInvariantRulesHold();
     }
 }
 ?>
