@@ -1,17 +1,17 @@
 {-# LANGUAGE Rank2Types, NoMonomorphismRestriction, ScopedTypeVariables #-}
 module Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 
-import Data.List
-import Data.Char(toUpper)
-import System.FilePath ((</>),takeExtension)
-import Control.Monad --(filterM, forM_, foldM,when)
-import Control.Exception.Base
-import System.IO.Error (tryIOError)
-import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
-import Control.Monad.Trans.Class (lift)
-import Data.Conduit
-import Ampersand.Test.RunAmpersand (ampersand)
-import Ampersand.Input.ADL1.CtxError
+--import Data.List
+--import Data.Char(toUpper)
+--import System.FilePath ((</>),takeExtension)
+--import Control.Monad --(filterM, forM_, foldM,when)
+--import Control.Exception.Base
+--import System.IO.Error (tryIOError)
+--import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
+--import Control.Monad.Trans.Class (lift)
+--import Data.Conduit
+--import Ampersand.Test.RunAmpersand (ampersand)
+--import Ampersand.Input.ADL1.CtxError
 
 --endswith :: String -> String -> Bool
 --endswith a b = drop (length a - length b) a == b
@@ -27,12 +27,13 @@ getTestScripts = do
 
 
 
-data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
-                | DirError IOError               
-data DirData = DirData FilePath DirContent       -- path and content of a directory
+--data DirContent = DirList [FilePath] [FilePath]  -- files and directories in a directory
+--                | DirError IOError               
+--data DirData = DirData FilePath DirContent       -- path and content of a directory
 
 testAmpersandScripts :: IO ()
 testAmpersandScripts = putStrLn "Testscripts of this kind are not available."
+{-
 testAmpersandScripts' :: IO ()
 testAmpersandScripts'
  = do 
@@ -114,4 +115,4 @@ runATest' path file = do
          )
        unless shouldFail $ mapM_ putStrLn (map showErr (take 1 errs))  --for now, only show the first error
     where shouldFail = "SHOULDFAIL" `isInfixOf` map toUpper (path </> file)
- 
+-} 
