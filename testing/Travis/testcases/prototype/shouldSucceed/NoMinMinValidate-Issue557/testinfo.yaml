@@ -1,0 +1,2 @@
+command : ampersand --proto --verbose --sqlLogin="root" --sqlPwd="" --meta-tables
+shouldSucceed : yes
