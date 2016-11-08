@@ -89,8 +89,10 @@ class Transaction {
      * @param boolean $commit specifies to commit (true) or rollback (false) when all invariants hold
      * @return Transaction $this
      */
-    public function close($commit = null){
+    public function close($commit = true){
         $this->logger->info("Request to close transaction: {$this->id}");
+        
+        if($this->isClosed()) throw new Exception("Cannot close transaction, because transaction is already closed", 500);
         
         Hooks::callHooks('preCloseTransaction', get_defined_vars());
         
@@ -101,8 +103,6 @@ class Transaction {
         
         // Check all process rules that are relevant for the activate roles
         RuleEngine::checkProcessRules();
-        
-        if(!isset($commit)) $commit = true;
         
         if($this->invariantRulesHold && $commit){
             $this->logger->debug("Commit transaction");
