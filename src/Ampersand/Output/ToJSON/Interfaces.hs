@@ -117,7 +117,7 @@ instance JSON ObjectDef JSONexpr where
         Nothing -> (source normalizedInterfaceExp, target normalizedInterfaceExp) -- fall back to typechecker type
  
 instance JSON ObjectDef JSONObjectDef where
- fromAmpersand multi object = JSONObjectDef
+ fromAmpersand multi object' = JSONObjectDef
   { ifcJSONid                 = escapeIdentifier . name $ object
   , ifcJSONlabel              = name object
   , ifcJSONviewId             = fmap name viewToUse
@@ -141,3 +141,28 @@ instance JSON ObjectDef JSONObjectDef where
           (tgt, Just (decl, isFlipped))
         Nothing -> (target normalizedInterfaceExp, Nothing) -- fall back to typechecker type
     
+
+    object :: ObjectDef
+    object = case substitution of
+               Nothing           -> object'
+               Just (expr,cruds) -> object'{ objctx  = expr
+                                           , objcrud = cruds
+                                           }
+    -- In case of reference to an INTERFACE, not used as a LINKTO, the
+    -- expression and cruds are replaced. This is introduce with the
+    -- refactoring of the frontend interfaces in oct/nov 2016. 
+    substitution :: Maybe (Expression, Cruds)
+    substitution =
+       case objmsub object' of
+         Just InterfaceRef{ siIsLink=False
+                          , siIfcId=interfaceId} 
+           -> let ifc = ifcObj (lookupInterface interfaceId)
+              in Just (conjNF opts (objctx object' .:. objctx ifc), objcrud ifc)
+         _ -> Nothing
+    lookupInterface :: String -> Interface
+    lookupInterface nm = 
+        case [ ifc | ifc <- (interfaceS fSpec ++ interfaceG fSpec), name ifc == nm ] of
+          [ifc] -> ifc
+          _     -> fatal 124 "Interface lookup returned zero or more than one result"
+
+      
