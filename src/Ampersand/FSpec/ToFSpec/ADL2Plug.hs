@@ -236,7 +236,6 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
         
 
 tooBigToStoreInConceptTable :: TType -> Bool
--- based on http://stackoverflow.com/questions/13760998/store-text-blob-in-same-table-or-not
 tooBigToStoreInConceptTable ttype = 
   case ttype of
     Alphanumeric     -> True
