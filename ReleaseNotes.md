@@ -1,7 +1,6 @@
 # Release notes of Ampersand
 
 ## unreleased changes
-  * Changes in order to get RAP3 up and running
   * Alternative definition of univalence and injectivity to get better violations on runtime.
 
 ## v3.7.2 (28 october 2016)
