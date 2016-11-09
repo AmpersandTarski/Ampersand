@@ -211,47 +211,25 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 -- | this function tells in what concepttable a given declaration is to be stored. If stored
 --   in a concept table, it returns the concept and a boolean, telling wether or not the relation
 --   is stored flipped.
-    wayToStore :: Declaration -> Maybe (A_Concept,Bool)
-    wayToStore d =
-     case d of 
-      Isn{} -> fatal 38 "I is not expected here." -- These relations are already in the kernel
-      Vs{}  -> fatal 39 "V is not expected here" -- Vs are not implemented at all
-      Sgn{} ->
+wayToStore :: Declaration -> Maybe (A_Concept,Bool)
+wayToStore d =
+  case d of 
+  Isn{} -> fatal 38 "I is not expected here." -- These relations are already in the kernel
+  Vs{}  -> fatal 39 "V is not expected here" -- Vs are not implemented at all
+  Sgn{} ->
        case (isInj d, isUni d) of
             (False  , False  ) -> Nothing --Will become a link-table
-            (True   , False  ) -> flipped
-            (False  , True   ) -> plain
+            (True   , False  ) -> Just flipped
+            (False  , True   ) -> Just plain
             (True   , True   ) ->
               case (isTot d, isSur d) of
-                   (False  , False  ) -> plain 
-                   (True   , False  ) -> plain
-                   (False  , True   ) -> plain
-                   (True   , True   ) -> plain
-      where plain   = if tooBigToStoreInConceptTable . repr . target $ d
-                      then Just (source d,False)
-                      else Nothing
-            flipped = if tooBigToStoreInConceptTable . repr . source $ d
-                      then Just (target d, True)
-                      else Nothing
-        
+                   (False  , False  ) -> Just plain 
+                   (True   , False  ) -> Just plain
+                   (False  , True   ) -> Just plain
+                   (True   , True   ) -> Just plain
+  where plain  = (source d,False)
+        flipped = (target d, True)
 
-tooBigToStoreInConceptTable :: TType -> Bool
-tooBigToStoreInConceptTable ttype = 
-  case ttype of
-    Alphanumeric     -> True
-    BigAlphanumeric  -> False
-    HugeAlphanumeric -> False
-    Password         -> True
-    Binary           -> False
-    BigBinary        -> False
-    HugeBinary       -> False
-    Date             -> True
-    DateTime         -> True
-    Boolean          -> True
-    Integer          -> True
-    Float            -> True
-    Object           -> True
-    TypeOfOne        -> fatal 143 $ "ONE has no key at all. does it?"
 
 unquote :: String -> String
 unquote str 
@@ -284,6 +262,8 @@ isFlipped e =
   case e of
     EFlp _ -> True
     _      -> False
+
+
 
 typologies :: A_Context -> [Typology]
 typologies context = 
