@@ -25,6 +25,7 @@ createTablesPHP :: FSpec -> [Text.Text]
 createTablesPHP fSpec =
         [ "/*** Create new SQL tables ***/"
         , ""
+        , "SET GLOBAL innodb_file_format=Barracuda;"
         ] <>
         createTablePHP sessionTableSpec <>
         setSqlModePHP<>
@@ -66,8 +67,8 @@ plug2TableSpec plug
    , [ quote (Text.pack$ attName f)<>" " <> Text.pack (showSQL (attType f)) <> " DEFAULT NULL"
      | f <- plugAttributes plug ]<>
       case (plug, (head.plugAttributes) plug) of
-           (BinSQL{}, _)   -> []
-           (_,    primAtt) ->
+           (BinSQL{}, _      ) -> []
+           (TblSQL{}, primAtt) ->
                 case attUse primAtt of
                    PrimaryKey _ -> [ "PRIMARY KEY (`"<>Text.pack (attName primAtt)<>"`)"]
                    ForeignKey c  -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
