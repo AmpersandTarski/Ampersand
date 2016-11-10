@@ -8,7 +8,7 @@ $if(verbose)$<!-- View-FILEOBJECT.html "$label$" : $expAdl$ :: $source$ * $targe
     originalFileName          :: FileObject -> FileName
       REPRESENT FileName TYPE ALPHANUMERIC
 -->
-$endif$$if(crudR)$<div class="input-group">
+$endif$$if(crudR)$<div class="input-group" ng-controller="static_atomicController">
     <div ng-repeat="(key, row) in resource['$name$']">
         $if(crudU)$<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeObject(resource, '$name$', key, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
         <a href="{{row['_view_']['filePath']}}" target="_blank">{{row['_view_']['fileName']}}</a>
