@@ -1,6 +1,10 @@
 angular.module('AmpersandApp').controller('static_atomicController', function($scope){
     
-    $scope.selected = {}; // an empty object for temporary storing the value or selected resource
+    /*
+     * Object to temporary store value/resourceId to add to list
+     * Value/resourceId is stored as property of 'selected' obj. This is needed to pass it around by reference
+     */
+    $scope.selected = {};
     
     $scope.hasNoResults = false;
     
@@ -25,27 +29,23 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
     
     // Function to add item to list
     $scope.addItem = function(resource, ifc, selected, patchResource){
-        if(typeof selected.value === 'undefined'){
-            console.log('Value undefined');
-        }else if(selected.value !== ''){
+        if(typeof selected.value === 'undefined') console.log('Value undefined');
+        else if(selected.value === '') console.log('Empty value selected');
+        else if(!Array.isArray(resource[ifc])) console.log('Error: trying to add item to non-array');
+        else{
             // Adapt in js model
-            if(typeof resource[ifc] === 'undefined' || resource[ifc] === null) resource[ifc] = [];
             resource[ifc].push(selected.value);
             
-            // Construct path
-            pathLength = patchResource['_path_'].length;
-            path = resource['_path_'].substring(pathLength) + '/' + ifc;
-            
-            // Construct patch
+            // Construct patch(es)
+            pathLength = patchResource._path_.length;
+            path = resource._path_.substring(pathLength) + '/' + ifc;
             patches = [{ op : 'add', path : path, value : selected.value}];
             
             // Reset selected value
-            selected.value = '';
+            delete(selected.value);
             
             // Patch!
             addPatches(patchResource, patches);
-        }else{
-            console.log('Empty value selected');
         }
     };
     
@@ -55,11 +55,9 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         value = resource[ifc][key];
         resource[ifc].splice(key, 1);
         
-        // Construct path
-        pathLength = patchResource['_path_'].length;
-        path = resource['_path_'].substring(pathLength) + '/' + ifc;
-        
-        // Construct patch
+        // Construct patch(es)
+        pathLength = patchResource._path_.length;
+        path = resource._path_.substring(pathLength) + '/' + ifc;
         patches = [{ op : 'remove', path : path, value: value}];
         
         // Patch!
