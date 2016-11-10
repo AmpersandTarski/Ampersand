@@ -633,8 +633,9 @@ pCtx2aCtx opts
       checkCrudForRefInterface :: Guarded()
       checkCrudForRefInterface = 
          case (mCrud, subs) of
-           (Just _ , Just P_InterfaceRef{}) -> Errors [mkCrudForRefInterfaceError orig]
-           _                              -> pure ()
+           (Just _ , Just P_InterfaceRef{si_isLink=False}) 
+                   -> Errors [mkCrudForRefInterfaceError orig]
+           _       -> pure ()
       typeCheckViewAnnotation :: Expression -> Maybe String -> Guarded ()
       typeCheckViewAnnotation _       Nothing       = pure ()
       typeCheckViewAnnotation objExpr (Just viewId) =
