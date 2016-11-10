@@ -49,9 +49,9 @@ rulefromProp prp d@Sgn{} =
         rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
                 then fatal 70 ("Illegal property of an endo relation "++show (name d)) else
                 case prp of
-                     Uni-> flp r .:. r .|-. EDcI (target r)
+                     Uni-> r .:. ECpl (EDcI (target r)) .:. flp r .|-. ECpl (EDcI (source r))
                      Tot-> EDcI (source r)  .|-. r .:. flp r
-                     Inj-> r .:. flp r .|-. EDcI (source r)
+                     Inj-> flp r .:. ECpl (EDcI (source r)) .:. r .|-. ECpl (EDcI (target r))
                      Sur-> EDcI (target r)  .|-. flp r .:. r
                      Sym-> r .==. flp r
                      Asy-> flp r ./\. r .|-. EDcI (source r)

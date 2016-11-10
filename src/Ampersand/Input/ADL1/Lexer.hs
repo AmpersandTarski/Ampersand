@@ -429,7 +429,7 @@ getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
 getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
-                                      | val >= 0 && val <= 255 -> (Just (chr val),length s - length rest, rest)
+                                      | val >= 0 && val <= ord (maximum [chr 1 ..]) -> (Just (chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
                                     _  -> fatal 432 $ "Impossible! first char is a digit.. "++take 40 s
                     | x `elem` ['\"','\''] = (Just x,2,xs)

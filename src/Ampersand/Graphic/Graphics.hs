@@ -307,6 +307,7 @@ instance ReferableFromPandoc Picture where
      ( dirOutput opts)
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
 
+{-
 class Named a => Navigatable a where
    interfacename :: a -> String
    itemstring :: a -> String
@@ -331,6 +332,7 @@ instance Navigatable Declaration where
    itemstring x = name x ++ "["
                   ++ (if source x==target x then name(source x) else name(source x)++"*"++name(target x))
                   ++ "]"
+-}
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
                                    , csRels :: [Declaration]   -- ^ The relations, (the edges in the graph)
@@ -433,7 +435,7 @@ handleFlags po opts =
                  [ (Label . StrLabel . fromString . name) c
                  , Shape PlainText
                  , Style [filled]
-                 , URL (theURL opts c)
+             --    , URL (theURL opts c)
                  ]
             else [ Shape PointShape
                  , Style [filled]
@@ -445,7 +447,7 @@ handleFlags po opts =
                              [ (Label . StrLabel . fromString . name) c
                              , Shape PlainText
                              , Style [filled]
-                             , URL (theURL opts c)
+               --              , URL (theURL opts c)
                              ]
       CptEdge    -> [Style [invis]
                     ]
@@ -453,13 +455,11 @@ handleFlags po opts =
                           [(Label . StrLabel . fromString . name) c
                           , Shape BoxShape
                           , Style [filled]
-                          , URL (theURL opts c)
+                    --      , URL (theURL opts c)
                           ]
-      RelOnlyOneEdge r -> [ URL (theURL opts r)
-                          , (XLabel . StrLabel .fromString.name) r
+      RelOnlyOneEdge r -> [ (XLabel . StrLabel .fromString.name) r
+                       --   , URL (theURL opts r)
                           ]
-                    --    ++[ (HeadLabel . StrLabel .fromString) "1" | isTot r && isUni r]
-                    --    ++[ (TailLabel . StrLabel .fromString) "1" | isSur r && isInj r]
                         ++[ ArrowTail noArrow, ArrowHead noArrow
                           , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
@@ -489,11 +489,11 @@ handleFlags po opts =
                                   )
                       ,TailClip False
                       ]
-      RelIntermediateNode r ->
+      RelIntermediateNode _ ->
                        [ Label (StrLabel (fromString("")))
                        , Shape PlainText
                        , bgColor White
-                       , URL (theURL opts r)
+                    --   , URL (theURL opts r)
                        ]
       IsaOnlyOneEdge-> [ ArrowHead (AType [(open,Normal)])
                        , ArrowTail noArrow

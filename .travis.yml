@@ -2,7 +2,7 @@
 # (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
 #
 language: php
-sudo: false
+sudo: true
 
 cache:
     directories:
@@ -25,45 +25,45 @@ services:
 #     addons: {apt: {packages: [libfcgi-dev,libgmp-dev]}}
 matrix:
   include:
+  # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
+  # variable, such as using --stack-yaml to point to a different file.
+  - env: BUILD=stack ARGS=""
+    compiler: ": #stack 8.0.1"
+    addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
+  - env: BUILD=stack ARGS="" osx
+    compiler: ": #stack 8.0.1"
+    os: osx
+
+
   # We grab the appropriate GHC and cabal-install versions from hvr's PPA. See:
   # https://github.com/hvr/multi-ghc-travis
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
     compiler: ": #GHC 8.0.1"
     addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
+    compiler: ": #GHC 8.0.1"
+    os: osx
 
   # Build with the newest GHC and cabal-install. This is an accepted failure,
   # see below.
   - env: BUILD=cabal GHCVER=head  CABALVER=head
     compiler: ": #GHC HEAD"
     addons: {apt: {packages: [cabal-install-head,ghc-head], sources: [hvr-ghc]}}
-
-  # The Stack builds. We can pass in arbitrary Stack arguments via the ARGS
-  # variable, such as using --stack-yaml to point to a different file.
-  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml"
-    compiler: ": #stack 8.0.1"
-    addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
-
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
-  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml osx"
-    compiler: ": #stack 8.0.1 osx"
-    os: osx
-
-  - env: BUILD=stack ARGS="--resolver nightly osx"
-    compiler: ": #stack nightly osx"
-    os: osx
 
   allow_failures:
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
+  - env: BUILD=stack ARGS="--resolver nightly"
   - env: BUILD=cabal GHCVER=head  CABALVER=head
 
-  - env: BUILD=stack ARGS="--resolver nightly"
   # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - env: BUILD=stack ARGS="--stack-yaml stack.lts7.yaml osx"
-  - env: BUILD=stack ARGS="--resolver nightly osx"
+  - env: BUILD=stack ARGS="" osx
+  - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
+
 
   fast_finish: true
 
@@ -80,6 +80,12 @@ before_install:
 - CABALARGS=""
 - if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 
+# We need to ensure that there is enough memory. See:
+# http://stackoverflow.com/questions/13104630/exitfailure-9-when-trying-to-install-ghc-mod-using-cabal 
+- sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
+- sudo mkswap /swapfile
+- sudo swapon /swapfile
+
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
 - mkdir -p ~/.local/bin
@@ -95,6 +101,7 @@ install:
 - echo "$(ghc --version) [$(ghc --print-project-git-commit-id 2> /dev/null || echo '?')]"
 - chmod +x ./travis_long
 - if [ -f configure.ac ]; then autoreconf -i; fi
+- PATH=$PATH:~/.cabal/bin
 - |
   case "$BUILD" in
     stack)
@@ -103,7 +110,7 @@ install:
     cabal)
       cabal --version
       travis_retry cabal update
-      cabal install --only-dependencies --enable-tests --enable-benchmarks --force-reinstalls --ghc-options=-O0
+      cabal install --enable-tests 
       ;;
   esac
 
@@ -117,13 +124,6 @@ script:
     ./travis_long stack --no-terminal $ARGS test
       ;;
     cabal)
-      cabal configure --enable-tests --enable-benchmarks -v2 --ghc-options="-O0 "
-      ./travis_long cabal build
-      cabal check
-      ./travis_long cabal test
-      cabal copy
-      cabal sdist
-      SRC_TGZ=$(cabal info . | awk '{print $2;exit}').tar.gz && \
-        (cd dist && cabal install --enable-tests --force-reinstalls "$SRC_TGZ")
+    ./travis_long cabal test
       ;;
   esac

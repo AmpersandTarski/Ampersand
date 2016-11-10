@@ -37,6 +37,9 @@ module Ampersand.Basics.UTF8
            , hGetContents
            , hPutStr
            , hPutStrLn
+           , stdout
+           , BufferMode(..)
+           , hSetBuffering 
            )
 
 where
@@ -45,7 +48,7 @@ import qualified Data.ByteString as B hiding (putStrLn)
 import qualified Data.ByteString.Char8 as C (putStrLn)
 import Data.ByteString.UTF8 (toString, fromString)
 import Prelude hiding (readFile, writeFile, getContents, putStr, putStrLn)
-import System.IO (Handle)
+import System.IO (Handle,stdout, BufferMode(..),hSetBuffering )
 import Control.Monad (liftM)
 import Data.Text (unpack)
 import Data.Text.Encoding (decodeUtf8)
