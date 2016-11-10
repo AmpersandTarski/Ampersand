@@ -6,6 +6,6 @@ INTERFACE "$interfaceName$" : $expAdl$ :: $source$ * $target$  ($if(!isTopLevel)
 InterfaceLabel: $interfaceLabel$
 Roles: [$roles;separator=", "$]
 $endif$-->
-<div class="container-fluid interface" cg-busy="resource['_loading_']">
+<div class="container-fluid interface" cg-busy="resource['_loading_']" ng-controller="static_interfaceController">
     $contents$
 </div>

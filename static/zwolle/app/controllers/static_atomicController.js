@@ -114,8 +114,10 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         addPatches(patchResource, patches);
     };
     
-    // Typeahead functionality
-    \$scope.typeahead = {}; // an empty object for typeahead
+    /*
+     * Typeahead functionality
+     * $scope.typeahead is initiated in static_interfaceController to be able to reuse typeahead data
+     */
     \$scope.getTypeahead = function(resourceType){
         // Only if not yet set
         if(typeof \$scope.typeahead[resourceType] === 'undefined'){
