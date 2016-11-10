@@ -11,7 +11,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
     };
     
     // Function to save ifc (not a list)
-    \$scope.saveItem = function(resource, ifc, patchResource){
+    $scope.saveItem = function(resource, ifc, patchResource){
         if(typeof resource[ifc] === 'undefined' || resource[ifc] === '') value = null;
         else value = resource[ifc];
         
@@ -24,7 +24,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
     };
     
     // Function to add item to list
-    \$scope.addItem = function(resource, ifc, selected, patchResource){
+    $scope.addItem = function(resource, ifc, selected, patchResource){
         if(typeof selected.value === 'undefined'){
             console.log('Value undefined');
         }else if(selected.value !== ''){
@@ -50,7 +50,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
     };
     
     // Function to remove item from array
-    \$scope.removeItem = function(resource, ifc, key, patchResource){
+    $scope.removeItem = function(resource, ifc, key, patchResource){
         // Adapt js model
         value = resource[ifc][key];
         resource[ifc].splice(key, 1);
@@ -67,7 +67,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
     };
     
     // Function to add an object to a certain interface (array) of a resource
-    \$scope.addObject = function(resource, ifc, obj, patchResource){
+    $scope.addObject = function(resource, ifc, obj, patchResource){
         // If patchResource is undefined, the patchResource equals the resource
         if(typeof patchResource === 'undefined'){
             patchResource = resource
@@ -98,7 +98,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
     };
     
     // Function to remove an object from a certain interface (array) of a resource
-    \$scope.removeObject = function(resource, ifc, key, patchResource){
+    $scope.removeObject = function(resource, ifc, key, patchResource){
         // Adapt js model
         id = resource[ifc][key]['_id_'];
         resource[ifc].splice(key, 1);
@@ -118,10 +118,10 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
      * Typeahead functionality
      * $scope.typeahead is initiated in static_interfaceController to be able to reuse typeahead data
      */
-    \$scope.getTypeahead = function(resourceType){
+    $scope.getTypeahead = function(resourceType){
         // Only if not yet set
-        if(typeof \$scope.typeahead[resourceType] === 'undefined'){
-            \$scope.typeahead[resourceType] = Restangular.all('resources/' + resourceType).getList().\$object;
+        if(typeof $scope.typeahead[resourceType] === 'undefined'){
+            $scope.typeahead[resourceType] = Restangular.all('resources/' + resourceType).getList().$object;
         }
     };
 }
