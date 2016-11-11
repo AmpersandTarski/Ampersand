@@ -9,9 +9,20 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
     $scope.hasNoResults = false;
     
     // Regular function used by Atomic-OBJECT template
-    $scope.typeaheadOnSelect = function ($item, $model, $label, obj, property, patchResource){
-        $scope.addObject(obj, property, $item, patchResource);
-        $scope.hasNoResults = false;
+    $scope.typeaheadOnSelect = function ($item, $model, $label, resource, ifc, patchResource){
+        if(typeof $item._id_ === 'undefined') console.log('Resource id undefined');
+        else if($item._id_ === '') console.log('Empty resource id provided');
+        else{
+            selected = {value : $item._id_};
+            if(Array.isArray(resource[ifc])) $scope.addItem(resource, ifc, selected, patchResource);
+            else if(resource[ifc] === null){
+                resource[ifc] = $item._id_;
+                $scope.saveItem(resource, ifc, patchResource);
+            }
+            else console.log('Error: Property already set and/or not defined');
+            
+            $scope.hasNoResults = false;
+        }
     };
     
     // Function to save ifc (not a list)
@@ -20,6 +31,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         else value = resource[ifc];
         
         // Construct patch(es)
+        if(typeof patchResource === 'undefined') patchResource = resource;
         pathLength = patchResource._path_.length;
         path = resource._path_.substring(pathLength) + '/' + ifc;
         patches = [{ op : 'replace', path : path, value : value}];
@@ -37,6 +49,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
             resource[ifc].push(selected.value);
             
             // Construct patch(es)
+            if(typeof patchResource === 'undefined') patchResource = resource;
             pathLength = patchResource._path_.length;
             path = resource._path_.substring(pathLength) + '/' + ifc;
             patches = [{ op : 'add', path : path, value : selected.value}];
@@ -56,43 +69,13 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         resource[ifc].splice(key, 1);
         
         // Construct patch(es)
+        if(typeof patchResource === 'undefined') patchResource = resource;
         pathLength = patchResource._path_.length;
         path = resource._path_.substring(pathLength) + '/' + ifc;
         patches = [{ op : 'remove', path : path, value: value}];
         
         // Patch!
         addPatches(patchResource, patches);
-    };
-    
-    // Function to add an object to a certain interface (array) of a resource
-    $scope.addObject = function(resource, ifc, obj, patchResource){
-        // If patchResource is undefined, the patchResource equals the resource
-        if(typeof patchResource === 'undefined'){
-            patchResource = resource
-        }
-        
-        if(typeof obj['_id_'] === 'undefined' || obj['_id_'] == ''){
-            console.log('Selected object id is undefined');
-        }else{
-            try {
-                obj = obj.plain(); // plain is Restangular function
-            }catch(e){} // when plain() does not exists (i.e. object is not restangular object)
-            
-            // Adapt js model
-            if(resource[ifc] === null) resource[ifc] = obj;
-            else if(Array.isArray(resource[ifc])) resource[ifc].push(obj);
-            else console.log('Cannot add object. Resource[ifc] already set and/or not defined');
-            
-            // Construct path
-            pathLength = patchResource['_path_'].length;
-            path = resource['_path_'].substring(pathLength) + '/' + ifc;
-            
-            // Construct patch
-            patches = [{ op : 'add', path : path, value : obj['_id_']}];
-            
-            // Patch!
-            addPatches(patchResource, patches);
-        }
     };
     
     // Function to remove an object from a certain interface (array) of a resource
@@ -102,6 +85,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         resource[ifc].splice(key, 1);
         
         // Construct path
+        if(typeof patchResource === 'undefined') patchResource = resource;
         pathLength = patchResource['_path_'].length;
         path = resource['_path_'].substring(pathLength) + '/' + ifc + '/' + id;
         
