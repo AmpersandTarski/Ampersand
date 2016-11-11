@@ -8,6 +8,7 @@ AmpersandApp.controller('static_dateController', function ($scope) {
 		$scope.isOpen = true;
 	}
 	
+    // Adds leading 0 if necesarry. Returns 2 digits.
 	function pad(number) {
 		var r = String(number);
 		if ( r.length === 1 ) {
