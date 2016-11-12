@@ -12,7 +12,7 @@ $endif$$if(crudR)$<div ng-controller="static_atomicController">
         </div>$endif$
     </div>$if(crudU)$$if(verbose)$
     <!-- Input to add new link to another resource -->$endif$
-    <div $if(exprIsUni)$ng-if="!resource['$name$']" $endif$>
+    <div$if(exprIsUni)$ ng-if="!resource['$name$']"$endif$ ng-controller="static_typeaheadController">
         <input ng-model="selected.value" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', patchResource); selected.value=''" typeahead-no-results="hasNoResults" ng-init="getTypeahead('$target$')">$if(crudC)$
         <span ng-show="hasNoResults && selected.value" class="glyphicon glyphicon-plus" ng-click="addItem(resource, '$name$', selected, patchResource)" uib-tooltip="Create new" tooltip-trigger="mouseenter" tooltip-placement="right"></span>$endif$
         <div ng-show="hasNoResults && selected.value" style="color:orangered; font-size:12px;">$target$ not found!</div>
