@@ -25,7 +25,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         }
     };
     
-    // Function to save ifc (not a list)
+    // Function to save an ifc that is not a list
     $scope.saveItem = function(resource, ifc, patchResource){
         if(typeof resource[ifc] === 'undefined' || resource[ifc] === '') value = null;
         else value = resource[ifc];
@@ -39,7 +39,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         addPatches(patchResource, patches);
     };
     
-    // Function to add item to list
+    // Function to add an item to an interface list
     $scope.addItem = function(resource, ifc, selected, patchResource){
         if(typeof selected.value === 'undefined') console.log('Value undefined');
         else if(selected.value === '') console.log('Empty value selected');
@@ -62,7 +62,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         }
     };
     
-    // Function to remove item from array
+    // Function to remove an item from an interface list
     $scope.removeItem = function(resource, ifc, key, patchResource){
         // Adapt js model
         value = resource[ifc][key];
@@ -78,18 +78,15 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         addPatches(patchResource, patches);
     };
     
-    // Function to remove an object from a certain interface (array) of a resource
-    $scope.removeObject = function(resource, ifc, key, patchResource){
+    // Function to remove a resource from an interface list
+    $scope.removeResource = function(list, index, resource, patchResource){
         // Adapt js model
-        id = resource[ifc][key]['_id_'];
-        resource[ifc].splice(key, 1);
+        list.splice(index, 1);
         
-        // Construct path
+        // Construct patch(es)
         if(typeof patchResource === 'undefined') patchResource = resource;
-        pathLength = patchResource['_path_'].length;
-        path = resource['_path_'].substring(pathLength) + '/' + ifc + '/' + id;
-        
-        // Construct patch
+        pathLength = patchResource._path_.length;
+        path = resource._path_.substring(pathLength);
         patches = [{ op : 'remove', path : path}];
         
         // Patch!
