@@ -44,10 +44,10 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
     };
     
     // Function to remove an item from an interface list
-    $scope.removeItem = function(resource, ifc, key, patchResource){
+    $scope.removeItem = function(resource, ifc, index, patchResource){
         // Adapt js model
-        value = resource[ifc][key];
-        resource[ifc].splice(key, 1);
+        value = resource[ifc][index];
+        resource[ifc].splice(index, 1);
         
         // Construct patch(es)
         if(typeof patchResource === 'undefined') patchResource = resource;
