@@ -4,6 +4,97 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
     let updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes (patches in cache)
     
     return {
+        // Function to get (GET) a resource
+        getResource : function(resource, ifc, callingObj){
+            if(!Array.isArray(callingObj._loading_)) callingObj._loading_) = []; // list with promises
+            
+            callingObj._loading_.push(
+                Restangular.one(resource._path_ + '/' + ifc)
+                .get()
+                .then(
+                    function(data){
+                        if($.isEmptyObject(data.plain())) $rootScope.addInfo('No results found'); // plain() is an Restangular method
+                        else angular.extend(resource[ifc], data);
+                    }, function(reason){
+                        $rootScope.addError('Failed to get resource: ' + reason);
+                    }
+                )
+            );
+        },
+        
+        // Function to cancel edits and reset resource data
+        cancelResource : function(resource){
+            if(!Array.isArray(resource._loading_)) resource._loading_) = []; // list with promises
+            
+            resource._loading_.push(
+                Restangular.one(resource._path_)
+                .get()
+                .then(
+                    function(data){
+                        if($.isEmptyObject(data.plain())) $rootScope.addInfo('No results found');
+                        else resource = data;
+                        
+                        // Update visual feedback (notifications and buttons)
+                        $rootScope.getNotifications();
+                        this.initResourceMetaData(resource);
+                    }, function(reason){
+                        $rootScope.addError('Failed to get resource: ' + reason);
+                    }
+                )
+            );
+        },
+        
+        // Function to create (POST) a new resource
+        createResource : function(obj, ifc, callingObj, prepend){
+            if(prepend === 'undefined') var prepend = false;
+            if(!Array.isArray(callingObj._loading_)) callingObj._loading_) = []; // list with promises
+            
+            callingObj._loading_.push(
+                Restangular.one(obj._path_).all(ifc)
+                .post({}, {})
+                .then(
+                    function(data){
+                        // Update visual feedback (notifications and buttons)
+                        this.processResponse(callingObj, data);
+                        
+                        // Add new resource to ifc
+                        if(!Array.isArray(obj[ifc])){ // non-uni -> list
+                            if(prepend) obj[ifc].unshift(data.content);
+                            else obj[ifc].push(data.content);
+                        }else{ // uni
+                            obj[ifc] = data.content;
+                        }
+                    }, function(reason){
+                        $rootScope.addError('Failed to create resource: ' + reason);
+                    }
+                )
+            );
+        },
+        
+        // Function to delete a resource
+        deleteResource : function(parent, ifc, resource){
+            if(!Array.isArray(resource._loading_)) resource._loading_) = []; // list with promises
+            
+            if(confirm('Are you sure?')){
+                resource._loading_.push(
+                    Restangular.one(resource._path_)
+                    .remove({})
+                    .then(
+                        function(data){
+                            // Update visual feedback (notifications and buttons)
+                            $rootScope.updateNotifications(data.notifications);
+                            
+                            // Remove resource from ifc
+                            if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni -> list
+                            else parent[ifc] = null; // uni
+                        }, function(reason){
+                            $rootScope.addError('Failed to delete resource: ' + reason);
+                        }
+                    )
+                );
+            }
+        },
+        
         checkRequired : function(){ 
             updatedResources.reduce(function(prev, item, index, arr){
                 return prev || item._patchesCache_.length;
