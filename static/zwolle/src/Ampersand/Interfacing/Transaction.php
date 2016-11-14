@@ -7,6 +7,7 @@
 
 namespace Ampersand\Interfacing;
 
+use Exception;
 use Ampersand\Hooks;
 use Ampersand\Config;
 use Ampersand\Core\Concept;
@@ -127,8 +128,8 @@ class Transaction {
         
         Hooks::callHooks('postCloseTransaction', get_defined_vars());
         
+        self::$_currentTransaction = null; // unset currentTransaction
         return $this;
-        
     }
     
     /**
@@ -194,7 +195,7 @@ class Transaction {
     }
     
     public function isOpen(){
-        return $this->isComitted === null;
+        return $this->isCommitted === null;
     }
     
     public function isClosed(){
