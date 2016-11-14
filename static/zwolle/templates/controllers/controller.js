@@ -20,8 +20,8 @@ angular.module('AmpersandApp').controller('$interfaceName$Controller', function 
     \$scope.resource = { '_id_' : resourceId,
                         '_path_' : '/resources/' + resourceType + '/' + resourceId,
                         '_isRoot_' : true,
-                        ifcName : {}
                       };
+    \$scope.resource[ifcName] = {};
     
     // Create new resource
     if(\$routeParams['new']) ResourceService.createResource(\$scope.resource, ifcName, \$scope.resource);
