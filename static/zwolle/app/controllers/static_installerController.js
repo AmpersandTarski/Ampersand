@@ -18,6 +18,6 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
             $scope.installing = false;
             $scope.installed = false;
         });
-    }
+    };
     
 });

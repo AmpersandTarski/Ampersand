@@ -4,20 +4,20 @@ var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngS
 AmpersandApp.config(function($routeProvider) {
     $routeProvider
         // default start page
-        .when('/',
-            {    controller: ''
-            ,    templateUrl: 'app/views/static_home.html'
-            ,    interfaceLabel: 'Home'
+        .when('/', { 
+            controller : '',
+            templateUrl : 'app/views/static_home.html',
+            interfaceLabel : 'Home'
             })
         // installer page
-        .when('/admin/installer',
-            {    controller: 'static_installerController'
-            ,    templateUrl: 'app/views/static_installer.html'
-            ,    interfaceLabel: 'Installer'
+        .when('/admin/installer', {
+            controller : 'static_installerController',
+            templateUrl : 'app/views/static_installer.html',
+            interfaceLabel : 'Installer'
             })
-        .when('/404',
-            {    templateUrl: 'app/views/static_404.html'
-            ,    interfaceLabel: '404'
+        .when('/404', {
+            templateUrl: 'app/views/static_404.html',
+            interfaceLabel: '404'
             })
         .otherwise({redirectTo: '/404'});
 });
@@ -34,17 +34,17 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     
     $sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
         
-    Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
+    Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params){
         var roleIds = [];
         angular.forEach($sessionStorage.sessionRoles, function(role) {
-            if (role.active == true) {
+            if (role.active === true) {
                 roleIds.push(role.id);
             }
         });
         
         params['roleIds[]'] = roleIds; // the '[]' in param 'roleIds[]' is needed by the API to process it as array
-        params['navIfc'] = true;
-        params['metaData'] = true;
+        params.navIfc = true;
+        params.metaData = true;
         return params;
     });
     
@@ -62,14 +62,16 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
             $location.path(''); // TODO: redirect to login page (if exists)
         }
         
+        var message;
+        var details;
         if(typeof response.data === 'object'){
-            var message = response.data.msg || response.statusText; // if empty response message, take statusText
+            message = response.data.msg || response.statusText; // if empty response message, take statusText
             NotificationService.addError(message, response.status, true);
             
             if(response.data.notifications !== undefined) NotificationService.updateNotifications(response.data.notifications); 
         }else{
-            var message = response.status + ' ' + response.statusText;
-            var details = response.data; // html content is excepted
+            message = response.status + ' ' + response.statusText;
+            details = response.data; // html content is excepted
             NotificationService.addError(message, response.status, true, details);
         }
         
@@ -77,8 +79,8 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     });
     
     $rootScope.getCurrentDateTime = function (){
-        return (new Date);
-    }
+        return new Date();
+    };
     
     // Add feature to $location.url() function to be able to prevent reloading page (set reload param to false)
     var original = $location.url;
@@ -119,7 +121,7 @@ AmpersandApp.directive('myShowonhoverBox', function (){
                 element.hide();
             });
         }
-    }
+    };
 }).directive('myBluronenter', function() {
     return function(scope, element, attrs) {
         element.bind("keydown keypress", function(event) {
@@ -146,19 +148,17 @@ AmpersandApp.directive('myShowonhoverBox', function (){
         }
       };
 }).directive('myNavToInterfaces', function(){
-    
     return {
-          restrict        : 'E'
-        , scope         : {ifcs : '=', resource : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        , templateUrl    : 'app/views/partials/my_nav_to_interfaces.html'
-        , transclude    : true
+        restrict : 'E',
+        scope : {ifcs : '=', resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+        templateUrl : 'app/views/partials/my_nav_to_interfaces.html',
+        transclude : true
     };
 }).directive('myNavToOtherInterfaces', function(){
-    
     return {
-          restrict        : 'E'
-        , scope         : {ifcs : '=', resource : '=', label : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        , templateUrl    : 'app/views/partials/my_nav_to_other_interfaces.html'
+        restrict : 'E',
+        scope  : {ifcs : '=', resource : '=', label : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+        templateUrl : 'app/views/partials/my_nav_to_other_interfaces.html'
     };
 }).directive('myAlias', function($animate, $compile) {
     // adapted from ngIf and ngRepeat directives

@@ -3,8 +3,8 @@ AmpersandApp.controller('static_breadcrumbController', function ($scope, $route,
     
     $scope.$on("$routeChangeSuccess", function(event, current, previous){
         
-        indexInHistory = linkInArray($scope.history, $location.path())
-        indexInTopLevel = linkInArray(($rootScope.navbar || {}).top, $location.path())
+        indexInHistory = linkInArray($scope.history, $location.path());
+        indexInTopLevel = linkInArray(($rootScope.navbar || {}).top, $location.path());
         if(indexInHistory !== false) $scope.history.splice(indexInHistory, $scope.history.length - indexInHistory); 
         
         // Clear history
@@ -14,10 +14,11 @@ AmpersandApp.controller('static_breadcrumbController', function ($scope, $route,
         
         // Add new breadcrumb item (except for home path '/')
         if($location.path() != '/'){
-            $scope.history.push({ 'link' : $location.path()
-                                , 'interfaceData' : current.scope
-                                , 'interfaceLabel' : current.$$route.interfaceLabel // interfaceLabel is specified in RouteProvider.js
-                                });
+            $scope.history.push(
+                {'link' : $location.path(),
+                 'interfaceData' : current.scope,
+                 'interfaceLabel' : current.$$route.interfaceLabel // interfaceLabel is specified in RouteProvider.js
+                });
         }
         
         // Prevent endless breadcrumb
