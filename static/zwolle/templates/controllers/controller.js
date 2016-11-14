@@ -20,10 +20,6 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
     \$scope.resource._isRoot_ = true;
     \$scope.resource[ifcName] = {};
     
-    // Function to change location to create a new resource
-    \$scope.newResource = function(){
-        \$location.url('/' + ifcName + '?new');
-    };
     
     /**********************************************************************************************
      * GET INTERFACE
@@ -68,6 +64,11 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
             else console.log('Someting went wrong. Cannot determine action after locationChangeStart');
         }
     });
+    
+    // Function to change location to create a new resource
+    \$scope.newResource = function(){
+        \$location.url('/' + ifcName + '?new');
+    };
     
     \$scope.pendingPromises = ResourceService.pendingPromises;
 });
