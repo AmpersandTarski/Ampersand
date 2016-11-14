@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('static_atomicController', function($scope){
+angular.module('AmpersandApp').controller('static_atomicController', function($scope, ResourceService){
     
     /*
      * Object to temporary store value/resourceId to add to list
@@ -17,7 +17,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         path = resource._path_.substring(pathLength) + '/' + ifc;
         patches = [{ op : 'replace', path : path, value : value}];
         
-        addPatches(patchResource, patches);
+        ResourceService.addPatches(patchResource, patches);
     };
     
     // Function to add an item to an interface list
@@ -39,7 +39,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
             delete(selected.value);
             
             // Patch!
-            addPatches(patchResource, patches);
+            ResourceService.addPatches(patchResource, patches);
         }
     };
     
@@ -56,7 +56,7 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         patches = [{ op : 'remove', path : path, value: value}];
         
         // Patch!
-        addPatches(patchResource, patches);
+        ResourceService.addPatches(patchResource, patches);
     };
     
     // Function to remove a resource from an interface list
@@ -71,6 +71,6 @@ angular.module('AmpersandApp').controller('static_atomicController', function($s
         patches = [{ op : 'remove', path : path}];
         
         // Patch!
-        addPatches(patchResource, patches);
+        ResourceService.addPatches(patchResource, patches);
     };
-}
+});
