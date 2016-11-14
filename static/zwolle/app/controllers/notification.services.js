@@ -22,8 +22,8 @@ angular.module('AmpersandApp').service('NotificationService', function($localSto
                     data = data.plain();
                     this.updateNotifications(data);
                 },
-                function(reason){
-                    this.addError('Failed to get notifications: ' + reason);
+                function(){
+                    this.addError('Something went wrong while getting notifications');
                 }
             );
         },

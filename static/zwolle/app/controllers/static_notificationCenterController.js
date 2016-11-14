@@ -13,7 +13,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
                 NotificationService.addSuccess('Evaluated all rules.');
                 NotificationService.updateNotifications(data);
             },function(){
-                NotificationService.addError('Failed to evaluate all rules: ' + reason);
+                NotificationService.addError('Something went wrong while evaluating all rules');
             }
         );
     };

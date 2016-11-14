@@ -16,8 +16,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                         data = data.plain();
                         if($.isEmptyObject(data)) NotificationService.addInfo('No results found');
                         else angular.extend(resource[ifc], data);
-                    }, function(reason){
-                        NotificationService.addError('Failed to get resource: ' + reason);
+                    }, function(){
+                        NotificationService.addError('Something went wrong while getting resource');
                     }
                 )
             );
@@ -39,8 +39,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                         // Update visual feedback (notifications and buttons)
                         NotificationService.getNotifications();
                         this.initResourceMetaData(resource);
-                    }, function(reason){
-                        NotificationService.addError('Failed to get resource: ' + reason);
+                    }, function(){
+                        NotificationService.addError('Something went wrong while getting resource');
                     }
                 )
             );
@@ -69,8 +69,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                         }
                         
                         if(obj._isRoot_ && obj._id_ == '_NEW') $location.url('/' + ifc + '/'+ data.content._id_, false);
-                    }, function(reason){
-                        NotificationService.addError('Failed to create resource: ' + reason);
+                    }, function(){
+                        NotificationService.addError('Something went wrong while creating a resource');
                     }
                 )
             );
@@ -93,8 +93,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                             // Remove resource from ifc
                             if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni -> list
                             else parent[ifc] = null; // uni
-                        }, function(reason){
-                            NotificationService.addError('Failed to delete resource: ' + reason);
+                        }, function(){
+                            NotificationService.addError('Something went wrong while deleting a resource');
                         }
                     )
                 );
@@ -144,8 +144,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                         
                         // Update visual feedback (notifications and buttons)
                         this.processResponse(resource, data);
-                    },function(reason){
-                        NotificationService.addError('Failed to save resource: ' + reason);
+                    },function(){
+                        NotificationService.addError('Something went wrong while saving a resource');
                     }
                 )
             );
