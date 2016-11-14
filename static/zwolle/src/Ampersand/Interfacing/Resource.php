@@ -244,7 +244,7 @@ class Resource extends Atom {
                 
                 // Add sort data if subIfc is univalent
                 if($subifc->isUni() && ($rcOptions & self::INCLUDE_SORT_DATA)){
-                    $this->ifcData['_sortValues'] = [];
+                    $this->ifcData['_sortValues_'] = [];
                     
                     // If subifc is PROP (i.e. content is boolean)
                     if(!isset($subcontent)) $this->ifcData['_sortValues_'][$subifc->id] = null;
