@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('static_typeaheadController', function($scope){
+angular.module('AmpersandApp').controller('static_typeaheadController', function($scope, Restangular){
     
     $scope.hasNoResults = false;
     
