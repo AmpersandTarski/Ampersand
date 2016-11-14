@@ -28,4 +28,4 @@ angular.module('AmpersandApp').controller('static_typeaheadController', function
             $scope.hasNoResults = false;
         }
     };
-}
+});

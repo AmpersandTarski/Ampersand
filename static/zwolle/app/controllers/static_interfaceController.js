@@ -1,13 +1,13 @@
 angular.module('AmpersandApp').controller('static_interfaceController', function($scope, $location, ResourceService){
     // Function (reference) to save certain attributes changes of a resource (i.e. patches)
-    \$scope.save = ResourceService.saveResource;
+    $scope.save = ResourceService.saveResource;
     
     /*
      * An empty object for typeahead functionality.
      * Defined here so it can be reused in an interface
      * Prevents multiple calls for the same resourceType
      */
-    \$scope.typeahead = {};
+    $scope.typeahead = {};
     
     // Detects location changes and checks if there are unsaved changes
     $scope.$on("$locationChangeStart", function(event, next, current){
