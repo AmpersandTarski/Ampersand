@@ -6,7 +6,7 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
     return {
         // Function to get (GET) a resource
         getResource : function(resource, ifc, callingObj){
-            if(!Array.isArray(callingObj._loading_)) callingObj._loading_) = []; // list with promises
+            if(!Array.isArray(callingObj._loading_)) callingObj._loading_ = []; // list with promises
             
             callingObj._loading_.push(
                 Restangular.one(resource._path_ + '/' + ifc)
@@ -24,7 +24,7 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
         
         // Function to cancel edits and reset resource data
         cancelResource : function(resource){
-            if(!Array.isArray(resource._loading_)) resource._loading_) = []; // list with promises
+            if(!Array.isArray(resource._loading_)) resource._loading_ = []; // list with promises
             
             resource._loading_.push(
                 Restangular.one(resource._path_)
@@ -46,8 +46,8 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
         
         // Function to create (POST) a new resource
         createResource : function(obj, ifc, callingObj, prepend){
-            if(prepend === 'undefined') var prepend = false;
-            if(!Array.isArray(callingObj._loading_)) callingObj._loading_) = []; // list with promises
+            if(prepend === 'undefined') prepend = false;
+            if(!Array.isArray(callingObj._loading_)) callingObj._loading_ = []; // list with promises
             
             callingObj._loading_.push(
                 Restangular.one(obj._path_).all(ifc)
@@ -75,7 +75,7 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
         
         // Function to delete a resource
         deleteResource : function(parent, ifc, resource){
-            if(!Array.isArray(resource._loading_)) resource._loading_) = []; // list with promises
+            if(!Array.isArray(resource._loading_)) resource._loading_ = []; // list with promises
             
             if(confirm('Are you sure?')){
                 resource._loading_.push(
@@ -108,7 +108,7 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
         },
         
         addPatches : function(resource, patches){
-            if(!Array.isArray(resource._patchesCache_)) resource._patchesCache_) = [];
+            if(!Array.isArray(resource._patchesCache_)) resource._patchesCache_ = [];
             
             // Add new patches to resource
             resource._patchesCache_ = resource._patchesCache_.concat(patches);
@@ -126,7 +126,7 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
         },
         
         saveResource : function(resource){
-            if(!Array.isArray(resource._loading_)) resource._loading_) = []; // list with promises
+            if(!Array.isArray(resource._loading_)) resource._loading_ = []; // list with promises
             
             resource._loading_.push(
                 Restangular.one(resource._path_)
@@ -174,10 +174,10 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
         
         setResourceStatus : function(resource, status){
             // Reset all status properties
-            resource._status_ = { 'warning' : false
-                                , 'danger'  : false
-                                , 'default' : false
-                                , 'success' : false
+            resource._status_ = { 'warning' : false,
+                                  'danger'  : false,
+                                  'default' : false,
+                                  'success' : false
                                 };
             // Set status property
             resource._status_[status] = true;
@@ -187,7 +187,7 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
             if(!Array.isArray(resource._loading_)) return false; // empty array contains no pending promises
             
             return resource._loading_.some(function(val){
-                return val.$$state.status == 0; // promise status: 0 -> pending, 1 -> resolved, 2 -> rejected
+                return val.$$state.status === 0; // promise status: 0 -> pending, 1 -> resolved, 2 -> rejected
             });
         }
     };
