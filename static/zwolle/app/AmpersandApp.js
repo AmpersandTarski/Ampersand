@@ -160,16 +160,62 @@ AmpersandApp.directive('myShowonhoverBox', function (){
 		, scope 		: {ifcs : '=', resource : '=', label : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
 		, templateUrl	: 'app/views/partials/my_nav_to_other_interfaces.html'
 	};
-}).directive('myAlias', function() {
+}).directive('myAlias', function($animate, $compile) {
+    // adapted from ngIf and ngRepeat directives
+    // use e.g.: <div my-alias="resource['Project'] as test">{{test}}</div>
     return {
-        // adapted from: http://stackoverflow.com/questions/31857845/does-angular-have-a-syntax-to-alias-a-property-within-a-div
-        // use e.g.: <div my-alias="resource['Project'] as test">{{test}}</div>
+        transclude: 'element',
+        priority: 600, // like ngIf directive
+        terminal: true,
         restrict: 'A',
-        scope: true,
-        link: function(scope, element, attrs) {
-            var args = attrs.myAlias.split(' as ');
+        // scope: true,
+        link: function($scope, $element, $attr, ctrl, $transclude) {
+            var block, childScope, previousElements;
+            
+            var expression = $attr.myAlias;
+            var args = expression.split(' as ');
             if(!args[1]) throw "No 'as' specified for my-alias directive";
-            scope[args[1]] = scope.$eval(args[0]);
+            
+            var lhs = args[0];
+            var rhs = args[1];
+            
+            $scope.$watch(lhs, function(value) {
+                if (value) {
+                    if (!childScope) {
+                        $transclude(function(clone, newScope) {
+                            childScope = newScope;
+                            
+                            // Create alias in new childScope
+                            childScope[rhs] = $scope.$eval(lhs);
+                            
+                            clone[clone.length++] = document.createComment(' end myAlias: ' + $attr.myAlias + ' ');
+                            // Note: We only need the first/last node of the cloned nodes.
+                            // However, we need to keep the reference to the jqlite wrapper as it might be changed later
+                            // by a directive with templateUrl when its template arrives.
+                            block = {
+                                clone: clone
+                            };
+                            $animate.enter(clone, $element.parent(), $element);
+                        });
+                    }
+                } else {
+                    if (previousElements) {
+                        previousElements.remove();
+                        previousElements = null;
+                    }
+                    if (childScope) {
+                        childScope.$destroy();
+                        childScope = null;
+                    }
+                    if (block) {
+                        previousElements = getBlockNodes(block.clone);
+                        $animate.leave(previousElements).then(function() {
+                            previousElements = null;
+                        });
+                        block = null;
+                    }
+                }
+            });
         }
     };
 }).filter('unsafe', function($sce){
