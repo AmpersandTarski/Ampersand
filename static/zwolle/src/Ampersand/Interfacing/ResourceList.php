@@ -310,8 +310,15 @@ class ResourceList implements IteratorAggregate {
     public function set($value){
         if(!$this->ifc->isUni()) throw new Exception ("Cannot use set() for non-univalent interface " . $this->ifc->getPath() . ". Use add or remove instead", 400);
         
-        if(is_null($value)) $this->removeAll();
-        else $this->add($value);
+        // Handle Ampersand properties [PROP]
+        if($this->ifc->isProp()){
+            if($value === true) $this->add($this->src->id);
+            elseif ($value === false) $this->remove($this->src->id);
+            else throw new Exception ("Boolean expected, non-boolean provided.", 400);
+        }else{
+            if(is_null($value)) $this->removeAll();
+            else $this->add($value);
+        }
         
         return true;
     }
