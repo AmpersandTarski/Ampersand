@@ -1,4 +1,6 @@
 angular.module('AmpersandApp').service('ResourceService', function($scope, $rootScope, $localStorage, $timeout, Restangular){
+    // http://blog.thoughtram.io/angular/2015/07/07/service-vs-factory-once-and-for-all.html
+    
     let updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes (patches in cache)
     
     return {
@@ -22,10 +24,10 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
             if(updatedResources.indexOf(resource) === -1) updatedResources.push(resource);
             
             // Save if autoSave is enabled
-            if($localStorage.switchAutoSave) saveResource(resource);
+            if($localStorage.switchAutoSave) this.saveResource(resource);
             else {
                 // Update visual feedback
-                setResourceStatus(resource, 'warning');
+                this.setResourceStatus(resource, 'warning');
                 resource._showButtons_ = {'save' : true, 'cancel' : true};
             }
         },
@@ -43,7 +45,7 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
                         else resource = angular.extend(resource, data.content);
                         
                         // Update visual feedback (notifications and buttons)
-                        processResponse(resource, data);
+                        this.processResponse(resource, data);
                     },function(reason){
                         $rootScope.addError('Failed to save resource: ' + reason);
                     }
@@ -55,7 +57,7 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
         initResourceMetaData : function(resource){
             resource._showButtons_ = {'save' : false, 'cancel' : false};
             resource._patchesCache = [];
-            setResourceStatus(resource, 'default');
+            this.setResourceStatus(resource, 'default');
         },
         
         // Process response: i.e. set resource buttons and status
@@ -65,15 +67,15 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
             if(response.invariantRulesHold){
                 resource._showButtons_ = {'save' : false, 'cancel' : false};
                 resource._patchesCache_ = []; // empty patches cache
-                setResourceStatus(resource, 'success');
+                this.setResourceStatus(resource, 'success');
                 
                 // After 3 seconds, reset status to default
                 $timeout(function(){
-                    setResourceStatus(resource, 'default');
+                    this.setResourceStatus(resource, 'default');
                 }, 3000);
             }else{
                 resource._showButtons_ = {'save' : false, 'cancel' : true};
-                setResourceStatus(resource, 'danger');
+                this.setResourceStatus(resource, 'danger');
             }
         },
         
