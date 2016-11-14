@@ -27,15 +27,7 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
     
     // Create new resource
     if(\$routeParams['new']){
-        
-        /*
-        \$scope.createResource(\$scope.resource, ifcName)
-        .then(function(data){
-            \$location.url('/' + ifcName + '/'+ data.content._id_, false);
-        },function(reason){
-            \$rootScope.addError('Failed to create resource: ' + reason);
-        });
-        */
+        ResourceService.createResource(\$scope.resource, ifcName, \$scope.resource);
     
     // Get resource interface data
     }else{
