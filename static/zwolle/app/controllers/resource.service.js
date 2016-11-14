@@ -8,6 +8,10 @@ angular.module('AmpersandApp').service('ResourceService', function($scope, $root
             }, false);
         },
         
+        emptyUpdatedResources : function(){
+            updatedResources = [];
+        },
+        
         addPatches : function(resource, patches){
             if(!Array.isArray(resource._patchesCache_)) resource._patchesCache_) = [];
             

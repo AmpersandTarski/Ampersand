@@ -155,6 +155,8 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         if(ResourceService.checkRequired()){
             confirmed = confirm("You have unsaved edits. Do you wish to leave?");
             if (event && !confirmed) event.preventDefault();
+            else if(event && confirmed) ResourceService.emptyUpdatedResources();
+            else console.log('Someting went wrong. Cannot determine action after locationChangeStart');
         }
     });
     
