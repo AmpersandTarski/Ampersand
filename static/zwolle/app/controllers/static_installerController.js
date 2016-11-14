@@ -6,6 +6,7 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
 		$scope.installing = true;
 		$scope.installed = false;
 		Restangular.one('admin/installer').get({defaultPop : defPop}).then(function(data) {
+            data = data.plain();
 			NotificationService.updateNotifications(data);
 			
 			// deactive all roles

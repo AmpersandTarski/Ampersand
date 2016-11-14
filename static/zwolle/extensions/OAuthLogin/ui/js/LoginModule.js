@@ -7,6 +7,7 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, R
 	
 	Restangular.one('oauthlogin/login').get().then(
 		function(data){ // success
+            data = data.plain();
 			$scope.idps = data.identityProviders;
 			NotificationService.updateNotifications(data.notifications);
 			
@@ -20,7 +21,7 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, R
 	$scope.logout = function(){
 		Restangular.one('oauthlogin/logout').get().then(
 			function(data){ // success
-				
+				data = data.plain();
 				NotificationService.updateNotifications(data.notifications);
 				$rootScope.deactivateAllRoles();
 				$location.path('/'); // goto home

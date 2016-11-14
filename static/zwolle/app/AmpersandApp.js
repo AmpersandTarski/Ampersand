@@ -26,7 +26,7 @@ AmpersandApp.config(function(RestangularProvider) {
 	
     RestangularProvider.setBaseUrl('api/v1'); // Generate: path to API folder
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
-    RestangularProvider.setPlainByDefault = true;
+    // RestangularProvider.setPlainByDefault(true); available from Restangular v1.5.3
     
 });
 

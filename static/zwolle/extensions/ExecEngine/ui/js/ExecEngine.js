@@ -5,6 +5,7 @@ AmpersandApp.controller('ExecEngineController', function ($scope, $rootScope, $r
 		Restangular.one('execengine/run').get()
 		.then(
 			function(data){ // success
+                data = data.plain();
 				NotificationService.updateNotifications(data.notifications);
 				
 			}, function(){ // error

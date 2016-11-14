@@ -9,6 +9,7 @@ AmpersandApp.controller('static_notificationCenterController', function ($scope,
         .get()
         .then(
             function(data){
+                data = data.plain();
                 NotificationService.addSuccess('Evaluated all rules.');
                 NotificationService.updateNotifications(data);
             },function(){

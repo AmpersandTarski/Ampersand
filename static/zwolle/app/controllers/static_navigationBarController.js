@@ -60,6 +60,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 			Restangular.one('sessions', $scope.$sessionStorage.session.id).one('navbar')
 				.get()
 				.then(function(data){
+                    data = data.plain();
 					$rootScope.navbar = data;
 					$scope.$sessionStorage.session = data.session;
 					$scope.$sessionStorage.sessionRoles = data.sessionRoles;
@@ -92,6 +93,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$scope.destroySession = function(){
 		session = Restangular.one('sessions', $scope.$sessionStorage.session.id);
 		session.remove().then(function(data){
+            data = data.plain();
 			NotificationService.updateNotifications(data.notifications);
 			
 			// deactivate roles

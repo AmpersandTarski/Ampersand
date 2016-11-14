@@ -13,6 +13,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 .get()
                 .then(
                     function(data){
+                        data = data.plain();
                         if($.isEmptyObject(data)) NotificationService.addInfo('No results found');
                         else angular.extend(resource[ifc], data);
                     }, function(reason){
@@ -31,6 +32,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 .get()
                 .then(
                     function(data){
+                        data = data.plain();
                         if($.isEmptyObject(data)) NotificationService.addInfo('No results found');
                         else resource = data;
                         
@@ -54,6 +56,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 .post({}, {})
                 .then(
                     function(data){
+                        data = data.plain();
                         // Update visual feedback (notifications and buttons)
                         this.processResponse(callingObj, data);
                         
@@ -83,6 +86,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                     .remove({})
                     .then(
                         function(data){
+                            data = data.plain();
                             // Update visual feedback (notifications and buttons)
                             NotificationService.updateNotifications(data.notifications);
                             
@@ -133,6 +137,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 .patch(resource._patchesCache_, {})
                 .then(
                     function(data) {
+                        data = data.plain();
                         // Update resource data
                         if(resource._isRoot_) resource = data.content;
                         else resource = angular.extend(resource, data.content);

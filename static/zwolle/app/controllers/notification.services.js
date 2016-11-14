@@ -19,6 +19,7 @@ angular.module('AmpersandApp').service('NotificationService', function($localSto
             .get()
             .then(
                 function(data){
+                    data = data.plain();
                     this.updateNotifications(data);
                 },
                 function(reason){
