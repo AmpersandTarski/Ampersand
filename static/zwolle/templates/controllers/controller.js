@@ -42,14 +42,4 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
         ResourceService.getResource(\$scope.resource, ifcName, \$scope.resource);
     }
     
-    // Function to change certain attributes of a resource (PATCH)
-    \$scope.save = ResourceService.saveResource;
-    
-    /*
-     * An empty object for typeahead functionality.
-     * Defined here so it can be reused in an interface
-     * Prevents multiple calls for the same resourceType
-     */
-    \$scope.typeahead = {};
-    
 });
