@@ -9,7 +9,7 @@ angular.module('AmpersandApp').service('NotificationService', function($localSto
         'errors' : []
     };
     
-    return {
+    let NotificationService = {
         notifications : notifications,
         
         // Function to get notifications again
@@ -20,10 +20,10 @@ angular.module('AmpersandApp').service('NotificationService', function($localSto
             .then(
                 function(data){
                     data = data.plain();
-                    this.updateNotifications(data);
+                    NotificationService.updateNotifications(data);
                 },
                 function(){
-                    this.addError('Something went wrong while getting notifications');
+                    NotificationService.addError('Something went wrong while getting notifications');
                 }
             );
         },
@@ -113,4 +113,6 @@ angular.module('AmpersandApp').service('NotificationService', function($localSto
             });
         }
     };
+    
+    return NotificationService;
 });

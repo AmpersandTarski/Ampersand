@@ -3,7 +3,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
     
     let updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes (patches in cache)
     
-    return {
+    let ResourceService = {
         // Function to get (GET) a resource
         getResource : function(resource, ifc, callingObj){
             if(!Array.isArray(callingObj._loading_)) callingObj._loading_ = []; // list with promises
@@ -38,7 +38,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                         
                         // Update visual feedback (notifications and buttons)
                         NotificationService.getNotifications();
-                        this.initResourceMetaData(resource);
+                        ResourceService.initResourceMetaData(resource);
                     }, function(){
                         NotificationService.addError('Something went wrong while getting resource');
                     }
@@ -58,7 +58,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                     function(data){
                         data = data.plain();
                         // Update visual feedback (notifications and buttons)
-                        this.processResponse(callingObj, data);
+                        ResourceService.processResponse(callingObj, data);
                         
                         // Add new resource to ifc
                         if(!Array.isArray(obj[ifc])){ // non-uni -> list
@@ -143,7 +143,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                         else resource = angular.extend(resource, data.content);
                         
                         // Update visual feedback (notifications and buttons)
-                        this.processResponse(resource, data);
+                        ResourceService.processResponse(resource, data);
                     },function(){
                         NotificationService.addError('Something went wrong while saving a resource');
                     }
@@ -169,7 +169,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 
                 // After 3 seconds, reset status to default
                 $timeout(function(){
-                    this.setResourceStatus(resource, 'default');
+                    ResourceService.setResourceStatus(resource, 'default');
                 }, 3000);
             }else{
                 resource._showButtons_ = {'save' : false, 'cancel' : true};
@@ -196,5 +196,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
             });
         }
     };
+    
+    return ResourceService;
     
 });
