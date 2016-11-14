@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').service('ResourceService', function($scope, $rootScope, $localStorage, $timeout, $location, Restangular){
+angular.module('AmpersandApp').service('ResourceService', function($rootScope, $localStorage, $timeout, $location, Restangular){
     // http://blog.thoughtram.io/angular/2015/07/07/service-vs-factory-once-and-for-all.html
     
     let updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes (patches in cache)
