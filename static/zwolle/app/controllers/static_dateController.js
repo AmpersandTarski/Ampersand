@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_dateController', function ($scope) {
+angular.module('AmpersandApp').controller('static_dateController', function ($scope) {
     
     $scope.isOpen = false;
     

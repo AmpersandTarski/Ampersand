@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_breadcrumbController', function ($scope, $route, $location, $rootScope) {
+angular.module('AmpersandApp').controller('static_breadcrumbController', function ($scope, $route, $location, $rootScope) {
     $scope.history = [];
     
     $scope.$on("$routeChangeSuccess", function(event, current, previous){

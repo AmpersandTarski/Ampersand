@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_installerController', function ($scope, $rootScope, $routeParams, Restangular, $localStorage, NotificationService) {
+angular.module('AmpersandApp').controller('static_installerController', function ($scope, $rootScope, $routeParams, Restangular, $localStorage, NotificationService) {
     $scope.installing = false;
     $scope.installed = false;
     

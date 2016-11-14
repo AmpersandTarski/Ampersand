@@ -1,7 +1,6 @@
 // when using minified angular modules, use module('myApp', []).controller('MyController', ['myService', function (myService) { ...
-var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload', 'agGrid', 'ui.bootstrap.datetimepicker', 'hc.marked']);
-
-AmpersandApp.config(function($routeProvider) {
+angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload', 'agGrid', 'ui.bootstrap.datetimepicker', 'hc.marked'])
+.config(function($routeProvider) {
     $routeProvider
         // default start page
         .when('/', { 
@@ -20,17 +19,13 @@ AmpersandApp.config(function($routeProvider) {
             interfaceLabel: '404'
             })
         .otherwise({redirectTo: '/404'});
-});
-
-AmpersandApp.config(function(RestangularProvider) {
+}).config(function(RestangularProvider) {
     
     RestangularProvider.setBaseUrl('api/v1'); // Generate: path to API folder
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     // RestangularProvider.setPlainByDefault(true); available from Restangular v1.5.3
     
-});
-
-AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route, NotificationService){
+}).run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route, NotificationService){
     
     $sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
         
@@ -96,18 +91,14 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     };
     
     
-});
-
-AmpersandApp.value('cgBusyDefaults',{
-      message:'Loading...',
-      backdrop: true,
-      //templateUrl: 'my_custom_template.html',
-      //delay: 500, // in ms
-      minDuration: 500, // in ms
-      // wrapperClass: 'my-class my-class2'
-    });
-
-AmpersandApp.directive('myShowonhoverBox', function (){
+}).value('cgBusyDefaults',{
+    message:'Loading...',
+    backdrop: true,
+    //templateUrl: 'my_custom_template.html',
+    //delay: 500, // in ms
+    minDuration: 500, // in ms
+    // wrapperClass: 'my-class my-class2'
+}).directive('myShowonhoverBox', function (){
     return {
         link : function(scope, element, attrs) {
             if(!element.closest('.box').hasClass('my-showonhover-box-show')) element.hide(); // default hide

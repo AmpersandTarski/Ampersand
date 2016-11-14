@@ -1,7 +1,8 @@
+// Add angularFileUpload module to dependency list
 var app = angular.module('AmpersandApp');
-app.requires[app.requires.length] = 'angularFileUpload'; // add ur.file module to dependencies
+app.requires[app.requires.length] = 'angularFileUpload';
 
-app.config(function($routeProvider) {
+angular.module('AmpersandApp').config(function($routeProvider) {
 	$routeProvider
 		// default start page
 		.when('/ext/ExcelImport',
