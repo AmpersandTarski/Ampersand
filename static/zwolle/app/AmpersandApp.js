@@ -30,7 +30,7 @@ AmpersandApp.config(function(RestangularProvider) {
     
 });
 
-AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route){
+AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route, NotificationService){
 	
 	$sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
 		
@@ -64,13 +64,13 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
     	
     	if(typeof response.data === 'object'){
     		var message = response.data.msg || response.statusText; // if empty response message, take statusText
-    		$rootScope.addError(message, response.status, true);
+    		NotificationService.addError(message, response.status, true);
     		
-    		if(response.data.notifications !== undefined) $rootScope.updateNotifications(response.data.notifications); 
+    		if(response.data.notifications !== undefined) NotificationService.updateNotifications(response.data.notifications); 
     	}else{
     		var message = response.status + ' ' + response.statusText;
     		var details = response.data; // html content is excepted
-    		$rootScope.addError(message, response.status, true, details);
+    		NotificationService.addError(message, response.status, true, details);
     	}
     	
     	return true; // proceed with success or error hooks of promise

@@ -9,7 +9,7 @@ app.config(function($routeProvider) {
 			,	templateUrl: 'extensions/ExcelImport/ui/views/ExcelImport.html'
 			,	interfaceLabel: 'Excel import'
 			});
-}).controller('ExcelImportController', function ($scope, $rootScope, FileUploader) {
+}).controller('ExcelImportController', function ($scope, $rootScope, FileUploader, NotificationService) {
 	
 	// $rootScope, so that all information and uploaded files are kept while browsing in the application
 	if (typeof $rootScope.uploader == 'undefined') {
@@ -20,20 +20,20 @@ app.config(function($routeProvider) {
 	}
 	
 	$rootScope.uploader.onSuccessItem = function(fileItem, response, status, headers) {
-		$rootScope.updateNotifications(response.notifications);
+		NotificationService.updateNotifications(response.notifications);
         // console.info('onSuccessItem', fileItem, response, status, headers);
     };
     
     $rootScope.uploader.onErrorItem = function(item, response, status, headers){
         if(typeof response === 'object'){
             var message = response.msg || 'Error while importing';
-            $rootScope.addError(message, status, true);
+            NotificationService.addError(message, status, true);
             
-            if(response.notifications !== undefined) $rootScope.updateNotifications(response.notifications); 
+            if(response.notifications !== undefined) NotificationService.updateNotifications(response.notifications); 
         }else{
             var message = status + ' Error while importing';
             var details = response; // html content is excepted
-            $rootScope.addError(message, status, true, details);
+            NotificationService.addError(message, status, true, details);
         }
     };
     

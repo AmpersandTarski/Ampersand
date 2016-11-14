@@ -1,4 +1,4 @@
-AmpersandApp.controller('uploadFileController', function($scope, $rootScope, FileUploader){
+AmpersandApp.controller('uploadFileController', function($scope, $rootScope, FileUploader, NotificationService){
     
     // File uploader stuff
     $scope.FileUploader = new FileUploader({
@@ -9,13 +9,13 @@ AmpersandApp.controller('uploadFileController', function($scope, $rootScope, Fil
     });
     
     $scope.FileUploader.onSuccessItem = function(fileItem, response, status, headers){
-        $scope.updateNotifications(response.notifications);
+        NotificationService.updateNotifications(response.notifications);
         
         // Add response content (newly created FileObject) to ifc list in resource
         fileItem.resource[fileItem.ifc].push(response.content);
     };
     
     $scope.FileUploader.onErrorItem = function(item, response, status, headers){
-        $rootScope.addError(response.error.message, response.error.code, true);
+        NotificationService.addError(response.error.message, response.error.code, true);
     };
 });

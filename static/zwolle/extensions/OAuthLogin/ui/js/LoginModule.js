@@ -3,12 +3,12 @@ app.requires[app.requires.length] = 'LoginModule'; // add ur.file module to depe
 
 var LoginModule = angular.module('LoginModule', ['ngRoute', 'restangular']);
 
-LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, Restangular){
+LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, Restangular, NotificationService){
 	
 	Restangular.one('oauthlogin/login').get().then(
 		function(data){ // success
 			$scope.idps = data.identityProviders;
-			$rootScope.updateNotifications(data.notifications);
+			NotificationService.updateNotifications(data.notifications);
 			
 		}, function(){ // error
 		
@@ -21,7 +21,7 @@ LoginModule.controller('LoginExtLoginController', function($scope, $rootScope, R
 		Restangular.one('oauthlogin/logout').get().then(
 			function(data){ // success
 				
-				$rootScope.updateNotifications(data.notifications);
+				NotificationService.updateNotifications(data.notifications);
 				$rootScope.deactivateAllRoles();
 				$location.path('/'); // goto home
 				

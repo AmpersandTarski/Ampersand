@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular, $localStorage, $sessionStorage, $timeout) {
+AmpersandApp.controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular, $localStorage, $sessionStorage, $timeout, NotificationService) {
 	
 	$scope.$storage = $localStorage;
 	$scope.$sessionStorage = $sessionStorage;
@@ -49,7 +49,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 				return;
 			}
 			
-			$rootScope.addError('Unknown role: ' + roleLabel);
+			NotificationService.addError('Unknown role: ' + roleLabel);
 			return;
 		});
 	};
@@ -82,7 +82,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 					}
 					
 					// Update notifications
-					$rootScope.updateNotifications(data.notifications);
+					NotificationService.updateNotifications(data.notifications);
 				}, function(error){
 					// on error
 				})
@@ -92,7 +92,7 @@ AmpersandApp.controller('static_navigationBarController', function ($scope, $roo
 	$scope.destroySession = function(){
 		session = Restangular.one('sessions', $scope.$sessionStorage.session.id);
 		session.remove().then(function(data){
-			$rootScope.updateNotifications(data.notifications);
+			NotificationService.updateNotifications(data.notifications);
 			
 			// deactivate roles
 			$rootScope.deactivateAllRoles();

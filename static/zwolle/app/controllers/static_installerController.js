@@ -1,4 +1,4 @@
-AmpersandApp.controller('static_installerController', function ($scope, $rootScope, $routeParams, Restangular, $localStorage) {
+AmpersandApp.controller('static_installerController', function ($scope, $rootScope, $routeParams, Restangular, $localStorage, NotificationService) {
 	$scope.installing = false;
     $scope.installed = false;
     
@@ -6,7 +6,7 @@ AmpersandApp.controller('static_installerController', function ($scope, $rootSco
 		$scope.installing = true;
 		$scope.installed = false;
 		Restangular.one('admin/installer').get({defaultPop : defPop}).then(function(data) {
-			$rootScope.updateNotifications(data);
+			NotificationService.updateNotifications(data);
 			
 			// deactive all roles
 			$rootScope.deactivateAllRoles();

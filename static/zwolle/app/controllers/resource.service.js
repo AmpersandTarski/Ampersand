@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').service('ResourceService', function($rootScope, $localStorage, $timeout, $location, Restangular){
+angular.module('AmpersandApp').service('ResourceService', function($localStorage, $timeout, $location, Restangular, NotificationService){
     // http://blog.thoughtram.io/angular/2015/07/07/service-vs-factory-once-and-for-all.html
     
     let updatedResources = []; // contains list with updated resource objects in this interface. Used to check if there are uncommmitted changes (patches in cache)
@@ -13,10 +13,10 @@ angular.module('AmpersandApp').service('ResourceService', function($rootScope, $
                 .get()
                 .then(
                     function(data){
-                        if($.isEmptyObject(data.plain())) $rootScope.addInfo('No results found'); // plain() is an Restangular method
+                        if($.isEmptyObject(data.plain())) NotificationService.addInfo('No results found'); // plain() is an Restangular method
                         else angular.extend(resource[ifc], data);
                     }, function(reason){
-                        $rootScope.addError('Failed to get resource: ' + reason);
+                        NotificationService.addError('Failed to get resource: ' + reason);
                     }
                 )
             );
@@ -31,14 +31,14 @@ angular.module('AmpersandApp').service('ResourceService', function($rootScope, $
                 .get()
                 .then(
                     function(data){
-                        if($.isEmptyObject(data.plain())) $rootScope.addInfo('No results found');
+                        if($.isEmptyObject(data.plain())) NotificationService.addInfo('No results found');
                         else resource = data;
                         
                         // Update visual feedback (notifications and buttons)
-                        $rootScope.getNotifications();
+                        NotificationService.getNotifications();
                         this.initResourceMetaData(resource);
                     }, function(reason){
-                        $rootScope.addError('Failed to get resource: ' + reason);
+                        NotificationService.addError('Failed to get resource: ' + reason);
                     }
                 )
             );
@@ -67,7 +67,7 @@ angular.module('AmpersandApp').service('ResourceService', function($rootScope, $
                         
                         if(obj._isRoot_ && obj._id_ == '_NEW') $location.url('/' + ifc + '/'+ data.content._id_, false);
                     }, function(reason){
-                        $rootScope.addError('Failed to create resource: ' + reason);
+                        NotificationService.addError('Failed to create resource: ' + reason);
                     }
                 )
             );
@@ -84,13 +84,13 @@ angular.module('AmpersandApp').service('ResourceService', function($rootScope, $
                     .then(
                         function(data){
                             // Update visual feedback (notifications and buttons)
-                            $rootScope.updateNotifications(data.notifications);
+                            NotificationService.updateNotifications(data.notifications);
                             
                             // Remove resource from ifc
                             if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni -> list
                             else parent[ifc] = null; // uni
                         }, function(reason){
-                            $rootScope.addError('Failed to delete resource: ' + reason);
+                            NotificationService.addError('Failed to delete resource: ' + reason);
                         }
                     )
                 );
@@ -140,7 +140,7 @@ angular.module('AmpersandApp').service('ResourceService', function($rootScope, $
                         // Update visual feedback (notifications and buttons)
                         this.processResponse(resource, data);
                     },function(reason){
-                        $rootScope.addError('Failed to save resource: ' + reason);
+                        NotificationService.addError('Failed to save resource: ' + reason);
                     }
                 )
             );
@@ -155,7 +155,7 @@ angular.module('AmpersandApp').service('ResourceService', function($rootScope, $
         
         // Process response: i.e. set resource buttons and status
         processResponse : function(resource, response){
-            $rootScope.updateNotifications(response.notifications);
+            NotificationService.updateNotifications(response.notifications);
             
             if(response.invariantRulesHold){
                 resource._showButtons_ = {'save' : false, 'cancel' : false};
