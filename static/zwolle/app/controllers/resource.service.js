@@ -13,7 +13,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 .get()
                 .then(
                     function(data){
-                        if($.isEmptyObject(data.plain())) NotificationService.addInfo('No results found'); // plain() is an Restangular method
+                        if($.isEmptyObject(data)) NotificationService.addInfo('No results found');
                         else angular.extend(resource[ifc], data);
                     }, function(reason){
                         NotificationService.addError('Failed to get resource: ' + reason);
@@ -31,7 +31,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 .get()
                 .then(
                     function(data){
-                        if($.isEmptyObject(data.plain())) NotificationService.addInfo('No results found');
+                        if($.isEmptyObject(data)) NotificationService.addInfo('No results found');
                         else resource = data;
                         
                         // Update visual feedback (notifications and buttons)
