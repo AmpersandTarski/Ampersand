@@ -17,11 +17,11 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
     else if (resourceType == 'ONE') resourceId = '1';
     else resourceId = \$routeParams.resourceId;
     
-    \$scope.resource =  { '_id_' : resourceId
-                        , '_path_' : '/resources/' + resourceType + '/' + resourceId
-                        , '_isRoot_' : true
-                        , ifcName : {}
-                        };
+    \$scope.resource = { '_id_' : resourceId,
+                        '_path_' : '/resources/' + resourceType + '/' + resourceId,
+                        '_isRoot_' : true,
+                        ifcName : {}
+                      };
     
     // Create new resource
     if(\$routeParams['new']) ResourceService.createResource(\$scope.resource, ifcName, \$scope.resource);
