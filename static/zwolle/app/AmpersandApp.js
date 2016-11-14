@@ -2,28 +2,28 @@
 var AmpersandApp = angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangular', 'ui.bootstrap', 'uiSwitch', 'cgBusy', 'siTable', 'ng-code-mirror', 'ngStorage', 'angularFileUpload', 'agGrid', 'ui.bootstrap.datetimepicker', 'hc.marked']);
 
 AmpersandApp.config(function($routeProvider) {
-	$routeProvider
-		// default start page
-		.when('/',
-			{	controller: ''
-			,	templateUrl: 'app/views/static_home.html'
-			,	interfaceLabel: 'Home'
-			})
-		// installer page
-		.when('/admin/installer',
-			{	controller: 'static_installerController'
-			,	templateUrl: 'app/views/static_installer.html'
-			,	interfaceLabel: 'Installer'
-			})
-		.when('/404',
-			{	templateUrl: 'app/views/static_404.html'
-			,	interfaceLabel: '404'
-			})
-		.otherwise({redirectTo: '/404'});
+    $routeProvider
+        // default start page
+        .when('/',
+            {    controller: ''
+            ,    templateUrl: 'app/views/static_home.html'
+            ,    interfaceLabel: 'Home'
+            })
+        // installer page
+        .when('/admin/installer',
+            {    controller: 'static_installerController'
+            ,    templateUrl: 'app/views/static_installer.html'
+            ,    interfaceLabel: 'Installer'
+            })
+        .when('/404',
+            {    templateUrl: 'app/views/static_404.html'
+            ,    interfaceLabel: '404'
+            })
+        .otherwise({redirectTo: '/404'});
 });
 
 AmpersandApp.config(function(RestangularProvider) {
-	
+    
     RestangularProvider.setBaseUrl('api/v1'); // Generate: path to API folder
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     // RestangularProvider.setPlainByDefault(true); available from Restangular v1.5.3
@@ -31,54 +31,54 @@ AmpersandApp.config(function(RestangularProvider) {
 });
 
 AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route, NotificationService){
-	
-	$sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
-		
-	Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
-		var roleIds = [];
-		angular.forEach($sessionStorage.sessionRoles, function(role) {
-			if (role.active == true) {
-				roleIds.push(role.id);
-			}
-		});
-		
-		params['roleIds[]'] = roleIds; // the '[]' in param 'roleIds[]' is needed by the API to process it as array
+    
+    $sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
+        
+    Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params, element, httpConfig){
+        var roleIds = [];
+        angular.forEach($sessionStorage.sessionRoles, function(role) {
+            if (role.active == true) {
+                roleIds.push(role.id);
+            }
+        });
+        
+        params['roleIds[]'] = roleIds; // the '[]' in param 'roleIds[]' is needed by the API to process it as array
         params['navIfc'] = true;
         params['metaData'] = true;
-		return params;
-	});
-	
-	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
-		if(operation != 'get' && operation != 'getList' && data.sessionRefreshAdvice) $rootScope.refreshNavBar();
-		
-		return data;
-	});
-	
+        return params;
+    });
+    
+    Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
+        if(operation != 'get' && operation != 'getList' && data.sessionRefreshAdvice) $rootScope.refreshNavBar();
+        
+        return data;
+    });
+    
     Restangular.setErrorInterceptor(function(response, deferred, responseHandler) {
-    	
-    	// 401: Unauthorized, 440: Login Timeout
-    	if(response.status == 401 || response.status == 440) {
-    		$rootScope.deactivateAllRoles();
-    		$location.path(''); // TODO: redirect to login page (if exists)
-    	}
-    	
-    	if(typeof response.data === 'object'){
-    		var message = response.data.msg || response.statusText; // if empty response message, take statusText
-    		NotificationService.addError(message, response.status, true);
-    		
-    		if(response.data.notifications !== undefined) NotificationService.updateNotifications(response.data.notifications); 
-    	}else{
-    		var message = response.status + ' ' + response.statusText;
-    		var details = response.data; // html content is excepted
-    		NotificationService.addError(message, response.status, true, details);
-    	}
-    	
-    	return true; // proceed with success or error hooks of promise
+        
+        // 401: Unauthorized, 440: Login Timeout
+        if(response.status == 401 || response.status == 440) {
+            $rootScope.deactivateAllRoles();
+            $location.path(''); // TODO: redirect to login page (if exists)
+        }
+        
+        if(typeof response.data === 'object'){
+            var message = response.data.msg || response.statusText; // if empty response message, take statusText
+            NotificationService.addError(message, response.status, true);
+            
+            if(response.data.notifications !== undefined) NotificationService.updateNotifications(response.data.notifications); 
+        }else{
+            var message = response.status + ' ' + response.statusText;
+            var details = response.data; // html content is excepted
+            NotificationService.addError(message, response.status, true, details);
+        }
+        
+        return true; // proceed with success or error hooks of promise
     });
     
     $rootScope.getCurrentDateTime = function (){
-		return (new Date);
-	}
+        return (new Date);
+    }
     
     // Add feature to $location.url() function to be able to prevent reloading page (set reload param to false)
     var original = $location.url;
@@ -93,33 +93,33 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
         return original.apply($location, [url]);
     };
     
-	
+    
 });
 
 AmpersandApp.value('cgBusyDefaults',{
-	  message:'Loading...',
-	  backdrop: true,
-	  //templateUrl: 'my_custom_template.html',
-	  //delay: 500, // in ms
-	  minDuration: 500, // in ms
-	  // wrapperClass: 'my-class my-class2'
-	});
+      message:'Loading...',
+      backdrop: true,
+      //templateUrl: 'my_custom_template.html',
+      //delay: 500, // in ms
+      minDuration: 500, // in ms
+      // wrapperClass: 'my-class my-class2'
+    });
 
 AmpersandApp.directive('myShowonhoverBox', function (){
-	return {
-		link : function(scope, element, attrs) {
-			if(!element.closest('.box').hasClass('my-showonhover-box-show')) element.hide(); // default hide
-			
-			element.closest('.box').bind('mouseenter', function() {
-				element.closest('.box').addClass('my-showonhover-box-show');
-				element.show();
-			});
-			element.closest('.box').bind('mouseleave', function() {
-				element.closest('.box').removeClass('my-showonhover-box-show');
-				element.hide();
-			});
-		}
-	}
+    return {
+        link : function(scope, element, attrs) {
+            if(!element.closest('.box').hasClass('my-showonhover-box-show')) element.hide(); // default hide
+            
+            element.closest('.box').bind('mouseenter', function() {
+                element.closest('.box').addClass('my-showonhover-box-show');
+                element.show();
+            });
+            element.closest('.box').bind('mouseleave', function() {
+                element.closest('.box').removeClass('my-showonhover-box-show');
+                element.hide();
+            });
+        }
+    }
 }).directive('myBluronenter', function() {
     return function(scope, element, attrs) {
         element.bind("keydown keypress", function(event) {
@@ -131,35 +131,35 @@ AmpersandApp.directive('myShowonhoverBox', function (){
         });
     };
 }).filter('toArray', function() {
-	// used from: https://github.com/petebacondarwin/angular-toArrayFilter
-	return function (obj, addKey) {
-	    if (!obj) return obj;
-	    if ($.isArray(obj)) return obj; // obj is already an array
-	    if ( addKey === false ) {
-	      return Object.keys(obj).map(function(key) {
-	        return obj[key];
-	      });
-	    } else {
-	      return Object.keys(obj).map(function (key) {
-	        return Object.defineProperty(obj[key], '$key', { enumerable: false, value: key});
-	      });
-	    }
-	  };
+    // used from: https://github.com/petebacondarwin/angular-toArrayFilter
+    return function (obj, addKey) {
+        if (!obj) return obj;
+        if ($.isArray(obj)) return obj; // obj is already an array
+        if ( addKey === false ) {
+          return Object.keys(obj).map(function(key) {
+            return obj[key];
+          });
+        } else {
+          return Object.keys(obj).map(function (key) {
+            return Object.defineProperty(obj[key], '$key', { enumerable: false, value: key});
+          });
+        }
+      };
 }).directive('myNavToInterfaces', function(){
-	
-	return {
-		  restrict		: 'E'
-		, scope 		: {ifcs : '=', resource : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-		, templateUrl	: 'app/views/partials/my_nav_to_interfaces.html'
-		, transclude	: true
-	};
+    
+    return {
+          restrict        : 'E'
+        , scope         : {ifcs : '=', resource : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+        , templateUrl    : 'app/views/partials/my_nav_to_interfaces.html'
+        , transclude    : true
+    };
 }).directive('myNavToOtherInterfaces', function(){
-	
-	return {
-		  restrict		: 'E'
-		, scope 		: {ifcs : '=', resource : '=', label : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-		, templateUrl	: 'app/views/partials/my_nav_to_other_interfaces.html'
-	};
+    
+    return {
+          restrict        : 'E'
+        , scope         : {ifcs : '=', resource : '=', label : '=', target : '@'} // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+        , templateUrl    : 'app/views/partials/my_nav_to_other_interfaces.html'
+    };
 }).directive('myAlias', function($animate, $compile) {
     // adapted from ngIf and ngRepeat directives
     // use e.g.: <div my-alias="resource['Project'] as test">{{test}}</div>
@@ -219,5 +219,5 @@ AmpersandApp.directive('myShowonhoverBox', function (){
         }
     };
 }).filter('unsafe', function($sce){
-	return $sce.trustAsHtml;
+    return $sce.trustAsHtml;
 });
