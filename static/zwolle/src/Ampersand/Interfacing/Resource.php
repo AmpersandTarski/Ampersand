@@ -407,6 +407,29 @@ class Resource extends Atom {
             return $this->all($ifcId)->remove($value); // Remove tgt atom from provided ifc
         }
     }
+    
+/**********************************************************************************************
+ * Static functions
+ *********************************************************************************************/
+    
+    /**
+     * Return all resources for a given resourceType
+     * TODO: refactor when resources (e.g. for update field in UI) can be requested with interface definition
+     * @param string $resourceType name/id of concept
+     * @return Resource[]
+     */
+    public static function getAllResources($resourceType){
+        $concept = Concept::getConcept($resourceType);
+        
+        $resources = [];
+        foreach ($concept->getAllAtomObjects() as $atom) {
+            $r = new Resource($atom->id, $concept->name);
+            $r->setQueryData($atom->getQueryData());
+            $resources[] = $r;
+        }
+        
+        return $resources;
+    }
 }
 
 ?>

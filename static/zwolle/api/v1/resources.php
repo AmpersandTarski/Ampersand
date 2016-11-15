@@ -43,7 +43,9 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app) {
     if(!$concept->isObject()) throw new Exception ("Resource type not found", 404);
     if(!$session->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
     
-    print json_encode($concept->getAllAtomObjects(), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    $resources = Resource::getAllResources($resourceType);
+    
+    print json_encode($resources, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
 
