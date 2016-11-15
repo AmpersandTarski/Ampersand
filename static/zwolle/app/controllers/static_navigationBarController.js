@@ -4,7 +4,7 @@ angular.module('AmpersandApp').controller('static_navigationBarController', func
     $scope.$sessionStorage = $sessionStorage;
     $scope.defaultSettings = {};
     
-    $rootScope.loadingNavBar = new Array(); // initialize an array for promises, used by angular-busy module (loading indicator)
+    $rootScope.loadingNavBar = []; // initialize an array for promises, used by angular-busy module (loading indicator)
     
     $rootScope.selectRole = function(roleId){
         $rootScope.toggleRole(roleId, true);
@@ -23,24 +23,24 @@ angular.module('AmpersandApp').controller('static_navigationBarController', func
         
         // refresh navbar + notifications
         $rootScope.refreshNavBar();
-    }
+    };
     
     $rootScope.deactivateAllRoles = function(){
         angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
             role.active = false;
         });
         $rootScope.refreshNavBar();
-    }
+    };
     
     $rootScope.getActiveRoleIds = function(){
         var roleIds = [];
         angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
-            if (role.active == true) {
+            if (role.active === true) {
                 roleIds.push(role.id);
             }
         });
         return roleIds;
-    }
+    };
     
     $rootScope.selectRoleByLabel = function (roleLabel){
         angular.forEach($scope.sessionStorage.sessionRoles, function(role) {
@@ -55,7 +55,7 @@ angular.module('AmpersandApp').controller('static_navigationBarController', func
     };
     
     $rootScope.refreshNavBar = function(){
-        $rootScope.loadingNavBar = new Array();
+        $rootScope.loadingNavBar = [];
         $rootScope.loadingNavBar.push(
             Restangular.one('sessions', $scope.$sessionStorage.session.id).one('navbar')
                 .get()
@@ -109,7 +109,11 @@ angular.module('AmpersandApp').controller('static_navigationBarController', func
     
     $scope.resetSettings = function(){
         // all off
-        $.each($scope.$storage.notificationPrefs, function(index, value){ $scope.$storage.notificationPrefs[index] = false });
+        $.each($scope.$storage.notificationPrefs, 
+            function(index, value){
+                $scope.$storage.notificationPrefs[index] = false;
+            }
+        );
         $scope.$storage.switchAutoSave = false;
         
         $timeout(function() {
@@ -139,8 +143,8 @@ angular.module('AmpersandApp').controller('static_navigationBarController', func
         var resizeNavbar = function() {
             $timeout(function(){
                 // moving ifc items from dropdown-menu to navbar itself
-                while($('#navbar-interfaces').width() < ($('#navbar-wrapper').width() - $('#navbar-options').width())
-                        && $('#navbar-interfaces-dropdown-menu').children().length > 0){
+                while($('#navbar-interfaces').width() < ($('#navbar-wrapper').width() - $('#navbar-options').width()) &&
+                        $('#navbar-interfaces-dropdown-menu').children().length > 0){
                     $("#navbar-interfaces-dropdown-menu").children().first().appendTo("#navbar-interfaces");
                 }
                 
@@ -149,11 +153,11 @@ angular.module('AmpersandApp').controller('static_navigationBarController', func
                     $("#navbar-interfaces").children().last().prependTo("#navbar-interfaces-dropdown-menu");
                     
                     // show/hide dropdown menu for more interfaces (must be inside loop, because it affects the width of the navbar
-                    $('#navbar-interfaces-dropdown').toggleClass('hidden', !$('#navbar-interfaces-dropdown-menu').children().length > 0);
+                    $('#navbar-interfaces-dropdown').toggleClass('hidden', $('#navbar-interfaces-dropdown-menu').children().length <= 0);
                 }
                 
                 // show/hide dropdown menu when possible
-                $('#navbar-interfaces-dropdown').toggleClass('hidden', !$('#navbar-interfaces-dropdown-menu').children().length > 0);
+                $('#navbar-interfaces-dropdown').toggleClass('hidden', $('#navbar-interfaces-dropdown-menu').children().length <= 0);
             });
         };
         
@@ -169,5 +173,5 @@ angular.module('AmpersandApp').controller('static_navigationBarController', func
         
         // when page loads
         resizeNavbar();
-    }
+    };
 });
