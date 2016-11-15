@@ -1,8 +1,16 @@
 # This file is based on the travis.yml file of stack. 
 # (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
 #
+dist: trusty
+sudo: required
+addons:
+  apt:
+    packages:
+    - mysql-server-5.6
+    - mysql-client-core-5.6
+    - mysql-client-5.6
+
 language: php
-sudo: true
 
 cache:
     directories:
@@ -10,8 +18,6 @@ cache:
         - $HOME/.cabal
         - $HOME/.stack
 
-services:
-  - mysql
 
 # The different configurations we want to test. We have BUILD=cabal which uses
 # cabal-install, and BUILD=stack which uses Stack. More documentation on each
