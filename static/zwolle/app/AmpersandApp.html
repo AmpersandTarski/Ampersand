@@ -1,20 +1,20 @@
 <!-- HEADER -->
-<div id="header" ng-include="'app/views/static_header.html'"></div>
+<div id="header" ng-include="'app/views/header.html'"></div>
 
 <!-- NAVIGATION BAR -->
-<div id="navbar" ng-include="'app/views/static_navigationBar.html'" cg-busy="{promise:loadingNavBar}"></div>
+<div id="navbar" ng-include="'app/views/navigationBar.html'" cg-busy="{promise:loadingNavBar}"></div>
 
 <!-- MAIN -->
 <div id="main" class="container">
     <!-- Breadcrumb -->
-    <div ng-include="'app/views/static_breadcrumb.html'"></div>
+    <div ng-include="'app/views/breadcrumb.html'"></div>
     
     <!--  Notification center -->
-    <div ng-include="'app/views/static_notificationCenter.html'"></div>
+    <div ng-include="'app/views/notificationCenter.html'"></div>
     
     <!-- Placeholder for views (user interfaces) -->
     <div ng-view></div>
 </div>
 
 <!-- FOOTER -->
-<div id="footer" ng-include="'app/views/static_footer.html'"></div>
+<div id="footer" ng-include="'app/views/footer.html'"></div>

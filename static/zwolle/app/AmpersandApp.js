@@ -5,17 +5,17 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
         // default start page
         .when('/', { 
             controller : '',
-            templateUrl : 'app/views/static_home.html',
+            templateUrl : 'app/views/home.html',
             interfaceLabel : 'Home'
             })
         // installer page
         .when('/admin/installer', {
             controller : 'InstallerController',
-            templateUrl : 'app/views/static_installer.html',
+            templateUrl : 'app/views/installer.html',
             interfaceLabel : 'Installer'
             })
         .when('/404', {
-            templateUrl: 'app/views/static_404.html',
+            templateUrl: 'app/views/404.html',
             interfaceLabel: '404'
             })
         .otherwise({redirectTo: '/404'});
