@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Atomic-BIGALPHANUMERIC.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$$if(crudR)$<div class="input-group" ng-controller="static_atomicController">
+$endif$$if(crudR)$<div class="input-group" ng-controller="AtomicController">
     $if(crudU)$$if(exprIsUni)$<textarea ng-model="resource['$name$']" class="form-control input-sm" placeholder="Text" rows="6" cols="80" ng-blur="saveItem(resource, '$name$', patchResource)"></textarea>$else$<div ng-repeat="row in resource['$name$'] track by \$index" style="display:flex;">
         <span my-showonhover-box class="glyphicon glyphicon-minus" style="margin-right: 5px;" ng-click="removeItem(resource, '$name$', \$index, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
         <div class="bigalphanumeric wordwrap">{{row}}</div>

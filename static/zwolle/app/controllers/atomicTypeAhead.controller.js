@@ -1,10 +1,10 @@
-angular.module('AmpersandApp').controller('static_typeaheadController', function($scope, Restangular){
+angular.module('AmpersandApp').controller('AtomicTypeAheadController', function($scope, Restangular){
     
     $scope.hasNoResults = false;
     
     /*
      * Typeahead functionality
-     * $scope.typeahead is initiated in static_interfaceController to be able to reuse typeahead data
+     * $scope.typeahead is initiated in InterfaceController to be able to reuse typeahead data
      */
     $scope.getTypeahead = function(resourceType){
         // Only if not yet set

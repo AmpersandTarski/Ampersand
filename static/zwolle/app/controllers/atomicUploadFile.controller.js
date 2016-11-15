@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('uploadFileController', function($scope, $rootScope, FileUploader, NotificationService, RoleService){
+angular.module('AmpersandApp').controller('AtomicUploadFileController', function($scope, $rootScope, FileUploader, NotificationService, RoleService){
     
     // File uploader stuff
     $scope.FileUploader = new FileUploader({

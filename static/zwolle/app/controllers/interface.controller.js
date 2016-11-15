@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('static_interfaceController', function($scope, $location, ResourceService){
+angular.module('AmpersandApp').controller('InterfaceController', function($scope, $location, ResourceService){
     // Function (reference) to save certain attributes changes of a resource (i.e. patches)
     $scope.save = ResourceService.saveResource;
     

@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('static_notificationCenterController', function ($scope, $rootScope, $route, Restangular, $localStorage, NotificationService) {
+angular.module('AmpersandApp').controller('NotificationCenterController', function ($scope, $rootScope, $route, Restangular, $localStorage, NotificationService) {
     
     $scope.localStorage = $localStorage;
     $scope.notifications = NotificationService.notifications;

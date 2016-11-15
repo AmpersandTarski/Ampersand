@@ -10,7 +10,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
             })
         // installer page
         .when('/admin/installer', {
-            controller : 'static_installerController',
+            controller : 'InstallerController',
             templateUrl : 'app/views/static_installer.html',
             interfaceLabel : 'Installer'
             })

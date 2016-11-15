@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('static_atomicController', function($scope, ResourceService){
+angular.module('AmpersandApp').controller('AtomicController', function($scope, ResourceService){
     
     /*
      * Object to temporary store value/resourceId to add to list

@@ -1,6 +1,6 @@
 $if(verbose)$<!-- Atomic-DATE.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$$if(crudR)$<div style="min-width:6em;" ng-controller="static_atomicController">
-    $if(crudU)$$if(exprIsUni)$<div class="input-group" ng-controller="static_dateController" style="width:170px;">
+$endif$$if(crudR)$<div style="min-width:6em;" ng-controller="AtomicController">
+    $if(crudU)$$if(exprIsUni)$<div class="input-group" ng-controller="AtomicDateController" style="width:170px;">
         <input ng-model="resource['$name$']" type="text" class="form-control input-sm" uib-datepicker-popup="dd-MM-yyyy" placeholder="dd-mm-yyyy" is-open="isOpen" ng-blur="saveDateItem(resource, '$name$', patchResource)"/>
         <span class="input-group-btn">
             <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event)"><i class="glyphicon glyphicon-calendar"></i></button>
@@ -9,7 +9,7 @@ $endif$$if(crudR)$<div style="min-width:6em;" ng-controller="static_atomicContro
         <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeItem(resource, '$name$', \$index, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>
         <span>{{row | date : 'dd-MM-yyyy'}}</span>
     </div>
-    <div class="input-group" ng-controller="static_dateController" style="width:170px;">
+    <div class="input-group" ng-controller="AtomicDateController" style="width:170px;">
         <input ng-model="selected.value" type="text" class="form-control input-sm" uib-datepicker-popup="dd-MM-yyyy" placeholder="dd-mm-yyyy" is-open="isOpen" ng-blur="addDateItem(resource, '$name$', selected, patchResource)"/>
         <span class="input-group-btn">
             <button type="button" class="btn btn-default input-sm" ng-click="openDatepicker(\$event)"><i class="glyphicon glyphicon-calendar"></i></button>
