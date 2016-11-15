@@ -5,8 +5,8 @@ In order to start using the Pushalot notifications extension within a prototype,
 1) Enable the Pushalot extension in your localsettings file.
    This is done by adding the following lines to your 'localSettings.php' file:
 
-	// Enable Pushalot notification extension
-	require_once(__DIR__ . '/extensions/Messaging/Pushalot.php');
+    // Enable Pushalot notification extension
+    require_once(__DIR__ . '/extensions/Messaging/Pushalot.php');
 
 2) Include the Pushalot messaging module in your Ampersand script:
 
@@ -14,7 +14,7 @@ In order to start using the Pushalot notifications extension within a prototype,
 
 3) Send messages by a VIOLATION statement such as
 
-	VIOLATION(TXT "{EX}PushalotNotifications::execEnginePushNotificationOnCommit;<authorizationtokens>;<message>;<title>;<url>")
+    VIOLATION(TXT "{EX}PushalotNotifications::execEnginePushNotificationOnCommit;<authorizationtokens>;<message>;<title>;<url>")
 
    Notes:
    - Multiple <authorizationtokens> must be seperated with _AND. This is atomatically done when using an ampersand expression to fill the userKeys.

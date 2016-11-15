@@ -17,20 +17,20 @@ use Ampersand\Interfacing\Transaction;
 global $app;
 
 $app->get('/admin/installer', function () use ($app){
-	if(Config::get('productionEnv')) throw new Exception ("Database reinstall not allowed in production environment", 403);
-	
-	$defaultPop = filter_var($app->request->params('defaultPop'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE); 
+    if(Config::get('productionEnv')) throw new Exception ("Database reinstall not allowed in production environment", 403);
+    
+    $defaultPop = filter_var($app->request->params('defaultPop'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE); 
     if(is_null($defaultPop)) $defaultPop = true;
 
-	Database::createDB();
+    Database::createDB();
 
-	$db = Database::singleton();
-	$db->reinstallDB($defaultPop);
+    $db = Database::singleton();
+    $db->reinstallDB($defaultPop);
 
-	$session = Session::singleton();
+    $session = Session::singleton();
 
-	$roleIds = $app->request->params('roleIds');
-	$session->activateRoles($roleIds);
+    $roleIds = $app->request->params('roleIds');
+    $session->activateRoles($roleIds);
     
     // Checks
     $logger = Logger::getUserLogger();
@@ -52,9 +52,9 @@ $app->get('/admin/installer', function () use ($app){
         }
     }
 
-	$content = Notifications::getAll(); // Return all notifications
+    $content = Notifications::getAll(); // Return all notifications
 
-	print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 
 });
 
@@ -142,71 +142,71 @@ $app->get('/admin/import', function () use ($app){
 
 
 $app->get('/admin/performance/conjuncts', function () use ($app){
-	if(Config::get('productionEnv')) throw new Exception ("Performance tests are not allowed in production environment", 403);
-	
-	// Defaults
-	$groupBy = $app->request->params('groupBy'); if(is_null($groupBy)) $groupBy = 'conjuncts';
-	$from = $app->request->params('from'); if(is_null($from)) $from = 0;
-	$to = $app->request->params('to'); if(is_null($to)) $to = 10;
-	
-	$performanceArr = array();
-	
-	// run all conjuncts (from - to)
-	for ($i = $from; $i <= $to; $i++){
-		$conjunct = Conjunct::getConjunct('conj_' . $i);
-		$startTimeStamp = microtime(true); // true means get as float instead of string
-		$conjunct->evaluateConjunct(false);
-		$endTimeStamp = microtime(true);
-	
-		$performanceArr[$conjunct->id] = array( 'id' => $conjunct->id
-				, 'start' => round($startTimeStamp, 6)
-				, 'end' => round($endTimeStamp, 6)
-				, 'duration' => round($endTimeStamp - $startTimeStamp, 6)
-				, 'invariantRules' => implode(';', $conjunct->invRuleNames)
-				, 'signalRules' => implode(';', $conjunct->sigRuleNames)
-		);
-	}
-	
-	switch ($groupBy){
-		case 'conjuncts' :
-			$content = array_values($performanceArr);
-			break;
-		case 'rules' :
-			$ruleArr = array();
-			foreach(Rule::getAllRules() as $rule){
-				$duration = 0;
-				$conjunctIds = array();
-				foreach($rule->conjuncts as $conjunct){
-					$duration += $performanceArr[$conjunct->id]['duration'];
-					$conjunctIds[] = $conjunct->id;
-				}
-				$ruleArr[] = array('ruleName' => $rule->id
-						, 'duration' => $duration
-						, 'conjuncts' => implode(';', $conjunctIds)
-				);
-			}
-			$content = $ruleArr;
-			break;
-		case 'relations' :
-			$relArr = array();
-			$conjunctIds = array();
-			foreach(Relation::getAllRelations() as $relation){
-				$duration = 0;
-				foreach($relation->affectedConjuncts as $conjunct){
-					$duration += $performanceArr[$conjunct->id]['duration'];
-					$conjunctIds = $conjunct->id;
-				}
-				$relArr[] = array('relationSignature' => $relation->__toString()
-						, 'duration' => $duration
-						, 'conjuncts' => implode(';', $conjunctIds)
-				);
-			}
-			$content = $relArr;
-			break;
-		default :
-			throw new Exception ("Unknown groupBy argument", 500);
-			break;
-	}
+    if(Config::get('productionEnv')) throw new Exception ("Performance tests are not allowed in production environment", 403);
+    
+    // Defaults
+    $groupBy = $app->request->params('groupBy'); if(is_null($groupBy)) $groupBy = 'conjuncts';
+    $from = $app->request->params('from'); if(is_null($from)) $from = 0;
+    $to = $app->request->params('to'); if(is_null($to)) $to = 10;
+    
+    $performanceArr = array();
+    
+    // run all conjuncts (from - to)
+    for ($i = $from; $i <= $to; $i++){
+        $conjunct = Conjunct::getConjunct('conj_' . $i);
+        $startTimeStamp = microtime(true); // true means get as float instead of string
+        $conjunct->evaluateConjunct(false);
+        $endTimeStamp = microtime(true);
+    
+        $performanceArr[$conjunct->id] = array( 'id' => $conjunct->id
+                , 'start' => round($startTimeStamp, 6)
+                , 'end' => round($endTimeStamp, 6)
+                , 'duration' => round($endTimeStamp - $startTimeStamp, 6)
+                , 'invariantRules' => implode(';', $conjunct->invRuleNames)
+                , 'signalRules' => implode(';', $conjunct->sigRuleNames)
+        );
+    }
+    
+    switch ($groupBy){
+        case 'conjuncts' :
+            $content = array_values($performanceArr);
+            break;
+        case 'rules' :
+            $ruleArr = array();
+            foreach(Rule::getAllRules() as $rule){
+                $duration = 0;
+                $conjunctIds = array();
+                foreach($rule->conjuncts as $conjunct){
+                    $duration += $performanceArr[$conjunct->id]['duration'];
+                    $conjunctIds[] = $conjunct->id;
+                }
+                $ruleArr[] = array('ruleName' => $rule->id
+                        , 'duration' => $duration
+                        , 'conjuncts' => implode(';', $conjunctIds)
+                );
+            }
+            $content = $ruleArr;
+            break;
+        case 'relations' :
+            $relArr = array();
+            $conjunctIds = array();
+            foreach(Relation::getAllRelations() as $relation){
+                $duration = 0;
+                foreach($relation->affectedConjuncts as $conjunct){
+                    $duration += $performanceArr[$conjunct->id]['duration'];
+                    $conjunctIds = $conjunct->id;
+                }
+                $relArr[] = array('relationSignature' => $relation->__toString()
+                        , 'duration' => $duration
+                        , 'conjuncts' => implode(';', $conjunctIds)
+                );
+            }
+            $content = $relArr;
+            break;
+        default :
+            throw new Exception ("Unknown groupBy argument", 500);
+            break;
+    }
     
     usort($content, function($a, $b){ 
         // return $b['duration'] <=> $a['duration']; // uses php7 spaceship operator
@@ -220,9 +220,9 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
     $output->addColumns(array_keys($content[0]));
     foreach ($content as $row) $output->addRow($row);
     $output->render('conj-performance-report.csv');
-	
-	// print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-	
+    
+    // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    
 });
 
 $app->get('/admin/report/relations', function () use ($app){

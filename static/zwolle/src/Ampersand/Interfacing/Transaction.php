@@ -145,7 +145,7 @@ class Transaction {
     }
     
     public function getAffectedConcepts(){
-        return $this->affectedConcepts;	
+        return $this->affectedConcepts;
     }
     
     public function getAffectedRelations(){

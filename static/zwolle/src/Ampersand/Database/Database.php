@@ -42,80 +42,80 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     /**
      * Contains a connection to the mysql database
      */
-	private $db_link;
-	
-	/**
-	 * Host/server of mysql database
-	 * @var string
-	 */
-	private $db_host;
-	
-	/**
-	 * Username for mysql database
-	 * @var string
-	 */
-	private $db_user;
-	
-	/**
-	 * Password for mysql database
-	 * @var string
-	 */
-	private $db_pass;
-	
-	/**
-	 * Database name
-	 * @var string
-	 */
-	private $db_name;
+    private $db_link;
+    
+    /**
+     * Host/server of mysql database
+     * @var string
+     */
+    private $db_host;
+    
+    /**
+     * Username for mysql database
+     * @var string
+     */
+    private $db_user;
+    
+    /**
+     * Password for mysql database
+     * @var string
+     */
+    private $db_pass;
+    
+    /**
+     * Database name
+     * @var string
+     */
+    private $db_name;
     
     /**
      * Specifies if database transaction is active
      * @var boolean $dbTransactionActive
      */
     private $dbTransactionActive = false;
-	
-	/**
-	 * Contains reference to database instance (singleton pattern)
-	 * @var Database
-	 */
-	private static $_instance = null;
-	
-	/**
-	 * Constructor of database class
-	 * Singleton pattern: private function to prevent any outside instantiantion of this object. 
-	 * Use Database::singleton() instead
-	 */
-	private function __construct(){
-	    $this->logger = Logger::getLogger('DATABASE');
-	    
-	    $this->db_host = Config::get('dbHost', 'mysqlDatabase');
-		$this->db_user = Config::get('dbUser', 'mysqlDatabase');
-		$this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
-		$this->db_name = Config::get('dbName', 'mysqlDatabase');
-		
-		// Enable mysqli errors to be thrown as Exceptions
-		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-		
-		// Connect to MYSQL database
-		$this->db_link = mysqli_init();
-		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
-		
-		// Set sql_mode to ANSI
-		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-	}
-	
-	/**
-	 * Use Database::singleton() instead
-	 * Singleton pattern: private function to prevent any copy/clone of database instance
-	 */
-	private function __clone(){}
     
-	/**
-	 * Function to return the database instance
+    /**
+     * Contains reference to database instance (singleton pattern)
+     * @var Database
+     */
+    private static $_instance = null;
+    
+    /**
+     * Constructor of database class
+     * Singleton pattern: private function to prevent any outside instantiantion of this object. 
+     * Use Database::singleton() instead
+     */
+    private function __construct(){
+        $this->logger = Logger::getLogger('DATABASE');
+        
+        $this->db_host = Config::get('dbHost', 'mysqlDatabase');
+        $this->db_user = Config::get('dbUser', 'mysqlDatabase');
+        $this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
+        $this->db_name = Config::get('dbName', 'mysqlDatabase');
+        
+        // Enable mysqli errors to be thrown as Exceptions
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        
+        // Connect to MYSQL database
+        $this->db_link = mysqli_init();
+        $this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+        
+        // Set sql_mode to ANSI
+        $this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+    }
+    
+    /**
+     * Use Database::singleton() instead
+     * Singleton pattern: private function to prevent any copy/clone of database instance
+     */
+    private function __clone(){}
+    
+    /**
+     * Function to return the database instance
      * Singleton pattern: use this static function to get the single instance of this class
-	 * @return Database
-	 */
-	public static function singleton(){
+     * @return Database
+     */
+    public static function singleton(){
         try {
             if(!is_object (self::$_instance)) self::$_instance = new Database();
         }catch (Exception $e){
@@ -129,78 +129,78 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
                         self::$_instance->logger->info("Automatically installing database for the first time");
                         self::$_instance->reinstallDB();
                         break;
-    		        default : 
-    		            throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
-    		    }
-		    }else{
-		        throw new Exception("Cannot connect to database", 500);
-		    }
-		}
-		return self::$_instance;
-	}
-	
-	/**
-	 * Function to create new database. Drops database (and loose all data) if already exists
-	 * @throws Exception
-	 * @return void
-	 */
-	public static function createDB(){
-	    try{
-	        $logger = Logger::getLogger('DATABASE');
-	        
-    		$DB_host = Config::get('dbHost', 'mysqlDatabase');
-    		$DB_user = Config::get('dbUser', 'mysqlDatabase');
-    		$DB_pass = Config::get('dbPassword', 'mysqlDatabase');
-    		$DB_name = Config::get('dbName', 'mysqlDatabase');
-    		
-    		// Enable mysqli errors to be thrown as Exceptions
-    		mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-    		
-    		$db_link = mysqli_init();
-    		
-    		// Connect to MYSQL database
-    		$logger->info("Connecting to host: '{$DB_host}'");
-    		$db_link->real_connect($DB_host, $DB_user, $DB_pass);
-    		
-    		// Set sql_mode to ANSI
-    		$logger->info("Setting session sql_mode to 'ANSI,TRADITIONAL'");
-    		$db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-    		
-    		// Drop database
-    		$logger->info("Drop database if exists: '{$DB_name}'");
-    		$db_link->query("DROP DATABASE IF EXISTS $DB_name");
-    		
-    		// Create new database
-    		$logger->info("Create new database: '{$DB_name}'");
-    		$db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
-		
-		}catch (Exception $e){
-		    // Convert mysqli_sql_exceptions into 500 errors
-		    throw new Exception($e->getMessage(), 500);
-		}
-	}
-	
-	/**
-	 * Function to reinstall database structure and load default population
-	 * @param boolean $loadDefaultPop specifies whether or not to install the default population
-	 * @return void
-	 */
-	public function reinstallDB($installDefaultPop = true){
-		$queries = file_get_contents(Config::get('pathToGeneratedFiles') . 'mysql-installer.json');
-		$queries = json_decode($queries, true);
-		
-		$this->logger->info("Start database reinstall");
-		
-		$this->logger->info("Execute database structure queries");
-		foreach($queries['allDBstructQueries'] as $query){
-			$this->Exe($query);
+                    default : 
+                        throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
+                }
+            }else{
+                throw new Exception("Cannot connect to database", 500);
+            }
+        }
+        return self::$_instance;
+    }
+    
+    /**
+     * Function to create new database. Drops database (and loose all data) if already exists
+     * @throws Exception
+     * @return void
+     */
+    public static function createDB(){
+        try{
+            $logger = Logger::getLogger('DATABASE');
+            
+            $DB_host = Config::get('dbHost', 'mysqlDatabase');
+            $DB_user = Config::get('dbUser', 'mysqlDatabase');
+            $DB_pass = Config::get('dbPassword', 'mysqlDatabase');
+            $DB_name = Config::get('dbName', 'mysqlDatabase');
+            
+            // Enable mysqli errors to be thrown as Exceptions
+            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+            
+            $db_link = mysqli_init();
+            
+            // Connect to MYSQL database
+            $logger->info("Connecting to host: '{$DB_host}'");
+            $db_link->real_connect($DB_host, $DB_user, $DB_pass);
+            
+            // Set sql_mode to ANSI
+            $logger->info("Setting session sql_mode to 'ANSI,TRADITIONAL'");
+            $db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+            
+            // Drop database
+            $logger->info("Drop database if exists: '{$DB_name}'");
+            $db_link->query("DROP DATABASE IF EXISTS $DB_name");
+            
+            // Create new database
+            $logger->info("Create new database: '{$DB_name}'");
+            $db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
+        
+        }catch (Exception $e){
+            // Convert mysqli_sql_exceptions into 500 errors
+            throw new Exception($e->getMessage(), 500);
+        }
+    }
+    
+    /**
+     * Function to reinstall database structure and load default population
+     * @param boolean $loadDefaultPop specifies whether or not to install the default population
+     * @return void
+     */
+    public function reinstallDB($installDefaultPop = true){
+        $queries = file_get_contents(Config::get('pathToGeneratedFiles') . 'mysql-installer.json');
+        $queries = json_decode($queries, true);
+        
+        $this->logger->info("Start database reinstall");
+        
+        $this->logger->info("Execute database structure queries");
+        foreach($queries['allDBstructQueries'] as $query){
+            $this->Exe($query);
                 
             set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of create table / index queries.
-		}
-		
+        }
+        
         if($installDefaultPop){
             $this->logger->info("Install default population");
-		    if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
+            if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
             
             foreach($queries['allDefPopQueries'] as $query){
                 $this->Exe($query);
@@ -210,21 +210,21 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         }else{
             $this->logger->info("Skip default population");
         }
-		
-		// Ininiate new session
-		Session::singleton();
-		
-		Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
-		
-		$this->logger->info("Database reinstalled");
-		
-		// Initial conjunct evaluation
-		Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
-		
+        
+        // Ininiate new session
+        Session::singleton();
+        
+        Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
+        
+        $this->logger->info("Database reinstalled");
+        
+        // Initial conjunct evaluation
+        Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
+        
         $transaction = Transaction::getCurrentTransaction()->close(true);
         if($transaction->isCommitted()) Logger::getUserLogger()->notice("Database successfully reinstalled");
-		
-	}
+        
+    }
     
     /**
      * Return escaped mysql representation of Atom (identifier) according to Ampersand technical types (TTypes)
@@ -262,42 +262,42 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         }
     }
     
-	/**
-	 * Execute query on database. Function replaces reserved words by their corresponding value (e.g. _SESSION)
-	 * @param string $query
-	 * @return boolean|array
-	 * 
-	 * TODO:
-	 * Create private equivalent that is used by addAtom(), addLink(), deleteLink() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
-	 * The public version should be allowed to only do SELECT queries.
-	 * This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
-	 */
-	public function Exe($query){
-		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
-		
-		$result = $this->doQuery($query);
-		$this->logger->debug($query);
+    /**
+     * Execute query on database. Function replaces reserved words by their corresponding value (e.g. _SESSION)
+     * @param string $query
+     * @return boolean|array
+     * 
+     * TODO:
+     * Create private equivalent that is used by addAtom(), addLink(), deleteLink() and deleteAtom() functions, to perform any INSERT, UPDATE, DELETE
+     * The public version should be allowed to only do SELECT queries.
+     * This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
+     */
+    public function Exe($query){
+        $query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
+        
+        $result = $this->doQuery($query);
+        $this->logger->debug($query);
 
-		if ($result === false) return false;
-		elseif ($result === true) return true;
-		
-		$arr = array();
-		while($row = mysqli_fetch_array($result)){
-			$arr[] = $row;
-		}
-		return $arr;
-		
-	}
-	
-	/**
-	 * Execute query on database.
-	 * @param string $query
-	 * @return mixed
-	 * @throws Exception
-	 */
-	private function doQuery($query){
-	    try{
-	        return $this->db_link->query($query);
+        if ($result === false) return false;
+        elseif ($result === true) return true;
+        
+        $arr = array();
+        while($row = mysqli_fetch_array($result)){
+            $arr[] = $row;
+        }
+        return $arr;
+        
+    }
+    
+    /**
+     * Execute query on database.
+     * @param string $query
+     * @return mixed
+     * @throws Exception
+     */
+    private function doQuery($query){
+        try{
+            return $this->db_link->query($query);
         }catch (Exception $e){
             $this->logger->error($e->getMessage());
             if(!Config::get('productionEnv')){
@@ -315,20 +315,20 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
                 throw new Exception("Error in database query", 500);
             }
         }
-	}
-	
-	/**
-	 * Function to escape identifiers for use in database queries 
-	 * @param string $escapestr
-	 * @return NULL|string
-	 * 
-	 * http://php.net/manual/en/language.types.string.php#language.types.string.parsing
-	 * http://php.net/manual/en/mysqli.real-escape-string.php
-	 */
-	public function escape($escapestr){
-		if(is_null($escapestr)) return null;
-		else return $this->db_link->real_escape_string($escapestr);
-	}
+    }
+    
+    /**
+     * Function to escape identifiers for use in database queries 
+     * @param string $escapestr
+     * @return NULL|string
+     * 
+     * http://php.net/manual/en/language.types.string.php#language.types.string.parsing
+     * http://php.net/manual/en/mysqli.real-escape-string.php
+     */
+    public function escape($escapestr){
+        if(is_null($escapestr)) return null;
+        else return $this->db_link->real_escape_string($escapestr);
+    }
 
 /**************************************************************************************************
  *
@@ -344,38 +344,38 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         return "MySQL database {$this->db_host} - {$this->db_name}";
     }
     
-	/**
-	 * Function to start/open a database transaction to track of all changes and be able to rollback
-	 * @return void
-	 */
-	private function startTransaction(){
+    /**
+     * Function to start/open a database transaction to track of all changes and be able to rollback
+     * @return void
+     */
+    private function startTransaction(){
         Transaction::registerStorageTransaction($this);
         
         $this->Exe("START TRANSACTION"); // start database transaction
         $this->dbTransactionActive = true; // set flag dbTransactionActive
-	}
-	
-	/**
-	 * Function to commit the open database transaction
-	 * @return void
-	 */
-	public function commitTransaction(){
-		$this->logger->info("Commit database transaction");
-		
-		$this->Exe("COMMIT"); // commit database transaction
+    }
+    
+    /**
+     * Function to commit the open database transaction
+     * @return void
+     */
+    public function commitTransaction(){
+        $this->logger->info("Commit database transaction");
+        
+        $this->Exe("COMMIT"); // commit database transaction
         $this->dbTransactionActive = false;
-	}
-	
-	/**
-	 * Function to rollback changes made in the open database transaction
-	 * @return void
-	 */
-	public function rollbackTransaction(){
-		$this->logger->info("Rollback database transaction");
-		
-		$this->Exe("ROLLBACK"); // rollback database transaction
+    }
+    
+    /**
+     * Function to rollback changes made in the open database transaction
+     * @return void
+     */
+    public function rollbackTransaction(){
+        $this->logger->info("Rollback database transaction");
+        
+        $this->Exe("ROLLBACK"); // rollback database transaction
         $this->dbTransactionActive = false;
-	}
+    }
     
 /**************************************************************************************************
  * 
@@ -424,86 +424,86 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         return $arr;
     }
     
-	/**
-	 * Add atom to database
-	 * @param Atom $atom
-	 * @return void
-	 */
-	public function addAtom(Atom $atom){
-	    $this->logger->debug("addAtom({$atom})");
-	    
-		// This function is under control of transaction check!
+    /**
+     * Add atom to database
+     * @param Atom $atom
+     * @return void
+     */
+    public function addAtom(Atom $atom){
+        $this->logger->debug("addAtom({$atom})");
+        
+        // This function is under control of transaction check!
         if (!$this->dbTransactionActive) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
-	    			    
-		// Get table properties
-		$conceptTableInfo = $atom->concept->getConceptTableInfo();
-		$conceptTable = $conceptTableInfo->name;
-		$conceptCols = $conceptTableInfo->getCols(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
-		
-		// Create query string: `<col1>`, `<col2>`, etc
-		$allConceptCols = '`' . implode('`, `', $conceptTableInfo->getColNames()) . '`';
-		
-		
-		// Create query string: '<newAtom>', '<newAtom', etc
-		$atomIdsArray = array_fill(0, count($conceptCols), $atomId);
-		$allValues = "'".implode("', '", $atomIdsArray)."'";
-		
-		foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atomId}'";
-		$duplicateStatement = substr($str, 1);
-		
-		$this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
-				  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
-		
-		// Check if query resulted in an affected row
-        $this->checkForAffectedRows();
-	}
-	
-	/**
-	 * Removing an atom as member from a concept set. 
-	 * @param Atom $atom
-	 * @throws Exception
-	 * @return void
-	 */
-	public function removeAtom(Atom $atom){
-        $this->logger->debug("removeAtom({$atom})");
-	    
-		// This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
+                        
+        // Get table properties
+        $conceptTableInfo = $atom->concept->getConceptTableInfo();
+        $conceptTable = $conceptTableInfo->name;
+        $conceptCols = $conceptTableInfo->getCols(); // Concept are registered in multiple cols in case of specializations. We insert the new atom in every column.
         
-        $atomId = $this->getDBRepresentation($atom);
+        // Create query string: `<col1>`, `<col2>`, etc
+        $allConceptCols = '`' . implode('`, `', $conceptTableInfo->getColNames()) . '`';
         
-		// Get col information for concept and its specializations
-		$colNames = array();
-		$conceptTableInfo = $concept->getConceptTableInfo();
-		$conceptTable = $conceptTableInfo->name;
-		$conceptCol = reset($conceptTableInfo->getCols());
-		
-		$colNames[] = $conceptCol->name;
-		foreach($concept->getSpecializations() as $specConcept){
-			$conceptTableInfo = $specConcept->getConceptTableInfo();
-			$colNames[] = reset($conceptTableInfo->getColNames);
-		}
-		
-		// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
-		$queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
-		
-		$this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atomId}'");
+        
+        // Create query string: '<newAtom>', '<newAtom', etc
+        $atomIdsArray = array_fill(0, count($conceptCols), $atomId);
+        $allValues = "'".implode("', '", $atomIdsArray)."'";
+        
+        foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atomId}'";
+        $duplicateStatement = substr($str, 1);
+        
+        $this->Exe("INSERT INTO `$conceptTable` ($allConceptCols) VALUES ($allValues)"
+                  ." ON DUPLICATE KEY UPDATE $duplicateStatement");
         
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();
-	}
+    }
     
     /**
-	 * Delete atom from concept table in the database
-	 * @param \Ampersand\Core\Atom $atom
-	 * @return void
-	 */
-	public function deleteAtom(Atom $atom){
-		$this->logger->debug("deleteAtom({$atom})");
-		
-	    // This function is under control of transaction check!
+     * Removing an atom as member from a concept set. 
+     * @param Atom $atom
+     * @throws Exception
+     * @return void
+     */
+    public function removeAtom(Atom $atom){
+        $this->logger->debug("removeAtom({$atom})");
+        
+        // This function is under control of transaction check!
+        if (!$this->dbTransactionActive) $this->startTransaction();
+        
+        $atomId = $this->getDBRepresentation($atom);
+        
+        // Get col information for concept and its specializations
+        $colNames = array();
+        $conceptTableInfo = $concept->getConceptTableInfo();
+        $conceptTable = $conceptTableInfo->name;
+        $conceptCol = reset($conceptTableInfo->getCols());
+        
+        $colNames[] = $conceptCol->name;
+        foreach($concept->getSpecializations() as $specConcept){
+            $conceptTableInfo = $specConcept->getConceptTableInfo();
+            $colNames[] = reset($conceptTableInfo->getColNames);
+        }
+        
+        // Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
+        $queryString = "\"" . implode("\" = NULL, \"", $colNames) . "\" = NULL";
+        
+        $this->Exe("UPDATE \"$conceptTable\" SET $queryString WHERE \"{$conceptCol->name}\" = '{$atomId}'");
+        
+        // Check if query resulted in an affected row
+        $this->checkForAffectedRows();
+    }
+    
+    /**
+     * Delete atom from concept table in the database
+     * @param \Ampersand\Core\Atom $atom
+     * @return void
+     */
+    public function deleteAtom(Atom $atom){
+        $this->logger->debug("deleteAtom({$atom})");
+        
+        // This function is under control of transaction check!
         if (!$this->dbTransactionActive) $this->startTransaction();
         
         $atomId = $this->getDBRepresentation($atom);
@@ -515,7 +515,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();
-	}
+    }
     
 /**************************************************************************************************
  *
@@ -571,89 +571,89 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         return $links;
     }
     
-	/**
-	 * Add link (srcAtom,tgtAtom) into database table for relation r
+    /**
+     * Add link (srcAtom,tgtAtom) into database table for relation r
      * @param Link $link
      * @return void
-	 */
-	public function addLink(Link $link){
+     */
+    public function addLink(Link $link){
         $this->logger->debug("addLink({$link})");
         
-	    // This function is under control of transaction check!
+        // This function is under control of transaction check!
         if (!$this->dbTransactionActive) $this->startTransaction();
         
         $relation = $link->relation();
         $srcAtomId = $this->getDBRepresentation($link->src());
         $tgtAtomId = $this->getDBRepresentation($link->tgt());
-	    
-	    $relTable = $relation->getMysqlTable();
-	    
-	    switch ($relTable->tableOf){
-	        case null : // Relation is administrated in n-n table
-	            $this->Exe("INSERT INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtomId}', '{$tgtAtomId}')");
-	            break;
-	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
-	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtomId}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
-	            break;
-	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
-	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtomId}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
-	            break;
-	        default :
-	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
-	    }
         
-	    // Check if query resulted in an affected row
-	    $this->checkForAffectedRows();
-	}
-	
-	/**
-	 * Delete link (srcAtom,tgtAtom) into database table for relation r
+        $relTable = $relation->getMysqlTable();
+        
+        switch ($relTable->tableOf){
+            case null : // Relation is administrated in n-n table
+                $this->Exe("INSERT INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtomId}', '{$tgtAtomId}')");
+                break;
+            case 'src' : // Relation is administrated in concept table (wide) of source of relation
+                $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtomId}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
+                break;
+            case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
+                $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = '{$srcAtomId}' WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+                break;
+            default :
+                throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
+        }
+        
+        // Check if query resulted in an affected row
+        $this->checkForAffectedRows();
+    }
+    
+    /**
+     * Delete link (srcAtom,tgtAtom) into database table for relation r
      * @param Link $link
      * @return void
-	 */
-	public function deleteLink(Link $link){
+     */
+    public function deleteLink(Link $link){
         $this->logger->debug("deleteLink({$link})");
         
-	    // This function is under control of transaction check!
+        // This function is under control of transaction check!
         if (!$this->dbTransactionActive) $this->startTransaction();
         
         $relation = $link->relation();
         $srcAtomId = $this->getDBRepresentation($link->src());
         $tgtAtomId = $this->getDBRepresentation($link->tgt());
-	     
-	    $relTable = $relation->getMysqlTable();
-	     
-	    switch ($relTable->tableOf){
-	        case null : // Relation is administrated in n-n table
-	            if(is_null($srcAtomId) || is_null($tgtAtomId)) throw new Exception ("Cannot delete from relation table '{$relTable->name}', because srcAtom or tgtAtom is null", 500);
-	            $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
-	            break;
-	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
-	            if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link {$link} because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
-	            
-	            // Source atom can be used in WHERE statement
-	            if(!is_null($srcAtomId)) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
-	            // Target can be used in WHERE statement, because tgtCol is unique
-	            elseif($relTable->tgtCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
-	            // Else update cannot be performed, because of missing target
-	            else throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
-	            break;
-	        case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
-	            if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link {$link} because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
-	            
-	            // Target atom can be used in WHERE statement
-	            if(!is_null(($tgtAtomId))) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
-	            // Source can be used in WHERE statement, because srcCol is unique
-	            elseif($relTable->srcCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
-	            // Else update cannot be performed, because of missing target
-	            else throw new Exception ("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
-	            break;
-	        default :
-	            throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
-	    }
-	    
-	    $this->checkForAffectedRows(); // Check if query resulted in an affected row
-	}
+         
+        $relTable = $relation->getMysqlTable();
+         
+        switch ($relTable->tableOf){
+            case null : // Relation is administrated in n-n table
+                if(is_null($srcAtomId) || is_null($tgtAtomId)) throw new Exception ("Cannot delete from relation table '{$relTable->name}', because srcAtom or tgtAtom is null", 500);
+                $this->Exe("DELETE FROM `{$relTable->name}` WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}' AND `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+                break;
+            case 'src' : // Relation is administrated in concept table (wide) of source of relation
+                if(!$relTable->tgtCol()->null) throw new Exception("Cannot delete link {$link} because target column '{$relTable->tgtCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+                
+                // Source atom can be used in WHERE statement
+                if(!is_null($srcAtomId)) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
+                // Target can be used in WHERE statement, because tgtCol is unique
+                elseif($relTable->tgtCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+                // Else update cannot be performed, because of missing target
+                else throw new Exception ("Cannot set '{$relTable->tgtCol()->name}' to NULL in concept table '{$relTable->name}', because srcAtom is null", 500);
+                break;
+            case 'tgt' : //  Relation is administrated in concept table (wide) of target of relation
+                if(!$relTable->srcCol()->null) throw new Exception("Cannot delete link {$link} because source column '{$relTable->srcCol()->name}' in table '{$relTable->name}' may not be set to null", 500);
+                
+                // Target atom can be used in WHERE statement
+                if(!is_null(($tgtAtomId))) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->tgtCol()->name}` = '{$tgtAtomId}'");
+                // Source can be used in WHERE statement, because srcCol is unique
+                elseif($relTable->srcCol()->unique) $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->srcCol()->name}` = NULL WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");
+                // Else update cannot be performed, because of missing target
+                else throw new Exception ("Cannot set '{$relTable->srcCol()->name}' to NULL in concept table '{$relTable->name}', because tgtAtom is null", 500);
+                break;
+            default :
+                throw new Exception ("Unknown 'tableOf' option for relation '{$relation}'", 500);
+        }
+        
+        $this->checkForAffectedRows(); // Check if query resulted in an affected row
+    }
     
     /**
      * @param Relation $relation relation from which to delete all links
@@ -754,7 +754,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         $query = "SELECT DISTINCT `tgt` FROM ({$view->expSQL}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
         return array_column((array) $this->Exe($query), 'tgt');
     }
-	
+    
 /**************************************************************************************************
  *
  * Helper functions

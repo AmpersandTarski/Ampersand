@@ -175,7 +175,7 @@ class Rule {
             foreach($this->conjuncts as $conjunct) 
                 foreach ($conjunct->evaluateConjunct($cacheConjuncts) as $violation) 
                     $violations[] = new Violation($this, $violation['src'], $violation['tgt']);
-            	
+                
             // If no violations => rule holds
             if(empty($violations)) $this->logger->debug("Rule '{$this->id}' holds");
             

@@ -109,12 +109,12 @@ class Conjunct {
     public function evaluateConjunct($cacheConjuncts = true){
         $this->logger->debug("Checking conjunct '{$this->id}' cache:" . var_export($cacheConjuncts, true));
         try{
-            	
+                
             // If conjunct is already evaluated and conjunctCach may be used -> return violations
             if(isset($this->conjunctViolations) && $cacheConjuncts){
                 $this->logger->debug("Conjunct is already evaluated, getting violations from cache");
                 return $this->conjunctViolations;
-                	
+                    
                 // Otherwise evaluate conjunct, cache and return violations
             }else{
                 $db = Database::singleton();
@@ -136,7 +136,7 @@ class Conjunct {
                     
                 }else{
                     $this->logger->debug("Conjunct '{$this->id}' broken, updating violations in database");
-                    	
+                        
                     // Add new conjunct violation to database
                     $query = "INSERT IGNORE INTO `$dbsignalTableName` (`conjId`, `src`, `tgt`) VALUES ";
                     $values = array();
@@ -147,7 +147,7 @@ class Conjunct {
     
                 return $violations;
             }
-            	
+                
         }catch (Exception $e){
             Logger::getUserLogger()->error("While checking conjunct '{$this->id}': " . $e->getMessage());
             return array();

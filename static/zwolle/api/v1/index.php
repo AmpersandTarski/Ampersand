@@ -24,22 +24,22 @@ $app->response->headers->set('Content-Type', 'application/json');
 
 // Error handler
 $app->error(function (Exception $e) use ($app) {
-	$app->response->setStatus($e->getCode());
-	try{
+    $app->response->setStatus($e->getCode());
+    try{
         Logger::getLogger("API")->error($e->getMessage());
-	    $notifications = Notifications::getAll();
-	    print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
-	}catch(Exception $b){
+        $notifications = Notifications::getAll();
+        print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
+    }catch(Exception $b){
         Logger::getLogger("API")->error($b->getMessage());
-	    print json_encode(array('error' => $b->getCode(), 'msg' => $b->getMessage(), 'notifications' => array()));
-	}
-	
+        print json_encode(array('error' => $b->getCode(), 'msg' => $b->getMessage(), 'notifications' => array()));
+    }
+    
 });
 
 // Not found handler
 $app->notFound(function () use ($app) {
-	$app->response->setStatus(404);
-	print json_encode(array('error' => 404, 'msg' => "API call not found: {$app->request->getMethod()} {$app->request->getUrl()}{$app->request->getPath()}"));
+    $app->response->setStatus(404);
+    print json_encode(array('error' => 404, 'msg' => "API call not found: {$app->request->getMethod()} {$app->request->getUrl()}{$app->request->getPath()}"));
 });
 
 include (__DIR__ . '/resources.php'); // API calls starting with '/resources/'
@@ -51,5 +51,5 @@ foreach((array)$GLOBALS['api']['files'] as $apiFile) include_once ($apiFile); //
 
 // Run app
 $app->run();
-	
+    
 ?>

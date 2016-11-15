@@ -102,11 +102,11 @@ class Resource extends Atom {
         
     }
     
-	/**
-	 * Returns view array of key-value pairs for this atom
-	 * @return array
-	 */
-	private function getView(){
+    /**
+     * Returns view array of key-value pairs for this atom
+     * @return array
+     */
+    private function getView(){
         // If view is not already set
         if(!isset($this->viewData)){
             $this->logger->debug("Get view for atom '{$this}'");

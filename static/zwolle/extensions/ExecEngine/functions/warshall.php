@@ -35,100 +35,100 @@ use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
 
 function TransitiveClosure($r,$C,$rCopy,$rPlus){
-	if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
-	Logger::getLogger('EXECENGINE')->debug("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)");
-	
-	$warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
-	$execEngineRunCount = ExecEngine::$runCount;
+    if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
+    Logger::getLogger('EXECENGINE')->debug("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)");
+    
+    $warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
+    $execEngineRunCount = ExecEngine::$runCount;
 
-	if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
-		if($warshallRunCount == $execEngineRunCount){
-			Logger::getLogger('EXECENGINE')->debug("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)");
-			return;  // this is the case if we have executed this function already in this transaction
-		}		
-	}
-		
-	$GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
-	$GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'] = ExecEngine::$runCount;
-	
-	// Compute transitive closure following Warshall's algorithm
-	$closure = RetrievePopulation($r, $C); // get adjacency matrix
-	
-	OverwritePopulation($closure, $rCopy, $C); // store it in the 'rCopy' relation
-	
-	// Get all unique atoms from this population
-	$atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure
-	
-	foreach ($closure as $tgtAtomsList){ // Loop to add 'Tgt' atoms that not yet exist
-		$tgtAtoms = array_keys($tgtAtomsList);
-		foreach ($tgtAtoms as $tgtAtom){
-			if (!in_array($tgtAtom, $atoms)) $atoms[] = $tgtAtom;
-		}
-	}
-	
-	foreach ($atoms as $k){
-		foreach ($atoms as $i){
-			if ($closure[$i][$k]){
-				foreach ($atoms as $j){
-					$closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
-				}
-			}
-		}
-	}
-	
-	OverwritePopulation($closure, $rPlus, $C);
+    if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
+        if($warshallRunCount == $execEngineRunCount){
+            Logger::getLogger('EXECENGINE')->debug("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)");
+            return;  // this is the case if we have executed this function already in this transaction
+        }        
+    }
+        
+    $GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
+    $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'] = ExecEngine::$runCount;
+    
+    // Compute transitive closure following Warshall's algorithm
+    $closure = RetrievePopulation($r, $C); // get adjacency matrix
+    
+    OverwritePopulation($closure, $rCopy, $C); // store it in the 'rCopy' relation
+    
+    // Get all unique atoms from this population
+    $atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure
+    
+    foreach ($closure as $tgtAtomsList){ // Loop to add 'Tgt' atoms that not yet exist
+        $tgtAtoms = array_keys($tgtAtomsList);
+        foreach ($tgtAtoms as $tgtAtom){
+            if (!in_array($tgtAtom, $atoms)) $atoms[] = $tgtAtom;
+        }
+    }
+    
+    foreach ($atoms as $k){
+        foreach ($atoms as $i){
+            if ($closure[$i][$k]){
+                foreach ($atoms as $j){
+                    $closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
+                }
+            }
+        }
+    }
+    
+    OverwritePopulation($closure, $rPlus, $C);
 }
 
 function RetrievePopulation($relationName, $conceptName){
-	try{
-		$database = Database::singleton();
-		
+    try{
+        $database = Database::singleton();
+        
         $concept = Concept::getConceptByLabel($conceptName);
-		$relation = Relation::getRelation($relationName, $concept, $concept);
-		$relationTable = $relation->getMysqlTable();
-		$srcCol = $relationTable->srcCol();
-		$tgtCol = $relationTable->tgtCol();
-		
-		$query = "SELECT * FROM `{$relationTable->name}`";
-		$result = $database->Exe($query);
-		
-		// initialization of 2-dimensional array
-		$array = array();
-		foreach($result as $row){
-			$array[$row[$srcCol->name]][$row[$tgtCol->name]] = !is_null($row[$tgtCol->name]);
-		}
-		
-		return $array;
-	}catch(Exception $e){
-		throw new Exception('RetrievePopulation: ' . $e->getMessage(), 500);
-	}
+        $relation = Relation::getRelation($relationName, $concept, $concept);
+        $relationTable = $relation->getMysqlTable();
+        $srcCol = $relationTable->srcCol();
+        $tgtCol = $relationTable->tgtCol();
+        
+        $query = "SELECT * FROM `{$relationTable->name}`";
+        $result = $database->Exe($query);
+        
+        // initialization of 2-dimensional array
+        $array = array();
+        foreach($result as $row){
+            $array[$row[$srcCol->name]][$row[$tgtCol->name]] = !is_null($row[$tgtCol->name]);
+        }
+        
+        return $array;
+    }catch(Exception $e){
+        throw new Exception('RetrievePopulation: ' . $e->getMessage(), 500);
+    }
 }
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
 function OverwritePopulation($rArray, $relationName, $conceptName){
-	try{
-		$database = Database::singleton();
-		
+    try{
+        $database = Database::singleton();
+        
         $concept = Concept::getConceptByLabel($conceptName);
-		$relation = Relation::getRelation($relationName, $concept, $concept);
-		$relationTable = $relation->getMysqlTable();
-		$srcCol = $relationTable->srcCol();
-		$tgtCol = $relationTable->tgtCol();
-		
-		$query = "DELETE FROM `{$relationTable->name}`"; // Do not use TRUNCATE statement, this causes an implicit commit
-		$database->Exe($query);
-		
-		foreach($rArray as $src => $tgtArray){
-			foreach($tgtArray as $tgt => $bool){
-				if($bool){
-					$query = "INSERT INTO `{$relationTable->name}` (`{$srcCol->name}`, `{$tgtCol->name}`) VALUES ('$src','$tgt')";
-					$database->Exe($query);
-				}
-			}
-		}
-		
-	}catch(Exception $e){
-		throw new Exception('OverwritePopulation: ' . $e->getMessage(), 500);
-	}
+        $relation = Relation::getRelation($relationName, $concept, $concept);
+        $relationTable = $relation->getMysqlTable();
+        $srcCol = $relationTable->srcCol();
+        $tgtCol = $relationTable->tgtCol();
+        
+        $query = "DELETE FROM `{$relationTable->name}`"; // Do not use TRUNCATE statement, this causes an implicit commit
+        $database->Exe($query);
+        
+        foreach($rArray as $src => $tgtArray){
+            foreach($tgtArray as $tgt => $bool){
+                if($bool){
+                    $query = "INSERT INTO `{$relationTable->name}` (`{$srcCol->name}`, `{$tgtCol->name}`) VALUES ('$src','$tgt')";
+                    $database->Exe($query);
+                }
+            }
+        }
+        
+    }catch(Exception $e){
+        throw new Exception('OverwritePopulation: ' . $e->getMessage(), 500);
+    }
 }
 ?>

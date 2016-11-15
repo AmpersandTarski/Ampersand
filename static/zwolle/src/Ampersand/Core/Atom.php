@@ -19,38 +19,38 @@ use Ampersand\Log\Logger;
  *
  */
 class Atom implements JsonSerializable {
-	/**
-	 *
-	 * @var \Psr\Log\LoggerInterface
-	 */
-	protected $logger;
-	
-	/**
-	 * Ampersand identifier of the atom
-	 * @var string
-	 */
-	public $id;
-	
-	/**
-	 * Specifies the concept of which this atom is an instance
-	 * @var Concept
-	 */
-	public $concept;
+    /**
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    protected $logger;
+    
+    /**
+     * Ampersand identifier of the atom
+     * @var string
+     */
+    public $id;
+    
+    /**
+     * Specifies the concept of which this atom is an instance
+     * @var Concept
+     */
+    public $concept;
     
     /**
      * @var array|null $queryData the row data (from database query) from which this resource is created
      */
     protected $queryData = null;
     
-	/**
-	 * Atom constructor
-	 * @param string $atomId
-	 * @param Concept $concept
-	 * @return void
-	 */
-	public function __construct($atomId, Concept $concept){
-		$this->logger = Logger::getLogger('ATOM');
-		
+    /**
+     * Atom constructor
+     * @param string $atomId
+     * @param Concept $concept
+     * @return void
+     */
+    public function __construct($atomId, Concept $concept){
+        $this->logger = Logger::getLogger('ATOM');
+        
         $this->concept = $concept;
         
         switch($this->concept->type){
@@ -82,17 +82,17 @@ class Atom implements JsonSerializable {
             default :
                 throw new Exception("Unknown/unsupported representation type '{$this->concept->type}' for concept '[{$this->concept}]'", 501);
         }
-	}
-	
+    }
+    
     /**
      * Function is called when object is treated as a string
      * @return string
      */
-	public function __toString(){
+    public function __toString(){
         // if atom id is longer than 40 chars, display first and last 20 chars
         $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
-	    return "{$id}[{$this->concept}]";
-	}
+        return "{$id}[{$this->concept}]";
+    }
     
     /**
      * Return label of atom to be displayed in user interfaces
@@ -138,22 +138,22 @@ class Atom implements JsonSerializable {
         }
     }
     
-	/**
-	 * Checks if atom exists in storage
-	 * @return boolean
-	 */
-	public function exists(){
+    /**
+     * Checks if atom exists in storage
+     * @return boolean
+     */
+    public function exists(){
         return $this->concept->atomExists($this);
-	}
-	
-	/**
-	 * Add atom to concept
-	 * @return Atom $this
-	 */
-	public function add(){
+    }
+    
+    /**
+     * Add atom to concept
+     * @return Atom $this
+     */
+    public function add(){
         $this->concept->addAtom($this);
-	    return $this;
-	}
+        return $this;
+    }
     
     /**
      * Delete atom from concept

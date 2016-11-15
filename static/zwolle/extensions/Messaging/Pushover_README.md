@@ -8,8 +8,8 @@ Steps:
 
 // Enable Pushover notification extension
 require_once(__DIR__ . '/extensions/Messaging/Pushover.php');
-	Config::set('applicationToken', 'pushover', '<token here>'); // pushover application token
-	Config::set('alwaysNotifyUsers', 'pushover', array('<userkey>', '<userkey>', '<etc>')); // array of pushover user keys that receive a copy of all notifications
+    Config::set('applicationToken', 'pushover', '<token here>'); // pushover application token
+    Config::set('alwaysNotifyUsers', 'pushover', array('<userkey>', '<userkey>', '<etc>')); // array of pushover user keys that receive a copy of all notifications
 
 // ExecEngine rule violation example:
 VIOLATION(TXT "{EX}PushoverNotifications::execEnginePushNotificationOnCommit;<userKeys>;<message>;<title>;<url>")
