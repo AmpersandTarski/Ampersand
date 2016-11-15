@@ -21,11 +21,26 @@ import Ampersand.Basics hiding (putStrLn)
 import Ampersand.Misc
 import Ampersand.Core.AbstractSyntaxTree
 
+
+initMySQLGlobals :: FSpec -> [Text.Text]
+initMySQLGlobals fSpec =
+  [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
+  , ""
+  , "    /* file_per_table is required for long columns */"
+  , "    mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table \");"
+  , ""
+  , "    /* file_format = Barracuda is required for long columns */"
+  , "    mysqli_query($DB_link, \"SET GLOBAL innodb_file_format = `Barracuda` \");"
+  , ""
+  , "    /* large_prefix gives max single-column indices of 3072 bytes = win! */"
+  , "    mysqli_query($DB_link, \"SET GLOBAL innodb_large_prefix = true \");"
+  , ""
+  ]
+
 createTablesPHP :: FSpec -> [Text.Text]
-createTablesPHP fSpec =
+createTablesPHP fSpec = initMySQLGlobals fSpec <>
         [ "/*** Create new SQL tables ***/"
         , ""
-        , "SET GLOBAL innodb_file_format=Barracuda;"
         ] <>
         createTablePHP sessionTableSpec <>
         setSqlModePHP<>
