@@ -23,13 +23,13 @@ angular.module('LoginModule', ['ngRoute', 'restangular'])
             NotificationService.updateNotifications(data.notifications);
         }
     );
-}).controller('LoginExtLogoutController', function($scope, $rootScope, Restangular, $location){
+}).controller('LoginExtLogoutController', function($scope, Restangular, $location, RoleService){
     $scope.logout = function(){
         Restangular.one('oauthlogin/logout').get().then(
             function(data){ // success
                 data = data.plain();
                 NotificationService.updateNotifications(data.notifications);
-                $rootScope.deactivateAllRoles();
+                RoleService.deactivateAllRoles();
                 $location.path('/'); // goto home
             }
         );

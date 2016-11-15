@@ -1,9 +1,9 @@
-angular.module('AmpersandApp').controller('uploadFileController', function($scope, $rootScope, FileUploader, NotificationService){
+angular.module('AmpersandApp').controller('uploadFileController', function($scope, $rootScope, FileUploader, NotificationService, RoleService){
     
     // File uploader stuff
     $scope.FileUploader = new FileUploader({
         alias : 'file', // fieldname as used in $_FILES['file']
-        formData : [{'roleId[]' : $rootScope.getActiveRoleIds()}], // the '[]' in param 'roleIds[]' is needed by the API to process it as array
+        formData : [{'roleId[]' : RoleService.getActiveRoleIds()}], // the '[]' in param 'roleIds[]' is needed by the API to process it as array
         removeAfterUpload : true,
         autoUpload : true
     });

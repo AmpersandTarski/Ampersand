@@ -25,19 +25,12 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     RestangularProvider.setDefaultHeaders({"Content-Type": "application/json"});
     // RestangularProvider.setPlainByDefault(true); available from Restangular v1.5.3
     
-}).run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route, NotificationService){
+}).run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route, NotificationService, RoleService){
     
     $sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
         
     Restangular.addFullRequestInterceptor(function(element, operation, what, url, headers, params){
-        var roleIds = [];
-        angular.forEach($sessionStorage.sessionRoles, function(role) {
-            if (role.active === true) {
-                roleIds.push(role.id);
-            }
-        });
-        
-        params['roleIds[]'] = roleIds; // the '[]' in param 'roleIds[]' is needed by the API to process it as array
+        params['roleIds[]'] = RoleService.getActiveRoleIds(); // the '[]' in param 'roleIds[]' is needed by the API to process it as array
         params.navIfc = true;
         params.metaData = true;
         return params;
@@ -53,7 +46,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
         
         // 401: Unauthorized, 440: Login Timeout
         if(response.status == 401 || response.status == 440) {
-            $rootScope.deactivateAllRoles();
+            RoleService.deactivateAllRoles();
             $location.path(''); // TODO: redirect to login page (if exists)
         }
         

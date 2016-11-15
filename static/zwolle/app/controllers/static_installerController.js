@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('static_installerController', function ($scope, $rootScope, $routeParams, Restangular, $localStorage, NotificationService) {
+angular.module('AmpersandApp').controller('static_installerController', function ($scope, Restangular, NotificationService, RoleService) {
     $scope.installing = false;
     $scope.installed = false;
     
@@ -10,7 +10,7 @@ angular.module('AmpersandApp').controller('static_installerController', function
             NotificationService.updateNotifications(data);
             
             // deactive all roles
-            $rootScope.deactivateAllRoles();
+            RoleService.deactivateAllRoles();
             
             $scope.installing = false;
             $scope.installed = true;

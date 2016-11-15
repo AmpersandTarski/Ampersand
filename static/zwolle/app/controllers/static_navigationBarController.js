@@ -1,58 +1,10 @@
-angular.module('AmpersandApp').controller('static_navigationBarController', function ($scope, $rootScope, $route, $routeParams, Restangular, $localStorage, $sessionStorage, $timeout, NotificationService) {
+angular.module('AmpersandApp').controller('static_navigationBarController', function ($scope, $rootScope, $route, Restangular, $localStorage, $sessionStorage, $timeout, NotificationService, RoleService) {
     
     $scope.$storage = $localStorage;
     $scope.$sessionStorage = $sessionStorage;
     $scope.defaultSettings = {};
     
     $rootScope.loadingNavBar = []; // initialize an array for promises, used by angular-busy module (loading indicator)
-    
-    $rootScope.selectRole = function(roleId){
-        $rootScope.toggleRole(roleId, true);
-    };
-    
-    $rootScope.toggleRole = function(roleId, set){
-        angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
-            if (role.id == roleId) {
-                if(set === undefined){
-                    role.active = !role.active;
-                }else{
-                    role.active = set;
-                }
-            }
-        });
-        
-        // refresh navbar + notifications
-        $rootScope.refreshNavBar();
-    };
-    
-    $rootScope.deactivateAllRoles = function(){
-        angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
-            role.active = false;
-        });
-        $rootScope.refreshNavBar();
-    };
-    
-    $rootScope.getActiveRoleIds = function(){
-        var roleIds = [];
-        angular.forEach($scope.$sessionStorage.sessionRoles, function(role) {
-            if (role.active === true) {
-                roleIds.push(role.id);
-            }
-        });
-        return roleIds;
-    };
-    
-    $rootScope.selectRoleByLabel = function (roleLabel){
-        angular.forEach($scope.sessionStorage.sessionRoles, function(role) {
-            if(role.label == roleLabel){
-                $rootScope.selectRole(role.id);
-                return;
-            }
-            
-            NotificationService.addError('Unknown role: ' + roleLabel);
-            return;
-        });
-    };
     
     $rootScope.refreshNavBar = function(){
         $rootScope.loadingNavBar = [];
@@ -97,7 +49,8 @@ angular.module('AmpersandApp').controller('static_navigationBarController', func
             NotificationService.updateNotifications(data.notifications);
             
             // deactivate roles
-            $rootScope.deactivateAllRoles();
+            RoleService.deactivateAllRoles();
+            $rootScope.refreshNavBar();
             
         });
     };
