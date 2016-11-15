@@ -3,25 +3,25 @@ var app = angular.module('AmpersandApp');
 app.requires[app.requires.length] = 'angularFileUpload';
 
 angular.module('AmpersandApp').config(function($routeProvider) {
-	$routeProvider
-		// default start page
-		.when('/ext/ExcelImport',
-			{	controller: 'ExcelImportController'
-			,	templateUrl: 'extensions/ExcelImport/ui/views/ExcelImport.html'
-			,	interfaceLabel: 'Excel import'
-			});
+    $routeProvider
+        // default start page
+        .when('/ext/ExcelImport',
+            {    controller: 'ExcelImportController'
+            ,    templateUrl: 'extensions/ExcelImport/ui/views/ExcelImport.html'
+            ,    interfaceLabel: 'Excel import'
+            });
 }).controller('ExcelImportController', function ($scope, $rootScope, FileUploader, NotificationService) {
-	
-	// $rootScope, so that all information and uploaded files are kept while browsing in the application
-	if (typeof $rootScope.uploader == 'undefined') {
+    
+    // $rootScope, so that all information and uploaded files are kept while browsing in the application
+    if (typeof $rootScope.uploader == 'undefined') {
 
-		$rootScope.uploader = new FileUploader({
-			 url: 'api/v1/excelimport/import'
-		});
-	}
-	
-	$rootScope.uploader.onSuccessItem = function(fileItem, response, status, headers) {
-		NotificationService.updateNotifications(response.notifications);
+        $rootScope.uploader = new FileUploader({
+             url: 'api/v1/excelimport/import'
+        });
+    }
+    
+    $rootScope.uploader.onSuccessItem = function(fileItem, response, status, headers) {
+        NotificationService.updateNotifications(response.notifications);
         // console.info('onSuccessItem', fileItem, response, status, headers);
     };
     
