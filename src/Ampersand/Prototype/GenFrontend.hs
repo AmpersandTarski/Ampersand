@@ -331,7 +331,7 @@ genViewInterface fSpec interf =
                      . setAttribute "contents"            (intercalate "\n"$ lns) -- intercalate, because unlines introduces a trailing \n
                      . setAttribute "verbose"             (verboseP opts)
 
-    ; let filename = ifcName interf ++ ".html" 
+    ; let filename = "ifc" ++ ifcName interf ++ ".view.html" 
     ; writePrototypeAppFile opts ("views" </> filename) contents 
     }
    where opts = getOpts fSpec
@@ -449,7 +449,7 @@ genControllerInterface fSpec interf =
                      . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
                      . setAttribute "verbose"                  (verboseP opts)
                      . setAttribute "usedTemplate"             controlerTemplateName
-    ; let filename = "Ifc" ++ ifcName interf ++ ".controller.js"
+    ; let filename = "ifc" ++ ifcName interf ++ ".controller.js"
     ; writePrototypeAppFile opts ("controllers" </> filename) contents 
     }
     where 
