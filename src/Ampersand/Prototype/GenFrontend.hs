@@ -449,7 +449,7 @@ genControllerInterface fSpec interf =
                      . setAttribute "crudD"                    (objCrudD (_ifcObj interf))
                      . setAttribute "verbose"                  (verboseP opts)
                      . setAttribute "usedTemplate"             controlerTemplateName
-    ; let filename = ifcName interf ++ ".js"
+    ; let filename = "Ifc" ++ ifcName interf ++ ".controller.js"
     ; writePrototypeAppFile opts ("controllers" </> filename) contents 
     }
     where 

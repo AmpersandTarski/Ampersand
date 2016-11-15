@@ -7,7 +7,7 @@ INTERFACE "$interfaceName$" : $expAdl$ :: $source$ * $target$  ($if(!isRoot)$non
 Roles: [$roles;separator=", "$]
 $endif$*/
 /* jshint ignore:start */
-angular.module('AmpersandApp').controller('$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, \$sessionStorage, ResourceService) {
+angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', function (\$scope, \$rootScope, \$route, \$routeParams, \$sessionStorage, ResourceService) {
     const resourceType = '$source$';
     const ifcName = '$interfaceName$';
     let resourceId;
