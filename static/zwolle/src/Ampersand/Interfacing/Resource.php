@@ -63,7 +63,7 @@ class Resource extends Atom {
         $this->parentList = $parentList;
         
         // Get Ampersand concept for this resourceType
-        $cpt = Concept::getConceptByLabel($resourceType);
+        $cpt = Concept::getConcept($resourceType);
         if(!$cpt->isObject()) throw new Exception ("Cannot instantiate resource given non-object concept {$cpt->name}.");
         
         // Call Atom constructor

@@ -89,7 +89,7 @@ class Session {
     
     private function initSession(){
         $this->sessionAtom = new Atom($this->id, Concept::getSessionConcept());
-        $this->sessionResource = new Resource($this->id, Concept::getSessionConcept());
+        $this->sessionResource = new Resource($this->id, Concept::getSessionConcept()->name);
         
         // Create a new Ampersand session atom if not yet in SESSION table (i.e. new php session)
         if (!$this->sessionAtom->exists()){ 
