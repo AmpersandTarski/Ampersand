@@ -309,8 +309,7 @@ tempDbName = "ampersand_temporaryeditvalidationdb"
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { writeFile "d:\\mijnTempDB.php" (Text.unpack . showPHP $ phpStr)
-    ; _ <- executePHPStr .
+ do { _ <- executePHPStr .
            showPHP $ phpStr
     ; return ()
     }
