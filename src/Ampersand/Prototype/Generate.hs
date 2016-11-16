@@ -47,7 +47,8 @@ generateDBstructQueries fSpec withComment
                (map fld2sql (tsflds ts) <> tsKey ts)
             
           <>[" , "<>doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]
-          <>[" ) ENGINE="<>dbEngine]
+          <>[" ) ENGINE="<>tsEngn ts]
+          <>[" , ROW_FORMAT="<>tsRowFormat ts]
          ):
          [ ["CREATE INDEX "<>show (tsName ts<>"_"<>name fld)<>" ON "<>show (tsName ts)<>" ("<>show (name fld)<>")"]
          | fld <- tsflds ts
@@ -63,6 +64,7 @@ data TableSpec
               , tsflds :: [SqlAttribute]
               , tsKey ::  [String]
               , tsEngn :: String
+              , tsRowFormat :: String
               }
 data AttributeSpec
   = AttributeSpec { fsname :: String
@@ -107,6 +109,7 @@ plug2TableSpec plug
                          ForeignKey c -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
                          PlainAttr    -> []
      , tsEngn = dbEngine
+     , tsRowFormat = "Dynamic"
      }
 
 commentBlockSQL :: [String] -> [String]
