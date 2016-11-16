@@ -234,13 +234,16 @@ performQuery fSpec dbNm queryStr =
       , "$DB_user='"<>addSlashes (Text.pack (sqlLogin opts))<>"';"
       , "$DB_pass='"<>addSlashes (Text.pack (sqlPwd opts))<>"';"
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
+      , "echo aap"
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
       , "  die(\"Error: Failed to connect to $DB_name: \" . mysqli_connect_error());"
       , "  }"
       , ""
+      , "echo noot"
       ]<>setSqlModePHP<>
       [ "$sql="<>showPhpStr queryStr<>";"
+      , "echo mies"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
       , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
@@ -308,7 +311,7 @@ setSqlModePHP =
        ]
 
 tempDbName :: String
-tempDbName = "ampersand_temporaryeditvalidationdb"
+tempDbName = "ampTempdb"
 
 
 createTempDatabase :: FSpec -> IO ()
