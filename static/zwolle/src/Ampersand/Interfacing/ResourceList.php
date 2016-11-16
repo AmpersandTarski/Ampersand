@@ -62,6 +62,10 @@ class ResourceList implements IteratorAggregate {
         else return new ArrayIterator($this->getTgtAtoms());
     }
     
+    public function getSrc(){
+        return $this->src;
+    }
+    
     /**
      * @return string
      */
@@ -80,7 +84,10 @@ class ResourceList implements IteratorAggregate {
      * @param string $tgtId
      * @return Resource
      */
-    public function one($tgtId){
+    public function one($tgtId = null){
+        // If no tgtId is provided, the srcId is used. Usefull for ident interface expressions (I[Concept])
+        if(!isset($tgtId)) $tgtId = $this->src->id;
+        
         $arr = $this->getTgtResources();
         
         // Functionality to automatically add/create resource if allowed

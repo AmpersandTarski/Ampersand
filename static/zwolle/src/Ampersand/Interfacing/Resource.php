@@ -124,7 +124,20 @@ class Resource extends Atom {
      * @return string
      */
     public function getPath(){
-        if(isset($this->parentList)) return $this->parentList->getPath() . '/' . $this->id;
+        if(isset($this->parentList)){
+            
+            /* Skip resource id for ident interface expressions (I[Concept])
+             * I expressions are commonly used for adding structure to an interface using (sub) boxes
+             * This results in verbose paths
+             * e.g.: pathToApi/resource/Person/John/Person/John/Person details/John/Name
+             * By skipping ident expressions the paths are more concise without loosing information
+             * e.g.: pathToApi/resource/Person/John/Person/PersonDetails/Name
+             */
+            if($this->parentList->getIfc()->isIdent()) return $this->parentList->getPath();
+            else return $this->parentList->getPath() . '/' . $this->id;
+            
+            return $this->parentList->getPath() . '/' . $this->id;
+        }
         else return "resources/{$this->concept->name}/" . $this->id;
     }
     
@@ -183,14 +196,19 @@ class Resource extends Atom {
                     $r = $r->all(array_shift($pathList));
                     break;
                 case 'Ampersand\Interfacing\ResourceList' :
-                    $r = $r->one(array_shift($pathList));
+                    // See explaination at getPath() function above why this if/else construct is here
+                    if($r->getIfc()->isIdent()) $r = $r->one();
+                    else $r = $r->one(array_shift($pathList));
                     break;
                 default:
                     throw new Exception("Unknown class type: " . get_class($r), 500);
             }
         }
         
-        if(isset($returnType) && $returnType != get_class($r)) throw new Exception ("Provided path results in '" . get_class($r) . "' while '{$returnType}' requested", 500);
+        if(isset($returnType) && $returnType != get_class($r)){
+            if(get_class($r) == 'Ampersand\Interfacing\ResourceList' && $r->getIfc()->isIdent()) $r = $r->one();
+            else throw new Exception ("Provided path results in '" . get_class($r) . "' while '{$returnType}' requested", 500);
+        }
         
         return $r;
     }
