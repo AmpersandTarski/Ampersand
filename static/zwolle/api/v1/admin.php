@@ -36,7 +36,10 @@ $app->get('/admin/installer', function () use ($app){
     $logger = Logger::getUserLogger();
     foreach (InterfaceObject::getAllInterfaces() as $key => $interface) {
         foreach($interface->getInterfaceFlattened() as $ifc){
-            if($ifc->crudU() && !$ifc->isEditable()) $logger->warning("Update rights (crUd) specified while interface expression is not an editable relation for (sub)interface: ". $ifc->getPath());
+            if($ifc->crudU() && !$ifc->isEditable()) $logger->warning("Update rights (crUd) specified while interface expression is not an editable relation! Ifc:". $ifc->getPath());
+            if($ifc->crudC() && !$ifc->tgtConcept->isObject()) $logger->warning("Create rights (Crud) specified while target concept is a scalar. This has no affect! Ifc:". $ifc->getPath());
+            if($ifc->crudD() && !$ifc->tgtConcept->isObject()) $logger->warning("Delete rights (cruD) specified while target concept is a scalar. This has no affect! Ifc:". $ifc->getPath());
+            if(!$ifc->crudR()) $logger->warning("No read rights specified. Are you sure? Ifc:". $ifc->getPath());
             
             // Check for unsupported patchReplace functionality due to missing 'old value'. Related with issue #318. TODO: still needed??
             if($ifc->isEditable() && $ifc->crudU() && !$ifc->tgtConcept->isObject() && $ifc->isUni()){
