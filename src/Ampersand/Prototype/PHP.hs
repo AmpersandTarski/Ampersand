@@ -4,41 +4,47 @@ module Ampersand.Prototype.PHP
          , setSqlModePHP, createTablesPHP, populateTablesPHP
          , signalTableSpec, getTableName, createTempDatabase, tempDbName) where
 
-import Prelude hiding (exp,putStrLn,readFile)
+import Prelude hiding (exp,putStrLn,readFile,writeFile)
 import Control.Exception
 import Data.Monoid
 import Data.List
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
 import System.Process
-import System.IO hiding (hPutStr,hGetContents,readFile)
+import System.IO hiding (hPutStr,hGetContents,putStrLn,readFile,writeFile)
 import System.Directory
 import System.FilePath
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.FSpec.SQL
 import Ampersand.FSpec
-import Ampersand.Basics hiding (putStrLn)
+import Ampersand.Basics
 import Ampersand.Misc
 import Ampersand.Core.AbstractSyntaxTree
 
 
-initMySQLGlobals :: FSpec -> [Text.Text]
-initMySQLGlobals fSpec =
+initMySQLGlobals :: [Text.Text]
+initMySQLGlobals =
   [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
   , ""
   , "    /* file_per_table is required for long columns */"
-  , "    mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table \");"
-  , ""
+  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table = true\");"
+  , "       if(!$result)"
+  , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
+  , "" 
   , "    /* file_format = Barracuda is required for long columns */"
-  , "    mysqli_query($DB_link, \"SET GLOBAL innodb_file_format = `Barracuda` \");"
+  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_format = `Barracuda` \");"
+  , "       if(!$result)"
+  , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
   , ""
   , "    /* large_prefix gives max single-column indices of 3072 bytes = win! */"
-  , "    mysqli_query($DB_link, \"SET GLOBAL innodb_large_prefix = true \");"
+  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_large_prefix = true \");"
+  , "       if(!$result)"
+  , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
   , ""
   ]
 
 createTablesPHP :: FSpec -> [Text.Text]
-createTablesPHP fSpec = initMySQLGlobals fSpec <>
+createTablesPHP fSpec = 
         [ "/*** Create new SQL tables ***/"
         , ""
         ] <>
@@ -160,7 +166,8 @@ sqlServerConnectPHP fSpec =
   , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
   , "}"
   , ""
-  ]<>setSqlModePHP
+  ]<> initMySQLGlobals
+   <> setSqlModePHP
 
 createTempDbPHP :: String -> [Text.Text]
 createTempDbPHP dbNm =
@@ -308,8 +315,8 @@ createTempDatabase fSpec =
     ; return ()
     }
    where phpStr = 
-           sqlServerConnectPHP fSpec ++
-           createTempDbPHP tempDbName ++
-           createTablesPHP fSpec ++
+           sqlServerConnectPHP fSpec <>
+           createTempDbPHP tempDbName <>
+           createTablesPHP fSpec <>
            populateTablesWithInitialPopsPHP fSpec
 
