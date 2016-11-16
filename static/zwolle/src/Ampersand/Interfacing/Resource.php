@@ -125,11 +125,11 @@ class Resource extends Atom {
      */
     public function getPath(){
         if(isset($this->parentList)) return $this->parentList->getPath() . '/' . $this->id;
-        else return "/resources/{$this->concept->name}/" . $this->id;
+        else return "resources/{$this->concept->name}/" . $this->id;
     }
     
     public function getURL(){
-        return Config::get('serverURL') . Config::get('apiPath') . $this->getPath();
+        return Config::get('serverURL') . Config::get('apiPath') . "/" . $this->getPath();
     }
     
     public function getURI(){

@@ -18,7 +18,7 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
     else resourceId = \$routeParams.resourceId;
     
     \$scope.resource = { '_id_' : resourceId,
-                        '_path_' : '/resources/' + resourceType + '/' + resourceId,
+                        '_path_' : 'resources/' + resourceType + '/' + resourceId,
                         '_isRoot_' : true,
                       };
     \$scope.resource[ifcName] = {};
