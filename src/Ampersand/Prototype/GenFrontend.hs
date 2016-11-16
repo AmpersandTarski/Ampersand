@@ -373,13 +373,13 @@ genViewObject fSpec depth obj =
                     
             --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
             --                                      | NavInterface n rs <- navInterfaces ]
-            ; let mNavInterface = listToMaybe (objNavInterfaces obj) -- TODO: can also be deleted, not used anymore?
+            ; let mNavInterface = listToMaybe (objNavInterfaces obj) -- TODO: can also be deleted, not used anymore!!
                                                                                   
             ; return . indentation
                      . lines 
                      . renderTemplate template $ 
                                  atomicAndBoxAttrs
-                               . setAttribute "navInterface" (fmap (escapeIdentifier . navIfcName) mNavInterface) -- TODO: can also be deleted, not used anymore?
+                               . setAttribute "navInterface" (fmap (escapeIdentifier . navIfcName) mNavInterface) -- TODO: can also be deleted, not used anymore!!
             }
         FEBox { objMClass  = mClass
               , ifcSubObjs = subObjs} ->
