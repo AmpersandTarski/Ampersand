@@ -390,7 +390,7 @@ genViewObject fSpec depth obj =
               -}
             ; subObjAttrs <- mapM genView_SubObject subObjs
                     
-            ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
+            ; let clssStr = maybe "-ROWS" (\cl -> "-" ++ cl) mClass -- TODO: replace default (ROWS) when no mClass by always having an mClass (default to ROWS for uni ifc expressions and COLS for non-uni ifc expressions)
             ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ ".html"
             
             ; return . indentation
