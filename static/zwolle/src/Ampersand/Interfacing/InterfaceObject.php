@@ -195,7 +195,7 @@ class InterfaceObject {
         $this->label = $ifcDef['label'];
         $this->view = is_null($ifcDef['viewId']) ? null : View::getView($ifcDef['viewId']);
         
-        $this->path = is_null($pathEntry) ? $this->id : "{$pathEntry}/{$this->id}";
+        $this->path = is_null($pathEntry) ? $this->label : "{$pathEntry}/{$this->label}"; // Use label, because path is only used for human readable purposes (e.g. Exception messages)
         
         // Information about the (editable) relation if applicable
         $this->relation = is_null($ifcDef['relation']) ? null : Relation::getRelation($ifcDef['relation']);
