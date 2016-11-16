@@ -12,7 +12,7 @@
             <div class="alert alert-warning alert-dismissible" role="alert" ng-repeat="warning in notifications.warnings">
                 <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
                 <span class="glyphicon glyphicon-warning-sign"></span><span> {{warning.message}}</span>
-                <span class="badge pull-right">{{warning.count}}</span>
+                <span class="badge pull-right" ng-show="warning.count > 1">{{warning.count}}</span>
             </div>
         </div>
         
@@ -24,7 +24,7 @@
                         <button type="button" class="close" data-target="#error-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss">
                             <span aria-hidden="true">&times;</span>
                         </button>
-                        <span class="badge pull-right" ng-show="error.count > 1">{{error.count}}</span>            
+                        <span class="badge pull-right" ng-show="error.count > 1">{{error.count}}</span>
                     </div>
                 </div>
                 <div class="panel-body collapse" id="error-body-{{key}}">
