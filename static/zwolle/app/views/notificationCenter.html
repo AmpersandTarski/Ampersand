@@ -3,14 +3,14 @@
         
         <div id="infos" ng-show="localStorage.notificationPrefs.switchShowInfos">
             <div class="alert alert-info alert-dismissible" role="alert" ng-repeat="info in notifications.infos">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.infos, $index);"><span aria-hidden="true">&times;</span></button>
                 <span class="glyphicon glyphicon-info-sign"></span><span> {{info.message}}</span>
             </div>
         </div>
         
         <div id="warnings" ng-show="localStorage.notificationPrefs.switchShowWarnings">
             <div class="alert alert-warning alert-dismissible" role="alert" ng-repeat="warning in notifications.warnings">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.warnings, $index);"><span aria-hidden="true">&times;</span></button>
                 <span class="glyphicon glyphicon-warning-sign"></span><span> {{warning.message}}</span>
                 <span class="badge pull-right" ng-show="warning.count > 1">{{warning.count}}</span>
             </div>
@@ -21,7 +21,7 @@
                 <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#error-body-{{key}}">
                     <div class="text-left">
                         <span class="glyphicon glyphicon-exclamation-sign"></span> <span ng-bind-html="error.message | unsafe"></span>
-                        <button type="button" class="close" data-target="#error-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss">
+                        <button type="button" class="close" data-target="#error-panel-{{key}}" data-dismiss="alert" aria-label="Dismiss" ng-click="closeAlert(notifications.errors, $index);">
                             <span aria-hidden="true">&times;</span>
                         </button>
                         <span class="badge pull-right" ng-show="error.count > 1">{{error.count}}</span>
@@ -78,7 +78,7 @@
         <!-- Success notifications must be last in notifications center because of position:absolute -->
         <div id="successes" ng-show="localStorage.notificationPrefs.switchShowSuccesses">
             <div class="alert alert-success alert-dismissible" role="alert" ng-repeat="success in notifications.successes">
-                <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close" ng-click="closeAlert(notifications.successes, $index);"><span aria-hidden="true">&times;</span></button>
                 <span class="glyphicon glyphicon-ok-sign"></span><span> {{success.message}}</span>
             </div>
         </div>
