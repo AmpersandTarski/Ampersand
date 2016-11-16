@@ -296,3 +296,20 @@ setSqlModePHP =
        , ""
        ]
 
+tempDbName :: String
+tempDbName = "ampersand_temporaryeditvalidationdb"
+
+
+createTempDatabase :: FSpec -> IO ()
+createTempDatabase fSpec =
+ do { writeFile "d:\\mijnTempDB.php" (Text.unpack . showPHP $ phpStr)
+    ; _ <- executePHPStr .
+           showPHP $ phpStr
+    ; return ()
+    }
+   where phpStr = 
+           sqlServerConnectPHP fSpec ++
+           createTempDbPHP tempDbName ++
+           createTablesPHP fSpec ++
+           populateTablesWithInitialPopsPHP fSpec
+
