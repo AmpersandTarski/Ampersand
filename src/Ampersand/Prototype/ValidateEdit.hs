@@ -12,9 +12,6 @@ import Ampersand.FSpec.SQL
 import qualified Ampersand.Misc.Options as Opts
 import Ampersand.Classes.ConceptStructure
 
-tempDbName :: String
-tempDbName = "ampersand_temporaryeditvalidationdb"
-
 validateEditScript :: FSpec -> [Population] -> [Population] -> [Char] -> IO Bool
 validateEditScript fSpec beforePops afterPops editScriptPath =
  do { mFileContents <- readUTF8File editScriptPath
@@ -77,21 +74,6 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             }
     }
   where showValsSQL p = ((showValSQL.apLeft) p, (showValSQL.apRight) p)
-createTempDatabase :: FSpec -> [Population] -> IO ()
-createTempDatabase fSpec pops =
- do { _ <- executePHPStr (getOpts fSpec) .
-                                     showPHP $ sqlServerConnectPHP fSpec ++
-                                     createTempDbPHP tempDbName ++
-                                     createTablesPHP fSpec ++
---                                     [ "TODO: "
---                                     , "*** Beware: This script has bitrotted! ***"
---                                     , "To get it on her feet again, bsure not to forget"
---                                     , "to initialize the signal table too. "
---                                     ] ++
-                                     populateTablesWithInitialPopsPHP fSpec
-    ; return ()
-    }
-
 getSqlConceptTable :: FSpec -> A_Concept -> IO (A_Concept, [String])
 getSqlConceptTable fSpec c =
  do { -- to prevent needing a unary query function, we add a dummy NULL column and use `src` and `tgt` as column names (in line with what performQuery expects)

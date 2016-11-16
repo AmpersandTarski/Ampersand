@@ -7,15 +7,12 @@ import System.IO (hSetBuffering,stdout,BufferMode(NoBuffering))
 import Ampersand.Basics
 import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
+import Ampersand.Prototype.PHP
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
 therefore most likely to be correct in case of discrepancies.
 -}
-
-tempDbName :: String
-tempDbName = "ampersand_temporaryvalidationdb"
 
 validateRulesSQL :: FSpec -> IO Bool
 validateRulesSQL fSpec =
@@ -108,13 +105,3 @@ validateExp fSpec vExp@(exp, orig) =
           }
     }
 
-createTempDatabase :: FSpec -> IO ()
-createTempDatabase fSpec =
- do { _ <- executePHPStr (getOpts fSpec) .
-                                     showPHP $ sqlServerConnectPHP fSpec ++
-                                     createTempDbPHP tempDbName ++
-                                     createTablesPHP fSpec ++
-                                     populateTablesPHP fSpec
-    ; return ()
-    }
- 
