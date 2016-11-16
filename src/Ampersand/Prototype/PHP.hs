@@ -27,17 +27,17 @@ initMySQLGlobals =
   [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
   , ""
   , "    /* file_per_table is required for long columns */"
-  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table = true\");"
+  , "    $result=mysqli_query($DB_link, \"SET SESSION innodb_file_per_table = true\");"
   , "       if(!$result)"
   , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
   , "" 
   , "    /* file_format = Barracuda is required for long columns */"
-  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_format = `Barracuda` \");"
+  , "    $result=mysqli_query($DB_link, \"SET SESSION innodb_file_format = `Barracuda` \");"
   , "       if(!$result)"
   , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
   , ""
   , "    /* large_prefix gives max single-column indices of 3072 bytes = win! */"
-  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_large_prefix = true \");"
+  , "    $result=mysqli_query($DB_link, \"SET SESSION innodb_large_prefix = true \");"
   , "       if(!$result)"
   , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
   , ""
@@ -166,7 +166,7 @@ sqlServerConnectPHP fSpec =
   , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
   , "}"
   , ""
-  ]<> initMySQLGlobals
+  ]-- <> initMySQLGlobals
    <> setSqlModePHP
 
 createTempDbPHP :: String -> [Text.Text]
@@ -212,7 +212,9 @@ evaluateExpSQL fSpec dbNm exp =
 
 performQuery :: FSpec -> String -> Text.Text -> IO [(String,String)]
 performQuery fSpec dbNm queryStr =
- do { queryResult <- (executePHPStr . showPHP) php
+ do { _ <- mapM (dump ">>>INPUT>>> ") $ zip [1..] (take 20 php)
+    ; queryResult <- (executePHPStr . showPHP) php
+    ; _ <- mapM (dump "<<<RESLT<<< ") $ zip [1..] (take 20 (map Text.pack $ lines queryResult))
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn opts{verboseP=True} (Text.unpack$ "\n******Problematic query:\n"<>queryStr<>"\n******")
               fatal 141 $ "PHP/SQL problem: "<>queryResult
@@ -221,6 +223,8 @@ performQuery fSpec dbNm queryStr =
              _            -> fatal 143 $ "Parse error on php result: \n"<>show queryResult
     } 
    where
+    dump :: String -> (Int, Text.Text) -> IO()
+    dump str (i,t) = verboseLn opts $ str++show i++" "++take 100 (Text.unpack t)
     opts = getOpts fSpec
     php =
       [ "// Try to connect to the database"
