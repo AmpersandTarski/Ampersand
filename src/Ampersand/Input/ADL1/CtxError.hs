@@ -37,7 +37,7 @@ import Ampersand.ADL1
 import Ampersand.FSpec.ShowADL
 import Ampersand.Basics
 import Data.Maybe
-import Data.List  (intercalate)
+import Data.List  (intercalate, nub)
 import GHC.Exts (groupWith)
 import Ampersand.Core.ParseTree
 import Text.Parsec.Error (Message(..), messageString)
@@ -49,7 +49,7 @@ _notUsed :: a
 _notUsed = undefined fatal
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
-              | PE Message
+              | PE Message deriving Eq
 
 instance Show CtxError where
     show (CTXE o s) = "CTXE " ++ show o ++ " " ++ show s
@@ -377,7 +377,7 @@ instance Applicative Guarded where
  (<*>) (Checked f) (Checked a) = Checked (f a)
  (<*>) (Errors  a) (Checked _) = Errors a
  (<*>) (Checked _) (Errors  b) = Errors b
- (<*>) (Errors  a) (Errors  b) = Errors (a ++ b) -- this line makes Guarded violate some (potential) applicative/monad laws
+ (<*>) (Errors  a) (Errors  b) = Errors . nub $(a ++ b) -- this line makes Guarded violate some (potential) applicative/monad laws
 instance Monad Guarded where
  (>>=) (Checked a) f = f a
  (>>=) (Errors x) _ = Errors x
@@ -391,10 +391,7 @@ whenCheckedIO ioGA fIOGB =
          Checked a  -> fIOGB a
 
 whenChecked :: Guarded a -> (a -> Guarded b) -> Guarded b
-whenChecked ga fgb =
-      case ga of
-         Checked a  -> fgb a
-         Errors err -> Errors err
+whenChecked = (>>=)
 
 whenError :: Guarded a -> Guarded a -> Guarded a
 whenError (Errors _) a = a

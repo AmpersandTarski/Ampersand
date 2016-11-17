@@ -31,12 +31,10 @@ import Control.Monad
 createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
 createMulti opts = do 
-  whenCheckedIO (parseADL opts (fileName opts)) $ \userP_Ctx ->
+ whenCheckedIO (parseADL opts (fileName opts)) 
+  (\userP_Ctx ->
     do gSystemP_Ctx <- parseSystemContext opts
-       let systemP_Ctx = case gSystemP_Ctx of
-                          Errors err -> fatal 36 $ "Errors found while parsing SystemContext!"++show err
-                          Checked ctx -> ctx
-       let gFSpec = pCtx2Fspec . merge . pure $ [userP_Ctx,systemP_Ctx]  -- the FSpec resulting from the user's souceFile
+       let gFSpec = combineAll [pure userP_Ctx,gSystemP_Ctx]  -- the FSpec resulting from the user's souceFile
        when (genMetaFile opts) (dumpMetaFile gFSpec)
        if genMetaTables opts || genRap
        then do fAmpP_Ctx <- parseMeta opts             -- the P_Context of the formalAmpersand metamodel
@@ -45,6 +43,7 @@ createMulti opts = do
                let metaPopFSpec = pCtx2Fspec gGrinded
                return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [pure userP_Ctx, gGrinded, fAmpP_Ctx]
        else    return $ mkMulti <$> pure Nothing <*> gFSpec
+  )
    where
     -- The gens from FromalAmpersand must be available in the result of grinded 
     addGens :: P_Context -> P_Context -> P_Context
@@ -77,7 +76,7 @@ createMulti opts = do
     merge ctxs = f <$> ctxs
       where
        f []     = fatal 77 $ "merge must not be applied to an empty list"
-       f (c:cs) = foldr mergeContexts c cs
+       f (c:cs) = foldl mergeContexts c cs
     grind :: FSpec -> Guarded P_Context
     grind fSpec = f <$> uncurry parseCtx (makeMetaPopulationFile fSpec)
       where
