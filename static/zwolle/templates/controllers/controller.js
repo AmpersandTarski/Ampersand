@@ -22,12 +22,13 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
                         '_isRoot_' : true,
                       };
     \$scope.resource[ifcName] = {};
+    \$scope.patchResource = \$scope.resource;
     
     // Create new resource
-    if(\$routeParams['new']) ResourceService.createResource(\$scope.resource, ifcName, \$scope.resource);
+    if(\$routeParams['new']) ResourceService.createResource(\$scope.resource, ifcName, \$scope.patchResource);
     
     // Get resource interface data
-    else ResourceService.getResource(\$scope.resource, ifcName, \$scope.resource);
+    else ResourceService.getResource(\$scope.resource, ifcName, \$scope.patchResource);
     
 });
 /* jshint ignore:end */
