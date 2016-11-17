@@ -19,7 +19,10 @@ $app = new \Slim\Slim(array(
     'debug' => Config::get('debugMode')
 ));
 
-$app->add(new \Slim\Middleware\ContentTypes());
+$app->add(new \Slim\Middleware\ContentTypes([
+    'application/json' => function($input){return json_decode($input, false);} // use json_decode without assoc option.
+    ])
+);
 $app->response->headers->set('Content-Type', 'application/json');
 
 // Error handler
