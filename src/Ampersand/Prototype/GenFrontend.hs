@@ -21,7 +21,6 @@ import qualified Ampersand.Misc.Options as Opts
 import Ampersand.Prototype.ProtoUtil
 
 {- TODO
-- Converse navInterfaces?
 - Be more consistent with record selectors/pattern matching
 - HStringTemplate hangs on uninitialized vars in anonymous template? (maybe only fields?)
 - isRoot is a bit dodgy (maybe make dependency on ONE and SESSIONS a bit more apparent)
@@ -166,7 +165,6 @@ data FEObject = FEObject { objName :: String
                          , exprIsTot :: Bool
                          , relIsProp  :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
                          , exprIsIdent :: Bool
-                         , objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox
                          } deriving (Show, Data, Typeable )
 
@@ -177,10 +175,6 @@ data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the abso
                    | FEBox    { objMClass :: Maybe String
                               , ifcSubObjs :: [FEObject] 
                               } deriving (Show, Data,Typeable)
-
-data NavInterface = NavInterface { navIfcName :: String
-                                 , navIfcRoles :: [Role]
-                                 } deriving (Show, Data, Typeable)
 
 buildInterfaces :: FSpec -> IO [FEInterface]
 buildInterfaces fSpec = mapM (buildInterface fSpec allIfcs) allIfcs
@@ -258,13 +252,6 @@ buildInterface fSpec allIfcs ifc =
                                    } 
 
         ; let (src, mDecl, tgt) = getSrcDclTgt iExp'
-        ; let navIfcs = [ NavInterface { navIfcName  = name nIfc
-                                       , navIfcRoles = ifcRoles nIfc `intersect` ifcRoles ifc -- only consider interfaces that share roles with the one we're building
-                                       } 
-                        | nIfc <- allIfcs
-                        , (source . objctx . ifcObj $ nIfc) == tgt
-                        ]
-
         ; return FEObject{ objName = name object
                          , objExp = iExp'
                          , objSource = src
@@ -279,7 +266,6 @@ buildInterface fSpec allIfcs ifc =
                                           Nothing  -> False
                                           Just dcl -> isProp dcl
                          , exprIsIdent = isIdent iExp'
-                         , objNavInterfaces = navIfcs
                          , atomicOrBox = aOrB
                          }
         }
@@ -371,15 +357,10 @@ genViewObject fSpec depth obj =
             ; let (templateFilename, _) = fromMaybe (conceptTemplate, []) (objMPrimTemplate . atomicOrBox $ obj) -- Atomic is the default template
             ; template <- readTemplate fSpec templateFilename
                     
-            --; verboseLn (getOpts fSpec) $ unlines [ replicate depth ' ' ++ "-NAV: "++ show n ++ " for "++ show rs 
-            --                                      | NavInterface n rs <- navInterfaces ]
-            ; let mNavInterface = listToMaybe (objNavInterfaces obj) -- TODO: can also be deleted, not used anymore!!
-                                                                                  
             ; return . indentation
                      . lines 
                      . renderTemplate template $ 
                                  atomicAndBoxAttrs
-                               . setAttribute "navInterface" (fmap (escapeIdentifier . navIfcName) mNavInterface) -- TODO: can also be deleted, not used anymore!!
             }
         FEBox { objMClass  = mClass
               , ifcSubObjs = subObjs} ->
