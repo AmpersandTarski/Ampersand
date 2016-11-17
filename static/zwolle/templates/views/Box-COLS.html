@@ -5,7 +5,7 @@ $endif$$if(crudR)$<div class="box" ng-controller="BoxController">
             <tr>$subObjects:{subObj|
                 <th>$subObj.subObjLabel$</th>}$
                 <th>$if(crudC)$
-                    <a $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', patchResource, true)">
+                    <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', patchResource, true)">
                         <span class="glyphicon glyphicon-plus"></span>
                     </a>$endif$
                 </th>
@@ -25,7 +25,7 @@ $endif$$if(crudR)$<div class="box" ng-controller="BoxController">
                     <div style="float:right;" cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
                 </td>
             </tr>$if(crudU)$
-            <tr$if(exprIsUni)$ ng-if="!resource['$name$'].length"$endif$ ng-controller="AtomicTypeAheadController">
+            <tr$if(exprIsUni)$ ng-if="!resource['$name$']"$endif$ ng-controller="AtomicTypeAheadController">
                 <td colspan="42"$if(crudU)$ ng-init="getTypeahead('$target$')"$endif$>
                     <input ng-model="selected.label" type="text" class="input-sm" placeholder="Select" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, parent, '$name$', parent); selected.label=''">
                 </td>
@@ -35,7 +35,7 @@ $endif$$if(crudR)$<div class="box" ng-controller="BoxController">
             <tr>$subObjects:{subObj|
                 <td></td>}$
                 <td style="text-align:right;">$if(crudC)$
-                    <a $if(exprIsUni)$ng-if="!resource['$name$'].length" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', false, 'promise')"><span class="glyphicon glyphicon-plus"></span></a>
+                    <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', false, 'promise')"><span class="glyphicon glyphicon-plus"></span></a>
                     <span cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></span>$endif$
                 </td>
             </tr>
