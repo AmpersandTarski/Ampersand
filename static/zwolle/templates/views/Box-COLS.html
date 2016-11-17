@@ -34,9 +34,10 @@ $endif$$if(crudR)$<div class="box" ng-controller="BoxController">
         <tfoot>
             <tr>$subObjects:{subObj|
                 <td></td>}$
-                <td style="text-align:right;">$if(crudC)$
-                    <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', false, 'promise')"><span class="glyphicon glyphicon-plus"></span></a>
-                    <span cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></span>$endif$
+                <td>$if(crudC)$
+                    <a $if(exprIsUni)$ng-if="!resource['$name$']" $endif$ng-hide="pendingPromises(resource)" href="" ng-click="createResource(resource, '$name$', patchResource, false)">
+                        <span class="glyphicon glyphicon-plus"></span>
+                    </a>$endif$
                 </td>
             </tr>
         </tfoot>$endif$
