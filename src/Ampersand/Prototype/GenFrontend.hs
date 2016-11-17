@@ -172,7 +172,7 @@ data FEObject = FEObject { objName :: String
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
                                                           , [String] -- the attributes of the template
                                                           ) }
-                   | FEBox    { objMClass :: Maybe String
+                   | FEBox    { objClass :: String
                               , ifcSubObjs :: [FEObject] 
                               } deriving (Show, Data,Typeable)
 
@@ -226,7 +226,7 @@ buildInterface fSpec allIfcs ifc =
                 case si of
                   Box{} -> 
                    do { subObjs <- mapM buildObject (siObjs si)
-                      ; return (FEBox { objMClass  = siMClass si
+                      ; return (FEBox { objClass  = fromMaybe "ROWS" $ siMClass si
                                       , ifcSubObjs = subObjs
                                       }
                                , iExp
@@ -362,17 +362,11 @@ genViewObject fSpec depth obj =
                      . renderTemplate template $ 
                                  atomicAndBoxAttrs
             }
-        FEBox { objMClass  = mClass
+        FEBox { objClass  = oClass
               , ifcSubObjs = subObjs} ->
-         do { {-
-              verboseLn (getOpts fSpec) $ replicate depth ' ' ++ "BOX" ++ maybe "" (\c -> "<"++c++">") mClass ++
-                                            " " ++ show nm ++ " [" ++ name src ++ "*"++ name tgt ++ "], " ++
-                                            (if isEditable then "" else "not ") ++ "editable"
-              -}
-            ; subObjAttrs <- mapM genView_SubObject subObjs
+         do { subObjAttrs <- mapM genView_SubObject subObjs
                     
-            ; let clssStr = maybe "-ROWS" (\cl -> "-" ++ cl) mClass -- TODO: replace default (ROWS) when no mClass by always having an mClass (default to ROWS for uni ifc expressions and COLS for non-uni ifc expressions)
-            ; parentTemplate <- readTemplate fSpec $ "views/Box" ++ clssStr ++ ".html"
+            ; parentTemplate <- readTemplate fSpec $ "views" </> "Box-" ++ oClass ++ ".html"
             
             ; return . indentation
                      . lines 
