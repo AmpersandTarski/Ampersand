@@ -416,6 +416,7 @@ genControllerInterface fSpec interf =
                      . setAttribute "interfaceName"            (ifcName interf)
                      . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
                      . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
+                     . setAttribute "exprIsUni"                (exprIsUni (_ifcObj interf))
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "crudC"                    (objCrudC (_ifcObj interf))

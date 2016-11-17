@@ -61,7 +61,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                         ResourceService.processResponse(callingObj, data);
                         
                         // Add new resource to ifc
-                        if(!Array.isArray(obj[ifc])){ // non-uni -> list
+                        if(Array.isArray(obj[ifc])){ // non-uni -> list
                             if(prepend) obj[ifc].unshift(data.content);
                             else obj[ifc].push(data.content);
                         }else{ // uni
