@@ -182,6 +182,10 @@ fieldset {
 	margin-bottom		: 15px;
 }
 
+.interface .cols .options {
+    text-align: right;
+}
+
 .interface .panel-heading {
 	padding-top			: 1px;
 	padding-bottom		: 1px;
