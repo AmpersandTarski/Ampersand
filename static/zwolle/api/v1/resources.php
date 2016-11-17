@@ -108,7 +108,8 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $depth = $app->request->params('depth');
     
     // Perform put
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put((object) $app->request->getBody())->get($rcOptions, $ifcOptions);
+    $obj = json_decode($app->request->getBody());
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->put($obj)->get($rcOptions, $ifcOptions);
     
     // Close transaction
     $transaction->close();
@@ -140,7 +141,8 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     $depth = $app->request->params('depth');
     
     // Perform patch(es)
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($app->request->getBody())->get($rcOptions, $ifcOptions);
+    $patches = json_decode($app->request->getBody());
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\Resource')->patch($patches)->get($rcOptions, $ifcOptions);
     
     // Close transaction
     $transaction->close();
@@ -175,7 +177,8 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $depth = $app->request->params('depth');
     
     // Perform create
-    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($app->request->getBody())->get($rcOptions, $ifcOptions);
+    $obj = json_decode($app->request->getBody());
+    $resource = (new Resource($resourceId, $resourceType))->walkPath($ifcPath, 'Ampersand\Interfacing\ResourceList')->post($obj)->get($rcOptions, $ifcOptions);
     
     // Close transaction
     $transaction->close();
