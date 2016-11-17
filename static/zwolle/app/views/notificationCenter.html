@@ -56,20 +56,22 @@
                 <div class="panel-heading btn btn-block" data-toggle="collapse" data-target="#violation-{{key}}">
                     <div class="text-left" style="display:flex; align-items:center;">
                         <span class="glyphicon glyphicon-warning-sign"></span>
-                        <div marked="val.ruleMessage" style="display:inline-block; margin: 0px 10px;"></div> <!-- uses angular-marked directive -->
-                        <span class="badge" style="margin-left:auto;">{{val.tuples.length}}</span>
+                        <div marked="val.message" style="display:inline-block; margin: 0px 10px;"></div> <!-- uses angular-marked directive -->
+                        <span class="badge" style="margin-left:auto;">{{val.violations.length}}</span>
                     </div>
                 </div>
                 <ul class="list-group collapse" id="violation-{{key}}">
-                    <li class="dropdown list-group-item" ng-repeat="tuple in val.tuples track by $index">
-                        <a ng-if="tuple.links.length > 1" href="" class="dropdown-toggle" data-toggle="dropdown">{{tuple.violationMessage}}</a>
-                        <ul ng-if="tuple.links.length > 1" class="dropdown-menu" role="menu">
-                            <li ng-repeat="link in tuple.links">
-                                <a ng-href="{{link}}" data-toggle="collapse" data-target="#violation-{{key}}">{{link}}</a>
-                            </li>
-                        </ul>
-                        <a ng-if="tuple.links.length == 1" ng-href="{{tuple.links[0]}}" data-toggle="collapse" data-target="#violation-{{key}}">{{tuple.violationMessage}}</a>
-                        <span ng-if="tuple.links.length == 0">{{tuple.violationMessage}}</span>
+                    <li class="dropdown list-group-item" ng-repeat="violation in val.violations track by $index">
+                        <div ng-if="violation.ifcs.length > 1">
+                            <a href="" class="dropdown-toggle" data-toggle="dropdown">{{violation.message}}</a>
+                            <ul class="dropdown-menu" role="menu">
+                                <li ng-repeat="ifc in violation.ifcs">
+                                    <a ng-href="{{ifc.link}}" data-toggle="collapse" data-target="#violation-{{key}}">{{ifc.label}}</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <a ng-if="violation.ifcs.length == 1" ng-href="{{violation.ifcs[0].link}}" data-toggle="collapse" data-target="#violation-{{key}}">{{violation.message}}</a>
+                        <span ng-if="violation.ifcs.length == 0">{{violation.message}}</span>
                     </li>
                 </ul>
             </div>

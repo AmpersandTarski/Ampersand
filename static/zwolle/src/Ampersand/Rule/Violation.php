@@ -112,20 +112,24 @@ class Violation {
     }
 
     /**
-     * Build links to interfaces to solve the violation
+     * Get interfaces to solve the violation
+     * @param string $srcOrTgt specifies to get interfaces for source concept (src), target concept (tgt) or both (null)
      * @return array
      */
-    public function getLinks(){
+    public function getInterfaces($srcOrTgt = null){
         $session = Session::singleton();
-
-        $links = array();
-        foreach ($session->getInterfacesToReadConcepts([$this->src->concept]) as $interface){
-            $links[] = "#/{$interface->id}/{$this->src->id}";
+        
+        switch ($srcOrTgt) {
+            case 'src':
+                return $session->getInterfacesToReadConcepts([$this->src->concept]);
+                break;
+            case 'tgt':
+                return $session->getInterfacesToReadConcepts([$this->tgt->concept]);
+                break;
+            default:
+                return $session->getInterfacesToReadConcepts([$this->src->concept, $this->tgt->concept]);
+                break;
         }
-        foreach ($session->getInterfacesToReadConcepts([$this->tgt->concept]) as $interface){
-            $links[] = "#/{$interface->id}/{$this->tgt->id}";
-        }
-        return array_unique($links);
     }
 }
 

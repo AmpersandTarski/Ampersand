@@ -129,10 +129,20 @@ class Notifications {
     public static function addSignal($violation){
         $ruleHash = hash('md5', $violation->rule->id);
         
-        self::$signals[$ruleHash]['ruleMessage'] = $violation->rule->getViolationMessage();
-        self::$signals[$ruleHash]['tuples'][] = array('violationMessage' => ($violationMessage = $violation->getViolationMessage())
-                                                        ,'links' => $violation->getLinks());
-        Logger::getLogger('SIGNAL')->info("'{$violationMessage}' RULE: '{$violation->rule}'");
+        if(!isset(self::$signals[$ruleHash])){
+            self::$signals[$ruleHash]['message'] = $violation->rule->getViolationMessage();
+        }
+        
+        $ifcs = [];
+        foreach ($violation->getInterfaces('src') as $ifc) $ifcs[] = ['id' => $ifc->id, 'label' => $ifc->label, 'link' => "#/{$ifc->id}/{$violation->src->id}"];
+        foreach ($violation->getInterfaces('tgt') as $ifc) $ifcs[] = ['id' => $ifc->id, 'label' => $ifc->label, 'link' => "#/{$ifc->id}/{$violation->tgt->id}"];
+        $message = $violation->getViolationMessage();
+        
+        self::$signals[$ruleHash]['violations'][] = ['message' => $message
+                                                    ,'ifcs' => $ifcs
+                                                    ];
+        
+        Logger::getLogger('SIGNAL')->debug("'{$message}' RULE: '{$violation->rule}'");
     }
     
 /**************************************************************************************************
