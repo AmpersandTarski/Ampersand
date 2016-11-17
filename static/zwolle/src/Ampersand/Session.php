@@ -293,18 +293,21 @@ class Session {
     
     /**
      * Get interfaces that are accessible in the current session to 'Read' a certain concept
-     * @param Concept $concept
+     * @param Concept[] $concepts
      * @return InterfaceObject[]
      */
-    public function getInterfacesToReadConcept($concept){
-        $interfaces = array();
-        foreach($this->accessibleInterfaces as $interface){
-            if(($interface->srcConcept == $concept || $interface->srcConcept->hasSpecialization($concept)) 
-                    && $interface->crudR()
-                    && (!$interface->crudC() or ($interface->crudU() or $interface->crudD()))
-                    ) $interfaces[] = $interface;
-        }
-        return $interfaces;
+    public function getInterfacesToReadConcepts($concepts){
+        return array_values(
+            array_filter($this->accessibleInterfaces, function($ifc) use ($concepts) {
+                foreach($concepts as $cpt){
+                    if($ifc->srcConcept->hasSpecialization($cpt, true)
+                        && $ifc->crudR()
+                        && (!$ifc->crudC() or ($ifc->crudU() or $ifc->crudD()))
+                        ) return true;
+                }
+                return false;
+            })
+        );
     }
     
     /**

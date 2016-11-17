@@ -470,7 +470,7 @@ class InterfaceObject {
         $ifcs = array();
         
         if($this->isLinkTo() && $session->isAccessibleIfc($refIfc = self::getInterface($this->refInterfaceId))) $ifcs[] = $refIfc;
-        else $ifcs = $session->getInterfacesToReadConcept($this->tgtConcept);
+        else $ifcs = $session->getInterfacesToReadConcepts([$this->tgtConcept]);
         
         return $ifcs;
     }
