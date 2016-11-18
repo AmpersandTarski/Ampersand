@@ -220,7 +220,7 @@ performQuery fSpec dbNm queryStr =
               fatal 141 $ "PHP/SQL problem: "<>queryResult
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal 143 $ "Parse error on php result: \n"<>show queryResult
+             _            -> fatal 143 $ "Parse error on php result: \n"<>unlines . indent 5 . lines $ queryResult
     } 
    where
     opts = getOpts fSpec
