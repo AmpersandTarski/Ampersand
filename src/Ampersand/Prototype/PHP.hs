@@ -22,41 +22,6 @@ import Ampersand.Misc
 import Ampersand.Core.AbstractSyntaxTree
 
 
-initMySQLGlobals :: [Text.Text]
-initMySQLGlobals =
-  [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
-  , ""
-  , "    /* file_per_table is required for long columns */"
-  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table = true\");"
-  , "       if(!$result)"
-  , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
-  , "" 
-  , "    /* file_format = Barracuda is required for long columns */"
-  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_format = `Barracuda` \");"
-  , "       if(!$result)"
-  , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
-  , ""
-  , "    /* large_prefix gives max single-column indices of 3072 bytes = win! */"
-  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_large_prefix = true \");"
-  , "       if(!$result)"
-  , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
-  , ""
-  ]
-
-createTablesPHP :: FSpec -> [Text.Text]
-createTablesPHP fSpec = 
-        [ "/*** Create new SQL tables ***/"
-        , ""
-        ] <>
-        createTablePHP sessionTableSpec <>
-        setSqlModePHP<>
-        createTablePHP signalTableSpec <>
-        [ ""
-        , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
-        ]
-        -- Create all plugs
-        <> concatMap (createTablePHP . plug2TableSpec) [p | InternalPlug p <- plugInfos fSpec]
-
 --                 (headerCmmnt,tableName,crflds,engineOpts)
 type TableSpec = (String,String,[Text.Text],String)
 
@@ -114,91 +79,6 @@ sessionTableSpec
      , "`lastAccess` BIGINT NOT NULL" ]
    , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
 
-populateTablesPHP :: FSpec -> [Text.Text]
-populateTablesPHP fSpec =
-  fillSignalTable (initialConjunctSignals fSpec) <>
-  populateTablesWithInitialPopsPHP fSpec
-  where
-    fillSignalTable []          = []
-    fillSignalTable conjSignals =
-      [ "mysqli_query($DB_link, "<>showPhpStr ("INSERT INTO "<> quote (getTableName signalTableSpec)
-                                                                    <>" (`conjId`, `src`, `tgt`)"
-                                              <>phpIndent 24<>"VALUES " <> 
-                                              Text.intercalate (phpIndent 29<>", ") 
-                                                [ "(" <>sqlConjId<>", "<>showValPHP (apLeft p)<>", "<>showValPHP (apRight p)<>")" 
-                                                | (conj, viols) <- conjSignals
-                                                , let sqlConjId = "'" <> Text.pack (rc_id conj) <> "'" -- conjunct id's do not need escaping (SJ 2016-07-07: In that case: why not escape with showValPHP for the sake of maintainability?)
-                                                , p <- viols
-                                                ])<>"\n"<>
-        "            );"
-      , "if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"
-      ]
-
-populateTablesWithInitialPopsPHP :: FSpec -> [Text.Text]
-populateTablesWithInitialPopsPHP fSpec =
-  concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
-  where
-    populatePlugPHP plug
-         = case tableContents fSpec plug of
-               [] -> []
-               tblRecords -> ( "mysqli_query($DB_link, "<>showPhpStr ("INSERT INTO "<>quote (Text.pack (name plug))
-                                                           <>" ("<>Text.intercalate "," [quote (Text.pack$ attName f) |f<-plugAttributes plug]<>")"
-                                                           <>phpIndent 17<>"VALUES " <> Text.intercalate (phpIndent 22<>", ") [ "(" <>valuechain md<> ")" | md<-tblRecords]
-                                                           <>phpIndent 16 )
-                                        <>");"
-                             ):
-                             ["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
-     where
-        valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> showValPHP val | att<-record]
-
-
-sqlServerConnectPHP :: FSpec -> [Text.Text]
-sqlServerConnectPHP fSpec =
-  [ "// Try to connect to the database"
-  , "global $DB_host,$DB_user,$DB_pass;"
-  , "$DB_host='"<>subst sqlHost <>"';"
-  , "$DB_user='"<>subst sqlLogin<>"';"
-  , "$DB_pass='"<>subst sqlPwd  <>"';"
-  , ""
-  , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
-  , "// Check connection"
-  , "if (mysqli_connect_errno()) {"
-  , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
-  , "}"
-  , ""
-  ]<> initMySQLGlobals
-   <> setSqlModePHP
-  where 
-    subst :: (Options -> String) -> Text.Text
-    subst x = addSlashes . Text.pack . x . getOpts $ fSpec
-createTempDbPHP :: String -> [Text.Text]
-createTempDbPHP dbNm =
-      [ "$DB_name='"<>addSlashes (Text.pack dbNm)<>"';"
-      , "// Drop the database if it exists"
-      , "$sql=\"DROP DATABASE $DB_name\";"
-      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
-      , "// Check connection"
-      , "if (mysqli_connect_errno()) {"
-      , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
-      , "}"
-      , ""
-      , "mysqli_query($DB_link,$sql);"
-      , "// Don't bother about the error if the database didn't exist..."
-      , ""
-      , "// Create the database"
-      , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin\";"
-      , "if (!mysqli_query($DB_link,$sql)) {"
-      , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
-      , "  }"
-      , ""
-      , "// Connect to the freshly created database"
-      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
-      , "// Check connection"
-      , "if (mysqli_connect_errno()) {"
-      , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
-      , "  }"
-      , ""
-      ]<>setSqlModePHP
 
 
 -- evaluate normalized exp in SQL
@@ -316,9 +196,94 @@ createTempDatabase fSpec =
            showPHP $ phpStr
     ; unless (null result) $ verboseLn (getOpts fSpec) result
     }
-   where phpStr = 
-           sqlServerConnectPHP fSpec <>
-           createTempDbPHP tempDbName <>
-           createTablesPHP fSpec <>
-           populateTablesWithInitialPopsPHP fSpec
+ where 
+  subst :: (Options -> String) -> Text.Text
+  subst x = addSlashes . Text.pack . x . getOpts $ fSpec
+  phpStr = 
+    [ "// Try to connect to the database"
+    , "global $DB_host,$DB_user,$DB_pass;"
+    , "$DB_host='"<>subst sqlHost <>"';"
+    , "$DB_user='"<>subst sqlLogin<>"';"
+    , "$DB_pass='"<>subst sqlPwd  <>"';"
+    , ""
+    , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
+    , "// Check connection"
+    , "if (mysqli_connect_errno()) {"
+    , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
+    , "}"
+    , ""
+    , "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
+    , ""
+    , "    /* file_per_table is required for long columns */"
+    , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table = true\");"
+    , "       if(!$result)"
+    , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
+    , "" 
+    , "    /* file_format = Barracuda is required for long columns */"
+    , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_format = `Barracuda` \");"
+    , "       if(!$result)"
+    , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
+    , ""
+    , "    /* large_prefix gives max single-column indices of 3072 bytes = win! */"
+    , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_large_prefix = true \");"
+    , "       if(!$result)"
+    , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
+    , ""
+    ]<> setSqlModePHP
+    <>
+    [ "$DB_name='"<>addSlashes (Text.pack tempDbName)<>"';"
+    , "// Drop the database if it exists"
+    , "$sql=\"DROP DATABASE $DB_name\";"
+    , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
+    , "// Check connection"
+    , "if (mysqli_connect_errno()) {"
+    , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
+    , "}"
+    , ""
+    , "mysqli_query($DB_link,$sql);"
+    , "// Don't bother about the error if the database didn't exist..."
+    , ""
+    , "// Create the database"
+    , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin\";"
+    , "if (!mysqli_query($DB_link,$sql)) {"
+    , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
+    , "  }"
+    , ""
+    , "// Connect to the freshly created database"
+    , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
+    , "// Check connection"
+    , "if (mysqli_connect_errno()) {"
+    , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
+    , "  }"
+    , ""
+    ]
+    <>       
+    [ "/*** Create new SQL tables ***/"
+    , ""
+    ] <>
+    createTablePHP sessionTableSpec <>
+    setSqlModePHP<>
+    createTablePHP signalTableSpec <>
+    [ ""
+    , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
+    ]
+    -- Create all plugs
+    <> concatMap (createTablePHP . plug2TableSpec) [p | InternalPlug p <- plugInfos fSpec]
+    -- Populate all plugs
+    <> concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
+  
+    where
+      populatePlugPHP plug =
+        case tableContents fSpec plug of
+          [] -> []
+          tblRecords 
+             -> ( "mysqli_query($DB_link, "<>showPhpStr ( "INSERT INTO "<>quote (Text.pack (name plug))
+                                                        <>" ("<>Text.intercalate "," [quote (Text.pack$ attName f) |f<-plugAttributes plug]<>")"
+                                                        <>phpIndent 17<>"VALUES " <> Text.intercalate (phpIndent 22<>", ") [ "(" <>valuechain md<> ")" | md<-tblRecords]
+                                                        <>phpIndent 16
+                                                        )
+                                           <>");"
+                ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
+       where
+        valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> showValPHP val | att<-record]
 
