@@ -121,10 +121,10 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
             if(updatedResources.indexOf(resource) === -1) updatedResources.push(resource);
             
             // Save if autoSave is enabled
-            if($localStorage.switchAutoSave) this.saveResource(resource);
+            if($localStorage.switchAutoSave) ResourceService.saveResource(resource);
             else {
                 // Update visual feedback
-                this.setResourceStatus(resource, 'warning');
+                ResourceService.setResourceStatus(resource, 'warning');
                 resource._showButtons_ = {'save' : true, 'cancel' : true};
             }
         },
@@ -155,7 +155,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
         initResourceMetaData : function(resource){
             resource._showButtons_ = {'save' : false, 'cancel' : false};
             resource._patchesCache = [];
-            this.setResourceStatus(resource, 'default');
+            ResourceService.setResourceStatus(resource, 'default');
         },
         
         // Process response: i.e. set resource buttons and status
@@ -165,7 +165,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
             if(response.invariantRulesHold){
                 resource._showButtons_ = {'save' : false, 'cancel' : false};
                 resource._patchesCache_ = []; // empty patches cache
-                this.setResourceStatus(resource, 'success');
+                ResourceService.setResourceStatus(resource, 'success');
                 
                 // After 3 seconds, reset status to default
                 $timeout(function(){
@@ -173,7 +173,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 }, 3000);
             }else{
                 resource._showButtons_ = {'save' : false, 'cancel' : true};
-                this.setResourceStatus(resource, 'danger');
+                ResourceService.setResourceStatus(resource, 'danger');
             }
         },
         

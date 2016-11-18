@@ -7,7 +7,7 @@ angular.module('AmpersandApp').service('RoleService', function($sessionStorage){
     
     RoleService = {
         selectRole : function(roleId){
-            this.toggleRole(roleId, true);
+            RoleService.toggleRole(roleId, true);
         },
         
         selectRoleByLabel : function (roleLabel){
