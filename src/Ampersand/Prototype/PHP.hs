@@ -51,7 +51,7 @@ getTableName :: TableSpec -> Text.Text
 getTableName = Text.pack . tsName
 
 createTablePHP :: TableSpec -> [Text.Text]
-createTablePHP tSpec = -- (headerCmmnt,tableName,crflds,engineOpts) =
+createTablePHP tSpec =
   map (Text.pack . ("// "<>)) (tsCmnt tSpec) <>
   [-- Drop table if it already exists
     "if($columns = mysqli_query($DB_link, "<>showPhpStr ("SHOW COLUMNS FROM `"<>Text.pack (tsName tSpec)<>"`")<>")){"
@@ -63,7 +63,7 @@ createTablePHP tSpec = -- (headerCmmnt,tableName,crflds,engineOpts) =
   , "if($err=mysqli_error($DB_link)) {"
   , "  $error=true; echo $err.'<br />';"
   , "}"
-  , "" 
+  , ""
   ]
 
 createTableSql :: Bool -> TableSpec -> [Text.Text]
@@ -164,7 +164,7 @@ sessionTableSpec =
 
 
 -- evaluate normalized exp in SQL
-evaluateExpSQL :: FSpec -> String -> Expression -> IO [(String,String)]
+evaluateExpSQL :: FSpec -> Text.Text -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
  do { -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showADL exp)
     ; -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showADL . cfProof (getOpts fSpec)) exp
@@ -174,7 +174,7 @@ evaluateExpSQL fSpec dbNm exp =
  where violationsExpr = conjNF (getOpts fSpec) exp
        violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 
-performQuery :: FSpec -> String -> Text.Text -> IO [(String,String)]
+performQuery :: FSpec -> Text.Text -> Text.Text -> IO [(String,String)]
 performQuery fSpec dbNm queryStr =
  do { queryResult <- (executePHPStr . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
@@ -186,21 +186,9 @@ performQuery fSpec dbNm queryStr =
     } 
    where
     opts = getOpts fSpec
+    php :: [Text.Text]
     php =
-      [ "// Try to connect to the database"
-      , "$DB_name='"<>addSlashes (Text.pack dbNm)<>"';"
-      , "global $DB_host,$DB_user,$DB_pass;"
-      , "$DB_host='"<>addSlashes (Text.pack (sqlHost opts))<>"';"
-      , "$DB_user='"<>addSlashes (Text.pack (sqlLogin opts))<>"';"
-      , "$DB_pass='"<>addSlashes (Text.pack (sqlPwd opts))<>"';"
-      , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
-      , ""
-      , "// Check connection"
-      , "if (mysqli_connect_errno()) {"
-      , "  die(\"Error: Failed to connect to $DB_name: \" . mysqli_connect_error());"
-      , "  }"
-      , ""
-      ]<>setSqlModePHP<>
+      connectToMySqlServerPHP opts (Just dbNm) <>
       [ "$sql="<>showPhpStr queryStr<>";"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
@@ -257,20 +245,52 @@ showPHP :: [Text.Text] -> Text.Text
 showPHP phpLines = Text.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
--- | php code snippet to set the sql_mode
-setSqlModePHP :: [Text.Text]
-setSqlModePHP = 
-       [ "$sql=\"SET SESSION sql_mode = 'ANSI,TRADITIONAL'\";" -- ANSI because of the syntax of the generated SQL
-                                                               -- TRADITIONAL because of some more safety
-       , "if (!mysqli_query($DB_link,$sql)) {"
-       , "  die(\"Error setting sql_mode: \" . mysqli_error($DB_link));"
-       , "  }"
-       , ""
-       ]
-
-tempDbName :: String
+tempDbName :: Text.Text
 tempDbName = "ampersandTempDB"
 
+connectToMySqlServerPHP :: Options -> Maybe Text.Text-> [Text.Text]
+connectToMySqlServerPHP opts mDbName =
+    [ "// Try to connect to the MySQL server"
+    , "global $DB_host,$DB_user,$DB_pass;"
+    , "$DB_host='"<>subst sqlHost <>"';"
+    , "$DB_user='"<>subst sqlLogin<>"';"
+    , "$DB_pass='"<>subst sqlPwd  <>"';"
+    , ""
+    ]<>
+    (case mDbName of
+       Nothing   ->
+         [ "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
+         , "// Check connection"
+         , "if (mysqli_connect_errno()) {"
+         , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
+         , "}"
+         , ""
+         ]
+       Just dbNm ->
+         ["$DB_name='"<>dbNm<>"';"]<>
+         connectToTheDatabasePHP
+    ) <>
+    [ "$sql=\"SET SESSION sql_mode = 'ANSI,TRADITIONAL'\";" -- ANSI because of the syntax of the generated SQL
+                                                            -- TRADITIONAL because of some more safety
+    , "if (!mysqli_query($DB_link,$sql)) {"
+    , "  die(\"Error setting sql_mode: \" . mysqli_error($DB_link));"
+    , "  }"
+    , ""
+    ]
+  where
+   subst :: (Options -> String) -> Text.Text
+   subst x = addSlashes . Text.pack . x $ opts
+
+connectToTheDatabasePHP :: [Text.Text]
+connectToTheDatabasePHP =
+    [ "// Connect to the database"
+    , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
+    , "// Check connection"
+    , "if (mysqli_connect_errno()) {"
+    , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
+    , "  }"
+    , ""
+    ]
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
@@ -279,22 +299,10 @@ createTempDatabase fSpec =
     ; unless (null result) $ verboseLn (getOpts fSpec) result
     }
  where 
-  subst :: (Options -> String) -> Text.Text
-  subst x = addSlashes . Text.pack . x . getOpts $ fSpec
+  phpStr :: [Text.Text]
   phpStr = 
-    [ "// Try to connect to the database"
-    , "global $DB_host,$DB_user,$DB_pass;"
-    , "$DB_host='"<>subst sqlHost <>"';"
-    , "$DB_user='"<>subst sqlLogin<>"';"
-    , "$DB_pass='"<>subst sqlPwd  <>"';"
-    , ""
-    , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
-    , "// Check connection"
-    , "if (mysqli_connect_errno()) {"
-    , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
-    , "}"
-    , ""
-    , "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
+    connectToMySqlServerPHP (getOpts fSpec) Nothing <>
+    [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
     , ""
     , "    /* file_per_table is required for long columns */"
     , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table = true\");"
@@ -311,17 +319,10 @@ createTempDatabase fSpec =
     , "       if(!$result)"
     , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , ""
-    ]<> setSqlModePHP
-    <>
-    [ "$DB_name='"<>addSlashes (Text.pack tempDbName)<>"';"
+    ]<> 
+    [ "$DB_name='"<>addSlashes (tempDbName)<>"';"
     , "// Drop the database if it exists"
     , "$sql=\"DROP DATABASE $DB_name\";"
-    , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
-    , "// Check connection"
-    , "if (mysqli_connect_errno()) {"
-    , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
-    , "}"
-    , ""
     , "mysqli_query($DB_link,$sql);"
     , "// Don't bother about the error if the database didn't exist..."
     , ""
@@ -331,14 +332,8 @@ createTempDatabase fSpec =
     , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
     , "  }"
     , ""
-    , "// Connect to the freshly created database"
-    , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
-    , "// Check connection"
-    , "if (mysqli_connect_errno()) {"
-    , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
-    , "  }"
-    , ""
-    ] <>       
+    ] <> 
+    connectToTheDatabasePHP <>       
     [ "/*** Create new SQL tables ***/"
     , ""
     ] <>
