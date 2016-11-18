@@ -1,11 +1,11 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.PHP 
-         ( evaluateExpSQL, executePHPStr, sqlServerConnectPHP, createTempDbPHP, showPHP
-         , setSqlModePHP, createTablesPHP, populateTablesPHP
+         ( evaluateExpSQL
          , signalTableSpec, getTableName, createTempDatabase, tempDbName) where
 
 import Prelude hiding (exp,putStrLn,readFile,writeFile)
 import Control.Exception
+import Control.Monad
 import Data.Monoid
 import Data.List
 import qualified Data.Text as Text
@@ -27,17 +27,17 @@ initMySQLGlobals =
   [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
   , ""
   , "    /* file_per_table is required for long columns */"
-  , "    $result=mysqli_query($DB_link, \"SET SESSION innodb_file_per_table = true\");"
+  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table = true\");"
   , "       if(!$result)"
   , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
   , "" 
   , "    /* file_format = Barracuda is required for long columns */"
-  , "    $result=mysqli_query($DB_link, \"SET SESSION innodb_file_format = `Barracuda` \");"
+  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_format = `Barracuda` \");"
   , "       if(!$result)"
   , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
   , ""
   , "    /* large_prefix gives max single-column indices of 3072 bytes = win! */"
-  , "    $result=mysqli_query($DB_link, \"SET SESSION innodb_large_prefix = true \");"
+  , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_large_prefix = true \");"
   , "       if(!$result)"
   , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
   , ""
@@ -156,19 +156,21 @@ sqlServerConnectPHP :: FSpec -> [Text.Text]
 sqlServerConnectPHP fSpec =
   [ "// Try to connect to the database"
   , "global $DB_host,$DB_user,$DB_pass;"
-  , "$DB_host='"<>addSlashes (Text.pack (sqlHost (getOpts fSpec)))<>"';"
-  , "$DB_user='"<>addSlashes (Text.pack (sqlLogin (getOpts fSpec)))<>"';"
-  , "$DB_pass='"<>addSlashes (Text.pack (sqlPwd (getOpts fSpec)))<>"';"
-  
+  , "$DB_host='"<>subst sqlHost <>"';"
+  , "$DB_user='"<>subst sqlLogin<>"';"
+  , "$DB_pass='"<>subst sqlPwd  <>"';"
+  , ""
   , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
   , "// Check connection"
   , "if (mysqli_connect_errno()) {"
   , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
   , "}"
   , ""
-  ]-- <> initMySQLGlobals
+  ]<> initMySQLGlobals
    <> setSqlModePHP
-
+  where 
+    subst :: (Options -> String) -> Text.Text
+    subst x = addSlashes . Text.pack . x . getOpts $ fSpec
 createTempDbPHP :: String -> [Text.Text]
 createTempDbPHP dbNm =
       [ "$DB_name='"<>addSlashes (Text.pack dbNm)<>"';"
@@ -212,9 +214,7 @@ evaluateExpSQL fSpec dbNm exp =
 
 performQuery :: FSpec -> String -> Text.Text -> IO [(String,String)]
 performQuery fSpec dbNm queryStr =
- do { _ <- mapM (dump ">>>INPUT>>> ") $ zip [1..] (take 20 php)
-    ; queryResult <- (executePHPStr . showPHP) php
-    ; _ <- mapM (dump "<<<RESLT<<< ") $ zip [1..] (take 20 (map Text.pack $ lines queryResult))
+ do { queryResult <- (executePHPStr . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn opts{verboseP=True} (Text.unpack$ "\n******Problematic query:\n"<>queryStr<>"\n******")
               fatal 141 $ "PHP/SQL problem: "<>queryResult
@@ -223,8 +223,6 @@ performQuery fSpec dbNm queryStr =
              _            -> fatal 143 $ "Parse error on php result: \n"<>show queryResult
     } 
    where
-    dump :: String -> (Int, Text.Text) -> IO()
-    dump str (i,t) = verboseLn opts $ str++show i++" "++take 100 (Text.unpack t)
     opts = getOpts fSpec
     php =
       [ "// Try to connect to the database"
@@ -234,16 +232,14 @@ performQuery fSpec dbNm queryStr =
       , "$DB_user='"<>addSlashes (Text.pack (sqlLogin opts))<>"';"
       , "$DB_pass='"<>addSlashes (Text.pack (sqlPwd opts))<>"';"
       , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
-      , "echo 'aap';"
+      , ""
       , "// Check connection"
       , "if (mysqli_connect_errno()) {"
       , "  die(\"Error: Failed to connect to $DB_name: \" . mysqli_connect_error());"
       , "  }"
       , ""
-      , "echo 'noot';"
       ]<>setSqlModePHP<>
       [ "$sql="<>showPhpStr queryStr<>";"
-      , "echo 'mies';"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
       , "  die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
@@ -311,14 +307,14 @@ setSqlModePHP =
        ]
 
 tempDbName :: String
-tempDbName = "ampTempdb"
+tempDbName = "ampersandTempDB"
 
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { _ <- executePHPStr .
+ do { result <- executePHPStr .
            showPHP $ phpStr
-    ; return ()
+    ; unless (null result) $ verboseLn (getOpts fSpec) result
     }
    where phpStr = 
            sqlServerConnectPHP fSpec <>
