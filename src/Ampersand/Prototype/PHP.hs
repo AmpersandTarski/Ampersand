@@ -80,7 +80,7 @@ createTableSql _withComment tSpec =
     addColumn att 
        =    quote (fsname att) <> " " 
          <> (Text.pack . showSQL . fstype) att 
-         <> (if fsIsPrimKey att) then " UNIQUE" else "")
+         <> (if fsIsPrimKey att then " UNIQUE" else "")
          <> (if fsDbNull att then " DEFAULT NULL" else " NOT NULL")
 
 
