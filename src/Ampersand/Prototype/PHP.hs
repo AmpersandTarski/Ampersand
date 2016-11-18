@@ -1,7 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.PHP 
          ( evaluateExpSQL
-         , signalTableSpec, getTableName, createTempDatabase, tempDbName) where
+         , signalTableSpec
+         , sessionTableSpec
+         , plug2TableSpec
+         , getTableName
+         , createTempDatabase
+         , tempDbName
+         , tableSpec2Queries
+         , SqlQuery
+         , sqlQuery2Text
+         , additionalDatabaseSettings
+         ) where
 
 import Prelude hiding (exp,putStrLn,readFile,writeFile)
 import Control.Exception
@@ -17,68 +27,140 @@ import System.FilePath
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.FSpec.SQL
 import Ampersand.FSpec
+import Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import Ampersand.Basics
 import Ampersand.Misc
 import Ampersand.Core.AbstractSyntaxTree
 
 
---                 (headerCmmnt,tableName,crflds,engineOpts)
-type TableSpec = (String,String,[Text.Text],String)
+data TableSpec
+  = TableSpec { tsCmnt :: [String]  -- Without leading "// "
+              , tsName :: String
+              , tsflds :: [AttributeSpec]
+              , tsKey ::  [String]
+              }
+data AttributeSpec
+  = AttributeSpec { fsname :: Text.Text
+                  , fstype :: TType
+                  , fsIsPrimKey :: Bool
+                  , fsDbNull :: Bool
+                  }
+
 
 getTableName :: TableSpec -> Text.Text
-getTableName (_,nm,_,_) = Text.pack nm
+getTableName = Text.pack . tsName
 
 createTablePHP :: TableSpec -> [Text.Text]
-createTablePHP (headerCmmnt,tableName,crflds,engineOpts) =
-  [ Text.pack headerCmmnt
-  -- Drop table if it already exists
-  , "if($columns = mysqli_query($DB_link, "<>showPhpStr ("SHOW COLUMNS FROM `"<>Text.pack tableName<>"`")<>")){"
-  , "    mysqli_query($DB_link, "<>showPhpStr ("DROP TABLE `"<>Text.pack tableName<>"`")<>");"
+createTablePHP tSpec = -- (headerCmmnt,tableName,crflds,engineOpts) =
+  map (Text.pack . ("// "<>)) (tsCmnt tSpec) <>
+  [-- Drop table if it already exists
+    "if($columns = mysqli_query($DB_link, "<>showPhpStr ("SHOW COLUMNS FROM `"<>Text.pack (tsName tSpec)<>"`")<>")){"
+  , "    mysqli_query($DB_link, "<>showPhpStr ("DROP TABLE `"<>Text.pack (tsName tSpec)<>"`")<>");"
   , "}"
   ] <>
-  [ "mysqli_query($DB_link,\"CREATE TABLE `"<>Text.pack tableName<>"`"] <>
-  [ Text.replicate 23 " " <> Text.pack [pref] <> " " <> att | (pref, att) <- zip ('(' : repeat ',') crflds ] <>
-  [ Text.replicate 23 " " <> ") ENGINE=" <>Text.pack engineOpts <> "\");"]<>
-  [ "if($err=mysqli_error($DB_link)) {"
+  [ "$sql="<>showPhpStr (Text.unlines $ createTableSql True tSpec)<>";"
+  , "mysqli_query($DB_link,$sql);" 
+  , "if($err=mysqli_error($DB_link)) {"
   , "  $error=true; echo $err.'<br />';"
   , "}"
   , "" 
-  ]<>setSqlModePHP
+  ]
+
+createTableSql :: Bool -> TableSpec -> [Text.Text]
+createTableSql withComment tSpec = 
+      [ "CREATE TABLE `"<>Text.pack (tsName tSpec)<>"`"] <>
+      [ Text.replicate indnt " " <> Text.pack [pref] <> " " <> addColumn att 
+      | (pref, att) <- zip ('(' : repeat ',') (tsflds tSpec)] <>
+      [ Text.replicate indnt " " <> "," <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
+      [ Text.replicate indnt " " <> ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN" ]<>
+      [ Text.replicate indnt " " <> ", ROW_FORMAT = DYNAMIC"]
+  where
+    indnt = 23
+    addColumn :: AttributeSpec -> Text.Text
+    addColumn att = quote (fsname att) <> " " <> (Text.pack . showSQL . fstype) att <> (if fsDbNull att then " DEFAULT NULL" else " NOT NULL")
+
 
 
 plug2TableSpec :: PlugSQL -> TableSpec
-plug2TableSpec plug
- = ( unlines $ commentBlock (["Plug "<>name plug,"","attributes:"]<>map (\x->showADL (attExpr x)<>"  "<>(show.properties.attExpr) x) (plugAttributes plug))
-   , name plug
-   , [ quote (Text.pack$ attName f)<>" " <> Text.pack (showSQL (attType f)) <> " DEFAULT NULL"
-     | f <- plugAttributes plug ]<>
-      case (plug, (head.plugAttributes) plug) of
-           (BinSQL{}, _      ) -> []
-           (TblSQL{}, primAtt) ->
-                case attUse primAtt of
-                   PrimaryKey _ -> [ "PRIMARY KEY (`"<>Text.pack (attName primAtt)<>"`)"]
-                   ForeignKey c  -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
-                   PlainAttr     -> []
-   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN")
+plug2TableSpec plug 
+  = TableSpec 
+     { tsCmnt = commentBlockSQL $
+                   ["Plug "<>name plug
+                   ,""
+                   ,"attributes:"
+                   ]<> concat
+                   [ [showADL (attExpr x)
+                     , "  "<>(show.properties.attExpr) x ]
+                   | x <- plugAttributes plug
+                   ]
+     , tsName = name plug
+     , tsflds = map fld2AttributeSpec $ plugAttributes plug
+     , tsKey  = case (plug, (head.plugAttributes) plug) of
+                 (BinSQL{}, _)   -> [  "PRIMARY KEY (" 
+                                       <> intercalate ", " (map (show . attName) (plugAttributes plug))
+                                       <> ")"
+                                    | all (suitableAsKey . attType) (plugAttributes plug)
+                                    ] 
+                 (TblSQL{}, primFld) ->
+                      case attUse primFld of
+                         PrimaryKey _ -> ["PRIMARY KEY (" <> (show . attName) primFld <> ")" ]
+                         ForeignKey c -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
+                         PlainAttr    -> []
+     }
+fld2AttributeSpec ::SqlAttribute -> AttributeSpec
+fld2AttributeSpec att 
+  = AttributeSpec { fsname = Text.pack (name att)
+                  , fstype = attType att
+                  , fsIsPrimKey = isPrimaryKey att
+                  , fsDbNull = attDBNull att 
+                  }
+
 
 signalTableSpec :: TableSpec
 signalTableSpec =
-  ( "// Signal table"
-  , "__all_signals__"
-  , [ "`conjId` VARCHAR(255) NOT NULL"
-    , "`src` VARCHAR(255) NOT NULL"
-    , "`tgt` VARCHAR(255) NOT NULL" ]
-  , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN"
-  )
+    TableSpec { tsCmnt = ["Signal table"]
+              , tsName = "__all_signals__"
+              , tsflds = [ AttributeSpec 
+                             { fsname      = "conjId"
+                             , fstype      = Alphanumeric
+                             , fsIsPrimKey = True
+                             , fsDbNull    = False
+                             }
+                         , AttributeSpec 
+                             { fsname      = "src"
+                             , fstype      = Alphanumeric
+                             , fsIsPrimKey = False
+                             , fsDbNull    = False
+                             }
+                         , AttributeSpec 
+                             { fsname      = "tgt"
+                             , fstype      = Alphanumeric
+                             , fsIsPrimKey = False
+                             , fsDbNull    = False
+                             }        
+                         ]
+              , tsKey =  ["PRIMARY KEY (`conjId`)" ]
+              }
 
 sessionTableSpec :: TableSpec
-sessionTableSpec
- = ( "// Session timeout table"
-   , "__SessionTimeout__"
-   , [ "`SESSION` VARCHAR(255) UNIQUE NOT NULL"
-     , "`lastAccess` BIGINT NOT NULL" ]
-   , "InnoDB DEFAULT CHARACTER SET UTF8 DEFAULT COLLATE UTF8_BIN" )
-
+sessionTableSpec = 
+    TableSpec { tsCmnt = ["Session timeout table"]
+              , tsName = "__SessionTimeout__"
+              , tsflds = [ AttributeSpec 
+                             { fsname      = "SESSION"
+                             , fstype      = Alphanumeric
+                             , fsIsPrimKey = True
+                             , fsDbNull    = False
+                             }
+                         , AttributeSpec 
+                             { fsname      = "lastAccess"
+                             , fstype      = Integer --HJO: Why not DateTime???
+                             , fsIsPrimKey = False
+                             , fsDbNull    = False
+                             }
+                         ]
+              , tsKey =  ["PRIMARY KEY (`SESSION`)" ]
+              }
 
 
 -- evaluate normalized exp in SQL
@@ -143,11 +225,11 @@ executePHPStr phpStr =
                        (\e -> do let err = show (e :: IOException)
                                  hPutStr stderr ("Warning: Couldn't find temp directory. Using current directory : " <> err)
                                  return ".")
-    ; (tempPhpFile, temph) <- openTempFile tempdir "tmpPhpQueryOfAmpersand"
+    ; (tempPhpFile, temph) <- openTempFile tempdir "tmpPhpQueryOfAmpersand.php"
     ; Text.hPutStr temph phpStr
     ; hClose temph
     ; results <- executePHP tempPhpFile
-    ; removeFile tempPhpFile
+  --  ; removeFile tempPhpFile
     ; return (normalizeNewLines results)
     }
 normalizeNewLines :: String -> String
@@ -256,13 +338,11 @@ createTempDatabase fSpec =
     , "  die(\"Failed to connect to the database: \" . mysqli_connect_error());"
     , "  }"
     , ""
-    ]
-    <>       
+    ] <>       
     [ "/*** Create new SQL tables ***/"
     , ""
     ] <>
     createTablePHP sessionTableSpec <>
-    setSqlModePHP<>
     createTablePHP signalTableSpec <>
     [ ""
     , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
@@ -286,4 +366,34 @@ createTempDatabase fSpec =
                 ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
        where
         valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> showValPHP val | att<-record]
+
+
+-- *** MySQL stuff below:
+
+data SqlQuery = SqlQuery [Text.Text]
+
+tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
+tableSpec2Queries withComment tSpec = 
+ (SqlQuery $ createTableSql withComment tSpec 
+ ):
+ [SqlQuery [ Text.pack $ "CREATE INDEX "<> show (tsName tSpec<>"_"<>(Text.unpack . fsname) fld)
+                             <>" ON "<>show (tsName tSpec)
+                             <>" ("<>(show . Text.unpack . fsname) fld<>")"
+           ]
+ | fld <- tsflds tSpec
+ , not (fsIsPrimKey fld)
+ , suitableAsKey (fstype  fld)
+ ]
+
+additionalDatabaseSettings :: [SqlQuery]
+additionalDatabaseSettings = [ SqlQuery ["SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]]
+
+sqlQuery2Text :: Bool -> SqlQuery -> Text.Text
+sqlQuery2Text withComment (SqlQuery ts)
+   = if withComment 
+     then Text.intercalate "\n" ts
+     else Text.unwords . Text.words . Text.unlines $ ts
+
+doubleQuote :: Text.Text -> Text.Text
+doubleQuote s = "\"" <> s <> "\""
 

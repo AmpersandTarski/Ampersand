@@ -16,7 +16,7 @@ dumpSQLqueries multi
    = Text.intercalate "\n" $ 
          header (Text.pack ampersandVersionStr)
        <>header "Database structure queries"
-       <>map Text.pack (generateDBstructQueries fSpec True)
+       <>generateDBstructQueries fSpec True
        <>header "Initial population queries"
        <>generateInitialPopQueries fSpec
        <>header "Violations of conjuncts"
