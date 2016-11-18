@@ -1,16 +1,12 @@
 $if(verbose)$<!-- Atomic-OBJECT.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
 $endif$$if(crudR)$<div ng-controller="AtomicController">
-    $if(exprIsUni)$<div>$if(crudU)$
-        <span my-showonhover-box class="glyphicon glyphicon-minus" ng-if="resource['$name$']" ng-click="resource['$name$'] = null; saveItem(resource, '$name$', patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$$if(crudD)$
-        <!--<span my-showonhover-box class="glyphicon glyphicon-trash" ng-if="resource['$name$']" ng-click="deleteResource(resource, '$name$', row, 'promise')" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left"></span>-->$endif$
-        <my-nav-to-interfaces ifcs="resource['$name$']._ifcs_" resource="resource['$name$']._id_">{{resource['$name$']._label_}}</my-nav-to-interfaces>
-    </div>$else$<div ng-repeat="row in resource['$name$']">
+    <div $if(exprIsUni)$my-alias="resource['$name$'] as obj"$else$ng-repeat="obj in resource['$name$']"$endif$>
         <div>$if(crudU)$
-            <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeResource(resource['$name$'], \$index, row, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$$if(crudD)$
-            <span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(resource, '$name$', row, 'promise')" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
-            <my-nav-to-interfaces ifcs="row['_ifcs_']" resource="row['_id_']">{{row['_label_']}}</my-nav-to-interfaces>
+            <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="remove(resource, '$name$', obj, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$$if(crudD)$
+            <span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="delete(resource, '$name$', obj)" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
+            <my-nav-to-interfaces ifcs="obj._ifcs_" resource="obj._id_">{{obj._label_}}</my-nav-to-interfaces>
         </div>
-    </div>$endif$$if(crudU)$$if(verbose)$
+    </div>$if(crudU)$$if(verbose)$
     <!-- Input to add new link to another resource -->$endif$
     <div$if(exprIsUni)$ ng-if="!resource['$name$']"$endif$ ng-controller="AtomicTypeAheadController">
         <input ng-model="selected.value" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, resource, '$name$', patchResource); selected.value=''" typeahead-no-results="hasNoResults" ng-init="getTypeahead('$target$')">$if(crudC)$

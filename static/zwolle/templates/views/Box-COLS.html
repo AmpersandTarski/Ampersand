@@ -1,5 +1,5 @@
 $if(verbose)$<!-- Box-COLS.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
-$endif$$if(crudR)$<div class="box cols" ng-controller="BoxController">
+$endif$$if(crudR)$<div class="box cols" ng-controller="BoxController" ng-init="parent = resource">
     <table class="table table-striped table-hover table-condensed">
         <thead>
             <tr>$subObjects:{subObj|
@@ -11,23 +11,23 @@ $endif$$if(crudR)$<div class="box cols" ng-controller="BoxController">
                 </th>
             </tr>
         </thead>
-        <tbody ng-init="parent = resource">
-            <tr $if(exprIsUni)$my-alias="resource['$name$'] as resource"$else$ng-repeat="(key, resource) in resource['$name$']"$endif$ ng-class="resource['_status_']">$subObjects:{subObj|
+        <tbody>
+            <tr $if(exprIsUni)$my-alias="resource['$name$'] as resource"$else$ng-repeat="resource in resource['$name$']"$endif$ ng-class="resource._status_"$if(isRoot)$ ng-init="patchResource = resource;"$endif$>$subObjects:{subObj|
                 $if(verbose)$<!-- $subObj.subObjLabel$ -->
                 $endif$<td class="row-content">
                     $subObj.subObjContents$
                 </td>}$
-                <td class="options">$if(isRoot)$
-                    <button type="button" class="btn btn-warning btn-xs" ng-if="resource['_showButtons_']['save']" ng-click="save(resource)">Save</button>
-                    <button type="button" class="btn btn-danger btn-xs" ng-if="resource['_showButtons_']['cancel']" ng-click="cancelResource(resource)">Cancel</button>$endif$$if(crudU)$
-                    <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeResource(parent['$name$'], \$index, resource, patchResource)"></span>$endif$$if(crudD)$
-                    <span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="deleteResource(parent, '$name$', resource, 'promise')"></span>$endif$
-                    <div style="float:right;" cg-busy="{promise:resource['_loading_'],templateUrl:'app/views/partials/loading.html',backdrop:false,wrapperClass:''}"></div>
+                <td class="options">
+                    <button type="button" class="btn btn-warning btn-xs" ng-if="resource._showButtons_.save" ng-click="save(resource)">Save</button>
+                    <button type="button" class="btn btn-danger btn-xs" ng-if="resource._showButtons_.cancel" ng-click="cancel(resource)">Cancel</button>$if(crudU)$
+                    <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="remove(parent, '$name$', resource, patchResource)"></span>$endif$$if(crudD)$
+                    <span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="delete(parent, '$name$', resource)"></span>$endif$
+                    <div style="float:right;" cg-busy="{promise:resource._loading_, templateUrl:'app/views/partials/loading.html', backdrop:false, wrapperClass:''}"></div>
                 </td>
             </tr>$if(crudU)$
             <tr$if(exprIsUni)$ ng-if="!resource['$name$']"$endif$ ng-controller="AtomicTypeAheadController">
                 <td colspan="42"$if(crudU)$ ng-init="getTypeahead('$target$')"$endif$>
-                    <input ng-model="selected.label" type="text" class="input-sm" placeholder="Select" uib-typeahead="item['_label_'] for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, parent, '$name$', parent); selected.label=''">
+                    <input ng-model="selected.label" type="text" class="input-sm" placeholder="Add $target$" uib-typeahead="item._label_ for item in typeahead['$target$'] | filter:\$viewValue | limitTo:15" typeahead-editable="true" typeahead-on-select="typeaheadOnSelect(\$item, \$model, \$label, parent, '$name$', parent); selected.label=''">
                 </td>
             </tr>$endif$
         </tbody>$if(crudC)$ <!-- <tfoot> only needed if crudC -->

@@ -43,7 +43,6 @@ angular.module('AmpersandApp').controller('AtomicController', function($scope, R
         }
     };
     
-    // Function to remove an item from an interface list
     $scope.removeItem = function(resource, ifc, index, patchResource){
         // Adapt js model
         value = resource[ifc][index];
@@ -59,18 +58,7 @@ angular.module('AmpersandApp').controller('AtomicController', function($scope, R
         ResourceService.addPatches(patchResource, patches);
     };
     
-    // Function to remove a resource from an interface list
-    $scope.removeResource = function(list, index, resource, patchResource){
-        // Adapt js model
-        list.splice(index, 1);
-        
-        // Construct patch(es)
-        if(typeof patchResource === 'undefined') patchResource = resource;
-        pathLength = patchResource._path_.length;
-        path = resource._path_.substring(pathLength);
-        patches = [{ op : 'remove', path : path}];
-        
-        // Patch!
-        ResourceService.addPatches(patchResource, patches);
-    };
+    $scope.remove = ResourceService.removeResource; // function(ifc, resource, patchResource)
+    
+    $scope.delete = ResourceService.deleteResource; // function(ifc, resource)
 });

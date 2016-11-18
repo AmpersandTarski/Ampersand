@@ -15,9 +15,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                     function(data){
                         data = data.plain();
                         if($.isEmptyObject(data)) NotificationService.addInfo('No results found');
+                        else if(resource[ifc] === null) resource[ifc] = data;
                         else angular.extend(resource[ifc], data);
-                    }, function(){
-                        NotificationService.addError('Something went wrong while getting resource');
                     }
                 )
             );
@@ -34,7 +33,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                     function(data){
                         data = data.plain();
                         if($.isEmptyObject(data)) NotificationService.addInfo('No results found');
-                        else resource = data;
+                        else angular.extend(resource, data);
                         
                         // Update visual feedback (notifications and buttons)
                         NotificationService.getNotifications();
@@ -47,12 +46,12 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
         },
         
         // Function to create (POST) a new resource
-        createResource : function(obj, ifc, callingObj, prepend){
+        createResource : function(resource, ifc, callingObj, prepend){
             if(prepend === 'undefined') prepend = false;
             if(!Array.isArray(callingObj._loading_)) callingObj._loading_ = []; // list with promises
             
             callingObj._loading_.push(
-                Restangular.one(obj._path_).all(ifc)
+                Restangular.one(resource._path_).all(ifc)
                 .post({}, {})
                 .then(
                     function(data){
@@ -61,19 +60,35 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                         ResourceService.processResponse(callingObj, data);
                         
                         // Add new resource to ifc
-                        if(Array.isArray(obj[ifc])){ // non-uni -> list
-                            if(prepend) obj[ifc].unshift(data.content);
-                            else obj[ifc].push(data.content);
-                        }else{ // uni
-                            obj[ifc] = data.content;
+                        if(Array.isArray(resource[ifc])){ // non-uni = list
+                            if(prepend) resource[ifc].unshift(data.content);
+                            else resource[ifc].push(data.content);
+                        }else{ // uni = object
+                            resource[ifc] = data.content;
                         }
                         
-                        if(obj._isRoot_ && obj._id_ == '_NEW') $location.url('/' + ifc + '/'+ data.content._id_, false);
+                        if(resource._isRoot_ && resource._id_ == '_NEW') $location.url('/' + ifc + '/'+ data.content._id_, false);
                     }, function(){
                         NotificationService.addError('Something went wrong while creating a resource');
                     }
                 )
             );
+        },
+        
+        // Function to remove a resource from an interface (list)
+        removeResource : function(parent, ifc, resource, patchResource){
+            // Adapt js model
+            if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
+            else parent[ifc] = null; // uni = object
+            
+            // Construct patch(es)
+            if(typeof patchResource === 'undefined') patchResource = resource;
+            pathLength = patchResource._path_.length;
+            path = resource._path_.substring(pathLength);
+            patches = [{ op : 'remove', path : path}];
+            
+            // Patch!
+            ResourceService.addPatches(patchResource, patches);
         },
         
         // Function to delete a resource
@@ -91,8 +106,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                             NotificationService.updateNotifications(data.notifications);
                             
                             // Remove resource from ifc
-                            if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni -> list
-                            else parent[ifc] = null; // uni
+                            if(Array.isArray(parent[ifc])) parent[ifc].splice(parent[ifc].indexOf(resource), 1); // non-uni = list
+                            else parent[ifc] = null; // uni = object
                         }, function(){
                             NotificationService.addError('Something went wrong while deleting a resource');
                         }

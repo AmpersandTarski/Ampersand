@@ -21,7 +21,7 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
                         '_path_' : 'resources/' + resourceType + '/' + resourceId,
                         '_isRoot_' : true,
                       };
-    \$scope.resource[ifcName] = $if(exprIsUni)${}$else$[]$endif$;
+    \$scope.resource[ifcName] = $if(exprIsUni)$null$else$[]$endif$;
     \$scope.patchResource = \$scope.resource;
     
     // Create new resource

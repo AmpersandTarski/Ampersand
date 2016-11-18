@@ -191,11 +191,16 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
                         childScope.$destroy();
                         childScope = null;
                     }
+                    /* Code below copied from ngIf directive. Not sure what it is for. 
+                     * getBlockNodes() function is not defined.
+                     */
                     if (block) {
+                        /*
                         previousElements = getBlockNodes(block.clone);
                         $animate.leave(previousElements).then(function() {
                             previousElements = null;
                         });
+                        */
                         block = null;
                     }
                 }

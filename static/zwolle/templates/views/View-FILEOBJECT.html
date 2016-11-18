@@ -10,7 +10,7 @@ $if(verbose)$<!-- View-FILEOBJECT.html "$label$" : $expAdl$ :: $source$ * $targe
 -->
 $endif$$if(crudR)$<div class="input-group" ng-controller="AtomicController">
     <div ng-repeat="row in resource['$name$']">
-        $if(crudU)$<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="removeResource(resource['$name$'], \$index, row, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
+        $if(crudU)$<span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="remove(resource, '$name$', row, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
         <a href="{{row['_view_']['filePath']}}" target="_blank">{{row['_view_']['fileName']}}</a>
     </div>$if(crudU)$$if(verbose)$
     <!-- Input to add new link to another resource -->$endif$

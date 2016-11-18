@@ -1,7 +1,4 @@
 angular.module('AmpersandApp').controller('InterfaceController', function($scope, $location, ResourceService){
-    // Function (reference) to save certain attributes changes of a resource (i.e. patches)
-    $scope.save = ResourceService.saveResource;
-    
     /*
      * An empty object for typeahead functionality.
      * Defined here so it can be reused in an interface
