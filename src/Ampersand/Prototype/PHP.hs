@@ -15,7 +15,6 @@ module Ampersand.Prototype.PHP
 
 import Prelude hiding (exp,putStrLn,readFile,writeFile)
 import Control.Exception
-import Control.Monad
 import Data.Monoid
 import Data.List
 import qualified Data.Text as Text
@@ -297,11 +296,25 @@ connectToTheDatabasePHP =
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { result <- executePHPStr .
+ do { dump ">>>INPUT>>>" (Text.lines $ showPHP phpStr) 
+    ; result <- executePHPStr .
            showPHP $ phpStr
-    ; unless (null result) $ verboseLn (getOpts fSpec) result
+    ; dump "<<<OUTPUT<<<" (Text.lines . Text.pack $ result)
+    ; verboseLn (getOpts fSpec) 
+         (if null result 
+          then "Temp database created succesfully."
+          else "Temp database creation failed! :"<>result  )
     }
  where 
+  dump :: String -> [Text.Text] -> IO ()
+  dump prefix txt = mapM_ (verboseLn $ getOpts fSpec) noot
+    where
+      noot :: [String]
+      noot = map aap (zip [1..] txt)
+      aap :: (Int, Text.Text) -> String
+      aap (i,x) = prefix <> " "<>(show i)<>" "<>Text.unpack x
+
+
   phpStr :: [Text.Text]
   phpStr = 
     connectToMySqlServerPHP (getOpts fSpec) Nothing <>
