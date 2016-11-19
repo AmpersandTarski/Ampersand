@@ -87,12 +87,13 @@ before_install:
 - CABALARGS=""
 - if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 
+- sudo find / -type s
+- mysqladmin variables | grep socket
 # We need to ensure that there is enough memory. See:
 # http://stackoverflow.com/questions/13104630/exitfailure-9-when-trying-to-install-ghc-mod-using-cabal 
 - sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
 - sudo mkswap /swapfile
 - sudo swapon /swapfile
-- mysqladmin variables | grep socket
 
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
