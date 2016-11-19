@@ -87,7 +87,6 @@ before_install:
 - CABALARGS=""
 - if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 
-- ls -alR | grep "mysql" 
 - sudo find / -ignore_readdir_race ! -readable -prune -true
 - mysqladmin variables | grep socket
 # We need to ensure that there is enough memory. See:
