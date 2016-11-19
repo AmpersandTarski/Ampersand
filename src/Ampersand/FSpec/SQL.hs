@@ -1185,7 +1185,10 @@ theONESingleton = Col { cTable = []
                       }
 
 commentBlockSQL :: [String] -> [String]
+commentBlockSQL [] = []
 commentBlockSQL xs = 
-   map (\cmmnt -> "/* "<>cmmnt<>" */") $ hbar <> xs <> hbar
-  where hbar = [replicate (maximum . map length $ xs) '-']
-  
+   map (\cmmnt -> "/* "<>cmmnt<> " */") $ [hbar] <>(map addSpaces xs)<> [hbar]
+  where 
+    hbar = replicate (maximum . map length $ xs) '-'
+    addSpaces str = str <> (replicate (length hbar - length str) ' ')
+    

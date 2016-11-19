@@ -36,7 +36,7 @@ data TableSpec
   = TableSpec { tsCmnt :: [String]  -- Without leading "// "
               , tsName :: String
               , tsflds :: [AttributeSpec]
-              , tsKey ::  [String]
+              , tsKey  ::  String
               }
 data AttributeSpec
   = AttributeSpec { fsname :: Text.Text
@@ -66,18 +66,27 @@ createTablePHP tSpec =
   ]
 
 createTableSql :: Bool -> TableSpec -> [Text.Text]
-createTableSql _withComment tSpec = 
-      [ "CREATE TABLE `"<>Text.pack (tsName tSpec)<>"`"] <>
+createTableSql withComment tSpec = 
+      ( if withComment 
+        then map Text.pack . commentBlockSQL . tsCmnt $ tSpec
+        else []
+      ) <>
+      [ "CREATE TABLE "<>(doubleQuote . Text.pack . tsName $ tSpec)] <>
       [ Text.replicate indnt " " <> Text.pack [pref] <> " " <> addColumn att 
       | (pref, att) <- zip ('(' : repeat ',') (tsflds tSpec)] <>
-      [ Text.replicate indnt " " <> "," <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
+      ( if null (tsKey tSpec) 
+        then []
+        else [ Text.replicate indnt " " <> ", " <> Text.pack (tsKey tSpec) ]
+      ) <>
+      [ Text.replicate indnt " " <> ", " <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
       [ Text.replicate indnt " " <> ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN" ]<>
-      [ Text.replicate indnt " " <> ", ROW_FORMAT = DYNAMIC"]
+      [ Text.replicate indnt " " <> ", ROW_FORMAT = DYNAMIC"]<>
+      [ "" ]
   where
-    indnt = 23
+    indnt = 5
     addColumn :: AttributeSpec -> Text.Text
     addColumn att 
-       =    quote (fsname att) <> " " 
+       =    doubleQuote (fsname att) <> " " 
          <> (Text.pack . showSQL . fstype) att 
          <> (if fsIsPrimKey att then " UNIQUE" else "")
          <> (if fsDbNull att then " DEFAULT NULL" else " NOT NULL")
@@ -86,7 +95,7 @@ createTableSql _withComment tSpec =
 plug2TableSpec :: PlugSQL -> TableSpec
 plug2TableSpec plug 
   = TableSpec 
-     { tsCmnt = commentBlockSQL $
+     { tsCmnt = 
                    ["Plug "<>name plug
                    ,""
                    ,"attributes:"
@@ -98,16 +107,16 @@ plug2TableSpec plug
      , tsName = name plug
      , tsflds = map fld2AttributeSpec $ plugAttributes plug
      , tsKey  = case (plug, (head.plugAttributes) plug) of
-                 (BinSQL{}, _)   -> [  "PRIMARY KEY (" 
-                                       <> intercalate ", " (map (show . attName) (plugAttributes plug))
-                                       <> ")"
-                                    | all (suitableAsKey . attType) (plugAttributes plug)
-                                    ] 
+                 (BinSQL{}, _)   -> if all (suitableAsKey . attType) (plugAttributes plug)
+                                    then "PRIMARY KEY (" 
+                                            <> intercalate ", " (map (show . attName) (plugAttributes plug))
+                                            <> ")"
+                                    else ""
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
-                         PrimaryKey _ -> ["PRIMARY KEY (" <> (show . attName) primFld <> ")" ]
+                         PrimaryKey _ -> "PRIMARY KEY (" <> (show . attName) primFld <> ")"
                          ForeignKey c -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
-                         PlainAttr    -> []
+                         PlainAttr    -> ""
      }
 fld2AttributeSpec ::SqlAttribute -> AttributeSpec
 fld2AttributeSpec att 
@@ -141,7 +150,7 @@ signalTableSpec =
                              , fsDbNull    = False
                              }        
                          ]
-              , tsKey =  ["PRIMARY KEY (`conjId`)" ]
+              , tsKey  = "PRIMARY KEY (`conjId`)"
               }
 
 sessionTableSpec :: TableSpec
@@ -161,7 +170,7 @@ sessionTableSpec =
                              , fsDbNull    = False
                              }
                          ]
-              , tsKey =  ["PRIMARY KEY (`SESSION`)" ]
+              , tsKey  = "PRIMARY KEY (`SESSION`)"
               }
 
 
@@ -353,8 +362,8 @@ createTempDatabase fSpec =
     [ "/*** Create new SQL tables ***/"
     , ""
     ] <>
-    createTablePHP sessionTableSpec <>
     createTablePHP signalTableSpec <>
+    createTablePHP sessionTableSpec <>
     [ ""
     , "//// Number of plugs: " <> Text.pack (show (length (plugInfos fSpec)))
     ]

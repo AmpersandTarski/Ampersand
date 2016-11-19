@@ -22,8 +22,8 @@ generateDBstructQueries fSpec withComment =
 generateDBstructQueries' :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries' fSpec withComment 
   = (concatMap (tableSpec2Queries withComment)
-           ( signalTableSpec
-           : sessionTableSpec
+           ( sessionTableSpec
+           : signalTableSpec
            : [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
            )
     ) <> additionalDatabaseSettings 
