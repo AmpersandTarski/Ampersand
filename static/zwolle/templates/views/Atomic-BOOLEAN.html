@@ -1,12 +1,7 @@
 $if(verbose)$<!-- Atomic-BOOLEAN.html "$label$" : $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$) -->
-$endif$$if(crudR)$<div style="vertical-align:middle;"  ng-controller="AtomicController">
-    $if(exprIsUni)$<div>
+$endif$$if(crudR)$<div style="vertical-align:middle;" ng-controller="AtomicController">$if(exprIsUni)$
         <label>
             <input ng-model="resource['$name$']" type="checkbox"$if(!crudU)$ ng-disabled="true"$endif$ ng-change="saveItem(resource, '$name$', patchResource)"/>
-        </label>
-    </div>$else$$if(crudU)$<span>Not implemented: editable non-uni boolean</span>$else$<div ng-repeat="row in resource['$name$'] track by \$index">
-        <label>
-            <input ng-model="resource['$name$'][\$index]" type="checkbox" ng-disabled="true"/>
-        </label>
-    </div>$endif$$endif$
+        </label>$else$
+        <span>Not implemented: non-uni boolean</span>$endif$
 </div>$else$<span><i>N/A</i></span>$endif$
