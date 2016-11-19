@@ -125,7 +125,7 @@ signalTableSpec =
               , tsflds = [ AttributeSpec 
                              { fsname      = "conjId"
                              , fstype      = Alphanumeric
-                             , fsIsPrimKey = True
+                             , fsIsPrimKey = False
                              , fsDbNull    = False
                              }
                          , AttributeSpec 
@@ -248,14 +248,13 @@ showPHP phpLines = Text.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
 tempDbName :: Text.Text
-tempDbName = "ampersandTempDB"
+tempDbName = "TempDB"
 
 connectToMySqlServerPHP :: Options -> Maybe Text.Text-> [Text.Text]
 connectToMySqlServerPHP opts mDbName =
     [ "// Try to connect to the MySQL server"
     , "global $DB_host,$DB_user,$DB_pass;"
     , "$DB_host='"<>subst sqlHost <>"';"
-    , "$DB_host='127.0.0.1';"  --Hack for testing on Travis
     , "$DB_user='"<>subst sqlLogin<>"';"
     , "$DB_pass='"<>subst sqlPwd  <>"';"
     , ""
