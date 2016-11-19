@@ -87,7 +87,7 @@ before_install:
 - CABALARGS=""
 - if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 
-- sudo find / ! -path /proc/* -prune ! -readable -prune -type s
+- sudo find / ! -path /proc/* -prune -o ! -readable -prune -type s
 - mysqladmin variables | grep socket
 # We need to ensure that there is enough memory. See:
 # http://stackoverflow.com/questions/13104630/exitfailure-9-when-trying-to-install-ghc-mod-using-cabal 
