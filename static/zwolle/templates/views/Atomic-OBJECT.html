@@ -4,7 +4,7 @@ $endif$$if(crudR)$<div ng-controller="AtomicController">
         <div>$if(crudU)$
             <span my-showonhover-box class="glyphicon glyphicon-minus" ng-click="remove(resource, '$name$', obj, patchResource)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$$if(crudD)$
             <span my-showonhover-box class="glyphicon glyphicon-trash" ng-click="delete(resource, '$name$', obj)" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="left"></span>$endif$
-            <my-nav-to-interfaces ifcs="obj._ifcs_" resource="obj._id_">{{obj._label_}}</my-nav-to-interfaces>
+            <my-nav-to-interfaces resource="obj">{{obj._label_}}</my-nav-to-interfaces>
         </div>
     </div>$if(crudU)$$if(verbose)$
     <!-- Input to add new link to another resource -->$endif$

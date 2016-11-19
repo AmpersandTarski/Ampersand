@@ -134,15 +134,15 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
 }).directive('myNavToInterfaces', function(){
     return {
         restrict : 'E',
-        scope : {ifcs : '=', resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        templateUrl : 'app/views/partials/my_nav_to_interfaces.html',
+        scope : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+        templateUrl : 'app/views/partials/myNavToInterfaces.html',
         transclude : true
     };
 }).directive('myNavToOtherInterfaces', function(){
     return {
         restrict : 'E',
-        scope  : {ifcs : '=', resource : '=', label : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
-        templateUrl : 'app/views/partials/my_nav_to_other_interfaces.html'
+        scope  : {resource : '=', target : '@'}, // '=' => two-way bind, '@' => evaluates string (use {{}} in html) 
+        templateUrl : 'app/views/partials/myNavToOtherInterfaces.html'
     };
 }).directive('myAlias', function($animate, $compile) {
     // adapted from ngIf and ngRepeat directives
