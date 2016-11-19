@@ -4,11 +4,12 @@
 dist: trusty
 sudo: required
 addons:
-  apt:
-    packages:
-    - mysql-server-5.6
-    - mysql-client-core-5.6
-    - mysql-client-5.6
+  mariadb: '10.0'
+#  apt:
+#    packages:
+#    - mysql-server-5.6
+#    - mysql-client-core-5.6
+#    - mysql-client-5.6
 
 language: php
 
@@ -91,12 +92,6 @@ before_install:
 - sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
 - sudo mkswap /swapfile
 - sudo swapon /swapfile
-
-# Using MySQL 5.6 might need some fiddling around with configuration (http://stackoverflow.com/questions/4219970/warning-mysql-connect-2002-no-such-file-or-directory-trying-to-connect-vi)
-- sudo /usr/libexec/locate.updatedb
-- locate mysql.sock
-- php -i | grep php.ini
-
 
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
