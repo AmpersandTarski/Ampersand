@@ -92,6 +92,7 @@ before_install:
 - sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
 - sudo mkswap /swapfile
 - sudo swapon /swapfile
+- mysqladmin variables | grep socket
 
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
