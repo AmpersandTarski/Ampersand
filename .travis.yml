@@ -92,6 +92,12 @@ before_install:
 - sudo mkswap /swapfile
 - sudo swapon /swapfile
 
+# Using MySQL 5.6 might need some fiddling around with configuration (http://stackoverflow.com/questions/4219970/warning-mysql-connect-2002-no-such-file-or-directory-trying-to-connect-vi)
+- sudo /usr/libexec/locate.updatedb
+- locate mysql.sock
+- php -i | grep php.ini
+
+
 # Download and unpack the stack executable
 - export PATH=/opt/ghc/$GHCVER/bin:/opt/cabal/$CABALVER/bin:$HOME/.local/bin:$PATH
 - mkdir -p ~/.local/bin
