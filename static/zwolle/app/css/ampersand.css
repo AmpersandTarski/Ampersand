@@ -186,6 +186,41 @@ fieldset {
     text-align: right;
 }
 
+.interface .interface-opt {
+    display: flex;
+    justify-content: flex-end;
+}
+
+.interface .btn {
+    margin: 5px 0px 5px 2px;
+}
+
+.interface .box-rows .box-rows-opt {
+    display: flex;
+    justify-content: flex-end;
+}
+.box-rows-opt .btn {
+    margin: 5px 0px 5px 2px;
+}
+
+.interface .box-rows .box-rows-li-opt {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 10;
+    display: block;
+    padding: 5px 8px;
+    font-size: 12px;
+    /*
+    border-left: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
+    border-bottom-left-radius: 4px;
+    */
+}
+.box-rows-li-opt .btn {
+    margin-left: 2px;
+}
+
 .interface .panel-heading {
 	padding-top			: 1px;
 	padding-bottom		: 1px;

@@ -24,11 +24,16 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
     \$scope.resource[ifcName] = $if(exprIsUni)$null$else$[]$endif$;
     \$scope.patchResource = \$scope.resource;
     
-    // Create new resource
-    if(\$routeParams['new']) ResourceService.createResource(\$scope.resource, ifcName, \$scope.patchResource);
+    \$scope.createResource = function(){
+        ResourceService.createResource(\$scope.resource, ifcName, \$scope.patchResource);
+    };
+    \$scope.getResource = function(){
+        ResourceService.getResource(\$scope.resource, ifcName, \$scope.patchResource);
+    };
     
-    // Get resource interface data
-    else ResourceService.getResource(\$scope.resource, ifcName, \$scope.patchResource);
+    // Create new or get resource
+    if(\$routeParams['new']) \$scope.createResource();
+    else \$scope.getResource();
     
 });
 /* jshint ignore:end */
