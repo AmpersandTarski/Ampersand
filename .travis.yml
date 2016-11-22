@@ -3,13 +3,13 @@
 #
 dist: trusty
 sudo: required
-addons:
+#addons:
 #  mariadb: '10.0'
-  apt:
-    packages:
-    - mysql-server-5.6
-    - mysql-client-core-5.6
-    - mysql-client-5.6
+#  apt:
+#    packages:
+#    - mysql-server-5.6
+#    - mysql-client-core-5.6
+#    - mysql-client-5.6
 
 
 cache:
@@ -35,7 +35,12 @@ matrix:
   # variable, such as using --stack-yaml to point to a different file.
   - env: BUILD=stack ARGS=""
     compiler: ": #stack 8.0.1"
-    addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ ghc-8.0.1
+                             , mysql-server-5.6
+                             , mysql-client-core-5.6
+                             , mysql-client-5.6
+                             ] 
+                  ,sources: [hvr-ghc]}}
   - env: BUILD=stack ARGS="" osx
     compiler: ": #stack 8.0.1"
     os: osx
@@ -45,7 +50,13 @@ matrix:
   # https://github.com/hvr/multi-ghc-travis
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
     compiler: ": #GHC 8.0.1"
-    addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ cabal-install-1.24
+                             , ghc-8.0.1
+                             , mysql-server-5.6
+                             , mysql-client-core-5.6
+                             , mysql-client-5.6
+                             ] 
+                  ,sources: [hvr-ghc]}}
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
     compiler: ": #GHC 8.0.1"
     os: osx
