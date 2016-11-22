@@ -11,7 +11,7 @@ $endif$$if(crudR)$<div class="box box-rows" ng-controller="BoxController" ng-cla
                 <span class="glyphicon glyphicon-minus" ng-hide="resource._showButtons_.cancel" ng-click="remove(parent, '$name$', resource, $if(isRoot)$parent$else$patchResource$endif$)" uib-tooltip="Remove" tooltip-trigger="mouseenter" tooltip-placement="bottom"></span>$endif$$if(crudD)$
                 <span class="glyphicon glyphicon-trash" ng-hide="resource._showButtons_.cancel" ng-click="delete(parent, '$name$', resource)" uib-tooltip="Delete" tooltip-trigger="mouseenter" tooltip-placement="bottom"></span>$endif$
             </div>
-            <h4 class="list-group-item-heading">{{resource._label_}}&nbsp;</h4>$subObjects:{subObj|$if(verbose)$
+            <h5 class="list-group-item-heading">{{resource._label_}}&nbsp;</h5>$subObjects:{subObj|$if(verbose)$
             <!-- $subObj.subObjLabel$ -->$endif$
             <div class="row">
                 <div class="row-label col-md-2 wordwrap"><strong>$subObj.subObjLabel$</strong></div>
