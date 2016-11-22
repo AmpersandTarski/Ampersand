@@ -86,7 +86,7 @@ createTableSql withComment tSpec =
     indnt = 5
     addColumn :: AttributeSpec -> Text.Text
     addColumn att 
-       =    doubleQuote (fsname att) <> " " 
+       =    quote (fsname att) <> " " 
          <> (Text.pack . showSQL . fstype) att 
          <> (if fsIsPrimKey att then " UNIQUE" else "")
          <> (if fsDbNull att then " DEFAULT NULL" else " NOT NULL")
@@ -203,7 +203,7 @@ performQuery fSpec dbNm queryStr =
       [ "$sql="<>showPhpStr queryStr<>";"
       , "$result=mysqli_query($DB_link,$sql);"
       , "if(!$result)"
-      , "  die(\"Error : Connect to server failed\".($ernr=mysqli_errno($DB_link)).\": \".mysqli_error($DB_link).\"(Sql: $sql)\");"
+      , "  die('Error : Connect to server failed'.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
       , "$rows=Array();"
       , "  while ($row = mysqli_fetch_array($result)) {"
       , "    $rows[]=$row;"
@@ -273,7 +273,7 @@ connectToMySqlServerPHP opts mDbName =
          [ "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass);"
          , "// Check connection"
          , "if (mysqli_connect_errno()) {"
-         , "  die(\"Failed to connect to MySQL: \" . mysqli_connect_error());"
+         , "  die('Failed to connect to MySQL: ' . mysqli_connect_error());"
          , "}"
          , ""
          ]
@@ -284,7 +284,7 @@ connectToMySqlServerPHP opts mDbName =
     [ "$sql=\"SET SESSION sql_mode = 'ANSI,TRADITIONAL'\";" -- ANSI because of the syntax of the generated SQL
                                                             -- TRADITIONAL because of some more safety
     , "if (!mysqli_query($DB_link,$sql)) {"
-    , "  die(\"Error setting sql_mode: \" . mysqli_error($DB_link));"
+    , "  die('Error setting sql_mode: ' . mysqli_error($DB_link));"
     , "  }"
     , ""
     ]
@@ -298,7 +298,7 @@ connectToTheDatabasePHP =
     , "$DB_link = mysqli_connect($DB_host,$DB_user,$DB_pass,$DB_name);"
     , "// Check connection"
     , "if (mysqli_connect_errno()) {"
-    , "  die(\"Error : Failed to connect to the database: \" . mysqli_connect_error());"
+    , "  die('Error : Failed to connect to the database: ' . mysqli_connect_error());"
     , "  }"
     , ""
     ]
@@ -308,7 +308,7 @@ createTempDatabase fSpec =
  do { dump ">>>INPUT>>>" (Text.lines $ showPHP phpStr) 
     ; result <- executePHPStr .
            showPHP $ phpStr
-    ; dump "<<<OUTPUT<<<" (Text.lines . Text.pack $ result)
+    ; -- dump "<<<OUTPUT<<<" (Text.lines . Text.pack $ result)
     ; verboseLn (getOpts fSpec) 
          (if null result 
           then "Temp database created succesfully."
@@ -319,7 +319,7 @@ createTempDatabase fSpec =
   dump prefix txt = mapM_ (verboseLn $ getOpts fSpec) noot
     where
       noot :: [String]
-      noot = map aap (zip [1..] txt)
+      noot = map aap (zip [1..99] txt)
       aap :: (Int, Text.Text) -> String
       aap (i,x) = prefix <> " "<>(show i)<>" "<>Text.unpack x
 
@@ -330,31 +330,34 @@ createTempDatabase fSpec =
     [ "/*** Set global varables to ensure the correct working of MySQL with Ampersand ***/"
     , ""
     , "    /* file_per_table is required for long columns */"
-    , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_per_table = true\");"
+    , "    $sql='SET GLOBAL innodb_file_per_table = true';"
+    , "    $result=mysqli_query($DB_link, $sql);"
     , "       if(!$result)"
-    , "         die(\"Error \".($ernr=mysqli_errno($DB_link)).\": \".mysqli_error($DB_link).\"(Sql: $sql)\");"
+    , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , "" 
     , "    /* file_format = Barracuda is required for long columns */"
-    , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_file_format = `Barracuda` \");"
+    , "    $sql='SET GLOBAL innodb_file_format = `Barracuda`';"
+    , "    $result=mysqli_query($DB_link, $sql);"
     , "       if(!$result)"
-    , "         die(\"Error \".($ernr=mysqli_errno($DB_link)).\": \".mysqli_error($DB_link).\"(Sql: $sql)\");"
+    , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , ""
     , "    /* large_prefix gives max single-column indices of 3072 bytes = win! */"
-    , "    $result=mysqli_query($DB_link, \"SET GLOBAL innodb_large_prefix = true \");"
+    , "    $sql='SET GLOBAL innodb_large_prefix = true';"
+    , "    $result=mysqli_query($DB_link, $sql);"
     , "       if(!$result)"
-    , "         die(\"Error \".($ernr=mysqli_errno($DB_link)).\": \".mysqli_error($DB_link).\"(Sql: $sql)\");"
+    , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , ""
     ]<> 
     [ "$DB_name='"<>addSlashes (tempDbName)<>"';"
     , "// Drop the database if it exists"
-    , "$sql=\"DROP DATABASE $DB_name\";"
+    , "$sql='DROP DATABASE $DB_name';"
     , "mysqli_query($DB_link,$sql);"
     , "// Don't bother about the error if the database didn't exist..."
     , ""
     , "// Create the database"
-    , "$sql=\"CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin\";"
+    , "$sql='CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin';"
     , "if (!mysqli_query($DB_link,$sql)) {"
-    , "  die(\"Error creating the database: \" . mysqli_error($DB_link));"
+    , "  die('Error creating the database: ' . mysqli_error($DB_link));"
     , "  }"
     , ""
     ] <> 
