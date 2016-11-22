@@ -79,10 +79,14 @@ CONTEXT "RAP" IN ENGLISH
   RULE "The target concept of a reference interface expression must have an object representation (i.e. not scalar)" : I[RefIfc];expr;tgt |-V;isObj
   
   -- CRUD rights of reference interfaces must be the same as the CRUD right of the interface it refers to
-  RULE crudC = refTo;crudC
-  RULE crudR = refTo;crudR
-  RULE crudU = refTo;crudU
-  RULE crudD = refTo;crudD
+  RULE refTo;crudC     |- crudC
+  RULE refTo;(I-crudC) |- I-crudC
+  RULE refTo;crudR     |- crudR
+  RULE refTo;(I-crudR) |- I-crudR
+  RULE refTo;crudU     |- crudU
+  RULE refTo;(I-crudU) |- I-crudU
+  RULE refTo;crudD     |- crudD
+  RULE refTo;(I-crudD) |- I-crudD
     
 --[BOX INTERFACES]---------------------------------------------------------------------------------
   CONCEPT BoxIfc ""
