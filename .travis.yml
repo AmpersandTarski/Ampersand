@@ -59,13 +59,26 @@ matrix:
                   ,sources: [hvr-ghc]}}
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
     compiler: ": #GHC 8.0.1"
+    addons: {apt: {packages: [ cabal-install-1.24
+                             , ghc-8.0.1
+                             , mysql-server-5.6
+                             , mysql-client-core-5.6
+                             , mysql-client-5.6
+                             ] 
+                  ,sources: [hvr-ghc]}}
     os: osx
 
   # Build with the newest GHC and cabal-install. This is an accepted failure,
   # see below.
   - env: BUILD=cabal GHCVER=head  CABALVER=head
     compiler: ": #GHC HEAD"
-    addons: {apt: {packages: [cabal-install-head,ghc-head], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ cabal-install-head
+                             , ghc-head
+                             , mysql-server-5.6
+                             , mysql-client-core-5.6
+                             , mysql-client-5.6
+                             ] 
+                  ,sources: [hvr-ghc]}}
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
@@ -97,8 +110,6 @@ before_install:
 - CABALARGS=""
 - if [ "x$GHCVER" = "xhead" ]; then CABALARGS=--allow-newer; fi
 
-- sudo find / -ignore_readdir_race ! -readable -prune -o -type s 
-- mysqladmin variables | grep socket
 # We need to ensure that there is enough memory. See:
 # http://stackoverflow.com/questions/13104630/exitfailure-9-when-trying-to-install-ghc-mod-using-cabal 
 - sudo dd if=/dev/zero of=/swapfile bs=1M count=1024
