@@ -1,6 +1,8 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+
+## v3.7.3 (25 november 2016)
   * Alternative definition of univalence and injectivity to get better violations on runtime.
 
 ## v3.7.2 (28 october 2016)
