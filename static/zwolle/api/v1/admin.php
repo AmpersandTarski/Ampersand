@@ -4,6 +4,7 @@ use Ampersand\Config;
 use Ampersand\Database\Database;
 use Ampersand\Session;
 use Ampersand\Interfacing\InterfaceObject;
+use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Rule\Rule;
@@ -74,6 +75,7 @@ $app->get('/admin/export/all', function () use ($app){
 
 $app->get('/admin/import', function () use ($app){
     if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
+    $logger = Logger::getLogger('ADMIN');
 
     $file = $app->request->params('file'); if(is_null($file)) throw new Exception("Import file not specified",500);
     
@@ -86,17 +88,32 @@ $app->get('/admin/import', function () use ($app){
     foreach((array)$allLinks as $rel => $links) if(!empty($links)) Relation::getRelation($rel);
     
     foreach((array)$allAtoms as $cpt => $atoms){
+        $logger->info("Importing atoms for concept {$cpt}");
+        if(empty($atoms)) continue;
+        
         $concept = Concept::getConcept($cpt);
+        $total = count($atoms); 
+        $i = 1;
         foreach($atoms as $atomId){
+            $logger->debug("Importing {$cpt}: atom {$i}/{$total}");
+            $i++;
+            
             $atom = new Atom($atomId, $concept);
             $atom->addAtom();
         }
     }
     
     foreach ((array)$allLinks as $rel => $links){
-        if(!empty($links)) $relation = Relation::getRelation($rel);
+        $logger->info("Importing links for relation {$rel}");
+        if(empty($links)) continue;
         
+        $relation = Relation::getRelation($rel);
+        $total = count($links); 
+        $i = 1;
         foreach($links as $link){
+            $logger->debug("Importing {$rel}: link {$i}/{$total}");
+            $i++;
+            
             if(is_null($link['src']) || is_null($link['tgt'])) continue; // skip
             
             $relation->addLink(new Atom($link['src'], $relation->srcConcept), new Atom($link['tgt'], $relation->tgtConcept));

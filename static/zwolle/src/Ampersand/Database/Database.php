@@ -122,6 +122,7 @@ class Database {
 		// Connect to MYSQL database
 		$this->db_link = mysqli_init();
 		$this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+        $this->db_link->set_charset("utf8");
 		
 		// Set sql_mode to ANSI
 		$this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");

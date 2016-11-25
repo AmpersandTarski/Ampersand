@@ -79,7 +79,8 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
   where showValsSQL p = ((showValSQL.apLeft) p, (showValSQL.apRight) p)
 createTempDatabase :: FSpec -> [Population] -> IO ()
 createTempDatabase fSpec pops =
- do { _ <- executePHPStr . showPHP $ sqlServerConnectPHP fSpec ++
+ do { _ <- executePHPStr (getOpts fSpec) .
+                                     showPHP $ sqlServerConnectPHP fSpec ++
                                      createTempDbPHP tempDbName ++
                                      createTablesPHP fSpec ++
 --                                     [ "TODO: "
