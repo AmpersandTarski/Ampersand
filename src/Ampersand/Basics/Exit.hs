@@ -26,6 +26,7 @@ data AmpersandExit
   | NoPrototypeBecauseOfRuleViolations
   | FailedToInstallComposer [String]
   | PHPExecutionFailed [String]
+  | WrongArgumentsGiven [String]
 
 info :: AmpersandExit -> (SE.ExitCode, [String])
 info x = 
@@ -44,4 +45,6 @@ info x =
               -> (SE.ExitFailure  50 , msg)
     PHPExecutionFailed msg
               -> (SE.ExitFailure  60 , msg)
+    WrongArgumentsGiven msg 
+              -> (SE.ExitFailure  70 , msg)
 
