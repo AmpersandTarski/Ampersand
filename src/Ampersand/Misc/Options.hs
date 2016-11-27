@@ -173,23 +173,25 @@ getOptions =
 
 getOptions' :: EnvironmentOptions -> Options
 getOptions' envOpts =  
-   case getOpt Permute (map fst options) $ envArgsFromConfigFile envOpts ++ envArgsCommandLine envOpts of
-     ( _      , []     , []     ) -> exitWith . WrongArgumentsGiven $ "Please supply the name of an ampersand file" : [usage]
-     ( actions, [fName], []     ) 
-         | development opts && validateSQL opts 
-                                  -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
+   case errors of
+     []  | development opts && validateSQL opts 
+                     -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
          | otherwise -> opts
-      where
-       opts :: Options
-       -- Here we thread startOptions through all supplied option actions
-       opts = foldl f (startOptions fName) actions
-         where f a b = b a
-     ( _      , fNames , []     ) -> exitWith . WrongArgumentsGiven $ ("Too many files: "++ intercalate ", " fNames) : [usage]
-     ( _      , _      , errors ) -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
- where 
+     _  -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
+         
+ where
+    opts :: Options
+    -- Here we thread startOptions through all supplied option actions
+    opts = foldl f startOptions actions
+      where f a b = b a
+    (actions, fNames, errors) = getOpt Permute (map fst options) $ envArgsFromConfigFile envOpts ++ envArgsCommandLine envOpts 
+    fName = case fNames of
+             []   -> exitWith . WrongArgumentsGiven $ "Please supply the name of an ampersand file" : [usage]
+             [n]  -> n
+             _    -> exitWith . WrongArgumentsGiven $ ("Too many files: "++ intercalate ", " fNames) : [usage]
     usage = "Type '"++envProgName envOpts++" --help' for usage info."
-    startOptions :: FilePath -> Options
-    startOptions fName =
+    startOptions :: Options
+    startOptions =
                Options {environment      = envOpts
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
@@ -249,7 +251,6 @@ getOptions' envOpts =
                       , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
                       }
-      
 writeConfigFile :: IO ()
 writeConfigFile = do
     writeFile sampleConfigFileName (unlines sampleConfigFile)
@@ -304,7 +305,25 @@ canBeYamlSwitch str =
    takeWhile (/= '=') str `notElem` ["version","help","config","sampleConfigFile"]  
 data DisplayMode = Public | Hidden deriving Eq
 
-data FSpecFormat = FPandoc| Fasciidoc| Fcontext| Fdocbook| Fdocx | Fhtml| FLatex| Fman| Fmarkdown| Fmediawiki| Fopendocument| Forg| Fplain| Frst| Frtf| Ftexinfo| Ftextile deriving (Show, Eq)
+data FSpecFormat = 
+         FPandoc
+       | Fasciidoc
+       | Fcontext
+       | Fdocbook
+       | Fdocx 
+       | Fhtml
+       | FLatex
+       | Fman
+       | Fmarkdown
+       | Fmediawiki
+       | Fopendocument
+       | Forg
+       | Fplain
+       | Frst
+       | Frtf
+       | Ftexinfo
+       | Ftextile
+       deriving (Show, Eq)
 allFSpecFormats :: String
 allFSpecFormats = "["++intercalate ", " 
     ((sort . map showFormat) 
