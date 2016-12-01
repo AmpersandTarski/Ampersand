@@ -2,6 +2,7 @@
 
 ## unreleased changes
   * Added some additional diagnosis info in settings.json
+  * Added support for project/application and extension specific composer dependencies.
 
 ## v3.7.3 (25 november 2016)
   * Alternative definition of univalence and injectivity to get better violations on runtime.
