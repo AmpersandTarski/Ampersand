@@ -128,7 +128,7 @@ copyIncludes fSpec =
                       
           ; let ignoredPaths = includeDirContents \\ map includeSrc absIncludes
           ; when (any (\ str -> head str /= '.') ignoredPaths) $  --filter paths starting with a dot, because on mac this is very common and it is a nuisance to avoid (see issue #
-             do { putStrLn $ "\nWARNING: only the following include/ paths are allowed:\n  " ++ show (map includeSrc allowedIncludeSubDirs) ++ "\n"
+             do { putStrLn $ "\nWARNING: only the following include paths are allowed:\n  " ++ show (map includeSrc allowedIncludeSubDirs) ++ "\n"
                 ; mapM_ (\d -> putStrLn $ "  Ignored " ++ d) ignoredPaths
                 }
           }
@@ -155,8 +155,8 @@ copyCustomizations fSpec =
       else
         verboseLn (getOpts fSpec) $ "No customizations (there is no directory " ++ custDir ++ ")"
     }
------- Build intermediate data structure
 
+------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
 data FEInterface = FEInterface { ifcName :: String
                                , ifcLabel :: String
