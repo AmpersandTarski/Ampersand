@@ -101,6 +101,7 @@ doGenFrontend fSpec =
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
+    ; copyCustomizations fSpec
     ; putStrLn "Frontend generated.\n"
     }
 
@@ -140,6 +141,20 @@ copyIncludes fSpec =
                  File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
                  Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
              }
+
+copyCustomizations :: FSpec -> IO ()
+copyCustomizations fSpec =
+ do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
+          custDir = adlSourceDir </> "customizations"
+          protoDir = Opts.dirPrototype (getOpts fSpec)
+    ; custDirExists <- doesDirectoryExist custDir
+    ; if custDirExists then
+        do { verboseLn (getOpts fSpec) $ "Copying customizations from " ++ custDir ++ " -> " ++ protoDir
+           ; copyDirRecursively custDir protoDir (getOpts fSpec) -- recursively copy all includes
+           }
+      else
+        verboseLn (getOpts fSpec) $ "No customizations (there is no directory " ++ custDir ++ ")"
+    }
 ------ Build intermediate data structure
 
 -- NOTE: _ disables 'not used' warning for fields
