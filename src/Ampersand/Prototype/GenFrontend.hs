@@ -95,13 +95,13 @@ clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStr "Generating frontend.." 
+ do { putStr "Generating frontend..\n" 
     ; copyIncludes fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
-    ; putStrLn "frontend generated."
+    ; putStrLn "Frontend generated.\n"
     }
 
 copyIncludes :: FSpec -> IO ()
@@ -136,14 +136,9 @@ copyIncludes fSpec =
     } 
   where copyInclude :: Include -> IO()
         copyInclude incl =
-          do { verboseLn (getOpts fSpec) $ 
-                          "  Copying " ++ (case fileOrDir incl of 
-                                             File -> "file"
-                                             Dir  -> "directory"
-                                          )++ " " ++ includeSrc incl ++ "\n    -> " ++ includeTgt incl
-             ; case fileOrDir incl of
-                 File -> copyDeepFile (includeSrc incl) (includeTgt incl)
-                 Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl)
+          do { case fileOrDir incl of
+                 File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
+                 Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
              }
 ------ Build intermediate data structure
 
