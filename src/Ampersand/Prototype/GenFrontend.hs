@@ -65,6 +65,8 @@ allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
                         , Include Dir  "app"               "app"
                         , Include Dir  "extensions"        "extensions"
                         , Include File "localSettings.php" "localSettings.php"
+                        , Include File "composer.json"     "composer.json"
+                        , Include File "composer.local.json" "composer.local.json"
                         ]
 
 getTemplateDir :: FSpec -> String
