@@ -2,7 +2,8 @@
 
 ## unreleased changes
   * Added some additional diagnosis info in settings.json
-  * Added support for project/application and extension specific composer dependencies.
+  * Added 'customization' folder to prototype generation process. This folder can be used to e.g. overwrite generated views.
+  * Includes for frontend app must be placed in 'app' folder now. The include folder thereby directly matches the destination directory structure.
 
 ## v3.7.3 (25 november 2016)
   * Alternative definition of univalence and injectivity to get better violations on runtime.
