@@ -41,25 +41,29 @@ getAppDir opts =
   
 -- Copy entire directory tree from srcBase/ to tgtBase/, overwriting existing files, but not emptying existing directories.
 -- NOTE: tgtBase specifies the copied directory target, not its parent
-copyDirRecursively :: FilePath -> FilePath -> IO ()
-copyDirRecursively srcBase tgtBase = copy ""
+copyDirRecursively :: FilePath -> FilePath -> Options -> IO ()
+copyDirRecursively srcBase tgtBase opts = copy ""
   where copy fileOrDirPth = 
          do { let srcPath = srcBase </> fileOrDirPth
                   tgtPath = tgtBase </> fileOrDirPth
             ; isDir <- doesDirectoryExist srcPath
             ; if isDir then 
                do { createDirectoryIfMissing True tgtPath
+                  ; verboseLn opts $ " Copying dir... " ++ srcPath
                   ; fOrDs <- getProperDirectoryContents srcPath
                   ; mapM_ (\fOrD -> copy $ fileOrDirPth </> fOrD) fOrDs
                   }
               else
-                copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
+               do { verboseLn opts $ "  file... " ++ fileOrDirPth
+                  ; copyFile srcPath tgtPath -- directory will exist, so no need for copyDeepFile
+                  }
             }
             
 -- Copy file while creating all subdirectories on the target path (if non-existent)
-copyDeepFile :: FilePath -> FilePath -> IO ()
-copyDeepFile srcPath tgtPath =
- do { createDirectoryIfMissing True (takeDirectory tgtPath)
+copyDeepFile :: FilePath -> FilePath -> Options -> IO ()
+copyDeepFile srcPath tgtPath opts =
+ do { verboseLn opts $ " Copying file... " ++ srcPath ++ " -> " ++ tgtPath
+    ; createDirectoryIfMissing True (takeDirectory tgtPath)
     ; copyFile srcPath tgtPath
     }
 
@@ -183,7 +187,7 @@ installComposerLibs opts =
    where
      myProc :: CreateProcess
      myProc = CreateProcess 
-       { cmdspec = ShellCommand $ "composer install --prefer-dist --profile --working-dir="<>composerTargetPath
+       { cmdspec = ShellCommand $ "composer update --prefer-dist --lock --profile --working-dir="<>composerTargetPath
        , cwd = Nothing
        , env = Nothing
        , std_in = Inherit

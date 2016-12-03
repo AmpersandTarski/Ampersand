@@ -18,6 +18,7 @@ import Ampersand.Graphic.Graphics (writePicture)
 import Ampersand.Output
 import Control.Monad
 import System.FilePath
+import System.Directory
 import Data.Time.Clock.POSIX
 import qualified Data.ByteString.Lazy as L
 import Data.List
@@ -35,14 +36,18 @@ import Ampersand.Prototype.ProtoUtil   (installComposerLibs)
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: MultiFSpecs -> IO ()
-generateAmpersandOutput multi =
+generateAmpersandOutput multi = do
+   createDirectoryIfMissing True (dirOutput opts)
+   when (genPrototype opts)
+        (createDirectoryIfMissing True (dirPrototype opts))
    sequence_ (map doWhen conditionalActions)
   where 
    doWhen :: ((Options -> Bool), IO()) -> IO()
    doWhen (b,x) = when (b opts) x
    conditionalActions :: [(Options -> Bool, IO())]
    conditionalActions = 
-      [ ( genUML      , doGenUML           )
+      [ ( genSampleConfigFile , doGenSampleConfigFile) 
+      , ( genUML      , doGenUML           )
       , ( haskell     , doGenHaskell       )
       , ( sqlDump     , doGenSQLdump       )
       , ( export2adl  , doGenADL           )
@@ -62,7 +67,8 @@ generateAmpersandOutput multi =
        ; verboseLn opts $ ".adl-file written to " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> outputfile opts
-
+   doGenSampleConfigFile :: IO()
+   doGenSampleConfigFile = writeConfigFile
    doGenProofs :: IO()
    doGenProofs =
     do { verboseLn opts $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
