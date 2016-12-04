@@ -150,7 +150,7 @@ signalTableSpec =
                              , fsDbNull    = False
                              }        
                          ]
-              , tsKey  = "PRIMARY KEY (`conjId`)"
+              , tsKey  = ""
               }
 
 sessionTableSpec :: TableSpec
