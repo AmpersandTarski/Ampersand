@@ -2,9 +2,9 @@
 --------------------------------------------------------
 PROCESS "Ticket444"
 
-nhIsDashboard :: Normenhiërarchie * Normenhiërarchie [PROP]
-ouDashboardNH :: OrgUnit * Normenhiërarchie [UNI]
-bfDashboardNH :: Bedrijfsfunctie * Normenhiërarchie [UNI]
+nhIsDashboard :: Normenhierarchie * Normenhierarchie [PROP]
+ouDashboardNH :: OrgUnit * Normenhierarchie [UNI]
+bfDashboardNH :: Bedrijfsfunctie * Normenhierarchie [UNI]
 
 --ROLE Developer MAINTAINS "Regeltje"
 RULE "Regeltje": I /\ (bfDashboardNH~;bfDashboardNH \/ ouDashboardNH~;ouDashboardNH) |- nhIsDashboard

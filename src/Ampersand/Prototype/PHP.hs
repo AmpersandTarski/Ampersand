@@ -256,8 +256,8 @@ showPHP :: [Text.Text] -> Text.Text
 showPHP phpLines = Text.unlines $ ["<?php"]<>phpLines<>["?>"]
 
 
-tempDbName :: Text.Text
-tempDbName = "TempDB"
+tempDbName :: Options -> Text.Text
+tempDbName opts = "TempDB_"<>Text.pack (dbName opts)
 
 connectToMySqlServerPHP :: Options -> Maybe Text.Text-> [Text.Text]
 connectToMySqlServerPHP opts mDbName =
@@ -305,23 +305,23 @@ connectToTheDatabasePHP =
 
 createTempDatabase :: FSpec -> IO ()
 createTempDatabase fSpec =
- do { dump ">>>INPUT>>>" (Text.lines $ showPHP phpStr) 
+ do { --dump ">>>INPUT>>>" (Text.lines $ showPHP phpStr) 
     ; result <- executePHPStr .
            showPHP $ phpStr
-    ; dump "<<<OUTPUT<<<" (Text.lines . Text.pack $ result)
+    ; --dump "<<<OUTPUT<<<" (Text.lines . Text.pack $ result)
     ; verboseLn (getOpts fSpec) 
          (if null result 
           then "Temp database created succesfully."
           else "Temp database creation failed! :"<>result  )
     }
  where 
-  dump :: String -> [Text.Text] -> IO ()
-  dump prefix txt = mapM_ (verboseLn $ getOpts fSpec) noot
-    where
-      noot :: [String]
-      noot = map aap (zip [1..99] txt)
-      aap :: (Int, Text.Text) -> String
-      aap (i,x) = prefix <> " "<>(show i)<>" "<>Text.unpack x
+--  dump :: String -> [Text.Text] -> IO ()
+--  dump prefix txt = mapM_ (verboseLn $ getOpts fSpec) noot
+--    where
+--      noot :: [String]
+--      noot = map aap (zip [1..99] txt)
+--      aap :: (Int, Text.Text) -> String
+--      aap (i,x) = prefix <> " "<>(show i)<>" "<>Text.unpack x
 
 
   phpStr :: [Text.Text]
@@ -348,7 +348,7 @@ createTempDatabase fSpec =
     , "         die('Error '.($ernr=mysqli_errno($DB_link)).': '.mysqli_error($DB_link).'(Sql: $sql)');"
     , ""
     ]<> 
-    [ "$DB_name='"<>(addSlashes tempDbName)<>"';"
+    [ "$DB_name='"<>(addSlashes (tempDbName (getOpts fSpec)))<>"';"
     , "// Drop the database if it exists"
     , "$sql=\"DROP DATABASE $DB_name\";"
     , "mysqli_query($DB_link,$sql);"

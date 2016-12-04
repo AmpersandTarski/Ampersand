@@ -83,7 +83,7 @@ getSqlConceptTable fSpec c =
                                                   " FROM `" ++ name table ++ "`" ++
                                                   " WHERE `" ++ attName conceptAttribute ++ "` IS NOT NULL"
     --; putStrLn $ "Query for concept " ++ name c ++ ":" ++ query 
-    ; atomsDummies <- performQuery (getOpts fSpec) tempDbName query
+    ; atomsDummies <- performQuery (getOpts fSpec) (tempDbName (getOpts fSpec)) query
     ; return (c, map fst atomsDummies)
     }
 
@@ -92,7 +92,7 @@ getSqlRelationTable fSpec d =
  do { let query = prettySQLQuery False fSpec 0 d
  
     --; putStrLn $ "Query for decl " ++ name d ++ ":" ++ query 
-    ; pairs <- performQuery (getOpts fSpec) tempDbName query
+    ; pairs <- performQuery (getOpts fSpec) (tempDbName (getOpts fSpec)) query
     ; return (d, pairs)
     }
 -- TODO: are we going to use this data type?
