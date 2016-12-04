@@ -177,12 +177,12 @@ installComposerLibs opts =
   do curPath <- getCurrentDirectory
      verboseLn opts $ "current directory: "++curPath
      verbose opts "  Trying to download and install Composer libraries..."
-     (exit_code, stdout, stderr) <- readCreateProcessWithExitCode myProc ""
+     (exit_code, stdout', stderr') <- readCreateProcessWithExitCode myProc ""
      case exit_code of
        SE.ExitSuccess   -> do verboseLn opts $
-                               " Succeeded." <> (if null stdout then " (stdout is empty)" else "") 
-                              verboseLn opts stdout
-       SE.ExitFailure _ -> failOutput (exit_code, stdout, stderr)
+                               " Succeeded." <> (if null stdout' then " (stdout is empty)" else "") 
+                              verboseLn opts stdout'
+       SE.ExitFailure _ -> failOutput (exit_code, stdout', stderr')
 
    where
      myProc :: CreateProcess
@@ -203,14 +203,14 @@ installComposerLibs opts =
        , child_user = Nothing
        }
      composerTargetPath = dirPrototype opts
-     failOutput (exit_code, stdout, stderr) =
+     failOutput (exit_code, stdout', stderr') =
         exitWith . FailedToInstallComposer  $
             [ "Failed!"
             , "composerTargetPath: "++composerTargetPath
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
-            (if null stdout then [] else ["stdout:"]++lines stdout) ++
-            (if null stderr then [] else ["stderr:"]++lines stderr) ++
+            (if null stdout' then [] else ["stdout:"]++lines stdout') ++
+            (if null stderr' then [] else ["stderr:"]++lines stderr') ++
             [ "Possible solutions to fix your prototype:"
             , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
             , "  2) Make sure you have an active internet connection."

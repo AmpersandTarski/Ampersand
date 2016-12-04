@@ -2,7 +2,9 @@ module Ampersand.FSpec.SQL
   ( placeHolderSQL
   , prettySQLQuery               , sqlQuery
   , prettySQLQueryWithPlaceholder, sqlQueryWithPlaceholder 
-  , prettyBroadQueryWithPlaceholder,broadQueryWithPlaceholder)
+  , prettyBroadQueryWithPlaceholder,broadQueryWithPlaceholder
+  , commentBlockSQL
+  )
   
 where
 import Language.SQL.SimpleSQL.Syntax
@@ -17,6 +19,7 @@ import Ampersand.FSpec.ShowADL
 import Ampersand.Misc
 import Data.List
 import Data.Maybe
+import Data.Monoid
 
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"
@@ -1180,3 +1183,12 @@ theONESingleton = Col { cTable = []
                       , cAlias = []
                       , cSpecial = Just $ NumLit "1"
                       }
+
+commentBlockSQL :: [String] -> [String]
+commentBlockSQL [] = []
+commentBlockSQL xs = 
+   map (\cmmnt -> "/* "<>cmmnt<> " */") $ [hbar] <>(map addSpaces xs)<> [hbar]
+  where 
+    hbar = replicate (maximum . map length $ xs) '-'
+    addSpaces str = str <> (replicate (length hbar - length str) ' ')
+    
