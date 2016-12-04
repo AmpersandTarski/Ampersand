@@ -308,7 +308,7 @@ createTempDatabase fSpec =
  do { dump ">>>INPUT>>>" (Text.lines $ showPHP phpStr) 
     ; result <- executePHPStr .
            showPHP $ phpStr
-    ; -- dump "<<<OUTPUT<<<" (Text.lines . Text.pack $ result)
+    ; dump "<<<OUTPUT<<<" (Text.lines . Text.pack $ result)
     ; verboseLn (getOpts fSpec) 
          (if null result 
           then "Temp database created succesfully."
