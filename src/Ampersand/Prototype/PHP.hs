@@ -280,14 +280,7 @@ connectToMySqlServerPHP opts mDbName =
        Just dbNm ->
          ["$DB_name='"<>dbNm<>"';"]<>
          connectToTheDatabasePHP
-    ) <>
-    [ "$sql=\"SET SESSION sql_mode = 'ANSI,TRADITIONAL'\";" -- ANSI because of the syntax of the generated SQL
-                                                            -- TRADITIONAL because of some more safety
-    , "if (!mysqli_query($DB_link,$sql)) {"
-    , "  die('Error setting sql_mode: ' . mysqli_error($DB_link));"
-    , "  }"
-    , ""
-    ]
+    )
   where
    subst :: (Options -> String) -> Text.Text
    subst x = addSlashes . Text.pack . x $ opts
@@ -299,6 +292,13 @@ connectToTheDatabasePHP =
     , "// Check connection"
     , "if (mysqli_connect_errno()) {"
     , "  die('Error : Failed to connect to the database: ' . mysqli_connect_error());"
+    , "  }"
+    , ""
+    ]<>
+    [ "$sql=\"SET SESSION sql_mode = 'ANSI,TRADITIONAL'\";" -- ANSI because of the syntax of the generated SQL
+                                                            -- TRADITIONAL because of some more safety
+    , "if (!mysqli_query($DB_link,$sql)) {"
+    , "  die('Error setting sql_mode: ' . mysqli_error($DB_link));"
     , "  }"
     , ""
     ]
