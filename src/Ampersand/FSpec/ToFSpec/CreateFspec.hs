@@ -31,17 +31,16 @@ createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
 createMulti opts =
   do fAmpP_Ctx <-
-        if or [ genMetaFile          opts
-              , genMetaTables        opts
+        if or [ genMetaTables        opts
               , genRapPopulationOnly opts
-              , addMetaRelations     opts 
+              , addSemanticMetaModel opts 
               ] 
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal 38 "With the given switches, the formal ampersand model is not supposed to play any part."
      rawUserP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let userP_Ctx =
-           if addMetaRelations opts
+           if addSemanticMetaModel opts
            then addSemanticModelOf fAmpP_Ctx rawUserP_Ctx     
            else rawUserP_Ctx
      let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile

@@ -76,7 +76,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , test :: Bool
                        , genMetaTables :: Bool -- When set, generate the meta-tables of AST into the prototype
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
-                       , addMetaRelations :: Bool -- When set, the user can use all relations defined in Formal Ampersand, without the need to specify them explicitly
+                       , addSemanticMetaModel :: Bool -- When set, the user can use all relations defined in Formal Ampersand, without the need to specify them explicitly
                        , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
@@ -243,7 +243,7 @@ getOptions' envOpts =
                       , test             = False
                       , genMetaTables    = False
                       , genMetaFile      = False
-                      , addMetaRelations = False
+                      , addSemanticMetaModel = False
                       , genRapPopulationOnly = False
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
@@ -545,9 +545,9 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{genMetaFile = True}))
                "Generate the meta-population in AST format and output it to an .adl file"
             , Hidden)
-          , (Option []        ["add-meta-relations"]
-               (NoArg (\opts -> opts{addMetaRelations = True}))
-               "add the relations of Formal Ampersand into your script"
+          , (Option []        ["add-semantic-metamodel"]
+               (NoArg (\opts -> opts{addSemanticMetaModel = True}))
+               "Add all relations, concepts and generalisation relations of formal ampersand into your script"
             , Hidden)
           , (Option []        ["gen-as-rap-model"]
                (NoArg (\opts -> opts{genRapPopulationOnly = True}))
