@@ -307,6 +307,7 @@ instance ReferableFromPandoc Picture where
      ( dirOutput opts)
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
 
+{-
 class Named a => Navigatable a where
    interfacename :: a -> String
    itemstring :: a -> String
@@ -331,6 +332,7 @@ instance Navigatable Declaration where
    itemstring x = name x ++ "["
                   ++ (if source x==target x then name(source x) else name(source x)++"*"++name(target x))
                   ++ "]"
+-}
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
                                    , csRels :: [Declaration]   -- ^ The relations, (the edges in the graph)
@@ -487,7 +489,7 @@ handleFlags po opts =
                                   )
                       ,TailClip False
                       ]
-      RelIntermediateNode r ->
+      RelIntermediateNode _ ->
                        [ Label (StrLabel (fromString("")))
                        , Shape PlainText
                        , bgColor White

@@ -6,8 +6,14 @@ module Ampersand.Misc
 import Ampersand.Misc.Languages
        (Lang(..), plural, allLangs)
 import Ampersand.Misc.Options
-       (getOptions, Options(..),
-        verboseLn, verbose, FSpecFormat(..),showFormat,
-        helpNVersionTexts)
+        ( Options(..)
+        , FSpecFormat(..)
+        , getOptions
+        , verboseLn
+        , verbose
+        , showFormat
+        , helpNVersionTexts
+        , writeConfigFile
+        )
 import Ampersand.Misc.Explain
        (string2Blocks, blocks2String, PandocFormat(..))

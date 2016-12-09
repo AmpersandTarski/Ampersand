@@ -621,7 +621,7 @@ math :: String -> Inlines
 math s = BuggyBuilder.math ("{"++s++"}")
 
 violation2Inlines :: FSpec -> PairView Expression -> Inlines
-violation2Inlines fSpec pVws = (text.l) (NL "<meldingstekst moet hier nog worden gegenereerd>"
+violation2Inlines fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worden gegenereerd>"
                                         ,EN "<violation message should be printed here>"
                                         )
   where

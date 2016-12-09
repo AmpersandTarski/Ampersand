@@ -341,7 +341,7 @@ class Relation {
         }
         
         // Else
-        throw new Exception("Relation '{$relationSignature}' is not defined", 500);
+        throw new Exception("Relation '{$relationSignature}[{$srcConcept}*{$tgtConcept}]' is not defined", 500);
     }
     
     /**

@@ -74,8 +74,6 @@ instance MetaPopulations FSpec where
     ctx = originalContext fSpec
     extract :: MetaPopulations a => a -> [Pop]
     extract = metaPops fSpec
-    sortByName :: Named a => [a] -> [a]
-    sortByName = sortBy (comparing name)
 
 instance MetaPopulations A_Context where
  metaPops fSpec ctx =

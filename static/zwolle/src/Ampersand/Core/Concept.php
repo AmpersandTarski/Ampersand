@@ -379,8 +379,9 @@ class Concept {
      * @return string
      */
     public function createNewAtomId(){
-        static $prevTime = null;
-        
+        static $prevTimeSeconds = null;
+        static $prevTimeMicros  = null;
+
         // TODO: remove this hack with _AI (autoincrement feature)
         if(strpos($this->name, '_AI') !== false && $this->isInteger()){
             $firstCol = current($this->mysqlConceptTable->getCols());
@@ -392,14 +393,22 @@ class Concept {
             else $atomId = $result[0] + 1;
     
         }else{
-            $now = explode(' ', microTime()); // yields ["microseconds", "seconds"] both in seconds, e.g. ["0.85629400", "1322761879"]
-            $time = $now[1] . substr($now[0], 2,6); // we drop the leading "0." and trailing "00"  from the microseconds
+            list($timeMicros, $timeSeconds) = explode(' ', microTime());
+            $timeMicros = substr($timeMicros, 2,6); // we drop the leading "0." and trailing "00"  from the microseconds
             
             // Guarantee that time is increased
-            if($time <= $prevTime) $time = ++$prevTime; 
-            else $prevTime = $time;
+            if ($timeSeconds < $prevTimeSeconds){
+            	$timeSeconds = $prevTimeSeconds;
+            	$timeMicros  = ++$prevTimeMicros;
+            } elseif($timeSeconds == $prevTimeSeconds){
+                if($timeMicros <= $prevTimeMicros) $timeMicros = ++$prevTimeMicros;
+                else $prevTimeMicros = $timeMicros;
+            } else{
+            	$prevTimeSeconds = $timeSeconds;
+            	$prevTimeMicros = $timeMicros;
+            }
             
-            $atomId = $this->name . '_' . $time;
+            $atomId = $this->name . '_' . sprintf('%d',$timeSeconds) . '_' . sprintf('%08d',$timeMicros);
         }
         return $atomId;
     }

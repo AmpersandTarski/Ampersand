@@ -18,7 +18,7 @@ instance ToJSON MySQLInstaller where
   toJSON = amp2Jason
 instance JSON MultiFSpecs MySQLInstaller where
  fromAmpersand _ multi = MySQLInstaller
-        { msiJSONallDBstructQueries = map Text.pack $ generateDBstructQueries fSpec False
+        { msiJSONallDBstructQueries = generateDBstructQueries fSpec False
         , msiJSONallDefPopQueries = generateInitialPopQueries fSpec
         }
   where

@@ -16,7 +16,7 @@ dumpSQLqueries multi
    = Text.intercalate "\n" $ 
          header (Text.pack ampersandVersionStr)
        <>header "Database structure queries"
-       <>map Text.pack (generateDBstructQueries fSpec True)
+       <>generateDBstructQueries fSpec True
        <>header "Initial population queries"
        <>generateInitialPopQueries fSpec
        <>header "Violations of conjuncts"
@@ -51,7 +51,7 @@ dumpSQLqueries multi
      showConjunct :: Conjunct -> [Text.Text]
      showConjunct conj 
         = header (Text.pack$ rc_id conj)
-        <>["Rules for this conjunc:"]
+        <>["Rules for this conjunct:"]
         <>map showRule (rc_orgRules conj)
         <>[Text.pack$ prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj,""]
         where

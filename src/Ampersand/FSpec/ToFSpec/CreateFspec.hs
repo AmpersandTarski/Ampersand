@@ -10,7 +10,6 @@ import Ampersand.ADL1.P2A_Converters
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ShowMeatGrinder
 import Ampersand.Input
-import Ampersand.Input.ADL1.CtxError
 import Ampersand.FSpec.ToFSpec.ADL2FSpec
 import System.FilePath
 import Control.Monad
@@ -30,20 +29,28 @@ import Control.Monad
 --   which is the result of createMulti.
 createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
-createMulti opts = do 
- whenCheckedIO (parseADL opts (fileName opts)) 
-  (\userP_Ctx ->
-    do gSystemP_Ctx <- parseSystemContext opts
-       let gFSpec = combineAll [pure userP_Ctx,gSystemP_Ctx]  -- the FSpec resulting from the user's souceFile
-       when (genMetaFile opts) (dumpMetaFile gFSpec)
-       if genMetaTables opts || genRap
-       then do fAmpP_Ctx <- parseMeta opts             -- the P_Context of the formalAmpersand metamodel
-               let gGrinded :: Guarded P_Context
-                   gGrinded = addGens <$> fAmpP_Ctx <*> join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
-               let metaPopFSpec = pCtx2Fspec gGrinded
-               return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [pure userP_Ctx, gGrinded, fAmpP_Ctx]
-       else    return $ mkMulti <$> pure Nothing <*> gFSpec
-  )
+createMulti opts =
+  do fAmpP_Ctx <-
+        if or [ genMetaTables        opts
+              , genRapPopulationOnly opts
+              , addSemanticMetaModel opts 
+              ] 
+        then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
+        else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
+               $ fatal 38 "With the given switches, the formal ampersand model is not supposed to play any part."
+     rawUserP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
+     let userP_Ctx =
+           if addSemanticMetaModel opts
+           then addSemanticModelOf fAmpP_Ctx rawUserP_Ctx     
+           else rawUserP_Ctx
+     let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
+     when (genMetaFile opts) (dumpMetaFile gFSpec)
+     if genMetaTables opts || genRap
+     then do let gGrinded :: Guarded P_Context
+                 gGrinded = addGens <$> fAmpP_Ctx <*> join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+             let metaPopFSpec = pCtx2Fspec gGrinded
+             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, fAmpP_Ctx]
+     else    return $ mkMulti <$> pure Nothing <*> gFSpec
    where
     -- The gens from FromalAmpersand must be available in the result of grinded 
     addGens :: P_Context -> P_Context -> P_Context
@@ -76,9 +83,18 @@ createMulti opts = do
     merge ctxs = f <$> ctxs
       where
        f []     = fatal 77 $ "merge must not be applied to an empty list"
-       f (c:cs) = foldl mergeContexts c cs
+       f (c:cs) = foldr mergeContexts c cs
     grind :: FSpec -> Guarded P_Context
     grind fSpec = f <$> uncurry parseCtx (makeMetaPopulationFile fSpec)
       where
        f (a,[]) = a
        f _      = fatal 83 "Meatgrinder returns included file. That isn't anticipated."
+
+
+addSemanticModelOf :: Guarded P_Context -> Guarded P_Context -> Guarded P_Context
+addSemanticModelOf = liftM2 f
+  where 
+    f :: P_Context -> P_Context -> P_Context
+    f fa usr = usr{ctx_ds = ctx_ds usr ++ ctx_ds fa ++ concatMap pt_dcs (ctx_pats fa)
+                  ,ctx_gs = ctx_gs usr ++ ctx_gs fa ++ concatMap pt_gns (ctx_pats fa)
+                  }
