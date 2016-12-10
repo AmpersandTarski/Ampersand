@@ -285,7 +285,7 @@ pCtx2aCtx opts
   where
     concGroups = (\x -> trace (show x) x) $
                  getGroups genLatticeIncomplete :: [[Type]]
-    deflangCtxt = fromMaybe English $ ctxmLang `orElse` (language opts)
+    deflangCtxt = fromMaybe English $ ctxmLang `orElse` language opts
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
