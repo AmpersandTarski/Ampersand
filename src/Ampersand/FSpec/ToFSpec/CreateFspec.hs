@@ -39,17 +39,18 @@ createMulti opts =
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal 38 "With the given switches, the formal ampersand model is not supposed to play any part."
      rawUserP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
+     gSystemP_Ctx <- parseSystemContext opts
      let userP_Ctx =
            if addSemanticMetaModel opts
            then addSemanticModelOf fAmpP_Ctx rawUserP_Ctx     
            else rawUserP_Ctx
-     let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
+     let gFSpec = combineAll [gSystemP_Ctx,userP_Ctx] -- the FSpec resuting from the user's souceFile
      when (genMetaFile opts) (dumpMetaFile gFSpec)
      if genMetaTables opts || genRap
      then do let gGrinded :: Guarded P_Context
                  gGrinded = addGens <$> fAmpP_Ctx <*> join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
              let metaPopFSpec = pCtx2Fspec gGrinded
-             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, fAmpP_Ctx]
+             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [gSystemP_Ctx, userP_Ctx, gGrinded, fAmpP_Ctx]
      else    return $ mkMulti <$> pure Nothing <*> gFSpec
    where
     -- The gens from FromalAmpersand must be available in the result of grinded 
