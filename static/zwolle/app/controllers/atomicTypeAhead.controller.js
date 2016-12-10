@@ -28,4 +28,13 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
             $scope.hasNoResults = false;
         }
     };
+    
+    $scope.typeAheadCreate = function (resource, ifc, selected, patchResource){
+        if(Array.isArray(resource[ifc])) $scope.addItem(resource, ifc, selected, patchResource);
+        else if(resource[ifc] === null){
+            resource[ifc] = selected.value;
+            $scope.saveItem(resource, ifc, patchResource);
+        }
+        else console.log('Error: Property already set and/or not defined');
+    };
 });
