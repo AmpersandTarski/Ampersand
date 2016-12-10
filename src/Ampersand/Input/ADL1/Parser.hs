@@ -478,12 +478,12 @@ pPhpplug = pKey "PHPPLUG" *> pObjDef
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose
 pPurpose = rebuild <$> currPos
-                   <*  pKey "PURPOSE"  -- "EXPLAIN" has become obsolete
+                   <*  pKey "PURPOSE"
                    <*> pRef2Obj
                    <*> pMaybe pLanguageRef
                    <*> pMaybe pTextMarkup
                    <*> optList (pKey "REF" *> pString `sepBy1` pSemi)
-                   <*> pExpl
+                   <*> pAmpersandMarkup
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
@@ -554,7 +554,7 @@ pMeaning = PMeaning <$> (
            P_Markup <$  pKey "MEANING"
                     <*> pMaybe pLanguageRef
                     <*> pMaybe pTextMarkup
-                    <*> (pString <|> pExpl))
+                    <*> (pString <|> pAmpersandMarkup))
 
 --- Message ::= 'MESSAGE' Markup
 pMessage :: AmpParser PMessage
@@ -565,7 +565,7 @@ pMarkup :: AmpParser P_Markup
 pMarkup = P_Markup
            <$> pMaybe pLanguageRef
            <*> pMaybe pTextMarkup
-           <*> (pString <|> pExpl)
+           <*> (pString <|> pAmpersandMarkup)
 
 --- Rule ::= Term ('=' Term | '|-' Term)?
 -- | Parses a rule

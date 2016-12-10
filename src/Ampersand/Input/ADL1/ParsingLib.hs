@@ -9,7 +9,7 @@ module Ampersand.Input.ADL1.ParsingLib(
     -- Positions
     currPos, posOf, valPosOf,
     -- Basic parsers
-    pConid, pString, pExpl, pVarid, pCrudString,
+    pConid, pString, pAmpersandMarkup, pVarid, pCrudString,
     -- special parsers
     pAtomInExpression, pAtomValInPopulation, Value(..),
     -- Special symbols
@@ -123,9 +123,9 @@ pConid = check (\lx -> case lx of { LexConId s -> Just s; _ -> Nothing }) <?> "u
 pString :: AmpParser String
 pString = check (\lx -> case lx of { LexString s -> Just s; _ -> Nothing }) <?> "string"
 
---- Expl ::= '{+' Any* '-}'
-pExpl :: AmpParser String
-pExpl = check (\lx -> case lx of { LexExpl s -> Just s; _ -> Nothing }) <?> "explanation"
+--- Markup ::= '{+' Any* '+}'
+pAmpersandMarkup :: AmpParser String
+pAmpersandMarkup = check (\lx -> case lx of { LexMarkup s -> Just s; _ -> Nothing }) <?> "markup"
 
 --- Varid ::= (LowerChar | '_') (Char | '_')*
 pVarid :: AmpParser String
