@@ -20,17 +20,17 @@ import Prelude hiding ((<$))
 pPopulations :: AmpParser [P_Population] -- ^ The population list parser
 pPopulations = many1 pPopulation
 
---- Context ::= 'CONTEXT' ConceptName LanguageRef TextMarkup? ContextElement* 'ENDCONTEXT'
+--- Context ::= 'CONTEXT' ConceptName LanguageRef? TextMarkup? ContextElement* 'ENDCONTEXT'
 -- | Parses a context
 pContext :: AmpParser (P_Context, [Include]) -- ^ The result is the parsed context and a list of include filenames
 pContext  = rebuild <$> posOf (pKey "CONTEXT")
                     <*> pConceptName
-                    <*> pLanguageRef
+                    <*> pMaybe pLanguageRef
                     <*> pMaybe pTextMarkup
                     <*> many pContextElement
                     <*  pKey "ENDCONTEXT"
   where
-    rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
+    rebuild :: Origin -> String -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
     rebuild    pos'      nm        lang          fmt                   ces
      = (PCtx{ ctx_nm     = nm
             , ctx_pos    = [pos']
