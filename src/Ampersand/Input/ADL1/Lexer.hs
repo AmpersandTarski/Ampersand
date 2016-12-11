@@ -238,7 +238,7 @@ lexMarkup = lexMarkup' ""
  where lexMarkup' str _ p ('-':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s -- for backwards compatibility with old `{+ ... -}` notation.
        lexMarkup' str _ p ('+':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s
        lexMarkup' str c p (x:s)       = lexMarkup' (str++[x]) c (updatePos p x) s
-       lexMarkup' _   _ p []          = lexerError UnterminatedPurpose p
+       lexMarkup' _   _ p []          = lexerError UnterminatedMarkup p
 
 -----------------------------------------------------------
 -- iso 8601 date / time
