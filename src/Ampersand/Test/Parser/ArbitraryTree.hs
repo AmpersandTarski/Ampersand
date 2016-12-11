@@ -346,7 +346,9 @@ instance Arbitrary P_Markup where
     arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr `suchThat` noEndMarkup
      where 
        noEndMarkup :: String -> Bool
-       noEndMarkup = not . isInfixOf "+}"
+       noEndMarkup str = and [ not (isInfixOf "+}" str)
+                             , not (isInfixOf "-}" str)  -- to cope with obsolete {+ ... -} notation. 
+                             ]
 
 instance Arbitrary PandocFormat where
     arbitrary = elements [HTML, ReST, LaTeX, Markdown]
