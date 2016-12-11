@@ -4,7 +4,7 @@ PURPOSE PATTERN SelectExprTest IN ENGLISH
 {+
 This pattern is meant to test the translation of Expressions in Ampersand into
 SELECT statements in SQL.
--}
++}
 
 PATTERN SelectExprTest
   r :: A*A

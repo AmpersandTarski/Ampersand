@@ -163,7 +163,7 @@ verwerkingBewaartermijn :: Verwerking * Bewaartermijn [UNI] PRAGMA "De periode g
 PURPOSE RELATION verwerkingBewaartermijn REF "Artikel 10 Wbp"
 {+1.	PERSOONSGEGEVENs worden niet langer bewaard in een vorm die het mogelijk maakt de BETROKKENE te identificeren, dan noodzakelijk is voor de verwerkelijking van de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt.
 2.	PERSOONSGEGEVENs mogen langer worden bewaard dan bepaald in het eerste lid voor zover ze voor historische, statistische of wetenschappelijke doeleinden worden bewaard, en de VERANTWOORDELIJKE de nodige voorzieningen heeft getroffen ten einde te verzekeren dat de desbetreffende gegevens uitsluitend voor deze specifieke doeleinden worden gebruikt.
--}
++}
 
 --[Doelen]--
 
@@ -190,13 +190,13 @@ c.	2. ten behoeve van de uitvoering van de politietaak, bedoeld in de artikelen 
 d.	die is geregeld bij of krachtens de Wet gemeentelijke basisadministratie persoonsgegevens;
 e.	ten behoeve van de uitvoering van de Wet justitiële en strafvorderlijke gegevens en
 f.	ten behoeve van de uitvoering van de Kieswet.
--}
++}
 PURPOSE RELATION doelWettelijkeGrondslag REF "Artikel 2 derde lid Wbp"
 {+Een van de grondslagen op basis waarvan VERWERKINGen (kunnen) zijn toegestaan, althans niet zijn verboden, is als de Wbp niet van toepassing is. Deze wet is niet van toepassing is op VERWERKING door de krijgsmacht indien Onze Minister van Defensie daartoe beslist met het oog op de inzet of het ter beschikking stellen van de krijgsmacht ter handhaving of bevordering van de internationale rechtsorde.
--}
++}
 PURPOSE RELATION doelWettelijkeGrondslag REF "Artikel 3 eerste lid Wbp"
 {+Een van de grondslagen op basis waarvan VERWERKINGen (kunnen) zijn toegestaan, althans niet zijn verboden, is als de Wbp niet van toepassing is. Deze wet is niet van toepassing op de VERWERKING voor uitsluitend journalistieke, artistieke of literaire doeleinden, behoudens de overige bepalingen van hoofdstuk 1 Wbp, alsmede de artikelen 6 tot en met 11, 13 tot en met 15, 25 en 49 van die wet.
--}
++}
 
 isSubdoelVan :: Doel * Doel [ASY]
 PRAGMA "Het bereiken van " " is een onderdeel van het bereiken van "
