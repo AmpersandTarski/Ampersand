@@ -2,8 +2,8 @@ CONTEXT Try44 IN ENGLISH
 -----------------------------------------------------------
 PATTERN "DocumentationByLanguage"
 
-PURPOSE CONCEPT X IN ENGLISH {+Some english text-}
-PURPOSE CONCEPT X IN DUTCH {+Enige nederlandse woorden-}
+PURPOSE CONCEPT X IN ENGLISH {+Some english text+}
+PURPOSE CONCEPT X IN DUTCH {+Enige nederlandse woorden+}
 
 ENDPATTERN
 -----------------------------------------------------------

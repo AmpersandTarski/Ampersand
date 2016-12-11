@@ -1,26 +1,26 @@
 CONTEXT Purposes IN ENGLISH
 
-PURPOSE CONCEPT   Concpt1    {+Concept purpose: Concpt1-}
-PURPOSE RELATION  rel        {+Relation purpose: rel-}
-PURPOSE RULE      procRule   {+Rule purpose procRule-}
-PURPOSE IDENT     ident      {+Identity purpose: ident-}
-PURPOSE VIEW      view       {+View purpose: view-}
-PURPOSE INTERFACE Iface      {+Interface purpose: IFace-}
-PURPOSE CONTEXT   Purposes   {+Context purpose: Purposes-}
+PURPOSE CONCEPT   Concpt1    {+Concept purpose: Concpt1+}
+PURPOSE RELATION  rel        {+Relation purpose: rel+}
+PURPOSE RULE      procRule   {+Rule purpose procRule+}
+PURPOSE IDENT     ident      {+Identity purpose: ident+}
+PURPOSE VIEW      view       {+View purpose: view+}
+PURPOSE INTERFACE Iface      {+Interface purpose: IFace+}
+PURPOSE CONTEXT   Purposes   {+Context purpose: Purposes+}
 
-PURPOSE PATTERN   Patt       {+Pattern purpose: Patt-}
-PURPOSE CONCEPT   PattConcpt {+Concept purpose: PattConcpt-}
-PURPOSE RELATION  pattRel    {+Relation purpose: pattRel-}
-PURPOSE RULE      pattRule   {+Rule purpose: pattRule-}
-PURPOSE IDENT     pattIdent  {+Identity purpose: pattIdent-}
-PURPOSE VIEW      pattView   {+View purpose: pattView-}
+PURPOSE PATTERN   Patt       {+Pattern purpose: Patt+}
+PURPOSE CONCEPT   PattConcpt {+Concept purpose: PattConcpt+}
+PURPOSE RELATION  pattRel    {+Relation purpose: pattRel+}
+PURPOSE RULE      pattRule   {+Rule purpose: pattRule+}
+PURPOSE IDENT     pattIdent  {+Identity purpose: pattIdent+}
+PURPOSE VIEW      pattView   {+View purpose: pattView+}
 
-PURPOSE PROCESS   Proc       {+Process purpose: Proc-}
-PURPOSE CONCEPT   ProcConcpt {+Concept purpose: ProcConcpt-}
-PURPOSE RELATION  procRel    {+Relation purpose: procRel-}
-PURPOSE RULE      procRule   {+Rule purpose: procRule-}
-PURPOSE IDENT     procIdent  {+Identity purpose: procIdent-}
-PURPOSE VIEW      procView   {+View purpose: procView-}
+PURPOSE PROCESS   Proc       {+Process purpose: Proc+}
+PURPOSE CONCEPT   ProcConcpt {+Concept purpose: ProcConcpt+}
+PURPOSE RELATION  procRel    {+Relation purpose: procRel+}
+PURPOSE RULE      procRule   {+Rule purpose: procRule+}
+PURPOSE IDENT     procIdent  {+Identity purpose: procIdent+}
+PURPOSE VIEW      procView   {+View purpose: procView+}
 
 CONCEPT Concpt1 "{definition of Concpt1}"
 rel :: Concpt1 * Concpt1
@@ -36,7 +36,7 @@ PATTERN Patt
   IDENT pattIdent : PattConcpt(I[PattConcpt])
   VIEW pattView: PattConcpt("":I[PattConcpt])
 
-  PURPOSE CONCEPT Concpt2 {+Concept purpose: Concpt2-} -- test purpose inside pattern
+  PURPOSE CONCEPT Concpt2 {+Concept purpose: Concpt2+} -- test purpose inside pattern
 ENDPATTERN
 
 PROCESS Proc
@@ -46,7 +46,7 @@ PROCESS Proc
   IDENT procIdent : ProcConcpt(I[ProcConcpt])
   VIEW procView: ProcConcpt("":I[ProcConcpt])
 
-  PURPOSE CONCEPT Concpt3 {+Concept purpose: Concpt3-} -- test purpose inside process
+  PURPOSE CONCEPT Concpt3 {+Concept purpose: Concpt3+} -- test purpose inside process
 ENDPROCESS
 
 CONCEPT Concpt2 "{definition of Concpt2}"

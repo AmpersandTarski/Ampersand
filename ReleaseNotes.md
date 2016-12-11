@@ -1,6 +1,8 @@
 # Release notes of Ampersand
 
 ## unreleased changes
+  * [Issue #587](https://github.com/AmpersandTarski/Ampersand/issues/587) There is no need any longer to explicitly specify the language in a script. If omitted, IN ENGLISH will be used as default. 
+  * [Issue #588](https://github.com/AmpersandTarski/Ampersand/issues/588) PURPOSE sytax changed: Now matching brackets are: `{+` and `+}` 
   * Added some additional diagnosis info in settings.json
   * Added support for project/application and extension specific composer dependencies.
   * Added 'customization' folder to prototype generation process. This folder can be used to e.g. overwrite generated views.

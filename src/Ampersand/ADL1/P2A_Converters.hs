@@ -210,7 +210,7 @@ pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
-      , ctx_lang   = lang
+      , ctx_lang   = ctxmLang
       , ctx_markup = pandocf
       , ctx_thms   = p_themes 
       , ctx_pats   = p_patterns
@@ -285,7 +285,7 @@ pCtx2aCtx opts
   where
     concGroups = (\x -> trace (show x) x) $
                  getGroups genLatticeIncomplete :: [[Type]]
-    deflangCtxt = lang -- take the default language from the top-level context
+    deflangCtxt = fromMaybe English $ ctxmLang `orElse` language opts
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
@@ -1070,3 +1070,8 @@ getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
 
 
+-- | Left-biased choice on maybes
+orElse :: Maybe a -> Maybe a -> Maybe a
+x `orElse` y = case x of
+                 Just _  -> x
+                 Nothing -> y

@@ -5,7 +5,7 @@ PROCESS RuntimeStuff
 runtimeVerzamelendeService :: Persoonsgegeven * Service [UNI,TOT]
 PRAGMA "" " is verzameld door een instantie van "
 PURPOSE RELATION runtimeVerzamelendeService  REF "Artikel 7 Wbp"
-{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Om dit te kunnen doen moet voor elk persoonsgegeven de service geidentificeerd kunnen worden waarvan een instantie het persoonsgegeven heeft verzameld.-}
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Om dit te kunnen doen moet voor elk persoonsgegeven de service geidentificeerd kunnen worden waarvan een instantie het persoonsgegeven heeft verzameld.+}
 
 runtimeVerwerkendeService :: Persoonsgegeven * Service
 PRAGMA "" " is verwerkt door een instantie van "
@@ -28,7 +28,7 @@ MESSAGE ""
 VIOLATION (TXT "Persoonsgegeven ", SRC I, TXT " is verwerkt in runtime service '", TGT I, TXT "' zonder dat het verwerkingsdoel van de service verenigbaar is met de doeleinden waarvoor het persoonsgegeven is verkregen")
 ROLE User MAINTAINS "Verwerkingsdoelen"
 PURPOSE RULE "Verwerkingsdoelen" REF "Artikel 9 eerste lid Wbp"
-{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.-}
+{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.+}
 
 runtimeDoel :: SvcInstantie * RuntimeDoel
 
@@ -54,7 +54,7 @@ MESSAGE ""
 VIOLATION (TXT "Runtime verwerking '", SRC I, TXT "' dient geen doel en mag daarom niet plaatsvinden.")
 ROLE User MAINTAINS "Runtime verwerkingen hebben een doel"
 PURPOSE RULE "Runtime verwerkingen hebben een doel" REF "Artikel 9 eerste lid Wbp"
-{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.-}
+{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.+}
 
 ENDPROCESS
 ------------------------------------------------------------

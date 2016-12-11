@@ -25,7 +25,7 @@ data Lexeme  = LexSymbol      Char    -- ^ A symbol
              | LexOperator    String  -- ^ An operator
              | LexKeyword     String  -- ^ A keyword
              | LexString      String  -- ^ A quoted string
-             | LexExpl        String  -- ^ An explanation
+             | LexMarkup      String  -- ^ A markup (string to be parsed by Pandoc)
              | LexSingleton   String  -- ^ An atomvalue in an Expression
              | LexDecimal     Int     -- ^ A decimal number
              | LexFloat      Double   -- ^ A decimal floating point thing
@@ -43,7 +43,7 @@ instance Show Lexeme where
          LexOperator val -> "operator "              ++ "'"  ++      val  ++ "'"
          LexKeyword  val -> "keyword "               ++         show val
          LexString   val -> "string "                ++ "\"" ++      val  ++ "\""
-         LexExpl     val -> "explanation "           ++ "{+" ++      val  ++ "+}"
+         LexMarkup   val -> "markup "                ++ "{+" ++      val  ++ "+}"
          LexSingleton val -> "singleton "            ++ "'"  ++      val  ++ "'"
          LexDecimal   _  -> "integer "               ++   lexemeText  x
          LexFloat     _  -> "float "                 ++   lexemeText  x
@@ -69,7 +69,7 @@ lexemeText l = case l of
          LexOperator val -> val
          LexKeyword  val -> val
          LexString   val -> val
-         LexExpl     val -> val
+         LexMarkup   val -> val
          LexSingleton val -> val
          LexDecimal  val -> show val
          LexFloat    val -> show val
