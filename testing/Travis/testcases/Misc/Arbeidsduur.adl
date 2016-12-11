@@ -31,7 +31,7 @@ PURPOSE RELATION inDienst REF "Artikel 2 lid 3"
 {+Om een verzoek te mogen indienen dient de werknemer ten minste een jaar voorafgaand aan het beoogde tijdstip van ingang van de aanpassing in dienst te zijn bij de werkgever.
 Daarom moet het tijdstip van indiensttreding bekend zijn.
 Dit wetsartikel bevat nuanceringen ten aanzien van de berekening van het tijdvak. 
-Deze details worden om praktische redenen buiten scope gehouden.-}
+Deze details worden om praktische redenen buiten scope gehouden.+}
 
 --[Verzoeken]--
 arbeidsrelatie :: Verzoek -> Arbeidsrelatie
@@ -40,14 +40,14 @@ MEANING "Het verzoek vermeldt de arbeidsrelatie waarop de aanpassing van toepass
 PURPOSE RELATION arbeidsrelatie
 {+Het verzoek moet duidelijk vermelden welke arbeidsrelatie onderwerp is van het verzoek.
 Dat is immers niet vanzelfsprekend in die gevallen waar een werknemer meerdere arbeidsrelaties over verschillende periodes heeft.
-De onderzochte wet sluit zelfs niet uit dat één werkgever en één werknemer op hetzelfde moment verschillende arbeidsrelaties onderhouden.-}
+De onderzochte wet sluit zelfs niet uit dat één werkgever en één werknemer op hetzelfde moment verschillende arbeidsrelaties onderhouden.+}
 
 tot :: Verzoek * Aanpassing [UNI]
 PRAGMA "" "tot"
 MEANING "Elk verzoek beschrijft de gewenste aanpassing van de uit zijn arbeidsovereenkomst of publiekrechtelijke aanstelling voortvloeiende arbeidsduur."
 PURPOSE RELATION tot[Verzoek*Aanpassing] REF "Artikel 2 lid 1"
 {+Omdat het gaat om verzoeken tot aanpassing van de arbeidsduur, gedaan vanuit de werknemer,
-is het beschrijven van de aanpassing verplicht.-}
+is het beschrijven van de aanpassing verplicht.+}
 
 ingediend :: Verzoek * Datum [UNI]
 PRAGMA "" "is ingediend"
@@ -80,7 +80,7 @@ MEANING "Elke beslissing verwijst naar het verzoek waarop de beslissing genomen 
 PURPOSE RELATION op REF "Artikel 2 lid 7"
 {+Duidelijkheid is nodig over de vraag op welk verzoek een beslissing gevraagd wordt.
 De tekst van de wet rept van ``De beslissing op het verzoek ...''
-Daarom wordt voor elke beslissing bijgehouden op welk verzoek de betreffende beslissing genomen wordt.-}
+Daarom wordt voor elke beslissing bijgehouden op welk verzoek de betreffende beslissing genomen wordt.+}
 
 aanp :: Beslissing -> Aanpassing
 PRAGMA "" "tot"
@@ -88,7 +88,7 @@ MEANING "Een beslissing beschrijft de aanpassing van de uit de betreffende arbei
 PURPOSE RELATION aanp[Beslissing*Aanpassing] REF "Artikel 2 lid 7"
 {+De aanpassing waartoe een werkgever besluit kan afwijken van de aanpassing die door de werknemer is verzocht.
 Daarom wordt aan het besluit nadrukkelijk de aanpassing verbonden die door de werkgever is besloten.
-Onder inwilligen zullen we dan ook verstaan dat de aanpassing waarom verzocht is gelijk is aan de aanpassing die in het besluit is vermeld.-}
+Onder inwilligen zullen we dan ook verstaan dat de aanpassing waarom verzocht is gelijk is aan de aanpassing die in het besluit is vermeld.+}
 
 door :: Beslissing -> Persoon
 PRAGMA "" "door"
@@ -96,14 +96,14 @@ MEANING "Elke beslissing wordt door een (rechts)persoon genomen."
 PURPOSE RELATION door
 {+Het moet duidelijk zijn door welke (rechts)persoon een beslissing genomen is.
 Het optreden van natuurlijke personen als tekenbevoegde voor een rechtspersoon wordt buiten deze wet geregeld en valt dan ook buiten de scope van dit model.
-Hier volstaan we met de juridische entiteit, ofwel de werkgever die de beslissing neemt.-}
+Hier volstaan we met de juridische entiteit, ofwel de werkgever die de beslissing neemt.+}
 
 medegedeeldAan :: Beslissing * Persoon [UNI]
 PRAGMA "" "is medegedeeld aan"
 MEANING "Beslissingen kunnen worden medegedeeld aan personen. Dat gebeurt schriftelijk."
 PURPOSE RELATION medegedeeldAan REF "Artikel 2 lid 7"
 {+De beslissing op het verzoek om aanpassing van de arbeidsduur wordt door de werkgever schriftelijk aan de werknemer meegedeeld.
-Daarom wordt het mededelen vastgelegd.-}
+Daarom wordt het mededelen vastgelegd.+}
 
 reden :: Beslissing * Reden [INJ,SUR]
 PRAGMA "" "wordt gemotiveerd door"
@@ -111,7 +111,7 @@ MEANING "Beslissingen kunnen met redenen worden omkleed."
 PURPOSE RELATION reden REF "Artikel 2 lid 7"
 {+Een beslissing, die afwijkt van de wensen van de werknemer, dient onder schriftelijke opgave van de redenen te worden meegedeeld.
 Hier scheppen we de ruimte om redenen voor de beslissing vast te leggen.
-De eis zelf, namelijk dat er redenen moeten zijn voor een afwijkend besluit, is elders in deze analyse geformuleerd.-}
+De eis zelf, namelijk dat er redenen moeten zijn voor een afwijkend besluit, is elders in deze analyse geformuleerd.+}
 
 beslisdatum :: Beslissing -> Datum
 PRAGMA "" "is genomen op"
@@ -197,7 +197,7 @@ VIOLATION (TXT "verzoek van ", SRC op;arbeidsrelatie;werknemer, TXT ", die op ",
 
 PURPOSE RULE "Verzoek gemotiveerd afwijzen" REF "Artikel 2 lid 7"
 {+Indien de werkgever het verzoek niet inwilligt of de spreiding van de uren vaststelt in afwijking van de wensen van de werknemer, wordt dit onder schriftelijke opgave van de redenen meegedeeld.
-Hieruit valt op te maken dat elke afwijkende arbeidsduur vraagt om opgave van redenen.-}
+Hieruit valt op te maken dat elke afwijkende arbeidsduur vraagt om opgave van redenen.+}
 RULE "Verzoek gemotiveerd afwijzen" : I /\ op;tot;-I;aanp~ |- reden;reden~
 MEANING "Wanneer de arbeidsduur uit de beslissing afwijkt van de arbeidsduur uit het verzoek, dan dient er een reden voor te zijn, die in de beslissing wordt opgenomen."
 MESSAGE "Artikel 2 lid 7 Wet aanpassing arbeidsduur eist dat als de besloten arbeidsduur afwijkt van hetgeen is verzocht, dit met (schriftelijke) redenen omkleed moet zijn."
@@ -286,7 +286,7 @@ PURPOSE RULE "Verzoeksdatum invullen (geautomatiseerd)" REF "Artikel 2 lid 3"
 
 PURPOSE RELATION vierMaandenOfMeer REF "Artikel 2 lid 3"
 {+Omdat de wet een termijn van vier maanden noemt, en omdat we in Ampersand (nog) niet kunnen
-rekenen, voeren we een relatie “vierMaandenOfMeer” in. Deze dient als stub voor het rekenwerk.-}
+rekenen, voeren we een relatie “vierMaandenOfMeer” in. Deze dient als stub voor het rekenwerk.+}
 vierMaandenOfMeer :: Datum * Datum
 PRAGMA "" "ligt minstens vier maanden voor"
 MEANING "De relatie 'vierMaandenOfMeer' bevat alleen paren van datums waarvan de eerste minstens vier maanden voor de tweede valt."
@@ -580,34 +580,34 @@ BOX[ "unieke naam" : I
 CONCEPT Verzoek  "Een verzoek is een schrijven waarin een werknemer verzoekt om de arbeidsduur van een arbeidsrelatie aan te passen."
 PURPOSE CONCEPT Verzoek
 {+De wet geeft geen definitie van ``verzoek'' en gaat kennelijk uit van de betekenis algemeen gebruikt Nederlands.
-Wel stelt de wet de eis van een schriftelijk verzoek, waardoor het verzoek het karakter van een document krijgt.-}
+Wel stelt de wet de eis van een schriftelijk verzoek, waardoor het verzoek het karakter van een document krijgt.+}
 
 CONCEPT Aanpassing "Een aanpassing is de gebeurtenis waarbij de arbeidsduur van een arbeidsrelatie verandert."
 PURPOSE CONCEPT Aanpassing
 {+Het begrip aanpassing is nodig om de gebeurtenis van het aanpassen te objectiveren.
-Het gaat in deze wet uitsluitend om het aanpassen van de arbeidsduur, die uit een arbeidsrelatie voortvloeit.-}
+Het gaat in deze wet uitsluitend om het aanpassen van de arbeidsduur, die uit een arbeidsrelatie voortvloeit.+}
 
 CONCEPT Persoon "Een persoon is een natuurlijke persoon of een rechtspersoon, naar geldend Nederlands recht."
 PURPOSE CONCEPT Persoon
 {+Er is sprake van werkgever en werknemer, waarbij de werkgever (naar geldend recht) zowel een natuurlijke persoon als een rechtspersoon kan zijn.
-In deze analyse wordt daarvan geabstraheerd, en noemen we alle natuurlijke- en rechtspersonen gewoon ``Persoon''.-}
+In deze analyse wordt daarvan geabstraheerd, en noemen we alle natuurlijke- en rechtspersonen gewoon ``Persoon''.+}
 
 CONCEPT Beslissing "Een beslissing is een schrijven, waarin een werkgever mededeelt wat hij op een in de beslissing vermeld verzoek heeft besloten."
 PURPOSE CONCEPT Beslissing
 {+Omdat de beslissing (net als het verzoek) schriftelijk wordt meegedeeld, heeft ook de beslissing een documentair karakter.
 Het onderscheid tussen besluit en beslissing, wat we kennen uit de Algemene Wet Bestuursrecht, wordt hier niet gemaakt.
-Wellicht omdat het hier niet alleen over ambtelijke aanstellingen, maar ook over arbeidsovereenkomsten naar burgerlijk recht gaat.-}
+Wellicht omdat het hier niet alleen over ambtelijke aanstellingen, maar ook over arbeidsovereenkomsten naar burgerlijk recht gaat.+}
 
 CONCEPT Reden "Een reden is een omschrijving van de grond van een beslissing."
 PURPOSE CONCEPT Reden
 {+Omdat de Wet aanpassing arbeidsduur expliciet om redenen vraagt, is hiervoor een concept nodig.
-De aard van de redenen kan worden gecategoriseerd conform artikel 1 lid 8-9.-}
+De aard van de redenen kan worden gecategoriseerd conform artikel 1 lid 8-9.+}
 
 CONCEPT Arbeidsrelatie "Onder arbeidsrelatie verstaan we een arbeidsovereenkomst naar burgerlijk recht of publiekrechtelijke aanstelling." "Artikel 1 sub a"
 PURPOSE CONCEPT Arbeidsrelatie REF "Artikel 1 sub a"
 {+De wet spreekt van ``arbeidsovereenkomst naar burgerlijk recht of publiekrechtelijke aanstelling''.
 Kennelijk zijn er twee manieren om een arbeidsrelatie te hebben.
-In de onderhavige analyse spreken we van een arbeidsrelatie, maar bedoelen daarmee zoals in dit artikel staat omschreven.-}
+In de onderhavige analyse spreken we van een arbeidsrelatie, maar bedoelen daarmee zoals in dit artikel staat omschreven.+}
 
 CONCEPT Arbeidsduur "Onder arbeidsduur verstaan we een afspraak over de omvang en het tijdstip van ingang van die afspraak."
 PURPOSE CONCEPT Arbeidsduur
@@ -616,13 +616,13 @@ Een beetje curieus is dan ook dat de Wet aanpassing arbeidsduur ``arbeidsduur'' 
 Wel doet deze wet een aantal aannames, zoals: Arbeidsduur heeft een omvang, die je kunt aanpassen (specifiek door te verminderen of vermeerderen).
 Arbeidsduur heeft ook een tijdstip van ingang.
 Deze aannames zijn in het model verwerkt, zonder te kijken naar andere wetten of regelingen die het begrip verder inkleuren.
-De definitie die we hier hanteren voor Arbeidsduur gaat dan ook wat verder dan strikt uit deze wet kan worden opgemaakt (uitzoeken).-}
+De definitie die we hier hanteren voor Arbeidsduur gaat dan ook wat verder dan strikt uit deze wet kan worden opgemaakt (uitzoeken).+}
 
 CONCEPT Omvang "Onder de omvang verstaan we het aantal uren dat een werknemer per periode voor een werkgever arbeid verricht en de verdeling van die uren over de dag/week/periode."
 PURPOSE CONCEPT Omvang
 {+Niet helemaal duidelijk is wat deze wet verstaat onder de omvang van de arbeidsduur.
 Het aantal uren per week (of tijdvak) valt onder de omvang, maar er is ook een vage aanwijzing over de verdeling van die uren over de week.
-Deze onduidelijkheid wordt niet verder geanalyseerd, omdat we dan naar andere wetten en regelingen moeten kijken.-}
+Deze onduidelijkheid wordt niet verder geanalyseerd, omdat we dan naar andere wetten en regelingen moeten kijken.+}
 
 CONCEPT Datum "Een datum is de aanduiding van een dag volgens het formaat dag-maand-jaar (bijvoorbeeld: 1-5-2014)."
 PURPOSE CONCEPT Datum
