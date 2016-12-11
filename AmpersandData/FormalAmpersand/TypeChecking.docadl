@@ -4,7 +4,7 @@ INCLUDE "Terms.adl"
 
 CONCEPT Signature "A signature is a pair of concepts."
 PURPOSE CONCEPT Signature
-{+Every relation gets a signature when declared, for the purpose of classifying atoms in that relation.-}
+{+Every relation gets a signature when declared, for the purpose of classifying atoms in that relation.+}
 
 PURPOSE RELATION src[Signature*Concept]
 {+The src-concept of a signature corresponds to the source concept of a relation, which serves the purpose of classifying all atoms as instances of that concept.
@@ -23,13 +23,13 @@ PURPOSE RULE totSign
 -}
 
 PURPOSE RULE signatureSrcIns
-{+The relation src[Signature*Concept] must be filled automatically as soon as a new signature is made.-}
+{+The relation src[Signature*Concept] must be filled automatically as soon as a new signature is made.+}
 PURPOSE RULE signatureTgtIns
-{+The relation tgt[Signature*Concept] must be filled automatically as soon as a new signature is made.-}
+{+The relation tgt[Signature*Concept] must be filled automatically as soon as a new signature is made.+}
 PURPOSE RULE signatureSrcDel
-{+The relation src[Signature*Concept] must be cleared automatically as soon as a signature is deleted.-}
+{+The relation src[Signature*Concept] must be cleared automatically as soon as a signature is deleted.+}
 PURPOSE RULE signatureTgtDel
-{+The relation tgt[Signature*Concept] must be cleared automatically as soon as a signature is deleted.-}
+{+The relation tgt[Signature*Concept] must be cleared automatically as soon as a signature is deleted.+}
 
 CONCEPT TypeTerm "A type-term represents a set of atoms."
 PURPOSE CONCEPT TypeTerm

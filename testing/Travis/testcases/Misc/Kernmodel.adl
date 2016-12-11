@@ -75,7 +75,7 @@ PURPOSE INTERFACE Bestuursorgaan
       ]
 
    PURPOSE INTERFACE Mandaatvoorbehouden 
-   {+ Roger Hage en Sebastiaan Hobers -}
+   {+ Roger Hage en Sebastiaan Hobers +}
    INTERFACE Mandaatvoorbehouden (mandaatgever) FOR Bestuurder: I[Mandaat] 
    BOX[ "Mandaat"      : I
       , "Bevoegdheid": mandaatbevoegdheid[Mandaat*Bevoegdheid]
@@ -294,7 +294,7 @@ RELATION departementsleiding[Departement*Functie]
   RULE "Artikel 10:10 Awb" : krachtens;namens |- beslotenDoor
   MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
   PURPOSE RULE "Artikel 10:10 Awb" LATEX REF "Artikel 10:10 Awb"
-{+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. -}
+{+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. +}
 
 
    -- bevoegdheid hernoemd naar mandaatbevoegdheid omdat bevoegdheid al bestaat
@@ -408,14 +408,14 @@ In artikel 10:4 staat dat ingeval er bij wettelijk voorschrift in de mandaatverl
    --- SPEC MandaatVerleningVoorzien ISA Mandaat
    -- Concept MandaatVerleningVoorzien en relatie isA toegevoegd door Henk Boer, 9 mei 2013; werkt nog niet..
    RELATION isa_nietwettelijkmandaat [Mandaat * Mandaat] [SYM, ASY]
-   PURPOSE RELATION isa_nietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien -}
+   PURPOSE RELATION isa_nietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien +}
 
   -- RULE Uitgewerkt door Chris Haveman en Henk Boer, aangepast op 9 mei 2013 (HB)
   RULE "Artikel 10:4 Awb - gemandateerde" : isa_nietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~ |- instemming~
   MEANING "Indien de gemandateerde niet werkzaam is onder verantwoordelijkheid van de mandaatgever, behoeft de mandaatverlening de instemming van de gemandateerde, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien"
 
   PURPOSE RULE "Artikel 10:4 Awb - gemandateerde" LATEX REF "Artikel 10:4 Awb"
-  {+ Het Awb stelt dat instemming vereist is als de gemandateerde niet onder de verantwoordelijkheid valt van het bestuursorgaan, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien -}
+  {+ Het Awb stelt dat instemming vereist is als de gemandateerde niet onder de verantwoordelijkheid valt van het bestuursorgaan, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien +}
 
   -- RULE Toegevoegd door Chris Haveman en Henk Boer, 02-05-2013.
   RULE "Artikel 10:4 Awb - verantwoordelijke" : (isa_nietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~);onder |- instemming~
@@ -464,7 +464,7 @@ CONCEPT MandaatIntrekkingWijze "Een Mandaatintrekkingwijze is een wijze waarop m
 
 RELATION mandaatTyperen [Mandaat * MandaatType]
 PRAGMA "" " is van mandaattype "
-PURPOSE RELATION mandaatTyperen [Mandaat * MandaatType] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van algemene mandaten. AANNAME: Kennelijk bestaan er verschillende soorten mandaten, en kunnen mandaten worden ingedeeld in mandaattypen. -}
+PURPOSE RELATION mandaatTyperen [Mandaat * MandaatType] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van algemene mandaten. AANNAME: Kennelijk bestaan er verschillende soorten mandaten, en kunnen mandaten worden ingedeeld in mandaattypen. +}
 POPULATION mandaatTyperen [Mandaat * MandaatType] CONTAINS
      [ ("Mandaat A", "algemeen mandaat")
      ; ("Mandaat B", "specifiek mandaat")
@@ -472,7 +472,7 @@ POPULATION mandaatTyperen [Mandaat * MandaatType] CONTAINS
 
 mandaatIntrekken :: MandaatIntrekking -> Mandaat 
 PRAGMA "" "betreft het intrekken van"
-PURPOSE RELATION mandaatIntrekken [MandaatIntrekking * Mandaat] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het intrekken van mandaten. Omdat voor het intrekken bijzondere regels gelden, onderscheiden we een Mandaatintrekking als een afzonderlijk concept. -}
+PURPOSE RELATION mandaatIntrekken [MandaatIntrekking * Mandaat] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het intrekken van mandaten. Omdat voor het intrekken bijzondere regels gelden, onderscheiden we een Mandaatintrekking als een afzonderlijk concept. +}
 POPULATION mandaatIntrekken [MandaatIntrekking * Mandaat] CONTAINS
      [ ("MI00001", "Mandaat A")
      ; ("MI00002", "Mandaat B")
@@ -480,7 +480,7 @@ POPULATION mandaatIntrekken [MandaatIntrekking * Mandaat] CONTAINS
 
 RELATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze]
 PRAGMA "" " geschiedde "
-PURPOSE RELATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het het schriftelijk intrekken van mandaten. AANNAME: Kennelijk bestaan er verschillende manieren om een mandaat in te trekken, en is er sprake van zoiets als een mandaatintrekkingwijze. -}
+PURPOSE RELATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het het schriftelijk intrekken van mandaten. AANNAME: Kennelijk bestaan er verschillende manieren om een mandaat in te trekken, en is er sprake van zoiets als een mandaatintrekkingwijze. +}
 POPULATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze] CONTAINS
      [ ("MI00001", "schriftelijk")
      ; ("MI00002", "mondeling")
@@ -488,7 +488,7 @@ POPULATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze] CO
 
 RELATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze]
 PRAGMA "Mandaten van het type " " mogen " " worden ingetrokken."
-PURPOSE RELATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze] REF "Artikel 10:8 lid 2 Awb" {+ Deze relatie is nodig om te kunnen testen of de regel is overtreden of niet. -}
+PURPOSE RELATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze] REF "Artikel 10:8 lid 2 Awb" {+ Deze relatie is nodig om te kunnen testen of de regel is overtreden of niet. +}
 POPULATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze] CONTAINS
      [("algemeen mandaat", "schriftelijk"); ("specifiek mandaat", "schriftelijk"); ("specifiek mandaat", "mondeling")
      ]
@@ -509,13 +509,13 @@ Zo mag bijvoorbeeld een algemeen mandaat alleen schriftelijk worden ingetrokken.
 ENDPATTERN
 
    PURPOSE PROCESS ToevoegenBestuursorganen
-   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters -}
+   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
    PROCESS ToevoegenBestuursorganen
    ROLE BO MAINTAINS "Artikel 10:2 Awb"
    ENDPROCESS
    --
    PURPOSE INTERFACE Bestuursorganen
-   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters -}
+   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
    INTERFACE Bestuursorganen (mandaatgever) FOR BO: I[Bestuursorgaan]
    BOX[ "Bestuursorgaan" : I
       , "Mandaat" : namens~

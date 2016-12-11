@@ -6,13 +6,13 @@ s :: A*B
 PATTERN Try46
 RULE ifRthenS : r |- s 
 PURPOSE RULE ifRthenS IN DUTCH 
-{+Dit is de tekst voor de regel ifRthenS. Deze staat in het eerste pattern met de naam Try46.-}
+{+Dit is de tekst voor de regel ifRthenS. Deze staat in het eerste pattern met de naam Try46.+}
 ENDPATTERN
 
 PATTERN Try46
 RULE ifSthenR : s |- r
 PURPOSE RULE ifSthenR IN DUTCH 
-{+Dit is de tekst voor de regel ifSthenR. Deze staat in het tweede pattern met de naam Try46.-}
+{+Dit is de tekst voor de regel ifSthenR. Deze staat in het tweede pattern met de naam Try46.+}
 ENDPATTERN
 
 ENDCONTEXT
