@@ -235,8 +235,7 @@ lexNestComment _ p []          = lexerError UnterminatedComment p
 --TODO: Also accept {+ ... +} as delimiters
 lexMarkup :: Lexer -> Lexer
 lexMarkup = lexMarkup' ""
- where 
-    -- lexMarkup' str _ p ('-':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s -- for backwards compatibility with old `{+ ... -}` notation.
+ where lexMarkup' str _ p ('-':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s -- for backwards compatibility with old `{+ ... -}` notation.
        lexMarkup' str _ p ('+':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s
        lexMarkup' str c p (x:s)       = lexMarkup' (str++[x]) c (updatePos p x) s
        lexMarkup' _   _ p []          = lexerError UnterminatedMarkup p
