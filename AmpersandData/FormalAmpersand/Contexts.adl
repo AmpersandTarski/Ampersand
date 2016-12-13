@@ -1,4 +1,4 @@
-﻿CONTEXT RAP IN ENGLISH
+CONTEXT RAP IN ENGLISH
 INCLUDE "Rules.adl"
 INCLUDE "Relations.adl"
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
@@ -40,7 +40,7 @@ PATTERN Context
     RELATION name[Concept*ConceptName] [UNI,TOT] 
     MEANING "Every relation has a name by which it can be referenced within its Context(s)."
     REPRESENT ConceptName TYPE ALPHANUMERIC
-    RELATION gens[Context*Gen]
+    RELATION gens[Context*Isa]
     MEANING "The user-defined generalization rules in a context."
     RELATION concepts[Pattern*Concept]
     RELATION uses[Context*Pattern]
@@ -59,7 +59,7 @@ PATTERN Context
     RELATION identityRules[Rule*Context] [UNI]  -- ^ all identity rules the user has declared within this context. This contains all rules declared inside a context including the patterns it contains.
     RELATION allRules[Context*Rule] [INJ]       -- This contains all rules declared inside a context. This contains all rules declared inside a context including the patterns it contains.
     MEANING "If a rule is declared anywhere in a context, that rule exists in that context. This is registered in the system."
-    RELATION context[Pattern*Context] [UNI]  -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
+    RELATION context[Pattern*Context] [UNI]     -- comes from patterns, which is defined in FSpec. This contains all patterns declared inside a context.
     MEANING "If a pattern is declared inside a context, this is registered in the system."
 
     PURPOSE RULE "rule declared outside pattern"
@@ -196,26 +196,6 @@ PATTERN Patterns
     ROLE User MAINTAINS "self-sustained rules"
     RULE "self-sustained rules" : usedIn;formalExpression~;allRules~ |- declaredIn[Relation*Pattern]
     MEANING "A relation that is used in a rule, which is declared in a pattern, must be declared in that same pattern."
-
-ENDPATTERN
-
-PATTERN Specialization
---    VIEW Gen: Gen( TXT "CLASSIFY ", genspc;name{-[Concept*ConceptName]-} , TXT " ISA " , gengen;name{-[Concept*ConceptName]-} )
---    RULE "eq gen": gengen;gengen~ /\ genspc;genspc~ |- I
---    MEANING "Two generalization rules are identical when the specific concepts are identical and the generic concepts are identical."
--- HJO, 20160906: Disabled above rule and view, because a generalisation can currently have more than one generic concepts (CLASSIFY A IS B /\ C )
-    RELATION gengen[Gen*Concept] [TOT]
-    MEANING "A generalization rule refers to one or more generic concepts."
-    RELATION genspc[Gen*Concept] [TOT]
-    MEANING "A generalization rule refers to one or more specific concepts."
-
---PURPOSE RULE specialization
---{+Specialization has the consequence that an atom is not necessarily an instance of one concept only.
---If limes are citrus fruits, then every lime is not only lime but a citrus fruit as well.
----}
---RELATION instanceOf[Atom*Concept] [TOT] 
---RULE specialization : instanceOf;genspc~;gengen |- instanceOf
---MEANING "Every instance of a specialized concept is an instance of the generic concept too."
 
 ENDPATTERN
 
