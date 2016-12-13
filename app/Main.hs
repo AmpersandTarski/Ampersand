@@ -14,9 +14,10 @@ main =
                                          --  approach for handling those options should
                                          --  be thought of. 
     then mapM_ putStr (helpNVersionTexts ampersandVersionStr opts)
-    else do gMulti <- createMulti opts
-            case gMulti of
-              Errors err    -> exitWith . NoValidFSpec . intersperse  (replicate 30 '=') . map showErr $ err
-              Checked multi -> generateAmpersandOutput multi
-                                  
+    else do { verboseLn opts $ ampersandVersionStr
+            ; gMulti <- createMulti opts
+            ; case gMulti of
+                Errors err    -> exitWith . NoValidFSpec . intersperse  (replicate 30 '=') . map showErr $ err
+                Checked multi -> generateAmpersandOutput multi
+            }
 

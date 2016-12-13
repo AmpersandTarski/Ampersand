@@ -21,8 +21,8 @@ data LexerError = LexerError FilePos LexerErrorInfo -- ^ The lexer file position
 data LexerErrorInfo
     -- | The comment was not terminated
     = UnterminatedComment
-    -- | The purpose statement was not terminated
-    | UnterminatedPurpose
+    -- | The markup section was not terminated
+    | UnterminatedMarkup
     -- | The atom was not terminated
     | UnterminatedAtom
     -- | The character was unexpected
@@ -47,7 +47,7 @@ showLexerErrorInfo :: LexerErrorInfo -- ^ The error information
 showLexerErrorInfo info =
     case info of
         UnterminatedComment          -> [ Texts.lexerUnterminatedComment               ]
-        UnterminatedPurpose          -> [ Texts.lexerUnterminatedPurpose               ]
+        UnterminatedMarkup           -> [ Texts.lexerUnterminatedMarkup               ]
         UnterminatedAtom             -> [ Texts.lexerUnterminatedAtom                  ]
         UnexpectedChar c             -> [ Texts.lexerUnexpectedChar c                  ]
         NonTerminatedString _        -> [ Texts.lexerNonTerminatedString, correctStrings ]

@@ -4,7 +4,7 @@ module Ampersand.Test.Parser.ArbitraryTree () where
 
 import Test.QuickCheck
 import Data.Char
-import Data.List (nub)
+import Data.List (nub,isInfixOf)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
 
@@ -343,7 +343,10 @@ instance Arbitrary Lang where
     arbitrary = elements [Dutch, English]
 
 instance Arbitrary P_Markup where
-    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr
+    arbitrary = P_Markup <$> arbitrary <*> arbitrary <*> safeStr `suchThat` noEndMarkup
+     where 
+       noEndMarkup :: String -> Bool
+       noEndMarkup = not . isInfixOf "+}"
 
 instance Arbitrary PandocFormat where
     arbitrary = elements [HTML, ReST, LaTeX, Markdown]

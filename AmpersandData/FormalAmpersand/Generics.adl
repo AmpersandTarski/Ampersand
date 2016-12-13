@@ -1,6 +1,6 @@
 CONTEXT Generics IN ENGLISH LATEX
 PURPOSE CONTEXT Generics
-{+This context specifies the administration that currrently is, and in future will have been, the contents of GENERICS.PHP-}
+{+This context specifies the administration that currrently is, and in future will have been, the contents of GENERICS.PHP+}
 
 REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
 

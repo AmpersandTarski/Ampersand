@@ -1,7 +1,7 @@
 CONTEXT RAP IN ENGLISH
 PURPOSE PATTERN Documentation
 {+
--}
++}
 PATTERN Documentation
     REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
 

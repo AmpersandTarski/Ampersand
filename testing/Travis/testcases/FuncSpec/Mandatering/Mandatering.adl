@@ -155,7 +155,7 @@ Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genom
   RULE "Artikel 10:10 Awb" : krachtens;namens |- beslotenDoor
   MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
   PURPOSE RULE "Artikel 10:10 Awb" REF "Artikel 10:10 Awb"
-{+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. -}
+{+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. +}
 
 
    -- bevoegdheid hernoemd naar mandaatbevoegdheid omdat bevoegdheid al bestaat
