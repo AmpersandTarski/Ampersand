@@ -69,7 +69,9 @@ toPops opts file x = map popForColumn (colNrs x)
                       , p_src = src
                       , p_tgt = trg
                       , p_nmdr 
-                         = PNamedRel popOrigin relName Nothing
+                         = case (src, trg) of
+                             (Just s, Just t) -> PNamedRel popOrigin relName (Just (P_Sign (PCpt s) (PCpt t)))
+                             _                -> PNamedRel popOrigin relName Nothing
                       , p_popps = thePairs
                       }
      where                             
