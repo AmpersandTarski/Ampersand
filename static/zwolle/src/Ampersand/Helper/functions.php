@@ -24,4 +24,13 @@ function getDirectoryList($dirPath)
     return $results;
 }
 
+/**
+ * Check if array is sequential (i.e. numeric keys, starting with 0, without gaps)
+ * @param array $arr the array to check
+ * @return boolean
+ */
+function isSequential(array $arr){
+    return array_keys($arr) === range(0, count($arr) - 1);
+}
+
 ?>

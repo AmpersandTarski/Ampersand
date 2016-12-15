@@ -11,6 +11,7 @@ use Exception;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
+use function Ampersand\Helper\isSequential;
 
 /**
  *
@@ -95,7 +96,10 @@ class Resource extends Atom {
         // Add Ampersand atom attributes
         $content['_id_'] = $this->id;
         $content['_label_'] = $this->getLabel();
-        $content['_view_'] = $this->getView();
+        
+        // Add view data if array is assoc (i.e. not sequential)
+        $data = $this->getView();
+        if(!isSequential($data)) $content['_view_'] = $data;
         
         // Merge with interface data (only when get() method is called before)
         return array_merge($content, $this->ifcData);
