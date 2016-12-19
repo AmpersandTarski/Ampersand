@@ -14,16 +14,25 @@ ADL (ampersand) files.
 
 Syntax colouring for Ampersand-v3.7.3 [development-ba1988e] (12-DEC-2016) and later.
 Supports `{+ ... +}` syntax rather than `{+ ... -}` syntax.
-67
+76
 #define spullenboel
 CONTEXT Piet  IN DUTCH { }
+PURPOSE CONTEXT Piet 
 {+dit is een beschrijving van de context 
 dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl +}
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
 {- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
 '_SESSION' [SESSION] 'ONE' '_ONE'
 --! Line comment die er qua colouring uitspringt kan soms handig zijn. dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl 
---[ Dit soort commentaar ook]--
+--[Testing comment stuff]--
+{- tests -}
+MEANING some text
+{+ 1 {- 2 geldt **OOK** -} 3 
+{- 1 {+ 2 +}
+afsdfgeldt **OOK** asdf
+ 3 -} {- 1 {+ 2 +} 3 -}
+{- 1 {+ 2geldt **OOK**  +} 3 +}
+{+ 1 {- 2 -} 3 -}
 --[[Of dit soort]]--
 -- [ of dit soort
 --$ of dit soort commentaar
@@ -84,7 +93,7 @@ yx--!  asdfas
 {- asdfasdfa
 0
 FALSE
-28
+30
 Preprocessor
 Preprocessor regels hebben het '#' teken op de eerste positie van een regel
 ((?<!.)|[\n\r])#[^\n\r]*+
@@ -225,12 +234,12 @@ FALSE
 
 FALSE
 
-&-block comment start
-&-block comment is {+ ... +}
-{\+
+{+ block comment start
+comment between {+ and +}
+(?<=(PURPOSE|MEANING|MESSAGE).*?){\+
 FALSE
-FALSE
-10
+TRUE
+25
 0
 
 
@@ -245,16 +254,36 @@ FALSE
 
 FALSE
 +}
-Haskell block comment start
++}  block comment ends
+This is illegal in this coloring scheme
+\+}
+FALSE
+FALSE
+30
+0
+
+
+2
+FALSE
+FALSE
+TRUE
+FALSE
+
+
+
+
+FALSE
+
+{- (Haskell) block comment start
 Haskell block comment is text between {- and -}
 {-
 FALSE
 FALSE
-9
+24
 0
 
 
-4
+5
 FALSE
 FALSE
 FALSE
@@ -265,6 +294,26 @@ FALSE
 
 FALSE
 -}
+-} block comment ends
+This is illegal in this coloring scheme
+-}
+FALSE
+FALSE
+30
+0
+
+
+2
+FALSE
+FALSE
+TRUE
+FALSE
+
+
+
+
+FALSE
+
 Multiplicities
 
 \[(\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP)(\s*+(,\s*+(INJ|SUR|UNI|TOT|SYM|ASY|RFX|IRF|TRN|PROP))*+)?+)?+\s*+\]
@@ -674,7 +723,7 @@ FALSE
 FALSE
 {
 0
-2
+3
 line comments
 1
 9
@@ -763,14 +812,94 @@ FALSE
 
 FALSE
 
-block comments
+{+ block comments
 1
-9
+10
 FALSE
 0
 
 
+7
+{+ block comment start
+comment between {+ and +}
+(?<=(PURPOSE|MEANING|MESSAGE).*?){\+
+FALSE
+TRUE
+25
+0
+
+
+4
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{+ ... +}
+
+FALSE
++}
++} block comment ends
+comment between {+ and +}
+\+}
+FALSE
+FALSE
+25
+0
+
+
+1
+FALSE
+FALSE
+FALSE
+FALSE
+
+0
+{+ ... +}
+
+FALSE
+{+
+{- (Haskell) block comment start
+Haskell block comment is text between {- and -}
+{-
+FALSE
+FALSE
+24
+0
+
+
 5
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{- ... -}
+
+FALSE
+-}
+-} (Haskell) block comment ends
+Haskell block comment is text between {- and -}
+-}
+FALSE
+FALSE
+30
+0
+
+
+2
+FALSE
+FALSE
+TRUE
+FALSE
+
+0
+{- ... -}
+
+FALSE
+{-
 mailaddres
 
 \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
@@ -831,32 +960,40 @@ FALSE
 
 FALSE
 
-&-block comment ends
-&-block comment is {+ ... +}
-\+}
-FALSE
-FALSE
-10
-0
-
-
+{- block comments
 1
+9
 FALSE
-FALSE
-FALSE
-FALSE
-
 0
-{+ ... +}
+
+
+7
+{- (Haskell) block comment start
+Haskell block comment is text between {- and -}
+{-
+FALSE
+FALSE
+24
+0
+
+
+5
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{- ... -}
 
 FALSE
-{+
-Haskell block comment ends
-Haskell block comment is {- ... -}
+-}
+-} (Haskell) block comment ends
+Haskell block comment is text between {- and -}
 -}
 FALSE
 FALSE
-9
+24
 0
 
 
@@ -871,3 +1008,103 @@ FALSE
 
 FALSE
 {-
+{+ block comment start
+comment between {+ and +}
+(?<=(PURPOSE|MEANING|MESSAGE).*?){\+
+FALSE
+TRUE
+25
+0
+
+
+4
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{+ ... +}
+
+FALSE
++}
+{+block comment ends
+comment between {+ and +}
+\+}
+FALSE
+FALSE
+30
+0
+
+
+0
+FALSE
+FALSE
+TRUE
+FALSE
+
+0
+{+ ... +}
+
+FALSE
+{+
+mailaddres
+
+\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
+FALSE
+FALSE
+2
+3
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+FALSE
+FALSE
+2
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+empasize stuff
+Stuff between [! and a subsequent ] (or eol) will be highlighed
+\*\*[^*]*\*\*
+FALSE
+FALSE
+33
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
