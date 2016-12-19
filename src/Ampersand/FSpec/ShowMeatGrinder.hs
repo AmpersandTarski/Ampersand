@@ -218,23 +218,17 @@ instance MetaPopulations Purpose where
 
 
 instance MetaPopulations A_Gen where
- metaPops fSpec gen@Isa{} =
-  [ Pop "gens" "Context" "Isa" [Sur,Inj]  -- What is the purpose of Sur? I'd rather see it removed?
+ metaPops fSpec gen =
+  [ Pop "gens" "Context" "Gen" [Sur,Inj]
           [(dirtyId ctx ctx,dirtyId ctx gen)]
-  , Pop "genspc"  "Isa" "Concept" []
+  , Pop "genspc"  "Gen" "Concept" []
           [(dirtyId ctx gen,dirtyId ctx (genspc gen))]
-  , Pop "gengen"  "Isa" "Concept" []
-          [(dirtyId ctx gen,dirtyId ctx (gengen gen))]
-  ]
-  where 
-    ctx = originalContext fSpec
- metaPops fSpec gen@IsE{} =
-  [ Pop "gens" "Context" "IsE" [Sur,Inj]  -- What is the purpose of Sur? I'd rather see it removed?
-          [(dirtyId ctx ctx,dirtyId ctx gen)]
-  , Pop "genspc"  "IsE" "Concept" []
-          [(dirtyId ctx gen,dirtyId ctx (genspc gen))]
-  , Pop "gengen"  "IsE" "Concept" []
-          [ (dirtyId ctx gen,dirtyId ctx c) | c<-genrhs gen ]
+  , Pop "gengen"  "Gen" "Concept" []
+          [ (dirtyId ctx gen,dirtyId ctx c)
+          | c<- case gen of
+                     Isa{} -> [gengen gen]
+                     IsE{} -> genrhs gen
+          ]
   ]
   where 
     ctx = originalContext fSpec

@@ -1,4 +1,4 @@
-CONTEXT "AST Interface" IN ENGLISH
+﻿CONTEXT "AST Interface" IN ENGLISH
 
 
 
@@ -16,11 +16,11 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
     ]
   , "Patterns" : context[Pattern*Context]~ BOX 
     [ "Pattern" : I INTERFACE Pattern]
-  , "Isas" : context[Concept*Context]~ ;
+  , "Gens" : context[Concept*Context]~ ;
              (I[Concept]                                  /\
-                gengen[Isa*Concept]~;gengen[Isa*Concept]  /\
-              -(genspc[Isa*Concept]~;genspc[Isa*Concept])
-             )  INTERFACE IsaTree 
+                gengen[Gen*Concept]~;gengen[Gen*Concept]  /\
+              -(genspc[Gen*Concept]~;genspc[Gen*Concept])
+             )  INTERFACE GenTree 
   , "Concepts defined inside patterns" : context[Pattern*Context]~;concepts[Pattern*Concept]
   , "Concepts defined outside patterns" : context[Concept*Context]~
   , "Relations" : declaredIn[Relation*Context]~  LINKTO INTERFACE "Relation"
@@ -28,11 +28,11 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
 --  , "allConjuncts" : allConjuncts[Context*Conjunct]
   , "Rules" : allRules[Context*Rule] INTERFACE "Rule"
   ]
-INTERFACE IsaTree FOR Ampersand : I[Concept]
+INTERFACE GenTree FOR Ampersand : I[Concept]
   BOX <ROWSNL>
     [ concept : I[Concept] LINKTO INTERFACE Concept
-    , "is a"  : genspc[Isa*Concept]~;gengen[Isa*Concept] LINKTO INTERFACE IsaTree
-    , "Kinds" : gengen[Isa*Concept]~;genspc[Isa*Concept] LINKTO INTERFACE IsaTree
+    , "is a"  : genspc[Gen*Concept]~;gengen[Gen*Concept] LINKTO INTERFACE GenTree
+    , "Kinds" : gengen[Gen*Concept]~;genspc[Gen*Concept] LINKTO INTERFACE GenTree
     ] 
 INTERFACE Pattern FOR Ampersand : I[Pattern]
 BOX [ Pattern : name[Pattern*PatternName] cRud
@@ -73,8 +73,8 @@ INTERFACE "Concept" FOR Ampersand : I[Concept] BOX
 --    , ttype   : ttype
     , "source~" : source[Relation*Concept]~ LINKTO INTERFACE Relation
     , "target~" : target[Relation*Concept]~ LINKTO INTERFACE Relation
-    , "gengen~" : gengen[Isa*Concept]~
-    , "genspc~" : genspc[Isa*Concept]~
+    , "gengen~" : gengen[Gen*Concept]~
+    , "genspc~" : genspc[Gen*Concept]~
 --    , "rootConcept~" : rootConcept~
     , "src of expression~" : src[Expression*Concept]~
     , "tgt of expression~" : tgt[Expression*Concept]~
@@ -138,10 +138,10 @@ BOX [ "declaredthrough": declaredthrough[PropertyRule*Property]
 	 
 
 
-INTERFACE Isa FOR Ampersand : I[Isa]
-BOX [ "gens~" : gens[Context*Isa]~
-    , "gengen" : gengen[Isa*Concept]
-    , "genspc" : genspc[Isa*Concept]
+INTERFACE Gen FOR Ampersand : I[Gen]
+BOX [ "gens~" : gens[Context*Gen]~
+    , "gengen" : gengen[Gen*Concept]
+    , "genspc" : genspc[Gen*Concept]
     ]
 
 INTERFACE Relation FOR Ampersand : I[Relation]

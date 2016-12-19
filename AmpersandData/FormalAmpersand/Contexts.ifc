@@ -28,11 +28,11 @@ INTERFACE "Context" FOR Ampersand : I[Context] TABS
   , "Patterns used" : uses[Context*Pattern] BOX 
     [ "Pattern" : I CRuD -- INTERFACE Pattern
     ]
-  , "Isas" : context[Concept*Context]~ ; (I[Concept] 
+  , "Gens" : context[Concept*Context]~ ; (I[Concept] 
           /\
-                (gengen[Isa*Concept]~;gengen[Isa*Concept]) /\
-                ( -(genspc[Isa*Concept]~;genspc[Isa*Concept]))) 
-         -- INTERFACE IsaTree 
+                (gengen[Gen*Concept]~;gengen[Gen*Concept]) /\
+                ( -(genspc[Gen*Concept]~;genspc[Gen*Concept]))) 
+         -- INTERFACE GenTree 
   , "Concepts" : context[Concept*Context]~
   , "Relations" : declaredIn[Relation*Context]~  -- LINKTO INTERFACE "Relation"
        BOX<SCOLS>

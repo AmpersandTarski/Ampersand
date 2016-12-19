@@ -170,7 +170,7 @@ classdiagram2dot opts cd
              | (spec,gener)<-splits gen]
           splits gen = case gen of
                                Isa{} -> [(genspc gen, gengen gen)]
-                               IsE{} -> [(genspc gen, x ) | x<-genrhs gen]
+                               IsE{} -> [(genspc gen, x ) | x<-(genrhs gen)]
 
 
 
