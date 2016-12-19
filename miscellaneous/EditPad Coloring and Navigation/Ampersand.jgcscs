@@ -1,7 +1,7 @@
 ﻿JGCSCS
 5
-Ampersand files
-*.adl;*.pop;*.ifc
+Ampersand scripts/source files
+*.adl;*.pop;*.ifc;*.docadl
 Rieks Joosten
 rieks.joosten@tno.nl
 
@@ -236,7 +236,7 @@ FALSE
 
 {+ block comment start
 comment between {+ and +}
-(?<=(PURPOSE|MEANING|MESSAGE).*?){\+
+(?<=(PURPOSE|MEANING|MESSAGE).*?)({\+)
 FALSE
 TRUE
 25
@@ -248,10 +248,10 @@ FALSE
 FALSE
 FALSE
 FALSE
-0
+2
 
 {+ ... +}
-
+{+ ... +}
 FALSE
 +}
 +}  block comment ends
@@ -269,9 +269,9 @@ FALSE
 TRUE
 FALSE
 
-
-
-
+0
+{+ ... +}
+{+ ... +}
 FALSE
 
 {- (Haskell) block comment start
@@ -291,7 +291,7 @@ FALSE
 0
 
 {- ... -}
-
+{- ... -}
 FALSE
 -}
 -} block comment ends
@@ -311,7 +311,7 @@ FALSE
 
 
 
-
+{- ... -}
 FALSE
 
 Multiplicities
@@ -837,7 +837,7 @@ FALSE
 0
 
 {+ ... +}
-
+{+ ... +}
 FALSE
 +}
 +} block comment ends
@@ -857,7 +857,7 @@ FALSE
 
 0
 {+ ... +}
-
+{+ ... +}
 FALSE
 {+
 {- (Haskell) block comment start
@@ -877,7 +877,7 @@ FALSE
 0
 
 {- ... -}
-
+{- ... -}
 FALSE
 -}
 -} (Haskell) block comment ends
@@ -897,7 +897,7 @@ FALSE
 
 0
 {- ... -}
-
+{- ... -}
 FALSE
 {-
 mailaddres
@@ -985,7 +985,7 @@ FALSE
 0
 
 {- ... -}
-
+{- ... -}
 FALSE
 -}
 -} (Haskell) block comment ends
@@ -1005,7 +1005,7 @@ FALSE
 
 0
 {- ... -}
-
+{- ... -}
 FALSE
 {-
 {+ block comment start
@@ -1025,7 +1025,7 @@ FALSE
 0
 
 {+ ... +}
-
+{+ ... +}
 FALSE
 +}
 {+block comment ends
@@ -1045,7 +1045,7 @@ FALSE
 
 0
 {+ ... +}
-
+{+ ... +}
 FALSE
 {+
 mailaddres
