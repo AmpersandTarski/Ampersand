@@ -1,5 +1,8 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+
 ## v3.8.0 (20 december 2016) 
   * [Issue #587](https://github.com/AmpersandTarski/Ampersand/issues/587) There is no need any longer to explicitly specify the language in a script. If omitted, IN ENGLISH will be used as default. 
   * [Issue #588](https://github.com/AmpersandTarski/Ampersand/issues/588) PURPOSE sytax changed: Now matching brackets are: `{+` and `+}`   (no backwards compatibility, to enable nested comment blocks)
