@@ -1,6 +1,14 @@
 # Release notes of Ampersand
 
-## unreleased changes
+## v3.8.0 (20 december 2016) 
+  * [Issue #587](https://github.com/AmpersandTarski/Ampersand/issues/587) There is no need any longer to explicitly specify the language in a script. If omitted, IN ENGLISH will be used as default. 
+  * [Issue #588](https://github.com/AmpersandTarski/Ampersand/issues/588) PURPOSE sytax changed: Now matching brackets are: `{+` and `+}`   (no backwards compatibility, to enable nested comment blocks)
+  * Added some additional diagnosis info in settings.json
+  * Added support for project/application and extension specific composer dependencies.
+  * Added 'customization' folder to prototype generation process. This folder can be used to e.g. overwrite generated views.
+  * Includes for frontend app must be placed in 'app' folder now. The include folder thereby directly matches the destination directory structure.
+  * Ampersand version info is printed in verbose mode
+  * New switch, to add all relations, concepts and generalisation relations of formal ampersand into your script: --add-semantic-metamodel
 
 ## v3.7.3 (25 november 2016)
   * Alternative definition of univalence and injectivity to get better violations on runtime.

@@ -4,7 +4,7 @@ PURPOSE PATTERN EscapeTest
 {+
 This pattern tests escaping capabilities of the Prototype generator by using 
 special characters on all possible constructs.
--}
++}
 
 -- Special characters that may cause problems:
 

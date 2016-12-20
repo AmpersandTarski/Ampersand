@@ -26,12 +26,13 @@ data AmpersandExit
   | NoPrototypeBecauseOfRuleViolations
   | FailedToInstallComposer [String]
   | PHPExecutionFailed [String]
+  | WrongArgumentsGiven [String]
 
 info :: AmpersandExit -> (SE.ExitCode, [String])
 info x = 
   case x of
     Succes    -> (SE.ExitSuccess     , [])
-    Fatal msg -> (SE.ExitFailure   1 , msg) -- These specific errors are due to some bug in the Ampersand code. Please report such bugs!
+    Fatal msg -> (SE.ExitFailure   2 , msg) -- These specific errors are due to some bug in the Ampersand code. Please report such bugs!
     NoValidFSpec msg
               -> (SE.ExitFailure  10 , msg) 
     ViolationsInDatabase
@@ -44,4 +45,6 @@ info x =
               -> (SE.ExitFailure  50 , msg)
     PHPExecutionFailed msg
               -> (SE.ExitFailure  60 , msg)
+    WrongArgumentsGiven msg 
+              -> (SE.ExitFailure  70 , msg)
 

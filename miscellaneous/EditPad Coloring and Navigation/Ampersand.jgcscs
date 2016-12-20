@@ -1,7 +1,7 @@
 ﻿JGCSCS
 5
-Ampersand files
-*.adl;*.pop;*.ifc
+Ampersand scripts/source files
+*.adl;*.pop;*.ifc;*.docadl
 Rieks Joosten
 rieks.joosten@tno.nl
 
@@ -9,21 +9,36 @@ rieks.joosten@tno.nl
 TRUE
 --
 
-1
-ADL (ampersand) files
-62
+4
+ADL (ampersand) files.
+
+Syntax colouring for Ampersand-v3.7.3 [development-ba1988e] (12-DEC-2016) and later.
+Supports `{+ ... +}` syntax rather than `{+ ... -}` syntax.
+76
 #define spullenboel
-CONTEXT Piet  IN DUTCH
+CONTEXT Piet  IN DUTCH { }
+PURPOSE CONTEXT Piet 
+{+dit is een beschrijving van de context 
+dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl +}
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
 {- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
-
---! Line comment die er qua colouring uitspringt kan soms handig zijn.
---[ Dit soort commentaar ook]--
+'_SESSION' [SESSION] 'ONE' '_ONE'
+--! Line comment die er qua colouring uitspringt kan soms handig zijn. dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl 
+--[Testing comment stuff]--
+{- tests -}
+MEANING some text
+{+ 1 {- 2 geldt **OOK** -} 3 
+{- 1 {+ 2 +}
+afsdfgeldt **OOK** asdf
+ 3 -} {- 1 {+ 2 +} 3 -}
+{- 1 {+ 2geldt **OOK**  +} 3 +}
+{+ 1 {- 2 -} 3 -}
+--[[Of dit soort]]--
 -- [ of dit soort
 --$ of dit soort commentaar
-apenbroodboom :: A * B -X asdfsdfsdf  --[ Dit soort commentaar ook]--
-{-preCdx  :: Proces -> Conditie.-} --$ of dit soort commentaar
-postCdx :: Proces -> Conditie. --!sdfdfd
+apenbroodboom :: A * B -X asdfsdfsdf  --[ Dit soort commentaar ook]-- sdfasdfasdf
+{-preCdx  :: Proces -> Conditie.-} --$ of dit soort commentaar WIJZIGER: rieks.joosten@tno.nl 
+postCdx :: Proces -> Conditie. --!sdfdfd WIJZIGER: rieks.joosten@tno.nl 
 RELATION[Proces * Conditie] PRAGMA "" " wordt geacht om " " waar te maken c.q. te houden".
  "sfdkfj"
 
@@ -74,9 +89,11 @@ yx--!  asdfas
   yx--! 
   yx--!asdfasdf
   yx--!  asdfa
+
+{- asdfasdfa
 0
 FALSE
-27
+30
 Preprocessor
 Preprocessor regels hebben het '#' teken op de eerste positie van een regel
 ((?<!.)|[\n\r])#[^\n\r]*+
@@ -217,12 +234,12 @@ FALSE
 
 FALSE
 
-Block Comment
-Text between {+ or {- and -}
-{(\+|-)
+{+ block comment start
+comment between {+ and +}
+(?<=(PURPOSE|MEANING|MESSAGE).*?)({\+)
 FALSE
-FALSE
-9
+TRUE
+25
 0
 
 
@@ -231,10 +248,70 @@ FALSE
 FALSE
 FALSE
 FALSE
+2
+
+{+ ... +}
+{+ ... +}
+FALSE
++}
++}  block comment ends
+This is illegal in this coloring scheme
+\+}
+FALSE
+FALSE
+30
 0
 
-{+/- xxx -}
 
+2
+FALSE
+FALSE
+TRUE
+FALSE
+
+0
+{+ ... +}
+{+ ... +}
+FALSE
+
+{- (Haskell) block comment start
+Haskell block comment is text between {- and -}
+{-
+FALSE
+FALSE
+24
+0
+
+
+5
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{- ... -}
+{- ... -}
+FALSE
+-}
+-} block comment ends
+This is illegal in this coloring scheme
+-}
+FALSE
+FALSE
+30
+0
+
+
+2
+FALSE
+FALSE
+TRUE
+FALSE
+
+
+
+{- ... -}
 FALSE
 
 Multiplicities
@@ -279,11 +356,10 @@ FALSE
 
 Special words
 Stuff for ExecEngine, Sessions, Logins
-4
+3
 (\bExecEngine\b|\b{EX}\b|\b(InsPair|DelPair|NewStruct|DelAtom)\b
-|'ONE'|'_SESSION'|(?<=('_SESSION'))\[SESSION\]|\bSESSION\b|\b_NEW\b
-|\b[Cc][Rr][Uu][Dd]\b
-|"SessionRoles"|\bRole\b|"SessionUser"|\bUser\b|"SessionVars"|\bNobodyInParticular\b)
+|'ONE'|'_SESSION'|(?<='_SESSION')\[SESSION\]|\bSESSION\b|\b_NEW\b
+|\b[Cc][Rr][Uu][Dd]\b)
 FALSE
 FALSE
 15
@@ -545,7 +621,7 @@ FALSE
 ()
 ()
 FALSE
-
+)
 Round parenthesis ')'
 
 \)
@@ -565,7 +641,7 @@ FALSE
 ()
 ()
 FALSE
-
+(
 Square bracket '['
 
 \[
@@ -585,7 +661,7 @@ FALSE
 []
 []
 FALSE
-
+]
 Square bracket ']'
 
 \]
@@ -605,7 +681,7 @@ FALSE
 []
 []
 FALSE
-
+[
 Parenthesis '{'
 
 \{
@@ -625,7 +701,7 @@ FALSE
 {}
 {}
 FALSE
-
+}
 Parenthesis '}'
 
 \}
@@ -645,9 +721,9 @@ FALSE
 {}
 {}
 FALSE
-
+{
 0
-2
+3
 line comments
 1
 9
@@ -736,14 +812,94 @@ FALSE
 
 FALSE
 
-block comments
+{+ block comments
 1
-9
+10
 FALSE
 0
 
 
+7
+{+ block comment start
+comment between {+ and +}
+(?<=(PURPOSE|MEANING|MESSAGE).*?){\+
+FALSE
+TRUE
+25
+0
+
+
 4
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{+ ... +}
+{+ ... +}
+FALSE
++}
++} block comment ends
+comment between {+ and +}
+\+}
+FALSE
+FALSE
+25
+0
+
+
+1
+FALSE
+FALSE
+FALSE
+FALSE
+
+0
+{+ ... +}
+{+ ... +}
+FALSE
+{+
+{- (Haskell) block comment start
+Haskell block comment is text between {- and -}
+{-
+FALSE
+FALSE
+24
+0
+
+
+5
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{- ... -}
+{- ... -}
+FALSE
+-}
+-} (Haskell) block comment ends
+Haskell block comment is text between {- and -}
+-}
+FALSE
+FALSE
+30
+0
+
+
+2
+FALSE
+FALSE
+TRUE
+FALSE
+
+0
+{- ... -}
+{- ... -}
+FALSE
+{-
 mailaddres
 
 \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
@@ -804,12 +960,40 @@ FALSE
 
 FALSE
 
-end of text
+{- block comments
+1
+9
+FALSE
+0
 
+
+7
+{- (Haskell) block comment start
+Haskell block comment is text between {- and -}
+{-
+FALSE
+FALSE
+24
+0
+
+
+5
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{- ... -}
+{- ... -}
+FALSE
+-}
+-} (Haskell) block comment ends
+Haskell block comment is text between {- and -}
 -}
 FALSE
 FALSE
-9
+24
 0
 
 
@@ -820,7 +1004,107 @@ FALSE
 FALSE
 
 0
-{+/- xxx -}
+{- ... -}
+{- ... -}
+FALSE
+{-
+{+ block comment start
+comment between {+ and +}
+(?<=(PURPOSE|MEANING|MESSAGE).*?){\+
+FALSE
+TRUE
+25
+0
+
+
+4
+FALSE
+FALSE
+FALSE
+FALSE
+0
+
+{+ ... +}
+{+ ... +}
+FALSE
++}
+{+block comment ends
+comment between {+ and +}
+\+}
+FALSE
+FALSE
+30
+0
+
+
+0
+FALSE
+FALSE
+TRUE
+FALSE
+
+0
+{+ ... +}
+{+ ... +}
+FALSE
+{+
+mailaddres
+
+\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
+FALSE
+FALSE
+2
+3
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+FALSE
+FALSE
+2
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+empasize stuff
+Stuff between [! and a subsequent ] (or eol) will be highlighed
+\*\*[^*]*\*\*
+FALSE
+FALSE
+33
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
 
 FALSE
 

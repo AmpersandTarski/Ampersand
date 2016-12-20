@@ -13,7 +13,7 @@ aCtx2pCtx :: A_Context -> P_Context
 aCtx2pCtx ctx = 
  PCtx { ctx_nm     = ctxnm ctx
       , ctx_pos    = ctxpos ctx
-      , ctx_lang   = ctxlang ctx
+      , ctx_lang   = Just $ ctxlang ctx
       , ctx_markup = Just $ ctxmarkup ctx
       , ctx_thms   = ctxthms ctx 
       , ctx_pats   = map aPattern2pPattern . ctxpats $ ctx

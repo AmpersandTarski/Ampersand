@@ -205,12 +205,6 @@ class AngularApp {
 		// angular-file-upload
 		$this->addHtmlLine('<script src="app/lib/angular/angular-file-upload/angular-file-upload.min.js"></script>');
 
-		// angular-grid
-		$this->addHtmlLine('<script src="app/lib/angular/angular-grid/ag-grid.min.js"></script>');
-		$this->addHtmlLine('<link href="app/lib/angular/angular-grid/ag-grid.min.css" rel="stylesheet" media="screen" type="text/css">');
-		$this->addHtmlLine('<link href="app/lib/angular/angular-grid/theme-dark.min.css" rel="stylesheet" media="screen" type="text/css">');
-		$this->addHtmlLine('<link href="app/lib/angular/angular-grid/theme-fresh.min.css" rel="stylesheet" media="screen" type="text/css">');
-
 		// Restangular (with depency for lodash)
 		$this->addHtmlLine('<script src="app/lib/restangular/restangular.min.js"></script>');
 		$this->addHtmlLine('<script src="app/lib/restangular/lodash.min.js"></script>');

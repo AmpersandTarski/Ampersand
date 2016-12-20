@@ -12,7 +12,7 @@ De onderstaande tekst is daarvan een analyse.
 
 Deze analyse is tot stand gekomen als gezamenlijk werkstuk van de cursisten van de ``Masterclass Ampersand 2013''.
 De analyse is dan ook niet compleet en niet getoetst door juridisch deskundigen.
--}
++}
    PURPOSE PATTERN Mandaten
 {+
 Dit hoofdstuk beschrijft de taal zoals die in Afdeling 10:1.1. Awb wordt gebruikt om het mandateren te regelen.
@@ -20,7 +20,7 @@ Waar mogelijk verwijst de tekst naar de bron, zodat de lezer afwijkingen die hij
 Daar waar de tekst afwijkt van de bron is die bron uiteraard meer gezaghebbend dan deze tekst.
 
 Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
--}
++}
 
    INTERFACE Overview : I[ONE] {- Stef Joosten, 19 April 2013 -}
    BOX[ "Functies" : V[ONE*Functie]
@@ -33,7 +33,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
 
    PURPOSE INTERFACE Functie
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
-      Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... -}
+      Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
    INTERFACE Functie (formatie, krachtens, beslotenDoor, namens) FOR Bestuurder: I[Functie] {- Stef Joosten, 19 April 2013 -}
    BOX[ "Functie"      : I
       , "Orgaan": formatie~
@@ -55,7 +55,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
 
    PURPOSE INTERFACE Mandaat 
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
-      Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... -}
+      Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
    INTERFACE Mandaat (mandaatgever) FOR Bestuurder: I[Mandaat]  {- Stef Joosten, 19 April 2013 -}
    BOX[ "Mandaat"      : I
       , "Mandaatgever": mandaatgever
@@ -66,7 +66,7 @@ Functionele eisen zullen worden opgesteld in de hier gedefinieerde taal.
       ]
 PURPOSE INTERFACE Bestuursorgaan 
    {+ Deze interface is uitsluitend bedoeld als voorbeeld voor de les.
-      Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... -}
+      Hij is niet geschikt noch bedoeld als interface in de uiteindelijke applicatie... +}
    INTERFACE Bestuursorgaan (bevoegdheid,formatie) FOR Bestuurder: I[Bestuursorgaan]  {- Henk Boer Chris Haveman, 2 mei 2013 -}
    BOX[ "Bestuursorgaan" : I
       , "Bevoegdheid": bevoegdheid
@@ -75,7 +75,7 @@ PURPOSE INTERFACE Bestuursorgaan
       ]
 
    PURPOSE INTERFACE Mandaatvoorbehouden 
-   {+ Roger Hage en Sebastiaan Hobers -}
+   {+ Roger Hage en Sebastiaan Hobers +}
    INTERFACE Mandaatvoorbehouden (mandaatgever) FOR Bestuurder: I[Mandaat] 
    BOX[ "Mandaat"      : I
       , "Bevoegdheid": mandaatbevoegdheid[Mandaat*Bevoegdheid]
@@ -100,19 +100,19 @@ PURPOSE INTERFACE Bestuursorgaan
       In deze analyse noemen wij ambtenaren bij functie, zoals ``De directeur-generaal Jeugd en Sanctietoepassing van het Ministerie van Veiligheid en Justitie''.
       De naam van de persoon die deze functie vervult, bijvoorbeeld ``E.M. ten Hoorn Boer'' blijft dan uit zicht.
       In een uitgebreidere versie is het nodig om mandaten aan natuurlijke personen toe te voegen.
-   -}
+   +}
 
    CONCEPT Besluit "Onder besluit wordt verstaan: een schriftelijke beslissing van een bestuursorgaan, inhoudende een publiekrechtelijke rechtshandeling." "Artikel 1:3 lid 1 Awb"
    CONCEPT Beschikking  "Onder beschikking wordt verstaan: een besluit dat niet van algemene strekking is, met inbegrip van de afwijzing van een aanvraag daarvan." "Artikel 1:3 lid 2 Awb"
    PURPOSE CONCEPT Besluit LATEX REF "Artikel 1:3 lid 1 Awb"
 {+
 De wet maakt onderscheid tussen besluiten en beschikkingen. Beide zijn gedefinieerd in de Awb.
--}
++}
 
    PURPOSE RELATION bevoegdheid[Bestuursorgaan*Bevoegdheid] LATEX REF "Artikel 1:3 lid 4 Awb"
 {+In het bestuursrecht wordt een bevoegdheid aan een bepaald bestuursorgaan toegedeeld omdat dit bestuursorgaan het meest geschikt wordt geacht om die taak in overeenstemming met het algemeen belang uit te oefenen. Daarbij spelen niet alleen de positie en de deskundigheid van het betrokken bestuursorgaan een rol, maar ook de mogelijkheid van goede controle op de taakuitvoering. Met het oog daarop worden bestuursbevoegdheden vaak toegekend aan organen die een verantwoordingsplicht hebben jegens een vertegenwoordigend lichaam\footnote{bron: Memorie van Toelichting AwB afd 10.1}.
 De reden van toedeling aan juist deze bestuursorganen is meestal niet zozeer gelegen in het feit dat men verwacht dat zij zelf alle besluiten nemen waartoe de toegekende bevoegdheid de gelegenheid biedt, maar dat men een verantwoordingsplicht van deze organen voor de uitoefening daarvan wenst.
--}
++}
    RELATION bevoegdheid[Bestuursorgaan*Bevoegdheid]
    PRAGMA "" " heeft " " als bevoegdheid"
    MEANING LATEX "De uitspraak ``Bestuursorgaan $b$ heeft $x$ als bevoegdheid.'' behoort tot de gemeenschappelijke taal."
@@ -126,7 +126,7 @@ De reden van toedeling aan juist deze bestuursorganen is meestal niet zozeer gel
 
    PURPOSE RELATION beslotenDoor[Besluit*Bestuursorgaan] LATEX REF "Artikel 1:3 lid 1 Awb"
 {+In de Awb worden beslissingen consequent door bestuursorganen genomen.
--}
++}
    RELATION beslotenDoor[Besluit*Bestuursorgaan]
    PRAGMA "" " is genomen door "
    MEANING LATEX "De uitspraak ``Besluit $b$ is genomen door (bestuursorgaan) $o$.'' behoort tot de gemeenschappelijke taal."
@@ -171,7 +171,7 @@ RELATION departementsleiding[Departement*Functie]
 
    PURPOSE RELATION ondermandaatgever[Mandaatnemer*Functie] LATEX REF "Nota behorende tot de mandaatregeling Bergen 2007"
    {+Er is sprake van ondermandaat als de gemandateerde een aan hem ondergeschikte ambtenaar machtigt om de gemandateerde bevoegdheid uit te oefenen.
-   -}
+   +}
 
 -- RELATION toegevoegd op 02 april door Patrick en Arjan
    RELATION ondermandaatgever[Mandaatnemer*Functie]
@@ -205,10 +205,10 @@ RELATION departementsleiding[Departement*Functie]
 
    PURPOSE RULE "Artikel 10:2 Awb" REF "Artikel 10:2 Awb"
 {+
--}
++}
    PURPOSE RELATION namens[Mandaat*Bestuursorgaan] LATEX REF "Artikel 10:10 Awb"
 {+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen.
-   -}
+   +}
    RELATION namens[Mandaat*Bestuursorgaan] [UNI,TOT]  -- ontleend aan Artikel 10:10 Awb
    PRAGMA "" " is verleend in naam van "
    MEANING LATEX "De zin ``Mandaat $m$ is verleend in naam van bestuursorgaan $b$.'' behoort tot de gemeenschappelijke taal."
@@ -224,7 +224,7 @@ RELATION departementsleiding[Departement*Functie]
 
    PURPOSE RELATION mandaatverlener[Mandaat*Bestuursorgaan] LATEX REF "Artikel 10:3, 10:5 Awb"
 {+De Awb zegt dat een bestuursorgaan mandaat kan verlenen.
--}
++}
    RELATION mandaatverlener[Mandaat*Bestuursorgaan] [UNI,TOT]  -- ontleend aan Artikel 10:3 en 10:5 Awb
    PRAGMA "" " is verleend door "
    MEANING LATEX "De zin ``Mandaat $m$ is verleend door bestuursorgaan $b$.'' behoort tot de gemeenschappelijke taal."
@@ -240,7 +240,7 @@ RELATION departementsleiding[Departement*Functie]
 
    PURPOSE RELATION mandaatgever[Mandaat*Functie] LATEX REF "Artikelen 10:6-9 Awb"
 {+De Awb spreekt van een mandaatgever: de ambtenaar die (een deel van) zijn bevoegdheden mandateert aan ondergeschikte ambtenaren.
--}
++}
    RELATION mandaatgever[Mandaat*Functie]
    PRAGMA "" " is verleend door "
    MEANING LATEX "De zin ``Mandaat $m$ is verleend door (mandaatgever) $a$.'' behoort tot de gemeenschappelijke taal."
@@ -255,7 +255,7 @@ RELATION departementsleiding[Departement*Functie]
 
    PURPOSE RELATION gemandateerde[Mandaat*Functie] LATEX REF "Artikel 10:2 Awb"
 {+De Awb spreekt van een gemandateerde: de ambtenaar die bevoegdheden krijgt van hogerhand.
--}
++}
    RELATION gemandateerde[Mandaat*Functie]
    PRAGMA "" " is verleend aan "
    MEANING LATEX "De uitspraak ``Mandaat $m$ is verleend aan (gemandateerde) $g$.'' behoort tot de gemeenschappelijke taal."
@@ -269,7 +269,7 @@ RELATION departementsleiding[Departement*Functie]
 
    PURPOSE RELATION instemming[Functie*Mandaat] LATEX REF "Artikel 10:4 Awb"
 {+De Awb spreekt van instemming voor een mandaat van de gemandateerde en van degene onder wiens verantwoordelijkheid hij valt.
--}
++}
    RELATION instemming[Functie*Mandaat]
    PRAGMA "" " heeft ingestemd met "
    MEANING LATEX "De uitspraak ``Functie $f$ heeft ingestemd met(mandaat) $m$.'' behoort tot de gemeenschappelijke taal."
@@ -284,7 +284,7 @@ RELATION departementsleiding[Departement*Functie]
 
    PURPOSE RELATION krachtens[Besluit*Mandaat] LATEX REF "Artikel 10:10 Awb"
 {+De Awb gebruikt het woord ``krachtens'' om aan te geven dat een besluit is genomen op basis van een een mandaat.
--}
++}
    RELATION krachtens[Besluit*Mandaat]
    PRAGMA "" " is krachtens " " genomen"
    MEANING LATEX "De uitspraak ``Besluit $b$ is krachtens (mandaat) $m$ genomen.'' behoort tot de gemeenschappelijke taal."
@@ -294,7 +294,7 @@ RELATION departementsleiding[Departement*Functie]
   RULE "Artikel 10:10 Awb" : krachtens;namens |- beslotenDoor
   MEANING "De Awb zegt dat: een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen"
   PURPOSE RULE "Artikel 10:10 Awb" LATEX REF "Artikel 10:10 Awb"
-{+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. -}
+{+De Awb zegt dat een krachtens mandaat genomen besluit vermeldt namens welk bestuursorgaan het besluit is genomen. Dat impliceert dat een besluit altijd in naam van een bestuursorgaan wordt genomen. +}
 
 
    -- bevoegdheid hernoemd naar mandaatbevoegdheid omdat bevoegdheid al bestaat
@@ -303,7 +303,7 @@ RELATION departementsleiding[Departement*Functie]
 De wetstekst spreekt van ``de gemandateerde bevoegdheid''.
 Kennelijk bestaat er voor elk mandaat een bevoegdheid die gemandateerd wordt.
 In de gemeenschappelijke taal wordt het woordje ``tot'' gebruikt om deze bevoegdheid aan te duiden.
--}
++}
    RELATION mandaatbevoegdheid[Mandaat*Bevoegdheid] [TOT]
    PRAGMA "" " tot "
    MEANING LATEX "De frase ``een mandaat tot $b$'' behoort tot de gemeenschappelijke taal en duidt de bevoegdheid ($b$) aan die wordt gemandateerd."
@@ -319,7 +319,7 @@ In de gemeenschappelijke taal wordt het woordje ``tot'' gebruikt om deze bevoegd
    PURPOSE RELATION beperking[Mandaat*Beperking] LATEX REF "Artikel 10:2 Awb"
 {+De Awb spreekt van ``een door de gemandateerde binnen de grenzen van zijn bevoegdheid genomen besluit''.
 Dit impliceert dat er beperkingen kunnen gelden voor een mandaat.
--}
++}
    RELATION beperking[Mandaat*Beperking]
    PRAGMA "" " geldt ten aanzien van aangelegenheden die " " betreffen"
    MEANING LATEX "De uitspraak ``Mandaat $m$ geldt ten aanzien van aangelegenheden die (beperking) $b$ betreffen.'' behoort tot de gemeenschappelijke taal."
@@ -327,7 +327,7 @@ Dit impliceert dat er beperkingen kunnen gelden voor een mandaat.
    PURPOSE RELATION voorbehouden[Bevoegdheid*Functie] LATEX REF "Artikel 4 Mandaatregeling hoofddirecteur DJI 2013"
 {+De Mandaatregeling hoofddirecteur DJI 2013 spreekt van ``bevoegdheden die voorbehouden blijven aan een bepaalde ambtenaar.''.
 Dit impliceert dat deze bevoegdheden niet kunnen worden ondergemandateerd.
--}
++}
    RELATION voorbehouden[Bevoegdheid*Functie]
    PRAGMA "" " is voorbehouden aan "
    MEANING LATEX "De uitspraak ``Bevoegdheid $b$ s voorbehouden aan (functie) $a$.'' behoort tot de gemeenschappelijke taal."
@@ -335,7 +335,7 @@ Dit impliceert dat deze bevoegdheden niet kunnen worden ondergemandateerd.
    PURPOSE RELATION grond[Bevoegdheid*Titel] LATEX
 {+Bevoegdheden hebben een wettige grondslag.
 Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bevoegdheid op is gebaseerd.
--}
++}
    RELATION grond[Bevoegdheid*Titel]
    PRAGMA "" " op grond van "
    MEANING LATEX "De frase ``bevoegd op grond van (titel) $t$'' behoort tot de gemeenschappelijke taal en duidt de wettige grondslag aan van de bedoelde bevoegdheid."
@@ -389,7 +389,7 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
     MEANING "Een ingediend bezwaar krachtens genomen besluit door gemandandateerde of mandaatgever mag niet door de gemandanteerde of mandaatgever zelf besloten worden."
     PURPOSE RULE "Artikel 10:3 lid 3 Awb" LATEX REF "Artikel 10:3 lid 3 Awb"
 {+ Een ingediend bezwaar krachtens genomen besluit door gemandandateerde of mandaatgever mag niet door de gemandanteerde of mandaatgever zelf besloten worden.
--}
++}
 
 
    -- RULE nog uit te werken door George de Vries en Tim Ruijters.
@@ -403,19 +403,19 @@ Dit betekent dat van elke bevoegdheid de titel kan worden gevonden waar deze bev
    PURPOSE CONCEPT MandaatVerleningVoorzien LATEX REF "Artikel 10:4 lid 2 Awb"
 {+
 In artikel 10:4 staat dat ingeval er bij wettelijk voorschrift in de mandaatverlening is voorzien, er geen instemming nodig is. Blijkbaar kan er bij sommige mandaten dit wettelijk voorschrift bestaan.
--}
++}
 
    --- SPEC MandaatVerleningVoorzien ISA Mandaat
    -- Concept MandaatVerleningVoorzien en relatie isA toegevoegd door Henk Boer, 9 mei 2013; werkt nog niet..
    RELATION isa_nietwettelijkmandaat [Mandaat * Mandaat] [SYM, ASY]
-   PURPOSE RELATION isa_nietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien -}
+   PURPOSE RELATION isa_nietwettelijkmandaat LATEX REF "Artikel 10:4 lid 2 Awb" {+ Niet wettelijk in mandaatbevoegdheid voorzien +}
 
   -- RULE Uitgewerkt door Chris Haveman en Henk Boer, aangepast op 9 mei 2013 (HB)
   RULE "Artikel 10:4 Awb - gemandateerde" : isa_nietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~ |- instemming~
   MEANING "Indien de gemandateerde niet werkzaam is onder verantwoordelijkheid van de mandaatgever, behoeft de mandaatverlening de instemming van de gemandateerde, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien"
 
   PURPOSE RULE "Artikel 10:4 Awb - gemandateerde" LATEX REF "Artikel 10:4 Awb"
-  {+ Het Awb stelt dat instemming vereist is als de gemandateerde niet onder de verantwoordelijkheid valt van het bestuursorgaan, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien -}
+  {+ Het Awb stelt dat instemming vereist is als de gemandateerde niet onder de verantwoordelijkheid valt van het bestuursorgaan, tenzij wettelijk in de bevoegdheid tot mandaatverlening is voorzien +}
 
   -- RULE Toegevoegd door Chris Haveman en Henk Boer, 02-05-2013.
   RULE "Artikel 10:4 Awb - verantwoordelijke" : (isa_nietwettelijkmandaat;gemandateerde /\ mandaatgever;-onder~);onder |- instemming~
@@ -429,7 +429,7 @@ In artikel 10:4 staat dat ingeval er bij wettelijk voorschrift in de mandaatverl
      Daarmee verplicht hij zich overeenkomstig de aanwijzingen van de mandaatgever te handelen
      en staat ook tegenover derden vast dat hij over de gemandateerde bevoegdheid beschikt.
      Dientengevolge zal hij ook niet kunnen weigeren haar uit te oefenen indien dat in de gegeven omstandigheden verlangd kan worden.
-  -}
+  +}
 
    ENDPATTERN
 
@@ -453,7 +453,7 @@ PURPOSE PATTERN "Intrekken van mandaten" LATEX
 {+ Artikel 10:8 lid 2 Awb stelt een beperking in op het intrekken van mandaten:
 Een algemeen mandaat wordt schriftelijk ingetrokken.
 Daartoe moet worden bijgehouden hoe het intrekken van een mandaat is verlopen.
--}
++}
 
 CONCEPT MandaatType "Een mandaattype is een typering van Mandaat." "vrij naar Artikel 10:8 lid 2 Awb"
 
@@ -464,7 +464,7 @@ CONCEPT MandaatIntrekkingWijze "Een Mandaatintrekkingwijze is een wijze waarop m
 
 RELATION mandaatTyperen [Mandaat * MandaatType]
 PRAGMA "" " is van mandaattype "
-PURPOSE RELATION mandaatTyperen [Mandaat * MandaatType] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van algemene mandaten. AANNAME: Kennelijk bestaan er verschillende soorten mandaten, en kunnen mandaten worden ingedeeld in mandaattypen. -}
+PURPOSE RELATION mandaatTyperen [Mandaat * MandaatType] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van algemene mandaten. AANNAME: Kennelijk bestaan er verschillende soorten mandaten, en kunnen mandaten worden ingedeeld in mandaattypen. +}
 POPULATION mandaatTyperen [Mandaat * MandaatType] CONTAINS
      [ ("Mandaat A", "algemeen mandaat")
      ; ("Mandaat B", "specifiek mandaat")
@@ -472,7 +472,7 @@ POPULATION mandaatTyperen [Mandaat * MandaatType] CONTAINS
 
 mandaatIntrekken :: MandaatIntrekking -> Mandaat 
 PRAGMA "" "betreft het intrekken van"
-PURPOSE RELATION mandaatIntrekken [MandaatIntrekking * Mandaat] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het intrekken van mandaten. Omdat voor het intrekken bijzondere regels gelden, onderscheiden we een Mandaatintrekking als een afzonderlijk concept. -}
+PURPOSE RELATION mandaatIntrekken [MandaatIntrekking * Mandaat] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het intrekken van mandaten. Omdat voor het intrekken bijzondere regels gelden, onderscheiden we een Mandaatintrekking als een afzonderlijk concept. +}
 POPULATION mandaatIntrekken [MandaatIntrekking * Mandaat] CONTAINS
      [ ("MI00001", "Mandaat A")
      ; ("MI00002", "Mandaat B")
@@ -480,7 +480,7 @@ POPULATION mandaatIntrekken [MandaatIntrekking * Mandaat] CONTAINS
 
 RELATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze]
 PRAGMA "" " geschiedde "
-PURPOSE RELATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het het schriftelijk intrekken van mandaten. AANNAME: Kennelijk bestaan er verschillende manieren om een mandaat in te trekken, en is er sprake van zoiets als een mandaatintrekkingwijze. -}
+PURPOSE RELATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze] REF "Artikel 10:8 lid 2 Awb" {+ De Awb spreekt van het het schriftelijk intrekken van mandaten. AANNAME: Kennelijk bestaan er verschillende manieren om een mandaat in te trekken, en is er sprake van zoiets als een mandaatintrekkingwijze. +}
 POPULATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze] CONTAINS
      [ ("MI00001", "schriftelijk")
      ; ("MI00002", "mondeling")
@@ -488,7 +488,7 @@ POPULATION wijzeMandaatIntrekken [MandaatIntrekking * MandaatIntrekkingWijze] CO
 
 RELATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze]
 PRAGMA "Mandaten van het type " " mogen " " worden ingetrokken."
-PURPOSE RELATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze] REF "Artikel 10:8 lid 2 Awb" {+ Deze relatie is nodig om te kunnen testen of de regel is overtreden of niet. -}
+PURPOSE RELATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze] REF "Artikel 10:8 lid 2 Awb" {+ Deze relatie is nodig om te kunnen testen of de regel is overtreden of niet. +}
 POPULATION mandaatIntrekkingWijzeToestaan [MandaatType * MandaatIntrekkingWijze] CONTAINS
      [("algemeen mandaat", "schriftelijk"); ("specifiek mandaat", "schriftelijk"); ("specifiek mandaat", "mondeling")
      ]
@@ -501,21 +501,21 @@ MEANING "Het intrekken van een mandaat mag alleen geschieden op de toegestane wi
 
 PURPOSE RULE "mandaatIntrekkingWijze" REF "Artikel 10:8 lid 2 Awb"
 {+ Kennelijk bestaan er beperkingen ten aanzien van op welke wijze mandaten ingetrokken mogen worden.
-Zo mag bijvoorbeeld een algemeen mandaat alleen schriftelijk worden ingetrokken.-}
+Zo mag bijvoorbeeld een algemeen mandaat alleen schriftelijk worden ingetrokken.+}
    -- REALTION en POPULATION ingediend[Bezwaarschrift*Besluit] toegevoegd door Roger Hage en Sebastiaan Hobers
    PURPOSE RELATION ingediend[Bezwaarschrift*Besluit] REF "Artikel 3 AwbMandaatregeling"
 {+Tegen een besluit kan een bezwaarschrift worden ingediend.
--}
++}
 ENDPATTERN
 
-   PURPOSE PROCESS ToevoegenBestuursorganen
-   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters -}
+   PURPOSE PATTERN ToevoegenBestuursorganen
+   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
    PROCESS ToevoegenBestuursorganen
    ROLE BO MAINTAINS "Artikel 10:2 Awb"
    ENDPROCESS
    --
    PURPOSE INTERFACE Bestuursorganen
-   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters -}
+   {+ Toegevoegd op 02-05-20123 door George de Vries en Tim Ruijters +}
    INTERFACE Bestuursorganen (mandaatgever) FOR BO: I[Bestuursorgaan]
    BOX[ "Bestuursorgaan" : I
       , "Mandaat" : namens~

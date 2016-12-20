@@ -10,6 +10,7 @@ data Settings = Settings
   { sngJSONversionInfo :: String
   , sngJSONcontextName :: String
   , sngJSONmysqlSettings :: MySQLSettings
+  , sngJSONenvironment :: String
   } deriving (Generic, Show)
 instance ToJSON Settings where
   toJSON = amp2Jason
@@ -18,6 +19,7 @@ instance JSON MultiFSpecs Settings where
   { sngJSONversionInfo   = ampersandVersionStr
   , sngJSONcontextName   = Text.unpack (fsName fSpec)
   , sngJSONmysqlSettings = fromAmpersand multi multi
+  , sngJSONenvironment   = show . environment . getOpts $ fSpec
   } 
    where fSpec = userFSpec multi
 
