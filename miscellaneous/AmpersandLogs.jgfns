@@ -1,0 +1,96 @@
+﻿JGFNS
+2
+Download the JGsoft File Navigation Scheme Editor from http://www.editpadpro.com/fns.html to create and edit JGsoft File Navigation Schemes
+AmpersandLogs
+*.log,*.ampersandlog
+
+Rieks Joosten
+rieks.joosten@tno.nl
+
+1
+Thanks to JGSoft for providing the example.
+3
+Ampersand Log file
+1
+ExecEngine call (multiple runs)
+6697881
+10092543
+XExecEngine\sfixing(.|\r?\n)*?(?=\[.*\sEXECENGINE\.NOTICE)      XFixing\sviolation(.|\r?\n)*?(?=\[.*\sEXECENGINE\.(INFO:\s Fixing|NOTICE))
+ExecEngine run started(.|\r?\n)*?run completed
+1
+0
+0
+3
+0
+2
+0
+
+0
+
+
+0
+0
+0
+1
+0
+0
+
+1
+
+0
+Block that fixes a single violation
+1
+Block that fixes 1 violation
+13209
+52479
+
+^\[.*Fixing violation(.|\r?\n)*?(?=\r?\n\[.*\sEXECENGINE\.(NOTICE|INFO:\sFixing violation))
+0
+0
+0
+0
+0
+0
+0
+
+0
+
+
+0
+0
+0
+1
+0
+0
+
+1
+
+0
+Block that fixes all violations for one rule
+1
+Block that fixes 1 rule
+-16777208
+-16777211
+
+(?<=^\[.*)violations for rule(.|\r?\n)*?(?=\r?\n\[.*\sEXECENGINE\.(INFO: ExecEngine run|NOTICE: ExecEngine (fixing|run #)))
+0
+0
+0
+3
+0
+1
+0
+
+0
+
+
+0
+0
+0
+1
+0
+0
+
+1
+
+0

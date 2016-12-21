@@ -1,0 +1,162 @@
+﻿JGCSCS
+5
+Ampersand Log files
+*.log
+Rieks Joosten
+rieks.joosten@tno.nl
+
+
+TRUE
+
+
+1
+Comments
+3
+Please enter some text here that
+can be displayed as an example in
+the preferences when configuring colors.
+0
+TRUE
+7
+ExecEngine started
+
+^.*ExecEngine run started.*$
+FALSE
+FALSE
+27
+0
+
+
+0
+FALSE
+FALSE
+TRUE
+FALSE
+
+
+
+
+FALSE
+
+ExecEngine run
+
+^.*ExecEngine run #.*$
+FALSE
+FALSE
+35
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+ExecEngine fixing violations
+
+^.*ExecEngine fixing.*violations for rule
+FALSE
+FALSE
+29
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Rule names
+
+(?<=rule\s)'.*'(?=\s\[)
+FALSE
+FALSE
+26
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Triailer for execEngine fixing a rule
+
+(?<=rule '.*'\s)\[\]\s\[\]
+FALSE
+FALSE
+29
+0
+
+
+0
+FALSE
+FALSE
+TRUE
+FALSE
+
+
+
+
+FALSE
+
+Fixing violation
+
+^.*Fixing violation.*$
+FALSE
+FALSE
+31
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+ExecEngine run completed
+
+^.*ExecEngine run completed.*$
+FALSE
+FALSE
+37
+0
+
+
+0
+FALSE
+FALSE
+TRUE
+FALSE
+
+
+
+
+FALSE
+
+0
+0
