@@ -7,8 +7,12 @@ Ampersand
 Rieks Joosten
 rieks.joosten@tno.nl
 
-1
-Thanks to JGSoft for providing the example.
+5
+This file is for navigation in Ampersand-3.8.0 source code (as of December 2016)
+It supports folding of
+- Haskell-type comments `{- ... -}`
+- Ampersand PURPOSEs, MEANINGs and MESSAGEs
+- INTERFACEs
 4
 Outside any block
 3
@@ -41,10 +45,10 @@ start {- comment block
 start {+ comment block
 -16777208
 52377
-
-((PURPOSE|MEANING|MESSAGE)).*?({\+)
+The '{+' after a keyword should not be more than one newline away.
+((PURPOSE|MEANING|MESSAGE)).*?(\r|\n){0,2}.*?({\+)
 0
-1
+0
 0
 2
 0
@@ -147,10 +151,10 @@ end nested -} comment
 start nested {+ comment
 -16777208
 12632256
-
-((PURPOSE|MEANING|MESSAGE)).*?({\+)
+The '{+' after a keyword should not be more than one newline away.
+((PURPOSE|MEANING|MESSAGE)).*?(\r|\n){0,2}.*?({\+)
 0
-1
+0
 0
 2
 0
@@ -175,10 +179,10 @@ start nested {+ comment
 start nested {+ comment
 16711680
 39423
-
-((PURPOSE|MEANING|MESSAGE)).*?({\+)
+The '{+' after a keyword should not be more than one newline away.
+((PURPOSE|MEANING|MESSAGE)).*?(\r|\n){0,2}.*?({\+)
 0
-1
+0
 0
 2
 0
@@ -304,7 +308,7 @@ end nested ] comment
 1
 
 0
-eliminate other []-blocks
+skip other []-blocks
 10092543
 16764057
 Non-interface []-blocks, e.g. as in V[C1*C2], or I[A], should be skipped

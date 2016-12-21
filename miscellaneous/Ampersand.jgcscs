@@ -9,22 +9,24 @@ rieks.joosten@tno.nl
 TRUE
 --
 
-6
+8
 ADL (ampersand) files.
 
 Syntax colouring for Ampersand-v3.8.0 (December 2016) and later.
-Changes: 
-- support for `{+ ... +}` syntax.
-- support for back-quote coloring in comments
+Changes include support for: 
+- `{+ ... +}` syntax.
+- back-quote coloring (e.g. `text`) in comments.
+- refering to developers (e.g. @RieksJ: links to https://github.com/RieksJ)
+- references to Ampersand issues (e.g. #598 links to https://github.com/AmpersandTarski/Ampersand/issues/598) 
 76
 #define spullenboel
 CONTEXT Piet  IN DUTCH { }
 PURPOSE CONTEXT Piet 
 {+dit is een beschrijving van de context 
 dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl +}
-PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen `gelinkt` worden
-{- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
-'_SESSION' [SESSION] 'ONE' '_ONE'
+PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mai`la`dre`ssen `gelinkt` word`en
+{- dat geldt **OOK** voor URL's. Vo`orbeeld: http://www.tno.nl -}
+'_SESSION' [SESSION] 'ONE' '_ONE' Issue#598dec
 --! Line comment die er qua colouring uitspringt kan soms handig zijn. dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl 
 --[Testing comment stuff]--
 {- tests -}
@@ -733,10 +735,10 @@ FALSE
 0
 
 
-5
+7
 text in `back-quotes`
 
-(?<=\s)\`.*?\`
+\`[^\`]*?(\`|(?=(\n|\r)))
 FALSE
 FALSE
 7
@@ -776,12 +778,52 @@ FALSE
 
 URL
 We don't check the URL itself, it is just for coloring 99% of the URLs used...
-(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
 FALSE
 FALSE
 2
 4
+$1
 
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+@GitDeveloper: message to end of line
+Piece of text that should draw the attention of specific developers.
+@([A-Za-z0-9_-]+)
+FALSE
+FALSE
+28
+4
+https://github.com/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Ampersand issues
+
+#([0-9]{1,4})
+FALSE
+FALSE
+2
+4
+https://github.com/AmpersandTarski/Ampersand/issues/$1
 
 0
 FALSE
@@ -799,7 +841,7 @@ Stuff between [! and a subsequent ] (or eol) will be highlighed
 \*\*[^*]*\*\*
 FALSE
 FALSE
-33
+29
 0
 
 
@@ -841,7 +883,7 @@ FALSE
 0
 
 
-8
+10
 {+ block comment start
 comment between {+ and +}
 (?<=(PURPOSE|MEANING|MESSAGE).*?){\+
@@ -924,7 +966,7 @@ FALSE
 {-
 text in `back-quotes`
 
-(?<=\s)\`.*?\`
+\`[^\`]*?(\`|(?=\+}))
 FALSE
 TRUE
 7
@@ -962,14 +1004,54 @@ FALSE
 
 FALSE
 
-URL
-We don't check the URL itself, it is just for coloring 99% of the URLs used...
-(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+@GitDeveloper: message to end of line
+Piece of text that should draw the attention of specific developers.
+@([A-Za-z0-9_-]+)
+FALSE
+FALSE
+28
+4
+https://github.com/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Ampersand issues
+
+#([0-9]{1,4})
 FALSE
 FALSE
 2
-0
+4
+https://github.com/AmpersandTarski/Ampersand/issues/$1
 
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+FALSE
+FALSE
+2
+4
+$1
 
 0
 FALSE
@@ -987,7 +1069,7 @@ Stuff between [! and a subsequent ] (or eol) will be highlighed
 \*\*[^*]*\*\*
 FALSE
 FALSE
-33
+29
 0
 
 
@@ -1009,7 +1091,7 @@ FALSE
 0
 
 
-8
+10
 {- (Haskell) block comment start
 Haskell block comment is text between {- and -}
 {-
@@ -1092,7 +1174,7 @@ FALSE
 {+
 text in `back-quotes`
 
-(?<=\s)\`.*?\`
+\`[^\`]*?(\`|(?=-}))
 FALSE
 TRUE
 7
@@ -1130,14 +1212,54 @@ FALSE
 
 FALSE
 
-URL
-We don't check the URL itself, it is just for coloring 99% of the URLs used...
-(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+@GitDeveloper: message to end of line
+Piece of text that should draw the attention of specific developers.
+@([A-Za-z0-9_-]+)
+FALSE
+FALSE
+28
+4
+https://github.com/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Ampersand issues
+
+#([0-9]{1,4})
 FALSE
 FALSE
 2
-0
+4
+https://github.com/AmpersandTarski/Ampersand/issues/$1
 
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+FALSE
+FALSE
+2
+4
+$1
 
 0
 FALSE
@@ -1155,7 +1277,7 @@ Stuff between [! and a subsequent ] (or eol) will be highlighed
 \*\*[^*]*\*\*
 FALSE
 FALSE
-33
+29
 0
 
 
