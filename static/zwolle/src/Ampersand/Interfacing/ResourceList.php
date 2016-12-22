@@ -363,7 +363,7 @@ class ResourceList implements IteratorAggregate {
         if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
         
         $tgt = new Atom($value, $this->ifc->tgtConcept);
-        $this->src->link($tgt, $this->ifc->relation(), $ifc->relationIsFlipped)->delete();
+        $this->src->link($tgt, $this->ifc->relation(), $this->ifc->relationIsFlipped)->delete();
         
         return true;
     }
@@ -373,7 +373,7 @@ class ResourceList implements IteratorAggregate {
         if(!$this->ifc->crudU()) throw new Exception ("Update not allowed for " . $this->ifc->getPath(), 405);
         
         foreach ($this->getTgtAtoms() as $tgt) {
-            $this->src->link($tgt, $this->ifc->relation(), $ifc->relationIsFlipped)->delete();
+            $this->src->link($tgt, $this->ifc->relation(), $this->ifc->relationIsFlipped)->delete();
         }
     }
     
