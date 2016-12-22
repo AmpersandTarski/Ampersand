@@ -1,6 +1,18 @@
 angular.module('AmpersandApp').controller('AtomicTypeAheadController', function($scope, Restangular, ResourceService){
     
+    /*
+     * Object to temporary store value/resourceId to add to list
+     * Value/resourceId is stored as property of 'selected' obj. This is needed to pass it around by reference
+     */
+    $scope.selected = {};
+    
     $scope.hasNoResults = false;
+    
+    /*
+     * Typeahead object is declared in interface.controller.js
+     * Thereby typeahead is called only once for every resourceType per interface
+     */
+    // $scope.typeahead = {};
     
     /*
      * Typeahead functionality
