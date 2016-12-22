@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('AtomicTypeAheadController', function($scope, Restangular){
+angular.module('AmpersandApp').controller('AtomicTypeAheadController', function($scope, Restangular, ResourceService){
     
     $scope.hasNoResults = false;
     
@@ -18,10 +18,10 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
         else if($item._id_ === '') console.log('Empty resource id provided');
         else{
             selected = {value : $item._id_};
-            if(Array.isArray(resource[ifc])) $scope.addItem(resource, ifc, selected, patchResource);
+            if(Array.isArray(resource[ifc])) ResourceService.addItem(resource, ifc, selected, patchResource);
             else if(resource[ifc] === null){
                 resource[ifc] = $item._id_;
-                $scope.saveItem(resource, ifc, patchResource);
+                ResourceService.saveItem(resource, ifc, patchResource);
             }
             else console.log('Error: Property already set and/or not defined');
             
@@ -30,10 +30,10 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
     };
     
     $scope.typeAheadCreate = function (resource, ifc, selected, patchResource){
-        if(Array.isArray(resource[ifc])) $scope.addItem(resource, ifc, selected, patchResource);
+        if(Array.isArray(resource[ifc])) ResourceService.addItem(resource, ifc, selected, patchResource);
         else if(resource[ifc] === null){
             resource[ifc] = selected.value;
-            $scope.saveItem(resource, ifc, patchResource);
+            ResourceService.saveItem(resource, ifc, patchResource);
         }
         else console.log('Error: Property already set and/or not defined');
     };

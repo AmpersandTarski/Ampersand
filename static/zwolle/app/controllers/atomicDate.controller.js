@@ -1,4 +1,4 @@
-angular.module('AmpersandApp').controller('AtomicDateController', function ($scope) {
+angular.module('AmpersandApp').controller('AtomicDateController', function ($scope, ResourceService) {
     
     $scope.isOpen = false;
     
@@ -31,13 +31,13 @@ angular.module('AmpersandApp').controller('AtomicDateController', function ($sco
     
     $scope.saveDateItem = function(obj, property, patchResource){
         modifyToJSON(obj[property]);
-        $scope.saveItem(obj, property, patchResource);
+        ResourceService.saveItem(obj, property, patchResource);
     };
-            
+    
     $scope.addDateItem = function(obj, property, selected, patchResource){
         if(selected.value !== ''){
             modifyToJSON(selected.value);
-            $scope.addItem(obj, property, selected, patchResource);
+            ResourceService.addItem(obj, property, selected, patchResource);
         }else{
             console.log('Empty date selected');
         }
