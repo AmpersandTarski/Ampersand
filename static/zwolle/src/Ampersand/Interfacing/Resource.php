@@ -211,7 +211,7 @@ class Resource extends Atom {
         
         if(isset($returnType) && $returnType != get_class($r)){
             if(get_class($r) == 'Ampersand\Interfacing\ResourceList' && $r->getIfc()->isIdent()) $r = $r->one();
-            else throw new Exception ("Provided path results in '" . get_class($r) . "' while '{$returnType}' requested", 500);
+            else throw new Exception ("Provided path results in '" . get_class($r) . "'. This must be '{$returnType}'", 400);
         }
         
         return $r;
@@ -318,25 +318,19 @@ class Resource extends Atom {
         foreach ($patches as $key => $patch){
             if(!property_exists($patch, 'op')) throw new Exception ("No 'op' (i.e. operation) specfied for patch #{$key}", 400);
             if(!property_exists($patch, 'path')) throw new Exception ("No 'path' specfied for patch #{$key}", 400);
-        
-            // Walk path to lowest level
-            $resourceOrList = $this->walkPath($patch->path);
             
             // Process patch
             switch($patch->op){
                 case "replace" :
                     if(!property_exists($patch, 'value')) throw new Exception ("Cannot patch replace. No 'value' specfied for patch #{$key}", 400);
-                    if(get_class($resourceOrList) != 'Ampersand\Interfacing\ResourceList') throw new Exception ("Cannot patch replace on resource, path must end with an interface");
-                    $resourceOrList->replace($patch->value);
+                    $this->walkPath($patch->path, 'Ampersand\Interfacing\ResourceList')->replace($patch->value);
                     break;
                 case "add" :
                     if(!property_exists($patch, 'value')) throw new Exception ("Cannot patch add. No 'value' specfied for patch #{$key}", 400);
-                    if(get_class($resourceOrList) != 'Ampersand\Interfacing\ResourceList') throw new Exception ("Cannot patch add on resource, path must end with an interface");
-                    $resourceOrList->add($patch->value);
+                    $this->walkPath($patch->path, 'Ampersand\Interfacing\ResourceList')->add($patch->value);
                     break;
                 case "remove" :
-                    if(get_class($resourceOrList) != 'Ampersand\Interfacing\Resource') throw new Exception("Cannot patch remove on resource list, path must end with a resource", 400);
-                    $resourceOrList->remove();
+                    $this->walkPath($patch->path, 'Ampersand\Interfacing\Resource')->remove();
                     break;
                 default :
                     throw new Exception("Unknown patch operation '{$patch->op}'. Supported are: 'replace', 'add' and 'remove'", 501);
