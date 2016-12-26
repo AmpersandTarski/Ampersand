@@ -202,7 +202,7 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                     function(data) {
                         data = data.plain();
                         // Update resource data
-                        if(resource._isRoot_) resource = data.content;
+                        if(resource._isRoot_) resource.get();
                         else resource = angular.extend(resource, data.content);
                         
                         // Update visual feedback (notifications and buttons)

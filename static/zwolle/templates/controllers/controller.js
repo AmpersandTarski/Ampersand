@@ -25,12 +25,12 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
     \$scope.patchResource = \$scope.resource;
     
     \$scope.createResource = function(){ ResourceService.createResource(\$scope.resource, ifcName, \$scope.patchResource);};
-    \$scope.getResource = function(){ ResourceService.getResource(\$scope.resource, ifcName, \$scope.patchResource);};
+    \$scope.resource.get = function(){ ResourceService.getResource(\$scope.resource, ifcName, \$scope.patchResource);};
     \$scope.saveResource = ResourceService.saveResource;
     
     // Create new or get resource
     if(\$routeParams['new']) \$scope.createResource();
-    else \$scope.getResource();
+    else \$scope.resource.get();
     
 });
 /* jshint ignore:end */
