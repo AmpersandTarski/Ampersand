@@ -310,7 +310,7 @@ class Resource extends Atom {
     }
     
     /**
-     * Path this resource with provided patches
+     * Patch this resource with provided patches
      * @param array $patches
      * @return Resource $this
      */
