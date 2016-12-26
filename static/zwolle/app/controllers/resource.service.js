@@ -13,9 +13,11 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 .get()
                 .then(
                     function(data){
-                        data = data.plain();
+                        try {
+                            data = data.plain();
+                        }catch(error){}
                         if($.isEmptyObject(data)) NotificationService.addInfo('No results found');
-                        else if(resource[ifc] === null) resource[ifc] = data;
+                        else if(resource[ifc] === null || Array.isArray(resource[ifc])) resource[ifc] = data;
                         else angular.extend(resource[ifc], data);
                         
                         ResourceService.initResourceMetaData(resource);
