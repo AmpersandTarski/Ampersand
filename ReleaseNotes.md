@@ -1,7 +1,7 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-
+  * [Issue #600](https://github.com/AmpersandTarski/Ampersand/issues/600) When a configuration file exists (.yaml) with the same name as the file being compiled, it will be used if no config file is explicitly mentioned in the command. 
 
 ## v3.8.0 (20 december 2016) 
   * [Issue #587](https://github.com/AmpersandTarski/Ampersand/issues/587) There is no need any longer to explicitly specify the language in a script. If omitted, IN ENGLISH will be used as default. 

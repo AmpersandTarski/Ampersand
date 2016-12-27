@@ -16,6 +16,7 @@ import System.Environment    (getArgs, getProgName,getEnvironment,getExecutableP
 import Ampersand.Misc.Languages (Lang(..))
 import System.Console.GetOpt
 import System.FilePath
+import System.Directory
 import Data.Time.Clock
 import Data.Time.LocalTime
 import Control.Monad
@@ -145,9 +146,18 @@ getEnvironmentOptions =
     readConfigFileArgs :: Maybe FilePath -> IO [String]
     readConfigFileArgs mFp
      = case mFp of
-         Nothing   -> return []
-         Just yaml -> 
-           do putStrLn $ "Reading config file: "++yaml
+         Nothing    -> -- If no config file is given, there might exist one with the same name
+                       -- as the script name. If that is the case, we use that config file. 
+                       do args     <- getArgs
+                          let (_, xs, _) = getOpt Permute (map fst options) args
+                          case xs of 
+                            [script] -> do exist <- doesFileExist (script -<.> "yaml")
+                                           if exist then readConfigFile script else return []
+                            _  -> return []
+         Just fName -> readConfigFile fName
+        where 
+           readConfigFile yaml = do
+              putStrLn $ "Reading config file: "++yaml
               config <- load yaml
               case keys config \\ ["switches"] of
                 []  -> do let switches :: [String] = YC.lookupDefault "switches" [] config
@@ -158,13 +168,13 @@ getEnvironmentOptions =
                            
                 [x] -> configFail $ "Unknown key: "++show x 
                 xs  -> configFail $ "Unknown keys: "++intercalate ", " (map show xs)
-          where
-           configFail :: String -> a
-           configFail msg
-                = exitWith . WrongArgumentsGiven $
-                   [ "Error in "++yaml++":"
-                   , "  "++msg
-                   ]
+             where
+              configFail :: String -> a
+              configFail msg
+                  = exitWith . WrongArgumentsGiven $
+                     [ "Error in "++yaml++":"
+                     , "  "++msg
+                     ] 
 
 
 getOptions :: IO Options
