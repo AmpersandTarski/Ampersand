@@ -29,16 +29,28 @@ angular.module('AmpersandApp').controller('AtomicTypeAheadController', function(
         if(typeof $item._id_ === 'undefined') console.log('Resource id undefined');
         else if($item._id_ === '') console.log('Empty resource id provided');
         else{
-            selected = {value : $item._id_};
-            if(Array.isArray(resource[ifc])) ResourceService.addItem(resource, ifc, selected, patchResource);
-            else if(resource[ifc] === null){
-                resource[ifc] = $item._id_;
-                ResourceService.saveItem(resource, ifc, patchResource);
+            if(Array.isArray(resource[ifc])){
+                // Adapt in js model
+                resource[ifc].push(angular.copy($item));
+                
+                // Construct patch(es)
+                patch = ResourceService.createPatch('add', resource, patchResource, ifc, $item._id_);
+                ResourceService.addPatches(patchResource, [patch]);
+                
+            }else if(resource[ifc] === null){
+                // Adapt js model
+                resource[ifc] = angular.copy($item);
+                
+                // Construct patch(es)
+                patch = ResourceService.createPatch('replace', resource, patchResource, ifc, $item._id_);
+                ResourceService.addPatches(patchResource, [patch]);
             }
             else console.log('Error: Property already set and/or not defined');
             
             $scope.hasNoResults = false;
         }
+        // Empty selected input
+        $scope.selected.value = '';
     };
     
     $scope.typeAheadCreate = function (resource, ifc, selected, patchResource){
