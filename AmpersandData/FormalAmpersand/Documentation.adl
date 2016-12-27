@@ -1,7 +1,7 @@
 CONTEXT RAP IN ENGLISH
 PURPOSE PATTERN Documentation
 {+
--}
++}
 PATTERN Documentation
     RELATION purpose[Pattern*Purpose] [INJ]
     MEANING "The purposes of a pattern."

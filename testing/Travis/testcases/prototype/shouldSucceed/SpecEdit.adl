@@ -5,7 +5,7 @@ CONTEXT SpecEdit IN ENGLISH
    Reason: This script was devised to study the behaviour of specialization (CLASSIFY) in a live database.
 -}
 
-PURPOSE CONTEXT SpecEdit {+ Simple context for testing edit operations on narrowed relations -}
+PURPOSE CONTEXT SpecEdit {+ Simple context for testing edit operations on narrowed relations +}
 -- This script contains W-expressions, such as I[Orange];I[Lime];I[Citrus];I[Lemon]. These must be caught by the type checker,
 -- because it is predictable that there can never be any population in a W-expression.
 -- NOTE: these are currently not guaranteed to be empty, as mutual exclusion for CLASSIFY is not enforced (strangeLemon is an example)

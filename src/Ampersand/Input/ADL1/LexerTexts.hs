@@ -10,7 +10,7 @@ module Ampersand.Input.ADL1.LexerTexts
     , lexerUnexpectedClose
     , lexerUnterminatedAtom
     , lexerUnterminatedComment
-    , lexerUnterminatedPurpose
+    , lexerUnterminatedMarkup
     , lexerProblematicISO8601DateTime
     , lexerUtfChar
     ) where
@@ -43,11 +43,11 @@ lexerUnterminatedComment = select language
     , Dutch   :-> "Commentaar niet afgesloten"
     ]
 
--- | Translates 'Unterminated purpose' into the chosen language
-lexerUnterminatedPurpose:: String -- ^ The translated string
-lexerUnterminatedPurpose= select language
-    [ English :-> "Unterminated PURPOSE section"
-    , Dutch   :-> "PURPOSE sectie niet afgesloten"
+-- | Translates 'Unterminated markup' into the chosen language
+lexerUnterminatedMarkup:: String -- ^ The translated string
+lexerUnterminatedMarkup= select language
+    [ English :-> "Unterminated markup section. (any text between `{+` and `+}` )."
+    , Dutch   :-> "markup sectie niet afgesloten. (tekst tussen `{+` en `+}` )."
     ]
 
 -- | Translates 'Unterminated atom' into the chosen language

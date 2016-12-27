@@ -20,17 +20,17 @@ import Prelude hiding ((<$))
 pPopulations :: AmpParser [P_Population] -- ^ The population list parser
 pPopulations = many1 pPopulation
 
---- Context ::= 'CONTEXT' ConceptName LanguageRef TextMarkup? ContextElement* 'ENDCONTEXT'
+--- Context ::= 'CONTEXT' ConceptName LanguageRef? TextMarkup? ContextElement* 'ENDCONTEXT'
 -- | Parses a context
 pContext :: AmpParser (P_Context, [Include]) -- ^ The result is the parsed context and a list of include filenames
 pContext  = rebuild <$> posOf (pKey "CONTEXT")
                     <*> pConceptName
-                    <*> pLanguageRef
+                    <*> pMaybe pLanguageRef
                     <*> pMaybe pTextMarkup
                     <*> many pContextElement
                     <*  pKey "ENDCONTEXT"
   where
-    rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
+    rebuild :: Origin -> String -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
     rebuild    pos'      nm        lang          fmt                   ces
      = (PCtx{ ctx_nm     = nm
             , ctx_pos    = [pos']
@@ -477,12 +477,12 @@ pPhpplug = pKey "PHPPLUG" *> pObjDef
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose
 pPurpose = rebuild <$> currPos
-                   <*  pKey "PURPOSE"  -- "EXPLAIN" has become obsolete
+                   <*  pKey "PURPOSE"
                    <*> pRef2Obj
                    <*> pMaybe pLanguageRef
                    <*> pMaybe pTextMarkup
                    <*> optList (pKey "REF" *> pString `sepBy1` pSemi)
-                   <*> pExpl
+                   <*> pAmpersandMarkup
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
@@ -553,7 +553,7 @@ pMeaning = PMeaning <$> (
            P_Markup <$  pKey "MEANING"
                     <*> pMaybe pLanguageRef
                     <*> pMaybe pTextMarkup
-                    <*> (pString <|> pExpl))
+                    <*> (pString <|> pAmpersandMarkup))
 
 --- Message ::= 'MESSAGE' Markup
 pMessage :: AmpParser PMessage
@@ -564,7 +564,7 @@ pMarkup :: AmpParser P_Markup
 pMarkup = P_Markup
            <$> pMaybe pLanguageRef
            <*> pMaybe pTextMarkup
-           <*> (pString <|> pExpl)
+           <*> (pString <|> pAmpersandMarkup)
 
 --- Rule ::= Term ('=' Term | '|-' Term)?
 -- | Parses a rule

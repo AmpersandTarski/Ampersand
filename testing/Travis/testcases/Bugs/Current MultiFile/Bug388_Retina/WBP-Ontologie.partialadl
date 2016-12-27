@@ -2,7 +2,7 @@ CONTEXT WBPOntologie IN DUTCH
 -----------------------------------------------------------
 PROCESS "Wbp Hoofdstuk 1 (uitgezonderd paragraaf 2)"
 PURPOSE PROCESS "Wbp Hoofdstuk 1 (uitgezonderd paragraaf 2)"
-{+Dit pattern bevat de terminologie (en de relaties daartussen) welke aansluiten op de Wet Bescherming Persoonsgegevens (Wbp), althans (en vooralsnog) de artikelen 1 t/m 15, en voorzover deze nodig zijn voor het werkwerken van persoonsgegevens bij volledig geautomatiseerde systemen (dat is immers de scope van ons onderzoek). De wet zelf is van toepassing op elke geheel of gedeeltelijk geautomatiseerde verwerking van persoonsgegevens, alsmede op elke niet geautomatiseerde verwerking van persoonsgegevens die in een bestand zijn opgenomen of die bestemd zijn om daarin te worden opgenomen (artikel 2 eerste lid Wbp). Dit pattern definieert een mapping tussen de tekst van de wet en een formele ontologie voor ons systeem.-}
+{+Dit pattern bevat de terminologie (en de relaties daartussen) welke aansluiten op de Wet Bescherming Persoonsgegevens (Wbp), althans (en vooralsnog) de artikelen 1 t/m 15, en voorzover deze nodig zijn voor het werkwerken van persoonsgegevens bij volledig geautomatiseerde systemen (dat is immers de scope van ons onderzoek). De wet zelf is van toepassing op elke geheel of gedeeltelijk geautomatiseerde verwerking van persoonsgegevens, alsmede op elke niet geautomatiseerde verwerking van persoonsgegevens die in een bestand zijn opgenomen of die bestemd zijn om daarin te worden opgenomen (artikel 2 eerste lid Wbp). Dit pattern definieert een mapping tussen de tekst van de wet en een formele ontologie voor ons systeem.+}
 
 --[Persoonsgegevens]--
 
@@ -17,12 +17,12 @@ persoonsgegevensWaarde :: Persoonsgegeven -> PersoonsgegevensWaarde
 betrokkene :: Persoonsgegeven * NatuurlijkPersoon [UNI,TOT]
 PRAGMA "" " is een gegeven betreffende " ", die (mede) aan de hand van dit gegeven geidentificeerd is of indentificeerbaar is"
 PURPOSE RELATION betrokkene REF "Artikel 1 sub f Wbp"
-{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder BETROKKENE: degene op wie een persoonsgegeven betrekking heeft.-}
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder BETROKKENE: degene op wie een persoonsgegeven betrekking heeft.+}
 
 verzamelDoel :: Persoonsgegeven * Doel
 PRAGMA "" " is verzameld ten behoeve van "
 PURPOSE RELATION verzamelDoel REF "Artikel 7 Wbp"
-{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.-}
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.+}
 
 RULE "Integriteit van het verzamelen van persoonsgegevens" : 
 I[Persoonsgegeven] |- verzamelDoel;verzamelDoel~
@@ -31,13 +31,13 @@ MESSAGE "Persoonsgegevens worden alleen verzameld ten behoeve van een (welbepaal
 VIOLATION (TXT "Van persoonsgegeven ", SRC I, TXT " is geen doel bekend waartoe het is verzameld")
 ROLE User MAINTAINS "Integriteit van het verzamelen van persoonsgegevens"
 PURPOSE RULE "Integriteit van het verzamelen van persoonsgegevens" REF "Artikel 7 Wbp"
-{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.-}
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.+}
 
 --[Verwerkingen]--
 
 CONCEPT Verwerking "de specificatie van een geheel aan (runtime) handelingen als bedoeld in artikel 1 sub b Wbp, ten behoeve van een (of meerdere) doel(einden)" ""
 PURPOSE CONCEPT Verwerking REF "Artikel 1 sub b Wbp"
-{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens.-}
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERWERKING: elke handeling of elk geheel van handelingen met betrekking tot PERSOONSGEGEVENs, waaronder in ieder geval het verzamelen, vastleggen, ordenen, bewaren, bijwerken, wijzigen, opvragen, raadplegen, gebruiken, verstrekken door middel van doorzending, verspreiding of enige andere vorm van terbeschikkingstelling, samenbrengen, met elkaar in verband brengen, alsmede het afschermen, uitwissen of vernietigen van gegevens.+}
 VIEW "Verwerkingen": Verwerking(verwerkingNaam)
 verwerkingNaam :: Verwerking * Naam  [UNI,TOT] PRAGMA "" " wordt door diens verantwoordelijke aangeduid als "
 verwerkingOmschrijving :: Verwerking * Omschrijving PRAGMA "" " wordt omschreven als "
@@ -49,9 +49,9 @@ ROLE User MAINTAINS "Verwerking omschrijven"
 
 verwerkingsVerantwoordelijke :: Verwerking * Partij PRAGMA "Voor " " draagt " " (me)de verantwoordelijkheid in de zin van de Wbp"
 PURPOSE RELATION verwerkingsVerantwoordelijke REF "Artikel 1 sub d Wbp"
-{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERANTWOORDELIJKE: de natuurlijke persoon, rechtspersoon of ieder ander die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de VERWERKING vaststelt.-}
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERANTWOORDELIJKE: de natuurlijke persoon, rechtspersoon of ieder ander die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de VERWERKING vaststelt.+}
 PURPOSE RELATION verwerkingsVerantwoordelijke REF "Artikel 28 sub a Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de naam en het adres van de VERANTWOORDELIJKE.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de naam en het adres van de VERANTWOORDELIJKE.+}
 
 RULE "Verwerkingsverantwoordelijkheid toekennen": I[Verwerking] |- verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
 MEANING "Elke verwerking moet een VERANTWOORDELIJKE hebben (Artikel 1 sub d Wbp)"
@@ -59,13 +59,13 @@ MESSAGE ""
 VIOLATION (TXT "Van verwerking '", SRC I, TXT "' moet de Verantwoordelijke worden ingevuld")
 ROLE User MAINTAINS "Verwerkingsverantwoordelijkheid toekennen"
 PURPOSE RULE "Verwerkingsverantwoordelijkheid toekennen" REF "Artikel 1 sub d Wbp"
-{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERANTWOORDELIJKE: de natuurlijke persoon, rechtspersoon of ieder ander die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de VERWERKING vaststelt. Dat kan alleen als aan elke VERWERKING een VERANTWOORDELIJKE is toegekend-}
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder VERANTWOORDELIJKE: de natuurlijke persoon, rechtspersoon of ieder ander die of het bestuursorgaan dat, alleen of te zamen met anderen, het doel van en de middelen voor de VERWERKING vaststelt. Dat kan alleen als aan elke VERWERKING een VERANTWOORDELIJKE is toegekend+}
 
 {-[IRF] overtredingen worden niet goed uitgerekend door prototypes-} --$Zie T#313**
 isDeelverwerkingVan :: Verwerking * Verwerking [{-IRF,-}ASY]
 PRAGMA "" " is een onderdeel van "
 PURPOSE RELATION isDeelverwerkingVan REF "Meldingsformulier Wbp en de Toelichting hierop"
-{+-}
+{++}
 
 {-IRF] overtredeingen worden niet goed uitgerekend door prototypes. Daarom doen we dit 'met de hand'-} --$Zie T#313**
 RULE "Irreflexiviteit van deelverwerking zijn": I |- -isDeelverwerkingVan 
@@ -78,7 +78,7 @@ MESSAGE ""
 VIOLATION (TXT "Verwerking '", SRC I, TXT "' moet tenminste 1 doel hebben die een subdoel is van '", TGT I) 
 ROLE User MAINTAINS "Deelverwerkingen dienen subdoelen"
 PURPOSE RULE "Deelverwerkingen dienen subdoelen"
-{+Om te kunnen beargumenteren dat een verwerking wordt aangeroepen door (c.q. een deelverwerking is van) een andere verwerking, moet die eerste een bijdrage leveren aan het doel van de tweede. Deze bijdrage is een doel van de eerste verwerking, en dus ook een subdoel van een doel dat de tweede verwerking beoogt. Merk op dat een soortgelijke doelsafhankelijkheid op runtime veel strakker is, omdat elke verwerkingsinstantie precies 1 doel dient.-}
+{+Om te kunnen beargumenteren dat een verwerking wordt aangeroepen door (c.q. een deelverwerking is van) een andere verwerking, moet die eerste een bijdrage leveren aan het doel van de tweede. Deze bijdrage is een doel van de eerste verwerking, en dus ook een subdoel van een doel dat de tweede verwerking beoogt. Merk op dat een soortgelijke doelsafhankelijkheid op runtime veel strakker is, omdat elke verwerkingsinstantie precies 1 doel dient.+}
 
 RULE "Verwerkingsverantwoordelijkheidsintegriteit": verwerkingsVerantwoordelijke~; (I[Verwerking] /\ -(isDeelverwerkingVan~;isDeelverwerkingVan)); verwerkingsVerantwoordelijke |- I[Partij]
 MEANING "Verwerkingen die niet uit onderdelen bestaan hebben precies 1 verantwoordelijke (Toelichting Meldingsformulier Wbp)"
@@ -86,11 +86,11 @@ MESSAGE ""
 VIOLATION (TXT "Verwerking '", SRC I, TXT "' heeft geen deelverwerkingen en moet daarom precies 1 verantwoordelijke hebben")
 ROLE User MAINTAINS "Verwerkingsverantwoordelijkheidsintegriteit"
 PURPOSE RULE "Verwerkingsverantwoordelijkheidsintegriteit" REF "Toelichting Meldingsformulier Wbp"
-{+Er kunnen bij een verwerking meerdere verantwoordelijken zijn. Is dat het geval, dan zal de onderlinge verdeling van verantwoordelijkheid tussen de verantwoordelijken duidelijk gemaakt moeten worden.-}
+{+Er kunnen bij een verwerking meerdere verantwoordelijken zijn. Is dat het geval, dan zal de onderlinge verdeling van verantwoordelijkheid tussen de verantwoordelijken duidelijk gemaakt moeten worden.+}
 
 verwerkingBewerker :: Verwerking * Partij PRAGMA "De feitelijke (runtime) uitvoering van " " is uitbesteed aan "
 PURPOSE RELATION verwerkingBewerker REF "Artikel 1 sub e Wbp"
-{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen.-}
+{+In de Wbp en de daarop berustende bepalingen wordt verstaan onder BEWERKER: degene die ten behoeve van de VERANTWOORDELIJKE PERSOONSGEGEVENs verwerkt, zonder aan zijn rechtstreeks gezag te zijn onderworpen.+}
 
 RULE "Bewerkers hebben verantwoordelijken": I /\ verwerkingBewerker;verwerkingBewerker~ |- verwerkingsVerantwoordelijke;verwerkingsVerantwoordelijke~
 MEANING "Voor elke bewerker moet de verantwoordelijkheid zijn belegd (Artikel 12 eerste lid Wbp)"
@@ -98,7 +98,7 @@ MESSAGE ""
 VIOLATION (TXT "Voor verwerking '", SRC I, TXT " bestaat wel een verwerker, namelijk ", SRC verwerkingBewerker, TXT ", maar er is geen verantwoordelijke")
 ROLE User MAINTAINS "Bewerkers hebben verantwoordelijken" 
 PURPOSE RULE "Bewerkers hebben verantwoordelijken" REF "Artikel 12 eerste lid Wbp"
-{+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.-}
+{+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.+}
 
 RULE "Bewerkers hebben precies 1 verantwoordelijke": 
 {- Onderstaande regel kan gemakkelijker d.m.v.:
@@ -112,14 +112,14 @@ MESSAGE ""
 VIOLATION (TXT "Omdat verwerking '", SRC I, TXT "' een verwerker heeft, namelijk ", SRC verwerkingBewerker, TXT ", moet de verantwoordelijkheid eenduidig zijn belegd, en niet bij meerdere partijen, zoals ", SRC verwerkingsVerantwoordelijke)
 ROLE User MAINTAINS "Bewerkers hebben precies 1 verantwoordelijke" 
 PURPOSE RULE "Bewerkers hebben precies 1 verantwoordelijke" REF "Artikel 12 eerste lid Wbp"
-{+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.-}
+{+Een ieder die handelt onder het gezag van de VERANTWOORDELIJKE of van de BEWERKER, alsmede de BEWERKER zelf, voor zover deze toegang hebben tot PERSOONSGEGEVENs, verwerkt deze slechts in opdracht van de VERANTWOORDELIJKE, behoudens afwijkende wettelijke verplichtingen (artikel 12 eerste lid Wbp). Daarom moet per BEWERKER eenduidig bepaald kunnen worden wie de bijbehorende VERANTWOORDELIJKE is.+}
 
 verwerkingsDoel :: Verwerking * Doel
 PRAGMA "" " verwerkt gegevens ten behoeve van "
 PURPOSE RELATION svcVerwerkingsDoel REF "Artikel 11 eerste lid Wbp"
-{+PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn. Daarom moet van elke verwering bekend zijn ten behoeve van welk(e) doel(en) die plaatsvindt.-}
+{+PERSOONSGEGEVENs worden slechts verwerkt voor zover zij, gelet op de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt, toereikend, ter zake dienend en niet bovenmatig zijn. Daarom moet van elke verwering bekend zijn ten behoeve van welk(e) doel(en) die plaatsvindt.+}
 PURPOSE RELATION verwerkingsDoel REF "Artikel 28 sub b Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de verwerking.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de verwerking.+}
 
 RULE "Doel van verwerkingen": I[Verwerking] |- verwerkingsDoel;verwerkingsDoel~
 MEANING "Elke verwerking dient tenminste 1 doel (Artikel 28 sub b Wbp)"
@@ -127,43 +127,43 @@ MESSAGE ""
 VIOLATION (TXT "Voor verwerking '", SRC I, TXT "' moet het doel (c.q. de doelen) worden gespecificeerd.")
 ROLE User MAINTAINS "Doel van verwerkingen"
 PURPOSE RULE "Doel van verwerkingen" REF "Artikel 28 sub b Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de verwerking.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van het doel of de doeleinden van de verwerking.+}
 
 verwerkingBetrokkenenCategorie :: Verwerking * BetrokkeneCategorie
 PRAGMA "" " verzamelt en/of verwerkt gegevens met betrekking tot betrokkenen die behoren tot "
 PURPOSE RELATION verwerkingBetrokkenenCategorie REF "Artikel 28 sub c Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een beschrijving van de categorieën van BETROKKENEn en van de gegevens of categorieën van gegevens die daarop betrekking hebben.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een beschrijving van de categorieën van BETROKKENEn en van de gegevens of categorieën van gegevens die daarop betrekking hebben.+}
 
 verwerkingGegevensCategorie :: Verwerking * GegevensCategorie
 PRAGMA "" " verzamelt en/of verwerkt gegevens die behoren tot "
 PURPOSE RELATION verwerkingGegevensCategorie REF "Artikel 28 sub c Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een beschrijving van de categorieën van BETROKKENEn en van de gegevens of categorieën van gegevens die daarop betrekking hebben.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een beschrijving van de categorieën van BETROKKENEn en van de gegevens of categorieën van gegevens die daarop betrekking hebben.+}
 
 verwerkingOntvangerCategorie :: Verwerking * OntvangerCategorie
 PRAGMA "" " verstrekt gegevens aan partijen die behoren tot "
 PURPOSE RELATION verwerkingOntvangerCategorie REF "Artikel 28 sub d Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de ONTVANGERs of categorieën van ONTVANGERs aan wie de gegevens kunnen worden verstrekt.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de ONTVANGERs of categorieën van ONTVANGERs aan wie de gegevens kunnen worden verstrekt.+}
 
 verwerkingOntvanger :: Verwerking * Partij 
 PRAGMA "" " verstrekt gegevens aan "
 PURPOSE RELATION verwerkingOntvanger REF "Artikel 28 sub d Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de ONTVANGERs of categorieën van ONTVANGERs aan wie de gegevens kunnen worden verstrekt.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de ONTVANGERs of categorieën van ONTVANGERs aan wie de gegevens kunnen worden verstrekt.+}
 
 verwerkingGegevensDoorgiftenBuitenEU :: Verwerking * DoorgifteBuitenEU 
 PRAGMA "" " geeft gegevens door aan " " (buiten de EU)"
 PURPOSE RELATION verwerkingGegevensDoorgiftenBuitenEU REF "Artikel 28 sub e Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de voorgenomen doorgiften van gegevens naar landen buiten de Europese Unie.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de voorgenomen doorgiften van gegevens naar landen buiten de Europese Unie.+}
 
 verwerkingSpecificatieSamenvatting :: Verwerking * SpecificatieSamenvatting [UNI] 
 PRAGMA "Een algemene beschrijving om een voorlopig oordeel te kunnen geven over de gepastheid van de voorgenomen maatregelen om, ter toepassing van artikel 13 en 14, de beveiliging van " " te waarborgen, wordt gegeven door"
 PURPOSE RELATION verwerkingSpecificatieSamenvatting REF "Artikel 28 sub f Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een algemene beschrijving om een voorlopig oordeel te kunnen geven over de gepastheid van de voorgenomen maatregelen om, ter toepassing van artikel 13 en 14, de beveiliging van de verwerking te waarborgen.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van een algemene beschrijving om een voorlopig oordeel te kunnen geven over de gepastheid van de voorgenomen maatregelen om, ter toepassing van artikel 13 en 14, de beveiliging van de verwerking te waarborgen.+}
 
 verwerkingBewaartermijn :: Verwerking * Bewaartermijn [UNI] PRAGMA "De periode gedurende welke de gegevens welke in " " worden verwerkt, worden bewaard, bedraagt "
 PURPOSE RELATION verwerkingBewaartermijn REF "Artikel 10 Wbp"
 {+1.	PERSOONSGEGEVENs worden niet langer bewaard in een vorm die het mogelijk maakt de BETROKKENE te identificeren, dan noodzakelijk is voor de verwerkelijking van de doeleinden waarvoor zij worden verzameld of vervolgens worden verwerkt.
 2.	PERSOONSGEGEVENs mogen langer worden bewaard dan bepaald in het eerste lid voor zover ze voor historische, statistische of wetenschappelijke doeleinden worden bewaard, en de VERANTWOORDELIJKE de nodige voorzieningen heeft getroffen ten einde te verzekeren dat de desbetreffende gegevens uitsluitend voor deze specifieke doeleinden worden gebruikt.
--}
++}
 
 --[Doelen]--
 
@@ -174,11 +174,11 @@ doelID :: Doel -> DoelID PRAGMA "" " wordt aangeduid door "
 gerechtvaardigdDoor :: Doel * Partij [UNI] 
 PRAGMA "" " is gerechtvaardigd door "
 PURPOSE RELATION gerechtvaardigdDoor REF "Artikel 7 resp artikel 8 Wbp"
-{+Aritkel 7 stelt:PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Artikel 8 stelt beperkingen aan andersoortige verwerkingen.-}
+{+Aritkel 7 stelt:PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld. Artikel 8 stelt beperkingen aan andersoortige verwerkingen.+}
 
 doelOmschrijving :: Doel * Omschrijving [UNI] PRAGMA "" " is welbepaald en wordt uitdrukkelijk omschreven door "
 PURPOSE RELATION doelOmschrijving REF "Artikel 7 Wbp"
-{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.-}
+{+PERSOONSGEGEVENs worden voor welbepaalde, uitdrukkelijk omschreven en gerechtvaardigde doeleinden verzameld.+}
 
 doelWettelijkeGrondslag :: Doel * WettelijkeGrondslag [UNI]
 PRAGMA "De wettelijke basis voor " " is "
@@ -190,13 +190,13 @@ c.	2. ten behoeve van de uitvoering van de politietaak, bedoeld in de artikelen 
 d.	die is geregeld bij of krachtens de Wet gemeentelijke basisadministratie persoonsgegevens;
 e.	ten behoeve van de uitvoering van de Wet justitiële en strafvorderlijke gegevens en
 f.	ten behoeve van de uitvoering van de Kieswet.
--}
++}
 PURPOSE RELATION doelWettelijkeGrondslag REF "Artikel 2 derde lid Wbp"
 {+Een van de grondslagen op basis waarvan VERWERKINGen (kunnen) zijn toegestaan, althans niet zijn verboden, is als de Wbp niet van toepassing is. Deze wet is niet van toepassing is op VERWERKING door de krijgsmacht indien Onze Minister van Defensie daartoe beslist met het oog op de inzet of het ter beschikking stellen van de krijgsmacht ter handhaving of bevordering van de internationale rechtsorde.
--}
++}
 PURPOSE RELATION doelWettelijkeGrondslag REF "Artikel 3 eerste lid Wbp"
 {+Een van de grondslagen op basis waarvan VERWERKINGen (kunnen) zijn toegestaan, althans niet zijn verboden, is als de Wbp niet van toepassing is. Deze wet is niet van toepassing op de VERWERKING voor uitsluitend journalistieke, artistieke of literaire doeleinden, behoudens de overige bepalingen van hoofdstuk 1 Wbp, alsmede de artikelen 6 tot en met 11, 13 tot en met 15, 25 en 49 van die wet.
--}
++}
 
 isSubdoelVan :: Doel * Doel [ASY]
 PRAGMA "Het bereiken van " " is een onderdeel van het bereiken van "
@@ -223,13 +223,13 @@ PRAGMA "Om " " te kunnen bereiken is het verwerken van gegevens van het type " "
 verenigbaarMet :: Doel * Doel
 PRAGMA "Het verzameldoel " " is (volgens de VERANTWOORDELIJKE) verenigbaar met verwerkingsdoel "
 PURPOSE RELATION verenigbaarMet REF "Artikel 9 eerste lid Wbp"
-{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.-}
+{+PERSOONSGEGEVENs worden niet verder verwerkt op een wijze die onverenigbaar is met de doeleinden waarvoor ze zijn verkregen.+}
 
 ENDPROCESS
 --[Partijen]-----------------------------------------------
 PROCESS "Partijen"
 PURPOSE PROCESS "Partijen"
-{+Om te kunnen praten over de concrete personen, rechtspersonen, bestuursorganen e.d. die een rol kunnen vervullen zoals de Wbp die noemt (bijvoorbeeld 'Verantwoordelijke' of 'Bewerker'), hebben we een concept nodig waarmee we instaties van die rollen kunnen weergeven.-}
+{+Om te kunnen praten over de concrete personen, rechtspersonen, bestuursorganen e.d. die een rol kunnen vervullen zoals de Wbp die noemt (bijvoorbeeld 'Verantwoordelijke' of 'Bewerker'), hebben we een concept nodig waarmee we instaties van die rollen kunnen weergeven.+}
 
 CONCEPT Partij "Een natuurlijke persoon, rechtspersoon, bestuursorgaan of ieder ander die de rol van VERANTWOORDELIJKE, BEWERKER, BETROKKENE, ONTVANGER of DERDE kan vervullen."
 IDENT "Partijen": Partij(partijNaam)
@@ -243,7 +243,7 @@ MEANING "Van elke VERANTWOORDELIJKE moet de naam en het adres bekend zijn (Artik
 MESSAGE ""
 VIOLATION (TXT "Van ", SRC I, TXT " moet de naam en het adres bekend zijn")
 PURPOSE RULE "Integriteit voor partijen die VERANTWOORDELIJKE zijn" REF "Artikel 28 sub a Wbp"
-{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de naam en het adres van de VERANTWOORDELIJKE.-}
+{+Een melding van een (geheel of gedeeltelijk geautomatiseerde VERWERKING) als bedoeld in Artikel 27 eerste lid, behelst een opgave van de naam en het adres van de VERANTWOORDELIJKE.+}
 
 ENDPROCESS
 -----------------------------------------------------------

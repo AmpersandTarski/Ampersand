@@ -1,5 +1,5 @@
 CONTEXT Limorange IN ENGLISH
-PURPOSE CONTEXT Limorange {+ Simple context for testing edit operations on specilizations -}
+PURPOSE CONTEXT Limorange {+ Simple context for testing edit operations on specilizations +}
 
 CONCEPT Fruit "Most general concept"
 

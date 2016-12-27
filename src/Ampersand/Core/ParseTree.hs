@@ -56,7 +56,7 @@ import qualified Data.Set as Set
 data P_Context
    = PCtx{ ctx_nm ::     String           -- ^ The name of this context
          , ctx_pos ::    [Origin]         -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctx_lang ::   Lang             -- ^ The default language specified on the top-level context
+         , ctx_lang ::   Maybe Lang       -- ^ The language specified on the top-level context. If omitted, English will be the default.
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
          , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context

@@ -47,11 +47,11 @@ quote = text.show
 --              escape x = replace x ("\\" ++ x)
 
 quotePurpose :: String -> Doc
-quotePurpose p = text "{+" </> escapeExpl p </> text "-}"
+quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
         where escapeExpl = text.escapeCommentStart.escapeLineComment.escapeExplEnd
               escapeCommentStart = escape "{-"
               escapeLineComment = escape "--"
-              escapeExplEnd = escape "-}"
+              escapeExplEnd = escape "+}"
               escape x = replace x (intersperse ' ' x)
 
 isId :: String -> Bool
@@ -241,8 +241,8 @@ instance Pretty ConceptDef where
 
 instance Pretty P_Population where
     pretty p = case p of
-                P_RelPopu _ _ _ nrel  cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
-                P_CptPopu _ nm    ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> pretty ps
+                P_RelPopu _ _ _ nrel cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
+                P_CptPopu _ nm       ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> pretty ps
                where contents = list . map pretty
 
 instance Pretty Representation where

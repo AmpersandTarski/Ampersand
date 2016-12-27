@@ -14,6 +14,6 @@ PURPOSE CONTEXT Ticket237 MARKDOWN
 {+This script should succeed, because `I[Fruit]-I[Citrus]` must
 be interpreted as  `I[Fruit] /\ (V[Fruit]-I[Citrus])`.
 This is to prove that `I[Fruit]-I[Citrus]` may not be interpreted as `I[Fruit] /\ (V[Citrus]-I[Citrus])`
--}
++}
 
 ENDCONTEXT

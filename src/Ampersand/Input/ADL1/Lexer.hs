@@ -101,9 +101,6 @@ lexer opt file input = case runLexerMonad opt file (mainLexer (initPos file) inp
 skipLine :: String -> String
 skipLine = dropWhile (/= '\n')
 
-takeLine :: String -> String
-takeLine = takeWhile (/= '\n')
-
 -----------------------------------------------------------
 -- Lexer definition
 -----------------------------------------------------------
@@ -123,12 +120,8 @@ mainLexer p ('-':'-':s) = mainLexer p (skipLine s) --TODO: Test if we should inc
 mainLexer p (c:s) | isSpace c = let (spc,next) = span isSpace s
                                 in  mainLexer (foldl updatePos p (c:spc)) next
 
-mainLexer p ('-':'+':s)  = returnToken lx p mainLexer p rest
-                where lx   = LexExpl $ dropWhile isSpace (takeLine s)
-                      rest = skipLine s
-
-mainLexer p ('{':'-':s) = lexNest mainLexer (addPos 2 p) s
-mainLexer p ('{':'+':s) = lexExpl mainLexer (addPos 2 p) s
+mainLexer p ('{':'-':s) = lexNestComment mainLexer (addPos 2 p) s
+mainLexer p ('{':'+':s) = lexMarkup mainLexer (addPos 2 p) s
 mainLexer p ('"':ss) =
     let (s,swidth,rest) = scanString ss
     in if null rest || head rest /= '"'
@@ -233,20 +226,20 @@ scanIdent p s = let (name,rest) = span isIdChar s
 -- String clean-up functions / comments
 -----------------------------------------------------------
 
-lexNest :: Lexer -> Lexer
-lexNest c p ('-':'}':s) = c (addPos 2 p) s
-lexNest c p ('{':'-':s) = lexNest (lexNest c) (addPos 2 p) s
-lexNest c p (x:s)       = lexNest c (updatePos p x) s
-lexNest _ p []          = lexerError UnterminatedComment p
+lexNestComment :: Lexer -> Lexer
+lexNestComment c p ('-':'}':s) = c (addPos 2 p) s
+lexNestComment c p ('{':'-':s) = lexNestComment (lexNestComment c) (addPos 2 p) s
+lexNestComment c p (x:s)       = lexNestComment c (updatePos p x) s
+lexNestComment _ p []          = lexerError UnterminatedComment p
 
 --TODO: Also accept {+ ... +} as delimiters
-lexExpl :: Lexer -> Lexer
-lexExpl = lexExpl' ""
- where lexExpl' str _ p ('-':'}':s) = returnToken (LexExpl str) p mainLexer (addPos 2 p)  s
-       lexExpl' str c p ('{':'-':s) = lexNest (lexExpl' str c) (addPos 2 p) s
-       lexExpl' str c p ('-':'-':s) = lexExpl' str c p (dropWhile (/= '\n') s)
-       lexExpl' str c p (x:s)       = lexExpl' (str++[x]) c (updatePos p x) s
-       lexExpl' _   _ p []          = lexerError UnterminatedPurpose p
+lexMarkup :: Lexer -> Lexer
+lexMarkup = lexMarkup' ""
+ where 
+    -- lexMarkup' str _ p ('-':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s -- for backwards compatibility with old `{+ ... -}` notation.
+       lexMarkup' str _ p ('+':'}':s) = returnToken (LexMarkup str) p mainLexer (addPos 2 p)  s
+       lexMarkup' str c p (x:s)       = lexMarkup' (str++[x]) c (updatePos p x) s
+       lexMarkup' _   _ p []          = lexerError UnterminatedMarkup p
 
 -----------------------------------------------------------
 -- iso 8601 date / time

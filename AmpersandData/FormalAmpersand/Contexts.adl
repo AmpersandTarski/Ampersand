@@ -11,11 +11,11 @@ VIEW Signature: Signature( TXT "[" , src;name[Concept*ConceptName] , TXT "*" , t
 --PATTERN Authorizations
 --PURPOSE PATTERN Authorizations
 --{+
----}
+--+}
 --PURPOSE RELATION owner[Context*Account]
 --{+In RAP, every context must have one owner, who can exercise all ownership rights that contexts have.
 --Initially, the creator of a context is its owner.
----}
+--+}
 --    RELATION owner[Context*Account] [UNI]
 --    MEANING "A context has an owner, which is an account."
 --    ROLE ExecEngine MAINTAINS TOTowner
@@ -64,7 +64,7 @@ PATTERN Context
 
     PURPOSE RULE "rule declared outside pattern"
     {+Ampersand allows its users to declare rules in a context, outside the scope of a pattern.
-    -}
+    +}
     ROLE ExecEngine MAINTAINS "rule declared outside pattern"
     RULE "rule declared outside pattern" : ctxrs[Rule*Context] |- udefrules[Rule*Context]
     MEANING "A rule declared in a context outside the scope of a pattern is registered in the system."
@@ -72,7 +72,7 @@ PATTERN Context
 
     PURPOSE RULE "all rules"
     {+It is convenient to have one relation to contain all rules in a context. TODO: delete rules from allRules.
-    -}
+    +}
     ROLE ExecEngine MAINTAINS "all rules"
     RULE "all rules" : udefrules[Rule*Context] \/ multrules \/ identityRules |- allRules[Context*Rule]~
     MEANING "All rules in a context consist of the user-defined rules, the multiplicity rules, and the identity rules."
@@ -80,7 +80,7 @@ PATTERN Context
 
     PURPOSE RULE "relation declared outside pattern"
     {+Ampersand allows its users to declare relations in a context, outside the scope of a pattern.
-    -}
+    +}
     ROLE ExecEngine MAINTAINS "relation declared outside pattern"
     RULE "relation declared outside pattern" : ctxds[Relation*Context] |- declaredIn[Relation*Context]
     MEANING "A relation declared in a context outside the scope of a pattern is registered in the system."
@@ -88,7 +88,7 @@ PATTERN Context
 
     PURPOSE RULE "pat defined in means used in"
     {+Patterns can be defined inside a context. This means that all declarations in that pattern are used in that context.
-    -}
+    +}
     ROLE ExecEngine MAINTAINS "pat defined in means used in"
     RULE "pat defined in means used in" : context[Pattern*Context] |- uses[Context*Pattern]~
     MEANING "Every pattern defined in a context is used in that context."
@@ -99,7 +99,7 @@ PURPOSE PATTERN Validity
 {+The mechanism to define truth within context is represented by the relation `valid`.
 The idea is that a context determines concepts, relations and rules, all of which we say are `valid` in the context.
 For this purpose we define three relations, `valid[Concept*Context]`, `valid[Relation*Context]`, and `valid[Rule*Context]`.
--}
++}
 PATTERN Validity
     RELATION valid[Concept*Context]
     MEANING "A concept/context pair in the relation `valid[Concept*Context]` means that this concept exists with the context."
@@ -109,7 +109,7 @@ PATTERN Validity
      - the concept defined in the context
      - all concept defined in patterns within the context
      - all concept defined in patterns used by the context
-    -}
+    +}
     ROLE ExecEngine MAINTAINS validConcepts
     RULE validConcepts : concepts~;(context\/uses~) \/ context |- valid[Concept*Context]
     MEANING "Every concept defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
@@ -131,7 +131,7 @@ PATTERN Validity
      - the relation defined in the context
      - all relation defined in patterns within the context
      - all relation defined in patterns used by the context
-    -}
+    +}
     ROLE ExecEngine MAINTAINS validRelations
     RULE validRelations : declaredIn[Relation*Pattern];(context\/uses~) \/ ctxds |- valid[Relation*Context]
     MEANING "Every relation defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
@@ -150,7 +150,7 @@ PATTERN Validity
      - the rules defined in the context
      - all rules defined in patterns within the context
      - all rules defined in patterns used by the context
-    -}
+    +}
     ROLE ExecEngine MAINTAINS validRules
     RULE validRules : allRules[Pattern*Rule]~;(context\/uses~) \/ allRules[Context*Rule]~ |- valid[Rule*Context]
     MEANING "Every rule defined in one of the patterns inside a context, or in the context itself, or in one of the contexts used by this context, is valid throughout that context."
