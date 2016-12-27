@@ -82,13 +82,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
             else parent[ifc] = null; // uni = object
             
             // Construct patch(es)
-            if(typeof patchResource === 'undefined') patchResource = resource;
-            pathLength = patchResource._path_.length;
-            path = resource._path_.substring(pathLength);
-            patches = [{ op : 'remove', path : path}];
-            
-            // Patch!
-            ResourceService.addPatches(patchResource, patches);
+            patch = ResourceService.createPatch('remove', resource, patchResource);
+            ResourceService.addPatches(patchResource, [patch]);
         },
         
         // Function to delete a resource
@@ -119,12 +114,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
             else value = resource[ifc];
             
             // Construct patch(es)
-            if(typeof patchResource === 'undefined') patchResource = resource;
-            pathLength = patchResource._path_.length;
-            path = resource._path_.substring(pathLength) + '/' + ifc;
-            patches = [{ op : 'replace', path : path, value : value}];
-            
-            ResourceService.addPatches(patchResource, patches);
+            patch = ResourceService.createPatch('replace', resource, patchResource, ifc, value);
+            ResourceService.addPatches(patchResource, [patch]);
         },
         
         // Function to add an item to an interface list
@@ -137,16 +128,11 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
                 resource[ifc].push(selected.value);
                 
                 // Construct patch(es)
-                if(typeof patchResource === 'undefined') patchResource = resource;
-                pathLength = patchResource._path_.length;
-                path = resource._path_.substring(pathLength) + '/' + ifc;
-                patches = [{ op : 'add', path : path, value : selected.value}];
+                patch = ResourceService.createPatch('add', resource, patchResource, ifc, selected.value);
+                ResourceService.addPatches(patchResource, [patch]);
                 
                 // Reset selected value
                 delete(selected.value);
-                
-                // Patch!
-                ResourceService.addPatches(patchResource, patches);
             }
         },
         
@@ -157,13 +143,8 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
             resource[ifc].splice(index, 1);
             
             // Construct patch(es)
-            if(typeof patchResource === 'undefined') patchResource = resource;
-            pathLength = patchResource._path_.length;
-            path = resource._path_.substring(pathLength) + '/' + ifc;
-            patches = [{ op : 'remove', path : path, value: value}];
-            
-            // Patch!
-            ResourceService.addPatches(patchResource, patches);
+            patch = ResourceService.createPatch('remove', resource, patchResource, ifc, value);
+            ResourceService.addPatches(patchResource, [patch]);
         },
         
         checkRequired : function(){ 
@@ -174,6 +155,17 @@ angular.module('AmpersandApp').service('ResourceService', function($localStorage
         
         emptyUpdatedResources : function(){
             updatedResources = [];
+        },
+        
+        createPatch : function(operation, resource, patchResource, ifc, value){
+            if(typeof patchResource === 'undefined') patchResource = resource;
+            pathLength = patchResource._path_.length;
+            
+            path = resource._path_.substring(pathLength);
+            if(typeof ifc !== 'undefined') path = path + '/' + ifc;
+            
+            if(typeof value === 'undefined') return { op : operation, path : path};
+            else return { op : operation, path : path, value : value};
         },
         
         addPatches : function(resource, patches){
