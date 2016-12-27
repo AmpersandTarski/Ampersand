@@ -6,6 +6,7 @@ module Ampersand.Basics.Exit
 
 import qualified System.Exit as SE
 import System.IO.Unsafe
+import Data.List
 
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a
@@ -21,7 +22,7 @@ data AmpersandExit
   = Succes
   | Fatal [String]
   | NoValidFSpec [String]
-  | ViolationsInDatabase
+  | ViolationsInDatabase [(String,[String])]
   | InvalidSQLExpression
   | NoPrototypeBecauseOfRuleViolations
   | FailedToInstallComposer [String]
@@ -35,8 +36,8 @@ info x =
     Fatal msg -> (SE.ExitFailure   2 , msg) -- These specific errors are due to some bug in the Ampersand code. Please report such bugs!
     NoValidFSpec msg
               -> (SE.ExitFailure  10 , msg) 
-    ViolationsInDatabase
-              -> (SE.ExitFailure  10 , ["ERROR: The population would violate invariants. Could not generate your database."])
+    ViolationsInDatabase viols
+              -> (SE.ExitFailure  10 , ["ERROR: The population would violate invariants. Could not generate your database."]++concatMap showViolatedRule viols)
     InvalidSQLExpression
               -> (SE.ExitFailure  30 , ["ERROR: Invalid SQL Expression"])
     NoPrototypeBecauseOfRuleViolations
@@ -47,4 +48,9 @@ info x =
               -> (SE.ExitFailure  60 , msg)
     WrongArgumentsGiven msg 
               -> (SE.ExitFailure  70 , msg)
-
+  where
+    showViolatedRule :: (String,[String]) -> [String]
+    showViolatedRule (rule,pairs) = 
+         [ "Rule: "++rule
+         , "   violations: "++intercalate ", " pairs
+         ]
