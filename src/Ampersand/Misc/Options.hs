@@ -260,7 +260,7 @@ getOptions' envOpts =
                       , sqlPwd           = "ampersand"
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
-                      , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
+                      , oldNormalizer    = False -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
                       }
 writeConfigFile :: IO ()
