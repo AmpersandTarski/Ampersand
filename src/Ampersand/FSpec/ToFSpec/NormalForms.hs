@@ -683,13 +683,6 @@ dRule (PEqu _ l r) = [DEquiR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule (PInc _ l r) = [DInclR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule term         = fatal 279 ("Illegal use of dRule with term "++showADL term)
 
-slideDown :: (RTerm -> Integer) -> RTerm -> [(Integer,DerivStep)]
-slideDown weight term
- = let w = weight term in
-   case [dstep | dstep<-dSteps tceDerivRules term, weight (rhs dstep)<w] of
-     dstep: _ -> (w,dstep): (slideDown weight) (rhs dstep)
-     _        -> []
-
 weightNF :: Bool -> RTerm -> Integer
 weightNF dnf term = w term
  where
