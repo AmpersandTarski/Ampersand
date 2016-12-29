@@ -13,7 +13,7 @@ import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ShowADL (ShowADL(..))
 import Ampersand.FSpec.ToFSpec.NormalForms
-import Ampersand.Misc (Lang(..),Options(..))
+import Ampersand.Misc (Options(..))
 import Text.Pandoc.Builder
 
 testConfluence :: A_Context -> Blocks
