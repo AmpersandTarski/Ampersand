@@ -305,7 +305,6 @@ data Chapter = Intro
              | ProcessAnalysis
              | DataAnalysis
              | SoftwareMetrics
-             | EcaRules
              | Interfaces
              | FunctionPointAnalysis
              | Glossary
@@ -329,8 +328,6 @@ chptTitle lang cpt =
         (DataAnalysis          , English) -> text "Data structure"
         (SoftwareMetrics       , Dutch  ) -> text "Functiepunt Analyse"
         (SoftwareMetrics       , English) -> text "Function Point Analysis"
-        (EcaRules              , Dutch  ) -> text "ECA regels"
-        (EcaRules              , English) -> text "ECA rules (Flash points)"
         (Interfaces            , Dutch  ) -> text "Koppelvlakken"
         (Interfaces            , English) -> text "Interfaces"
         (FunctionPointAnalysis , Dutch  ) -> text "Functiepuntanalyse"
