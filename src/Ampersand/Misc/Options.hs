@@ -49,7 +49,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , genFSpec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
-                       , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
@@ -84,7 +83,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , sqlPwd :: String  -- pass password on to the database server
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
-                       , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
                        } deriving Show
 data EnvironmentOptions = EnvironmentOptions
@@ -223,11 +221,9 @@ getOptions' envOpts =
                       , allInterfaces    = False
                       , namespace        = ""
                       , testRule         = Nothing
-              --        , customCssFile    = Nothing
                       , genFSpec         = False
                       , diag             = False
                       , fspecFormat      = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFSpecFormats++"."
-                      , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
                       , sqlDump          = False
@@ -260,7 +256,6 @@ getOptions' envOpts =
                       , sqlPwd           = "ampersand"
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
-                      , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
                       }
 writeConfigFile :: IO ()
@@ -469,14 +464,6 @@ options = [ (Option ['v']   ["version"]
                        ) "RULE")
                "Show contents and violations of specified rule."
             , Hidden)
-     --     , (Option []        ["css"]
-     --          (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
-     --          "Custom.css file to customize the style of the prototype."
-     --       , Public)
-          , (Option []        ["ECA"]
-               (NoArg (\opts -> opts{genEcaDoc = True}))
-               "generate documentation with ECA rules."
-            , Hidden)
           , (Option []        ["proofs"]
                (NoArg (\opts -> opts{proofs = True}))
                "generate derivations."
@@ -576,14 +563,6 @@ options = [ (Option ['v']   ["version"]
                        ) "CRUD"
                )
                "Temporary switch to learn about the semantics of crud in interface expressions."
-            , Hidden)
-          , (Option []        ["oldNormalizer"]
-               (NoArg (\opts -> opts{oldNormalizer = True}))
-               "Use the old normalizer at your own risk."
-            , Hidden)
-          , (Option []        ["newNormalizer"]
-               (NoArg (\opts -> opts{oldNormalizer = False}))
-               "Use the new normalizer at your own risk." -- :-)
             , Hidden)
           , (Option []        ["do-not-trim-cellvalues"]
                (NoArg (\opts -> opts{trimXLSXCells = False}))
