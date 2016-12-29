@@ -155,10 +155,16 @@ maybeSpecialCase fSpec expr =
                                        , bseWhr = Just whereClause
                                        }
       | otherwise -> Nothing
+    EIsc (ECpl (ECps (EDcD r,EFlp (EDcD r')) ),EDcI a ) 
+                  -> maybeSpecialCase fSpec $ EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) ))
     EIsc (expr1 , ECpl expr2)
                   -> go False expr1 expr2
+    EIsc (ECpl expr1 , expr2)
+                  -> go False expr2 expr1
     EIsc (expr1 , EFlp (ECpl expr2))
                   -> go True expr1 expr2
+    EIsc (EFlp (ECpl expr1) , expr2)
+                  -> go True expr2 expr1
     _ -> Nothing 
   where 
     go :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
