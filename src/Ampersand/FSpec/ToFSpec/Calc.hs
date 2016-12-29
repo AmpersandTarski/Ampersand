@@ -134,7 +134,7 @@ deriveProofs opts context
                 bulletList [ para (linebreak<>"delta expression"<>linebreak<>space<>str (showADL d)
                                    <>linebreak<>"derivation:"
                                   )<>
-                             (showProof (para.str.showADL).dfProof opts) d<>  -- Produces its result in disjunctive normal form
+                             (showProof (para.str.showADL).dfProof) d<>  -- Produces its result in disjunctive normal form
                              para ("disjunctly normalized delta expression"<>linebreak<>(str.showADL.disjNF opts) d)
                            | verboseP opts, e@Do{}<-[ecaAction ecarule], let d = paDelta e ]
               | ecarule <- ecaRs]
@@ -222,10 +222,10 @@ deriveProofs opts context
                                   | r<-[dc | cs<-[makeCjcts opts rule], (_,dnfClauses)<-cs, dc<-dnfClauses]
                                   ]
            where e = rrexp rule
-                 prf = cfProof (getOpts fSpec) e
+                 prf = cfProof e
                  (exx',_,_) = last prf
-            --     conjProof = showProof (para.str.showADL) . cfProof (getOpts fSpec)
-                 disjProof = showProof (para.str.showADL) . dfProof (getOpts fSpec)
+            --     conjProof = showProof (para.str.showADL) . cfProof
+                 disjProof = showProof (para.str.showADL) . dfProof
 --                 showPr    = showProof (para.str.showADL)  -- hoort bij de uitgecommentaarde code hierboven...
        --TODO: See ticket #105
 -}
@@ -502,7 +502,7 @@ assembleECAs options context editables
                               )<>
                          para ("Let us compute the violations to see whether invariance is maintained."<>linebreak<>
                                "This means to negate the result (notClau = notCpl clause'): ")<>
-                         (showProof (para.str.showADL). cfProof options) notClau<>
+                         (showProof (para.str.showADL). cfProof) notClau<>
                          para ("So, notClau has CNF: "<>str (showADL viols )<>linebreak<>
                                ( if viols==viols'
                                  then "This expression is in disjunctive normal form as well."
@@ -510,7 +510,7 @@ assembleECAs options context editables
                          ( if isTrue clause'
                            then para ("This result proves the absence of violations, so a reaction of doing nothing is appropriate."<>linebreak
                                       <>"Just for fun, let us try to derive whether clause |- clause' is true... ")<>
-                                (showProof (para.str.showADL). cfProof options) (expr .|-. clause')
+                                (showProof (para.str.showADL). cfProof) (expr .|-. clause')
                            else para ("This result does not prove the absence of violations, so we cannot conclude that invariance is maintained."<>linebreak<>
                                       "We must compute a reaction to compensate for violations..."<>linebreak<>
                                       "That would be to reinsert violations that originate from "<>
@@ -518,7 +518,7 @@ assembleECAs options context editables
                                         then str (showADL (conjNF options negs))<>" into "<> str (showADL (disjNF options poss))<>"."
                                         else str (showADL (disjNF options poss))<>" into "<> str (showADL (conjNF options negs))<>"."
                                       )<>linebreak<>"deltFr: ")<>
-                                (showProof (para.str.showADL). dfProof options) deltFr<>
+                                (showProof (para.str.showADL). dfProof) deltFr<>
                                 ( let pr=proofPA options act in
                                   if length pr>1
                                   then para "Now let us remove redundancy from the ECA action:\n     "<>
@@ -533,8 +533,8 @@ assembleECAs options context editables
                                                   "viols'"<>showSign (sign viols')<>"  "<>showADL viols'<>"\n"<>
                                                   "toExpr"<>showSign (sign toExpr)<>"  "<>showADL toExpr)
                                   else if ev==Ins
-                                  then (showProof (para.str.showADL). cfProof options) (viols'.\/.toExpr)<>linebreak
-                                  else (showProof (para.str.showADL). dfProof options) (notCpl viols./\.toExpr)<>linebreak
+                                  then (showProof (para.str.showADL). cfProof) (viols'.\/.toExpr)<>linebreak
+                                  else (showProof (para.str.showADL). dfProof) (notCpl viols./\.toExpr)<>linebreak
                                 ) -}
                          )
                        )
