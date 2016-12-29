@@ -758,9 +758,12 @@ Based on this derivation:
     EDia (l,r)
       -> BQEComment [BlockComment $ "case: EDia (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec ((flp l .\. r) ./\. (l ./. flp r))
-    ERad{}
+    ERad (l,ECpl r) 
+      -> BQEComment [BlockComment $ "case: ERad (l, ECpl r)"++showADL expr++" ("++show (sign expr)++")"] $
+        selectExpr fSpec (EFlp (r .\. flp l))
+    ERad (l,r) 
       -> BQEComment [BlockComment $ "case: ERad (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
-        selectExpr fSpec (deMorganERad expr)
+        selectExpr fSpec (flp (notCpl l) .\. r)
     EPrd (l,r)
      -> let v = EDcV (Sign (target l) (source r))
         in BQEComment [BlockComment $ "case: EPrd (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
