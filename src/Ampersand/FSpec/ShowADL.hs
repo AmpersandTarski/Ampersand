@@ -72,7 +72,7 @@ instance ShowADL Purpose where
  showADL expl = "PURPOSE "++showADL (explObj expl)
                 ++" "++showADL (amLang (explMarkup expl))
                 ++(if null (explRefIds expl) then "" else " REF "++intercalate ";" (explRefIds expl))
-                ++ "{+"++aMarkup2String ReST (explMarkup expl)++"-}"
+                ++showADL (explMarkup expl)
 
 instance ShowADL PandocFormat where
  showADL LaTeX = "LATEX "
@@ -83,7 +83,7 @@ instance ShowADL PandocFormat where
 instance ShowADL A_Markup where
  showADL m
      = showADL (amLang m)
-    ++ "{+"++aMarkup2String ReST m++"-}"
+    ++ "{+"++aMarkup2String ReST m++"+}"
 
 instance ShowADL Lang where
  showADL Dutch   = "IN DUTCH"

@@ -2,7 +2,6 @@ module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import Prelude hiding (exp,putStrLn,putStr)
 import Data.List
-import Control.Monad
 import System.IO (hSetBuffering,stdout,BufferMode(NoBuffering))
 import Ampersand.Basics
 import Ampersand.FSpec
@@ -16,8 +15,9 @@ therefore most likely to be correct in case of discrepancies.
 
 validateRulesSQL :: FSpec -> IO Bool
 validateRulesSQL fSpec =
- do { when (any (not.isSignal.fst) (allViolations fSpec))
-           (exitWith ViolationsInDatabase)
+ do { case filter (not.isSignal.fst) (allViolations fSpec) of
+         []    -> return()
+         viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     ; hSetBuffering stdout NoBuffering
 
     ; putStrLn "Initializing temporary database (this could take a while)"
@@ -45,6 +45,10 @@ validateRulesSQL fSpec =
                   ; return False
                   }
     }
+stringify :: (Rule,[AAtomPair]) -> (String,[String])
+stringify (rule,pairs) = (name rule, map f pairs )
+  where f pair = "("++showValADL (apLeft pair)++", "++showValADL (apRight pair)++")"
+
 
 -- functions for extracting all expressions from the context
 
