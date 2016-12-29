@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -XFlexibleInstances #-}
 module Ampersand.FSpec.ToFSpec.NormalForms
-  (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify
+  (delta,conjNF,disjNF,cfProof,dfProof,simplify
   ,cfProofs, dfProofs  -- these are for confluence testing.
   , makeAllConjs, conjuncts
   ) where
@@ -9,7 +9,6 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.List (nub, intercalate, permutations,partition)
 import Ampersand.Basics
-import Ampersand.ADL1.ECArule
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import Ampersand.Classes.Relational
@@ -1065,10 +1064,6 @@ delta sgn
 
 {- Normalization of process algebra clauses -}
 
-normPA :: Options -> PAclause -> PAclause
-normPA opts pac = pac'
-    where (pac',_,_) = if null (proofPA opts pac) then fatal 21 "last: empty list" else last (proofPA opts pac)
-
 type Proof a = [(a, [String], String)]
 
 {- A proof is a list of triples (e, ss, rel), where |e| is an expression in the chain;
@@ -1079,89 +1074,6 @@ type Proof a = [(a, [String], String)]
 
    WK: I typically do |(a, [(rel, hint, a)])|.
 -}
-
-proofPA :: Options -> PAclause -> Proof PAclause
-proofPA opts = {-reverse.take 3.reverse.-}pPA
- where pPA pac' = case normstepPA opts pac' of
-                    ( _ , []  ,equ) -> [(pac',[]   ,equ)]    -- is dus (pac,[],"<=>")
-                    (res,steps,equ) -> (pac',steps,equ):pPA res
-
-{- The following rewriter is used to simplify the actions inside eca rules.
--- WHY? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats.
--- Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter.
--- BECAUSE! Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
--- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie ADL.ECArule).
--- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.
--- Helaas zijn de herschrijfregels nu nog hard gecodeerd, zodat ik voor PAclause een afzonderlijke Haskell functie moet schrijven.
--- Hierna volgt de normalisator voor relatiealgebra-expressies, genaamd normStep. Die heeft dezelfde structuur,
--- maar gebruikt herschrijfregels vanuit gelijkheden die gelden in relatiealgebra.
--}
-normstepPA :: Options -> PAclause -> (PAclause,[String],String)
-normstepPA opts pac = (res,ss,"<=>")
- where
-  (res,ss) = norm pac
-  norm :: PAclause -> (PAclause,[String])
-  norm (CHC [] ms)  = (Blk ms, ["Run out of options"])
-  norm (CHC [r] ms) = (r', ["Flatten ONE"])
-                    where r' = case r of
-                                 Blk{} -> r
-                                 _     -> r{paMotiv = ms}
-  norm (CHC ds ms)  | (not.null) msgs = (CHC ops ms, msgs)
-                    | (not.null) [d | d<-ds, isCHC d] = (CHC (nub [ d' | d<-ds, d'<-if isCHC d then let CHC ops' _ = d in ops' else [d] ]) ms, ["flatten CHC"])  -- flatten
-                    | (not.null) [Nop | Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
-                    | (not.null) [Blk | Blk{}<-ops] = (CHC [op | op<-ops, not (isBlk op)] ms, ["Choose anything but block"])
-                    | (not.null) doubles = (CHC [ head cl | cl<-eqClass (==) ds ] ms, ["remove double occurrences"])
-                    | otherwise = (CHC ds ms, [])
-                    where nds  = map norm ds
-                          msgs = concatMap snd nds
-                          ops  = map fst nds
-                          doubles = [ d | cl<-eqClass (==) ds, length cl>1, d<-cl ]
-  norm (GCH [] ms)  = (Blk ms, ["Run out of options"])
-  norm (GCH ds ms)  | (not.null) [() | (_,links,_)<-normds, isFalse links] = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isFalse links)] ms, ["Remove provably empty guard(s)."])
-                    | (not.null) [()          | (_,  _    ,p)<-normds, isNop p]
-                        = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isNop p)] ms, ["Remove unneccessary SELECT."])
-                    | (not.null) doubles = (GCH [ (fst3 (head cl), foldr1 (.\/.) (map snd3 cl), thd3 (head cl)) | cl<-eqCl (\(tOp,_,p)->(tOp,p)) ds ] ms, ["remove double occurrences"])
-                    | otherwise = (GCH ds ms, [])
-                    where normds = [ (tOp, conjNF opts links, let (p',_)=norm p in p') | (tOp,links,p)<-ds]
-                          doubles = [ d | cl<-eqCl (\(tOp,_,p)->(tOp,p)) ds, length cl>1, d<-cl ]
-  norm (ALL [] ms)  = (Nop ms, ["ALL [] = No Operation"])
-  norm (ALL [d] ms) = (d', ["Flatten ONE"])
-                    where d' = case d of
-                                 Blk{} -> d
-                                 _     -> d{paMotiv = ms}
-  norm (ALL ds ms)  | (not.null) msgs = (ALL ops ms, msgs)
-                    | (not.null) [d | d<-ds, isAll d] = (ALL (nub [ d' | d<-ds, d'<-if isAll d then let ALL ops' _ = d in ops' else [d] ]) ms, ["flatten ALL"])  -- flatten
-                    | (not.null) [Blk | Blk{}<-ops] = (Blk{paMotiv = [m | op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
-                    | (not.null) [Nop | Nop{}<-ops] = (ALL [op | op<-ops, not (isNop op)] ms, ["Ignore Nop"])
-                    | (not.null) doubles = (CHC [ head cl | cl<-eqClass (==) ds ] ms, ["remove double occurrences"])
-                    | (not.null) long    = (ALL ds' ms, ["Take the expressions for "++commaEng "and" [(name . paTo . head) cl |cl<-long]++"together"])
-                    | otherwise = (ALL ds ms, [])
-                    where ds'     = [ let p=head cl in
-                                        if length cl==1 then p else p{paDelta=disjNF opts (foldr1 (.\/.) [paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
-                                    | cl<-dCls {- not (null cl) is guaranteed by eqCl -} ]
-                                    ++[d | d<-ds, not (isDo d)]
-                          nds     = map norm ds
-                          msgs    = concatMap snd nds
-                          ops     = map fst nds
-                          doubles = [ d | cl<-eqClass (==) ds, length cl>1, d<-cl ]
-                          dCls :: [[PAclause]]
-                          dCls = eqCl to [d | d<-ds, isDo d]
-                          long :: [[PAclause]]
-                          long = [cl | cl<-dCls, length cl>1]
-                          to d = case d of
-                                   Do{} -> (paSrt d, paTo d)
-                                   _    -> fatal 74 "illegal call of to(d)"
-  norm (New c p ms)        = ( case p' of
-                                Blk{} -> p'{paMotiv = ms}
-                                _     -> New c (\x->let (p'', _) = norm (p x) in p'') ms
-                             , msgs)
-                             where (p', msgs) = norm (p (makePSingleton "x"))
-  norm (Rmv c p ms)        = ( case p' of
-                                Blk{} -> p'{paMotiv = ms}
-                                _     -> Rmv c (\x->let (p'', _) = norm (p x) in p'') ms
-                             , msgs)
-                             where (p', msgs) = norm (p (makePSingleton "x"))
-  norm p                   = (p, [])
 
 {- Normalization of expressions -}
 

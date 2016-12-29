@@ -8,11 +8,11 @@
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
 module Ampersand.FSpec.ShowADL
-    ( ShowADL(..), showPAclause, showREL)
+    ( ShowADL(..), showREL)
 where
 import Ampersand.Core.ParseTree
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Basics      (fatal,Collection(..),Named(..))
+import Ampersand.Basics      (Collection(..),Named(..))
 import Ampersand.Classes
 import Ampersand.ADL1 (insParentheses)
 import Ampersand.FSpec.FSpec
@@ -297,12 +297,6 @@ instance ShowADL A_Context where
 
 instance ShowADL (Maybe String) where
   showADL _ = ""
-instance ShowADL ECArule where
-  showADL eca = "ECA #"++show (ecaNum eca)
-
-instance ShowADL Event where
-  showADL ev = " On " ++show (eSrt ev)++" "++showREL (eDcl ev)
-
 instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
  showADL (a,b) = "(" ++ showADL a ++ ", " ++ showADL b ++ ")"
 
@@ -460,43 +454,3 @@ insP_Parentheses = insPar 0
 --used to compose error messages at p2a time
 instance ShowADL P_Concept where
  showADL = name
-
-instance ShowADL PAclause where
-    showADL = showPAclause "\n "
-
-showPAclause :: String -> PAclause -> String
-showPAclause indent pa@Do{}
-       = ( case paSrt pa of
-            Ins -> "INSERT INTO "
-            Del -> "DELETE FROM ")++
-         showREL (paTo pa) ++
-         indent++" SELECTFROM "++
-         showADL (paDelta pa)++
-         indent++motivate indent "TO MAINTAIN " (paMotiv pa)
-showPAclause indent (New c clause cj_ruls)
-       = "NEW x:"++show c++";"++indent'++showPAclause indent' (clause (makePSingleton "x"))++motivate indent "MAINTAINING" cj_ruls
-         where indent'  = indent++"  "
-showPAclause indent (Rmv c clause cj_ruls)
-       = "REMOVE x:"++show c++";"++indent'++showPAclause indent' (clause (makePSingleton "x"))++motivate indent "MAINTAINING" cj_ruls
-         where indent'  = indent++"  "
-showPAclause indent (CHC ds cj_ruls)
-       = "ONE OF "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
-         where indent'  = indent++"       "
-showPAclause indent (GCH ds cj_ruls)
-       = "ONE NONEMPTY ALTERNATIVE OF "++intercalate indent'
-         ["PICK a,b FROM "++showADL links++indent'++"THEN "++showPAclause (indent'++"     ") p| (_,links,p)<-ds]++
-         motivate indent "MAINTAINING" cj_ruls
-         where indent'  = indent++"       "
-showPAclause indent (ALL ds cj_ruls)
-       = "ALL of "++intercalate indent' [showPAclause indent' d | d<-ds]++motivate indent "MAINTAINING" cj_ruls
-         where indent'  = indent++"       "
-showPAclause indent (Nop cj_ruls)
-       = "DO NOTHING"++motivate indent "TO MAINTAIN" cj_ruls
-showPAclause indent (Blk cj_ruls)
-       = "BLOCK"++motivate indent "CANNOT CHANGE" cj_ruls
-showPAclause  _ (Let _ _ _)  = fatal 55 "showPAclause is missing for `Let`. Contact your dealer!"
-showPAclause  _ (Ref _)      = fatal 56 "showPAclause is missing for `Ref`. Contact your dealer!"
-
-motivate :: [Char] -> [Char] -> [(Expression, [Rule])] -> [Char]
-motivate indent motive motives = concat [ indent++showConj cj_rul | cj_rul<-motives ]
-   where showConj (conj,rs) = "("++motive++" "++showADL conj++" FROM "++intercalate ", " (map name rs) ++")"
