@@ -18,7 +18,7 @@ import Ampersand.FSpec.ShowHS
 import Ampersand.FSpec.ShowADL (ShowADL(..))
 import Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile)
 import Ampersand.FSpec.ToFSpec.Calc
-       (showProof,showPrf, commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd,commaPandocOr)
+       (showProof,showPrf)
 import Ampersand.FSpec.ToFSpec.ADL2FSpec
        (makeFSpec)
 import Ampersand.FSpec.ToFSpec.NormalForms

@@ -2,7 +2,6 @@
 module Ampersand.FSpec.ToFSpec.Calc
             ( deriveProofs
             , showProof, showPrf, conjuncts
-            , commaEngPandoc, commaNLPandoc, commaEngPandoc', commaNLPandoc', commaPandocAnd ,commaPandocOr--TODO: this shouldt be here!
             , quadsOfRules
             ) where
 
@@ -73,37 +72,6 @@ showPrf _  []                   = []
 
 
 
-commaEngPandoc' :: Inlines -> [Inlines] -> Inlines
-commaEngPandoc' s [a,b,c] = a <> ", " <> b <> ", " <> s <> space <> c
-commaEngPandoc' s [a,b]   = a <> space <> s <> space <> b
-commaEngPandoc' _   [a]   = a
-commaEngPandoc' s (a:as)  = a <> ", " <> commaEngPandoc' s as
-commaEngPandoc' _   []    = mempty
-
-commaEngPandoc :: Inline -> [Inline] -> [Inline]
-commaEngPandoc s [a,b,c] = [a,Str ", ",b,Str ", ",s, Str " ", c]
-commaEngPandoc s [a,b]   = [a,Str " ",s, Str " ", b]
-commaEngPandoc _   [a]   = [a]
-commaEngPandoc s (a:as)  = [a, Str ", "]++commaEngPandoc s as
-commaEngPandoc _   []    = []
-
-commaNLPandoc' :: Inlines -> [Inlines] -> Inlines
-commaNLPandoc' s [a,b]  = a <> space <> s <> space <> b
-commaNLPandoc'  _  [a]  = a
-commaNLPandoc' s (a:as) = a <> ", " <> commaNLPandoc' s as
-commaNLPandoc'  _  []   = mempty
-commaNLPandoc :: Inline -> [Inline] -> [Inline]
-commaNLPandoc s [a,b]  = [a,Str " ",s, Str " ", b]
-commaNLPandoc  _  [a]  = [a]
-commaNLPandoc s (a:as) = [a, Str ", "]++commaNLPandoc s as
-commaNLPandoc  _  []   = []
-   
-commaPandocAnd :: Lang -> [Inlines] -> Inlines
-commaPandocAnd Dutch = commaNLPandoc' "en"
-commaPandocAnd English = commaEngPandoc' "and"
-commaPandocOr :: Lang -> [Inlines] -> Inlines
-commaPandocOr Dutch = commaNLPandoc' "of"
-commaPandocOr English = commaEngPandoc' "or"
 
 quadsOfRules :: Options -> [Rule] -> [Quad]
 quadsOfRules opts rules 

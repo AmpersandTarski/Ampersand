@@ -17,6 +17,8 @@ module Ampersand.Output.PandocAux
       , ENString(..)
       , LocalizedStr
       , localize
+      , commaPandocAnd
+      , commaPandocOr
       , Inlines
       )
 where
@@ -708,3 +710,23 @@ extractMsg log' = do
      then log'
      else BC.unlines (msg'' ++ lineno)
 
+commaPandocAnd :: Lang -> [Inlines] -> Inlines
+commaPandocAnd Dutch = commaNLPandoc "en"
+commaPandocAnd English = commaEngPandoc "and"
+commaPandocOr :: Lang -> [Inlines] -> Inlines
+commaPandocOr Dutch = commaNLPandoc "of"
+commaPandocOr English = commaEngPandoc "or"
+
+commaEngPandoc :: Inlines -> [Inlines] -> Inlines
+commaEngPandoc s [a,b,c] = a <> ", " <> b <> ", " <> s <> space <> c
+commaEngPandoc s [a,b]   = a <> space <> s <> space <> b
+commaEngPandoc _   [a]   = a
+commaEngPandoc s (a:as)  = a <> ", " <> commaEngPandoc s as
+commaEngPandoc _   []    = mempty
+
+commaNLPandoc :: Inlines -> [Inlines] -> Inlines
+commaNLPandoc s [a,b]  = a <> space <> s <> space <> b
+commaNLPandoc  _  [a]  = a
+commaNLPandoc s (a:as) = a <> ", " <> commaNLPandoc s as
+commaNLPandoc  _  []   = mempty
+   
