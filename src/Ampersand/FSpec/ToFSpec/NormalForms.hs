@@ -1494,26 +1494,21 @@ nfPr shw eq dnf expr
 conjNF, disjNF :: Options -> Expression -> Expression
 (conjNF, disjNF) = (pr False, pr True)
  where pr dnf opts expr
-        = case oldNormalizer opts of
-           False -> let rterm = expr2RTerm expr
-                    in (rTerm2expr.last.((:) (rterm)).map (rhs.snd).slideDown (weightNF dnf)) rterm
-           True  -> let proof = if dnf then dfProof opts else cfProof opts
-                        (e,_,_) = if null (proof expr) then fatal 340 "last: empty list" else last (proof expr)
-                    in e
+        = let proof = if dnf then dfProof opts else cfProof opts
+              (e,_,_) = if null (proof expr) then fatal 340 "last: empty list" else last (proof expr)
+          in e
 
 cfProof, dfProof :: Options -> Expression -> Proof Expression
 (cfProof,dfProof) = (proof False, proof True)
  where
    proof :: Bool -> Options -> Expression -> Proof Expression
    proof dnf opts expr
-    = case oldNormalizer opts of
-       False -> [ (rTerm2expr term, explStr, logicSym) | (term, explStr, logicSym)<-prRT (expr2RTerm expr) ]
-       True  -> [line | step, line<-init pr]++
-                [line | step', line<-init pr']++
-                [last ([(expr,[],"<=>")]++
-                       [line | step, line<-pr]++
-                       [line | step', line<-pr']
-                      )]
+    = [line | step, line<-init pr]++
+      [line | step', line<-init pr']++
+      [last ([(expr,[],"<=>")]++
+             [line | step, line<-pr]++
+             [line | step', line<-pr']
+            )]
       where
         prRT :: RTerm -> [(RTerm, [String], String)]
         prRT term

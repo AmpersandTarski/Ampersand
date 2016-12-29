@@ -84,7 +84,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , sqlPwd :: String  -- pass password on to the database server
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
-                       , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
                        } deriving Show
 data EnvironmentOptions = EnvironmentOptions
@@ -260,7 +259,6 @@ getOptions' envOpts =
                       , sqlPwd           = "ampersand"
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
-                      , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
                       }
 writeConfigFile :: IO ()
@@ -576,14 +574,6 @@ options = [ (Option ['v']   ["version"]
                        ) "CRUD"
                )
                "Temporary switch to learn about the semantics of crud in interface expressions."
-            , Hidden)
-          , (Option []        ["oldNormalizer"]
-               (NoArg (\opts -> opts{oldNormalizer = True}))
-               "Use the old normalizer at your own risk."
-            , Hidden)
-          , (Option []        ["newNormalizer"]
-               (NoArg (\opts -> opts{oldNormalizer = False}))
-               "Use the new normalizer at your own risk." -- :-)
             , Hidden)
           , (Option []        ["do-not-trim-cellvalues"]
                (NoArg (\opts -> opts{trimXLSXCells = False}))
