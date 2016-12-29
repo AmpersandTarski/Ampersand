@@ -7,7 +7,6 @@ import Data.Char                  (isAlphaNum)
 import Ampersand.Basics hiding (indent)
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
---import Ampersand.FSpec.FPA   (fpa)
 import Data.List
 import Ampersand.Misc
 import Data.Hashable
@@ -96,54 +95,6 @@ instance ShowHS PlugSQL where
                    ,"       }"
                    ]
 
-instance ShowHSName ECArule where
- showHSName r = "ecaRule"++show (ecaNum r)
-
-instance ShowHS ECArule where
- showHS opts indent r
-   =         "ECA { ecaTriggr = " ++ showHS opts "" (ecaTriggr r) ++
-     indent++"    , ecaDelta  = " ++ showHSName (ecaDelta r)++
-     indent++"    , ecaAction = " ++ showHS opts (indent++"                  ")  (ecaAction r)++
-     indent++"    , ecaNum    = " ++ show (ecaNum r)++
-     indent++"    }"
-
-instance ShowHS Event where
- showHS _ indent e
-   = if "\n" `isPrefixOf` indent
-     then "On " ++ show (eSrt e)++indent++"   " ++ showHSName (eDcl e)++indent++"   "
-     else "On " ++ show (eSrt e)++          " " ++ showHSName (eDcl e)++           ""
-
-instance ShowHS (InsDel, Expression, PAclause) where
- showHS opts indent (tOp, links, p)
-   = "( "++show tOp++indent++", "++showHS opts (indent++"  ") links++indent++", "++showHS opts (indent++"  ") p++indent++")"
-
-instance ShowHS PAclause where
- showHS opts indent p
-   = case p of
-        CHC{} -> wrap "CHC " (indent ++"    ") (showHS opts) (paCls p)++
-                 wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-        GCH{} -> wrap "GCH " (indent ++"    ") (showHS opts) (paGCls p)++
-                 wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-        ALL{} -> wrap "ALL " (indent ++"    ") (showHS opts) (paCls p)++
-                 wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-        Do{}  ->  "Do "++show (paSrt p)++" "++showHSName (paTo p)++
-                         indent++"       ("++showHS opts (indent++"        ") (paDelta p)++indent++"       )"++
-                 wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-        New{} -> "New ("++showHS opts "" (paCpt p)++")"++
-                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p (makePSingleton "x"))++indent++"    )"++
-                 wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-        Rmv{} -> "Rmv ("++showHS opts "" (paCpt p)++")"++
-                 indent++"    (\\x->"++showHS opts (indent++"        ") (paCl p (makePSingleton "x"))++indent++"    )"++
-                 wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-        Nop{} -> "Nop "++wrap "" (indent ++"    ") showMotiv ms
-        Blk{} -> "Blk "++wrap "" (indent ++"    ") showMotiv ms
-        Let{} -> wrap "Let " (indent ++"    ") (showHS opts) (paCls p)++
-                 "TODO: paBody of Let clause"++
-                 wrap (if null ms then "" else indent ++"    ") (indent ++"    ") showMotiv ms
-        Ref{} -> "Ref "++paVar p
-     where ms = paMotiv p
-           showMotiv ind (conj,rs) = "( "++showHS opts (ind++"  ") conj++" -- conjunct:  "++showADL conj++ind++", "++showHSName rs++ind++")"
-
 instance ShowHSName SqlAttribute where
  showHSName sqAtt = haskellIdentifier ("sqlAtt_"++attName sqAtt)
 
@@ -185,23 +136,6 @@ instance ShowHS Quad where
     where
       newindent = indent ++ "                 "
 
-instance ShowHS Fswitchboard where
- showHS opts indent fsb
-   = intercalate indent
-       [ "Fswtch { fsbEvIn  = " ++ showHS opts newindent (fsbEvIn  fsb)
-       , "       , fsbEvOut = " ++ showHS opts newindent (fsbEvOut fsb)
-       ,wrap
-         "       , fsbConjs = " newindent' (const shConj) (fsbConjs  fsb)
-       ,wrap
-         "       , fsbECAs  = " newindent' (const showHSName) (fsbECAs  fsb)
-       , "       }"
-       ]
-    where
-      newindent   = indent ++ "                   "
-      newindent'  = newindent ++ " "
-      newindent'' = newindent' ++ "    "
-      shConj (r,conj) = "( "++showHSName r++newindent++"   , "++showHS opts newindent'' conj++newindent++"   )"
-
 instance ShowHS DnfClause where
  showHS opts indent dnf
    = intercalate indent
@@ -242,7 +176,6 @@ instance ShowHS FSpec where
         , wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
         ,      ", interfaceS    = interfaceS'"
         ,      ", interfaceG    = interfaceG'"
-        , wrap ", fActivities   = " indentA (\_->showHS opts (indentA++"  ")) (fActivities fSpec)
         ,      ", fRoleRels     = " ++
                case fRoleRels fSpec of
                  []        -> "[]"
@@ -263,8 +196,6 @@ instance ShowHS FSpec where
         , wrap ", fsisa         = " indentA (const showHSName) (fsisa fSpec)
         , wrap ", allConjuncts  = " indentA (const showHSName) (allConjuncts fSpec)
         , wrap ", vquads        = " indentA (const showHSName) (vquads fSpec)
-        , wrap ", vEcas         = " indentA (const showHSName) (vEcas fSpec)
-        ,      ", fSwitchboard  = "++showHS opts indentA (fSwitchboard fSpec)
         , wrap ", vpatterns     = " indentA (const showHSName) (vpatterns fSpec)
         , wrap ", conceptDefs   = " indentA (showHS opts)    (conceptDefs fSpec)
         , wrap ", fSexpls       = " indentA (showHS opts)    (fSexpls fSpec)
@@ -328,11 +259,6 @@ instance ShowHS FSpec where
     (if null (vquads fSpec ) then "" else
      "\n -- *** Quads (total: "++(show.length.vquads) fSpec++" quads) ***: "++
      concat [indent++" "++showHSName x++indent++"  = "++showHS opts (indent++"    ") x |x<-vquads     fSpec ]++"\n"
-    )++
-    (if null (vEcas fSpec ) then "" else
-     "\n -- *** ECA rules (total: "++(show.length.vEcas) fSpec++" ECA rules) ***: "++
-     concat [indent++" "++showHSName eca++indent++"  = "++showHS opts (indent++"    ") eca |eca<-vEcas fSpec ]++"\n"++
-     concat [indent++" "++showHSName rel++indent++"  = "++showHS opts (indent++"    ") rel |rel<-nub(map ecaDelta (vEcas fSpec)) ]++"\n"
     )++
     (if null (plugInfos fSpec ) then "" else
      "\n -- *** PlugInfos (total: "++(show.length.plugInfos) fSpec++" plugInfos) ***: "++
@@ -425,20 +351,6 @@ instance ShowHS Pattern where
      , "}"
      ] where indentA = indent ++"      "     -- adding the width of "A_Pat "
              indentB = indentA++"          " -- adding the width of ", ptrls = "
-
-instance ShowHS Activity where
- showHS opts indent act =
-    intercalate indentA
-     [ "Act { actRule   = "++showHSName (actRule act)
-     , wrap ", actTrig   = " indentB (const showHSName) (actTrig   act)
-     , wrap ", actAffect = " indentB (const showHSName) (actAffect act)
-     , wrap ", actQuads  = " indentB (const showHSName) (actQuads  act)
-     , wrap ", actEcas   = " indentB (const showHSName) (actEcas   act)
-     , wrap ", actPurp   = " indentB (const $ showHS opts indentB) (actPurp act)
-     , "      }"
-     ]
-    where indentA = indent ++replicate (length ("Act "::String)) ' '
-          indentB = indentA++replicate (length (", actAffect = " :: String)) ' '
 
 instance ShowHS PPurpose where
  showHS opts _ expl =
@@ -606,7 +518,6 @@ instance ShowHS Interface where
   = intercalate indent
         [ "Ifc { ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
-        , "    , ifcEcas   = " ++ showHS opts (indent++"                 ") (ifcEcas ifc)
         , wrap "    , ifcControls = " (indent++"                  ") (const showHSName) (ifcControls ifc)
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
         , "    , ifcPrp    = " ++ show(ifcPrp ifc)

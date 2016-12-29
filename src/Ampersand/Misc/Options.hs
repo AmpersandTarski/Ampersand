@@ -49,7 +49,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , genFSpec :: Bool   -- if True, generate a functional specification
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
-                       , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
@@ -223,11 +222,9 @@ getOptions' envOpts =
                       , allInterfaces    = False
                       , namespace        = ""
                       , testRule         = Nothing
-              --        , customCssFile    = Nothing
                       , genFSpec         = False
                       , diag             = False
                       , fspecFormat      = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFSpecFormats++"."
-                      , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
                       , sqlDump          = False
@@ -468,14 +465,6 @@ options = [ (Option ['v']   ["version"]
                (ReqArg (\ruleName opts -> opts{ testRule = Just ruleName }
                        ) "RULE")
                "Show contents and violations of specified rule."
-            , Hidden)
-     --     , (Option []        ["css"]
-     --          (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
-     --          "Custom.css file to customize the style of the prototype."
-     --       , Public)
-          , (Option []        ["ECA"]
-               (NoArg (\opts -> opts{genEcaDoc = True}))
-               "generate documentation with ECA rules."
             , Hidden)
           , (Option []        ["proofs"]
                (NoArg (\opts -> opts{proofs = True}))
