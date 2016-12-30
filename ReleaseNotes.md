@@ -1,9 +1,10 @@
 # Release notes of Ampersand
-  * [Issue #603](https://github.com/AmpersandTarski/Ampersand/issues/603) Removed obsolete switches about what normalization is used.
   
 ## Unreleased changes
+  * [Issue #605](https://github.com/AmpersandTarski/Ampersand/issues/605) Added modules "Modules.adl" and "Patterns.adl" in FormalAmpersand as preparatory work for issue #605.
+  * [Issue #603](https://github.com/AmpersandTarski/Ampersand/issues/603) Removed obsolete switches about what normalization is used.
   * [Issue #600](https://github.com/AmpersandTarski/Ampersand/issues/600) When a configuration file exists (.yaml) with the same name as the file being compiled, it will be used if no config file is explicitly mentioned in the command. 
-  * Rename "functional specification" to "functional design" for more realistic expectations with users.
+  * Renamed "functional specification" to "functional design" for more realistic expectations with users.
 
 ## v3.8.0 (20 december 2016) 
   * [Issue #587](https://github.com/AmpersandTarski/Ampersand/issues/587) There is no need any longer to explicitly specify the language in a script. If omitted, IN ENGLISH will be used as default. 
