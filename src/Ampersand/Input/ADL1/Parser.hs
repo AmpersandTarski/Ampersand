@@ -36,7 +36,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_pos    = [pos']
             , ctx_lang   = lang
             , ctx_markup = fmt
-            , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns to be printed in the functional specification. (For partial documents.)
+            , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns to be printed in the functional design document. (For partial documents.)
             , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
             , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
             , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
@@ -97,7 +97,7 @@ data ContextElement = CMeta Meta
                     | CPhpPlug P_ObjectDef
                     | CPrp PPurpose
                     | CPop P_Population
-                    | CThm [String]    -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
+                    | CThm [String]    -- a list of themes to be printed in the functional design document. These themes must be PATTERN or PROCESS names.
                     | CIncl Include    -- an INCLUDE statement
 
 data Include = Include Origin FilePath

@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {- | The intentions behind FSpec (SJ 30 dec 2008):
-Generation of functional specifications is the core functionality of Ampersand.
+Generation of functional designs is a core functionality of Ampersand.
 All items in a specification are generated into the following data structure, FSpec.
 It is built by compiling an Ampersand script and translating that to FSpec.
 In the future, other ways of 'filling' FSpec are foreseen.
@@ -55,7 +55,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , originalContext :: A_Context             -- ^ the original context. (for showADL)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
-                   , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+                   , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
                      , pattsInScope :: [Pattern]
                      , rulesInScope :: [Rule]
                      , declsInScope :: [Declaration]
@@ -187,7 +187,7 @@ instance ConceptStructure FSpec where
  - ..."
 -}
 
-data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
+data FSid = FS_id String     -- Identifiers in Ampersand contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
 instance Named FSpec where
   name = unpack . fsName

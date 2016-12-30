@@ -148,7 +148,7 @@ makeFSpec opts context
                                      []   -> True -- interface is for all roles
                                      rs  -> role `elem` rs
      
-     themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+     themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
                      then map name (patterns context)
                      else ctxthms context
      pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)

@@ -18,7 +18,7 @@ import Text.Pandoc.CrossRef
 
 --import Debug.Trace
 --DESCR ->
---The functional specification starts with an introduction
+--The functional design document starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
 --Because we assume these stakeholders to speak the language of the primary process without any technical knowledge,
 --the second chapter contains natural language only.
@@ -36,7 +36,7 @@ import Text.Pandoc.CrossRef
 
 --TODO: Invent a syntax for meta information that is included in the source file...
 
---The following general requirements apply to the functional specification document:
+--The following general requirements apply to the functional design document:
 --Descriptive title, number, identifier, etc. of the specification
 --Date of last effective revision and revision designation
 --A logo (trademark recommended) to declare the document copyright, ownership and origin
@@ -88,8 +88,8 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
         (setTitle
            (case metaValues "title" fSpec of
                 [] -> text (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
-                                 (Dutch  , False) -> "Functionele Specificatie van "
-                                 (English, False) -> "Functional Specification of "
+                                 (Dutch  , False) -> "Functioneel Ontwerp van "
+                                 (English, False) -> "Functional Design of "
                                  (Dutch  ,  True) -> "Diagnose van "
                                  (English,  True) -> "Diagnosis of "
                            ) <> (singleQuoted.text.name) fSpec

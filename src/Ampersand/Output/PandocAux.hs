@@ -76,8 +76,8 @@ defaultWriterVariables fSpec
   = [ ("title", (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                         (Dutch  , False) -> if test (getOpts fSpec)
                                             then "Afspraken van "
-                                            else "Functionele Specificatie van "
-                        (English, False) -> "Functional Specification of "
+                                            else "Functioneel Ontwerp van "
+                        (English, False) -> "Functional Design of "
                         (Dutch  ,  True) -> "Diagnose van "
                         (English,  True) -> "Diagnosis of "
                 )++name fSpec)

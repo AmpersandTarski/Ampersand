@@ -46,9 +46,10 @@ data Options = Options { environment :: EnvironmentOptions
                        , namespace :: String
                        , testRule :: Maybe String
                --        , customCssFile :: Maybe FilePath
-                       , genFSpec :: Bool   -- if True, generate a functional specification
+                       , genFSpec :: Bool   -- if True, generate a functional design
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
+                       , genEcaDoc :: Bool   -- if True, generate ECA rules in the functional design
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
@@ -57,8 +58,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
                        , blackWhite :: Bool   -- only use black/white in graphics
                        , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
-                       , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional specification document
-                       , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional specification document)
+                       , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document
+                       , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
                        , genFPAChap :: Bool   -- Generate Function Point Analysis chapter
@@ -83,6 +84,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , sqlPwd :: String  -- pass password on to the database server
                        , sqlBinTables :: Bool -- generate binary tables (no 'brede tabellen')
                        , defaultCrud :: (Bool,Bool,Bool,Bool) -- Default values for CRUD functionality in interfaces
+                       , oldNormalizer :: Bool
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
                        } deriving Show
 data EnvironmentOptions = EnvironmentOptions
@@ -221,9 +223,11 @@ getOptions' envOpts =
                       , allInterfaces    = False
                       , namespace        = ""
                       , testRule         = Nothing
+              --        , customCssFile    = Nothing
                       , genFSpec         = False
                       , diag             = False
                       , fspecFormat      = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFSpecFormats++"."
+                      , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
                       , sqlDump          = False
@@ -256,6 +260,7 @@ getOptions' envOpts =
                       , sqlPwd           = "ampersand"
                       , sqlBinTables       = False
                       , defaultCrud      = (True,True,True,True) 
+                      , oldNormalizer    = True -- The new normalizer still has a few bugs, so until it is fixed we use the old one as the default
                       , trimXLSXCells    = True
                       }
 writeConfigFile :: IO ()
@@ -457,12 +462,20 @@ options = [ (Option ['v']   ["version"]
                                     ('T':'E':'X':'T': _ ) -> Ftextile
                                     _                     -> fspecFormat opts}
                        ) "FORMAT")
-               ("generate a functional specification document in specified format (FORMAT="++allFSpecFormats++").")
+               ("generate a functional design document in specified format (FORMAT="++allFSpecFormats++").")
             , Public)
           , (Option []        ["testRule"]
                (ReqArg (\ruleName opts -> opts{ testRule = Just ruleName }
                        ) "RULE")
                "Show contents and violations of specified rule."
+            , Hidden)
+     --     , (Option []        ["css"]
+     --          (ReqArg (\pth opts -> opts{ customCssFile = Just pth }) "file")
+     --          "Custom.css file to customize the style of the prototype."
+     --       , Public)
+          , (Option []        ["ECA"]
+               (NoArg (\opts -> opts{genEcaDoc = True}))
+               "generate documentation with ECA rules."
             , Hidden)
           , (Option []        ["proofs"]
                (NoArg (\opts -> opts{proofs = True}))
@@ -490,7 +503,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option []        ["noDiagnosis"]
                (NoArg (\opts -> opts{noDiagnosis = True}))
-               "omit the diagnosis chapter from the functional specification document."
+               "omit the diagnosis chapter from the functional design document."
             , Public)
           , (Option []        ["diagnosis"]
                (NoArg (\opts -> opts{diagnosisOnly = True}))
@@ -563,6 +576,14 @@ options = [ (Option ['v']   ["version"]
                        ) "CRUD"
                )
                "Temporary switch to learn about the semantics of crud in interface expressions."
+            , Hidden)
+          , (Option []        ["oldNormalizer"]
+               (NoArg (\opts -> opts{oldNormalizer = True}))
+               "Use the old normalizer at your own risk."
+            , Hidden)
+          , (Option []        ["newNormalizer"]
+               (NoArg (\opts -> opts{oldNormalizer = False}))
+               "Use the new normalizer at your own risk." -- :-)
             , Hidden)
           , (Option []        ["do-not-trim-cellvalues"]
                (NoArg (\opts -> opts{trimXLSXCells = False}))
