@@ -141,8 +141,8 @@ generateAmpersandOutput multi = do
    doValidateSQLTest :: IO ()
    doValidateSQLTest =
     do { verboseLn opts "Validating SQL expressions..."
-       ; isValidRule <- validateRulesSQL fSpec
-       ; unless isValidRule (exitWith InvalidSQLExpression)
+       ; errMsg <- validateRulesSQL fSpec
+       ; unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
        }
 
    doGenProto :: IO ()
