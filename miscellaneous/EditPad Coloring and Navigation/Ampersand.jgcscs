@@ -9,22 +9,30 @@ rieks.joosten@tno.nl
 TRUE
 --
 
-4
+8
 ADL (ampersand) files.
 
-Syntax colouring for Ampersand-v3.7.3 [development-ba1988e] (12-DEC-2016) and later.
-Supports `{+ ... +}` syntax rather than `{+ ... -}` syntax.
-76
+Syntax colouring for Ampersand-v3.8.0 (December 2016) and later.
+Changes include support for: 
+- `{+ ... +}` syntax.
+- back-quote coloring (e.g. `text`) in comments.
+- refering to developers (e.g. @RieksJ: links to https://github.com/RieksJ)
+- references to Ampersand issues (e.g. #598 links to https://github.com/AmpersandTarski/Ampersand/issues/598) 
+80
 #define spullenboel
 CONTEXT Piet  IN DUTCH { }
 PURPOSE CONTEXT Piet 
 {+dit is een beschrijving van de context 
-dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl +}
-PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mailadressen **gelinkt** worden
-{- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl -}
-'_SESSION' [SESSION] 'ONE' '_ONE'
---! Line comment die er qua colouring uitspringt kan soms handig zijn. dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl 
---[Testing comment stuff]--
+dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl +} --Kennen wij geen issues? #392
+PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mai`la`dre`ssen `gelinkt` word`en
+{- dat geldt **OOK** voor URL's. Vo`orbeeld: http://www.tno.nl -} en dan "strings" of zulke "str\"ings" sdf
+'_SESSION' [SESSION] 'ONE' '_ONE' {- Zie Issue#598 -} dec  V[Aap*Noot] I[AAP] V[noot] 
+--! Line comment die !-- er @qa colouring #234 uitspringt kan soms handig zijn. 
+-- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl 
+--? nog een ?@line comment #234 
+--$ en de laatste @line comment #234 
+--------[[dit is een section header]]--
+--[dit is een subsection header]-- met daarin #1234
 {- tests -}
 MEANING some text
 {+ 1 {- 2 geldt **OOK** -} 3 
@@ -93,10 +101,10 @@ yx--!  asdfas
 {- asdfasdfa
 0
 FALSE
-30
+29
 Preprocessor
 Preprocessor regels hebben het '#' teken op de eerste positie van een regel
-((?<!.)|[\n\r])#[^\n\r]*+
+^#.*
 FALSE
 FALSE
 11
@@ -114,9 +122,29 @@ FALSE
 
 FALSE
 
+Section header
+--[[xxx]]---
+^--+\[\[.*\]\]
+FALSE
+FALSE
+26
+0
+
+
+3
+FALSE
+FALSE
+TRUE
+FALSE
+
+
+
+
+FALSE
+
 Line Comment (emphasized)
-Text after --! on the same line
---![^\n\r]*
+Text after --! on the same line.
+((?<=--)|^---*)(?<cmtchar>!).*?($|\k<cmtchar>)
 FALSE
 FALSE
 33
@@ -135,8 +163,8 @@ FALSE
 FALSE
 
 Line Comment (alternate highlight)
-Text after --? on the same line
---\?[^\n\r]*+
+Text after --? on the same line.
+((?<=--)|^---*)(?<cmtchar>\?).*?($|\k<cmtchar>)
 FALSE
 FALSE
 34
@@ -154,59 +182,19 @@ FALSE
 
 FALSE
 
-Line Comment (Exceptional)
-Excluded chars prevent coloring of regularly commented out POPULATIONS, INTERFACE parts and relation properties
---+\[[^\[\n\r][^\n\r]*\]--+
-FALSE
-FALSE
-35
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Line Comment (VERY EMPHASIZED)
---$
---\$[^\n\r]*+
+Line Comment $
+Text after --$ on the same line.
+((?<=--)|^---*)(?<cmtchar>\$).*?($|\k<cmtchar>)
 FALSE
 FALSE
 32
 0
 
 
-0
+3
 FALSE
 FALSE
 FALSE
-FALSE
-
-
-
-
-FALSE
-
-Line Comment (Section header)
-Text after --[ on the same line
---+\[\[[^\n\r]*\]\]--+
-FALSE
-FALSE
-26
-0
-
-
-0
-FALSE
-FALSE
-TRUE
 FALSE
 
 
@@ -428,7 +416,7 @@ FALSE
 
 V, I
 
-(?<!['])\b[VI](\[\s*[A-Z]['\w]*\s*[*]\s*[A-Z]['\w]*\s*\])?\b
+(?<!['])\b[VI](?=\s*\[\s*([A-Z][a-zA-Z0-9_-]*)\s*(|\*\s*([A-Z][a-zA-Z0-9_-]*)\s*)\])
 FALSE
 FALSE
 23
@@ -584,7 +572,7 @@ FALSE
 
 string
 
-"[^"\r\n]*"
+\"(?:[^\"\r\n](?!\\"))*\"
 FALSE
 FALSE
 17
@@ -723,7 +711,7 @@ FALSE
 FALSE
 {
 0
-3
+4
 line comments
 1
 9
@@ -731,7 +719,27 @@ FALSE
 0
 
 
-4
+11
+text in `back-quotes`
+
+\`[^\`]*?(\`|(?=(\n|\r)))
+FALSE
+FALSE
+7
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 mailaddres
 
 \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
@@ -754,11 +762,111 @@ FALSE
 
 URL
 We don't check the URL itself, it is just for coloring 99% of the URLs used...
-(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
 FALSE
 FALSE
 2
 4
+$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+@GitDeveloper: message to end of line
+Piece of text that should draw the attention of specific developers.
+@([A-Za-z0-9_-]+)
+FALSE
+FALSE
+28
+4
+https://github.com/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Ampersand issues
+
+(|\b[Ii]ssue\s?)#([0-9]{1,4})\b
+FALSE
+FALSE
+2
+4
+https://github.com/AmpersandTarski/Ampersand/issues/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+empasize within comments
+Stuff between ** and ** (or eol) will be highlighed
+\*\*
+FALSE
+FALSE
+29
+0
+
+
+6
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+subsection header
+Stuff between [ (or eol) will be highlighed
+\[.*\]
+FALSE
+FALSE
+35
+0
+
+
+3
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Line Comment (emphasized)
+Text after --! on the same line.
+(?<=--)!.*
+FALSE
+FALSE
+33
+0
 
 
 0
@@ -772,12 +880,32 @@ FALSE
 
 FALSE
 
-empasize stuff
-Stuff between [! and a subsequent ] (or eol) will be highlighed
-\*\*[^*]*\*\*
+Line Comment (alternate highlight)
+Text after --? on the same line.
+(?<=--)\?.*
 FALSE
 FALSE
-33
+34
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Line Comment $
+Text after --$ on the same line.
+(?<=--)\$.*
+FALSE
+FALSE
+32
 0
 
 
@@ -819,7 +947,7 @@ FALSE
 0
 
 
-7
+10
 {+ block comment start
 comment between {+ and +}
 (?<=(PURPOSE|MEANING|MESSAGE).*?){\+
@@ -900,6 +1028,26 @@ FALSE
 {- ... -}
 FALSE
 {-
+text in `back-quotes`
+
+\`[^\`]*?(\`|(?=\+}))
+FALSE
+TRUE
+7
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 mailaddres
 
 \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
@@ -920,36 +1068,76 @@ FALSE
 
 FALSE
 
-URL
-We don't check the URL itself, it is just for coloring 99% of the URLs used...
-(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+@GitDeveloper: message to end of line
+Piece of text that should draw the attention of specific developers.
+@([A-Za-z0-9_-]+)
+FALSE
+FALSE
+28
+4
+https://github.com/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Ampersand issues
+
+#([0-9]{1,4})
 FALSE
 FALSE
 2
+4
+https://github.com/AmpersandTarski/Ampersand/issues/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+FALSE
+FALSE
+2
+4
+$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+empasize within comments
+Stuff between ** and ** (or eol) will be highlighed
+\*\*
+FALSE
+FALSE
+29
 0
 
 
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-empasize stuff
-Stuff between [! and a subsequent ] (or eol) will be highlighed
-\*\*[^*]*\*\*
-FALSE
-FALSE
-33
-0
-
-
-0
+6
 FALSE
 FALSE
 FALSE
@@ -967,7 +1155,7 @@ FALSE
 0
 
 
-7
+10
 {- (Haskell) block comment start
 Haskell block comment is text between {- and -}
 {-
@@ -1048,6 +1236,26 @@ FALSE
 {+ ... +}
 FALSE
 {+
+text in `back-quotes`
+
+\`[^\`]*?(\`|(?=-}))
+FALSE
+TRUE
+7
+0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 mailaddres
 
 \b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
@@ -1068,12 +1276,140 @@ FALSE
 
 FALSE
 
-URL
-We don't check the URL itself, it is just for coloring 99% of the URLs used...
-(http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*
+@GitDeveloper: message to end of line
+Piece of text that should draw the attention of specific developers.
+@([A-Za-z0-9_-]+)
+FALSE
+FALSE
+28
+4
+https://github.com/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Ampersand issues
+
+#([0-9]{1,4})
 FALSE
 FALSE
 2
+4
+https://github.com/AmpersandTarski/Ampersand/issues/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+FALSE
+FALSE
+2
+4
+$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+empasize within comments
+Stuff between ** and ** (or eol) will be highlighed
+\*\*
+FALSE
+FALSE
+29
+0
+
+
+6
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+**-comments
+1
+29
+FALSE
+0
+
+
+7
+**-return
+Toggle back after another pair of **'s
+\*\*
+FALSE
+FALSE
+29
+0
+
+
+1
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+end of line
+
+$
+FALSE
+FALSE
+29
+0
+
+
+1
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+text in `back-quotes`
+
+\`[^\`]*?(\`|(?=\*\*))
+FALSE
+TRUE
+36
 0
 
 
@@ -1088,14 +1424,74 @@ FALSE
 
 FALSE
 
-empasize stuff
-Stuff between [! and a subsequent ] (or eol) will be highlighed
-\*\*[^*]*\*\*
-FALSE
-FALSE
-33
-0
+mailaddres
 
+\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
+FALSE
+FALSE
+2
+3
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+@GitDeveloper: message to end of line
+Piece of text that should draw the attention of specific developers.
+@([A-Za-z0-9_-]+)
+FALSE
+FALSE
+28
+4
+https://github.com/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+Ampersand issues
+
+#([0-9]{1,4})
+FALSE
+FALSE
+2
+4
+https://github.com/AmpersandTarski/Ampersand/issues/$1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+URL
+We don't check the URL itself, it is just for coloring 99% of the URLs used...
+((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+FALSE
+FALSE
+2
+4
+$1
 
 0
 FALSE
