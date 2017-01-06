@@ -86,7 +86,7 @@ class SQLAble a where
                             -> bqeWithPlaceholder
                          | otherwise -> bqeWithoutPlaceholder
                        _ -> bqeWithoutPlaceholder
-            BCQE{} -> BCQE { bseSetQuantifier = SQDefault
+            BCQE{} -> BCQE { bseSetQuantifier = bseSetQuantifier bqe
                            , bcqeOper = bcqeOper bqe
                            , bcqe0 = insertPlaceholder . bcqe0 $ bqe
                            , bcqe1 = insertPlaceholder . bcqe1 $ bqe
@@ -95,7 +95,7 @@ class SQLAble a where
         where 
           bqeWithoutPlaceholder = BQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
           bqeWithPlaceholder = 
-             BSE { bseSetQuantifier = SQDefault
+             BSE { bseSetQuantifier = bseSetQuantifier bqe
                  , bseSrc = bseSrc bqe
                  , bseTrg = bseTrg bqe
                  , bseTbl = bseTbl bqe
@@ -483,12 +483,12 @@ nonSpecialSelectExpr fSpec expr=
                                        , bseWhr = bseWhr se
                                        }
                          BCQE { bcqeOper = Union }
-                               -> BCQE { bseSetQuantifier = SQDefault
+                               -> BCQE { bseSetQuantifier = bseSetQuantifier se
                                        , bcqeOper = Union 
                                        , bcqe0    = flipped (bcqe0 se)
                                        , bcqe1    = flipped (bcqe1 se)
                                        }
-                         BCQE{} -> BSE { bseSetQuantifier = SQDefault
+                         BCQE{} -> BSE { bseSetQuantifier = bseSetQuantifier se
                                        , bseSrc = Col { cTable = [fTable]
                                                       , cCol   = [targetAlias]
                                                       , cAlias = []
