@@ -842,14 +842,14 @@ FALSE
 
 subsection header
 Stuff between [ (or eol) will be highlighed
-\[.*\]
+\[.*?\]
 FALSE
 FALSE
 35
 0
 
 
-3
+0
 FALSE
 FALSE
 FALSE
