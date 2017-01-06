@@ -3,14 +3,14 @@
 module Ampersand.FSpec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
 where
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec.FSpec(FSpec(..),Activity(..)) 
+import Ampersand.FSpec.FSpec(FSpec(..)) 
 import Ampersand.Basics
 import Text.Pandoc
 
 -- The general idea is that an Ampersand declaration such as:
 --     PURPOSE RELATION r[A*B] IN ENGLISH
 --     {+This text explains why r[A*B] exists-}
--- produces the exact right text in the functional specification
+-- produces the exact right text in the functional design document.
 
 -- The class Motivated exists so that we can write the Haskell expression 'purposeOf fSpec l x'
 -- anywhere we like for every type of x that could possibly be motivated in an Purpose.
@@ -361,15 +361,5 @@ instance Motivated FSpec where
     = fSexpls fSpec ++
       (concatMap explanations . vpatterns)  fSpec ++
       (concatMap explanations . interfaceS) fSpec
-
--- Ampersand allows multiple purposes for everything.
--- The diagnosis report must make mention of this (so the user will notice if (s)he reads the diagnosis).
--- Multiple purposes are simply concatenated, so the user sees them all.
-instance Motivated Activity where
-  explForObj _ _ = False
-  explanations activity = actPurp activity
-  purposeOf _ l x = case [ e | e <- actPurp x, amLang (explMarkup e) == l ] of
-                    []    -> Nothing
-                    purps -> Just purps
 
    

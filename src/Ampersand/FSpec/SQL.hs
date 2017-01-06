@@ -86,7 +86,7 @@ class SQLAble a where
                             -> bqeWithPlaceholder
                          | otherwise -> bqeWithoutPlaceholder
                        _ -> bqeWithoutPlaceholder
-            BCQE{} -> BCQE { bseSetQuantifier = SQDefault
+            BCQE{} -> BCQE { bseSetQuantifier = bseSetQuantifier bqe
                            , bcqeOper = bcqeOper bqe
                            , bcqe0 = insertPlaceholder . bcqe0 $ bqe
                            , bcqe1 = insertPlaceholder . bcqe1 $ bqe
@@ -95,7 +95,7 @@ class SQLAble a where
         where 
           bqeWithoutPlaceholder = BQEComment [BlockComment "THERE IS NO PLACEHOLDER HERE"] bqe
           bqeWithPlaceholder = 
-             BSE { bseSetQuantifier = SQDefault
+             BSE { bseSetQuantifier = bseSetQuantifier bqe
                  , bseSrc = bseSrc bqe
                  , bseTrg = bseTrg bqe
                  , bseTbl = bseTbl bqe
@@ -155,10 +155,16 @@ maybeSpecialCase fSpec expr =
                                        , bseWhr = Just whereClause
                                        }
       | otherwise -> Nothing
+    EIsc (ECpl (ECps (EDcD r,EFlp (EDcD r')) ),EDcI a ) 
+                  -> maybeSpecialCase fSpec $ EIsc (EDcI a , ECpl (ECps (EDcD r,EFlp (EDcD r')) ))
     EIsc (expr1 , ECpl expr2)
                   -> go False expr1 expr2
+    EIsc (ECpl expr1 , expr2)
+                  -> go False expr2 expr1
     EIsc (expr1 , EFlp (ECpl expr2))
                   -> go True expr1 expr2
+    EIsc (EFlp (ECpl expr1) , expr2)
+                  -> go True expr2 expr1
     _ -> Nothing 
   where 
     go :: Bool -> Expression -> Expression -> Maybe BinQueryExpr
@@ -477,12 +483,12 @@ nonSpecialSelectExpr fSpec expr=
                                        , bseWhr = bseWhr se
                                        }
                          BCQE { bcqeOper = Union }
-                               -> BCQE { bseSetQuantifier = SQDefault
+                               -> BCQE { bseSetQuantifier = bseSetQuantifier se
                                        , bcqeOper = Union 
                                        , bcqe0    = flipped (bcqe0 se)
                                        , bcqe1    = flipped (bcqe1 se)
                                        }
-                         BCQE{} -> BSE { bseSetQuantifier = SQDefault
+                         BCQE{} -> BSE { bseSetQuantifier = bseSetQuantifier se
                                        , bseSrc = Col { cTable = [fTable]
                                                       , cCol   = [targetAlias]
                                                       , cAlias = []
@@ -752,9 +758,12 @@ Based on this derivation:
     EDia (l,r)
       -> BQEComment [BlockComment $ "case: EDia (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
          selectExpr fSpec ((flp l .\. r) ./\. (l ./. flp r))
-    ERad{}
+    ERad (l,ECpl r) 
+      -> BQEComment [BlockComment $ "case: ERad (l, ECpl r)"++showADL expr++" ("++show (sign expr)++")"] $
+        selectExpr fSpec (EFlp (r .\. flp l))
+    ERad (l,r) 
       -> BQEComment [BlockComment $ "case: ERad (l,r)"++showADL expr++" ("++show (sign expr)++")"] $
-        selectExpr fSpec (deMorganERad expr)
+        selectExpr fSpec (flp (notCpl l) .\. r)
     EPrd (l,r)
      -> let v = EDcV (Sign (target l) (source r))
         in BQEComment [BlockComment $ "case: EPrd (l,r)"++showADL expr++" ("++show (sign expr)++")"] $

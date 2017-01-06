@@ -40,7 +40,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Signature(..)
  , Population(..)
  , Association(..)
- , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
+ , Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomValue(..), mkAtomPair, PAtomValue(..)
  , ContextInfo(..)
  , showValADL,showValPHP,showValSQL
@@ -77,7 +77,7 @@ data A_Context
          , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctxlang :: Lang           -- ^ The default language used in this context.
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
-         , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+         , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Declaration]    -- ^ The relations that are declared in this context, outside the scope of patterns
@@ -363,7 +363,6 @@ instance Show A_Gen where
 
 data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcEcas ::     [ECArule]     -- All ECArules that are needed to perform computations for maintaining rules
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
                      , ifcPrp ::      String        -- The purpose of the interface
@@ -427,92 +426,7 @@ data SubInterface = Box { siConcept :: A_Concept
                         , siIfcId  :: String  --id of the interface that is referenced to
                         } deriving (Eq, Show)
 
-data InsDel   = Ins | Del
-                 deriving (Show,Eq,Ord)
-data ECArule= ECA { ecaTriggr :: Event       -- The event on which this rule is activated
-                  , ecaDelta ::  Declaration -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
-                  , ecaAction :: PAclause    -- The action to be taken when triggered.
-                  , ecaNum ::    Int         -- A unique number that identifies the ECArule within its scope.
-                  }
 
-instance Show ECArule where
-  showsPrec _ r = showString ("ON "++show (ecaTriggr r)++" "++show (ecaDelta r)++" do something.")
-
-instance Eq (ECArule) where
-   e==e' = ecaNum e==ecaNum e'
-
-data Event = On { eSrt :: InsDel
-                , eDcl :: Declaration
-                } deriving (Show,Eq)
-
-data PAclause
-              = CHC { paCls :: [PAclause]                 -- precisely one clause is executed.
-                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
-                    }
-              | GCH { paGCls :: [(InsDel,Expression,PAclause)]    -- guarded choice; The rule is maintained if one of the clauses of which the expression is populated is executed.
-                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
-                    }
-              | ALL { paCls :: [PAclause]                 -- all clauses are executed.
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Do  { paSrt :: InsDel                     -- do Insert or Delete
-                    , paTo :: Declaration                 -- into toExpr    or from toExpr
-                    , paDelta :: Expression               -- delta
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | New { paCpt :: A_Concept                  -- make a new instance of type c
-                    , paCl :: PSingleton ->PAclause            -- to be done after creating the concept
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Rmv { paCpt :: A_Concept                  -- Remove an instance of type c
-                    , paCl :: PSingleton->PAclause            -- to be done afteremoving the concept
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Nop { paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
-                    }
-              | Blk { paMotiv :: [(Expression,[Rule] )]   -- tells which expression from whichule has caused the blockage
-                    }
-              | Let { paExpr :: PAclause                  -- the expression that represents a condition to be tested.
-                    , paBody :: PAclause -> PAclause
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Ref { paVar :: String
-                    }
-
--- SJC: adding motivation separately may help:
--- data Motivated a = Motivated a [(Expression,[Rule])] | Ref String
---   then make an instance for Ord Motivated (any way you like)
---   let PAclause be deriving (Ord,Eq)
-instance Ord PAclause where
-   CHC ds _ `compare` CHC ds' _ = ds `compare` ds'
-   CHC{} `compare` _ = LT
-   _ `compare` CHC{} = GT
-   GCH ds _ `compare` GCH ds' _ = ds `compare` ds'
-   GCH{} `compare` _ = LT
-   _ `compare` GCH{} = GT
-   ALL ds _ `compare` ALL ds' _ = ds `compare` ds'
-   ALL{} `compare` _ = LT
-   _ `compare` ALL{} = GT
-   p@Do{}   `compare`   p'@Do{} = (paSrt p,paTo p,paDelta p) `compare` (paSrt p',paTo p',paDelta p')
-   Do{} `compare` _ = LT
-   _ `compare` Do{} = GT
-   Nop _    `compare`     Nop _ = EQ
-   Nop{} `compare` _ = LT
-   _ `compare` Nop{} = GT
-   p@New{}  `compare`  p'@New{} = paCpt p `compare` paCpt p'
-   New{} `compare` _ = LT
-   _ `compare` New{} = GT
-   p@Rmv{}  `compare`  p'@Rmv{} = paCpt p `compare` paCpt p'
-   Rmv{} `compare` _ = LT
-   _ `compare` Rmv{} = GT
-   Blk{} `compare` Blk{} = EQ
-   Blk{} `compare` _ = LT
-   _ `compare` Blk{} = GT
-   Ref{} `compare` Ref{} = EQ
-   Ref{} `compare` _ = LT
-   _ `compare` Ref{} = GT
-   p@Let{} `compare` p'@Let{} = paExpr p `compare` paExpr p' -- TODO SJC: this cannot be right, right? It was "False" in the old EQ class, but that was wrong too I think
-instance Eq PAclause where a == b = (compare a b == EQ)
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects

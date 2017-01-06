@@ -1,0 +1,23 @@
+CONTEXT RAP IN ENGLISH
+
+
+
+PATTERN Modules
+    CONCEPT Module "A module is a file that contains Ampersand source code."
+    RELATION filename[Module*FileName] [UNI]
+    MEANING "Every pattern that is stored in a file system has a FileName."
+    RELATION filepath[Module*FilePath] [UNI]
+    MEANING "Every pattern that is stored in a file system has a FilePath."
+    RELATION includes[Module*Module]
+    MEANING "Pattern A instantiates B means that all definitions from B are copied into A."
+    PURPOSE RELATION filename[Module*FileName]
+    {+	Patterns can be stored in a file system.
+    	To identify a pattern as a file, it has a file name.
+    	The file name follows the conventions of the file system in which the pattern resides.
+    +}
+    PURPOSE RELATION filepath[Pattern*FilePath]
+    {+	For working with file systems that support a folder hierarchy,
+    	patterns can have a file path.
+    	The file path follows the conventions of the file system in which the pattern resides.
+    +}
+ENDCONTEXT

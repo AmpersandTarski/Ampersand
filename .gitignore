@@ -7,6 +7,10 @@ cabal.sandbox.config
 StaticFiles_Generated.hs
 BuildInfo_Generated.hs
 
+# Visual studio code stuff
+###################
+/.vscode
+
 # Compiled source #
 ###################
 *.com

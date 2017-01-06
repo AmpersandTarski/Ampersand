@@ -2,9 +2,9 @@ module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import Prelude hiding (exp,putStrLn,putStr)
 import Data.List
-import Control.Monad
 import System.IO (hSetBuffering,stdout,BufferMode(NoBuffering))
 import Ampersand.Basics
+import Ampersand.Misc
 import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Prototype.PHP
@@ -14,13 +14,14 @@ with the results from Haskell-based Ampersand rule evaluator. The latter is much
 therefore most likely to be correct in case of discrepancies.
 -}
 
-validateRulesSQL :: FSpec -> IO Bool
+validateRulesSQL :: FSpec -> IO [String]
 validateRulesSQL fSpec =
- do { when (any (not.isSignal.fst) (allViolations fSpec))
-           (exitWith ViolationsInDatabase)
+ do { case filter (not . isSignal . fst) (allViolations fSpec) of
+         []    -> return()
+         viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     ; hSetBuffering stdout NoBuffering
 
-    ; putStrLn "Initializing temporary database (this could take a while)"
+    ; verboseLn (getOpts fSpec)  "Initializing temporary database (this could take a while)"
     ; createTempDatabase fSpec
 
     ; let allExps = getAllInterfaceExps fSpec ++
@@ -29,22 +30,22 @@ validateRulesSQL fSpec =
                     getAllIdExps fSpec ++
                     getAllViewExps fSpec
 
-    ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
+    ; verboseLn (getOpts fSpec)  $ "Number of expressions to be validated: "++show (length allExps)
     ; results <- mapM (validateExp fSpec) allExps
 
---    ; putStrLn "\nRemoving temporary database"
---    ; removeTempDatabase (getOpts fSpec)
-
     ; case [ ve | (ve, False) <- results] of
-        [] -> do { putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
-                 ; return True
+        [] -> do { verboseLn (getOpts fSpec) "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+                 ; return []
                  }
-        ves -> do { putStrLn ( "\n\nValidation error. The following expressions failed validation:\n" ++
-                               unlines (map showVExp ves)
-                             )
-                  ; return False
-                  }
+        ves -> return $ "Validation error. The following expressions failed validation:"
+                      : map showVExp ves
+                             
+               
     }
+stringify :: (Rule,[AAtomPair]) -> (String,[String])
+stringify (rule,pairs) = (name rule, map f pairs )
+  where f pair = "("++showValADL (apLeft pair)++", "++showValADL (apRight pair)++")"
+
 
 -- functions for extracting all expressions from the context
 

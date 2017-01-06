@@ -46,10 +46,10 @@ data Options = Options { environment :: EnvironmentOptions
                        , namespace :: String
                        , testRule :: Maybe String
                --        , customCssFile :: Maybe FilePath
-                       , genFSpec :: Bool   -- if True, generate a functional specification
+                       , genFSpec :: Bool   -- if True, generate a functional design
                        , diag :: Bool   -- if True, generate a diagnosis only
                        , fspecFormat :: FSpecFormat -- the format of the generated (pandoc) document(s)
-                       , genEcaDoc :: Bool   -- if True, generate ECA rules in the Functional Spec
+                       , genEcaDoc :: Bool   -- if True, generate ECA rules in the functional design
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
@@ -58,8 +58,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
                        , blackWhite :: Bool   -- only use black/white in graphics
                        , doubleEdges :: Bool   -- Graphics are generated with hinge nodes on edges.
-                       , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional specification document
-                       , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional specification document)
+                       , noDiagnosis :: Bool   -- omit the diagnosis chapter from the functional design document
+                       , diagnosisOnly :: Bool   -- give a diagnosis only (by omitting the rest of the functional design document)
                        , genLegalRefs :: Bool   -- Generate a table of legal references in Natural Language chapter
                        , genUML :: Bool   -- Generate a UML 2.0 data model
                        , genFPAChap :: Bool   -- Generate Function Point Analysis chapter
@@ -462,7 +462,7 @@ options = [ (Option ['v']   ["version"]
                                     ('T':'E':'X':'T': _ ) -> Ftextile
                                     _                     -> fspecFormat opts}
                        ) "FORMAT")
-               ("generate a functional specification document in specified format (FORMAT="++allFSpecFormats++").")
+               ("generate a functional design document in specified format (FORMAT="++allFSpecFormats++").")
             , Public)
           , (Option []        ["testRule"]
                (ReqArg (\ruleName opts -> opts{ testRule = Just ruleName }
@@ -503,7 +503,7 @@ options = [ (Option ['v']   ["version"]
             , Public)
           , (Option []        ["noDiagnosis"]
                (NoArg (\opts -> opts{noDiagnosis = True}))
-               "omit the diagnosis chapter from the functional specification document."
+               "omit the diagnosis chapter from the functional design document."
             , Public)
           , (Option []        ["diagnosis"]
                (NoArg (\opts -> opts{diagnosisOnly = True}))

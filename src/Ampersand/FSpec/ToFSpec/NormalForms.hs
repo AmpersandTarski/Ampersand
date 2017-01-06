@@ -1,6 +1,6 @@
 {-# OPTIONS_GHC -XFlexibleInstances #-}
 module Ampersand.FSpec.ToFSpec.NormalForms
-  (delta,conjNF,disjNF,normPA,cfProof,dfProof,proofPA,simplify
+  (delta,conjNF,disjNF,cfProof,dfProof,simplify
   ,cfProofs, dfProofs  -- these are for confluence testing.
   , makeAllConjs, conjuncts
   ) where
@@ -9,7 +9,6 @@ import Data.Set (Set)
 import qualified Data.Set as Set
 import Data.List (nub, intercalate, permutations,partition)
 import Ampersand.Basics
-import Ampersand.ADL1.ECArule
 import Ampersand.ADL1.Expression
 import Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import Ampersand.Classes.Relational
@@ -683,13 +682,6 @@ dRule (PEqu _ l r) = [DEquiR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule (PInc _ l r) = [DInclR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule term         = fatal 279 ("Illegal use of dRule with term "++showADL term)
 
-slideDown :: (RTerm -> Integer) -> RTerm -> [(Integer,DerivStep)]
-slideDown weight term
- = let w = weight term in
-   case [dstep | dstep<-dSteps tceDerivRules term, weight (rhs dstep)<w] of
-     dstep: _ -> (w,dstep): (slideDown weight) (rhs dstep)
-     _        -> []
-
 weightNF :: Bool -> RTerm -> Integer
 weightNF dnf term = w term
  where
@@ -1072,10 +1064,6 @@ delta sgn
 
 {- Normalization of process algebra clauses -}
 
-normPA :: Options -> PAclause -> PAclause
-normPA opts pac = pac'
-    where (pac',_,_) = if null (proofPA opts pac) then fatal 21 "last: empty list" else last (proofPA opts pac)
-
 type Proof a = [(a, [String], String)]
 
 {- A proof is a list of triples (e, ss, rel), where |e| is an expression in the chain;
@@ -1086,89 +1074,6 @@ type Proof a = [(a, [String], String)]
 
    WK: I typically do |(a, [(rel, hint, a)])|.
 -}
-
-proofPA :: Options -> PAclause -> Proof PAclause
-proofPA opts = {-reverse.take 3.reverse.-}pPA
- where pPA pac' = case normstepPA opts pac' of
-                    ( _ , []  ,equ) -> [(pac',[]   ,equ)]    -- is dus (pac,[],"<=>")
-                    (res,steps,equ) -> (pac',steps,equ):pPA res
-
-{- The following rewriter is used to simplify the actions inside eca rules.
--- WHY? Stef, kan je uitleggen wat hier gebeurt? Enig commentaar is hier wel op zijn plaats.
--- Ook zou het helpen om bij de verschillende constructoren van PAclause een beschrijving te geven van het idee er achter.
--- BECAUSE! Kan ik wel uitleggen, maar het is een heel verhaal. Dat moet tzt in een wetenschappelijk artikel gebeuren, zodat het er goed staat.
--- Het idee is dat een procesalgebra is weergegeven in Haskell combinatoren (gedefinieerd als PAclause(..), zie ADL.ECArule).
--- Die kun je vervolgens normaliseren met herschrijfregels op basis van gelijkheden die gelden in de bewuste procesalgebra.
--- Helaas zijn de herschrijfregels nu nog hard gecodeerd, zodat ik voor PAclause een afzonderlijke Haskell functie moet schrijven.
--- Hierna volgt de normalisator voor relatiealgebra-expressies, genaamd normStep. Die heeft dezelfde structuur,
--- maar gebruikt herschrijfregels vanuit gelijkheden die gelden in relatiealgebra.
--}
-normstepPA :: Options -> PAclause -> (PAclause,[String],String)
-normstepPA opts pac = (res,ss,"<=>")
- where
-  (res,ss) = norm pac
-  norm :: PAclause -> (PAclause,[String])
-  norm (CHC [] ms)  = (Blk ms, ["Run out of options"])
-  norm (CHC [r] ms) = (r', ["Flatten ONE"])
-                    where r' = case r of
-                                 Blk{} -> r
-                                 _     -> r{paMotiv = ms}
-  norm (CHC ds ms)  | (not.null) msgs = (CHC ops ms, msgs)
-                    | (not.null) [d | d<-ds, isCHC d] = (CHC (nub [ d' | d<-ds, d'<-if isCHC d then let CHC ops' _ = d in ops' else [d] ]) ms, ["flatten CHC"])  -- flatten
-                    | (not.null) [Nop | Nop{}<-ops] = (Nop{paMotiv=ms}, ["Choose to do nothing"])
-                    | (not.null) [Blk | Blk{}<-ops] = (CHC [op | op<-ops, not (isBlk op)] ms, ["Choose anything but block"])
-                    | (not.null) doubles = (CHC [ head cl | cl<-eqClass (==) ds ] ms, ["remove double occurrences"])
-                    | otherwise = (CHC ds ms, [])
-                    where nds  = map norm ds
-                          msgs = concatMap snd nds
-                          ops  = map fst nds
-                          doubles = [ d | cl<-eqClass (==) ds, length cl>1, d<-cl ]
-  norm (GCH [] ms)  = (Blk ms, ["Run out of options"])
-  norm (GCH ds ms)  | (not.null) [() | (_,links,_)<-normds, isFalse links] = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isFalse links)] ms, ["Remove provably empty guard(s)."])
-                    | (not.null) [()          | (_,  _    ,p)<-normds, isNop p]
-                        = (GCH [(tOp,links,p) | (tOp,links,p)<-normds, not (isNop p)] ms, ["Remove unneccessary SELECT."])
-                    | (not.null) doubles = (GCH [ (fst3 (head cl), foldr1 (.\/.) (map snd3 cl), thd3 (head cl)) | cl<-eqCl (\(tOp,_,p)->(tOp,p)) ds ] ms, ["remove double occurrences"])
-                    | otherwise = (GCH ds ms, [])
-                    where normds = [ (tOp, conjNF opts links, let (p',_)=norm p in p') | (tOp,links,p)<-ds]
-                          doubles = [ d | cl<-eqCl (\(tOp,_,p)->(tOp,p)) ds, length cl>1, d<-cl ]
-  norm (ALL [] ms)  = (Nop ms, ["ALL [] = No Operation"])
-  norm (ALL [d] ms) = (d', ["Flatten ONE"])
-                    where d' = case d of
-                                 Blk{} -> d
-                                 _     -> d{paMotiv = ms}
-  norm (ALL ds ms)  | (not.null) msgs = (ALL ops ms, msgs)
-                    | (not.null) [d | d<-ds, isAll d] = (ALL (nub [ d' | d<-ds, d'<-if isAll d then let ALL ops' _ = d in ops' else [d] ]) ms, ["flatten ALL"])  -- flatten
-                    | (not.null) [Blk | Blk{}<-ops] = (Blk{paMotiv = [m | op@Blk{}<-ops,m<-paMotiv op]}, ["Block all"])
-                    | (not.null) [Nop | Nop{}<-ops] = (ALL [op | op<-ops, not (isNop op)] ms, ["Ignore Nop"])
-                    | (not.null) doubles = (CHC [ head cl | cl<-eqClass (==) ds ] ms, ["remove double occurrences"])
-                    | (not.null) long    = (ALL ds' ms, ["Take the expressions for "++commaEng "and" [(name . paTo . head) cl |cl<-long]++"together"])
-                    | otherwise = (ALL ds ms, [])
-                    where ds'     = [ let p=head cl in
-                                        if length cl==1 then p else p{paDelta=disjNF opts (foldr1 (.\/.) [paDelta c | c<-cl]), paMotiv=concatMap paMotiv cl}
-                                    | cl<-dCls {- not (null cl) is guaranteed by eqCl -} ]
-                                    ++[d | d<-ds, not (isDo d)]
-                          nds     = map norm ds
-                          msgs    = concatMap snd nds
-                          ops     = map fst nds
-                          doubles = [ d | cl<-eqClass (==) ds, length cl>1, d<-cl ]
-                          dCls :: [[PAclause]]
-                          dCls = eqCl to [d | d<-ds, isDo d]
-                          long :: [[PAclause]]
-                          long = [cl | cl<-dCls, length cl>1]
-                          to d = case d of
-                                   Do{} -> (paSrt d, paTo d)
-                                   _    -> fatal 74 "illegal call of to(d)"
-  norm (New c p ms)        = ( case p' of
-                                Blk{} -> p'{paMotiv = ms}
-                                _     -> New c (\x->let (p'', _) = norm (p x) in p'') ms
-                             , msgs)
-                             where (p', msgs) = norm (p (makePSingleton "x"))
-  norm (Rmv c p ms)        = ( case p' of
-                                Blk{} -> p'{paMotiv = ms}
-                                _     -> Rmv c (\x->let (p'', _) = norm (p x) in p'') ms
-                             , msgs)
-                             where (p', msgs) = norm (p (makePSingleton "x"))
-  norm p                   = (p, [])
 
 {- Normalization of expressions -}
 
@@ -1182,7 +1087,7 @@ simpProof shw expr
  = if expr==res
    then [(expr,[],"<=>")]
    else (expr,steps,equ):simpProof shw res
- where (res,steps,equ) = normStep shw True True True expr
+ where (res,steps,equ) = normStep shw True True expr
 
 -- | The purpose of "normStep" is to elaborate a single step in a rewrite process,
 -- in which the expression is normalized by means of rewrite rules.
@@ -1193,11 +1098,10 @@ simpProof shw expr
 -- Use normstep shw eq False expr to obtain a single proof step or none when no rule is applicable.
 -- This function returns a resulting expression that is closer to a normal form.
 -- The normal form is not unique. This function simply uses the first rewrite rule it encounters.
-normStep :: (Expression -> String) -> Bool -> Bool -> Bool ->
+normStep :: (Expression -> String) -> Bool -> Bool ->
             Expression -> (Expression,[String],String) -- This might be generalized to "Expression" if it weren't for the fact that flip is embedded in the Relation type.
 normStep shw   -- a function to print an expression. Might be "showADL"
          eq    -- If eq==True, only equivalences are used. Otherwise, inclusions are used as well.
-         dnf   -- If dnf==True, the result is in disjunctive normal form, otherwise in conjunctive normal form
          simpl -- If True, only simplification rules are used, which is a subset of all rules. Consequently, simplification is implied by normalization.
          expr = if sign expr==sign res then (res,ss,equ) else
                 fatal 166 ("Violation of sign expr==sign res in the normalizer\n  expr: sign( "++showADL expr++" ) == "++showSign res++"\n  res:  sign( "++showADL res++" ) == "++showSign res)
@@ -1290,10 +1194,6 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM _      (ECps (l,r)) _                | isIdent r = (l, ["x;I = x"], "<=>")
   nM True   (ECps (r,ERad (s,q))) _          | not eq = ((r.:.s).!.q, ["Peirce: r;(s!q) |- (r;s)!q"],"==>")
   nM True   (ECps (ERad (r,s),q)) _          | not eq = (r.!.(s.:.q), ["Peirce: (r!s);q |- r!(s;q)"],"==>")
-  nM True   (ECps (EIsc (r,s),q)) _          | not eq = ((r.:.q)./\.(s.:.q), ["distribute ; over /\\"],"==>")
-  nM True   (ECps (r,EIsc (s,q))) _          | not eq = ((r.:.s)./\.(r.:.q), ["distribute ; over /\\"],"==>")
-  nM _      (ECps (EUni (q,s),r)) _                   = ((q.:.r).\/.(s.:.r), ["distribute ; over \\/"],"<=>")
-  nM _      (ECps (l,EUni (q,s))) _                   = ((l.:.q).\/.(l.:.s), ["distribute ; over \\/"],"<=>")
   nM _      x@(ECps (l@EFlp{},r)) _ | not eq && flp l==r && isInj l   = (EDcI (source x), ["r~;r |- I (r is univalent)"], "==>")
   nM _      x@(ECps (l,       r)) _ | not eq && l==flp r && isInj l   = (EDcI (source x), ["r;r~ |- I (r is injective)"], "==>")
 -- Issues #345 and #256: The following two rules may not be used, because multiplicities are not yet proven but must be enforced. So the normalizer may not assume them.
@@ -1325,10 +1225,6 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM _      (ERad (l,r)) _                   | isImin r = (l, ["x!-I = x"], "<=>")
 --     nM False  (ERad (ECps (r,s),q)) _            | not eq = (r.:.(s.!.q), ["Peirce: (r;s)!q |- r;(s!q)"],"==>")  -- SJ 20131124 TODO: check this rule. It is wrong!
 --     nM False  (ERad (r,ECps (s,q))) _            | not eq = ((r.!.s).:.q, ["Peirce: (r!s);q |- r!(s;q)"],"==>")  -- SJ 20131124 TODO: check this rule. It is wrong!
-  nM False  (ERad (EUni (r,s),q)) _            | not eq = ((r.!.q).\/.(s.!.q), ["distribute ! over \\/"],"==>")
-  nM False  (ERad (r,EUni (s,q))) _            | not eq = ((r.!.s).\/.(r.!.q), ["distribute ! over \\/"],"==>")
-  nM _      (ERad (EIsc (q,s),r)) _                     = ((q.!.r)./\.(s.!.r), ["distribute ! over /\\"],"<=>")
-  nM _      (ERad (l,EIsc (q,s))) _                     = ((l.!.q)./\.(l.!.s), ["distribute ! over /\\"],"<=>")
   nM _      (ERad(ECpl l,r))      _                     = (flp l .\. r, [case l of EFlp{} -> "-l~!r = l\\r"; _ -> "-l!r = l~\\r"], "<=>")
   nM _      (ERad(l,ECpl r))      _                     = (l ./. flp r, [case r of EFlp{} -> "l!-r~ = l/r"; _ -> "l!-r = l/r~"], "<=>")
   nM posCpl (ERad (l,r))         rs                     = (t .!. f, steps++steps', fEqu [equ',equ''])
@@ -1338,8 +1234,6 @@ Until the new normalizer works, we will have to work with this one. So I have in
   nM posCpl (EPrd (l,r)) _                              = (t .*. f, steps++steps', fEqu [equ',equ''])
                                                               where (t,steps, equ')  = nM posCpl l []
                                                                     (f,steps',equ'') = nM posCpl r []
-  nM posCpl (EIsc (EUni (l,k),r)) _       | posCpl/=dnf = ((l./\.r) .\/. (k./\.r), ["distribute /\\ over \\/"],"<=>")
-  nM posCpl (EIsc (l,EUni (k,r))) _       | posCpl/=dnf = ((l./\.k) .\/. (l./\.r), ["distribute /\\ over \\/"],"<=>")
   nM posCpl x@(EIsc (l,r)) rs
 -- Absorb equals:    r/\r  -->  r
       | or [length cl>1 |cl<-absorbClasses]
@@ -1411,8 +1305,6 @@ Until the new normalizer works, we will have to work with this one. So I have in
             absorbAsyRfx = eqClass same eList where e `same` e' = isRfx e && isAsy e && isRfx e' && isAsy e' && e == flp e'
             (negList,posList) = partition isNeg (exprIsc2list l++exprIsc2list r)
             eList  = rs++exprIsc2list l++exprIsc2list r
-  nM posCpl (EUni (EIsc (l,k),r)) _  | posCpl==dnf    = ((l.\/.r) ./\. (k.\/.r), ["distribute \\/ over /\\"],"<=>")
-  nM posCpl (EUni (l,EIsc (k,r))) _  | posCpl==dnf    = ((l.\/.k) ./\. (l.\/.r), ["distribute \\/ over /\\"],"<=>")
   nM posCpl (EUni (ECpl x,r@(ELrs (z,y)))) _          = if sign x==sign z -- necessary to guarantee that sign expr is equal to sign of the result
                                                         then (notCpl (x .:. y) .\/. z, ["remove left residual (/)"],"<=>")
                                                         else (notCpl t .\/. f, steps++steps', fEqu [equ',equ''])
@@ -1501,40 +1393,27 @@ nfPr shw eq dnf expr
    if expr==res
    then [(expr,[],"<=>")]
    else (expr,steps,equ):nfPr shw eq dnf (simplify res)
- where (res,steps,equ) = normStep shw eq dnf False expr
+ where (res,steps,equ) = normStep shw eq False expr
 
 conjNF, disjNF :: Options -> Expression -> Expression
 (conjNF, disjNF) = (pr False, pr True)
- where pr dnf opts expr
-        = case oldNormalizer opts of
-           False -> let rterm = expr2RTerm expr
-                    in (rTerm2expr.last.((:) (rterm)).map (rhs.snd).slideDown (weightNF dnf)) rterm
-           True  -> let proof = if dnf then dfProof opts else cfProof opts
-                        (e,_,_) = if null (proof expr) then fatal 340 "last: empty list" else last (proof expr)
-                    in e
+ where pr dnf _ expr
+        = let proof = if dnf then dfProof else cfProof
+              (e,_,_) = if null (proof expr) then fatal 340 "last: empty list" else last (proof expr)
+          in e
 
-cfProof, dfProof :: Options -> Expression -> Proof Expression
+cfProof, dfProof :: Expression -> Proof Expression
 (cfProof,dfProof) = (proof False, proof True)
  where
-   proof :: Bool -> Options -> Expression -> Proof Expression
-   proof dnf opts expr
-    = case oldNormalizer opts of
-       False -> [ (rTerm2expr term, explStr, logicSym) | (term, explStr, logicSym)<-prRT (expr2RTerm expr) ]
-       True  -> [line | step, line<-init pr]++
-                [line | step', line<-init pr']++
-                [last ([(expr,[],"<=>")]++
-                       [line | step, line<-pr]++
-                       [line | step', line<-pr']
-                      )]
+   proof :: Bool -> Expression -> Proof Expression
+   proof dnf expr
+    = [line | step, line<-init pr]++
+      [line | step', line<-init pr']++
+      [last ([(expr,[],"<=>")]++
+             [line | step, line<-pr]++
+             [line | step', line<-pr']
+            )]
       where
-        prRT :: RTerm -> [(RTerm, [String], String)]
-        prRT term
-           = case slideDown (weightNF dnf) term of
-               [] -> [ (term, ["weight: "++show (weightNF dnf term)], "<=>") ]
-               ds -> [ (lhs d, [" weight: "++show w++",   "++showADL tmpl++" = "++showADL stp++"  with unifier: "++showADL unif | let (tmpl,unif,stp) = rul d], "<=>")
-                     | (w,d)<-ds ] ++
-                     [ (rhs d, [], "<=>")
-                     | let (_,d) = last ds ]
         pr           = nfPr showADL True dnf expr
         (expr',_,_)  = if null pr then fatal 356 "last: empty list" else last pr
         step         = simplify expr/=simplify expr'
@@ -1542,37 +1421,6 @@ cfProof, dfProof :: Options -> Expression -> Proof Expression
         step'        = simplify expr'/=simplify expr''
         (expr'',_,_) = if null pr' then fatal 365 "last: empty list" else last pr'
 
-{-
-   cfProof :: Expression -> Proof Expression
-   cfProof expr
-    = [line | step, line<-init pr]++
-      [line | step', line<-init pr']++
-      [last ([(expr,[],"<=>")]++
-             [line | step, line<-pr]++
-             [line | step', line<-pr']
-            )]
-      where pr           = nfPr showADL True False (simplify expr)
-            (expr',_,_)  = if null pr then fatal 328 "last: empty list" else last pr
-            step         = simplify expr/=expr' -- obsolete?    || and [null s | (_,ss,_)<-pr, s<-ss]
-            pr'          = nfPr showADL True False (simplify expr')
-            step'        = simplify expr'/=simplify expr'' -- obsolete?    || and [null s | (_,ss,_)<-pr', s<-ss]
-            (expr'',_,_) = if null pr' then fatal 337 "last: empty list" else last pr'
-
-   dfProof :: Expression -> Proof Expression
-   dfProof expr
-    = [line | step, line<-init pr]++
-      [line | step', line<-init pr']++
-      [last ([(expr,[],"<=>")]++
-             [line | step, line<-pr]++
-             [line | step', line<-pr']
-            )]
-      where pr           = nfPr showADL True True expr
-            (expr',_,_)  = if null pr then fatal 356 "last: empty list" else last pr
-            step         = simplify expr/=simplify expr'
-            pr'          = nfPr showADL True True expr'
-            step'        = simplify expr'/=simplify expr''
-            (expr'',_,_) = if null pr' then fatal 365 "last: empty list" else last pr'
--}
 
 isEUni :: Expression -> Bool
 isEUni EUni{}  = True

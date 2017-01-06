@@ -17,6 +17,8 @@ module Ampersand.Output.PandocAux
       , ENString(..)
       , LocalizedStr
       , localize
+      , commaPandocAnd
+      , commaPandocOr
       , Inlines
       )
 where
@@ -74,8 +76,8 @@ defaultWriterVariables fSpec
   = [ ("title", (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                         (Dutch  , False) -> if test (getOpts fSpec)
                                             then "Afspraken van "
-                                            else "Functionele Specificatie van "
-                        (English, False) -> "Functional Specification of "
+                                            else "Functioneel Ontwerp van "
+                        (English, False) -> "Functional Design of "
                         (Dutch  ,  True) -> "Diagnose van "
                         (English,  True) -> "Diagnosis of "
                 )++name fSpec)
@@ -305,7 +307,6 @@ data Chapter = Intro
              | ProcessAnalysis
              | DataAnalysis
              | SoftwareMetrics
-             | EcaRules
              | Interfaces
              | FunctionPointAnalysis
              | Glossary
@@ -329,8 +330,6 @@ chptTitle lang cpt =
         (DataAnalysis          , English) -> text "Data structure"
         (SoftwareMetrics       , Dutch  ) -> text "Functiepunt Analyse"
         (SoftwareMetrics       , English) -> text "Function Point Analysis"
-        (EcaRules              , Dutch  ) -> text "ECA regels"
-        (EcaRules              , English) -> text "ECA rules (Flash points)"
         (Interfaces            , Dutch  ) -> text "Koppelvlakken"
         (Interfaces            , English) -> text "Interfaces"
         (FunctionPointAnalysis , Dutch  ) -> text "Functiepuntanalyse"
@@ -711,3 +710,23 @@ extractMsg log' = do
      then log'
      else BC.unlines (msg'' ++ lineno)
 
+commaPandocAnd :: Lang -> [Inlines] -> Inlines
+commaPandocAnd Dutch = commaNLPandoc "en"
+commaPandocAnd English = commaEngPandoc "and"
+commaPandocOr :: Lang -> [Inlines] -> Inlines
+commaPandocOr Dutch = commaNLPandoc "of"
+commaPandocOr English = commaEngPandoc "or"
+
+commaEngPandoc :: Inlines -> [Inlines] -> Inlines
+commaEngPandoc s [a,b,c] = a <> ", " <> b <> ", " <> s <> space <> c
+commaEngPandoc s [a,b]   = a <> space <> s <> space <> b
+commaEngPandoc _   [a]   = a
+commaEngPandoc s (a:as)  = a <> ", " <> commaEngPandoc s as
+commaEngPandoc _   []    = mempty
+
+commaNLPandoc :: Inlines -> [Inlines] -> Inlines
+commaNLPandoc s [a,b]  = a <> space <> s <> space <> b
+commaNLPandoc  _  [a]  = a
+commaNLPandoc s (a:as) = a <> ", " <> commaNLPandoc s as
+commaNLPandoc  _  []   = mempty
+   
