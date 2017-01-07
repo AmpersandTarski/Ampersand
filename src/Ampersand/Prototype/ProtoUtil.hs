@@ -19,7 +19,7 @@ import System.Directory
 import System.FilePath
 import Ampersand.Basics
 import Ampersand.FSpec
-import Ampersand.Misc.Options
+import Ampersand.Misc
 import qualified System.Exit as SE (ExitCode(..))
 import System.Process
 

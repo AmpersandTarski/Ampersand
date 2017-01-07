@@ -5,7 +5,7 @@ import Prelude hiding (Ord(..))
 import Ampersand.ADL1.Rule
 import Ampersand.Classes.Relational  (Relational(properties))
 import Ampersand.Basics
-import Ampersand.Misc.Explain
+import Ampersand.Misc(string2Blocks)
 import Data.Maybe
 import Data.List(nub)
 

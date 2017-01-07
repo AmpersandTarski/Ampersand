@@ -10,7 +10,7 @@ import Ampersand.ADL1.Lattices -- used for type-checking
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Classes.ViewPoint
 import Ampersand.Classes.ConceptStructure
-import Ampersand.FSpec.ToFSpec.Populated
+import Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import Ampersand.Basics
 import Ampersand.Misc
 import Control.Monad (join,unless)

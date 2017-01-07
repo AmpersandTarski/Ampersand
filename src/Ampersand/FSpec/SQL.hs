@@ -16,7 +16,6 @@ import Ampersand.ADL1.Expression
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.FSpecAux
 import Ampersand.FSpec.ShowADL
-import Ampersand.Misc
 import Data.List
 import Data.Maybe
 import Data.Monoid
@@ -661,9 +660,7 @@ nonSpecialSelectExpr fSpec expr=
                                                                 )
                                 }
               where posName = Name "pos"
-                    closedWorldName = QName ("cartesian product of "++plur (source e) ++ " and " ++ plur (target e)) 
-                                       
-                          where plur c = plural (fsLang fSpec) (name c)
+                    closedWorldName = QName $ "cartesian product of "++ name (source e) ++ " and " ++ name (target e) 
                     theClosedWorldExpression = EDcV (sign e) 
                         
     EKl0 _               -> fatal 249 "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"

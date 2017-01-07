@@ -14,7 +14,7 @@ import Ampersand.ADL1.P2A_Converters (pCpt2aCpt)
 import Ampersand.Classes.Relational
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
-import Ampersand.Misc.Options
+import Ampersand.Misc
 import Ampersand.Input (parseRule)
 import Ampersand.FSpec.ShowADL  -- for debug purposes only
 import Data.Hashable

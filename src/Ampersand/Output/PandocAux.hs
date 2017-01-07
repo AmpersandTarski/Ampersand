@@ -28,7 +28,6 @@ import Data.List
 import Data.Maybe
 import Ampersand.ADL1
 import Ampersand.Basics hiding (hPutStrLn)
-import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec
 import Ampersand.Misc
 import Ampersand.Prototype.StaticFiles_Generated

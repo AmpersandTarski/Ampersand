@@ -1,13 +1,15 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DeriveGeneric, DuplicateRecordFields,OverloadedLabels  #-}
 -- | This module does some string manipulation based on natural languages
-module Ampersand.Misc.Languages
-         ( Lang(English,Dutch)
-         , allLangs
-         , plural
-         ) where
+module Ampersand.Basics.Languages
+         where
               
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
-import Ampersand.Core.ParseTree      (Lang(..))
+import Data.Typeable
+import Data.Data
+
+data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
 
 allLangs :: [Lang]
 allLangs = [Dutch,English] -- All supported natural languages in Ampersand
@@ -50,3 +52,6 @@ plural Dutch str
                      , ("plan", "plannen")
                      , ("kind", "kinderen")
                      ]
+
+
+

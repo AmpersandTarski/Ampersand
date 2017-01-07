@@ -43,7 +43,7 @@ import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.Crud
-import Ampersand.Misc.Options (Options)
+import Ampersand.Misc
 import Text.Pandoc.Builder (Blocks)
 import Ampersand.FSpec.ToFSpec.Populated
 

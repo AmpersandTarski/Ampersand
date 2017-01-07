@@ -29,7 +29,7 @@ module Ampersand.Core.ParseTree (
 
    , P_Gen(..)
 
-   , Lang(..)
+   , Lang(..), plural, allLangs
    , P_Markup(..)
 
    , PandocFormat(..)
@@ -823,8 +823,6 @@ instance Show P_Gen where
 
 instance Traced P_Gen where
  origin = pos
-
-data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
 

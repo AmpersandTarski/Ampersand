@@ -6,7 +6,6 @@ import Data.List
 import Ampersand.Basics
 import Ampersand.ADL1
 import Ampersand.Classes
-import Ampersand.Misc
 import Ampersand.FSpec.ShowADL
 import Data.Char
 import Data.Text (pack)

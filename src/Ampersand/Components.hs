@@ -25,7 +25,6 @@ import Data.List
 import qualified Data.Text.IO as Text
 import Data.Function (on)
 import Data.Maybe (maybeToList)
-import Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Prototype.GenBericht  (doGenBericht)

@@ -1,9 +1,5 @@
 module Main (main) where
 
---import Ampersand.Misc.Options(getOptions,Options)
---import Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts)
---import Ampersand.Test.Parser.ParserTest (parseScripts)
---import Ampersand.Test.Parser.QuickChecks (parserQuickChecks)
 import System.Exit (ExitCode, exitFailure, exitSuccess)
 import Ampersand
 import Prelude hiding (putStrLn)
