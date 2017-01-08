@@ -1,4 +1,5 @@
-{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances    #-}
+{-# LANGUAGE UndecidableInstances #-}
   -- The purpose of ShowADL is to print things in Ampersand source format.
   -- Rule: The semantics of each fSpec produced by the compiler is identical to the semantics  of (parse (showADL fSpec)).
   -- Rule: The standard show is used only for simple error messages during testing.
@@ -11,6 +12,8 @@ module Ampersand.FSpec.ShowADL
     ( ShowADL(..), showREL)
 where
 import Ampersand.Core.ParseTree
+import Ampersand.Core.ShowPStruct
+--import Ampersand.Core.ShowAStruct
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics      (Collection(..),Named(..))
 import Ampersand.Classes
@@ -22,15 +25,13 @@ import Data.Char
 
 
 class ShowADL a where
- showADL :: a -> String
+  showADL :: a -> String
 
+instance {-# OVERLAPPABLE #-} PStruct a => ShowADL a where
+  showADL = showP
 instance ShowADL (P_SubIfc a) where
   showADL (P_Box{}) = "BOX"
-  showADL (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm
-
-instance ShowADL (Maybe TType) where
-  showADL (Just v) = show v
-  showADL Nothing = "'Default'"
+  showADL (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
 
 instance ShowADL ObjectDef where
 -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
@@ -43,11 +44,11 @@ instance ShowADL ObjectDef where
                recur "\n  " (objmsub obj)
   where recur :: String -> Maybe SubInterface -> String
         recur _   Nothing = ""
-        recur ind (Just (InterfaceRef isLink nm cruds)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++showstr nm++showADL cruds
+        recur ind (Just (InterfaceRef isLink nm cruds)) = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm++showADL cruds
         recur ind (Just (Box _ cl objs))
          = ind++" BOX" ++ showClass cl ++ " [ "++
            intercalate (ind++"     , ")
-                               [ showstr (name o)++
+                               [ doubleQuote (name o)++
                                   " : "++showADL (objctx o)++
                                   recur (ind++"      ") (objmsub o)
                                | o<-objs
@@ -74,34 +75,24 @@ instance ShowADL Purpose where
                 ++(if null (explRefIds expl) then "" else " REF "++intercalate ";" (explRefIds expl))
                 ++showADL (explMarkup expl)
 
-instance ShowADL PandocFormat where
- showADL LaTeX = "LATEX "
- showADL HTML  = "HTML "
- showADL ReST  = "REST "
- showADL Markdown = "MARKDOWN "
-
 instance ShowADL A_Markup where
  showADL m
      = showADL (amLang m)
     ++ "{+"++aMarkup2String ReST m++"+}"
 
-instance ShowADL Lang where
- showADL Dutch   = "IN DUTCH"
- showADL English = "IN ENGLISH"
-
 instance ShowADL ExplObj where
  showADL e = case e of
       ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
       ExplDeclaration d  -> "RELATION "++show (name d)
-      ExplRule str       -> "RULE "++showstr str
-      ExplIdentityDef str-> "IDENT "++showstr str
-      ExplViewDef str    -> "VIEW "++showstr str
-      ExplPattern str    -> "PATTERN "++ showstr str
-      ExplInterface str  -> "INTERFACE "++showstr str
-      ExplContext str    -> "CONTEXT "++showstr str
+      ExplRule str       -> "RULE "++doubleQuote str
+      ExplIdentityDef str-> "IDENT "++doubleQuote str
+      ExplViewDef str    -> "VIEW "++doubleQuote str
+      ExplPattern str    -> "PATTERN "++ doubleQuote str
+      ExplInterface str  -> "INTERFACE "++doubleQuote str
+      ExplContext str    -> "CONTEXT "++doubleQuote str
 
-showstr :: String -> String
-showstr str = "\""++str++"\""
+doubleQuote :: String -> String
+doubleQuote str = "\""++str++"\""
 
 
 -- TODO: making these tuples instance of ShowADL is very hacky
@@ -117,7 +108,7 @@ instance ShowADL (String,Interface) where
 instance ShowADL Pattern where
 -- TODO: This function is VERY outdated
  showADL pat
-  = "PATTERN " ++ showstr (name pat) ++ "\n"
+  = "PATTERN " ++ doubleQuote (name pat) ++ "\n"
     ++ (if null (ptrls pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptrls pat)) ++ "\n")
     ++ (if null (ptgns pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptgns pat)) ++ "\n")
     ++ (if null (ptdcs pat)  then "" else "\n  " ++intercalate "\n  " (map showADL (ptdcs pat)) ++ "\n")
@@ -152,13 +143,9 @@ instance ShowADL A_RoleRelation where
  showADL r
   = "ROLE "++intercalate ", " (map show (rrRoles r))++" EDITS "++intercalate ", " (map showADL (rrRels r))
 
-instance ShowADL P_RoleRule where
- showADL r 
-  = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
-
 instance ShowADL Interface where
  showADL ifc
-  = "INTERFACE "++showstr(name ifc)
+  = "INTERFACE "++doubleQuote(name ifc)
           ++(if null (ifcRoles ifc) then "" else " FOR "++intercalate ", " (map name (ifcRoles ifc)))
           ++showADL (ifcObj ifc)
 
@@ -317,8 +304,6 @@ instance ShowADL P_Population where
           showContent = case pop of
                           P_RelPopu{} -> map showADL (p_popps pop)
                           P_CptPopu{} -> map showADL  (p_popas pop)
-instance ShowADL PAtomPair where
- showADL p = "("++showADL (ppLeft p)++","++ showADL (ppRight p)++")"
 instance ShowADL AAtomPair where
  showADL p = "("++showADL (apLeft p)++","++ showADL (apRight p)++")"
   
@@ -345,17 +330,6 @@ instance ShowADL Population where
 --    indent++"[ "++intercalate ("\n"++indent++", ") (map (\(x,y)-> showatom x++" * "++ showatom y) pairs)++indent++"]"
 --    where indent = "   "
 
-instance ShowADL PAtomValue where
- showADL at = case at of
-              PSingleton _ s _ -> show s
-              ScriptString _ s -> show s
-              XlsxString _ s   -> show s
-              ScriptInt _ s    -> show s
-              ScriptFloat  _ x -> show x
-              XlsxDouble _ d   -> show d
-              ComnBool   _ b   -> show b
-              ScriptDate _ x   -> show x
-              ScriptDateTime _ x -> show x
               
 instance ShowADL AAtomValue where
  showADL at = case at of
@@ -367,90 +341,4 @@ instance ShowADL AAtomValue where
               AAVDateTime _ dt -> show dt
               AtomValueOfONE -> "1"
 
-instance ShowADL TermPrim where
- showADL (PI _)                   = "I"
- showADL (Pid _ c)                = "I["++showADL c++"]"
- showADL (Patm _ val mSign)     = showSingleton
-  where
-   showSingleton =
-     "'"++
-     (case val of
-       PSingleton   _ x _ -> x 
-       ScriptString   _ x -> x
-       XlsxString     _ x -> concatMap escapeSingleQuote x
-                               where escapeSingleQuote c=
-                                       case c of
-                                         '\'' -> ['\\','\'']
-                                         _    -> [c]
-       ScriptInt      _ x -> show x
-       ScriptFloat    _ x -> show x
-       XlsxDouble     _ x -> show x
-       ComnBool       _ x -> show x
-       ScriptDate     _ x -> show x
-       ScriptDateTime _ x -> show x
-     ) ++
-     "'" ++
-     (case mSign of
-       Nothing -> ""
-       Just c  -> "["++show c++"]"
-     )
-     
- showADL (PVee _)                 = "V"
- showADL (Pfull _ s t)            = "V["++show s++"*"++show t++"]"
- showADL (PNamedR rel)            = showADL rel
-instance ShowADL P_NamedRel where
- showADL (PNamedRel _ rel mSgn)                    = rel++maybe "" showsign mSgn
-  where     showsign (P_Sign src trg)                         = "["++showADL src++"*"++showADL trg++"]"
-
 --used to compose error messages at p2a time
-instance (ShowADL a, Traced a) => ShowADL (Term a) where
- showADL = showPExpr (" = ", " |- ", " /\\ ", " \\/ ", " - ", " / ", " \\ ", "<>", ";", "!", "*", "*", "+", "~", "(", ")")
-   where
-    showPExpr (equiv,inclu,inter,union',diff,lresi,rresi,rDia,rMul,rAdd,rPrd,closK0,closK1,flp',lpar,rpar) expr
-     = showchar (insP_Parentheses expr)
-      where
-       showchar (Prim a) = showADL a
-       showchar (PEqu _ l r)                             = showchar l++equiv++showchar r
-       showchar (PInc _ l r)                             = showchar l++inclu++showchar r
-       showchar (PIsc _ l r)                             = showchar l++inter++showchar r
-       showchar (PUni _ l r)                             = showchar l++union'++showchar r
-       showchar (PDif _ l r)                             = showchar l++diff ++showchar r
-       showchar (PLrs _ l r)                             = showchar l++lresi++showchar r
-       showchar (PRrs _ l r)                             = showchar l++rresi++showchar r
-       showchar (PDia _ l r)                             = showchar l++rDia++showchar r
-       showchar (PCps _ l r)                             = showchar l++rMul++showchar r
-       showchar (PRad _ l r)                             = showchar l++rAdd++showchar r
-       showchar (PPrd _ l r)                             = showchar l++rPrd++showchar r
-       showchar (PKl0 _ e)                               = showchar e++closK0
-       showchar (PKl1 _ e)                               = showchar e++closK1
-       showchar (PFlp _ e)                               = showchar e++flp'
-       showchar (PCpl _ e)                               = '-':showchar e
-       showchar (PBrk _ e)                               = lpar++showchar e++rpar
-
-insP_Parentheses :: (Traced a) => Term a -> Term a
-insP_Parentheses = insPar 0
-      where
-       wrap :: (Traced a) => Integer -> Integer -> Term a -> Term a
-       wrap i j e' = if i<=j then e' else PBrk (origin e') e'
-       insPar :: (Traced a) => Integer -> Term a -> Term a
-       insPar i (PEqu o l r) = wrap i     0 (PEqu o (insPar 1 l) (insPar 1 r))
-       insPar i (PInc o l r) = wrap i     0 (PInc o (insPar 1 l) (insPar 1 r))
-       insPar i (PIsc o l r) = wrap (i+1) 2 (PIsc o (insPar 2 l) (insPar 2 r))
-       insPar i (PUni o l r) = wrap (i+1) 2 (PUni o (insPar 2 l) (insPar 2 r))
-       insPar i (PDif o l r) = wrap i     4 (PDif o (insPar 5 l) (insPar 5 r))
-       insPar i (PLrs o l r) = wrap i     6 (PLrs o (insPar 7 l) (insPar 7 r))
-       insPar i (PRrs o l r) = wrap i     6 (PRrs o (insPar 7 l) (insPar 7 r))
-       insPar i (PDia o l r) = wrap i     6 (PDia o (insPar 7 l) (insPar 7 r))
-       insPar i (PCps o l r) = wrap (i+1) 8 (PCps o (insPar 8 l) (insPar 8 r))
-       insPar i (PRad o l r) = wrap (i+1) 8 (PRad o (insPar 8 l) (insPar 8 r))
-       insPar i (PPrd o l r) = wrap (i+1) 8 (PPrd o (insPar 8 l) (insPar 8 r))
-       insPar _ (PKl0 o e)   = PKl0 o (insPar 10 e)
-       insPar _ (PKl1 o e)   = PKl1 o (insPar 10 e)
-       insPar _ (PFlp o e)   = PFlp o (insPar 10 e)
-       insPar _ (PCpl o e)   = PCpl o (insPar 10 e)
-       insPar i (PBrk _ e)   = insPar i e
-       insPar _ x            = x
-
---used to compose error messages at p2a time
-instance ShowADL P_Concept where
- showADL = name
