@@ -151,8 +151,9 @@ getEnvironmentOptions =
                        do args     <- getArgs
                           let (_, xs, _) = getOpt Permute (map fst options) args
                           case xs of 
-                            [script] -> do exist <- doesFileExist (script -<.> "yaml")
-                                           if exist then readConfigFile script else return []
+                            [script] -> do let yaml = script -<.> "yaml"
+                                           exist <- doesFileExist yaml
+                                           if exist then readConfigFile yaml else return []
                             _  -> return []
          Just fName -> readConfigFile fName
         where 
