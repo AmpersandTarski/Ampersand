@@ -7,6 +7,7 @@ import Data.Char
 import Data.List (nub,isInfixOf)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
+import Ampersand.Basics
 
 -- Useful functions to build on the quick check functions
 

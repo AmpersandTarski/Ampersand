@@ -996,17 +996,17 @@ pMean2aMean defLanguage defFormat pmeanings
  = AMeaning [ pMarkup2aMarkup defLanguage defFormat pmarkup | PMeaning pmarkup <-pmeanings ]
 pMess2aMess :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
-            -> PMessage -> A_Markup
+            -> PMessage -> Markup
 pMess2aMess defLanguage defFormat (PMessage x) = pMarkup2aMarkup defLanguage defFormat x
 pMarkup2aMarkup :: Lang           -- The default language
                 -> PandocFormat   -- The default pandocFormat
-                -> P_Markup -> A_Markup
+                -> P_Markup -> Markup
 pMarkup2aMarkup defLanguage defFormat
    P_Markup  { mLang   = ml
              , mFormat = mpdf
              , mString = str
              }
- = A_Markup { amLang = fromMaybe defLanguage ml -- The language is always defined; if not by the user, then by default.
+ = Markup { amLang = fromMaybe defLanguage ml -- The language is always defined; if not by the user, then by default.
             , amPandoc = string2Blocks fmt str
             }
      where

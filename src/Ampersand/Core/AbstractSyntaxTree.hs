@@ -6,7 +6,7 @@ module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
  , Meta(..)
- , Pattern(..)
+ , Pattern(..) 
  , PairView(..)
  , PairViewSegment(..)
  , Rule(..)
@@ -50,24 +50,30 @@ module Ampersand.Core.AbstractSyntaxTree (
  ) where
 import Ampersand.Basics
 import Ampersand.Core.ParseTree 
-    ( Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
-    , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat
+    ( Meta(..)
+    , Role(..)
+    , ConceptDef
+    , Origin(..)
+    , Traced(..)
+    , ViewHtmlTemplate(..)
+    , PairView(..)
+    , PairViewSegment(..)
+    , Prop(..)
     , Representation(..), TType(..), PAtomValue(..), PSingleton
     )
-import Text.Pandoc hiding (Meta)
-import Data.Function
-import Data.Typeable
-import GHC.Generics (Generic)
-import Data.Data
-import Data.Char (toUpper,toLower)
-import Data.List (nub,intercalate)
-import Data.Maybe
-import Data.Time.Calendar
-import Data.Time.Clock
-import Data.Default
-import Data.Hashable
-import Data.Text (Text,unpack,pack)
-import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
+import Data.Function      (on)
+import GHC.Generics       (Generic)
+import Data.Data          (Typeable,Data)
+import Data.Char          (toUpper,toLower)
+import Data.List          (nub,intercalate)
+import Data.Maybe         (fromMaybe,listToMaybe)
+import Data.Time.Calendar (showGregorian,Day, fromGregorian, addDays)
+import Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
+import Data.Default       (Default(..))
+import Data.Hashable      (Hashable(..),hashWithSalt)
+import Data.Text          (Text,unpack,pack)
+import qualified Data.Time.Format as DTF 
+                          (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
@@ -147,7 +153,7 @@ data Rule =
         , rrexp ::    Expression                  -- ^ The rule expression
         , rrfps ::    Origin                      -- ^ Position in the Ampersand file
         , rrmean ::   AMeaning                    -- ^ Ampersand generated meaning (for all known languages)
-        , rrmsg ::    [A_Markup]                  -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+        , rrmsg ::    [Markup]                  -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
         , rrtyp ::    Signature                   -- ^ Allocated signature
         , rrdcl ::    Maybe (Prop,Declaration)    -- ^ The property, if this rule originates from a property on a Declaration
@@ -264,7 +270,7 @@ showDcl forceBoth dcl = name dcl++"["++cpts++"]"
      | forceBoth || source dcl /= target dcl = show (source dcl) ++ "*"++ show (target dcl)
      | otherwise                             = show (source dcl)
 
-data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving (Show, Eq, Prelude.Ord, Typeable, Data)
+data AMeaning = AMeaning { ameaMrk ::[Markup]} deriving (Show, Eq, Prelude.Ord, Typeable, Data)
 
 instance Named Declaration where
   name d@Sgn{}   = unpack (decnm d)
@@ -419,7 +425,7 @@ data SubInterface = Box { siConcept :: A_Concept
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
 data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand script of this purpose definition
                      , explObj :: ExplObj    -- ^ The object that is explained.
-                     , explMarkup :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
+                     , explMarkup :: Markup   -- ^ This field contains the text of the explanation including language and markup info.
                      , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
                      , explRefIds :: [String]     -- ^ The references of the explaination
                      } deriving (Show, Typeable)

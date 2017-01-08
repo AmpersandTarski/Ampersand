@@ -324,11 +324,11 @@ instance Named t => Named (Numbered t) where
  name = name . theLoad
 data RuleCont = CRul { cRul ::  Rule
                      , cRulPurps :: [Purpose]
-                     , cRulMeaning :: Maybe A_Markup
+                     , cRulMeaning :: Maybe Markup
                      }
 data DeclCont = CDcl { cDcl ::  Declaration
                      , cDclPurps :: [Purpose]
-                     , cDclMeaning :: Maybe A_Markup
+                     , cDclMeaning :: Maybe Markup
                      , cDclPairs :: [AAtomPair]
                      }
 data CptCont  = CCpt { cCpt ::  A_Concept
@@ -574,11 +574,11 @@ purposes2Blocks opts ps
                     FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex")
                                                              (texOnly_marginNote (intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
                     _                                  -> []
-concatMarkup :: [A_Markup] -> Maybe A_Markup
+concatMarkup :: [Markup] -> Maybe Markup
 concatMarkup es
  = case eqCl amLang es of
     []   -> Nothing
-    [cl] -> Just A_Markup { amLang   = amLang (head cl)
+    [cl] -> Just Markup { amLang   = amLang (head cl)
                           , amPandoc = concatMap amPandoc es
                           }
     cls  -> fatal 136 ("don't call concatMarkup with different languages and formats\n   "++

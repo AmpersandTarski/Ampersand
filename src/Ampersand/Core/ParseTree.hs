@@ -20,7 +20,7 @@ module Ampersand.Core.ParseTree (
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
-   , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..) {-, ViewTextTemplate-}
+   , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..)
    , P_ViewD(..) , P_ViewSegmtPayLoad(..)
 
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
@@ -29,12 +29,9 @@ module Ampersand.Core.ParseTree (
 
    , P_Gen(..)
 
-   , Lang(..), plural, allLangs
    , P_Markup(..)
 
-   , PandocFormat(..)
-
-   , Prop(..), Props, normalizeProps
+   , Prop(..), Props
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
@@ -42,7 +39,7 @@ import Ampersand.Input.ADL1.FilePos
 import Ampersand.Basics
 import Data.Traversable
 import Data.Foldable hiding (concat)
-import Data.List (nub,intercalate)
+import Data.List (intercalate)
 import Prelude hiding (foldr, sequence, foldl, concatMap)
 import Data.Typeable
 import Data.Data
@@ -859,15 +856,6 @@ instance Flippable Prop where
  flp Sur = Tot
  flp Inj = Uni
  flp x = x
-
-normalizeProps :: [Prop] -> [Prop]
-normalizeProps = nub.conv.rep
-    where -- replace PROP by SYM, ASY
-          rep (Prop:ps) = [Sym, Asy] ++ rep ps
-          rep (p:ps) = (p:rep ps)
-          rep [] = []
-          -- add Uni and Inj if ps has neither Sym nor Asy
-          conv ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
 
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =

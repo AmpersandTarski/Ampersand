@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 module Ampersand.Basics.PandocExtended
    ( PandocFormat(..)
-   , A_Markup(..)
+   , Markup(..)
    , aMarkup2String
    , string2Blocks
    )
@@ -15,12 +15,12 @@ import Ampersand.Basics.Version
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
 
-data A_Markup =
-    A_Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
+data Markup =
+    Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
              , amPandoc :: [Block]
              } deriving (Show, Eq, Prelude.Ord, Typeable, Data)
 
-aMarkup2String :: PandocFormat -> A_Markup -> String
+aMarkup2String :: PandocFormat -> Markup -> String
 aMarkup2String fmt a = blocks2String fmt False (amPandoc a)
 
 -- | use a suitable format to read generated strings. if you have just normal text, ReST is fine.

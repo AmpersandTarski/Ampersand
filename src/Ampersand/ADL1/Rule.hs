@@ -62,7 +62,7 @@ rulefromProp prp d@Sgn{} =
                      Prop -> fatal 78 "Prop should have been converted by the parser"
         explain prop = [ explang lang | lang <-[English,Dutch]]
           where 
-            explang lang = A_Markup lang (string2Blocks ReST $ f lang)
+            explang lang = Markup lang (string2Blocks ReST $ f lang)
             f English = showDcl'++" is "++
                   case prop of
                     Sym-> "symmetric"
@@ -92,7 +92,7 @@ rulefromProp prp d@Sgn{} =
           where
             s= name (source d)
             t= name (target d)
-            msg lang = A_Markup lang (string2Blocks ReST $ f lang)
+            msg lang = Markup lang (string2Blocks ReST $ f lang)
             f English =
                   case prop of
                     Sym-> showDcl'++" is "++"symmetric"

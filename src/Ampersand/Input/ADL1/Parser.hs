@@ -269,6 +269,15 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
   where pProp :: AmpParser Prop
         pProp = choice [ p <$ pKey (show p) | p <- [minBound..] ]
+        normalizeProps :: [Prop] -> [Prop]
+        normalizeProps = nub.conv.rep
+            where -- replace PROP by SYM, ASY
+                  rep (Prop:ps) = [Sym, Asy] ++ rep ps
+                  rep (p:ps) = (p:rep ps)
+                  rep [] = []
+                  -- add Uni and Inj if ps has neither Sym nor Asy
+                  conv ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
+
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser [Prop]

@@ -18,8 +18,7 @@ import Ampersand.Basics
 import Ampersand.Misc
 import Ampersand.FSpec.ShowADL
 import Ampersand.Core.ParseTree
-     ( PandocFormat(ReST)
-     , Prop(..)
+     ( Prop(..)
      , Traced(..)
      , Role
      , ConceptDef

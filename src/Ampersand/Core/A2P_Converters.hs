@@ -211,10 +211,10 @@ aExpression2pTermPrim expr =
 aMeaning2pMeaning :: AMeaning -> [PMeaning]
 aMeaning2pMeaning m = map (PMeaning . aMarkup2pMarkup) (ameaMrk m)
 
-aMarkup2pMessage :: A_Markup -> PMessage
+aMarkup2pMessage :: Markup -> PMessage
 aMarkup2pMessage m = (PMessage . aMarkup2pMarkup) m
 
-aMarkup2pMarkup :: A_Markup -> P_Markup
+aMarkup2pMarkup :: Markup -> P_Markup
 aMarkup2pMarkup markup =
  P_Markup  { mLang   = Just $ amLang markup
            , mFormat = Just ReST

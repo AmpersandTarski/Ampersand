@@ -180,7 +180,7 @@ instance PStruct PandocFormat where
  showP ReST  = "REST "
  showP Markdown = "MARKDOWN "
 
-instance PStruct A_Markup where
+instance PStruct Markup where
  showP m
      = showP (amLang m) ++ " " ++ showP Markdown 
     ++ " {+"++aMarkup2String ReST m++"+}"

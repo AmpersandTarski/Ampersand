@@ -332,7 +332,7 @@ instance Motivated Interface where
   explanations _ = []
 
 class Meaning a where
-  meaning :: Lang -> a -> Maybe A_Markup
+  meaning :: Lang -> a -> Maybe Markup
   meaning2Blocks :: Lang -> a -> [Block]
   meaning2Blocks l a = case meaning l a of
                          Nothing -> []

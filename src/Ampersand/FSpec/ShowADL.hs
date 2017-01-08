@@ -257,7 +257,7 @@ instance ShowADL Declaration where
      Isn{} -> "I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
      Vs{}  -> "V"++show (decsgn decl)      -- Vs{}  is of type Declaration and it is implicitly defined
    where
-     meaning :: A_Markup -> String
+     meaning :: Markup -> String
      meaning pmkup = " MEANING "++showADL pmkup
 
 showREL :: Declaration-> String
