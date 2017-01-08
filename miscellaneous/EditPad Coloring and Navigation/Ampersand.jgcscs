@@ -124,7 +124,7 @@ FALSE
 
 Section header
 --[[xxx]]---
-^--+\[\[.*\]\]
+^--+\[\[.*\]\]--+
 FALSE
 FALSE
 26
@@ -134,8 +134,8 @@ FALSE
 3
 FALSE
 FALSE
-TRUE
 FALSE
+TRUE
 
 
 
@@ -842,7 +842,7 @@ FALSE
 
 subsection header
 Stuff between [ (or eol) will be highlighed
-\[.*?\]
+(?<=^--+)\[[^\[\]]*\]
 FALSE
 FALSE
 35
