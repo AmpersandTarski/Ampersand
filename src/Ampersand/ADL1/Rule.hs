@@ -44,7 +44,7 @@ rulefromProp prp d@Sgn{} =
         , isSignal = fatal 63 "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where
-        showDcl' = showDcl False d
+        showDcl' = showDcl True d
         r:: Expression
         r = EDcD d
         rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
