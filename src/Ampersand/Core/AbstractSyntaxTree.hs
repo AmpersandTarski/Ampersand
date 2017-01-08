@@ -25,7 +25,6 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Object(..)
  , Cruds(..)
  , Default(..)
- , objAts
  , Purpose(..)
  , ExplObj(..)
  , Expression(..)
@@ -384,12 +383,6 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
                                 [ifc] -> ifc
                                 _     -> fatal 330 $ "getInterface by name: multiple interfaces named "++show nm
 
-objAts :: ObjectDef -> [ObjectDef]
-objAts obj
-  = case objmsub obj of
-     Nothing       -> []
-     Just InterfaceRef{} -> []
-     Just b@Box{}    -> siObjs b
 
 class Object a where
  concept ::   a -> A_Concept        -- the type of the object
@@ -398,7 +391,10 @@ class Object a where
 
 instance Object ObjectDef where
  concept obj = target (objctx obj)
- fields      = objAts
+ fields  obj = case objmsub obj of
+                 Nothing       -> []
+                 Just InterfaceRef{} -> []
+                 Just b@Box{}    -> siObjs b
  contextOf   = objctx
 
 data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
