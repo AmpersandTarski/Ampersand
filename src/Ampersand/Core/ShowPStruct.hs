@@ -158,11 +158,6 @@ instance PStruct P_NamedRel where
  showP (PNamedRel _ rel mSgn)   = rel++maybe "" showsign mSgn
   where     showsign (P_Sign src trg) = "["++showP src++"*"++showP trg++"]"
 
-instance PStruct PandocFormat where
- showP LaTeX = "LATEX "
- showP HTML  = "HTML "
- showP ReST  = "REST "
- showP Markdown = "MARKDOWN "
 
 instance PStruct Lang where
  showP Dutch   = "IN DUTCH"
@@ -177,4 +172,16 @@ instance PStruct (P_SubIfc a) where
 
 doubleQuote :: String -> String
 doubleQuote str = "\""++str++"\""
+
+
+instance PStruct PandocFormat where
+ showP LaTeX = "LATEX "
+ showP HTML  = "HTML "
+ showP ReST  = "REST "
+ showP Markdown = "MARKDOWN "
+
+instance PStruct A_Markup where
+ showP m
+     = showP (amLang m) ++ " " ++ showP Markdown 
+    ++ " {+"++aMarkup2String ReST m++"+}"
 

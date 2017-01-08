@@ -1,11 +1,12 @@
-module Ampersand.Classes.ViewPoint (Language(..)) where
+module Ampersand.Classes.ViewPoint 
+   (Language(..)) 
+where
 import Ampersand.Core.ParseTree
 import Ampersand.Core.AbstractSyntaxTree
 import Prelude hiding (Ord(..))
 import Ampersand.ADL1.Rule
 import Ampersand.Classes.Relational  (Relational(properties))
 import Ampersand.Basics
-import Ampersand.Misc(string2Blocks)
 import Data.Maybe
 import Data.List(nub)
 

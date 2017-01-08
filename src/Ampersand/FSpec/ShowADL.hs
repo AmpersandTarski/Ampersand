@@ -12,8 +12,7 @@ module Ampersand.FSpec.ShowADL
     ( ShowADL(..), showREL)
 where
 import Ampersand.Core.ParseTree
-     ( PandocFormat(ReST)
-     , MetaObj(..)
+     ( MetaObj(..)
      , SrcOrTgt(..)
      , P_Markup(..)
      , Prop(..)
@@ -25,7 +24,6 @@ import Ampersand.Core.AbstractSyntaxTree
      , Meta(..)
    --  , MetaObj(..)
      , Purpose(..)
-     , A_Markup(..), aMarkup2String
      , AMeaning(..)
      , ExplObj(..), explObj
      , Rule(..)
@@ -47,7 +45,7 @@ import Ampersand.Core.AbstractSyntaxTree
      , AAtomValue(..), aavstr
      , Association(..)
      )
-import Ampersand.Basics      (Collection(..),Named(..))
+import Ampersand.Basics hiding (indent)
 import Ampersand.Classes
 import Ampersand.ADL1 (insParentheses)
 import Ampersand.FSpec.FSpec
@@ -106,11 +104,6 @@ instance ShowADL Purpose where
                 ++" "++showADL (amLang (explMarkup expl))
                 ++(if null (explRefIds expl) then "" else " REF "++intercalate ";" (explRefIds expl))
                 ++showADL (explMarkup expl)
-
-instance ShowADL A_Markup where
- showADL m
-     = showADL (amLang m)
-    ++ "{+"++aMarkup2String ReST m++"+}"
 
 instance ShowADL ExplObj where
  showADL e = case e of

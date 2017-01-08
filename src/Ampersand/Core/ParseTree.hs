@@ -824,8 +824,6 @@ instance Show P_Gen where
 instance Traced P_Gen where
  origin = pos
 
-data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
-
 type Props = [Prop]
 
 data Prop      = Uni          -- ^ univalent
