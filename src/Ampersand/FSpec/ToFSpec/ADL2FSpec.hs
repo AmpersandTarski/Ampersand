@@ -18,6 +18,7 @@ import Ampersand.FSpec.Crud
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms 
+import Ampersand.FSpec.ToFSpec.Populated 
 import Ampersand.FSpec.ShowADL
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,

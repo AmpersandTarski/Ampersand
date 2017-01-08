@@ -5,7 +5,9 @@ module Ampersand.Graphic.ClassDiagram
            ) where
 import Data.List
 import Ampersand.Basics
-import Ampersand.FSpec --  hiding (Association,Box)
+import Ampersand.Core.AbstractSyntaxTree
+     ( A_Concept, Declaration, A_Gen
+     )
 
 data ClassDiag = OOclassdiagram {cdName :: String
                                 ,classes :: [Class]           --

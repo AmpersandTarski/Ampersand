@@ -12,7 +12,6 @@ module Ampersand.FSpec.FSpec
           ( MultiFSpecs(..)
           , FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Quad(..)
-          , A_Concept, Declaration, A_Gen
           , FSid(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
@@ -27,14 +26,10 @@ module Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..),AAtomValue
-          , showValADL,showValPHP,showValSQL,showSQL
-          , module Ampersand.FSpec.ToFSpec.Populated 
-          , module Ampersand.Classes
+          , Language(..)
+          , showSQL
+      --    , module Ampersand.Classes
           ) where
--- TODO: Export module Ampersand.Core.AbstractSyntaxTree in the same way as is done
---       for module Ampersand.Core.ParseTree in that module. Then build to a better
---       hierarchie to reflect the Architecture. 
 import Data.List
 import Data.Text (Text,unpack)
 import Data.Typeable
@@ -50,7 +45,6 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.Crud
 import Ampersand.Misc
 import Text.Pandoc.Builder (Blocks)
-import Ampersand.FSpec.ToFSpec.Populated
 
 data MultiFSpecs = MultiFSpecs
                    { userFSpec :: FSpec        -- ^ The FSpec based on the user's script only.

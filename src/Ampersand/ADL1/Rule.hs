@@ -86,7 +86,7 @@ rulefromProp prp d@Sgn{} =
                     Sur-> "surjectief"
                     Inj-> "injectief"
                     Tot-> "totaal"
-                    Prop -> fatal 103 "Prop should have been converted by pattern the parser"
+                    Prop -> fatal 103 "Prop should have been converted by the parser"
          
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
           where

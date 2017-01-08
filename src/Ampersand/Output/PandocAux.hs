@@ -30,6 +30,7 @@ import Ampersand.ADL1
 import Ampersand.Basics hiding (hPutStrLn)
 import Ampersand.FSpec
 import Ampersand.Misc
+import Ampersand.Classes (isFunction)
 import Ampersand.Prototype.StaticFiles_Generated
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import qualified Data.ByteString as BS

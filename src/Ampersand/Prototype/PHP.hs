@@ -28,6 +28,7 @@ import Ampersand.FSpec.SQL
 import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.Misc
 import Ampersand.Core.AbstractSyntaxTree
 

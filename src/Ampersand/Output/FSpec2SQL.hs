@@ -10,6 +10,8 @@ import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Data.Monoid
 import qualified Data.Text as Text
+import Ampersand.Core.AbstractSyntaxTree
+     ( Declaration )
 
 dumpSQLqueries :: MultiFSpecs -> Text.Text
 dumpSQLqueries multi

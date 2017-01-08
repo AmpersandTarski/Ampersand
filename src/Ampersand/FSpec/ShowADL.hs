@@ -54,6 +54,9 @@ import Ampersand.FSpec.FSpec
 import Data.List
 import Prelude
 import Data.Char
+import Ampersand.Core.AbstractSyntaxTree
+     ( A_Concept
+     )
 
 
 class ShowADL a where

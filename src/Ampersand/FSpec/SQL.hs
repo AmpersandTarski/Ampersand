@@ -12,8 +12,7 @@ import Language.SQL.SimpleSQL.Pretty
 import Ampersand.Basics
 import Ampersand.Classes.ConceptStructure
 import Ampersand.Core.ParseTree
-     ( PSingleton
-     )
+     ( PSingleton )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.ADL1.Expression
 import Ampersand.FSpec.FSpec
@@ -22,6 +21,8 @@ import Ampersand.FSpec.ShowADL
 import Data.List
 import Data.Maybe
 import Data.Monoid
+import Ampersand.Classes
+     (isUni)
 
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"

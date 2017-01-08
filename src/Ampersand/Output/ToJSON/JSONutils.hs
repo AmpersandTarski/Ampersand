@@ -6,6 +6,7 @@ module Ampersand.Output.ToJSON.JSONutils
   , module Ampersand.FSpec.FSpec
   , module Ampersand.Misc
   , module Ampersand.FSpec.SQL
+  , module Ampersand.FSpec.ToFSpec.Populated
   , module Ampersand.Basics
   , module Ampersand.Classes
   , module GHC.Generics
@@ -19,6 +20,7 @@ import Ampersand.Core.ParseTree
      ( Role
      , ViewHtmlTemplate(ViewHtmlTemplateFile)
      )
+import Ampersand.FSpec.ToFSpec.Populated 
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder)
 import Ampersand.Misc

@@ -6,6 +6,8 @@ import Ampersand.Graphic.ClassDiagram
 import Ampersand.Graphic.Fspec2ClassDiagrams 
 import Ampersand.FSpec
 import Ampersand.Core.ParseTree(PandocFormat(ReST))
+import Ampersand.Core.AbstractSyntaxTree
+     ( Declaration )
 import Data.List
 import qualified Data.Map as Map
 import Control.Monad.State.Lazy  (State, gets, evalState, modify)

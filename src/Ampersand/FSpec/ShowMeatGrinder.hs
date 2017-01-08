@@ -25,7 +25,7 @@ import Ampersand.Core.ParseTree
      , ConceptDef
      )
 import Ampersand.Core.AbstractSyntaxTree
-
+import Ampersand.Classes
 
 makeMetaPopulationFile :: FSpec -> (FilePath,String)
 makeMetaPopulationFile fSpec
