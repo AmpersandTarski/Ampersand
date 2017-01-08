@@ -12,9 +12,41 @@ module Ampersand.FSpec.ShowADL
     ( ShowADL(..), showREL)
 where
 import Ampersand.Core.ParseTree
+     ( PandocFormat(ReST)
+     , MetaObj(..)
+     , SrcOrTgt(..)
+     , P_Markup(..)
+     , Prop(..)
+     )
 import Ampersand.Core.ShowPStruct
 --import Ampersand.Core.ShowAStruct
 import Ampersand.Core.AbstractSyntaxTree
+     ( Cruds(..)
+     , Meta(..)
+   --  , MetaObj(..)
+     , Purpose(..)
+     , A_Markup(..), aMarkup2String
+     , AMeaning(..)
+     , ExplObj(..), explObj
+     , Rule(..)
+     , Pattern(..)
+     , PairViewSegment(..)
+     , Expression(..)
+     , PairView(..)
+     , A_Gen(..)
+     , A_RoleRelation(..)
+     , IdentityDef(..)
+     , IdentitySegment(..)
+     , ViewDef(..)
+     , ViewSegment(..)
+     , ViewSegmentPayLoad(..)
+     , Declaration(..)
+     , A_Context(..)
+     , Population(..)
+     , AAtomPair(..)
+     , AAtomValue(..), aavstr
+     , Association(..)
+     )
 import Ampersand.Basics      (Collection(..),Named(..))
 import Ampersand.Classes
 import Ampersand.ADL1 (insParentheses)
@@ -29,9 +61,6 @@ class ShowADL a where
 
 instance {-# OVERLAPPABLE #-} PStruct a => ShowADL a where
   showADL = showP
-instance ShowADL (P_SubIfc a) where
-  showADL (P_Box{}) = "BOX"
-  showADL (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
 
 instance ShowADL ObjectDef where
 -- WHY (HJ)? In deze instance van ShowADL worden diverse zaken gebruikt die ik hier niet zou verwachten.
@@ -82,8 +111,8 @@ instance ShowADL A_Markup where
 
 instance ShowADL ExplObj where
  showADL e = case e of
-      ExplConceptDef cd  -> "CONCEPT "++cdcpt cd
-      ExplDeclaration d  -> "RELATION "++show (name d)
+      ExplConceptDef cd  -> "CONCEPT "++doubleQuote (name cd)
+      ExplDeclaration d  -> "RELATION "++doubleQuote (name d)
       ExplRule str       -> "RULE "++doubleQuote str
       ExplIdentityDef str-> "IDENT "++doubleQuote str
       ExplViewDef str    -> "VIEW "++doubleQuote str
@@ -261,10 +290,6 @@ instance ShowADL Prop where
 instance ShowADL A_Concept where
  showADL c = show (name c)
 
-instance ShowADL ConceptDef where
- showADL cd
-  = "\n  CONCEPT "++show (cdcpt cd)++" "++show (cddef cd)++" "++(if null (cdref cd) then "" else show (cdref cd))
-
 instance ShowADL A_Context where
  showADL context
   = "CONTEXT " ++name context
@@ -287,23 +312,6 @@ instance ShowADL (Maybe String) where
 instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
  showADL (a,b) = "(" ++ showADL a ++ ", " ++ showADL b ++ ")"
 
-instance ShowADL P_Population where
- showADL pop
-  = "POPULATION "++name pop
-  ++ case pop of
-        P_RelPopu{p_nmdr = PNamedRel _ _ (Just sgn)} -> "["++(name.pSrc) sgn++"*"++(name.pTgt) sgn++"]"
-        _ -> ""
-  ++ " CONTAINS\n"
-  ++ if (case pop of
-            P_RelPopu{} -> null (p_popps pop)
-            P_CptPopu{} -> null (p_popas pop)
-        )
-     then ""
-     else indent++"[ "++intercalate ("\n"++indent++", ") showContent++indent++"]"
-    where indent = "   "
-          showContent = case pop of
-                          P_RelPopu{} -> map showADL (p_popps pop)
-                          P_CptPopu{} -> map showADL  (p_popas pop)
 instance ShowADL AAtomPair where
  showADL p = "("++showADL (apLeft p)++","++ showADL (apRight p)++")"
   

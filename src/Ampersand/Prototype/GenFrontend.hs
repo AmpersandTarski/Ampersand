@@ -12,6 +12,9 @@ import Text.StringTemplate
 import Text.StringTemplate.GenericStandard () -- only import instances
 import Ampersand.Basics
 import Ampersand.Classes.Relational
+import Ampersand.Core.ParseTree
+     ( Role, ViewHtmlTemplate(ViewHtmlTemplateFile)
+     )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ShowADL

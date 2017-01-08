@@ -41,6 +41,11 @@ import Data.Typeable
 import Ampersand.ADL1.Expression (notCpl)
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.ParseTree
+        ( Traced(..), Origin
+        , Role
+        , ConceptDef
+        )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.Crud
 import Ampersand.Misc

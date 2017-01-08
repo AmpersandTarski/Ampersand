@@ -13,6 +13,10 @@ class PStruct a where
 instance PStruct P_Concept where
  showP = name
 
+instance PStruct ConceptDef where
+ showP cd
+  = "\n  CONCEPT "++show (cdcpt cd)++" "++show (cddef cd)++" "++(if null (cdref cd) then "" else show (cdref cd))
+
 
 instance PStruct PAtomPair where
  showP p = "("++showP (ppLeft p)++","++ showP (ppRight p)++")"
@@ -28,6 +32,31 @@ instance PStruct PAtomValue where
               ComnBool   _ b   -> show b
               ScriptDate _ x   -> show x
               ScriptDateTime _ x -> show x
+
+instance PStruct P_Population where
+ showP pop
+  = "POPULATION "++name pop
+  ++ case pop of
+        P_RelPopu{p_nmdr = PNamedRel _ _ (Just sgn)} -> "["++(name.pSrc) sgn++"*"++(name.pTgt) sgn++"]"
+        _ -> ""
+  ++ " CONTAINS\n"
+  ++ if (case pop of
+            P_RelPopu{} -> null (p_popps pop)
+            P_CptPopu{} -> null (p_popas pop)
+        )
+     then ""
+     else indnt++"[ "++intercalate ("\n"++indnt++", ") showContent++indnt++"]"
+    where indnt = "   "
+          showContent = case pop of
+                          P_RelPopu{} -> map showP (p_popps pop)
+                          P_CptPopu{} -> map showP  (p_popas pop)
+
+
+
+
+
+
+
 
 instance PStruct (Maybe TType) where
   showP (Just v) = show v
@@ -139,4 +168,13 @@ instance PStruct Lang where
  showP Dutch   = "IN DUTCH"
  showP English = "IN ENGLISH"
 
+
+instance PStruct (P_SubIfc a) where
+  showP (P_Box{}) = "BOX"
+  showP (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
+
+
+
+doubleQuote :: String -> String
+doubleQuote str = "\""++str++"\""
 

@@ -6,7 +6,6 @@ module Ampersand.Output.ToJSON.Roles
 where
 
 import Ampersand.Output.ToJSON.JSONutils
-import Ampersand.Core.AbstractSyntaxTree
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson

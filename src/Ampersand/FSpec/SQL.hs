@@ -11,6 +11,9 @@ import Language.SQL.SimpleSQL.Syntax
 import Language.SQL.SimpleSQL.Pretty
 import Ampersand.Basics
 import Ampersand.Classes.ConceptStructure
+import Ampersand.Core.ParseTree
+     ( PSingleton
+     )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.ADL1.Expression
 import Ampersand.FSpec.FSpec

@@ -9,6 +9,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Ampersand.Basics
     , module Ampersand.FSpec
     , module Ampersand.Misc
+    , module Ampersand.Core.ParseTree
     , module Ampersand.Core.AbstractSyntaxTree
     , module Ampersand.ADL1
     , module Ampersand.Output.PandocAux
@@ -35,6 +36,9 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , sortWith)
 where
 import Ampersand.Basics
+import Ampersand.Core.ParseTree
+     ( Role
+     )
 import Ampersand.Core.AbstractSyntaxTree hiding (Meta)
 import Ampersand.ADL1 hiding (Meta)
 import Ampersand.Classes

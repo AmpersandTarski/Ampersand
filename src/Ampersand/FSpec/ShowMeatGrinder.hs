@@ -17,6 +17,13 @@ import Ampersand.FSpec.Motivations
 import Ampersand.Basics
 import Ampersand.Misc
 import Ampersand.FSpec.ShowADL
+import Ampersand.Core.ParseTree
+     ( PandocFormat(ReST)
+     , Prop(..)
+     , Traced(..)
+     , Role
+     , ConceptDef
+     )
 import Ampersand.Core.AbstractSyntaxTree
 
 

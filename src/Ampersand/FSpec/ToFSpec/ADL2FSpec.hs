@@ -8,6 +8,9 @@ import Data.Text (pack)
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.ParseTree
+     ( Role
+     )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc

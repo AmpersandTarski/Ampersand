@@ -1,7 +1,7 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE ImplicitParams #-}{-# OPTIONS_GHC -Wall -Werror #-}
+{-# LANGUAGE ImplicitParams #-}
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
@@ -46,16 +46,17 @@ module Ampersand.Core.AbstractSyntaxTree (
  , showValADL,showValPHP,showValSQL
  , showSign
  , aMarkup2String
- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
+-- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConcept
  , aavstr
  ) where
 import Ampersand.Basics
-import Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
-                                                , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..), PSingleton, makePSingleton
-                                                )
+import Ampersand.Core.ParseTree 
+    ( Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
+    , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat
+    , Representation(..), TType(..), PAtomValue(..), PSingleton
+    )
 import Ampersand.Misc
 import Text.Pandoc hiding (Meta)
 import Data.Function

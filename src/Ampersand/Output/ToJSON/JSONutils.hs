@@ -9,11 +9,16 @@ module Ampersand.Output.ToJSON.JSONutils
   , module Ampersand.Basics
   , module Ampersand.Classes
   , module GHC.Generics
+  , module Ampersand.Core.ParseTree
   )
 where
 import Data.Aeson
 import qualified Data.Aeson.Types as AT 
 import Data.List
+import Ampersand.Core.ParseTree
+     ( Role
+     , ViewHtmlTemplate(ViewHtmlTemplateFile)
+     )
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder)
 import Ampersand.Misc
