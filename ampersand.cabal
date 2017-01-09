@@ -152,7 +152,7 @@ library
                      Ampersand.Output.ToJSON.Roles,
                      Ampersand.Output.ToJSON.Rules,
                      Ampersand.Output.ToJSON.Settings,
-                     Ampersand.Output.ToJSON.ToJSON,
+                     Ampersand.Output.ToJSON.ToJson,
                      Ampersand.Output.ToJSON.Views,
                      Ampersand.Output.ToPandoc
                      Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,

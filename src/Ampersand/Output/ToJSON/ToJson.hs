@@ -1,4 +1,4 @@
-module Ampersand.Output.ToJSON.ToJSON
+module Ampersand.Output.ToJSON.ToJson
   (generateJSONfiles)
 where
 import Ampersand.Output.ToJSON.JSONutils
