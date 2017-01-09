@@ -65,29 +65,6 @@ Outside its scope, a rule has no meaning.
 For example a rule may be valid in downtown St. Catharines, Ontario, but totally meaningless in Smalltown, NY that does not even have a St. Paul street.
 -}
 
-PURPOSE PATTERN Patterns
-{+The rules that govern patterns are brought together in one pattern,
-in order to formalize patterns and determine their meaning.
--}
-CONCEPT Pattern "A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem."
-PURPOSE CONCEPT Pattern
-{+
-Patterns are used to isolate discussions about a specific theme to a particular group of stakeholders,
-who are competent to identify (define, select, invent, etc.) rules that define the theme.
-
-\subsubsection*{Explanation}
-A pattern formalizes the agreement among stakeholders on this particular theme.
-Design patterns are meant to make solutions reusable.
-On top of that, Ampersand advocates "one theme in one pattern".
-Stakeholders confine their discussion to one theme, and deliver the result in one pattern.
-A pattern is created when a group of stakeholders is trying to agree on a solution for a particular problem.
-The agreements they reach are written as rules, which are collected in a pattern.
-Therefore, they are independent from a particular context.
-\subsubsection*{Example}
-The problem of identifying which persons have been using an information system can be solved by making rules
-about log-in, users and sessions.
--}
-
 -- Expression
 PATTERN Expressions
 PURPOSE PATTERN Expressions
