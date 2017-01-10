@@ -4,7 +4,6 @@ module Ampersand.ADL1.Rule
 import Ampersand.Core.ParseTree(Prop(..),Traced(..))
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
-import Ampersand.Misc
 
 hasantecedent :: Rule -> Bool
 hasantecedent r

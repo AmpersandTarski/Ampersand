@@ -99,6 +99,7 @@ library
                      Ampersand.Components,
                      Ampersand.Core.AbstractSyntaxTree,
                      Ampersand.Core.ParseTree,
+                     Ampersand.Core.ShowAStruct,
                      Ampersand.Core.ShowPStruct,
                      Ampersand.FSpec,
                      Ampersand.FSpec.Crud,
