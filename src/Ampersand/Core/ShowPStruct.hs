@@ -185,3 +185,11 @@ instance PStruct Markup where
      = showP (amLang m) ++ " " ++ showP Markdown 
     ++ " {+"++aMarkup2String ReST m++"+}"
 
+
+instance PStruct a => PStruct (PairViewSegment a) where
+ showP (PairViewText _ str)       = "TXT " ++ show str
+ showP (PairViewExp _ srcOrTgt e) = showP srcOrTgt ++ " " ++ showP e
+
+instance PStruct SrcOrTgt where
+ showP Src = "SRC"
+ showP Tgt = "TGT" 
