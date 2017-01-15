@@ -1,7 +1,13 @@
 {-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.Core.A2P_Converters (
-  aCtx2pCtx
+    aCtx2pCtx
+  , aDeclaration2pDeclaration
   , aAtomValue2pAtomValue
+  , aConcept2pConcept
+  , aExpression2pTermPrim
+  , aExplObj2PRef2Obj
+  , aObjectDef2pObjectDef
+  , aGen2pGen
 ) 
 where
 import Ampersand.ADL1.Expression

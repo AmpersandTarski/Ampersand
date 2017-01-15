@@ -1,6 +1,6 @@
 {-# LANGUAGE FlexibleInstances    #-}
 module Ampersand.Core.ShowPStruct
-  (PStruct(..))
+  (PStruct(..), doubleQuote)
 where
 
 import Ampersand.Core.ParseTree
@@ -53,6 +53,22 @@ instance PStruct P_Population where
 
 
 
+instance PStruct P_Gen where
+ showP g = 
+   case g of
+     PGen{} -> "CLASSIFY "++showP (gen_spc g)++" ISA "++showP (gen_gen g)
+     P_Cy{} -> "CLASSIFY "++showP (gen_spc g)++" IS "++intercalate " /\\ " (map showP (gen_rhs g))
+
+instance PStruct PRef2Obj where
+ showP e = case e of
+      PRef2ConceptDef str  -> "CONCEPT "++doubleQuote str
+      PRef2Declaration rel -> "RELATION "++doubleQuote (name rel)
+      PRef2Rule str        -> "RULE "++doubleQuote str
+      PRef2IdentityDef str -> "IDENT "++doubleQuote str
+      PRef2ViewDef str     -> "VIEW "++doubleQuote str
+      PRef2Pattern str     -> "PATTERN "++ doubleQuote str
+      PRef2Interface str   -> "INTERFACE "++doubleQuote str
+      PRef2Context str     -> "CONTEXT "++doubleQuote str
 
 
 
@@ -92,10 +108,10 @@ instance PStruct TermPrim where
  showP (PNamedR rel)      = showP rel
 
 
-instance PStruct (Term TermPrim) where
+instance (Traced a, PStruct a) => PStruct (Term a) where
  showP = showchar . insP_Parentheses
    where
-    showchar :: Term TermPrim -> String
+    showchar :: PStruct a => Term a -> String
     showchar (Prim a) = showP a
     showchar (PEqu _ l r)  = showBin " = "   l r
     showchar (PInc _ l r)  = showBin " |- "  l r
@@ -113,17 +129,17 @@ instance PStruct (Term TermPrim) where
     showchar (PFlp _ e)    = showUnPostfix "~" e
     showchar (PCpl _ e)    = showUnPrefix  "-" e
     showchar (PBrk _ e)    = "("++showchar e++")"
-    showBin :: String -> Term TermPrim -> Term TermPrim -> String
+    showBin :: PStruct a => String -> Term a -> Term a -> String
     showBin       op l r = showchar l++op++showchar r
     showUnPostfix op e   = showchar e ++ op
     showUnPrefix  op e   = op ++ showchar e
 
-    insP_Parentheses :: Term TermPrim -> Term TermPrim 
+    insP_Parentheses :: Traced a => Term a -> Term a 
     insP_Parentheses = insPar 0
       where
-       wrap :: Integer -> Integer -> Term TermPrim -> Term TermPrim
+       wrap :: Traced a => Integer -> Integer -> Term a -> Term a
        wrap i j e' = if i<=j then e' else PBrk (origin e') e'
-       insPar :: Integer -> Term TermPrim -> Term TermPrim
+       insPar :: Traced a => Integer -> Term a -> Term a
        insPar i (PEqu o l r) = wrap i     0 (PEqu o (insPar 1 l) (insPar 1 r))
        insPar i (PInc o l r) = wrap i     0 (PInc o (insPar 1 l) (insPar 1 r))
        insPar i (PIsc o l r) = wrap (i+1) 2 (PIsc o (insPar 2 l) (insPar 2 r))
@@ -142,6 +158,35 @@ instance PStruct (Term TermPrim) where
        insPar i (PBrk _ e)   = insPar i e
        insPar _ x            = x
 
+instance PStruct (P_ObjDef TermPrim) where
+ showP obj = " : "++showP (obj_ctx obj)++
+               recur "\n  " (obj_msub obj)
+  where 
+    recur :: (Traced a, PStruct a) => String -> Maybe (P_SubIfc a) -> String
+    recur _   Nothing = ""
+    recur ind (Just (P_InterfaceRef _ isLink nm cruds))
+         = ind++(if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm++showP cruds
+    recur ind (Just (P_Box _ cl objs))
+         = ind++" BOX" ++ showClass cl ++ " [ "++
+           intercalate (ind++"     , ")
+                               [ doubleQuote (name o)++
+                                  " : "++showP (obj_ctx o)++
+                                  recur (ind++"      ") (obj_msub o)
+                               | o<-objs
+                               ]++
+           ind++"     ]"
+    showClass Nothing = ""
+    showClass (Just cl) = "<" ++ cl ++ ">" 
+
+instance PStruct (P_SubIfc a) where --TODO : Compare with other " LINKTO" stuff to check redundancy. 
+  showP (P_Box{}) = "BOX"
+  showP (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
+
+instance PStruct (Maybe P_Cruds) where
+ showP Nothing = ""
+ showP (Just (P_Cruds _ x)) = x 
+
+
 
 
 instance PStruct P_RoleRule where
@@ -149,10 +194,34 @@ instance PStruct P_RoleRule where
   = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
 
 
+instance PStruct P_Declaration where
+ showP decl =
+  case decl of
+    P_Sgn{} -> name decl++" :: "++(name . pSrc . dec_sign) decl
+                                ++(if null ([Uni,Tot]>-dec_prps decl) then " -> " else " * ")
+                                ++(name . pTgt . dec_sign) decl++
+               (let mults=if null ([Uni,Tot]>-dec_prps decl) then dec_prps decl>-[Uni,Tot] else dec_prps decl in
+                if null mults then "" else "["++intercalate "," (map showP mults)++"]")++
+               (if null(unwords (dec_pragma decl)) then "" else
+                " PRAGMA "++unwords (dec_pragma decl))
+                ++ intercalate " " (map showP (dec_Mean decl))
 
+instance PStruct PMeaning where
+ showP (PMeaning pmkup) = " MEANING "++showP pmkup
 
+instance PStruct P_Markup where
+ showP (P_Markup lng fmt str) = case lng of
+                                   Nothing -> ""
+                                   Just l  -> showP l++" "
+                               ++
+                                case fmt of
+                                   Nothing -> ""
+                                   Just f  -> showP f++" "
+                               ++
+                                "{+"++str++"+} "
 
-
+instance PStruct Prop where
+ showP = show
 
 instance PStruct P_NamedRel where
  showP (PNamedRel _ rel mSgn)   = rel++maybe "" showsign mSgn
@@ -162,11 +231,6 @@ instance PStruct P_NamedRel where
 instance PStruct Lang where
  showP Dutch   = "IN DUTCH"
  showP English = "IN ENGLISH"
-
-
-instance PStruct (P_SubIfc a) where
-  showP (P_Box{}) = "BOX"
-  showP (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
 
 
 

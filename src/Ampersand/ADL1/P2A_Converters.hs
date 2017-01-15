@@ -6,6 +6,7 @@ where
 import Ampersand.ADL1.Disambiguate
 import Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import Ampersand.Input.ADL1.CtxError
+import Ampersand.Core.A2P_Converters
 import Ampersand.ADL1.Lattices -- used for type-checking
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Classes.ViewPoint
@@ -516,8 +517,8 @@ pCtx2aCtx opts
                         _ -> namedRel2Decl declMap nmdr
                       
                aps' <- traverse (pAtomPair2aAtomPair contextInfo dcl) aps
-               src' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric pop dcl Src . userConcept) src
-               tgt' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric pop dcl Tgt . userConcept) tgt
+               src' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric (origin pop) dcl Src . userConcept) src
+               tgt' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric (origin pop) dcl Tgt . userConcept) tgt
                return ARelPopu { popdcl = dcl
                                , popps  = aps'
                                , popsrc = fromMaybe (source dcl) src'
@@ -530,7 +531,7 @@ pCtx2aCtx opts
                           , popas  = vals
                           }
               ) <$> traverse (pAtomValue2aAtomValue contextInfo cpt) (p_popas pop)
-    -- isMoreGeneric :: a2 -> t -> SrcOrTgt -> Type -> Guarded Type
+    isMoreGeneric :: Origin -> Declaration -> SrcOrTgt -> Type -> Guarded Type
     isMoreGeneric o dcl sourceOrTarget givenType
      = if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
        then pure givenType
@@ -595,7 +596,7 @@ pCtx2aCtx opts
               P_ViewExp term -> 
                  do (viewExpr,(srcBounded,_)) <- typecheckTerm term
                     case userList$toList$ findExact genLattice (flType$ lMeet c (source viewExpr)) of
-                       [] -> mustBeOrdered o o (Src, source viewExpr, viewExpr)
+                       [] -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
                        r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft (head r) viewExpr))
                              else mustBeBound (origin seg) [(Tgt,viewExpr)]
               P_ViewText str -> pure$ ViewText str
@@ -710,7 +711,7 @@ pCtx2aCtx opts
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objctx $ ojd)) of
-                    [] -> mustBeOrderedLst x [(source (objctx ojd),Src, ojd)]
+                    [] -> mustBeOrderedLst x [(source (objctx ojd),Src, aObjectDef2pObjectDef ojd)]
                     (r:_) -> pure (ojd{objctx=addEpsilonLeft r (objctx ojd)})
               else mustBeBound (origin ojd) [(Src,objctx ojd),(Tgt,objExpr)]
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression

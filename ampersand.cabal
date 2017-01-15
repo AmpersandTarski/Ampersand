@@ -97,6 +97,7 @@ library
                      Ampersand.Classes.Relational,
                      Ampersand.Classes.ViewPoint,
                      Ampersand.Components,
+                     Ampersand.Core.A2P_Converters,
                      Ampersand.Core.AbstractSyntaxTree,
                      Ampersand.Core.ParseTree,
                      Ampersand.Core.ShowAStruct,
