@@ -71,7 +71,7 @@ data P_Context
          , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
-         } 
+         } deriving Show --for QuickCheck
 
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
@@ -137,7 +137,7 @@ data P_Pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-           } 
+           } deriving Show -- for QuickCheck
 
 instance Ord P_Pattern where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
@@ -806,7 +806,7 @@ data P_Gen =  P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand fil
             | PGen{ pos  :: Origin         -- ^ the position of the GEN-rule
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
-                  } deriving (Eq, Ord)
+                  } deriving (Show, Eq, Ord)
 
 instance Traced P_Gen where
  origin = pos

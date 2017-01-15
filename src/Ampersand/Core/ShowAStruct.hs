@@ -11,6 +11,8 @@ import Ampersand.ADL1 (insParentheses)
 class AStruct a where
  showA :: a -> String
 
+instance AStruct A_Context where
+ showA = showP . aCtx2pCtx
 
 instance AStruct Expression where  
  --showA = aExpression2pTermPrim . showP --HJO, 20170109: TODO: This should be equivalent (and much beter for maintainability.)                                  
@@ -57,6 +59,9 @@ instance AStruct A_Concept where
 
 instance AStruct A_Gen where
  showA = showP . aGen2pGen 
+
+instance AStruct Rule where
+ showA = showP . aRule2pRule
 
 instance AStruct Declaration where
   showA = showP . aDeclaration2pDeclaration

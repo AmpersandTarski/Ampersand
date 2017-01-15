@@ -85,7 +85,7 @@ chpInterfacesBlocks fSpec =
                     [ plainText $ "Hiervandaan kan genavigeerd worden naar interface"++(if null rest then "" else "s")++":"] ++
                     [ bulletList navDocs ]
                 ++
-                [ plainText $ "De bijbehorende Ampersand expressie is: ", plain . code $ showADL iExp ] ++
+                [ plainText $ "De bijbehorende Ampersand expressie is: ", plain . code $ showA iExp ] ++
                 [ plainText $ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
                 | let len = length subInterfaceDocs, len > 0 ] ++
                 if not $ development (getOpts fSpec) then [] else -- some debug info shown on --dev
@@ -94,7 +94,7 @@ chpInterfacesBlocks fSpec =
                     Nothing -> []
                     Just (_, d, _, isFlipped) -> 
                       [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
-                      , plainText $ "DEBUG: showADL: " ++ showADL d
+                      , plainText $ "DEBUG: showA: " ++ showA d
                       ] 
               where (fieldDescr,fieldRef) = 
                       if isSur iExp then if isUni iExp then ("Een verplicht veld van type ", "Dit veld")

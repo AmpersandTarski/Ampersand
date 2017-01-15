@@ -30,6 +30,7 @@ import Ampersand.ADL1
 import Ampersand.Basics hiding (hPutStrLn)
 import Ampersand.FSpec
 import Ampersand.Misc
+import Ampersand.Core.ShowPStruct
 import Ampersand.Classes (isFunction)
 import Ampersand.Prototype.StaticFiles_Generated
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
@@ -377,7 +378,7 @@ instance ShowMath Expression where
           showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
           showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
-          showExpr (EMp1 val _) = inMathText $ showADL val
+          showExpr (EMp1 val _) = inMathText $ showP val
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)

@@ -11,6 +11,7 @@ module Ampersand.Output.ToJSON.JSONutils
   , module Ampersand.Classes
   , module GHC.Generics
   , module Ampersand.Core.ParseTree
+  , module Ampersand.Core.ShowAStruct
   )
 where
 import Data.Aeson
@@ -20,6 +21,7 @@ import Ampersand.Core.ParseTree
      ( Role
      , ViewHtmlTemplate(ViewHtmlTemplateFile)
      )
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.Populated 
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.SQL (sqlQuery,sqlQueryWithPlaceholder,placeHolderSQL,broadQueryWithPlaceholder)

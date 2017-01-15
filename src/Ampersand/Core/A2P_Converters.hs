@@ -8,6 +8,7 @@ module Ampersand.Core.A2P_Converters (
   , aExplObj2PRef2Obj
   , aObjectDef2pObjectDef
   , aGen2pGen
+  , aRule2pRule
 ) 
 where
 import Ampersand.ADL1.Expression
@@ -17,6 +18,7 @@ import Ampersand.Core.AbstractSyntaxTree
 import Data.Maybe
 import Data.Char
 import qualified Data.Text as T
+
 aCtx2pCtx :: A_Context -> P_Context
 aCtx2pCtx ctx = 
  PCtx { ctx_nm     = ctxnm ctx

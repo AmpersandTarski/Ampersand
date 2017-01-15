@@ -17,7 +17,7 @@ import Ampersand.Core.ParseTree
      )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ShowADL
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.Misc
 import qualified Ampersand.Misc.Options as Opts
@@ -329,7 +329,7 @@ genViewInterface fSpec interf =
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "interfaceName"       (ifcName  interf)
                      . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"              (showADL . _ifcExp $ interf)
+                     . setAttribute "expAdl"              (showA . _ifcExp $ interf)
                      . setAttribute "source"              (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"              (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "crudC"               (objCrudC (_ifcObj interf))
@@ -357,7 +357,7 @@ genViewObject fSpec depth obj =
                         . setAttribute "exprIsTot"  (exprIsTot obj)
                         . setAttribute "name"       (escapeIdentifier . objName $ obj)
                         . setAttribute "label"      (objName obj) -- no escaping for labels in templates needed
-                        . setAttribute "expAdl"     (showADL . objExp $ obj) 
+                        . setAttribute "expAdl"     (showA . objExp $ obj) 
                         . setAttribute "source"     (escapeIdentifier . name . objSource $ obj)
                         . setAttribute "target"     (escapeIdentifier . name . objTarget $ obj)
                         . setAttribute "crudC"      (objCrudC obj)
@@ -448,7 +448,7 @@ genControllerInterface fSpec interf =
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (ifcName interf)
                      . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
+                     . setAttribute "expAdl"                   (showA . _ifcExp $ interf)
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "crudC"                    (objCrudC (_ifcObj interf))

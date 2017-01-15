@@ -109,7 +109,6 @@ library
                      Ampersand.FSpec.FSpecAux,
                      Ampersand.FSpec.GenerateUML,
                      Ampersand.FSpec.Motivations,
-                     Ampersand.FSpec.ShowADL,
                      Ampersand.FSpec.ShowHS,
                      Ampersand.FSpec.ShowMeatGrinder,
                      Ampersand.FSpec.SQL,

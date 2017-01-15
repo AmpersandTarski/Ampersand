@@ -19,7 +19,7 @@ import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms 
 import Ampersand.FSpec.ToFSpec.Populated 
-import Ampersand.FSpec.ShowADL
+import Ampersand.Core.ShowAStruct
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
@@ -337,7 +337,7 @@ makeFSpec opts context
      interfaceGen = step4a ++ step4b
      step4a
       = let recur es
-             = [ Obj { objnm   = showADL t
+             = [ Obj { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objctx  = t
                      , objcrud = fatal 351 "No default crud in generated interface"

@@ -6,6 +6,7 @@ where
 import Ampersand.Core.ParseTree
 import Ampersand.Basics
 import Data.List
+import Ampersand.ADL1.PrettyPrinters
 
 class PStruct a where
  showP :: a -> String
@@ -187,6 +188,14 @@ instance PStruct (Maybe P_Cruds) where
  showP (Just (P_Cruds _ x)) = x 
 
 
+instance (Traced a,PStruct a) => PStruct (P_Rule a) where
+ showP r 
+  = "RULE \""++rr_nm r++"\" : "++showP (rr_exp r)
+     ++ concat ["\n   "++showP mng | mng <- rr_mean r ]
+     ++ concat ["\n   "++showP msg | msg <- rr_msg  r ]
+     ++ case rr_viol r of
+          Nothing                -> ""
+          Just (PairView pvSegs) -> "\n     VIOLATION ("++intercalate ", " (map showP pvSegs)++")"
 
 
 instance PStruct P_RoleRule where
@@ -208,6 +217,9 @@ instance PStruct P_Declaration where
 
 instance PStruct PMeaning where
  showP (PMeaning pmkup) = " MEANING "++showP pmkup
+
+instance PStruct PMessage where
+ showP (PMessage pmkup) = " MESSAGE "++showP pmkup
 
 instance PStruct P_Markup where
  showP (P_Markup lng fmt str) = case lng of
@@ -257,3 +269,7 @@ instance PStruct a => PStruct (PairViewSegment a) where
 instance PStruct SrcOrTgt where
  showP Src = "SRC"
  showP Tgt = "TGT" 
+
+
+instance PStruct P_Context where
+ showP = prettyPrint  --HJO20170115: This is special: PrettyPrint must not use showP, or there will be loops...

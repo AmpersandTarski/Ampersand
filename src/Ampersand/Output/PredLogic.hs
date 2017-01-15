@@ -6,7 +6,8 @@ import Data.List
 import Ampersand.Basics
 import Ampersand.ADL1
 import Ampersand.Classes
-import Ampersand.FSpec.ShowADL
+import Ampersand.Core.ShowAStruct
+import Ampersand.Core.ShowPStruct
 import Data.Char
 import Data.Text (pack)
 import Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
@@ -20,7 +21,7 @@ data PredLogic
    Conj [PredLogic]                  |
    Disj [PredLogic]                  |
    Not PredLogic                     |
-   Pred String String                |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Sgn (showADL e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
+   Pred String String                |  -- Pred nm v, with v::type   is equiv. to Rel nm Nowhere [] (type,type) True (Sgn (showA e) type type [] "" "" "" [Asy,Sym] Nowhere 0 False)
    PlK0 PredLogic                    |
    PlK1 PredLogic                    |
    R PredLogic Declaration PredLogic |
@@ -238,8 +239,8 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                Funs x ls           -> case ls of
                                          []    -> x
                                          r:ms  -> if isIdent r then charshow i (Funs x ms) else charshow i (Funs (funP r x) ms)
-               Dom expr (x,_)      -> x++el++funP (makeRel "dom") (showADL expr)
-               Cod expr (x,_)      -> x++el++funP (makeRel "cod") (showADL expr)
+               Dom expr (x,_)      -> x++el++funP (makeRel "dom") (showA expr)
+               Cod expr (x,_)      -> x++el++funP (makeRel "cod") (showA expr)
                R pexpr dec pexpr'  -> case (pexpr,pexpr') of
                                          (Funs l [] , Funs r [])  -> wrap i 5 (apply dec l r)
 {-
@@ -330,10 +331,10 @@ assemble expr
             Rn   -> R (Funs b []) (dcl) (Funs a [])
             Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
    f exclVars (EFlp e)       (a,b) = f exclVars e (b,a)
-   f _ (EMp1 val _) _             = Atom . showADL $ val
+   f _ (EMp1 val _) _             = Atom . showP $ val
    f _ (EDcI _) ((a,_),(b,tv))     = R (Funs a []) (Isn tv) (Funs b [])
    f _ (EDcV _) _                  = Atom "True"
-   f _ e _ = fatal 298 ("Non-exhaustive pattern in subexpression "++showADL e++" of assemble (<"++showADL expr++">)")
+   f _ e _ = fatal 298 ("Non-exhaustive pattern in subexpression "++showA e++" of assemble (<"++showA expr++">)")
 
 -- fECps treats the case of a composition.  It works as follows:
 --       An expression, e.g. r;s;t , is translated to Exists (zip ivs ics) (Conj (frels s t)),
@@ -439,7 +440,7 @@ assemble expr
      = case e of
          EDcD dcl        -> \sv tv->R (Funs (fst sv) [r | t'<-        lhs, r<-relsMentionedIn t']) dcl (Funs (fst tv) [r | t'<-reverse rhs, r<-relsMentionedIn t'])
          EFlp (EDcD dcl) -> \sv tv->R (Funs (fst tv) [r | t'<-reverse rhs, r<-relsMentionedIn t']) dcl (Funs (fst sv) [r | t'<-        lhs, r<-relsMentionedIn t'])
-         EMp1 val _      -> \_ _-> Atom . showADL $ val
+         EMp1 val _      -> \_ _-> Atom . showP $ val
          EFlp EMp1{}     -> relFun exclVars lhs e rhs
          _               -> \sv tv->f (exclVars++[sv,tv]) e (sv,tv)
 

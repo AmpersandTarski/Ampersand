@@ -11,6 +11,7 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , module Ampersand.Misc
     , module Ampersand.Core.ParseTree
     , module Ampersand.Core.AbstractSyntaxTree
+    , module Ampersand.Core.ShowAStruct
     , module Ampersand.ADL1
     , module Ampersand.Output.PandocAux
     , module Ampersand.Graphic.Graphics
@@ -40,6 +41,7 @@ import Ampersand.Core.ParseTree
      ( Role
      )
 import Ampersand.Core.AbstractSyntaxTree hiding (Meta)
+import Ampersand.Core.ShowAStruct
 import Ampersand.ADL1 hiding (Meta)
 import Ampersand.Classes
 import Ampersand.FSpec

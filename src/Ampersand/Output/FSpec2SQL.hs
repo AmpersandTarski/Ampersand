@@ -6,6 +6,7 @@ import Ampersand.Basics
 import Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateInitialPopQueries
   )
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Data.Monoid
@@ -37,7 +38,7 @@ dumpSQLqueries multi
         where 
           showObjDef :: ObjectDef -> [Text.Text]
           showObjDef obj
-            = (header . Text.pack . showADL . objctx) obj
+            = (header . Text.pack . showA . objctx) obj
             <>[Text.pack$ (prettySQLQueryWithPlaceholder 2 fSpec . objctx) obj]
             <>case objmsub obj of
                  Nothing  -> []
@@ -58,10 +59,10 @@ dumpSQLqueries multi
         <>[Text.pack$ prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj,""]
         where
           showRule r 
-            = Text.pack ("  - "<>name r<>": "<>showADL r)
+            = Text.pack ("  - "<>name r<>": "<>showA r)
      showDecl :: Declaration -> [Text.Text]
      showDecl decl 
-        = header (Text.pack$ showADL decl)
+        = header (Text.pack$ showA decl)
         <>[Text.pack$ prettySQLQuery 2 fSpec $ decl,""]
      header :: Text.Text -> [Text.Text]
      header title = 
