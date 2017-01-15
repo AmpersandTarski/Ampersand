@@ -55,7 +55,7 @@ instance JSON MultiFSpecs Rules where
 instance JSON Rule JsonRule where
  fromAmpersand multi rule = JsonRule
   { rulJSONname        = rrnm         rule
-  , rulJSONruleAdl     = showADL.rrexp $ rule
+  , rulJSONruleAdl     = showA.rrexp $ rule
   , rulJSONorigin      = show.rrfps     $ rule
   , rulJSONmeaning     = showMeaning
   , rulJSONmessage     = showMessage

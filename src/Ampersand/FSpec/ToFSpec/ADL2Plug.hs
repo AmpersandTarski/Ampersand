@@ -7,6 +7,7 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc
 import Data.Maybe
 import Data.Char

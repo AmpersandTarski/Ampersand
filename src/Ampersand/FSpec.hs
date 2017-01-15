@@ -2,7 +2,6 @@ module Ampersand.FSpec
    ( module Ampersand.Basics
    , module Ampersand.FSpec.FSpec
    , module Ampersand.FSpec.ShowHS
-   , module Ampersand.FSpec.ShowADL
    , module Ampersand.FSpec.ShowMeatGrinder
    , module Ampersand.FSpec.ToFSpec.Calc
    , module Ampersand.FSpec.ToFSpec.ADL2FSpec
@@ -15,7 +14,6 @@ import Ampersand.FSpec.FSpec
 import Ampersand.Basics      (fatal,Collection(..),Named(..))
 import Ampersand.FSpec.ShowHS
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
-import Ampersand.FSpec.ShowADL (ShowADL(..))
 import Ampersand.FSpec.ShowMeatGrinder (makeMetaPopulationFile)
 import Ampersand.FSpec.ToFSpec.Calc
        (showProof,showPrf)

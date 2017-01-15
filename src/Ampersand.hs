@@ -8,10 +8,7 @@ module Ampersand
   , module Ampersand.Misc
   , module Ampersand.Output
 
-  , module Ampersand.Test.TestScripts
-  , module Ampersand.Test.Parser.ParserTest
-  , module Ampersand.Test.Parser.QuickChecks
-  , module Ampersand.Test.Regression
+  , module Ampersand.Test
   ) where
 import Ampersand.ADL1
 import Ampersand.Basics
@@ -21,8 +18,5 @@ import Ampersand.FSpec
 import Ampersand.Input
 import Ampersand.Misc
 import Ampersand.Output
+import Ampersand.Test
 
-import Ampersand.Test.Regression
-import Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts)
-import Ampersand.Test.Parser.ParserTest (parseScripts)
-import Ampersand.Test.Parser.QuickChecks (parserQuickChecks)

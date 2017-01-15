@@ -7,6 +7,7 @@ import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.Graphic.Fspec2ClassDiagrams
 import Ampersand.Graphic.ClassDiag2Dot
 import Data.GraphViz.Attributes.Complete

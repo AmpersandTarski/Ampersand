@@ -25,9 +25,9 @@ import Data.List
 import qualified Data.Text.IO as Text
 import Data.Function (on)
 import Data.Maybe (maybeToList)
-import Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ShowAStruct
 import Ampersand.Prototype.GenBericht  (doGenBericht)
 import Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
@@ -63,7 +63,7 @@ generateAmpersandOutput multi = do
    fSpec = userFSpec multi
    doGenADL :: IO()
    doGenADL =
-    do { writeFile outputFile . showADL . originalContext $ fSpec
+    do { writeFile outputFile . showA . originalContext $ fSpec
        ; verboseLn opts $ ".adl-file written to " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> outputfile opts
@@ -185,13 +185,13 @@ generateAmpersandOutput multi = do
                              ]
 
           showprs :: [AAtomPair] -> String
-          showprs aprs = "["++intercalate ", " (map showADL aprs)++"]"
+          showprs aprs = "["++intercalate ", " (map showA aprs)++"]"
    --       showpr :: AAtomPair -> String
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
           reportSignals []        = verboseLn opts "No signals for the initial population."
           reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
             [   "Rule(s): "++(show . map name . rc_orgRules) conj
-            ++"\n  Conjunct   : " ++ showADL (rc_conjunct conj)
+            ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
             ++"\n  Violations : " ++ showprs viols
             | (conj, viols) <- conjViols
             ]
@@ -199,11 +199,11 @@ generateAmpersandOutput multi = do
           ruleTest ruleName =
            case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
              [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (rrexp rule)
                             ; putStrLn $ showContents rule
                             ; let rExpr = rrexp rule
                             ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
-                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (rrexp ruleComplement)++"):"
                             ; putStrLn $ showContents ruleComplement
                             }
            where showContents rule = "[" ++ intercalate ", " pairs ++ "]"

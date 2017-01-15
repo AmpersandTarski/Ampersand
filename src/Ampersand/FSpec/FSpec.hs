@@ -12,7 +12,6 @@ module Ampersand.FSpec.FSpec
           ( MultiFSpecs(..)
           , FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Quad(..)
-          , A_Concept, Declaration, A_Gen
           , FSid(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
@@ -27,32 +26,32 @@ module Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..),AAtomValue
-          , showValADL,showValPHP,showValSQL,showSQL
-          , module Ampersand.FSpec.ToFSpec.Populated 
-          , module Ampersand.Classes
+          , Language(..)
+          , showSQL
+      --    , module Ampersand.Classes
           ) where
--- TODO: Export module Ampersand.Core.AbstractSyntaxTree in the same way as is done
---       for module Ampersand.Core.ParseTree in that module. Then build to a better
---       hierarchie to reflect the Architecture. 
 import Data.List
 import Data.Text (Text,unpack)
 import Data.Typeable
 import Ampersand.ADL1.Expression (notCpl)
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.ParseTree
+        ( Traced(..), Origin
+        , Role
+        , ConceptDef
+        )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.Crud
-import Ampersand.Misc.Options (Options)
+import Ampersand.Misc
 import Text.Pandoc.Builder (Blocks)
-import Ampersand.FSpec.ToFSpec.Populated
 
 data MultiFSpecs = MultiFSpecs
                    { userFSpec :: FSpec        -- ^ The FSpec based on the user's script only.
                    , metaFSpec :: Maybe FSpec  -- ^ The FormalAmpersand metamodel, populated with the items from the user's script 
                    }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
-                   , originalContext :: A_Context             -- ^ the original context. (for showADL)  
+                   , originalContext :: A_Context             -- ^ the original context. (for showA)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
