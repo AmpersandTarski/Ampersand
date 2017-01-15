@@ -9,7 +9,7 @@
   --
   -- Every Expression should be disambiguated before printing to ensure unambiguity.
 module Ampersand.FSpec.ShowADL
-    ( ShowADL(..), showREL)
+    ( ShowADL, showREL)
 where
 import Ampersand.Core.ParseTree
      ( MetaObj(..)
@@ -17,20 +17,32 @@ import Ampersand.Core.ParseTree
      , P_Markup(..)
      , Prop(..)
      )
+import Ampersand.Core.ParseTree 
+    ( Meta(..)
+--    , Role(..)
+--    , ConceptDef
+--    , Origin(..)
+--    , Traced(..)
+--    , ViewHtmlTemplate(..)
+--    , PairView(..)
+    , PairViewSegment(..)
+--    , Prop(..)
+--    , Representation(..), TType(..), PAtomValue(..), PSingleton
+    )
 import Ampersand.Core.ShowPStruct
--- import Ampersand.Core.ShowAStruct(showA)
+import Ampersand.Core.ShowAStruct(showA)
 import Ampersand.Core.AbstractSyntaxTree
      ( Cruds(..)
-     , Meta(..)
+   --  , Meta(..)
    --  , MetaObj(..)
      , Purpose(..)
-     , AMeaning(..)
+   --  , AMeaning(..)
      , ExplObj(..), explObj
      , Rule(..)
      , Pattern(..)
-     , PairViewSegment(..)
+   --  , PairViewSegment(..)
      , Expression(..)
-     , PairView(..)
+   --  , PairView(..)
      , A_Gen(..)
      , A_RoleRelation(..)
      , IdentityDef(..)
@@ -42,11 +54,10 @@ import Ampersand.Core.AbstractSyntaxTree
      , A_Context(..)
      , Population(..)
      , AAtomPair(..)
-     , AAtomValue(..), aavstr
+     , AAtomValue(..)
      , Association(..)
      )
 import Ampersand.Basics hiding (indent)
-import Ampersand.Classes
 import Ampersand.FSpec.FSpec
 import Data.List
 import Prelude
@@ -105,18 +116,7 @@ instance ShowADL Purpose where
                 ++showADL (explMarkup expl)
 
 instance ShowADL ExplObj where
- showADL e = case e of
-      ExplConceptDef cd  -> "CONCEPT "++doubleQuote (name cd)
-      ExplDeclaration d  -> "RELATION "++doubleQuote (name d)
-      ExplRule str       -> "RULE "++doubleQuote str
-      ExplIdentityDef str-> "IDENT "++doubleQuote str
-      ExplViewDef str    -> "VIEW "++doubleQuote str
-      ExplPattern str    -> "PATTERN "++ doubleQuote str
-      ExplInterface str  -> "INTERFACE "++doubleQuote str
-      ExplContext str    -> "CONTEXT "++doubleQuote str
-
-doubleQuote :: String -> String
-doubleQuote str = "\""++str++"\""
+ showADL = showA
 
 
 -- TODO: making these tuples instance of ShowADL is very hacky
@@ -149,20 +149,10 @@ instance ShowADL SrcOrTgt where
  showADL Tgt = "TGT"
 
 instance ShowADL Rule where
- showADL r
-  = "RULE \""++rrnm r++"\" : "++showADL (rrexp r)
-     ++ concat ["\n     MEANING "++showADL mng | mng <- ameaMrk $ rrmean r ]
-     ++ concat ["\n     MESSAGE "++showADL msg | msg <- rrmsg r]
-     ++ case rrviol r of
-          Nothing                -> ""
-          Just (PairView pvSegs) -> "\n     VIOLATION ("++intercalate ", " (map showADL pvSegs)++")"
+ showADL = showA 
 
 instance ShowADL A_Gen where
- showADL g =
-   case g of
-    Isa{} -> "CLASSIFY "++showADL (genspc g)++" ISA "++showADL (gengen g)
-    IsE{} -> "CLASSIFY "++showADL (genspc g)++" IS "++intercalate " /\\ " (map showADL (genrhs g))
-
+ showADL = showA
 instance ShowADL A_RoleRelation where
  showADL r
   = "ROLE "++intercalate ", " (map show (rrRoles r))++" EDITS "++intercalate ", " (map showADL (rrRels r))
@@ -210,19 +200,7 @@ instance ShowADL DnfClause where
  showADL dnfClause = showADL (dnf2expr dnfClause)
 
 instance ShowADL Declaration where
- showADL decl =
-  case decl of
-     Sgn{} -> name decl++" :: "++name (source decl)++(if null ([Uni,Tot]>-properties decl) then " -> " else " * ")++name (target decl)++
-              (let mults=if null ([Uni,Tot]>-properties decl) then properties decl>-[Uni,Tot] else properties decl in
-               if null mults then "" else "["++intercalate "," (map showADL mults)++"]")++
-              (if null(decprL decl++decprM decl++decprR decl) then "" else
-               " PRAGMA "++unwords (map show [decprL decl,decprM decl,decprR decl]))
-               ++ concatMap meaning (ameaMrk (decMean decl))
-     Isn{} -> "I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
-     Vs{}  -> "V"++show (decsgn decl)      -- Vs{}  is of type Declaration and it is implicitly defined
-   where
-     meaning :: Markup -> String
-     meaning pmkup = " MEANING "++showADL pmkup
+ showADL = showA
 
 showREL :: Declaration-> String
 showREL decl = show decl
@@ -234,21 +212,13 @@ showREL decl = show decl
 -}
 
 instance ShowADL P_Markup where
- showADL (P_Markup lng fmt str) = case lng of
-                                     Nothing -> ""
-                                     Just l  -> "IN "++show l++" "
-                                 ++
-                                  case fmt of
-                                     Nothing -> ""
-                                     Just f  -> " "++show f++" "
-                                 ++
-                                  "{+"++str++"-} "
+ showADL = showP
 
 instance ShowADL Prop where
- showADL = show
+ showADL = showP
 
 instance ShowADL A_Concept where
- showADL c = show (name c)
+ showADL = showA
 
 instance ShowADL A_Context where
  showADL context
@@ -273,7 +243,7 @@ instance (ShowADL a, ShowADL b) => ShowADL (a,b) where
  showADL (a,b) = "(" ++ showADL a ++ ", " ++ showADL b ++ ")"
 
 instance ShowADL AAtomPair where
- showADL p = "("++showADL (apLeft p)++","++ showADL (apRight p)++")"
+ showADL p = showA p
   
 instance ShowADL Population where
  showADL pop
@@ -300,13 +270,6 @@ instance ShowADL Population where
 
               
 instance ShowADL AAtomValue where
- showADL at = case at of
-              AAVString{} -> show (aavstr at)
-              AAVInteger _ i   -> show i
-              AAVFloat   _ f   -> show f
-              AAVBoolean _ b   -> show b
-              AAVDate _ day    -> show day
-              AAVDateTime _ dt -> show dt
-              AtomValueOfONE -> "1"
+ showADL = showA
 
 --used to compose error messages at p2a time

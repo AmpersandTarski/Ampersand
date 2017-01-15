@@ -462,7 +462,7 @@ instance MetaPopulations Expression where
              [(dirtyId ctx expr, dirtyId ctx (source expr))]
       , Pop "tgt" "Expression" "Concept" [Uni,Tot]
              [(dirtyId ctx expr, dirtyId ctx (target expr))]
-      , Pop "showA" "Expression" "ShowADL" [Uni,Tot]
+      , Pop "showADL" "Expression" "ShowADL" [Uni,Tot]
              [(dirtyId ctx expr, show (showA expr))]
       ]++
       ( case skipEpsilon expr of
