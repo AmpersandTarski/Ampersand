@@ -145,7 +145,7 @@ class Atom {
 	}
 	
 	/**
-	 * Checks if atom exists in database
+	 * Checks if atom exists in database. Uses cache for optimization. It saves database queries.
 	 * @return boolean
 	 */
 	public function atomExists(){
@@ -164,18 +164,18 @@ class Atom {
 	
 	/**
 	 * Add atom to concept in database
-	 * @return void
+	 * @return Atom
 	 */
 	public function addAtom(){
         if($this->atomExists()){
-            $this->logger->debug("Atom '{$this}' already exists in database");
+            $this->logger->debug("Atom '{$this}' already exists in database.");
         }else{
             $this->database->addAtomToConcept($this);
             $this->concept->addToAtomCache($this);
         }
 	    return $this;
 	}
-    
+
     /**
      * 
      * @return void
@@ -185,10 +185,52 @@ class Atom {
             $this->database->deleteAtom($this);
             $this->concept->removeFromAtomCache($this);
         }else{
-            $this->logger->debug("Cannot delete atom '{$this}', because it does not exists");
+            $this->logger->debug("Cannot delete atom '{$this}', because it does not exist.");
         }
     }
-	
+
+    /**
+     * 
+	 * @param Atom $equalAtom  -- this atom is deemed equal to $this, so its information must be moved to $this.
+     * @return void
+     */
+    public function unionWithAtom($equalAtom){
+        if($this->atomExists()){
+ 	       $db         = $this->database;
+ 	       $UpdConcept = $this->concept;
+
+  		   // Check if UpdConcept and DelConcept are in the same classification tree
+		   if(!$UpdConcept->inSameClassificationTree($equalAtom->concept)) throw new Exception("Concepts '[{$UpdConcept}]' and '[{$equalAtom->concept}]' are not in the same classification tree", 500);
+
+           // if $equalAtom is not more generic than $this, we have to update concept columns.
+		   if (!$this->concept->hasGeneralization($equalAtom->concept)) $db->atomSetConcept($this, $equalAtom->concept);
+
+		   // enrich the database record corresponding to $this with the information from $equalAtom.
+           $db->substAtom($this, $equalAtom);
+
+           // rename every mention of $equalAtom->idEsc to $this->idEsc, in all tables
+		   foreach (Relation::getAllRelations() as $relation){
+		       $tableName = $relation->getMysqlTable()->name;
+		    
+		       $cols = array();
+		       if($relation->srcConcept->inSameClassificationTree($UpdConcept)) $cols[] = $relation->getMysqlTable()->srcCol();
+		       if($relation->tgtConcept->inSameClassificationTree($UpdConcept)) $cols[] = $relation->getMysqlTable()->tgtCol();
+		       // Now $cols contains every column that might possibly contain this atom.
+		       foreach($cols as $col){
+		           $db->Exe("UPDATE `{$tableName}` SET `{$col->name}` = `{$this->idEsc}` WHERE `{$col->name}` = '{$equalAtom->idEsc}'");
+		           $db->addAffectedRelations($relation);
+		       }
+		   }
+
+		   $equalAtom->deleteAtom();
+ 
+        }else{
+            $this->logger->debug("Cannot unify atom '{$this}' with '{$equalAtom}', because '{$this}' does not exist.");
+        }
+	}
+
+		// delete $delAtom
+		
 	/**
 	 * Returns basic information about this atom
 	 * @param array $options
