@@ -9,7 +9,7 @@ import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import Ampersand.Input.ADL1.Parser
 import Ampersand.Input.Parsing
-import Ampersand.Misc.Options(Options)
+import Ampersand.Misc
 import System.IO (hPutStrLn, stderr)
 
 -- Tries to parse all the given files

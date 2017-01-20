@@ -1,9 +1,9 @@
 module Ampersand.ADL1.Rule 
   (consequent, antecedent, rulefromProp, hasantecedent) where
 
+import Ampersand.Core.ParseTree(Prop(..),Traced(..))
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
-import Ampersand.Misc
 
 hasantecedent :: Rule -> Bool
 hasantecedent r
@@ -43,7 +43,7 @@ rulefromProp prp d@Sgn{} =
         , isSignal = fatal 63 "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where
-        showDcl' = showDcl False d
+        showDcl' = showDcl True d
         r:: Expression
         r = EDcD d
         rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
@@ -61,7 +61,7 @@ rulefromProp prp d@Sgn{} =
                      Prop -> fatal 78 "Prop should have been converted by the parser"
         explain prop = [ explang lang | lang <-[English,Dutch]]
           where 
-            explang lang = A_Markup lang (string2Blocks ReST $ f lang)
+            explang lang = Markup lang (string2Blocks ReST $ f lang)
             f English = showDcl'++" is "++
                   case prop of
                     Sym-> "symmetric"
@@ -85,13 +85,13 @@ rulefromProp prp d@Sgn{} =
                     Sur-> "surjectief"
                     Inj-> "injectief"
                     Tot-> "totaal"
-                    Prop -> fatal 103 "Prop should have been converted by pattern the parser"
+                    Prop -> fatal 103 "Prop should have been converted by the parser"
          
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
           where
             s= name (source d)
             t= name (target d)
-            msg lang = A_Markup lang (string2Blocks ReST $ f lang)
+            msg lang = Markup lang (string2Blocks ReST $ f lang)
             f English =
                   case prop of
                     Sym-> showDcl'++" is "++"symmetric"

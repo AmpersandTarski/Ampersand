@@ -92,7 +92,7 @@ chpIntroduction fSpec =
                          <> xRef ConceptualAnalysis
                          <> text " is meant for requirements engineers and architects to validate and formalize the requirements. "
                          <> text "It is also meant for testers to come up with correct test cases. "
-                         <> text "The formalization in this chapter makes consistency of the functional specification provable. "
+                         <> text "The formalization in this chapter makes consistency of the functional design provable. "
                          <> text "It also yields an unambiguous interpretation of all requirements."
                          )
                else mempty

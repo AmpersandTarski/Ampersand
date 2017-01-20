@@ -5,9 +5,9 @@ module Ampersand.Graphic.Graphics
 import Data.GraphViz
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.Switchboard
 import Ampersand.Misc
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.Graphic.Fspec2ClassDiagrams
 import Ampersand.Graphic.ClassDiag2Dot
 import Data.GraphViz.Attributes.Complete
@@ -24,8 +24,6 @@ data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern
                 | PTDeclaredInPat Pattern
                 | PTCDConcept A_Concept
-                | PTSwitchBoard Activity
-                | PTFinterface Activity
                 | PTIsaInPattern Pattern  -- Not used at all...
                 | PTCDRule Rule
                 | PTLogicalDM
@@ -104,15 +102,6 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of the rules in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van de regels in " ++ name pat
                                }
-   PTFinterface act    -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Concept diagram of interface " ++ name act
-                                      Dutch   -> "Conceptueel diagram van interface " ++ name act
-                               }
    PTCDRule rul        -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = conceptualGraph' fSpec pr
@@ -122,26 +111,15 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of rule " ++ name rul
                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
                                }
-   PTSwitchBoard act   -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = sbdotGraph (switchboardAct fSpec act)
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Switchboard diagram of " ++ name act
-                                      Dutch   -> "Schakelpaneel van " ++ name act
-                               }
  where
    scale' =
       case pr of
             PTClassDiagram -> "1.0"
             PTCDPattern{}-> "0.7"
             PTDeclaredInPat{}-> "0.6"
-            PTSwitchBoard{}  -> "0.4"
             PTIsaInPattern{} -> "0.7"
             PTCDRule{}   -> "0.7"
             PTCDConcept{}      -> "0.7"
-            PTFinterface{}   -> "0.7"
             PTLogicalDM    -> "1.2"
             PTTechnicalDM  -> "1.2"
    graphVizCmdForConceptualGraph = Sfdp
@@ -156,8 +134,6 @@ pictureID pr =
       PTDeclaredInPat pat -> "RelationsInPattern"++name pat
       PTIsaInPattern  pat -> "IsasInPattern"++name pat
       PTCDPattern pat     -> "CDPattern"++name pat
-      PTFinterface act    -> "KnowledgeGraph"++name act
-      PTSwitchBoard x     -> "SwitchBoard"++name x
       PTCDRule r          -> "CDRule"++name r
 
 conceptualGraph' :: FSpec -> PictureReq -> DotGraph String
@@ -227,21 +203,6 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                   , csIdgs = idgs
                   }
 
-        PTFinterface ifc ->
-          let gs   = fsisa fSpec
-              cpts = nub $ cpts' ++ [c |(s,g)<-idgs, c<-[g,s]]
-              cpts'  = concs rs
-              rs         = filter affected (vrules fSpec)
-              affected r = (not.null) [d | d@Sgn{} <- relsMentionedIn r `isc` relsMentionedIn ifc]
-              idgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
-              rels = [r | r@Sgn{}<-relsMentionedIn ifc, decusr r
-                        , not (isProp r)    -- r is not a property
-                     ]
-          in
-          CStruct { csCpts = cpts -- involve all concepts involved either in the affected rules or in the isa-links
-                  , csRels = rels
-                  , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
-                  }
         PTCDRule r ->
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges

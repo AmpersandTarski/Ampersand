@@ -20,7 +20,7 @@ module Ampersand.Core.ParseTree (
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
-   , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..) {-, ViewTextTemplate-}
+   , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..)
    , P_ViewD(..) , P_ViewSegmtPayLoad(..)
 
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
@@ -29,12 +29,9 @@ module Ampersand.Core.ParseTree (
 
    , P_Gen(..)
 
-   , Lang(..)
    , P_Markup(..)
 
-   , PandocFormat(..)
-
-   , Prop(..), Props, normalizeProps
+   , Prop(..), Props
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
@@ -42,7 +39,6 @@ import Ampersand.Input.ADL1.FilePos
 import Ampersand.Basics
 import Data.Traversable
 import Data.Foldable hiding (concat)
-import Data.List (nub,intercalate)
 import Prelude hiding (foldr, sequence, foldl, concatMap)
 import Data.Typeable
 import Data.Data
@@ -58,7 +54,7 @@ data P_Context
          , ctx_pos ::    [Origin]         -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctx_lang ::   Maybe Lang       -- ^ The language specified on the top-level context. If omitted, English will be the default.
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-         , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+         , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
          , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
@@ -75,7 +71,7 @@ data P_Context
          , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
-         } deriving (Show) --For QuickCheck error messages only!
+         } deriving Show --for QuickCheck
 
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
@@ -141,7 +137,7 @@ data P_Pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-           } deriving (Show) --For QuickCheck error messages only!
+           } deriving Show -- for QuickCheck
 
 instance Ord P_Pattern where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
@@ -810,23 +806,10 @@ data P_Gen =  P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand fil
             | PGen{ pos  :: Origin         -- ^ the position of the GEN-rule
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
-                  } deriving (Eq, Ord)
-
-instance Show P_Gen where
- -- This show is used in error messages.
- showsPrec _ g = 
-   case g of
-     P_Cy{} -> showString $ "CLASSIFY "++show (gen_spc g)++" IS "++
-                  (intercalate " /\\ " . map show . gen_rhs $ g)
-     PGen{} -> showString $ "CLASSIFY "++show (gen_spc g)++" ISA "++
-                  (show . gen_gen $ g)
+                  } deriving (Show, Eq, Ord)
 
 instance Traced P_Gen where
  origin = pos
-
-data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
-
-data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
 
 type Props = [Prop]
 
@@ -863,15 +846,6 @@ instance Flippable Prop where
  flp Sur = Tot
  flp Inj = Uni
  flp x = x
-
-normalizeProps :: [Prop] -> [Prop]
-normalizeProps = nub.conv.rep
-    where -- replace PROP by SYM, ASY
-          rep (Prop:ps) = [Sym, Asy] ++ rep ps
-          rep (p:ps) = (p:rep ps)
-          rep [] = []
-          -- add Uni and Inj if ps has neither Sym nor Asy
-          conv ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
 
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =

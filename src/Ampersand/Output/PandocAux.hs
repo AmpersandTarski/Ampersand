@@ -17,6 +17,8 @@ module Ampersand.Output.PandocAux
       , ENString(..)
       , LocalizedStr
       , localize
+      , commaPandocAnd
+      , commaPandocOr
       , Inlines
       )
 where
@@ -26,9 +28,10 @@ import Data.List
 import Data.Maybe
 import Ampersand.ADL1
 import Ampersand.Basics hiding (hPutStrLn)
-import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec
 import Ampersand.Misc
+import Ampersand.Core.ShowPStruct
+import Ampersand.Classes (isFunction)
 import Ampersand.Prototype.StaticFiles_Generated
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import qualified Data.ByteString as BS
@@ -74,8 +77,8 @@ defaultWriterVariables fSpec
   = [ ("title", (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                         (Dutch  , False) -> if test (getOpts fSpec)
                                             then "Afspraken van "
-                                            else "Functionele Specificatie van "
-                        (English, False) -> "Functional Specification of "
+                                            else "Functioneel Ontwerp van "
+                        (English, False) -> "Functional Design of "
                         (Dutch  ,  True) -> "Diagnose van "
                         (English,  True) -> "Diagnosis of "
                 )++name fSpec)
@@ -305,7 +308,6 @@ data Chapter = Intro
              | ProcessAnalysis
              | DataAnalysis
              | SoftwareMetrics
-             | EcaRules
              | Interfaces
              | FunctionPointAnalysis
              | Glossary
@@ -329,8 +331,6 @@ chptTitle lang cpt =
         (DataAnalysis          , English) -> text "Data structure"
         (SoftwareMetrics       , Dutch  ) -> text "Functiepunt Analyse"
         (SoftwareMetrics       , English) -> text "Function Point Analysis"
-        (EcaRules              , Dutch  ) -> text "ECA regels"
-        (EcaRules              , English) -> text "ECA rules (Flash points)"
         (Interfaces            , Dutch  ) -> text "Koppelvlakken"
         (Interfaces            , English) -> text "Interfaces"
         (FunctionPointAnalysis , Dutch  ) -> text "Functiepuntanalyse"
@@ -378,7 +378,7 @@ instance ShowMath Expression where
           showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
           showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
-          showExpr (EMp1 val _) = inMathText $ showADL val
+          showExpr (EMp1 val _) = inMathText $ showP val
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -711,3 +711,23 @@ extractMsg log' = do
      then log'
      else BC.unlines (msg'' ++ lineno)
 
+commaPandocAnd :: Lang -> [Inlines] -> Inlines
+commaPandocAnd Dutch = commaNLPandoc "en"
+commaPandocAnd English = commaEngPandoc "and"
+commaPandocOr :: Lang -> [Inlines] -> Inlines
+commaPandocOr Dutch = commaNLPandoc "of"
+commaPandocOr English = commaEngPandoc "or"
+
+commaEngPandoc :: Inlines -> [Inlines] -> Inlines
+commaEngPandoc s [a,b,c] = a <> ", " <> b <> ", " <> s <> space <> c
+commaEngPandoc s [a,b]   = a <> space <> s <> space <> b
+commaEngPandoc _   [a]   = a
+commaEngPandoc s (a:as)  = a <> ", " <> commaEngPandoc s as
+commaEngPandoc _   []    = mempty
+
+commaNLPandoc :: Inlines -> [Inlines] -> Inlines
+commaNLPandoc s [a,b]  = a <> space <> s <> space <> b
+commaNLPandoc  _  [a]  = a
+commaNLPandoc s (a:as) = a <> ", " <> commaNLPandoc s as
+commaNLPandoc  _  []   = mempty
+   

@@ -28,9 +28,10 @@ import Ampersand.FSpec.SQL
 import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.Misc
 import Ampersand.Core.AbstractSyntaxTree
-
+import Ampersand.Core.ShowAStruct
 
 data TableSpec
   = TableSpec { tsCmnt :: [String]  -- Without leading "// "
@@ -100,7 +101,7 @@ plug2TableSpec plug
                    ,""
                    ,"attributes:"
                    ]<> concat
-                   [ [showADL (attExpr x)
+                   [ [showA (attExpr x)
                      , "  "<>(show.properties.attExpr) x ]
                    | x <- plugAttributes plug
                    ]
@@ -177,8 +178,8 @@ sessionTableSpec =
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: FSpec -> Text.Text -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
- do { -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showADL exp)
-    ; -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showADL . cfProof (getOpts fSpec)) exp
+ do { -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA exp)
+    ; -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) exp
     ; -- verboseLn (getOpts fSpec) "End of proof"
     ; performQuery fSpec dbNm (Text.pack violationsQuery)
     }

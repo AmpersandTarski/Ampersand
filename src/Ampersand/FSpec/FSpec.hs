@@ -1,7 +1,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {- | The intentions behind FSpec (SJ 30 dec 2008):
-Generation of functional specifications is the core functionality of Ampersand.
+Generation of functional designs is a core functionality of Ampersand.
 All items in a specification are generated into the following data structure, FSpec.
 It is built by compiling an Ampersand script and translating that to FSpec.
 In the future, other ways of 'filling' FSpec are foreseen.
@@ -11,14 +11,8 @@ are merely different ways to show FSpec.
 module Ampersand.FSpec.FSpec
           ( MultiFSpecs(..)
           , FSpec(..), concDefs, Atom(..), A_Pair(..)
-          , Fswitchboard(..), Quad(..)
-          , A_Concept, Declaration, A_Gen
+          , Quad(..)
           , FSid(..)
---        , InsDel(..)
-          , ECArule(..)
---        , Event(..)
---        , PAclause(..)
-          , Activity(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
           , RelStore(..)
@@ -32,35 +26,35 @@ module Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..),AAtomValue
-          , showValADL,showValPHP,showValSQL,showSQL
-          , module Ampersand.FSpec.ToFSpec.Populated 
-          , module Ampersand.Classes
+          , Language(..)
+          , showSQL
+      --    , module Ampersand.Classes
           ) where
--- TODO: Export module Ampersand.Core.AbstractSyntaxTree in the same way as is done
---       for module Ampersand.Core.ParseTree in that module. Then build to a better
---       hierarchie to reflect the Architecture. 
 import Data.List
 import Data.Text (Text,unpack)
 import Data.Typeable
 import Ampersand.ADL1.Expression (notCpl)
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.ParseTree
+        ( Traced(..), Origin
+        , Role
+        , ConceptDef
+        )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.Crud
-import Ampersand.Misc.Options (Options)
+import Ampersand.Misc
 import Text.Pandoc.Builder (Blocks)
-import Ampersand.FSpec.ToFSpec.Populated
 
 data MultiFSpecs = MultiFSpecs
                    { userFSpec :: FSpec        -- ^ The FSpec based on the user's script only.
                    , metaFSpec :: Maybe FSpec  -- ^ The FormalAmpersand metamodel, populated with the items from the user's script 
                    }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
-                   , originalContext :: A_Context             -- ^ the original context. (for showADL)  
+                   , originalContext :: A_Context             -- ^ the original context. (for showA)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
-                   , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+                   , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
                      , pattsInScope :: [Pattern]
                      , rulesInScope :: [Rule]
                      , declsInScope :: [Declaration]
@@ -73,9 +67,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
-                   , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
-                   , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
                    , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
                    , fMaintains ::   Role -> [Rule]
@@ -102,7 +94,6 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , allConjsPerDecl :: [(Declaration, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
-                   , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
                    , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
                    , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
@@ -171,13 +162,6 @@ instance ConceptStructure FSpec where
   concs         = allConcepts
   expressionsIn = allExprs 
 
--- | A list of ECA rules, which is used for automated functionality.
-data Fswitchboard
-  = Fswtch { fsbEvIn :: [Event]
-           , fsbEvOut :: [Event]
-           , fsbConjs :: [(Rule, Expression)]
-           , fsbECAs :: [ECArule]
-           }
 
 --type Attributes = [Attribute]
 --data Attribute  = Attr { fld_name :: String        -- The name of this attribute
@@ -202,31 +186,13 @@ data Fswitchboard
  - ..."
 -}
 
-data FSid = FS_id String     -- Identifiers in the Functional Specification Language contain strings that do not contain any spaces.
+data FSid = FS_id String     -- Identifiers in Ampersand contain strings that do not contain any spaces.
         --  | NoName           -- some identified objects have no name...
 instance Named FSpec where
   name = unpack . fsName
 
 instance Named FSid where
   name (FS_id nm) = nm
-
-data Activity = Act { actRule ::   Rule
-                    , actTrig ::   [Declaration]
-                    , actAffect :: [Declaration]
-                    , actQuads ::  [Quad]
-                    , actEcas ::   [ECArule]
-                    , actPurp ::   [Purpose]
-                    } deriving Show
-
-instance Named Activity where
-  name act = name (actRule act)
--- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
---   whenever qDcl is affected (i.e. tuples in qDcl are inserted or deleted), qRule may have to be restored using functionality from qConjuncts.
---   The rule is taken along for traceability.
-
-instance ConceptStructure Activity where
- concs         act = concs (actRule act) `uni` concs (actAffect act)
- expressionsIn act = expressionsIn (actRule act)
 
 
 
@@ -238,8 +204,6 @@ data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affect
 instance Ord Quad where
   q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
 instance Eq Quad where q == q' = compare q q' == EQ
-instance Eq Activity where
-  a == a'  = actRule a == actRule a'
 
 --
 dnf2expr :: DnfClause -> Expression

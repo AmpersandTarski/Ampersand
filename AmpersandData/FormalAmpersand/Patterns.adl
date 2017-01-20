@@ -1,0 +1,142 @@
+CONTEXT RAP IN ENGLISH
+
+PATTERN Patterns
+    CONCEPT Pattern "A pattern is a file that is meant to contain Ampersand source code."
+    CONCEPT Instance "An instance corresponds to an INSTANCE statement in a pattern."
+    CONCEPT Entity "Something that refers to a definition."
+    CONCEPT Definition "A definition is a locally defined entity."
+    CONCEPT ExternalEntity "An external entity is an entity that is instantiated from a different pattern"
+    CLASSIFY Definition ISA Entity
+    CLASSIFY ExternalEntity ISA Entity
+    RELATION name[Pattern*PatternName] [UNI,TOT]
+    MEANING "Every pattern has one given name."
+    RELATION consumer[Instance*Pattern] [UNI,TOT]
+    MEANING "The pattern in which an INSTANCE statement is placed."
+    RELATION consumes[Instance*Pattern] [UNI,TOT]
+    MEANING "The pattern that is being instantiated."
+    RELATION instantiates[Pattern*Pattern]
+    MEANING "Pattern A instantiates B means that all definitions from B are copied into A."
+    RELATION including[Instance*Definition]
+    MEANING "The definitions of entities that are being instantiated."
+    RELATION excluding[Instance*Definition]
+    MEANING "The definitions of entities that are hidden (but still instantiated)."
+    RELATION existsIn[Entity*Pattern] [UNI,TOT]
+    MEANING "The pattern in which an entity exists."
+    RELATION locator[Definition*Locator] [UNI]
+    MEANING "The locator of a definition tells where it can be found."
+    RELATION definition[Entity*Definition] [UNI,TOT]
+    MEANING "The thing a name refers to is registered in the relation definition."
+    RELATION type[Entity*SyntacticCategory] [UNI,TOT]
+    MEANING "The syntactic category of every entity is registered in the relation `type`."
+    RELATION name[Entity*String] [UNI]
+    MEANING "The string that identifies the entity locally or externally."
+    RELATION declaredIn[Definition*Pattern] [UNI]
+    MEANING "The pattern in which the definition is made."
+    RELATION instantiatesAs[Instance*String] [UNI,TOT]
+    MEANING "The string used to refer to this instance of the pattern."
+    RELATION fromInstance[ExternalEntity*Instance] [UNI,TOT]
+    MEANING "The instance from which this entity is obtained."
+    RELATION fromEntity[ExternalEntity*Entity] [UNI,TOT]
+    MEANING "The non-local entity from which this entity is obtained."
+    RELATION exposes[Instance*ExternalEntity] [SUR]
+    IDENT ExternalEntity : ExternalEntity (exposes~,fromEntity)
+    PURPOSE IDENT ExternalEntity
+    {+ An external entity is a new entity, determined by the obtained entity, and the instance from which it is obtained.
+    +}
+    
+    RULE fromInstance = name[Entity*String];result~;fst;instantiatesAs~
+    MEANING "The first part of the string combination determines the pattern instance of the entity."
+    
+    RULE exposes = fromInstance~ /\ consumer;existsIn~
+    MEANING "The entities are exposed in the consumer pattern"
+
+
+    IDENT Entity : Entity (name, type)
+    PURPOSE IDENT Entity 
+    {+A definition is uniquely determined by its name and its type, such that we can find the Definition when refering to it.
+    +}
+
+    RULE I[Definition] \/ I[ExternalEntity] = I[Entity]
+    MEANING "Each entity is local or external"
+    RULE I[Definition] - I[ExternalEntity] = I[Definition]
+    MEANING "Each local entity is never external"
+    RULE I[ExternalEntity] - I[Definition] = I[ExternalEntity]
+    MEANING "Each external entity is never local"
+
+    RULE definition /\ V[Definition*Definition] = I /\ existsIn;declaredIn~
+
+    RULE definition /\ V[ExternalEntity*Definition]
+                =   exposes~;including  /\ name[Entity*String];result~;snd;name[Entity*String]~ -- second part of the string names the declaration
+    
+    RULE excluding \/ including = consumes;declaredIn~
+    MEANING "The excluded and the included definitions together are precisely the declarations of the consumed pattern"
+    
+    RULE excluding /\ including = -V
+    MEANING "There is no overlap between what is included and excluded"
+
+    RULE consumer~;consumes = instantiates
+    MEANING "The relation `instantiates` is defined here."
+
+    RULE existsIn /\ V[Definition*Pattern] = declaredIn
+    MEANING "A definition exists in the pattern in which it is declared"
+    
+    RULE consumes;existsIn~ |- exposes;fromEntity
+    MEANING {+ If a pattern in which entity e exists is consumed in some instance,
+               then that instance exposes an entity based on e +}
+    
+
+ENDPATTERN
+
+    PURPOSE RELATION including[Instance*Definition]
+    {+	To accomodate selective instances, we need a relation that identifies which
+    	entities are actually being instantiated. This administers the difference between the
+        entire name space and the hidden names.
+    +}
+    PURPOSE CONCEPT Instance
+    {+	To administer INSTANCE-statements together with their AS-annotations,
+    	we need the concept of Instance.
+        Instantiating (consuming) a pattern adds the content of that pattern to the consumer pattern,
+        under a different name. This creates a new instance of the entities in the instantiated pattern.
+    +}
+    PURPOSE RELATION name[Pattern*PatternName]
+    {+	To distinguish different patterns that exist within the same environment,
+    	every pattern has a name.
+    +}
+    PURPOSE RELATION instantiates[Pattern*Pattern]
+    {+	A pattern can contain `INSTANCE` statements, which identify other patterns to be instantiated.
+    	These statements are registered in the system for the purpose of computing the name space.
+    	This determines which names are visible in which patterns.
+    +}
+    PURPOSE RELATION locator[Definition*Locator]
+    {+	Ampersand users can ask where a certain Definition has been defined.
+        This relation administrates that.
+    +}
+    PURPOSE CONCEPT Locator
+    {+
+        Place in a document of the Ampersand-user
+    +}
+    PURPOSE RELATION definition[Entity*Definition]
+    {+	
+    	
+    +}
+    PURPOSE RELATION type[Entity*SyntacticCategory]
+    {+	As different syntactic categories may have disjoint name spaces,
+    	we need to distinguish all entities to their respective syntactic categories.
+    +}
+    PURPOSE RELATION declaredIn[Definition*Pattern]
+    {+	We wish to know which definitions there are in a certain pattern.
+        This enables us to instantiate exactly the entities that are defined in the instantiated pattern.
+    +}
+
+PATTERN StringCombination
+  CONCEPT CombineStrings "A combination of two strings"
+  CONCEPT String "A sequence"
+  RELATION fst[CombineStrings*String] [UNI,TOT]
+  RELATION snd[CombineStrings*String] [UNI,TOT]
+  RELATION result[CombineStrings*String] [UNI,TOT] -- de TOT door de exec-engine laten doen..
+  IDENT CombineStrings : CombineStrings (fst,snd)
+ENDPATTERN
+
+ENDCONTEXT
+
+

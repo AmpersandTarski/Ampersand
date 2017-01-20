@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.8.0
+version:        3.8.1
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -76,7 +76,6 @@ library
   exposed-modules:   Ampersand,
                      Ampersand.ADL1,
                      Ampersand.ADL1.Disambiguate,
-                     Ampersand.ADL1.ECArule,
                      Ampersand.ADL1.Expression,
                      Ampersand.ADL1.Lattices,
                      Ampersand.ADL1.P2A_Converters,
@@ -87,6 +86,8 @@ library
                      Ampersand.Basics.BuildInfo_Generated,
                      Ampersand.Basics.Collection,
                      Ampersand.Basics.Exit,
+                     Ampersand.Basics.Languages,
+                     Ampersand.Basics.PandocExtended,
                      Ampersand.Basics.String,
                      Ampersand.Basics.Unique,
                      Ampersand.Basics.UTF8,
@@ -96,8 +97,11 @@ library
                      Ampersand.Classes.Relational,
                      Ampersand.Classes.ViewPoint,
                      Ampersand.Components,
+                     Ampersand.Core.A2P_Converters,
                      Ampersand.Core.AbstractSyntaxTree,
                      Ampersand.Core.ParseTree,
+                     Ampersand.Core.ShowAStruct,
+                     Ampersand.Core.ShowPStruct,
                      Ampersand.FSpec,
                      Ampersand.FSpec.Crud,
                      Ampersand.FSpec.FPA,
@@ -105,12 +109,9 @@ library
                      Ampersand.FSpec.FSpecAux,
                      Ampersand.FSpec.GenerateUML,
                      Ampersand.FSpec.Motivations,
-                     Ampersand.FSpec.ShowADL,
-                     Ampersand.FSpec.ShowECA,
                      Ampersand.FSpec.ShowHS,
                      Ampersand.FSpec.ShowMeatGrinder,
                      Ampersand.FSpec.SQL,
-                     Ampersand.FSpec.Switchboard,
                      Ampersand.FSpec.ToFSpec.ADL2FSpec,
                      Ampersand.FSpec.ToFSpec.ADL2Plug,
                      Ampersand.FSpec.ToFSpec.Calc,
@@ -134,8 +135,6 @@ library
                      Ampersand.Input.Parsing,
                      Ampersand.Input.Xslx.XLSX,
                      Ampersand.Misc,
-                     Ampersand.Misc.Explain,
-                     Ampersand.Misc.Languages,
                      Ampersand.Misc.Options,
                      Ampersand.Output,
                      Ampersand.Output.FSpec2Excel,
@@ -156,10 +155,10 @@ library
                      Ampersand.Output.ToJSON.Settings,
                      Ampersand.Output.ToJSON.ToJson,
                      Ampersand.Output.ToJSON.Views,
+                     Ampersand.Output.ToPandoc
                      Ampersand.Output.ToPandoc.ChapterConceptualAnalysis,
                      Ampersand.Output.ToPandoc.ChapterDataAnalysis,
                      Ampersand.Output.ToPandoc.ChapterDiagnosis,
-                     Ampersand.Output.ToPandoc.ChapterECArules,
                      Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis,
                      Ampersand.Output.ToPandoc.ChapterGlossary,
                      Ampersand.Output.ToPandoc.ChapterInterfaces,
@@ -176,6 +175,7 @@ library
                      Ampersand.Prototype.StaticFiles_Generated,
                      Ampersand.Prototype.ValidateSQL,
                      Ampersand.Prototype.WriteStaticFiles,
+                     Ampersand.Test
                      Ampersand.Test.Parser.ArbitraryTree,
                      Ampersand.Test.Parser.ParserTest,
                      Ampersand.Test.Parser.QuickChecks,

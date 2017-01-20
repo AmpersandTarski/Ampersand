@@ -16,9 +16,16 @@ import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Motivations
 import Ampersand.Basics
 import Ampersand.Misc
-import Ampersand.FSpec.ShowADL
+import Ampersand.Core.ShowPStruct
+import Ampersand.Core.ShowAStruct
+import Ampersand.Core.ParseTree
+     ( Prop(..)
+     , Traced(..)
+     , Role
+     , ConceptDef
+     )
 import Ampersand.Core.AbstractSyntaxTree
-
+import Ampersand.Classes
 
 makeMetaPopulationFile :: FSpec -> (FilePath,String)
 makeMetaPopulationFile fSpec
@@ -44,7 +51,7 @@ content fSpec = unlines
     , "CONTEXT FormalAmpersand IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."
     , showRelsFromPops pops
     , "" ]
-    ++ intercalate [] (map (lines . showADL ) pops)  ++
+    ++ intercalate [] (map (lines . showPop ) pops)  ++
     [ ""
     , "ENDCONTEXT"
     ])
@@ -218,17 +225,23 @@ instance MetaPopulations Purpose where
 
 
 instance MetaPopulations A_Gen where
- metaPops fSpec gen =
-  [ Pop "gens" "Context" "Gen" [Sur,Inj]
+ metaPops fSpec gen@Isa{} =
+  [ Pop "gens" "Context" "Isa" [Sur,Inj]  -- What is the purpose of Sur? I'd rather see it removed?
           [(dirtyId ctx ctx,dirtyId ctx gen)]
-  , Pop "genspc"  "Gen" "Concept" []
+  , Pop "genspc"  "Isa" "Concept" []
           [(dirtyId ctx gen,dirtyId ctx (genspc gen))]
-  , Pop "gengen"  "Gen" "Concept" []
-          [ (dirtyId ctx gen,dirtyId ctx c)
-          | c<- case gen of
-                     Isa{} -> [gengen gen]
-                     IsE{} -> genrhs gen
-          ]
+  , Pop "gengen"  "Isa" "Concept" []
+          [(dirtyId ctx gen,dirtyId ctx (gengen gen))]
+  ]
+  where 
+    ctx = originalContext fSpec
+ metaPops fSpec gen@IsE{} =
+  [ Pop "gens" "Context" "IsE" [Sur,Inj]  -- What is the purpose of Sur? I'd rather see it removed?
+          [(dirtyId ctx ctx,dirtyId ctx gen)]
+  , Pop "genspc"  "IsE" "Concept" []
+          [(dirtyId ctx gen,dirtyId ctx (genspc gen))]
+  , Pop "gengen"  "IsE" "Concept" []
+          [ (dirtyId ctx gen,dirtyId ctx c) | c<-genrhs gen ]
   ]
   where 
     ctx = originalContext fSpec
@@ -402,7 +415,7 @@ instance MetaPopulations Declaration where
       , Pop "decprR" "Relation" "String" [Uni]
              [(dirtyId ctx dcl,(show.decprR) dcl)]
       , Pop "decmean" "Relation" "Meaning" [Uni]
-             [(dirtyId ctx dcl, (show.concatMap showADL.ameaMrk.decMean) dcl)]
+             [(dirtyId ctx dcl, (show.concatMap showP.ameaMrk.decMean) dcl)]
       ]
      Isn{} -> -- fatal 335 "Isn should not be populated by the meatgrinder."
 {- SJ sept 2nd, 2016: I don't think we should populate the I-relation from the meatgrinder,
@@ -444,13 +457,13 @@ instance MetaPopulations Expression where
   case expr of 
     EBrk e -> metaPops fSpec e
     _      ->
-      [ Comment $ "Expression: "++showADL expr++" ("++show (sign expr)++")"
+      [ Comment $ "Expression: "++showA expr++" ("++show (sign expr)++")"
       , Pop "src" "Expression" "Concept" [Uni,Tot]
              [(dirtyId ctx expr, dirtyId ctx (source expr))]
       , Pop "tgt" "Expression" "Concept" [Uni,Tot]
              [(dirtyId ctx expr, dirtyId ctx (target expr))]
       , Pop "showADL" "Expression" "ShowADL" [Uni,Tot]
-             [(dirtyId ctx expr, show (showADL expr))]
+             [(dirtyId ctx expr, show (showA expr))]
       ]++
       ( case skipEpsilon expr of
             (EEqu (l,r)) -> makeBinaryTerm Equivalence l r
@@ -479,14 +492,14 @@ instance MetaPopulations Expression where
                             --  [(dirtyId ctx expr,dirtyId ctx (Isn cpt))]
                             --]
             EEps{}       -> fatal 430 $ "EEps is not an expression in FormalAmpersand.\n"++
-                                  "  Expression: "++showADL expr++" ("++show (sign expr)++")" 
+                                  "  Expression: "++showA expr++" ("++show (sign expr)++")" 
             (EDcV sgn)   -> [Pop "userSrc"  (show "V") "Concept"  [Uni,Tot]
                               [(dirtyId ctx expr,dirtyId ctx (source sgn))]
                             ,Pop "userTrg"  (show "V") "Concept"  [Uni,Tot]
                               [(dirtyId ctx expr,dirtyId ctx (target sgn))]
                             ]
             (EMp1 v _)   -> [ Pop "singleton" "Singleton" "AtomValue" [Uni,Tot]
-                              [(dirtyId ctx expr,showADL v)]
+                              [(dirtyId ctx expr,showP v)]
                             ]
        ) 
   where
@@ -494,8 +507,8 @@ instance MetaPopulations Expression where
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
     makeBinaryTerm op lhs rhs = 
       [ Comment $ "BinOperator: "++show op
-      , Comment $ "  First : "++showADL lhs++" ("++dirtyId ctx lhs++")"
-      , Comment $ "  Second: "++showADL rhs++" ("++dirtyId ctx rhs++")"
+      , Comment $ "  First : "++showA lhs++" ("++dirtyId ctx lhs++")"
+      , Comment $ "  Second: "++showA rhs++" ("++dirtyId ctx rhs++")"
       , Pop "first"  "BinaryTerm" "Expression" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx lhs)]
       , Pop "second" "BinaryTerm" "Expression" [Uni,Tot]
@@ -507,7 +520,7 @@ instance MetaPopulations Expression where
     makeUnaryTerm :: UnaryOp -> Expression -> [Pop]
     makeUnaryTerm op arg =
       [ Comment $ "UnaOperator: "++show op
-      , Comment $ "  Arg : "++showADL arg++" ("++dirtyId ctx arg++")"
+      , Comment $ "  Arg : "++showA arg++" ("++dirtyId ctx arg++")"
       , Pop "arg" "UnaryTerm" "Expression" [Uni,Tot]
              [(dirtyId ctx expr,dirtyId ctx arg)]
       , Pop "operator"  "UnaryTerm" "Operator" [Uni,Tot]
@@ -602,8 +615,9 @@ data Pop = Pop { popName ::   String
          | Comment { comment :: String  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
                    }
 
-instance ShowADL Pop where
- showADL pop =
+
+showPop :: Pop -> String
+showPop pop =
   case pop of
       Pop{} -> "POPULATION "++ popNameSignature pop++" CONTAINS"
               ++
@@ -650,7 +664,7 @@ instance AdlId Prop
 instance AdlId Expression
   where dirtyId ctx (EEps _ e') = dirtyId ctx e'
         dirtyId ctx (EBrk e') = dirtyId ctx e'
-        dirtyId _ e = show $ take 150 (showADL e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
+        dirtyId _ e = show $ take 150 (showA e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
 instance AdlId BinOp
 instance AdlId UnaryOp
 instance AdlId A_Context
