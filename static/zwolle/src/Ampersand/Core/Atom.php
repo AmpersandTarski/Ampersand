@@ -196,17 +196,15 @@ class Atom {
      */
     public function unionWithAtom($equalAtom){
         if($this->atomExists()){
- 	       $db         = $this->database;
- 	       $UpdConcept = $this->concept;
+ 	       $db               = $this->database;
+ 	       $UpdConcept       = $this->concept;
+	       $conceptTable     = $UpdConcept->getConceptTableInfo();
 
-  		   // Check if UpdConcept and DelConcept are in the same classification tree
+  		   // Check validity of both atoms. They must be in the same typology.
 		   if(!$UpdConcept->inSameClassificationTree($equalAtom->concept)) throw new Exception("Concepts '[{$UpdConcept}]' and '[{$equalAtom->concept}]' are not in the same classification tree", 500);
 
-           // if $equalAtom is not more generic than $this, we have to update concept columns.
+           // if $equalAtom is not more generic than $this, we have to update concept columns. TODO: inspect code of atomSetConcept
 		   if (!$this->concept->hasGeneralization($equalAtom->concept)) $db->atomSetConcept($this, $equalAtom->concept);
-
-		   // enrich the database record corresponding to $this with the information from $equalAtom.
-           $db->substAtom($this, $equalAtom);
 
            // rename every mention of $equalAtom->idEsc to $this->idEsc, in all tables
 		   foreach (Relation::getAllRelations() as $relation){
