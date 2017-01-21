@@ -307,5 +307,5 @@ unscanRef scannedRef = concat $ map (either id show) scannedRef
 printPurposes :: [Purpose] -> Blocks
 printPurposes  = fromList . concat . map (amPandoc . explMarkup) 
 
-printMeaning :: A_Markup -> Blocks
+printMeaning :: Markup -> Blocks
 printMeaning = fromList . amPandoc

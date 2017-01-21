@@ -3,7 +3,6 @@
 module Ampersand.Output.ToPandoc.ChapterConceptualAnalysis
 where
 import Ampersand.Output.ToPandoc.SharedAmongChapters
---import Ampersand.Output.PredLogic        (PredLogicShow(..), showLatex)
 import Data.List (intersperse )
 
 chpConceptualAnalysis :: Int -> FSpec -> (Blocks,[Picture])

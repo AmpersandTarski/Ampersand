@@ -1,7 +1,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Basics.Auxiliaries 
-         ( module Ampersand.Basics.Auxiliaries
-         , module Debug.Trace) where
+        ( eqClass,
+          eqCl,
+          getCycles,
+          transClosureMap, transClosureMap',
+          combinations,
+          converse,
+          commaEng, commaNL,
+          fst3, snd3, thd3,
+          Flippable(..),
+          showTrace,
+          showTraceTag,
+          blockParenthesize,
+          addToLastLine,
+          indent,
+          module Debug.Trace
+        ) where
 
 import Data.List
 import Data.Graph (stronglyConnComp, SCC(CyclicSCC))

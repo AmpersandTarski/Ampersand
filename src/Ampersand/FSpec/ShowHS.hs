@@ -6,7 +6,7 @@ import Text.Pandoc hiding (Meta)
 import Data.Char                  (isAlphaNum)
 import Ampersand.Basics hiding (indent)
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ShowADL    (ShowADL(..))  -- for traceability, we generate comments in the Haskell code.
+import Ampersand.Core.ShowAStruct  (AStruct(..))  -- for traceability, we generate comments in the Haskell code.
 import Data.List
 import Ampersand.Misc
 import Data.Hashable
@@ -399,10 +399,10 @@ instance ShowHS P_Markup where
      ,"        }"
      ]
 
-instance ShowHS A_Markup where
+instance ShowHS Markup where
  showHS _ indent m
    = intercalate indent
-     ["A_Markup{ amLang   = "++ show (amLang m)
+     ["Markup{ amLang   = "++ show (amLang m)
      ,"        , amPandoc = "++ show (amPandoc m)
      ,"        }"
      ]
@@ -421,7 +421,7 @@ instance ShowHS Rule where
  showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
    = intercalate indent
      ["Ru{ rrnm   = " ++ show (rrnm   r)
-     ,"  , rrexp  = -- " ++ showADL (rrexp  r) ++ indent++"             " ++ showHS opts (indent++"             ") (rrexp  r)
+     ,"  , rrexp  = -- " ++ showA (rrexp  r) ++ indent++"             " ++ showHS opts (indent++"             ") (rrexp  r)
      ,"  , rrfps  = " ++ showHS opts "" (rrfps  r)
      ,"  , rrmean = " ++ showHS opts (indent++"             ") (rrmean r)
      ,"  , rrmsg  = " ++ showHS opts "" (rrmsg  r)
