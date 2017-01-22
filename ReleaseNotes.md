@@ -1,5 +1,8 @@
 # Release notes of Ampersand
   
+## Unreleased changes
+  * [Issue #621](https://github.com/AmpersandTarski/Ampersand/issues/621) Disabled --fpa-excel switch, because it resulted in a fatal error. 
+
 ## v3.8.1 (20 january 2017)
   * [Issue #605](https://github.com/AmpersandTarski/Ampersand/issues/605) Added modules "Modules.adl" and "Patterns.adl" in FormalAmpersand as preparatory work for issue #605.
   * [Issue #603](https://github.com/AmpersandTarski/Ampersand/issues/603) Removed obsolete switches about what normalization is used.
