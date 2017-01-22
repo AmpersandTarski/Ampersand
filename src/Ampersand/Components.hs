@@ -124,10 +124,10 @@ generateAmpersandOutput multi = do
    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
    doGenFPAExcel :: IO()
    doGenFPAExcel =
-    do { verboseLn opts "Generating Excel containing FPA..."
-       ; writeFile outputFile $ fspec2FPA_Excel fSpec
+    do { verboseLn opts "FPA analisys is discontinued. (It needs maintenance). Sorry. " -- See https://github.com/AmpersandTarski/Ampersand/issues/621
+     --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
        }
-      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
+--      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
