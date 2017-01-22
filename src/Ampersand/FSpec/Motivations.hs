@@ -2,6 +2,9 @@
 --        In that case it's not a Rendering module and it needs to be replaced
 module Ampersand.FSpec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
 where
+import Ampersand.Core.ParseTree
+        ( ConceptDef
+        )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec(FSpec(..)) 
 import Ampersand.Basics
@@ -329,7 +332,7 @@ instance Motivated Interface where
   explanations _ = []
 
 class Meaning a where
-  meaning :: Lang -> a -> Maybe A_Markup
+  meaning :: Lang -> a -> Maybe Markup
   meaning2Blocks :: Lang -> a -> [Block]
   meaning2Blocks l a = case meaning l a of
                          Nothing -> []

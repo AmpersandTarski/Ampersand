@@ -4,7 +4,6 @@
 module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
 where
-import Ampersand.FSpec(showADL)
 import Ampersand.Output.ToJSON.JSONutils 
 import Ampersand.Core.AbstractSyntaxTree 
 import Data.Maybe
@@ -104,7 +103,7 @@ instance JSON ViewSegment Segment where
                        ViewExp{}  -> "Exp"
                        ViewText{} -> "Text"
   , segJSONexpADL  = case vsmLoad seg of
-                       ViewExp expr -> Just . showADL $ expr
+                       ViewExp expr -> Just . showA $ expr
                        _            -> Nothing
   , segJSONexpSQL  = case vsmLoad seg of
                        ViewExp expr -> Just $ sqlQuery fSpec expr

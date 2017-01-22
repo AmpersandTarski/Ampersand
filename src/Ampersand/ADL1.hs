@@ -39,7 +39,6 @@ import Ampersand.Core.AbstractSyntaxTree (
          ,Association(..)
          ,Expression(..)
          ,A_Gen(..)
-         ,A_Markup(..)
          ,IdentityDef(..)
          ,IdentitySegment(..)
          ,ViewDef(..)

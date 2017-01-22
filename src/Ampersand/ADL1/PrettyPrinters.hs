@@ -3,7 +3,7 @@ module Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
-import Ampersand.Basics        (fatal)
+import Ampersand.Basics(fatal,Lang(..),PandocFormat(..))
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)

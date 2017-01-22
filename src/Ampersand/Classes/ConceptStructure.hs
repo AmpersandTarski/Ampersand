@@ -1,6 +1,7 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
+import Ampersand.Core.ParseTree(ConceptDef)
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
 import Data.List

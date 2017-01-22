@@ -13,7 +13,6 @@ module Ampersand.Misc.Options
         )
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
-import Ampersand.Misc.Languages (Lang(..))
 import System.Console.GetOpt
 import System.FilePath
 import System.Directory

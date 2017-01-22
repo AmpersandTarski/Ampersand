@@ -3,6 +3,7 @@ module Ampersand.Classes.Relational
    ) where
 
 import Data.Maybe
+import Ampersand.Core.ParseTree(Prop(..))
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.ADL1.Expression
 import Ampersand.Basics

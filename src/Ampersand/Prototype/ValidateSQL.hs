@@ -7,6 +7,7 @@ import Ampersand.Basics
 import Ampersand.Misc
 import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ShowAStruct
 import Ampersand.Prototype.PHP
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
@@ -79,8 +80,8 @@ getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
 type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we
 -- obtained it from (e.g. rule/interface/..)
-showVExp :: ShowADL a => (a, String) -> String
-showVExp (exp, orig) = "Origin: "++orig++", expression: "++showADL exp
+showVExp :: (Expression, String) -> String
+showVExp (exp, orig) = "Origin: "++orig++", expression: "++showA exp
 
 -- validate a single expression and report the results
 validateExp :: FSpec -> ValidationExp -> IO (ValidationExp, Bool)
@@ -97,7 +98,7 @@ validateExp fSpec vExp@(exp, orig) =
           ; return (vExp, True)
           }
       else
-       do { putStrLn $ "\nChecking "++orig ++": expression = "++showADL exp
+       do { putStrLn $ "\nChecking "++orig ++": expression = "++showA exp
           ; putStrLn "\nMismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
           ; putStrLn $ "SQL violations:\n"++show violationsSQL
