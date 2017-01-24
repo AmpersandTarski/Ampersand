@@ -213,11 +213,7 @@ class Session {
             $sessionRoles = array();
             if(Config::get('loginEnabled')){
                 $this->logger->debug("Getting interface 'SessionRoles' for {$this->sessionAtom->__toString()}");
-                $sessionRoleLabels = array_map(
-                    function($o){
-                        return $o->id;
-                    }, $this->sessionAtom->ifc('SessionRoles')->getTgtAtoms()
-                );
+                $sessionRoleLabels = $this->getSessionRoleLabels();
                 foreach(Role::getAllRoles() as $role){
                     if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
                 }
@@ -228,6 +224,33 @@ class Session {
             $this->sessionRoles = $sessionRoles;
         }
         return $this->sessionRoles;
+    }
+    
+    /**
+     * Returns the labels of the session roles
+     * @return string[]
+     */
+    public function getSessionRoleLabels(){
+        return array_map(function($o){
+                return $o->id;
+            }, $this->sessionAtom->ifc('SessionRoles')->getTgtAtoms());
+    }
+    
+    /**
+     * Returns true if the session roles contain any of the provided roles or provided roles are NULL. Returns false otherwise
+     * @param array|null $roleLabels that have access rigths
+     * @return boolean
+     * @throws Exception 500 when $roles param is not an array or NULL
+     */
+    public function hasAccess($roleLabels = []){
+        if(is_null($roleLabels)) return true;
+        if(!is_array($roleLabels)) throw new Exception("Array (or null) expected to check access rights. Non-array provided.", 500);
+        
+        foreach($this->getSessionRoleLabels() as $sRole){
+            if(in_array($sRole, $roleLabels)) return true;
+        }
+        
+        return false;
     }
     
     /**
