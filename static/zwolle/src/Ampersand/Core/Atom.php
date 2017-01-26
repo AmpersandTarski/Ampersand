@@ -210,13 +210,15 @@ class Atom {
 		   foreach (Relation::getAllRelations() as $relation){
 		       $tableName = $relation->getMysqlTable()->name;
 		    
-		       $cols = array();
+			   $cols = [];
 		       if($relation->srcConcept->inSameClassificationTree($UpdConcept)) $cols[] = $relation->getMysqlTable()->srcCol();
 		       if($relation->tgtConcept->inSameClassificationTree($UpdConcept)) $cols[] = $relation->getMysqlTable()->tgtCol();
 		       // Now $cols contains every column that might possibly contain this atom.
 		       foreach($cols as $col){
-		           $db->Exe("UPDATE `{$tableName}` SET `{$col->name}` = `{$this->idEsc}` WHERE `{$col->name}` = '{$equalAtom->idEsc}'");
-		           $db->addAffectedRelations($relation);
+				   if(!($tableName==$conceptTable->name && in_array($col->name, $conceptTable->getColNames())))  {
+		               $db->Exe("UPDATE IGNORE `{$tableName}` SET `{$col->name}` = '{$this->idEsc}' WHERE `{$col->name}` = '{$equalAtom->idEsc}'");
+		               $db->addAffectedRelations($relation);
+				   }
 		       }
 		   }
 
