@@ -195,6 +195,7 @@ class Atom {
      * @return void
      */
     public function unionWithAtom($equalAtom){
+	  if ($equalAtom->id!=$this->id) {
         if($this->atomExists()){
  	       $db               = $this->database;
  	       $UpdConcept       = $this->concept;
@@ -224,9 +225,8 @@ class Atom {
 
 		   $equalAtom->deleteAtom();
  
-        }else{
-            $this->logger->debug("Cannot unify atom '{$this}' with '{$equalAtom}', because '{$this}' does not exist.");
-        }
+        }else $this->logger->debug("Cannot unify atom '{$this}' with '{$equalAtom}', because '{$this}' does not exist.");
+	  } else $this->logger->debug("Cannot unify atom \$this with \$equalAtom, because they are both '{$this}'. This is likely an error in your .adl-script.");
 	}
 
 		// delete $delAtom
