@@ -146,7 +146,7 @@ chpNatLangReqs lev fSpec =
   printConcept nCpt 
         = -- Purposes:
            (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (cCptDefs.theLoad) nCpt of
+         <> case (nubByText.cCptDefs.theLoad) nCpt of
              []    -> mempty  -- There is no definition of the concept
              [cd] -> printCDef cd Nothing
              cds  -> mconcat
@@ -155,6 +155,7 @@ chpNatLangReqs lev fSpec =
                     ]
          <> someWhiteSpace 
         where
+         nubByText = nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: ConceptDef -- the definition to print
                 -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
                 -> Blocks

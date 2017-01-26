@@ -15,15 +15,7 @@ $app->get('/execengine/run', function () use ($app){
 	$session->activateRoles($roleIds);
 	
 	// Check sessionRoles if allowedRolesForRunFunction is specified
-	$allowedRoles = Config::get('allowedRolesForRunFunction','execEngine');
-	if(!is_null($allowedRoles)){
-		$ok = false;
-	
-		foreach($session->getSessionRoles() as $role){
-			if(in_array($role->label, $allowedRoles)) $ok = true;
-		}
-		if(!$ok) throw new Exception("You do not have access to run the exec engine", 401);
-	}
+    if(!$session->hasAccess(Config::get('allowedRolesForRunFunction','execEngine'))) throw new Exception("You do not have access to run the exec engine", 401);
 		
 	ExecEngine::run(true);
 	
