@@ -460,12 +460,12 @@ class Database {
 		$colNames = array();
 		$conceptTableInfo = $atom->concept->getConceptTableInfo();
 		$conceptTable = $conceptTableInfo->name;
-		$conceptCol = reset($conceptTableInfo->getCols());
+		$conceptCol = current($conceptTableInfo->getCols());
 		
 		$colNames[] = $conceptCol->name;
 		foreach($atom->concept->getSpecializations() as $specConcept){
 			$conceptTableInfo = $specConcept->getConceptTableInfo();
-			$colNames[] = reset($conceptTableInfo->getColNames);
+			$colNames[] = current($conceptTableInfo->getColNames);
 		}
 		
 		// Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
