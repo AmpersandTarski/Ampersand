@@ -244,6 +244,7 @@ class Session {
      */
     public function hasAccess($roleLabels = []){
         if(is_null($roleLabels)) return true;
+        if(Config::get('loginEnabled', 'global') === false) return true;
         if(!is_array($roleLabels)) throw new Exception("Array (or null) expected to check access rights. Non-array provided.", 500);
         
         foreach($this->getSessionRoleLabels() as $sRole){
