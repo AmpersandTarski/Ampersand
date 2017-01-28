@@ -16,7 +16,7 @@ ExecEngine call (multiple runs)
 6697881
 10092543
 XExecEngine\sfixing(.|\r?\n)*?(?=\[.*\sEXECENGINE\.NOTICE)      XFixing\sviolation(.|\r?\n)*?(?=\[.*\sEXECENGINE\.(INFO:\s Fixing|NOTICE))
-EXECENGINE.INFO:\sExecEngine run started.*(.|\r?\n)*(?=ExecEngine run completed)(ExecEngine run completed.*|$)
+EXECENGINE.INFO:\sExecEngine run started.*(.|\r?\n)*?(?=ExecEngine run completed)(ExecEngine run completed.*|$)
 1
 0
 0
