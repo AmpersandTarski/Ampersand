@@ -742,7 +742,7 @@ class Database {
 	 * @param Relation $relation
 	 * @return void
 	 */
-	private function addAffectedRelations($relation){
+	public function addAffectedRelations($relation){
 	
 		if($this->trackAffectedConjuncts && !in_array($relation, $this->affectedRelations)){
 			$this->logger->debug("Mark relation '{$relation->__toString()}' as affected relation");
