@@ -95,9 +95,6 @@ data P_RoleRelation
           , rr_Roles :: [Role]      -- ^ list of roles
           , rr_Rels :: [P_NamedRel] -- ^ list of named relations
           } deriving (Show)       -- deriving Show is just for debugging
-instance Ord P_RoleRelation where
-  compare p1 p2 = compare (origin p1) (origin p2)
-instance Eq P_RoleRelation where p1 == p2 = (compare p1 p2 == EQ)
 instance Traced P_RoleRelation where
  origin = pos
 
@@ -862,7 +859,7 @@ mergeContexts ctx1 ctx2 =
       , ctx_cs     = nubSortConcatMap ctx_cs $ contexts
       , ctx_ks     = nubSortConcatMap ctx_ks $ contexts
       , ctx_rrules = nubSortConcatMap ctx_rrules $ contexts
-      , ctx_rrels  = nubSortConcatMap ctx_rrels $ contexts
+      , ctx_rrels  =        concatMap ctx_rrels $ contexts
       , ctx_reprs  = nubSortConcatMap ctx_reprs $ contexts
       , ctx_vs     = nubSortConcatMap ctx_vs $ contexts
       , ctx_gs     = nubSortConcatMap ctx_gs $ contexts
