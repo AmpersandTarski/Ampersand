@@ -37,9 +37,9 @@ info x =
     NoValidFSpec msg
               -> (SE.ExitFailure  10 , msg) 
     ViolationsInDatabase viols
-              -> (SE.ExitFailure  10 , ["ERROR: The population would violate invariants. Could not generate your database."]++concatMap showViolatedRule viols)
+              -> (SE.ExitFailure  10 , "ERROR: The population would violate invariants. Could not generate your database." : concatMap showViolatedRule viols)
     InvalidSQLExpression msg
-              -> (SE.ExitFailure  30 , ["ERROR: Invalid SQL Expression"]++ map ("  "++) msg)
+              -> (SE.ExitFailure  30 , "ERROR: Invalid SQL Expression" : map ("  "++) msg)
     NoPrototypeBecauseOfRuleViolations
               -> (SE.ExitFailure  40 , ["ERROR: No prototype generated because of rule violations."])
     FailedToInstallComposer msg

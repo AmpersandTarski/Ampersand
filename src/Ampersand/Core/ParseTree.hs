@@ -139,7 +139,8 @@ data P_Pattern
 instance Ord P_Pattern where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq P_Pattern where
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = name   p1 == name   p2 && 
+            origin p1 == origin p2
 instance Named P_Pattern where
  name = pt_nm
 
@@ -216,7 +217,7 @@ data P_Declaration =
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
 --   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Declarations.
 instance Eq P_Declaration where
- decl==decl' = (compare decl decl' == EQ)
+ decl==decl' = compare decl decl' == EQ
 instance Prelude.Ord P_Declaration where
  compare p1 p2 
    | origin p1==OriginUnknown && origin p2==OriginUnknown = compare (name p1,dec_sign p1) (name p2,dec_sign p2)
@@ -275,7 +276,7 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     XlsxString     _ s -> singleQuote s
     ScriptInt      _ i -> singleQuote (show i)
     ScriptFloat    _ d -> singleQuote (show d)
-    XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+    XlsxDouble     _ _ -> fatal 267 "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
     ComnBool       _ b -> singleQuote (show b)
     ScriptDate     _ x -> singleQuote (show x)
     ScriptDateTime _ x -> singleQuote (show x)
@@ -286,46 +287,29 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
      f '\'' = "\\'"
      f c    = [c]
 instance Eq PAtomValue where
-  PSingleton _ s _ == PSingleton _ s' _ = s == s'
-  PSingleton _ _ _ == _                 = False
-  ScriptString _ s == ScriptString _ s' = s == s'
-  ScriptString _ _ == _                 = False
-  XlsxString   _ s == XlsxString   _ s' = s == s'
-  XlsxString   _ _ == _                 = False
-  ScriptInt    _ i == ScriptInt    _ i' = i == i'
-  ScriptInt    _ _ == _                 = False
-  ScriptFloat  _ x == ScriptFloat  _ x' = x == x'
-  ScriptFloat  _ _ == _                 = False
-  XlsxDouble   _ d == XlsxDouble   _ d' = d == d'
-  XlsxDouble   _ _ == _                 = False
-  ScriptDate   _ d == ScriptDate   _ d' = d == d'
-  ScriptDate   _ _ == _                 = False
-  ScriptDateTime _ d == ScriptDateTime _ d' = d == d'
-  ScriptDateTime _ _ == _               = False
-  ComnBool     _ b == ComnBool     _ b' = b == b'
-  ComnBool     _ _ == _                 = False
+  a == b = compare a b == EQ
 
 instance Ord PAtomValue where
   compare a b =
    case (a,b) of
     (PSingleton  _ x _ , PSingleton   _ x' _) -> compare x x'
-    (PSingleton  _ _ _ , _                  ) -> GT
+    (PSingleton{}      , _                  ) -> GT
     (ScriptString   _ x, ScriptString   _ x') -> compare x x'
-    (ScriptString   _ _, _                  ) -> GT
+    (ScriptString{}    , _                  ) -> GT
     (XlsxString     _ x, XlsxString     _ x') -> compare x x'
-    (XlsxString     _ _, _                  ) -> GT
+    (XlsxString{}      , _                  ) -> GT
     (ScriptInt      _ x, ScriptInt      _ x') -> compare x x'
-    (ScriptInt      _ _, _                  ) -> GT
+    (ScriptInt{}       , _                  ) -> GT
     (ScriptFloat    _ x, ScriptFloat    _ x') -> compare x x'
-    (ScriptFloat    _ _, _                  ) -> GT
+    (ScriptFloat{}     , _                  ) -> GT
     (XlsxDouble     _ x, XlsxDouble     _ x') -> compare x x'
-    (XlsxDouble     _ _, _                  ) -> GT
+    (XlsxDouble{}      , _                  ) -> GT
     (ScriptDate     _ x, ScriptDate     _ x') -> compare x x'
-    (ScriptDate     _ _, _                  ) -> GT
+    (ScriptDate{}      , _                  ) -> GT
     (ScriptDateTime _ x, ScriptDateTime _ x') -> compare x x'
-    (ScriptDateTime _ _, _                  ) -> GT
+    (ScriptDateTime{}  , _                  ) -> GT
     (ComnBool       _ x, ComnBool       _ x') -> compare x x'
-    (ComnBool       _ _, _                  ) -> GT
+    (ComnBool{}        , _                  ) -> GT
 instance Traced PAtomValue where
   origin pav =
    case pav of
@@ -545,7 +529,7 @@ data P_Rule a  =
 instance Ord (P_Rule a) where
   compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq (P_Rule a) where --Required for merge of P_Contexts
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
 instance Traced (P_Rule a) where
  origin = pos
 instance Functor P_Rule where fmap = fmapDefault
@@ -589,7 +573,7 @@ instance Ord P_Population where
                                                               (_,P_RelPopu{}) -> GT
    | otherwise                                            = compare (origin p1) (origin p2)
 instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
  
 instance Named P_Population where
  name P_RelPopu{p_nmdr = nr} = name nr
@@ -609,7 +593,7 @@ data P_Interface =
 instance Ord P_Interface where --Required for merge of P_Contexts
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq P_Interface where
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
 instance Named P_Interface where
  name = ifc_Name
 
@@ -658,7 +642,8 @@ instance Named (P_IdentDf a) where
  name = ix_lbl
 instance Ord (P_IdentDf a) where
   compare p1 p2 = compare (origin p1) (origin p2)
-instance Eq (P_IdentDf a) where p1 == p2 = (compare p1 p2 == EQ)
+instance Eq (P_IdentDf a) where 
+  p1 == p2 = compare p1 p2 == EQ
 instance Traced (P_IdentDf a) where
  origin = pos
 instance Functor P_IdentDf where fmap = fmapDefault
@@ -688,7 +673,7 @@ data P_ViewD a =
 instance Ord (P_ViewD a) where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
 instance Traced (P_ViewD a) where
  origin = pos
 instance Named (P_ViewD a) where
@@ -763,7 +748,7 @@ data PPurpose = PRef2 { pos :: Origin      -- the position in the Ampersand scri
 instance Ord PPurpose where --Required for merge of P_Contexts
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq PPurpose where --Required for merge of P_Contexts
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
 
 instance Named PPurpose where
  name pe = name (pexObj pe)
@@ -779,7 +764,7 @@ data P_Concept
 -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 
 instance Named P_Concept where
- name (PCpt {p_cptnm = nm}) = nm
+ name PCpt {p_cptnm = nm} = nm
  name P_Singleton = "ONE"
 
 instance Show P_Concept where
@@ -849,26 +834,26 @@ mergeContexts ctx1 ctx2 =
   PCtx{ ctx_nm     = case (filter (not.null) . map ctx_nm) contexts of
                         []    -> ""
                         (x:_) -> x
-      , ctx_pos    = nubSortConcatMap ctx_pos $ contexts
+      , ctx_pos    = nubSortConcatMap ctx_pos contexts
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
-      , ctx_thms   = nubSortConcatMap ctx_thms $ contexts
-      , ctx_pats   = nubSortConcatMap ctx_pats $ contexts
-      , ctx_rs     = nubSortConcatMap ctx_rs $ contexts
-      , ctx_ds     = nubSortConcatMap ctx_ds $ contexts
-      , ctx_cs     = nubSortConcatMap ctx_cs $ contexts
-      , ctx_ks     = nubSortConcatMap ctx_ks $ contexts
-      , ctx_rrules = nubSortConcatMap ctx_rrules $ contexts
-      , ctx_rrels  =        concatMap ctx_rrels $ contexts
-      , ctx_reprs  = nubSortConcatMap ctx_reprs $ contexts
-      , ctx_vs     = nubSortConcatMap ctx_vs $ contexts
-      , ctx_gs     = nubSortConcatMap ctx_gs $ contexts
-      , ctx_ifcs   = nubSortConcatMap ctx_ifcs $ contexts
-      , ctx_ps     = nubSortConcatMap ctx_ps $ contexts
-      , ctx_pops   = nubSortConcatMap ctx_pops $ contexts
-      , ctx_sql    = nubSortConcatMap ctx_sql $ contexts
-      , ctx_php    = nubSortConcatMap ctx_php $ contexts
-      , ctx_metas  = nubSortConcatMap ctx_metas $ contexts
+      , ctx_thms   = nubSortConcatMap ctx_thms contexts
+      , ctx_pats   = nubSortConcatMap ctx_pats contexts
+      , ctx_rs     = nubSortConcatMap ctx_rs contexts
+      , ctx_ds     = nubSortConcatMap ctx_ds contexts
+      , ctx_cs     = nubSortConcatMap ctx_cs contexts
+      , ctx_ks     = nubSortConcatMap ctx_ks contexts
+      , ctx_rrules = nubSortConcatMap ctx_rrules contexts
+      , ctx_rrels  =        concatMap ctx_rrels contexts
+      , ctx_reprs  = nubSortConcatMap ctx_reprs contexts
+      , ctx_vs     = nubSortConcatMap ctx_vs contexts
+      , ctx_gs     = nubSortConcatMap ctx_gs contexts
+      , ctx_ifcs   = nubSortConcatMap ctx_ifcs contexts
+      , ctx_ps     = nubSortConcatMap ctx_ps contexts
+      , ctx_pops   = nubSortConcatMap ctx_pops contexts
+      , ctx_sql    = nubSortConcatMap ctx_sql contexts
+      , ctx_php    = nubSortConcatMap ctx_php contexts
+      , ctx_metas  = nubSortConcatMap ctx_metas contexts
       }
     where contexts = [ctx1,ctx2]
 

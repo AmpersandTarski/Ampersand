@@ -20,7 +20,7 @@ clAnalysis fSpec =
                    , assocs  = []
                    , aggrs   = []
                    , geners  = map OOGener . gensInScope $ fSpec
-                   , ooCpts  = concs $ fSpec
+                   , ooCpts  = concs fSpec
                    }
 
  where
@@ -107,14 +107,13 @@ cdAnalysis fSpec =
      where
        dclIsShown :: Declaration -> Bool
        dclIsShown d = 
-          (  (not . isProp) d
+             (not . isProp) d
           && (   (d `notElem` attribDcls)
               || (   source d `elem` nodeConcepts
                   && target d `elem` nodeConcepts
                   && source d /= target d
                  )
              )      
-          )   
           where nodeConcepts = concatMap (tyCpts . typologyOf fSpec)
                              . filter cptIsShown
                              . allConcepts $ fSpec
@@ -124,7 +123,7 @@ cdAnalysis fSpec =
 --   decl2assocOrAggr :: Declaration -> Either Association Aggregation
 --   decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
 --   decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
-   decl2assocOrAggr d | otherwise          = Left $
+   decl2assocOrAggr d = Left
      OOAssoc { assSrc = name $ source d
              , assSrcPort = name d
              , asslhm = mults . flp $ EDcD d
@@ -156,7 +155,7 @@ tdAnalysis fSpec =
                             TblSQL{} -> 
                               let kernelAtts = map snd $ cLkpTbl table -- extract kernel attributes from kernel lookup table
                               in  map (ooAttr kernelAtts) kernelAtts
-                                ++map (ooAttr kernelAtts) (map rsTrgAtt $ dLkpTbl table) 
+                                ++map (ooAttr kernelAtts . rsTrgAtt) (dLkpTbl table) 
                             BinSQL{}      ->
                               map mkOOattr (plugAttributes table)
                                 where mkOOattr a =
@@ -172,7 +171,7 @@ tdAnalysis fSpec =
 
    tables = [ pSql | InternalPlug pSql <- plugInfos fSpec]
    roots :: [A_Concept]
-   roots = (catMaybes.map primKey) tables
+   roots = mapMaybe primKey tables
    primKey :: PlugSQL -> Maybe A_Concept
    primKey TblSQL{attributes=(f:_)} = Just (source (attExpr f))
    primKey _                    = Nothing
@@ -192,7 +191,7 @@ tdAnalysis fSpec =
 
        relsOf t =
          case t of
-           TblSQL{} -> map (mkRel t) (catMaybes (map relOf (attributes t)))
+           TblSQL{} -> map (mkRel t) . mapMaybe relOf . attributes $ t
            BinSQL{} -> map mkOOAssoc (plugAttributes t)
                         where mkOOAssoc a =
                                 OOAssoc { assSrc = sqlname t

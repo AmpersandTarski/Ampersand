@@ -8,6 +8,7 @@ import Ampersand.Basics
 import Ampersand.Classes.ConceptStructure
 import Ampersand.Classes.Relational
 import Ampersand.Core.AbstractSyntaxTree
+import Data.Maybe
 
 -- For a description of the algorithms in this module, see https://github.com/AmpersandTarski/ampersand/issues/45 
 
@@ -26,7 +27,7 @@ showCrudInfo (CrudInfo crudObjs ifcCrudObjs _) =
   "\nMatrices\n" ++ concat
     [ "Interface " ++ name ifc ++
       "\nC R U D Object\n" ++
-      (unlines $ map showCrud cObjs)
+       unlines (map showCrud cObjs)
     | (ifc, cObjs) <- ifcCrudObjs
     ] ++ "\n"
   where showCrud (cncpt, isC, isR, isU, isD) = concat [ showX isX ++ " " | isX <- [isC, isR, isU, isD] ] ++ show (name cncpt)
@@ -34,9 +35,8 @@ showCrudInfo (CrudInfo crudObjs ifcCrudObjs _) =
 
 getCrudObjectsForInterface :: CrudInfo -> Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
 getCrudObjectsForInterface crudInfo ifc = 
-  case lookup ifc $ crudObjsPerInterface crudInfo of
-    Nothing       -> fatal 33 $ "NO CRUD objects for interface " ++ show (name ifc)
-    Just crudObjs -> crudObjs
+  fromMaybe (fatal 33 $ "NO CRUD objects for interface " ++ show (name ifc))
+            (lookup ifc $ crudObjsPerInterface crudInfo) 
   
 mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim decls allIfcs =
@@ -99,7 +99,7 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
                    Just si -> case si of
                                InterfaceRef{siIsLink = True} -> []
                                InterfaceRef{siIsLink = False} ->
-                                  case filter (\rIfc -> name rIfc == siIfcId si) $ allIfcs of -- Follow interface ref
+                                  case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
                                     []      -> fatal 65 $ "Referenced interface " ++ siIfcId si ++ " missing"
                                     (_:_:_) -> fatal 66 $ "Multiple declarations of referenced interface " ++ siIfcId si
                                     [i]     -> getAllInterfaceExprs allIfcs i
@@ -113,10 +113,10 @@ getCrudObjsPerConcept crudsPerIfc = sortBy (compare `on` fst)  conceptsAndInterf
         
         toIfcPerConcept :: (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) -> 
                            [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
-        toIfcPerConcept (ifc, ifcCrudObjs) = [ (cncpt, ( if isC then [ifc] else []
-                                                       , if isR then [ifc] else []
-                                                       , if isU then [ifc] else []
-                                                       , if isD then [ifc] else []
+        toIfcPerConcept (ifc, ifcCrudObjs) = [ (cncpt, ( [ifc | isC]
+                                                       , [ifc | isR]
+                                                       , [ifc | isU]
+                                                       , [ifc | isD]
                                                        )
                                                )
                                              | (cncpt, isC, isR, isU, isD) <- ifcCrudObjs

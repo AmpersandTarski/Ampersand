@@ -72,7 +72,7 @@ chpFunctionPointAnalysis fSpec
   where
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
-  l lstr = localize (fsLang fSpec) lstr
+  l = localize (fsLang fSpec)
 
   fpa = fpAnalyze fSpec 
 

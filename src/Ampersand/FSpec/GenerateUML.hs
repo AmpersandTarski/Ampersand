@@ -1,12 +1,10 @@
 module Ampersand.FSpec.GenerateUML (generateUML) where
 
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..))
+import Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Declaration)
 import Ampersand.Graphic.ClassDiagram
 import Ampersand.Graphic.Fspec2ClassDiagrams 
 import Ampersand.FSpec
-import Ampersand.Core.AbstractSyntaxTree
-     ( Declaration )
 import Data.List
 import qualified Data.Map as Map
 import Control.Monad.State.Lazy  (State, gets, evalState, modify)
@@ -90,7 +88,7 @@ genUMLRequirement :: Req -> UML
 genUMLRequirement req =
  do { reqLId <- mkUnlabeledId "Req"
     ; addReqToState (reqLId, req)
-    ; return $ [ "    <packagedElement xmi:type=\"uml:Class\" xmi:id=\""++reqLId++"\" name=\""++reqId req++"\" visibility=\"public\"/> " ]
+    ; return [ "    <packagedElement xmi:type=\"uml:Class\" xmi:id=\""++reqLId++"\" name=\""++reqId req++"\" visibility=\"public\"/> " ]
     }
 
 genUMLDatatype :: String -> UML
@@ -170,7 +168,7 @@ genCustomProfileElements =
   where
     reqUML :: ReqValue2 -> String
     reqUML (xmiId, req) = intercalate "\n"
-     ( ["   <thecustomprofile:Functional base_Requirement="++show xmiId++"/>"]++
+     ( ("   <thecustomprofile:Functional base_Requirement="++show xmiId++"/>") :
        [tagUML xmiId count puprtxt reftxt 
        | (count, (puprtxt, reftxt)) <- zip [0::Int ..] [(aMarkup2String ReST (explMarkup p), intercalate ";" (explRefIds p)) | p <- reqPurposes req]
        ]
@@ -194,7 +192,7 @@ genCustomReqElements fSpec parentPackageId =
       , "      <model package="++show parentPackageId++" ea_eleType=\"element\"/>"
       , "      <properties documentation="++show (maybe "" (aMarkup2String ReST) (meaning (fsLang fSpec) req))++" isSpecification=\"false\" sType=\"Requirement\" nType=\"0\" scope=\"public\" stereotype=\"Functional\"/>"
       , "      <tags>"]++
-      [ "         <tag name=\"Purpose"++nr++"\" value="++show p++" modelElement="++show xmiId++"/>" | (nr ,p) <- zip ("" : map show [1::Int ..]) ([aMarkup2String ReST (explMarkup p) | p <- reqPurposes req])  ]++
+      [ "         <tag name=\"Purpose"++nr++"\" value="++show p++" modelElement="++show xmiId++"/>" | (nr ,p) <- zip ("" : map show [1::Int ..]) [aMarkup2String ReST (explMarkup p) | p <- reqPurposes req]  ]++
       [ "      </tags>"
       , "    </element>"
       ])

@@ -31,20 +31,20 @@ fspec2Workbook fSpec =
       , workbookWorksheets = [pimpWs wsResume,pimpWs wsDatasets,pimpWs wsFunctions]
       }
   where
+    -- shorthand for easy localizing    
+    l :: LocalizedStr -> String
+    l = localize lang
     fpa = fpAnalyze fSpec -- TODO: Also count the PHP plugs
     (_,totaalFPgegevensverzamelingen) = dataModelFPA fpa
     (_,totaalFPgebruikerstransacties) = userTransactionFPA fpa
     lang = fsLang fSpec
     wsResume =
       Worksheet { worksheetName =
-                            Name $ case lang of
-                                    English -> "Resume"
-                                    Dutch   -> "Overzicht"
+                            Name $ l (NL "Overzicht", EN "Resume")
                 , worksheetTable = Just $ emptyTable
                     { tableRows =
-                          [ mkRow [string $ case lang of
-                                               English -> "Detailed function point count (according to NESMA 2.1) of the application "
-                                               Dutch   -> "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
+                          [ mkRow [string $ l (NL "Gedetailleerde functiepunentelling (volgens NESMA 2.2) van het systeem "
+                                              ,EN "Detailed function point count (according to NESMA 2.1) of the application ")
                                              ++ baseName (getOpts fSpec)
                                   ]
                           , emptyRow
@@ -53,66 +53,66 @@ fspec2Workbook fSpec =
                           , mkRow [string gebruikerstransacties,(number.fromIntegral) totaalFPgebruikerstransacties]
                           , mkRow [string grandTotaal,(number.fromIntegral) (totaalFPgegevensverzamelingen + totaalFPgebruikerstransacties)]
                           , emptyRow
-                          , mkRow [string $ case lang of
-                                    English -> "For this function point count it is assumed that:"
-                                    Dutch   -> "Voor deze telling is aangenomen dat:"
+                          , mkRow [string $ l
+                                    (NL "Voor deze telling is aangenomen dat:"
+                                    ,EN "For this function point count it is assumed that:")
                                   ]
-                          , mkRow [string $ case lang of
-                                    English -> "- the application is built from scratch."
-                                    Dutch   -> "- het een nieuw informatiesyteem betreft."
+                          , mkRow [string $ l
+                                    (NL "- het een nieuw informatiesyteem betreft."
+                                    ,EN "- the application is built from scratch.")
                                   ]
-                          , mkRow [string $ case lang of
-                                    English -> "- all persistent information will be stored internally"
-                                    Dutch   -> "- alle informatie wordt intern opgeslagen"
+                          , mkRow [string $ l
+                                    (NL "- alle informatie wordt intern opgeslagen"
+                                    ,EN "- all persistent information will be stored internally")
                                   ]
                           ]
                     }
                 }
     wsDatasets =
-      Worksheet { worksheetName = Name $ gegevensverzamelingen
+      Worksheet { worksheetName = Name gegevensverzamelingen
                 , worksheetTable = Just $ emptyTable
                     { tableRows =
                           [ mkRow [string gegevensverzamelingen, (number.fromIntegral.length.plugInfos) fSpec]
                           ] ++
-                          (map mkRow $ mapMaybe showDetailsOfPlug $ plugInfos fSpec)
+                          (map mkRow . mapMaybe showDetailsOfPlug . plugInfos $ fSpec)
                        ++ map mkRow [replicate 3 emptyCell ++ [string totaal, (number.fromIntegral) totaalFPgegevensverzamelingen]]
                     }
                 }
     wsFunctions =
-      Worksheet { worksheetName  = Name $ gebruikerstransacties
+      Worksheet { worksheetName  = Name gebruikerstransacties
                 , worksheetTable = Just $ emptyTable
                     { tableRows =
-                          [ mkRow [string $ gebruikerstransacties, (number.fromIntegral.length.interfaceS) fSpec]
+                          [ mkRow [string gebruikerstransacties, (number.fromIntegral.length.interfaceS) fSpec]
                           ]
                           ++ map (mkRow.showDetailsOfFunction) (interfaceS fSpec)
-                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, (number.fromIntegral.sum.(map $ fpVal . fpaInterface)) (interfaceS fSpec)]]
-                          ++ map mkRow [[string "Gegenereerde interfaces" , (number.fromIntegral.length.interfaceG) fSpec]]
+                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, number . fromIntegral . sum . map (fpVal . fpaInterface) . interfaceS $ fSpec]]
+                          ++ map mkRow [[string "Gegenereerde interfaces" , number . fromIntegral . length . interfaceG $ fSpec]]
                           ++ map (mkRow.showDetailsOfFunction) (interfaceG fSpec)
-                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, (number.fromIntegral.sum.(map $ fpVal . fpaInterface)) (interfaceG fSpec)]]
+                          ++ map mkRow [replicate 4 emptyCell ++ [string totaal, number . fromIntegral . sum . map (fpVal . fpaInterface) . interfaceG $ fSpec]]
                           ++ map mkRow [replicate 5 emptyCell ++ [string grandTotaal, (number.fromIntegral) totaalFPgebruikerstransacties ]]
                     }
                 }
     gegevensverzamelingen :: String
-    gegevensverzamelingen = case lang of
-       Dutch   -> "Gegevensverzamelingen"
-       English -> "Data function types"
+    gegevensverzamelingen = l
+       (NL "Gegevensverzamelingen"
+       ,EN "Data function types")
 
     gebruikerstransacties :: String
-    gebruikerstransacties = case lang of
-       Dutch   -> "Gebruikerstransacties"
-       English -> "Transactional function types"
+    gebruikerstransacties = l
+       (NL "Gebruikerstransacties"
+       ,EN "Transactional function types")
     totalen :: String
-    totalen = case lang of
-       Dutch   -> "Totalen:"
-       English -> "Totals:"
+    totalen = l
+       (NL "Totalen:"
+       ,EN "Totals:")
     totaal :: String
-    totaal = case lang of
-       Dutch   -> "Totaal:"
-       English -> "Total:"
+    totaal =  l
+       (NL "Totaal:"
+       ,EN "Total:")
     grandTotaal :: String
-    grandTotaal = case lang of
-       Dutch   -> "Grandtotaal:"
-       English -> "Grand total:"
+    grandTotaal =  l
+       (NL "Grandtotaal:"
+       ,EN "Grand total:")
 
 -- TODO: rewrite: either remove external, BinSQL and ScalarSQL cases or don't filter based on fpaPlugInfo (which only yields TblSql plugs)
     showDetailsOfPlug :: PlugInfo -> Maybe [Cell]
@@ -124,13 +124,13 @@ fspec2Workbook fSpec =
                   ExternalPlug _ -> "???"
                 )
        , number . fromIntegral $ fpVal fpaplgInfo 
-       , string ( case (lang,plug) of
-                   (English, ExternalPlug _)             -> "PHP plugs are not (yet) taken into account!"
-                   (Dutch  , ExternalPlug _)             -> "PHP plugs worden (nog) niet meegerekend!"
-                   (English, InternalPlug p@TblSQL{})    -> "Table with "++(show.length.attributes) p++" attributes."
-                   (Dutch  , InternalPlug p@TblSQL{})    -> "Tabel met "++(show.length.attributes) p++" attributen."
-                   (English, InternalPlug   BinSQL{})    -> "Link table"
-                   (Dutch  , InternalPlug   BinSQL{})    -> "Koppel tabel"
+       , string ( case plug of
+                   ExternalPlug{}          -> l ( NL "PHP plugs worden (nog) niet meegerekend!"
+                                                , EN "PHP plugs are not (yet) taken into account!")
+                   InternalPlug p@TblSQL{} -> l ( NL $ "Tabel met " ++(show . length . attributes) p++" attributen."
+                                                , EN $ "Table with "++(show . length . attributes) p++" attributes.")
+                   InternalPlug BinSQL{}   -> l ( NL "Koppel tabel"
+                                                , EN "Link table")
                 )
        ]
     showDetailsOfPlug _ = Nothing

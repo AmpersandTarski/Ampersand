@@ -22,11 +22,11 @@ instance JSON MultiFSpecs Roles where
  fromAmpersand multi _ = Roles . map (fromAmpersand multi) . fRoles $ fSpec
    where fSpec = userFSpec multi
 instance JSON (Role,Int) RoleJson where
- fromAmpersand multi (role,i) = RoleJson
+ fromAmpersand multi (role',i) = RoleJson
   { roleJSONid         = i
-  , roleJSONname       = name role
-  , roleJSONmaintains  = map name . fMaintains     fSpec $ role
-  , roleJSONinterfaces = map (escapeIdentifier . name) . roleInterfaces fSpec $ role
+  , roleJSONname       = name role'
+  , roleJSONmaintains  = map name . fMaintains     fSpec $ role'
+  , roleJSONinterfaces = map (escapeIdentifier . name) . roleInterfaces fSpec $ role'
   }
    where fSpec = userFSpec multi
 

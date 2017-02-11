@@ -6,7 +6,6 @@ module Tests.Arbitrary ()
 where
 import Test.QuickCheck.Gen
 import Test.QuickCheck.Arbitrary
-import Control.Monad (liftM, liftM2)
 import Text.Pandoc.Definition
 import Text.Pandoc.Shared (normalize, escapeURI)
 import Text.Pandoc.Builder
@@ -23,10 +22,10 @@ arbAttr = do
   return (id',classes,keyvals)
 
 instance Arbitrary Inlines where
-  arbitrary = liftM (fromList :: [Inline] -> Inlines) arbitrary
+  arbitrary = fmap (fromList :: [Inline] -> Inlines) arbitrary
 
 instance Arbitrary Blocks where
-  arbitrary = liftM (fromList :: [Block] -> Blocks) arbitrary
+  arbitrary = fmap (fromList :: [Block] -> Blocks) arbitrary
 
 instance Arbitrary Inline where
   arbitrary = resize 3 $ arbInline 2
@@ -39,43 +38,42 @@ arbInlines n = listOf1 (arbInline n) `suchThat` (not . startsWithSpace)
 -- restrict to 3 levels of nesting max; otherwise we get
 -- bogged down in indefinitely large structures
 arbInline :: Int -> Gen Inline
-arbInline n = frequency $ [ (60, liftM Str realString)
+arbInline n = frequency $ [ (60, fmap Str realString)
                           , (60, return Space)
-                          , (10, liftM2 Code arbAttr realString)
+                          , (10, Code arbAttr <$> realString)
                           , (5,  elements [ RawInline (Format "html") "<a id=\"eek\">"
                                           , RawInline (Format "latex") "\\my{command}" ])
                           ] ++ [ x | x <- nesters, n > 1]
-   where nesters = [ (10,  liftM Emph $ arbInlines (n-1))
-                   , (10,  liftM Strong $ arbInlines (n-1))
-                   , (10,  liftM Strikeout $ arbInlines (n-1))
-                   , (10,  liftM Superscript $ arbInlines (n-1))
-                   , (10,  liftM Subscript $ arbInlines (n-1))
-                   , (10,  liftM SmallCaps $ arbInlines (n-1))
+   where nesters = [ (10,  Emph <$> arbInlines (n-1))
+                   , (10,  Strong <$> arbInlines (n-1))
+                   , (10,  Strikeout <$> arbInlines (n-1))
+                   , (10,  Superscript <$> arbInlines (n-1))
+                   , (10,  Subscript <$> arbInlines (n-1))
+                   , (10,  SmallCaps <$> arbInlines (n-1))
                    , (10,  do x1 <- arbitrary
                               x2 <- arbInlines (n-1)
                               return $ Quoted x1 x2)
-                   , (10,  do x1 <- arbitrary
-                              x2 <- realString
-                              return $ Math x1 x2)
+                   , (10,  Math <$> arbitrary <*> realString)
                    , (10,  do x1 <- arbInlines (n-1)
                               x3 <- realString
-                              x2 <- liftM escapeURI realString
+                              x2 <- fmap escapeURI realString
                               return $ Link x1 (x2,x3))
                    , (10,  do x1 <- arbInlines (n-1)
                               x3 <- realString
-                              x2 <- liftM escapeURI realString
+                              x2 <- fmap escapeURI realString
                               return $ Image x1 (x2,x3))
-                   , (2,  liftM2 Cite arbitrary (arbInlines 1))
-                   , (2,  liftM Note $ resize 3 $ listOf1 $ arbBlock (n-1))
+                   , (2,  Cite arbitrary <$> arbInlines 1)
+                   , (2,  Note <$> resize 3 $ listOf1 $ arbBlock (n-1))
                    ]
-
+         
+                         
 instance Arbitrary Block where
   arbitrary = resize 3 $ arbBlock 2
 
 arbBlock :: Int -> Gen Block
-arbBlock n = frequency $ [ (10, liftM Plain $ arbInlines (n-1))
-                         , (15, liftM Para $ arbInlines (n-1))
-                         , (5,  liftM2 CodeBlock arbAttr realString)
+arbBlock n = frequency $ [ (10, Plain <$> arbInlines (n-1))
+                         , (15, Para  <$> arbInlines (n-1))
+                         , (5,  CodeBlock arbAttr <$> realString)
                          , (2,  elements [ RawBlock (Format "html")
                                             "<div>\n*&amp;*\n</div>"
                                          , RawBlock (Format "latex")
@@ -86,13 +84,13 @@ arbBlock n = frequency $ [ (10, liftM Plain $ arbInlines (n-1))
                                    return (Header x1 nullAttr x2))
                          , (2, return HorizontalRule)
                          ] ++ [x | x <- nesters, n > 0]
-   where nesters = [ (5,  liftM BlockQuote $ listOf1 $ arbBlock (n-1))
+   where nesters = [ (5,  BlockQuote <$> listOf1 $ arbBlock (n-1))
                    , (5,  do x2 <- arbitrary
                              x3 <- arbitrary
                              x1 <- arbitrary `suchThat` (> 0)
                              x4 <- listOf1 $ listOf1 $ arbBlock (n-1)
                              return $ OrderedList (x1,x2,x3) x4 )
-                   , (5,  liftM BulletList $ (listOf1 $ listOf1 $ arbBlock (n-1)))
+                   , (5,  BulletList <$> (listOf1 . listOf1 $ arbBlock (n-1)))
                    , (5,  do items <- listOf1 $ do
                                         x1 <- listOf1 $ listOf1 $ arbBlock (n-1)
                                         x2 <- arbInlines (n-1)
@@ -110,8 +108,7 @@ arbBlock n = frequency $ [ (10, liftM Plain $ arbInlines (n-1))
                    ]
 
 instance Arbitrary Pandoc where
-        arbitrary = resize 8 $ liftM normalize
-                             $ liftM2 Pandoc arbitrary arbitrary
+        arbitrary = resize 8 $ normalize . Pandoc arbitrary <$> arbitrary
 
 instance Arbitrary CitationMode where
         arbitrary
@@ -151,11 +148,11 @@ instance Arbitrary QuoteType where
 instance Arbitrary Meta where
         arbitrary
           = do (x1 :: Inlines) <- arbitrary
-               (x2 :: [Inlines]) <- liftM (filter (not . isNull)) arbitrary
+               (x2 :: [Inlines]) <- filter (not . isNull) <$> arbitrary
                (x3 :: Inlines) <- arbitrary
-               return $ setMeta "title" x1
-                      $ setMeta "author" x2
-                      $ setMeta "date" x3
+               return . setMeta "title" x1
+                      . setMeta "author" x2
+                      . setMeta "date" x3
                       $ nullMeta
 
 instance Arbitrary Alignment where

@@ -66,13 +66,13 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
   where
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
-    l lstr = localize (fsLang fSpec) lstr
+    l = localize (fsLang fSpec)
     
     wrap :: Pandoc -> Pandoc
     wrap (Pandoc m bs) = Pandoc m $ runCrossRef m' Nothing crossRefBlocks bs 
       where 
-        m' =   (figureTitle $ (str.l) (NL "Figuur" ,EN "Figure"))
-            <> (tableTitle  $ (str.l) (NL "Tabel"  ,EN "Table" ))
+        m' =   figureTitle ( (str.l) (NL "Figuur" ,EN "Figure"))
+            <> tableTitle  ( (str.l) (NL "Tabel"  ,EN "Table" ))
             <> figPrefix [str "fig.", str "figs."]
             <> eqnPrefix [(str.l) (NL "relatie",EN "relation")
                          ,(str.l) (NL "relaties", EN "relations")]
@@ -84,8 +84,8 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
             <> cref True
             <> chapters True
 
-    thePandoc = wrap $
-        (setTitle
+    thePandoc = wrap .
+        setTitle
            (case metaValues "title" fSpec of
                 [] -> text (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                                  (Dutch  , False) -> "Functioneel Ontwerp van "
@@ -95,8 +95,8 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
                            ) <> (singleQuoted.text.name) fSpec
                 titles -> (text.concat.nub) titles --reduce doubles, for when multiple script files are included, this could cause titles to be mentioned several times.
            )
-        )
-      . (setAuthors $ 
+        
+      . setAuthors ( 
            case metaValues "authors" fSpec of
              [] -> case fsLang fSpec of
                      Dutch   -> [text "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\""]
@@ -105,7 +105,7 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
            ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (getOpts fSpec) ]
 
         )
-      . (setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec)))))
+      . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec))))
       . doc . mconcat $ blocksByChapter
     
     thePictures = concat picturesByChapter

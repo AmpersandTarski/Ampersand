@@ -107,7 +107,7 @@ dirOutputVarName = "CCdirOutput"
 dbNameVarName :: String
 dbNameVarName = "CCdbName"
 
-getEnvironmentOptions :: IO (EnvironmentOptions)
+getEnvironmentOptions :: IO EnvironmentOptions
 getEnvironmentOptions = 
    do args     <- getArgs
       let (configSwitches,otherArgs) = partition isConfigSwitch args
@@ -137,11 +137,11 @@ getEnvironmentOptions =
     configSwitch :: String
     configSwitch = "--config"    
     mConfigFile :: [String] -> Maybe FilePath
-    mConfigFile switches = case catMaybes (map (stripPrefix configSwitch) switches) of
+    mConfigFile switches = case mapMaybe (stripPrefix configSwitch) switches of
                     []  -> Nothing
                     ['=':x] -> Just x
                     [err]   -> exitWith . WrongArgumentsGiven $ ["No file specified in `"++configSwitch++err++"`"]
-                    xs  -> exitWith . WrongArgumentsGiven $ ["Too many config files specified: "] ++ map ("   "++) xs
+                    xs  -> exitWith . WrongArgumentsGiven $ "Too many config files specified: " : map ("   " ++) xs
     readConfigFileArgs :: Maybe FilePath -> IO [String]
     readConfigFileArgs mFp
      = case mFp of
@@ -207,7 +207,7 @@ getOptions' envOpts =
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
                       , outputfile       = fatal 83 "No monadic options available."
-                      , dirPrototype     = (fromMaybe "." $ envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
+                      , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
                       , dirInclude       = "include"
                       , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)

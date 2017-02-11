@@ -39,7 +39,7 @@ parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal 
 parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
 parseThing opts pc =
   whenCheckedIO (parseADLs opts [] [pc] ) $ \ctxts ->
-      return $ Checked $ foldl mergeContexts (head ctxts) (tail ctxts)
+      return $ Checked $ foldl1 mergeContexts ctxts
 
 
 -- | Parses several ADL files
@@ -52,7 +52,7 @@ parseADLs opts parsedFilePaths fpIncludes =
     [] -> return $ Checked []
     x:xs -> if x `elem` parsedFilePaths
             then parseADLs opts parsedFilePaths xs
-            else do whenCheckedIO (parseSingleADL opts x) parseTheRest
+            else whenCheckedIO (parseSingleADL opts x) parseTheRest
         where parseTheRest :: (P_Context, [ParseCandidate]) -> IO (Guarded [P_Context])
               parseTheRest (ctx, includes) = whenCheckedIO (parseADLs opts (x:parsedFilePaths) (includes++xs)) $
                                                   return . pure . (:) ctx 
@@ -75,7 +75,7 @@ parseSingleADL ::
 parseSingleADL opts singleFile
  = do verboseLn opts $ "Reading file " ++ filePath ++ if useAllStaticFiles singleFile then " (from within ampersand.exe)" else ""
       exists <- doesFileExist filePath
-      if (useAllStaticFiles singleFile)|| exists
+      if useAllStaticFiles singleFile|| exists
       then parseSingleADL'
       else return $ mkErrorReadingINCLUDE (pcOrigin singleFile) filePath "File does not exist."
     where
@@ -90,7 +90,7 @@ parseSingleADL opts singleFile
              do { mFileContents
                     <- if useAllStaticFiles singleFile
                        then case getStaticFileContent FormalAmpersand filePath of
-                             Just cont -> do return (Right $ stripBom cont)
+                             Just cont -> return (Right $ stripBom cont)
                              Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++filePath++"`.")
                        else readUTF8File filePath
                 ; case mFileContents of
@@ -114,7 +114,7 @@ parseSingleADL opts singleFile
                -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why System.Filepath doesn't support reduction of x/foo/../bar into x/bar. 
                -- However, for most Ampersand use cases, we will not deal with symlinks. 
                -- As long as that assumption holds, we can make the following reductions
-               myNormalise fp = joinDrive drive . joinPath $ (f [] dirs)++[file]
+               myNormalise fp = joinDrive drive . joinPath $ f [] dirs ++ [file]
                  where
                    (drive,path) = splitDrive (normalise fp)
                    (dirs,file)  = case splitPath path of
@@ -130,8 +130,8 @@ parseSingleADL opts singleFile
                                | otherwise = f (ds++[x]) xs
                is :: String -> FilePath -> Bool
                is str fp = case stripPrefix str fp of
-                             Just (chr:[]) -> chr `elem` pathSeparators  
-                             _             -> False
+                             Just [chr] -> chr `elem` pathSeparators  
+                             _          -> False
                stripBom :: String -> String
                stripBom ('\239':'\187':'\191': s) = s
                stripBom s = s
@@ -195,4 +195,4 @@ parseRule str
 parseCtx :: FilePath -- ^ The file name (used for error messages)
          -> String   -- ^ The string to be parsed
          -> Guarded (P_Context, [Include]) -- ^ The context and a list of included files
-parseCtx base content = runParser pContext base content
+parseCtx = runParser pContext
