@@ -33,7 +33,7 @@ PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mai`la`dre`ssen `gelin
 --$ en de laatste @line comment #234 
 --------[[dit is een section header]]--
 --[dit is een subsection header]-- met daarin #1234
-{- tests -}
+-- tests INCLUDE "../Test/EditableFile.adl" -- jeetje...-}
 MEANING some text
 {+ 1 {- 2 geldt **OOK** -} 3 
 {- 1 {+ 2 +}
@@ -101,27 +101,7 @@ yx--!  asdfas
 {- asdfasdfa
 0
 FALSE
-29
-Preprocessor
-Preprocessor regels hebben het '#' teken op de eerste positie van een regel
-^#.*
-FALSE
-FALSE
-11
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
+27
 Section header
 --[[xxx]]---
 ^--+\[\[.*\]\]--+
@@ -148,46 +128,6 @@ Text after --! on the same line.
 FALSE
 FALSE
 33
-0
-
-
-3
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Line Comment (alternate highlight)
-Text after --? on the same line.
-((?<=--)|^---*)(?<cmtchar>\?).*?($|\k<cmtchar>)
-FALSE
-FALSE
-34
-0
-
-
-3
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Line Comment $
-Text after --$ on the same line.
-((?<=--)|^---*)(?<cmtchar>\$).*?($|\k<cmtchar>)
-FALSE
-FALSE
-32
 0
 
 
@@ -416,7 +356,7 @@ FALSE
 
 V, I
 
-(?<!['])\b[VI](?=\s*\[\s*([A-Z][a-zA-Z0-9_-]*)\s*(|\*\s*([A-Z][a-zA-Z0-9_-]*)\s*)\])
+(?<!['])\b[VI]\b
 FALSE
 FALSE
 23
@@ -571,12 +511,32 @@ FALSE
 FALSE
 
 string
-
-\"(?:[^\"\r\n](?!\\"))*\"
+preprocessing of 'INCLUDE' is needed so that the 'INCLUDE statements' element can match.
+(?<!\bINCLUDE\s*)"(?:[^"\r\n](?!\\"))*"
 FALSE
 FALSE
 17
 0
+
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+INCLUDE statements
+Allows one to edit files that are INCLUDEd
+(?<=\bINCLUDE\s*")[^"\r\n]*(?=")
+FALSE
+FALSE
+1
+2
 
 
 0
@@ -780,14 +740,14 @@ FALSE
 
 FALSE
 
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
+Ampersand issues
+
+(|\b[Ii]ssue\s?)#([0-9]{1,4})\b
 FALSE
 FALSE
-28
+2
 4
-https://github.com/$1
+https://github.com/AmpersandTarski/Ampersand/issues/$1
 
 0
 FALSE
@@ -800,14 +760,14 @@ FALSE
 
 FALSE
 
-Ampersand issues
-
-(|\b[Ii]ssue\s?)#([0-9]{1,4})\b
+INCLUDE statements
+Allows one to edit files that are INCLUDEd
+(?<=\bINCLUDE\s*")[^"\r\n]*(?=")
 FALSE
 FALSE
+1
 2
-4
-https://github.com/AmpersandTarski/Ampersand/issues/$1
+
 
 0
 FALSE
@@ -947,7 +907,7 @@ FALSE
 0
 
 
-10
+9
 {+ block comment start
 comment between {+ and +}
 (?<=(PURPOSE|MEANING|MESSAGE).*?){\+
@@ -1056,26 +1016,6 @@ FALSE
 2
 3
 
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
-FALSE
-FALSE
-28
-4
-https://github.com/$1
 
 0
 FALSE
@@ -1276,14 +1216,14 @@ FALSE
 
 FALSE
 
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
+Ampersand issues
+
+#([0-9]{1,4})
 FALSE
 FALSE
-28
+2
 4
-https://github.com/$1
+https://github.com/AmpersandTarski/Ampersand/issues/$1
 
 0
 FALSE
@@ -1296,14 +1236,14 @@ FALSE
 
 FALSE
 
-Ampersand issues
-
-#([0-9]{1,4})
+INCLUDE statements
+Allows one to edit files that are INCLUDEd
+(?<=\bINCLUDE\s*")[^"\r\n]*(?=")
 FALSE
 FALSE
+1
 2
-4
-https://github.com/AmpersandTarski/Ampersand/issues/$1
+
 
 0
 FALSE

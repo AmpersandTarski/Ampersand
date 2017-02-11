@@ -71,8 +71,8 @@ The '{+' after a keyword should not be more than one newline away.
 start [ interface block
 -16777208
 52377
-
 (INTERFACE.*?\s(BOX|ROWS|COLS|TABS)\s).*?\[
+regex moved to comment field (functionally disabeling it, for performance reasons)
 0
 1
 0
@@ -80,7 +80,7 @@ start [ interface block
 0
 3
 0
-1
+
 0
 
 
