@@ -90,7 +90,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
     ; return (vExp, True)
     }
 validateExp fSpec vExp@(exp, orig) =
- do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) $ exp
+ do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) exp
     ; let violationsAmp = [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- pairsInExpr fSpec exp]
     ; if sort violationsSQL == sort violationsAmp
       then
@@ -98,11 +98,15 @@ validateExp fSpec vExp@(exp, orig) =
           ; return (vExp, True)
           }
       else
-       do { putStrLn $ "\nChecking "++orig ++": expression = "++showA exp
-          ; putStrLn "\nMismatch between SQL and Ampersand"
+       do { putStrLn ""
+          ; putStrLn $ "Checking "++orig ++": expression = "++showA exp
+          ; putStrLn ""
+          ; putStrLn "Mismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
-          ; putStrLn $ "SQL violations:\n"++show violationsSQL
-          ; putStrLn $ "Ampersand violations:\n" ++ show violationsAmp
+          ; putStrLn "SQL violations:"
+          ; print violationsSQL
+          ; putStrLn "Ampersand violations:"
+          ; print violationsAmp
           ; return (vExp, False)
           }
     }

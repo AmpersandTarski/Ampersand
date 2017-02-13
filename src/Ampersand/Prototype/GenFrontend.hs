@@ -137,11 +137,10 @@ copyIncludes fSpec =
     } 
   where copyInclude :: Include -> IO()
         copyInclude incl =
-          do { case fileOrDir incl of
-                 File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
-                 Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
-             }
-
+          case fileOrDir incl of
+            File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
+            Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
+          
 copyCustomizations :: FSpec -> IO ()
 copyCustomizations fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
@@ -336,7 +335,7 @@ genViewInterface fSpec interf =
                      . setAttribute "crudR"               (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"               (objCrudD (_ifcObj interf))
-                     . setAttribute "contents"            (intercalate "\n"$ lns) -- intercalate, because unlines introduces a trailing \n
+                     . setAttribute "contents"            (intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
                      . setAttribute "verbose"             (verboseP opts)
 
     ; let filename = ifcName interf ++ ".html" 

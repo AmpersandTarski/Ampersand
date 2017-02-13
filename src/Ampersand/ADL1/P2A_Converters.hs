@@ -404,8 +404,8 @@ pCtx2aCtx opts
                ]
       where
         gen_generics :: P_Gen -> [P_Concept]
-        gen_generics (P_Cy {gen_rhs=x}) = x
-        gen_generics (PGen {gen_gen=x,gen_spc=y}) = [x,y]
+        gen_generics P_Cy{gen_rhs = x} = x
+        gen_generics PGen{gen_gen = x, gen_spc = y} = [x,y]
 
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )

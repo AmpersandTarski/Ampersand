@@ -73,10 +73,10 @@ chpProcessAnalysis fSpec
                   English -> RawInline (Format "latex") "Role&Rule\\\\ \\hline\n"
                ]++
                [ RawInline (Format "latex") $ intercalate "\\\\ \\hline\n   "
-                       [ latexEscShw (name role)++" & "++latexEscShw (name r)++
+                       [ latexEscShw (name role')++" & "++latexEscShw (name r)++
                          concat[ "\\\\\n   &"++latexEscShw  (name rul) | rul<-map snd (tail rrClass)]
                        | rrClass<-eqCl fst (fRoleRuls fSpec)
-                       , let role=fst (head rrClass), let r=snd (head rrClass)
+                       , let role'=fst (head rrClass), let r=snd (head rrClass)
                        ]
                ]++
                [ RawInline (Format "latex") "\\\\ \\hline\n\\end{tabular}"
@@ -128,10 +128,9 @@ chpProcessAnalysis fSpec
     iterat (fproc:fps) i seenConcepts seenDeclarations
      = (
            xDefBlck fSpec (XRefProcessAnalysis fproc) 
-        <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc))
-   --    <> (txtProcessModel fproc)
+        <> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc)
         <> (if null sctRules then mempty else definitionList sctRules)
-         ):  iterat fps i' seenCrs seenDrs
+       ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
          (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec (udefrules fproc) i seenConcepts seenDeclarations

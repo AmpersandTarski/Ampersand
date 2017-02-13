@@ -24,7 +24,6 @@ data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern
                 | PTDeclaredInPat Pattern
                 | PTCDConcept A_Concept
-                | PTIsaInPattern Pattern  -- Not used at all...
                 | PTCDRule Rule
                 | PTLogicalDM
                 | PTTechnicalDM
@@ -84,15 +83,6 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of relations in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van relaties in " ++ name pat
                                }
-   PTIsaInPattern pat  -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Classifications of " ++ name pat
-                                      Dutch   -> "Classificaties van " ++ name pat
-                               }
    PTCDPattern pat     -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = conceptualGraph' fSpec pr
@@ -117,7 +107,6 @@ makePicture fSpec pr =
             PTClassDiagram -> "1.0"
             PTCDPattern{}-> "0.7"
             PTDeclaredInPat{}-> "0.6"
-            PTIsaInPattern{} -> "0.7"
             PTCDRule{}   -> "0.7"
             PTCDConcept{}      -> "0.7"
             PTLogicalDM    -> "1.2"
@@ -132,7 +121,6 @@ pictureID pr =
       PTTechnicalDM    -> "TechnicalDataModel"
       PTCDConcept cpt     -> "CDConcept"++name cpt
       PTDeclaredInPat pat -> "RelationsInPattern"++name pat
-      PTIsaInPattern  pat -> "IsasInPattern"++name pat
       PTCDPattern pat     -> "CDPattern"++name pat
       PTCDRule r          -> "CDRule"++name r
 
@@ -186,22 +174,6 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                              ]
                   , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
                   }
-        PTIsaInPattern pat ->
-          let gs    = fsisa fSpec
-              cpts  = concs edges
-              cpts' = concs pat >- concs gs
-              edges = clos gs idgs
-              idgs  = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
-              clos tuples ts = f (tuples>-ts) ts []
-               where f  []  new result = result++new
-                     f  _   []  result = result
-                     f tups new result = f (tups>-new) [ t |t<-tups, (not.null) (concs t `isc` concs result') ] result'
-                                             where result' = result++new
-          in
-          CStruct { csCpts = cpts
-                  , csRels = []
-                  , csIdgs = idgs
-                  }
 
         PTCDRule r ->
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
@@ -228,7 +200,7 @@ writePicture opts pict
    where
      dumpShow :: IO()
      dumpShow = -- This has been hacked in in order to diagnose the issue at: https://github.com/ivan-m/graphviz/issues/13
-       do let path = (imagePath opts) pict -<.> "txt"
+       do let path = imagePath opts pict -<.> "txt"
           writeFile path (show . dotSource $ pict)
           verboseLn opts $ "Dumpfile written: "++path 
      writeDot :: GraphvizOutput -> IO ()
@@ -265,7 +237,7 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePath opts p =
-     ( dirOutput opts)
+     dirOutput opts
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
 
 {-
@@ -418,16 +390,15 @@ handleFlags po opts =
                           , Style [filled]
                     --      , URL (theURL opts c)
                           ]
-      RelOnlyOneEdge r -> [ (XLabel . StrLabel .fromString.name) r
+      RelOnlyOneEdge r ->  (XLabel . StrLabel .fromString.name) r
                        --   , URL (theURL opts r)
-                          ]
-                        ++[ ArrowTail noArrow, ArrowHead noArrow
+                          :
+                          [ ArrowTail noArrow, ArrowHead noArrow
                           , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
                           ]
       RelSrcEdge r -> [ ArrowHead ( if crowfoot opts   then normal                    else
                                     if isFunction r    then noArrow                   else
-                                    if isInvFunction r then directionArrow            else
                                     directionArrow
                                   )
                       , ArrowTail ( if crowfoot opts   then crowfootArrowType False r else
@@ -440,18 +411,16 @@ handleFlags po opts =
       RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
                       , ArrowHead ( if crowfoot opts   then crowfootArrowType True r  else
                                     if isFunction r    then normal                    else
-                                    if isInvFunction r then noArrow                   else
                                     noArrow
                                   )
-                      , ArrowTail ( if crowfoot opts   then noArrow                   else
-                                    if isFunction r    then noArrow                   else
-                                    if isInvFunction r then AType [(noMod ,Inv)]      else
+                      , ArrowTail ( if crowfoot opts   || isFunction r    
+                                                       then noArrow                   else
                                     AType [(noMod ,Inv)]
                                   )
                       ,TailClip False
                       ]
       RelIntermediateNode _ ->
-                       [ Label (StrLabel (fromString("")))
+                       [ Label (StrLabel (fromString "" ))
                        , Shape PlainText
                        , bgColor White
                     --   , URL (theURL opts r)
@@ -472,9 +441,9 @@ isInvFunction d = isInj d && isSur d
 
 crowfootArrowType :: Bool -> Declaration -> ArrowType
 crowfootArrowType isHead r
-   = AType (case isHead of
-               True  -> getCrowfootShape (isUni r) (isTot r)
-               False -> getCrowfootShape (isInj r) (isSur r)
+   = AType (if isHead 
+            then getCrowfootShape (isUni r) (isTot r)
+            else getCrowfootShape (isInj r) (isSur r)
            )
        where
          getCrowfootShape :: Bool -> Bool -> [( ArrowModifier , ArrowShape )]

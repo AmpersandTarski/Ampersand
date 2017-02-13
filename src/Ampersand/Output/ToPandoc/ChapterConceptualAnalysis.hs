@@ -16,7 +16,7 @@ chpConceptualAnalysis lev fSpec = (
   where
   -- shorthand for easy localizing
   l :: LocalizedStr -> String
-  l lstr = localize (fsLang fSpec) lstr
+  l = localize (fsLang fSpec)
   caIntro :: Blocks
   caIntro
    = (case fsLang fSpec of
@@ -39,7 +39,7 @@ chpConceptualAnalysis lev fSpec = (
      )<> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fSpec) -- This explains the purpose of this context.
 
   caBlocks = 
-        (mconcat (map caSection (vpatterns fSpec)))
+         mconcat (map caSection (vpatterns fSpec))
       <>(case fsLang fSpec of
            Dutch   -> para "De definities van concepten zijn te vinden in de index."
                    <> header (lev+3) "Gedeclareerde relaties"
@@ -66,15 +66,15 @@ chpConceptualAnalysis lev fSpec = (
    =    -- new section to explain this pattern
         xDefBlck fSpec (XRefConceptualAnalysisPattern pat)
         -- The section starts with the reason why this pattern exists
-     <> (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat))
+     <> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) pat)
         -- followed by a conceptual model for this pattern
-     <> ( case (fsLang fSpec) of
-               (Dutch  ) -> -- announce the conceptual diagram
-                            para (xRef (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
-                            -- draw the conceptual diagram
-                          <>((xDefBlck fSpec . pictOfPat) pat)
-               (English) -> para (xRef (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
-                          <>((xDefBlck fSpec . pictOfPat) pat)
+     <> ( case fsLang fSpec of
+               Dutch   -> -- announce the conceptual diagram
+                          para (xRef (pictOfPat pat) <> " geeft een conceptueel diagram van dit pattern.")
+                          -- draw the conceptual diagram
+                          <>(xDefBlck fSpec . pictOfPat) pat
+               English -> para (xRef (pictOfPat pat) <> " shows a conceptual diagram of this pattern.")
+                          <>(xDefBlck fSpec . pictOfPat) pat
         ) <>
     (
         -- now provide the text of this pattern.
@@ -90,7 +90,7 @@ chpConceptualAnalysis lev fSpec = (
     )
   caRelation :: Declaration -> (Inlines, [Blocks])
   caRelation d
-        = let purp =  (purposes2Blocks (getOpts fSpec) [p | p<-purposesDefinedIn fSpec (fsLang fSpec) d])
+        = let purp =  purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) d)
           in (mempty
              ,[   -- First the reason why the relation exists, if any, with its properties as fundamental parts of its being..
                 ( case ( isNull purp, fsLang fSpec) of
@@ -141,7 +141,7 @@ chpConceptualAnalysis lev fSpec = (
     nladj Prop  = "symmetrische en antisymmetrische"
   caRule :: Rule -> (Inlines, [Blocks])
   caRule r
-        = let purp = (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r))
+        = let purp = purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r)
           in ( mempty
              , [  -- First the reason why the rule exists, if any..
                   purp
@@ -159,10 +159,10 @@ chpConceptualAnalysis lev fSpec = (
                <> plain
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
-                    <>(mconcat (intersperse  (str ", ")
+                    <> mconcat (intersperse  (str ", ")
                                 [   xRef (XRefConceptualAnalysisDeclaration d)
                                  <> text (" ("++name d++")")
-                                | d@Sgn{}<-relsMentionedIn r]))
+                                | d@Sgn{}<-relsMentionedIn r])
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )

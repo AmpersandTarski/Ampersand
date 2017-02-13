@@ -47,8 +47,8 @@ getGroups (ES1 tran _ imap)
  where
    iml :: [(Int,[(IntSet.IntSet,IntSet.IntSet)])]
    iml = IntMap.toList imap
-   (_, _, res) = foldr getLists (0, IntMap.empty, IntMap.empty) ([(IntSet.insert a (IntSet.union b c)) | (a,bc) <- iml, (b,c)<-bc] ++ Map.elems tran)
-   getLists :: IntSet.IntSet -> (Int, IntMap.IntMap Int, IntMap.IntMap (IntSet.IntSet)) -> (Int, IntMap.IntMap Int, IntMap.IntMap (IntSet.IntSet))
+   (_, _, res) = foldr getLists (0, IntMap.empty, IntMap.empty) ([IntSet.insert a (IntSet.union b c) | (a, bc) <- iml, (b, c) <- bc] ++ Map.elems tran)
+   getLists :: IntSet.IntSet -> (Int, IntMap.IntMap Int, IntMap.IntMap IntSet.IntSet) -> (Int, IntMap.IntMap Int, IntMap.IntMap IntSet.IntSet)
    getLists im (acc, allElems, rev) -- TODO: this might be made more efficiently by using Array as the last element
     = if not (IntMap.null overlap) then
        (acc, newElems, newRev)
@@ -108,7 +108,7 @@ simplifySet :: Op1EqualitySystem t -> IntSet.IntSet -> IntSet.IntSet
 simplifySet (ES1 _ _ imap) x = imapTranslate imap x IntSet.empty
 
 latticeToTranslatable :: Ord a => Op1EqualitySystem a -> FreeLattice a -> Maybe [IntSet.IntSet]
-latticeToTranslatable (ES1 m _ _) lt = t lt
+latticeToTranslatable (ES1 m _ _) = t
  where
    t (Atom a)   = do{r<-Map.lookup a m;return [r]}
    t (Meet a b) = do{a'<-t a;b'<- t b;return [IntSet.union ta tb | ta <- a', tb <- b']}
@@ -145,7 +145,7 @@ largestSubset i
 
 endPoints :: (Ord a, SetLike x) => RevMap a -> [(IntSet.IntSet,x a)]
 endPoints (RevMap st im)
- = if (IntMap.null im) then (if slNull st then [] else [(IntSet.empty,fromSet st)]) else concatMap endPoints' (IntMap.toList im)
+ = if IntMap.null im then (if slNull st then [] else [(IntSet.empty,fromSet st)]) else concatMap endPoints' (IntMap.toList im)
  where endPoints' (i,rm) = map addi (endPoints rm)
         where addi (lst,elm) = (IntSet.insert i lst,elm)
 
@@ -160,7 +160,7 @@ data RevMap a
 
 -- | An optimized structure that expressed equality in a finite semi-lattice
 data Op1EqualitySystem a
- = ES1 (Map.Map a (IntSet.IntSet))
+ = ES1 (Map.Map a IntSet.IntSet)
        (RevMap a)
        (IntMap.IntMap  -- map for: whenever you encounter this element i in your set y
          [( IntSet.IntSet -- when you find this set (that is: if it is a subset of y)
@@ -189,12 +189,12 @@ optimize1 (ES oldmap oldimap)
  where notEmpty [] = Nothing
        notEmpty a = Just a
        maybeMapper :: [(IntSet.IntSet,IntSet.IntSet)] -> Maybe [(IntSet.IntSet,IntSet.IntSet)]
-       maybeMapper x = notEmpty [ (s1,imapTranslate oldimap s2 (IntSet.empty))
+       maybeMapper x = notEmpty [ (s1,imapTranslate oldimap s2 IntSet.empty)
                                 | (s1,s2) <- x
                                 , not (IntSet.null s1)
                                 , not (IntSet.null s2)
                                 ]
-       newmap = Map.map (\x -> imapTranslate oldimap (IntSet.singleton x) (IntSet.empty)) oldmap
+       newmap = Map.map (\x -> imapTranslate oldimap (IntSet.singleton x) IntSet.empty) oldmap
 
 -- | Add an equality to a system of equalities.
 addEquality :: (Ord a, SetLike x) => (x a, x a) -> EqualitySystem a -> EqualitySystem a
@@ -249,8 +249,8 @@ instance SetLike [] where
   fromSet = Set.toList
   toSet = Set.fromList
   getList = id
-  slUnion a b = mrgUnion a b
-  slIsect a b = mrgIsect a b
+  slUnion = mrgUnion
+  slIsect = mrgIsect
   slFold = foldl
   slNull = null
   slSize = length
@@ -279,13 +279,13 @@ class SetLike x where -- I dislike having to put Ord everywhere, is there anothe
   fromList :: Ord a => [a] -> x a
   fromSet :: Ord a => Set.Set a -> x a
   slMap :: (Ord a,Ord b) => (a -> b) -> x a -> x b
-  slMap f = fromList . nub' . sort . (map f) . getList
+  slMap f = fromList . nub' . sort . map f . getList
   slEmpty :: Ord a => x a
   slEmpty = fromList []
   slUnions :: Ord a => [x a] -> x a
   slUnions = foldr slUnion slEmpty
   isElemOf :: Ord a => a -> x a -> Bool
-  isElemOf e mp = (e `elem` getList mp)
+  isElemOf e mp = e `elem` getList mp
   slFold :: Ord b => (a -> b -> a) -> a -> x b -> a
   slFold f u xs = foldl f u (getList xs)
   slSize :: Ord a => x a -> Int

@@ -29,7 +29,7 @@ consequent r
 -- The table of all relations is provided, in order to generate shorter names if possible.
 rulefromProp :: Prop -> Declaration -> Maybe Rule
 rulefromProp prp d@Sgn{} =
-  Just $ 
+  Just
      Ru { rrnm  = show prp++" "++showDcl'
         , rrexp = rExpr
         , rrfps = origin d

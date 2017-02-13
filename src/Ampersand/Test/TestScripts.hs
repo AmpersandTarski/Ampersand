@@ -19,11 +19,11 @@ module Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 
 
 getTestScripts :: IO [FilePath]
-getTestScripts = do
+getTestScripts =
 --        fs <- getFiles ".adl" "ArchitectureAndDesign"
 --        ss <- getFiles ".adl" $ ".." </> "ampersand-models" </> "Tests" </> "ShouldSucceed"
 --        ds <- getFiles ".adl" $ "AmpersandData" </> "FormalAmpersand"
-        return $ [] --enabling these test as a single testcase will stop the sentinel from working. Was: fs ++ ss ++ ds -- ++ models
+        return [] --enabling these test as a single testcase will stop the sentinel from working. Was: fs ++ ss ++ ds -- ++ models
 
 
 

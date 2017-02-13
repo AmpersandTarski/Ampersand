@@ -40,9 +40,9 @@ generateAmpersandOutput multi = do
    createDirectoryIfMissing True (dirOutput opts)
    when (genPrototype opts)
         (createDirectoryIfMissing True (dirPrototype opts))
-   sequence_ (map doWhen conditionalActions)
+   mapM_ doWhen conditionalActions
   where 
-   doWhen :: ((Options -> Bool), IO()) -> IO()
+   doWhen :: (Options -> Bool, IO ()) -> IO()
    doWhen (b,x) = when (b opts) x
    conditionalActions :: [(Options -> Bool, IO())]
    conditionalActions = 
@@ -124,9 +124,9 @@ generateAmpersandOutput multi = do
    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
    doGenFPAExcel :: IO()
    doGenFPAExcel =
-    do { verboseLn opts "FPA analisys is discontinued. (It needs maintenance). Sorry. " -- See https://github.com/AmpersandTarski/Ampersand/issues/621
+     verboseLn opts "FPA analisys is discontinued. (It needs maintenance). Sorry. " -- See https://github.com/AmpersandTarski/Ampersand/issues/621
      --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
-       }
+    
 --      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
    doGenPopsXLSX :: IO()
@@ -152,20 +152,20 @@ generateAmpersandOutput multi = do
        , reportViolations violationsOfInvariants
        , reportSignals (initialConjunctSignals fSpec)
        ]++
-       if null violationsOfInvariants || development opts
-       then if genRap
-            then [ generateJSONfiles multi]
-            else [ verboseLn opts "Generating prototype..."
-                 , clearTemplateDirs fSpec
-                 , writeStaticFiles opts
-                 , generateJSONfiles multi
-                 , doGenFrontend fSpec
-                 , verboseLn opts "\n"
-                 , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                 , installComposerLibs opts
-                 ]
-       else [exitWith NoPrototypeBecauseOfRuleViolations]
-       ++
+       (if null violationsOfInvariants || development opts
+        then if genRap
+             then [ generateJSONfiles multi]
+             else [ verboseLn opts "Generating prototype..."
+                  , clearTemplateDirs fSpec
+                  , writeStaticFiles opts
+                  , generateJSONfiles multi
+                  , doGenFrontend fSpec
+                  , verboseLn opts "\n"
+                  , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
+                  , installComposerLibs opts
+                  ]
+        else [exitWith NoPrototypeBecauseOfRuleViolations]
+       )++
        maybeToList (fmap ruleTest (testRule opts))
 
     where genRap = genRapPopulationOnly (getOpts fSpec)

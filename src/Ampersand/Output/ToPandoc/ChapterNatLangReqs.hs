@@ -41,9 +41,9 @@ chpNatLangReqs lev fSpec =
   where
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
-  l lstr = localize (fsLang fSpec) lstr
+  l = localize (fsLang fSpec)
   legalRefs :: Blocks
-  legalRefs = (header (lev+2) sectionTitle)
+  legalRefs =  header (lev+2) sectionTitle
             <> table caption'
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
                      [plain lawHeader, plain articleHeader]  --headers
@@ -55,7 +55,7 @@ chpNatLangReqs lev fSpec =
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs f = concatMap catMaybes ((map (map toLawRef).map explRefIds.explanations) f)
+               getRefs f = concatMap (mapMaybe toLawRef . explRefIds) (explanations f)
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
@@ -92,10 +92,10 @@ chpNatLangReqs lev fSpec =
          = case patOfTheme tc of
              Nothing  -> mempty
              Just pat -> 
-               ((para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
+                 para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
                                  ,EN "The sequel introduces the language of ")
                               <> (str.name) pat <> ".")
-                )<>
+              <>
 {-
                 ( case nCpts of
                    [] 
@@ -132,7 +132,6 @@ chpNatLangReqs lev fSpec =
                                          ,EN " are multiple defined.")
                               )
                )
-              )                                    
          where
            showCpt :: Numbered CptCont -> Inlines
            showCpt = emph.text.name.cCpt.theLoad
@@ -169,7 +168,7 @@ chpNatLangReqs lev fSpec =
                , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
                         <> (case fspecFormat (getOpts fSpec) of
                                     FLatex -> rawInline "latex"
-                                                ("~"++texOnly_marginNote 
+                                                ("~"++texOnlyMarginNote 
                                                         ("\\gls{"++escapeNonAlphaNum 
                                                                    (name cDef++fromMaybe "" suffx)
                                                             ++"}"
@@ -262,7 +261,7 @@ chpNatLangReqs lev fSpec =
          prR = decprR decl
          atomShow = str
          pragmaShow = emph . str
-         devShow c = if (development (getOpts fSpec)) then "("<> (str.name) c <> ")" else mempty
+         devShow c = if development (getOpts fSpec) then "("<> (str.name) c <> ")" else mempty
                    
 someWhiteSpace :: Blocks  --TODO: This doesn't seem to have any effect. (At least not in the LaTeX output)
 someWhiteSpace = para (linebreak <> linebreak <> linebreak <> linebreak)
@@ -292,7 +291,7 @@ getArticlesOfLaw ref = map buildLA  ((splitOn ", ".unwords.init.words.lawRef) re
                            in  Left txt : scanRefInt rest
 
          scanRefInt "" = []
-         scanRefInt str' = let (digits, rest) = break (not . isDigit) str'
+         scanRefInt str' = let (digits, rest) = span isDigit str'
                            in  Right (read digits) : scanRefTxt rest
 
 instance Ord ArticleOfLaw where
@@ -302,11 +301,11 @@ instance Ord ArticleOfLaw where
      ord' -> ord'
 
 unscanRef :: [Either String Int] -> String
-unscanRef scannedRef = concat $ map (either id show) scannedRef
+unscanRef = concatMap (either id show)
              
              
 printPurposes :: [Purpose] -> Blocks
-printPurposes  = fromList . concat . map (amPandoc . explMarkup) 
+printPurposes  = fromList . concatMap (amPandoc . explMarkup) 
 
 printMeaning :: Markup -> Blocks
 printMeaning = fromList . amPandoc
