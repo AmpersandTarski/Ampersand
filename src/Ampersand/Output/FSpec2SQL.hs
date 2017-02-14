@@ -2,6 +2,7 @@
 module Ampersand.Output.FSpec2SQL
   (dumpSQLqueries)
 where
+import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateInitialPopQueries
@@ -43,7 +44,7 @@ dumpSQLqueries multi
             <>case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
-            <>header "Broad query of above stuff"     
+            <>header ("Broad query for the object at " <> (Text.pack . show . origin) obj)
             <>[Text.pack . prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
           showSubInterface :: SubInterface -> [Text.Text]
           showSubInterface sub = 

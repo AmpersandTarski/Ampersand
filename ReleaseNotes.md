@@ -3,8 +3,9 @@
 ## Unreleased changes
   * [Issue #621](https://github.com/AmpersandTarski/Ampersand/issues/621) Disabled --fpa-excel switch, because it resulted in a fatal error. 
   * [Issue #617](https://github.com/AmpersandTarski/Ampersand/issues/617) Minor fix in functional design document.
-  * [Issue #624](https://github.com/AmpersandTarski/Ampersand/issues/626) New feature: ExecEngine can merge atoms to fix violations of univalence and other identity violations.
-  * [Issue #625](https://github.com/AmpersandTarski/Ampersand/issues/626) Comparison of origins now based on canonicalized paths
+  * [Issue #624](https://github.com/AmpersandTarski/Ampersand/issues/624) New feature: ExecEngine can merge atoms to fix violations of univalence and other identity violations.
+  * [Issue #625](https://github.com/AmpersandTarski/Ampersand/issues/625) Comparison of origins now based on canonicalized paths
+  * [Issue #627](https://github.com/AmpersandTarski/Ampersand/issues/627) Fixed a bug in generation of queries for frontend
 
 ## v3.8.1 (20 january 2017)
   * [Issue #605](https://github.com/AmpersandTarski/Ampersand/issues/605) Added modules "Modules.adl" and "Patterns.adl" in FormalAmpersand as preparatory work for issue #605.
