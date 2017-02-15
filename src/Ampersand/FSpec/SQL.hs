@@ -1096,10 +1096,10 @@ broadQuery fSpec obj =
    Nothing                -> toSQL baseBinExpr
    Just InterfaceRef{}    -> toSQL baseBinExpr
    Just Box{siObjs=sObjs} -> 
-                    case filter isInBroadQuery sObjs of
+                    case filter (isInBroadQuery (objctx obj)) sObjs of
                        [] -> toSQL baseBinExpr
                        xs -> extendWithCols xs baseBinExpr
-       --                xs -> extendWithCols xs (toSQL baseBinExpr)
+       
  where  
   baseBinExpr = getBinQueryExprPlaceholder fSpec . objctx $ obj
 
@@ -1171,11 +1171,12 @@ broadQuery fSpec obj =
          ct  = Name "cptTbl"
      tableCpt = source . objctx . head $ objs
 
-  isInBroadQuery :: ObjectDef -> Bool
-  isInBroadQuery sObj = 
+  isInBroadQuery :: Expression -> ObjectDef -> Bool
+  isInBroadQuery ctxExpr sObj = 
      (isUni . objctx $ sObj) && 
-     (isJust . attThatisInTableOf (target . objctx $ obj) $ sObj)
-      
+     (isJust . attThatisInTableOf (target . objctx $ obj) $ sObj) &&
+     (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
+
   attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
   attThatisInTableOf cpt od = 
           case theDcl of
