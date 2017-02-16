@@ -18,7 +18,7 @@ Changes include support for:
 - back-quote coloring (e.g. `text`) in comments.
 - refering to developers (e.g. @RieksJ: links to https://github.com/RieksJ)
 - references to Ampersand issues (e.g. #598 links to https://github.com/AmpersandTarski/Ampersand/issues/598) 
-80
+81
 #define spullenboel
 CONTEXT Piet  IN DUTCH { }
 PURPOSE CONTEXT Piet 
@@ -34,6 +34,7 @@ PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mai`la`dre`ssen `gelin
 --------[[dit is een section header]]--
 --[dit is een subsection header]-- met daarin #1234
 -- tests INCLUDE "../Test/EditableFile.adl" -- jeetje...-}
+-- te editen: file:"file (spaties ook)"
 MEANING some text
 {+ 1 {- 2 geldt **OOK** -} 3 
 {- 1 {+ 2 +}
@@ -679,7 +680,7 @@ FALSE
 0
 
 
-11
+12
 text in `back-quotes`
 
 \`[^\`]*?(\`|(?=(\n|\r)))
@@ -722,12 +723,32 @@ FALSE
 
 URL
 We don't check the URL itself, it is just for coloring 99% of the URLs used...
-((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+((http|https|ftp|ftps):\/\/[^\]}>\s\)]*)
 FALSE
 FALSE
 2
 4
 $1
+
+0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+file:pathAndFile
+allow for editing files that you refer to in comments
+(?<=file(|:)\s*")[^"]+(?=")
+FALSE
+FALSE
+1
+2
+
 
 0
 FALSE
