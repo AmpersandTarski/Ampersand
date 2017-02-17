@@ -25,7 +25,7 @@ safeStr1 :: Gen String
 safeStr1 = listOf1 printable `suchThat` noEsc
 
 noEsc :: String -> Bool
-noEsc = all (/= '\\')
+noEsc = notElem '\\'
 
 -- Genrates a valid ADL identifier
 identifier :: Gen String
@@ -243,7 +243,7 @@ instance Arbitrary PAtomPair where
 instance Arbitrary P_Population where
     arbitrary =
         oneof [
-          (P_RelPopu Nothing Nothing) <$> arbitrary <*> arbitrary <*> arbitrary,
+          P_RelPopu Nothing Nothing <$> arbitrary <*> arbitrary <*> arbitrary,
           P_CptPopu <$> arbitrary <*> lowerId <*> arbitrary
         ]
 
@@ -264,10 +264,8 @@ instance Arbitrary PAtomValue where
      where stringConstraints :: String -> Bool
            stringConstraints str =
              case readLitChar str of
-              [(c,cs)] -> if c `elem` ['\'', '"', '\\'] 
-                          then False
-                          else stringConstraints cs
-              _ -> True  -- end of string
+              [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints cs
+              _        -> True  -- end of string
 
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1

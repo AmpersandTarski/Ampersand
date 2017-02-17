@@ -266,7 +266,7 @@ getTime :: String -> Maybe (DiffTime, NominalDiffTime, Int, String)
 getTime cs =
   case cs of
    'T':h1:h2:':':m1:m2:rest 
-    -> if (all isDigit [h1,h2,m1,m2])
+    -> if all isDigit [h1,h2,m1,m2]
        then let (_,Left hours,_,_) = getNumber [h1,h2]
                 (_,Left minutes,_,_) = getNumber [m1,m2]
                 (seconds,ls,rs) = getSeconds rest
@@ -337,10 +337,10 @@ getDate cs =
 -- Numbers
 -----------------------------------------------------------
 -- Returns tuple with the parsed lexeme, the integer, the amount of read characters and the rest of the text
-getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
+getNumber :: String -> (Lexeme, Either Int Double, Int, String)
 getNumber str =
   case readDec str of
-    [(_,('.':_))] -> case readFloat str of
+    [(_,'.':_)] -> case readFloat str of
                            [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
                            _            -> fatal 342 "Unexpected: can read decimal, but not float???"
     [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
@@ -389,7 +389,7 @@ scanSingletonInExpression = scanUpto True ['\'']
 
 -- | scan to some given character. The end char is scanned away too
 scanUpto :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
-         -> [Char]  -- non-empty list of ending characters
+         -> String  -- non-empty list of ending characters
          -> String 
          -> (String, Int, String)
 scanUpto isAtomScan echrs s = 
@@ -399,7 +399,7 @@ scanUpto isAtomScan echrs s =
                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
 getchar :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
-        -> [Char]  -- non-empty list of ending characters
+        -> String  -- non-empty list of ending characters
         -> String  -- string to get the character from
         -> (Maybe Char, Int, String)
 getchar isAtomScan echrs s =

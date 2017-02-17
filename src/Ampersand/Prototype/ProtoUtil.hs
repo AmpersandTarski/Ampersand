@@ -85,8 +85,9 @@ removeAllDirectoryFiles dirPath =
             }
      
 getProperDirectoryContents :: FilePath -> IO [String]
-getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $
-                                   getDirectoryContents pth
+getProperDirectoryContents pth = 
+    filter (`notElem` [".","..",".svn"]) 
+       <$> getDirectoryContents pth
 
 
 quote :: Text.Text->Text.Text
@@ -211,8 +212,8 @@ installComposerLibs opts =
             , "composerTargetPath: "++composerTargetPath
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
-            (if null stdout' then [] else ["stdout:"]++lines stdout') ++
-            (if null stderr' then [] else ["stderr:"]++lines stderr') ++
+            (if null stdout' then [] else "stdout:" : lines stdout') ++
+            (if null stderr' then [] else "stderr:" : lines stderr') ++
             [ "Possible solutions to fix your prototype:"
             , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
             , "  2) Make sure you have an active internet connection."

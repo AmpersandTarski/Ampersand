@@ -640,7 +640,7 @@ showRelsFromPops :: [Pop] -> String
 showRelsFromPops pops
   = intercalate "\n" [ "RELATION "++popNameSignature (head cl)++show (props cl)
                      | cl<-eqCl popNameSignature . filter isPop $ pops]
-    where props cl = (foldr1 uni . map popMult) cl
+    where props = foldr1 uni . map popMult
           isPop Pop{}     = True
           isPop Comment{} = False
 class Unique a => AdlId a where
@@ -654,7 +654,7 @@ instance AdlId Atom
 instance AdlId ConceptDef
 instance AdlId Declaration
   where dirtyId ctx r
-         = case Map.lookup r (declMap) of
+         = case Map.lookup r declMap of
             Nothing -> fatal 546 ("no relation known as: "++showUnique r)
             Just i  -> show (show i)
           where

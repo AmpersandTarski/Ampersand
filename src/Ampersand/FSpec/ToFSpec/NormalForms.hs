@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -XFlexibleInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Ampersand.FSpec.ToFSpec.NormalForms
   (delta,conjNF,disjNF,cfProof,dfProof,simplify
   ,cfProofs, dfProofs  -- these are for confluence testing.
@@ -120,34 +120,34 @@ normRT (RFlp e)   = RFlp (normRT e)
 normRT term       = term
 
 isRIsc, isRUni, isRDif, isRCpl, isRDia, isRLrs, isRRrs, isRRad, isRCps, isRPrd, isRKl0, isRKl1, isRFlp, isRVar :: RTerm -> Bool
-isRIsc (RIsc{}) = True
-isRIsc _        = False
-isRUni (RUni{}) = True
-isRUni _        = False
-isRDif (RDif{}) = True
-isRDif _        = False
-isRCpl (RCpl{}) = True
-isRCpl _        = False
-isRDia (RDia{}) = True
-isRDia _        = False
-isRLrs (RLrs{}) = True
-isRLrs _        = False
-isRRrs (RRrs{}) = True
-isRRrs _        = False
-isRRad (RRad{}) = True
-isRRad _        = False
-isRCps (RCps{}) = True
-isRCps _        = False
-isRPrd (RPrd{}) = True
-isRPrd _        = False
-isRKl0 (RKl0{}) = True
-isRKl0 _        = False
-isRKl1 (RKl1{}) = True
-isRKl1 _        = False
-isRFlp (RFlp{}) = True
-isRFlp _        = False
-isRVar (RVar{}) = True
-isRVar _        = False
+isRIsc RIsc{} = True
+isRIsc _      = False
+isRUni RUni{} = True
+isRUni _      = False
+isRDif RDif{} = True
+isRDif _      = False
+isRCpl RCpl{} = True
+isRCpl _      = False
+isRDia RDia{} = True
+isRDia _      = False
+isRLrs RLrs{} = True
+isRLrs _      = False
+isRRrs RRrs{} = True
+isRRrs _      = False
+isRRad RRad{} = True
+isRRad _      = False
+isRCps RCps{} = True
+isRCps _      = False
+isRPrd RPrd{} = True
+isRPrd _      = False
+isRKl0 RKl0{} = True
+isRKl0 _      = False
+isRKl1 RKl1{} = True
+isRKl1 _      = False
+isRFlp RFlp{} = True
+isRFlp _      = False
+isRVar RVar{} = True
+isRVar _      = False
 
 {- dSteps computes the expressions that can be obtained in one rewrite step.
    It yields the steps, for the purpose of constructing the entire proof.
@@ -178,7 +178,7 @@ dSteps drs x = dStps x
                        , let unif = Set.fromList [(name a',x)]                  -- find unifiers such that: substitute "" unif term==rCombinator a
                        , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showIT term++" -> "++showIT term'           -- rule documentation for fatals in 'substitute'
-                       , if substitute rd unif term==x then True else
+                       , substitute rd unif term==x ||
                          fatal 122 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
                        ]
   dStps (RVee a b)   = [ DStep { lhs = x                                       -- derivs gives the top level rewrites.
@@ -190,7 +190,7 @@ dSteps drs x = dStps x
                        , noDoubles unif                                         -- if one variable is bound to more than one different expressions, the deal is off.
                        , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showIT term++" -> "++showIT term'           -- rule documentation for fatals in 'substitute'
-                       , if substitute rd unif term==x then True else
+                       , substitute rd unif term==x ||
                          fatal 134 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
                        ]
   dStps (RAtm a c)   = [ DStep { lhs = x                                       -- derivs gives the top level rewrites.
@@ -202,11 +202,11 @@ dSteps drs x = dStps x
                        , let unif = Set.fromList [(name c',RId c)]              -- find unifiers such that: substitute "" unif term==rCombinator a
                        , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                        , let rd = showIT term++" -> "++showIT term'            -- rule documentation for fatals in 'substitute'
-                       , if substitute rd unif term==x then True else
+                       , substitute rd unif term==x ||
                          fatal 146 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from:  "++showIT x)
                        ]
-  dStps (RVar _ _ _) = fatal 147 "Cannot rewrite a term with a variable in it." -- This should become a haskell type-error when RTerm is polymorphic
-  dStps (RConst _)   = [] -- the only possibly matching rule has a single variable on the lhs, which we assume does not exist. SJ to SJC: Why? is there a reason why we don't want to include that situation?
+  dStps RVar{}   = fatal 147 "Cannot rewrite a term with a variable in it." -- This should become a haskell type-error when RTerm is polymorphic
+  dStps RConst{} = [] -- the only possibly matching rule has a single variable on the lhs, which we assume does not exist. SJ to SJC: Why? is there a reason why we don't want to include that situation?
 
   dStepUny :: (RTerm -> Bool)    -- a predicate, isrComb, which tests whether some RTerm r has rCombinator as its root.
            -> (RTerm -> RTerm)   -- the combinator
@@ -235,7 +235,7 @@ dSteps drs x = dStps x
                     , unif<-matches subTerm a                                -- find unifiers such that: substitute "" unif term==rCombinator a
                     , term'<-rewriteTerms                                    -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                     , let rd = showIT term++" -> "++showIT term'            -- rule documentation for fatals in 'substitute'
-                    , if substitute rd unif term==rCombinator a then True else
+                    , substitute rd unif term==rCombinator a ||
                       fatal 177 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from\nrCombinator a:  "++showIT (rCombinator a))
                     ]
 
@@ -268,7 +268,7 @@ dSteps drs x = dStps x
                     , noDoubles unif                          -- if one variable is bound to more than one different expressions, the deal is off.
                     , term'<-rewriteTerms                     -- enumerate right hand side RTerms in order to construct:  substitute "" unif term'
                     , let rd = showIT term++" -> "++showIT term'        -- rule documentation for fatals in 'substitute'
-                    , if substitute rd unif term==rCombinator a b then True else
+                    , substitute rd unif term==rCombinator a b ||
                       fatal 207 ("When analysing rule "++rd++" with unifier "++showIT unif++"\nsubstitute rd unif term:  "++showIT (substitute rd unif term)++"\ndiffers from\nrCombinator a b:  "++showIT (rCombinator a b))
                     ]
 
@@ -291,7 +291,7 @@ dSteps drs x = dStps x
      , let rd = showIT term++" -> "++showIT term'        -- rule documentation for fatals in 'substitute'
      , let original=flatLst (pre ++ substitute rd unif term :post)  -- is equal to rCombinator ls
      , let result  =flatLst (pre ++ substitute rd unif term':post)
-     , if original==rCombinator ls then True else
+     , original==rCombinator ls ||
        fatal 228 ("When analysing rule "++rd++" with unifier "++showIT unif++" on:  "++showIT (rCombinator ls)++
                   "\nWe substitute:  "++showIT (substitute rd unif term)++
                   "\nby:             "++showIT (substitute rd unif term')++
@@ -340,9 +340,10 @@ dSteps drs x = dStps x
      , (matchCandidates,rest)<-separate n subExprs              -- e.g. matchCandidates = {aap\noot} and rest={ '1', aap, mies;vuur }
      , let m=Set.size termVars -- each variable in subTerms must be matched to one subset from rest.
      , (restSets,remainder)<-partsplus m rest                   -- e.g. restSets={ {'1', aap, mies;vuur} }
-     , let restTerms = (Set.map (flatSet . Set.toList)) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
-     , if Set.null restTerms then True else
-       if (isValid . flatSet . Set.toList) restTerms then True else fatal 305 ("Invalid restTerms: "++showIT (rCombinator restTerms))
+     , let restTerms = Set.map (flatSet . Set.toList) restSets   -- e.g. restTerms={ RUni {'1', aap, mies;vuur} }
+     , Set.null restTerms ||
+       (isValid . flatSet . Set.toList) restTerms ||
+       fatal 305 ("Invalid restTerms: "++showIT (rCombinator restTerms))
      , let remTerm   = let remT = combSet rCombinator remainder in
                        if Set.null remainder
                        then fatal 308 "empty remTerm"
@@ -363,7 +364,7 @@ dSteps drs x = dStps x
      , let result   = if Set.null remainder
                       then substitute rd unif term'
                       else flatSet [substitute rd unif term', remTerm]
-     , if original==rCombinator s then True else
+     , original==rCombinator s ||
        fatal 327 ("When analysing rule "++rd++" with unifier "++showIT unif++" on:  "++showIT (rCombinator s)++
                   "\nWe substitute:  "++showIT original++
                   "\nby:             "++showIT result++
@@ -422,7 +423,7 @@ instance Association RTerm where
   sign (RId  a)      = Sign a a
   sign (RVee a b)    = Sign a b
   sign (RAtm _ b)    = Sign b b
-  sign (RVar _ _ _)  = fatal 324 "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
+  sign RVar{}        = fatal 324 "Cannot determine the sign of an RVar." -- This should become a haskell type-error when RTerm is polymorphic
   sign (RConst e)    = sign e
 
 -- In order to write deriviation rules in the Ampersand syntax, RTerms are obtained by means of the (already available) Ampersand parser.
@@ -645,16 +646,16 @@ vars (RCpl e)      = vars e
 vars (RDia l r)    = vars l `Set.union` vars r
 vars (RLrs l r)    = vars l `Set.union` vars r
 vars (RRrs l r)    = vars l `Set.union` vars r
-vars (RRad rs)     = foldr Set.union Set.empty (map vars rs)
-vars (RCps rs)     = foldr Set.union Set.empty (map vars rs)
-vars (RPrd rs)     = foldr Set.union Set.empty (map vars rs)
+vars (RRad rs)     = foldr (Set.union . vars) Set.empty rs
+vars (RCps rs)     = foldr (Set.union . vars) Set.empty rs
+vars (RPrd rs)     = foldr (Set.union . vars) Set.empty rs
 vars (RKl0 e)      = vars e
 vars (RKl1 e)      = vars e
 vars (RFlp e)      = vars e
 vars (RId  c)      = Set.fromList [name c]
 vars (RVee s t)    = Set.fromList [name s, name t]
 vars (RVar r s t)  = Set.fromList [r, s, t]
-vars (RConst{})    = Set.empty
+vars  RConst{}     = Set.empty
 vars  RAtm{}       = Set.empty
 
 data DerivRule = DEquiR { lTerm :: RTerm  -- equivalence rule
@@ -686,13 +687,13 @@ dRule (PInc _ l r) = [DInclR { lTerm=term2rTerm l, rTerm=term2rTerm r }]
 dRule term         = fatal 279 ("Illegal use of dRule with term "++showP term)
 
 weightNF :: Bool -> RTerm -> Integer
-weightNF dnf term = w term
+weightNF dnf = w
  where
   w :: RTerm -> Integer
   w trm
    = case trm of
-       RIsc ls  -> (sum (map w (Set.toList ls))) * if dnf then 1 else 2
-       RUni ls  -> (sum (map w (Set.toList ls))) * if dnf then 2 else 1
+       RIsc ls  -> sum (map w (Set.toList ls)) * if dnf then 1 else 2
+       RUni ls  -> sum (map w (Set.toList ls)) * if dnf then 2 else 1
        RDif l r -> (w l+w r+10) * 4
        RCpl e   -> (w e + 1) * 4
        RDia l r -> (w l+w r+10) * 4
@@ -770,8 +771,9 @@ rTermListForSets x = rTermList x
 
 matches :: RTerm -> RTerm -> [Unifier]
 matches term expr
-  = if not (isValid term) then fatal 719 ("Invalid term "++showIT term++"\nbeing matched to expression "++showIT expr) else
-    if not (isValid expr) then fatal 720 ("Matching term "++showIT term++"\nto invalid expression "++showIT expr) else
+ | not (isValid term) = fatal 719 ("Invalid term "++showIT term++"\nbeing matched to expression "++showIT expr)
+ | not (isValid expr) = fatal 720 ("Matching term "++showIT term++"\nto invalid expression "++showIT expr)
+ | otherwise =
     case (term,expr) of
      (RIsc es,        RIsc es')   -> matchSets RIsc es es'
      (RUni es,        RUni es')   -> matchSets RUni es es'
@@ -795,15 +797,15 @@ matches term expr
 
 matchLists :: ([RTerm] -> RTerm) -> [RTerm] -> [RTerm] -> [Unifier]
 matchLists rCombinator es es'
- = if not (isValid (combLst rCombinator es) ) then fatal 754 ("Invalid term " ++showIT (rCombinator es)++"\nbeing matched to expression "++showIT (rCombinator es')) else
-   if not (isValid (combLst rCombinator es')) then fatal 755 ("Matching term "++showIT (rCombinator es)++"\nto invalid expression " ++showIT (rCombinator es')) else
+ | not (isValid (combLst rCombinator es) ) = fatal 754 ("Invalid term " ++showIT (rCombinator es)++"\nbeing matched to expression "++showIT (rCombinator es'))
+ | not (isValid (combLst rCombinator es')) = fatal 755 ("Matching term "++showIT (rCombinator es)++"\nto invalid expression " ++showIT (rCombinator es'))
+ | otherwise =
    [ unif
    | let n = length es              -- the length of the template, which contains variables
-   , if n==0 then fatal 681 "n equals 0" else True
+   , n /= 0 || fatal 681 "n equals 0"
    , ms <- dist n es'     -- determine segments from es' (which is variable free) that have the same length as the template es
-   , if or [null m | m<-ms]
-     then fatal 683 (concat ["\nms:  ["++intercalate ", " (map showIT m)++"]" | m<-ms])
-     else True
+   , not (or [null m | m<-ms]) ||
+     fatal 683 (concat ["\nms:  ["++intercalate ", " (map showIT m)++"]" | m<-ms])
    , let subTerms = map (combLst rCombinator) ms     -- make an RTerm from each sublist in ms
    , unif<-mix [ matches l r | (l,r)<-safezip es subTerms ]
    , noDoubles unif                 -- if one variable, v, is bound to more than one different expressions, the deal is off.
@@ -839,10 +841,11 @@ mix []       = [Set.empty]
 -}
 matchSets :: (Set RTerm -> RTerm) -> Set RTerm -> Set RTerm -> [Unifier]
 matchSets rCombinator es es'
- = -- set sizes are not necessarily equal.
-   if Set.null es || Set.null es' then fatal 858 "cannot match empty sets" else
-   if or [ not (isValid e) | e<-Set.toList es ] then fatal 859 ("Invalid subterm(s): "++intercalate ", " [ showIT e | e<-Set.toList es,  not (isValid e) ]) else
-   if or [ not (isValid e) | e<-Set.toList es'] then fatal 860 ("Invalid subexpr(s): "++intercalate ", " [ showIT e | e<-Set.toList es', not (isValid e) ]) else
+ -- set sizes are not necessarily equal.
+ | Set.null es || Set.null es' = fatal 858 "cannot match empty sets"
+ | or [ not (isValid e) | e<-Set.toList es ] = fatal 859 ("Invalid subterm(s): "++intercalate ", " [ showIT e | e<-Set.toList es,  not (isValid e) ])
+ | or [ not (isValid e) | e<-Set.toList es'] = fatal 860 ("Invalid subexpr(s): "++intercalate ", " [ showIT e | e<-Set.toList es', not (isValid e) ])
+ | otherwise =
    [ unif
    | let n = Set.size cdes                      -- the length of the template, which contains variables
    , partition' <- parts n cdes'                 -- determine segments from the expression with the same length. partition' :: Set (Set RTerm)
@@ -866,7 +869,7 @@ separate n s = [ (part, s `Set.difference` part) | part <- subsetLength n (Set.t
 
  -- parts produces a fixed number of subsets
 parts :: Ord a => Int -> Set a -> [Set (Set a)]  -- ,   but within this where clause we must make it more specific.
-parts n xsss = (Set.toList . Set.fromList . map Set.fromList . map (map Set.fromList) . p n . Set.toList) xsss
+parts n = Set.toList . Set.fromList . map (Set.fromList . map Set.fromList) . p n . Set.toList
  where
    p :: Eq a => Int -> [a] -> [[[a]]]
    p 0 _  = []
@@ -1590,7 +1593,7 @@ makeAllConjs opts allRls =
   in  conjs
    where
       expr2dnfClause :: Expression -> DnfClause
-      expr2dnfClause conj = (split (Dnf [] []).exprUni2list) conj
+      expr2dnfClause = split (Dnf [] []) . exprUni2list
        where
          split :: DnfClause -> [Expression] -> DnfClause
          split (Dnf antc cons) (ECpl e: rest) = split (Dnf (e:antc) cons) rest

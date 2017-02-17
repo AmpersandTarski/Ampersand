@@ -43,12 +43,12 @@ instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  whe
   expressionsIn (a,b) = expressionsIn a `uni` expressionsIn b
 
 instance ConceptStructure a => ConceptStructure (Maybe a) where
-  concs    ma = maybe [] concs ma
-  expressionsIn ma = maybe [] expressionsIn ma
+  concs = maybe [] concs
+  expressionsIn = maybe [] expressionsIn
 
 instance ConceptStructure a => ConceptStructure [a] where
   concs     = nub . concatMap concs
-  expressionsIn = foldr ((uni) . expressionsIn) []
+  expressionsIn = foldr (uni . expressionsIn) []
 
 instance ConceptStructure A_Context where
   concs ctx = foldr uni [ONE, makeConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
@@ -117,7 +117,7 @@ instance ConceptStructure Signature where
 
 instance ConceptStructure ObjectDef where
   concs     obj = [target (objctx obj)] `uni` concs (objmsub obj)
-  expressionsIn obj = foldr (uni) []
+  expressionsIn obj = foldr uni []
                      [ (expressionsIn.objctx) obj
                      , (expressionsIn.objmsub) obj
                      ]
@@ -140,7 +140,7 @@ instance ConceptStructure Pattern where
               , (concs.ptids) pat
               , (concs.ptxps) pat
               ]
-  expressionsIn p = foldr (uni) []
+  expressionsIn p = foldr uni []
                      [ (expressionsIn.ptrls) p
                      , (expressionsIn.ptids) p
                      , (expressionsIn.ptvds) p
@@ -148,7 +148,7 @@ instance ConceptStructure Pattern where
 
 instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
-  expressionsIn ifc = foldr (uni) []
+  expressionsIn ifc = foldr uni []
                      [ (expressionsIn.ifcObj) ifc
                      ]
 
@@ -158,7 +158,7 @@ instance ConceptStructure Declaration where
 
 instance ConceptStructure Rule where
   concs r   = concs (rrexp r) `uni` concs (rrviol r)
-  expressionsIn r = foldr (uni) []
+  expressionsIn r = foldr uni []
                    [ (expressionsIn.rrexp ) r
                    , (expressionsIn.rrviol) r
                    ]

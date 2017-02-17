@@ -2,6 +2,7 @@
 module Ampersand.Output.FSpec2SQL
   (dumpSQLqueries)
 where
+import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateInitialPopQueries
@@ -34,7 +35,7 @@ dumpSQLqueries multi
      showInterface :: Interface -> [Text.Text]
      showInterface ifc 
         = header ("INTERFACE: "<>Text.pack (name ifc))
-        <>(map ((<>) "  ") . showObjDef . ifcObj) ifc
+        <>(map ("  " <>) . showObjDef . ifcObj) ifc
         where 
           showObjDef :: ObjectDef -> [Text.Text]
           showObjDef obj
@@ -43,8 +44,8 @@ dumpSQLqueries multi
             <>case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
-            <>header "Broad query of above stuff"     
-            <>[Text.pack$ prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
+            <>header ("Broad query for the object at " <> (Text.pack . show . origin) obj)
+            <>[Text.pack . prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
           showSubInterface :: SubInterface -> [Text.Text]
           showSubInterface sub = 
             case sub of 
@@ -63,7 +64,7 @@ dumpSQLqueries multi
      showDecl :: Declaration -> [Text.Text]
      showDecl decl 
         = header (Text.pack$ showA decl)
-        <>[Text.pack$ prettySQLQuery 2 fSpec $ decl,""]
+        <>[Text.pack . prettySQLQuery 2 fSpec $ decl,""]
      header :: Text.Text -> [Text.Text]
      header title = 
          [ ""

@@ -22,7 +22,7 @@ fSpec2PopulationXlsx ct fSpec =
      
 
 plugs2Sheets :: FSpec -> M.Map T.Text Worksheet
-plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos fSpec
+plugs2Sheets fSpec = M.fromList . mapMaybe plug2sheet $ plugInfos fSpec
   where
     plug2sheet :: PlugInfo -> Maybe (T.Text, Worksheet)
     plug2sheet ExternalPlug{} = Nothing  -- Not supported at present
@@ -45,7 +45,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                        Just $ headers ++ content
          where
            headers :: [[Cell]]
-           headers = transpose (Prelude.map f (zip (True : repeat False) (plugAttributes plug))) 
+           headers = transpose (zipWith (curry f) (True : repeat False) (plugAttributes plug)) 
              where f :: (Bool,SqlAttribute) -> [Cell]
                    f (isFirstField,att) = Prelude.map toCell 
                          [ if isFirstField  -- In case of the first field of the table, we put the fieldname inbetween brackets,
@@ -59,8 +59,8 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
                    cleanUpRelName :: String -> String
                    --TODO: This is a not-so-nice way to get the relationname from the fieldname.
                    cleanUpRelName orig
-                     | isPrefixOf "tgt_" orig = drop 4 orig
-                     | isPrefixOf "src_" orig = drop 4 orig ++"~" --TODO: Make in less hacky! (See also the way the fieldname is constructed.
+                     | "tgt_" `isPrefixOf` orig = drop 4 orig
+                     | "src_" `isPrefixOf` orig = drop 4 orig ++"~" --TODO: Make in less hacky! (See also the way the fieldname is constructed.
                      | otherwise         = orig
            content = fmap record2Cells (tableContents fSpec plug)
            record2Cells :: [Maybe AAtomValue] -> [Cell]
@@ -84,7 +84,7 @@ plugs2Sheets fSpec = M.fromList . catMaybes . Prelude.map plug2sheet $ plugInfos
        toCell :: Maybe String -> Cell
        toCell mVal 
         = Cell { _cellStyle = Nothing
-               , _cellValue = fmap (\x -> CellText . T.pack $ x) mVal
+               , _cellValue = fmap (CellText . T.pack) mVal
                , _cellComment = Nothing
                , _cellFormula = Nothing
                }

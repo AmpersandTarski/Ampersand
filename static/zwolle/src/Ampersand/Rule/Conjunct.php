@@ -102,6 +102,19 @@ class Conjunct {
     }
     
     /**
+     * Temporary function to be able to skip uni and inj conj in Conjunct::evaluateConjunct()
+     * @return boolean specifies if this conjunct is part of an UNI or INJ rule
+     * TODO: remove after fix for issue #535
+     */
+    public function isUniOrInjConj(){
+        $rules = array_map(function($name){
+            return substr($name, 0, 3);
+        }, array_merge($this->sigRuleNames, $this->invRuleNames));
+        
+        return (in_array('UNI', $rules) || in_array('INJ', $rules));
+    }
+    
+    /**
      * Function to evaluate conjunct
      * @param boolean $cacheConjuncts
      * @return array[] array(array('src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
@@ -109,7 +122,12 @@ class Conjunct {
     public function evaluateConjunct($cacheConjuncts = true){
         $this->logger->debug("Checking conjunct '{$this->id}' cache:" . var_export($cacheConjuncts, true));
         try{
-            	
+            // Skipping evaluation of UNI and INJ conjuncts. TODO: remove after fix for issue #535
+            if(Config::get('skipUniInjConjuncts', 'transactions') && $this->isUniOrInjConj()){
+                $this->logger->debug("Skipping conjunct '{$this}', because it is part of a UNI/INJ rule");
+                return [];
+            }
+            
             // If conjunct is already evaluated and conjunctCach may be used -> return violations
             if(isset($this->conjunctViolations) && $cacheConjuncts){
                 $this->logger->debug("Conjunct is already evaluated, getting violations from cache");

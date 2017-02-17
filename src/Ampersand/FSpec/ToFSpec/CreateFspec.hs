@@ -31,10 +31,9 @@ createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
 createMulti opts =
   do fAmpP_Ctx <-
-        if or [ genMetaTables        opts
-              , genRapPopulationOnly opts
-              , addSemanticMetaModel opts 
-              ] 
+        if genMetaTables opts ||
+           genRapPopulationOnly opts ||
+           addSemanticMetaModel opts 
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal 38 "With the given switches, the formal ampersand model is not supposed to play any part."
@@ -82,7 +81,7 @@ createMulti opts =
     merge :: Guarded [P_Context] -> Guarded P_Context
     merge ctxs = f <$> ctxs
       where
-       f []     = fatal 77 $ "merge must not be applied to an empty list"
+       f []     = fatal 77 "merge must not be applied to an empty list"
        f (c:cs) = foldr mergeContexts c cs
     grind :: FSpec -> Guarded P_Context
     grind fSpec = f <$> uncurry parseCtx (makeMetaPopulationFile fSpec)

@@ -20,7 +20,7 @@ instance Statistics a => Statistics [a] where
 instance Statistics FSpec where
   nInterfaces _     = 0 --TODO -> check correctness
   nPatterns   fSpec = nPatterns (vpatterns fSpec)
-  nFpoints    fSpec = sum [nFpoints ifc | ifc <- (interfaceS fSpec++interfaceG fSpec)]
+  nFpoints    fSpec = sum (map nFpoints (interfaceS fSpec++interfaceG fSpec))
                 --       + sum [fPoints (fpa plug) | InternalPlug plug <- plugInfos fSpec]
 -- TODO Deze module moet nog verder worden ingekleurd...
 
