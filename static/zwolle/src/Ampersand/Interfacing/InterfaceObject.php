@@ -311,7 +311,7 @@ class InterfaceObject {
 	 */
 	public function setSrcAtom($atom){
 	    // Check if atom can be used as source for this interface
-	    if(!in_array($atom->concept, $this->srcConcept->getGeneralizationsIncl())) throw new Exception ("Atom '{$atom->__toString()}' does not match source concept '{$this->srcConcept}' or any of its generalizations. Interface path: '{$this->path}'", 500);
+	    if(!in_array($atom->concept, $this->srcConcept->getSpecializationsIncl())) throw new Exception ("Atom '{$atom}' does not match source concept '{$this->srcConcept}' or any of its specializations. Interface path: '{$this->path}'", 500);
 	    
 	    $this->srcAtom = $atom;
 	    $this->path = $this->srcAtom->path . '/' . $this->id;
