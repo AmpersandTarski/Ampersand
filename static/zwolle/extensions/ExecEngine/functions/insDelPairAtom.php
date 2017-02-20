@@ -290,4 +290,51 @@ function ClearConcept($concept, $atom){
 		Logger::getUserLogger()->error('ClearConcept: ' . $e->getMessage());
 	}
 }
+
+
+/**************************************************************
+ * Conditional variants of the above functions
+ *************************************************************/
+ 
+// SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
+function InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool){
+	Logger::getLogger('EXECENGINE')->info("InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool)");
+    
+	try{
+        if(func_num_args() != 6) throw new Exception("Wrong number of arguments supplied for function SetConceptCond(): ".func_num_args()." arguments", 500);
+        
+        // Skip when $bool evaluates to false or equals '_NULL'. 
+        // _Null is the exec-engine special for zero results from Ampersand expression
+        if(filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === false || $bool === '_NULL'){
+            Logger::getLogger('EXECENGINE')->debug("InsPairCond skipped because bool evaluation results in false");
+            return;
+        }
+        
+        InsPair($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom);
+	
+	}catch(Exception $e){
+		Logger::getUserLogger()->error('InsPairCond: ' . $e->getMessage());
+	}
+}
+
+// SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
+function SetConceptCond($conceptA, $conceptB, $atom, $bool){
+	Logger::getLogger('EXECENGINE')->info("SetConceptCond($conceptA, $conceptB, $atom, $bool)");
+    
+	try{
+        if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function SetConceptCond(): ".func_num_args()." arguments", 500);
+        
+        // Skip when $bool evaluates to false or equals '_NULL'. 
+        // _Null is the exec-engine special for zero results from Ampersand expression
+        if(filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === false || $bool === '_NULL'){
+            Logger::getLogger('EXECENGINE')->debug("SetConcept skipped because bool evaluation results in false");
+            return;
+        }
+        
+        SetConcept($conceptA, $conceptB, $atom);
+	
+	}catch(Exception $e){
+		Logger::getUserLogger()->error('SetConceptCond: ' . $e->getMessage());
+	}
+}
 ?>
