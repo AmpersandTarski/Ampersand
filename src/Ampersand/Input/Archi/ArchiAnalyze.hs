@@ -142,6 +142,7 @@ data PAtomPair
      , elemDocu       :: String
      , elChilds       :: [Child]
      , elProps        :: [ArchiProp]
+     , elDocus        :: [ArchiDocu]
      } deriving (Show, Eq)
 
 -- Children occur in views only.
@@ -190,6 +191,10 @@ data PAtomPair
      { archPropId     :: Maybe String
      , archPropKey    :: String
      , archPropVal    :: String
+     } deriving (Show, Eq)
+
+   data ArchiDocu = ArchiDocu
+     { archDocuVal    :: String
      } deriving (Show, Eq)
 
 
@@ -493,7 +498,7 @@ data PAtomPair
        where
         analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
         analArchiRepo
-          = atTag "archimate:ArchimateModel" >>>
+          = atTag "archimate:model" >>>
             proc l -> do repoNm'   <- getAttrValue "name"                  -< l
                          repoId'   <- getAttrValue "id"                    -< l
                          folders'  <- listA (getChildren >>> getFolder 0)  -< l
@@ -506,7 +511,7 @@ data PAtomPair
 
         getFolder :: ArrowXml a => Int -> a XmlTree Folder
         getFolder level
-         = isElem >>> hasName "folders" >>>
+         = isElem >>> hasName "folder" >>>
             proc l -> do fldNm'     <- getAttrValue "name"                 -< l
                          fldId'     <- getAttrValue "id"                   -< l
                          fldType'   <- getAttrValue "type"                 -< l
@@ -528,9 +533,14 @@ data PAtomPair
                                                  , archPropId  = Nothing -- error "fatal 315: archPropId not yet defined"
                                                  , archPropVal = propVal
                                                  }
+        getDocu :: ArrowXml a => a XmlTree ArchiDocu
+        getDocu = isElem >>> hasName "documentation" >>>
+            proc l -> do docuVal    <- getText -< l
+                         returnA    -< ArchiDocu { archDocuVal = docuVal
+                                                 }
 
         getElement :: ArrowXml a => a XmlTree Element
-        getElement = isElem >>> hasName "elements" >>>  -- don't use atTag, because recursion is in getFolder.
+        getElement = isElem >>> hasName "element" >>>  -- don't use atTag, because recursion is in getFolder.
             proc l -> do elemType'  <- getAttrValue "xsi:type"           -< l
                          elemId'    <- getAttrValue "id"                 -< l
                          elemName'  <- getAttrValue "name"               -< l
@@ -539,6 +549,7 @@ data PAtomPair
                          elemDocu'  <- getAttrValue "documentation"      -< l
                          childs'    <- listA (getChildren >>> getChild)  -< l
                          props'     <- listA (getChildren >>> getProp)   -< l
+                         docus'     <- listA (getChildren >>> getDocu)   -< l
                          returnA    -< Element  { elemType = drop 1 (dropWhile (/=':') elemType')  -- drop the prefix "archimate:"
                                                , elemId   = elemId'
                                                , elemName = elemName'
@@ -547,6 +558,7 @@ data PAtomPair
                                                , elemDocu = elemDocu'
                                                , elChilds = childs'
                                                , elProps  = props'
+                                               , elDocus  = docus'
                                                }
                                   
         getRelation :: ArrowXml a => a XmlTree Relation
