@@ -1,7 +1,6 @@
 module Ampersand.FSpec.FPA (FPA(..), FP(..), FPType(..), ShowLang(..), fpAnalyze, fpVal, fpaPlugInfo, fpaInterface) where 
                                            -- fpaPlugInfo and fpaInterface are exported for legacy modules Statistics and FSpec2Excel
 
-import Ampersand.Misc (Lang(..))
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
 import Ampersand.Basics
@@ -52,7 +51,7 @@ fpaDataModel :: FSpec -> [FP]
 fpaDataModel fSpec = mapMaybe fpaPlugInfo $ plugInfos fSpec
 
 fpaPlugInfo :: PlugInfo -> Maybe FP
-fpaPlugInfo p@(InternalPlug (TblSQL{attributes=atts})) | Just cmplxty <- ilgvComplexity $ length atts =
+fpaPlugInfo p@(InternalPlug TblSQL{attributes=atts}) | Just cmplxty <- ilgvComplexity $ length atts =
   Just $ FP ILGV (name p) cmplxty
   where ilgvComplexity :: Int -> Maybe Complexity
         ilgvComplexity n | n <= 2    = Nothing 
@@ -68,7 +67,7 @@ fpaInterface :: Interface -> FP
 fpaInterface ifc = 
    let nm = name ifc
        cmplxty = depth2Cmplxty $ getDepth $ ifcObj ifc
-       tp = fatal 78 $ "TODO: fix to see if the interface contains editalbe fields"
+       tp = fatal 78 "TODO: fix to see if the interface contains editalbe fields"
     in FP tp nm cmplxty
   where depth2Cmplxty :: Int -> Complexity
         depth2Cmplxty d | d <= 1    = Eenvoudig

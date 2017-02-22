@@ -5,7 +5,9 @@ module Ampersand.Graphic.ClassDiagram
            ) where
 import Data.List
 import Ampersand.Basics
-import Ampersand.FSpec --  hiding (Association,Box)
+import Ampersand.Core.AbstractSyntaxTree
+     ( A_Concept, Declaration, A_Gen
+     )
 
 data ClassDiag = OOclassdiagram {cdName :: String
                                 ,classes :: [Class]           --
@@ -18,7 +20,7 @@ instance Named ClassDiag where
    name = cdName
 
 data Class          = OOClass  { clName :: String          -- ^ name of the class
-                               , clcpt ::  Maybe (A_Concept) -- ^ Main concept of the class. (link tables do not have a main concept)
+                               , clcpt ::  Maybe A_Concept -- ^ Main concept of the class. (link tables do not have a main concept)
                                , clAtts :: [CdAttribute]   -- ^ Attributes of the class
                                , clMths :: [Method]        -- ^ Methods of the class
                                } deriving Show

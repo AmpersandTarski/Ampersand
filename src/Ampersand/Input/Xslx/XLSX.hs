@@ -68,8 +68,7 @@ toPops opts file x = map popForColumn (colNrs x)
       else  P_RelPopu { pos = popOrigin
                       , p_src = src
                       , p_tgt = trg
-                      , p_nmdr 
-                         = PNamedRel popOrigin relName Nothing
+                      , p_nmdr = PNamedRel popOrigin relName Nothing -- The P-to-A converter must assign the type.
                       , p_popps = thePairs
                       }
      where                             

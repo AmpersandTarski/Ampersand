@@ -1,6 +1,6 @@
-﻿CONTEXT Generics IN ENGLISH LATEX
+CONTEXT Generics IN ENGLISH LATEX
 PURPOSE CONTEXT Generics
-{+This context specifies the administration that currrently is, and in future will have been, the contents of GENERICS.PHP-}
+{+This context specifies the administration that currrently is, and in future will have been, the contents of GENERICS.PHP+}
 
 REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
 
@@ -21,7 +21,6 @@ RELATION name[Rule*RuleID] [UNI,TOT,SUR] -- e.g. 'ASY bfOUprop::BusinessFunction
 RELATION ruleAdl[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[BusinessFunction]'
 REPRESENT Adl TYPE HUGEALPHANUMERIC
 RELATION origin[Rule*Origin] [TOT] -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
-RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
 RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
 RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
 RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'

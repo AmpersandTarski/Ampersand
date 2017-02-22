@@ -15,7 +15,7 @@ chpInterfacesBlocks :: FSpec -> Blocks
 chpInterfacesBlocks fSpec = 
      --  *** Header ***
       xDefBlck fSpec Interfaces
-   <> (mconcat $ map interfaceChap regularInterfaces)
+   <> mconcat (map interfaceChap regularInterfaces)
   where
     regularInterfaces :: [Interface]
     regularInterfaces = interfaceS fSpec
@@ -46,7 +46,7 @@ chpInterfacesBlocks fSpec =
 
     docInterface :: Interface -> Blocks
     docInterface ifc =
-      (plainText $ "De interface is beschikbaar voor " ++ showRoles (ifcRoles ifc) ++ ".") <>
+       plainText ( "De interface is beschikbaar voor " <> showRoles (ifcRoles ifc) <> ".") <>
       (if null $ ifcControls ifc
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
        else plainText "Voorafgaand aan het afsluiten van een transactie (commit), moet aan de volgende regels voldaan zijn:" <>  
@@ -68,7 +68,7 @@ chpInterfacesBlocks fSpec =
       case hierarchy of
         [] -> plain . text $ "Interface voor een waarde van type " ++ quoteName (target iExp) ++ "."
               -- TODO: unclear what we want to do here. Probably want to hide "ONE". Do we need to take multiplicites into account? (e.g. waarden)  
-        _  -> plain . strong . fromList $ [Str $ (intercalate "." $ map show hierarchy) ++ " " ++ objectName]
+        _  -> plain . strong . fromList $ [Str $ intercalate "." (map show hierarchy) <> " " <> objectName]
       <> interfaceObjDoc <>
       mconcat subInterfaceDocs
       where objectName = let nm = name object in if null nm then "<Naamloos>" else nm
@@ -82,10 +82,10 @@ chpInterfacesBlocks fSpec =
                 case navigationDocs of
                   []               -> []
                   navDocs@(_:rest) -> 
-                    [ plainText $ "Hiervandaan kan genavigeerd worden naar interface"++(if null rest then "" else "s")++":"] ++
+                    plainText ("Hiervandaan kan genavigeerd worden naar interface"++(if null rest then "" else "s")++":") :
                     [ bulletList navDocs ]
                 ++
-                [ plainText $ "De bijbehorende Ampersand expressie is: ", plain . code $ showADL iExp ] ++
+                [ plainText "De bijbehorende Ampersand expressie is: ", plain . code $ showA iExp ] ++
                 [ plainText $ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
                 | let len = length subInterfaceDocs, len > 0 ] ++
                 if not $ development (getOpts fSpec) then [] else -- some debug info shown on --dev
@@ -94,16 +94,16 @@ chpInterfacesBlocks fSpec =
                     Nothing -> []
                     Just (_, d, _, isFlipped) -> 
                       [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
-                      , plainText $ "DEBUG: showADL: " ++ showADL d
+                      , plainText $ "DEBUG: showA: " ++ showA d
                       ] 
-              where (fieldDescr,fieldRef) = 
-                      if isSur iExp then if isUni iExp then ("Een verplicht veld van type ", "Dit veld")
-                                                       else ("Een lijst van 1 of meer velden van type ", "Elk veld")
-                                    else if isUni iExp then ("Een optioneel veld van type ", "Dit veld")
-                                                       else ("Een lijst van 0 of meer velden van type ", "Elk veld")
+              where (fieldDescr,fieldRef) 
+                      | isSur iExp && isUni iExp = ("Een verplicht veld van type ", "Dit veld")
+                      | isSur iExp               = ("Een lijst van 1 of meer velden van type ", "Elk veld")
+                      |               isUni iExp = ("Een optioneel veld van type ", "Dit veld")
+                      | otherwise                = ("Een lijst van 0 of meer velden van type ", "Elk veld")
                     props = intercalate "," $ [ "INJ" | isInj iExp] ++ [ "SUR" | isSur iExp] ++ [ "TOT" | isTot iExp] ++ [ "UNI" | isUni iExp]
                     
-                    (expressionRelM) = getExpressionRelation iExp
+                    expressionRelM = getExpressionRelation iExp
                     
                     navigationDocs = [ plainText $ quoteName navIfc ++ " (voor " ++ showRoles sharedRoles ++ ")" 
                                      | navIfc <- regularInterfaces
@@ -130,7 +130,8 @@ chpInterfacesBlocks fSpec =
     docCrudMatrix :: Interface -> Blocks
     docCrudMatrix ifc = mconcat
       [ plain . strong . text $ "CRUD matrix:"
-      , simpleTable [ plainText "Concept", plainText "C", plainText "R", plainText "U", plainText "D" ] $
+      , simpleTable 
+          [ plainText "Concept", plainText "C", plainText "R", plainText "U", plainText "D" ]
           [ [plainText $ name cncpt, checkMark isC, checkMark isR, checkMark isU, checkMark isD ]
           | (cncpt, isC, isR, isU, isD) <- getCrudObjectsForInterface (crudInfo fSpec) ifc
           ]

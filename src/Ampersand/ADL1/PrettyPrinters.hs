@@ -3,7 +3,7 @@ module Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
-import Ampersand.Basics        (fatal)
+import Ampersand.Basics(fatal,Lang(..),PandocFormat(..))
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)
@@ -47,11 +47,11 @@ quote = text.show
 --              escape x = replace x ("\\" ++ x)
 
 quotePurpose :: String -> Doc
-quotePurpose p = text "{+" </> escapeExpl p </> text "-}"
+quotePurpose p = text "{+" </> escapeExpl p </> text "+}"
         where escapeExpl = text.escapeCommentStart.escapeLineComment.escapeExplEnd
               escapeCommentStart = escape "{-"
               escapeLineComment = escape "--"
-              escapeExplEnd = escape "-}"
+              escapeExplEnd = escape "+}"
               escape x = replace x (intersperse ' ' x)
 
 isId :: String -> Bool
@@ -241,8 +241,8 @@ instance Pretty ConceptDef where
 
 instance Pretty P_Population where
     pretty p = case p of
-                P_RelPopu _ _ _ nrel  cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
-                P_CptPopu _ nm    ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> pretty ps
+                P_RelPopu _ _ _ nrel cs -> text "POPULATION" <+> pretty nrel      <+> text "CONTAINS" <+> contents cs
+                P_CptPopu _ nm       ps -> text "POPULATION" <+> quoteConcept nm  <+> text "CONTAINS" <+> pretty ps
                where contents = list . map pretty
 
 instance Pretty Representation where
@@ -394,7 +394,7 @@ instance Pretty PAtomValue where
        XlsxString     _ s -> text . show $ s
        ScriptInt      _ i -> text . show $ i
        ScriptFloat    _ d -> text . show $ d
-       XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+       XlsxDouble     _ _ -> fatal 267 "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
        ComnBool       _ b -> text . map toUpper . show $ b
        ScriptDate     _ x -> text . show $ x
        ScriptDateTime _ x -> text . show $ x

@@ -1,12 +1,11 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE ImplicitParams #-}{-# OPTIONS_GHC -Wall -Werror #-}
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
  , Meta(..)
- , Pattern(..)
+ , Pattern(..) 
  , PairView(..)
  , PairViewSegment(..)
  , Rule(..)
@@ -25,13 +24,11 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Object(..)
  , Cruds(..)
  , Default(..)
- , objAts
  , Purpose(..)
  , ExplObj(..)
  , Expression(..)
  , getExpressionRelation
  , A_Concept(..)
- , A_Markup(..)
  , AMeaning(..)
  , A_RoleRule(..)
  , A_RoleRelation(..)
@@ -40,44 +37,49 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Signature(..)
  , Population(..)
  , Association(..)
- , PAclause(..), Event(..), ECArule(..), InsDel(..), Conjunct(..), DnfClause(..)
+ , Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomValue(..), mkAtomPair, PAtomValue(..)
  , ContextInfo(..)
  , showValADL,showValPHP,showValSQL
  , showSign
- , aMarkup2String
- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
+-- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
  , makeConcept
  , aavstr
  ) where
 import Ampersand.Basics
-import Ampersand.Core.ParseTree ( MetaObj(..),Meta(..),Role(..),ConceptDef,Origin(..),Traced(..), ViewHtmlTemplate(..){-, ViewTextTemplate(..)-}
-                                                , PairView(..),PairViewSegment(..),Prop(..),Lang, PandocFormat, P_Markup(..), PMeaning(..)
-                                                , SrcOrTgt(..), isSrc , Representation(..), TType(..), PAtomValue(..), PSingleton, makePSingleton
-                                                )
-import Ampersand.Misc
-import Text.Pandoc hiding (Meta)
-import Data.Function
-import Data.Typeable
-import GHC.Generics (Generic)
-import Data.Data
-import Data.Char (toUpper,toLower)
-import Data.List (nub,intercalate)
-import Data.Maybe
-import Data.Time.Calendar
-import Data.Time.Clock
-import Data.Default
-import Data.Hashable
-import Data.Text (Text,unpack,pack)
-import qualified Data.Time.Format as DTF (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
+import Ampersand.Core.ParseTree 
+    ( Meta(..)
+    , Role(..)
+    , ConceptDef
+    , Origin(..)
+    , Traced(..)
+    , ViewHtmlTemplate(..)
+    , PairView(..)
+    , PairViewSegment(..)
+    , Prop(..)
+    , Representation(..), TType(..), PAtomValue(..), PSingleton
+    )
+import Data.Function      (on)
+import GHC.Generics       (Generic)
+import Data.Data          (Typeable,Data)
+import Data.Char          (toUpper,toLower)
+import Data.List          (nub,intercalate)
+import Data.Maybe         (fromMaybe,listToMaybe)
+import Data.Time.Calendar (showGregorian,Day, fromGregorian, addDays)
+import Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
+import Data.Default       (Default(..))
+import Data.Hashable      (Hashable(..),hashWithSalt)
+import Data.Text          (Text,unpack,pack)
+import qualified Data.Time.Format as DTF 
+                          (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
          , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctxlang :: Lang           -- ^ The default language used in this context.
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
-         , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+         , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Declaration]    -- ^ The relations that are declared in this context, outside the scope of patterns
@@ -141,11 +143,6 @@ data A_RoleRule = A_RoleRule { arRoles :: [Role]
                              , arRules ::  [String] -- the names of the rules
                              , arPos ::   Origin
                              } deriving (Show)
-data A_Markup =
-    A_Markup { amLang :: Lang -- No Maybe here!  In the A-structure, it will be defined by the default if the P-structure does not define it. In the P-structure, the language is optional.
-             , amPandoc :: [Block]
-             } deriving (Show, Eq, Prelude.Ord, Typeable, Data)
-
 data RuleOrigin = UserDefined     -- This rule was specified explicitly as a rule in the Ampersand script
                 | Multiplicity    -- This rule follows implicitly from the Ampersand script (Because of a property) and generated by a computer
                 | Identity        -- This rule follows implicitly from the Ampersand script (Because of a identity) and generated by a computer
@@ -155,7 +152,7 @@ data Rule =
         , rrexp ::    Expression                  -- ^ The rule expression
         , rrfps ::    Origin                      -- ^ Position in the Ampersand file
         , rrmean ::   AMeaning                    -- ^ Ampersand generated meaning (for all known languages)
-        , rrmsg ::    [A_Markup]                  -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+        , rrmsg ::    [Markup]                  -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
         , rrtyp ::    Signature                   -- ^ Allocated signature
         , rrdcl ::    Maybe (Prop,Declaration)    -- ^ The property, if this rule originates from a property on a Declaration
@@ -253,9 +250,9 @@ instance Unique Declaration where
       Isn{} -> "I["++uniqueShow False (detyp d)++"]"
       Vs{}  -> "V"++uniqueShow False (decsgn d)
 instance Hashable Declaration where
-   hashWithSalt s (Sgn{dech = v}) = s `hashWithSalt` v
-   hashWithSalt s (Isn{detyp = v}) = hashWithSalt s v
-   hashWithSalt s (Vs{decsgn = v})  = hashWithSalt s v
+   hashWithSalt s Sgn{dech = v} = s `hashWithSalt` v
+   hashWithSalt s Isn{detyp = v} = hashWithSalt s v
+   hashWithSalt s Vs{decsgn = v}  = hashWithSalt s v
 instance Show Declaration where  -- For debugging purposes only (and fatal messages)
   showsPrec _ decl@Sgn{}
    = showString (case decl of
@@ -272,10 +269,7 @@ showDcl forceBoth dcl = name dcl++"["++cpts++"]"
      | forceBoth || source dcl /= target dcl = show (source dcl) ++ "*"++ show (target dcl)
      | otherwise                             = show (source dcl)
 
-aMarkup2String :: PandocFormat -> A_Markup -> String
-aMarkup2String fmt a = blocks2String fmt False (amPandoc a)
-
-data AMeaning = AMeaning { ameaMrk ::[A_Markup]} deriving (Show, Eq, Prelude.Ord, Typeable, Data)
+data AMeaning = AMeaning { ameaMrk ::[Markup]} deriving (Show, Eq, Prelude.Ord, Typeable, Data)
 
 instance Named Declaration where
   name d@Sgn{}   = unpack (decnm d)
@@ -363,7 +357,6 @@ instance Show A_Gen where
 
 data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
-                     , ifcEcas ::     [ECArule]     -- All ECArules that are needed to perform computations for maintaining rules
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
                      , ifcPrp ::      String        -- The purpose of the interface
@@ -384,12 +377,6 @@ getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc ==
                                 [ifc] -> ifc
                                 _     -> fatal 330 $ "getInterface by name: multiple interfaces named "++show nm
 
-objAts :: ObjectDef -> [ObjectDef]
-objAts obj
-  = case objmsub obj of
-     Nothing       -> []
-     Just InterfaceRef{} -> []
-     Just b@Box{}    -> siObjs b
 
 class Object a where
  concept ::   a -> A_Concept        -- the type of the object
@@ -398,7 +385,10 @@ class Object a where
 
 instance Object ObjectDef where
  concept obj = target (objctx obj)
- fields      = objAts
+ fields  obj = case objmsub obj of
+                 Nothing       -> []
+                 Just InterfaceRef{} -> []
+                 Just b@Box{}    -> siObjs b
  contextOf   = objctx
 
 data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
@@ -428,98 +418,13 @@ data SubInterface = Box { siConcept :: A_Concept
                         , siCruds  :: Cruds
                         } deriving (Eq, Show)
 
-data InsDel   = Ins | Del
-                 deriving (Show,Eq,Ord)
-data ECArule= ECA { ecaTriggr :: Event       -- The event on which this rule is activated
-                  , ecaDelta ::  Declaration -- The delta to be inserted or deleted from this rule. It actually serves very much like a formal parameter.
-                  , ecaAction :: PAclause    -- The action to be taken when triggered.
-                  , ecaNum ::    Int         -- A unique number that identifies the ECArule within its scope.
-                  }
 
-instance Show ECArule where
-  showsPrec _ r = showString ("ON "++show (ecaTriggr r)++" "++show (ecaDelta r)++" do something.")
-
-instance Eq (ECArule) where
-   e==e' = ecaNum e==ecaNum e'
-
-data Event = On { eSrt :: InsDel
-                , eDcl :: Declaration
-                } deriving (Show,Eq)
-
-data PAclause
-              = CHC { paCls :: [PAclause]                 -- precisely one clause is executed.
-                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
-                    }
-              | GCH { paGCls :: [(InsDel,Expression,PAclause)]    -- guarded choice; The rule is maintained if one of the clauses of which the expression is populated is executed.
-                    , paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from which rule is being maintained
-                    }
-              | ALL { paCls :: [PAclause]                 -- all clauses are executed.
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Do  { paSrt :: InsDel                     -- do Insert or Delete
-                    , paTo :: Declaration                 -- into toExpr    or from toExpr
-                    , paDelta :: Expression               -- delta
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | New { paCpt :: A_Concept                  -- make a new instance of type c
-                    , paCl :: PSingleton ->PAclause            -- to be done after creating the concept
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Rmv { paCpt :: A_Concept                  -- Remove an instance of type c
-                    , paCl :: PSingleton->PAclause            -- to be done afteremoving the concept
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Nop { paMotiv :: [(Expression,[Rule] )]   -- tells which conjunct from whichule is being maintained
-                    }
-              | Blk { paMotiv :: [(Expression,[Rule] )]   -- tells which expression from whichule has caused the blockage
-                    }
-              | Let { paExpr :: PAclause                  -- the expression that represents a condition to be tested.
-                    , paBody :: PAclause -> PAclause
-                    , paMotiv :: [(Expression,[Rule] )]
-                    }
-              | Ref { paVar :: String
-                    }
-
--- SJC: adding motivation separately may help:
--- data Motivated a = Motivated a [(Expression,[Rule])] | Ref String
---   then make an instance for Ord Motivated (any way you like)
---   let PAclause be deriving (Ord,Eq)
-instance Ord PAclause where
-   CHC ds _ `compare` CHC ds' _ = ds `compare` ds'
-   CHC{} `compare` _ = LT
-   _ `compare` CHC{} = GT
-   GCH ds _ `compare` GCH ds' _ = ds `compare` ds'
-   GCH{} `compare` _ = LT
-   _ `compare` GCH{} = GT
-   ALL ds _ `compare` ALL ds' _ = ds `compare` ds'
-   ALL{} `compare` _ = LT
-   _ `compare` ALL{} = GT
-   p@Do{}   `compare`   p'@Do{} = (paSrt p,paTo p,paDelta p) `compare` (paSrt p',paTo p',paDelta p')
-   Do{} `compare` _ = LT
-   _ `compare` Do{} = GT
-   Nop _    `compare`     Nop _ = EQ
-   Nop{} `compare` _ = LT
-   _ `compare` Nop{} = GT
-   p@New{}  `compare`  p'@New{} = paCpt p `compare` paCpt p'
-   New{} `compare` _ = LT
-   _ `compare` New{} = GT
-   p@Rmv{}  `compare`  p'@Rmv{} = paCpt p `compare` paCpt p'
-   Rmv{} `compare` _ = LT
-   _ `compare` Rmv{} = GT
-   Blk{} `compare` Blk{} = EQ
-   Blk{} `compare` _ = LT
-   _ `compare` Blk{} = GT
-   Ref{} `compare` Ref{} = EQ
-   Ref{} `compare` _ = LT
-   _ `compare` Ref{} = GT
-   p@Let{} `compare` p'@Let{} = paExpr p `compare` paExpr p' -- TODO SJC: this cannot be right, right? It was "False" in the old EQ class, but that was wrong too I think
-instance Eq PAclause where a == b = (compare a b == EQ)
 
 -- | Explanation is the intended constructor. It explains the purpose of the object it references.
 --   The enrichment process of the parser must map the names (from PPurpose) to the actual objects
 data Purpose  = Expl { explPos :: Origin     -- ^ The position in the Ampersand script of this purpose definition
                      , explObj :: ExplObj    -- ^ The object that is explained.
-                     , explMarkup :: A_Markup   -- ^ This field contains the text of the explanation including language and markup info.
+                     , explMarkup :: Markup   -- ^ This field contains the text of the explanation including language and markup info.
                      , explUserdefd :: Bool       -- ^ Is this purpose defined in the script?
                      , explRefIds :: [String]     -- ^ The references of the explaination
                      } deriving (Show, Typeable)
@@ -816,17 +721,20 @@ getExpressionRelation expr = case getRelation expr of
     getRelation (ECps (EDcI{}, e)) = getRelation e
     getRelation (ECps (e1, e2))
       = case (getRelation e1, getRelation e2) of --note: target e1==source e2
-         (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) -> if i1==target e1 && i2==source e2 then Just (i1, Nothing, i2, False) else -- i1==i2
-                                                           if i1==target e1 && i2/=source e2 then Just (i2, Nothing, i2, False) else
-                                                           if i1/=target e1 && i2==source e2 then Just (i1, Nothing, i1, False) else
-                                                           Nothing
-         (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else
-                                                           if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else
-                                                           Nothing
-         (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                 then Just (s,d,t,isFlipped) else
-                                                           if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else
-                                                           Nothing
-         _                                              -> Nothing
+         (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) 
+             | i1==target e1 && i2==source e2 -> Just (i1, Nothing, i2, False)
+             | i1==target e1 && i2/=source e2 -> Just (i2, Nothing, i2, False)
+             | i1/=target e1 && i2==source e2 -> Just (i1, Nothing, i1, False)
+             | otherwise                      -> Nothing
+         (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) 
+             | i==target e1                   -> Just (s,d,t,isFlipped)
+             | i/=target e1 && s==target e1   -> Just (i,d,t,isFlipped)
+             | otherwise                      -> Nothing
+         (Just (s,d,t,isFlipped), Just (i,Nothing,_,_))
+             | i==source e2                   -> Just (s,d,t,isFlipped)
+             | i/=source e2 && t==source e2   -> Just (s,d,i,isFlipped)
+             | otherwise                      -> Nothing
+         _                                    -> Nothing
     getRelation (EFlp e)
      = case getRelation e of
          Just (s,d,t,isFlipped) -> Just (t,d,s,not isFlipped)
@@ -869,7 +777,7 @@ instance Hashable A_Concept where
   hashWithSalt s cpt =
      s `hashWithSalt` (case cpt of
                         PlainConcept{} -> (0::Int) `hashWithSalt` cpthash cpt
-                        ONE            -> (1::Int)
+                        ONE            -> 1::Int
                       )
 instance Named A_Concept where
   name PlainConcept{cptnm = nm} = unpack nm
@@ -1053,14 +961,13 @@ unsafePAtomVal2AtomValue' typ mCpt pav
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> Right (AAVDate {aavtyp = typ
-                                                ,aadateDay = addDays (floor d) dayZeroExcel
-                                                })
-             DateTime         -> Right (AAVDateTime {aavtyp = typ
-                                                    ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
-                                                                          (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
-
-                                                })
+             Date             -> Right AAVDate {aavtyp = typ
+                                               ,aadateDay = addDays (floor d) dayZeroExcel
+                                               }
+             DateTime         -> Right AAVDateTime {aavtyp = typ
+                                                   ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
+                                                                         (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
+                                                   }
                                      where picosecondsPerDay = 24*60*60*1000000000000
                                            (daysSinceZero, fractionOfDay) = properFraction d
              Boolean          -> message d

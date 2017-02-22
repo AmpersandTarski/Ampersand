@@ -6,11 +6,12 @@ where
 import Ampersand.ADL1.Disambiguate
 import Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
 import Ampersand.Input.ADL1.CtxError
+import Ampersand.Core.A2P_Converters
 import Ampersand.ADL1.Lattices -- used for type-checking
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Classes.ViewPoint
 import Ampersand.Classes.ConceptStructure
-import Ampersand.FSpec.ToFSpec.Populated
+import Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
 import Ampersand.Basics
 import Ampersand.Misc
 import Control.Monad (join,unless)
@@ -210,7 +211,7 @@ pCtx2aCtx :: Options -> P_Context -> Guarded A_Context
 pCtx2aCtx opts
  PCtx { ctx_nm     = n1
       , ctx_pos    = n2
-      , ctx_lang   = lang
+      , ctx_lang   = ctxmLang
       , ctx_markup = pandocf
       , ctx_thms   = p_themes 
       , ctx_pats   = p_patterns
@@ -285,7 +286,7 @@ pCtx2aCtx opts
   where
     concGroups = (\x -> trace (show x) x) $
                  getGroups genLatticeIncomplete :: [[Type]]
-    deflangCtxt = lang -- take the default language from the top-level context
+    deflangCtxt = fromMaybe English $ ctxmLang `orElse` language opts
     deffrmtCtxt = fromMaybe ReST pandocf
     
     allGens = p_gens ++ concatMap pt_gns p_patterns
@@ -403,8 +404,8 @@ pCtx2aCtx opts
                ]
       where
         gen_generics :: P_Gen -> [P_Concept]
-        gen_generics (P_Cy {gen_rhs=x}) = x
-        gen_generics (PGen {gen_gen=x,gen_spc=y}) = [x,y]
+        gen_generics P_Cy{gen_rhs = x} = x
+        gen_generics PGen{gen_gen = x, gen_spc = y} = [x,y]
 
     completeRules = genRules ++
                [ ( Set.singleton (userConcept cpt), Set.fromList [BuiltIn (reprdom x), userConcept cpt] )
@@ -516,8 +517,8 @@ pCtx2aCtx opts
                         _ -> namedRel2Decl declMap nmdr
                       
                aps' <- traverse (pAtomPair2aAtomPair contextInfo dcl) aps
-               src' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric pop dcl Src . userConcept) src
-               tgt' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric pop dcl Tgt . userConcept) tgt
+               src' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric (origin pop) dcl Src . userConcept) src
+               tgt' <- maybeOverGuarded ((getAsConcept (origin pop) =<<) . isMoreGeneric (origin pop) dcl Tgt . userConcept) tgt
                return ARelPopu { popdcl = dcl
                                , popps  = aps'
                                , popsrc = fromMaybe (source dcl) src'
@@ -530,7 +531,7 @@ pCtx2aCtx opts
                           , popas  = vals
                           }
               ) <$> traverse (pAtomValue2aAtomValue contextInfo cpt) (p_popas pop)
-    -- isMoreGeneric :: a2 -> t -> SrcOrTgt -> Type -> Guarded Type
+    isMoreGeneric :: Origin -> Declaration -> SrcOrTgt -> Type -> Guarded Type
     isMoreGeneric o dcl sourceOrTarget givenType
      = if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
        then pure givenType
@@ -595,7 +596,7 @@ pCtx2aCtx opts
               P_ViewExp term -> 
                  do (viewExpr,(srcBounded,_)) <- typecheckTerm term
                     case userList$toList$ findExact genLattice (flType$ lMeet c (source viewExpr)) of
-                       [] -> mustBeOrdered o o (Src, source viewExpr, viewExpr)
+                       [] -> mustBeOrdered (origin o) o (Src, source viewExpr, viewExpr)
                        r  -> if srcBounded || c `elem` r then pure (ViewExp (addEpsilonLeft (head r) viewExpr))
                              else mustBeBound (origin seg) [(Tgt,viewExpr)]
               P_ViewText str -> pure$ ViewText str
@@ -710,7 +711,7 @@ pCtx2aCtx opts
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
                 case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objctx $ ojd)) of
-                    [] -> mustBeOrderedLst x [(source (objctx ojd),Src, ojd)]
+                    [] -> mustBeOrderedLst x [(source (objctx ojd),Src, aObjectDef2pObjectDef ojd)]
                     (r:_) -> pure (ojd{objctx=addEpsilonLeft r (objctx ojd)})
               else mustBeBound (origin ojd) [(Src,objctx ojd),(Tgt,objExpr)]
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
@@ -852,7 +853,6 @@ pCtx2aCtx opts
         = (\ obj'
              -> Ifc { ifcRoles = rols
                     , ifcObj = obj'
-                    , ifcEcas = []      -- to be enriched in Adl2fSpec with ECA-rules
                     , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
                     , ifcPos = orig
                     , ifcPrp = prp
@@ -997,17 +997,17 @@ pMean2aMean defLanguage defFormat pmeanings
  = AMeaning [ pMarkup2aMarkup defLanguage defFormat pmarkup | PMeaning pmarkup <-pmeanings ]
 pMess2aMess :: Lang           -- The default language
             -> PandocFormat   -- The default pandocFormat
-            -> PMessage -> A_Markup
+            -> PMessage -> Markup
 pMess2aMess defLanguage defFormat (PMessage x) = pMarkup2aMarkup defLanguage defFormat x
 pMarkup2aMarkup :: Lang           -- The default language
                 -> PandocFormat   -- The default pandocFormat
-                -> P_Markup -> A_Markup
+                -> P_Markup -> Markup
 pMarkup2aMarkup defLanguage defFormat
    P_Markup  { mLang   = ml
              , mFormat = mpdf
              , mString = str
              }
- = A_Markup { amLang = fromMaybe defLanguage ml -- The language is always defined; if not by the user, then by default.
+ = Markup { amLang = fromMaybe defLanguage ml -- The language is always defined; if not by the user, then by default.
             , amPandoc = string2Blocks fmt str
             }
      where
@@ -1070,3 +1070,8 @@ getConcept Src = aConcToType . source
 getConcept Tgt = aConcToType . target
 
 
+-- | Left-biased choice on maybes
+orElse :: Maybe a -> Maybe a -> Maybe a
+x `orElse` y = case x of
+                 Just _  -> x
+                 Nothing -> y

@@ -4,7 +4,7 @@ PURPOSE PATTERN Hello
 {+
 This pattern is a very small, but demonstrative Ampersand script.
 It contains one relation, one rule and three interfaces.
--}
++}
 
 PATTERN Hello
 

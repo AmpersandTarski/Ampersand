@@ -29,7 +29,7 @@ I want to introduce a new pair, which has signature [G*G] in the general case.
 However, if the right atom's name is 'Peter', I want that atom to be of type B instead of G.
 At the same time, the left atom must be specialized to A. I.e. I want the left atom to be of type A instead of G.
 This demonstrates that the left atom can be specialized dynamically.
--}
++}
 
 PURPOSE INTERFACE Gs
 {+Here is an experiment you can do.
@@ -37,7 +37,7 @@ PURPOSE INTERFACE Gs
 2. Notice that pair (1,1) is in relation s. This means that 1 has been specialized to A and B by the execengine.
 3. Now insert pair (1,3) into relation r. Study the results and verify that atom 3 is not a B but a G.
 4. Now insert pair (1,3) into relation s. Study the results and verify that atom 3 is both A and B .
--}
++}
 INTERFACE Gs : V[SESSION*G]
 BOX [ name : name
     , r : r

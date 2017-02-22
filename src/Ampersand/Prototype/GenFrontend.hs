@@ -12,9 +12,12 @@ import Text.StringTemplate
 import Text.StringTemplate.GenericStandard () -- only import instances
 import Ampersand.Basics
 import Ampersand.Classes.Relational
+import Ampersand.Core.ParseTree
+     ( Role, ViewHtmlTemplate(ViewHtmlTemplateFile)
+     )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ShowADL
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.Misc
 import qualified Ampersand.Misc.Options as Opts
@@ -62,14 +65,11 @@ data FileOrDir = File | Dir deriving Show
 -- Files/directories that will be copied to the prototype, if present in $adlSourceDir/includes/
 allowedIncludeSubDirs :: [Include]
 allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
-                        , Include Dir  "views"             "app/views"
-                        , Include Dir  "controllers"       "app/controllers"
-                        , Include Dir  "css"               "app/css"
-                        , Include Dir  "js"                "app/js"
-                        , Include Dir  "lib"               "app/lib"
-                        , Include Dir  "images"            "app/images"
+                        , Include Dir  "app"               "app"
                         , Include Dir  "extensions"        "extensions"
                         , Include File "localSettings.php" "localSettings.php"
+                        , Include File "composer.json"     "composer.json"
+                        , Include File "composer.local.json" "composer.local.json"
                         ]
 
 getTemplateDir :: FSpec -> String
@@ -95,13 +95,14 @@ clearTemplateDirs fSpec = mapM_ emptyDir ["views", "controllers"]
 
 doGenFrontend :: FSpec -> IO ()
 doGenFrontend fSpec =
- do { putStr "Generating frontend.." 
+ do { putStr "Generating frontend..\n" 
     ; copyIncludes fSpec
     ; feInterfaces <- buildInterfaces fSpec
     ; genViewInterfaces fSpec feInterfaces
     ; genControllerInterfaces fSpec feInterfaces
     ; genRouteProvider fSpec feInterfaces
-    ; putStrLn "frontend generated."
+    ; copyCustomizations fSpec
+    ; putStrLn "Frontend generated.\n"
     }
 
 copyIncludes :: FSpec -> IO ()
@@ -127,7 +128,7 @@ copyIncludes fSpec =
                       
           ; let ignoredPaths = includeDirContents \\ map includeSrc absIncludes
           ; when (any (\ str -> head str /= '.') ignoredPaths) $  --filter paths starting with a dot, because on mac this is very common and it is a nuisance to avoid (see issue #
-             do { putStrLn $ "\nWARNING: only the following include/ paths are allowed:\n  " ++ show (map includeSrc allowedIncludeSubDirs) ++ "\n"
+             do { putStrLn $ "\nWARNING: only the following include paths are allowed:\n  " ++ show (map includeSrc allowedIncludeSubDirs) ++ "\n"
                 ; mapM_ (\d -> putStrLn $ "  Ignored " ++ d) ignoredPaths
                 }
           }
@@ -136,17 +137,25 @@ copyIncludes fSpec =
     } 
   where copyInclude :: Include -> IO()
         copyInclude incl =
-          do { verboseLn (getOpts fSpec) $ 
-                          "  Copying " ++ (case fileOrDir incl of 
-                                             File -> "file"
-                                             Dir  -> "directory"
-                                          )++ " " ++ includeSrc incl ++ "\n    -> " ++ includeTgt incl
-             ; case fileOrDir incl of
-                 File -> copyDeepFile (includeSrc incl) (includeTgt incl)
-                 Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl)
-             }
------- Build intermediate data structure
+          case fileOrDir incl of
+            File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
+            Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
+          
+copyCustomizations :: FSpec -> IO ()
+copyCustomizations fSpec =
+ do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
+          custDir = adlSourceDir </> "customizations"
+          protoDir = Opts.dirPrototype (getOpts fSpec)
+    ; custDirExists <- doesDirectoryExist custDir
+    ; if custDirExists then
+        do { verboseLn (getOpts fSpec) $ "Copying customizations from " ++ custDir ++ " -> " ++ protoDir
+           ; copyDirRecursively custDir protoDir (getOpts fSpec) -- recursively copy all includes
+           }
+      else
+        verboseLn (getOpts fSpec) $ "No customizations (there is no directory " ++ custDir ++ ")"
+    }
 
+------ Build intermediate data structure
 -- NOTE: _ disables 'not used' warning for fields
 data FEInterface = FEInterface { ifcName :: String
                                , ifcLabel :: String
@@ -319,14 +328,14 @@ genViewInterface fSpec interf =
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "interfaceName"       (ifcName  interf)
                      . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"              (showADL . _ifcExp $ interf)
+                     . setAttribute "expAdl"              (showA . _ifcExp $ interf)
                      . setAttribute "source"              (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"              (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "crudC"               (objCrudC (_ifcObj interf))
                      . setAttribute "crudR"               (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"               (objCrudD (_ifcObj interf))
-                     . setAttribute "contents"            (intercalate "\n"$ lns) -- intercalate, because unlines introduces a trailing \n
+                     . setAttribute "contents"            (intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
                      . setAttribute "verbose"             (verboseP opts)
 
     ; let filename = ifcName interf ++ ".html" 
@@ -347,7 +356,7 @@ genViewObject fSpec depth obj =
                         . setAttribute "exprIsTot"  (exprIsTot obj)
                         . setAttribute "name"       (escapeIdentifier . objName $ obj)
                         . setAttribute "label"      (objName obj) -- no escaping for labels in templates needed
-                        . setAttribute "expAdl"     (showADL . objExp $ obj) 
+                        . setAttribute "expAdl"     (showA . objExp $ obj) 
                         . setAttribute "source"     (escapeIdentifier . name . objSource $ obj)
                         . setAttribute "target"     (escapeIdentifier . name . objTarget $ obj)
                         . setAttribute "crudC"      (objCrudC obj)
@@ -438,7 +447,7 @@ genControllerInterface fSpec interf =
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (ifcName interf)
                      . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
+                     . setAttribute "expAdl"                   (showA . _ifcExp $ interf)
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "crudC"                    (objCrudC (_ifcObj interf))

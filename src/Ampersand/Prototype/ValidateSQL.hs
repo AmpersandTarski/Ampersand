@@ -2,28 +2,27 @@ module Ampersand.Prototype.ValidateSQL (validateRulesSQL) where
 
 import Prelude hiding (exp,putStrLn,putStr)
 import Data.List
-import Control.Monad
 import System.IO (hSetBuffering,stdout,BufferMode(NoBuffering))
 import Ampersand.Basics
+import Ampersand.Misc
 import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Prototype.PHP(createTablesPHP,populateTablesPHP,evaluateExpSQL,executePHPStr,sqlServerConnectPHP,createTempDbPHP,showPHP)
+import Ampersand.Core.ShowAStruct
+import Ampersand.Prototype.PHP
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
 with the results from Haskell-based Ampersand rule evaluator. The latter is much simpler and
 therefore most likely to be correct in case of discrepancies.
 -}
 
-tempDbName :: String
-tempDbName = "ampersand_temporaryvalidationdb"
-
-validateRulesSQL :: FSpec -> IO Bool
+validateRulesSQL :: FSpec -> IO [String]
 validateRulesSQL fSpec =
- do { when (any (not.isSignal.fst) (allViolations fSpec))
-           (exitWith ViolationsInDatabase)
+ do { case filter (not . isSignal . fst) (allViolations fSpec) of
+         []    -> return()
+         viols -> exitWith . ViolationsInDatabase . map stringify $ viols
     ; hSetBuffering stdout NoBuffering
 
-    ; putStrLn "Initializing temporary database (this could take a while)"
+    ; verboseLn (getOpts fSpec)  "Initializing temporary database (this could take a while)"
     ; createTempDatabase fSpec
 
     ; let allExps = getAllInterfaceExps fSpec ++
@@ -32,22 +31,22 @@ validateRulesSQL fSpec =
                     getAllIdExps fSpec ++
                     getAllViewExps fSpec
 
-    ; putStrLn $ "Number of expressions to be validated: "++show (length allExps)
+    ; verboseLn (getOpts fSpec)  $ "Number of expressions to be validated: "++show (length allExps)
     ; results <- mapM (validateExp fSpec) allExps
 
---    ; putStrLn "\nRemoving temporary database"
---    ; removeTempDatabase (getOpts fSpec)
-
     ; case [ ve | (ve, False) <- results] of
-        [] -> do { putStrLn "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
-                 ; return True
+        [] -> do { verboseLn (getOpts fSpec) "\nValidation successful.\nWith the provided populations, all generated SQL code has passed validation."
+                 ; return []
                  }
-        ves -> do { putStrLn ( "\n\nValidation error. The following expressions failed validation:\n" ++
-                               unlines (map showVExp ves)
-                             )
-                  ; return False
-                  }
+        ves -> return $ "Validation error. The following expressions failed validation:"
+                      : map showVExp ves
+                             
+               
     }
+stringify :: (Rule,[AAtomPair]) -> (String,[String])
+stringify (rule,pairs) = (name rule, map f pairs )
+  where f pair = "("++showValADL (apLeft pair)++", "++showValADL (apRight pair)++")"
+
 
 -- functions for extracting all expressions from the context
 
@@ -81,8 +80,8 @@ getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
 type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we
 -- obtained it from (e.g. rule/interface/..)
-showVExp :: ShowADL a => (a, String) -> String
-showVExp (exp, orig) = "Origin: "++orig++", expression: "++showADL exp
+showVExp :: (Expression, String) -> String
+showVExp (exp, orig) = "Origin: "++orig++", expression: "++showA exp
 
 -- validate a single expression and report the results
 validateExp :: FSpec -> ValidationExp -> IO (ValidationExp, Bool)
@@ -91,7 +90,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
     ; return (vExp, True)
     }
 validateExp fSpec vExp@(exp, orig) =
- do { violationsSQL <- evaluateExpSQL fSpec tempDbName $ exp
+ do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) exp
     ; let violationsAmp = [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- pairsInExpr fSpec exp]
     ; if sort violationsSQL == sort violationsAmp
       then
@@ -99,22 +98,16 @@ validateExp fSpec vExp@(exp, orig) =
           ; return (vExp, True)
           }
       else
-       do { putStrLn $ "\nChecking "++orig ++": expression = "++showADL exp
-          ; putStrLn "\nMismatch between SQL and Ampersand"
+       do { putStrLn ""
+          ; putStrLn $ "Checking "++orig ++": expression = "++showA exp
+          ; putStrLn ""
+          ; putStrLn "Mismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
-          ; putStrLn $ "SQL violations:\n"++show violationsSQL
-          ; putStrLn $ "Ampersand violations:\n" ++ show violationsAmp
+          ; putStrLn "SQL violations:"
+          ; print violationsSQL
+          ; putStrLn "Ampersand violations:"
+          ; print violationsAmp
           ; return (vExp, False)
           }
     }
 
-createTempDatabase :: FSpec -> IO ()
-createTempDatabase fSpec =
- do { _ <- executePHPStr (getOpts fSpec) .
-                                     showPHP $ sqlServerConnectPHP fSpec ++
-                                     createTempDbPHP tempDbName ++
-                                     createTablesPHP fSpec ++
-                                     populateTablesPHP fSpec
-    ; return ()
-    }
- 

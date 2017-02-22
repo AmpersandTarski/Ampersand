@@ -212,11 +212,38 @@ function DelAtom($concept, $atomId){
     if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function DelAtom(): ".func_num_args()." arguments", 500);
 	try{		
 		$atom = new Atom($atomId, Concept::getConceptByLabel($concept));
-		$atom->deleteAtom(); // delete atom + all relations with other atoms
+		$atom->deleteAtom(); // delete atom + all pairs shared with other atoms
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom}' deleted");
 	
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('DelAtom: ' . $e->getMessage());
+	}
+	
+}
+
+/* 
+	ROLE ExecEngine MAINTAINS "Person" -- unify two atoms
+	RULE Person : name;name~ |- I
+    VIOLATION (TXT "{EX} MrgAtoms;Person;", SRC I, TXT ";Person;", TGT I )
+	 * Parameters
+	 * @param Concept $conceptA   -- The most specific concept A such that $srcAtomId pop A
+	 * @param Atom $srcAtomId     -- The atom to be made equal to $tgtAtomId
+	 * @param Concept $conceptB   -- The most specific concept B such that $tgtAtomId pop B
+	 * @param Atom $tgtAtomId     -- The atom to be made equal to $srcAtomId
+	 * @return void
+*/
+// Use: VIOLATION (TXT "{EX} MrgAtoms;<conceptA>;", SRC I, TXT ";<conceptB>;", TGT I )
+function MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId){
+	Logger::getLogger('EXECENGINE')->info("MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId)");
+    if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function MrgAtoms(): ".func_num_args()." arguments", 500);
+	try{		
+		$srcAtom = new Atom($srcAtomId, Concept::getConceptByLabel($conceptA));
+		$tgtAtom = new Atom($tgtAtomId, Concept::getConceptByLabel($conceptB));
+		$srcAtom->unionWithAtom($tgtAtom); // union of two records plus substitution in all occurences in binary relations.
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$tgtAtom}' unified with '{$srcAtom}' and then deleted");
+	
+	}catch(Exception $e){
+		Logger::getUserLogger()->error('MrgAtoms: ' . $e->getMessage());
 	}
 	
 }
@@ -261,6 +288,53 @@ function ClearConcept($concept, $atom){
 
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('ClearConcept: ' . $e->getMessage());
+	}
+}
+
+
+/**************************************************************
+ * Conditional variants of the above functions
+ *************************************************************/
+ 
+// SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
+function InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool){
+	Logger::getLogger('EXECENGINE')->info("InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool)");
+    
+	try{
+        if(func_num_args() != 6) throw new Exception("Wrong number of arguments supplied for function SetConceptCond(): ".func_num_args()." arguments", 500);
+        
+        // Skip when $bool evaluates to false or equals '_NULL'. 
+        // _Null is the exec-engine special for zero results from Ampersand expression
+        if(filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === false || $bool === '_NULL'){
+            Logger::getLogger('EXECENGINE')->debug("InsPairCond skipped because bool evaluation results in false");
+            return;
+        }
+        
+        InsPair($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom);
+	
+	}catch(Exception $e){
+		Logger::getUserLogger()->error('InsPairCond: ' . $e->getMessage());
+	}
+}
+
+// SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
+function SetConceptCond($conceptA, $conceptB, $atom, $bool){
+	Logger::getLogger('EXECENGINE')->info("SetConceptCond($conceptA, $conceptB, $atom, $bool)");
+    
+	try{
+        if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function SetConceptCond(): ".func_num_args()." arguments", 500);
+        
+        // Skip when $bool evaluates to false or equals '_NULL'. 
+        // _Null is the exec-engine special for zero results from Ampersand expression
+        if(filter_var($bool, FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE) === false || $bool === '_NULL'){
+            Logger::getLogger('EXECENGINE')->debug("SetConcept skipped because bool evaluation results in false");
+            return;
+        }
+        
+        SetConcept($conceptA, $conceptB, $atom);
+	
+	}catch(Exception $e){
+		Logger::getUserLogger()->error('SetConceptCond: ' . $e->getMessage());
 	}
 }
 ?>

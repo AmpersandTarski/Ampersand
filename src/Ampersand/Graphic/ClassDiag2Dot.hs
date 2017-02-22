@@ -23,18 +23,18 @@ classdiagram2dot opts cd
             , graphID         = Nothing
             , graphStatements = 
                     DotStmts
-                        { attrStmts =  [ GraphAttrs [ RankDir FromLeft
-                                                    , bgColor White]
-                                       ]
+                        { attrStmts =  GraphAttrs [ RankDir FromLeft
+                                                  , bgColor White]
+                                       :
                                 --    ++ [NodeAttrs  [ ]]
-                                    ++ [EdgeAttrs  [ FontSize 11
+                                       [EdgeAttrs  [ FontSize 11
                                                    , MinLen 4
                                        ]           ]
                         , subGraphs = []
                         , nodeStmts = allNodes (classes cd) (nodes cd >- nodes (classes cd))
-                        , edgeStmts = (map association2edge (assocs cd))  ++
-                                      (map aggregation2edge (aggrs cd))  ++
-                                      (concatMap generalization2edges (geners cd))
+                        , edgeStmts = map association2edge (assocs cd)  ++
+                                      map aggregation2edge (aggrs cd)  ++
+                                      concatMap generalization2edges (geners cd)
                         }
             }
      where
@@ -124,7 +124,7 @@ classdiagram2dot opts cd
                                      , Label     (StrLabel (fromString (assrhr ass)))
                                      , LabelFloat True
                                      ]
-                                   ++[(TailPort (LabelledPort (PN ((fromString.assSrcPort) ass)) Nothing))]
+                                   ++[ TailPort (LabelledPort (PN ((fromString.assSrcPort) ass)) Nothing)]
                   }
            where
               mult2Lable = StrLabel . fromString . mult2Str
@@ -170,7 +170,7 @@ classdiagram2dot opts cd
              | (spec,gener)<-splits gen]
           splits gen = case gen of
                                Isa{} -> [(genspc gen, gengen gen)]
-                               IsE{} -> [(genspc gen, x ) | x<-(genrhs gen)]
+                               IsE{} -> [(genspc gen, x ) | x<-genrhs gen]
 
 
 

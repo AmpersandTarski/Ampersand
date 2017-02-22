@@ -1,27 +1,32 @@
 CONTEXT RAP IN ENGLISH
 PURPOSE PATTERN Documentation
 {+
--}
++}
 PATTERN Documentation
-    RELATION purpose[Pattern*Purpose] [INJ]
-    MEANING "The purposes of a pattern."
-    RELATION propertyRule[Relation*PropertyRule] [INJ,SUR]
-    MEANING "The properties of a relation."
+    REPRESENT ConceptDefinition TYPE BIGALPHANUMERIC
+
+    REPRESENT Purpose TYPE BIGALPHANUMERIC
+    REPRESENT Meaning TYPE BIGALPHANUMERIC
+
+    RELATION meaning[Rule*Meaning] -- e.g. 'bfOUprop[BusinessFunction] is antisymmetric'
+    MEANING "The meanings of a relation."
     RELATION decmean[Relation * Meaning]
     MEANING "The meanings of a relation."
-    RELATION purpose[Relation * Purpose] [INJ]
+    RELATION purpose[Pattern*Purpose]
+    MEANING "The purposes of a pattern."
+    RELATION purpose[Relation * Purpose]
     MEANING "The purposes of a relation."
     RELATION meaning[Rule * Meaning]
     MEANING "The meanings of a rule."
-    RELATION purpose[Rule * Purpose] [INJ]
+    RELATION purpose[Rule * Purpose]
     MEANING "The purposes of a rule."
-    RELATION purpose[Identity * Purpose] [INJ]
+    RELATION purpose[Identity * Purpose]
     MEANING "The purposes of an identity."
-    RELATION purpose[View * Purpose] [INJ]
+    RELATION purpose[View * Purpose]
     MEANING "The purposes of a view."
-    RELATION purpose[Concept * Purpose] [INJ]
+    RELATION purpose[Concept * Purpose]
     MEANING "The purposes of a concept."
-    RELATION purpose[Interface * Purpose] [INJ]
+    RELATION purpose[Interface * Purpose]
     MEANING "The purposes of an interface."
     RELATION purpose[Context * Purpose] [{-This is currently *NOT* INJ, see issue https://github.com/AmpersandTarski/Ampersand/issues/46 -}]
     MEANING "The purposes of a context."

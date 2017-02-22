@@ -1,8 +1,16 @@
 # This file is based on the travis.yml file of stack. 
 # (https://github.com/commercialhaskell/stack/blob/master/.travis.yml)
 #
-language: php
-sudo: true
+dist: trusty
+sudo: required
+#addons:
+#  mariadb: '10.0'
+#  apt:
+#    packages:
+#    - mysql-server-5.6
+#    - mysql-client-core-5.6
+#    - mysql-client-5.6
+
 
 cache:
     directories:
@@ -10,8 +18,6 @@ cache:
         - $HOME/.cabal
         - $HOME/.stack
 
-services:
-  - mysql
 
 # The different configurations we want to test. We have BUILD=cabal which uses
 # cabal-install, and BUILD=stack which uses Stack. More documentation on each
@@ -29,7 +35,12 @@ matrix:
   # variable, such as using --stack-yaml to point to a different file.
   - env: BUILD=stack ARGS=""
     compiler: ": #stack 8.0.1"
-    addons: {apt: {packages: [ghc-8.0.1], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ ghc-8.0.1
+                             , mysql-server-5.6
+                             , mysql-client-core-5.6
+                             , mysql-client-5.6
+                             ] 
+                  ,sources: [hvr-ghc]}}
   - env: BUILD=stack ARGS="" osx
     compiler: ": #stack 8.0.1"
     os: osx
@@ -39,16 +50,35 @@ matrix:
   # https://github.com/hvr/multi-ghc-travis
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24
     compiler: ": #GHC 8.0.1"
-    addons: {apt: {packages: [cabal-install-1.24,ghc-8.0.1], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ cabal-install-1.24
+                             , ghc-8.0.1
+                             , mysql-server-5.6
+                             , mysql-client-core-5.6
+                             , mysql-client-5.6
+                             ] 
+                  ,sources: [hvr-ghc]}}
   - env: BUILD=cabal GHCVER=8.0.1 CABALVER=1.24 osx
     compiler: ": #GHC 8.0.1"
+    addons: {apt: {packages: [ cabal-install-1.24
+                             , ghc-8.0.1
+                             , mysql-server-5.6
+                             , mysql-client-core-5.6
+                             , mysql-client-5.6
+                             ] 
+                  ,sources: [hvr-ghc]}}
     os: osx
 
   # Build with the newest GHC and cabal-install. This is an accepted failure,
   # see below.
   - env: BUILD=cabal GHCVER=head  CABALVER=head
     compiler: ": #GHC HEAD"
-    addons: {apt: {packages: [cabal-install-head,ghc-head], sources: [hvr-ghc]}}
+    addons: {apt: {packages: [ cabal-install-head
+                             , ghc-head
+                             , mysql-server-5.6
+                             , mysql-client-core-5.6
+                             , mysql-client-5.6
+                             ] 
+                  ,sources: [hvr-ghc]}}
   # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"

@@ -4,11 +4,13 @@ import Prelude
 import Data.Char
 import Data.List
 import Data.Maybe
-import Text.Pandoc
 import Data.Text (pack)
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.ParseTree
+     ( Role
+     )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc
@@ -16,7 +18,8 @@ import Ampersand.FSpec.Crud
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms 
-import Ampersand.FSpec.ShowADL
+import Ampersand.FSpec.ToFSpec.Populated 
+import Ampersand.Core.ShowAStruct
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
@@ -42,25 +45,15 @@ makeFSpec opts context
                                     , isIdent ctxrel && source ctxrel==ONE
                                       || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
-              , fSwitchboard
-                  = Fswtch
-                           { fsbEvIn  = nub (map ecaTriggr allVecas) -- eventsIn
-                           , fsbEvOut = nub [evt | eca<-allVecas, evt<-eventsFrom (ecaAction eca)] -- eventsOut
-                           , fsbConjs = nub [ (qRule q, rc_conjunct x) | q <- filter (not . isSignal . qRule) allQuads
-                                                                       , x <- qConjuncts q]
-                           , fsbECAs  = allVecas
-                           }
-
               , fDeriveProofs = deriveProofs opts context 
-              , fActivities  = allActivities
-              , fRoleRels    = nub [(role,decl) -- fRoleRels says which roles may change the population of which relation.
+              , fRoleRels    = nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
                                    | rr <- ctxRRels context
                                    , decl <- rrRels rr
-                                   , role <- rrRoles rr
+                                   , role' <- rrRoles rr
                                    ] 
-              , fRoleRuls    = nub [(role,rule)   -- fRoleRuls says which roles maintain which rules.
+              , fRoleRuls    = nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- allrules
-                                   , role <- maintainersOf rule
+                                   , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
               , fRoles       = zip ((sort . nub) (concatMap arRoles (ctxrrules context)++
@@ -78,11 +71,10 @@ makeFSpec opts context
               , allConjsPerDecl = fSpecAllConjsPerDecl
               , allConjsPerConcept = fSpecAllConjsPerConcept
               , vquads       = allQuads
-              , vEcas        = allVecas
               , allUsedDecls = relsUsedIn context
               , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
-              , cptTType     = (\cpt -> representationOf contextinfo cpt)
+              , cptTType     = representationOf contextinfo
               , fsisa        = nub . concatMap genericAndSpecifics . gens $ context
               , vpatterns    = patterns context
               , vgens        = gens context
@@ -124,9 +116,9 @@ makeFSpec opts context
      handleType :: A_Concept -> A_Concept -> Expression
      handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
      fMaintains' :: Role -> [Rule]
-     fMaintains' role = nub [ rule 
+     fMaintains' role' = nub [ rule 
                             | rule <- allrules
-                            , role `elem` maintainersOf rule
+                            , role' `elem` maintainersOf rule
                             ]
      typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
@@ -151,17 +143,16 @@ makeFSpec opts context
        where
           enrichIfc :: Interface -> Interface
           enrichIfc ifc
-           = ifc{ ifcEcas = fst . assembleECAs opts context $ []
-                , ifcControls = makeIfcControls [] allConjs
+           = ifc{ ifcControls = makeIfcControls [] allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
-     fSpecRoleInterfaces role = filter (forThisRole role) fSpecAllInterfaces
+     fSpecRoleInterfaces role' = filter (forThisRole role') fSpecAllInterfaces
      forThisRole ::Role -> Interface -> Bool
-     forThisRole role interf = case ifcRoles interf of
+     forThisRole role' interf = case ifcRoles interf of
                                      []   -> True -- interface is for all roles
-                                     rs  -> role `elem` rs
+                                     rs  -> role' `elem` rs
      
-     themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional specification. (for making partial documentation)
+     themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
                      then map name (patterns context)
                      else ctxthms context
      pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)
@@ -206,10 +197,6 @@ makeFSpec opts context
          UserDefined  -> True
          Multiplicity -> False
          Identity     -> False
-     allActivities :: [Activity]
-     allActivities = map makeActivity (filter isSignal allrules)
-     allVecas = {-preEmpt opts . -} fst (assembleECAs opts context calculatedDecls)   -- TODO: preEmpt gives problems. Readdress the preEmption problem and redo, but properly.
-     -- | allDecs contains all user defined plus all generated relations plus all defined and computed totals.
      calcProps :: Declaration -> Declaration
      calcProps d = d{decprps_calc = Just calculated}
          where calculated = decprps d `uni` [Tot | d `elem` totals]
@@ -350,7 +337,7 @@ makeFSpec opts context
      interfaceGen = step4a ++ step4b
      step4a
       = let recur es
-             = [ Obj { objnm   = showADL t
+             = [ Obj { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objctx  = t
                      , objcrud = fatal 351 "No default crud in generated interface"
@@ -374,7 +361,6 @@ makeFSpec opts context
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
                                  }
-             , ifcEcas     = fst (assembleECAs opts context params)
              , ifcControls = makeIfcControls params allConjs
              , ifcPos      = Origin "generated interface: step 4a - default theme"
              , ifcPrp      = "Interface " ++name c++" has been generated by Ampersand."
@@ -385,7 +371,7 @@ makeFSpec opts context
         , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
         , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
           not (length objattributes==1 && isIdent(objctx(head objattributes)))
-        , let e0=head cl, if null e0 then fatal 284 "null e0" else True
+        , let e0=head cl, not (null e0) || fatal 284 "null e0"
         , let c=source (head e0)
         , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]++
                        [ Isn cpt |  EDcI cpt <- concatMap primsMentionedIn (expressionsIn objattributes)]
@@ -400,7 +386,6 @@ makeFSpec opts context
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
                                  }
-             , ifcEcas     = ifcEcas     ifcc
              , ifcControls = ifcControls ifcc
              , ifcPos      = ifcPos      ifcc
              , ifcPrp      = ifcPrp      ifcc
@@ -428,66 +413,6 @@ makeFSpec opts context
      ----------------------
      printingLanguage = fromMaybe (ctxlang context) (language opts)  -- The language for printing this specification is taken from the command line options (language opts). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
 
-        {- makeActivity turns a process rule into an activity definition.
-        Each activity can be mapped to a single interface.
-        A call to such an interface takes the population of the current context to another population,
-        while maintaining all invariants.
-        -}
-     makeActivity :: Rule -> Activity
-     makeActivity rul 
-         = -- Trace added to demonstrate that this function takes VERY long.
-           (\x -> trace ("trace: makeActivity for rule `"++name rul++"`") x) 
-           Act{ actRule   = rul
-              , actTrig   = decls
-              , actAffect = nub [ d' | (d,_,d')<-clos2 affectPairs, d `elem` decls]
-              , actQuads  = invQs
-              , actEcas   = [eca | eca<-allVecas, eDcl (ecaTriggr eca) `elem` decls]
-              , actPurp   = [Expl { explPos = OriginUnknown
-                                  , explObj = ExplRule (name rul)
-                                  , explMarkup = A_Markup { amLang   = Dutch
-                                                          , amPandoc = [Plain [Str "Waartoe activiteit ", Quoted SingleQuote [Str (name rul)], Str" bestaat is niet gedocumenteerd." ]]
-                                                          }
-                                  , explUserdefd = False
-                                  , explRefIds = ["Regel "++name rul]
-                                  }
-                            ,Expl { explPos = OriginUnknown
-                                  , explObj = ExplRule (name rul)
-                                  , explMarkup = A_Markup { amLang   = English
-                                                          , amPandoc = [Plain [Str "For what purpose activity ", Quoted SingleQuote [Str (name rul)], Str" exists remains undocumented." ]]
-                                                          }
-                                  , explUserdefd = False
-                                  , explRefIds = ["Regel "++name rul]
-                                  }
-                                    ]
-              } 
-         where
-        -- relations that may be affected by an edit action within the transaction
-             decls        = relsUsedIn rul
-        -- the quads that induce automated action on an editable relation.
-        -- (A quad contains the conjunct(s) to be maintained.)
-        -- Those are the quads that originate from invariants.
-             invQs       = [q | q<-allQuads, (not.isSignal.qRule) q
-                              , (not.null) ((relsUsedIn.qRule) q `isc` decls)] -- SJ 20111201 TODO: make this selection more precise (by adding inputs and outputs to a quad).
-        -- a relation affects another if there is a quad (i.e. an automated action) that links them
-             affectPairs = [(qDcl q,[q], d) | q<-invQs, d<-(relsUsedIn.qRule) q]
-        -- the relations affected by automated action
-        --      triples     = [ (r,qs,r') | (r,qs,r')<-clos affectPairs, r `elem` rels]
-        ----------------------------------------------------
-        --  Warshall's transitive closure algorithm in Haskell, adapted to carry along the intermediate steps:
-        ----------------------------------------------------
-             clos2 :: (Ord a,Ord b) => [(a,[b],a)] -> [(a,[b],a)]     -- e.g. a list of pairs, with intermediates in between
-             clos2 xs
-               = foldl f xs (nub (map fst3 xs) `isc` nub (map thd3 xs))
-                 where
-                  f q x = q `un`
-                             [(a, qs `uni` qs', b') | (a, qs, b) <- q, b == x,
-                              (a', qs', b') <- q, a' == x]
-                  ts `un` [] = ts
-                  ts `un` ((a',qs',b'):ts')
-                   = ([(a,qs `uni` qs',b) | (a,qs,b)<-ts, a==a' && b==b']++
-                      [(a,qs,b)           | (a,qs,b)<-ts, a/=a' || b/=b']++
-                      [(a',qs',b')        | (a',b') `notElem` [(a,b) |(a,_,b)<-ts]]) `un` ts'
-        
 makeIfcControls :: [Declaration] -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs
  = [ conj 

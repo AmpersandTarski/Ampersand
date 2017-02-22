@@ -20,7 +20,7 @@ module Ampersand.Core.ParseTree (
    , P_ObjectDef, P_SubInterface, P_Interface(..), P_IClass(..), P_ObjDef(..), P_SubIfc(..)
    , P_Cruds(..)
    , P_IdentDef, P_IdentDf(..) , P_IdentSegment, P_IdentSegmnt(..)
-   , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..) {-, ViewTextTemplate-}
+   , P_ViewDef , P_ViewSegment(..), ViewHtmlTemplate(..)
    , P_ViewD(..) , P_ViewSegmtPayLoad(..)
 
    , PPurpose(..),PRef2Obj(..),PMeaning(..),PMessage(..)
@@ -29,12 +29,9 @@ module Ampersand.Core.ParseTree (
 
    , P_Gen(..)
 
-   , Lang(..)
    , P_Markup(..)
 
-   , PandocFormat(..)
-
-   , Prop(..), Props, normalizeProps
+   , Prop(..), Props
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
@@ -42,7 +39,6 @@ import Ampersand.Input.ADL1.FilePos
 import Ampersand.Basics
 import Data.Traversable
 import Data.Foldable hiding (concat)
-import Data.List (nub,intercalate)
 import Prelude hiding (foldr, sequence, foldl, concatMap)
 import Data.Typeable
 import Data.Data
@@ -56,9 +52,9 @@ import qualified Data.Set as Set
 data P_Context
    = PCtx{ ctx_nm ::     String           -- ^ The name of this context
          , ctx_pos ::    [Origin]         -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
-         , ctx_lang ::   Lang             -- ^ The default language specified on the top-level context
+         , ctx_lang ::   Maybe Lang       -- ^ The language specified on the top-level context. If omitted, English will be the default.
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-         , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional specification. (For partial documents.)
+         , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
          , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
@@ -75,7 +71,7 @@ data P_Context
          , ctx_sql ::    [P_ObjectDef]    -- ^ user defined sqlplugs, taken from the Ampersand script
          , ctx_php ::    [P_ObjectDef]    -- ^ user defined phpplugs, taken from the Ampersand script
          , ctx_metas ::  [Meta]         -- ^ generic meta information (name/value pairs) that can be used for experimenting without having to modify the adl syntax
-         } deriving (Show) --For QuickCheck error messages only!
+         } deriving Show --for QuickCheck
 
 instance Eq P_Context where
   c1 == c2  =  name c1 == name c2
@@ -85,10 +81,10 @@ instance Named P_Context where
 
 -- for declaring name/value pairs with information that is built in to the adl syntax yet
 data Meta = Meta { pos :: Origin
-                 , mtObj :: MetaObj
-                 , mtName :: String
-                 , mtVal :: String
-                 } deriving (Eq,Ord,Show)
+              , mtObj :: MetaObj
+              , mtName :: String
+              , mtVal :: String
+              } deriving (Eq,Ord,Show)
 instance Traced Meta where
   origin = pos
 data MetaObj = ContextMeta deriving (Eq,Ord,Show) -- for now, we just have meta data for the entire context
@@ -99,9 +95,6 @@ data P_RoleRelation
           , rr_Roles :: [Role]      -- ^ list of roles
           , rr_Rels :: [P_NamedRel] -- ^ list of named relations
           } deriving (Show)       -- deriving Show is just for debugging
-instance Ord P_RoleRelation where
-  compare p1 p2 = compare (origin p1) (origin p2)
-instance Eq P_RoleRelation where p1 == p2 = (compare p1 p2 == EQ)
 instance Traced P_RoleRelation where
  origin = pos
 
@@ -141,12 +134,13 @@ data P_Pattern
            , pt_xps :: [PPurpose]       -- ^ The purposes of elements defined in this pattern
            , pt_pop :: [P_Population]   -- ^ The populations that are local to this pattern
            , pt_end :: Origin           -- ^ the end position in the file in which this pattern was declared.
-           } deriving (Show) --For QuickCheck error messages only!
+           } deriving Show -- for QuickCheck
 
 instance Ord P_Pattern where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq P_Pattern where
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = name   p1 == name   p2 && 
+            origin p1 == origin p2
 instance Named P_Pattern where
  name = pt_nm
 
@@ -223,7 +217,7 @@ data P_Declaration =
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
 --   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Declarations.
 instance Eq P_Declaration where
- decl==decl' =  compare decl decl' == EQ
+ decl==decl' = compare decl decl' == EQ
 instance Prelude.Ord P_Declaration where
  compare p1 p2 
    | origin p1==OriginUnknown && origin p2==OriginUnknown = compare (name p1,dec_sign p1) (name p2,dec_sign p2)
@@ -232,13 +226,6 @@ instance Named P_Declaration where
  name = dec_nm
 instance Traced P_Declaration where
  origin = pos
-instance Flippable P_Declaration where
- flp d@P_Sgn{}
-   = d { dec_sign   = flp (dec_sign d)
-       , dec_prps   = flp (dec_prps d)
-       , dec_pragma = []
-       , dec_popu   = flp (dec_popu d)
-       }
 
 data PAtomPair
   = PPair { pos :: Origin
@@ -289,7 +276,7 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     XlsxString     _ s -> singleQuote s
     ScriptInt      _ i -> singleQuote (show i)
     ScriptFloat    _ d -> singleQuote (show d)
-    XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+    XlsxDouble     _ _ -> fatal 267 "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
     ComnBool       _ b -> singleQuote (show b)
     ScriptDate     _ x -> singleQuote (show x)
     ScriptDateTime _ x -> singleQuote (show x)
@@ -300,46 +287,29 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
      f '\'' = "\\'"
      f c    = [c]
 instance Eq PAtomValue where
-  PSingleton _ s _ == PSingleton _ s' _ = s == s'
-  PSingleton _ _ _ == _                 = False
-  ScriptString _ s == ScriptString _ s' = s == s'
-  ScriptString _ _ == _                 = False
-  XlsxString   _ s == XlsxString   _ s' = s == s'
-  XlsxString   _ _ == _                 = False
-  ScriptInt    _ i == ScriptInt    _ i' = i == i'
-  ScriptInt    _ _ == _                 = False
-  ScriptFloat  _ x == ScriptFloat  _ x' = x == x'
-  ScriptFloat  _ _ == _                 = False
-  XlsxDouble   _ d == XlsxDouble   _ d' = d == d'
-  XlsxDouble   _ _ == _                 = False
-  ScriptDate   _ d == ScriptDate   _ d' = d == d'
-  ScriptDate   _ _ == _                 = False
-  ScriptDateTime _ d == ScriptDateTime _ d' = d == d'
-  ScriptDateTime _ _ == _               = False
-  ComnBool     _ b == ComnBool     _ b' = b == b'
-  ComnBool     _ _ == _                 = False
+  a == b = compare a b == EQ
 
 instance Ord PAtomValue where
   compare a b =
    case (a,b) of
     (PSingleton  _ x _ , PSingleton   _ x' _) -> compare x x'
-    (PSingleton  _ _ _ , _                  ) -> GT
+    (PSingleton{}      , _                  ) -> GT
     (ScriptString   _ x, ScriptString   _ x') -> compare x x'
-    (ScriptString   _ _, _                  ) -> GT
+    (ScriptString{}    , _                  ) -> GT
     (XlsxString     _ x, XlsxString     _ x') -> compare x x'
-    (XlsxString     _ _, _                  ) -> GT
+    (XlsxString{}      , _                  ) -> GT
     (ScriptInt      _ x, ScriptInt      _ x') -> compare x x'
-    (ScriptInt      _ _, _                  ) -> GT
+    (ScriptInt{}       , _                  ) -> GT
     (ScriptFloat    _ x, ScriptFloat    _ x') -> compare x x'
-    (ScriptFloat    _ _, _                  ) -> GT
+    (ScriptFloat{}     , _                  ) -> GT
     (XlsxDouble     _ x, XlsxDouble     _ x') -> compare x x'
-    (XlsxDouble     _ _, _                  ) -> GT
+    (XlsxDouble{}      , _                  ) -> GT
     (ScriptDate     _ x, ScriptDate     _ x') -> compare x x'
-    (ScriptDate     _ _, _                  ) -> GT
+    (ScriptDate{}      , _                  ) -> GT
     (ScriptDateTime _ x, ScriptDateTime _ x') -> compare x x'
-    (ScriptDateTime _ _, _                  ) -> GT
+    (ScriptDateTime{}  , _                  ) -> GT
     (ComnBool       _ x, ComnBool       _ x') -> compare x x'
-    (ComnBool       _ _, _                  ) -> GT
+    (ComnBool{}        , _                  ) -> GT
 instance Traced PAtomValue where
   origin pav =
    case pav of
@@ -378,11 +348,8 @@ data TermPrim
    | PNamedR P_NamedRel
    deriving (Show) --For QuickCheck error messages only!
 
-data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
-   deriving (Ord,Show)
-
-instance Eq P_NamedRel where
-  pnr == pnr' = p_nrnm pnr == p_nrnm pnr' && p_mbSign pnr == p_mbSign pnr'
+data P_NamedRel = PNamedRel { pos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
+   deriving Show
 
 {- For whenever it may turn out to be useful
 instance Eq TermPrim where
@@ -562,7 +529,7 @@ data P_Rule a  =
 instance Ord (P_Rule a) where
   compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq (P_Rule a) where --Required for merge of P_Contexts
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
 instance Traced (P_Rule a) where
  origin = pos
 instance Functor P_Rule where fmap = fmapDefault
@@ -587,13 +554,13 @@ data P_Markup =
 data P_Population
   = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
               , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
-              , pos     :: Origin       -- the location in the source file
+              , pos  :: Origin       -- the origin
               , p_nmdr  :: P_NamedRel   -- the named relation
               , p_popps :: [PAtomPair]  -- the contents
               }
-  | P_CptPopu { pos     :: Origin       -- the location in the source file
-              , p_cnme  :: String       -- the name of a concept
-              , p_popas :: [PAtomValue] -- atoms in the initial population of that concept
+  | P_CptPopu { pos  :: Origin  -- the origin
+              , p_cnme  :: String  -- the name of a concept
+              , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
 
@@ -606,19 +573,11 @@ instance Ord P_Population where
                                                               (_,P_RelPopu{}) -> GT
    | otherwise                                            = compare (origin p1) (origin p2)
 instance Eq P_Population where --Required for merge of P_Contexts  -- see also the comment at `Eq P_Concept`
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
  
 instance Named P_Population where
  name P_RelPopu{p_nmdr = nr} = name nr
  name P_CptPopu{p_cnme = nm} = nm
-
-instance Flippable P_Population where
- flp p@P_RelPopu{}
-   = p { p_src   = p_tgt p
-       , p_tgt   = p_src p
-       , p_popps = flp (p_popps p)
-       }
- flp p = p
 
 instance Traced P_Population where
  origin = pos
@@ -634,7 +593,7 @@ data P_Interface =
 instance Ord P_Interface where --Required for merge of P_Contexts
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq P_Interface where
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
 instance Named P_Interface where
  name = ifc_Name
 
@@ -683,7 +642,8 @@ instance Named (P_IdentDf a) where
  name = ix_lbl
 instance Ord (P_IdentDf a) where
   compare p1 p2 = compare (origin p1) (origin p2)
-instance Eq (P_IdentDf a) where p1 == p2 = (compare p1 p2 == EQ)
+instance Eq (P_IdentDf a) where 
+  p1 == p2 = compare p1 p2 == EQ
 instance Traced (P_IdentDf a) where
  origin = pos
 instance Functor P_IdentDf where fmap = fmapDefault
@@ -713,7 +673,7 @@ data P_ViewD a =
 instance Ord (P_ViewD a) where
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq (P_ViewD a) where --Required for merge of P_Contexts
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
 instance Traced (P_ViewD a) where
  origin = pos
 instance Named (P_ViewD a) where
@@ -788,7 +748,7 @@ data PPurpose = PRef2 { pos :: Origin      -- the position in the Ampersand scri
 instance Ord PPurpose where --Required for merge of P_Contexts
  compare p1 p2 = compare (name p1, origin p1) (name p2,origin p2)
 instance Eq PPurpose where --Required for merge of P_Contexts
- p1 == p2 = (compare p1 p2 == EQ)
+ p1 == p2 = compare p1 p2 == EQ
 
 instance Named PPurpose where
  name pe = name (pexObj pe)
@@ -804,7 +764,7 @@ data P_Concept
 -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 
 instance Named P_Concept where
- name (PCpt {p_cptnm = nm}) = nm
+ name PCpt {p_cptnm = nm} = nm
  name P_Singleton = "ONE"
 
 instance Show P_Concept where
@@ -828,23 +788,10 @@ data P_Gen =  P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand fil
             | PGen{ pos  :: Origin         -- ^ the position of the GEN-rule
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
-                  } deriving (Eq, Ord)
-
-instance Show P_Gen where
- -- This show is used in error messages.
- showsPrec _ g = 
-   case g of
-     P_Cy{} -> showString $ "CLASSIFY "++show (gen_spc g)++" IS "++
-                  (intercalate " /\\ " . map show . gen_rhs $ g)
-     PGen{} -> showString $ "CLASSIFY "++show (gen_spc g)++" ISA "++
-                  (show . gen_gen $ g)
+                  } deriving (Show, Eq, Ord)
 
 instance Traced P_Gen where
  origin = pos
-
-data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
-
-data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
 
 type Props = [Prop]
 
@@ -882,40 +829,31 @@ instance Flippable Prop where
  flp Inj = Uni
  flp x = x
 
-normalizeProps :: [Prop] -> [Prop]
-normalizeProps = nub.conv.rep
-    where -- replace PROP by SYM, ASY
-          rep (Prop:ps) = [Sym, Asy] ++ rep ps
-          rep (p:ps) = (p:rep ps)
-          rep [] = []
-          -- add Uni and Inj if ps has neither Sym nor Asy
-          conv ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
-
 mergeContexts :: P_Context -> P_Context -> P_Context
 mergeContexts ctx1 ctx2 =
   PCtx{ ctx_nm     = case (filter (not.null) . map ctx_nm) contexts of
                         []    -> ""
                         (x:_) -> x
-      , ctx_pos    = nubSortConcatMap ctx_pos $ contexts
+      , ctx_pos    = nubSortConcatMap ctx_pos contexts
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
-      , ctx_thms   = nubSortConcatMap ctx_thms $ contexts
-      , ctx_pats   = nubSortConcatMap ctx_pats $ contexts
-      , ctx_rs     = nubSortConcatMap ctx_rs $ contexts
-      , ctx_ds     = nubSortConcatMap ctx_ds $ contexts
-      , ctx_cs     = nubSortConcatMap ctx_cs $ contexts
-      , ctx_ks     = nubSortConcatMap ctx_ks $ contexts
-      , ctx_rrules = nubSortConcatMap ctx_rrules $ contexts
-      , ctx_rrels  = nubSortConcatMap ctx_rrels $ contexts
-      , ctx_reprs  = nubSortConcatMap ctx_reprs $ contexts
-      , ctx_vs     = nubSortConcatMap ctx_vs $ contexts
-      , ctx_gs     = nubSortConcatMap ctx_gs $ contexts
-      , ctx_ifcs   = nubSortConcatMap ctx_ifcs $ contexts
-      , ctx_ps     = nubSortConcatMap ctx_ps $ contexts
-      , ctx_pops   = nubSortConcatMap ctx_pops $ contexts
-      , ctx_sql    = nubSortConcatMap ctx_sql $ contexts
-      , ctx_php    = nubSortConcatMap ctx_php $ contexts
-      , ctx_metas  = nubSortConcatMap ctx_metas $ contexts
+      , ctx_thms   = nubSortConcatMap ctx_thms contexts
+      , ctx_pats   = nubSortConcatMap ctx_pats contexts
+      , ctx_rs     = nubSortConcatMap ctx_rs contexts
+      , ctx_ds     = nubSortConcatMap ctx_ds contexts
+      , ctx_cs     = nubSortConcatMap ctx_cs contexts
+      , ctx_ks     = nubSortConcatMap ctx_ks contexts
+      , ctx_rrules = nubSortConcatMap ctx_rrules contexts
+      , ctx_rrels  =        concatMap ctx_rrels contexts
+      , ctx_reprs  = nubSortConcatMap ctx_reprs contexts
+      , ctx_vs     = nubSortConcatMap ctx_vs contexts
+      , ctx_gs     = nubSortConcatMap ctx_gs contexts
+      , ctx_ifcs   = nubSortConcatMap ctx_ifcs contexts
+      , ctx_ps     = nubSortConcatMap ctx_ps contexts
+      , ctx_pops   = nubSortConcatMap ctx_pops contexts
+      , ctx_sql    = nubSortConcatMap ctx_sql contexts
+      , ctx_php    = nubSortConcatMap ctx_php contexts
+      , ctx_metas  = nubSortConcatMap ctx_metas contexts
       }
     where contexts = [ctx1,ctx2]
 

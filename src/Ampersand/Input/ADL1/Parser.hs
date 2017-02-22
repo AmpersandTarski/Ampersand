@@ -20,23 +20,23 @@ import Prelude hiding ((<$))
 pPopulations :: AmpParser [P_Population] -- ^ The population list parser
 pPopulations = many1 pPopulation
 
---- Context ::= 'CONTEXT' ConceptName LanguageRef TextMarkup? ContextElement* 'ENDCONTEXT'
+--- Context ::= 'CONTEXT' ConceptName LanguageRef? TextMarkup? ContextElement* 'ENDCONTEXT'
 -- | Parses a context
 pContext :: AmpParser (P_Context, [Include]) -- ^ The result is the parsed context and a list of include filenames
 pContext  = rebuild <$> posOf (pKey "CONTEXT")
                     <*> pConceptName
-                    <*> pLanguageRef
+                    <*> pMaybe pLanguageRef
                     <*> pMaybe pTextMarkup
                     <*> many pContextElement
                     <*  pKey "ENDCONTEXT"
   where
-    rebuild :: Origin -> String -> Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
+    rebuild :: Origin -> String -> Maybe Lang -> Maybe PandocFormat -> [ContextElement] -> (P_Context, [Include])
     rebuild    pos'      nm        lang          fmt                   ces
      = (PCtx{ ctx_nm     = nm
             , ctx_pos    = [pos']
             , ctx_lang   = lang
             , ctx_markup = fmt
-            , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns to be printed in the functional specification. (For partial documents.)
+            , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns to be printed in the functional design document. (For partial documents.)
             , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
             , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
             , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
@@ -97,7 +97,7 @@ data ContextElement = CMeta Meta
                     | CPhpPlug P_ObjectDef
                     | CPrp PPurpose
                     | CPop P_Population
-                    | CThm [String]    -- a list of themes to be printed in the functional specification. These themes must be PATTERN or PROCESS names.
+                    | CThm [String]    -- a list of themes to be printed in the functional design document. These themes must be PATTERN or PROCESS names.
                     | CIncl Include    -- an INCLUDE statement
 
 data Include = Include Origin FilePath
@@ -269,6 +269,15 @@ pProps  = normalizeProps <$> pBrackets (pProp `sepBy` pComma)
         --- Prop ::= 'UNI' | 'INJ' | 'SUR' | 'TOT' | 'SYM' | 'ASY' | 'TRN' | 'RFX' | 'IRF' | 'PROP'
   where pProp :: AmpParser Prop
         pProp = choice [ p <$ pKey (show p) | p <- [minBound..] ]
+        normalizeProps :: [Prop] -> [Prop]
+        normalizeProps = nub.conv.rep
+            where -- replace PROP by SYM, ASY
+                  rep (Prop:ps) = [Sym, Asy] ++ rep ps
+                  rep (p:ps) = p:rep ps
+                  rep [] = []
+                  -- add Uni and Inj if ps has neither Sym nor Asy
+                  conv ps = ps ++ concat [[Uni, Inj] | null ([Sym, Asy]>-ps)]
+
 
 --- Fun ::= '*' | '->' | '<-' | '[' Mults ']'
 pFun :: AmpParser [Prop]
@@ -478,12 +487,12 @@ pPhpplug = pKey "PHPPLUG" *> pObjDef
 --- Purpose ::= 'PURPOSE' Ref2Obj LanguageRef? TextMarkup? ('REF' StringListSemi)? Expl
 pPurpose :: AmpParser PPurpose
 pPurpose = rebuild <$> currPos
-                   <*  pKey "PURPOSE"  -- "EXPLAIN" has become obsolete
+                   <*  pKey "PURPOSE"
                    <*> pRef2Obj
                    <*> pMaybe pLanguageRef
                    <*> pMaybe pTextMarkup
                    <*> optList (pKey "REF" *> pString `sepBy1` pSemi)
-                   <*> pExpl
+                   <*> pAmpersandMarkup
      where
        rebuild :: Origin -> PRef2Obj -> Maybe Lang -> Maybe PandocFormat -> [String] -> String -> PPurpose
        rebuild    orig      obj         lang          fmt                   refs       str
@@ -554,7 +563,7 @@ pMeaning = PMeaning <$> (
            P_Markup <$  pKey "MEANING"
                     <*> pMaybe pLanguageRef
                     <*> pMaybe pTextMarkup
-                    <*> (pString <|> pExpl))
+                    <*> (pString <|> pAmpersandMarkup))
 
 --- Message ::= 'MESSAGE' Markup
 pMessage :: AmpParser PMessage
@@ -565,7 +574,7 @@ pMarkup :: AmpParser P_Markup
 pMarkup = P_Markup
            <$> pMaybe pLanguageRef
            <*> pMaybe pTextMarkup
-           <*> (pString <|> pExpl)
+           <*> (pString <|> pAmpersandMarkup)
 
 --- Rule ::= Term ('=' Term | '|-' Term)?
 -- | Parses a rule

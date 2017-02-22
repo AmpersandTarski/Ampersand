@@ -18,15 +18,16 @@ import Ampersand.Graphic.Graphics (writePicture)
 import Ampersand.Output
 import Control.Monad
 import System.FilePath
+import System.Directory
 import Data.Time.Clock.POSIX
 import qualified Data.ByteString.Lazy as L
 import Data.List
 import qualified Data.Text.IO as Text
 import Data.Function (on)
 import Data.Maybe (maybeToList)
-import Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ShowAStruct
 import Ampersand.Prototype.GenBericht  (doGenBericht)
 import Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
@@ -35,14 +36,18 @@ import Ampersand.Prototype.ProtoUtil   (installComposerLibs)
 --  | The FSpec is the datastructure that contains everything to generate the output. This monadic function
 --    takes the FSpec as its input, and spits out everything the user requested.
 generateAmpersandOutput :: MultiFSpecs -> IO ()
-generateAmpersandOutput multi =
-   sequence_ (map doWhen conditionalActions)
+generateAmpersandOutput multi = do
+   createDirectoryIfMissing True (dirOutput opts)
+   when (genPrototype opts)
+        (createDirectoryIfMissing True (dirPrototype opts))
+   mapM_ doWhen conditionalActions
   where 
-   doWhen :: ((Options -> Bool), IO()) -> IO()
+   doWhen :: (Options -> Bool, IO ()) -> IO()
    doWhen (b,x) = when (b opts) x
    conditionalActions :: [(Options -> Bool, IO())]
    conditionalActions = 
-      [ ( genUML      , doGenUML           )
+      [ ( genSampleConfigFile , doGenSampleConfigFile) 
+      , ( genUML      , doGenUML           )
       , ( haskell     , doGenHaskell       )
       , ( sqlDump     , doGenSQLdump       )
       , ( export2adl  , doGenADL           )
@@ -58,11 +63,12 @@ generateAmpersandOutput multi =
    fSpec = userFSpec multi
    doGenADL :: IO()
    doGenADL =
-    do { writeFile outputFile . showADL . originalContext $ fSpec
+    do { writeFile outputFile . showA . originalContext $ fSpec
        ; verboseLn opts $ ".adl-file written to " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> outputfile opts
-
+   doGenSampleConfigFile :: IO()
+   doGenSampleConfigFile = writeConfigFile
    doGenProofs :: IO()
    doGenProofs =
     do { verboseLn opts $ "Generating Proof for " ++ name fSpec ++ " into " ++ outputFile ++ "."
@@ -109,7 +115,7 @@ generateAmpersandOutput multi =
     do { verboseLn opts ("Processing "++name fSpec)
        ; -- First we need to output the pictures, because they should be present before the actual document is written
          when (not(null thePictures) && fspecFormat opts/=FPandoc) $
-           mapM_ (writePicture opts) thePictures
+           mapM_ (writePicture opts) (reverse thePictures) -- NOTE: reverse is used to have the datamodels generated first. This is not required, but it is handy.
        ; writepandoc fSpec thePandoc
        }
      where (thePandoc,thePictures) = fSpec2Pandoc fSpec
@@ -118,10 +124,10 @@ generateAmpersandOutput multi =
    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
    doGenFPAExcel :: IO()
    doGenFPAExcel =
-    do { verboseLn opts "Generating Excel containing FPA..."
-       ; writeFile outputFile $ fspec2FPA_Excel fSpec
-       }
-      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
+     verboseLn opts "FPA analisys is discontinued. (It needs maintenance). Sorry. " -- See https://github.com/AmpersandTarski/Ampersand/issues/621
+     --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
+    
+--      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
@@ -135,8 +141,8 @@ generateAmpersandOutput multi =
    doValidateSQLTest :: IO ()
    doValidateSQLTest =
     do { verboseLn opts "Validating SQL expressions..."
-       ; isValidRule <- validateRulesSQL fSpec
-       ; unless isValidRule (exitWith InvalidSQLExpression)
+       ; errMsg <- validateRulesSQL fSpec
+       ; unless (null errMsg) (exitWith $ InvalidSQLExpression errMsg)
        }
 
    doGenProto :: IO ()
@@ -146,20 +152,20 @@ generateAmpersandOutput multi =
        , reportViolations violationsOfInvariants
        , reportSignals (initialConjunctSignals fSpec)
        ]++
-       if null violationsOfInvariants || development opts
-       then if genRap
-            then [ generateJSONfiles multi]
-            else [ verboseLn opts "Generating prototype..."
-                 , clearTemplateDirs fSpec
-                 , writeStaticFiles opts
-                 , generateJSONfiles multi
-                 , doGenFrontend fSpec
-                 , verboseLn opts "\n"
-                 , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                 , installComposerLibs opts
-                 ]
-       else [exitWith NoPrototypeBecauseOfRuleViolations]
-       ++
+       (if null violationsOfInvariants || development opts
+        then if genRap
+             then [ generateJSONfiles multi]
+             else [ verboseLn opts "Generating prototype..."
+                  , clearTemplateDirs fSpec
+                  , writeStaticFiles opts
+                  , generateJSONfiles multi
+                  , doGenFrontend fSpec
+                  , verboseLn opts "\n"
+                  , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
+                  , installComposerLibs opts
+                  ]
+        else [exitWith NoPrototypeBecauseOfRuleViolations]
+       )++
        maybeToList (fmap ruleTest (testRule opts))
 
     where genRap = genRapPopulationOnly (getOpts fSpec)
@@ -179,13 +185,13 @@ generateAmpersandOutput multi =
                              ]
 
           showprs :: [AAtomPair] -> String
-          showprs aprs = "["++intercalate ", " (map showADL aprs)++"]"
+          showprs aprs = "["++intercalate ", " (map showA aprs)++"]"
    --       showpr :: AAtomPair -> String
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
           reportSignals []        = verboseLn opts "No signals for the initial population."
           reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
             [   "Rule(s): "++(show . map name . rc_orgRules) conj
-            ++"\n  Conjunct   : " ++ showADL (rc_conjunct conj)
+            ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
             ++"\n  Violations : " ++ showprs viols
             | (conj, viols) <- conjViols
             ]
@@ -193,11 +199,11 @@ generateAmpersandOutput multi =
           ruleTest ruleName =
            case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
              [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (rrexp rule)
                             ; putStrLn $ showContents rule
                             ; let rExpr = rrexp rule
                             ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
-                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (rrexp ruleComplement)++"):"
                             ; putStrLn $ showContents ruleComplement
                             }
            where showContents rule = "[" ++ intercalate ", " pairs ++ "]"

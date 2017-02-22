@@ -1,13 +1,13 @@
 module Ampersand.Misc
-   ( module Ampersand.Misc.Languages
-   , module Ampersand.Misc.Options
-   , module Ampersand.Misc.Explain
+   ( module Ampersand.Misc.Options
    ) where
-import Ampersand.Misc.Languages
-       (Lang(..), plural, allLangs)
 import Ampersand.Misc.Options
-       (getOptions, Options(..),
-        verboseLn, verbose, FSpecFormat(..),showFormat,
-        helpNVersionTexts)
-import Ampersand.Misc.Explain
-       (string2Blocks, blocks2String, PandocFormat(..))
+        ( Options(..)
+        , FSpecFormat(..)
+        , getOptions
+        , verboseLn
+        , verbose
+        , showFormat
+        , helpNVersionTexts
+        , writeConfigFile
+        )

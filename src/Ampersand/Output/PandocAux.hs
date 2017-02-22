@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable, CPP, MultiParamTypeClasses,
-    FlexibleContexts, ScopedTypeVariables, PatternGuards,
-    ViewPatterns #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.PandocAux
       ( writepandoc
@@ -8,15 +9,15 @@ module Ampersand.Output.PandocAux
       , count
       , ShowMath(..),showMathWithSign
       , latexEscShw, escapeNonAlphaNum
-      , texOnly_Id
-      , texOnly_fun
-      , texOnly_rel
-      , texOnly_marginNote
+      , texOnlyId
+      , texOnlyMarginNote
       , newGlossaryEntry
       , NLString(..)
       , ENString(..)
       , LocalizedStr
       , localize
+      , commaPandocAnd
+      , commaPandocOr
       , Inlines
       )
 where
@@ -26,9 +27,10 @@ import Data.List
 import Data.Maybe
 import Ampersand.ADL1
 import Ampersand.Basics hiding (hPutStrLn)
-import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec
 import Ampersand.Misc
+import Ampersand.Core.ShowPStruct
+import Ampersand.Classes (isFunction)
 import Ampersand.Prototype.StaticFiles_Generated
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import qualified Data.ByteString as BS
@@ -53,29 +55,14 @@ changePathSeparators :: FilePath -> FilePath
 changePathSeparators = intercalate "/" . splitDirectories
 #endif
 
--- Utility types and functions for handling multiple-language strings
-
--- If you declare a local function:   l lstr = localize (fsLang fSpec) lstr
--- you can use:  l (NL "Nederlandse tekst", EN "English text")
--- to specify strings in multiple languages.
-
-newtype NLString = NL String
-newtype ENString = EN String
-
-type LocalizedStr = (NLString, ENString)
-
-localize :: Lang -> LocalizedStr -> String
-localize Dutch   (NL s, _) = s
-localize English (_, EN s) = s
-
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: FSpec -> [(String , String)]
 defaultWriterVariables fSpec
   = [ ("title", (case (fsLang fSpec, diagnosisOnly (getOpts fSpec)) of
                         (Dutch  , False) -> if test (getOpts fSpec)
                                             then "Afspraken van "
-                                            else "Functionele Specificatie van "
-                        (English, False) -> "Functional Specification of "
+                                            else "Functioneel Ontwerp van "
+                        (English, False) -> "Functional Design of "
                         (Dutch  ,  True) -> "Diagnose van "
                         (English,  True) -> "Diagnosis of "
                 )++name fSpec)
@@ -170,7 +157,7 @@ writepandoc fSpec thePandoc =
         FLatex  ->
            do result <- makePDF writeLaTeX wOpts thePandoc fSpec
               case result of 
-                Left err -> do putStrLn ("LaTeX Error: ")
+                Left err -> do putStrLn "LaTeX Error: "
                                B.putStr err
                                putStrLn "\n."
                 Right _  -> do let pdfFile = outputFile -<.> "pdf"
@@ -184,8 +171,8 @@ writepandoc fSpec thePandoc =
            writeReferenceFileDocx
       case getWriter fSpecFormatString of
         Left msg -> fatal 162 . unlines $
-                        ["Something wrong with format "++show(fspecFormat (getOpts fSpec))++":"]
-                        ++ map ("  "++) (lines msg)
+                        ("Something wrong with format "++show(fspecFormat (getOpts fSpec))++":")
+                        : map ("  "++) (lines msg)
         Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
                                                 writeFile outputFile content
         Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
@@ -250,14 +237,14 @@ writepandoc fSpec thePandoc =
     docxStyleContent = 
       case getStaticFileContent PandocTemplates "defaultStyle.docx" of
          Just cont -> BC.pack cont
-         Nothing -> fatal 0 ("Cannot find the statically included default defaultStyle.docx.")
+         Nothing -> fatal 0 "Cannot find the statically included default defaultStyle.docx."
     docxStyleUserPath = dirOutput (getOpts fSpec) </> "reference.docx" -- this is the place where the file is written if it doesn't exist.
     writeReferenceFileDocx :: IO()
     writeReferenceFileDocx = do
          exists <- doesFileExist docxStyleUserPath
          if exists 
-             then do verboseLn (getOpts fSpec) 
-                           "Existing style file is used for generating .docx file:"
+             then verboseLn (getOpts fSpec) 
+                      "Existing style file is used for generating .docx file:"
              else (do verboseLn (getOpts fSpec)
                            "Default style file is written. this can be changed to fit your own style:"
                       BC.writeFile docxStyleUserPath docxStyleContent
@@ -270,7 +257,7 @@ writepandoc fSpec thePandoc =
        where addToBag :: MediaBag -> FilePath -> IO MediaBag
              addToBag bag fullPath = do
                 verboseLn (getOpts fSpec) $ "Collect: "++fullPath
-                verboseLn (getOpts fSpec) $ "  as: "++(takeFileName fullPath)
+                verboseLn (getOpts fSpec) $ "  as: "++takeFileName fullPath
                 contents <- BC.readFile fullPath
                 return $ insertMedia (takeFileName fullPath) Nothing contents bag 
              isGraphic :: FilePath -> Bool
@@ -305,7 +292,6 @@ data Chapter = Intro
              | ProcessAnalysis
              | DataAnalysis
              | SoftwareMetrics
-             | EcaRules
              | Interfaces
              | FunctionPointAnalysis
              | Glossary
@@ -314,30 +300,22 @@ data Chapter = Intro
 
 chptTitle :: Lang -> Chapter -> Inlines
 chptTitle lang cpt =
-     (case (cpt,lang) of
-        (Intro                 , Dutch  ) -> text "Inleiding"
-        (Intro                 , English) -> text "Introduction"
-        (SharedLang            , Dutch  ) -> text "Gemeenschappelijke taal"
-        (SharedLang            , English) -> text "Shared Language"
-        (Diagnosis             , Dutch  ) -> text "Diagnose"
-        (Diagnosis             , English) -> text "Diagnosis"
-        (ConceptualAnalysis    , Dutch  ) -> text "Conceptuele Analyse"
-        (ConceptualAnalysis    , English) -> text "Conceptual Analysis"
-        (ProcessAnalysis       , Dutch  ) -> text "Procesanalyse"
-        (ProcessAnalysis       , English) -> text "Process Analysis"
-        (DataAnalysis          , Dutch  ) -> text "Gegevensstructuur"
-        (DataAnalysis          , English) -> text "Data structure"
-        (SoftwareMetrics       , Dutch  ) -> text "Functiepunt Analyse"
-        (SoftwareMetrics       , English) -> text "Function Point Analysis"
-        (EcaRules              , Dutch  ) -> text "ECA regels"
-        (EcaRules              , English) -> text "ECA rules (Flash points)"
-        (Interfaces            , Dutch  ) -> text "Koppelvlakken"
-        (Interfaces            , English) -> text "Interfaces"
-        (FunctionPointAnalysis , Dutch  ) -> text "Functiepuntanalyse"
-        (FunctionPointAnalysis , English) -> text "Function point analysis"
-        (Glossary              , Dutch  ) -> text "Begrippen"
-        (Glossary              , English) -> text "Glossary"
-     )
+  case cpt of
+    Intro                 -> text.l $ (NL "Inleiding", EN "Introduction")
+    SharedLang            -> text.l $ (NL "Gemeenschappelijke taal", EN "Shared Language")
+    Diagnosis             -> text.l $ (NL "Diagnose", EN "Diagnosis")
+    ConceptualAnalysis    -> text.l $ (NL "Conceptuele Analyse", EN "Conceptual Analysis")
+    ProcessAnalysis       -> text.l $ (NL "Procesanalyse", EN "Process Analysis")
+    DataAnalysis          -> text.l $ (NL "Gegevensstructuur", EN "Data structure")
+    SoftwareMetrics       -> text.l $ (NL "Functiepunt Analyse", EN "Function Point Analysis")
+    Interfaces            -> text.l $ (NL "Koppelvlakken", EN "Interfaces")
+    FunctionPointAnalysis -> text.l $ (NL "Functiepuntanalyse", EN "Function point analysis")
+    Glossary              -> text.l $ (NL "Begrippen", EN "Glossary")
+ where 
+     -- shorthand for easy localizing    
+    l :: LocalizedStr -> String
+    l = localize lang
+    
 
 
 
@@ -378,7 +356,7 @@ instance ShowMath Expression where
           showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
           showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
           showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
-          showExpr (EMp1 val _) = inMathText $ showADL val
+          showExpr (EMp1 val _) = inMathText $ showP val
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -389,14 +367,14 @@ addParensToSuper e@EFlp{} = EBrk e
 addParensToSuper e        = e
 
 instance ShowMath Declaration where
- showMath decl@(Sgn{})  = math $ 
+ showMath decl@Sgn{}  = math $ 
         inMathText (name decl)++":\\ "
      ++(inMathText . name . source $ decl)++(if isFunction decl then "\\mapsto" else "*")
      ++(inMathText . name . target $ decl)++"]"
  showMath Isn{}
-  = math $ "\\mathbb{I}"
+  = math "\\mathbb{I}"
  showMath Vs{}
-  = math $ "\\mathbb{V}"
+  = math "\\mathbb{V}"
 showMathWithSign :: Declaration -> Inlines
 showMathWithSign decl = math $ 
         inMathText (name decl)++"["
@@ -556,14 +534,9 @@ inMathText s = "\\text{"++latexEscShw s++"} "
 inMathCartesianProduct :: String
 inMathCartesianProduct = "\\times "
 
-texOnly_Id :: String -> String
-texOnly_Id s = "\\mbox{"++latexEscShw s++"} "
+texOnlyId :: String -> String
+texOnlyId s = "\\mbox{"++latexEscShw s++"} "
 -- \\def\\id#1{\\mbox{\\em #1\\/}}"
-texOnly_fun :: String
-texOnly_fun = "\\rightarrow "
-
-texOnly_rel :: String
-texOnly_rel = "\\times "
 
 inMathCompose :: String
 inMathCompose = ";"
@@ -609,10 +582,10 @@ newGlossaryEntry nm cnt =
   rawInline "latex"
     ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
      "     { name={"++latexEscShw nm ++"}\n"++
-     "     , description={"++latexEscShw (cnt)++"}}\n")
+     "     , description={"++latexEscShw cnt++"}}\n")
 
-texOnly_marginNote :: String -> String
-texOnly_marginNote mgn = 
+texOnlyMarginNote :: String -> String
+texOnlyMarginNote mgn = 
    "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "++mgn++"}\\end{minipage}}"
 
 -------------------------------------------------
@@ -624,7 +597,7 @@ makePDF :: (WriterOptions -> Pandoc -> String)  -- ^ writer
         -> Pandoc              -- ^ document
         -> FSpec
         -> IO (Either B.ByteString B.ByteString)
-makePDF writer wOpts pandoc fSpec = do
+makePDF writer wOpts pandoc fSpec = 
   tex2pdf' (dirOutput (getOpts fSpec))
   
   where 
@@ -711,3 +684,23 @@ extractMsg log' = do
      then log'
      else BC.unlines (msg'' ++ lineno)
 
+commaPandocAnd :: Lang -> [Inlines] -> Inlines
+commaPandocAnd Dutch = commaNLPandoc "en"
+commaPandocAnd English = commaEngPandoc "and"
+commaPandocOr :: Lang -> [Inlines] -> Inlines
+commaPandocOr Dutch = commaNLPandoc "of"
+commaPandocOr English = commaEngPandoc "or"
+
+commaEngPandoc :: Inlines -> [Inlines] -> Inlines
+commaEngPandoc s [a,b,c] = a <> ", " <> b <> ", " <> s <> space <> c
+commaEngPandoc s [a,b]   = a <> space <> s <> space <> b
+commaEngPandoc _   [a]   = a
+commaEngPandoc s (a:as)  = a <> ", " <> commaEngPandoc s as
+commaEngPandoc _   []    = mempty
+
+commaNLPandoc :: Inlines -> [Inlines] -> Inlines
+commaNLPandoc s [a,b]  = a <> space <> s <> space <> b
+commaNLPandoc  _  [a]  = a
+commaNLPandoc s (a:as) = a <> ", " <> commaNLPandoc s as
+commaNLPandoc  _  []   = mempty
+   

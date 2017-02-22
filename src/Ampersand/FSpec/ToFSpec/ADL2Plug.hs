@@ -7,6 +7,7 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.ToFSpec.Populated (sortSpecific2Generic)
 import Ampersand.Misc
 import Data.Maybe
 import Data.Char
@@ -43,12 +44,12 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                        ([],[]) -> names
                        ([], _) -> f (insert (Right . head $ ds) names) ([],tail ds)
                        _       -> f (insert (Left  . head $ cs) names) (tail cs,ds)
-                  insert :: (Either A_Concept Declaration) -> [(Either A_Concept Declaration, String)] -> [(Either A_Concept Declaration, String)]
+                  insert :: Either A_Concept Declaration -> [(Either A_Concept Declaration, String)] -> [(Either A_Concept Declaration, String)]
                   insert item = tryInsert item 0
                     where 
                       tryInsert :: Either A_Concept Declaration -> Int -> [(Either A_Concept Declaration,String)] -> [(Either A_Concept Declaration,String)]
                       tryInsert x n names =
-                        let nm = (either name name x) ++ (if n == 0 then "" else "_"++show n)
+                        let nm = either name name x ++ (if n == 0 then "" else "_"++show n)
                         in if map toLower nm `elem` map (map toLower . snd) names -- case insencitive compare, because SQL needs that.
                            then tryInsert x (n+1) names
                            else (x,nm):names
@@ -82,9 +83,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                                          ++"\nlookupTable: "++show (map fst conceptLookuptable)
                                     x:_ -> x
           cptAttrib :: A_Concept -> SqlAttribute
-          cptAttrib cpt = Att { attName = case lookup (Left cpt) colNameMap of
-                                            Nothing -> fatal 99 $ "No name found for `"++name cpt++"`. "
-                                            Just nm -> nm
+          cptAttrib cpt = Att { attName = fromMaybe (fatal 99 $ "No name found for `"++name cpt++"`. ")
+                                                    (lookup (Left cpt) colNameMap) 
                               , attExpr = expr
                               , attType = repr cpt
                               , attUse  = if cpt == tableKey 
@@ -100,9 +100,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                              then EDcI cpt
                              else EEps cpt (Sign tableKey cpt)
           dclAttrib :: Declaration -> SqlAttribute
-          dclAttrib dcl = Att { attName = case lookup (Right dcl) colNameMap of
-                                            Nothing -> fatal 113 $ "No name found for `"++name dcl++"`. "
-                                            Just nm -> nm                                         
+          dclAttrib dcl = Att { attName = fromMaybe (fatal 113 $ "No name found for `"++name dcl++"`. ")
+                                                    (lookup (Right dcl) colNameMap)
                               , attExpr = dclAttExpression
                               , attType = repr (target dclAttExpression)
                               , attUse  = if suitableAsKey . repr . target $ dclAttExpression
@@ -113,10 +112,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                               , attUniq = isInj keyToTargetExpr
                               , attFlipped = isStoredFlipped dcl
                               }
-              where dclAttExpression = if isStoredFlipped dcl
-                                       then EFlp (EDcD dcl)
-                                       else      (EDcD dcl)
-                    keyToTargetExpr = (attExpr . cptAttrib $ (source dclAttExpression) ) .:. dclAttExpression
+              where dclAttExpression = (if isStoredFlipped dcl then EFlp else id) (EDcD dcl)
+                    keyToTargetExpr = (attExpr . cptAttrib . source $ dclAttExpression)  .:. dclAttExpression
           
 -----------------------------------------
 --makeLinkTable
@@ -198,7 +195,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
             ) 
     dist dcls cptLists = 
        ( [ (t, declsInTable t) | t <- cptLists]
-       , [ d | d <- dcls, conceptTableOf d == Nothing])
+       , [ d | d <- dcls, isNothing (conceptTableOf d)]
+       )
       where
         declsInTable typ = [ dcl | dcl <- dcls
                             , not . null $ maybeToList (conceptTableOf dcl) `isc` tyCpts typ ]
@@ -206,7 +204,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
         conceptTableOf :: Declaration -> Maybe A_Concept
         conceptTableOf d = if sqlBinTables opts
                            then Nothing
-                           else fmap fst $ wayToStore d
+                           else fst <$> wayToStore d
 
 -- | this function tells in what concepttable a given declaration is to be stored. If stored
 --   in a concept table, it returns the concept and a boolean, telling wether or not the relation
@@ -234,7 +232,7 @@ wayToStore d =
 unquote :: String -> String
 unquote str 
   | length str Prelude.< 2 = str
-  | head str == '"' && last str == '"' = reverse . tail . reverse .tail $ str 
+  | head str == '"' && last str == '"' = init . tail $ str 
   | otherwise = str
       
 suitableAsKey :: TType -> Bool
@@ -253,7 +251,7 @@ suitableAsKey st =
     Integer          -> True
     Float            -> False
     Object           -> True
-    TypeOfOne        -> fatal 143 $ "ONE has no key at all. does it?"
+    TypeOfOne        -> fatal 143 "ONE has no key at all. does it?"
 
  
 

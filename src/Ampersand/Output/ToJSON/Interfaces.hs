@@ -8,7 +8,6 @@ import Ampersand.Output.ToJSON.JSONutils
 import Ampersand.Core.AbstractSyntaxTree 
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.ToFSpec.Calc
-import Ampersand.FSpec.ShowADL
 
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
@@ -124,7 +123,7 @@ instance JSON ObjectDef JSONObjectDef where
   { ifcJSONid                 = escapeIdentifier . name $ object
   , ifcJSONlabel              = name object
   , ifcJSONviewId             = fmap name viewToUse
-  , ifcJSONNormalizationSteps = showPrf showADL.cfProof opts.objctx $ object 
+  , ifcJSONNormalizationSteps = showPrf showA.cfProof.objctx $ object 
   , ifcJSONrelation           = fmap (showDcl True . fst) mEditableDecl
   , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
   , ifcJSONcrud               = fromAmpersand multi (objcrud object)

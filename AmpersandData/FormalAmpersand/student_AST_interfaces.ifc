@@ -155,7 +155,7 @@ BOX ["PURPOSEs" :ptxps
     ,"ISA-relations" :ptgns
     ,"diagram" : ptpic
     ]
-INTERFACE "ISA-relation" FOR Student: I[Gen]
+INTERFACE "ISA-relation" FOR Student: I[Isa]
 BOX ["SPEC" : genspc
     ,"ISA" : gengen
     ,"in PATTERN" : ptgns~

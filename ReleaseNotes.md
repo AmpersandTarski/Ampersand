@@ -1,11 +1,35 @@
 # Release notes of Ampersand
+  
+## v3.8.2 (17 february 2017)
+  * [Issue #621](https://github.com/AmpersandTarski/Ampersand/issues/621) Disabled --fpa-excel switch, because it resulted in a fatal error. 
+  * [Issue #617](https://github.com/AmpersandTarski/Ampersand/issues/617) Minor fix in functional design document.
+  * [Issue #624](https://github.com/AmpersandTarski/Ampersand/issues/624) New feature: ExecEngine can merge atoms to fix violations of univalence and other identity violations.
+  * [Issue #625](https://github.com/AmpersandTarski/Ampersand/issues/625) Comparison of origins now based on canonicalized paths
+  * [Issue #627](https://github.com/AmpersandTarski/Ampersand/issues/627) Fixed a bug in generation of queries for frontend
 
-## unreleased changes
+## v3.8.1 (20 january 2017)
+  * [Issue #605](https://github.com/AmpersandTarski/Ampersand/issues/605) Added modules "Modules.adl" and "Patterns.adl" in FormalAmpersand as preparatory work for issue #605.
+  * [Issue #603](https://github.com/AmpersandTarski/Ampersand/issues/603) Removed obsolete switches about what normalization is used.
+  * [Issue #600](https://github.com/AmpersandTarski/Ampersand/issues/600) When a configuration file exists (.yaml) with the same name as the file being compiled, it will be used if no config file is explicitly mentioned in the command. 
+  * Renamed "functional specification" to "functional design" for more realistic expectations with users.
+  * Restructured internal structure of modules of Ampersand. 
+
+## v3.8.0 (20 december 2016) 
+  * [Issue #587](https://github.com/AmpersandTarski/Ampersand/issues/587) There is no need any longer to explicitly specify the language in a script. If omitted, IN ENGLISH will be used as default. 
+  * [Issue #588](https://github.com/AmpersandTarski/Ampersand/issues/588) PURPOSE sytax changed: Now matching brackets are: `{+` and `+}`   (no backwards compatibility, to enable nested comment blocks)
+  * Added some additional diagnosis info in settings.json
+  * Added support for project/application and extension specific composer dependencies.
+  * Added 'customization' folder to prototype generation process. This folder can be used to e.g. overwrite generated views.
+  * Includes for frontend app must be placed in 'app' folder now. The include folder thereby directly matches the destination directory structure.
+  * Ampersand version info is printed in verbose mode
+  * New switch, to add all relations, concepts and generalisation relations of formal ampersand into your script: --add-semantic-metamodel
+
+## v3.7.3 (25 november 2016)
   * Alternative definition of univalence and injectivity to get better violations on runtime.
 
 ## v3.7.2 (28 october 2016)
   * Some updates in the meatgrinder. (still experimental)
-  * Several changes in the generation of the functional specification document. (Less LaTex specific)
+  * Several changes in the generation of the functional design document. (Less LaTex specific)
 
 ## v3.7.1 (30 september 2016)
   * Upgrade version of Haskell compiler to 8.0.1 (automatically used via Stack)

@@ -17,15 +17,7 @@ $app->post('/excelimport/import', function () use ($app){
 	$session->activateRoles($roleIds);
 			
 	// Check sessionRoles if allowedRolesForExcelImport is specified
-	$allowedRoles = Config::get('allowedRolesForExcelImport','excelImport');
-	if(!is_null($allowedRoles)){
-		$ok = false;
-	
-		foreach($session->getSessionRoles() as $role){
-			if(in_array($role->label, $allowedRoles)) $ok = true;
-		}
-		if(!$ok) throw new Exception("You do not have access to import excel files", 401);
-	}
+    if(!$session->hasAccess(Config::get('allowedRolesForExcelImport','excelImport'))) throw new Exception("You do not have access to import excel files", 401);
 	
 	if (is_uploaded_file($_FILES['file']['tmp_name'])){
 		// Parse:

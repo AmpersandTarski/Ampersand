@@ -5,9 +5,9 @@ module Ampersand.Graphic.Graphics
 import Data.GraphViz
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.Switchboard
 import Ampersand.Misc
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.Graphic.Fspec2ClassDiagrams
 import Ampersand.Graphic.ClassDiag2Dot
 import Data.GraphViz.Attributes.Complete
@@ -24,9 +24,6 @@ data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern
                 | PTDeclaredInPat Pattern
                 | PTCDConcept A_Concept
-                | PTSwitchBoard Activity
-                | PTFinterface Activity
-                | PTIsaInPattern Pattern  -- Not used at all...
                 | PTCDRule Rule
                 | PTLogicalDM
                 | PTTechnicalDM
@@ -86,15 +83,6 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of relations in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van relaties in " ++ name pat
                                }
-   PTIsaInPattern pat  -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Classifications of " ++ name pat
-                                      Dutch   -> "Classificaties van " ++ name pat
-                               }
    PTCDPattern pat     -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = conceptualGraph' fSpec pr
@@ -103,15 +91,6 @@ makePicture fSpec pr =
                                    case fsLang fSpec of
                                       English -> "Concept diagram of the rules in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van de regels in " ++ name pat
-                               }
-   PTFinterface act    -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Concept diagram of interface " ++ name act
-                                      Dutch   -> "Conceptueel diagram van interface " ++ name act
                                }
    PTCDRule rul        -> Pict { pType = pr
                                , scale = scale'
@@ -122,26 +101,14 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of rule " ++ name rul
                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
                                }
-   PTSwitchBoard act   -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = sbdotGraph (switchboardAct fSpec act)
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Switchboard diagram of " ++ name act
-                                      Dutch   -> "Schakelpaneel van " ++ name act
-                               }
  where
    scale' =
       case pr of
             PTClassDiagram -> "1.0"
             PTCDPattern{}-> "0.7"
             PTDeclaredInPat{}-> "0.6"
-            PTSwitchBoard{}  -> "0.4"
-            PTIsaInPattern{} -> "0.7"
             PTCDRule{}   -> "0.7"
             PTCDConcept{}      -> "0.7"
-            PTFinterface{}   -> "0.7"
             PTLogicalDM    -> "1.2"
             PTTechnicalDM  -> "1.2"
    graphVizCmdForConceptualGraph = Sfdp
@@ -154,10 +121,7 @@ pictureID pr =
       PTTechnicalDM    -> "TechnicalDataModel"
       PTCDConcept cpt     -> "CDConcept"++name cpt
       PTDeclaredInPat pat -> "RelationsInPattern"++name pat
-      PTIsaInPattern  pat -> "IsasInPattern"++name pat
       PTCDPattern pat     -> "CDPattern"++name pat
-      PTFinterface act    -> "KnowledgeGraph"++name act
-      PTSwitchBoard x     -> "SwitchBoard"++name x
       PTCDRule r          -> "CDRule"++name r
 
 conceptualGraph' :: FSpec -> PictureReq -> DotGraph String
@@ -210,38 +174,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                              ]
                   , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
                   }
-        PTIsaInPattern pat ->
-          let gs    = fsisa fSpec
-              cpts  = concs edges
-              cpts' = concs pat >- concs gs
-              edges = clos gs idgs
-              idgs  = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
-              clos tuples ts = f (tuples>-ts) ts []
-               where f  []  new result = result++new
-                     f  _   []  result = result
-                     f tups new result = f (tups>-new) [ t |t<-tups, (not.null) (concs t `isc` concs result') ] result'
-                                             where result' = result++new
-          in
-          CStruct { csCpts = cpts
-                  , csRels = []
-                  , csIdgs = idgs
-                  }
 
-        PTFinterface ifc ->
-          let gs   = fsisa fSpec
-              cpts = nub $ cpts' ++ [c |(s,g)<-idgs, c<-[g,s]]
-              cpts'  = concs rs
-              rs         = filter affected (vrules fSpec)
-              affected r = (not.null) [d | d@Sgn{} <- relsMentionedIn r `isc` relsMentionedIn ifc]
-              idgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
-              rels = [r | r@Sgn{}<-relsMentionedIn ifc, decusr r
-                        , not (isProp r)    -- r is not a property
-                     ]
-          in
-          CStruct { csCpts = cpts -- involve all concepts involved either in the affected rules or in the isa-links
-                  , csRels = rels
-                  , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
-                  }
         PTCDRule r ->
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
@@ -267,7 +200,7 @@ writePicture opts pict
    where
      dumpShow :: IO()
      dumpShow = -- This has been hacked in in order to diagnose the issue at: https://github.com/ivan-m/graphviz/issues/13
-       do let path = (imagePath opts) pict -<.> "txt"
+       do let path = imagePath opts pict -<.> "txt"
           writeFile path (show . dotSource $ pict)
           verboseLn opts $ "Dumpfile written: "++path 
      writeDot :: GraphvizOutput -> IO ()
@@ -304,7 +237,7 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePath opts p =
-     ( dirOutput opts)
+     dirOutput opts
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
 
 {-
@@ -457,16 +390,15 @@ handleFlags po opts =
                           , Style [filled]
                     --      , URL (theURL opts c)
                           ]
-      RelOnlyOneEdge r -> [ (XLabel . StrLabel .fromString.name) r
+      RelOnlyOneEdge r ->  (XLabel . StrLabel .fromString.name) r
                        --   , URL (theURL opts r)
-                          ]
-                        ++[ ArrowTail noArrow, ArrowHead noArrow
+                          :
+                          [ ArrowTail noArrow, ArrowHead noArrow
                           , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
                           ]
       RelSrcEdge r -> [ ArrowHead ( if crowfoot opts   then normal                    else
                                     if isFunction r    then noArrow                   else
-                                    if isInvFunction r then directionArrow            else
                                     directionArrow
                                   )
                       , ArrowTail ( if crowfoot opts   then crowfootArrowType False r else
@@ -479,18 +411,16 @@ handleFlags po opts =
       RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
                       , ArrowHead ( if crowfoot opts   then crowfootArrowType True r  else
                                     if isFunction r    then normal                    else
-                                    if isInvFunction r then noArrow                   else
                                     noArrow
                                   )
-                      , ArrowTail ( if crowfoot opts   then noArrow                   else
-                                    if isFunction r    then noArrow                   else
-                                    if isInvFunction r then AType [(noMod ,Inv)]      else
+                      , ArrowTail ( if crowfoot opts   || isFunction r    
+                                                       then noArrow                   else
                                     AType [(noMod ,Inv)]
                                   )
                       ,TailClip False
                       ]
       RelIntermediateNode _ ->
-                       [ Label (StrLabel (fromString("")))
+                       [ Label (StrLabel (fromString "" ))
                        , Shape PlainText
                        , bgColor White
                     --   , URL (theURL opts r)
@@ -511,9 +441,9 @@ isInvFunction d = isInj d && isSur d
 
 crowfootArrowType :: Bool -> Declaration -> ArrowType
 crowfootArrowType isHead r
-   = AType (case isHead of
-               True  -> getCrowfootShape (isUni r) (isTot r)
-               False -> getCrowfootShape (isInj r) (isSur r)
+   = AType (if isHead 
+            then getCrowfootShape (isUni r) (isTot r)
+            else getCrowfootShape (isInj r) (isSur r)
            )
        where
          getCrowfootShape :: Bool -> Bool -> [( ArrowModifier , ArrowShape )]

@@ -21,13 +21,11 @@ chpIntroduction fSpec =
                    <> text "Het definieert de database en de business-services van " <> (text.name) fSpec <> text " door middel van bedrijfsregels"
                    <> (note.para.text) "Het ontwerpen met bedrijfsregels is een kenmerk van de Ampersand aanpak, die gebruikt is bij het samenstellen van dit document. "
                    <> text ". "
-                   <> (if SharedLang `elem` chaptersInDoc (getOpts fSpec)
-                       then (   text "Deze afspraken staan opgesomd in "
-                             <> xRef SharedLang
-                             <> text ", geordend op thema. "
-                            ) 
-                       else text "Deze afspraken zijn niet opgenomen in dit document."
-                      )
+                   <> if SharedLang `elem` chaptersInDoc (getOpts fSpec)
+                      then text "Deze afspraken staan opgesomd in "
+                        <> xRef SharedLang
+                        <> text ", geordend op thema. "
+                      else text "Deze afspraken zijn niet opgenomen in dit document."
                     )
             <> if Diagnosis `elem` chaptersInDoc (getOpts fSpec)
                then para (   text "De diagnose in " 
@@ -73,13 +71,11 @@ chpIntroduction fSpec =
                    <> text "It defines the database and the business services of " <> (text.name) fSpec <> text " by means of business rules"
                    <> (note.para.text) "Rule based design characterizes the Ampersand approach, which has been used to produce this document. "
                    <> text ". "
-                   <> (if SharedLang `elem` chaptersInDoc (getOpts fSpec)
-                       then (   text "Those rules are listed in "
-                             <> xRef SharedLang
-                             <> text ", ordered by theme. "
-                            )
-                       else text "Those rules are not included in this document."
-                      )
+                   <> if SharedLang `elem` chaptersInDoc (getOpts fSpec)
+                      then text "Those rules are listed in "
+                        <> xRef SharedLang
+                        <> text ", ordered by theme. "
+                      else text "Those rules are not included in this document."
                     )
              <> if Diagnosis `elem` chaptersInDoc (getOpts fSpec)
                then para (  text "The diagnosis in "
@@ -92,7 +88,7 @@ chpIntroduction fSpec =
                          <> xRef ConceptualAnalysis
                          <> text " is meant for requirements engineers and architects to validate and formalize the requirements. "
                          <> text "It is also meant for testers to come up with correct test cases. "
-                         <> text "The formalization in this chapter makes consistency of the functional specification provable. "
+                         <> text "The formalization in this chapter makes consistency of the functional design provable. "
                          <> text "It also yields an unambiguous interpretation of all requirements."
                          )
                else mempty

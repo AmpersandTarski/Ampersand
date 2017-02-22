@@ -1,7 +1,7 @@
 CONTEXT Arbeidsduur IN DUTCH LATEX
 META "authors" "Stef Joosten, Rieks Joosten"
 PURPOSE CONTEXT Arbeidsduur
-{+De Wet aanpassing arbeidsduur (http://wetten.overheid.nl/BWBR0011173, 19 februari 2000) regelt het recht van werknemers om te vragen om aanpassing van de arbeidsduur. Op deze wet is een Ampersand analyse gedaan, om inzicht te krijgen in de wijze van modelleren aan de hand van een klein voorbeeld. Daar waar in deze tekst wordt gerefereerd naar een wetsartikel, zonder de naam van de wet erbij te noemen, wordt de Wet aanpassing arbeidsduur bedoeld.-}
+{+De Wet aanpassing arbeidsduur (http://wetten.overheid.nl/BWBR0011173, 19 februari 2000) regelt het recht van werknemers om te vragen om aanpassing van de arbeidsduur. Op deze wet is een Ampersand analyse gedaan, om inzicht te krijgen in de wijze van modelleren aan de hand van een klein voorbeeld. Daar waar in deze tekst wordt gerefereerd naar een wetsartikel, zonder de naam van de wet erbij te noemen, wordt de Wet aanpassing arbeidsduur bedoeld.+}
 
 PATTERN Arbeidsduur
 
@@ -10,19 +10,19 @@ werkgever :: Arbeidsrelatie -> Persoon
 PRAGMA "In" "is" "de werkgever"
 MEANING "Elke arbeidsrelatie benoemt expliciet welke (rechts)persoon de rol van werkgever vervult."
 PURPOSE RELATION werkgever
-{+Om de werkgever te kunnen bepalen gaan we ervan uit dat elke arbeidsrelatie precies één werkgever heeft.-}
+{+Om de werkgever te kunnen bepalen gaan we ervan uit dat elke arbeidsrelatie precies één werkgever heeft.+}
 
 werknemer :: Arbeidsrelatie -> Persoon
 PRAGMA "In" "is" "de werknemer"
 MEANING "Elke arbeidsrelatie benoemt expliciet welke persoon de rol van werknemer vervult."
 PURPOSE RELATION werknemer
-{+We gaan ervan uit dat elke arbeidsrelatie precies één werknemer heeft.-}
+{+We gaan ervan uit dat elke arbeidsrelatie precies één werknemer heeft.+}
 
 arbeidsduur :: Arbeidsrelatie -> Arbeidsduur
 PRAGMA "In" "is" "als arbeidsduur afgesproken"
 MEANING "Elke arbeidsrelatie vermeldt de afgesproken arbeidsduur."
 PURPOSE RELATION arbeidsduur REF "Artikel 2 lid 1"
-{+De Wet aanpassing arbeidsduur spreekt van ``de uit zijn arbeidsovereenkomst of publiekrechtelijke aanstelling voortvloeiende arbeidsduur''. Dat impliceert dat er voor elke arbeidsovereenkomst of publiekrechtelijke aanstelling precies één arbeidsduur is. Er zijn ongetwijfeld andere wetten en regelingen die dat garanderen, maar hier nemen we dit als een gegeven (uitgangspunt) over.-}
+{+De Wet aanpassing arbeidsduur spreekt van ``de uit zijn arbeidsovereenkomst of publiekrechtelijke aanstelling voortvloeiende arbeidsduur''. Dat impliceert dat er voor elke arbeidsovereenkomst of publiekrechtelijke aanstelling precies één arbeidsduur is. Er zijn ongetwijfeld andere wetten en regelingen die dat garanderen, maar hier nemen we dit als een gegeven (uitgangspunt) over.+}
 
 inDienst :: Arbeidsrelatie -> Datum
 PRAGMA "" "vermeldt" "als tijdstip van indiensttreding"
@@ -31,7 +31,7 @@ PURPOSE RELATION inDienst REF "Artikel 2 lid 3"
 {+Om een verzoek te mogen indienen dient de werknemer ten minste een jaar voorafgaand aan het beoogde tijdstip van ingang van de aanpassing in dienst te zijn bij de werkgever.
 Daarom moet het tijdstip van indiensttreding bekend zijn.
 Dit wetsartikel bevat nuanceringen ten aanzien van de berekening van het tijdvak. 
-Deze details worden om praktische redenen buiten scope gehouden.-}
+Deze details worden om praktische redenen buiten scope gehouden.+}
 
 --[Verzoeken]--
 arbeidsrelatie :: Verzoek -> Arbeidsrelatie
@@ -40,38 +40,38 @@ MEANING "Het verzoek vermeldt de arbeidsrelatie waarop de aanpassing van toepass
 PURPOSE RELATION arbeidsrelatie
 {+Het verzoek moet duidelijk vermelden welke arbeidsrelatie onderwerp is van het verzoek.
 Dat is immers niet vanzelfsprekend in die gevallen waar een werknemer meerdere arbeidsrelaties over verschillende periodes heeft.
-De onderzochte wet sluit zelfs niet uit dat één werkgever en één werknemer op hetzelfde moment verschillende arbeidsrelaties onderhouden.-}
+De onderzochte wet sluit zelfs niet uit dat één werkgever en één werknemer op hetzelfde moment verschillende arbeidsrelaties onderhouden.+}
 
 tot :: Verzoek * Aanpassing [UNI]
 PRAGMA "" "tot"
 MEANING "Elk verzoek beschrijft de gewenste aanpassing van de uit zijn arbeidsovereenkomst of publiekrechtelijke aanstelling voortvloeiende arbeidsduur."
 PURPOSE RELATION tot[Verzoek*Aanpassing] REF "Artikel 2 lid 1"
 {+Omdat het gaat om verzoeken tot aanpassing van de arbeidsduur, gedaan vanuit de werknemer,
-is het beschrijven van de aanpassing verplicht.-}
+is het beschrijven van de aanpassing verplicht.+}
 
 ingediend :: Verzoek * Datum [UNI]
 PRAGMA "" "is ingediend"
 MEANING "Van elk verzoek is het tijdstip van indienen geregistreerd."
 PURPOSE RELATION ingediend REF "Artikel 2 lid 3"
-{+Omdat het tijdstip van indienen van het verzoek relevant is voor de ontvankelijkheid ervan, moeten we het registreren.-}
+{+Omdat het tijdstip van indienen van het verzoek relevant is voor de ontvankelijkheid ervan, moeten we het registreren.+}
 
 uitersteBeslisdatum :: Verzoek * Datum [UNI]
 PRAGMA "De beslissing op " " moet uiterlijk " " zijn genomen."
 MEANING "Elk verzoek heeft een uiterste datum waarop de beslissing moet zijn genomen."
 PURPOSE RELATION uitersteBeslisdatum REF "Artikel 2 lid 10"
-{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Om de werkgever te faciliteren om dit soort beslissingen tijdig te nemen, moet voor elk verzoek de uiterste beslisdatum worden geregistreerd.-}
+{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Om de werkgever te faciliteren om dit soort beslissingen tijdig te nemen, moet voor elk verzoek de uiterste beslisdatum worden geregistreerd.+}
 
 isDirecteVoorloperVan :: Verzoek * Verzoek [INJ,UNI,IRF,ASY]
 PRAGMA "" " is het verzoek dat direct is voorafgegaan aan " " aan dezelfde werkgever."
 MEANING "Als ooit een eerder verzoek is gedaan (van een werknemer aan dezelfde werkgever), moet deze bekend zijn." 
 PURPOSE RELATION isDirecteVoorloperVan REF "Artikel 2 lid 3"
-{+Volgens de wet mag een werknemer hoogstens eenmaal per twee jaren, nadat de werkgever op een (eerder) verzoek om aanpassing van de arbeidsduur heeft besloten, opnieuw een verzoek indienen. Daarom moet een opeenvolging van verzoeken van een werknemer bij eenzelfde werkgever worden geregistreerd.-}
+{+Volgens de wet mag een werknemer hoogstens eenmaal per twee jaren, nadat de werkgever op een (eerder) verzoek om aanpassing van de arbeidsduur heeft besloten, opnieuw een verzoek indienen. Daarom moet een opeenvolging van verzoeken van een werknemer bij eenzelfde werkgever worden geregistreerd.+}
 
 laatsteVerzoek :: Arbeidsrelatie * Verzoek [UNI]
 PRAGMA "Het laatste verzoek dat op " " betrekking had, is "
 MEANING "Het laatste verzoek om aanpassing van een arbeidsrelatie moet bekend zijn"
 PURPOSE RELATION laatsteVerzoek REF "Artikel 2 lid 3"
-{+Omdat de wet stelt dat een werknemer hooguit eenmaal per twee jaren om een aanpassing van de arbeidsduur kan verzoeken, moet bekend zijn wat diens laatste verzoek hieromtrent was.-}
+{+Omdat de wet stelt dat een werknemer hooguit eenmaal per twee jaren om een aanpassing van de arbeidsduur kan verzoeken, moet bekend zijn wat diens laatste verzoek hieromtrent was.+}
 
 --[Beslissingen]--
 op :: Beslissing -> Verzoek
@@ -80,7 +80,7 @@ MEANING "Elke beslissing verwijst naar het verzoek waarop de beslissing genomen 
 PURPOSE RELATION op REF "Artikel 2 lid 7"
 {+Duidelijkheid is nodig over de vraag op welk verzoek een beslissing gevraagd wordt.
 De tekst van de wet rept van ``De beslissing op het verzoek ...''
-Daarom wordt voor elke beslissing bijgehouden op welk verzoek de betreffende beslissing genomen wordt.-}
+Daarom wordt voor elke beslissing bijgehouden op welk verzoek de betreffende beslissing genomen wordt.+}
 
 aanp :: Beslissing -> Aanpassing
 PRAGMA "" "tot"
@@ -88,7 +88,7 @@ MEANING "Een beslissing beschrijft de aanpassing van de uit de betreffende arbei
 PURPOSE RELATION aanp[Beslissing*Aanpassing] REF "Artikel 2 lid 7"
 {+De aanpassing waartoe een werkgever besluit kan afwijken van de aanpassing die door de werknemer is verzocht.
 Daarom wordt aan het besluit nadrukkelijk de aanpassing verbonden die door de werkgever is besloten.
-Onder inwilligen zullen we dan ook verstaan dat de aanpassing waarom verzocht is gelijk is aan de aanpassing die in het besluit is vermeld.-}
+Onder inwilligen zullen we dan ook verstaan dat de aanpassing waarom verzocht is gelijk is aan de aanpassing die in het besluit is vermeld.+}
 
 door :: Beslissing -> Persoon
 PRAGMA "" "door"
@@ -96,14 +96,14 @@ MEANING "Elke beslissing wordt door een (rechts)persoon genomen."
 PURPOSE RELATION door
 {+Het moet duidelijk zijn door welke (rechts)persoon een beslissing genomen is.
 Het optreden van natuurlijke personen als tekenbevoegde voor een rechtspersoon wordt buiten deze wet geregeld en valt dan ook buiten de scope van dit model.
-Hier volstaan we met de juridische entiteit, ofwel de werkgever die de beslissing neemt.-}
+Hier volstaan we met de juridische entiteit, ofwel de werkgever die de beslissing neemt.+}
 
 medegedeeldAan :: Beslissing * Persoon [UNI]
 PRAGMA "" "is medegedeeld aan"
 MEANING "Beslissingen kunnen worden medegedeeld aan personen. Dat gebeurt schriftelijk."
 PURPOSE RELATION medegedeeldAan REF "Artikel 2 lid 7"
 {+De beslissing op het verzoek om aanpassing van de arbeidsduur wordt door de werkgever schriftelijk aan de werknemer meegedeeld.
-Daarom wordt het mededelen vastgelegd.-}
+Daarom wordt het mededelen vastgelegd.+}
 
 reden :: Beslissing * Reden [INJ,SUR]
 PRAGMA "" "wordt gemotiveerd door"
@@ -111,37 +111,37 @@ MEANING "Beslissingen kunnen met redenen worden omkleed."
 PURPOSE RELATION reden REF "Artikel 2 lid 7"
 {+Een beslissing, die afwijkt van de wensen van de werknemer, dient onder schriftelijke opgave van de redenen te worden meegedeeld.
 Hier scheppen we de ruimte om redenen voor de beslissing vast te leggen.
-De eis zelf, namelijk dat er redenen moeten zijn voor een afwijkend besluit, is elders in deze analyse geformuleerd.-}
+De eis zelf, namelijk dat er redenen moeten zijn voor een afwijkend besluit, is elders in deze analyse geformuleerd.+}
 
 beslisdatum :: Beslissing -> Datum
 PRAGMA "" "is genomen op"
 MEANING "Beslissingen worden genomen op een zekere datum."
 PURPOSE RELATION beslisdatum REF "Artikel 2 lid 3"
-{+Volgens de wet mogen werknemers ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen. Om dit te kunnen toetsen moet de datum waarop beslissingen worden genomen, worden geregistreerd.-}
+{+Volgens de wet mogen werknemers ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen. Om dit te kunnen toetsen moet de datum waarop beslissingen worden genomen, worden geregistreerd.+}
 
 --[Aanpassingen]--
 nieuw :: Aanpassing -> Arbeidsduur
 PRAGMA "" "leidt tot een nieuwe arbeidsduur van"
 MEANING "De arbeidsduur na aanpassing moet in de beslissing worden vermeld."
 PURPOSE RELATION nieuw REF "Artikel 2 lid 3"
-{+De nieuwe arbeidsduur moet eenduidig uit de aanpassing blijken.-}
+{+De nieuwe arbeidsduur moet eenduidig uit de aanpassing blijken.+}
 
 ingang :: Aanpassing -> Datum
 PRAGMA "" "gaat in op"
 MEANING "Het tijdstip van ingang moet in de aanpassing worden vermeld."
 PURPOSE RELATION ingang REF "Artikel 2 lid 3"
-{+De aanpassing van de arbeidsduur moet worden ingediend onder opgave van een beoogd tijdstip van ingang.-}
+{+De aanpassing van de arbeidsduur moet worden ingediend onder opgave van een beoogd tijdstip van ingang.+}
 
 omvang :: Aanpassing -> Omvang
 PRAGMA "" "betreft een verandering ter grootte van"
 MEANING "De omvang van de aanpassing van de arbeidsduur moet worden vermeld."
 PURPOSE RELATION omvang REF "Artikel 2 lid 3"
-{+De aanpassing moet worden ingediend onder opgave van de omvang van de aanpassing van de arbeidsduur per week of, als de arbeidsduur over een ander tijdvak is overeengekomen over dat tijdvak en de gewenste spreiding van de uren over de week of het anderszins overeengekomen tijdvak.-}
+{+De aanpassing moet worden ingediend onder opgave van de omvang van de aanpassing van de arbeidsduur per week of, als de arbeidsduur over een ander tijdvak is overeengekomen over dat tijdvak en de gewenste spreiding van de uren over de week of het anderszins overeengekomen tijdvak.+}
 
 --[Invarianten]--
 
 PURPOSE RULE "Een jaar in dienst" REF "Artikel 2 lid 1"
-{+Omdat werknemers niet direct na indiensttreding een verzoek tot aanpassing mogen doen, geldt in de wet een termijn van een jaar na indiensttreding.-}
+{+Omdat werknemers niet direct na indiensttreding een verzoek tot aanpassing mogen doen, geldt in de wet een termijn van een jaar na indiensttreding.+}
 RULE "Een jaar in dienst" : arbeidsrelatie~;tot;ingang;(I /\ minstensEenJaar~;minstensEenJaar)  |- inDienst;minstensEenJaar
 -- Deze regel geeft alleen overtredingen als 'minstensEenJaar' al is uitgerekend, en laat bovendien toe dat 'TGT I' in onderstaande 'VIOLATION' kan worden gebruikt.
 MEANING "De werknemer, die een verzoek indient, dient ten minste een jaar voorafgaand aan het beoogde tijdstip van ingang van die aanpassing in dienst te zijn bij die werkgever."
@@ -149,7 +149,7 @@ MESSAGE "Wet op Aanpassing van de Arbeidsduur, Artikel 2 lid 1:"
 VIOLATION (SRC werknemer, TXT " is minder dan een jaar voorafgaand aan ingangstijdstip ", TGT I, TXT " in dienst.")
 
 PURPOSE RULE "tijdig indienen" REF "Artikel 2 lid 3"
-{+Omdat werkgevers voldoende tijd moeten krijgen voor het beslissen, schrijft de wet voor dat een aanvraag vier maanden voor de beoogde ingangsdatum van de aanpassing moet worden ingediend.-}
+{+Omdat werkgevers voldoende tijd moeten krijgen voor het beslissen, schrijft de wet voor dat een aanvraag vier maanden voor de beoogde ingangsdatum van de aanpassing moet worden ingediend.+}
 RULE "tijdig indienen" : tot;ingang;vierMaandenOfMeer~ |- ingediend
 MEANING "Deze regel bewaakt dat er minstens vier maanden zijn verstreken tussen het tijdstip van aanvragen en het tijdstip van ingang van de aanpassing."
 MESSAGE "Wet op Aanpassing van de Arbeidsduur, Artikel 2 lid 3"
@@ -159,16 +159,16 @@ RULE "Indieningsmogelijkheden beperken tot 2 jaar":
 minstensTweeJaarTrigger /\ beslisdatum~;op;isDirecteVoorloperVan;(I[Verzoek] /\ laatsteVerzoek~;laatsteVerzoek);ingediend |- minstensTweeJaar
 MEANING "De werknemer kan ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen"
 PURPOSE RULE "Indieningsmogelijkheden beperken tot 2 jaar" REF "Artikel 2 lid 3"
-{+De wet zegt: 'De werknemer kan ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen'. Daarom moet een regel bestaan die dit afdwingt.-}
+{+De wet zegt: 'De werknemer kan ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek indienen'. Daarom moet een regel bestaan die dit afdwingt.+}
 
 RULE "Alleen op het laatste verzoek kan (mogelijk) nog worden besloten": 
 arbeidsrelatie~ /\ -laatsteVerzoek |- arbeidsrelatie~;(I /\ op~;op)
 MEANING "Per arbeidsrelatie mag hoogstens een verzoek bestaan waarover (nog) niet besloten is."
 PURPOSE RULE "Alleen op het laatste verzoek kan (mogelijk) nog worden besloten" REF "Artikel 2 lid 3"
-{+Omdat de wet stelt dat een werknemer hooguit eenmaal per twee jaren om een aanpassing van de arbeidsduur kan verzoeken, kan er op elk tijdstip en per arbeidsrelatie hoogstens een verzoek bestaan waarop nog niet is besloten. Dat is dan dus tevens het laatste verzoek. Deze eigenschap maakt het mogelijk om eenduidig een opeenvolging van verzoeken per arbeidsrelatie te maken.-}
+{+Omdat de wet stelt dat een werknemer hooguit eenmaal per twee jaren om een aanpassing van de arbeidsduur kan verzoeken, kan er op elk tijdstip en per arbeidsrelatie hoogstens een verzoek bestaan waarop nog niet is besloten. Dat is dan dus tevens het laatste verzoek. Deze eigenschap maakt het mogelijk om eenduidig een opeenvolging van verzoeken per arbeidsrelatie te maken.+}
 
 PURPOSE RULE beslisser REF "Artikel 2 lid 1,5,6,7"
-{+Volgens de wet beslist de werkgever over de aanpassing van de arbeidsduur, op basis van een verzoek hiertoe van de werknemer.-}
+{+Volgens de wet beslist de werkgever over de aanpassing van de arbeidsduur, op basis van een verzoek hiertoe van de werknemer.+}
 RULE beslisser : op~;door |- arbeidsrelatie;werkgever
 MEANING "Een beslissing op een verzoek tot aanpassing van een arbeidsrelatie wordt genomen door de werkgever."
 MESSAGE "Artikel 2 lid 1,5,6,7 Wet aanpassing arbeidsduur:"
@@ -181,7 +181,7 @@ PROCESS "Verzoek behandelen"
 
 ROLE Werkgever MAINTAINS "Beslissen over verzoek"
 PURPOSE RULE "Beslissen over verzoek" REF "Artikel 2 lid 10"
-{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Daarom moet op elk verzoek tijdig een besluit worden genomen.-}
+{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Daarom moet op elk verzoek tijdig een besluit worden genomen.+}
 RULE "Beslissen over verzoek" : arbeidsrelatie;werkgever |- op~;door
 MEANING "Degene aan wie een verzoek gericht is dient daarop (tijdig!) een beslissing te nemen."
 MESSAGE "Nog beslissen:"
@@ -189,7 +189,7 @@ VIOLATION (TGT I, TXT " moet voor ", SRC uitersteBeslisdatum, TXT " beslissen ov
 
 ROLE Werkgever MAINTAINS "Beslissing mededelen"
 PURPOSE RULE "Beslissing mededelen" REF "Artikel 2 lid 7"
-{+De beslissing op het verzoek om aanpassing van de arbeidsduur wordt door de werkgever schriftelijk aan de werknemer meegedeeld.-}
+{+De beslissing op het verzoek om aanpassing van de arbeidsduur wordt door de werkgever schriftelijk aan de werknemer meegedeeld.+}
 RULE "Beslissing mededelen" : op |- medegedeeldAan;werknemer~;arbeidsrelatie~ 
 MEANING "De beslissing op een verzoek dient medegedeeld te worden aan de werknemer"
 MESSAGE "Nog te verzenden besluiten:"
@@ -197,7 +197,7 @@ VIOLATION (TXT "verzoek van ", SRC op;arbeidsrelatie;werknemer, TXT ", die op ",
 
 PURPOSE RULE "Verzoek gemotiveerd afwijzen" REF "Artikel 2 lid 7"
 {+Indien de werkgever het verzoek niet inwilligt of de spreiding van de uren vaststelt in afwijking van de wensen van de werknemer, wordt dit onder schriftelijke opgave van de redenen meegedeeld.
-Hieruit valt op te maken dat elke afwijkende arbeidsduur vraagt om opgave van redenen.-}
+Hieruit valt op te maken dat elke afwijkende arbeidsduur vraagt om opgave van redenen.+}
 RULE "Verzoek gemotiveerd afwijzen" : I /\ op;tot;-I;aanp~ |- reden;reden~
 MEANING "Wanneer de arbeidsduur uit de beslissing afwijkt van de arbeidsduur uit het verzoek, dan dient er een reden voor te zijn, die in de beslissing wordt opgenomen."
 MESSAGE "Artikel 2 lid 7 Wet aanpassing arbeidsduur eist dat als de besloten arbeidsduur afwijkt van hetgeen is verzocht, dit met (schriftelijke) redenen omkleed moet zijn."
@@ -208,10 +208,10 @@ ENDPROCESS
 --[Proces: Rekenen met datums]-----------------------------
 PROCESS "Rekenen met datums"
 PURPOSE PROCESS "Rekenen met datums"
-{+De wet spreekt over tijdsverschillen van minstens vier maanden, of minstens een jaar. Dat vereist het kunnen rekenen met tijden. Omdat Ampersand dat nog niet goed kan, is een proces gedefinieerd dat deze berekeningen uitvoert. Dit proces is hier verder niet gedocumenteerd.-}
+{+De wet spreekt over tijdsverschillen van minstens vier maanden, of minstens een jaar. Dat vereist het kunnen rekenen met tijden. Omdat Ampersand dat nog niet goed kan, is een proces gedefinieerd dat deze berekeningen uitvoert. Dit proces is hier verder niet gedocumenteerd.+}
 
 PURPOSE RULE "Vandaag is 1 (enkele) dag" 
-{+ Om handelingen op een zekere datum uit te kunnen voeren, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een Concept ``Vandaag'' in (bestaande uit 1 atoom 'VANDAAG').-}
+{+ Om handelingen op een zekere datum uit te kunnen voeren, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een Concept ``Vandaag'' in (bestaande uit 1 atoom 'VANDAAG').+}
 RULE "Vandaag is 1 (enkele) dag": I[Vandaag] = 'VANDAAG'
 vandaag :: Vandaag * Datum [UNI]
 PRAGMA "" "is de datum"
@@ -222,17 +222,17 @@ RULE "Stel datum van vandaag vast": I[Vandaag] |- vandaag;vandaag~
 VIOLATION (TXT "{EX} SetToday;vandaag;Vandaag;VANDAAG;Datum")
 
 PURPOSE RELATION datumEQV
-{+Omdat een datum op verschillende manieren kan worden genoteerd, en om van deze notatiewijzen de equivalentie vast te kunnen stellen, voeren we de relatie ``datumEQV'' in.-}
+{+Omdat een datum op verschillende manieren kan worden genoteerd, en om van deze notatiewijzen de equivalentie vast te kunnen stellen, voeren we de relatie ``datumEQV'' in.+}
 datumEQV :: Datum * Datum
 MEANING "De relatie 'datumEQV' geeft van elk paar datums weer of ze equivalent zijn, d.w.z. naar dezelfde dag verwijzen."
 
 PURPOSE RELATION datumNEQ
-{+Omdat een datum op verschillende manieren kan worden genoteerd, en om van deze notatiewijzen de niet-equivalentie vast te kunnen stellen, voeren we de relatie ``datumNEQ'' in.-}
+{+Omdat een datum op verschillende manieren kan worden genoteerd, en om van deze notatiewijzen de niet-equivalentie vast te kunnen stellen, voeren we de relatie ``datumNEQ'' in.+}
 datumNEQ :: Datum * Datum
 MEANING "De relatie 'datumNEQ' geeft van elk paar datums weer of ze niet-equivalent zijn, d.w.z. naar verschillende dagen verwijzen."
 
 PURPOSE RELATION datumGD
-{+Om datums te kunnen vergelijken, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we de relatie ``datumGD'' in, d.w.z. de 'groter dan of gelijk aan'-relatie voor datums.-}
+{+Om datums te kunnen vergelijken, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we de relatie ``datumGD'' in, d.w.z. de 'groter dan of gelijk aan'-relatie voor datums.+}
 datumGD :: Datum * Datum
 MEANING "De relatie 'datumGD' geeft van elk paar datums weer welke groter dan of gelijk is aan de ander."
 
@@ -249,7 +249,7 @@ ENDPROCESS
 --[Proces: geautomatiseerde procesondersteuning]-----------
 PROCESS "Geautomatiseerde procesondersteuning"
 PURPOSE PROCESS "Geautomatiseerde procesondersteuning"
-{+Menselijke procesuitvoerders moeten zoveel mogelijk worden ontlast van handelingen die ook geautomatiseerd kunnen worden uitgevoerd. Geautomatiseerde procesondersteuning zorgt ervoor dat informatie die reeds aanwezig is dan wel afleidbaar is uit bestaande informatie, daar waar nodig automatisch wordt ingevuld. Ook zorgt het ervoor dat handelingen automatisch uitgevoerd worden voor zover dit afleidbaar is. Dit hoofdstuk documenteert de afspraken op basis waarvan automatische handelingen worden uitgevoerd.-}
+{+Menselijke procesuitvoerders moeten zoveel mogelijk worden ontlast van handelingen die ook geautomatiseerd kunnen worden uitgevoerd. Geautomatiseerde procesondersteuning zorgt ervoor dat informatie die reeds aanwezig is dan wel afleidbaar is uit bestaande informatie, daar waar nodig automatisch wordt ingevuld. Ook zorgt het ervoor dat handelingen automatisch uitgevoerd worden voor zover dit afleidbaar is. Dit hoofdstuk documenteert de afspraken op basis waarvan automatische handelingen worden uitgevoerd.+}
 
 nieuwVerzoek :: Arbeidsrelatie * Verzoek [UNI]
 ROLE ExecEngine MAINTAINS "Eerste verzoek verwerken"
@@ -275,18 +275,18 @@ arbeidsrelatie;werknemer;(I[Persoon] /\ -(werknemer~;-I[Arbeidsrelatie];werkneme
 MEANING "Als een werknemer die om aanpassing verzoekt slechts 1 arbeidsrelatie heeft, dan wordt deze zo nodig automatisch in het verzoek ingevuld."
 VIOLATION (TXT "{EX} InsPair;arbeidsrelatie;Verzoek;", SRC I, TXT ";Arbeidsrelatie;", TGT I)
 PURPOSE RULE "Arbeidsrelatie invullen (geautomatiseerd)"
-{+ Gebruikers hoeven de arbeidsrelatie in een verzoek niet in te vullen als deze kan worden afgeleid.-}
+{+ Gebruikers hoeven de arbeidsrelatie in een verzoek niet in te vullen als deze kan worden afgeleid.+}
 
 ROLE ExecEngine MAINTAINS "Verzoeksdatum invullen (geautomatiseerd)"
 RULE "Verzoeksdatum invullen (geautomatiseerd)": (I[Verzoek] /\ -(ingediend;ingediend~));V;vandaag |- ingediend
 MEANING "Als de indieningsdatum van een verzoek niet is ingevuld, dan wordt daarvoor automatisch de datum van vandaag ingevuld."
 VIOLATION (TXT "{EX} InsPair;ingediend;Verzoek;", SRC I, TXT ";Datum;", TGT I)
 PURPOSE RULE "Verzoeksdatum invullen (geautomatiseerd)" REF "Artikel 2 lid 3"
-{+Van elk verzoek moet de indieningsdatum bekend zijn, zodat onder meer kan worden gecontroleerd of een werknemer niet teveel verzoeken indient.-}
+{+Van elk verzoek moet de indieningsdatum bekend zijn, zodat onder meer kan worden gecontroleerd of een werknemer niet teveel verzoeken indient.+}
 
 PURPOSE RELATION vierMaandenOfMeer REF "Artikel 2 lid 3"
 {+Omdat de wet een termijn van vier maanden noemt, en omdat we in Ampersand (nog) niet kunnen
-rekenen, voeren we een relatie “vierMaandenOfMeer” in. Deze dient als stub voor het rekenwerk.-}
+rekenen, voeren we een relatie “vierMaandenOfMeer” in. Deze dient als stub voor het rekenwerk.+}
 vierMaandenOfMeer :: Datum * Datum
 PRAGMA "" "ligt minstens vier maanden voor"
 MEANING "De relatie 'vierMaandenOfMeer' bevat alleen paren van datums waarvan de eerste minstens vier maanden voor de tweede valt."
@@ -302,10 +302,10 @@ RULE "Uiterste beslisdatum invullen (geautomatiseerd)": (I[Beslissing] /\ -(besl
 MEANING "Als de beslisdatum van een beslissing niet is ingevuld, dan wordt daarvoor automatisch de datum van vandaag ingevuld."
 VIOLATION (TXT "{EX} InsPair;beslisdatum;Beslissing;", SRC I, TXT ";Datum;", TGT I)
 PURPOSE RULE "Uiterste beslisdatum invullen (geautomatiseerd)" REF "Artikel 2 lid 3"
-{+Van elke beslissing moet de beslisdatum bekend zijn, zodat kan worden gecontroleerd of een werknemer niet teveel verzoeken indient.-}
+{+Van elke beslissing moet de beslisdatum bekend zijn, zodat kan worden gecontroleerd of een werknemer niet teveel verzoeken indient.+}
 
 PURPOSE RELATION eenMaandVoordien REF "Artikel 2 lid 10"
-{+Omdat de wet stelt dat een beslissing op een verzoek minimaal 1 maand voorafgaand aan de beoogde ingangsdatum van de aanpassing genomen moet worden, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een relatie ``eenMaandVoordien'' in.-}
+{+Omdat de wet stelt dat een beslissing op een verzoek minimaal 1 maand voorafgaand aan de beoogde ingangsdatum van de aanpassing genomen moet worden, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een relatie ``eenMaandVoordien'' in.+}
 eenMaandVoordien :: Datum * Datum [INJ,UNI]
 MEANING "De relatie 'eenMaandVoordien' geeft van elke datum waarvoor dat nodig is, aan welke datum een maand voordien was."
 ROLE ExecEngine MAINTAINS "Bereken een maand voordien"
@@ -323,13 +323,13 @@ MEANING "Van elk verzoek wordt de uiterste belisdatum automatisch vastgesteld."
 VIOLATION (TXT "{EX} InsPair;uitersteBeslisdatum;Verzoek;", SRC I, TXT ";Datum;", TGT I)
 
 PURPOSE RELATION minstensEenJaar REF "Artikel 2 lid 1"
-{+Omdat de wet de voorwaarde stelt dat de werknemer die tot aanpassing van zijn arbeidsduur verzoekt, tenminste 1 jaar voor de ingangsdatum van de aanpassing in dienst moet zijn, willen we dat automatisch kunnen uitrekenen. Daarom voeren we een relatie ``minstensEenJaar'' in.-}
+{+Omdat de wet de voorwaarde stelt dat de werknemer die tot aanpassing van zijn arbeidsduur verzoekt, tenminste 1 jaar voor de ingangsdatum van de aanpassing in dienst moet zijn, willen we dat automatisch kunnen uitrekenen. Daarom voeren we een relatie ``minstensEenJaar'' in.+}
 minstensEenJaar :: Datum * Datum
 PRAGMA "" "ligt minstens een jaar voor"
 MEANING "De relatie 'minstensEenJaar' geeft weer of er minstens een jaar zijn verstreken tussen twee tijdstippen."
 minstensEenJaarTrigger :: Datum * Datum
 PURPOSE RULE "Berekenen van de termijn van een jaar conform artikel 2 lid 1"
-{+Artikel 2 lid 1 stelt dat voor de berekening van de termijn van een jaar, perioden waarin arbeid wordt verricht en die elkaar opvolgen met een onderbreking van niet meer dan drie maanden, worden samengeteld. Ook stelt dit artikel dat dit geldt als arbeid voor verschillende wergevers wordt verricht die ten aanzien van de verrichte arbeid redelijkerwijs geacht moeten worden elkanders opvolger te zijn. Er is voor gekozen om de bedoelde termijn van een jaar geautomatiseerd te berekenen voor zover deze uit een enkele arbeidsovereenkomst valt af te leiden.-} --! Om geheel aan art 2 lid 1 te voldoen moet dus nog een stukje handmatig proces worden gespecificeerd. !-- 
+{+Artikel 2 lid 1 stelt dat voor de berekening van de termijn van een jaar, perioden waarin arbeid wordt verricht en die elkaar opvolgen met een onderbreking van niet meer dan drie maanden, worden samengeteld. Ook stelt dit artikel dat dit geldt als arbeid voor verschillende wergevers wordt verricht die ten aanzien van de verrichte arbeid redelijkerwijs geacht moeten worden elkanders opvolger te zijn. Er is voor gekozen om de bedoelde termijn van een jaar geautomatiseerd te berekenen voor zover deze uit een enkele arbeidsovereenkomst valt af te leiden.+} --! Om geheel aan art 2 lid 1 te voldoen moet dus nog een stukje handmatig proces worden gespecificeerd. !-- 
 ROLE ExecEngine MAINTAINS "Berekenen van de termijn van een jaar conform artikel 2 lid 1"
 RULE "Berekenen van de termijn van een jaar conform artikel 2 lid 1":
        inDienst~;arbeidsrelatie~;tot;ingang |- minstensEenJaarTrigger
@@ -338,13 +338,13 @@ VIOLATION (TXT "{EX} InsPair;minstensEenJaarTrigger;Datum;", SRC I, TXT ";Datum;
           )
 
 PURPOSE RELATION minstensTweeJaar REF "Artikel 2 lid 3"
-{+Omdat de wet de voorwaarde stelt dat de werknemer die tot aanpassing van zijn arbeidsduur verzoekt, tenminste 2 jaar na een voorafgaand besluit wacht met het indienen van een nieuw verzoek, willen we dat automatisch kunnen uitrekenen. Daarom voeren we een relatie ``minstensTweeJaar'' in.-}
+{+Omdat de wet de voorwaarde stelt dat de werknemer die tot aanpassing van zijn arbeidsduur verzoekt, tenminste 2 jaar na een voorafgaand besluit wacht met het indienen van een nieuw verzoek, willen we dat automatisch kunnen uitrekenen. Daarom voeren we een relatie ``minstensTweeJaar'' in.+}
 minstensTweeJaar :: Datum * Datum
 PRAGMA "" "ligt minstens twee jaar voor "
 MEANING "De relatie 'minstensTweeJaar' geeft weer of er minstens twee jaren zijn verstreken tussen twee tijdstippen."
 minstensTweeJaarTrigger :: Datum * Datum
 PURPOSE RULE "Berekenen van de termijn van twee jaar"
-{+Artikel 2 lid 3 stelt dat een werknemer ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek kan indienen.-}
+{+Artikel 2 lid 3 stelt dat een werknemer ten hoogste eenmaal per twee jaren, nadat de werkgever een verzoek om aanpassing van de arbeidsduur heeft ingewilligd of afgewezen, opnieuw een verzoek kan indienen.+}
 ROLE ExecEngine MAINTAINS "Berekenen van de termijn van twee jaar"
 RULE  "Berekenen van de termijn van twee jaar":
        beslisdatum~;op;isDirecteVoorloperVan~;ingediend |- minstensTweeJaarTrigger
@@ -365,14 +365,14 @@ VIOLATION (TXT "{EX} NewStruct;Beslissing"
                ,TXT ";medegedeeldAan;Beslissing;NULL;Persoon;", SRC laatsteVerzoek~;werknemer
           )
 PURPOSE RULE "Beslissen op een verzoek (geautomatiseerd)" REF "Artikel 2 lid 10"
-{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Een dergelijk besluit kan geautomatiseerd worden genomen en verstuurd.-}
+{+De wet stelt dat indien de werkgever niet een maand voor het beoogde tijdstip van ingang van de aanpassing op het verzoek heeft beslist, de arbeidsduur wordt aangepast overeenkomstig het verzoek van de werknemer. Een dergelijk besluit kan geautomatiseerd worden genomen en verstuurd.+}
 
 ROLE ExecEngine MAINTAINS "Effectueren van beslissingen (geautomatiseerd)"
 RULE "Effectueren van beslissingen (geautomatiseerd)": laatsteVerzoek;op~;aanp;nieuw |- arbeidsduur
 MEANING "Een beslissing tot aanpassing van de arbeidsduur moet worden ge-effectueerd in de arbeidsrelatie."
 VIOLATION (TXT "{EX} InsPair;arbeidsduur;Arbeidsrelatie;", SRC I, TXT ";Arbeidsduur;", TGT I)
 PURPOSE RULE "Effectueren van beslissingen (geautomatiseerd)"
-{+Als door (of namens) de werkgever is besloten omtrent de aanpassing van een arbeidsrelatie, dan moet de arbeidsduur in de betreffende arbeidsrelatie worden aangepast. Dat kan automatisch worden uitgevoerd.-}
+{+Als door (of namens) de werkgever is besloten omtrent de aanpassing van een arbeidsrelatie, dan moet de arbeidsduur in de betreffende arbeidsrelatie worden aangepast. Dat kan automatisch worden uitgevoerd.+}
 
 ENDPROCESS
 
@@ -580,34 +580,34 @@ BOX[ "unieke naam" : I
 CONCEPT Verzoek  "Een verzoek is een schrijven waarin een werknemer verzoekt om de arbeidsduur van een arbeidsrelatie aan te passen."
 PURPOSE CONCEPT Verzoek
 {+De wet geeft geen definitie van ``verzoek'' en gaat kennelijk uit van de betekenis algemeen gebruikt Nederlands.
-Wel stelt de wet de eis van een schriftelijk verzoek, waardoor het verzoek het karakter van een document krijgt.-}
+Wel stelt de wet de eis van een schriftelijk verzoek, waardoor het verzoek het karakter van een document krijgt.+}
 
 CONCEPT Aanpassing "Een aanpassing is de gebeurtenis waarbij de arbeidsduur van een arbeidsrelatie verandert."
 PURPOSE CONCEPT Aanpassing
 {+Het begrip aanpassing is nodig om de gebeurtenis van het aanpassen te objectiveren.
-Het gaat in deze wet uitsluitend om het aanpassen van de arbeidsduur, die uit een arbeidsrelatie voortvloeit.-}
+Het gaat in deze wet uitsluitend om het aanpassen van de arbeidsduur, die uit een arbeidsrelatie voortvloeit.+}
 
 CONCEPT Persoon "Een persoon is een natuurlijke persoon of een rechtspersoon, naar geldend Nederlands recht."
 PURPOSE CONCEPT Persoon
 {+Er is sprake van werkgever en werknemer, waarbij de werkgever (naar geldend recht) zowel een natuurlijke persoon als een rechtspersoon kan zijn.
-In deze analyse wordt daarvan geabstraheerd, en noemen we alle natuurlijke- en rechtspersonen gewoon ``Persoon''.-}
+In deze analyse wordt daarvan geabstraheerd, en noemen we alle natuurlijke- en rechtspersonen gewoon ``Persoon''.+}
 
 CONCEPT Beslissing "Een beslissing is een schrijven, waarin een werkgever mededeelt wat hij op een in de beslissing vermeld verzoek heeft besloten."
 PURPOSE CONCEPT Beslissing
 {+Omdat de beslissing (net als het verzoek) schriftelijk wordt meegedeeld, heeft ook de beslissing een documentair karakter.
 Het onderscheid tussen besluit en beslissing, wat we kennen uit de Algemene Wet Bestuursrecht, wordt hier niet gemaakt.
-Wellicht omdat het hier niet alleen over ambtelijke aanstellingen, maar ook over arbeidsovereenkomsten naar burgerlijk recht gaat.-}
+Wellicht omdat het hier niet alleen over ambtelijke aanstellingen, maar ook over arbeidsovereenkomsten naar burgerlijk recht gaat.+}
 
 CONCEPT Reden "Een reden is een omschrijving van de grond van een beslissing."
 PURPOSE CONCEPT Reden
 {+Omdat de Wet aanpassing arbeidsduur expliciet om redenen vraagt, is hiervoor een concept nodig.
-De aard van de redenen kan worden gecategoriseerd conform artikel 1 lid 8-9.-}
+De aard van de redenen kan worden gecategoriseerd conform artikel 1 lid 8-9.+}
 
 CONCEPT Arbeidsrelatie "Onder arbeidsrelatie verstaan we een arbeidsovereenkomst naar burgerlijk recht of publiekrechtelijke aanstelling." "Artikel 1 sub a"
 PURPOSE CONCEPT Arbeidsrelatie REF "Artikel 1 sub a"
 {+De wet spreekt van ``arbeidsovereenkomst naar burgerlijk recht of publiekrechtelijke aanstelling''.
 Kennelijk zijn er twee manieren om een arbeidsrelatie te hebben.
-In de onderhavige analyse spreken we van een arbeidsrelatie, maar bedoelen daarmee zoals in dit artikel staat omschreven.-}
+In de onderhavige analyse spreken we van een arbeidsrelatie, maar bedoelen daarmee zoals in dit artikel staat omschreven.+}
 
 CONCEPT Arbeidsduur "Onder arbeidsduur verstaan we een afspraak over de omvang en het tijdstip van ingang van die afspraak."
 PURPOSE CONCEPT Arbeidsduur
@@ -616,17 +616,17 @@ Een beetje curieus is dan ook dat de Wet aanpassing arbeidsduur ``arbeidsduur'' 
 Wel doet deze wet een aantal aannames, zoals: Arbeidsduur heeft een omvang, die je kunt aanpassen (specifiek door te verminderen of vermeerderen).
 Arbeidsduur heeft ook een tijdstip van ingang.
 Deze aannames zijn in het model verwerkt, zonder te kijken naar andere wetten of regelingen die het begrip verder inkleuren.
-De definitie die we hier hanteren voor Arbeidsduur gaat dan ook wat verder dan strikt uit deze wet kan worden opgemaakt (uitzoeken).-}
+De definitie die we hier hanteren voor Arbeidsduur gaat dan ook wat verder dan strikt uit deze wet kan worden opgemaakt (uitzoeken).+}
 
 CONCEPT Omvang "Onder de omvang verstaan we het aantal uren dat een werknemer per periode voor een werkgever arbeid verricht en de verdeling van die uren over de dag/week/periode."
 PURPOSE CONCEPT Omvang
 {+Niet helemaal duidelijk is wat deze wet verstaat onder de omvang van de arbeidsduur.
 Het aantal uren per week (of tijdvak) valt onder de omvang, maar er is ook een vage aanwijzing over de verdeling van die uren over de week.
-Deze onduidelijkheid wordt niet verder geanalyseerd, omdat we dan naar andere wetten en regelingen moeten kijken.-}
+Deze onduidelijkheid wordt niet verder geanalyseerd, omdat we dan naar andere wetten en regelingen moeten kijken.+}
 
 CONCEPT Datum "Een datum is de aanduiding van een dag volgens het formaat dag-maand-jaar (bijvoorbeeld: 1-5-2014)."
 PURPOSE CONCEPT Datum
-{+De wet noemt verschillende termijnen. Om hiermee te kunnen rekenen moet bekend zijn wanneer verzoeken zijn ingediend, wanneer iemand een arbeidsrelatie aanging en dergelijke. Om een punt in de tijd aan te geven gebruiken we het concept Datum (meervoud: datums, om verwarring met 'data' (gegevens) te vermijden).-}
+{+De wet noemt verschillende termijnen. Om hiermee te kunnen rekenen moet bekend zijn wanneer verzoeken zijn ingediend, wanneer iemand een arbeidsrelatie aanging en dergelijke. Om een punt in de tijd aan te geven gebruiken we het concept Datum (meervoud: datums, om verwarring met 'data' (gegevens) te vermijden).+}
 
 --[Populaties]---------------------------------------------
 

@@ -1,6 +1,6 @@
 module Ampersand.Test.RunAmpersand (ampersand) where
 
-import Ampersand.Misc.Options(getOptions,Options(..))
+import Ampersand.Misc
 import Ampersand.FSpec.ToFSpec.CreateFspec(createMulti)
 import Ampersand.Input.ADL1.CtxError
 
@@ -15,4 +15,4 @@ runAmpersand opts file =
            case gFSpec of
               Errors err    -> return err
               --TODO: Do something with the fSpec
-              Checked _     -> do return []
+              Checked _     -> return []

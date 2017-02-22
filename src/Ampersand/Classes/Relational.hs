@@ -3,6 +3,7 @@ module Ampersand.Classes.Relational
    ) where
 
 import Data.Maybe
+import Ampersand.Core.ParseTree(Prop(..))
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.ADL1.Expression
 import Ampersand.Basics
@@ -66,9 +67,7 @@ class Association r => Relational r where
 
 instance Relational Declaration where
     properties d = case d of
-           Sgn {}       -> case decprps_calc d of
-                             Nothing -> decprps d
-                             Just ps -> ps
+           Sgn {}       -> fromMaybe (decprps d) (decprps_calc d)
            Isn{}        -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
            Vs{}         -> [Tot,Sur]
     isProp d = case d of         -- > tells whether the argument is a property.

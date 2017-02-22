@@ -29,72 +29,66 @@ import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(F
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line
-         -> FilePath   -- ^ The path of the file to be parsed
+         -> FilePath   -- ^ The path of the file to be parsed, either absolute or relative to the current user's path
          -> IO (Guarded P_Context)     -- ^ The resulting context
-parseADL opts fp = parseThing opts (fp,Nothing) False
+parseADL opts fp = do curDir <- getCurrentDirectory 
+                      canonical <- canonicalizePath fp
+                      parseThing opts (ParseCandidate (Just curDir) Nothing fp False canonical)
 
 --parseArchiMeta :: Options -> IO (Guarded P_Context)
 --parseArchiMeta opts = parseThing opts ("Archi.adl",Just $ Origin "Archimate metamodel") True
 
 parseMeta :: Options -> IO (Guarded P_Context)
-parseMeta opts = parseThing opts ("AST.adl",Just $ Origin "Formal Ampersand specification") True -- This is the top file from FormalAmpersand. 
+parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" True "AST.adl")
 
-parseThing :: Options -> SingleFileToParse -> Bool -> IO (Guarded P_Context) 
-parseThing opts mainFile useAllStaticFiles =
-  whenCheckedIO (parseSingleADL opts useAllStaticFiles mainFile) $ \(ctxt, includes) ->
-    whenCheckedIO (parseADLs opts useAllStaticFiles [fst mainFile] includes) $ \ctxts ->
-      return $ Checked $ foldl mergeContexts ctxt ctxts
+parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
+parseThing opts pc =
+  whenCheckedIO (parseADLs opts [] [pc] ) $ \ctxts ->
+      return $ Checked $ foldl1 mergeContexts ctxts
+
 
 -- | Parses several ADL files
-parseADLs :: Options                    -- ^ The options given through the command line
-          -> Bool                       -- ^ True iff the file is from FormalAmpersand files in `allStaticFiles`
-          -> [FilePath]                 -- ^ The list of files that have already been parsed
-          -> [SingleFileToParse]        -- ^ A list of files that still are to be parsed. 
-          -> IO (Guarded [P_Context])   -- ^ The resulting contexts
-parseADLs opts useAllStaticFiles parsedFilePaths fpIncludes =
+parseADLs :: Options                  -- ^ The options given through the command line
+          -> [ParseCandidate]         -- ^ The list of files that have already been parsed
+          -> [ParseCandidate]         -- ^ A list of files that still are to be parsed. 
+          -> IO (Guarded [P_Context]) -- ^ The resulting contexts
+parseADLs opts parsedFilePaths fpIncludes =
   case fpIncludes of
     [] -> return $ Checked []
-    _  -> do { let filePathsToParse = determineWhatElseToParse parsedFilePaths fpIncludes
-             ; whenCheckedIO (sequenceA <$> mapM (parseSingleADL opts useAllStaticFiles) filePathsToParse) $ noot
-             }
-           where 
-              noot :: [(P_Context, [SingleFileToParse])] -> IO (Guarded [P_Context])
-              noot results =
-                do { let (ctxts, includesPerFile) = unzip results
-                         processed = nub (parsedFilePaths ++ map fst fpIncludes)
-                   ; whenCheckedIO (parseADLs opts useAllStaticFiles processed $ concat includesPerFile) $ \ctxts' ->
-                       return $ Checked $ ctxts ++ ctxts'
-                   }
-          
-              determineWhatElseToParse :: [FilePath] -> [SingleFileToParse] -> [SingleFileToParse]
-              determineWhatElseToParse allreadyParsedFiles = 
-                  filter (not . isParsedAlready) . uniques 
-                where
-                  isParsedAlready :: SingleFileToParse -> Bool
-                  isParsedAlready (x,_)= x `elem` allreadyParsedFiles
-                  uniques :: [SingleFileToParse] -> [SingleFileToParse]
-                  uniques = map head . groupBy eql
-                  eql :: Eq a => (a,b) -> (a,c) -> Bool 
-                  eql a b = fst a == fst b
+    x:xs -> if x `elem` parsedFilePaths
+            then parseADLs opts parsedFilePaths xs
+            else whenCheckedIO (parseSingleADL opts x) parseTheRest
+        where parseTheRest :: (P_Context, [ParseCandidate]) -> IO (Guarded [P_Context])
+              parseTheRest (ctx, includes) = whenCheckedIO (parseADLs opts (x:parsedFilePaths) (includes++xs)) $
+                                                  return . pure . (:) ctx 
 
-type SingleFileToParse = (FilePath, Maybe Origin) -- The origin of why this file still has to be parsed.
+data ParseCandidate = ParseCandidate 
+       { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 
+       , pcOrigin   :: Maybe Origin
+       , pcFilePath :: FilePath -- The absolute or relative filename as found in the INCLUDE statement
+       , useAllStaticFiles :: Bool -- In case of FormalAmpersand stuff, the files are included in ampersand.exe
+       , pcCanonical :: FilePath -- The canonicalized path of the candicate
+       }
+instance Eq ParseCandidate where
+ a == b = useAllStaticFiles a == useAllStaticFiles b && pcCanonical a `equalFilePath` pcCanonical b
+
+
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL ::
     Options
- -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles`
- -> SingleFileToParse -> IO (Guarded (P_Context, [SingleFileToParse]))
-parseSingleADL opts useAllStaticFiles singleFile
- = do verboseLn opts $ "Reading file " ++ filePath ++ if useAllStaticFiles then " (from within ampersand.exe)" else ""
+ -> ParseCandidate -> IO (Guarded (P_Context, [ParseCandidate]))
+parseSingleADL opts singleFile
+ = do verboseLn opts $ "Reading file " ++ filePath ++ if useAllStaticFiles singleFile then " (from within ampersand.exe)" else ""
       exists <- doesFileExist filePath
-      if useAllStaticFiles || exists
+      if useAllStaticFiles singleFile|| exists
       then parseSingleADL'
-      else return $ mkErrorReadingINCLUDE (snd singleFile) filePath "File does not exist."
+      else return $ mkErrorReadingINCLUDE (pcOrigin singleFile) filePath "File does not exist."
     where
-     filePath = fst singleFile
-     parseSingleADL' :: IO(Guarded (P_Context, [SingleFileToParse]))
+     filePath = pcCanonical singleFile
+     parseSingleADL' :: IO(Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
          | extension == ".xlsx" =
-             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts useAllStaticFiles filePath
+             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts (useAllStaticFiles singleFile) filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
          | extension == ".xml" =
@@ -106,18 +100,50 @@ parseSingleADL opts useAllStaticFiles singleFile
                 }
          | otherwise =
              do { mFileContents
-                    <- if useAllStaticFiles
+                    <- if useAllStaticFiles singleFile
                        then case getStaticFileContent FormalAmpersand filePath of
-                             Just cont -> do return (Right $ stripBom cont)
+                             Just cont -> return (Right $ stripBom cont)
                              Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++filePath++"`.")
                        else readUTF8File filePath
                 ; case mFileContents of
-                    Left err -> return $ mkErrorReadingINCLUDE (snd singleFile) filePath err
+                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin singleFile) filePath err
                     Right fileContents ->
-                         whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, relativePaths) ->
-                               do return (Checked (ctxts, relativePaths))
+                         whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, includes) ->
+                               do parseCandidates <- mapM include2ParseCandidate includes
+                                  return (Checked (ctxts, parseCandidates))
                 }
-         where -- showDcl dcl = name dcl ++show(dec_sign dcl)
+         where 
+               include2ParseCandidate :: Include -> IO ParseCandidate
+               include2ParseCandidate (Include org str) = do
+                  let canonical = myNormalise ( takeDirectory filePath </> str )
+                  return ParseCandidate { pcBasePath = Just filePath
+                                        , pcOrigin   = Just org
+                                        , pcFilePath = str
+                                        , useAllStaticFiles = useAllStaticFiles singleFile
+                                        , pcCanonical = canonical
+                                        }
+               myNormalise :: FilePath -> FilePath 
+               -- see http://neilmitchell.blogspot.nl/2015/10/filepaths-are-subtle-symlinks-are-hard.html why System.Filepath doesn't support reduction of x/foo/../bar into x/bar. 
+               -- However, for most Ampersand use cases, we will not deal with symlinks. 
+               -- As long as that assumption holds, we can make the following reductions
+               myNormalise fp = joinDrive drive . joinPath $ f [] dirs ++ [file]
+                 where
+                   (drive,path) = splitDrive (normalise fp)
+                   (dirs,file)  = case splitPath path of
+                                   [] -> fatal 130 $ "Illegal filePath: "++show fp  
+                                   xs -> (init xs,last xs)
+                   
+                   f :: [FilePath] -> [FilePath] -> [FilePath]
+                   f ds [] = ds
+                   f ds (x:xs) | is "."  x = f ds xs   -- reduce /a/b/./c to /a/b/c/ 
+                               | is ".." x = case ds of
+                                              [] -> fatal 137 $ "Illegal filePath: "++show fp 
+                                              _  -> f (init ds) xs --reduce a/b/c/../d/ to a/b/d/
+                               | otherwise = f (ds++[x]) xs
+               is :: String -> FilePath -> Bool
+               is str fp = case stripPrefix str fp of
+                             Just [chr] -> chr `elem` pathSeparators  
+                             _          -> False
                stripBom :: String -> String
                stripBom ('\239':'\187':'\191': s) = s
                stripBom s = s
@@ -180,10 +206,5 @@ parseRule str
 -- | Parses an Ampersand context
 parseCtx :: FilePath -- ^ The file name (used for error messages)
          -> String   -- ^ The string to be parsed
-         -> Guarded (P_Context, [SingleFileToParse]) -- ^ The context and a list of included files
-parseCtx base content = 
-   case runParser pContext base content of
-     Errors err -> Errors err
-     Checked x -> Checked (f x)
-     where f (pctx,includes) = (pctx, map include2SingleFileToParse includes)
-           include2SingleFileToParse (Include orig str) = (normalise (takeDirectory base </> str) , Just orig)
+         -> Guarded (P_Context, [Include]) -- ^ The context and a list of included files
+parseCtx = runParser pContext
