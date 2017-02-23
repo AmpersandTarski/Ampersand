@@ -21,12 +21,12 @@ generateDBstructQueries fSpec withComment =
 
 generateDBstructQueries' :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries' fSpec withComment 
-  = (concatMap (tableSpec2Queries withComment)
-           ( sessionTableSpec
-           : signalTableSpec
-           : [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
-           )
-    ) <> additionalDatabaseSettings 
+  =    concatMap (tableSpec2Queries withComment)
+                 ( sessionTableSpec
+                 : signalTableSpec
+                 : [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
+                 )
+    <> additionalDatabaseSettings 
 generateInitialPopQueries :: FSpec -> [Text.Text]
 generateInitialPopQueries fSpec 
   = fillSignalTable (initialConjunctSignals fSpec) <>

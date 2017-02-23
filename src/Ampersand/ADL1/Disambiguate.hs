@@ -5,6 +5,7 @@ import Ampersand.Core.AbstractSyntaxTree
 --import Ampersand.Basics (fatal)
 --import Control.Applicative
 import qualified Data.Set as Set
+import Control.Arrow
 
 -- this is *only* used internally!
 data D_Concept
@@ -51,8 +52,7 @@ class Traversable d => Disambiguatable d where
   disambiguate termPrimDisAmb x = fixpoint disambiguationStep (Change (fmap termPrimDisAmb x) False)
     where
      fixpoint :: (a -> Change a) -- function for computing a fixpoint
-              -> (Change a) -- has the fixpoint been reached?
-              -> a
+              -> Change a -> a
      fixpoint _ (Change a True)  = a
      fixpoint f (Change a False) = fixpoint f (f a)
 
@@ -90,7 +90,7 @@ instance Disambiguatable P_Rule where
    = (P_Ru fps nm exp' mean msg (Just viol'), rt)
    where (exp',rt) = disambInfo expr x
          (PairViewTerm viol',_) -- SJ 20131123: disambiguation does not depend on the contents of this pairview, but must come from outside...
-          = (disambInfo (PairViewTerm viol) rt)
+          = disambInfo (PairViewTerm viol) rt
 instance Disambiguatable PairViewTerm where
   disambInfo (PairViewTerm (PairView lst)) x
    = (PairViewTerm (PairView [pv' | pv <- lst, let (PairViewSegmentTerm pv',_) = disambInfo (PairViewSegmentTerm pv) x])
@@ -102,15 +102,15 @@ instance Disambiguatable PairViewSegmentTerm where
                                             Src -> sourceConstraintsOf constraints
                                             Tgt -> targetConstraintsOf constraints) [])
 instance Disambiguatable P_ViewD where
-  disambInfo (P_Vd { pos  = o
-                   , vd_lbl  = s
-                   , vd_cpt  = c
-                   , vd_isDefault = d
-                   , vd_html = h
-                   , vd_ats  = a
-                   }) _ = ( P_Vd o s c d h (map (\x -> fst (disambInfo x constraints)) a)
-                          , constraints
-                          )
+  disambInfo P_Vd { pos  = o
+                  , vd_lbl  = s
+                  , vd_cpt  = c
+                  , vd_isDefault = d
+                  , vd_html = h
+                  , vd_ats  = a
+                  } _ = ( P_Vd o s c d h (map (\x -> fst (disambInfo x constraints)) a)
+                        , constraints
+                        )
    where constraints = Cnstr [MustBe (pCpt2aCpt c)] []
 
 instance Disambiguatable P_ViewSegment where
@@ -142,7 +142,7 @@ instance Disambiguatable P_ObjDef where
      (d', env1)
       = case d of
            Nothing -> (Nothing,noConstraints)
-           Just si -> (\(x,y)->(Just x,y)) $ disambInfo si (Cnstr (targetConstraintsOf env2) [])
+           Just si -> Control.Arrow.first Just $ disambInfo si (Cnstr (targetConstraintsOf env2) [])
      (c', env2)
       = disambInfo c (Cnstr (sourceConstraintsOf env) (sourceConstraintsOf env1))
 instance Disambiguatable Term where
@@ -238,7 +238,7 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    mayBeTgt = mayBe tgts'
    mustBe xs = Set.fromList [x | (MustBe x) <- xs]
    mayBe  xs = Set.fromList [x | (MayBe x) <- xs]
-   orWhenEmptyS a b = if (Set.null a) then b else a
+   orWhenEmptyS a b = if Set.null a then b else a
    determineBySize _   [a] = impure (t,Known a)
    determineBySize err lst = fmap ((,) t) (err lst)
    impure x = Change x False
@@ -246,7 +246,7 @@ performUpdate ((t,unkn), Cnstr srcs' tgts')
    uni = Set.union
 
 orWhenEmpty :: [a] -> [a] -> [a]
-orWhenEmpty a b = if (null a) then b else a
+orWhenEmpty a b = if null a then b else a
 
 pCpt2aCpt :: P_Concept -> A_Concept
 pCpt2aCpt pc

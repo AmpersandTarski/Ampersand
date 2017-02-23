@@ -10,7 +10,7 @@ import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ShowPStruct
 import Data.Char
 import Data.Text (pack)
-import Ampersand.Output.PandocAux (latexEscShw,texOnly_Id)
+import Ampersand.Output.PandocAux (latexEscShw,texOnlyId)
 
 --  data PredVar = PV String     -- TODO Bedoeld om predicaten inzichtelijk te maken. Er bestaan namelijk nu verschillende manieren om hier mee om te gaan (zie ook Motivations. HJO.
 data PredLogic
@@ -81,7 +81,7 @@ showLatex x
             where
              vss = [(map fst varCl,show(snd (head varCl))) |varCl<-eqCl snd vs]
          chop :: String -> [[String]]
-         chop str = (map chops.lins) str
+         chop = map chops . lins
           where
             lins ""        = []
             lins ('\n':cs) = "": lins cs
@@ -92,8 +92,7 @@ showLatex x
             tabs (c:cs) = (c:r):rs where r:rs = tabs cs
 
 showRtf :: PredLogic -> String
-showRtf  p = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el)
-               p
+showRtf = predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, funP, showVarsP, breakP, spaceP, apply, el)
   where unicodeSym :: Int -> Char -> Char -> String
         unicodeSym fs sym altChar = "{\\fs"++show fs++" \\u"++show (ord sym)++[altChar]++"}"
         forallP = unicodeSym 32 '∀' 'A' --"{\\fs36 \\u8704A}"
@@ -157,8 +156,8 @@ natLangOps l
              English -> ("For each",  "There exists", implies, "is equivalent to",  "or", "and", "*", "+", "not",  rel, fun,  langVars , "\n  ", " ", apply, "is element of")
              Dutch   -> ("Voor elke", "Er is een",    implies, "is equivalent met", "of", "en",  "*", "+", "niet", rel, fun,  langVars , "\n  ", " ", apply, "is element van")
             where
-               rel r = apply r
-               fun r x' = texOnly_Id(name r)++"("++x'++")"
+               rel = apply
+               fun r x' = texOnlyId(name r)++"("++x'++")"
                implies antc cons = case l of
                                      English  -> "If "++antc++", then "++cons
                                      Dutch    -> "Als "++antc++", dan "++cons
@@ -321,14 +320,14 @@ assemble expr
      res = case denote e of
             Flr  -> R (Funs a [dcl]) (Isn tv) (Funs b [])
             Frl  -> R (Funs a []) (Isn sv) (Funs b [dcl])
-            Rn   -> R (Funs a []) (dcl) (Funs b [])
+            Rn   -> R (Funs a []) dcl (Funs b [])
             Wrap -> fatal 246 "function res not defined when denote e == Wrap. "
    f _ e@(EFlp (EDcD dcl)) ((a,sv),(b,tv)) = res
     where
      res = case denote e of
             Flr  -> R (Funs a [dcl]) (Isn tv) (Funs b [])
             Frl  -> R (Funs a []) (Isn sv) (Funs b [dcl])
-            Rn   -> R (Funs b []) (dcl) (Funs a [])
+            Rn   -> R (Funs b []) dcl (Funs a [])
             Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
    f exclVars (EFlp e)       (a,b) = f exclVars e (b,a)
    f _ (EMp1 val _) _             = Atom . showP $ val
@@ -403,12 +402,12 @@ assemble expr
       res  = pars3 (exclVars++ivs) (split es)  -- yields triples (r,s,t): the fragment, its source and target.
       conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                 -- So conr is not empty.
-      antr = let x = (map notCpl.map flp.reverse.takeWhile isCpl) es in
-             if null x then fatal 367 ("Entering in an empty foldr1") else x
-      conl = let x = (reverse.dropWhile isCpl.reverse) es in
-             if null x then fatal 369 ("Entering in an empty foldr1") else x
-      antl = let x = (map notCpl.map flp.takeWhile isCpl.reverse) es in
-             if null x then fatal 371 ("Entering in an empty foldr1") else x
+      antr = let x = (map (notCpl . flp) . reverse . takeWhile isCpl) es in
+             if null x then fatal 367 "Entering in an empty foldr1" else x
+      conl = let x = (reverse . dropWhile isCpl . reverse) es in
+             if null x then fatal 369 "Entering in an empty foldr1" else x
+      antl = let x = (map (notCpl . flp) . takeWhile isCpl . reverse) es in
+             if null x then fatal 371 "Entering in an empty foldr1" else x
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
       frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]

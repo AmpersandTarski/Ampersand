@@ -180,7 +180,7 @@ instance PStruct (P_ObjDef TermPrim) where
     showClass (Just cl) = "<" ++ cl ++ ">" 
 
 instance PStruct (P_SubIfc a) where --TODO : Compare with other " LINKTO" stuff to check redundancy. 
-  showP (P_Box{}) = "BOX"
+  showP P_Box{} = "BOX"
   showP (P_InterfaceRef _ isLink nm _) = (if isLink then " LINKTO" else "")++" INTERFACE "++doubleQuote nm
 
 instance PStruct (Maybe P_Cruds) where
@@ -213,7 +213,7 @@ instance PStruct P_Declaration where
                 if null mults then "" else "["++intercalate "," (map showP mults)++"]")++
                (if null(unwords (dec_pragma decl)) then "" else
                 " PRAGMA "++unwords (dec_pragma decl))
-                ++ intercalate " " (map showP (dec_Mean decl))
+                ++ unwords (map showP (dec_Mean decl))
 
 instance PStruct PMeaning where
  showP (PMeaning pmkup) = " MEANING "++showP pmkup

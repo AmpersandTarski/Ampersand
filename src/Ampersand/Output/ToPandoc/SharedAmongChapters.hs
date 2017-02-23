@@ -1,21 +1,10 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.ToPandoc.SharedAmongChapters
-    ( module Text.Pandoc
+    ( module X
     , module Text.Pandoc.Builder
     , bulletList -- (is redefined in this module, but belongs in Text.Pandoc.Builder.)
     , math --
-    , module Data.Monoid
-    , module Ampersand.Basics
-    , module Ampersand.FSpec
-    , module Ampersand.Misc
-    , module Ampersand.Core.ParseTree
-    , module Ampersand.Core.AbstractSyntaxTree
-    , module Ampersand.Core.ShowAStruct
-    , module Ampersand.ADL1
-    , module Ampersand.Output.PandocAux
-    , module Ampersand.Graphic.Graphics
-    , module Ampersand.Classes
     , Chapter(..)
     , chaptersInDoc
     , Xreferenceble(..)
@@ -36,29 +25,28 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , plainText
     , sortWith)
 where
-import Ampersand.Basics
-import Ampersand.Core.ParseTree
+import Ampersand.Basics as X
+import Ampersand.Core.ParseTree as X
      ( Role
      )
-import Ampersand.Core.AbstractSyntaxTree hiding (Meta)
-import Ampersand.Core.ShowAStruct
-import Ampersand.ADL1 hiding (Meta)
-import Ampersand.Classes
-import Ampersand.FSpec
-import Text.Pandoc
+import Ampersand.Core.AbstractSyntaxTree as X hiding (Meta)
+import Ampersand.Core.ShowAStruct as X
+import Ampersand.ADL1 as X hiding (Meta)
+import Ampersand.Classes as X
+import Ampersand.FSpec as X
+import Text.Pandoc as X
 import Text.Pandoc.Builder hiding (bulletList,math)
 import qualified Text.Pandoc.Builder as  BuggyBuilder
-import Ampersand.Misc
-import Ampersand.Output.PandocAux
+import Ampersand.Misc as X
+import Ampersand.Output.PandocAux as X
 import Data.List      --       (intercalate,partition)
-import Data.Monoid
+import Data.Monoid as X
 import Data.Maybe
 import Data.Ord
 import Data.Typeable
 import qualified Data.Time.Format as DTF
 import GHC.Exts(sortWith)
-import Ampersand.Graphic.Graphics
-import Ampersand.Classes()
+import Ampersand.Graphic.Graphics as X
 import System.FilePath  -- (combine,addExtension,replaceExtension)
 
 -- | Define the order of the chapters in the document.
@@ -122,7 +110,7 @@ xDef fSpec a =
       XRefSharedLangDeclaration d     -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ d)
       XRefSharedLangRule r            -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ r)
       XRefConceptualAnalysisDeclaration d 
-            -> Right $ case numberOf fSpec $ d of
+            -> Right $ case numberOf fSpec d of
                          Nothing -> (text.l) ( NL "een ongedocumenteerde relatie"
                                              , EN "an undocumented relation")
                          Just i  -> spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
@@ -130,7 +118,7 @@ xDef fSpec a =
                                                 <> str (show i) <> ": "
                                               )  
       XRefConceptualAnalysisRule r    
-            -> Right $ case numberOf fSpec $ r of
+            -> Right $ case numberOf fSpec r of
                          Nothing -> (text.l) ( NL "een ongedocumenteerde afspraak"
                                              , EN "an undocumented agreement")
                          Just i  -> spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
@@ -138,7 +126,7 @@ xDef fSpec a =
                                                 <> str (show i) <> ": "
                                               ) 
       XRefConceptualAnalysisExpression r
-            -> Right $ case numberOf fSpec $ r of
+            -> Right $ case numberOf fSpec r of
                          Nothing -> (text.l) ( NL "een ongedocumenteerde afspraak"
                                              , EN "an undocumented agreement")
                          Just i  -> spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) 
@@ -152,7 +140,7 @@ xDef fSpec a =
     hdr = headerWith (xRefRawLabel a, [], []) 2
     -- shorthand for easy localizing    
     l :: LocalizedStr -> String
-    l lstr = localize (fsLang fSpec) lstr
+    l = localize (fsLang fSpec)
 
 ------ Symbolic referencing to a chapter/section. ---------------------------------
 class Typeable a => Xreferenceble a where
@@ -166,12 +154,12 @@ class Typeable a => Xreferenceble a where
 
 instance Xreferenceble Chapter where
   xLabel = show
-  xRef a = citeGen "sec:" a
+  xRef = citeGen "sec:"
   xDefBlck fSpec a = headerWith ("sec:"<> xLabel a,[],[]) 1 (chptTitle (fsLang fSpec) a)
   
 instance Xreferenceble Picture where
   xLabel = caption
-  xRef a = citeGen "fig:" a
+  xRef = citeGen "fig:"
   xDefBlck fSpec a = para $ imageWith ("fig:"++xLabel a, [], []) src ("fig:"++xLabel a)(text (caption a))
    where
     opts = getOpts fSpec
@@ -288,7 +276,7 @@ instance NumberedThing Rule where
                       _ -> fatal 90 $ "Rule has been numbered multiple times: "++name r
     where ns = concatMap rulesOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered RuleCont -> Bool
-          isTheOne x = (r ==) . cRul . theLoad $ x 
+          isTheOne = (r ==) . cRul . theLoad
 instance NumberedThing Declaration where
   numberOf fSpec d = case filter isTheOne ns of
                       [] -> Nothing -- fatal 88 $ "Declaration has not been numbered: "++showDcl d
@@ -296,7 +284,7 @@ instance NumberedThing Declaration where
                       _ -> fatal 90 $ "Declaration has been numbered multiple times: "++showDcl True d
     where ns = concatMap dclsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered DeclCont -> Bool
-          isTheOne x = (d ==) . cDcl . theLoad $ x 
+          isTheOne = (d ==) . cDcl . theLoad
 instance NumberedThing A_Concept where
   numberOf fSpec c = case filter isTheOne ns of
                       [] -> Nothing -- fatal 88 $ "Concept has not been numbered: "++name c
@@ -304,7 +292,7 @@ instance NumberedThing A_Concept where
                       _ -> fatal 90 $ "Concept has been numbered multiple times: "++name c
     where ns = concatMap cptsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered CptCont -> Bool
-          isTheOne x = (c ==) . cCpt . theLoad $ x 
+          isTheOne = (c ==) . cCpt . theLoad
 
 
 -- | This function orders the content to print by theme. It returns a list of
@@ -378,7 +366,7 @@ orderingByTheme fSpec
         [] -> Nothing
         cd :_ -> Just (origin cd)
   rulMustBeShown :: Rule -> Bool
-  rulMustBeShown r = (hasMeaning r || hasPurpose r)
+  rulMustBeShown r = hasMeaning r || hasPurpose r
   relMustBeShown :: Declaration -> Bool
   relMustBeShown d 
     | isIdent d || name d == "V" = False  --Identity relation has no meaning defined
@@ -391,8 +379,7 @@ orderingByTheme fSpec
   hasMeaning :: Meaning a => a -> Bool
   hasMeaning = isJust . meaning (fsLang fSpec)
   forNonUserDefdRule :: Declaration -> Bool
-  forNonUserDefdRule d = not . null
-      . filter isPropRuleForDcl . fallRules $ fSpec 
+  forNonUserDefdRule d = any isPropRuleForDcl . fallRules $ fSpec 
     where
       isPropRuleForDcl :: Rule -> Bool
       isPropRuleForDcl rul =
@@ -490,8 +477,8 @@ dpRule' fSpec = dpR
        where
         theBlocks :: Blocks
         theBlocks =
-         (  (purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r)) -- Als eerste de uitleg van de betreffende regel..
-         <> (purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d])  -- Dan de uitleg van de betreffende relaties
+            purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) r) -- Als eerste de uitleg van de betreffende regel..
+         <> purposes2Blocks (getOpts fSpec) [p | d<-nds, p<-purposesDefinedIn fSpec (fsLang fSpec) d]  -- Dan de uitleg van de betreffende relaties
          <> case (nds, fsLang fSpec) of
              ([] ,_)       -> mempty
              ([d],Dutch)   -> plain ("Om dit te formaliseren is een " <> (if isFunction d then "functie"  else "relatie" ) <> " nodig:")
@@ -541,7 +528,6 @@ dpRule' fSpec = dpR
 
                         )
             )
-         )
         showRef :: Declaration -> Inlines
         showRef dcl = xRef (XRefConceptualAnalysisDeclaration dcl) <> "(" <> (str.showDcl False) dcl <> ")"
         
@@ -557,9 +543,9 @@ relsInThemes fSpec
         -- a relation is considered relevant iff it is declared or mentioned in one of the relevant themes.
  = [d | d<-vrels fSpec
    , decusr d
-   , (  decpat d `elem` themes fSpec
+   , decpat d `elem` themes fSpec
          || d `elem` relsMentionedIn [p | p<-  vpatterns fSpec   , name p `elem` themes fSpec]
-     )
+     
    ]
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
@@ -574,7 +560,7 @@ purposes2Blocks opts ps
         ref :: Purpose -> [Inline]
         ref purp = case fspecFormat opts of
                     FLatex | (not.null.explRefIds) purp-> [RawInline (Text.Pandoc.Builder.Format "latex")
-                                                             (texOnly_marginNote (intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
+                                                             (texOnlyMarginNote (intercalate "; " (map latexEscShw (explRefIds purp))++"\n"))]
                     _                                  -> []
 concatMarkup :: [Markup] -> Maybe Markup
 concatMarkup es
@@ -631,4 +617,4 @@ violation2Inlines fSpec _ = (text.l) (NL "<meldingstekst moet hier nog worden ge
                                         ,EN "<violation message should be printed here>"
                                         )
   where
-    l lstr = localize (fsLang fSpec) lstr
+    l = localize (fsLang fSpec)

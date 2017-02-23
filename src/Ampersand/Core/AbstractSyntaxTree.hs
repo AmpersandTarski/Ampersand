@@ -1,7 +1,6 @@
 {-# LANGUAGE FlexibleInstances, UndecidableInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DeriveGeneric #-}
-{-# LANGUAGE ImplicitParams #-}
 module Ampersand.Core.AbstractSyntaxTree (
    A_Context(..)
  , Typology(..)
@@ -251,9 +250,9 @@ instance Unique Declaration where
       Isn{} -> "I["++uniqueShow False (detyp d)++"]"
       Vs{}  -> "V"++uniqueShow False (decsgn d)
 instance Hashable Declaration where
-   hashWithSalt s (Sgn{dech = v}) = s `hashWithSalt` v
-   hashWithSalt s (Isn{detyp = v}) = hashWithSalt s v
-   hashWithSalt s (Vs{decsgn = v})  = hashWithSalt s v
+   hashWithSalt s Sgn{dech = v} = s `hashWithSalt` v
+   hashWithSalt s Isn{detyp = v} = hashWithSalt s v
+   hashWithSalt s Vs{decsgn = v}  = hashWithSalt s v
 instance Show Declaration where  -- For debugging purposes only (and fatal messages)
   showsPrec _ decl@Sgn{}
    = showString (case decl of
@@ -722,17 +721,20 @@ getExpressionRelation expr = case getRelation expr of
     getRelation (ECps (EDcI{}, e)) = getRelation e
     getRelation (ECps (e1, e2))
       = case (getRelation e1, getRelation e2) of --note: target e1==source e2
-         (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) -> if i1==target e1 && i2==source e2 then Just (i1, Nothing, i2, False) else -- i1==i2
-                                                           if i1==target e1 && i2/=source e2 then Just (i2, Nothing, i2, False) else
-                                                           if i1/=target e1 && i2==source e2 then Just (i1, Nothing, i1, False) else
-                                                           Nothing
-         (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) -> if i==target e1                 then Just (s,d,t,isFlipped) else
-                                                           if i/=target e1 && s==target e1 then Just (i,d,t,isFlipped) else
-                                                           Nothing
-         (Just (s,d,t,isFlipped), Just (i,Nothing,_,_)) -> if i==source e2                 then Just (s,d,t,isFlipped) else
-                                                           if i/=source e2 && t==source e2 then Just (s,d,i,isFlipped) else
-                                                           Nothing
-         _                                              -> Nothing
+         (Just (_,Nothing,i1,_), Just (i2,Nothing,_,_)) 
+             | i1==target e1 && i2==source e2 -> Just (i1, Nothing, i2, False)
+             | i1==target e1 && i2/=source e2 -> Just (i2, Nothing, i2, False)
+             | i1/=target e1 && i2==source e2 -> Just (i1, Nothing, i1, False)
+             | otherwise                      -> Nothing
+         (Just (_,Nothing,i,_), Just (s,d,t,isFlipped)) 
+             | i==target e1                   -> Just (s,d,t,isFlipped)
+             | i/=target e1 && s==target e1   -> Just (i,d,t,isFlipped)
+             | otherwise                      -> Nothing
+         (Just (s,d,t,isFlipped), Just (i,Nothing,_,_))
+             | i==source e2                   -> Just (s,d,t,isFlipped)
+             | i/=source e2 && t==source e2   -> Just (s,d,i,isFlipped)
+             | otherwise                      -> Nothing
+         _                                    -> Nothing
     getRelation (EFlp e)
      = case getRelation e of
          Just (s,d,t,isFlipped) -> Just (t,d,s,not isFlipped)
@@ -775,7 +777,7 @@ instance Hashable A_Concept where
   hashWithSalt s cpt =
      s `hashWithSalt` (case cpt of
                         PlainConcept{} -> (0::Int) `hashWithSalt` cpthash cpt
-                        ONE            -> (1::Int)
+                        ONE            -> 1::Int
                       )
 instance Named A_Concept where
   name PlainConcept{cptnm = nm} = unpack nm
@@ -959,14 +961,13 @@ unsafePAtomVal2AtomValue' typ mCpt pav
              Binary           -> Left "Binary cannot be populated in an ADL script"
              BigBinary        -> Left "Binary cannot be populated in an ADL script"
              HugeBinary       -> Left "Binary cannot be populated in an ADL script"
-             Date             -> Right (AAVDate {aavtyp = typ
-                                                ,aadateDay = addDays (floor d) dayZeroExcel
-                                                })
-             DateTime         -> Right (AAVDateTime {aavtyp = typ
-                                                    ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
-                                                                          (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
-
-                                                })
+             Date             -> Right AAVDate {aavtyp = typ
+                                               ,aadateDay = addDays (floor d) dayZeroExcel
+                                               }
+             DateTime         -> Right AAVDateTime {aavtyp = typ
+                                                   ,aadatetime = UTCTime (addDays daysSinceZero dayZeroExcel)
+                                                                         (picosecondsToDiffTime.floor $ fractionOfDay*picosecondsPerDay)
+                                                   }
                                      where picosecondsPerDay = 24*60*60*1000000000000
                                            (daysSinceZero, fractionOfDay) = properFraction d
              Boolean          -> message d

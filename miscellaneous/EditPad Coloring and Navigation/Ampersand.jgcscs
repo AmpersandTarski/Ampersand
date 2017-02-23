@@ -18,22 +18,24 @@ Changes include support for:
 - back-quote coloring (e.g. `text`) in comments.
 - refering to developers (e.g. @RieksJ: links to https://github.com/RieksJ)
 - references to Ampersand issues (e.g. #598 links to https://github.com/AmpersandTarski/Ampersand/issues/598) 
-80
+82
 #define spullenboel
 CONTEXT Piet  IN DUTCH { }
+INCLUDE "myfile" -- dfasdf -!sdfasdfa! dkfa asd
 PURPOSE CONTEXT Piet 
 {+dit is een beschrijving van de context 
 dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl +} --Kennen wij geen issues? #392
 PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mai`la`dre`ssen `gelinkt` word`en
 {- dat geldt **OOK** voor URL's. Vo`orbeeld: http://www.tno.nl -} en dan "strings" of zulke "str\"ings" sdf
 '_SESSION' [SESSION] 'ONE' '_ONE' {- Zie Issue#598 -} dec  V[Aap*Noot] I[AAP] V[noot] 
---! Line comment die !-- er @qa colouring #234 uitspringt kan soms handig zijn. 
+--! Line comment die !-- er @qa --!colouring!-- #234 uitspringt kan soms handig zijn. 
 -- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl 
 --? nog een ?@line comment #234 
 --$ en de laatste @line comment #234 
 --------[[dit is een section header]]--
 --[dit is een subsection header]-- met daarin #1234
-{- tests -}
+-- tests INCLUDE "../Test/EditableFile.adl" -- jeetje...-}
+-- te editen: file:"file (spaties ook)"
 MEANING some text
 {+ 1 {- 2 geldt **OOK** -} 3 
 {- 1 {+ 2 +}
@@ -101,27 +103,7 @@ yx--!  asdfas
 {- asdfasdfa
 0
 FALSE
-29
-Preprocessor
-Preprocessor regels hebben het '#' teken op de eerste positie van een regel
-^#.*
-FALSE
-FALSE
-11
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
+26
 Section header
 --[[xxx]]---
 ^--+\[\[.*\]\]--+
@@ -136,66 +118,6 @@ FALSE
 FALSE
 FALSE
 TRUE
-
-
-
-
-FALSE
-
-Line Comment (emphasized)
-Text after --! on the same line.
-((?<=--)|^---*)(?<cmtchar>!).*?($|\k<cmtchar>)
-FALSE
-FALSE
-33
-0
-
-
-3
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Line Comment (alternate highlight)
-Text after --? on the same line.
-((?<=--)|^---*)(?<cmtchar>\?).*?($|\k<cmtchar>)
-FALSE
-FALSE
-34
-0
-
-
-3
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Line Comment $
-Text after --$ on the same line.
-((?<=--)|^---*)(?<cmtchar>\$).*?($|\k<cmtchar>)
-FALSE
-FALSE
-32
-0
-
-
-3
-FALSE
-FALSE
-FALSE
-FALSE
 
 
 
@@ -385,6 +307,26 @@ FALSE
 
 FALSE
 
+INCLUDE statements
+Allows one to edit files that are INCLUDEd
+\bINCLUDE\b
+FALSE
+FALSE
+12
+0
+
+
+7
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Reserved words
 Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
 9
@@ -416,7 +358,7 @@ FALSE
 
 V, I
 
-(?<!['])\b[VI](?=\s*\[\s*([A-Z][a-zA-Z0-9_-]*)\s*(|\*\s*([A-Z][a-zA-Z0-9_-]*)\s*)\])
+(?<!['])\b[VI]\b
 FALSE
 FALSE
 23
@@ -571,8 +513,8 @@ FALSE
 FALSE
 
 string
-
-\"(?:[^\"\r\n](?!\\"))*\"
+was "(?:[^"\r\n](?!\\"))*"
+"[^"\r\n]*"
 FALSE
 FALSE
 17
@@ -711,7 +653,7 @@ FALSE
 FALSE
 {
 0
-4
+5
 line comments
 1
 9
@@ -719,10 +661,10 @@ FALSE
 0
 
 
-11
+10
 text in `back-quotes`
-
 \`[^\`]*?(\`|(?=(\n|\r)))
+\`[^\`]*?\`
 FALSE
 FALSE
 7
@@ -740,29 +682,9 @@ FALSE
 
 FALSE
 
-mailaddres
-
-\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
-FALSE
-FALSE
-2
-3
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
 URL
 We don't check the URL itself, it is just for coloring 99% of the URLs used...
-((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+((http|https|ftp|ftps):\/\/[^\]}>\s\)]*)
 FALSE
 FALSE
 2
@@ -780,16 +702,16 @@ FALSE
 
 FALSE
 
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
+INCLUDE- or file-statements
+Allows one to edit files that are INCLUDEd
+\b(INCLUDE|file)\b
 FALSE
 FALSE
-28
-4
-https://github.com/$1
-
+9
 0
+
+
+7
 FALSE
 FALSE
 FALSE
@@ -841,8 +763,8 @@ FALSE
 FALSE
 
 subsection header
-Stuff between [ (or eol) will be highlighed
-(?<=^--+)\[[^\[\]]*\]
+Stuff between [ (or eol) will be highlighed     (?<=^--+)\[.*\](?=--)
+(?<=--)\[.*
 FALSE
 FALSE
 35
@@ -861,8 +783,8 @@ FALSE
 FALSE
 
 Line Comment (emphasized)
-Text after --! on the same line.
-(?<=--)!.*
+Text after -! on the same line (up till another !).
+(?<=-)!.*?($|!)
 FALSE
 FALSE
 33
@@ -947,7 +869,7 @@ FALSE
 0
 
 
-10
+9
 {+ block comment start
 comment between {+ and +}
 (?<=(PURPOSE|MEANING|MESSAGE).*?){\+
@@ -1029,8 +951,8 @@ FALSE
 FALSE
 {-
 text in `back-quotes`
-
 \`[^\`]*?(\`|(?=\+}))
+\`[^\`]*?\`
 FALSE
 TRUE
 7
@@ -1056,26 +978,6 @@ FALSE
 2
 3
 
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
-FALSE
-FALSE
-28
-4
-https://github.com/$1
 
 0
 FALSE
@@ -1237,8 +1139,8 @@ FALSE
 FALSE
 {+
 text in `back-quotes`
-
 \`[^\`]*?(\`|(?=-}))
+\`[^\`]*?\`
 FALSE
 TRUE
 7
@@ -1276,14 +1178,14 @@ FALSE
 
 FALSE
 
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
+Ampersand issues
+
+#([0-9]{1,4})
 FALSE
 FALSE
-28
+2
 4
-https://github.com/$1
+https://github.com/AmpersandTarski/Ampersand/issues/$1
 
 0
 FALSE
@@ -1296,14 +1198,14 @@ FALSE
 
 FALSE
 
-Ampersand issues
-
-#([0-9]{1,4})
+INCLUDE statements
+Allows one to edit files that are INCLUDEd
+(?<=\bINCLUDE\s*")[^"\r\n]*(?=")
 FALSE
 FALSE
+1
 2
-4
-https://github.com/AmpersandTarski/Ampersand/issues/$1
+
 
 0
 FALSE
@@ -1363,7 +1265,7 @@ FALSE
 0
 
 
-7
+3
 **-return
 Toggle back after another pair of **'s
 \*\*
@@ -1404,66 +1306,6 @@ FALSE
 
 FALSE
 
-text in `back-quotes`
-
-\`[^\`]*?(\`|(?=\*\*))
-FALSE
-TRUE
-36
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-mailaddres
-
-\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
-FALSE
-FALSE
-2
-3
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
-FALSE
-FALSE
-28
-4
-https://github.com/$1
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
 Ampersand issues
 
 #([0-9]{1,4})
@@ -1484,16 +1326,64 @@ FALSE
 
 FALSE
 
-URL
-We don't check the URL itself, it is just for coloring 99% of the URLs used...
-((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+edit file
+1
+0
+FALSE
+0
+
+
+3
+spaces until quote
+skip spaces
+\s*"
 FALSE
 FALSE
-2
-4
-$1
+0
+0
+
 
 0
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+fileid
+
+(?<=")[^"\r\n]*(?=")
+FALSE
+FALSE
+1
+2
+
+
+1
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+no fileid
+
+(?=.)
+FALSE
+FALSE
+0
+0
+
+
+1
 FALSE
 FALSE
 FALSE

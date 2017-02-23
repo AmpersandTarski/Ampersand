@@ -41,23 +41,22 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                             <>  "Finally, the logical and technical data model are discussed."
                              )
        )
-    <> (if null (classes $ clAnalysis fSpec) 
-        then mempty
-        else 
-          (   header sectionLevel
-                  (text.l $ (NL "Classificaties", EN "Classifications")
+    <> if null (classes $ clAnalysis fSpec) 
+       then mempty
+       else 
+         (   header sectionLevel
+                 (text.l $ (NL "Classificaties", EN "Classifications")
+                 )
+          <> para (case fsLang fSpec of
+                    Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
+                             <> ("Deze is weergegeven in " <> xRef classificationPicture <> "."
+                                )
+                    English -> "A number of concepts is organized in a classification structure. "
+                             <> ("This is shown in " <> xRef classificationPicture <> "."
+                                )
                   )
-           <> para (case fsLang fSpec of
-                     Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                              <> ("Deze is weergegeven in " <> xRef classificationPicture <> "."
-                                 )
-                     English -> "A number of concepts is organized in a classification structure. "
-                              <> ("This is shown in " <> xRef classificationPicture <> "."
-                                 )
-                   )
-                <> xDefBlck fSpec classificationPicture
-           )
-       )
+               <> xDefBlck fSpec classificationPicture
+          )
     <> daRulesSection
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks

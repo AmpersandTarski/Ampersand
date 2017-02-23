@@ -98,8 +98,8 @@ mkErrorReadingINCLUDE mo file str
  = Errors [CTXE (fromMaybe (Origin "command line argument") mo) msg]
     where 
       msg = intercalate "\n    " $
-             [ "While looking for file '"++file++"':" 
-             ]++lines str
+             ("While looking for file '"++file++"':" )
+             : lines str
 
 mkMultipleRepresentTypesError :: A_Concept -> [(TType,Origin)] -> Guarded a
 mkMultipleRepresentTypesError cpt rs
@@ -118,7 +118,7 @@ mkMultipleTypesInTypologyError tripls
  = Errors [CTXE o msg]
     where
       o = case tripls of
-            (_,_,(x:_)):_ -> x
+            (_,_,x:_):_ -> x
             _  -> fatal 112 "No origin in list."
       msg = intercalate "\n" $
              [ "Concepts in the same typology must have the same TYPE."
@@ -158,7 +158,7 @@ class GetOneGuarded a where
 instance GetOneGuarded (P_SubIfc a) where
   hasNone o = Errors [CTXE (origin o)$ "Required: one P-subinterface in "++showP o]
 
-instance GetOneGuarded (SubInterface) where
+instance GetOneGuarded SubInterface where
   hasNone o = Errors [CTXE (origin o)$ "Required: one A-subinterface in "++showP o]
 
 instance GetOneGuarded Declaration where
@@ -235,7 +235,7 @@ mkEndoPropertyError orig ps =
   where 
     msg = intercalate "\n" $
        case ps of
-         []  -> fatal 227 $ "What property is causing this error???"
+         []  -> fatal 227 "What property is causing this error???"
          [p] -> ["Property "++show p++" can only be used for relations where"
                 ,"  source and target are equal."]
          _   -> ["Properties "++showAnd++" can only be used for relations where"
@@ -243,15 +243,15 @@ mkEndoPropertyError orig ps =
      where showAnd = intercalate ", " (map show . init $ ps)++" and "++(show . last) ps
 
 mkMultipleInterfaceError :: String -> Interface -> [Interface] -> CtxError
-mkMultipleInterfaceError role ifc duplicateIfcs =
-  CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role ++ ":" ++
+mkMultipleInterfaceError role' ifc duplicateIfcs =
+  CTXE (origin ifc) $ "Multiple interfaces named " ++ show (name ifc) ++ " for role " ++ show role' ++ ":" ++
                       concatMap (("\n    "++ ) . show . origin) (ifc:duplicateIfcs)
 
 mkInvalidCRUDError :: Origin -> String -> CtxError
 mkInvalidCRUDError o str = CTXE o $ "Invalid CRUD annotation. (doubles and other characters than crud are not allowed): `"++str++"`."
 
 mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
-mkIncompatibleAtomValueError pav msg= CTXE (origin pav) msg
+mkIncompatibleAtomValueError pav = CTXE (origin pav)
 
 mkInterfaceRefCycleError :: [Interface] -> CtxError
 mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
@@ -292,9 +292,9 @@ class ErrorConcept a where
 instance ErrorConcept (P_ViewD a) where
   showEC x = showP (vd_cpt x) ++" given in VIEW "++vd_lbl x
   showMini x = showP (vd_cpt x)
-instance ErrorConcept (P_IdentDef) where
+instance ErrorConcept P_IdentDef where
   showEC x = showP (ix_cpt x) ++" given in Identity "++ix_lbl x
-  showMini x = showP (ix_cpt x)
+  showMini = showP . ix_cpt
 
 instance (AStruct a2) => ErrorConcept (SrcOrTgt, A_Concept, a2) where
   showEC (p1,c1,e1) = showEC' (p1,c1,showA e1)

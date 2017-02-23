@@ -37,7 +37,7 @@ aCtx2pCtx ctx =
       , ctx_vs     = map aViewDef2pViewDef . ctxvs $ ctx
       , ctx_gs     = map aGen2pGen . ctxgs $ ctx
       , ctx_ifcs   = map aInterface2pInterface . ctxifcs $ ctx
-      , ctx_ps     = catMaybes . map aPurpose2pPurpose . ctxps $ ctx
+      , ctx_ps     = mapMaybe aPurpose2pPurpose . ctxps $ ctx
       , ctx_pops   = map aPopulation2pPopulation . ctxpopus $ ctx
       , ctx_sql    = map aObjectDef2pObjectDef . ctxsql $ ctx
       , ctx_php    = map aObjectDef2pObjectDef . ctxphp $ ctx
@@ -57,7 +57,7 @@ aPattern2pPattern pat =
        , pt_Reprs = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_ids   = map aIdentityDef2pIdentityDef (ptids pat)
        , pt_vds   = map aViewDef2pViewDef (ptvds pat)
-       , pt_xps   = catMaybes . map aPurpose2pPurpose . ptxps $ pat
+       , pt_xps   = mapMaybe aPurpose2pPurpose . ptxps $ pat
        , pt_pop   = map aPopulation2pPopulation . ptups $ pat
        , pt_end   = ptend pat
        }
@@ -158,7 +158,7 @@ aConcept2pConcept cpt =
 aPurpose2pPurpose :: Purpose -> Maybe PPurpose 
 aPurpose2pPurpose p = 
  if explUserdefd p
- then Just $
+ then Just
    PRef2 { pos    = explPos p
          , pexObj    = aExplObj2PRef2Obj (explObj p)
          , pexMarkup = aMarkup2pMarkup (explMarkup p)
@@ -227,7 +227,7 @@ aMeaning2pMeaning :: AMeaning -> [PMeaning]
 aMeaning2pMeaning m = map (PMeaning . aMarkup2pMarkup) (ameaMrk m)
 
 aMarkup2pMessage :: Markup -> PMessage
-aMarkup2pMessage m = (PMessage . aMarkup2pMarkup) m
+aMarkup2pMessage = PMessage . aMarkup2pMarkup
 
 aMarkup2pMarkup :: Markup -> P_Markup
 aMarkup2pMarkup markup =
@@ -350,7 +350,7 @@ aCruds2pCruds :: Cruds -> Maybe P_Cruds
 aCruds2pCruds x = 
   if crudOrig x == Origin "default for Cruds" 
   then Nothing
-  else Just $ P_Cruds (crudOrig x) (map f (zip [crudC x,crudR x,crudU x,crudD x] "crud"))
+  else Just $ P_Cruds (crudOrig x) (zipWith (curry f) [crudC x, crudR x, crudU x, crudD x] "crud")
    where f :: (Bool,Char) -> Char
          f (b,c) = (if b then toUpper else toLower) c
 

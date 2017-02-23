@@ -1,0 +1,25 @@
+$if(verbose)$<!-- Box-HROWSNL.html "$label$" $expAdl$ :: $source$ * $target$ $if(exprIsUni)$[UNI]$endif$$if(exprIsTot)$[TOT]$endif$  ($if(crudC)$C$else$c$endif$$if(crudR)$R$else$r$endif$$if(crudU)$U$else$u$endif$$if(crudD)$D$else$d$endif$, $if(!isRoot)$non-$endif$root box) -->
+$endif$$if(crudR)$<div class="box$if(isRoot)$ panel panel-default$endif$" ng-repeat="(key, resource) in resource['$name$']" $if(isRoot)$ng-init="patchResource = resource" ng-class="{'panel-default' : resource['_status_']['default'], 'panel-warning' : resource['_status_']['warning'], 'panel-danger' : resource['_status_']['danger'], 'panel-success' : resource['_status_']['success']}"$endif$>$if(isRoot)$
+	<div class="panel-heading">
+		<div class="pull-right panel-heading-options">
+			<button type="button" class="btn btn-sm btn-warning" ng-if="resource['_showButtons_']['save']" ng-click="saveResource(resource, 'promise', true)">Save</button>
+			<button type="button" class="btn btn-sm btn-danger" ng-if="resource['_showButtons_']['cancel']" ng-click="cancelResource(resource)">Cancel</button>
+			<my-nav-to-other-interfaces ifcs="resource['_ifcs_']" resource="resource['_id_']" label="resource['_label_']"></my-nav-to-other-interfaces>
+			$if(crudD)$<button type="button" class="btn btn-sm" ng-click="deleteResource(resource)">
+				<span class="glyphicon glyphicon-trash"></span>
+			</button>$endif$
+			$if(crudC)$<button type="button" class="btn btn-sm" ng-click="newResource()">
+				<span class="glyphicon glyphicon-plus"></span>
+			</button>$endif$
+		</div>
+		<h4>{{resource['_label_']}}&nbsp;</h4>
+	</div>
+	<div class="panel-body" cg-busy="resource['_loading_']">$endif$
+	$subObjects:{subObj|$if(verbose)$<!-- $subObj.subObjLabel$ -->$endif$
+		<div class="row" ng-show="resource['$subObj.subObjName$'].length">
+			<div class="row-content col-md-12">
+$subObj.subObjContents$
+			</div>
+		</div>}$
+	$if(isRoot)$</div>
+$endif$</div>$else$<span><i>not readable</i></span>$endif$

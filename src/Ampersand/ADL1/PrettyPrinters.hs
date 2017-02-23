@@ -394,7 +394,7 @@ instance Pretty PAtomValue where
        XlsxString     _ s -> text . show $ s
        ScriptInt      _ i -> text . show $ i
        ScriptFloat    _ d -> text . show $ d
-       XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+       XlsxDouble     _ _ -> fatal 267 "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
        ComnBool       _ b -> text . map toUpper . show $ b
        ScriptDate     _ x -> text . show $ x
        ScriptDateTime _ x -> text . show $ x

@@ -46,14 +46,14 @@ makeFSpec opts context
                                       || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fDeriveProofs = deriveProofs opts context 
-              , fRoleRels    = nub [(role,decl) -- fRoleRels says which roles may change the population of which relation.
+              , fRoleRels    = nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
                                    | rr <- ctxRRels context
                                    , decl <- rrRels rr
-                                   , role <- rrRoles rr
+                                   , role' <- rrRoles rr
                                    ] 
-              , fRoleRuls    = nub [(role,rule)   -- fRoleRuls says which roles maintain which rules.
+              , fRoleRuls    = nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- allrules
-                                   , role <- maintainersOf rule
+                                   , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
               , fRoles       = zip ((sort . nub) (concatMap arRoles (ctxrrules context)++
@@ -74,7 +74,7 @@ makeFSpec opts context
               , allUsedDecls = relsUsedIn context
               , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
-              , cptTType     = (\cpt -> representationOf contextinfo cpt)
+              , cptTType     = representationOf contextinfo
               , fsisa        = nub . concatMap genericAndSpecifics . gens $ context
               , vpatterns    = patterns context
               , vgens        = gens context
@@ -116,9 +116,9 @@ makeFSpec opts context
      handleType :: A_Concept -> A_Concept -> Expression
      handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
      fMaintains' :: Role -> [Rule]
-     fMaintains' role = nub [ rule 
+     fMaintains' role' = nub [ rule 
                             | rule <- allrules
-                            , role `elem` maintainersOf rule
+                            , role' `elem` maintainersOf rule
                             ]
      typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
@@ -146,11 +146,11 @@ makeFSpec opts context
            = ifc{ ifcControls = makeIfcControls [] allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
-     fSpecRoleInterfaces role = filter (forThisRole role) fSpecAllInterfaces
+     fSpecRoleInterfaces role' = filter (forThisRole role') fSpecAllInterfaces
      forThisRole ::Role -> Interface -> Bool
-     forThisRole role interf = case ifcRoles interf of
+     forThisRole role' interf = case ifcRoles interf of
                                      []   -> True -- interface is for all roles
-                                     rs  -> role `elem` rs
+                                     rs  -> role' `elem` rs
      
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
                      then map name (patterns context)
@@ -371,7 +371,7 @@ makeFSpec opts context
         , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
         , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
           not (length objattributes==1 && isIdent(objctx(head objattributes)))
-        , let e0=head cl, if null e0 then fatal 284 "null e0" else True
+        , let e0=head cl, not (null e0) || fatal 284 "null e0"
         , let c=source (head e0)
         , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]++
                        [ Isn cpt |  EDcI cpt <- concatMap primsMentionedIn (expressionsIn objattributes)]

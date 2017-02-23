@@ -178,11 +178,10 @@ sessionTableSpec =
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: FSpec -> Text.Text -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
- do { -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA exp)
-    ; -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) exp
-    ; -- verboseLn (getOpts fSpec) "End of proof"
-    ; performQuery fSpec dbNm (Text.pack violationsQuery)
-    }
+  -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA exp)
+  -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) exp
+  -- verboseLn (getOpts fSpec) "End of proof"
+  performQuery fSpec dbNm (Text.pack violationsQuery)
  where violationsExpr = conjNF (getOpts fSpec) exp
        violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 

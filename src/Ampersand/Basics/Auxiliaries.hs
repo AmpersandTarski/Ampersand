@@ -65,7 +65,7 @@ transClosureMap' xs
 -- |  Warshall's transitive closure algorithm
 transClosureMap :: Ord a => Map a (Set a) -> Map a (Set a)
 transClosureMap xs
-  = foldl f xs (Map.keysSet xs `Set.intersection` (mconcat (Map.elems xs)))
+  = foldl f xs (Map.keysSet xs `Set.intersection` mconcat (Map.elems xs))
     where
      f :: Ord a => Map a (Set a) -> a -> Map a (Set a)
      f q x = Map.unionWith Set.union q (Map.fromListWith Set.union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
@@ -84,7 +84,7 @@ combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
 -- converse [("foo",[2,2,3]),("foo",[3,4]),("bar",[4,5])]  == [(2,["foo"]),(3,["foo"]),(4,["foo","bar"]),(5,["bar"])]
 converse :: forall a b . (Ord a, Ord b) => [(a, [b])] -> [(b, [a])]
 converse aBss = let asPerB :: Map b (Set a)
-                    asPerB = foldl (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] $ Map.empty
+                    asPerB = foldl (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] Map.empty
                 in Map.toList $ fmap Set.toList asPerB -- first convert each Set to a list, and then the whole Map to a list of tuples
 
 commaEng :: String -> [String] -> String
@@ -114,7 +114,7 @@ class Flippable a where
 -- Trace shorthands
 
 showTrace :: Show a => a -> a
-showTrace a = traceShowId a
+showTrace = traceShowId
 
 showTraceTag :: Show a => String -> a -> a
 showTraceTag tag x = trace (tag ++ ": " ++ show x) x
@@ -142,4 +142,4 @@ addToLastLine str [] = [str]
 addToLastLine str liness = init liness ++ [last liness ++ str]
 
 indent :: Int -> [String] -> [String]
-indent n = map ((replicate n ' ') ++)
+indent n = map (replicate n ' ' ++)
