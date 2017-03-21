@@ -87,7 +87,7 @@ data PAtomPair
    mkArchiContext pops =
      PCtx{ ctx_nm     = "Archimate"
          , ctx_pos    = []
-         , ctx_lang   = Dutch  -- fatal 686 "No language because of Archi-import hack. Please report this as a bug"
+         , ctx_lang   = Just Dutch  -- fatal 686 "No language because of Archi-import hack. Please report this as a bug"
          , ctx_markup = Nothing
          , ctx_thms   = []
          , ctx_pats   = []
@@ -256,7 +256,33 @@ data PAtomPair
                       [(P_Population, Maybe P_Declaration, [P_Gen])]
      keyArchi   :: a -> String                      -- get the key value (dirty identifier) of an a.
 
-   eqAsy :: [(P_Population, Maybe P_Declaration, [P_Gen])] -> [(P_Population, Maybe P_Declaration, [P_Gen])]
+   instance Flippable P_Declaration where
+     flp decl
+      = decl{ dec_sign =      flp  (dec_sign decl)
+            , dec_prps = (map flp) (dec_prps decl)
+            , dec_popu = (map flp) (dec_popu decl)
+            }
+
+   instance Flippable P_Population where
+     flp pop
+      = case pop of
+         P_RelPopu{} -> pop { p_src = p_tgt pop
+                            , p_tgt = p_src pop
+                            , p_nmdr = flp (p_nmdr pop)
+                            , p_popps = (map flp) (p_popps pop)
+                            }
+
+--data P_NamedRel = PNamedRel { pos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
+   instance Eq P_NamedRel where
+     PNamedRel p _ _ == PNamedRel p' _ _ = p==p'
+
+   instance Ord P_NamedRel where
+     compare (PNamedRel p _ _) (PNamedRel p' _ _) = compare p p'
+
+   instance Flippable P_NamedRel where
+     flp rel = rel{p_mbSign = flp (p_mbSign rel)}
+
+   eqAsy :: [(P_Population,  Maybe P_Declaration, [P_Gen])] -> [(P_Population, Maybe P_Declaration, [P_Gen])]
    eqAsy [] = []
    eqAsy ((pPop, maybeDecl, pgens): rest)
     = ( foldr1 squash
