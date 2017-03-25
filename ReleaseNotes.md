@@ -1,4 +1,10 @@
 # Release notes of Ampersand
+
+## Unreleased changes
+
+
+## v3.8.3 (17 march 2017)
+  * Minor modifications on frontend 
   
 ## v3.8.2 (17 february 2017)
   * [Issue #621](https://github.com/AmpersandTarski/Ampersand/issues/621) Disabled --fpa-excel switch, because it resulted in a fatal error. 
