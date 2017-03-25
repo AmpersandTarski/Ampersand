@@ -514,14 +514,18 @@ data PAtomPair
 
 -- The function `processStraight` derives an ArchiRepo from an Archi-XML-file.
    processStraight :: String -> IOSLA (XIOState s0) XmlTree ArchiRepo
-   processStraight infile
+   processStraight absFilePath
     = readDocument [ withRemoveWS  yes        -- purge redundant white spaces
                    , withCheckNamespaces yes  -- propagates name spaces into QNames
                    , withTrace 0]             -- if >0 gives trace messages.
-                   infile
+                   uri
       >>>
       analArchiRepo
        where
+        uri = "file://" ++ n (g <$> absFilePath)
+          where
+            g x = if x == '\\' then '/' else x
+            n x = if head x /= '/' then '/' : x else x
         analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
         analArchiRepo
           = atTag "archimate:model" >>>
