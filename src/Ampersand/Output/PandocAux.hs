@@ -223,10 +223,9 @@ writepandoc fSpec thePandoc =
             Ftextile -> "textile"
     writerOptions :: MediaBag-> WriterOptions
     writerOptions bag = def
-                      { writerStandalone=isJust template
-                      , writerTableOfContents=True
+                      { writerTableOfContents=True
                       , writerNumberSections=True
-                      , writerTemplate=fromMaybe "" template
+                      , writerTemplate=template
                       , writerVariables=defaultWriterVariables fSpec
                       , writerMediaBag=bag
                       , writerReferenceDocx=Just docxStyleUserPath
