@@ -33,8 +33,8 @@ parseXlsxFile opts useAllStaticFiles file =
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
   xlsx2pContext xlsx 
     = Checked $ concatMap (toPops opts file) $
-         Prelude.concatMap theSheetCellsForTable (xlsx ^. xlSheets . to M.toList)
-      
+         Prelude.concatMap theSheetCellsForTable (xlsx ^. xlSheets)
+
 data SheetCellsForTable 
        = Mapping{ theSheetName :: String
                 , theCellMap   :: CellMap
