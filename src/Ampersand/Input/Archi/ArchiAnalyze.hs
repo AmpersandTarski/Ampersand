@@ -60,6 +60,7 @@ data P_Population
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
 data P_NamedRel = PNamedRel { p_nrpos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
+
 data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept } deriving (Ord,Eq)
 data PAtomPair
   = PPair { pppos :: Origin
@@ -122,6 +123,7 @@ data PAtomPair
      , archRepoId     :: String
      , archFolders    :: [Folder]
      , archProperties :: [ArchiProp]
+     , archPurposes   :: [ArchiPurpose]
      } deriving (Show, Eq)
  
    data Folder = Folder
@@ -193,6 +195,10 @@ data PAtomPair
      , archPropVal    :: String
      } deriving (Show, Eq)
 
+   data ArchiPurpose = ArchiPurpose
+     { archPurpVal    :: String
+     } deriving (Show, Eq)
+
    data ArchiDocu = ArchiDocu
      { archDocuVal    :: String
      } deriving (Show, Eq)
@@ -256,6 +262,7 @@ data PAtomPair
                       [(P_Population, Maybe P_Declaration, [P_Gen])]
      keyArchi   :: a -> String                      -- get the key value (dirty identifier) of an a.
 
+{- I'm not quite sure what the purpose of having eqAsy was in the first place...
    instance Flippable P_Declaration where
      flp decl
       = decl{ dec_sign =      flp  (dec_sign decl)
@@ -271,13 +278,6 @@ data PAtomPair
                             , p_nmdr = flp (p_nmdr pop)
                             , p_popps = (map flp) (p_popps pop)
                             }
-
---data P_NamedRel = PNamedRel { pos :: Origin, p_nrnm :: String, p_mbSign :: Maybe P_Sign }
-   instance Eq P_NamedRel where
-     PNamedRel p _ _ == PNamedRel p' _ _ = p==p'
-
-   instance Ord P_NamedRel where
-     compare (PNamedRel p _ _) (PNamedRel p' _ _) = compare p p'
 
    instance Flippable P_NamedRel where
      flp rel = rel{p_mbSign = flp (p_mbSign rel)}
@@ -315,13 +315,17 @@ data PAtomPair
           , pgns `uni` pgns'
           )
        _ `squash` _ = fatal 285 "error in squash"
+-}
 
    instance MetaArchi ArchiRepo where
      typeMap archiRepo
       = typeMap [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]  ++ 
         (typeMap.archProperties) archiRepo
      grindArchi elemLookup archiRepo
-      = (concat.map (grindArchi elemLookup)) backendFolders  ++ 
+      = [ translateArchiObj "purpose" "ArchiRepo"
+           [(keyArchi archiRepo, archPurpVal purp) | purp<-archPurposes archiRepo]
+        | (not.null.archPurposes) archiRepo ] ++
+        (concat.map (grindArchi elemLookup)) backendFolders  ++ 
         (concat.map (grindArchi elemLookup).archProperties) archiRepo
         where backendFolders = [ folder | folder<-archFolders archiRepo, fldName folder/="Views"]
      keyArchi = archRepoId
@@ -370,8 +374,10 @@ data PAtomPair
      grindArchi elemLookup element
       = [ translateArchiObj "name" (elemType element) [(keyArchi element, elemName element)]
         | (not.null.elemName) element, (null.elemSrc) element] ++
-        [ translateArchiObj "docu" (elemType element) [(keyArchi element, elemDocu element)]
+        [ translateArchiObj "docu" (elemType element) [(keyArchi element, elemDocu element)] -- documentation in the XML-tag
         | (not.null.elemDocu) element, (null.elemSrc) element] ++
+        [ translateArchiObj "docu" (elemType element) [(keyArchi element, archDocuVal eldo)] -- documentation with <documentation/> tags.
+        | eldo<-elDocus element] ++
         (if isRelationship element
          then translateArchiRel    -- do this only for elements which are a relationship.
                     elemLookup
@@ -410,8 +416,11 @@ data PAtomPair
 
 -- | The function `translateArchiObj` does the actual compilation of data objects from archiRepo into the Ampersand structure.
 --   It looks redundant to produce both a `P_Population` and a `P_Declaration`, but the first contains the population and the second is used to
---   include the metamodel of Archimate in the population. This save the author the effort of maintaining an Archimate-metamodel.
+--   include the metamodel of Archimate in the population. This saves the author the effort of maintaining an Archimate-metamodel.
    translateArchiObj :: String -> String -> [(String, String)] -> (P_Population,Maybe P_Declaration,[P_Gen])
+   translateArchiObj "purpose" "ArchiRepo" tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "purpose" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")))) (transTuples tuples)
+      , Just $ P_Sgn "purpose" (P_Sign (PCpt "ArchiFolder") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj "folderName" _ tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "naam" (Just (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")))) (transTuples tuples)
       , Just $ P_Sgn "naam" (P_Sign (PCpt "ArchiFolder") (PCpt "FolderName")) [Uni] [] [] [] OriginUnknown False, [] )
@@ -451,7 +460,7 @@ data PAtomPair
    translateArchiObj "archiLayer" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "archiLayer" (Just (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")))) (transTuples tuples)
       , Just $ P_Sgn "archiLayer" (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")) [Uni] [] [] [] OriginUnknown False, [] )
-   translateArchiObj _ _ _ = error "fatal 328 non-exhaustive pattern in translateArchiObj"
+   translateArchiObj a b c = error ("!fatal: non-exhaustive pattern in translateArchiObj\ntranslateArchiObj "++ show a++" "++show b++" "++show c)
 
 
 -- | The function `translateArchiRel` does the actual compilation of relationships from archiRepo into the Ampersand P-structure.
@@ -528,20 +537,22 @@ data PAtomPair
             n x = if head x /= '/' then '/' : x else x
         analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
         analArchiRepo
-          = atTag "archimate:model" >>>
+          = atTag "archimate:ArchimateModel" >>>
             proc l -> do repoNm'   <- getAttrValue "name"                  -< l
                          repoId'   <- getAttrValue "id"                    -< l
+                         purposes' <- listA (getChildren >>> getPurpose)   -< l
                          folders'  <- listA (getChildren >>> getFolder 0)  -< l
                          props'    <- listA (getChildren >>> getProp)      -< l
                          returnA   -< ArchiRepo { archRepoName   = repoNm'
                                                 , archRepoId     = repoId'
                                                 , archFolders    = folders'
                                                 , archProperties = [ prop{archPropId=Just $ "pr-"++show i} | (prop,i)<- zip props' [length (allProps folders')..] ]
+                                                , archPurposes   = purposes'
                                                 }
 
         getFolder :: ArrowXml a => Int -> a XmlTree Folder
         getFolder level
-         = isElem >>> hasName "folder" >>>
+         = isElem >>> hasName "folders" >>>
             proc l -> do fldNm'     <- getAttrValue "name"                 -< l
                          fldId'     <- getAttrValue "id"                   -< l
                          fldType'   <- getAttrValue "type"                 -< l
@@ -563,14 +574,19 @@ data PAtomPair
                                                  , archPropId  = Nothing -- error "fatal 315: archPropId not yet defined"
                                                  , archPropVal = propVal
                                                  }
+
+        getPurpose :: ArrowXml a => a XmlTree ArchiPurpose
+        getPurpose = isElem >>> hasName "purpose" >>>
+            proc l -> do purpVal    <- text -< l
+                         returnA    -< ArchiPurpose { archPurpVal = purpVal }
+
         getDocu :: ArrowXml a => a XmlTree ArchiDocu
         getDocu = isElem >>> hasName "documentation" >>>
-            proc l -> do docuVal    <- getText -< l
-                         returnA    -< ArchiDocu { archDocuVal = docuVal
-                                                 }
+            proc l -> do docuVal    <- text -< l
+                         returnA    -< ArchiDocu { archDocuVal = docuVal }
 
         getElement :: ArrowXml a => a XmlTree Element
-        getElement = isElem >>> hasName "element" >>>  -- don't use atTag, because recursion is in getFolder.
+        getElement = isElem >>> hasName "elements" >>>  -- don't use atTag, because recursion is in getFolder.
             proc l -> do elemType'  <- getAttrValue "xsi:type"           -< l
                          elemId'    <- getAttrValue "id"                 -< l
                          elemName'  <- getAttrValue "name"               -< l
@@ -668,3 +684,6 @@ data PAtomPair
 
    atTag :: ArrowXml a => String -> a (NTree XNode) XmlTree
    atTag tag = deep (isElem >>> hasName tag)
+
+   text :: ArrowXml a => a (NTree XNode) String
+   text = getChildren >>> getText
