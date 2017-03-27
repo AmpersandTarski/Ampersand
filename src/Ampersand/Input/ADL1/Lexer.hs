@@ -33,7 +33,7 @@ import Data.Time.Calendar
 import Data.Time.Clock
 import Numeric
 
--- | Retrieves a list of keywords accepted by the ampersand language
+-- | Retrieves a list of keywords accepted by the Ampersand language
 keywords :: [String] -- ^ The keywords
 keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 , "IN", "ENGLISH", "DUTCH"
@@ -75,12 +75,12 @@ keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 -- Depreciated keywords:
                 , "SPEC", "PROCESS", "ENDPROCESS"]
 
--- | Retrieves a list of operators accepted by the ampersand language
+-- | Retrieves a list of operators accepted by the Ampersand language
 operators :: [String] -- ^ The operators
 operators = [ "|-", "-", "->", "<-", "=", "~", "+", "*", ";", "!", "#",
               "::", ":", "\\/", "/\\", "\\", "/", "<>" , "..", "."]
 
--- | Retrieves the list of symbols accepted by the ampersand language
+-- | Retrieves the list of symbols accepted by the Ampersand language
 symbols :: String -- ^ The list of symbol characters / [Char]
 symbols = "()[],{}<>"
 
