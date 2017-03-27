@@ -151,6 +151,7 @@ data PAtomPair
      , elemName       :: String
      , elemSrc        :: String
      , elemTgt        :: String
+     , elemAccTp      :: String
      , elemDocu       :: String
      , elChilds       :: [Child]
      , elProps        :: [ArchiProp]
@@ -400,6 +401,8 @@ data PAtomPair
                     (elemSrc element) (elemTgt element)
          else []
         ) ++
+        [ translateArchiObj "accessType" (elemType element) [(keyArchi element, elemAccTp element)]
+        | (not.null.elemAccTp) element] ++
         [ translateArchiObj "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
         | prop<-elProps element] ++
         (concat.map (grindArchi elemLookup).elProps) element
@@ -470,6 +473,9 @@ data PAtomPair
    translateArchiObj "archiLayer" typeLabel tuples
     = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "archiLayer" (Just (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")))) (transTuples tuples)
       , Just $ P_Sgn "archiLayer" (P_Sign (PCpt typeLabel) (PCpt "ArchiLayer")) [Uni] [] [] [] OriginUnknown False, [] )
+   translateArchiObj "accessType" typeLabel tuples
+    = ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "accessType" (Just (P_Sign (PCpt typeLabel) (PCpt "AccessType")))) (transTuples tuples)
+      , Just $ P_Sgn "accessType" (P_Sign (PCpt typeLabel) (PCpt "AccessType")) [Uni] [] [] [] OriginUnknown False, [] )
    translateArchiObj a b c = error ("!fatal: non-exhaustive pattern in translateArchiObj\ntranslateArchiObj "++ show a++" "++show b++" "++show c)
 
 
@@ -602,19 +608,21 @@ data PAtomPair
                          elemName'  <- getAttrValue "name"               -< l
                          elemSrc'   <- getAttrValue "source"             -< l
                          elemTgt'   <- getAttrValue "target"             -< l
+                         elemAccTp' <- getAttrValue "accessType"         -< l
                          elemDocu'  <- getAttrValue "documentation"      -< l
                          childs'    <- listA (getChildren >>> getChild)  -< l
                          props'     <- listA (getChildren >>> getProp)   -< l
                          docus'     <- listA (getChildren >>> getDocu)   -< l
-                         returnA    -< Element  { elemType = drop 1 (dropWhile (/=':') elemType')  -- drop the prefix "archimate:"
-                                               , elemId   = elemId'
-                                               , elemName = elemName'
-                                               , elemSrc  = elemSrc'
-                                               , elemTgt  = elemTgt'
-                                               , elemDocu = elemDocu'
-                                               , elChilds = childs'
-                                               , elProps  = props'
-                                               , elDocus  = docus'
+                         returnA    -< Element { elemType  = drop 1 (dropWhile (/=':') elemType')  -- drop the prefix "archimate:"
+                                               , elemId    = elemId'
+                                               , elemName  = elemName'
+                                               , elemSrc   = elemSrc'
+                                               , elemTgt   = elemTgt'
+                                               , elemAccTp = elemAccTp'
+                                               , elemDocu  = elemDocu'
+                                               , elChilds  = childs'
+                                               , elProps   = props'
+                                               , elDocus   = docus'
                                                }
                                   
         getRelation :: ArrowXml a => a XmlTree Relation
