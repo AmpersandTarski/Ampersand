@@ -36,7 +36,7 @@ writeJSONFile opts fName x
   where file = fName <.> "json"
         fullFile = getGenericsDir opts </> file
 
-class (GToJSON (Rep b), Generic b) => JSON a b | b -> a where
+class (GToJSON Zero (Rep b), Generic b) => JSON a b | b -> a where
   fromAmpersand :: MultiFSpecs -> a -> b
   amp2Jason :: b -> Value
   amp2Jason = genericToJSON ampersandDefault
