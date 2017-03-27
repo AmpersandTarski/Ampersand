@@ -69,8 +69,8 @@ data PAtomPair
           } deriving (Eq,Ord,Show) -- Show is for QuickCheck error messages and/or input redundancy removal only!
 -}
       where sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
-            sortRelPops pops = [ (head cl){p_popps = foldr uni [] [p_popps decl | decl<-cl]} | cl<-eqCl p_nmdr [pop | pop@P_RelPopu{}<-pops] ]
-            sortCptPops pops = [ (head cl){p_popas = foldr uni [] [p_popas cpt  | cpt <-cl]} | cl<-eqCl p_cnme [pop | pop@P_CptPopu{}<-pops] ]
+            sortRelPops pops = [ (head cl){p_popps = foldr uni [] [p_popps decl | decl<-cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-pops] ]
+            sortCptPops pops = [ (head cl){p_popas = foldr uni [] [p_popas cpt  | cpt <-cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-pops] ]
             atomMap :: [P_Population] -> Map.Map P_Concept [PAtomValue]
             atomMap pops = Map.fromListWith uni
                               ([ (pSrc sgn, (nub.map ppLeft.p_popps) pop) | pop@P_RelPopu{}<-pops, Just sgn<-[(p_mbSign.p_nmdr) pop] ]++
@@ -83,6 +83,16 @@ data PAtomPair
             showMaybeInt Nothing = "Err"
             showArchiElems :: (P_Concept,Int) -> String
             showArchiElems (c,n) = "\n"++p_cptnm c++"\t"++show n
+
+   samePop :: P_Population -> P_Population -> Bool
+   samePop pop@P_RelPopu{} pop'@P_RelPopu{}
+    = same (p_nmdr pop) (p_nmdr pop')
+      where same nr nr'
+             = case (p_mbSign nr, p_mbSign nr') of
+                    (Just sgn,    Just sgn') -> p_nrnm nr==p_nrnm nr' && sgn==sgn'
+                    _                        -> fatal 93 ("Cannot compare partially defined populations of\n"++show nr++" and\n"++show nr')
+   samePop pop@P_CptPopu{} pop'@P_CptPopu{} = p_cnme pop == p_cnme pop'
+   samePop _ _ = False
 
    mkArchiContext :: [(P_Population,Maybe P_Declaration,[P_Gen])] -> P_Context
    mkArchiContext pops =
@@ -113,8 +123,8 @@ data PAtomPair
            archiGenss :: [[P_Gen]]
            (archiPops, archiDecls, archiGenss) = unzip3 pops
            sortRelPops, sortCptPops :: [P_Population] -> [P_Population] -- assembles P_Populations with the same signature into one
-           sortRelPops popus = [ (head cl){p_popps = foldr uni [] [p_popps decl | decl<-cl]} | cl<-eqCl p_nmdr [pop | pop@P_RelPopu{}<-popus] ]
-           sortCptPops popus = [ (head cl){p_popas = foldr uni [] [p_popas cpt  | cpt <-cl]} | cl<-eqCl p_cnme [pop | pop@P_CptPopu{}<-popus] ]
+           sortRelPops popus = [ (head cl){p_popps = foldr uni [] [p_popps decl | decl<-cl]} | cl<-eqClass samePop [pop | pop@P_RelPopu{}<-popus] ]
+           sortCptPops popus = [ (head cl){p_popas = foldr uni [] [p_popas cpt  | cpt <-cl]} | cl<-eqClass samePop [pop | pop@P_CptPopu{}<-popus] ]
 
 -- The following code defines a data structure (called ArchiRepo) that corresponds to an Archi-repository in XML.
 

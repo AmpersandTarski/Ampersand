@@ -352,10 +352,10 @@ data P_NamedRel = PNamedRel { pos :: Origin, p_nrnm :: String, p_mbSign :: Maybe
    deriving Show
 
 instance Eq P_NamedRel where
-     PNamedRel p _ _ == PNamedRel p' _ _ = p==p'
-
-instance Ord P_NamedRel where
-     compare (PNamedRel p _ _) (PNamedRel p' _ _) = compare p p'
+     nr==nr'
+      = case (p_mbSign nr, p_mbSign nr') of
+             (Just sgn, Just sgn')  -> p_nrnm nr == p_nrnm nr' && sgn == sgn'
+             _                      -> False
 
 {- For whenever it may turn out to be useful
 instance Eq TermPrim where
