@@ -65,7 +65,8 @@ data Options = Options { environment :: EnvironmentOptions
                        , genFPAExcel :: Bool   -- Generate an Excel workbook containing Function Point Analysis
                        , genPOPExcel :: Bool   -- Generate an .xmlx file containing the populations 
                        , genStaticFiles :: Bool-- Generate the static files into the prototype
-                       , genBericht :: Bool
+                       , genBericht :: Bool     -- Generate EBV-messages
+                       , genArchiAnal :: Bool   -- Analyze an Archimate model, using the Ampersand script to specify situation specific rules.
                        , language :: Maybe Lang  -- The language in which the user wants the documentation to be printed.
                        , dirExec :: String --the base for relative paths to input files
                        , progrName :: String --The name of the adl executable
@@ -197,7 +198,7 @@ getOptions' envOpts =
       where f a b = b a
     (actions, fNames, errors) = getOpt Permute (map fst options) $ envArgsFromConfigFile envOpts ++ envArgsCommandLine envOpts 
     fName = case fNames of
-             []   -> exitWith . WrongArgumentsGiven $ "Please supply the name of an ampersand file" : [usage]
+             []   -> exitWith . WrongArgumentsGiven $ "Please supply the name of an Ampersand file" : [usage]
              [n]  -> n
              _    -> exitWith . WrongArgumentsGiven $ ("Too many files: "++ intercalate ", " fNames) : [usage]
     usage = "Type '"++envProgName envOpts++" --help' for usage info."
@@ -243,6 +244,7 @@ getOptions' envOpts =
                       , genStaticFiles   = True
                       , genPOPExcel      = False
                       , genBericht       = False
+                      , genArchiAnal     = True
                       , language         = Nothing
                       , progrName        = envProgName envOpts
                       , fileName         = if hasExtension fName
@@ -533,6 +535,10 @@ options = [ (Option ['v']   ["version"]
                (NoArg (\opts -> opts{genBericht = True}))
                "Generate specifications of interfaces in EBV-format (http://www.justid.nl/ebv/)."
             , Hidden)
+          , (Option []        ["Archimate"]
+               (NoArg (\opts -> opts{genArchiAnal = True}))
+               "Analyse an Archimate model, with situation specific rules in my Ampersand-script."
+            , Hidden)
           , (Option []        ["language"]
                (ReqArg (\l opts-> opts{language = case map toUpper l of
                                                        "NL"  -> Just Dutch
@@ -549,7 +555,7 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           , (Option []        ["meta-tables"]
                (NoArg (\opts -> opts{genMetaTables = True}))
-               "When set, generate the meta-tables of ampersand into the prototype"
+               "When set, generate the meta-tables of Ampersand into the prototype"
             , Hidden)
           , (Option []        ["meta-file"]
                (NoArg (\opts -> opts{genMetaFile = True}))
@@ -557,7 +563,7 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           , (Option []        ["add-semantic-metamodel"]
                (NoArg (\opts -> opts{addSemanticMetaModel = True}))
-               "Add all relations, concepts and generalisation relations of formal ampersand into your script"
+               "Add all relations, concepts and generalisation relations of Formal Ampersand into your script"
             , Hidden)
           , (Option []        ["gen-as-rap-model"]
                (NoArg (\opts -> opts{genRapPopulationOnly = True}))

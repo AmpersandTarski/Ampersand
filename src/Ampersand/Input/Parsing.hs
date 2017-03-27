@@ -91,7 +91,7 @@ parseSingleADL opts singleFile
              do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts (useAllStaticFiles singleFile) filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
-         | extension == ".xml" =
+         | genArchiAnal opts && extension == ".xml" =
              do { ctxFromArchi <- archi2PContext filePath  -- e.g. "CA repository.xml"
                 ; writeFile "ArchiMetaModel.adl" (prettyPrint ctxFromArchi)
                 ; verboseLn opts ("ArchiMetaModel.adl written")

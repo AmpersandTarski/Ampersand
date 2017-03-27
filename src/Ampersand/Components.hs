@@ -47,17 +47,18 @@ generateAmpersandOutput multi = do
    conditionalActions :: [(Options -> Bool, IO())]
    conditionalActions = 
       [ ( genSampleConfigFile , doGenSampleConfigFile) 
-      , ( genUML      , doGenUML           )
-      , ( haskell     , doGenHaskell       )
-      , ( sqlDump     , doGenSQLdump       )
-      , ( export2adl  , doGenADL           )
-      , ( genFSpec    , doGenDocument      )
-      , ( genFPAExcel , doGenFPAExcel      )
-      , ( genPOPExcel , doGenPopsXLSX      )
-      , ( proofs      , doGenProofs        )
-      , ( validateSQL , doValidateSQLTest  )
-      , ( genPrototype, doGenProto         )
-      , ( genBericht  , doGenBericht fSpec )
+      , ( genUML      , doGenUML             )
+      , ( haskell     , doGenHaskell         )
+      , ( sqlDump     , doGenSQLdump         )
+      , ( export2adl  , doGenADL             )
+      , ( genFSpec    , doGenDocument        )
+      , ( genFPAExcel , doGenFPAExcel        )
+      , ( genPOPExcel , doGenPopsXLSX        )
+      , ( proofs      , doGenProofs          )
+      , ( validateSQL , doValidateSQLTest    )
+      , ( genPrototype, doGenProto           )
+      , ( genBericht  , doGenBericht fSpec   )
+--    , ( genArchiAnal, doArchiAnalyze fSpec )  -- awaiting an implementation of doArchiAnalyze
       , ( const True  , putStrLn "Finished processing your model.")]
    opts = getOpts fSpec
    fSpec = userFSpec multi
