@@ -2,7 +2,13 @@
 
 /* Please forward any comments to the author: michiel.stornebrink@tno.nl
 
-   This file defines the functions 'InsPair', 'DelPair', InsAtom, DelAtom and NewStruct
+   This file defines the functions:
+   - 'InsPair', 'DelPair': insert and delete links in relations
+   - 'NewStruct': create a new atom and populate relations
+   - 'InsAtom', 'DelAtom': create/delete a single atom
+   - 'MergeAtoms': unify two atoms that have been discovered to be identical
+   - 'SetConcept', 'ClearConcept'
+   - 'InsPairCond', 'SetConceptCond': conditionally execute an 'InsPair' or 'SetConcept'
    There are no guarantees with respect to their 100% functioning. Have fun...
    
    This file has been modified to produce Exceptions rather than that it dies...
@@ -34,7 +40,7 @@ use Ampersand\Core\Atom;
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	Logger::getLogger('EXECENGINE')->info("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
-    if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function InsPair(): ".func_num_args()." arguments", 500);
+    if(func_num_args() != 5) throw new Exception("InsPair() expects 5 arguments, but you have provided ".func_num_args(), 500);
 	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
         $srcConcept = Concept::getConceptByLabel($srcConceptName);
@@ -81,7 +87,7 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
 function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
 	Logger::getLogger('EXECENGINE')->info("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
-    if(func_num_args() != 5) throw new Exception("Wrong number of arguments supplied for function DelPair(): ".func_num_args()." arguments", 500);
+    if(func_num_args() != 5) throw new Exception("DelPair() expects 5 arguments, but you have provided ".func_num_args(), 500);
 	try{		
 		// Check if relation signature exists: $relationName[$srcConceptName*$tgtConceptName]
         $srcConcept = Concept::getConceptByLabel($srcConceptName);
@@ -185,7 +191,7 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
 function InsAtom($conceptName){
 	Logger::getLogger('EXECENGINE')->info("InsAtom($conceptName)");
-    if(func_num_args() != 1) throw new Exception("Wrong number of arguments supplied for function InsAtom(): ".func_num_args()." arguments", 500);
+    if(func_num_args() != 1) throw new Exception("InsAtom() expects 1 argument, but you have provided ".func_num_args(), 500);
 	try{
 		$database = Database::singleton();
 		
@@ -209,7 +215,7 @@ function InsAtom($conceptName){
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
 function DelAtom($concept, $atomId){
 	Logger::getLogger('EXECENGINE')->info("DelAtom($concept,$atomId)");
-    if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function DelAtom(): ".func_num_args()." arguments", 500);
+    if(func_num_args() != 2) throw new Exception("DelAtom() expects 2 arguments, but you have provided ".func_num_args(), 500);
 	try{		
 		$atom = new Atom($atomId, Concept::getConceptByLabel($concept));
 		$atom->deleteAtom(); // delete atom + all pairs shared with other atoms
@@ -235,7 +241,7 @@ function DelAtom($concept, $atomId){
 // Use: VIOLATION (TXT "{EX} MrgAtoms;<conceptA>;", SRC I, TXT ";<conceptB>;", TGT I )
 function MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId){
 	Logger::getLogger('EXECENGINE')->info("MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId)");
-    if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function MrgAtoms(): ".func_num_args()." arguments", 500);
+    if(func_num_args() != 4) throw new Exception("MrgAtoms() expects 4 arguments, but you have provided ".func_num_args(), 500);
 	try{		
 		$srcAtom = new Atom($srcAtomId, Concept::getConceptByLabel($conceptA));
 		$tgtAtom = new Atom($tgtAtomId, Concept::getConceptByLabel($conceptB));
@@ -256,7 +262,7 @@ function MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId){
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atom>")
 function SetConcept($conceptA, $conceptB, $atom){
 	Logger::getLogger('EXECENGINE')->info("SetConcept($conceptA,$conceptB,$atom)");
-    if(func_num_args() != 3) throw new Exception("Wrong number of arguments supplied for function SetConcept(): ".func_num_args()." arguments", 500);
+    if(func_num_args() != 3) throw new Exception("SetConcept() expects 3 arguments, but you have provided ".func_num_args(), 500);
 	try{
 		$database = Database::singleton();
 		
@@ -278,7 +284,7 @@ function SetConcept($conceptA, $conceptB, $atom){
 // Use: VIOLATION (TXT "ClearConcept;<Concept>;<atom>")
 function ClearConcept($concept, $atom){
 	Logger::getLogger('EXECENGINE')->info("ClearConcept($concept,$atom)");
-    if(func_num_args() != 2) throw new Exception("Wrong number of arguments supplied for function ClearConcept(): ".func_num_args()." arguments", 500);
+    if(func_num_args() != 2) throw new Exception("ClearConcept() expects 2 arguments, but you have provided ".func_num_args(), 500);
 	try{
 		$database = Database::singleton();
         
@@ -296,12 +302,12 @@ function ClearConcept($concept, $atom){
  * Conditional variants of the above functions
  *************************************************************/
  
-// SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
+// InsPairCond is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
 function InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool){
 	Logger::getLogger('EXECENGINE')->info("InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool)");
     
 	try{
-        if(func_num_args() != 6) throw new Exception("Wrong number of arguments supplied for function SetConceptCond(): ".func_num_args()." arguments", 500);
+        if(func_num_args() != 6) throw new Exception("InsPairCond() expects 6 arguments, but you have provided ".func_num_args(), 500);
         
         // Skip when $bool evaluates to false or equals '_NULL'. 
         // _Null is the exec-engine special for zero results from Ampersand expression
@@ -322,7 +328,7 @@ function SetConceptCond($conceptA, $conceptB, $atom, $bool){
 	Logger::getLogger('EXECENGINE')->info("SetConceptCond($conceptA, $conceptB, $atom, $bool)");
     
 	try{
-        if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function SetConceptCond(): ".func_num_args()." arguments", 500);
+        if(func_num_args() != 4) throw new Exception("SetConceptCond() expects 4 arguments, but you have provided ".func_num_args(), 500);
         
         // Skip when $bool evaluates to false or equals '_NULL'. 
         // _Null is the exec-engine special for zero results from Ampersand expression

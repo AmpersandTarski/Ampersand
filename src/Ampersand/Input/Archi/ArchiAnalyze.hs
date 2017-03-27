@@ -491,7 +491,7 @@ data PAtomPair
         , [] -- [ PGen OriginUnknown (PCpt xType) (PCpt "ArchiObject") ]
         )
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "isa" (Just (P_Sign (PCpt xType) (PCpt "ArchiObject")))) (transTuples [(x,x)])
-        , Just $ P_Sgn "isa" (P_Sign (PCpt xType) (PCpt "ArchiObject")) [Uni,Inj] [] [] [] OriginUnknown False
+        , Just $ P_Sgn "isa" (P_Sign (PCpt xType) (PCpt "ArchiObject")) [] [] [] [] OriginUnknown False
         , []
         )
       , ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown "target" (Just (P_Sign (PCpt "Relationship") (PCpt "ArchiObject")))) (transTuples [(relId,y)])

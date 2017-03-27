@@ -32,6 +32,10 @@ AmpersandApp.controller('$interfaceName$Controller', function (\$scope, \$rootSc
             \$scope.navLabel = (\$scope.resource.$interfaceName$[0] || {})._label_ ? \$scope.resource.$interfaceName$[0]._label_ : '...';
         }
 	});
+    
+    \$scope.switchResource = function(resourceId){
+        \$location.url('/$interfaceName$/' + resourceId);
+    }
 	
 	// Create new resource and add data to \$scope.resource['$interfaceName$']
 	if(\$routeParams['new']){

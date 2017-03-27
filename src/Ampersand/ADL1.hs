@@ -60,4 +60,3 @@ import Ampersand.ADL1.Expression as X
 import Ampersand.ADL1.Rule as X (
           rulefromProp
          ,consequent,antecedent,hasantecedent)
-import Ampersand.ADL1.PrettyPrinters(prettyPrint)
