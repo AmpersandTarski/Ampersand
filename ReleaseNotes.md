@@ -1,7 +1,7 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-
+  * Upgrade LTS Haskell 8.5, which includes GHC 8.0.2
 
 ## v3.8.3 (17 march 2017)
   * Minor modifications on frontend 
