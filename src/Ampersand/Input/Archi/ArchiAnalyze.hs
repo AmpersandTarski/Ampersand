@@ -389,18 +389,7 @@ data PAtomPair
         | (not.null.elemDocu) element, (null.elemSrc) element] ++
         [ translateArchiObj "docu" (elemType element) [(keyArchi element, archDocuVal eldo)] -- documentation with <documentation/> tags.
         | eldo<-elDocus element] ++
-        (if isRelationship element
-         then translateArchiRel    -- do this only for elements which are a relationship.
-                    elemLookup
-                    (keyArchi element)
-                    (elemType element)
-                    (if (null.elemName) element
-                     then unfixRel (elemType element)
-                     else relCase (elemName element)
-                    )
-                    (elemSrc element) (elemTgt element)
-         else []
-        ) ++
+        (if isRelationship element then translateArchiRel elemLookup element else [] ) ++
         [ translateArchiObj "accessType" (elemType element) [(keyArchi element, elemAccTp element)]
         | (not.null.elemAccTp) element] ++
         [ translateArchiObj "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
@@ -479,9 +468,10 @@ data PAtomPair
    translateArchiObj a b c = error ("!fatal: non-exhaustive pattern in translateArchiObj\ntranslateArchiObj "++ show a++" "++show b++" "++show c)
 
 
--- | The function `translateArchiRel` does the actual compilation of relationships from archiRepo into the Ampersand P-structure.
-   translateArchiRel :: (String -> Maybe String) -> String -> String -> String -> String -> String -> [(P_Population, Maybe P_Declaration, [P_Gen])]
-   translateArchiRel elemLookup relId relTyp relLabel x y
+-- | Purpose: To generate relationships from archiRepo as elements the Ampersand P-structure
+-- | Pre:     isRelationship element
+   translateArchiRel :: (String -> Maybe String) -> Element -> [(P_Population, Maybe P_Declaration, [P_Gen])]
+   translateArchiRel elemLookup element
     = [ ( P_RelPopu Nothing Nothing OriginUnknown (PNamedRel OriginUnknown relNm (Just (P_Sign (PCpt xType) (PCpt yType)))) (transTuples [(x,y)])
         , Just $ P_Sgn relNm (P_Sign (PCpt xType) (PCpt yType)) [] [] [] [] OriginUnknown False
         , []
@@ -519,15 +509,22 @@ data PAtomPair
         , []
         )
       | xType=="ApplicationComponent" && yType=="ApplicationComponent" && relLabel/="flow" ]
-      where xType = case elemLookup x of
-                      Just str -> str
-                      Nothing -> fatal 292 ("No Archi-object found for Archi-identifier "++show x)
-            yType = case elemLookup y of
-                      Just str -> str
-                      Nothing -> fatal 293 ("No Archi-object found for Archi-identifier "++show y)
-            relNm = if xType=="ApplicationComponent" && yType=="ApplicationComponent"
-                    then "flow"
-                    else relCase relLabel  --  ++"["++xType++"*"++yType++"]"
+        where
+          relId    = keyArchi element                 -- the key from Archi, e.g. "693"                 
+          relTyp   = elemType element                 -- the relation type,  e.g. "AccessRelationship"  
+          relLabel = if (null.elemName) element          
+                     then unfixRel (elemType element)
+                     else relCase (elemName element)  -- the name given by the user, e.g. "create/update"
+          (x,y)    = (elemSrc element, elemTgt element)
+          xType    = case elemLookup x of
+                       Just str -> str
+                       Nothing -> fatal 292 ("No Archi-object found for Archi-identifier "++show x)
+          yType    = case elemLookup y of
+                       Just str -> str
+                       Nothing -> fatal 293 ("No Archi-object found for Archi-identifier "++show y)
+          relNm    = if xType=="ApplicationComponent" && yType=="ApplicationComponent"
+                     then "flow"
+                     else relCase relLabel  --  ++"["++xType++"*"++yType++"]"
 
    unfixRel :: String -> String
    unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
