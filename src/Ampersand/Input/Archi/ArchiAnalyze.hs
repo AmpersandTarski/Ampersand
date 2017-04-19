@@ -221,7 +221,7 @@ data PAtomPair
 --   are instances of class WithProperties.
 
    class WithProperties a where
-     allProps      :: a -> [ArchiProp]        -- takes all properties from an ArchiRepo, a Folder, or an Element
+     allProps      :: a -> [ArchiProp]   -- takes all properties from an ArchiRepo, a Folder, or an Element
      identifyProps :: [String] -> a -> a -- distributes identifiers ( [String] ) over an ArchiRepo, a Folder, or an Element, in order to assign a unique identifier to each property in it.
 
    instance WithProperties ArchiRepo where
@@ -232,8 +232,9 @@ data PAtomPair
        }
        where
          identifiers = [ "pr-"++show (i::Integer) | i<-[0..] ] -- infinitely many unique keys to identify properties.
-         fldrIds = take ((length.allProps.archFolders) archiRepo) identifiers
-         propIds = drop ((length.allProps.archFolders) archiRepo) identifiers
+         len = (length.allProps.archFolders) archiRepo
+         fldrIds = take len identifiers
+         propIds = drop len identifiers
 
    instance WithProperties Folder where
      allProps folder = allProps (fldElems folder) ++ allProps (fldFolders folder)
@@ -550,7 +551,7 @@ data PAtomPair
             n x = if head x /= '/' then '/' : x else x
         analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
         analArchiRepo
-          = atTag "archimate:ArchimateModel" >>>
+          = atTag "archimate:model" >>>
             proc l -> do repoNm'   <- getAttrValue "name"                  -< l
                          repoId'   <- getAttrValue "id"                    -< l
                          purposes' <- listA (getChildren >>> getPurpose)   -< l
@@ -565,7 +566,7 @@ data PAtomPair
 
         getFolder :: ArrowXml a => Int -> a XmlTree Folder
         getFolder level
-         = isElem >>> hasName "folders" >>>
+         = isElem >>> hasName "folder" >>>
             proc l -> do fldNm'     <- getAttrValue "name"                 -< l
                          fldId'     <- getAttrValue "id"                   -< l
                          fldType'   <- getAttrValue "type"                 -< l
@@ -599,7 +600,7 @@ data PAtomPair
                          returnA    -< ArchiDocu { archDocuVal = docuVal }
 
         getElement :: ArrowXml a => a XmlTree Element
-        getElement = isElem >>> hasName "elements" >>>  -- don't use atTag, because recursion is in getFolder.
+        getElement = isElem >>> hasName "element" >>>  -- don't use atTag, because recursion is in getFolder.
             proc l -> do elemType'  <- getAttrValue "xsi:type"           -< l
                          elemId'    <- getAttrValue "id"                 -< l
                          elemName'  <- getAttrValue "name"               -< l
