@@ -215,10 +215,11 @@ data PAtomPair
      } deriving (Show, Eq)
 
 
--- | Properties in Archimate have no identifying key. In Ampersand, that key is necessary. So the class WithProperties is defined to
---   generate keys for properties, to be inserted in the grinding process. The only data structures with properties in the inner structure
---   of Archi (i.e. in the repository minus the Views), are folders and elements. For this reason, the types ArchiRepo, Folder, and Element
---   are instances of class WithProperties.
+-- | Properties in Archimate have no identifying key. In Ampersand, that key is necessary to get objects that represent an Archimate-property.
+--   So the class WithProperties is defined to generate keys for properties, to be inserted in the grinding process.
+--   The only data structures with properties in the inner structure of Archi (i.e. in the repository minus the Views),
+--   are folders and elements.
+--   For this reason, the types ArchiRepo, Folder, and Element are instances of class WithProperties.
 
    class WithProperties a where
      allProps      :: a -> [ArchiProp]   -- takes all properties from an ArchiRepo, a Folder, or an Element
@@ -226,11 +227,12 @@ data PAtomPair
 
    instance WithProperties ArchiRepo where
      allProps archiRepo = allProps (archFolders archiRepo) ++ archProperties archiRepo
-     identifyProps _ archiRepo = archiRepo
-       { archProperties = [ prop{archPropId=Just propId} | (prop,propId)<- zip (archProperties archiRepo) propIds ]
-       , archFolders    = identifyProps fldrIds (archFolders archiRepo)
-       }
-       where
+     identifyProps _ archiRepo
+      = archiRepo
+         { archProperties = [ prop{archPropId=Just propId} | (prop,propId)<- zip (archProperties archiRepo) propIds ]
+         , archFolders    = identifyProps fldrIds (archFolders archiRepo)
+         }
+        where
          identifiers = [ "pr-"++show (i::Integer) | i<-[0..] ] -- infinitely many unique keys to identify properties.
          len = (length.allProps.archFolders) archiRepo
          fldrIds = take len identifiers
@@ -551,7 +553,7 @@ data PAtomPair
             n x = if head x /= '/' then '/' : x else x
         analArchiRepo :: ArrowXml a => a XmlTree ArchiRepo
         analArchiRepo
-          = atTag "archimate:model" >>>
+          = (atTag "archimate:model"<+>atTag "archimate:ArchimateModel") >>>
             proc l -> do repoNm'   <- getAttrValue "name"                  -< l
                          repoId'   <- getAttrValue "id"                    -< l
                          purposes' <- listA (getChildren >>> getPurpose)   -< l
@@ -566,7 +568,7 @@ data PAtomPair
 
         getFolder :: ArrowXml a => Int -> a XmlTree Folder
         getFolder level
-         = isElem >>> hasName "folder" >>>
+         = isElem >>> (hasName "folder"<+>hasName "folders") >>>
             proc l -> do fldNm'     <- getAttrValue "name"                 -< l
                          fldId'     <- getAttrValue "id"                   -< l
                          fldType'   <- getAttrValue "type"                 -< l
@@ -581,7 +583,7 @@ data PAtomPair
                                               }
 
         getProp :: ArrowXml a => a XmlTree ArchiProp
-        getProp = isElem >>> hasName "properties" >>>
+        getProp = isElem >>> (hasName "property"<+>hasName "properties") >>>
             proc l -> do propKey    <- getAttrValue "key"   -< l
                          propVal    <- getAttrValue "value" -< l
                          returnA    -< ArchiProp { archPropKey = propKey
@@ -600,7 +602,7 @@ data PAtomPair
                          returnA    -< ArchiDocu { archDocuVal = docuVal }
 
         getElement :: ArrowXml a => a XmlTree Element
-        getElement = isElem >>> hasName "element" >>>  -- don't use atTag, because recursion is in getFolder.
+        getElement = isElem >>> (hasName "element"<+>hasName "elements") >>>  -- don't use atTag, because recursion is in getFolder.
             proc l -> do elemType'  <- getAttrValue "xsi:type"           -< l
                          elemId'    <- getAttrValue "id"                 -< l
                          elemName'  <- getAttrValue "name"               -< l
