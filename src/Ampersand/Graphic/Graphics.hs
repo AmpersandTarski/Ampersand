@@ -111,7 +111,7 @@ makePicture fSpec pr =
             PTCDConcept{}      -> "0.7"
             PTLogicalDM    -> "1.2"
             PTTechnicalDM  -> "1.2"
-   graphVizCmdForConceptualGraph = Fdp (don't use Sfdp, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
+   graphVizCmdForConceptualGraph = Fdp -- (don't use Sfdp, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
 
 pictureID :: PictureReq -> String
 pictureID pr =
