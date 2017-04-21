@@ -190,8 +190,8 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
 writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
-      [dumpShow ]++
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
+   --   [dumpShow ]++
       [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
       [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
       [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
