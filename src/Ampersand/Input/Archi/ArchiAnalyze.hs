@@ -511,7 +511,7 @@ data PAtomPair
         , Just $ P_Sgn "datatype" (P_Sign (PCpt "Relationship") (PCpt "Tekst")) [Uni] [] [] [] OriginUnknown False
         , []
         )
-      | xType=="ApplicationComponent" && yType=="ApplicationComponent" && relLabel/="flow" ]
+      | xType=="ApplicationComponent" && yType=="ApplicationComponent" ]
         where
           relId    = keyArchi element                 -- the key from Archi, e.g. "693"                 
           relTyp   = elemType element                 -- the relation type,  e.g. "AccessRelationship"  
@@ -525,9 +525,7 @@ data PAtomPair
           yType    = case elemLookup y of
                        Just str -> str
                        Nothing -> fatal 293 ("No Archi-object found for Archi-identifier "++show y)
-          relNm    = if xType=="ApplicationComponent" && yType=="ApplicationComponent"
-                     then "flow"
-                     else relCase relLabel  --  ++"["++xType++"*"++yType++"]"
+          relNm    = relCase relLabel  --  ++"["++xType++"*"++yType++"]"
 
    unfixRel :: String -> String
    unfixRel cs = (reverse.drop 1.dropWhile (/='R').reverse.relCase) cs
