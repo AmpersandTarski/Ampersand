@@ -80,7 +80,7 @@ PROCESS "Expression definitions"
     CLASSIFY RightResidual      ISA BinaryTerm
 ENDPROCESS
 
-RELATION showADL[Expression*ShowADL] [UNI,TOT]
+RELATION showADL[Expression*ShowADL] [UNI]
 REPRESENT ShowADL TYPE BIGALPHANUMERIC
 --HJI20161004: This execEngine rule doesn't work, because of the ';'-characters that may be in the ShowADL expression
       ROLE ExecEngine MAINTAINS "del unused ShowADL"
