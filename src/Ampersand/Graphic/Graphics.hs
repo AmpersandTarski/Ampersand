@@ -5,6 +5,7 @@ module Ampersand.Graphic.Graphics
 import Data.GraphViz
 import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.Switchboard
 import Ampersand.Misc
 import Ampersand.Basics
 import Ampersand.Classes
@@ -24,6 +25,8 @@ data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern
                 | PTDeclaredInPat Pattern
                 | PTCDConcept A_Concept
+                | PTSwitchBoard Activity
+                | PTFinterface Activity
                 | PTCDRule Rule
                 | PTLogicalDM
                 | PTTechnicalDM
@@ -92,6 +95,15 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of the rules in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van de regels in " ++ name pat
                                }
+   PTFinterface act    -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = conceptualGraph' fSpec pr
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption =
+                                   case fsLang fSpec of
+                                      English -> "Concept diagram of interface " ++ name act
+                                      Dutch   -> "Conceptueel diagram van interface " ++ name act
+                               }
    PTCDRule rul        -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = conceptualGraph' fSpec pr
@@ -101,14 +113,25 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of rule " ++ name rul
                                       Dutch   -> "Conceptueel diagram van regel " ++ name rul
                                }
+   PTSwitchBoard act   -> Pict { pType = pr
+                               , scale = scale'
+                               , dotSource = sbdotGraph (switchboardAct fSpec act)
+                               , dotProgName = graphVizCmdForConceptualGraph
+                               , caption =
+                                   case fsLang fSpec of
+                                      English -> "Switchboard diagram of " ++ name act
+                                      Dutch   -> "Schakelpaneel van " ++ name act
+                               }
  where
    scale' =
       case pr of
             PTClassDiagram -> "1.0"
             PTCDPattern{}-> "0.7"
             PTDeclaredInPat{}-> "0.6"
+            PTSwitchBoard{}  -> "0.4"
             PTCDRule{}   -> "0.7"
             PTCDConcept{}      -> "0.7"
+            PTFinterface{}   -> "0.7"
             PTLogicalDM    -> "1.2"
             PTTechnicalDM  -> "1.2"
    graphVizCmdForConceptualGraph = Fdp -- (don't use Sfdp, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
@@ -116,12 +139,14 @@ makePicture fSpec pr =
 pictureID :: PictureReq -> String
 pictureID pr =
      case pr of
-      PTClassDiagram   -> "Classification"
-      PTLogicalDM      -> "LogicalDataModel"
-      PTTechnicalDM    -> "TechnicalDataModel"
+      PTClassDiagram      -> "Classification"
+      PTLogicalDM         -> "LogicalDataModel"
+      PTTechnicalDM       -> "TechnicalDataModel"
       PTCDConcept cpt     -> "CDConcept"++name cpt
       PTDeclaredInPat pat -> "RelationsInPattern"++name pat
       PTCDPattern pat     -> "CDPattern"++name pat
+      PTSwitchBoard x     -> "SwitchBoard"++name x
+      PTFinterface act    -> "KnowledgeGraph"++name act
       PTCDRule r          -> "CDRule"++name r
 
 conceptualGraph' :: FSpec -> PictureReq -> DotGraph String
@@ -175,6 +200,21 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                   , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
                   }
 
+        PTFinterface ifc ->
+          let gs   = fsisa fSpec
+              cpts = nub $ cpts' ++ [c |(s,g)<-idgs, c<-[g,s]]
+              cpts'  = concs rs
+              rs         = filter affected (vrules fSpec)
+              affected r = (not.null) [d | d@Sgn{} <- relsMentionedIn r `isc` relsMentionedIn ifc]
+              idgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
+              rels = [r | r@Sgn{}<-relsMentionedIn ifc, decusr r
+                        , not (isProp r)    -- r is not a property
+                     ]
+          in
+          CStruct { csCpts = cpts -- involve all concepts involved either in the affected rules or in the isa-links
+                  , csRels = rels
+                  , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
+                  }
         PTCDRule r ->
           let idgs = [(s,g) | (s,g)<-fsisa fSpec
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
@@ -198,11 +238,11 @@ writePicture opts pict
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
-     dumpShow :: IO()
-     dumpShow = -- This has been hacked in in order to diagnose the issue at: https://github.com/ivan-m/graphviz/issues/13
-       do let path = imagePath opts pict -<.> "txt"
-          writeFile path (show . dotSource $ pict)
-          verboseLn opts $ "Dumpfile written: "++path 
+--     dumpShow :: IO()
+--     dumpShow = -- Diagnostic code for issue at: https://github.com/ivan-m/graphviz/issues/13
+--       do let path = imagePath opts pict -<.> "txt"
+--          writeFile path (show . dotSource $ pict)
+--          verboseLn opts $ "Dumpfile written: "++path 
      writeDot :: GraphvizOutput -> IO ()
      writeDot = writeDotPostProcess Nothing
      writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor

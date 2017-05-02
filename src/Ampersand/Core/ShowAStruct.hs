@@ -2,6 +2,7 @@ module Ampersand.Core.ShowAStruct
   (AStruct(..))
 where
 
+import Data.List
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ShowPStruct
 import Ampersand.Core.A2P_Converters
@@ -43,3 +44,5 @@ instance AStruct AAtomValue where
 instance AStruct ExplObj where
  showA = showP . aExplObj2PRef2Obj
 
+instance AStruct DnfClause where
+ showA dc = "RULE "++(intercalate "/\\" . map showA . antcs) dc++" |- "++(intercalate "\\/" . map showA . conss) dc

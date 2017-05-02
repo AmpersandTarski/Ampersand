@@ -7,9 +7,10 @@ This relates to discussions held in Github issues #311 and #398.
 In the compiler, we will introduce a data structure `Enforcement` in the A-structure:
 
 data Enforcement =
-       Block
-     | Process Role
-     | Automated PA_Clause
+       None                -- for axioms. These must be used in formula manipulation, but are not enforced.
+     | Block               -- for "laws" that are enforced by the database.
+     | Process Role        -- for "rules" that are enforced by users. They experience each violation as a signal for doing work.
+     | Automated PA_Clause -- for correcting violations by software.
 
 In the Ampersand-metamodel (FormalAmpersand\Enforcements.adl) we introduce this pattern.
 
@@ -40,8 +41,8 @@ An enforcement-statement of rule `r` between `INTERFACE i` and `ENDINTERFACE` me
 In every situation there is at most one enforcement for every rule. Multiple enforcement-statements for the same rule result in a compile-time error.
 
 The following alternatives exist:
-1. Blocking: (previously called "invariant") The rule has to remain satisfied at all times. Only within a database transaction it may be "violated temporarily" as long as the transaction remains open. Commit is possible only when the rule is satisfied. Rollback is always an option and it leaves the database in the state it was when the transaction was started. Users not involved in the transaction will never notice what has occured within the transaction; they will only see the result. I.e. the transaction behaviour you would expect from any database.
-2. Automated: There is a rule, which restores satisfaction of the rule when executed by the computer. Note that other rules may be violated as a result. The rule to be executed is not just any Ampersand rule. Executable rules are called "clause" or "ECA-rule".
+1. Blocking: (aka "invariant") The rule has to remain satisfied at all times. Only within a database transaction it may be "violated temporarily" as long as the transaction remains open. Commit is possible only when the rule is satisfied. Rollback is always an option and it leaves the database in the state it was when the transaction was started. Users not involved in the transaction will never notice what has occured within the transaction; they will only see the result. I.e. the transaction behaviour you would expect from any database.
+2. Automated: There is a rule, which restores satisfaction of the rule when executed by the computer. Note that other rules may be violated as a result. The rule to be executed is not just any Ampersand rule. Executable rules are called "clause", "PA-clause", or "ECA-rule".
 3. Process: A human agent, represented generically by one or more Roles, is required to restore the rule. No code for restoring the rule is generated, but code for monitoring is.
 
 Examples:
@@ -65,16 +66,15 @@ RELATION clause[Enforcement*PA_Clause] [UNI]
 RELATION valid[Enforcement*Context] [UNI]
 RELATION valid[Enforcement*Interface] [UNI]
 
-RULE EnforcementType   : I[EnforcementType] = 'Blocking' \/ 'Automated' \/ Process'
-MEANING "There are four types of enforcement: 'Blocking', 'Automated', and 'Process'"
+RULE EnforcementType   : I[EnforcementType] = 'None' \/ 'Blocking' \/ 'Automated' \/ Process'
+MEANING "There are four types of enforcement: 'None', 'Blocking', 'Automated', and 'Process'"
 RULE EnforceRoleTot    : type;'Process'[EnforcementType];type~ /\ I[Enforcement] |- role;role~
 MEANING "For every enforcement of type `Process` there exists a role."
-RULE EnforceRoleUni    : role~;(type;'Process'[EnforcementType];type~ /\ I);role |-  I[Role]
-MEANING "For every enforcement of type `Process` there is at most one role."
-RULE EnforceClauseTot  : type;'Automated';type~ /\ I[Enforcement]     |- clause;clause~
+--PURPOSE RULE EnforceRoleUni{+There may be any number of roles to enforce a process rule. So we do not want to enforce the following rule.+}
+--RULE EnforceRoleUni    : role~;(type;'Process'[EnforcementType];type~ /\ I);role |-  I[Role]
+--MEANING "For every enforcement of type `Process` there is at most one role."
+RULE EnforceAutoRuleTot  : type;'Automated';type~ /\ I[Enforcement]     |- clause;clause~
 MEANING "For every enforcement of type `Automated` there exists a clause."
-RULE EnforceClauseUni  : clause~;(type;'Automated';type~ /\ I);clause |-  I[PA_Clause]
-MEANING "For every enforcement of type `Automated` there is at most one clause."
 RULE validInInterface  : valid[Enforcement*Interface] = interface \/ (context;in~/\-interface)
 MEANING "An enforcement that is declared in an interface precedes any enforcement that is valid in the context of that interface."
 ENDPATTERN

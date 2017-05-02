@@ -11,8 +11,13 @@ are merely different ways to show FSpec.
 module Ampersand.FSpec.FSpec
           ( MultiFSpecs(..)
           , FSpec(..), concDefs, Atom(..), A_Pair(..)
-          , Quad(..)
+          , Fswitchboard(..), Quad(..)
           , FSid(..)
+--        , InsDel(..)
+          , ECArule(..)
+--        , Event(..)
+--        , PAclause(..)
+          , Activity(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
           , RelStore(..)
@@ -67,7 +72,9 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
+                   , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
+                   , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
                    , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
                    , fMaintains ::   Role -> [Rule]
@@ -94,6 +101,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , allConjsPerDecl :: [(Declaration, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
+                   , vEcas ::        [ECArule]                -- ^ All ECA rules generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
                    , vpatterns ::    [Pattern]                -- ^ All patterns taken from the Ampersand script
                    , conceptDefs ::  [ConceptDef]             -- ^ All concept definitions defined throughout a context, including those inside patterns and processes
@@ -103,11 +111,8 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                --    , popsOfCptWithoutSmaller :: A_Concept -> [Population]  -- ^ All user defined populations of an A_concept, WITHOUT the populations of smaller A_Concepts
                    , atomsInCptIncludingSmaller :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_concept, INCLUDING the populations of smaller A_Concepts
                    , atomsBySmallestConcept :: A_Concept -> [AAtomValue] -- ^ All user defined populations of an A_Concept, where a population is NOT listed iff it also is in a smaller A_Concept.
-                   , tableContents :: PlugSQL -> [[Maybe AAtomValue]] -- ^ tableContents is meant to compute the contents of an entity table.
-                                                                      --   It yields a list of records. Values in the records may be absent, which is why Maybe is used rather than String.
-                                                                      -- SJ 2016-05-06: Why is that? `tableContents` should represent a set of atoms, so `Maybe` should have no part in this. Why is Maybe necessary?
-                                                                      -- HJO 2016-09-05: Answer: Broad tables may contain rows where some of the attributes implement a relation that is UNI, but not TOT. In such case,
-                                                                      --                         we may see empty attributes. (NULL values in database terminology)
+                   , tableContents :: PlugSQL -> [[Maybe AAtomValue]] -- ^ tableContents is meant to compute all records an entity table.
+                                                                      --   Each record is represented by a list of values, which contains all attributes in the designated order. Values in the records may be absent, which is why Maybe is used rather than String.
                    , pairsInExpr :: Expression -> [AAtomPair]   
                    , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
@@ -162,6 +167,13 @@ instance ConceptStructure FSpec where
   concs         = allConcepts
   expressionsIn = allExprs 
 
+-- | A list of ECA rules, which is used for automated functionality.
+data Fswitchboard
+  = Fswtch { fsbEvIn :: [Event]
+           , fsbEvOut :: [Event]
+           , fsbConjs :: [(Rule, Expression)]
+           , fsbECAs :: [ECArule]
+           }
 
 --type Attributes = [Attribute]
 --data Attribute  = Attr { fld_name :: String        -- The name of this attribute
@@ -194,6 +206,24 @@ instance Named FSpec where
 instance Named FSid where
   name (FS_id nm) = nm
 
+data Activity = Act { actRule ::   Rule
+                    , actTrig ::   [Declaration]
+                    , actAffect :: [Declaration]
+                    , actQuads ::  [Quad]
+                    , actEcas ::   [ECArule]
+                    , actPurp ::   [Purpose]
+                    } deriving Show
+
+instance Named Activity where
+  name act = name (actRule act)
+-- | A Quad is used in the "switchboard" of rules. It represents a "proto-rule" with the following meaning:
+--   whenever qDcl is affected (i.e. tuples in qDcl are inserted or deleted), qRule may have to be restored using functionality from qConjuncts.
+--   The rule is taken along for traceability.
+
+instance ConceptStructure Activity where
+ concs         act = concs (actRule act) `uni` concs (actAffect act)
+ expressionsIn act = expressionsIn (actRule act)
+
 
 
 data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affected, triggers a restore action.
@@ -204,6 +234,8 @@ data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affect
 instance Ord Quad where
   q `compare` q'  = (qDcl q,qRule q) `compare` (qDcl q',qRule q')
 instance Eq Quad where q == q' = compare q q' == EQ
+instance Eq Activity where
+  a == a'  = actRule a == actRule a'
 
 --
 dnf2expr :: DnfClause -> Expression

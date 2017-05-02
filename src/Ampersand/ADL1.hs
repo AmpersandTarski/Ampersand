@@ -1,6 +1,5 @@
 module Ampersand.ADL1
-   ( module X
-   )
+   ( module X )
 where
 import Ampersand.Core.ParseTree as X (
            PPurpose(..), PRef2Obj(..)
@@ -57,6 +56,8 @@ import Ampersand.ADL1.Expression as X
          ( notCpl, isCpl, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc
          , exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
          , insParentheses)
+import Ampersand.ADL1.ECArule as X
+         ( isAll, isCHC, isBlk, isNop, isDo, eventsFrom)
 import Ampersand.ADL1.Rule as X (
           rulefromProp
          ,consequent,antecedent,hasantecedent)

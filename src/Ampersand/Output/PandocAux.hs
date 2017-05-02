@@ -291,6 +291,7 @@ data Chapter = Intro
              | ProcessAnalysis
              | DataAnalysis
              | SoftwareMetrics
+             | EcaRules
              | Interfaces
              | FunctionPointAnalysis
              | Glossary
@@ -307,6 +308,7 @@ chptTitle lang cpt =
     ProcessAnalysis       -> text.l $ (NL "Procesanalyse", EN "Process Analysis")
     DataAnalysis          -> text.l $ (NL "Gegevensstructuur", EN "Data structure")
     SoftwareMetrics       -> text.l $ (NL "Functiepunt Analyse", EN "Function Point Analysis")
+    EcaRules              -> text.l $ (NL "ECA regels", EN "ECA rules (Flash points)")
     Interfaces            -> text.l $ (NL "Koppelvlakken", EN "Interfaces")
     FunctionPointAnalysis -> text.l $ (NL "Functiepuntanalyse", EN "Function point analysis")
     Glossary              -> text.l $ (NL "Begrippen", EN "Glossary")
@@ -314,8 +316,6 @@ chptTitle lang cpt =
      -- shorthand for easy localizing    
     l :: LocalizedStr -> String
     l = localize lang
-    
-
 
 
 --DESCR -> pandoc print functions for Ampersand data structures
@@ -702,4 +702,3 @@ commaNLPandoc s [a,b]  = a <> space <> s <> space <> b
 commaNLPandoc  _  [a]  = a
 commaNLPandoc s (a:as) = a <> ", " <> commaNLPandoc s as
 commaNLPandoc  _  []   = mempty
-   

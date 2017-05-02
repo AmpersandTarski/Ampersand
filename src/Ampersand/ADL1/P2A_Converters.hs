@@ -853,6 +853,7 @@ pCtx2aCtx opts
         = (\ obj'
              -> Ifc { ifcRoles = rols
                     , ifcObj = obj'
+                    , ifcEcas = []      -- to be enriched in Adl2fSpec with ECA-rules
                     , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
                     , ifcPos = orig
                     , ifcPrp = prp

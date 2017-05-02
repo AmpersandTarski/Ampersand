@@ -18,7 +18,7 @@ instance Statistics a => Statistics [a] where
   nFpoints    xs = sum (map nFpoints xs)
 
 instance Statistics FSpec where
-  nInterfaces _     = 0 --TODO -> check correctness
+  nInterfaces fSpec = length (fActivities fSpec) --TODO -> check correctness
   nPatterns   fSpec = nPatterns (vpatterns fSpec)
   nFpoints    fSpec = sum (map nFpoints (interfaceS fSpec++interfaceG fSpec))
                 --       + sum [fPoints (fpa plug) | InternalPlug plug <- plugInfos fSpec]
@@ -29,6 +29,10 @@ instance Statistics Pattern where
   nPatterns   _ = 1
   nFpoints   _  = fatal 43 "function points are not defined for patterns at all."
 
+--   instance Statistics Activity where
+--    nInterfaces _ = 1
+--    nPatterns   _ = 0
+--    nFpoints act  = fPoints (actFPA act) --TODO -> implement correct FPA qualification
 
 -- \***********************************************************************
 -- \*** Properties with respect to: Dataset                       ***
