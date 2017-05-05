@@ -26,7 +26,7 @@ instance AStruct Rule where
  showA = showP . aRule2pRule
 
 instance AStruct Declaration where
- showA = showP . aDeclaration2pDeclaration
+ showA = show
 
 instance AStruct AAtomPair where
  showA p = "("++showA (apLeft p)++","++ showA (apRight p)++")"

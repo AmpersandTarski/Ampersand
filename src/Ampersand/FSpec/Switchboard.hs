@@ -162,7 +162,7 @@ switchboardAct fSpec act
                         | q<-actQuads act, expr<-(map rc_conjunct . qConjuncts) q]
      --DESCR -> The relations from which changes can come
      inMorNodes    = [ DotNode { nodeID         = nameINode fromRels r
-                               , nodeAttributes = [Label (StrLabel (fromString (showA r)))]
+                               , nodeAttributes = [(Label . StrLabel . fromString . showA) r]
                                }
                      | r<-fromRels
                                                --TODOHAN        , (not.null) [e |e<-edgesIn, (nodeID  (fromNode e))==nameINode fromRels r]
@@ -170,7 +170,7 @@ switchboardAct fSpec act
 
      --DESCR -> The relations to which changes are made
      outMorNodes   = [ DotNode { nodeID         = nameONode toRels r
-                               , nodeAttributes = [Label (StrLabel (fromString (showA r)))]
+                               , nodeAttributes = [(Label . StrLabel . fromString . showA) r]
                                }
                      | r<-toRels
                --TODOHAN     , (not.null) [e |e<-edgesOut, (nodeID . toNode) e==nameONode toRels r ]
@@ -234,7 +234,7 @@ positiveIn expr decl = f expr   -- all are True, so an insert in rel means an in
   f (ECpl e)     = [ not b | b<- f e]
   f (EBrk e)     = f e
   f (EDcD d)     = [ True | d==decl ]
-  f (EDcI c)     = [ True | detyp decl==c ]
+  f (EDcI c)     = [ True | sign decl==Sign c c ]
   f EEps{}       = []
   f EDcV{}       = []
   f EMp1{}       = []

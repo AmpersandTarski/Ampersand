@@ -169,10 +169,10 @@ instance ConceptStructure FSpec where
 
 -- | A list of ECA rules, which is used for automated functionality.
 data Fswitchboard
-  = Fswtch { fsbEvIn :: [Event]
+  = Fswtch { fsbEvIn ::  [Event]
            , fsbEvOut :: [Event]
            , fsbConjs :: [(Rule, Expression)]
-           , fsbECAs :: [ECArule]
+           , fsbECAs ::  [ECArule]
            }
 
 --type Attributes = [Attribute]

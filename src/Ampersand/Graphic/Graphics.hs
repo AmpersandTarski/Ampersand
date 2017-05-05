@@ -116,7 +116,7 @@ makePicture fSpec pr =
    PTSwitchBoard act   -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = sbdotGraph (switchboardAct fSpec act)
-                               , dotProgName = graphVizCmdForConceptualGraph
+                               , dotProgName = Dot
                                , caption =
                                    case fsLang fSpec of
                                       English -> "Switchboard diagram of " ++ name act

@@ -53,6 +53,7 @@ chpConceptualAnalysis lev fSpec = (
   pictures = map pictOfPat (vpatterns fSpec)
           ++ map pictOfConcept (concs fSpec)
           ++ map pictOfRule (vrules fSpec)
+          ++ map pictOfActivity (fActivities fSpec)
   -----------------------------------------------------
   -- the Picture that represents this pattern's conceptual graph
   pictOfPat ::  Pattern ->  Picture
@@ -61,6 +62,8 @@ chpConceptualAnalysis lev fSpec = (
   pictOfRule = makePicture fSpec . PTCDRule
   pictOfConcept :: A_Concept -> Picture
   pictOfConcept = makePicture fSpec . PTCDConcept
+  pictOfActivity :: Activity -> Picture
+  pictOfActivity = makePicture fSpec . PTSwitchBoard
   caSection :: Pattern -> Blocks
   caSection pat
    =    -- new section to explain this pattern

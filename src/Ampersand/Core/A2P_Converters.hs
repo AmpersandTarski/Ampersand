@@ -28,7 +28,7 @@ aCtx2pCtx ctx =
       , ctx_thms   = ctxthms ctx 
       , ctx_pats   = map aPattern2pPattern . ctxpats $ ctx
       , ctx_rs     = map aRule2pRule . ctxrs $ ctx
-      , ctx_ds     = map aDeclaration2pDeclaration . ctxds $ ctx
+      , ctx_ds     = [ aDeclaration2pDeclaration d | d@Sgn{}<-ctxds ctx ]
       , ctx_cs     = ctxcds ctx
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
       , ctx_rrules = map aRoleRule2pRoleRule  .ctxrrules $ ctx
@@ -50,7 +50,7 @@ aPattern2pPattern pat =
        , pt_nm    = ptnm pat
        , pt_rls   = map aRule2pRule (ptrls pat)
        , pt_gns   = map aGen2pGen (ptgns pat)
-       , pt_dcs   = map aDeclaration2pDeclaration (ptdcs pat)
+       , pt_dcs   = [ aDeclaration2pDeclaration d | d@Sgn{}<-ptdcs pat ]
        , pt_RRuls = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_RRels = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_cds   = [] --TODO: should this be empty? There is nothing in the A-structure
@@ -73,20 +73,22 @@ aRule2pRule rul =
       }
 
 aDeclaration2pDeclaration :: Declaration -> P_Declaration
-aDeclaration2pDeclaration dcl = 
- P_Sgn { dec_nm     = T.unpack $ decnm dcl
+aDeclaration2pDeclaration dcl@Sgn{} = 
+ P_Sgn { dec_nm     = T.unpack (decnm dcl)
        , dec_sign   = aSign2pSign (decsgn dcl)
        , dec_prps   = decprps dcl
        , dec_pragma = [decprL dcl, decprM dcl, decprR dcl]
        , dec_Mean   = aMeaning2pMeaning (decMean dcl)
        , dec_popu   = [] --TODO: should this be empty? There is nothing in the A-structure
-       , pos   = decfpos dcl
+       , pos        = decfpos dcl
        , dec_plug   = decplug dcl
        }
-
+aDeclaration2pDeclaration _
+  = fatal 87 "aDeclaration2pDeclaration should not be called with Isn or Vs"
+ 
 aDeclaration2pNamedRel :: Declaration -> P_NamedRel
 aDeclaration2pNamedRel dcl =
- PNamedRel (decfpos dcl) (T.unpack $ decnm dcl) (Just (aSign2pSign (decsgn dcl)))
+ PNamedRel (decfpos dcl) (name dcl) (Just (aSign2pSign (decsgn dcl)))
  
 aIdentityDef2pIdentityDef :: IdentityDef -> P_IdentDf TermPrim -- P_IdentDef
 aIdentityDef2pIdentityDef iDef =
