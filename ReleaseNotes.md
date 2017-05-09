@@ -1,5 +1,5 @@
 # Release notes of Ampersand
-
+  * [Issue #666](https://github.com/AmpersandTarski/Ampersand/issues/666) A hint message is supplied when a case-incorrect url is used.   
 ## Unreleased changes
   * Upgrade LTS Haskell 8.5, which includes GHC 8.0.2
 
