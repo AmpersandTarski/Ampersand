@@ -1,7 +1,10 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.8.5 (12 may 2017)
+  * [Issue #666](https://github.com/AmpersandTarski/Ampersand/issues/666) A hint message is supplied when a case-incorrect url is used.   
   * Upgrade LTS Haskell 8.5, which includes GHC 8.0.2
+
+## v3.8.4 (not released, there was nothing new in april 2017)
 
 ## v3.8.3 (17 march 2017)
   * Minor modifications on frontend 
