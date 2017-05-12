@@ -4,7 +4,6 @@ module Ampersand.Output.Population2Xlsx
 where
 import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
-import qualified Data.Map as M
 import Codec.Xlsx
 import qualified Data.ByteString.Lazy as L
 import qualified Data.Text as T
@@ -19,10 +18,8 @@ fSpec2PopulationXlsx ct fSpec =
     where
       xlsx =def { _xlSheets = plugs2Sheets fSpec}
                
-     
-
-plugs2Sheets :: FSpec -> M.Map T.Text Worksheet
-plugs2Sheets fSpec = M.fromList . mapMaybe plug2sheet $ plugInfos fSpec
+plugs2Sheets :: FSpec -> [(T.Text, Worksheet)]
+plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
   where
     plug2sheet :: PlugInfo -> Maybe (T.Text, Worksheet)
     plug2sheet ExternalPlug{} = Nothing  -- Not supported at present

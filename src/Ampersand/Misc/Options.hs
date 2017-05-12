@@ -113,7 +113,8 @@ getEnvironmentOptions =
       let (configSwitches,otherArgs) = partition isConfigSwitch args
       argsFromConfigFile <- readConfigFileArgs (mConfigFile configSwitches)
       progName <- getProgName
-      exePath  <- getExecutablePath 
+      execPth  <- getExecutablePath -- on some operating systems, `getExecutablePath` gives a relative path. That may lead to a runtime error.
+      exePath  <- makeAbsolute execPth -- see https://github.com/haskell/cabal/issues/3512 for details
       localTime <-  do utcTime <- getCurrentTime
                        timeZone <- getCurrentTimeZone
                        return (utcToLocalTime timeZone utcTime)
