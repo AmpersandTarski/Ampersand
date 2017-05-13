@@ -357,14 +357,6 @@ instance MetaPopulations Role where
    where
     ctx = originalContext fSpec
 
-instance MetaPopulations Interface where
-  metaPops fSpec ifc =
-      [ Pop "interfaces" "Context" "Interface" [Sur,Inj]
-                 [(dirtyId ctx ctx, dirtyId ctx ifc) ]
-      ]
-   where
-    ctx = originalContext fSpec
-
 instance MetaPopulations Atom where
   metaPops fSpec atm =
    [ Pop "pop" "Atom" "Concept" []
@@ -561,7 +553,6 @@ data BinOp = CartesionProduct
 instance Unique BinOp where
   showUnique = show
 
-
 instance MetaPopulations Rule where
  metaPops fSpec rul =
       [ Comment " "
@@ -599,6 +590,124 @@ instance MetaPopulations Rule where
   where
     ctx = originalContext fSpec
 
+{- Reminder: (taken from AbstractSyntaxTree.hs)
+data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
+                     , ifcObj ::      ObjectDef     -- NOTE: the top-level ObjectDef contains the interface itself (ie. name and expression)
+                     , ifcEcas ::     [ECArule]     -- All ECArules that are needed to perform computations for maintaining rules
+                     , ifcConjuncts :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
+                     , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
+                     , ifcPrp ::      String        -- The purpose of the interface
+                     } deriving Show
+
+
+-}
+
+instance MetaPopulations Interface where
+ metaPops fSpec ifc =
+      [ Comment " "
+      , Comment $ " Interface `"++name ifc++"` "
+      , Pop "interfaces" "Context" "Interface" [Sur,Inj]
+                 [(dirtyId ctx ctx, dirtyId ctx ifc) ]
+      , Pop "ifcRoles"  "Interface" "Role" []
+             [(dirtyId ctx ifc, dirtyId ctx rol) | rol<-ifcRoles ifc]
+      , Pop "ifcObj"  "Interface" "ObjectDef" [Uni,Tot,Inj]
+             [(dirtyId ctx ifc, dirtyId ctx (ifcObj ifc))]
+      ] ++ 
+      metaPops fSpec (ifcRoles ifc) ++
+      metaPops fSpec (ifcObj ifc)
+  where
+    ctx = originalContext fSpec
+
+{- Reminder: (taken from AbstractSyntaxTree.hs)
+data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+                     , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+                     , objctx ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
+                     , objcrud ::  Cruds          -- ^ CRUD as defined by the user 
+                     , objmView :: Maybe String   -- ^ The view that should be used for this object
+                     , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
+                     } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
+instance Named ObjectDef where
+  name   = objnm
+instance Traced ObjectDef where
+  origin = objpos
+
+RELATION objpos[ObjectDef*Origin] [UNI,TOT]
+MEANING "Every object definition has a position in the text of the Ampersand source file (filename, line number and column number)."
+RELATION objctx[ObjectDef*Expression] [UNI,TOT] -- RJ: Why not call this thing 'objExpr(ession)'?
+MEANING "Every object definition has an expression, which determines the population for which that definition is applicable."
+RELATION objmView[ObjectDef*View] [UNI] -- RJ: Why not call this thing 'objView' or 'objdefView'
+MEANING "An object definition can have a view that should be used for this object (e.g. TABS, COLS, etc.)."
+RELATION objmsub[ObjectDef*SubInterface] [UNI]
+-}
+
+instance MetaPopulations ObjectDef where
+ metaPops fSpec obj =
+      [ Comment " "
+      , Comment $ " ObjectDef `"++name obj++"` "
+      , Pop "objnm"  "ObjectDef" "String" [Uni,Tot]
+             [(dirtyId ctx obj, objnm obj)]
+      , Pop "objctx"  "ObjectDef" "Expression" [Uni,Tot]
+             [(dirtyId ctx obj, dirtyId ctx (objctx obj))]
+      ] ++
+      (case objmsub obj of
+         Nothing     -> []
+         Just subIfc -> [Pop "objmsub"  "ObjectDef" "SubInterface" [Uni]
+                             [(dirtyId ctx obj, dirtyId ctx subIfc) ]
+                        ]
+      ) ++
+      metaPops fSpec (objctx obj) ++
+      case objmsub obj of
+         Nothing     -> []
+         Just subIfc -> metaPops fSpec subIfc
+  where
+    ctx = originalContext fSpec
+
+instance Unique ObjectDef where
+  showUnique = name
+
+{- Reminder: (taken from AbstractSyntaxTree.hs)
+data SubInterface = Box { siOrig ::    Origin       -- ^ the type of the subinterface
+                        , siConcept :: A_Concept    -- ^ the type of the subinterface
+                        , siMClass ::  Maybe String
+                        , siObjs ::    [ObjectDef] 
+                        }
+                  | InterfaceRef 
+                        { siIsLink :: Bool
+                        , siIfc ::    Interface  -- ^ the interface that is referenced to
+                        , siCruds ::  Cruds
+                        } deriving (Eq, Show)
+-}
+
+instance Unique SubInterface where
+  -- since a Subinterface has no combination of attributes by which it can be identified, its position will have to do the trick. TODO: verify that siOrig is total and injective.
+  showUnique subIfc = "BOX at "++show (siOrig subIfc)
+
+instance MetaPopulations SubInterface where
+ metaPops fSpec subIfc =
+  case subIfc of
+   Box{} ->
+      [ Comment " "
+      , Comment (showUnique subIfc)
+      , Pop "siOrig"  "SubInterface" "Origin" [Uni,Tot]
+             [(dirtyId ctx subIfc, (show.show.siOrig) subIfc)]
+      , Pop "siConcept"  "SubInterface" "Origin" [Uni,Tot]
+             [(dirtyId ctx subIfc, (show.showUnique.siConcept) subIfc)]
+      , Pop "siObjs"  "SubInterface" "ObjectDef" [Inj]
+             [(dirtyId ctx subIfc, dirtyId ctx obj) | obj<-siObjs subIfc]
+      ]++
+      [ Pop "siMClass"  "SubInterface" "Origin" [Uni,Tot]
+             [(dirtyId ctx subIfc, show cl)]
+      | Just cl<-[siMClass subIfc]]
+   InterfaceRef{} ->
+      [ Comment " "
+      , Comment ("Reference to "++name (siIfc subIfc))
+      , Pop "siIsLink"  "SubInterface" "Bool" [Uni,Tot]
+             [(dirtyId ctx subIfc, (show.siIsLink) subIfc)]
+      , Pop "siIfc"  "SubInterface" "Interface" []
+             [(dirtyId ctx subIfc, (dirtyId ctx.siIfc) subIfc)]
+      ]
+  where
+    ctx = originalContext fSpec
 
 instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
@@ -681,6 +790,8 @@ instance AdlId Population
 instance AdlId IdentityDef
 instance AdlId ViewDef
 instance AdlId Interface
+instance AdlId SubInterface where
+instance AdlId ObjectDef
 instance AdlId Signature
 instance AdlId TType
 instance AdlId Conjunct

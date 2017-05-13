@@ -10,10 +10,10 @@ import Ampersand.Output.ToJSON.Concepts
 
 data Views = Views [View] deriving (Generic, Show)
 data View = View
-  { vwJSONlabel      :: String
-  , vwJSONconceptId  :: String
-  , vwJSONisDefault  :: Bool
-  , vwJSONsegments   :: [Segment]
+  { vwJSONlabel ::      String
+  , vwJSONconceptId ::  String
+  , vwJSONisDefault ::  Bool
+  , vwJSONsegments ::   [Segment]
   } deriving (Generic, Show)
 instance ToJSON View where
   toJSON = amp2Jason

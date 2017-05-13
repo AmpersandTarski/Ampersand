@@ -11,29 +11,29 @@ import Data.Maybe
 
 data Rules = Rules
   { rulJSONinvariants :: [JsonRule]
-  , rulJSONsignals    :: [JsonRule]
+  , rulJSONsignals ::    [JsonRule]
   } deriving (Generic, Show)
 data JsonRule = JsonRule
-  { rulJSONname         :: String
-  , rulJSONruleAdl      :: String
-  , rulJSONorigin       :: String
-  , rulJSONmeaning      :: String
-  , rulJSONmessage      :: String
+  { rulJSONname ::         String
+  , rulJSONruleAdl ::      String
+  , rulJSONorigin ::       String
+  , rulJSONmeaning ::      String
+  , rulJSONmessage ::      String
   , rulJSONsrcConceptId :: String
   , rulJSONtgtConceptId :: String
-  , rulJSONconjunctIds  :: [String]
-  , rulJSONpairView     :: Maybe JsonPairView
+  , rulJSONconjunctIds ::  [String]
+  , rulJSONpairView ::     Maybe JsonPairView
   } deriving (Generic, Show)
 data JsonPairView = JsonPairView [JsonPairViewSegment]
     deriving (Generic, Show)
 data JsonPairViewSegment = JsonPairViewSegment
-  { pvsJSONseqNr   :: Int
+  { pvsJSONseqNr ::   Int
   , pvsJSONsegmentType :: String
-  , pvsJSONText        :: Maybe String
-  , pvsJSONsrcOrTgt    :: Maybe String
-  , pvsJSONexpTgt      :: Maybe String
-  , pvsJSONexpSQL      :: Maybe String
-  , pvsJSONexpIsIdent  :: Maybe Bool
+  , pvsJSONText ::        Maybe String
+  , pvsJSONsrcOrTgt ::    Maybe String
+  , pvsJSONexpTgt ::      Maybe String
+  , pvsJSONexpSQL ::      Maybe String
+  , pvsJSONexpIsIdent ::  Maybe Bool
   } deriving (Generic, Show)
 
 instance ToJSON Rules where
@@ -54,15 +54,15 @@ instance JSON MultiFSpecs Rules where
     
 instance JSON Rule JsonRule where
  fromAmpersand multi rule = JsonRule
-  { rulJSONname        = rrnm         rule
-  , rulJSONruleAdl     = showA.rrexp $ rule
-  , rulJSONorigin      = show.rrfps     $ rule
-  , rulJSONmeaning     = showMeaning
-  , rulJSONmessage     = showMessage
+  { rulJSONname         = rrnm         rule
+  , rulJSONruleAdl      = showA.rrexp $ rule
+  , rulJSONorigin       = show.rrfps     $ rule
+  , rulJSONmeaning      = showMeaning
+  , rulJSONmessage      = showMessage
   , rulJSONsrcConceptId = escapeIdentifier . name . source . rrexp $ rule
   , rulJSONtgtConceptId = escapeIdentifier . name . target . rrexp $ rule
-  , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
-  , rulJSONpairView    = fmap (fromAmpersand multi) (rrviol rule)
+  , rulJSONconjunctIds  = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
+  , rulJSONpairView     = fmap (fromAmpersand multi) (rrviol rule)
   } 
    where 
     fSpec = userFSpec multi

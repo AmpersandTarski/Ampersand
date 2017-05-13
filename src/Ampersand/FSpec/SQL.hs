@@ -59,11 +59,10 @@ class SQLAble a where
      . stripComment
      . fun fSpec
 
-  prettySQLQuery, prettySQLQueryWithPlaceholder 
-          :: Int    -- Amount of indentation
-          -> FSpec  -- The context
-          -> a      
-          -> String 
+  prettySQLQuery, prettySQLQueryWithPlaceholder :: Int    -- Amount of indentation
+                                                -> FSpec  -- The context
+                                                -> a      
+                                                -> String 
   prettySQLQueryWithPlaceholder = doPretty getBinQueryExprPlaceholder
   prettySQLQuery                = doPretty getBinQueryExpr
   doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> String
@@ -850,7 +849,7 @@ selectSorT att binExp =
             } 
 
 selectExists, selectNotExists
-     :: TableRef        -- ^ tables
+ ::     TableRef        -- ^ tables
      -> Maybe ValueExpr -- ^ the (optional) WHERE clause
      -> ValueExpr
 selectNotExists tbl whr = PrefixOp [Name "NOT"] $ selectExists tbl whr
@@ -884,7 +883,7 @@ data BinQueryExpr = BSE  { bseSetQuantifier :: SetQuantifier
                          }
                   | BQEComment [Comment] BinQueryExpr
 data Col = Col { cTable :: [Name]
-               , cCol   :: [Name]
+               , cCol ::   [Name]
                , cAlias :: [Name]
                , cSpecial :: Maybe ValueExpr 
                }  
@@ -1020,7 +1019,7 @@ as ve a = -- TRAlias ve (Alias a Nothing)
     
 notNull :: ValueExpr -> ValueExpr
 notNull = PostfixOp [Name "is not null"]
-isNull  :: ValueExpr -> ValueExpr
+isNull ::  ValueExpr -> ValueExpr
 isNull = PostfixOp [Name "is null"]
 emptySet :: BinQueryExpr
 emptySet = BQEComment [BlockComment "this will quaranteed return 0 rows:"]

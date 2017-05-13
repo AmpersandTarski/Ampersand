@@ -47,10 +47,10 @@ chpInterfacesBlocks fSpec =
     docInterface :: Interface -> Blocks
     docInterface ifc =
        plainText ( "De interface is beschikbaar voor " <> showRoles (ifcRoles ifc) <> ".") <>
-      (if null $ ifcControls ifc
+      (if null $ ifcConjuncts ifc
        then plainText "Voor deze interface hoeven geen regels gecontroleerd te worden."
        else plainText "Voorafgaand aan het afsluiten van een transactie (commit), moet aan de volgende regels voldaan zijn:" <>  
-              (bulletList . map plainText . nub) [rrnm rule | conj <- ifcControls ifc, rule <- rc_orgRules conj, r_usr rule == UserDefined]) <>
+              (bulletList . map plainText . nub) [rrnm rule | conj <- ifcConjuncts ifc, rule <- rc_orgRules conj, r_usr rule == UserDefined]) <>
       (if genFPAChap (getOpts fSpec)
        then (plain . strong . text) "Functiepunten:" <>
             plainText ("Deze interface is gerubriceerd als " ++ showLang lang (fpType interfaceFP) ++
@@ -120,12 +120,12 @@ chpInterfacesBlocks fSpec =
     docMSubInterface roles hierarchy subIfc =
       case subIfc of
         Nothing -> []
-        Just si ->
-          case si of
+        Just subIfc ->
+          case subIfc of
            InterfaceRef{} -> 
-             [ plainText $ (if siIsLink si then "LINKTO " else "")++"REF "++siIfcId si ] -- TODO: handle InterfaceRef
+             [ plainText $ (if siIsLink subIfc then "LINKTO " else "")++"REF "++name (siIfc subIfc) ] -- TODO: handle InterfaceRef
            Box{} -> 
-             [ docInterfaceObjects roles (hierarchy ++[i]) obj | (obj,i) <- zip (siObjs si) [1..] ]
+             [ docInterfaceObjects roles (hierarchy ++[i]) obj | (obj,i) <- zip (siObjs subIfc) [1..] ]
 
     docCrudMatrix :: Interface -> Blocks
     docCrudMatrix ifc = mconcat

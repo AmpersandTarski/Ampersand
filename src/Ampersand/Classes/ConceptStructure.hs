@@ -124,12 +124,12 @@ instance ConceptStructure ObjectDef where
 
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
 instance ConceptStructure SubInterface where
-  concs si = case si of
-              Box{} -> concs (siObjs si)
-              InterfaceRef{} -> []
-  expressionsIn si = case si of
-              Box{} -> expressionsIn (siObjs si)
-              InterfaceRef{} -> []
+  concs subIfc = case subIfc of
+                  Box{} -> concs (siObjs subIfc)
+                  InterfaceRef{} -> []
+  expressionsIn subIfc = case subIfc of
+                  Box{} -> expressionsIn (siObjs subIfc)
+                  InterfaceRef{} -> []
 
 instance ConceptStructure Pattern where
   concs pat = foldr uni []

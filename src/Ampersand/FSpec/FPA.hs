@@ -75,10 +75,10 @@ fpaInterface ifc =
                         | otherwise = Moeilijk 
 
         getDepth Obj{objmsub=Nothing} = 0
-        getDepth Obj{objmsub=Just si}
-          = case si of 
+        getDepth Obj{objmsub=Just subIfc}
+          = case subIfc of 
              InterfaceRef{} -> 1
-             Box{}          -> 1 + maximum (map getDepth (siObjs si))
+             Box{}          -> 1 + maximum (map getDepth (siObjs subIfc))
 
 class ShowLang a where
   showLang :: Lang -> a -> String

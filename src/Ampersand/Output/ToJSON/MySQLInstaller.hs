@@ -12,7 +12,7 @@ import Data.Maybe
 
 data MySQLInstaller = MySQLInstaller
    { msiJSONallDBstructQueries :: [Text.Text]
-   , msiJSONallDefPopQueries   :: [Text.Text]
+   , msiJSONallDefPopQueries ::   [Text.Text]
    } deriving (Generic, Show)
 instance ToJSON MySQLInstaller where
   toJSON = amp2Jason

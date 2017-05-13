@@ -334,18 +334,18 @@ aAtomValue2pAtomValue val =
    o = fatal 289 "Origin is not present in AAtomValue"
 
 aSubIfc2pSubIfc :: SubInterface -> P_SubIfc TermPrim
-aSubIfc2pSubIfc sub =
- case sub of
-  Box _ mStr objs  
-    -> P_Box          { pos   = fatal 295 "Origin is not present in SubInterface"
-                      , si_class = mStr
-                      , si_box   = map aObjectDef2pObjectDef objs
+aSubIfc2pSubIfc subIfc =
+ case subIfc of
+  Box{}
+    -> P_Box          { si_orig   = siOrig subIfc -- "Origin is passed on to SubInterface for identifying this box."
+                      , si_class  = siMClass subIfc
+                      , si_box    = [ aObjectDef2pObjectDef obj | obj<-siObjs subIfc ]
                       }
-  InterfaceRef isLinkto str cruds
-    -> P_InterfaceRef { pos    = fatal 295 "Origin is not present in SubInterface"
-                      , si_isLink = isLinkto
-                      , si_str    = str
-                      , si_crud   = aCruds2pCruds cruds
+  InterfaceRef{}
+    -> P_InterfaceRef { si_orig   = siOrig subIfc
+                      , si_isLink = siIsLink subIfc
+                      , si_str    = name (siIfc subIfc)
+                      , si_crud   = aCruds2pCruds (siCruds subIfc)
                       }
 
 aCruds2pCruds :: Cruds -> Maybe P_Cruds

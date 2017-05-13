@@ -11,34 +11,34 @@ import Data.List(nub)
 
 data Concepts = Concepts [Concept] deriving (Generic, Show)
 data Concept = Concept
-  { cptJSONid                :: String
-  , cptJSONlabel             :: String
-  , cptJSONtype              :: String
-  , cptJSONgeneralizations   :: [String]
-  , cptJSONspecializations   :: [String]
+  { cptJSONid ::                String
+  , cptJSONlabel ::             String
+  , cptJSONtype ::              String
+  , cptJSONgeneralizations ::   [String]
+  , cptJSONspecializations ::   [String]
   , cptJSONaffectedConjuncts :: [String]
-  , cptJSONinterfaces        :: [String]
-  , cptJSONdefaultViewId     :: Maybe String 
-  , cptJSONconceptTable      :: TableCols
-  , cptJSONlargestConcept    :: String
+  , cptJSONinterfaces ::        [String]
+  , cptJSONdefaultViewId ::     Maybe String 
+  , cptJSONconceptTable ::      TableCols
+  , cptJSONlargestConcept ::    String
   } deriving (Generic, Show)
 data TableCols = TableCols
-  { tclJSONname              :: String
-  , tclJSONcols              :: [String]
+  { tclJSONname ::              String
+  , tclJSONcols ::              [String]
   } deriving (Generic, Show)
 data View = View
-  { vwJSONlabel        :: String
-  , vwJSONisDefault    :: Bool
+  { vwJSONlabel ::        String
+  , vwJSONisDefault ::    Bool
   , vwJSONhtmlTemplate :: Maybe String
   , vwJSONsegments :: [Segment]
   } deriving (Generic, Show)
 data Segment = Segment
-  { segJSONseqNr   :: Integer
+  { segJSONseqNr ::   Integer
   , segJSONlabel :: Maybe String
   , segJSONsegType :: String
-  , segJSONexpADL  :: Maybe String
+  , segJSONexpADL ::  Maybe String
   , segJSONexpSQL :: Maybe String
-  , segJSONtext  :: Maybe String
+  , segJSONtext ::  Maybe String
   } deriving (Generic, Show)
 instance ToJSON Concept where
   toJSON = amp2Jason

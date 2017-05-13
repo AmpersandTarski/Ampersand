@@ -127,7 +127,7 @@ pMeta = Meta <$> currPos <* pKey "META" <*> pMetaObj <*> pString <*> pString
  where pMetaObj = return ContextMeta -- for the context meta we don't need a keyword
 
 --- PatternDef ::= 'PATTERN' ConceptName PatElem* 'ENDPATTERN' | 'PROCESS' ConceptName PatElem* 'ENDPROCESS'
-pPatternDef  :: AmpParser P_Pattern
+pPatternDef ::  AmpParser P_Pattern
 pPatternDef =  pPatternDef' ("PATTERN","ENDPATTERN")
            <|> pPatternDef' ("PROCESS","ENDPROCESS")
 pPatternDef' :: (String,String) ->  AmpParser P_Pattern

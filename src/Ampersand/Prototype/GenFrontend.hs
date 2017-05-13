@@ -173,7 +173,7 @@ data FEObject = FEObject { objName :: String
                          , objCrudD :: Bool
                          , exprIsUni :: Bool
                          , exprIsTot :: Bool
-                         , relIsProp  :: Bool -- True iff the expression is a kind of simple relation and that relation is a property.
+                         , relIsProp ::  Bool -- True iff the expression is a kind of simple relation and that relation is a property.
                          , exprIsIdent :: Bool
                          , objNavInterfaces :: [NavInterface]
                          , atomicOrBox :: FEAtomicOrBox
@@ -237,22 +237,22 @@ buildInterface fSpec allIfcs ifc =
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
                            , iExp, src, tgt, mDecl)
                   }
-              Just si ->
-                case si of
+              Just subIfc ->
+                case subIfc of
                   Box{} -> 
                    do { let (src, mDecl, tgt) = getSrcDclTgt iExp
-                      ; subObjs <- mapM buildObject (siObjs si)
-                      ; return (FEBox { objMClass  = siMClass si
+                      ; subObjs <- mapM buildObject (siObjs subIfc)
+                      ; return (FEBox { objMClass  = siMClass subIfc
                                       , ifcSubObjs = subObjs
                                       }
                                , iExp, src, tgt, mDecl)
                       }
                   InterfaceRef{} -> 
-                   case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                     []      -> fatal 44 $ "Referenced interface " ++ siIfcId si ++ " missing"
-                     (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ siIfcId si
+                   case filter (\rIfc -> rIfc == siIfc subIfc) allIfcs of -- Follow interface ref
+                     []      -> fatal 44 $ "Referenced interface " ++ name (siIfc subIfc) ++ " missing"
+                     (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ name (siIfc subIfc)
                      [i]     -> 
-                           if siIsLink si
+                           if siIsLink subIfc
                            then do { let (src, mDecl, tgt) = getSrcDclTgt iExp
                                    ; let templatePath = "views" </> "View-LINKTO.html"
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}

@@ -37,10 +37,10 @@ parseXlsxFile opts useAllStaticFiles file =
 
 data SheetCellsForTable 
        = Mapping{ theSheetName :: String
-                , theCellMap   :: CellMap
+                , theCellMap ::   CellMap
                 , headerRowNrs :: [Int]
-                , popRowNrs    :: [Int]
-                , colNrs       :: [Int]
+                , popRowNrs ::    [Int]
+                , colNrs ::       [Int]
                 , debugInfo :: [String]
                 }
 instance Show SheetCellsForTable where  --for debugging only

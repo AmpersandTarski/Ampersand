@@ -58,10 +58,10 @@ doGenBericht fSpec =
                       , associations =
                           case objmsub objDef of
                             Nothing -> []
-                            Just si 
-                              -> case si of
-                                  Box{} -> map (genEntity_ObjDef (dpth+1)) (siObjs si)
-                                  InterfaceRef{} -> map (genEntity_ObjDef (dpth+1)) . objsForInterfaceNamed . siIfcId $ si
+                            Just subIfc 
+                              -> case subIfc of
+                                  Box{} -> map (genEntity_ObjDef (dpth+1)) (siObjs subIfc)
+                                  InterfaceRef{} -> (map (genEntity_ObjDef (dpth+1)) . objsForInterface . siIfc) subIfc
                       }
             where card e = (if isTot e then "1" else "0")++".."++(if isUni e then "1" else "*")
 
@@ -69,11 +69,11 @@ doGenBericht fSpec =
                                   Cd {cddef=def'} : _ | def' /= "" -> def'
                                   _                                -> "** NO DEFINITION **"
 
-                  objsForInterfaceNamed :: String -> [ObjectDef]
-                  objsForInterfaceNamed nm =
-                    case objmsub $ ifcObj $ getInterfaceByName interfaces' nm of
-                      Just (Box _ _ objs) -> objs
-                      _                   -> fatal 81 "Bericht interfaces have wrong format"
+                  objsForInterface :: Interface -> [ObjectDef]
+                  objsForInterface ifc =
+                    case objmsub $ ifcObj ifc of
+                      Just (Box _ _ _ objs) -> objs
+                      _                     -> fatal 81 "Bericht interfaces have wrong format"
                   -- NOTE: We ignore the interface relation for interfaces refs
 
 allEntitiesToCSV :: [Entity] -> CSV

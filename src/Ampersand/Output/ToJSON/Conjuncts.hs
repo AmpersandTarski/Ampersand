@@ -9,10 +9,10 @@ import Ampersand.Core.AbstractSyntaxTree
 
 data Conjuncts = Conjuncts [JSONConjunct] deriving (Generic, Show)
 data JSONConjunct = JSONConjunct
-  { cnjJSONid                 :: String
-  , cnjJSONsignalRuleNames    :: [String]
+  { cnjJSONid ::                 String
+  , cnjJSONsignalRuleNames ::    [String]
   , cnjJSONinvariantRuleNames :: [String]
-  , cnjJSONviolationsSQL      :: String
+  , cnjJSONviolationsSQL ::      String
   } deriving (Generic, Show)
 instance ToJSON JSONConjunct where
   toJSON = amp2Jason

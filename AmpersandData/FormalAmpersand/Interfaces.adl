@@ -1,8 +1,11 @@
 CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
-INCLUDE "Interfaces.doc"
-
--- RJ: I wish you guys would use relation names that are easily interpretable by people that do not know about the Haskell stuff behind all this. Use 'ifcPurpose' rather than 'ifcPrp', and use something like 'ifcViolatableRules' rather than 'viol'. More or less self explanatory naming is considered a good practice. Use it.
+INCLUDE "Interfaces.docadl"
+{- The purpose of this module is to have an Ampersand-script that corresponds exactly to the Haskell source code
+in the Ampersand compiler. Correspondence means that there is a homomorphism from the Haskell code to the Ampersand code.
+This is necessary for including interfaces in the meatgrinder.
+Absence of meatgrinder errors must prove that this homomorphism exists.
+-}
 
 PATTERN Interfaces
 CONCEPT Interface "An interface is a mechanism that communicates data between different (two) contexts."
@@ -30,8 +33,8 @@ RELATION ifcObj[Interface*ObjectDef] [UNI,TOT,INJ]
 MEANING "Every interface has precisely one object definition, which defines the structure of objects to be changed by transactions of this interface."
 RELATION ifcQuads[Interface*Quad] -- RJ: What is a Quad?
 MEANING "All quads that are needed to perform computations for maintaining rules in an interface are registered."
-RELATION ifcControls[Interface*Conjunct] -- RJ: Why not call this 'ifcConjuncts'?
-MEANING "All conjuncts that must be evaluated after a transation are registered."
+RELATION ifcConjuncts[Interface*Conjunct] -- RJ: Why not call this 'ifcConjuncts'?
+MEANING "All conjuncts that must be satisfied before committing a transation are registered."
 RELATION ifcPos[Interface*Origin] [UNI,TOT]
 MEANING "The position in the file (filename, line- and column number)."
 RELATION ifcPrp[Interface*String] [UNI] -- RJ: use more self-explanatory (longer) name, please
@@ -47,6 +50,8 @@ RELATION objctx[ObjectDef*Expression] [UNI,TOT] -- RJ: Why not call this thing '
 MEANING "Every object definition has an expression, which determines the population for which that definition is applicable."
 RELATION objmView[ObjectDef*View] [UNI] -- RJ: Why not call this thing 'objView' or 'objdefView'
 MEANING "An object definition can have a view that should be used for this object (e.g. TABS, COLS, etc.)."
+RELATION objmsub[ObjectDef*SubInterface] [UNI]
+MEANING "???."
 RELATION usedIn[Relation*Expression]
 MEANING "If a relation is used in an expression, this is registered in usedIn."
 RELATION rrexp[Rule*Expression] -- RJ: use more self-explanatory (longer) name, please
@@ -82,6 +87,23 @@ RULE "Current atom" : sessIfc |- sessAtom;right~;in;(ifcObj;objctx)~
 MEANING "Each session has a current interface, which is linked to one of the roles allowed for that interface, or to any interface if no roles are specified."
 ENDPATTERN
 
+PATTERN Events
+RELATION pre[Event*State] [UNI,TOT]
+MEANING "The state in which a context is found when an event occurs."
+RELATION post[Event*State] [UNI]
+MEANING "The state in which a context is left after an event has occured."
+RELATION state[Context*State] [UNI]
+MEANING "The state of a context represents all data that resides in that context at some given moment."
+RELATION pre[Interface*Expression]
+MEANING "The preconditions are expressions that must be true in order to start a transaction."
+RELATION post[Interface*Expression]
+MEANING "The postconditions are expressions that must be true in order to commit a transaction."
+RELATION caused[Interface*Event] [INJ]
+MEANING "An event can be caused by an interface."
+RULE Preconditions : pre~;caused;pre;state~ |- true
+MEANING "The state in which a context was when an event occurs satisfies every precondition of the interface that caused this event."
+ENDPATTERN
+9pXrfWea
 PATTERN InterfaceSemantics
 CONCEPT Transaction "A transaction is an instance of an interface, which is being used (by a user or a program) to interact with the system."   -- Transactions reside in the front end.
 CONCEPT Object "An object is an instance of an ObjectDef."  -- Objects reside in the front end.

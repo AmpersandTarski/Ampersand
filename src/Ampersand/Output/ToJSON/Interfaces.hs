@@ -11,41 +11,41 @@ import Ampersand.FSpec.ToFSpec.Calc
 
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
-  { ifcJSONinterfaceRoles     :: [String]
-  , ifcJSONboxClass           :: Maybe String
-  , ifcJSONifcObject          :: JSONObjectDef
+  { ifcJSONinterfaceRoles ::     [String]
+  , ifcJSONboxClass ::           Maybe String
+  , ifcJSONifcObject ::          JSONObjectDef
   } deriving (Generic, Show)
 data JSONObjectDef = JSONObjectDef
-  { ifcJSONid                 :: String
-  , ifcJSONlabel              :: String
-  , ifcJSONviewId             :: Maybe String
+  { ifcJSONid ::                 String
+  , ifcJSONlabel ::              String
+  , ifcJSONviewId ::             Maybe String
   , ifcJSONNormalizationSteps :: [String] -- Not used in frontend. Just informative for analisys
-  , ifcJSONrelation           :: Maybe String
-  , ifcJSONrelationIsFlipped  :: Maybe Bool
-  , ifcJSONcrud               :: JSONCruds
-  , ifcJSONexpr               :: JSONexpr
-  , ifcJSONsubinterfaces      :: Maybe JSONSubInterface
+  , ifcJSONrelation ::           Maybe String
+  , ifcJSONrelationIsFlipped ::  Maybe Bool
+  , ifcJSONcrud ::               JSONCruds
+  , ifcJSONexpr ::               JSONexpr
+  , ifcJSONsubinterfaces ::      Maybe JSONSubInterface
   } deriving (Generic, Show)
 data JSONSubInterface = JSONSubInterface
-  { subJSONboxClass           :: Maybe String
-  , subJSONifcObjects         :: Maybe [JSONObjectDef]
-  , subJSONrefSubInterfaceId  :: Maybe String
-  , subJSONrefIsLinTo         :: Maybe Bool
-  , subJSONcrud               :: Maybe JSONCruds
+  { subJSONboxClass ::           Maybe String
+  , subJSONifcObjects ::         Maybe [JSONObjectDef]
+  , subJSONrefSubInterfaceId ::  Maybe String
+  , subJSONrefIsLinTo ::         Maybe Bool
+  , subJSONcrud ::               Maybe JSONCruds
   } deriving (Generic, Show)
 data JSONCruds = JSONCruds
-  { crudJSONread              :: Bool
-  , crudJSONcreate            :: Bool
-  , crudJSONupdate            :: Bool
-  , crudJSONdelete            :: Bool
+  { crudJSONread ::              Bool
+  , crudJSONcreate ::            Bool
+  , crudJSONupdate ::            Bool
+  , crudJSONdelete ::            Bool
   } deriving (Generic, Show)
 data JSONexpr = JSONexpr
-  { exprJSONsrcConceptId      :: String
-  , exprJSONtgtConceptId      :: String
-  , exprJSONisUni             :: Bool
-  , exprJSONisTot             :: Bool
-  , exprJSONisIdent           :: Bool
-  , exprJSONquery             :: String
+  { exprJSONsrcConceptId ::      String
+  , exprJSONtgtConceptId ::      String
+  , exprJSONisUni ::             Bool
+  , exprJSONisTot ::             Bool
+  , exprJSONisIdent ::           Bool
+  , exprJSONquery ::             String
   } deriving (Generic, Show)
 
 instance ToJSON JSONSubInterface where
@@ -66,11 +66,11 @@ instance JSON MultiFSpecs Interfaces where
    where fSpec = userFSpec multi
 
 instance JSON SubInterface JSONSubInterface where
- fromAmpersand multi si = 
-   case si of 
+ fromAmpersand multi subIfc = 
+   case subIfc of 
      Box{} -> JSONSubInterface
-       { subJSONboxClass           = siMClass si
-       , subJSONifcObjects         = Just . map (fromAmpersand multi) . siObjs $ si
+       { subJSONboxClass           = siMClass subIfc
+       , subJSONifcObjects         = (Just . map (fromAmpersand multi) . siObjs) subIfc
        , subJSONrefSubInterfaceId  = Nothing
        , subJSONrefIsLinTo         = Nothing
        , subJSONcrud               = Nothing
@@ -78,9 +78,9 @@ instance JSON SubInterface JSONSubInterface where
      InterfaceRef{} -> JSONSubInterface
        { subJSONboxClass           = Nothing
        , subJSONifcObjects         = Nothing
-       , subJSONrefSubInterfaceId  = Just . escapeIdentifier . siIfcId $ si
-       , subJSONrefIsLinTo         = Just . siIsLink $ si
-       , subJSONcrud               = Just . fromAmpersand multi . siCruds $ si
+       , subJSONrefSubInterfaceId  = (Just . escapeIdentifier . name . siIfc) subIfc
+       , subJSONrefIsLinTo         = (Just . siIsLink) subIfc
+       , subJSONcrud               = (Just . fromAmpersand multi . siCruds) subIfc
        }
  
 instance JSON Interface JSONInterface where

@@ -80,7 +80,7 @@ doTestSet indent dir fs
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the 
 -- yaml files in the test suite.
 data TestInfo = TestInfo 
-   { command  :: String
+   { command ::  String
    , shouldSucceed :: Bool 
    }deriving Generic
 instance FromJSON TestInfo

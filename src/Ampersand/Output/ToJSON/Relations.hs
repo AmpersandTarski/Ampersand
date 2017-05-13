@@ -10,28 +10,28 @@ import Data.Maybe
 
 data Relations = Relations [Relation]deriving (Generic, Show)
 data Relation = Relation
-  { relJSONname         :: String
-  , relJSONsignature    :: String
+  { relJSONname ::         String
+  , relJSONsignature ::    String
   , relJSONsrcConceptId :: String
   , relJSONtgtConceptId :: String
-  , relJSONuni          :: Bool
-  , relJSONtot          :: Bool
-  , relJSONinj          :: Bool
-  , relJSONsur          :: Bool
-  , relJSONprop         :: Bool
+  , relJSONuni ::          Bool
+  , relJSONtot ::          Bool
+  , relJSONinj ::          Bool
+  , relJSONsur ::          Bool
+  , relJSONprop ::         Bool
   , relJSONaffectedConjuncts :: [String]
-  , relJSONmysqlTable   :: RelTableInfo
+  , relJSONmysqlTable ::   RelTableInfo
   } deriving (Generic, Show)
 data RelTableInfo = RelTableInfo -- Contains info about where the relation is implemented in SQL
-  { rtiJSONname    :: String
+  { rtiJSONname ::    String
   , rtiJSONtableOf :: Maybe String -- specifies if relation is administrated in table of srcConcept (i.e. "src"), tgtConcept (i.e. "tgt") or its own n-n table (i.e. null).
-  , rtiJSONsrcCol  :: TableCol
-  , rtiJSONtgtCol  :: TableCol
+  , rtiJSONsrcCol ::  TableCol
+  , rtiJSONtgtCol ::  TableCol
   } deriving (Generic, Show)
 data TableCol = TableCol
-  { tcJSONname     :: String
-  , tcJSONnull     :: Bool
-  , tcJSONunique   :: Bool
+  { tcJSONname ::     String
+  , tcJSONnull ::     Bool
+  , tcJSONunique ::   Bool
   } deriving (Generic, Show)
 instance ToJSON Relations where
   toJSON = amp2Jason

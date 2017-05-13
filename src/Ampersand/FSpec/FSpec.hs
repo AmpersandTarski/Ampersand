@@ -71,7 +71,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)
                    , interfaceS ::   [Interface]              -- ^ All interfaces defined in the Ampersand script
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
-                   , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
+                   , roleInterfaces ::  Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
                    , fSwitchboard :: Fswitchboard             -- ^ The code to be executed to maintain the truth of invariants
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
                    , fActivities ::  [Activity]               -- ^ generated: One Activity for every ObjectDef in interfaceG and interfaceS
@@ -117,8 +117,8 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , initialConjunctSignals :: [(Conjunct,[AAtomPair])] -- ^ All conjuncts that have process-rule violations.
                    , allViolations ::  [(Rule,[AAtomPair])]   -- ^ All invariant rules with violations.
                    , allExprs ::     [Expression]             -- ^ All expressions in the fSpec
-                   , fcontextInfo   :: ContextInfo 
-                   , ftypologies   :: [Typology]
+                   , fcontextInfo ::   ContextInfo 
+                   , ftypologies ::   [Typology]
                    , typologyOf :: A_Concept -> Typology
                    , largestConcept :: A_Concept -> A_Concept
                    , specializationsOf :: A_Concept -> [A_Concept]    
@@ -141,7 +141,7 @@ instance Language FSpec where
 
 data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
                  , atmIn ::    [A_Concept] -- all concepts the atom is in. (Based on generalizations)
-                 , atmVal   :: AAtomValue
+                 , atmVal ::   AAtomValue
                  } deriving (Typeable,Eq)
 instance Unique Atom where
   showUnique a = showValADL (atmVal a)++" in "
@@ -324,9 +324,9 @@ getConceptTableFor fSpec c = case lookupCpt fSpec c of
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
 data RelStore 
   = RelStore
-     { rsDcl       :: Declaration
-     , rsSrcAtt    :: SqlAttribute
-     , rsTrgAtt    :: SqlAttribute
+     { rsDcl ::       Declaration
+     , rsSrcAtt ::    SqlAttribute
+     , rsTrgAtt ::    SqlAttribute
      } deriving (Show, Typeable)
 data SqlAttributeUsage = PrimaryKey A_Concept
                        | ForeignKey A_Concept  -- The SQL-attribute is a reference (containing the primary key value of) a TblSQL

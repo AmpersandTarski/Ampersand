@@ -606,14 +606,14 @@ instance ShowHS Interface where
         [ "Ifc { ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
         , "    , ifcEcas   = " ++ showHS opts (indent++"                 ") (ifcEcas ifc)
-        , wrap "    , ifcControls = " (indent++"                  ") (const showHSName) (ifcControls ifc)
+        , wrap "    , ifcConjuncts = " (indent++"                  ") (const showHSName) (ifcConjuncts ifc)
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)
         , "    , ifcPrp    = " ++ show(ifcPrp ifc)
         ]++indent++"    }"
 
 instance ShowHS SubInterface where
- showHS _     _     (InterfaceRef isLink n cs) = "InterfaceRef "++show isLink ++" "++show n++" "++show cs
- showHS opts indent (Box x cl objs) = "Box ("++showHS opts indent x++") ("++showHS opts indent cl++")"++indent++"     ("++showHS opts (indent++"     ") objs++")"
+ showHS opts indent (InterfaceRef ispos isLink ifc cs) = "InterfaceRef ("++showHS opts indent ispos ++") "++show isLink ++" "++showHSName ifc++" "++show cs
+ showHS opts indent (Box ispos x cl objs) = "Box ("++showHS opts indent ispos++") ("++showHS opts indent x++") ("++showHS opts indent cl++")"++indent++"     ("++showHS opts (indent++"     ") objs++")"
 
 instance ShowHS Expression where
  showHS opts indent (EEqu (l,r)) = "EEqu ("++showHS opts (indent++"      ") l++indent++"     ,"++showHS opts (indent++"      ") r++indent++"     )"

@@ -316,14 +316,14 @@ data ViewSegment = ViewSegment
      { vsmpos :: Origin
      , vsmlabel :: Maybe String
      , vsmSeqNr :: Integer
-     , vsmLoad  :: ViewSegmentPayLoad
+     , vsmLoad ::  ViewSegmentPayLoad
      } deriving Show
 instance Traced ViewSegment where
   origin = vsmpos
 data ViewSegmentPayLoad
                  = ViewExp { vsgmExpr :: Expression
                            }
-                 | ViewText{ vsgmTxt  :: String
+                 | ViewText{ vsgmTxt ::  String
                            }deriving (Eq, Show)
 
 
@@ -355,7 +355,7 @@ instance Show A_Gen where
 data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcEcas ::     [ECArule]     -- All ECArules that are needed to perform computations for maintaining rules
-                     , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
+                     , ifcConjuncts :: [Conjunct]    -- All conjuncts that must be satisfied before committing a transation
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
                      , ifcPrp ::      String        -- The purpose of the interface
                      } deriving Show
@@ -392,7 +392,7 @@ instance Object ObjectDef where
 data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                      , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
                      , objctx ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
-                     , objcrud ::  Cruds -- ^ CRUD as defined by the user 
+                     , objcrud ::  Cruds          -- ^ CRUD as defined by the user 
                      , objmView :: Maybe String   -- ^ The view that should be used for this object
                      , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.
                      } deriving (Eq, Show)        -- just for debugging (zie ook instance Show ObjectDef)
@@ -401,19 +401,24 @@ instance Named ObjectDef where
 instance Traced ObjectDef where
   origin = objpos
 data Cruds = Cruds { crudOrig :: Origin
-                   , crudC :: Bool
-                   , crudR :: Bool
-                   , crudU :: Bool
-                   , crudD :: Bool
+                   , crudC ::    Bool
+                   , crudR ::    Bool
+                   , crudU ::    Bool
+                   , crudD ::    Bool
                    } deriving (Eq, Show)
-data SubInterface = Box { siConcept :: A_Concept
-                        , siMClass  :: Maybe String
-                        , siObjs    :: [ObjectDef] 
+-- | Each SubInterface corresponds to a BOX in an Ampersand-program
+--   In case this is an HTML user interface, each SubInterface corresponds to a HTML-division (I think...).
+--   SubInterfaces implement a hierarchical interface structure.
+data SubInterface = Box { siOrig ::    Origin
+                        , siConcept :: A_Concept    -- ^ the type of the subinterface
+                        , siMClass ::  Maybe String
+                        , siObjs ::    [ObjectDef] 
                         }
                   | InterfaceRef 
-                        { siIsLink :: Bool
-                        , siIfcId  :: String  --id of the interface that is referenced to
-                        , siCruds  :: Cruds
+                        { siOrig ::   Origin
+                        , siIsLink :: Bool
+                        , siIfc ::    Interface  --the interface that is referenced to
+                        , siCruds ::  Cruds
                         } deriving (Eq, Show)
 
 data InsDel   = Ins | Del
@@ -536,7 +541,7 @@ instance Unique Population where
   showUnique pop@ACptPopu{} = (showUnique.popcpt) pop ++ (showUnique.popas) pop
 
 data AAtomPair
-  = APair { apLeft  :: AAtomValue
+  = APair { apLeft ::  AAtomValue
           , apRight :: AAtomValue
           } deriving(Eq,Prelude.Ord)
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
@@ -899,9 +904,9 @@ class Association rel where
 -- Convenient data structure to hold information about concepts and their representations
 --  in a context.
 data ContextInfo =
-  CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
+  CI { ctxiGens ::         [A_Gen]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
-     , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
+     , multiKernels ::     [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
      }
                        
    

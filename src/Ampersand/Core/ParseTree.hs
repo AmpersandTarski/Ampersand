@@ -164,8 +164,8 @@ instance Named ConceptDef where
  name = cdcpt
 
 data Representation
-  = Repr { pos  :: Origin
-         , reprcpts  :: [String]  -- ^ the concepts
+  = Repr { pos ::  Origin
+         , reprcpts ::  [String]  -- ^ the concepts
          , reprdom :: TType     -- the type of the concept the atom is in
          } deriving (Ord,Eq,Show)
 instance Traced Representation where
@@ -229,7 +229,7 @@ instance Traced P_Declaration where
 
 data PAtomPair
   = PPair { pos :: Origin
-          , ppLeft  :: PAtomValue
+          , ppLeft ::  PAtomValue
           , ppRight :: PAtomValue
           } deriving (Eq,Ord,Show) -- Show is for QuickCheck error messages and/or input redundancy removal only!
 instance Traced PAtomPair where
@@ -239,7 +239,7 @@ instance Flippable PAtomPair where
              ,ppRight = ppLeft pr}
 --data PSingleton
 --  = PSingleton { pos :: Origin
---               , psRaw  :: String
+--               , psRaw ::  String
 --               , psInterprets :: [PAtomValue]
 --               }
 --instance Show PSingleton where
@@ -414,7 +414,7 @@ instance Traversable P_SubIfc where
   traverse f (P_Box o c lst) = P_Box o c <$> traverse (traverse f) lst
 
 instance Traced (P_SubIfc a) where
- origin = pos
+ origin = si_orig
 
 instance Functor P_ObjDef where fmap = fmapDefault
 instance Foldable P_ObjDef where foldMap = foldMapDefault
@@ -546,20 +546,20 @@ newtype PMeaning = PMeaning P_Markup
 newtype PMessage = PMessage P_Markup
          deriving Show
 data P_Markup =
-    P_Markup  { mLang   ::   Maybe Lang
+    P_Markup  { mLang ::     Maybe Lang
               , mFormat :: Maybe PandocFormat
               , mString :: String
               } deriving Show -- for debugging only
 
 data P_Population
-  = P_RelPopu { p_src   :: Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
-              , p_tgt   :: Maybe String -- these src and tgt must be more specific than the P_NamedRel
-              , pos  :: Origin       -- the origin
-              , p_nmdr  :: P_NamedRel   -- the named relation
+  = P_RelPopu { p_src ::   Maybe String -- a separate src and tgt instead of "Maybe Sign", such that it is possible to specify only one of these.
+              , p_tgt ::   Maybe String -- these src and tgt must be more specific than the P_NamedRel
+              , pos ::  Origin       -- the origin
+              , p_nmdr ::  P_NamedRel   -- the named relation
               , p_popps :: [PAtomPair]  -- the contents
               }
-  | P_CptPopu { pos  :: Origin  -- the origin
-              , p_cnme  :: String  -- the name of a concept
+  | P_CptPopu { pos ::  Origin  -- the origin
+              , p_cnme ::  String  -- the name of a concept
               , p_popas :: [PAtomValue]  -- atoms in the initial population of that concept
               }
    deriving (Show) --For QuickCheck error messages only!
@@ -604,24 +604,25 @@ data P_IClass = P_IClass { iclass_name :: String } deriving (Eq, Ord, Show)
 
 type P_SubInterface = P_SubIfc TermPrim
 data P_SubIfc a
-              = P_Box          { pos :: Origin
-                               , si_class :: Maybe String
-                               , si_box :: [P_ObjDef a] }
-              | P_InterfaceRef { pos :: Origin
+              = P_Box          { si_orig ::   Origin   -- The origin identifies the box
+                               , si_class ::  Maybe String
+                               , si_box ::    [P_ObjDef a]
+                               }
+              | P_InterfaceRef { si_orig ::   Origin
                                , si_isLink :: Bool --True iff LINKTO is used. (will display as hyperlink)
-                               , si_str :: String  -- Name of the interface that is reffered to
-                               , si_crud :: Maybe P_Cruds -- ^ string containing the CRUD actions as required by the user
+                               , si_str ::    String  -- Name of the interface that is reffered to
+                               , si_crud ::   Maybe P_Cruds -- ^ string containing the CRUD actions as required by the user
                                } 
                 deriving (Show)
 
 type P_ObjectDef = P_ObjDef TermPrim
 data P_ObjDef a =
-     P_Obj { obj_nm :: String          -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
-           , pos :: Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-           , obj_ctx :: Term a         -- ^ this expression describes the instances of this object, related to their context.
-           , obj_crud :: Maybe P_Cruds  -- ^ the CRUD actions as required by the user  
-           , obj_mView :: Maybe String -- ^ The view that should be used for this object
-           , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
+     P_Obj { obj_nm ::    String             -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
+           , pos ::       Origin             -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
+           , obj_ctx ::   Term a             -- ^ this expression describes the instances of this object, related to their context.
+           , obj_crud ::  Maybe P_Cruds      -- ^ the CRUD actions as required by the user  
+           , obj_mView :: Maybe String       -- ^ The view that should be used for this object
+           , obj_msub ::  Maybe (P_SubIfc a) -- ^ the attributes, which are object definitions themselves.
            }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
 instance Prelude.Ord (P_ObjDef a) where
   compare a b = compare (origin a) (origin b)
@@ -785,7 +786,7 @@ data P_Gen =  P_Cy{ pos ::  Origin            -- ^ Position in the Ampersand fil
                   , gen_spc :: P_Concept         -- ^ Left hand side concept expression
                   , gen_rhs :: [P_Concept]       -- ^ Right hand side concept expression
                   }
-            | PGen{ pos  :: Origin         -- ^ the position of the GEN-rule
+            | PGen{ pos ::  Origin         -- ^ the position of the GEN-rule
                   , gen_spc :: P_Concept      -- ^ specific concept
                   , gen_gen :: P_Concept      -- ^ generic concept
                   } deriving (Show, Eq, Ord)

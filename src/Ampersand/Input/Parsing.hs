@@ -59,7 +59,7 @@ parseADLs opts parsedFilePaths fpIncludes =
 
 data ParseCandidate = ParseCandidate 
        { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 
-       , pcOrigin   :: Maybe Origin
+       , pcOrigin ::   Maybe Origin
        , pcFilePath :: FilePath -- The absolute or relative filename as found in the INCLUDE statement
        , useAllStaticFiles :: Bool -- In case of FormalAmpersand stuff, the files are included in ampersand.exe
        , pcCanonical :: FilePath -- The canonicalized path of the candicate

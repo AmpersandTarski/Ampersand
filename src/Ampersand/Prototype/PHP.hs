@@ -37,7 +37,7 @@ data TableSpec
   = TableSpec { tsCmnt :: [String]  -- Without leading "// "
               , tsName :: String
               , tsflds :: [AttributeSpec]
-              , tsKey  ::  String
+              , tsKey ::   String
               }
 data AttributeSpec
   = AttributeSpec { fsname :: Text.Text

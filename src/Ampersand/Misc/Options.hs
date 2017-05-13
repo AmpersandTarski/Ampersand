@@ -87,17 +87,17 @@ data Options = Options { environment :: EnvironmentOptions
                        , trimXLSXCells :: Bool -- Should leading and trailing spaces of text values in .XLSX files be ignored? 
                        } deriving Show
 data EnvironmentOptions = EnvironmentOptions
-      { envArgs               :: [String]
-      , envArgsCommandLine    :: [String]
+      { envArgs ::               [String]
+      , envArgsCommandLine ::    [String]
       , envArgsFromConfigFile :: [String]
-      , envProgName           :: String
-      , envExePath            :: FilePath
-      , envLocalTime          :: LocalTime
-      , envDirOutput          :: Maybe FilePath
-      , envDirPrototype       :: Maybe FilePath
-      , envDbName             :: Maybe String
-      , envPreVersion         :: Maybe String
-      , envPostVersion        :: Maybe String  
+      , envProgName ::           String
+      , envExePath ::            FilePath
+      , envLocalTime ::          LocalTime
+      , envDirOutput ::          Maybe FilePath
+      , envDirPrototype ::       Maybe FilePath
+      , envDbName ::             Maybe String
+      , envPreVersion ::         Maybe String
+      , envPostVersion ::        Maybe String  
       } deriving Show
 
 dirPrototypeVarName :: String

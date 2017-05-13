@@ -108,18 +108,21 @@ isDanglingPurpose ctx purp =
 checkInterfaceCycles :: A_Context -> Guarded ()
 checkInterfaceCycles ctx = unless (null interfaceCycles) $
                              Errors $ map mkInterfaceRefCycleError interfaceCycles
-      where interfaceCycles = [ map lookupInterface iCycle | iCycle <- getCycles refsPerInterface ]
+      where interfaceCycles = [ map (lookupInterface ctx) iCycle | iCycle <- getCycles refsPerInterface ]
             refsPerInterface = [(name ifc, getDeepIfcRefs $ ifcObj ifc) | ifc <- ctxifcs ctx ]
-            getDeepIfcRefs obj = case objmsub obj of
-                                   Nothing                  -> []
-                                   Just si -> case si of 
-                                               InterfaceRef{} -> if siIsLink si
-                                                                 then []
-                                                                 else [siIfcId si]
-                                               Box{}          -> concatMap getDeepIfcRefs (siObjs si)
-            lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
-                                   [ifc] -> ifc
-                                   _     -> fatal 124 "Interface lookup returned zero or more than one result"
+            getDeepIfcRefs obj
+              = case objmsub obj of
+                  Nothing     -> []
+                  Just subIfc -> case subIfc of 
+                                  InterfaceRef{} -> if siIsLink subIfc then [] else [name (siIfc subIfc)]
+                                  Box{}          -> concatMap getDeepIfcRefs (siObjs subIfc)
+
+lookupInterface :: A_Context -> String -> Interface
+lookupInterface ctx nm
+ = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
+     [ifc] -> ifc
+     []    -> fatal 121 "Interface lookup returned zero results"
+     _     -> fatal 122 "Interface lookup returned more than one result"
 
 -- Check whether each concept has at most one default view
 checkMultipleDefaultViews :: A_Context -> Guarded ()
@@ -247,7 +250,7 @@ pCtx2aCtx opts
       phpdefs     <- traverse (pObjDef2aObjDef declMap) p_phpdefs       --  user defined phpplugs, taken from the Ampersand script 
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation declMap) (p_roleRelations ++ concatMap pt_RRels p_patterns)
       declsAndPops <- traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) p_declarations
-      let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
+      let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls) ::  Set.Set Type
       let soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs) :: [Type]
       let actx = ACtx{ ctxnm = n1
                      , ctxpos = n2
@@ -689,20 +692,26 @@ pCtx2aCtx opts
     pSubi2aSubi declMap objExpr b o x
       = case x of
          P_InterfaceRef{si_str = ifcId} 
-           ->  do (refIfcExpr,_) <- case lookupDisambIfcObj declMap ifcId of
-                                         Just disambObj -> typecheckTerm $ obj_ctx disambObj -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
-                                         Nothing        -> Errors [mkUndeclaredError "interface" o ifcId]
+           ->  do (refIfcExpr,_) <- case [ (vd,disambObj) | (vd,disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId ] of
+                                      []               -> Errors [mkUndeclaredError "interface" o ifcId]
+                                      (_, disambObj):_ -> typecheckTerm (obj_ctx disambObj) -- term is type checked twice, but otherwise we need a more complicated type check method to access already-checked interfaces. TODO: hide possible duplicate errors in a nice way (that is: via CtxError)
+                  (vd,disambObj) <- case [ pIfcTuple | pIfcTuple@(vd,_) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId ] of
+                                         pIfcTuple:_ -> Checked pIfcTuple
+                                         _           -> Errors [mkUndeclaredError "interface" o ifcId]
+                  aIfc <- pIfc2aIfc declMap (vd,disambObj)
                   cs <- pCruds2aCruds (si_crud x)
                   objExprEps <- typeCheckInterfaceRef o ifcId objExpr refIfcExpr
-                  return (objExprEps,InterfaceRef{ siIsLink = si_isLink x
-                                                 , siIfcId  = ifcId
+                  return (objExprEps,InterfaceRef{ siOrig   = si_orig x
+                                                 , siIsLink = si_isLink x
+                                                 , siIfc    = aIfc
                                                  , siCruds  = cs
                                                  }
                          )
          P_Box{}
            -> case si_box x of
                 []  -> const undefined <$> (hasNone x :: Guarded SubInterface) -- error
-                l   -> (\lst -> (objExpr,Box { siConcept = target objExpr
+                l   -> (\lst -> (objExpr,Box { siOrig    = si_orig x
+                                             , siConcept = target objExpr
                                              , siMClass  = si_class x
                                              , siObjs    = lst
                                              }
@@ -722,11 +731,6 @@ pCtx2aCtx opts
       in  if refIsCompatible 
           then pure $ addEpsilonRight ifcSource objExpr 
           else Errors [mkIncompatibleInterfaceError objDef expTarget ifcSource ifcRef ]
-    lookupDisambIfcObj :: DeclMap -> String -> Maybe (P_ObjDef (TermPrim, DisambPrim))
-    lookupDisambIfcObj declMap ifcId =
-      case [ disambObj | (vd,disambObj) <- p_interfaceAndDisambObjs declMap, ifc_Name vd == ifcId ] of
-        []          -> Nothing
-        disambObj:_ -> Just disambObj -- return the first one, if there are more, this is caught later on by uniqueness static check
     
     typecheckTerm :: Term (TermPrim, DisambPrim) -> Guarded (Expression, (Bool, Bool))
     typecheckTerm tct
@@ -844,19 +848,14 @@ pCtx2aCtx opts
         disambNamedRel (PNamedRel _ r (Just s)) = map EDcD . findDeclsTyped declMap r $ pSign2aSign s
 
     pIfc2aIfc :: DeclMap -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
-    pIfc2aIfc declMap
-             (P_Ifc { ifc_Roles = rols
-                    , ifc_Obj = _
-                    , pos = orig
-                    , ifc_Prp = prp
-                    }, objDisamb)
+    pIfc2aIfc declMap (pIfc, objDisamb)
         = (\ obj'
-             -> Ifc { ifcRoles = rols
-                    , ifcObj = obj'
-                    , ifcEcas = []      -- to be enriched in Adl2fSpec with ECA-rules
-                    , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
-                    , ifcPos = orig
-                    , ifcPrp = prp
+             -> Ifc { ifcRoles     = ifc_Roles pIfc
+                    , ifcObj       = obj'
+                    , ifcEcas      = []      -- to be enriched in Adl2fSpec with ECA-rules
+                    , ifcConjuncts = []  -- to be enriched in Adl2fSpec with rules to be checked
+                    , ifcPos       = origin pIfc
+                    , ifcPrp       = ifc_Prp pIfc
                     }) <$> pObjDefDisamb2aObjDef declMap objDisamb
 
     pRoleRelation2aRoleRelation :: DeclMap -> P_RoleRelation -> Guarded A_RoleRelation

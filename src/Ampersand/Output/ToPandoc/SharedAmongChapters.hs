@@ -192,10 +192,10 @@ pandocEquationWithLabel fSpec xref x =
   para (strong (xDefInln fSpec xref) <> ": " <> x)
 
 data RefStuff = 
-  RefStuff { typeOfSection    :: String
+  RefStuff { typeOfSection ::    String
            , chapterOfSection :: Chapter
-           , nameOfThing      :: String
-           , xrefPrefix       :: String
+           , nameOfThing ::      String
+           , xrefPrefix ::       String
            } deriving Show
 refStuff :: XRefSection -> RefStuff
 refStuff x  = 

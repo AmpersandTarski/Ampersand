@@ -141,8 +141,8 @@ instance Disambiguatable P_ObjDef where
     where
      (d', env1)
       = case d of
-           Nothing -> (Nothing,noConstraints)
-           Just si -> Control.Arrow.first Just $ disambInfo si (Cnstr (targetConstraintsOf env2) [])
+           Just subIfc -> Control.Arrow.first Just $ disambInfo subIfc (Cnstr (targetConstraintsOf env2) [])
+           Nothing     -> (Nothing,noConstraints)
      (c', env2)
       = disambInfo c (Cnstr (sourceConstraintsOf env) (sourceConstraintsOf env1))
 instance Disambiguatable Term where

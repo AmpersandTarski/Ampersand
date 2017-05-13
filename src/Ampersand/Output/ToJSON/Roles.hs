@@ -9,9 +9,9 @@ import Ampersand.Output.ToJSON.JSONutils
 
 data Roles = Roles [RoleJson] deriving (Generic, Show)
 data RoleJson = RoleJson
-  { roleJSONid         :: Int
-  , roleJSONname       :: String
-  , roleJSONmaintains  :: [String] 
+  { roleJSONid ::         Int
+  , roleJSONname ::       String
+  , roleJSONmaintains ::  [String] 
   , roleJSONinterfaces :: [String] 
   } deriving (Generic, Show)
 instance ToJSON RoleJson where
