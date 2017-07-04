@@ -30,6 +30,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
 use Ampersand\Session;
+use Ampersand\Extension\ExecEngine\ExecEngine;
 
 /*
    Example of rule that automatically inserts pairs into a relation (analogous stuff holds for DelPair):
@@ -152,6 +153,9 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
 		
 		// Add atom to concept
 		$atom->addAtom();
+		
+		// Make newly created atom available within scope of violation for use of other functions
+		ExecEngine::$_NEW = $atom;
 	
 		// Next, for every relation that follows in the argument list, we create a link
 		for ($i = func_num_args() % 5; $i < func_num_args(); $i = $i+5){
@@ -195,6 +199,9 @@ function InsAtom($conceptName){
 		$concept = Concept::getConceptByLabel($conceptName);
         $atom = $concept->createNewAtom();
 		$atom->addAtom(); // insert new atom in database
+		
+		// Make newly created atom available within scope of violation for use of other functions
+		ExecEngine::$_NEW = $atom;
 		
 		Logger::getLogger('EXECENGINE')->debug("Atom '{$atom->__toString()}' created and added to database");
 		
