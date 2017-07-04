@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 ## Unreleased changes 
-
+  * [Issue #674](https://github.com/AmpersandTarski/Ampersand/issues/674) New feature for ExecEngine to navigate user to other interface
 
 ## v3.8.5 (12 may 2017)
   * [Issue #666](https://github.com/AmpersandTarski/Ampersand/issues/666) A hint message is supplied when a case-incorrect url is used.   
