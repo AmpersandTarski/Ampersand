@@ -364,14 +364,26 @@ function SetConceptCond($conceptA, $conceptB, $atom, $bool){
 	}
 }
 
-function setNavToOnCommit($navTo){
+function SetNavToOnCommit($navTo){
 	Logger::getLogger('EXECENGINE')->info("setNavToOnCommit($navTo)");
+	
+	if(strpos($navTo, '_NEW') !== false){
+		$navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
+		Logger::getLogger('EXECENGINE')->debug("replaced navTo string with '{$navTo}'");
+	}
+	
 	$session = Session::singleton();
 	$session->navToOnCommit = $navTo;
 }
     
-function setNavToOnRollback($navTo){
+function SetNavToOnRollback($navTo){
 	Logger::getLogger('EXECENGINE')->info("setNavToOnRollback($navTo)");
+	
+	if(strpos($navTo, '_NEW') !== false){
+		$navTo = str_replace('_NEW', ExecEngine::$_NEW->id, $navTo); // Replace _NEW with latest atom created by NewStruct or InsAtom (in this VIOLATION)
+		Logger::getLogger('EXECENGINE')->debug("replaced navTo string with '{$navTo}'");
+	}
+	
 	$session = Session::singleton();
 	$session->navToOnRollback = $navTo;
 }
