@@ -74,6 +74,9 @@ class Session {
      */
     private static $_instance = null;
     
+    public $navToOnCommit = null;
+    public $navToOnRollback = null;
+    
     /**
      * Constructor of Session class
      * private to prevent any outside instantiation of this object
@@ -390,6 +393,18 @@ class Session {
         return $this->getSessionVarAffected() 
                 && ($this->database->getRequestType() == 'promise')
                 && $this->database->getInvariantRulesHold();
+    }
+    
+    public function getNavToResponse(){
+    	return $this->database->getInvariantRulesHold() ? $this->navToOnCommit : $this->navToOnRollback;
+    }
+    
+    public function setNavToOnCommit($navTo){
+    	$this->navToOnCommit = $navTo;
+    }
+    
+    public function setNavToOnRollback($navTo){
+    	$this->navToOnRollback = $navTo;
     }
 }
 ?>

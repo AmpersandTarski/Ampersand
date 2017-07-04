@@ -29,6 +29,7 @@ use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
+use Ampersand\Session;
 
 /*
    Example of rule that automatically inserts pairs into a relation (analogous stuff holds for DelPair):
@@ -342,5 +343,17 @@ function SetConceptCond($conceptA, $conceptB, $atom, $bool){
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('SetConceptCond: ' . $e->getMessage());
 	}
+}
+
+function setNavToOnCommit($navTo){
+	Logger::getLogger('EXECENGINE')->info("setNavToOnCommit($navTo)");
+	$session = Session::singleton();
+	$session->navToOnCommit = $navTo;
+}
+    
+function setNavToOnRollback($navTo){
+	Logger::getLogger('EXECENGINE')->info("setNavToOnRollback($navTo)");
+	$session = Session::singleton();
+	$session->navToOnRollback = $navTo;
 }
 ?>
