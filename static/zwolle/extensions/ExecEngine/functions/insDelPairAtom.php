@@ -48,8 +48,6 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
         $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
 		$relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
 		
-		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
-		
 		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
 		if($srcAtom == '_NULL' or $tgtAtom == '_NULL'){
             Logger::getLogger('EXECENGINE')->debug("InsPair ignored because src and/or tgt atom is _NULL");
@@ -94,8 +92,6 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
         $srcConcept = Concept::getConceptByLabel($srcConceptName);
         $tgtConcept = Concept::getConceptByLabel($tgtConceptName);
 		$relation = Relation::getRelation($relationName, $srcConcept, $tgtConcept);
-		
-		if($srcAtom == "NULL" or $tgtAtom == "NULL") throw new Exception("Use of keyword NULL is deprecated, use '_NEW'", 500);
 		
 		// if either srcAtomIdStr or tgtAtom is not provided by the pairview function (i.e. value set to '_NULL'): skip the insPair
 		if($srcAtom == '_NULL' or $tgtAtom == '_NULL'){
