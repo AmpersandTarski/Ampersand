@@ -43,6 +43,11 @@ class ExecEngine {
 	public static $autoRerun;
 	public static $runCount;
 	
+	/**
+	 * @var \Ampersand\Core\Atom $_NEW specifies latest atom created by a newstruct function call. Can be (re)used within the scope of one violation statement. 
+	 */
+	public static $_NEW = null;
+	
 	public static function run($allRules = false){
 		$database = Database::singleton();
 		$logger = Logger::getLogger('EXECENGINE');
@@ -159,6 +164,8 @@ class ExecEngine {
 					throw new Exception("Function '{$function}' does not exists. Create function with {count($params)} parameters", 500);
 				}
 			}
+			
+			self::$_NEW = null; // The newly created atom cannot be (re)used outside the scope of the violation in which it was created.
 		}		
 	}
 }
