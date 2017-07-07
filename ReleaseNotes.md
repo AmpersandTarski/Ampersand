@@ -1,5 +1,7 @@
 # Release notes of Ampersand
-## Unreleased changes 
+
+
+## v3.8.6 (7 july 2017)
   * [Issue #674](https://github.com/AmpersandTarski/Ampersand/issues/674) New feature for ExecEngine to navigate user to other interface
   * [Issue #675](https://github.com/AmpersandTarski/Ampersand/issues/675) Extend scope of _NEW in ExecEngine from NewStruct to complete violation statement
 
