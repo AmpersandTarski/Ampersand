@@ -1,5 +1,10 @@
 # Release notes of Ampersand
 
+
+## v3.8.6 (7 july 2017)
+  * [Issue #674](https://github.com/AmpersandTarski/Ampersand/issues/674) New feature for ExecEngine to navigate user to other interface
+  * [Issue #675](https://github.com/AmpersandTarski/Ampersand/issues/675) Extend scope of _NEW in ExecEngine from NewStruct to complete violation statement
+
 ## v3.8.5 (12 may 2017)
   * [Issue #666](https://github.com/AmpersandTarski/Ampersand/issues/666) A hint message is supplied when a case-incorrect url is used.   
   * Upgrade LTS Haskell 8.5, which includes GHC 8.0.2

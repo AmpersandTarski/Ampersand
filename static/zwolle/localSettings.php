@@ -19,7 +19,7 @@ ini_set("display_errors", true);
  *************************************************************************************************/
 set_time_limit (30);
 
-//Config::set('debugMode', 'global', true); // default = false
+//Config::set('debugMode', 'global', true); // production mode = false
 
 // Log file handler
 $fileHandler = new \Monolog\Handler\RotatingFileHandler(__DIR__ . '/log/error.log', 0, \Monolog\Logger::WARNING);
@@ -52,7 +52,7 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * DATABASE settings
  *************************************************************************************************/
-// Config::set('dbHost', 'mysqlDatabase', 'localhost');
+// Config::set('dbHost', 'mysqlDatabase', '127.0.0.1');
 // Config::set('dbUser', 'mysqlDatabase', 'ampersand');
 // Config::set('dbPassword', 'mysqlDatabase', 'ampersand');
 // Config::set('dbName', 'mysqlDatabase', '');

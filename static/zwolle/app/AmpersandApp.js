@@ -30,7 +30,7 @@ AmpersandApp.config(function(RestangularProvider) {
     
 });
 
-AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route){
+AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorage, $location, $route, $location){
 	
 	$sessionStorage.session = {'id' : initSessionId}; // initSessionId provided by index.php on startup application
 		
@@ -48,6 +48,7 @@ AmpersandApp.run(function(Restangular, $rootScope, $localStorage, $sessionStorag
 	
 	Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
 		if(operation != 'get' && operation != 'getList' && data.sessionRefreshAdvice) $rootScope.refreshNavBar();
+		if(data.navTo != null) $location.url(data.navTo);
 		
 		return data;
 	});
