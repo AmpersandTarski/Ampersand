@@ -198,11 +198,6 @@ writePicture opts pict
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
-     dumpShow :: IO()
-     dumpShow = -- This has been hacked in in order to diagnose the issue at: https://github.com/ivan-m/graphviz/issues/13
-       do let path = imagePath opts pict -<.> "txt"
-          writeFile path (show . dotSource $ pict)
-          verboseLn opts $ "Dumpfile written: "++path 
      writeDot :: GraphvizOutput -> IO ()
      writeDot = writeDotPostProcess Nothing
      writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor
@@ -228,8 +223,9 @@ writePicture opts pict
                    
      writePdf :: GraphvizOutput
               -> IO ()
-     writePdf = writeDotPostProcess (Just makePdf) 
-
+     writePdf x = (writeDotPostProcess (Just makePdf) x)
+       `catch` (\ e -> verboseLn opts ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+                                       "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 class ReferableFromPandoc a where
