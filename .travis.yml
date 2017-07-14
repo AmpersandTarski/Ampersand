@@ -132,6 +132,7 @@ install:
 - chmod +x ./travis_long
 - if [ -f configure.ac ]; then autoreconf -i; fi
 - PATH=$PATH:~/.cabal/bin
+- mkdir dist
 - |
   case "$BUILD" in
     stack)
@@ -151,9 +152,20 @@ script:
 - |
   case "$BUILD" in
     stack)
-    ./travis_long stack --no-terminal $ARGS test
+    ./travis_long stack --no-terminal --test --local-bin-path=dist --copy-bins $ARGS build
       ;;
     cabal)
     ./travis_long cabal test
       ;;
   esac
+
+deploy:
+  provider: releases
+  skip_cleanup: true
+  file: dist/ampersand
+  on:
+    repo: AmpersandTarski/Ampersand
+    tags: true
+    condition: $BUILD = stack
+  api-key:
+    secure: ctc+qaMBb9wnQt9827grVDfqMDJsqgvGA3DQVo0P33B2J2XedHhn1PfRdSrZ8kdo55/658VQ4E94/quXYN7fdHbysFR+jO2b6ipTlo1alsOQ+t1B/s01nZ2QHZYkS+WD22bPWMO6ucbUsQ+NAUm44muL4GkdI4EXEIsZ3PEbHgg=
