@@ -211,8 +211,9 @@ instance PStruct P_Declaration where
                                 ++(name . pTgt . dec_sign) decl++
                (let mults=if null ([Uni,Tot]>-dec_prps decl) then dec_prps decl>-[Uni,Tot] else dec_prps decl in
                 if null mults then "" else "["++intercalate "," (map showP mults)++"]")++
-               (if null(unwords (dec_pragma decl)) then "" else
-                " PRAGMA "++unwords (dec_pragma decl))
+               (case unwords (dec_pragma decl) of
+                  "  " -> ""
+                  p    -> " PRAGMA "++ p)
                 ++ unwords (map showP (dec_Mean decl))
 
 instance PStruct PMeaning where
