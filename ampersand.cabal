@@ -41,7 +41,7 @@ library
                      base == 4.9.*,
                      bytestring == 0.10.*,
                      conduit == 1.2.*,
-                     conduit-extra == 1.1.15.*,
+                     conduit-extra == 1.1.16.*,
                      conduit-combinators == 1.1.*,
                      containers == 0.5.*,
                      csv == 0.1.*,
@@ -68,7 +68,7 @@ library
                      transformers == 0.5.*,
                      utf8-string == 1.0.*,
                      wl-pprint == 1.2.*,
-                     yaml == 0.8.22.*,
+                     yaml == 0.8.23.*,
                      yaml-config == 0.4.*,
                      xlsx == 0.4.3.*,
                      zlib == 0.6.*
