@@ -139,6 +139,7 @@ library
                      Ampersand.Output,
                      Ampersand.Output.FSpec2Excel,
                      Ampersand.Output.FSpec2Pandoc,
+                     Ampersand.Output.FSpec2Solidity,
                      Ampersand.Output.FSpec2SQL,
                      Ampersand.Output.PandocAux,
                      Ampersand.Output.Population2Xlsx,
