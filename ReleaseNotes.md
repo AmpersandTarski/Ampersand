@@ -1,6 +1,7 @@
 # Release notes of Ampersand
 ## Unreleased changes
   * [Issue #682](https://github.com/AmpersandTarski/Ampersand/issues/682) New experimental feature to generate solidity output.]
+  * Upgraded to LTS-8.22
 
 ## v3.8.6 (7 july 2017)
   * [Issue #674](https://github.com/AmpersandTarski/Ampersand/issues/674) New feature for ExecEngine to navigate user to other interface
