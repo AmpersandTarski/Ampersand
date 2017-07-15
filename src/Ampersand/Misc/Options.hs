@@ -52,6 +52,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , proofs :: Bool
                        , haskell :: Bool   -- if True, generate the F-structure as a Haskell source file
                        , sqlDump :: Bool   -- if True, generate a dump of SQL statements (for debugging)
+                       , genSolidity :: Bool -- if True, generate a Solidity output file.
                        , dirOutput :: String -- the directory to generate the output in.
                        , outputfile :: String -- the file to generate the output in.
                        , crowfoot :: Bool   -- if True, generate conceptual models and data models in crowfoot notation
@@ -232,6 +233,7 @@ getOptions' envOpts =
                       , proofs           = False
                       , haskell          = False
                       , sqlDump          = False
+                      , genSolidity      = False
                       , crowfoot         = False
                       , blackWhite       = False
                       , doubleEdges      = True
@@ -489,6 +491,10 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["sqldump"]
                (NoArg (\opts -> opts{sqlDump = True}))
                "generate a dump of SQL queries (for debugging)."
+            , Public)
+          , (Option []        ["solidity"]
+               (NoArg (\opts -> opts{genSolidity = True}))
+               "generate a solidity output file."
             , Public)
           , (Option []        ["crowfoot"]
                (NoArg (\opts -> opts{crowfoot = True}))

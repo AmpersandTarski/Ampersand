@@ -54,6 +54,7 @@ generateAmpersandOutput multi = do
       , ( genFSpec    , doGenDocument      )
       , ( genFPAExcel , doGenFPAExcel      )
       , ( genPOPExcel , doGenPopsXLSX      )
+      , ( genSolidity , doGenSolidity      )
       , ( proofs      , doGenProofs        )
       , ( validateSQL , doValidateSQLTest  )
       , ( genPrototype, doGenProto         )
@@ -97,6 +98,14 @@ generateAmpersandOutput multi = do
        ; verboseLn opts $ "SQL queries dumpfile written into " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> baseName opts -<.> ".sqlDump"
+
+   doGenSolidity :: IO()
+   doGenSolidity =
+    do { verboseLn opts $ "Generating Solidity output for "++name fSpec
+       ; Text.writeFile outputFile (fSpec2Solidity multi)
+       ; verboseLn opts $ "Solidity output written into " ++ outputFile ++ "."
+       }
+    where outputFile = dirOutput opts </> baseName opts -<.> ".sol"
 
    doGenUML :: IO()
    doGenUML =
