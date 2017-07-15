@@ -63,8 +63,7 @@ matrix:
                   ,sources: [hvr-ghc]}}
     os: osx
 
-  # Build with the newest GHC and cabal-install. This is an accepted failure,
-  # see below.
+  # Build with the newest GHC and cabal-install.
   - env: BUILD=cabal GHCVER=head  CABALVER=head
     compiler: ": #GHC HEAD"
     addons: {apt: {packages: [ cabal-install-head
@@ -74,14 +73,13 @@ matrix:
                              , mysql-client-5.6
                              ] 
                   ,sources: [hvr-ghc]}}
-  # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
     compiler: ": #stack nightly"
     addons: {apt: {packages: [libgmp-dev]}}
 
 
   allow_failures:
-  - env: BUILD=cabal GHCVER=8.0.2 CABALVER=1.24
+  # Nightly builds are allowed to fail
   - env: BUILD=stack ARGS="--resolver nightly"
   - env: BUILD=cabal GHCVER=head  CABALVER=head
 
