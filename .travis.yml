@@ -86,7 +86,7 @@ matrix:
   - env: BUILD=cabal GHCVER=head  CABALVER=head
 
   # OSX builds currently (sept 2016) do not work, because PHP isn't available
-  - env: BUILD=stack ARGS="" osx
+  - env: BUILD=stack GHCVER=8.0.2 STACK_YAML=stack.yaml osx
   - env: BUILD=cabal GHCVER=8.0.2 CABALVER=1.24 osx
 
 
