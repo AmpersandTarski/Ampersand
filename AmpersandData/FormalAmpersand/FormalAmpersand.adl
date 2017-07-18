@@ -1,4 +1,4 @@
-CONTEXT FormalAmpersand IN ENGLISH LATEX
+CONTEXT RAP3 IN ENGLISH LATEX
 
 INCLUDE "AST.adl" 
 THEMES Plugs, Context, Specialization
