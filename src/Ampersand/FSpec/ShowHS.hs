@@ -516,7 +516,8 @@ instance ShowHSName Interface where
 instance ShowHS Interface where
  showHS opts indent ifc
   = intercalate indent
-        [ "Ifc { ifcRoles  = " ++ show(ifcRoles ifc)
+        [ "Ifc { ifcname   = " ++ show(ifcname ifc)
+        , "    , ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
         , wrap "    , ifcControls = " (indent++"                  ") (const showHSName) (ifcControls ifc)
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)

@@ -6,7 +6,7 @@ REPRESENT MySQLQuery TYPE BIGALPHANUMERIC
 
 
 RELATION versionInfo[Context*AmpersandVersion] [UNI,TOT]  -- e.g. 'Ampersand v3.0.3[master:029ea02], build time: 05-Feb-15 08:46:36 W. Europe Standard Time'
-RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
+RELATION dbName[Context*DatabaseName] [UNI]   -- e.g. 'GRCengine';
 
 -- HJO20150206 @Rieks: Willen we hier nog iets met signalTableName, isDev, autoRefreshInterval?
 
@@ -18,8 +18,9 @@ RELATION dbName[Context*DatabaseName] [UNI,TOT]   -- e.g. 'GRCengine';
 --[Rules]--
 --HJO20160916: Dit zou moeten gelden: IDENT Rules: Rule(ctxrs[Context*Rule]~,name[Rule*RuleName])
 RELATION name[Rule*RuleName] [UNI,TOT,SUR] -- e.g. 'ASY bfOUprop::BusinessFunction*BusinessFunction'
-RELATION ruleAdl[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[BusinessFunction]'
-REPRESENT Adl TYPE HUGEALPHANUMERIC
+-- What purpose has ruleAdl?
+--RELATION ruleAdl[Rule*Adl] [UNI,TOT] -- e.g. 'bfOUprop~ /\\ bfOUprop |- I[BusinessFunction]'
+--REPRESENT Adl TYPE HUGEALPHANUMERIC
 RELATION origin[Rule*Origin] [TOT] -- e.g. 'line 367:10, file "C:\\\\Ampersand\\\\Workspace\\\\NRM\\\\NRM-BasicProcesses.adl"'
 RELATION message[Rule*Message] -- e.g. 'bfOUprop[BusinessFunction] is not antisymmetric'
 RELATION srcConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
@@ -44,7 +45,7 @@ RELATION conjunct[Conjunct*Expression] [TOT]
 
 --[Roles]--
 
-VIEW Role : Role(name)
+-- VIEW Role : Role(name)
 -- TODO: IDENT: name and context
 RELATION allRoles[Context*Role] [SUR,INJ]
 RELATION name[Role*RoleName] [UNI,TOT]

@@ -48,7 +48,7 @@ content fSpec = unlines
     , "model named '"++name fSpec++"'."
     , ""
     , "-}"
-    , "CONTEXT FormalAmpersand IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."
+    , "CONTEXT FormalAmpersand"
     , showRelsFromPops pops
     , "" ]
     ++ intercalate [] (map (lines . showPop ) pops)  ++
@@ -361,6 +361,12 @@ instance MetaPopulations Interface where
   metaPops fSpec ifc =
       [ Pop "interfaces" "Context" "Interface" [Sur,Inj]
                  [(dirtyId ctx ctx, dirtyId ctx ifc) ]
+      , Pop "ifcname" "Interface" "String" [Uni,Tot]
+                 [(dirtyId ctx ifc, ifcname ifc) ]
+      , Pop "allRoles" "Context" "Role" []
+                 [(dirtyId ctx ctx, dirtyId ctx rol) | rol <- ifcRoles ifc]
+      , Pop "ifcObj" "Interface" "ObjectDef" [Uni,Tot]
+                 [(dirtyId ctx ifc, dirtyId ctx (ifcObj ifc)) ]
       ]
    where
     ctx = originalContext fSpec
@@ -681,6 +687,7 @@ instance AdlId Population
 instance AdlId IdentityDef
 instance AdlId ViewDef
 instance AdlId Interface
+instance AdlId ObjectDef
 instance AdlId Signature
 instance AdlId TType
 instance AdlId Conjunct

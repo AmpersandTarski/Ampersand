@@ -137,7 +137,7 @@ fspec2Workbook fSpec =
     showDetailsOfFunction :: Interface -> [Cell]
     showDetailsOfFunction ifc =
        [ emptyCell
-       , (string.name.ifcObj) ifc
+       , (string.name) ifc
        , string $ showLang lang $ fpaInterface ifc
        , (number . fromIntegral . fpVal . fpaInterface) ifc
        ]

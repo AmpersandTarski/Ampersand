@@ -355,7 +355,8 @@ instance Show A_Gen where
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
 
-data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
+data Interface = Ifc { ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
+                     , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
@@ -365,7 +366,7 @@ data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an in
 instance Eq Interface where
   s==s' = name s==name s'
 instance Named Interface where
-  name = name . ifcObj
+  name = ifcname
 instance Traced Interface where
   origin = ifcPos
 instance Unique Interface where
@@ -402,6 +403,8 @@ instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
   origin = objpos
+instance Unique ObjectDef where
+  showUnique = showUnique . origin
 data Cruds = Cruds { crudOrig :: Origin
                    , crudC :: Bool
                    , crudR :: Bool

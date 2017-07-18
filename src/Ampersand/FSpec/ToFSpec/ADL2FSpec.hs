@@ -354,7 +354,8 @@ makeFSpec opts context
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
-        [Ifc { ifcObj      = Obj { objnm   = name c
+        [Ifc { ifcname     = name c
+             , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
                                  , objcrud = fatal 371 "No default crud in generated interface"
@@ -379,7 +380,8 @@ makeFSpec opts context
      --end otherwise: default theme
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
-      = [Ifc { ifcObj      = Obj { objnm   = nm
+      = [Ifc { ifcname     = nm
+             , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
                                  , objcrud = fatal 400 "No default crud in generated interface"
