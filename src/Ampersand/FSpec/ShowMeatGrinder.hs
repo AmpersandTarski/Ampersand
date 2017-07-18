@@ -476,7 +476,7 @@ instance MetaPopulations Expression where
             (EDia (l,r)) -> makeBinaryTerm Diamond l r
             (ECps (l,r)) -> makeBinaryTerm Composition l r
             (ERad (l,r)) -> makeBinaryTerm RelativeAddition l r
-            (EPrd (l,r)) -> makeBinaryTerm CartesionProduct l r
+            (EPrd (l,r)) -> makeBinaryTerm CartesianProduct l r
             (EKl0 e)     -> makeUnaryTerm  KleeneStar e
             (EKl1 e)     -> makeUnaryTerm  KleenePlus e
             (EFlp e)     -> makeUnaryTerm  Converse   e
@@ -547,7 +547,7 @@ data UnaryOp =
 instance Unique UnaryOp where
   showUnique = show
 
-data BinOp = CartesionProduct
+data BinOp = CartesianProduct
            | Composition
            | Diamond
            | Difference
