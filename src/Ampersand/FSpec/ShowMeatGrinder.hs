@@ -362,7 +362,7 @@ instance MetaPopulations Interface where
       [ Pop "interfaces" "Context" "Interface" [Sur,Inj]
                  [(dirtyId ctx ctx, dirtyId ctx ifc) ]
       , Pop "ifcname" "Interface" "String" [Uni,Tot]
-                 [(dirtyId ctx ifc, ifcname ifc) ]
+                 [(dirtyId ctx ifc, show . ifcname $ ifc) ]
       , Pop "allRoles" "Context" "Role" []
                  [(dirtyId ctx ctx, dirtyId ctx rol) | rol <- ifcRoles ifc]
       , Pop "ifcObj" "Interface" "ObjectDef" [Uni,Tot]
