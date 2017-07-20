@@ -46,7 +46,7 @@ createMulti opts =
      when (genMetaFile opts) (dumpMetaFile gFSpec)
      if genMetaTables opts || genRap
      then do let gGrinded :: Guarded P_Context
-                 gGrinded = addGens <$> fAmpP_Ctx <*> join (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                 gGrinded = addGens <$> fAmpP_Ctx <*> (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
              let metaPopFSpec = pCtx2Fspec gGrinded
              return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, fAmpP_Ctx]
      else    return $ mkMulti <$> pure Nothing <*> gFSpec
@@ -64,9 +64,8 @@ createMulti opts =
                }
     dumpMetaFile :: Guarded FSpec -> IO()
     dumpMetaFile a = case a of
-              Checked fSpec -> let (filePath,metaContents) = makeMetaPopulationFile fSpec 
-                               in writeMetaFile (filePath,metaContents)
-              _ -> return ()
+              Checked fSpec -> writeMetaFile $ dumpGrindFile fSpec
+              _             -> return ()
     writeMetaFile :: (FilePath,String) -> IO ()
     writeMetaFile (filePath,metaContents) = do
         verboseLn opts ("Generating meta file in path "++dirOutput opts)
@@ -83,12 +82,6 @@ createMulti opts =
       where
        f []     = fatal 77 "merge must not be applied to an empty list"
        f (c:cs) = foldr mergeContexts c cs
-    grind :: FSpec -> Guarded P_Context
-    grind fSpec = f <$> uncurry parseCtx (makeMetaPopulationFile fSpec)
-      where
-       f (a,[]) = a
-       f _      = fatal 83 "Meatgrinder returns included file. That isn't anticipated."
-
 
 addSemanticModelOf :: Guarded P_Context -> Guarded P_Context -> Guarded P_Context
 addSemanticModelOf = liftM2 f

@@ -4,7 +4,7 @@ import Ampersand.Basics as X (fatal, Collection(..), Named(..))
 import Ampersand.FSpec.ShowHS as X
        (ShowHS(..), ShowHSName(..), fSpec2Haskell, haskellIdentifier)
 import Ampersand.FSpec.ShowMeatGrinder as X
-       (makeMetaPopulationFile)
+       (dumpGrindFile, grind )
 import Ampersand.FSpec.ToFSpec.Calc as X (showProof, showPrf)
 import Ampersand.FSpec.ToFSpec.ADL2FSpec as X (makeFSpec)
 import Ampersand.FSpec.ToFSpec.NormalForms as X

@@ -1,8 +1,11 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DuplicateRecordFields#-}
+{-# LANGUAGE OverloadedLabels #-}
 module Ampersand.FSpec.ShowMeatGrinder
-  (makeMetaPopulationFile)
+  ( dumpGrindFile
+  , grind )
 where
 
 import Data.List
@@ -19,16 +22,17 @@ import Ampersand.Misc
 import Ampersand.Core.ShowPStruct
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ParseTree
-     ( Prop(..)
-     , Traced(..)
-     , Role
-     , ConceptDef
-     )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Classes
 
-makeMetaPopulationFile :: FSpec -> (FilePath,String)
-makeMetaPopulationFile fSpec
+-- ^ Create a P_Context that contains meta-information from 
+--   an FSpec.
+grind :: FSpec -> P_Context
+grind fSpec =
+  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe extractFromPop . metaPops fSpec $ fSpec }
+
+dumpGrindFile :: FSpec -> (FilePath,String)
+dumpGrindFile fSpec
   = ("MetaPopulationFile.adl", content fSpec)
 
 {-SJ 2015-11-06 Strange that the function 'content' generates text.
@@ -604,8 +608,29 @@ instance MetaPopulations a => MetaPopulations [a] where
  metaPops fSpec = concatMap $ metaPops fSpec
  
 
-
------------------------------------------------------
+extractFromPop :: Pop -> Maybe P_Declaration
+extractFromPop pop =
+  case pop of 
+    Comment{} -> Nothing
+    Pop{}     -> 
+      Just P_Sgn { dec_nm = popName pop
+                 , dec_sign = P_Sign { pSrc = PCpt (popSource pop)
+                                     , pTgt = PCpt (popTarget pop)
+                                     }
+                 , dec_prps   = []
+                 , dec_pragma = []
+                 , dec_Mean   = []
+                 , dec_popu   = map tuple2Pair (popPairs pop)
+                 , pos        = position
+                 , dec_plug   = False
+                 }
+           where 
+             position = Origin "Extracted by the meatgrinder of Ampersand"
+             tuple2Pair :: (String,String)-> PAtomPair
+             tuple2Pair (s,t) = mkPair position (f s) (f t)
+                where f :: String -> PAtomValue
+                      f = ScriptString position 
+             -----------------------------------------------------
 data Pop = Pop { popName ::   String
                , popSource :: String
                , popTarget :: String
