@@ -15,7 +15,6 @@ PATTERN Concepts
 
     REPRESENT ConceptName,RelationName TYPE ALPHANUMERIC
 ENDPATTERN
-VIEW Concept: Concept(name[Concept*ConceptName])
 
 --    RULE "Identifiability of concepts": name[Concept*ConceptName];name[Concept*ConceptName]~ |- I[Concept]
 

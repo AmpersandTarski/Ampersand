@@ -152,7 +152,7 @@ data Rule =
         , rrexp ::    Expression                  -- ^ The rule expression
         , rrfps ::    Origin                      -- ^ Position in the Ampersand file
         , rrmean ::   AMeaning                    -- ^ Ampersand generated meaning (for all known languages)
-        , rrmsg ::    [Markup]                  -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+        , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
         , rrtyp ::    Signature                   -- ^ Allocated signature
         , rrdcl ::    Maybe (Prop,Declaration)    -- ^ The property, if this rule originates from a property on a Declaration

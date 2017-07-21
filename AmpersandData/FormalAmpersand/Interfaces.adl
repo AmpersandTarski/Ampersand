@@ -1,6 +1,5 @@
 CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
-INCLUDE "Interfaces.doc"
 
 -- RJ: I wish you guys would use relation names that are easily interpretable by people that do not know about the Haskell stuff behind all this. Use 'ifcPurpose' rather than 'ifcPrp', and use something like 'ifcViolatableRules' rather than 'viol'. More or less self explanatory naming is considered a good practice. Use it.
 

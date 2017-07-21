@@ -468,10 +468,15 @@ instance MetaPopulations Expression where
     EBrk e -> metaPops fSpec e
     _      ->
       [ Comment $ "Expression: "++showA expr++" ("++show (sign expr)++")"
-      , Pop "src" "Expression" "Concept" [Uni,Tot]
-             [(dirtyId ctx expr, dirtyId ctx (source expr))]
-      , Pop "tgt" "Expression" "Concept" [Uni,Tot]
-             [(dirtyId ctx expr, dirtyId ctx (target expr))]
+      , Pop "sign" "Expression" "Signature" [Uni,Tot]
+             [(dirtyId ctx expr, dirtyId ctx (sign expr))]
+-- SJ20170721: The following two are redundant. They must not be populated, so I have commented them away.
+--      , Pop "src" "Expression" "Concept" [Uni,Tot]
+--             [(dirtyId ctx expr, dirtyId ctx (source expr))]
+--      , Pop "tgt" "Expression" "Concept" [Uni,Tot]
+--             [(dirtyId ctx expr, dirtyId ctx (target expr))]
+      , Pop "showADL" "Expression" "ShowADL" [Uni,Tot]
+             [(dirtyId ctx expr, show (showA expr))]
       , Pop "showADL" "Expression" "ShowADL" [Uni,Tot]
              [(dirtyId ctx expr, show (showA expr))]
       ]++
@@ -495,12 +500,7 @@ instance MetaPopulations Expression where
             (EDcD dcl)   -> [Pop "bind" "BindedRelation" "Relation" [Uni]
                               [(dirtyId ctx expr,dirtyId ctx dcl)]
                             ]
-            (EDcI _)   -> -- HJO, 2016-09-03: I think the fishy part is, that I[X] isn't a Relation. (See the LDM of formalAmpersand)
-                            -- Hence, `EDcI cpt` isn't bound to a Relation. It isn't bound at all. It is just what it is: I[Cpt] 
-                            []
-                            --[Pop "bind" "BindedRelation" "Relation" [Uni,Tot]  -- SJ 2016-07-24 TODO: Here is something fishy going on...
-                            --  [(dirtyId ctx expr,dirtyId ctx (Isn cpt))]
-                            --]
+            (EDcI _)     -> []
             EEps{}       -> fatal 430 $ "EEps is not an expression in FormalAmpersand.\n"++
                                   "  Expression: "++showA expr++" ("++show (sign expr)++")" 
             (EDcV sgn)   -> [Pop "userSrc"  (show "V") "Concept"  [Uni,Tot]
@@ -538,8 +538,8 @@ instance MetaPopulations Expression where
       ]++metaPops fSpec arg
 
     -- | As long as FormalAmpersand doesn't need/know about Epsilons, 
-    --   we cannot inject epsilon expressions into it. Hence
-    --   the epsilon expression must be skipped over.
+    --   we will not inject epsilon expressions into it.
+    --   So the epsilon expression must be skipped over.
     --   This goes for brackets as well.   
     skipEpsilon :: Expression -> Expression
     skipEpsilon e =
@@ -576,20 +576,21 @@ instance MetaPopulations Rule where
  metaPops fSpec rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
-      , Pop "name"  "Rule" "RuleName" [Uni,Tot,Sur]
+      , Pop "name"  "Rule" "RuleName" [Uni,Tot,Sur]  -- checked
              [(dirtyId ctx rul, (show.name) rul)]
-      , Pop "urlEncodedName" "Rule" "EncodedName" [Uni]
+      , Pop "urlEncodedName" "Rule" "EncodedName" [Uni]  -- checked
              [(dirtyId ctx rul, (show . escapeNonAlphaNum . name) rul) 
              | rul `elem` vrules fSpec --Rule must be user defined to show graphic 
              ]
-      , Pop "origin"  "Rule" "Origin" [Uni,Tot]
+      , Pop "origin"  "Rule" "Origin" [Uni,Tot]  -- checked
              [(dirtyId ctx rul, (show.show.origin) rul)]
-      , Pop "message"  "Rule" "Message" []
+      , Pop "message"  "Rule" "Message" []  -- checked
              [(dirtyId ctx rul, show (aMarkup2String ReST m)) | m <- rrmsg rul, amLang m == fsLang fSpec ]
-      , Pop "srcConcept"  "Rule" "Concept" [Uni,Tot]
-             [(dirtyId ctx rul, (dirtyId ctx.source.rrexp) rul)]
-      , Pop "tgtConcept"  "Rule" "Concept" [Uni,Tot]
-             [(dirtyId ctx rul, (dirtyId ctx.target.rrexp) rul)]
+-- The following two are redundant. They should not be populated, because they are derivable from sign[Rule*Signature]. So I have commented them away.
+--      , Pop "srcConcept"  "Rule" "Concept" [Uni,Tot]  -- checked
+--             [(dirtyId ctx rul, (dirtyId ctx.source.rrexp) rul)]
+--      , Pop "tgtConcept"  "Rule" "Concept" [Uni,Tot]  -- checked
+--             [(dirtyId ctx rul, (dirtyId ctx.target.rrexp) rul)]
 --      , Pop "originatesFrom" "Conjunct" "Rule" [Uni,Tot]
 --             [(dirtyId ctx conj,dirtyId ctx rul) | (rule,conjs)<-allConjsPerRule fSpec, rule==rul,conj <- conjs]
       , Pop "formalExpression"  "Rule" "Expression" [Uni,Tot]
