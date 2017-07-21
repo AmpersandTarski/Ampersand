@@ -42,11 +42,15 @@ createMulti opts =
            if addSemanticMetaModel opts
            then addSemanticModelOf fAmpP_Ctx rawUserP_Ctx     
            else rawUserP_Ctx
+     let fAmpFSpec :: FSpec
+         fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
+                       Checked f -> f
+                       Errors e  -> fatal 51 $ "The FormalAmpersand ADL scripts are not type correct." ++ show e
      let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
-     when (genMetaFile opts) (dumpMetaFile gFSpec)
+     when (genMetaFile opts) (dumpMetaFile fAmpFSpec gFSpec)
      if genMetaTables opts || genRap
      then do let gGrinded :: Guarded P_Context
-                 gGrinded = addGens <$> fAmpP_Ctx <*> (grind <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                 gGrinded = addGens <$> fAmpP_Ctx <*> (grind fAmpFSpec <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
              let metaPopFSpec = pCtx2Fspec gGrinded
              return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, fAmpP_Ctx]
      else    return $ mkMulti <$> pure Nothing <*> gFSpec
@@ -62,9 +66,9 @@ createMulti opts =
                { userFSpec = x
                , metaFSpec = y
                }
-    dumpMetaFile :: Guarded FSpec -> IO()
-    dumpMetaFile a = case a of
-              Checked fSpec -> writeMetaFile $ dumpGrindFile fSpec
+    dumpMetaFile :: FSpec -> Guarded FSpec -> IO()
+    dumpMetaFile faSpec a = case a of
+              Checked fSpec -> writeMetaFile $ dumpGrindFile faSpec fSpec
               _             -> return ()
     writeMetaFile :: (FilePath,String) -> IO ()
     writeMetaFile (filePath,metaContents) = do

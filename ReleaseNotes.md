@@ -1,7 +1,7 @@
 # Release notes of Ampersand
 ## Unreleased changes
   * Upgraded to LTS-8.22
-  * Small refactoring of meatgrinder, inspired by issue #684
+  * Made the meatgrinder do better static analisys, inspired by issue #684
 
 ## v3.8.6 (7 july 2017)
   * [Issue #674](https://github.com/AmpersandTarski/Ampersand/issues/674) New feature for ExecEngine to navigate user to other interface

@@ -3,6 +3,7 @@ module Ampersand.Input.ADL1.Parser
     ( AmpParser
     , Include(..)
     , pContext
+    , pContent
     , pPopulations
     , pTerm
     , pRule
