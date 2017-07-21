@@ -868,7 +868,7 @@ mkContextOfPopsOnly :: [P_Population] -> P_Context
 mkContextOfPopsOnly pops =
   PCtx{ ctx_nm     = ""
       , ctx_pos    = []
-      , ctx_lang   = fatal 686 "No language because of excel import hack. Please report this as a bug"
+      , ctx_lang   = Nothing
       , ctx_markup = Nothing
       , ctx_thms   = []
       , ctx_pats   = []
