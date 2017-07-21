@@ -30,36 +30,30 @@ import Ampersand.Classes
 grind :: FSpec -> P_Context
 grind fSpec =
   (mkContextOfPopsOnly []) {ctx_ds = mapMaybe extractFromPop . metaPops fSpec $ fSpec }
-
+-- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
+--   The comments that are in Pop are preserved. 
 dumpGrindFile :: FSpec -> (FilePath,String)
 dumpGrindFile fSpec
-  = ("MetaPopulationFile.adl", content fSpec)
-
-{-SJ 2015-11-06 Strange that the function 'content' generates text.
-I would have expected a P-structure (of even an A-structure) instead.
-Is there a reason? 
-Answer: HJO: By directly generate a string, the resulting file can contain comment, which is 
-             useful for debugging. However, the idea is good. In future, we might change
-             it to create a P_Context instead of a String.
--} 
-content :: FSpec -> String
-content fSpec = unlines
-   ([ "{- Do not edit manually. This code has been generated!!!"
-    , "    Generated with "++ampersandVersionStr
-    , "    Generated at "++show (genTime (getOpts fSpec))
-    , " "
-    , "The populations defined in this file are the populations from the user's"
-    , "model named '"++name fSpec++"'."
-    , ""
-    , "-}"
-    , "CONTEXT FormalAmpersand IN ENGLISH -- (the language is chosen arbitrary, for it is mandatory but irrelevant."
-    , showRelsFromPops pops
-    , "" ]
-    ++ intercalate [] (map (lines . showPop ) pops)  ++
-    [ ""
-    , "ENDCONTEXT"
-    ])
-    where pops = metaPops fSpec fSpec
+  = ("MetaPopulationFile.adl", adl)
+  where
+    adl :: String
+    adl = unlines
+      ([ "{- Do not edit manually. This code has been generated!!!"
+        , "    Generated with "++ampersandVersionStr
+        , "    Generated at "++show (genTime (getOpts fSpec))
+        , " "
+        , "The populations defined in this file are the populations from the user's"
+        , "model named '"++name fSpec++"'."
+        , ""
+        , "-}"
+        , "CONTEXT FormalAmpersand"
+        , showRelsFromPops pops
+        , "" ]
+        ++ intercalate [] (map (lines . showPop ) pops)  ++
+        [ ""
+        , "ENDCONTEXT"
+        ])
+        where pops = metaPops fSpec fSpec
 
 {-SJ 2016-07-24 In generating the metapopulation of a script, we need to maintain a close relation
 with the A-structure. But why?
@@ -663,7 +657,7 @@ popNameSignature pop =
 
 showRelsFromPops :: [Pop] -> String
 showRelsFromPops pops
-  = intercalate "\n" [ "RELATION "++popNameSignature (head cl)++show (props cl)
+  = intercalate "\n" [ "RELATION "++popNameSignature (head cl) ++show (props cl)
                      | cl<-eqCl popNameSignature . filter isPop $ pops]
     where props = foldr1 uni . map popMult
           isPop Pop{}     = True
