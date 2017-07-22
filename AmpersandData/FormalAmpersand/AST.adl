@@ -25,7 +25,7 @@ RELATION urlEncodedName[Concept*EncodedName]
 RELATION userTrg["V"*Concept]
 RELATION context[Relation*Context]
 RELATION ttype[Concept*TType]
-RELATION allRoles[Context*Role
+RELATION allRoles[Context*Role]
 {- ******************************************** -}
 {- *** Einde elders neer te zetten relaties *** -}
 {- ******************************************** -}
