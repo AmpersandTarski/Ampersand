@@ -383,21 +383,12 @@ instance MetaPopulations Expression where
     _      ->
       [ Comment $ "Expression: "++showA expr++" ("++show (sign expr)++")"
       , Pop "sign" "Expression" "Signature"
-<<<<<<< HEAD
              [(dirtyId ctx expr, dirtyId ctx (sign expr))]
 -- SJ20170721: The following two are redundant. They must not be populated, so I have commented them away.
 --      , Pop "src" "Expression" "Concept" [Uni,Tot]
 --             [(dirtyId ctx expr, dirtyId ctx (source expr))]
 --      , Pop "tgt" "Expression" "Concept" [Uni,Tot]
 --             [(dirtyId ctx expr, dirtyId ctx (target expr))]
-=======
-             [(dirtyId ctx expr, dirtyId ctx (sign expr))] 
--- SJ20170721: The following two are redundant. They must not be populated, so I have commented them away. 
---      , Pop "src" "Expression" "Concept" [Uni,Tot] 
---             [(dirtyId ctx expr, dirtyId ctx (source expr))] 
---      , Pop "tgt" "Expression" "Concept" [Uni,Tot] 
---             [(dirtyId ctx expr, dirtyId ctx (target expr))] 
->>>>>>> development
       , Pop "showADL" "Expression" "ShowADL"
              [(dirtyId ctx expr, show (showA expr))]
       ]++
@@ -421,10 +412,10 @@ instance MetaPopulations Expression where
             (EDcD dcl)   -> [Pop "bind" "BindedRelation" "Relation"
                               [(dirtyId ctx expr,dirtyId ctx dcl)]
                             ]
-            (EDcI _)     -> []
+            EDcI{}       -> []
             EEps{}       -> fatal 430 $ "EEps is not an expression in FormalAmpersand.\n"++
                                   "  Expression: "++showA expr++" ("++show (sign expr)++")" 
-            (EDcV sgn)   -> []
+            EDcV{}       -> []
             (EMp1 v _)   -> [ Pop "singleton" "Singleton" "AtomValue"
                               [(dirtyId ctx expr,showP v)]
                             ]
