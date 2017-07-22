@@ -414,11 +414,7 @@ instance MetaPopulations Expression where
                             --]
             EEps{}       -> fatal 430 $ "EEps is not an expression in FormalAmpersand.\n"++
                                   "  Expression: "++showA expr++" ("++show (sign expr)++")" 
-            (EDcV sgn)   -> [Pop "userSrc"  (show "V") "Concept"
-                              [(dirtyId ctx expr,dirtyId ctx (source sgn))]
-                            ,Pop "userTrg"  (show "V") "Concept"
-                              [(dirtyId ctx expr,dirtyId ctx (target sgn))]
-                            ]
+            (EDcV sgn)   -> []
             (EMp1 v _)   -> [ Pop "singleton" "Singleton" "AtomValue"
                               [(dirtyId ctx expr,showP v)]
                             ]
