@@ -33,6 +33,10 @@ RELATION urlEncodedName[Pattern*EncodedName]
 RELATION interfaces[Role*Interface]
 RELATION context[Population*Context]
 RELATION language[Context*Language]
+RELATION message[Rule*Message]
+RELATION origin[Rule*Origin]
+RELATION versionInfo[Context*AmpersandVersion]
+RELATION urlEncodedName[Rule*EncodedName]
 {- ******************************************** -}
 {- *** Einde elders neer te zetten relaties *** -}
 {- ******************************************** -}
