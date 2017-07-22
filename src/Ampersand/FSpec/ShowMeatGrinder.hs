@@ -52,7 +52,7 @@ dumpGrindFile fromFormalAmpersand fSpec
         , "model named '"++name fSpec++"'."
         , ""
         , "-}"
-    , "CONTEXT FormalAmpersand"
+        , "CONTEXT "++name fSpec
         , showRelsFromPops pops
         , "" ]
         ++ intercalate [] (map (lines . showPop ) pops)  ++
@@ -283,11 +283,11 @@ instance MetaPopulations Interface where
   metaPops _ fSpec ifc =
       [ Pop "interfaces" "Context" "Interface"
                  [(dirtyId ctx ctx, dirtyId ctx ifc) ]
-      , Pop "ifcname" "Interface" "String" [Uni,Tot]
+      , Pop "ifcname" "Interface" "String"
                  [(dirtyId ctx ifc, show . ifcname $ ifc) ]
-      , Pop "allRoles" "Context" "Role" []
+      , Pop "allRoles" "Context" "Role"
                  [(dirtyId ctx ctx, dirtyId ctx rol) | rol <- ifcRoles ifc]
-      , Pop "ifcObj" "Interface" "ObjectDef" [Uni,Tot]
+      , Pop "ifcObj" "Interface" "ObjectDef"
                  [(dirtyId ctx ifc, dirtyId ctx (ifcObj ifc)) ]
       ]
    where
@@ -389,8 +389,7 @@ instance MetaPopulations Expression where
 --             [(dirtyId ctx expr, dirtyId ctx (source expr))]
 --      , Pop "tgt" "Expression" "Concept" [Uni,Tot]
 --             [(dirtyId ctx expr, dirtyId ctx (target expr))]
-      , Pop "showADL" "Expression" "ShowADL" [Uni,Tot]
-             [(dirtyId ctx expr, show (showA expr))]
+      , Pop "showADL" "Expression" "ShowADL"
              [(dirtyId ctx expr, show (showA expr))]
       ]++
       ( case skipEpsilon expr of
@@ -504,7 +503,6 @@ instance MetaPopulations Rule where
 --             [(dirtyId ctx rul, (dirtyId ctx.source.rrexp) rul)]
 --      , Pop "tgtConcept"  "Rule" "Concept" [Uni,Tot]  -- checked
 --             [(dirtyId ctx rul, (dirtyId ctx.target.rrexp) rul)]
-             [(dirtyId ctx rul, dirtyId ctx (rrexp rul))]
       , Pop "meaning"  "Rule" "Meaning"
              [(dirtyId ctx rul, show (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
       , Pop "sign" "Rule" "Signature"
