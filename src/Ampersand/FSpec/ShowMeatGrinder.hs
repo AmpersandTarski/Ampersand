@@ -568,7 +568,8 @@ extractFromPop fromFormalAmpersand pop =
                      , name (source r) == src
                      , name (target r) == tgt
                   ] of
-         []  -> fatal 673 $ "Formalampersand adl files do not contain a relation `"++rel++"["++src++"*"++tgt++"]`"
+         []  -> fatal 673 $ "A relation populated by the meatgrinder must be defined in Formalampersand adl files.\n"
+                          ++"   Violation: `"++rel++"["++src++"*"++tgt++"]`"
          [r] -> r
          rs  -> fatal 675 $ "Multiple relations that match?? Impossible!"++
                                concatMap (\r -> "\n  "++show r) rs

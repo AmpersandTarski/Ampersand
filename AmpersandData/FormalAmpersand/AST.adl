@@ -24,6 +24,15 @@ RELATION urlEncodedName[Concept*EncodedName]
 RELATION context[Relation*Context]
 RELATION ttype[Concept*TType]
 RELATION allRoles[Context*Role]
+RELATION sign[Expression*Signature]
+RELATION relsDefdIn[Pattern*Relation]
+RELATION maintains[Role*Rule]
+RELATION context[Population*Context]
+RELATION gens[Context*IsE]
+RELATION urlEncodedName[Pattern*EncodedName]
+RELATION interfaces[Role*Interface]
+RELATION context[Population*Context]
+RELATION language[Context*Language]
 {- ******************************************** -}
 {- *** Einde elders neer te zetten relaties *** -}
 {- ******************************************** -}
