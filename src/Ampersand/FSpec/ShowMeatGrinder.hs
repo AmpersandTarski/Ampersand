@@ -424,11 +424,7 @@ instance MetaPopulations Expression where
             (EDcI _)     -> []
             EEps{}       -> fatal 430 $ "EEps is not an expression in FormalAmpersand.\n"++
                                   "  Expression: "++showA expr++" ("++show (sign expr)++")" 
-            (EDcV sgn)   -> [Pop "userSrc"  (show "V") "Concept"
-                              [(dirtyId ctx expr,dirtyId ctx (source sgn))]
-                            ,Pop "userTrg"  (show "V") "Concept"
-                              [(dirtyId ctx expr,dirtyId ctx (target sgn))]
-                            ]
+            (EDcV sgn)   -> []
             (EMp1 v _)   -> [ Pop "singleton" "Singleton" "AtomValue"
                               [(dirtyId ctx expr,showP v)]
                             ]
@@ -577,7 +573,8 @@ extractFromPop fromFormalAmpersand pop =
                      , name (source r) == src
                      , name (target r) == tgt
                   ] of
-         []  -> fatal 673 $ "Formalampersand adl files do not contain a relation `"++rel++"["++src++"*"++tgt++"]`"
+         []  -> fatal 673 $ "A relation populated by the meatgrinder must be defined in Formalampersand adl files.\n"
+                          ++"   Violation: `"++rel++"["++src++"*"++tgt++"]`"
          [r] -> r
          rs  -> fatal 675 $ "Multiple relations that match?? Impossible!"++
                                concatMap (\r -> "\n  "++show r) rs
