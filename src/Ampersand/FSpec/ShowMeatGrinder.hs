@@ -295,17 +295,6 @@ instance MetaPopulations Interface where
    where
     ctx = originalContext fSpec
 
-instance MetaPopulations Atom where  --Why is this required??
-  metaPops _ fSpec atm =
-   [ Pop "pop" "Atom" "Concept"
-          [(dirtyId ctx atm, dirtyId ctx cpt)
-          |cpt <- atmRoots atm]
-  -- , Pop "repr"  "Atom" "Representation"
-  --        [(dirtyId ctx atm, (showValADL.atmVal) atm)]
-   ]
-   where
-    ctx = originalContext fSpec
-
 instance MetaPopulations Signature where
  metaPops _ fSpec sgn =
       [ Pop "src" "Signature" "Concept"
@@ -634,7 +623,7 @@ instance HasDirtyId Declaration
   where dirtyId ctx r
          = case Map.lookup r declMap of
             Nothing -> fatal 546 ("no relation known as: "++showUnique r)
-            Just i  -> DirtyId $ show ("Relation_"++show i)
+            Just i  -> DirtyId $ "Relation_"++show i
           where
            declMap :: Map.Map Declaration Int
            declMap = Map.fromList (zip (relsDefdIn ctx++[ Isn c | c<-concs ctx]) [1..])
@@ -642,7 +631,7 @@ instance HasDirtyId Prop
 instance HasDirtyId Expression
   where dirtyId ctx (EEps _ e') = dirtyId ctx e'
         dirtyId ctx (EBrk e') = dirtyId ctx e'
-        dirtyId _ e = DirtyId . show $ take 150 (showA e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
+        dirtyId _ e = DirtyId $ take 150 (showA e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
 instance HasDirtyId BinOp
 instance HasDirtyId UnaryOp
 instance HasDirtyId A_Context
@@ -667,7 +656,6 @@ instance HasDirtyId (PairViewSegment Expression)
   where dirtyId _ x = DirtyId $ show (typeOf x)++show (hash (show (hash x) ++ show (origin x)))
 instance HasDirtyId Bool
   where dirtyId _ = DirtyId . map toUpper . show
---instance HasDirtyId a => HasDirtyId [a] where
 
 
 
@@ -678,20 +666,6 @@ camelCase str = concatMap capitalize (words str)
     capitalize [] = []
     capitalize (s:ss) = toUpper s : ss
 
--- | utility function to concat dirtyId's, knowing that the individual strings are doublequoted
-concatDirtyIdStrings :: [String] -> String
-concatDirtyIdStrings [] = []
-concatDirtyIdStrings [s] = s
-concatDirtyIdStrings (s0:s1:ss)   
-  | length s0 < 2 = fatal 645 "String too short to have quotes: "++s0
-  | length s1 < 2 = fatal 646 "String too short to have quotes: "++s1
-  | otherwise = concatDirtyIdStrings (concatFirstTwo:ss)
-  where
-   concatFirstTwo = show (unquoted s0 ++ separator ++ unquoted s1)
-   separator = "."
-   unquoted = reverse . unqfst . reverse . unqfst
-   unqfst ('"':tl) = tl
-   unqfst _ = fatal 653 "expected quote, but it is not there!"
 nullContent :: Pop -> Bool
 nullContent Pop{popPairs = ps} = null ps
 nullContent Comment{}          = False
