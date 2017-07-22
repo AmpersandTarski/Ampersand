@@ -122,7 +122,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
 instance Eq FSpec where
  f == f' = name f == name f'
 instance Unique FSpec where
- showUnique = name
+ showUnique = showUnique . originalContext
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
@@ -264,7 +264,7 @@ instance Named PlugSQL where
 instance Eq PlugSQL where
   x==y = name x==name y
 instance Unique PlugSQL where
-  showUnique = name
+  showUnique = optionalQuote . name
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 

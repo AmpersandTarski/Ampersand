@@ -34,9 +34,15 @@ RELATION urlEncodedName[Pattern*EncodedName]
 RELATION interfaces[Role*Interface]
 RELATION context[Population*Context]
 RELATION language[Context*Language]
-{- ******************************************** -}
-{- *** Einde elders neer te zetten relaties *** -}
-{- ******************************************** -}
+RELATION message[Rule*Message]
+RELATION origin[Rule*Origin]
+RELATION versionInfo[Context*AmpersandVersion]
+RELATION urlEncodedName[Rule*EncodedName]
+RELATION context[IdentityDef*Context]
+{- ******************************************** 
+   *** Einde elders neer te zetten relaties *** 
+   ******************************************** 
+-}
 
 
 ENDCONTEXT
