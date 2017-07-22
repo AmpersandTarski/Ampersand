@@ -37,9 +37,10 @@ RELATION message[Rule*Message]
 RELATION origin[Rule*Origin]
 RELATION versionInfo[Context*AmpersandVersion]
 RELATION urlEncodedName[Rule*EncodedName]
-{- ******************************************** -}
-{- *** Einde elders neer te zetten relaties *** -}
-{- ******************************************** -}
+{- ******************************************** 
+   *** Einde elders neer te zetten relaties *** 
+   ******************************************** 
+-}
 
 
 ENDCONTEXT
