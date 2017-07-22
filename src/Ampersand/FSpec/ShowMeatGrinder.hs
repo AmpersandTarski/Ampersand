@@ -657,7 +657,6 @@ instance HasDirtyId (PairViewSegment Expression)
   where dirtyId _ x = DirtyId $ show (typeOf x)++show (hash (show (hash x) ++ show (origin x)))
 instance HasDirtyId Bool
   where dirtyId _ = DirtyId . map toUpper . show
---instance HasDirtyId a => HasDirtyId [a] where
 
 
 
@@ -668,20 +667,6 @@ camelCase str = concatMap capitalize (words str)
     capitalize [] = []
     capitalize (s:ss) = toUpper s : ss
 
--- | utility function to concat dirtyId's, knowing that the individual strings are doublequoted
-concatDirtyIdStrings :: [String] -> String
-concatDirtyIdStrings [] = []
-concatDirtyIdStrings [s] = s
-concatDirtyIdStrings (s0:s1:ss)   
-  | length s0 < 2 = fatal 645 "String too short to have quotes: "++s0
-  | length s1 < 2 = fatal 646 "String too short to have quotes: "++s1
-  | otherwise = concatDirtyIdStrings (concatFirstTwo:ss)
-  where
-   concatFirstTwo = show (unquoted s0 ++ separator ++ unquoted s1)
-   separator = "."
-   unquoted = reverse . unqfst . reverse . unqfst
-   unqfst ('"':tl) = tl
-   unqfst _ = fatal 653 "expected quote, but it is not there!"
 nullContent :: Pop -> Bool
 nullContent Pop{popPairs = ps} = null ps
 nullContent Comment{}          = False
