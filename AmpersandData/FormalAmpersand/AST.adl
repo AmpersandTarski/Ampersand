@@ -17,13 +17,14 @@ INCLUDE "Views.adl"
    *** in de FormalAmpersand scripts, maar worden door de 
    *** meatgrinder wél gevuld. 
 -}
-RELATION tgtConcept[Rule*Concept]
 RELATION interfaces[Context*Interface]
 RELATION name[Role*RoleName]
 RELATION markupText[Purpose*MarkupText]
 RELATION urlEncodedName[Concept*EncodedName]
 RELATION userTrg["V"*Concept]
 RELATION context[Relation*Context]
+RELATION ttype[Concept*TType]
+RELATION allRoles[Context*Role
 {- ******************************************** -}
 {- *** Einde elders neer te zetten relaties *** -}
 {- ******************************************** -}

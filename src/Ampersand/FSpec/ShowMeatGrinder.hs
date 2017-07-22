@@ -376,10 +376,13 @@ instance MetaPopulations Expression where
     EBrk e -> metaPops fromFormalAmpersand fSpec e
     _      ->
       [ Comment $ "Expression: "++showA expr++" ("++show (sign expr)++")"
-      , Pop "src" "Expression" "Concept"
-             [(dirtyId ctx expr, dirtyId ctx (source expr))]
-      , Pop "tgt" "Expression" "Concept"
-             [(dirtyId ctx expr, dirtyId ctx (target expr))]
+      , Pop "sign" "Expression" "Signature"
+             [(dirtyId ctx expr, dirtyId ctx (sign expr))] 
+-- SJ20170721: The following two are redundant. They must not be populated, so I have commented them away. 
+--      , Pop "src" "Expression" "Concept" [Uni,Tot] 
+--             [(dirtyId ctx expr, dirtyId ctx (source expr))] 
+--      , Pop "tgt" "Expression" "Concept" [Uni,Tot] 
+--             [(dirtyId ctx expr, dirtyId ctx (target expr))] 
       , Pop "showADL" "Expression" "ShowADL"
              [(dirtyId ctx expr, show (showA expr))]
       ]++
@@ -494,10 +497,11 @@ instance MetaPopulations Rule where
              [(dirtyId ctx rul, (show.show.origin) rul)]
       , Pop "message"  "Rule" "Message"
              [(dirtyId ctx rul, show (aMarkup2String ReST m)) | m <- rrmsg rul, amLang m == fsLang fSpec ]
-      , Pop "srcConcept"  "Rule" "Concept"
-             [(dirtyId ctx rul, (dirtyId ctx.source.rrexp) rul)]
-      , Pop "tgtConcept"  "Rule" "Concept"
-             [(dirtyId ctx rul, (dirtyId ctx.target.rrexp) rul)]
+-- The following two are redundant. They should not be populated, because they are derivable from sign[Rule*Signature]. So I have commented them away. 
+--      , Pop "srcConcept"  "Rule" "Concept" [Uni,Tot]  -- checked 
+--             [(dirtyId ctx rul, (dirtyId ctx.source.rrexp) rul)] 
+--      , Pop "tgtConcept"  "Rule" "Concept" [Uni,Tot]  -- checked 
+--             [(dirtyId ctx rul, (dirtyId ctx.target.rrexp) rul)] 
       , Pop "formalExpression"  "Rule" "Expression"
              [(dirtyId ctx rul, dirtyId ctx (rrexp rul))]
       , Pop "meaning"  "Rule" "Meaning"
