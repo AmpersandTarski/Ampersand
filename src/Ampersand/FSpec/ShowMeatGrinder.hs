@@ -285,6 +285,8 @@ instance MetaPopulations Interface where
                  [(dirtyId ctx ctx, dirtyId ctx ifc) ]
       , Pop "ifcname" "Interface" "String"
                  [(dirtyId ctx ifc, PopAlphaNumeric . ifcname $ ifc) ]
+--      , Pop "ifcPos" "Interface" "Origin"
+--                 [(dirtyId ctx ifc, dirtyId ctx (ifcPos ifc))]
       , Pop "allRoles" "Context" "Role"
                  [(dirtyId ctx ctx, dirtyId ctx rol) | rol <- ifcRoles ifc]
       , Pop "ifcObj" "Interface" "ObjectDef"
