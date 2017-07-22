@@ -287,17 +287,6 @@ instance MetaPopulations Interface where
    where
     ctx = originalContext fSpec
 
-instance MetaPopulations Atom where  --Why is this required??
-  metaPops _ fSpec atm =
-   [ Pop "pop" "Atom" "Concept"
-          [(dirtyId ctx atm, dirtyId ctx cpt)
-          |cpt <- atmRoots atm]
-  -- , Pop "repr"  "Atom" "Representation"
-  --        [(dirtyId ctx atm, (showValADL.atmVal) atm)]
-   ]
-   where
-    ctx = originalContext fSpec
-
 instance MetaPopulations Signature where
  metaPops _ fSpec sgn =
       [ Pop "src" "Signature" "Concept"
@@ -636,7 +625,7 @@ instance HasDirtyId Declaration
   where dirtyId ctx r
          = case Map.lookup r declMap of
             Nothing -> fatal 546 ("no relation known as: "++showUnique r)
-            Just i  -> DirtyId $ show ("Relation_"++show i)
+            Just i  -> DirtyId $ "Relation_"++show i
           where
            declMap :: Map.Map Declaration Int
            declMap = Map.fromList (zip (relsDefdIn ctx++[ Isn c | c<-concs ctx]) [1..])
@@ -644,7 +633,7 @@ instance HasDirtyId Prop
 instance HasDirtyId Expression
   where dirtyId ctx (EEps _ e') = dirtyId ctx e'
         dirtyId ctx (EBrk e') = dirtyId ctx e'
-        dirtyId _ e = DirtyId . show $ take 150 (showA e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
+        dirtyId _ e = DirtyId $ take 150 (showA e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
 instance HasDirtyId BinOp
 instance HasDirtyId UnaryOp
 instance HasDirtyId A_Context
