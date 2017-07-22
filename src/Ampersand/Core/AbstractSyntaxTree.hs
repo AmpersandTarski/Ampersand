@@ -104,7 +104,7 @@ instance Show A_Context where
 instance Eq A_Context where
   c1 == c2  =  name c1 == name c2
 instance Unique A_Context where
-  showUnique = name
+  showUnique = optionalQuote . name
 instance Named A_Context where
   name  = ctxnm
 
@@ -131,7 +131,7 @@ data Pattern
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
-  showUnique = name
+  showUnique = optionalQuote . name
 
 instance Named Pattern where
  name = ptnm
@@ -369,7 +369,7 @@ instance Named Interface where
 instance Traced Interface where
   origin = ifcPos
 instance Unique Interface where
-  showUnique = name
+  showUnique = optionalQuote . name
 -- Utility function for looking up interface refs
 getInterfaceByName :: [Interface] -> String -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
@@ -484,7 +484,7 @@ data AAtomValue
                 }
   | AtomValueOfONE deriving (Eq,Prelude.Ord, Show)
 
-instance Unique AAtomValue where   -- TODO:  this in incorrect!
+instance Unique AAtomValue where   -- TODO:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique pop@AAVString{}   = (show.aavhash) pop
   showUnique pop@AAVInteger{}  = (show.aavint) pop
   showUnique pop@AAVFloat{}    = (show.aavflt) pop
@@ -772,7 +772,7 @@ makeConcept "ONE" = ONE
 makeConcept v = PlainConcept (hash v) (pack v)
 
 instance Unique A_Concept where
-  showUnique = name
+  showUnique = optionalQuote . name
 instance Hashable A_Concept where
   hashWithSalt s cpt =
      s `hashWithSalt` (case cpt of
@@ -1029,3 +1029,4 @@ unsafePAtomVal2AtomValue' typ mCpt pav
 data Typology = Typology { tyroot :: A_Concept -- the most generic concept in the typology 
                          , tyCpts :: [A_Concept] -- all concepts, from generic to specific
                          } deriving Show
+
