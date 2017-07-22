@@ -11,6 +11,7 @@ import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ShowMeatGrinder
 import Ampersand.Input
 import Ampersand.FSpec.ToFSpec.ADL2FSpec
+import Data.List
 import System.FilePath
 import Control.Monad
 
@@ -45,7 +46,8 @@ createMulti opts =
      let fAmpFSpec :: FSpec
          fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
                        Checked f -> f
-                       Errors e  -> fatal 51 $ "The FormalAmpersand ADL scripts are not type correct." ++ show e
+                       Errors err-> fatal 51 $ "The FormalAmpersand ADL scripts are not type correct:\n" 
+                                                ++ intercalate (replicate 30 '=') (map showErr err)
      let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
      when (genMetaFile opts) (dumpMetaFile fAmpFSpec gFSpec)
      if genMetaTables opts || genRap
