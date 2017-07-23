@@ -46,5 +46,5 @@ optionalQuote str
   needsQuotes =
    case words str of
     []  -> True
-    [w] -> False
+    [_] -> False
     _   -> True

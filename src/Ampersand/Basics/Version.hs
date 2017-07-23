@@ -16,15 +16,16 @@ fatal lineNr msg
  = exitWith . Fatal . lines $
         ("!"++ showCS (tail (getCallStack ?loc)) ++
           "             "++ampersandVersionWithoutBuildTimeStr++"\n"++
-          "             error nr: "++show lineNr++"\n  "++
-            case drop maxLen msg of
-                [] -> msg
-                _  -> take maxLen msg ++"\n<The rest of error message has been cut off.>"
+          "             error nr: "++show lineNr++"\n  "++lazyCutoff maxLen msg
         )
  where showCS (root:rest) = unlines (showCallSite root : map (indent . showCallSite) rest)
-       showCS [] = "fatal without a call site (check Version.hs to add a call site)\n"
+       showCS [] = "fatal  without a call site (check Version.hs to add a call site)\n"
        indent l = "             " ++ l
        showCallSite (f, loc) = f ++ ", called at " ++ prettySrcLoc loc
+       lazyCutoff _   []   = ""
+       lazyCutoff 0   _    = "\n<Ampersand's fatal-mechanism has removed the rest of this error message.>"
+       lazyCutoff n (c:cs) = c: lazyCutoff (n-1) cs
+
 {-# NOINLINE fatal #-}
 
 -- | String, containing the Ampersand version, including the build timestamp.
