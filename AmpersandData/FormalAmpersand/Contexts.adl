@@ -1,9 +1,7 @@
 CONTEXT RAP IN ENGLISH
 INCLUDE "Rules.adl"
 INCLUDE "Relations.adl"
---! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 
-RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
 
 VIEW Signature: Signature( TXT "[" , src;name[Concept*ConceptName] , TXT "*" , tgt;name[Concept*ConceptName] , TXT "]" )
 
@@ -28,7 +26,7 @@ PATTERN Context
     CONCEPT Context "A context is the root of the abstract syntax tree of a valid Ampersand rule specification." 
     VIEW Context: Context(name[Context*ContextName])  
     REPRESENT ContextName TYPE ALPHANUMERIC
-    RELATION name[Context*ContextName] [UNI,TOT,SUR]
+    RELATION name[Context*ContextName] [UNI] --Removed TOT, for it gives a nasty violation
     MEANING "The name of a context."
       ROLE ExecEngine MAINTAINS "del unused ContextName"
       RULE "del unused ContextName" : I[ContextName] |- name~;name
