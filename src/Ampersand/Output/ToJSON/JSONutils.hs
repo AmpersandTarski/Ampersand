@@ -45,7 +45,7 @@ ampersandDefault :: AT.Options
 ampersandDefault = defaultOptions {AT.fieldLabelModifier = stripLabel}
   where stripLabel str 
           = case filter (isPrefixOf pfx) (tails str) of
-                [] -> fatal 71 $ "Label at Haskell side must contain `JSON`: "++str
+                [] -> fatal ("Label at Haskell side must contain `JSON`: "++str)
                 xs -> snd . splitAt (length pfx) . head $ xs
              where pfx = "JSON"    
   

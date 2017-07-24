@@ -259,18 +259,18 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
       makeRel :: String -> Declaration -- This function exists solely for the purpose of dom and cod
       makeRel str
           =    Sgn { decnm   = pack str
-                   , decsgn  = fatal 217 "Do not refer to decsgn of this dummy relation"
+                   , decsgn  = fatal "Do not refer to decsgn of this dummy relation"
                    , decprps = [Uni,Tot]
                    , decprps_calc = Nothing
                    , decprL  = ""
                    , decprM  = ""
                    , decprR  = ""
-                   , decMean = fatal 223 "Do not refer to decMean of this dummy relation"
+                   , decMean = fatal "Do not refer to decMean of this dummy relation"
                    , decfpos = OriginUnknown
                    , decusr  = False
-                   , decpat  = fatal 228 "Do not refer to decpat of this dummy relation"
-                   , decplug = fatal 229 "Do not refer to decplug of this dummy relation"
-                   , dech    = fatal 272 "Do not use EQ on this dummy relation"
+                   , decpat  = fatal "Do not refer to decpat of this dummy relation"
+                   , decplug = fatal "Do not refer to decplug of this dummy relation"
+                   , dech    = fatal "Do not use EQ on this dummy relation"
                    }
 
 --objOrShow :: Lang -> PredLogic -> String
@@ -321,19 +321,19 @@ assemble expr
             Flr  -> R (Funs a [dcl]) (Isn tv) (Funs b [])
             Frl  -> R (Funs a []) (Isn sv) (Funs b [dcl])
             Rn   -> R (Funs a []) dcl (Funs b [])
-            Wrap -> fatal 246 "function res not defined when denote e == Wrap. "
+            Wrap -> fatal "function res not defined when denote e == Wrap. "
    f _ e@(EFlp (EDcD dcl)) ((a,sv),(b,tv)) = res
     where
      res = case denote e of
             Flr  -> R (Funs a [dcl]) (Isn tv) (Funs b [])
             Frl  -> R (Funs a []) (Isn sv) (Funs b [dcl])
             Rn   -> R (Funs b []) dcl (Funs a [])
-            Wrap -> fatal 253 "function res not defined when denote e == Wrap. "
+            Wrap -> fatal "function res not defined when denote e == Wrap. "
    f exclVars (EFlp e)       (a,b) = f exclVars e (b,a)
    f _ (EMp1 val _) _             = Atom . showP $ val
    f _ (EDcI _) ((a,_),(b,tv))     = R (Funs a []) (Isn tv) (Funs b [])
    f _ (EDcV _) _                  = Atom "True"
-   f _ e _ = fatal 298 ("Non-exhaustive pattern in subexpression "++showA e++" of assemble (<"++showA expr++">)")
+   f _ e _ = fatal ("Non-exhaustive pattern in subexpression "++showA e++" of assemble (<"++showA expr++">)")
 
 -- fECps treats the case of a composition.  It works as follows:
 --       An expression, e.g. r;s;t , is translated to Exists (zip ivs ics) (Conj (frels s t)),
@@ -403,11 +403,11 @@ assemble expr
       conr = dropWhile isCpl es -- There is at least one positive term, because conr is used in the second alternative (and the first alternative deals with absence of positive terms).
                                 -- So conr is not empty.
       antr = let x = (map (notCpl . flp) . reverse . takeWhile isCpl) es in
-             if null x then fatal 367 "Entering in an empty foldr1" else x
+             if null x then fatal "Entering in an empty foldr1" else x
       conl = let x = (reverse . dropWhile isCpl . reverse) es in
-             if null x then fatal 369 "Entering in an empty foldr1" else x
+             if null x then fatal "Entering in an empty foldr1" else x
       antl = let x = (map (notCpl . flp) . takeWhile isCpl . reverse) es in
-             if null x then fatal 371 "Entering in an empty foldr1" else x
+             if null x then fatal "Entering in an empty foldr1" else x
      -- Step 2: assemble the intermediate variables from at the right spot in each fragment.
       frels :: Var -> Var -> [PredLogic]
       frels src trg = [r v w | ((r,_,_),v,w)<-zip3 res' (src: ivs) (ivs++[trg]) ]

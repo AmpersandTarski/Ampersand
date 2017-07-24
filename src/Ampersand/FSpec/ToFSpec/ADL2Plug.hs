@@ -59,7 +59,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
           isStoredFlipped :: Declaration -> Bool
           isStoredFlipped d
             = snd . fromMaybe ftl . wayToStore $ d
-              where ftl = fatal 52 $ "relation `"++name d++"` cannot be stored in this table. "++show (properties d)++"\n\n"++show d
+              where ftl = fatal ("relation `"++name d++"` cannot be stored in this table. "++show (properties d)++"\n\n"++show d)
           conceptLookuptable :: [(A_Concept,SqlAttribute)]
           conceptLookuptable    = [(cpt,cptAttrib cpt) | cpt <-cpts]
           dclLookuptable :: [RelStore]
@@ -77,13 +77,13 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 
           lookupC :: A_Concept -> SqlAttribute
           lookupC cpt           = case [f |(c',f)<-conceptLookuptable, cpt==c'] of
-                                    []  -> fatal 70 $ "Concept `"++name cpt++"` is not in the lookuptable."
+                                    []  -> fatal $ "Concept `"++name cpt++"` is not in the lookuptable."
                                          ++"\ncpts: "++show cpts
                                          ++"\ndcls: "++show (map (\d -> name d++show (sign d)++" "++show (properties d)) dcls)
                                          ++"\nlookupTable: "++show (map fst conceptLookuptable)
                                     x:_ -> x
           cptAttrib :: A_Concept -> SqlAttribute
-          cptAttrib cpt = Att { attName = fromMaybe (fatal 99 $ "No name found for `"++name cpt++"`. ")
+          cptAttrib cpt = Att { attName = fromMaybe (fatal ("No name found for `"++name cpt++"`. "))
                                                     (lookup (Left cpt) colNameMap) 
                               , attExpr = expr
                               , attType = repr cpt
@@ -100,7 +100,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                              then EDcI cpt
                              else EEps cpt (Sign tableKey cpt)
           dclAttrib :: Declaration -> SqlAttribute
-          dclAttrib dcl = Att { attName = fromMaybe (fatal 113 $ "No name found for `"++name dcl++"`. ")
+          dclAttrib dcl = Att { attName = fromMaybe (fatal ("No name found for `"++name dcl++"`. "))
                                                     (lookup (Right dcl) colNameMap)
                               , attExpr = dclAttExpression
                               , attType = repr (target dclAttExpression)
@@ -212,8 +212,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 wayToStore :: Declaration -> Maybe (A_Concept,Bool)
 wayToStore d =
   case d of 
-  Isn{} -> fatal 38 "I is not expected here." -- These relations are already in the kernel
-  Vs{}  -> fatal 39 "V is not expected here" -- Vs are not implemented at all
+  Isn{} -> fatal "I is not expected here." -- These relations are already in the kernel
+  Vs{}  -> fatal "V is not expected here" -- Vs are not implemented at all
   Sgn{} ->
        case (isInj d, isUni d) of
             (False  , False  ) -> Nothing --Will become a link-table
@@ -251,7 +251,7 @@ suitableAsKey st =
     Integer          -> True
     Float            -> False
     Object           -> True
-    TypeOfOne        -> fatal 143 "ONE has no key at all. does it?"
+    TypeOfOne        -> fatal "ONE has no key at all. does it?"
 
  
 

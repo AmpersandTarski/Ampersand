@@ -27,7 +27,7 @@ instance Statistics FSpec where
 instance Statistics Pattern where
   nInterfaces _ = 0 --TODO -> check correctness
   nPatterns   _ = 1
-  nFpoints   _  = fatal 43 "function points are not defined for patterns at all."
+  nFpoints   _  = fatal "function points are not defined for patterns at all."
 
 
 -- \***********************************************************************
@@ -42,4 +42,4 @@ instance Statistics Interface where
 --    nInterfaces (Obj{objmsub=Nothing}) = 2 -- this is an association, i.e. a binary relation --TODO -> check correctness
 --    nInterfaces _ = 4 -- this is an entity with one or more attributes. --TODO -> check correctness
 --    nPatterns   _ = 0
---    nFpoints    _ = fatal 60 "function points are not defined for ObjectDefs at all."
+--    nFpoints    _ = fatal "function points are not defined for ObjectDefs at all."

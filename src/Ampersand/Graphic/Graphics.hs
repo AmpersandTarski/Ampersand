@@ -185,7 +185,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                              ]
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
-        _  -> fatal 276 "No conceptual graph defined for this type."
+        _  -> fatal "No conceptual graph defined for this type."
 
 writePicture :: Options -> Picture -> IO()
 writePicture opts pict
@@ -291,7 +291,7 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
         baseNodeId c
             = case lookup c (zip cpts [(1::Int)..]) of
                 Just i -> "cpt_"++show i
-                _      -> fatal 169 $ "element "++name c++" not found by nodeLabel."
+                _      -> fatal ("element "++name c++" not found by nodeLabel.")
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         relationNodesAndEdges ::

@@ -114,10 +114,10 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
                                 ] where flipr = contents (EFlp r)
          EKl0 x     -> if source x == target x --see #166
                        then transClosureMap (unionWith Set.union (contents x) (contents (EDcI (source x))))
-                       else fatal 87 ("source and target of "++show x++show (sign x)++ " are not equal.")
+                       else fatal ("source and target of "++show x++show (sign x)++ " are not equal.")
          EKl1 x     -> if source x == target x --see #166
                        then transClosureMap (contents x)
-                       else fatal 90 ("source and target of "++show x++show (sign x)++ " are not equal.")
+                       else fatal ("source and target of "++show x++show (sign x)++ " are not equal.")
          EFlp x     -> fromListWith Set.union [(b,Set.singleton a) | (a,bs)<-assocs (contents x), b<-Set.toList bs]
          ECpl x     -> contents (EDcV (sign x) .-. x)
          EBrk x     -> contents x

@@ -32,11 +32,11 @@ prim2rel :: Expression -> Declaration
 prim2rel e
  = case e of
     EDcD d@Sgn{} -> d
-    EDcD{}       -> fatal 23 "invalid declaration in EDcD{}"
+    EDcD{}       -> fatal "invalid declaration in EDcD{}"
     EDcI c       -> Isn c
     EDcV sgn     -> Vs sgn
     EMp1 _ c     -> Isn c
-    _            -> fatal 40 $ "only primitive expressions should be found here.\nHere we see: " ++ show e
+    _            -> fatal ("only primitive expressions should be found here.\nHere we see: " ++ show e)
 
 instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
   concs    (a,b) = concs a `uni` concs b
@@ -154,7 +154,7 @@ instance ConceptStructure Interface where
 
 instance ConceptStructure Declaration where
   concs         d = concs (sign d)
-  expressionsIn _ = fatal 148 "expressionsIn not allowed on Declaration"
+  expressionsIn d = fatal ("expressionsIn not allowed on Declaration of "++show d)
 
 instance ConceptStructure Rule where
   concs r   = concs (rrexp r) `uni` concs (rrviol r)
@@ -199,4 +199,4 @@ instance ConceptStructure (PairViewSegment Expression) where
 instance ConceptStructure A_Gen where
   concs g@Isa{}  = nub [gengen g,genspc g]
   concs g@IsE{}  = nub (genspc g: genrhs g)
-  expressionsIn _ = fatal 160 "expressionsIn not allowed on A_Gen"
+  expressionsIn g = fatal ("expressionsIn not allowed on A_Gen:\n"++show g)

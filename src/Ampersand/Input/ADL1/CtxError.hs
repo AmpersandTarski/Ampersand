@@ -106,7 +106,7 @@ mkMultipleRepresentTypesError cpt rs
  = Errors [CTXE o msg]
     where 
       o = case rs of
-           []  -> fatal 97 "Call of mkMultipleRepresentTypesError with no Representations"
+           []  -> fatal "Call of mkMultipleRepresentTypesError with no Representations"
            (_,x):_ -> x
       msg = intercalate "\n" $
              [ "The Concept "++showA cpt++" was shown to be representable with multiple types."
@@ -119,7 +119,7 @@ mkMultipleTypesInTypologyError tripls
     where
       o = case tripls of
             (_,_,x:_):_ -> x
-            _  -> fatal 112 "No origin in list."
+            _  -> fatal "No origin in list."
       msg = intercalate "\n" $
              [ "Concepts in the same typology must have the same TYPE."
              , "The following concepts are in the same typology, but not all"
@@ -131,7 +131,7 @@ mkMultipleRootsError roots gs
  = Errors [CTXE o msg]
     where 
       o = case gs of
-           [] -> fatal 103 "mkMultipleRootsError called with no A_Gen."
+           [] -> fatal "mkMultipleRootsError called with no A_Gen."
            g:_ -> origin g
       msg = intercalate "\n" $
              [ "A typology must have at most one root concept."
@@ -214,7 +214,7 @@ uniqueNames a = case (filter moreThanOne . groupWith name)  a of
                         concatMap (("\n    "++ ) . show . origin) (x:xs)
                         ++"."
                        )
-     messageFor _ = fatal 90 "messageFor must only be used on lists with more that one element!"
+     messageFor _ = fatal "messageFor must only be used on lists with more that one element!"
 
 mkDanglingPurposeError :: Purpose -> CtxError
 mkDanglingPurposeError p = CTXE (origin p) $ "Purpose refers to non-existent " ++ showA (explObj p)
@@ -235,7 +235,7 @@ mkEndoPropertyError orig ps =
   where 
     msg = intercalate "\n" $
        case ps of
-         []  -> fatal 227 "What property is causing this error???"
+         []  -> fatal "What property is causing this error???"
          [p] -> ["Property "++show p++" can only be used for relations where"
                 ,"  source and target are equal."]
          _   -> ["Properties "++showAnd++" can only be used for relations where"
@@ -254,7 +254,7 @@ mkIncompatibleAtomValueError :: PAtomValue -> String -> CtxError
 mkIncompatibleAtomValueError pav = CTXE (origin pav)
 
 mkInterfaceRefCycleError :: [Interface] -> CtxError
-mkInterfaceRefCycleError []                 = fatal 108 "mkInterfaceRefCycleError called on []"
+mkInterfaceRefCycleError []                 = fatal "mkInterfaceRefCycleError called on []"
 mkInterfaceRefCycleError cyclicIfcs@(ifc:_) = -- take the first one (there will be at least one) as the origin of the error
   CTXE (origin ifc) $ "Interfaces form a reference cycle:\n" ++
                       unlines [ "- " ++ show (name i) ++ " at position " ++ show (origin i) | i <- cyclicIfcs ]
@@ -266,7 +266,7 @@ mkIncompatibleInterfaceError objDef expTgt refSrc ref =
                          ", which is not comparable to the target " ++ show (name expTgt) ++ " of the expression at this field."
 
 mkMultipleDefaultError :: (A_Concept, [ViewDef]) -> CtxError
-mkMultipleDefaultError (_, [])              = fatal 118 "mkMultipleDefaultError called on []"
+mkMultipleDefaultError (_, [])              = fatal "mkMultipleDefaultError called on []"
 mkMultipleDefaultError (c, vds@(vd0:_)) =
   CTXE (origin vd0) $ "Multiple default views for concept " ++ show (name c) ++ ":" ++
                       concat ["\n    VIEW " ++ name vd ++ " (at " ++ show (origin vd) ++ ")"

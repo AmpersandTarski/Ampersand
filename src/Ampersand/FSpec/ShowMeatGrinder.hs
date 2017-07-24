@@ -194,36 +194,36 @@ instance MetaPopulations Purpose where
           ExplConceptDef x 
             -> ( "Concept"  , case filter (\cpt -> name cpt == name x) (concs ctx) of
                                 [cpt]  -> Just $ dirtyId ctx cpt
-                                ys -> fatal 192 $ show (length ys)++" concepts found that match `"++name x++"`")
+                                ys -> fatal $ show (length ys)++" concepts found that match `"++name x++"`")
           ExplDeclaration x
             -> ( "Relation" , case filter (x == ) (relsDefdIn ctx) of
                                 [rel]  -> Just $ dirtyId ctx rel
-                                ys -> fatal 196 $ show (length ys)++" relations found that match `"++show x++"`")
+                                ys -> fatal $ show (length ys)++" relations found that match `"++show x++"`")
           ExplRule x
             -> ( "Rule"     , case filter (\rul -> name rul == x) (allRules ctx) of
                                 [rul]  -> Just $ dirtyId ctx rul
-                                ys -> fatal 200 $ show (length ys)++" rules found that match `"++show x++"`")
+                                ys -> fatal $ show (length ys)++" rules found that match `"++show x++"`")
           ExplIdentityDef x
             -> ( "Identity" , case filter (\idn -> name idn == x) (identities ctx) of
                                 [idn]  -> Just $ dirtyId ctx idn
-                                ys -> fatal 200 $ show (length ys)++" identities found that match `"++show x++"`")
+                                ys -> fatal $ show (length ys)++" identities found that match `"++show x++"`")
           ExplViewDef x
             -> ( "View"     , case filter (\view -> name view == x) (viewDefs ctx) of
                                 [idn]  -> Just $ dirtyId ctx idn
-                                ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
+                                ys -> fatal $ show (length ys)++" views found that match `"++show x++"`")
           ExplPattern x
             -> ( "Pattern"  , case filter (\pat -> name pat == x) (patterns ctx) of
                                 [pat]  -> Just $ dirtyId ctx pat
-                                ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
+                                ys -> fatal $ show (length ys)++" views found that match `"++show x++"`")
           ExplInterface x
             -> ( "Interface", case filter (\ifc -> name ifc == x) (ctxifcs ctx) of
                                 [ifc]  -> Just $ dirtyId ctx ifc
-                                ys -> fatal 200 $ show (length ys)++" views found that match `"++show x++"`")
+                                ys -> fatal $ show (length ys)++" views found that match `"++show x++"`")
           ExplContext x 
             -> ( "Context"  , case filter (\y -> name y == x) [ctx] of
                                 []  -> Nothing
                                 [y] -> Just $ dirtyId ctx y
-                                ys  -> fatal 200 $ show (length ys)++" contexts found that match `"++show x++"`")
+                                ys  -> fatal $ show (length ys)++" contexts found that match `"++show x++"`")
 
 
 instance MetaPopulations A_Gen where
@@ -332,7 +332,7 @@ instance MetaPopulations Declaration where
  --     , Pop "decmean" "Relation" "Meaning"
  --            [(dirtyId ctx dcl, (show.concatMap showP.ameaMrk.decMean) dcl)]
       ]
-     Isn{} -> fatal 335 "Isn should not be populated by the meatgrinder."
+     Isn{} -> fatal "Isn should not be populated by the meatgrinder."
 {- SJ sept 2nd, 2016: I don't think we should populate the I-relation from the meatgrinder,
 but I'm not sure why. -}
 {- HJ july 22, 2017: This is because Isn{} must be removed from relation. It is an expression, not a relation.
@@ -350,7 +350,7 @@ but I'm not sure why. -}
              [(dirtyId ctx dcl,dirtyId ctx (target dcl))]
       ] -}
 
-     Vs{}  -> fatal 158 "Vs should not be populated by the meatgrinder."
+     Vs{}  -> fatal "Vs should not be populated by the meatgrinder."
    )++
    metaPops fromFormalAmpersand fSpec (sign dcl)
    where
@@ -400,13 +400,13 @@ instance MetaPopulations Expression where
             (EKl1 e)     -> makeUnaryTerm  KleenePlus e
             (EFlp e)     -> makeUnaryTerm  Converse   e
             (ECpl e)     -> makeUnaryTerm  UnaryMinus e
-            (EBrk _)     -> fatal 348 "This should not happen, because EBrk has been handled before"
+            (EBrk _)     -> fatal "This should not happen, because EBrk has been handled before"
             (EDcD dcl)   -> [Pop "bind" "BindedRelation" "Relation"
                               [(dirtyId ctx expr,dirtyId ctx dcl)]
                             ]
             EDcI{}       -> []
-            EEps{}       -> fatal 430 $ "EEps is not an expression in FormalAmpersand.\n"++
-                                  "  Expression: "++showA expr++" ("++show (sign expr)++")" 
+            EEps{}       -> fatal $ "EEps is not an expression in FormalAmpersand.\n"++
+                                    "  Expression: "++showA expr++" ("++show (sign expr)++")" 
             EDcV{}       -> []
             (EMp1 v _)   -> [ Pop "singleton" "Singleton" "AtomValue"
                               [(dirtyId ctx expr,(PopAlphaNumeric . showP) v)]
@@ -529,11 +529,11 @@ extractFromPop fromFormalAmpersand pop =
          case string2AValue . unwords . words . show $ tuples of
             Checked x -> case checkAtomValues aRel x of
                           Checked _ -> x
-                          Errors err -> fatal 664 $
+                          Errors err -> fatal $
                               "ERROR in tupels that are generated in the meatgrinder for relation\n"
                             ++"  "++rel++"["++src++"*"++tgt++"]"
                             ++intercalate (replicate 30 '=') (map showErr err)
-            Errors err -> fatal 668 $ 
+            Errors err -> fatal $ 
                               "ERROR in tupels that are generated in the meatgrinder for relation\n"
                             ++"  "++rel++"["++src++"*"++tgt++"]"
                             ++intercalate (replicate 30 '=') (map showErr err)
@@ -556,11 +556,11 @@ extractFromPop fromFormalAmpersand pop =
                      , name (source r) == src
                      , name (target r) == tgt
                   ] of
-         []  -> fatal 673 $ "A relation populated by the meatgrinder must be defined in Formalampersand adl files.\n"
-                          ++"   Violation: `"++rel++"["++src++"*"++tgt++"]`"
+         []  -> fatal $ "A relation populated by the meatgrinder must be defined in Formalampersand adl files.\n"
+                      ++"   Violation: `"++rel++"["++src++"*"++tgt++"]`"
          [r] -> r
-         rs  -> fatal 675 $ "Multiple relations that match?? Impossible!"++
-                               concatMap (\r -> "\n  "++show r) rs
+         rs  -> fatal $ "Multiple relations that match?? Impossible!"++
+                           concatMap (\r -> "\n  "++show r) rs
       string2AValue :: String -> Guarded [PAtomPair]
       string2AValue = runParser pContent "Somewhere in formalAmpersand files"
  
@@ -601,7 +601,7 @@ popNameSignature :: Pop -> String
 popNameSignature pop =
    case pop of
      Pop{}     -> popName pop++" ["++popSource pop++" * "++popTarget pop++"]"
-     Comment{} -> fatal 503 "Must not call popName on a Comment-combinator."
+     Comment{} -> fatal "Must not call popName on a Comment-combinator."
 
 showRelsFromPops :: [Pop] -> String
 showRelsFromPops pops
@@ -622,7 +622,7 @@ instance HasDirtyId ConceptDef
 instance HasDirtyId Declaration
   where dirtyId ctx r
          = case Map.lookup r declMap of
-            Nothing -> fatal 546 ("no relation known as: "++showUnique r)
+            Nothing -> fatal ("no relation known as: "++showUnique r)
             Just i  -> DirtyId $ "Relation_"++show i
           where
            declMap :: Map.Map Declaration Int

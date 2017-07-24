@@ -99,7 +99,7 @@ chpNatLangReqs lev fSpec =
 {-
                 ( case nCpts of
                    [] 
-                     -> fatal 136 "Unexpected. There should be at least one concept to introduce."
+                     -> fatal "Unexpected. There should be at least one concept to introduce."
                    [x]
                      -> para(   (str.l) (NL "Nu volgt de definitie van het begrip "
                                         ,EN "At this point, the definition of ")
@@ -252,8 +252,8 @@ chpNatLangReqs lev fSpec =
                          else " " <> pragmaShow prR)
                      <> "."
 
-       Isn{}     -> fatal 299 "Isn  is not supposed to be here expected here."
-       Vs{}      -> fatal 300 "Vs  is not supposed to be here expected here."
+       Isn{}     -> fatal "Isn  is not supposed to be here expected here."
+       Vs{}      -> fatal "Vs  is not supposed to be here expected here."
    where srcAtom = showValADL (apLeft pair)
          tgtAtom = showValADL (apRight pair)
          prL = decprL decl

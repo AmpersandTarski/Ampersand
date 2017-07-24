@@ -63,7 +63,7 @@ cdAnalysis fSpec =
    buildClass :: A_Concept -> Class
    buildClass root 
      = case classOf root of
-         Nothing -> fatal 67 $ "Concept is not a class: `"++name root++"`."
+         Nothing -> fatal $ "Concept is not a class: `"++name root++"`."
          Just exprs ->
            OOClass { clName = name root
                    , clcpt  = Just root
@@ -80,10 +80,10 @@ cdAnalysis fSpec =
      case filter isOfCpt . eqCl source $ attribs of -- an equivalence class wrt source yields the attributes that constitute an OO-class.
         []   -> Nothing
         [es] -> Just es
-        _    -> fatal 82 "Only one list of expressions is expected here"
+        _    -> fatal "Only one list of expressions is expected here"
      where
       isOfCpt :: [Expression] -> Bool
-      isOfCpt []    = fatal 85 "List must not be empty!"
+      isOfCpt []    = fatal "List must not be empty!"
       isOfCpt (e:_) = source e == cpt
       attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
 
@@ -210,7 +210,7 @@ tdAnalysis fSpec =
            EEps{} -> Nothing
            EDcD d -> if target d `elem` kernelConcepts then Just (expr,f) else Nothing
            EFlp (EDcD d) -> if source d `elem` kernelConcepts then Just (expr,f) else Nothing
-           _ -> fatal 200 ("Unexpected expression: "++show expr)
+           _ -> fatal ("Unexpected expression: "++show expr)
        mkRel :: PlugSQL -> (Expression,SqlAttribute) -> Ampersand.Graphic.ClassDiagram.Association
        mkRel t (expr,f) =
             OOAssoc { assSrc = sqlname t
@@ -219,7 +219,7 @@ tdAnalysis fSpec =
                     , asslhr = attName f
                     , assTgt = name . getConceptTableFor fSpec . target $ expr
                     , assrhm = mults expr
-                    , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal 229 "no relations used in expr"
+                    , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
                     , assmdcl = Nothing
                     }
 

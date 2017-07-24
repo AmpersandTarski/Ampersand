@@ -249,8 +249,8 @@ buildInterface fSpec allIfcs ifc =
                       }
                   InterfaceRef{} -> 
                    case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                     []      -> fatal 44 $ "Referenced interface " ++ siIfcId si ++ " missing"
-                     (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ siIfcId si
+                     []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
+                     (_:_:_) -> fatal ("Multiple declarations of referenced interface " ++ siIfcId si)
                      [i]     -> 
                            if siIsLink si
                            then do { let (src, mDecl, tgt) = getSrcDclTgt iExp

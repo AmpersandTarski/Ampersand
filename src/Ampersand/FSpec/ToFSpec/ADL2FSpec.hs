@@ -123,7 +123,7 @@ makeFSpec opts context
      typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
            [t] -> t
-           _   -> fatal 121 $ "concept "++name cpt++" should be in exactly one typology!"
+           _   -> fatal ("concept "++name cpt++" should be in exactly one typology!")
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
@@ -220,9 +220,9 @@ makeFSpec opts context
      lookupView' :: String -> ViewDef
      lookupView'  viewId =
        case filter (\v -> name v == viewId) $ viewDefs context of
-         []   -> fatal 174 $ "Undeclared view " ++ show viewId ++ "." -- Will be caught by static analysis
+         []   -> fatal ("Undeclared view " ++ show viewId ++ ".") -- Will be caught by static analysis
          [vd] -> vd
-         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map name vds) -- Will be caught by static analysis
+         vds  -> fatal ("Multiple views with id " ++ show viewId ++ ": " ++ show (map name vds)) -- Will be caught by static analysis
      
    -- get all views for a specific concept and all larger concepts.
      getAllViewsForConcept' :: A_Concept -> [ViewDef]
@@ -252,7 +252,7 @@ makeFSpec opts context
      --------------
      vsqlplugs = case ctxsql context of
                    []  -> []
-                   _   -> fatal 281 "User defined plugs have heavily bitrotted." --REMARK -> no optimization like try2specific, because these plugs are user defined
+                   _   -> fatal "User defined plugs are heavily bitrotted." --REMARK -> no optimization like try2specific, because these plugs are user defined
      definedplugs = map InternalPlug vsqlplugs
                  ++ map ExternalPlug (ctxphp context)
      allplugs = definedplugs ++      -- all plugs defined by the user
@@ -340,7 +340,7 @@ makeFSpec opts context
              = [ Obj { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
                      , objctx  = t
-                     , objcrud = fatal 351 "No default crud in generated interface"
+                     , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                      }
@@ -358,7 +358,7 @@ makeFSpec opts context
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
                                  , objctx  = EDcI c
-                                 , objcrud = fatal 371 "No default crud in generated interface"
+                                 , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
                                  }
@@ -372,7 +372,7 @@ makeFSpec opts context
         , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
         , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
           not (length objattributes==1 && isIdent(objctx(head objattributes)))
-        , let e0=head cl, not (null e0) || fatal 284 "null e0"
+        , let e0=head cl, not (null e0) || fatal "null e0"
         , let c=source (head e0)
         , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]++
                        [ Isn cpt |  EDcI cpt <- concatMap primsMentionedIn (expressionsIn objattributes)]
@@ -384,7 +384,7 @@ makeFSpec opts context
              , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
                                  , objctx  = EDcI ONE
-                                 , objcrud = fatal 400 "No default crud in generated interface"
+                                 , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
                                  }
@@ -400,12 +400,12 @@ makeFSpec opts context
               nm' i  = plural printingLanguage (name c) ++ show i
               nms = [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)]
               nm
-                | null nms = fatal 355 "impossible"
+                | null nms = fatal "impossible"
                 | otherwise = head nms
               att = Obj { objnm    = name c
                         , objpos   = Origin "generated attribute object: step 4b"
                         , objctx   = EDcV (Sign ONE c)
-                        , objcrud  = fatal 419 "No default crud in generated interface."
+                        , objcrud  = fatal "No default crud in generated interface."
                         , objmView = Nothing
                         , objmsub  = Nothing
                         }
@@ -446,7 +446,7 @@ tblcontents ci ps plug
    = case plug of
      BinSQL{}    -> let expr = case dLkpTbl plug of
                                  [store] -> EDcD (rsDcl store)
-                                 ss       -> fatal 540 $ "Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss)
+                                 ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
                     in [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps expr]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
@@ -455,7 +455,7 @@ tblcontents ci ps plug
  --and the first attribute is unique and not null
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
         case attributes plug of 
-         []   -> fatal 593 "no attributes in plug."
+         []   -> fatal "no attributes in plug."
          f:fs -> (nub.transpose)
                  ( map Just cAtoms
                  : [case fExp of
@@ -471,7 +471,7 @@ tblcontents ci ps plug
                     = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
-                       ps' -> fatal 428 . unlines $ 
+                       ps' -> fatal . unlines $ 
                                 [ "There is an attempt to populate multiple values into "
                                 , "     the row of table `"++name plug++"`, where id = "++show(showValADL a)++":"
                                 , "     Values to be inserted in field `"++name att++"` are: "++show (map (showValADL . apRight) ps')

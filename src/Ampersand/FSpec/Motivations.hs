@@ -33,7 +33,7 @@ class  Named a => Motivated a where
                                                     --  * Different purposes from different sources make me want to document them all.
                                                     --  * Combining two overlapping scripts from (i.e. from different authors) may cause multiple purposes.
   purposeOf fSpec l x = case expls of
-                        []  -> Nothing -- fatal 40 "No purpose is generated! (should be automatically generated and available in FSpec.)"
+                        []  -> Nothing -- fatal "No purpose is generated! (should be automatically generated and available in FSpec.)"
                         ps  -> Just ps
 
    where expls = [e | e<-explanations fSpec
@@ -50,13 +50,13 @@ class  Named a => Motivated a where
         , explForObj x (explObj e)                  -- informally: "if x and e are the same"
      ]
 instance Motivated ConceptDef where
---  meaning _ cd = fatal 49 ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
+--  meaning _ cd = fatal ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
   explForObj x (ExplConceptDef x') = x == x'
   explForObj _ _ = False
   explanations _ = []
 
 instance Motivated A_Concept where
---  meaning _ c = fatal 54 ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
+--  meaning _ c = fatal ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
   explForObj x (ExplConceptDef cd) = name x == name cd
   explForObj _ _ = False
   explanations _ = []
@@ -320,13 +320,13 @@ instance Motivated Rule where
 --           } ]
 
 instance Motivated Pattern where
---  meaning _ pat = fatal 324 ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
+--  meaning _ pat = fatal ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
   explForObj x (ExplPattern str) = name x == str
   explForObj _ _ = False
   explanations = ptxps
 
 instance Motivated Interface where
---  meaning _ obj = fatal 342 ("Interfaces have no intrinsic meaning, (used with interface '"++name obj++"')")
+--  meaning _ obj = fatal ("Interfaces have no intrinsic meaning, (used with interface '"++name obj++"')")
   explForObj x (ExplInterface str) = name x == str
   explForObj _ _ = False
   explanations _ = []
@@ -342,7 +342,7 @@ instance Meaning Rule where
   meaning l r = case filter isLang (ameaMrk (rrmean r)) of
                   []   -> Nothing
                   [m]  -> Just m
-                  _    -> fatal 381 ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
+                  _    -> fatal ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
                   where isLang m = l == amLang m
 
 instance Meaning Declaration where
@@ -352,12 +352,12 @@ instance Meaning Declaration where
                in case filter isLang (ameaMrk (decMean d)) of
                     []   -> Nothing
                     [m]  -> Just m
-                    _    -> fatal 388 ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
-      Isn{} -> fatal 370 "meaning is undefined for Isn"
-      Vs{}  -> fatal 371 "meaning is undefined for Vs"
+                    _    -> fatal ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
+      Isn{} -> fatal "meaning is undefined for Isn"
+      Vs{}  -> fatal "meaning is undefined for Vs"
 
 instance Motivated FSpec where
---  meaning _ fSpec = fatal 329 ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")
+--  meaning _ fSpec = fatal ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")
   explForObj x (ExplContext str) = name x == str
   explForObj _ _ = False
   explanations fSpec

@@ -37,7 +37,7 @@ createMulti opts =
            addSemanticMetaModel opts 
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
-               $ fatal 38 "With the given switches, the formal ampersand model is not supposed to play any part."
+               $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
      rawUserP_Ctx <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let userP_Ctx =
            if addSemanticMetaModel opts
@@ -46,8 +46,8 @@ createMulti opts =
      let fAmpFSpec :: FSpec
          fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
                        Checked f -> f
-                       Errors err-> fatal 51 $ "The FormalAmpersand ADL scripts are not type correct:\n" 
-                                                ++ intercalate (replicate 30 '=') (map showErr err)
+                       Errors err-> fatal ("The FormalAmpersand ADL scripts are not type correct:\n" ++
+                                           intercalate (replicate 30 '=') (map showErr err))
      let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
      when (genMetaFile opts) (dumpMetaFile fAmpFSpec gFSpec)
      if genMetaTables opts || genRap
@@ -86,7 +86,7 @@ createMulti opts =
     merge :: Guarded [P_Context] -> Guarded P_Context
     merge ctxs = f <$> ctxs
       where
-       f []     = fatal 77 "merge must not be applied to an empty list"
+       f []     = fatal "merge must not be applied to an empty list"
        f (c:cs) = foldr mergeContexts c cs
 
 addSemanticModelOf :: Guarded P_Context -> Guarded P_Context -> Guarded P_Context

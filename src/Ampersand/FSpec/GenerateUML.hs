@@ -261,7 +261,7 @@ refLabeledId label =
  do { lidMap <- gets labelIdMap
     ; case Map.lookup label lidMap of
           Just lid -> return lid
-          Nothing  -> fatal 147 $ "Requesting non-existent label "++label
+          Nothing  -> fatal ("Requesting non-existent label "++label)
     }
 
 mkLabeledId :: String -> String -> StateUML ()

@@ -152,7 +152,7 @@ addSlashes = Text.pack . addSlashes' . Text.unpack
     addSlashes' "" = ""
 
 addToLast :: [a] -> [[a]] -> [[a]]
-addToLast _ [] = fatal 109 "addToLast: empty list"
+addToLast _ [] = fatal "addToLast: empty list"
 addToLast s as = init as<>[last as<>s]
 
 showPhpStr :: Text.Text -> Text.Text
