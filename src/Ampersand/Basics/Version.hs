@@ -11,12 +11,12 @@ maxLen = 1500000 -- This trick is to make sure the process is terminated after t
 
 -- | a function to create error message in a structured way, containing the version of Ampersand.
 --   It throws an error, showing a (module)name and a number. This makes debugging pretty easy.
-fatal :: (?loc :: CallStack) => Int -> String -> a
+fatal :: (HasCallStack) => Int -> String -> a
 fatal lineNr msg
  = exitWith . Fatal . lines $
-        ("!"++ showCS (tail (getCallStack ?loc)) ++
-          "             "++ampersandVersionWithoutBuildTimeStr++"\n"++
-          "             error nr: "++show lineNr++"\n  "++lazyCutoff maxLen msg
+        ("!             "++ampersandVersionWithoutBuildTimeStr++"\n"++
+          "             error nr: "++show lineNr++"\n  "++lazyCutoff maxLen msg++"\n"++
+          prettyCallStack callStack 
         )
  where showCS (root:rest) = unlines (showCallSite root : map (indent . showCallSite) rest)
        showCS [] = "fatal  without a call site (check Version.hs to add a call site)\n"
