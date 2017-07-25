@@ -33,61 +33,61 @@ import Ampersand.Input.Parsing
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
 grind :: FSpec -> FSpec -> P_Context
-grind fromFormalAmpersand fSpec =
-  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop fromFormalAmpersand) . metaPops fromFormalAmpersand fSpec $ fSpec }
+grind formalAmpersand userFspec =
+  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) . metaPops formalAmpersand userFspec $ userFspec }
 
   -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
 dumpGrindFile :: FSpec -> FSpec -> (FilePath,String)
-dumpGrindFile fromFormalAmpersand fSpec
+dumpGrindFile formalAmpersand userFspec
   = ("MetaPopulationFile.adl", adl)
   where
     adl :: String
     adl = unlines
       ([ "{- Do not edit manually. This code has been generated!!!"
         , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show (genTime (getOpts fSpec))
+        , "    Generated at "++show (genTime (getOpts userFspec))
         , " "
         , "The populations defined in this file are the populations from the user's"
-        , "model named '"++name fSpec++"'."
+        , "model named '"++name userFspec++"'."
         , ""
         , "-}"
-        , "CONTEXT "++name fSpec
+        , "CONTEXT "++name userFspec
         , showRelsFromPops pops
         , "" ]
         ++ intercalate [] (map (lines . showPop ) pops)  ++
         [ ""
         , "ENDCONTEXT"
         ])
-        where pops = metaPops fromFormalAmpersand fSpec fSpec
+        where pops = metaPops formalAmpersand userFspec userFspec
 
 {-SJ 2016-07-24 In generating the metapopulation of a script, we need to maintain a close relation
 with the A-structure. But why?
 -} 
 instance MetaPopulations FSpec where
- metaPops fromFormalAmpersand _ fSpec =
+ metaPops formalAmpersand _ userFspec =
    filter (not.nullContent)
-    ( metaPops fromFormalAmpersand fSpec ctx
-    ++[ --Pop "dbName" "Context" "DatabaseName" [(dirtyId ctx ctx, (show.dbName.getOpts) fSpec)]
+    ( metaPops formalAmpersand userFspec ctx
+    ++[ --Pop "dbName" "Context" "DatabaseName" [(dirtyId ctx ctx, (show.dbName.getOpts) userFspec)]
         Pop "maintains" "Role" "Rule" 
-                 [(dirtyId ctx rol, dirtyId ctx rul) | (rol,rul) <-  fRoleRuls fSpec ]
+                 [(dirtyId ctx rol, dirtyId ctx rul) | (rol,rul) <-  fRoleRuls userFspec ]
       , Pop "interfaces" "Role" "Interface"
                  [(dirtyId ctx rol, dirtyId ctx ifc) | ifc <- ctxifcs ctx, rol<-ifcRoles ifc]
       ]
---    ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) fSpec++")"]
---    ++   concatMap extract (allConjuncts fSpec)
---    ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) fSpec++")"]
---    ++   concatMap extract (sortByName (plugInfos fSpec))
-    ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) fSpec++")"]
-    ++   concatMap (extract . fst) (fRoles fSpec)
+--    ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) userFspec++")"]
+--    ++   concatMap extract (allConjuncts userFspec)
+--    ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) userFspec++")"]
+--    ++   concatMap extract (sortByName (plugInfos userFspec))
+    ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) userFspec++")"]
+    ++   concatMap (extract . fst) (fRoles userFspec)
     )
   where 
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
     extract :: MetaPopulations a => a -> [Pop]
-    extract = metaPops fromFormalAmpersand fSpec
+    extract = metaPops formalAmpersand userFspec
 
 instance MetaPopulations A_Context where
- metaPops fromFormalAmpersand fSpec ctx =
+ metaPops formalAmpersand userFspec ctx =
    filter (not.nullContent)
     (
     [Comment  " ", Comment $ "PATTERN Context: ('"++name ctx++"')"]
@@ -143,16 +143,16 @@ instance MetaPopulations A_Context where
   ++   (concatMap extract . sortByName . allRules) ctx
   ++[ Comment " ", Comment $ "PATTERN Interfaces: (count="++(show.length.ctxifcs) ctx++")"]
   ++   (concatMap extract . sortByName . ctxifcs) ctx
-  ++ metaPops fromFormalAmpersand fSpec (ctxps ctx)
+  ++ metaPops formalAmpersand userFspec (ctxps ctx)
   )
   where 
     extract :: MetaPopulations a => a -> [Pop]
-    extract = metaPops fromFormalAmpersand fSpec
+    extract = metaPops formalAmpersand userFspec
     sortByName :: Named a => [a] -> [a]
     sortByName = sortBy (comparing name)
 
 instance MetaPopulations Pattern where
- metaPops fromFormalAmpersand fSpec pat =
+ metaPops formalAmpersand userFspec pat =
     [ Comment " "
     , Comment $ " Pattern `"++name pat++"` "
     , Pop "name"    "Pattern" "PatternName"
@@ -169,12 +169,12 @@ instance MetaPopulations Pattern where
            [(dirtyId ctx pat, dirtyId ctx r) | r<-allRules pat]
     , Pop "relsDefdIn"   "Pattern" "Relation"
            [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
-    ]++ metaPops fromFormalAmpersand fSpec (ptxps pat)
+    ]++ metaPops formalAmpersand userFspec (ptxps pat)
   where 
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 instance MetaPopulations Purpose where
-  metaPops _ fSpec purp = 
+  metaPops _ userFspec purp = 
     case mMotivatedThing of
        Nothing -> []
        Just motivatedThing ->
@@ -186,7 +186,7 @@ instance MetaPopulations Purpose where
               ]
          else []
    where 
-     ctx = originalContext fSpec
+     ctx = originalContext userFspec
      metaType :: String
      mMotivatedThing :: Maybe PopAtom  
      (metaType, mMotivatedThing) = 
@@ -227,7 +227,7 @@ instance MetaPopulations Purpose where
 
 
 instance MetaPopulations A_Gen where
- metaPops _ fSpec gen@Isa{} =
+ metaPops _ userFspec gen@Isa{} =
   [ Pop "gens" "Context" "Isa"
           [(dirtyId ctx ctx,dirtyId ctx gen)]
   , Pop "genspc"  "Isa" "Concept"
@@ -236,8 +236,8 @@ instance MetaPopulations A_Gen where
           [(dirtyId ctx gen,dirtyId ctx (gengen gen))]
   ]
   where 
-    ctx = originalContext fSpec
- metaPops _ fSpec gen@IsE{} =
+    ctx = originalContext userFspec
+ metaPops _ userFspec gen@IsE{} =
   [ Pop "gens" "Context" "IsE"
           [(dirtyId ctx ctx,dirtyId ctx gen)]
   , Pop "genspc"  "IsE" "Concept"
@@ -246,14 +246,14 @@ instance MetaPopulations A_Gen where
           [ (dirtyId ctx gen,dirtyId ctx c) | c<-genrhs gen ]
   ]
   where 
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 instance MetaPopulations A_Concept where
- metaPops _ fSpec cpt =
+ metaPops _ userFspec cpt =
    [ Comment " "
    , Comment $ " Concept `"++name cpt++"` "
    , Pop "ttype" "Concept" "TType"
-             [(dirtyId ctx cpt, dirtyId ctx (cptTType fSpec cpt))] 
+             [(dirtyId ctx cpt, dirtyId ctx (cptTType userFspec cpt))] 
    , Pop "name" "Concept" "ConceptName"
              [(dirtyId ctx cpt, (PopAlphaNumeric . name) cpt)]
    , Pop "urlEncodedName" "Concept" "EncodedName"
@@ -267,20 +267,20 @@ instance MetaPopulations A_Concept where
      ONE -> 
       [ ]
   where
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 instance MetaPopulations Role where
-  metaPops _ fSpec rol =
+  metaPops _ userFspec rol =
       [ Pop "allRoles" "Context" "Role"
                  [(dirtyId ctx ctx, dirtyId ctx rol) ]
       , Pop "name" "Role" "RoleName"
                  [(dirtyId ctx rol, (PopAlphaNumeric . name) rol) ]
       ]
    where
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 instance MetaPopulations Interface where
-  metaPops _ fSpec ifc =
+  metaPops _ userFspec ifc =
       [ Pop "interfaces" "Context" "Interface"
                  [(dirtyId ctx ctx, dirtyId ctx ifc) ]
       , Pop "ifcname" "Interface" "String"
@@ -293,20 +293,20 @@ instance MetaPopulations Interface where
                  [(dirtyId ctx ifc, dirtyId ctx (ifcObj ifc)) ]
       ]
    where
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 instance MetaPopulations Signature where
- metaPops _ fSpec sgn =
+ metaPops _ userFspec sgn =
       [ Pop "src" "Signature" "Concept"
              [(dirtyId ctx sgn, dirtyId ctx (source sgn))]
       , Pop "tgt" "Signature" "Concept"
              [(dirtyId ctx sgn, dirtyId ctx (target sgn))]
       ]
   where
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 instance MetaPopulations Declaration where
- metaPops fromFormalAmpersand fSpec dcl =
+ metaPops formalAmpersand userFspec dcl =
    (case dcl of
      Sgn{} ->
       [ Comment " "
@@ -352,12 +352,12 @@ but I'm not sure why. -}
 
      Vs{}  -> fatal "Vs should not be populated by the meatgrinder."
    )++
-   metaPops fromFormalAmpersand fSpec (sign dcl)
+   metaPops formalAmpersand userFspec (sign dcl)
    where
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 instance MetaPopulations A_Pair where
- metaPops _ fSpec pair =
+ metaPops _ userFspec pair =
       [ Pop "in" "Pair" "Relation"
              [(dirtyId ctx pair, dirtyId ctx (lnkDcl pair))]
       , Pop "lAtom" "Pair" "Atom"
@@ -366,12 +366,12 @@ instance MetaPopulations A_Pair where
              [(dirtyId ctx pair, dirtyId ctx (lnkRight pair))]
       ]
   where
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 instance MetaPopulations Expression where
- metaPops fromFormalAmpersand fSpec expr =
+ metaPops formalAmpersand userFspec expr =
   case expr of 
-    EBrk e -> metaPops fromFormalAmpersand fSpec e
+    EBrk e -> metaPops formalAmpersand userFspec e
     _      ->
       [ Comment $ "Expression: "++showA expr++" ("++show (sign expr)++")"
       , Pop "sign" "Expression" "Signature"
@@ -413,7 +413,7 @@ instance MetaPopulations Expression where
                             ]
        ) 
   where
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
     makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
     makeBinaryTerm op lhs rhs = 
       [ Comment $ "BinOperator: "++show op
@@ -425,8 +425,8 @@ instance MetaPopulations Expression where
              [(dirtyId ctx expr,dirtyId ctx rhs)]
       , Pop "operator"  "BinaryTerm" "Operator"
              [(dirtyId ctx expr,dirtyId ctx op)]
-      ]++metaPops fromFormalAmpersand fSpec lhs
-       ++metaPops fromFormalAmpersand fSpec rhs
+      ]++metaPops formalAmpersand userFspec lhs
+       ++metaPops formalAmpersand userFspec rhs
     makeUnaryTerm :: UnaryOp -> Expression -> [Pop]
     makeUnaryTerm op arg =
       [ Comment $ "UnaOperator: "++show op
@@ -435,7 +435,7 @@ instance MetaPopulations Expression where
              [(dirtyId ctx expr,dirtyId ctx arg)]
       , Pop "operator"  "UnaryTerm" "Operator"
              [(dirtyId ctx expr,dirtyId ctx op)]
-      ]++metaPops fromFormalAmpersand fSpec arg
+      ]++metaPops formalAmpersand userFspec arg
 
     -- | As long as FormalAmpersand doesn't need/know about Epsilons, 
     --   we will not inject epsilon expressions into it.
@@ -473,23 +473,23 @@ instance Unique BinOp where
 
 
 instance MetaPopulations Rule where
- metaPops fromFormalAmpersand fSpec rul =
+ metaPops formalAmpersand userFspec rul =
       [ Comment " "
       , Comment $ " Rule `"++name rul++"` "
       , Pop "name"  "Rule" "RuleName"
              [(dirtyId ctx rul, (PopAlphaNumeric . name) rul)]
       , Pop "urlEncodedName" "Rule" "EncodedName"
              [(dirtyId ctx rul, (PopAlphaNumeric . escapeNonAlphaNum . name) rul) 
-             | rul `elem` vrules fSpec --Rule must be user defined to show graphic 
+             | rul `elem` vrules userFspec --Rule must be user defined to show graphic 
              ]
       , Pop "origin"  "Rule" "Origin"
              [(dirtyId ctx rul, (PopAlphaNumeric . show . origin) rul)]
       , Pop "message"  "Rule" "Message"
-             [(dirtyId ctx rul, PopAlphaNumeric (aMarkup2String ReST m)) | m <- rrmsg rul, amLang m == fsLang fSpec ]
+             [(dirtyId ctx rul, PopAlphaNumeric (aMarkup2String ReST m)) | m <- rrmsg rul, amLang m == fsLang userFspec ]
       , Pop "formalExpression"  "Rule" "Expression"
              [(dirtyId ctx rul, dirtyId ctx (rrexp rul))]
       , Pop "meaning"  "Rule" "Meaning"
-             [(dirtyId ctx rul, PopAlphaNumeric (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang fSpec)) rul ]
+             [(dirtyId ctx rul, PopAlphaNumeric (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang userFspec)) rul ]
       , Pop "sign" "Rule" "Signature"
              [(dirtyId ctx rul, dirtyId ctx (sign rul))]
       , Pop "declaredthrough" "PropertyRule" "Property"
@@ -497,18 +497,18 @@ instance MetaPopulations Rule where
       , Pop "propertyRule" "Relation" "PropertyRule"
              [(dirtyId ctx dcl, dirtyId ctx rul) | Just(_,dcl) <- [rrdcl rul]]
       ] ++ 
-      metaPops fromFormalAmpersand fSpec (sign rul) ++
-      metaPops fromFormalAmpersand fSpec (rrexp rul)
+      metaPops formalAmpersand userFspec (sign rul) ++
+      metaPops formalAmpersand userFspec (rrexp rul)
   where
-    ctx = originalContext fSpec
+    ctx = originalContext userFspec
 
 
 instance MetaPopulations a => MetaPopulations [a] where
- metaPops fromFormalAmpersand fSpec = concatMap $ metaPops fromFormalAmpersand fSpec
+ metaPops formalAmpersand userFspec = concatMap $ metaPops formalAmpersand userFspec
  
 
 extractFromPop :: MetaFSpec -> Pop -> Maybe P_Declaration
-extractFromPop fromFormalAmpersand pop =
+extractFromPop formalAmpersand pop =
   case pop of 
     Comment{}                -> Nothing
     (Pop rel src tgt tuples) -> 
@@ -549,9 +549,9 @@ extractFromPop fromFormalAmpersand pop =
                 case unsafePAtomVal2AtomValue typ (Just cpt) pav of
                   Left msg -> Errors [mkIncompatibleAtomValueError pav msg]
                   Right av -> pure av
-                where typ = cptTType fromFormalAmpersand cpt
+                where typ = cptTType formalAmpersand cpt
             
-      aRel = case [r | r <- vrels fromFormalAmpersand
+      aRel = case [r | r <- vrels formalAmpersand
                      , name r == rel
                      , name (source r) == src
                      , name (target r) == tgt

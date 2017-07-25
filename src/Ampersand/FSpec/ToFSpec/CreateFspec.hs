@@ -48,14 +48,14 @@ createMulti opts =
                        Checked f -> f
                        Errors err-> fatal ("The FormalAmpersand ADL scripts are not type correct:\n" ++
                                            intercalate (replicate 30 '=') (map showErr err))
-     let gFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
-     when (genMetaFile opts) (dumpMetaFile fAmpFSpec gFSpec)
+     let userGFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
+     when (genMetaFile opts) (dumpMetaFile fAmpFSpec userGFSpec)
      if genMetaTables opts || genRap
      then do let gGrinded :: Guarded P_Context
-                 gGrinded = addGens <$> fAmpP_Ctx <*> (grind fAmpFSpec <$> gFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                 gGrinded = addGens <$> fAmpP_Ctx <*> (grind fAmpFSpec <$> userGFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
              let metaPopFSpec = pCtx2Fspec gGrinded
-             return $ mkMulti <$> (Just <$> metaPopFSpec) <*> combineAll [userP_Ctx, gGrinded, fAmpP_Ctx]
-     else    return $ mkMulti <$> pure Nothing <*> gFSpec
+             return $ mkMulti <$> userGFSpec <*> (Just <$> metaPopFSpec)
+     else    return $ mkMulti <$> userGFSpec <*> pure Nothing
    where
     -- The gens from FromalAmpersand must be available in the result of grinded 
     addGens :: P_Context -> P_Context -> P_Context
@@ -63,10 +63,10 @@ createMulti opts =
      where
       gs pCtx = ctx_gs pCtx ++ concatMap pt_gns (ctx_pats pCtx)
     genRap = genRapPopulationOnly opts
-    mkMulti :: Maybe FSpec -> FSpec -> MultiFSpecs
-    mkMulti y x = MultiFSpecs
-               { userFSpec = x
-               , metaFSpec = y
+    mkMulti :: FSpec -> Maybe FSpec -> MultiFSpecs
+    mkMulti u m = MultiFSpecs
+               { userFSpec = u
+               , metaFSpec = m
                }
     dumpMetaFile :: FSpec -> Guarded FSpec -> IO()
     dumpMetaFile faSpec a = case a of
@@ -78,16 +78,8 @@ createMulti opts =
         writeFile (dirOutput opts </> filePath) metaContents      
         verboseLn opts ("\""++filePath++"\" written")
 
-    combineAll :: [Guarded P_Context] -> Guarded FSpec
-    combineAll = pCtx2Fspec . merge . sequenceA
-         
     pCtx2Fspec :: Guarded P_Context -> Guarded FSpec
     pCtx2Fspec c = makeFSpec opts <$> join (pCtx2aCtx opts <$> c)
-    merge :: Guarded [P_Context] -> Guarded P_Context
-    merge ctxs = f <$> ctxs
-      where
-       f []     = fatal "merge must not be applied to an empty list"
-       f (c:cs) = foldr mergeContexts c cs
 
 addSemanticModelOf :: Guarded P_Context -> Guarded P_Context -> Guarded P_Context
 addSemanticModelOf = liftM2 f
