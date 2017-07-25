@@ -6,7 +6,7 @@
 module Ampersand.FSpec.ShowMeatGrinder
   ( dumpGrindFile
   , grind 
-  )
+  , grind2)
 where
 
 import Data.List
@@ -676,3 +676,13 @@ class MetaPopulations a where
 
 
 
+grind2 :: FSpec -> FSpec -> P_Context
+grind2 formalAmpersand userFspec =
+  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) metaPops2 }
+  where
+    metaPops2 :: [Pop]
+    metaPops2 = fatal "TODO: Meatgrinder v2.0 is still under construction."
+    meatgrinder = Role "Meatgrinder"
+    relevantInterfaces :: [Interface]
+    relevantInterfaces = roleInterfaces formalAmpersand $ meatgrinder
+  
