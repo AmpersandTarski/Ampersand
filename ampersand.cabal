@@ -111,6 +111,7 @@ library
                      Ampersand.FSpec.Motivations,
                      Ampersand.FSpec.ShowHS,
                      Ampersand.FSpec.ShowMeatGrinder,
+                     Ampersand.FSpec.Transformers,
                      Ampersand.FSpec.SQL,
                      Ampersand.FSpec.ToFSpec.ADL2FSpec,
                      Ampersand.FSpec.ToFSpec.ADL2Plug,

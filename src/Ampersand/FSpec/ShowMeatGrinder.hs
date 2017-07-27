@@ -18,6 +18,7 @@ import Data.Maybe
 import Data.Typeable
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Motivations
+import Ampersand.FSpec.Transformers
 import Ampersand.Basics
 import Ampersand.Misc
 import Ampersand.Core.ShowPStruct
@@ -33,6 +34,7 @@ import Ampersand.Input.Parsing
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
 grind :: FSpec -> FSpec -> P_Context
+--grind = grind2
 grind formalAmpersand userFspec =
   (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) . metaPops formalAmpersand userFspec $ userFspec }
 
@@ -571,18 +573,6 @@ data Pop = Pop { popName   :: String
                }
          | Comment { comment :: String  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
                    }
-data PopAtom = 
-    DirtyId String  -- Any String. Quotes will be applied later
-  -- from the following constructors, show will be used to show it in an ADL script
-  | PopAlphaNumeric String 
-  | PopInt Integer
-instance Show PopAtom where
- showsPrec _ x
-   = showString $ 
-      case x of
-        DirtyId str         -> show str
-        PopAlphaNumeric str -> show str
-        PopInt i            -> show i
 showPop :: Pop -> String
 showPop pop =
   case pop of
@@ -675,6 +665,67 @@ class MetaPopulations a where
  metaPops :: MetaFSpec -> FSpec -> a -> [Pop]
 
 
+dumpGrindFile2 :: FSpec -> FSpec -> (FilePath,String)
+dumpGrindFile2 formalAmpersand userFspec
+  = ("MetaPopulationFile.adl", content )
+  where
+    content = unlines $
+        ([ "{- Do not edit manually. This code has been generated!!!"
+        , "    Generated with "++ampersandVersionStr
+        , "    Generated at "++show (genTime (getOpts userFspec))
+        , " "
+        , "The populations defined in this file are the populations from the user's"
+        , "model named '"++name userFspec++"'."
+        , ""
+        , "-}"
+        , "CONTEXT "++name userFspec
+        , "" ]
+        ++ body  ++
+        [ ""
+        , "ENDCONTEXT"
+        ])
+    body :: [String]
+    body =
+       intercalate [] . 
+       map (lines . showPop ) $
+             forAllDcls listDcls
+          ++ [Comment "-----------------------------------------"]
+          ++ forAllDcls adl
+    forAllDcls :: (Declaration -> [Pop]) -> [Pop]
+    forAllDcls f =
+          concatMap f . 
+          sortOn (\dcl -> name dcl++" "++name (source dcl)++" "++name (target dcl)) .
+          vrels $ formalAmpersand  
+      
+    listDcls :: Declaration -> [Pop]
+    listDcls dcl =
+      [ Comment . unlines $
+          [ "     ,("++(show' . name) dcl++" , "
+                          ++(show' . name . source) dcl++" , "
+                          ++(show' . name . target) dcl
+          , "      , (\\x -> [])"
+          , "      )"
+          ]
+      ]
+      where
+        show' str = show str ++ take (maxLenStr - (length str)) (repeat ' ')
+    adl :: Declaration -> [Pop]
+    adl dcl = []
+    maxLenStr :: Int
+    maxLenStr = maximum 
+              . map length
+              . concatMap (\dcl -> [ name dcl
+                                   , name (source dcl)
+                                   , name (target dcl)])
+              . vrels
+              $ formalAmpersand
+    
+
+--      (nm, s,t) -> fatal . unlines $
+--            [ "All relations defined in FormalAmpersand.adl must be "
+--            , "known in ShowMeatGrinder.hs"
+--            , "   Violations: "
+                        
 
 grind2 :: FSpec -> FSpec -> P_Context
 grind2 formalAmpersand userFspec =
@@ -683,6 +734,4 @@ grind2 formalAmpersand userFspec =
     metaPops2 :: [Pop]
     metaPops2 = fatal "TODO: Meatgrinder v2.0 is still under construction."
     meatgrinder = Role "Meatgrinder"
-    relevantInterfaces :: [Interface]
-    relevantInterfaces = roleInterfaces formalAmpersand $ meatgrinder
   
