@@ -395,7 +395,7 @@ data PAtomPair
         (if isRelationship element then translateArchiRel elemLookup element else [] ) ++
         [ translateArchiObj "accessType" (elemType element) [(keyArchi element, elemAccTp element)]
         | (not.null.elemAccTp) element] ++
-        [ translateArchiObj "elprop" (elemType element) [(keyArchi prop, elemSrc element)]
+        [ translateArchiObj "elprop" (elemType element) [(keyArchi prop, keyArchi element)]
         | prop<-elProps element] ++
         (concat.map (grindArchi elemLookup).elProps) element
      keyArchi = elemId
