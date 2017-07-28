@@ -6,7 +6,7 @@
 module Ampersand.FSpec.ShowMeatGrinder
   ( dumpGrindFile
   , grind 
-  , grind2)
+  )
 where
 
 import Data.List
@@ -34,14 +34,14 @@ import Ampersand.Input.Parsing
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
 grind :: FSpec -> FSpec -> P_Context
---grind = grind2
-grind formalAmpersand userFspec =
-  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) . metaPops formalAmpersand userFspec $ userFspec }
+grind = grind2
+--grind formalAmpersand userFspec =
+--  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) . metaPops formalAmpersand userFspec $ userFspec }
 
   -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
 --   The comments that are in Pop are preserved. 
-dumpGrindFile :: FSpec -> FSpec -> (FilePath,String)
-dumpGrindFile formalAmpersand userFspec
+dumpGrindFileOLD :: FSpec -> FSpec -> (FilePath,String)
+dumpGrindFileOLD formalAmpersand userFspec
   = ("MetaPopulationFile.adl", adl)
   where
     adl :: String
@@ -599,53 +599,8 @@ showRelsFromPops pops
                      | cl<-eqCl popNameSignature . filter isPop $ pops]
     where isPop Pop{}     = True
           isPop _ = False
-class Unique a => HasDirtyId a where
- dirtyId :: A_Context -> a -> PopAtom
- dirtyId _ = DirtyId . camelCase . uniqueShow False
+
      
--- All 'things' that are relevant in the meta-environment (RAP),
--- must be an instance of HasDirtyId:
-instance HasDirtyId A_Concept
-instance HasDirtyId A_Gen
-instance HasDirtyId Atom
-instance HasDirtyId ConceptDef
-instance HasDirtyId Declaration
-  where dirtyId ctx r
-         = case Map.lookup r declMap of
-            Nothing -> fatal ("no relation known as: "++showUnique r)
-            Just i  -> DirtyId $ "Relation_"++show i
-          where
-           declMap :: Map.Map Declaration Int
-           declMap = Map.fromList (zip (relsDefdIn ctx++[ Isn c | c<-concs ctx]) [1..])
-instance HasDirtyId Prop
-instance HasDirtyId Expression
-  where dirtyId ctx (EEps _ e') = dirtyId ctx e'
-        dirtyId ctx (EBrk e') = dirtyId ctx e'
-        dirtyId _ e = DirtyId $ take 150 (showA e) ++"#"++ (show . abs . hash . camelCase . uniqueShow True $ e)
-instance HasDirtyId BinOp
-instance HasDirtyId UnaryOp
-instance HasDirtyId A_Context
-instance HasDirtyId A_Pair
-instance HasDirtyId Pattern
-instance HasDirtyId PlugInfo
-instance HasDirtyId PlugSQL
-instance HasDirtyId Purpose
-instance HasDirtyId Rule
-instance HasDirtyId Role
-instance HasDirtyId Population
-instance HasDirtyId IdentityDef
-instance HasDirtyId ViewDef
-instance HasDirtyId Interface
-instance HasDirtyId ObjectDef
-instance HasDirtyId Signature
-instance HasDirtyId TType
-instance HasDirtyId Conjunct
-instance HasDirtyId (PairView Expression)
-  where dirtyId _ x = DirtyId $ show (typeOf x)++show (hash x)
-instance HasDirtyId (PairViewSegment Expression)
-  where dirtyId _ x = DirtyId $ show (typeOf x)++show (hash (show (hash x) ++ show (origin x)))
-instance HasDirtyId Bool
-  where dirtyId _ = DirtyId . map toUpper . show
 
 
 
@@ -665,8 +620,8 @@ class MetaPopulations a where
  metaPops :: MetaFSpec -> FSpec -> a -> [Pop]
 
 
-dumpGrindFile2 :: FSpec -> FSpec -> (FilePath,String)
-dumpGrindFile2 formalAmpersand userFspec
+dumpGrindFile :: FSpec -> FSpec -> (FilePath,String)
+dumpGrindFile formalAmpersand userFspec
   = ("MetaPopulationFile.adl", content )
   where
     content = unlines $
@@ -734,4 +689,5 @@ grind2 formalAmpersand userFspec =
     metaPops2 :: [Pop]
     metaPops2 = fatal "TODO: Meatgrinder v2.0 is still under construction."
     meatgrinder = Role "Meatgrinder"
-  
+
+dirtyId = fatal "Meatgrinder is tijdelijk stuk. @Stef, als je wat wilt doen, bekijk dan Transformers.hs" 

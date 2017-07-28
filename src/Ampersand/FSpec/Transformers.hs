@@ -1,9 +1,33 @@
+{-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.Transformers 
   ( transformers
   , Transformer(..)
   , PopAtom(..)
   ) where
+
+import Data.List
+import Data.Char
+import Data.Ord
+import qualified Data.Map.Strict as Map
+import Data.Hashable (hash) -- a not good enouqh function, but used for the time being. 
+import Data.Maybe
+import Data.Typeable
 import Ampersand.FSpec.FSpec
+import Ampersand.FSpec.Motivations
+import Ampersand.Basics
+import Ampersand.Misc
+import Ampersand.Core.ShowPStruct
+import Ampersand.Core.ShowAStruct
+import Ampersand.Core.ParseTree
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Classes
+import Ampersand.Input
+import Ampersand.Input.ADL1.CtxError
+import Ampersand.Input.ADL1.Parser
+import Ampersand.Input.Parsing
+
 
 -- | The function that retrieves the population of
 --   some relation of Formal Ampersand of a given
@@ -12,7 +36,7 @@ data Transformer = Transformer
       { tRel :: String  -- name of relation
       , tSrc :: String  -- name of source
       , tTrg :: String  -- name of target
-      , tPairFunction :: (FSpec -> [(PopAtom,PopAtom)]) -- the function that retrieves the population of this relation from the user's script.
+      , tPairs :: [(PopAtom,PopAtom)] -- the population of this relation from the user's script.
       }
 
 -- | This datatype reflects the nature of an atom. It is use to construct
@@ -30,428 +54,473 @@ instance Show PopAtom where
         PopInt i            -> show i
 
 
-toTransformer :: (String, String, String, (FSpec -> [(PopAtom,PopAtom)])) -> Transformer 
+toTransformer :: (String, String, String, [(PopAtom,PopAtom)]) -> Transformer 
 toTransformer (rel, sCpt, tCpt, fun) = Transformer rel sCpt tCpt fun                   
 
 -- | The list of all transformers, one for each and every declaration in Formal Ampersand.
-transformers :: [Transformer]
-transformers = map toTransformer [
+transformers :: FSpec -> [Transformer]
+transformers x = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("allRoles"              , "Context"               , "Role"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("allRules"              , "Context"               , "Rule"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("allRules"              , "Pattern"               , "Rule"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("attObj"                , "Attribute"             , "ObjectDef"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("bind"                  , "BindedRelation"        , "Relation"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("changes"               , "Act"                   , "Relation"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("concepts"              , "Pattern"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("conjunct"              , "Conjunct"              , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("context"               , "Concept"               , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("context"               , "IdentityDef"           , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("context"               , "Pattern"               , "Context" 
-      , (\x -> [])
+      , [(dirtyId pat, dirtyId ctx) 
+        | ctx::A_Context <- instances x
+        , pat::Pattern   <- instances x
+        ]
       )
      ,("context"               , "Population"            , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("context"               , "Relation"              , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ctxds"                 , "Relation"              , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
-      , (\x -> [])
+      , [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instances x
+        , rul::Rule      <- instances x
+        ]
       )
      ,("dbName"                , "Context"               , "DatabaseName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("declaredIn"            , "Relation"              , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("declaredIn"            , "Relation"              , "Pattern" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("decmean"               , "Relation"              , "Meaning" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("decprL"                , "Relation"              , "String"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("decprM"                , "Relation"              , "String"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("decprR"                , "Relation"              , "String"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("default"               , "View"                  , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("delta"                 , "Act"                   , "Pair"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("expSQL"                , "PairViewSegment"       , "MySQLQuery"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("expTgt"                , "PairViewSegment"       , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("first"                 , "BinaryTerm"            , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("gengen"                , "IsE"                   , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("gengen"                , "Isa"                   , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("gens"                  , "Context"               , "IsE"     
-      , (\x -> [])
+      , []  --TODO
       )
      ,("gens"                  , "Context"               , "Isa"     
-      , (\x -> [])
+      , []  --TODO
       )
      ,("genspc"                , "IsE"                   , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("genspc"                , "Isa"                   , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("getExpressionRelation" , "Expression"            , "Relation"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("hasView"               , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("identityRules"         , "Rule"                  , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("identityRules"         , "Rule"                  , "Pattern" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcClass"              , "Interface"             , "String"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcControls"           , "Interface"             , "Conjunct"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcInputs"             , "Interface"             , "Relation"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcObj"                , "Interface"             , "ObjectDef"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcOutputs"            , "Interface"             , "Relation"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcPos"                , "Interface"             , "Origin"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcPrp"                , "Interface"             , "String"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcQuads"              , "Interface"             , "Quad"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcRoles"              , "Interface"             , "Role"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ifcname"               , "Interface"             , "String"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("in"                    , "Pair"                  , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("inQ"                   , "Quad"                  , "Act"     
-      , (\x -> [])
+      , []  --TODO
       )
      ,("inst"                  , "Object"                , "ObjectDef"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("inst"                  , "Transaction"           , "Interface"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("interfaces"            , "Context"               , "Interface"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("interfaces"            , "Role"                  , "Interface"
-      , (\x -> [])
+      , [(dirtyId rol,dirtyId ifc)
+        | ifc <- instances x
+        , rol <- ifcRoles ifc
+        ]      
       )
      ,("isa"                   , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("isaCopy"               , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("isaPlus"               , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("isaRfx"                , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("isaRfxCopy"            , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("isaRfxPlus"            , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("isaRfxStar"            , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("isaStar"               , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("language"              , "Context"               , "Language"
-      , (\x -> [])
+      , [(dirtyId ctx,(PopAlphaNumeric . show . ctxlang) ctx)
+        | ctx::A_Context <- instances x
+        ]
       )
      ,("left"                  , "Pair"                  , "Atom"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("maintains"             , "Role"                  , "Rule"    
-      , (\x -> [])
+      , [(dirtyId rol, dirtyId rul) 
+        | (rol,rul) <-  fRoleRuls x 
+        ]
       )
      ,("markupText"            , "Purpose"               , "MarkupText"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("meaning"               , "Rule"                  , "Meaning" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("message"               , "Rule"                  , "Message" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("multrules"             , "Rule"                  , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("multrules"             , "Rule"                  , "Pattern" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("name"                  , "Concept"               , "ConceptName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("name"                  , "Context"               , "ContextName"
-      , (\x -> [])
+      , [(dirtyId ctx,(PopAlphaNumeric . name) ctx)
+        | ctx::A_Context <- instances x
+        ]
       )
      ,("name"                  , "Pattern"               , "PatternName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("name"                  , "Relation"              , "RelationName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("name"                  , "Role"                  , "RoleName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("name"                  , "Rule"                  , "RuleName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("objctx"                , "ObjectDef"             , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("objmView"              , "ObjectDef"             , "View"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("objnm"                 , "ObjectDef"             , "String"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("objpos"                , "ObjectDef"             , "Origin"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("origin"                , "Rule"                  , "Origin"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("originatesFrom"        , "Conjunct"              , "Rule"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("outQ"                  , "Quad"                  , "Act"     
-      , (\x -> [])
+      , []  --TODO
       )
      ,("pairView"              , "Rule"                  , "PairView"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("prop"                  , "Relation"              , "Property"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("propertyRule"          , "Relation"              , "PropertyRule"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("purpose"               , "Concept"               , "Purpose" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("purpose"               , "Context"               , "Purpose" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("purpose"               , "Identity"              , "Purpose" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("purpose"               , "Interface"             , "Purpose" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("purpose"               , "Pattern"               , "Purpose" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("purpose"               , "Relation"              , "Purpose" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("purpose"               , "Rule"                  , "Purpose" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("purpose"               , "View"                  , "Purpose" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("relsDefdIn"            , "Pattern"               , "Relation"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("right"                 , "Pair"                  , "Atom"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("rrexp"                 , "Rule"                  , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("second"                , "BinaryTerm"            , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("segment"               , "PairView"              , "PairViewSegment" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("segmentType"           , "PairViewSegment"       , "PairViewSegmentType"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("sequenceNr"            , "PairViewSegment"       , "Int"     
-      , (\x -> [])
+      , []  --TODO
       )
      ,("sessAtom"              , "SESSION"               , "Atom"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("sessIfc"               , "SESSION"               , "Interface"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("sessionRole"           , "SESSION"               , "Role"    
-      , (\x -> [])
+      , []  --TODO
       )
      ,("showADL"               , "Expression"            , "ShowADL" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("sign"                  , "Expression"            , "Signature"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("sign"                  , "Relation"              , "Signature"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("sign"                  , "Rule"                  , "Signature"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("singleton"             , "Singleton"             , "AtomValue"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("source"                , "Relation"              , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("src"                   , "Signature"             , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("srcOrTgt"              , "PairViewSegment"       , "SourceOrTarget"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("target"                , "Relation"              , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("text"                  , "PairViewSegment"       , "String"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("tgt"                   , "Signature"             , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("transactionObject"     , "Transaction"           , "Object"  
-      , (\x -> [])
+      , []  --TODO
       )
      ,("ttype"                 , "Concept"               , "TType"   
-      , (\x -> [])
+      , []  --TODO
       )
      ,("udefrules"             , "Rule"                  , "Context" 
-      , (\x -> [])
+      , [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instances x
+        , rul            <- udefrules ctx
+        ]
       )
      ,("udefrules"             , "Rule"                  , "Pattern" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("urlEncodedName"        , "Concept"               , "EncodedName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("urlEncodedName"        , "Pattern"               , "EncodedName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("urlEncodedName"        , "Rule"                  , "EncodedName"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("usedIn"                , "Relation"              , "Expression"
-      , (\x -> [])
+      , []  --TODO
       )
      ,("userCpt"               , "I"                     , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("userSrc"               , "V"                     , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("userTrg"               , "V"                     , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("uses"                  , "Context"               , "Pattern" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("valid"                 , "Concept"               , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("valid"                 , "Relation"              , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("valid"                 , "Rule"                  , "Context" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("versionInfo"           , "Context"               , "AmpersandVersion"
-      , (\x -> [])
+      , [(dirtyId ctx,PopAlphaNumeric ampersandVersionStr)
+        | ctx::A_Context <- instances x
+        ]
       )
      ,("viewBy"                , "Concept"               , "Concept" 
-      , (\x -> [])
+      , []  --TODO
       )
      ,("viol"                  , "Interface"             , "Rule"    
-      , (\x -> [])
+      , []  --TODO
       )
      ]
-    
+
+
+class Typeable a => Instances a where
+  instances ::  FSpec -> [a]
+
+instance Instances A_Context where
+  instances x = [originalContext x]
+instance Instances Interface where
+  instances x = nub (interfaceS x ++ interfaceG x)
+instance Instances Pattern where
+  instances x = ctxpats (originalContext x)  
+instance Instances Rule where
+  instances x = ctxrs (originalContext x)  
+
+
+
+
+-- All Concepts that are relevant in Formal Ampersand (RAP),
+-- must be an instance of HasDirtyId:
+class HasDirtyId a where
+ dirtyId :: a -> PopAtom
+ dirtyId = DirtyId . rawId
+ rawId :: a -> String
+ 
+instance Unique a => HasDirtyId a where
+    rawId = uniqueShow True
