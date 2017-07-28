@@ -64,10 +64,16 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("allRoles"              , "Context"               , "Role"    
-      , []  --TODO
+      , [(dirtyId ctx, dirtyId rol ) 
+        | ctx::A_Context <- instances x
+        , rol::Role      <- instances x
+        ]
       )
      ,("allRules"              , "Context"               , "Rule"    
-      , []  --TODO
+      , [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instances x
+        , rul::Rule      <- instances x
+        ]
       )
      ,("allRules"              , "Pattern"               , "Rule"    
       , []  --TODO
@@ -97,7 +103,10 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("context"               , "IdentityDef"           , "Context" 
-      , []  --TODO
+      , [(dirtyId idf, dirtyId ctx) 
+        | ctx::A_Context <- instances x
+        , idf::IdentityDef   <- ctxks ctx
+        ]
       )
      ,("context"               , "Pattern"               , "Context" 
       , [(dirtyId pat, dirtyId ctx) 
@@ -106,13 +115,19 @@ transformers x = map toTransformer [
         ]
       )
      ,("context"               , "Population"            , "Context" 
-      , []  --TODO
+      , [(dirtyId pop, dirtyId ctx) 
+        | ctx::A_Context  <- instances x
+        , pop::Population <- ctxpopus ctx
+        ]
       )
      ,("context"               , "Relation"              , "Context" 
       , []  --TODO
       )
      ,("ctxds"                 , "Relation"              , "Context" 
-      , []  --TODO
+      , [(dirtyId dcl, dirtyId ctx) 
+        | ctx::A_Context   <- instances x
+        , dcl::Declaration <- ctxds ctx
+        ]
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
@@ -124,7 +139,10 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("declaredIn"            , "Relation"              , "Context" 
-      , []  --TODO
+      , [(dirtyId dcl, dirtyId ctx) 
+        | ctx::A_Context   <- instances x
+        , dcl::Declaration <- relsDefdIn ctx
+        ]
       )
      ,("declaredIn"            , "Relation"              , "Pattern" 
       , []  --TODO
@@ -187,7 +205,10 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("identityRules"         , "Rule"                  , "Context" 
-      , []  --TODO
+      , [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instances x
+        , rul            <- identityRules ctx
+        ]
       )
      ,("identityRules"         , "Rule"                  , "Pattern" 
       , []  --TODO
@@ -290,7 +311,10 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("multrules"             , "Rule"                  , "Context" 
-      , []  --TODO
+      , [(dirtyId rul, dirtyId ctx) 
+        | ctx::A_Context <- instances x
+        , rul            <- multrules ctx
+        ]
       )
      ,("multrules"             , "Rule"                  , "Pattern" 
       , []  --TODO
@@ -511,7 +535,8 @@ instance Instances Pattern where
   instances x = ctxpats (originalContext x)  
 instance Instances Rule where
   instances x = ctxrs (originalContext x)  
-
+instance Instances Role where
+  instances x = nub $ [Role "SystemAdmin"] ++ map fst (fRoles x)
 
 
 
