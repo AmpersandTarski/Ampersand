@@ -3,32 +3,24 @@ module Ampersand.FSpec.Transformers
   , Transformer(..)
   , PopAtom(..)
   ) where
-import Data.List
-import Data.Char
-import Data.Ord
-import qualified Data.Map.Strict as Map
-import Data.Hashable (hash) -- a not good enouqh function, but used for the time being. 
-import Data.Maybe
-import Data.Typeable
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.Motivations
-import Ampersand.Basics
-import Ampersand.Misc
-import Ampersand.Core.ShowPStruct
-import Ampersand.Core.ShowAStruct
-import Ampersand.Core.ParseTree
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Classes
-import Ampersand.Input
-import Ampersand.Input.ADL1.CtxError
-import Ampersand.Input.ADL1.Parser
-import Ampersand.Input.Parsing
 
+-- | The function that retrieves the population of
+--   some relation of Formal Ampersand of a given
+--   ampersand script.
+data Transformer = Transformer 
+      { tRel :: String  -- name of relation
+      , tSrc :: String  -- name of source
+      , tTrg :: String  -- name of target
+      , tPairFunction :: (FSpec -> [(PopAtom,PopAtom)]) -- the function that retrieves the population of this relation from the user's script.
+      }
+
+-- | This datatype reflects the nature of an atom. It is use to construct
+--   the atom. 
 data PopAtom = 
-    DirtyId String  -- Any String. Quotes will be applied later
-  -- from the following constructors, show will be used to show it in an ADL script
-  | PopAlphaNumeric String 
-  | PopInt Integer
+    DirtyId String  -- ^ Any String. must be unique of course. (TType = Object)
+  | PopAlphaNumeric String -- ^ Intended to be observable by users. Not a 'dirty id'.
+  | PopInt Integer 
 instance Show PopAtom where
  showsPrec _ x
    = showString $ 
@@ -38,14 +30,11 @@ instance Show PopAtom where
         PopInt i            -> show i
 
 
-data Transformer = Transformer 
-      { tRel :: String  -- name of relation
-      , tSrc :: String  -- name of source
-      , tTrg :: String  -- name of target
-      , tPairFunction :: (FSpec -> [(PopAtom,PopAtom)]) -- the function that retrieves the population of this relation from the user's script.
-      }
 toTransformer :: (String, String, String, (FSpec -> [(PopAtom,PopAtom)])) -> Transformer 
 toTransformer (rel, sCpt, tCpt, fun) = Transformer rel sCpt tCpt fun                   
+
+-- | The list of all transformers, one for each and every declaration in Formal Ampersand.
+transformers :: [Transformer]
 transformers = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
       , (\x -> [])
