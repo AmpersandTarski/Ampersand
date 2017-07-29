@@ -646,11 +646,12 @@ dumpGrindFile formalAmpersand userFspec
              forAllDcls listDcls
           ++ [Comment "-----------------------------------------"]
           ++ forAllDcls adl
-    forAllDcls :: (Declaration -> [Pop]) -> [Pop]
-    forAllDcls f =
-          concatMap f . 
-          sortOn (\dcl -> name dcl++" "++name (source dcl)++" "++name (target dcl)) .
-          vrels $ formalAmpersand  
+      where
+        forAllDcls :: (Declaration -> [Pop]) -> [Pop]
+        forAllDcls f =
+            concatMap f . 
+            sortOn (\dcl -> name dcl++" "++name (source dcl)++" "++name (target dcl)) .
+            relsDefdIn $ formalAmpersand  
       
     listDcls :: Declaration -> [Pop]
     listDcls dcl =
@@ -658,14 +659,43 @@ dumpGrindFile formalAmpersand userFspec
           [ "     ,("++(show' . name) dcl++" , "
                           ++(show' . name . source) dcl++" , "
                           ++(show' . name . target) dcl
-          , "      , (\\x -> [])"
+          , "      , []  --TODO)"
           , "      )"
           ]
       ]
       where
         show' str = show str ++ take (maxLenStr - (length str)) (repeat ' ')
     adl :: Declaration -> [Pop]
-    adl dcl = []
+    adl dcl = dclHeaderComment dcl ++ pops
+      where
+        dclHeaderComment :: Declaration -> [Pop]
+        dclHeaderComment dcl = 
+          [Comment . unlines $
+            [ "  "++(name) dcl++"["
+                              ++(name . source) dcl++" * "
+                              ++(name . target) dcl++"]"
+            ]
+          ]++pops
+        pops = case filter (isForDcl dcl) (transformers userFspec) of
+                []  -> fatal . unlines $ 
+                         ["Every relation in FormalAmpersand.adl must have a transformer in Transformers.hs"
+                         ,"   Violations:"
+                         ] ++ map ("      "++) viols
+                        where 
+                          viols = map myShow 
+                                . filter hasNoTransformer 
+                                . instances $ formalAmpersand
+                          hasNoTransformer :: Declaration -> Bool
+                          hasNoTransformer dcl = null (filter (isForDcl dcl) (transformers userFspec))
+                          myShow :: Declaration -> String
+                          myShow = showDcl True
+                ts  -> map transformer2Pop ts 
+        transformer2Pop (Transformer n s t ps) = Pop n s t ps      
+    isForDcl :: Declaration -> Transformer -> Bool
+    isForDcl dcl (Transformer n s t _ ) =
+       and [ name dcl == n
+           , name (source dcl) == s
+           , name (target dcl) == t]
     maxLenStr :: Int
     maxLenStr = maximum 
               . map length
@@ -688,6 +718,6 @@ grind2 formalAmpersand userFspec =
   where
     metaPops2 :: [Pop]
     metaPops2 = fatal "TODO: Meatgrinder v2.0 is still under construction."
-    meatgrinder = Role "Meatgrinder"
+    
 
 dirtyId = fatal "Meatgrinder is tijdelijk stuk. @Stef, als je wat wilt doen, bekijk dan Transformers.hs" 

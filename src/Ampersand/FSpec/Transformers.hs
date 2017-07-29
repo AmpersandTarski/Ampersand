@@ -5,28 +5,17 @@ module Ampersand.FSpec.Transformers
   ( transformers
   , Transformer(..)
   , PopAtom(..)
+  , instances
   ) where
 
 import Data.List
-import Data.Char
-import Data.Ord
-import qualified Data.Map.Strict as Map
-import Data.Hashable (hash) -- a not good enouqh function, but used for the time being. 
-import Data.Maybe
 import Data.Typeable
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Motivations
 import Ampersand.Basics
-import Ampersand.Misc
-import Ampersand.Core.ShowPStruct
-import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ParseTree
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Classes
-import Ampersand.Input
-import Ampersand.Input.ADL1.CtxError
-import Ampersand.Input.ADL1.Parser
-import Ampersand.Input.Parsing
 
 
 -- | The function that retrieves the population of
@@ -351,7 +340,7 @@ transformers fSpec = map toTransformer [
         | ctx::A_Context <- instances fSpec
         ]
       )
-     ,("name"                  , "Interface"             , "String"  
+     ,("name"                  , "Interface"             , "InterfaceName"  
       , [(dirtyId ifc,(PopAlphaNumeric . name) ifc)
         | ifc::Interface <- instances fSpec
         ]
