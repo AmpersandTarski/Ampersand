@@ -38,55 +38,6 @@ grind = grind2
 --grind formalAmpersand userFspec =
 --  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) . metaPops formalAmpersand userFspec $ userFspec }
 
-  -- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
---   The comments that are in Pop are preserved. 
-dumpGrindFileOLD :: FSpec -> FSpec -> (FilePath,String)
-dumpGrindFileOLD formalAmpersand userFspec
-  = ("MetaPopulationFile.adl", adl)
-  where
-    adl :: String
-    adl = unlines
-      ([ "{- Do not edit manually. This code has been generated!!!"
-        , "    Generated with "++ampersandVersionStr
-        , "    Generated at "++show (genTime (getOpts userFspec))
-        , " "
-        , "The populations defined in this file are the populations from the user's"
-        , "model named '"++name userFspec++"'."
-        , ""
-        , "-}"
-        , "CONTEXT "++name userFspec
-        , showRelsFromPops pops
-        , "" ]
-        ++ intercalate [] (map (lines . showPop ) pops)  ++
-        [ ""
-        , "ENDCONTEXT"
-        ])
-        where pops = metaPops formalAmpersand userFspec userFspec
-
-{-SJ 2016-07-24 In generating the metapopulation of a script, we need to maintain a close relation
-with the A-structure. But why?
--} 
-instance MetaPopulations FSpec where
- metaPops formalAmpersand _ userFspec =
-   filter (not.nullContent)
-    ( metaPops formalAmpersand userFspec ctx
-    ++[ --Pop "dbName" "Context" "DatabaseName" [(dirtyId ctx ctx, (show.dbName.getOpts) userFspec)]
-        Pop "maintains" "Role" "Rule" 
-                 [(dirtyId ctx rol, dirtyId ctx rul) | (rol,rul) <-  fRoleRuls userFspec ]
-      , Pop "interfaces" "Role" "Interface"
-                 [(dirtyId ctx rol, dirtyId ctx ifc) | ifc <- ctxifcs ctx, rol<-ifcRoles ifc]
-      ]
---    ++[ Comment " ", Comment $ "PATTERN Conjuncts: (count="++(show.length.allConjuncts) userFspec++")"]
---    ++   concatMap extract (allConjuncts userFspec)
---    ++[ Comment " ", Comment $ "PATTERN Plugs: (count="++(show.length.plugInfos) userFspec++")"]
---    ++   concatMap extract (sortByName (plugInfos userFspec))
-    ++[ Comment " ", Comment $ "PATTERN Roles: (count="++(show.length.fRoles) userFspec++")"]
-    ++   concatMap (extract . fst) (fRoles userFspec)
-    )
-  where 
-    ctx = originalContext userFspec
-    extract :: MetaPopulations a => a -> [Pop]
-    extract = metaPops formalAmpersand userFspec
 
 instance MetaPopulations A_Context where
  metaPops formalAmpersand userFspec ctx =
@@ -620,6 +571,9 @@ class MetaPopulations a where
  metaPops :: MetaFSpec -> FSpec -> a -> [Pop]
 
 
+
+-- ^ Write the meta-information of an FSpec to a file. This is usefull for debugging.
+--   The comments that are in Pop are preserved. 
 dumpGrindFile :: FSpec -> FSpec -> (FilePath,String)
 dumpGrindFile formalAmpersand userFspec
   = ("MetaPopulationFile.adl", content )
@@ -641,30 +595,14 @@ dumpGrindFile formalAmpersand userFspec
         ])
     body :: [String]
     body =
-       intercalate [] . 
-       map (lines . showPop ) $
-             forAllDcls listDcls
-          ++ [Comment "-----------------------------------------"]
-          ++ forAllDcls adl
-      where
-        forAllDcls :: (Declaration -> [Pop]) -> [Pop]
-        forAllDcls f =
-            concatMap f . 
-            sortOn (\dcl -> name dcl++" "++name (source dcl)++" "++name (target dcl)) .
-            relsDefdIn $ formalAmpersand  
+         intercalate []
+       . map (lines . showPop )
+       . concatMap adl
+       . sortOn (\dcl -> name dcl++" "++name (source dcl)++" "++name (target dcl))
+       . instances $ formalAmpersand
       
-    listDcls :: Declaration -> [Pop]
-    listDcls dcl =
-      [ Comment . unlines $
-          [ "     ,("++(show' . name) dcl++" , "
-                          ++(show' . name . source) dcl++" , "
-                          ++(show' . name . target) dcl
-          , "      , []  --TODO)"
-          , "      )"
-          ]
-      ]
-      where
-        show' str = show str ++ take (maxLenStr - (length str)) (repeat ' ')
+              
+      
     adl :: Declaration -> [Pop]
     adl dcl = dclHeaderComment dcl ++ pops
       where

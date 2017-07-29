@@ -32,7 +32,8 @@ createMulti :: Options  -- ^The options derived from the command line
             -> IO(Guarded MultiFSpecs)
 createMulti opts =
   do fAmpP_Ctx <-
-        if genMetaTables opts ||
+        if genMetaFile opts ||
+           genMetaTables opts ||
            genRapPopulationOnly opts ||
            addSemanticMetaModel opts 
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
