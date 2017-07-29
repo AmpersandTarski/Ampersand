@@ -8,14 +8,15 @@ module Ampersand.FSpec.Transformers
   , instances
   ) where
 
-import Data.List
-import Data.Typeable
+import Ampersand.Basics
+import Ampersand.Classes
+import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ParseTree
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Motivations
-import Ampersand.Basics
-import Ampersand.Core.ParseTree
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Classes
+import Data.List
+import Data.Typeable
 
 
 -- | The function that retrieves the population of
@@ -485,16 +486,24 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("showADL"               , "Expression"            , "ShowADL" 
-      , []  --TODO
+      , [(dirtyId expr, PopAlphaNumeric (showA expr)) 
+        | expr::Expression   <- instances fSpec
+        ]
       )
      ,("sign"                  , "Expression"            , "Signature"
-      , []  --TODO
+      , [(dirtyId expr, dirtyId (sign expr)) 
+        | expr::Expression   <- instances fSpec
+        ]
       )
      ,("sign"                  , "Relation"              , "Signature"
-      , []  --TODO
+      , [(dirtyId rel, dirtyId (sign rel)) 
+        | rel::Declaration   <- instances fSpec
+        ]
       )
      ,("sign"                  , "Rule"                  , "Signature"
-      , []  --TODO
+      , [(dirtyId rul, dirtyId (sign rul)) 
+        | rul::Rule   <- instances fSpec
+        ]
       )
      ,("singleton"             , "Singleton"             , "AtomValue"
       , []  --TODO
@@ -503,7 +512,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("src"                   , "Signature"             , "Concept" 
-      , []  --TODO
+      , [(dirtyId sgn, dirtyId (source sgn)) 
+        | sgn::Signature   <- instances fSpec
+        ]
       )
      ,("srcOrTgt"              , "PairViewSegment"       , "SourceOrTarget"
       , []  --TODO
@@ -515,7 +526,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("tgt"                   , "Signature"             , "Concept" 
-      , []  --TODO
+      , [(dirtyId sgn, dirtyId (target sgn)) 
+        | sgn::Signature   <- instances fSpec
+        ]
       )
      ,("transactionObject"     , "Transaction"           , "Object"  
       , []  --TODO
@@ -605,6 +618,8 @@ instance Instances A_Concept where
   instances fSpec = concs (originalContext fSpec)
 instance Instances Declaration where
   instances fSpec = relsDefdIn (originalContext fSpec)
+instance Instances Expression where
+  instances fSpec = allExprs fSpec
 instance Instances IdentityDef where
   instances fSpec = ctxks (originalContext fSpec)
 instance Instances Interface where
@@ -627,13 +642,17 @@ instance Instances Population where
   instances fSpec = ctxpopus (originalContext fSpec)
 instance Instances Purpose where
   instances fSpec = explanations fSpec
-instance Instances Rule where
-  instances fSpec = allRules (originalContext fSpec)  
 instance Instances Role where
   instances fSpec = nub $ [Role "SystemAdmin"] ++ map fst (fRoles fSpec)
+instance Instances Rule where
+  instances fSpec = allRules (originalContext fSpec)  
+instance Instances Signature where
+  instances fSpec = nub $
+       [sign dcl  | dcl::Declaration <- instances fSpec]
+    ++ [sign rul  | rul::Rule        <- instances fSpec]
+    ++ [sign expr | expr::Expression <- instances fSpec]
 instance Instances ViewDef where
   instances fSpec = viewDefs (originalContext fSpec)  
-
   
 
 -- All Concepts that are relevant in Formal Ampersand (RAP),
