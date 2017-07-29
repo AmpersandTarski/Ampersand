@@ -59,24 +59,27 @@ toTransformer (rel, sCpt, tCpt, fun) = Transformer rel sCpt tCpt fun
 
 -- | The list of all transformers, one for each and every declaration in Formal Ampersand.
 transformers :: FSpec -> [Transformer]
-transformers x = map toTransformer [
+transformers fSpec = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
       , []  --TODO
       )
      ,("allRoles"              , "Context"               , "Role"    
       , [(dirtyId ctx, dirtyId rol ) 
-        | ctx::A_Context <- instances x
-        , rol::Role      <- instances x
+        | ctx::A_Context <- instances fSpec
+        , rol::Role      <- instances fSpec
         ]
       )
      ,("allRules"              , "Context"               , "Rule"    
-      , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances x
-        , rul::Rule      <- instances x
+      , [(dirtyId ctx, dirtyId rul) 
+        | ctx::A_Context <- instances fSpec
+        , rul::Rule      <- allRules ctx
         ]
       )
      ,("allRules"              , "Pattern"               , "Rule"    
-      , []  --TODO
+      , [(dirtyId pat, dirtyId rul) 
+        | pat::Pattern   <- instances fSpec
+        , rul::Rule      <- allRules pat
+        ]
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
       , []  --TODO
@@ -100,23 +103,26 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("context"               , "Concept"               , "Context" 
-      , []  --TODO
+      , [(dirtyId cpt, dirtyId ctx) 
+        | ctx::A_Context <- instances fSpec 
+        , cpt::A_Concept <- instances fSpec
+        ]
       )
      ,("context"               , "IdentityDef"           , "Context" 
       , [(dirtyId idf, dirtyId ctx) 
-        | ctx::A_Context <- instances x
-        , idf::IdentityDef   <- ctxks ctx
+        | ctx::A_Context <- instances fSpec
+        , idf::IdentityDef   <- instances fSpec
         ]
       )
      ,("context"               , "Pattern"               , "Context" 
       , [(dirtyId pat, dirtyId ctx) 
-        | ctx::A_Context <- instances x
-        , pat::Pattern   <- instances x
+        | ctx::A_Context <- instances fSpec
+        , pat::Pattern   <- instances fSpec
         ]
       )
      ,("context"               , "Population"            , "Context" 
       , [(dirtyId pop, dirtyId ctx) 
-        | ctx::A_Context  <- instances x
+        | ctx::A_Context  <- instances fSpec
         , pop::Population <- ctxpopus ctx
         ]
       )
@@ -125,14 +131,14 @@ transformers x = map toTransformer [
       )
      ,("ctxds"                 , "Relation"              , "Context" 
       , [(dirtyId dcl, dirtyId ctx) 
-        | ctx::A_Context   <- instances x
+        | ctx::A_Context   <- instances fSpec
         , dcl::Declaration <- ctxds ctx
         ]
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances x
-        , rul::Rule      <- instances x
+        | ctx::A_Context <- instances fSpec
+        , rul::Rule      <- instances fSpec
         ]
       )
      ,("dbName"                , "Context"               , "DatabaseName"
@@ -140,7 +146,7 @@ transformers x = map toTransformer [
       )
      ,("declaredIn"            , "Relation"              , "Context" 
       , [(dirtyId dcl, dirtyId ctx) 
-        | ctx::A_Context   <- instances x
+        | ctx::A_Context   <- instances fSpec
         , dcl::Declaration <- relsDefdIn ctx
         ]
       )
@@ -187,10 +193,16 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("gens"                  , "Context"               , "IsE"     
-      , []  --TODO
+      , [ ( dirtyId ctx, dirtyId ise) 
+        | ctx::A_Context <- instances fSpec
+        , ise@IsE{}      <- instances fSpec
+        ] 
       )
      ,("gens"                  , "Context"               , "Isa"     
-      , []  --TODO
+      , [(dirtyId ctx, dirtyId isa) 
+        | ctx::A_Context <- instances fSpec
+        , isa@Isa{}      <- instances fSpec
+        ]
       )
      ,("genspc"                , "IsE"                   , "Concept" 
       , []  --TODO
@@ -206,12 +218,15 @@ transformers x = map toTransformer [
       )
      ,("identityRules"         , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances x
+        | ctx::A_Context <- instances fSpec
         , rul            <- identityRules ctx
         ]
       )
      ,("identityRules"         , "Rule"                  , "Pattern" 
-      , []  --TODO
+      , [(dirtyId rul, dirtyId pat) 
+        | pat::Pattern <- instances fSpec
+        , rul          <- identityRules pat
+        ]
       )
      ,("ifcClass"              , "Interface"             , "String"  
       , []  --TODO
@@ -240,9 +255,6 @@ transformers x = map toTransformer [
      ,("ifcRoles"              , "Interface"             , "Role"    
       , []  --TODO
       )
-     ,("ifcname"               , "Interface"             , "String"  
-      , []  --TODO
-      )
      ,("in"                    , "Pair"                  , "Expression"
       , []  --TODO
       )
@@ -256,11 +268,14 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("interfaces"            , "Context"               , "Interface"
-      , []  --TODO
+      , [(dirtyId ctx,dirtyId ifc)
+        | ctx::A_Context <- instances fSpec
+        , ifc::Interface <- instances fSpec
+        ]
       )
      ,("interfaces"            , "Role"                  , "Interface"
       , [(dirtyId rol,dirtyId ifc)
-        | ifc <- instances x
+        | ifc <- instances fSpec
         , rol <- ifcRoles ifc
         ]      
       )
@@ -290,7 +305,7 @@ transformers x = map toTransformer [
       )
      ,("language"              , "Context"               , "Language"
       , [(dirtyId ctx,(PopAlphaNumeric . show . ctxlang) ctx)
-        | ctx::A_Context <- instances x
+        | ctx::A_Context <- instances fSpec
         ]
       )
      ,("left"                  , "Pair"                  , "Atom"    
@@ -298,11 +313,15 @@ transformers x = map toTransformer [
       )
      ,("maintains"             , "Role"                  , "Rule"    
       , [(dirtyId rol, dirtyId rul) 
-        | (rol,rul) <-  fRoleRuls x 
+        | (rol,rul) <-  fRoleRuls fSpec 
         ]
       )
      ,("markupText"            , "Purpose"               , "MarkupText"
-      , []  --TODO
+      , [(dirtyId purp
+         ,PopAlphaNumeric . aMarkup2String Markdown . explMarkup $ purp
+         ) 
+        | purp::Purpose <-  instances fSpec
+        ]
       )
      ,("meaning"               , "Rule"                  , "Meaning" 
       , []  --TODO
@@ -312,32 +331,50 @@ transformers x = map toTransformer [
       )
      ,("multrules"             , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances x
+        | ctx::A_Context <- instances fSpec
         , rul            <- multrules ctx
         ]
       )
      ,("multrules"             , "Rule"                  , "Pattern" 
-      , []  --TODO
+      , [(dirtyId rul, dirtyId pat) 
+        | pat::Pattern   <- instances fSpec
+        , rul            <- multrules pat
+        ]
       )
      ,("name"                  , "Concept"               , "ConceptName"
-      , []  --TODO
+      , [(dirtyId cpt,(PopAlphaNumeric . name) cpt)
+        | cpt::A_Concept <- instances fSpec
+        ]
       )
      ,("name"                  , "Context"               , "ContextName"
       , [(dirtyId ctx,(PopAlphaNumeric . name) ctx)
-        | ctx::A_Context <- instances x
+        | ctx::A_Context <- instances fSpec
+        ]
+      )
+     ,("name"                  , "Interface"             , "String"  
+      , [(dirtyId ifc,(PopAlphaNumeric . name) ifc)
+        | ifc::Interface <- instances fSpec
         ]
       )
      ,("name"                  , "Pattern"               , "PatternName"
-      , []  --TODO
+      , [(dirtyId pat,(PopAlphaNumeric . name) pat)
+        | pat::Pattern <- instances fSpec
+        ]
       )
      ,("name"                  , "Relation"              , "RelationName"
-      , []  --TODO
+      , [(dirtyId rel,(PopAlphaNumeric . name) rel)
+        | rel::Declaration <- instances fSpec
+        ]
       )
      ,("name"                  , "Role"                  , "RoleName"
-      , []  --TODO
+      , [(dirtyId rol,(PopAlphaNumeric . name) rol)
+        | rol::Role <- instances fSpec
+        ]
       )
      ,("name"                  , "Rule"                  , "RuleName"
-      , []  --TODO
+      , [(dirtyId rul,(PopAlphaNumeric . name) rul)
+        | rul::Rule <- instances fSpec
+        ]
       )
      ,("objctx"                , "ObjectDef"             , "Expression"
       , []  --TODO
@@ -376,31 +413,55 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("purpose"               , "Concept"               , "Purpose" 
-      , []  --TODO
+      , [(dirtyId cpt, dirtyId purp) 
+        | cpt::A_Concept <- instances fSpec
+        , purp           <- purposes fSpec cpt
+        ]
       )
      ,("purpose"               , "Context"               , "Purpose" 
-      , []  --TODO
+      , [(dirtyId ctx, dirtyId purp) 
+        | ctx::A_Context <- instances fSpec
+        , purp           <- purposes fSpec ctx
+        ]
       )
      ,("purpose"               , "Identity"              , "Purpose" 
-      , []  --TODO
+      , [(dirtyId idn, dirtyId purp) 
+        | idn::IdentityDef <- instances fSpec
+        , purp           <- purposes fSpec idn
+        ]
       )
      ,("purpose"               , "Interface"             , "Purpose" 
-      , []  --TODO
+      , [(dirtyId ifc, dirtyId purp) 
+        | ifc::Interface <- instances fSpec
+        , purp           <- purposes fSpec ifc
+        ]
       )
      ,("purpose"               , "Pattern"               , "Purpose" 
-      , []  --TODO
+      , [(dirtyId pat, dirtyId purp) 
+        | pat::Pattern   <- instances fSpec
+        , purp           <- purposes fSpec pat
+        ]
       )
      ,("purpose"               , "Relation"              , "Purpose" 
-      , []  --TODO
+      , [(dirtyId rel, dirtyId purp) 
+        | rel::Declaration <- instances fSpec
+        , purp             <- purposes fSpec rel
+        ]
       )
      ,("purpose"               , "Rule"                  , "Purpose" 
-      , []  --TODO
+      , [(dirtyId rul, dirtyId purp) 
+        | rul::Rule      <- instances fSpec
+        , purp           <- purposes fSpec rul
+        ]
       )
      ,("purpose"               , "View"                  , "Purpose" 
       , []  --TODO
       )
      ,("relsDefdIn"            , "Pattern"               , "Relation"
-      , []  --TODO
+      , [(dirtyId pat, dirtyId rel) 
+        | pat::Pattern   <- instances fSpec
+        , rel            <- ptdcs pat
+        ]
       )
      ,("right"                 , "Pair"                  , "Atom"    
       , []  --TODO
@@ -466,25 +527,36 @@ transformers x = map toTransformer [
       , []  --TODO
       )
      ,("ttype"                 , "Concept"               , "TType"   
-      , []  --TODO
+      , [(dirtyId cpt, (PopAlphaNumeric . show . cptTType fSpec) cpt) 
+        | cpt::A_Concept <- instances fSpec
+        ]
       )
      ,("udefrules"             , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
-        | ctx::A_Context <- instances x
+        | ctx::A_Context <- instances fSpec
         , rul            <- udefrules ctx
         ]
       )
      ,("udefrules"             , "Rule"                  , "Pattern" 
-      , []  --TODO
+      , [(dirtyId rul, dirtyId pat) 
+        | pat::Pattern   <- instances fSpec
+        , rul            <- udefrules pat
+        ]
       )
      ,("urlEncodedName"        , "Concept"               , "EncodedName"
-      , []  --TODO
+      , [(dirtyId cpt,(PopAlphaNumeric . escapeNonAlphaNum . name) cpt)
+        | cpt::A_Concept <- instances fSpec
+        ]
       )
      ,("urlEncodedName"        , "Pattern"               , "EncodedName"
-      , []  --TODO
+      , [(dirtyId pat,(PopAlphaNumeric . escapeNonAlphaNum . name) pat)
+        | pat::Pattern <- instances fSpec
+        ]
       )
      ,("urlEncodedName"        , "Rule"                  , "EncodedName"
-      , []  --TODO
+      , [(dirtyId rul,(PopAlphaNumeric . escapeNonAlphaNum . name) rul)
+        | rul::Rule <- instances fSpec
+        ]
       )
      ,("usedIn"                , "Relation"              , "Expression"
       , []  --TODO
@@ -512,7 +584,7 @@ transformers x = map toTransformer [
       )
      ,("versionInfo"           , "Context"               , "AmpersandVersion"
       , [(dirtyId ctx,PopAlphaNumeric ampersandVersionStr)
-        | ctx::A_Context <- instances x
+        | ctx::A_Context <- instances fSpec
         ]
       )
      ,("viewBy"                , "Concept"               , "Concept" 
@@ -523,29 +595,90 @@ transformers x = map toTransformer [
       )
      ]
 
-
+-- | Within a specific context there are all kinds of things.
+--   These 'things' are instences (elements / atoms) of some
+--   Concept. They are the atoms of the concepts, as looked
+--   upon from the Formal Ampersand viewpoint.
 class Typeable a => Instances a where
+--TODO: This should eventially be replaced by Set a
   instances ::  FSpec -> [a]
 
 instance Instances A_Context where
-  instances x = [originalContext x]
+  instances fSpec = [originalContext fSpec]
+instance Instances A_Gen where
+  instances fSpec = gens (originalContext fSpec)
+instance Instances A_Concept where
+  instances fSpec = concs (originalContext fSpec)
+instance Instances Declaration where
+  instances fSpec = relsDefdIn (originalContext fSpec)
+instance Instances IdentityDef where
+  instances fSpec = ctxks (originalContext fSpec)
 instance Instances Interface where
-  instances x = nub (interfaceS x ++ interfaceG x)
+  instances fSpec = ctxifcs (originalContext fSpec)
 instance Instances Pattern where
-  instances x = ctxpats (originalContext x)  
+  instances fSpec = ctxpats (originalContext fSpec)  
+instance Instances Purpose where
+  instances fSpec = explanations fSpec
 instance Instances Rule where
-  instances x = ctxrs (originalContext x)  
+  instances fSpec = allRules (originalContext fSpec)  
 instance Instances Role where
-  instances x = nub $ [Role "SystemAdmin"] ++ map fst (fRoles x)
-
+  instances fSpec = nub $ [Role "SystemAdmin"] ++ map fst (fRoles fSpec)
+instance Instances ViewDef where
+  instances fSpec = viewDefs (originalContext fSpec)  
 
 
 -- All Concepts that are relevant in Formal Ampersand (RAP),
 -- must be an instance of HasDirtyId:
 class HasDirtyId a where
- dirtyId :: a -> PopAtom
- dirtyId = DirtyId . rawId
- rawId :: a -> String
+  dirtyId :: a -> PopAtom
+  dirtyId = DirtyId . rawId
+  rawId :: a -> String
  
 instance Unique a => HasDirtyId a where
-    rawId = uniqueShow True
+  rawId = uniqueShow True
+
+class Instances a => HasPurpose a where 
+  purposes :: FSpec -> a -> [Purpose]
+  purposes fSpec a = 
+    filter (isFor a) (instances fSpec)
+  isFor :: a -> Purpose -> Bool 
+instance HasPurpose A_Concept where
+  isFor cpt purp =
+    case explObj purp of
+        ExplConceptDef x  -> name cpt == name x
+        _                 -> False
+instance HasPurpose A_Context where
+  isFor ctx purp =
+    case explObj purp of
+        ExplContext x     -> name ctx == x
+        _                 -> False
+instance HasPurpose Declaration where
+  isFor rel purp =
+    case explObj purp of
+        ExplDeclaration x -> rel == x
+        _                 -> False
+instance HasPurpose IdentityDef where
+  isFor idf purp =
+    case explObj purp of
+        ExplInterface x  -> name idf == x
+        _                -> False
+instance HasPurpose Interface where
+  isFor ifc purp =
+    case explObj purp of
+        ExplInterface x  -> name ifc == x
+        _                -> False
+instance HasPurpose Pattern where
+  isFor pat purp =
+    case explObj purp of
+        ExplPattern x    -> name pat == x
+        _                -> False
+instance HasPurpose Rule where
+  isFor rul purp =
+    case explObj purp of
+        ExplRule x        -> name rul == x
+        _                 -> False
+instance HasPurpose ViewDef where
+  isFor vw purp =
+    case explObj purp of
+        ExplViewDef x    -> name vw == x
+        _                -> False
