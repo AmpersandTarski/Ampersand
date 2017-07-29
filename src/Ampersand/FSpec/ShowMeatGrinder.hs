@@ -10,10 +10,6 @@ module Ampersand.FSpec.ShowMeatGrinder
 where
 
 import Data.List
-import Data.Char
-import Data.Ord
-import qualified Data.Map.Strict as Map
-import Data.Hashable (hash) -- a not good enouqh function, but used for the time being. 
 import Data.Maybe
 import Data.Typeable
 import Ampersand.FSpec.FSpec
@@ -25,7 +21,6 @@ import Ampersand.Core.ShowPStruct
 import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ParseTree
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Classes
 import Ampersand.Input
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.ADL1.Parser
@@ -34,219 +29,15 @@ import Ampersand.Input.Parsing
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
 grind :: FSpec -> FSpec -> P_Context
-grind = grind2
---grind formalAmpersand userFspec =
---  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) . metaPops formalAmpersand userFspec $ userFspec }
-
-
-instance MetaPopulations A_Context where
- metaPops formalAmpersand userFspec ctx =
-   filter (not.nullContent)
-    (
-    [Comment  " ", Comment $ "PATTERN Context: ('"++name ctx++"')"]
-  ++[ Pop "versionInfo" "Context"  "AmpersandVersion"
-           [(dirtyId ctx ctx, PopAlphaNumeric ampersandVersionStr)]
-    , Pop "name" "Context" "ContextName"
-           [(dirtyId ctx ctx, (PopAlphaNumeric . name) ctx)]
-  --  , Pop "location" "Context" "Location"
-  --         [(dirtyId ctx ctx, (show.showUnique.ctxpos) ctx)]
-    , Pop "language" "Context" "Language"
-           [(dirtyId ctx ctx, (PopAlphaNumeric . show . ctxlang) ctx)]
-  --  , Pop "markup" "Context" "Markup"
-  --         [(dirtyId ctx ctx, (show.show.ctxmarkup) ctx)]
-    , Pop "context" "Pattern" "Context"
-           [(dirtyId ctx p, dirtyId ctx ctx) | p<-ctxpats ctx]
-    , Pop "ctxrs" "Rule" "Context"
-           [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxrs ctx]
-    , Pop "udefrules" "Rule" "Context"
-           [(dirtyId ctx r, dirtyId ctx ctx) | r<-udefrules ctx]
-    , Pop "multrules" "Rule" "Context"
-           [(dirtyId ctx r, dirtyId ctx ctx) | r<-multrules ctx]
-    , Pop "identityRules" "Rule" "Context"
-           [(dirtyId ctx r, dirtyId ctx ctx) | r<-identityRules ctx]
-    , Pop "allRules" "Context" "Rule"
-           [(dirtyId ctx ctx, dirtyId ctx r) | r<-allRules ctx]
-    , Pop "ctxds" "Relation" "Context"
-           [(dirtyId ctx r, dirtyId ctx ctx) | r<-ctxds ctx]
-    , Pop "declaredIn" "Relation" "Context"
-           [(dirtyId ctx r, dirtyId ctx ctx) | r<-relsDefdIn ctx]
-    , Pop "context" "Population" "Context"
-           [(dirtyId ctx pop, dirtyId ctx ctx) | pop<-ctxpopus ctx]
---    , Pop "context" "Concept" "Context"
---           [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxcds ctx]
-    , Pop "context" "IdentityDef" "Context"
-           [(dirtyId ctx c, dirtyId ctx ctx) | c<-ctxks ctx]
-    , Pop "allRoles" "Context" "Role"
-           [(dirtyId ctx ctx, PopAlphaNumeric "SystemAdmin")]
-    , Pop "name"   "Role" "RoleName"
-           [(dirtyId ctx (Role "SystemAdmin"), PopAlphaNumeric "SystemAdmin")]
-    ]
-  ++[ Comment " ", Comment $ "PATTERN Patterns: (count="++(show.length.patterns) ctx++")"]
-  ++   (concatMap extract . sortByName . patterns) ctx
-  ++[ Comment " ", Comment $ "PATTERN Specialization: (count="++(show.length.gens) ctx++")"]
-  ++   concatMap extract (gens ctx)
-  ++[ Comment " ", Comment $ "PATTERN Concept: (count="++(show.length.concs) ctx++")"]
-  ++[ Pop "context" "Concept" "Context"
-           [(dirtyId ctx c, dirtyId ctx ctx) | c<-concs ctx] ]
-  ++   (concatMap extract . sortByName . concs) ctx
-  ++[ Comment " ", Comment $ "PATTERN Relation: (count="++(show.length.relsDefdIn) ctx++")"]
-  ++   concatMap extract (relsDefdIn ctx)  -- SJ 2 sept 2016: I don't think we should populate I-relations and V-relations. But why?
-                                           -- HJO 4 sept 2016: I agree. This is, because I and V are not Relations, but Expressions. See the current version of FormalAmpersand. We have to fix this some day in the Haskell source too. 
-  ++[ Comment " ", Comment $ "PATTERN Rules: (count="++(show.length.allRules) ctx++")"]
-  ++   (concatMap extract . sortByName . allRules) ctx
-  ++[ Comment " ", Comment $ "PATTERN Interfaces: (count="++(show.length.ctxifcs) ctx++")"]
-  ++   (concatMap extract . sortByName . ctxifcs) ctx
-  ++ metaPops formalAmpersand userFspec (ctxps ctx)
-  )
-  where 
-    extract :: MetaPopulations a => a -> [Pop]
-    extract = metaPops formalAmpersand userFspec
-    sortByName :: Named a => [a] -> [a]
-    sortByName = sortBy (comparing name)
-
-instance MetaPopulations Pattern where
- metaPops formalAmpersand userFspec pat =
-    [ Comment " "
-    , Comment $ " Pattern `"++name pat++"` "
-    , Pop "name"    "Pattern" "PatternName"
-           [(dirtyId ctx pat, (PopAlphaNumeric . name) pat)]
-    , Pop "urlEncodedName" "Pattern" "EncodedName"
-             [(dirtyId ctx pat, (PopAlphaNumeric . escapeNonAlphaNum . name) pat)]
-    , Pop "udefrules" "Rule" "Pattern"
-           [(dirtyId ctx r, dirtyId ctx pat) | r<-udefrules pat]
-    , Pop "multrules" "Rule" "Pattern"
-           [(dirtyId ctx r, dirtyId ctx pat) | r<-multrules pat]
-    , Pop "identityRules" "Rule" "Pattern"
-           [(dirtyId ctx r, dirtyId ctx pat) | r<-identityRules pat]
-    , Pop "allRules" "Pattern" "Rule"
-           [(dirtyId ctx pat, dirtyId ctx r) | r<-allRules pat]
-    , Pop "relsDefdIn"   "Pattern" "Relation"
-           [(dirtyId ctx pat,dirtyId ctx x) | x <- ptdcs pat]
-    ]++ metaPops formalAmpersand userFspec (ptxps pat)
-  where 
-    ctx = originalContext userFspec
-
-instance MetaPopulations Purpose where
-  metaPops _ userFspec purp = 
-    case mMotivatedThing of
-       Nothing -> []
-       Just motivatedThing ->
-         if explUserdefd purp -- Only supply userdefined purposes for now
-         then [ Pop "purpose"  metaType "Purpose"
-                [(motivatedThing, dirtyId ctx purp)]   
-              , Pop "markupText" "Purpose" "MarkupText"
-                [(dirtyId ctx purp, PopAlphaNumeric . aMarkup2String Markdown . explMarkup $ purp)]
-              ]
-         else []
-   where 
-     ctx = originalContext userFspec
-     metaType :: String
-     mMotivatedThing :: Maybe PopAtom  
-     (metaType, mMotivatedThing) = 
-       case explObj purp of
-          ExplConceptDef x 
-            -> ( "Concept"  , case filter (\cpt -> name cpt == name x) (concs ctx) of
-                                [cpt]  -> Just $ dirtyId ctx cpt
-                                ys -> fatal $ show (length ys)++" concepts found that match `"++name x++"`")
-          ExplDeclaration x
-            -> ( "Relation" , case filter (x == ) (relsDefdIn ctx) of
-                                [rel]  -> Just $ dirtyId ctx rel
-                                ys -> fatal $ show (length ys)++" relations found that match `"++show x++"`")
-          ExplRule x
-            -> ( "Rule"     , case filter (\rul -> name rul == x) (allRules ctx) of
-                                [rul]  -> Just $ dirtyId ctx rul
-                                ys -> fatal $ show (length ys)++" rules found that match `"++show x++"`")
-          ExplIdentityDef x
-            -> ( "Identity" , case filter (\idn -> name idn == x) (identities ctx) of
-                                [idn]  -> Just $ dirtyId ctx idn
-                                ys -> fatal $ show (length ys)++" identities found that match `"++show x++"`")
-          ExplViewDef x
-            -> ( "View"     , case filter (\view -> name view == x) (viewDefs ctx) of
-                                [idn]  -> Just $ dirtyId ctx idn
-                                ys -> fatal $ show (length ys)++" views found that match `"++show x++"`")
-          ExplPattern x
-            -> ( "Pattern"  , case filter (\pat -> name pat == x) (patterns ctx) of
-                                [pat]  -> Just $ dirtyId ctx pat
-                                ys -> fatal $ show (length ys)++" views found that match `"++show x++"`")
-          ExplInterface x
-            -> ( "Interface", case filter (\ifc -> name ifc == x) (ctxifcs ctx) of
-                                [ifc]  -> Just $ dirtyId ctx ifc
-                                ys -> fatal $ show (length ys)++" views found that match `"++show x++"`")
-          ExplContext x 
-            -> ( "Context"  , case filter (\y -> name y == x) [ctx] of
-                                []  -> Nothing
-                                [y] -> Just $ dirtyId ctx y
-                                ys  -> fatal $ show (length ys)++" contexts found that match `"++show x++"`")
-
-
-instance MetaPopulations A_Gen where
- metaPops _ userFspec gen@Isa{} =
-  [ Pop "gens" "Context" "Isa"
-          [(dirtyId ctx ctx,dirtyId ctx gen)]
-  , Pop "genspc"  "Isa" "Concept"
-          [(dirtyId ctx gen,dirtyId ctx (genspc gen))]
-  , Pop "gengen"  "Isa" "Concept"
-          [(dirtyId ctx gen,dirtyId ctx (gengen gen))]
-  ]
-  where 
-    ctx = originalContext userFspec
- metaPops _ userFspec gen@IsE{} =
-  [ Pop "gens" "Context" "IsE"
-          [(dirtyId ctx ctx,dirtyId ctx gen)]
-  , Pop "genspc"  "IsE" "Concept"
-          [(dirtyId ctx gen,dirtyId ctx (genspc gen))]
-  , Pop "gengen"  "IsE" "Concept"
-          [ (dirtyId ctx gen,dirtyId ctx c) | c<-genrhs gen ]
-  ]
-  where 
-    ctx = originalContext userFspec
-
-instance MetaPopulations A_Concept where
- metaPops _ userFspec cpt =
-   [ Comment " "
-   , Comment $ " Concept `"++name cpt++"` "
-   , Pop "ttype" "Concept" "TType"
-             [(dirtyId ctx cpt, dirtyId ctx (cptTType userFspec cpt))] 
-   , Pop "name" "Concept" "ConceptName"
-             [(dirtyId ctx cpt, (PopAlphaNumeric . name) cpt)]
-   , Pop "urlEncodedName" "Concept" "EncodedName"
-             [(dirtyId ctx cpt, (PopAlphaNumeric . escapeNonAlphaNum . name) cpt)]
-   ]++
-   case cpt of
-     PlainConcept{} ->
-      [ Pop "context" "Concept" "Context"
-             [(dirtyId ctx cpt, dirtyId ctx ctx)]
-      ]
-     ONE -> 
-      [ ]
+grind formalAmpersand userFspec =
+  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) metaPops2 }
   where
-    ctx = originalContext userFspec
+    metaPops2 :: [Pop]
+    metaPops2 = concatMap (grindedPops formalAmpersand userFspec)
+              . instances $ formalAmpersand
 
-instance MetaPopulations Role where
-  metaPops _ userFspec rol =
-      [ Pop "allRoles" "Context" "Role"
-                 [(dirtyId ctx ctx, dirtyId ctx rol) ]
-      , Pop "name" "Role" "RoleName"
-                 [(dirtyId ctx rol, (PopAlphaNumeric . name) rol) ]
-      ]
-   where
-    ctx = originalContext userFspec
 
-instance MetaPopulations Interface where
-  metaPops _ userFspec ifc =
-      [ Pop "interfaces" "Context" "Interface"
-                 [(dirtyId ctx ctx, dirtyId ctx ifc) ]
-      , Pop "ifcname" "Interface" "String"
-                 [(dirtyId ctx ifc, PopAlphaNumeric . ifcname $ ifc) ]
---      , Pop "ifcPos" "Interface" "Origin"
---                 [(dirtyId ctx ifc, dirtyId ctx (ifcPos ifc))]
-      , Pop "allRoles" "Context" "Role"
-                 [(dirtyId ctx ctx, dirtyId ctx rol) | rol <- ifcRoles ifc]
-      , Pop "ifcObj" "Interface" "ObjectDef"
-                 [(dirtyId ctx ifc, dirtyId ctx (ifcObj ifc)) ]
-      ]
-   where
-    ctx = originalContext userFspec
+
 
 instance MetaPopulations Signature where
  metaPops _ userFspec sgn =
@@ -544,28 +335,6 @@ popNameSignature pop =
      Pop{}     -> popName pop++" ["++popSource pop++" * "++popTarget pop++"]"
      Comment{} -> fatal "Must not call popName on a Comment-combinator."
 
-showRelsFromPops :: [Pop] -> String
-showRelsFromPops pops
-  = intercalate "\n" [ "RELATION "++popNameSignature (head cl) 
-                     | cl<-eqCl popNameSignature . filter isPop $ pops]
-    where isPop Pop{}     = True
-          isPop _ = False
-
-     
-
-
-
--- | remove spaces and make camelCase
-camelCase :: String -> String
-camelCase str = concatMap capitalize (words str)
-  where
-    capitalize [] = []
-    capitalize (s:ss) = toUpper s : ss
-
-nullContent :: Pop -> Bool
-nullContent Pop{popPairs = ps} = null ps
-nullContent Comment{}          = False
-
 type MetaFSpec = FSpec
 class MetaPopulations a where
  metaPops :: MetaFSpec -> FSpec -> a -> [Pop]
@@ -597,65 +366,38 @@ dumpGrindFile formalAmpersand userFspec
     body =
          intercalate []
        . map (lines . showPop )
-       . concatMap adl
-       . sortOn (\dcl -> name dcl++" "++name (source dcl)++" "++name (target dcl))
+       . concatMap (grindedPops formalAmpersand userFspec)
+       . sortOn (showDcl True)
        . instances $ formalAmpersand
-      
-              
-      
-    adl :: Declaration -> [Pop]
-    adl dcl = dclHeaderComment dcl ++ pops
-      where
-        dclHeaderComment :: Declaration -> [Pop]
-        dclHeaderComment dcl = 
-          [Comment . unlines $
-            [ "  "++(name) dcl++"["
-                              ++(name . source) dcl++" * "
-                              ++(name . target) dcl++"]"
-            ]
-          ]++pops
-        pops = case filter (isForDcl dcl) (transformers userFspec) of
-                []  -> fatal . unlines $ 
-                         ["Every relation in FormalAmpersand.adl must have a transformer in Transformers.hs"
-                         ,"   Violations:"
-                         ] ++ map ("      "++) viols
-                        where 
-                          viols = map myShow 
-                                . filter hasNoTransformer 
-                                . instances $ formalAmpersand
-                          hasNoTransformer :: Declaration -> Bool
-                          hasNoTransformer dcl = null (filter (isForDcl dcl) (transformers userFspec))
-                          myShow :: Declaration -> String
-                          myShow = showDcl True
-                ts  -> map transformer2Pop ts 
-        transformer2Pop (Transformer n s t ps) = Pop n s t ps      
-    isForDcl :: Declaration -> Transformer -> Bool
-    isForDcl dcl (Transformer n s t _ ) =
-       and [ name dcl == n
-           , name (source dcl) == s
-           , name (target dcl) == t]
-    maxLenStr :: Int
-    maxLenStr = maximum 
-              . map length
-              . concatMap (\dcl -> [ name dcl
-                                   , name (source dcl)
-                                   , name (target dcl)])
-              . vrels
-              $ formalAmpersand
-    
-
---      (nm, s,t) -> fatal . unlines $
---            [ "All relations defined in FormalAmpersand.adl must be "
---            , "known in ShowMeatGrinder.hs"
---            , "   Violations: "
-                        
-
-grind2 :: FSpec -> FSpec -> P_Context
-grind2 formalAmpersand userFspec =
-  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) metaPops2 }
+grindedPops :: FSpec -> FSpec -> Declaration -> [Pop]
+grindedPops formalAmpersand userFspec dcl = headerComment ++ pops
   where
-    metaPops2 :: [Pop]
-    metaPops2 = fatal "TODO: Meatgrinder v2.0 is still under construction."
-    
+    headerComment :: [Pop]
+    headerComment = 
+      [Comment . unlines $
+        [ "  "++(name) dcl++"["
+                          ++(name . source) dcl++" * "
+                          ++(name . target) dcl++"]"
+        ]
+      ]
+    pops = case filter (isForDcl dcl) (transformers userFspec) of
+            []  -> fatal . unlines $ 
+                      ["Every relation in FormalAmpersand.adl must have a transformer in Transformers.hs"
+                      ,"   Violations:"
+                      ] ++ map ("      "++) viols
+                    where 
+                      viols = map (showDcl True) 
+                            . filter hasNoTransformer 
+                            . instances $ formalAmpersand
+                      hasNoTransformer :: Declaration -> Bool
+                      hasNoTransformer d = null (filter (isForDcl d) (transformers userFspec))
+            ts  -> map transformer2Pop ts 
+    transformer2Pop (Transformer n s t ps) = Pop n s t ps      
+isForDcl :: Declaration -> Transformer -> Bool
+isForDcl dcl (Transformer n s t _ ) =
+    and [ name dcl == n
+        , name (source dcl) == s
+        , name (target dcl) == t]
+                        
 
 dirtyId = fatal "Meatgrinder is tijdelijk stuk. @Stef, als je wat wilt doen, bekijk dan Transformers.hs" 

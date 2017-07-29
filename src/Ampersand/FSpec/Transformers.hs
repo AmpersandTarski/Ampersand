@@ -112,11 +112,14 @@ transformers fSpec = map toTransformer [
      ,("context"               , "Population"            , "Context" 
       , [(dirtyId pop, dirtyId ctx) 
         | ctx::A_Context  <- instances fSpec
-        , pop::Population <- ctxpopus ctx
+        , pop::Population <- instances fSpec
         ]
       )
      ,("context"               , "Relation"              , "Context" 
-      , []  --TODO
+      , [(dirtyId rel, dirtyId ctx) 
+        | ctx::A_Context   <- instances fSpec
+        , rel::Declaration <- instances fSpec
+        ]
       )
      ,("ctxds"                 , "Relation"              , "Context" 
       , [(dirtyId dcl, dirtyId ctx) 
@@ -227,7 +230,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("ifcObj"                , "Interface"             , "ObjectDef"
-      , []  --TODO
+      , [(dirtyId ifc, dirtyId (ifcObj ifc)) 
+        | ifc::Interface <- instances fSpec
+        ]
       )
      ,("ifcOutputs"            , "Interface"             , "Relation"
       , []  --TODO
@@ -604,8 +609,22 @@ instance Instances IdentityDef where
   instances fSpec = ctxks (originalContext fSpec)
 instance Instances Interface where
   instances fSpec = ctxifcs (originalContext fSpec)
+instance Instances ObjectDef where
+  instances fSpec = nub $
+       ctxsql (originalContext fSpec)
+    ++ ctxphp (originalContext fSpec)
+    ++ (concatMap (objects . ifcObj) . instances $ fSpec)
+    where
+      objects :: ObjectDef -> [ObjectDef]
+      objects obj = obj :
+          case objmsub obj of
+              Nothing       -> []
+              Just InterfaceRef{} -> []
+              Just b@Box{}  -> concatMap objects . siObjs $ b  
 instance Instances Pattern where
   instances fSpec = ctxpats (originalContext fSpec)  
+instance Instances Population where
+  instances fSpec = ctxpopus (originalContext fSpec)
 instance Instances Purpose where
   instances fSpec = explanations fSpec
 instance Instances Rule where
@@ -615,6 +634,7 @@ instance Instances Role where
 instance Instances ViewDef where
   instances fSpec = viewDefs (originalContext fSpec)  
 
+  
 
 -- All Concepts that are relevant in Formal Ampersand (RAP),
 -- must be an instance of HasDirtyId:
