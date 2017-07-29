@@ -13,7 +13,7 @@ ifcParams contain the editable relations. This needs to be enhanced to ifcInputs
 So I have substituted ifcParams by ifcInputs everywhere in the Haskell code.
 ifcOutputs has to be added yet.
 -}
-RELATION ifcname[Interface*String] [UNI,TOT]
+RELATION name[Interface*InterfaceName] [UNI,TOT]
 MEANING "This relation contains the name of each interface."
 RELATION ifcInputs[Interface*Relation]  -- was: ifcParams
 MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."

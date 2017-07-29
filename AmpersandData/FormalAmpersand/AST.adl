@@ -39,7 +39,6 @@ RELATION origin[Rule*Origin]
 RELATION versionInfo[Context*AmpersandVersion]
 RELATION urlEncodedName[Rule*EncodedName]
 RELATION context[IdentityDef*Context]
-RELATION ifcname[Interface*String]
 {- ******************************************** 
    *** Einde elders neer te zetten relaties *** 
    ******************************************** 
