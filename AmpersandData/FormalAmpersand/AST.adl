@@ -36,9 +36,11 @@ RELATION context[Population*Context]
 RELATION language[Context*Language]
 RELATION message[Rule*Message]
 RELATION origin[Rule*Origin]
+REPRESENT Origin TYPE ALPHANUMERIC
 RELATION versionInfo[Context*AmpersandVersion]
 RELATION urlEncodedName[Rule*EncodedName]
 RELATION context[IdentityDef*Context]
+
 {- ******************************************** 
    *** Einde elders neer te zetten relaties *** 
    ******************************************** 

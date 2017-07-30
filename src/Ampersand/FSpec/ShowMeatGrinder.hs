@@ -11,14 +11,10 @@ where
 
 import Data.List
 import Data.Maybe
-import Data.Typeable
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.Motivations
 import Ampersand.FSpec.Transformers
 import Ampersand.Basics
 import Ampersand.Misc
-import Ampersand.Core.ShowPStruct
-import Ampersand.Core.ShowAStruct
 import Ampersand.Core.ParseTree
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Input
@@ -39,217 +35,6 @@ grind formalAmpersand userFspec =
 
 
 
-instance MetaPopulations Signature where
- metaPops _ userFspec sgn =
-      [ Pop "src" "Signature" "Concept"
-             [(dirtyId ctx sgn, dirtyId ctx (source sgn))]
-      , Pop "tgt" "Signature" "Concept"
-             [(dirtyId ctx sgn, dirtyId ctx (target sgn))]
-      ]
-  where
-    ctx = originalContext userFspec
-
-instance MetaPopulations Declaration where
- metaPops formalAmpersand userFspec dcl =
-   (case dcl of
-     Sgn{} ->
-      [ Comment " "
-      , Comment $ " Relation `"++name dcl++" ["++(name.source.decsgn) dcl++" * "++(name.target.decsgn) dcl++"]"++"` "
-      , Pop "context" "Relation" "Context"
-             [(dirtyId ctx dcl,dirtyId ctx ctx)] 
-      , Pop "name" "Relation" "RelationName"
-             [(dirtyId ctx dcl, (PopAlphaNumeric . name) dcl)]
-      , Pop "sign" "Relation" "Signature"
-             [(dirtyId ctx dcl,dirtyId ctx (sign dcl))]
-      , Pop "source" "Relation" "Concept"
-             [(dirtyId ctx dcl,dirtyId ctx (source dcl))]
-      , Pop "target" "Relation" "Concept"
-             [(dirtyId ctx dcl,dirtyId ctx (target dcl))]
-      , Pop "prop" "Relation" "Property"
-             [(dirtyId ctx dcl, dirtyId ctx x) | x <- decprps dcl]  -- decprps gives the user defined properties; not the derived properties.
-      , Pop "decprL" "Relation" "String"
-             [(dirtyId ctx dcl,(PopAlphaNumeric . decprL) dcl)]
-      , Pop "decprM" "Relation" "String"
-             [(dirtyId ctx dcl,(PopAlphaNumeric . decprM) dcl)]
-      , Pop "decprR" "Relation" "String"
-             [(dirtyId ctx dcl,(PopAlphaNumeric . decprR) dcl)]
- --     , Pop "decmean" "Relation" "Meaning"
- --            [(dirtyId ctx dcl, (show.concatMap showP.ameaMrk.decMean) dcl)]
-      ]
-     Isn{} -> fatal "Isn should not be populated by the meatgrinder."
-{- SJ sept 2nd, 2016: I don't think we should populate the I-relation from the meatgrinder,
-but I'm not sure why. -}
-{- HJ july 22, 2017: This is because Isn{} must be removed from relation. It is an expression, not a relation.
-      [ Comment " "
-      , Comment $ " Relation `I["++name (source dcl)++"]`"
-      , Pop "sign" "Relation" "Signature"
-             [(dirtyId ctx dcl,dirtyId ctx (sign dcl))]
-      , Pop "context" "Relation" "Context"
-             [(dirtyId ctx dcl,dirtyId ctx ctx)]
-      , Pop "name" "Relation" "RelationName"
-             [(dirtyId ctx dcl, (PopAlphaNumeric . name) dcl)]
-      , Pop "source" "Relation" "Concept"
-             [(dirtyId ctx dcl,dirtyId ctx (source dcl))]
-      , Pop "target" "Relation" "Concept"
-             [(dirtyId ctx dcl,dirtyId ctx (target dcl))]
-      ] -}
-
-     Vs{}  -> fatal "Vs should not be populated by the meatgrinder."
-   )++
-   metaPops formalAmpersand userFspec (sign dcl)
-   where
-    ctx = originalContext userFspec
-
-instance MetaPopulations A_Pair where
- metaPops _ userFspec pair =
-      [ Pop "in" "Pair" "Relation"
-             [(dirtyId ctx pair, dirtyId ctx (lnkDcl pair))]
-      , Pop "lAtom" "Pair" "Atom"
-             [(dirtyId ctx pair, dirtyId ctx (lnkLeft pair))]
-      , Pop "rAtom" "Pair" "Atom"
-             [(dirtyId ctx pair, dirtyId ctx (lnkRight pair))]
-      ]
-  where
-    ctx = originalContext userFspec
-
-instance MetaPopulations Expression where
- metaPops formalAmpersand userFspec expr =
-  case expr of 
-    EBrk e -> metaPops formalAmpersand userFspec e
-    _      ->
-      [ Comment $ "Expression: "++showA expr++" ("++show (sign expr)++")"
-      , Pop "sign" "Expression" "Signature"
-             [(dirtyId ctx expr, dirtyId ctx (sign expr))]
--- SJ20170721: The following two are redundant. They must not be populated, so I have commented them away.
---      , Pop "src" "Expression" "Concept" [Uni,Tot]
---             [(dirtyId ctx expr, dirtyId ctx (source expr))]
---      , Pop "tgt" "Expression" "Concept" [Uni,Tot]
---             [(dirtyId ctx expr, dirtyId ctx (target expr))]
-      , Pop "showADL" "Expression" "ShowADL"
-             [(dirtyId ctx expr, PopAlphaNumeric (showA expr))]
-      ]++
-      ( case skipEpsilon expr of
-            (EEqu (l,r)) -> makeBinaryTerm Equivalence l r
-            (EInc (l,r)) -> makeBinaryTerm Inclusion l r
-            (EIsc (l,r)) -> makeBinaryTerm Intersection l r
-            (EUni (l,r)) -> makeBinaryTerm Union l r
-            (EDif (l,r)) -> makeBinaryTerm Difference l r
-            (ELrs (l,r)) -> makeBinaryTerm LeftResidu l r   
-            (ERrs (l,r)) -> makeBinaryTerm RightResidu l r
-            (EDia (l,r)) -> makeBinaryTerm Diamond l r
-            (ECps (l,r)) -> makeBinaryTerm Composition l r
-            (ERad (l,r)) -> makeBinaryTerm RelativeAddition l r
-            (EPrd (l,r)) -> makeBinaryTerm CartesianProduct l r
-            (EKl0 e)     -> makeUnaryTerm  KleeneStar e
-            (EKl1 e)     -> makeUnaryTerm  KleenePlus e
-            (EFlp e)     -> makeUnaryTerm  Converse   e
-            (ECpl e)     -> makeUnaryTerm  UnaryMinus e
-            (EBrk _)     -> fatal "This should not happen, because EBrk has been handled before"
-            (EDcD dcl)   -> [Pop "bind" "BindedRelation" "Relation"
-                              [(dirtyId ctx expr,dirtyId ctx dcl)]
-                            ]
-            EDcI{}       -> []
-            EEps{}       -> fatal $ "EEps is not an expression in FormalAmpersand.\n"++
-                                    "  Expression: "++showA expr++" ("++show (sign expr)++")" 
-            EDcV{}       -> []
-            (EMp1 v _)   -> [ Pop "singleton" "Singleton" "AtomValue"
-                              [(dirtyId ctx expr,(PopAlphaNumeric . showP) v)]
-                            ]
-       ) 
-  where
-    ctx = originalContext userFspec
-    makeBinaryTerm :: BinOp -> Expression -> Expression -> [Pop]
-    makeBinaryTerm op lhs rhs = 
-      [ Comment $ "BinOperator: "++show op
-      , Comment $ "  First : "++showA lhs
-      , Comment $ "  Second: "++showA rhs
-      , Pop "first"  "BinaryTerm" "Expression"
-             [(dirtyId ctx expr,dirtyId ctx lhs)]
-      , Pop "second" "BinaryTerm" "Expression"
-             [(dirtyId ctx expr,dirtyId ctx rhs)]
-      , Pop "operator"  "BinaryTerm" "Operator"
-             [(dirtyId ctx expr,dirtyId ctx op)]
-      ]++metaPops formalAmpersand userFspec lhs
-       ++metaPops formalAmpersand userFspec rhs
-    makeUnaryTerm :: UnaryOp -> Expression -> [Pop]
-    makeUnaryTerm op arg =
-      [ Comment $ "UnaOperator: "++show op
-      , Comment $ "  Arg : "++showA arg
-      , Pop "arg" "UnaryTerm" "Expression"
-             [(dirtyId ctx expr,dirtyId ctx arg)]
-      , Pop "operator"  "UnaryTerm" "Operator"
-             [(dirtyId ctx expr,dirtyId ctx op)]
-      ]++metaPops formalAmpersand userFspec arg
-
-    -- | As long as FormalAmpersand doesn't need/know about Epsilons, 
-    --   we will not inject epsilon expressions into it.
-    --   So the epsilon expression must be skipped over.
-    --   This goes for brackets as well.   
-    skipEpsilon :: Expression -> Expression
-    skipEpsilon e =
-      case e of
-        (ECps (EEps{}, e') ) -> skipEpsilon e'
-        (ECps (e', EEps{}) ) -> skipEpsilon e'
-        (EBrk e'           ) -> skipEpsilon e'
-        _                    -> e
-
-data UnaryOp = 
-             KleeneStar
-           | KleenePlus
-           | Converse
-           | UnaryMinus deriving (Eq, Show, Typeable)
-instance Unique UnaryOp where
-  showUnique = show
-
-data BinOp = CartesianProduct
-           | Composition
-           | Diamond
-           | Difference
-           | Equivalence 
-           | Inclusion 
-           | Intersection 
-           | LeftResidu
-           | RightResidu
-           | RelativeAddition 
-           | Union deriving (Eq, Show, Typeable)
-instance Unique BinOp where
-  showUnique = show
-
-
-instance MetaPopulations Rule where
- metaPops formalAmpersand userFspec rul =
-      [ Comment " "
-      , Comment $ " Rule `"++name rul++"` "
-      , Pop "name"  "Rule" "RuleName"
-             [(dirtyId ctx rul, (PopAlphaNumeric . name) rul)]
-      , Pop "urlEncodedName" "Rule" "EncodedName"
-             [(dirtyId ctx rul, (PopAlphaNumeric . escapeNonAlphaNum . name) rul) 
-             | rul `elem` vrules userFspec --Rule must be user defined to show graphic 
-             ]
-      , Pop "origin"  "Rule" "Origin"
-             [(dirtyId ctx rul, (PopAlphaNumeric . show . origin) rul)]
-      , Pop "message"  "Rule" "Message"
-             [(dirtyId ctx rul, PopAlphaNumeric (aMarkup2String ReST m)) | m <- rrmsg rul, amLang m == fsLang userFspec ]
-      , Pop "formalExpression"  "Rule" "Expression"
-             [(dirtyId ctx rul, dirtyId ctx (rrexp rul))]
-      , Pop "meaning"  "Rule" "Meaning"
-             [(dirtyId ctx rul, PopAlphaNumeric (aMarkup2String ReST m)) | m <- (maybeToList . meaning (fsLang userFspec)) rul ]
-      , Pop "sign" "Rule" "Signature"
-             [(dirtyId ctx rul, dirtyId ctx (sign rul))]
-      , Pop "declaredthrough" "PropertyRule" "Property"
-             [(dirtyId ctx rul, dirtyId ctx prp) | Just(prp,_) <- [rrdcl rul]]
-      , Pop "propertyRule" "Relation" "PropertyRule"
-             [(dirtyId ctx dcl, dirtyId ctx rul) | Just(_,dcl) <- [rrdcl rul]]
-      ] ++ 
-      metaPops formalAmpersand userFspec (sign rul) ++
-      metaPops formalAmpersand userFspec (rrexp rul)
-  where
-    ctx = originalContext userFspec
-
-
-instance MetaPopulations a => MetaPopulations [a] where
- metaPops formalAmpersand userFspec = concatMap $ metaPops formalAmpersand userFspec
- 
 
 extractFromPop :: MetaFSpec -> Pop -> Maybe P_Declaration
 extractFromPop formalAmpersand pop =
@@ -336,8 +121,6 @@ popNameSignature pop =
      Comment{} -> fatal "Must not call popName on a Comment-combinator."
 
 type MetaFSpec = FSpec
-class MetaPopulations a where
- metaPops :: MetaFSpec -> FSpec -> a -> [Pop]
 
 
 
@@ -399,5 +182,3 @@ isForDcl dcl (Transformer n s t _ ) =
         , name (source dcl) == s
         , name (target dcl) == t]
                         
-
-dirtyId = fatal "Meatgrinder is tijdelijk stuk. @Stef, als je wat wilt doen, bekijk dan Transformers.hs" 

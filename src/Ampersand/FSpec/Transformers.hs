@@ -72,7 +72,10 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
-      , []  --TODO
+      , [(dirtyId expr, dirtyId (arg expr))
+        | expr::Expression <- instances fSpec
+        , isUnaryTerm expr
+        ]
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
       , []  --TODO
@@ -123,9 +126,9 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("ctxds"                 , "Relation"              , "Context" 
-      , [(dirtyId dcl, dirtyId ctx) 
+      , [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context   <- instances fSpec
-        , dcl::Declaration <- ctxds ctx
+        , rel::Declaration <- ctxds ctx
         ]
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
@@ -138,28 +141,37 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("declaredIn"            , "Relation"              , "Context" 
-      , [(dirtyId dcl, dirtyId ctx) 
+      , [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context   <- instances fSpec
-        , dcl::Declaration <- relsDefdIn ctx
+        , rel::Declaration <- relsDefdIn ctx
         ]
       )
      ,("declaredIn"            , "Relation"              , "Pattern" 
       , []  --TODO
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
-      , []  --TODO
+      , [(dirtyId rul, dirtyId prop) 
+        | rul::Rule    <- instances fSpec
+        , Just(prop,_) <- [rrdcl rul]
+        ]
       )
      ,("decmean"               , "Relation"              , "Meaning" 
       , []  --TODO
       )
      ,("decprL"                , "Relation"              , "String"  
-      , []  --TODO
+      , [(dirtyId rel, (PopAlphaNumeric . decprL) rel) 
+        | rel::Declaration   <- instances fSpec
+        ]
       )
      ,("decprM"                , "Relation"              , "String"  
-      , []  --TODO
+      , [(dirtyId rel, (PopAlphaNumeric . decprM) rel) 
+        | rel::Declaration   <- instances fSpec
+        ]
       )
      ,("decprR"                , "Relation"              , "String"  
-      , []  --TODO
+      , [(dirtyId rel, (PopAlphaNumeric . decprR) rel) 
+        | rel::Declaration   <- instances fSpec
+        ]
       )
      ,("default"               , "View"                  , "Concept" 
       , []  --TODO
@@ -174,7 +186,10 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("first"                 , "BinaryTerm"            , "Expression"
-      , []  --TODO
+      , [(dirtyId expr, dirtyId (first expr))
+        | expr::Expression <- instances fSpec
+        , isBinaryTerm expr
+        ]
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
       , []  --TODO
@@ -384,13 +399,21 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
-      , []  --TODO
+      , [(dirtyId expr, dirtyId (operator expr)) 
+        | expr::Expression   <- instances fSpec
+        , isBinaryTerm expr
+        ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
-      , []  --TODO
+      , [(dirtyId expr, dirtyId (operator expr)) 
+        | expr::Expression   <- instances fSpec
+        , isUnaryTerm expr
+        ]
       )
      ,("origin"                , "Rule"                  , "Origin"  
-      , []  --TODO
+      , [(dirtyId rul, (PopAlphaNumeric . show . origin) rul)
+        | rul::Rule <- instances fSpec
+        ]
       )
      ,("originatesFrom"        , "Conjunct"              , "Rule"    
       , []  --TODO
@@ -402,10 +425,16 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("prop"                  , "Relation"              , "Property"
-      , []  --TODO
+      , [(dirtyId rel, dirtyId prop) 
+        | rel::Declaration   <- instances fSpec
+        , prop <- decprps rel
+        ]
       )
      ,("propertyRule"          , "Relation"              , "PropertyRule"
-      , []  --TODO
+      , [(dirtyId rel, dirtyId rul) 
+        | rul::Rule <- instances fSpec
+        , Just(_,rel) <- [rrdcl rul]
+        ]
       )
      ,("purpose"               , "Concept"               , "Purpose" 
       , [(dirtyId cpt, dirtyId purp) 
@@ -465,7 +494,10 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("second"                , "BinaryTerm"            , "Expression"
-      , []  --TODO
+      , [(dirtyId expr, dirtyId (second expr)) 
+        | expr::Expression   <- instances fSpec
+        , isBinaryTerm expr
+        ]
       )
      ,("segment"               , "PairView"              , "PairViewSegment" 
       , []  --TODO
@@ -509,7 +541,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("source"                , "Relation"              , "Concept" 
-      , []  --TODO
+      , [(dirtyId rel, dirtyId (source rel)) 
+        | rel::Declaration   <- instances fSpec
+        ]
       )
      ,("src"                   , "Signature"             , "Concept" 
       , [(dirtyId sgn, dirtyId (source sgn)) 
@@ -520,7 +554,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("target"                , "Relation"              , "Concept" 
-      , []  --TODO
+      , [(dirtyId rel, dirtyId (target rel)) 
+        | rel::Declaration   <- instances fSpec
+        ]
       )
      ,("text"                  , "PairViewSegment"       , "String"  
       , []  --TODO
@@ -710,3 +746,120 @@ instance HasPurpose ViewDef where
     case explObj purp of
         ExplViewDef x    -> name vw == x
         _                -> False
+
+isBinaryTerm :: Expression -> Bool 
+isBinaryTerm expr = 
+  case exprInfo expr of
+    (Just _ , _ , _ ,_ ,_ ) -> True
+    _                       -> False
+first :: Expression -> Expression
+first expr = x
+  where 
+    (_,_,x,_,_) = exprInfo expr
+second :: Expression -> Expression
+second expr = x
+  where 
+    (_,_,_,x,_) = exprInfo expr
+  
+isUnaryTerm :: Expression -> Bool 
+isUnaryTerm expr = 
+  case exprInfo expr of
+    ( _ ,Just _ , _ , _ ,_ ) -> True
+    _                        -> False
+arg :: Expression -> Expression
+arg expr = x
+  where 
+    (_,_,_,_,x) = exprInfo expr
+operator :: Expression -> Either BinOp UnaryOp
+operator expr = 
+  case (b,u) of
+    (Just t, Nothing) -> Left t
+    (Nothing, Just t) -> Right t
+    (Nothing,Nothing) -> fatal $ "There is no operator for the expression: "++showA expr
+    (Just _, Just _ ) -> fatal $ "An expression cannot have both a BinaryTerm and a UnaryTerm"
+  where 
+    (b,u,_,_,_) = exprInfo expr
+  
+  
+exprInfo :: Expression
+                  -> (Maybe BinOp, Maybe UnaryOp, Expression, Expression, Expression)
+exprInfo expr =
+-- Auxiliary function that gives answers for an expression to the
+-- functions isBinaryTerm, isUnaryTerm, first, second, arg
+  case expr of
+    (EEqu (l,r)) -> 
+      (Just Equivalence     , Nothing, l      , r      , undef 3)
+    (EInc (l,r)) -> 
+      (Just Inclusion       , Nothing, l      , r      , undef 3)
+    (EIsc (l,r)) -> 
+      (Just Intersection    , Nothing, l      , r      , undef 3)
+    (EUni (l,r)) -> 
+      (Just Union           , Nothing, l      , r      , undef 3)
+    (EDif (l,r)) -> 
+      (Just Difference      , Nothing, l      , r      , undef 3)
+    (ELrs (l,r)) -> 
+      (Just LeftResidu      , Nothing, l      , r      , undef 3)
+    (ERrs (l,r)) -> 
+      (Just RightResidu     , Nothing, l      , r      , undef 3)
+    (EDia (l,r)) -> 
+      (Just Diamond         , Nothing, l      , r      , undef 3)
+    (ECps (l,r)) -> 
+      (Just Composition     , Nothing, l      , r      , undef 3)
+    (ERad (l,r)) -> 
+      (Just RelativeAddition, Nothing, l      , r      , undef 3)
+    (EPrd (l,r)) -> 
+      (Just CartesianProduct, Nothing, l      , r      , undef 3)
+    (EKl0 e)     -> 
+      (Nothing              , Just KleeneStar , undef 1, undef 2, e      )
+    (EKl1 e)     -> 
+      (Nothing              , Just KleenePlus , undef 1, undef 2, e      )
+    (EFlp e)     -> 
+      (Nothing              , Just Converse   , undef 1, undef 2, e      )
+    (ECpl e)     -> 
+      (Nothing              , Just UnaryMinus , undef 1, undef 2, e      )
+    (EBrk e)     ->
+      (Nothing              , Just Bracket    , undef 1, undef 2, e      )
+    EDcD{}       -> 
+      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
+    EDcI{}       ->  
+      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
+    EEps{}       ->  
+      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
+    EDcV{}       ->  
+      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
+    EMp1{}       ->  
+      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
+  where
+    undef :: Int -> Expression
+    undef i =
+      case i of
+        1 -> fatal $ "`first` is not defined for " ++showA expr
+        2 -> fatal $ "`second` is not defined for " ++showA expr
+        3 -> fatal $ "`arg` is not defined for " ++showA expr
+        _ -> fatal $ "unknown fatal"
+
+data UnaryOp = 
+             KleeneStar
+           | KleenePlus
+           | Converse
+           | UnaryMinus
+           | Bracket deriving (Eq, Show, Typeable)
+instance Unique UnaryOp where
+  showUnique = show
+
+data BinOp = CartesianProduct
+           | Composition
+           | Diamond
+           | Difference
+           | Equivalence 
+           | Inclusion 
+           | Intersection 
+           | LeftResidu
+           | RightResidu
+           | RelativeAddition 
+           | Union deriving (Eq, Show, Typeable)
+instance Unique BinOp where
+  showUnique = show
+instance Unique (Either BinOp UnaryOp) where
+  showUnique (Left  a) = showUnique a
+  showUnique (Right b) = showUnique b
