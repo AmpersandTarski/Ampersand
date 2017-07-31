@@ -322,7 +322,8 @@ instance Traced PAtomValue where
     ComnBool       o _ -> o
     ScriptDate     o _ -> o
     ScriptDateTime o _ -> o
-
+instance Unique PAtomValue where
+  showUnique = show
 mkPair :: Origin -> PAtomValue -> PAtomValue -> PAtomPair
 mkPair o l r
    = PPair { pos   = o

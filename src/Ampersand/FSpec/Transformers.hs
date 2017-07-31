@@ -545,7 +545,10 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("singleton"             , "Singleton"             , "AtomValue"
-      , []  --TODO
+      , [(dirtyId expr, dirtyId x)
+        | expr::Expression <- instances fSpec
+        , Just x <- [singleton expr]
+        ]
       )
      ,("source"                , "Relation"              , "Concept" 
       , [(dirtyId rel, dirtyId (source rel)) 
@@ -773,6 +776,7 @@ data ExprInfo = ExprInfo
    , userCpt' :: Maybe A_Concept -- the concept of an I expression
    , userSrc' :: Maybe A_Concept -- the source concept of a V expression
    , userTrg' :: Maybe A_Concept -- the target concept of a V expression
+   , singleton' :: Maybe PAtomValue -- the value of a singleton expression
    }  
 binOp :: Expression -> Maybe BinOp
 binOp = binOp' . exprInfo
@@ -792,6 +796,9 @@ userSrc :: Expression -> Maybe A_Concept
 userSrc = userSrc' . exprInfo 
 userTrg :: Expression -> Maybe A_Concept
 userTrg = userTrg' . exprInfo 
+singleton :: Expression -> Maybe PAtomValue
+singleton = singleton' . exprInfo 
+
 exprInfo :: Expression -> ExprInfo
 exprInfo expr =
   case expr of
@@ -805,6 +812,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EInc (l,r)) -> ExprInfo
         { binOp'     = Just Inclusion
@@ -816,6 +824,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EIsc (l,r)) -> ExprInfo
         { binOp'     = Just Equivalence
@@ -827,6 +836,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EUni (l,r)) -> ExprInfo
         { binOp'     = Just Union
@@ -838,6 +848,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EDif (l,r)) -> ExprInfo
         { binOp'     = Just Difference
@@ -849,6 +860,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (ELrs (l,r)) -> ExprInfo
         { binOp'     = Just LeftResidu
@@ -860,6 +872,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (ERrs (l,r)) -> ExprInfo
         { binOp'     = Just RightResidu
@@ -871,6 +884,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EDia (l,r)) -> ExprInfo
         { binOp'     = Just Diamond
@@ -882,6 +896,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (ECps (l,r)) -> ExprInfo
         { binOp'     = Just Composition
@@ -893,6 +908,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (ERad (l,r)) -> ExprInfo
         { binOp'     = Just RelativeAddition
@@ -904,6 +920,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EPrd (l,r)) -> ExprInfo
         { binOp'     = Just CartesianProduct
@@ -915,6 +932,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EKl0 e)     -> ExprInfo
         { binOp'     = Nothing
@@ -926,6 +944,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EKl1 e)     -> ExprInfo
         { binOp'     = Nothing
@@ -937,6 +956,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EFlp e)     -> ExprInfo
         { binOp'     = Nothing
@@ -948,6 +968,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (ECpl e)     -> ExprInfo
         { binOp'     = Nothing
@@ -959,6 +980,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EBrk e)     -> ExprInfo
         { binOp'     = Nothing
@@ -970,6 +992,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EDcD r)     -> ExprInfo
         { binOp'     = Nothing
@@ -981,6 +1004,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EDcI cpt)       -> ExprInfo
         { binOp'     = Nothing
@@ -992,6 +1016,7 @@ exprInfo expr =
         , userCpt'   = Just cpt
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     EEps{}       -> ExprInfo -- TODO!!
         { binOp'     = Nothing
@@ -1003,6 +1028,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EDcV sgn)      -> ExprInfo
         { binOp'     = Nothing
@@ -1014,8 +1040,9 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Just (source sgn)
         , userTrg'   = Just (target sgn)
+        , singleton' = Nothing
         }
-    EMp1{}       -> ExprInfo -- TODO!!
+    (EMp1 val _) -> ExprInfo
         { binOp'     = Nothing
         , unaryOp'   = Nothing
         , bindedRel' = Nothing
@@ -1025,6 +1052,7 @@ exprInfo expr =
         , userCpt'   = Nothing
         , userSrc'   = Nothing
         , userTrg'   = Nothing
+        , singleton' = Just val
         }
 
 data UnaryOp = 
