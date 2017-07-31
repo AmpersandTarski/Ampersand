@@ -10,7 +10,7 @@ import Ampersand.FSpec.FSpec(FSpec(..))
 import Ampersand.Basics
 import Text.Pandoc
 
--- The general idea is that an Ampersand declaration such as:
+-- The general idea is that an Ampersand relation such as:
 --     PURPOSE RELATION r[A*B] IN ENGLISH
 --     {+This text explains why r[A*B] exists-}
 -- produces the exact right text in the functional design document.
@@ -348,7 +348,7 @@ instance Meaning Relation where
     in case filter isLang (ameaMrk (decMean d)) of
          []   -> Nothing
          [m]  -> Just m
-         _    -> fatal ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
+         _    -> fatal ("In the "++show l++" language, too many meanings given for relation "++name d ++".")
 
 instance Motivated FSpec where
 --  meaning _ fSpec = fatal ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")

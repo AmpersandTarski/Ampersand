@@ -45,7 +45,7 @@ data Association    = OOAssoc  { assSrc ::     String           -- ^ source: the
                                , assTgt ::     String           -- ^ target: the name of the target class
                                , assrhm ::     Multiplicities   -- ^ right hand side multiplicities
                                , assrhr ::     String           -- ^ right hand side role
-                               , assmdcl ::    Maybe Relation -- ^ the declarations that caused this association , if any.
+                               , assmdcl ::    Maybe Relation -- ^ the relations that caused this association , if any.
                                } deriving Show
 data Aggregation    = OOAggr   { aggDel :: Deleting             --
                                , aggChild ::  A_Concept         --

@@ -13,7 +13,7 @@ import Data.Maybe
 import Data.Char
 
 makeGeneratedSqlPlugs :: Options -> A_Context 
-              -> (Relation -> Relation) -- Function to add calculated properties to a declaration
+              -> (Relation -> Relation) -- Function to add calculated properties to a relation
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
@@ -184,14 +184,14 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                     , attFlipped = isFlipped trgExpr
                     }
 
-    -- | dist will distribute the declarations amongst the sets of concepts. 
+    -- | dist will distribute the relations amongst the sets of concepts. 
     --   Preconditions: The sets of concepts are supposed to be sets of 
     --                  concepts that are to be represented in a single table. 
-    dist :: [Relation]   -- all declarations that are to be distributed
+    dist :: [Relation]   -- all relations that are to be distributed
          -> [Typology]   -- the sets of concepts, each one contains all concepts that will go into a single table.
-         -> ( [(Typology, [Relation])]  -- tuples of a set of concepts and all declarations that can be
+         -> ( [(Typology, [Relation])]  -- tuples of a set of concepts and all relations that can be
                                               -- stored into that table. The order of concepts is not modified.
-            , [Relation]  -- The declarations that cannot be stored into one of the concept tables.
+            , [Relation]  -- The relations that cannot be stored into one of the concept tables.
             ) 
     dist dcls cptLists = 
        ( [ (t, declsInTable t) | t <- cptLists]
@@ -206,7 +206,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                            then Nothing
                            else fst <$> wayToStore d
 
--- | this function tells in what concepttable a given declaration is to be stored. If stored
+-- | this function tells in what concepttable a given relation is to be stored. If stored
 --   in a concept table, it returns the concept and a boolean, telling wether or not the relation
 --   is stored flipped.
 wayToStore :: Relation -> Maybe (A_Concept,Bool)

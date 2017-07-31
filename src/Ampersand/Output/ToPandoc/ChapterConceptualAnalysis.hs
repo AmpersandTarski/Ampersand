@@ -99,7 +99,7 @@ chpConceptualAnalysis lev fSpec = (
                    (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " gedefinieerd ")
                    (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
-                  -- Then the declaration of the relation with its properties and its intended meaning
+                  -- Then the relation of the relation with its properties and its intended meaning
                <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisRelation d) (showMathWithSign d)
                <> case meaning2Blocks (fsLang fSpec) d of
                     [] -> case fsLang fSpec of

@@ -25,7 +25,7 @@ dumpSQLqueries multi
        <>generateInitialPopQueries fSpec
        <>header "Violations of conjuncts"
        <>concatMap showConjunct (allConjuncts fSpec)
-       <>header "Queries per declaration"
+       <>header "Queries per relation"
        <>concatMap showDecl (vrels fSpec)
        <>header "Queries of interfaces"
        <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)

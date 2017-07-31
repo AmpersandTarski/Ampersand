@@ -80,7 +80,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , allUsedDecls :: [Relation]            -- ^ All relations that are used in the fSpec
                    , vrels ::        [Relation]            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
-                                                              --   one declaration for each signal.
+                                                              --   one relation for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                    , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
@@ -91,7 +91,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
                    , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
-                   , allConjsPerDecl :: [(Relation, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
+                   , allConjsPerDecl :: [(Relation, [Conjunct])]   -- ^ Maps each relation to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
@@ -237,9 +237,9 @@ data PlugSQL
    --   i.e. a list of SqlAttribute given some A -> [target r | r::A*B,isUni r,isTot r, isInj r]
    --                                            ++ [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
    --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ]
-   --              (r=attExpr of kernel attribute holding instances of B, in practice r is I or a makeRelation(flipped declaration))
+   --              (r=attExpr of kernel attribute holding instances of B, in practice r is I or a makeRelation(flipped relation))
    --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
-   --              (r=attExpr of attMor attribute, in practice r is a makeRelation(declaration))
+   --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
  = TblSQL  { sqlname ::    String
            , attributes :: [SqlAttribute]                           -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
                                                                     --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"

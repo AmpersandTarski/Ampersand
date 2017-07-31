@@ -291,7 +291,7 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         relationNodesAndEdges ::
-             (Relation,Int)           -- ^ tuple contains the declaration and its rank
+             (Relation,Int)           -- ^ tuple contains the relation and its rank
           -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         relationNodesAndEdges (r,n)
           | doubleEdges opts

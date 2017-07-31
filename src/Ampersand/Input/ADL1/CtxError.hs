@@ -163,8 +163,8 @@ instance GetOneGuarded SubInterface where
 
 instance GetOneGuarded Relation where
   getOneExactly _ [d] = Checked d
-  getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showP o]
-  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showP o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]]
+  getOneExactly o []  = Errors [CTXE (origin o)$ "No relation for "++showP o]
+  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many relations match "++showP o++".\n  Be more specific. These are the matching relations:"++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]]
 
 mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Relation -> SrcOrTgt -> a -> Guarded a1
 mkTypeMismatchError o decl sot conc
@@ -180,7 +180,7 @@ cannotDisambRel o exprs
   where
    message =
     case exprs of
-     [] -> "No declarations match the relation: "++showP o
+     [] -> "No relations match the relation: "++showP o
      _  -> case o of
              (PNamedR(PNamedRel _ _ Nothing))
                 -> intercalate "\n" $

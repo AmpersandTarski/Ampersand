@@ -201,7 +201,7 @@ refStuff :: XRefSection -> RefStuff
 refStuff x  = 
    case x of
      XRefSharedLangRelation d 
-       -> RefStuff { typeOfSection    = "declaration"
+       -> RefStuff { typeOfSection    = "relation"
                    , chapterOfSection = SharedLang
                    , nameOfThing      = fullName d
                    , xrefPrefix       = "lst:"
@@ -231,7 +231,7 @@ refStuff x  =
                    , xrefPrefix       = "sec:"
                    }
      XRefConceptualAnalysisRelation d
-       -> RefStuff { typeOfSection    = "declaration"
+       -> RefStuff { typeOfSection    = "relation"
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = fullName d
                    , xrefPrefix       = "eq:"
@@ -334,7 +334,7 @@ instance Named CptCont where
 data Counters
   = Counter { pNr :: Int --Theme number
             , definitionNr :: Int --For Concepts
-            , agreementNr ::  Int --For declarations andrules
+            , agreementNr ::  Int --For relations andrules
             }
 
 -- orderingByTheme organizes the content of a specification in themes according to a define-before-use policy.

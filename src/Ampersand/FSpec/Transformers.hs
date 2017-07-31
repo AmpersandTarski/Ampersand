@@ -47,7 +47,7 @@ instance Show PopAtom where
 toTransformer :: (String, String, String, [(PopAtom,PopAtom)]) -> Transformer 
 toTransformer (rel, sCpt, tCpt, fun) = Transformer rel sCpt tCpt fun                   
 
--- | The list of all transformers, one for each and every declaration in Formal Ampersand.
+-- | The list of all transformers, one for each and every relation in Formal Ampersand.
 transformers :: FSpec -> [Transformer]
 transformers fSpec = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"

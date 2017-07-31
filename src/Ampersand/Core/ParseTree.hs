@@ -197,21 +197,21 @@ instance Show TType where
     Object            ->   "OBJECT"
     TypeOfOne         ->   "TYPEOFONE"
 data P_Relation =
-      P_Sgn { dec_nm :: String    -- ^ the name of the declaration
+      P_Sgn { dec_nm :: String    -- ^ the name of the relation
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
             , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
             , dec_pragma :: [String]  -- ^ Three strings, which form the pragma. E.g. if pragma consists of the three strings: "Person ", " is married to person ", and " in Vegas."
                                       -- ^    then a tuple ("Peter","Jane") in the list of links means that Person Peter is married to person Jane in Vegas.
-            , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a declaration, possibly more than one for different languages.
+            , dec_Mean :: [PMeaning]  -- ^ the optional meaning of a relation, possibly more than one for different languages.
             , dec_popu :: [PAtomPair]     -- ^ the list of tuples, of which the relation consists.
-            , pos :: Origin    -- ^ the position in the Ampersand source file where this declaration is declared. Not all declarations come from the ampersand souce file.
+            , pos :: Origin    -- ^ the position in the Ampersand source file where this relation is declared. Not all relations come from the ampersand souce file.
             , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
             } deriving (Show) --For QuickCheck error messages only!
 
 -- | Equality on P_Relation
---   Normally, equality on declarations means equality of both name (dec_nm) and signature (dec_sign).
---   However, in the parser, we need to distinguish between two declarations with the same name and signature when they are in different locations.
---   That occurs for example if we need to locate a copy of a declaration for generating an error message.
+--   Normally, equality on relations means equality of both name (dec_nm) and signature (dec_sign).
+--   However, in the parser, we need to distinguish between two relations with the same name and signature when they are in different locations.
+--   That occurs for example if we need to locate a copy of a relation for generating an error message.
 --   For this reason, equality in the P-structure is defined on origin.
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.

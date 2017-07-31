@@ -25,7 +25,7 @@ consequent r
      EInc (_,re) -> re
      x           -> x
 
--- rulefromProp specifies a rule that defines property prp of declaration d.
+-- rulefromProp specifies a rule that defines property prp of relation d.
 -- The table of all relations is provided, in order to generate shorter names if possible.
 rulefromProp :: Prop -> Relation -> Maybe Rule
 rulefromProp prp d =
@@ -37,7 +37,7 @@ rulefromProp prp d =
         , rrmsg =  violMsg prp
         , rrviol = Nothing
         , rrtyp = sign rExpr
-        , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
+        , rrdcl = Just (prp,d)         -- For traceability: The original property and relation.
         , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
         , r_usr = Multiplicity
         , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
@@ -117,4 +117,4 @@ rulefromProp prp d =
                     Sur-> "Elke "++t++" dient een "      ++s++" te hebben" ++" in de relatie "++name d
                     Prop -> fatal "Prop should have been converted by pattern the parser"
 
-rulefromProp _ _ = fatal "Properties can only be set on user-defined relations."
+

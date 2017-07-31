@@ -310,11 +310,11 @@ makeFSpec opts context
 --  A script without any mention of interfaces is supplemented
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
---          to ensure insertability of entities (signal declarations are excluded)
+--          to ensure insertability of entities (signal relations are excluded)
      cRels = [     EDcD d  | d<-calculatedDecls, isTot d, not$decplug d]++
              [flp (EDcD d) | d<-calculatedDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
---          to ensure deletability of entities (signal declarations are excluded)
+--          to ensure deletability of entities (signal relations are excluded)
      dRels = [     EDcD d  | d<-calculatedDecls, isInj d, not$decplug d]++
              [flp (EDcD d) | d<-calculatedDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.

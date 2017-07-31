@@ -161,7 +161,7 @@ checkOtherAtomsInSessionConcept ctx = case [mkOtherAtomInSessionError atom
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
 findDecls :: DeclMap -> String -> Map.Map SignOrd Relation
-findDecls declMap x = Map.findWithDefault Map.empty x declMap  -- get all declarations with the same name as x
+findDecls declMap x = Map.findWithDefault Map.empty x declMap  -- get all relations with the same name as x
 namedRel2Decl :: DeclMap -> P_NamedRel -> Guarded Relation
 namedRel2Decl declMap o@(PNamedRel _ r Nothing)  = getOneExactly o (findDecls' declMap r)
 namedRel2Decl declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findDeclsTyped declMap r (pSign2aSign s))
@@ -216,7 +216,7 @@ pCtx2aCtx opts
       , ctx_thms   = p_themes 
       , ctx_pats   = p_patterns
       , ctx_rs     = p_rules    
-      , ctx_ds     = p_declarations
+      , ctx_ds     = p_relations
       , ctx_cs     = p_conceptdefs
       , ctx_ks     = p_identdefs
       , ctx_rrules = p_roleRules
@@ -233,7 +233,7 @@ pCtx2aCtx opts
       }
  = do contextInfo <- g_contextInfo
       decls       <- map fst
-                       <$> traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) (p_declarations ++ concatMap pt_dcs p_patterns)
+                       <$> traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) (p_relations ++ concatMap pt_dcs p_patterns)
       let declMap = Map.map groupOnTp (Map.fromListWith (++) [(name d,[d]) | d <- decls])
             where groupOnTp lst = Map.fromListWith accumDecl [(SignOrd$ sign d,d) | d <- lst]
       pats        <- traverse (pPat2aPat declMap contextInfo) p_patterns            --  The patterns defined in this context
@@ -246,7 +246,7 @@ pCtx2aCtx opts
       sqldefs     <- traverse (pObjDef2aObjDef declMap) p_sqldefs       --  user defined sqlplugs, taken from the Ampersand script 
       phpdefs     <- traverse (pObjDef2aObjDef declMap) p_phpdefs       --  user defined phpplugs, taken from the Ampersand script 
       allRoleRelations <- traverse (pRoleRelation2aRoleRelation declMap) (p_roleRelations ++ concatMap pt_RRels p_patterns)
-      declsAndPops <- traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) p_declarations
+      declsAndPops <- traverse (pDecl2aDecl n1 contextInfo deflangCtxt deffrmtCtxt) p_relations
       let allConcs = Set.fromList (map (aConcToType . source) decls ++ map (aConcToType . target) decls)  :: Set.Set Type
       let soloConcs = filter (not . isInSystem genLattice) (Set.toList allConcs) :: [Type]
       let actx = ACtx{ ctxnm = n1

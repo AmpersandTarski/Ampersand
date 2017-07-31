@@ -51,7 +51,7 @@ INTERFACE MyInterface
             ]
       ]
 
-This is considered editable iff the composition rel;relRef yields an editable declaration (e.g. for editableR;I).
+This is considered editable iff the composition rel;relRef yields an editable relation (e.g. for editableR;I).
 
 -}
 
@@ -250,7 +250,7 @@ buildInterface fSpec allIfcs ifc =
                   InterfaceRef{} -> 
                    case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
                      []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
-                     (_:_:_) -> fatal ("Multiple declarations of referenced interface " ++ siIfcId si)
+                     (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                      [i]     -> 
                            if siIsLink si
                            then do { let (src, mDecl, tgt) = getSrcDclTgt iExp
