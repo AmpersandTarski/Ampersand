@@ -28,13 +28,13 @@ PURPOSE RELATION ifcObj[Interface*ObjectDef]
 Each interface has precisely one object definition.
 -}
 
-PURPOSE RELATION objnm[ObjectDef*String]
+PURPOSE RELATION name[ObjectDef*ObjectName]
 {+The name of an object definition serves as attribute name, if used inside some other object definition.
 Otherwise, this name is the name of the interface.
 The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
 -}
 
-PURPOSE RELATION objctx[ObjectDef*Expression]
+PURPOSE RELATION objExpression[ObjectDef*Expression]
 {+Every object definition is associated with an expression.
 If the object definition is an attribute, this expression yields the pairs that are used to ``walk'' through the population of the system.
 It works the same way if the object definition is related to an interface.

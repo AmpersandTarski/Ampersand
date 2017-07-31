@@ -215,7 +215,7 @@ buildInterface fSpec allIfcs ifc =
   where    
     buildObject :: ObjectDef -> IO FEObject
     buildObject object =
-     do { let iExp = conjNF (getOpts fSpec) $ objctx object
+     do { let iExp = conjNF (getOpts fSpec) $ objExpression object
               
         ; (aOrB, iExp', src, tgt, mDecl) <-
             case objmsub object of
@@ -269,7 +269,7 @@ buildInterface fSpec allIfcs ifc =
                                        , navIfcRoles = ifcRoles nIfc `intersect` ifcRoles ifc -- only consider interfaces that share roles with the one we're building
                                        } 
                         | nIfc <- allIfcs
-                        , (source . objctx . ifcObj $ nIfc) == tgt
+                        , (source . objExpression . ifcObj $ nIfc) == tgt
                         ]
 
         ; return FEObject{ objName = name object

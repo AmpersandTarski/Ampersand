@@ -52,9 +52,9 @@ doGenBericht fSpec =
            genEntity_ObjDef dpth objDef =
                Entity { entName = name objDef
                       , depth = dpth
-                      , cardinality  = card $ objctx objDef
-                      , definition   = defin $ objctx objDef
-                      , refType      = name (target $ objctx objDef)
+                      , cardinality  = card $ objExpression objDef
+                      , definition   = defin $ objExpression objDef
+                      , refType      = name (target $ objExpression objDef)
                       , associations =
                           case objmsub objDef of
                             Nothing -> []

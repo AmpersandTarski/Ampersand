@@ -115,9 +115,9 @@ instance ConceptStructure Signature where
   expressionsIn _  = []
 
 instance ConceptStructure ObjectDef where
-  concs     obj = [target (objctx obj)] `uni` concs (objmsub obj)
+  concs     obj = [target (objExpression obj)] `uni` concs (objmsub obj)
   expressionsIn obj = foldr uni []
-                     [ (expressionsIn.objctx) obj
+                     [ (expressionsIn.objExpression) obj
                      , (expressionsIn.objmsub) obj
                      ]
 

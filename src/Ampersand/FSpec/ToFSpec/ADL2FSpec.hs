@@ -41,9 +41,9 @@ makeFSpec opts context
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
               , roleInterfaces = fSpecRoleInterfaces
-              , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
+              , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objExpression (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
-                                      || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
+                                      || ctxrel `notElem` map (objExpression.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fDeriveProofs = deriveProofs opts context 
               , fRoleRels    = nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
@@ -339,7 +339,7 @@ makeFSpec opts context
       = let recur es
              = [ Obj { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
-                     , objctx  = t
+                     , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
@@ -357,7 +357,7 @@ makeFSpec opts context
         [Ifc { ifcname     = name c
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
-                                 , objctx  = EDcI c
+                                 , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
@@ -371,7 +371,7 @@ makeFSpec opts context
         , let objattributes = recur cl
         , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
         , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
-          not (length objattributes==1 && isIdent(objctx(head objattributes)))
+          not (length objattributes==1 && isIdent(objExpression(head objattributes)))
         , let e0=head cl, not (null e0) || fatal "null e0"
         , let c=source (head e0)
         , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]
@@ -382,7 +382,7 @@ makeFSpec opts context
       = [Ifc { ifcname     = nm
              , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
-                                 , objctx  = EDcI ONE
+                                 , objExpression  = EDcI ONE
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
@@ -393,7 +393,7 @@ makeFSpec opts context
              , ifcRoles    = []
              }
         | ifcc<-step4a
-        , let c   = source(objctx (ifcObj ifcc))
+        , let c   = source(objExpression (ifcObj ifcc))
               nm'::Int->String
               nm' 0  = plural printingLanguage (name c)
               nm' i  = plural printingLanguage (name c) ++ show i
@@ -403,7 +403,7 @@ makeFSpec opts context
                 | otherwise = head nms
               att = Obj { objnm    = name c
                         , objpos   = Origin "generated attribute object: step 4b"
-                        , objctx   = EDcV (Sign ONE c)
+                        , objExpression   = EDcV (Sign ONE c)
                         , objcrud  = fatal "No default crud in generated interface."
                         , objmView = Nothing
                         , objmsub  = Nothing

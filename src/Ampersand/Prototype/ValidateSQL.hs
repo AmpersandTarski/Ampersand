@@ -53,7 +53,7 @@ stringify (rule,pairs) = (name rule, map f pairs )
 getAllInterfaceExps :: FSpec -> [ValidationExp]
 getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc
                                    | ifc <- interfaceS fSpec ++ interfaceG fSpec ]
- where getObjExps iName objDef = (objctx objDef, "interface " ++ show iName) :
+ where getObjExps iName objDef = (objExpression objDef, "interface " ++ show iName) :
                                  concatMap (getObjExps iName) (fields objDef)
 
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
@@ -69,7 +69,7 @@ getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fS
 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
- where getIdExps identity = [ (objctx objDef, "identity "++show (name identity))
+ where getIdExps identity = [ (objExpression objDef, "identity "++show (name identity))
                             | IdentityExp objDef <- identityAts identity ]
 
 getAllViewExps :: FSpec -> [ValidationExp]

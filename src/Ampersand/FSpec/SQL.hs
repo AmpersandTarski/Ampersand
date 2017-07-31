@@ -1074,12 +1074,12 @@ broadQuery fSpec obj =
    Nothing                -> toSQL baseBinExpr
    Just InterfaceRef{}    -> toSQL baseBinExpr
    Just Box{siObjs=sObjs} -> 
-                    case filter (isInBroadQuery (objctx obj)) sObjs of
+                    case filter (isInBroadQuery (objExpression obj)) sObjs of
                        [] -> toSQL baseBinExpr
                        xs -> extendWithCols xs baseBinExpr
        
  where  
-  baseBinExpr = getBinQueryExprPlaceholder fSpec . objctx $ obj
+  baseBinExpr = getBinQueryExprPlaceholder fSpec . objExpression $ obj
 
   extendWithCols :: [ObjectDef] -> BinQueryExpr -> QueryExpr
   extendWithCols objs bqe 
@@ -1115,7 +1115,7 @@ broadQuery fSpec obj =
      plainQE = toSQL bqe
      makeCol :: Maybe Name -> ObjectDef -> (ValueExpr, Maybe Name)
      makeCol tableName col =
-       case attThatisInTableOf (target . objctx $ obj) col of
+       case attThatisInTableOf (target . objExpression $ obj) col of
             Nothing  -> fatal ("this is unexpected behaviour. "++show col)
             Just att -> ( Iden ( case tableName of
                                    Nothing -> [QName (name att)]
@@ -1147,12 +1147,12 @@ broadQuery fSpec obj =
        where 
          org = Name "org"
          ct  = Name "cptTbl"
-     tableCpt = source . objctx . head $ objs
+     tableCpt = source . objExpression . head $ objs
 
   isInBroadQuery :: Expression -> ObjectDef -> Bool
   isInBroadQuery ctxExpr sObj = 
-     (isUni . objctx $ sObj) && 
-     (isJust . attThatisInTableOf (target . objctx $ obj) $ sObj) &&
+     (isUni . objExpression $ sObj) && 
+     (isJust . attThatisInTableOf (target . objExpression $ obj) $ sObj) &&
      (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
 
   attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
@@ -1165,7 +1165,7 @@ broadQuery fSpec obj =
          where
             (plug, _ ) = getConceptTableInfo fSpec cpt
             theDcl :: Maybe (PlugSQL, SqlAttribute)
-            theDcl = case objctx od of
+            theDcl = case objExpression od of
                        EFlp (EDcD d) -> let (p, s, _) = getRelationTableInfo fSpec d
                                         in Just (p, s)
                        EDcD d        -> let (p, _, t) = getRelationTableInfo fSpec d

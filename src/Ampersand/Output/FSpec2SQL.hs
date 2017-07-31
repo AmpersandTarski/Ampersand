@@ -39,8 +39,8 @@ dumpSQLqueries multi
         where 
           showObjDef :: ObjectDef -> [Text.Text]
           showObjDef obj
-            = (header . Text.pack . showA . objctx) obj
-            <>[Text.pack$ (prettySQLQueryWithPlaceholder 2 fSpec . objctx) obj]
+            = (header . Text.pack . showA . objExpression) obj
+            <>[Text.pack$ (prettySQLQueryWithPlaceholder 2 fSpec . objExpression) obj]
             <>case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub

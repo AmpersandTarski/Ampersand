@@ -643,7 +643,7 @@ pCtx2aCtx opts
       obj crud (e,sr) s
        = ( Obj { objnm = nm
                , objpos = orig
-               , objctx = e
+               , objExpression = e
                , objcrud = crud
                , objmView = mView
                , objmsub = s
@@ -711,10 +711,10 @@ pCtx2aCtx opts
                        ) <$> traverse (join . fmap (matchWith (target objExpr)) . typecheckObjDef declMap) l <* uniqueNames l
      where matchWith _ (ojd,exprBound)
             = if b || exprBound then
-                case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objctx $ ojd)) of
-                    [] -> mustBeOrderedLst x [(source (objctx ojd),Src, aObjectDef2pObjectDef ojd)]
-                    (r:_) -> pure (ojd{objctx=addEpsilonLeft r (objctx ojd)})
-              else mustBeBound (origin ojd) [(Src,objctx ojd),(Tgt,objExpr)]
+                case userList$toList$ findExact genLattice (flType $ lMeet (target objExpr) (source . objExpression $ ojd)) of
+                    [] -> mustBeOrderedLst x [(source (objExpression ojd),Src, aObjectDef2pObjectDef ojd)]
+                    (r:_) -> pure (ojd{objExpression=addEpsilonLeft r (objExpression ojd)})
+              else mustBeBound (origin ojd) [(Src,objExpression ojd),(Tgt,objExpr)]
     typeCheckInterfaceRef :: P_ObjDef a -> String -> Expression -> Expression -> Guarded Expression
     typeCheckInterfaceRef objDef ifcRef objExpr ifcExpr = 
       let expTarget = target objExpr
@@ -938,9 +938,9 @@ pCtx2aCtx opts
            pIdentSegment2IdentSegment :: P_IdentSegmnt (TermPrim, DisambPrim) -> Guarded IdentitySegment
            pIdentSegment2IdentSegment (P_IdentExp ojd) =
               do o <- pObjDefDisamb2aObjDef declMap ojd
-                 case toList$ findExact genLattice $ aConcToType (source $ objctx o) `lJoin` aConcToType conc of
-                          [] -> mustBeOrdered orig (Src, origin ojd, objctx o) pidt
-                          _  -> pure $ IdentityExp o{objctx = addEpsilonLeft conc (objctx o)}
+                 case toList$ findExact genLattice $ aConcToType (source $ objExpression o) `lJoin` aConcToType conc of
+                          [] -> mustBeOrdered orig (Src, origin ojd, objExpression o) pidt
+                          _  -> pure $ IdentityExp o{objExpression = addEpsilonLeft conc (objExpression o)}
     typeCheckPairView :: Origin -> Expression -> PairView (Term (TermPrim, DisambPrim)) -> Guarded (PairView Expression)
     typeCheckPairView o x (PairView lst)
      = PairView <$> traverse (typeCheckPairViewSeg o x) lst

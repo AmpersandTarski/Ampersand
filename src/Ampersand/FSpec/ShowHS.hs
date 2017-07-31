@@ -494,7 +494,7 @@ instance ShowHS ObjectDef where
   = intercalate indent
         ["Obj{ objnm    = " ++ show(objnm r)
         ,"   , objpos   = " ++ showHS opts "" (objpos r)
-        ,"   , objctx   = " ++ showHS opts (indent++"                ") (objctx r)
+        ,"   , objExpression   = " ++ showHS opts (indent++"                ") (objExpression r)
         ,"   , objcrud  = " ++ showHS opts (indent++"                ") (objcrud r)
         ,"   , objmView = " ++ show(objmView r)
         ,"   , objmsub  = " ++ showHS opts (indent++"                ") (objmsub r)

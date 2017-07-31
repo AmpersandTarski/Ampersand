@@ -51,12 +51,15 @@ toTransformer (rel, sCpt, tCpt, fun) = Transformer rel sCpt tCpt fun
 transformers :: FSpec -> [Transformer]
 transformers fSpec = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
-      , []  --TODO
+      , [(dirtyId ctx, dirtyId conj ) 
+        | ctx::A_Context <- instances fSpec
+        , conj::Conjunct <- instances fSpec
+        ]
       )
      ,("allRoles"              , "Context"               , "Role"    
       , [(dirtyId ctx, dirtyId rol ) 
         | ctx::A_Context <- instances fSpec
-        , rol::Role      <- instances fSpec
+        , rol::Role <- instances fSpec
         ]
       )
      ,("allRules"              , "Context"               , "Rule"    
@@ -67,7 +70,7 @@ transformers fSpec = map toTransformer [
       )
      ,("allRules"              , "Pattern"               , "Rule"    
       , [(dirtyId pat, dirtyId rul) 
-        | pat::Pattern   <- instances fSpec
+        | pat::Pattern <- instances fSpec
         , rul::Rule      <- allRules pat
         ]
       )
@@ -96,7 +99,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("conjunct"              , "Conjunct"              , "Expression"
-      , []  --TODO
+      , [(dirtyId conj, dirtyId (rc_conjunct conj))
+        | conj::Conjunct <- instances fSpec
+        ]
       )
      ,("context"               , "Concept"               , "Context" 
       , [(dirtyId cpt, dirtyId ctx) 
@@ -107,37 +112,37 @@ transformers fSpec = map toTransformer [
      ,("context"               , "IdentityDef"           , "Context" 
       , [(dirtyId idf, dirtyId ctx) 
         | ctx::A_Context <- instances fSpec
-        , idf::IdentityDef   <- instances fSpec
+        , idf::IdentityDef <- instances fSpec
         ]
       )
      ,("context"               , "Pattern"               , "Context" 
       , [(dirtyId pat, dirtyId ctx) 
         | ctx::A_Context <- instances fSpec
-        , pat::Pattern   <- instances fSpec
+        , pat::Pattern <- instances fSpec
         ]
       )
      ,("context"               , "Population"            , "Context" 
       , [(dirtyId pop, dirtyId ctx) 
-        | ctx::A_Context  <- instances fSpec
+        | ctx::A_Context <- instances fSpec
         , pop::Population <- instances fSpec
         ]
       )
      ,("context"               , "Relation"              , "Context" 
       , [(dirtyId rel, dirtyId ctx) 
-        | ctx::A_Context   <- instances fSpec
+        | ctx::A_Context <- instances fSpec
         , rel::Relation <- instances fSpec
         ]
       )
      ,("ctxds"                 , "Relation"              , "Context" 
       , [(dirtyId rel, dirtyId ctx) 
-        | ctx::A_Context   <- instances fSpec
+        | ctx::A_Context <- instances fSpec
         , rel::Relation <- ctxds ctx
         ]
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
       , [(dirtyId rul, dirtyId ctx) 
         | ctx::A_Context <- instances fSpec
-        , rul::Rule      <- instances fSpec
+        , rul::Rule <- instances fSpec
         ]
       )
      ,("dbName"                , "Context"               , "DatabaseName"
@@ -145,7 +150,7 @@ transformers fSpec = map toTransformer [
       )
      ,("declaredIn"            , "Relation"              , "Context" 
       , [(dirtyId rel, dirtyId ctx) 
-        | ctx::A_Context   <- instances fSpec
+        | ctx::A_Context <- instances fSpec
         , rel::Relation <- relsDefdIn ctx
         ]
       )
@@ -154,7 +159,7 @@ transformers fSpec = map toTransformer [
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
       , [(dirtyId rul, dirtyId prop) 
-        | rul::Rule    <- instances fSpec
+        | rul::Rule <- instances fSpec
         , Just(prop,_) <- [rrdcl rul]
         ]
       )
@@ -163,17 +168,17 @@ transformers fSpec = map toTransformer [
       )
      ,("decprL"                , "Relation"              , "String"  
       , [(dirtyId rel, (PopAlphaNumeric . decprL) rel) 
-        | rel::Relation   <- instances fSpec
+        | rel::Relation <- instances fSpec
         ]
       )
      ,("decprM"                , "Relation"              , "String"  
       , [(dirtyId rel, (PopAlphaNumeric . decprM) rel) 
-        | rel::Relation   <- instances fSpec
+        | rel::Relation <- instances fSpec
         ]
       )
      ,("decprR"                , "Relation"              , "String"  
       , [(dirtyId rel, (PopAlphaNumeric . decprR) rel) 
-        | rel::Relation   <- instances fSpec
+        | rel::Relation <- instances fSpec
         ]
       )
      ,("default"               , "View"                  , "Concept" 
@@ -208,13 +213,13 @@ transformers fSpec = map toTransformer [
      ,("gens"                  , "Context"               , "IsE"     
       , [ ( dirtyId ctx, dirtyId ise) 
         | ctx::A_Context <- instances fSpec
-        , ise@IsE{}      <- instances fSpec
+        , ise@IsE{} <- instances fSpec
         ] 
       )
      ,("gens"                  , "Context"               , "Isa"     
       , [(dirtyId ctx, dirtyId isa) 
         | ctx::A_Context <- instances fSpec
-        , isa@Isa{}      <- instances fSpec
+        , isa@Isa{} <- instances fSpec
         ]
       )
      ,("genspc"                , "IsE"                   , "Concept" 
@@ -245,7 +250,10 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("ifcControls"           , "Interface"             , "Conjunct"
-      , []  --TODO
+      , [(dirtyId ifc, dirtyId conj) 
+        | ifc::Interface <- instances fSpec
+        , conj <- ifcControls ifc
+        ]
       )
      ,("ifcInputs"             , "Interface"             , "Relation"
       , []  --TODO
@@ -352,7 +360,7 @@ transformers fSpec = map toTransformer [
       )
      ,("multrules"             , "Rule"                  , "Pattern" 
       , [(dirtyId rul, dirtyId pat) 
-        | pat::Pattern   <- instances fSpec
+        | pat::Pattern <- instances fSpec
         , rul            <- multrules pat
         ]
       )
@@ -369,6 +377,11 @@ transformers fSpec = map toTransformer [
      ,("name"                  , "Interface"             , "InterfaceName"  
       , [(dirtyId ifc,(PopAlphaNumeric . name) ifc)
         | ifc::Interface <- instances fSpec
+        ]
+      )
+     ,("name"                 , "ObjectDef"             , "ObjectName"  
+      , [(dirtyId obj, (PopAlphaNumeric . name) obj)
+        | obj::ObjectDef <- instances fSpec
         ]
       )
      ,("name"                  , "Pattern"               , "PatternName"
@@ -391,15 +404,12 @@ transformers fSpec = map toTransformer [
         | rul::Rule <- instances fSpec
         ]
       )
-     ,("objctx"                , "ObjectDef"             , "Expression"
-      , [(dirtyId obj, dirtyId (objctx obj))
+     ,("objExpression"         , "ObjectDef"             , "Expression"
+      , [(dirtyId obj, dirtyId (objExpression obj))
         | obj::ObjectDef <- instances fSpec
         ]
       )
      ,("objmView"              , "ObjectDef"             , "View"    
-      , []  --TODO
-      )
-     ,("objnm"                 , "ObjectDef"             , "String"  
       , []  --TODO
       )
      ,("objpos"                , "ObjectDef"             , "Origin"  
@@ -407,13 +417,13 @@ transformers fSpec = map toTransformer [
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
       , [(dirtyId expr, dirtyId op) 
-        | expr::Expression   <- instances fSpec
+        | expr::Expression <- instances fSpec
         , Just op <- [binOp expr]
         ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
       , [(dirtyId expr, dirtyId op) 
-        | expr::Expression   <- instances fSpec
+        | expr::Expression <- instances fSpec
         , Just op <- [unaryOp expr]
         ]
       )
@@ -423,7 +433,10 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("originatesFrom"        , "Conjunct"              , "Rule"    
-      , []  --TODO
+      , [(dirtyId conj, dirtyId rul)
+        | conj::Conjunct <- instances fSpec
+        , rul <- rc_orgRules conj
+        ]
       )
      ,("outQ"                  , "Quad"                  , "Act"     
       , []  --TODO
@@ -433,7 +446,7 @@ transformers fSpec = map toTransformer [
       )
      ,("prop"                  , "Relation"              , "Property"
       , [(dirtyId rel, dirtyId prop) 
-        | rel::Relation   <- instances fSpec
+        | rel::Relation <- instances fSpec
         , prop <- decprps rel
         ]
       )
@@ -469,7 +482,7 @@ transformers fSpec = map toTransformer [
       )
      ,("purpose"               , "Pattern"               , "Purpose" 
       , [(dirtyId pat, dirtyId purp) 
-        | pat::Pattern   <- instances fSpec
+        | pat::Pattern <- instances fSpec
         , purp           <- purposes fSpec pat
         ]
       )
@@ -481,7 +494,7 @@ transformers fSpec = map toTransformer [
       )
      ,("purpose"               , "Rule"                  , "Purpose" 
       , [(dirtyId rul, dirtyId purp) 
-        | rul::Rule      <- instances fSpec
+        | rul::Rule <- instances fSpec
         , purp           <- purposes fSpec rul
         ]
       )
@@ -490,7 +503,7 @@ transformers fSpec = map toTransformer [
       )
      ,("relsDefdIn"            , "Pattern"               , "Relation"
       , [(dirtyId pat, dirtyId rel) 
-        | pat::Pattern   <- instances fSpec
+        | pat::Pattern <- instances fSpec
         , rel            <- ptdcs pat
         ]
       )
@@ -498,7 +511,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , []  --TODO
+      , [(dirtyId rul, dirtyId (formalExpression rul))
+        | rul::Rule <- instances fSpec
+        ]
       )
      ,("second"                , "BinaryTerm"            , "Expression"
       , [(dirtyId expr, dirtyId x)
@@ -526,22 +541,22 @@ transformers fSpec = map toTransformer [
       )
      ,("showADL"               , "Expression"            , "ShowADL" 
       , [(dirtyId expr, PopAlphaNumeric (showA expr)) 
-        | expr::Expression   <- instances fSpec
+        | expr::Expression <- instances fSpec
         ]
       )
      ,("sign"                  , "Expression"            , "Signature"
       , [(dirtyId expr, dirtyId (sign expr)) 
-        | expr::Expression   <- instances fSpec
+        | expr::Expression <- instances fSpec
         ]
       )
      ,("sign"                  , "Relation"              , "Signature"
       , [(dirtyId rel, dirtyId (sign rel)) 
-        | rel::Relation   <- instances fSpec
+        | rel::Relation <- instances fSpec
         ]
       )
      ,("sign"                  , "Rule"                  , "Signature"
       , [(dirtyId rul, dirtyId (sign rul)) 
-        | rul::Rule   <- instances fSpec
+        | rul::Rule <- instances fSpec
         ]
       )
      ,("singleton"             , "Singleton"             , "AtomValue"
@@ -552,12 +567,12 @@ transformers fSpec = map toTransformer [
       )
      ,("source"                , "Relation"              , "Concept" 
       , [(dirtyId rel, dirtyId (source rel)) 
-        | rel::Relation   <- instances fSpec
+        | rel::Relation <- instances fSpec
         ]
       )
      ,("src"                   , "Signature"             , "Concept" 
       , [(dirtyId sgn, dirtyId (source sgn)) 
-        | sgn::Signature   <- instances fSpec
+        | sgn::Signature <- instances fSpec
         ]
       )
      ,("srcOrTgt"              , "PairViewSegment"       , "SourceOrTarget"
@@ -565,7 +580,7 @@ transformers fSpec = map toTransformer [
       )
      ,("target"                , "Relation"              , "Concept" 
       , [(dirtyId rel, dirtyId (target rel)) 
-        | rel::Relation   <- instances fSpec
+        | rel::Relation <- instances fSpec
         ]
       )
      ,("text"                  , "PairViewSegment"       , "String"  
@@ -573,7 +588,7 @@ transformers fSpec = map toTransformer [
       )
      ,("tgt"                   , "Signature"             , "Concept" 
       , [(dirtyId sgn, dirtyId (target sgn)) 
-        | sgn::Signature   <- instances fSpec
+        | sgn::Signature <- instances fSpec
         ]
       )
      ,("transactionObject"     , "Transaction"           , "Object"  
@@ -592,7 +607,7 @@ transformers fSpec = map toTransformer [
       )
      ,("udefrules"             , "Rule"                  , "Pattern" 
       , [(dirtyId rul, dirtyId pat) 
-        | pat::Pattern   <- instances fSpec
+        | pat::Pattern <- instances fSpec
         , rul            <- udefrules pat
         ]
       )
@@ -612,12 +627,15 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("usedIn"                , "Relation"              , "Expression"
-      , []  --TODO
+      , [(dirtyId rel, dirtyId expr)
+        | expr::Expression <- instances fSpec
+        , rel::Relation <- relsUsedIn expr
+        ]
       )
      ,("userCpt"               , "I"                     , "Concept" 
       , [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
-        , Just x <- [userCpt expr]
+        , Just (x::A_Concept) <- [userCpt expr]
         ]
       )
      ,("userSrc"               , "V"                     , "Concept" 
@@ -671,6 +689,8 @@ instance Instances A_Gen where
   instances fSpec = gens (originalContext fSpec)
 instance Instances A_Concept where
   instances fSpec = concs (originalContext fSpec)
+instance Instances Conjunct where
+  instances fSpec = allConjuncts fSpec
 instance Instances Relation where
   instances fSpec = relsDefdIn (originalContext fSpec)
 instance Instances Expression where
@@ -704,7 +724,7 @@ instance Instances Rule where
 instance Instances Signature where
   instances fSpec = nub $
        [sign dcl  | dcl::Relation <- instances fSpec]
-    ++ [sign rul  | rul::Rule        <- instances fSpec]
+    ++ [sign rul  | rul::Rule <- instances fSpec]
     ++ [sign expr | expr::Expression <- instances fSpec]
 instance Instances ViewDef where
   instances fSpec = viewDefs (originalContext fSpec)  

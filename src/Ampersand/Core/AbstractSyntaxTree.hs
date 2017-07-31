@@ -348,16 +348,16 @@ class Object a where
  contextOf :: a -> Expression     -- the context expression
 
 instance Object ObjectDef where
- concept obj = target (objctx obj)
+ concept obj = target (objExpression obj)
  fields  obj = case objmsub obj of
                  Nothing       -> []
                  Just InterfaceRef{} -> []
                  Just b@Box{}    -> siObjs b
- contextOf   = objctx
+ contextOf   = objExpression
 
 data ObjectDef = Obj { objnm ::    String         -- ^ view name of the object definition. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface if it is not an empty string.
                      , objpos ::   Origin         -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number)
-                     , objctx ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
+                     , objExpression ::   Expression     -- ^ this expression describes the instances of this object, related to their context.
                      , objcrud ::  Cruds -- ^ CRUD as defined by the user 
                      , objmView :: Maybe String   -- ^ The view that should be used for this object
                      , objmsub ::  Maybe SubInterface    -- ^ the fields, which are object definitions themselves.

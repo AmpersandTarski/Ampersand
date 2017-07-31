@@ -38,7 +38,7 @@ rulesFromIdentity :: IdentityDef -> [Rule]
 rulesFromIdentity identity
  = [ if null (identityAts identity) then fatal "Moving into foldr1 with empty list (identityAts identity)." else
      mkKeyRule
-      ( foldr1 (./\.) [  expr .:. flp expr | IdentityExp att <- identityAts identity, let expr=objctx att ]
+      ( foldr1 (./\.) [  expr .:. flp expr | IdentityExp att <- identityAts identity, let expr=objExpression att ]
         .|-. EDcI (idCpt identity)) ]
  {-    diamond e1 e2 = (flp e1 .\. e2) ./\. (e1 ./. flp e2)  -}
  where ruleName = "identity_" ++ name identity

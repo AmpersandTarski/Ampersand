@@ -186,7 +186,7 @@ aObjectDef2pObjectDef :: ObjectDef -> P_ObjectDef
 aObjectDef2pObjectDef oDef =
  P_Obj { obj_nm    = objnm oDef
        , pos   = objpos oDef
-       , obj_ctx   = aExpression2pTermPrim (objctx oDef)
+       , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
        , obj_crud  = aCruds2pCruds (objcrud oDef)
        , obj_mView = objmView oDef
        , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)

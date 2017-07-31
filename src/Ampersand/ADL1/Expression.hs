@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Ampersand.ADL1.Expression (
                        subst
-                      ,primitives,isMp1, isEEps
+                      ,primitives,isMp1, isEEps, isEDcD
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
@@ -112,6 +112,10 @@ isMp1 _ = False
 isEEps :: Expression -> Bool
 isEEps EEps{} = True
 isEEps _ = False
+
+isEDcD :: Expression -> Bool
+isEDcD EDcD{} = True
+isEDcD _ = False
 
 exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]
 exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r

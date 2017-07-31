@@ -93,7 +93,7 @@ getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterf
 
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
-  where getExprs Obj{objctx=expr, objmsub=subObj} = 
+  where getExprs Obj{objExpression=expr, objmsub=subObj} = 
           expr : case subObj of 
                    Nothing                -> []
                    Just si -> case si of
