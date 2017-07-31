@@ -416,13 +416,13 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
-      , [(dirtyId expr, dirtyId op) 
+      , [(dirtyId expr, PopAlphaNumeric . show $ op) 
         | expr::Expression <- instances fSpec
         , Just op <- [binOp expr]
         ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
-      , [(dirtyId expr, dirtyId op) 
+      , [(dirtyId expr, PopAlphaNumeric . show $ op) 
         | expr::Expression <- instances fSpec
         , Just op <- [unaryOp expr]
         ]

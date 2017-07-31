@@ -15,6 +15,7 @@ ifcOutputs has to be added yet.
 -}
 RELATION name[Interface*InterfaceName] [UNI,TOT]
 MEANING "This relation contains the name of each interface."
+REPRESENT InterfaceName TYPE ALPHANUMERIC
 RELATION ifcInputs[Interface*Relation]  -- was: ifcParams
 MEANING "This relation contains the relations that can be edited in an interface by a user or another computer."
 RELATION ifcOutputs[Interface*Relation]

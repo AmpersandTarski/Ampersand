@@ -20,10 +20,13 @@ INCLUDE "Interfaces.adl"
 -}
 RELATION interfaces[Context*Interface]
 RELATION name[Role*RoleName]
+REPRESENT RoleName TYPE ALPHANUMERIC
 RELATION markupText[Purpose*MarkupText]
 RELATION urlEncodedName[Concept*EncodedName]
+REPRESENT EncodedName TYPE ALPHANUMERIC
 RELATION context[Relation*Context]
 RELATION ttype[Concept*TType]
+REPRESENT TType TYPE ALPHANUMERIC
 RELATION allRoles[Context*Role]
 RELATION sign[Expression*Signature]
 RELATION relsDefdIn[Pattern*Relation]
@@ -34,10 +37,12 @@ RELATION urlEncodedName[Pattern*EncodedName]
 RELATION interfaces[Role*Interface]
 RELATION context[Population*Context]
 RELATION language[Context*Language]
+REPRESENT Language TYPE ALPHANUMERIC
 RELATION message[Rule*Message]
 RELATION origin[Rule*Origin]
 REPRESENT Origin TYPE ALPHANUMERIC
 RELATION versionInfo[Context*AmpersandVersion]
+REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 RELATION urlEncodedName[Rule*EncodedName]
 RELATION context[IdentityDef*Context]
 
