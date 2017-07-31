@@ -175,7 +175,41 @@ grindedPops formalAmpersand userFspec dcl = headerComment ++ pops
                       hasNoTransformer :: Relation -> Bool
                       hasNoTransformer d = null (filter (isForDcl d) (transformers userFspec))
             ts  -> map transformer2Pop ts 
-    transformer2Pop (Transformer n s t ps) = Pop n s t ps      
+    transformer2Pop :: Transformer -> Pop
+    transformer2Pop (Transformer n s t ps) 
+      | not ( all (ttypeOf (source dcl)) (map fst ps) ) =
+             fatal . unlines $
+                 [ "The TType of the population produced by the meatgrinder must"
+                 , "   match the TType of the concept as specified in formalampersand.adl."
+                 , "   The population of the relation `"++n++"["++s++" * "++t++"]` "
+                 , "   violates this rule for concept `"++s++"`. In formalAmpersand.adl "
+                 , "   the TType of this concept is "++(show . cptTType formalAmpersand $ source dcl)++"."
+                 ]
+      | not ( all (ttypeOf (target dcl)) (map snd ps) ) =
+             fatal . unlines $
+                 [ "The TType of the population produced by the meatgrinder must"
+                 , "   match the TType of the concept as specified in formalampersand.adl."
+                 , "   The population of the relation `"++n++"["++s++" * "++t++"]` "
+                 , "   violates this rule for concept `"++t++"`. In formalAmpersand.adl "
+                 , "   the TType of this concept is "++(show . cptTType formalAmpersand $ target dcl)++"." 
+                 ]
+      | otherwise = Pop n s t ps
+      where ttypeOf :: A_Concept -> (PopAtom -> Bool)
+            ttypeOf cpt =
+              case (cptTType formalAmpersand) cpt of
+                Object          -> isDirtyId
+                Alphanumeric    -> isTextual
+                BigAlphanumeric -> isTextual
+                tt              -> fatal $ "No test available yet. "++show tt++" encountered for the first time in FormalAmpersand.adl"
+            isDirtyId pa = case pa of
+                            DirtyId{}         -> True
+                            _                 -> False
+            isTextual pa = case pa of
+                            PopAlphaNumeric{} -> True
+                            _                 -> False
+                                        
+                            
+                                
 isForDcl :: Relation -> Transformer -> Bool
 isForDcl dcl (Transformer n s t _ ) =
     and [ name dcl == n
