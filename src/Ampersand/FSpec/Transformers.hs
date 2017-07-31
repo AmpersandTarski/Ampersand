@@ -158,7 +158,7 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
-      , [(dirtyId rul, dirtyId prop) 
+      , [(dirtyId rul, PopAlphaNumeric . show $ prop) 
         | rul::Rule <- instances fSpec
         , Just(prop,_) <- [rrdcl rul]
         ]
@@ -445,7 +445,7 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("prop"                  , "Relation"              , "Property"
-      , [(dirtyId rel, dirtyId prop) 
+      , [(dirtyId rel, PopAlphaNumeric . show $ prop) 
         | rel::Relation <- instances fSpec
         , prop <- decprps rel
         ]
