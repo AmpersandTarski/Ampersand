@@ -671,7 +671,7 @@ instance Association Expression where
 showSign :: Association a => a -> String
 showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 
--- We allow editing on basic relations (Declarations) that may have been flipped, or narrowed/widened by composing with I.
+-- We allow editing on basic relations (Relations) that may have been flipped, or narrowed/widened by composing with I.
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
 -- we use are the concepts in the innermost epsilon, or the source/target concept of the relation, in absence of epsilons.
 -- This is used to determine the type of the atoms provided by the outside world through interfaces.

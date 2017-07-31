@@ -8,7 +8,7 @@ module Ampersand.Core.ParseTree (
    , P_RoleRule(..)
    , Role(..)
    , P_Pattern(..)
-   , P_Declaration(..)
+   , P_Relation(..)
    , Term(..), TermPrim(..), P_NamedRel(..)
    , PairView(..), PairViewSegment(..), PairViewTerm(..), PairViewSegmentTerm(..)
    , SrcOrTgt(..), isSrc
@@ -57,7 +57,7 @@ data P_Context
          , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
          , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctx_ds ::     [P_Declaration]  -- ^ The relations defined in this context, outside the scope of patterns
+         , ctx_ds ::     [P_Relation]  -- ^ The relations defined in this context, outside the scope of patterns
          , ctx_cs ::     [ConceptDef]     -- ^ The concept definitions defined in this context, outside the scope of patterns
          , ctx_ks ::     [P_IdentDef]     -- ^ The identity definitions defined in this context, outside the scope of patterns
          , ctx_rrules :: [P_RoleRule]     -- ^ The MAINTAIN definitions defined in this context, outside the scope of patterns
@@ -124,7 +124,7 @@ data P_Pattern
            , pt_nm :: String            -- ^ Name of this pattern
            , pt_rls :: [P_Rule TermPrim]         -- ^ The user defined rules in this pattern
            , pt_gns :: [P_Gen]          -- ^ The generalizations defined in this pattern
-           , pt_dcs :: [P_Declaration]  -- ^ The relations that are declared in this pattern
+           , pt_dcs :: [P_Relation]  -- ^ The relations that are declared in this pattern
            , pt_RRuls :: [P_RoleRule]   -- ^ The assignment of roles to rules.
            , pt_RRels :: [P_RoleRelation] -- ^ The assignment of roles to Relations.
            , pt_cds :: [ConceptDef]     -- ^ The concept definitions defined in this pattern
@@ -196,7 +196,7 @@ instance Show TType where
     Float             ->   "FLOAT"
     Object            ->   "OBJECT"
     TypeOfOne         ->   "TYPEOFONE"
-data P_Declaration =
+data P_Relation =
       P_Sgn { dec_nm :: String    -- ^ the name of the declaration
             , dec_sign :: P_Sign    -- ^ the type. Parser must guarantee it is not empty.
             , dec_prps :: Props     -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
@@ -208,23 +208,23 @@ data P_Declaration =
             , dec_plug :: Bool      -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
             } deriving (Show) --For QuickCheck error messages only!
 
--- | Equality on P_Declaration
+-- | Equality on P_Relation
 --   Normally, equality on declarations means equality of both name (dec_nm) and signature (dec_sign).
 --   However, in the parser, we need to distinguish between two declarations with the same name and signature when they are in different locations.
 --   That occurs for example if we need to locate a copy of a declaration for generating an error message.
 --   For this reason, equality in the P-structure is defined on origin.
 --   It is easy to see that if the locations are the same, then the relations must be the same.
 --   But is that true all the time? ... No. If one or both origins are unknown, we revert to comparing name and signature.
---   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Declarations.
-instance Eq P_Declaration where
+--   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Relations.
+instance Eq P_Relation where
  decl==decl' = compare decl decl' == EQ
-instance Prelude.Ord P_Declaration where
+instance Prelude.Ord P_Relation where
  compare p1 p2 
    | origin p1==OriginUnknown && origin p2==OriginUnknown = compare (name p1,dec_sign p1) (name p2,dec_sign p2)
    | otherwise                                            = compare (origin p1) (origin p2)
-instance Named P_Declaration where
+instance Named P_Relation where
  name = dec_nm
-instance Traced P_Declaration where
+instance Traced P_Relation where
  origin = pos
 
 data PAtomPair
@@ -720,7 +720,7 @@ instance Traversable P_ViewSegmtPayLoad where
 -- It is a pre-explanation in the sense that it contains a reference to something that is not yet built by the compiler.
 --                       Constructor      name          RefID  Explanation
 data PRef2Obj = PRef2ConceptDef String
-              | PRef2Declaration P_NamedRel
+              | PRef2Relation P_NamedRel
               | PRef2Rule String
               | PRef2IdentityDef String
               | PRef2ViewDef String
@@ -732,7 +732,7 @@ data PRef2Obj = PRef2ConceptDef String
 instance Named PRef2Obj where
   name pe = case pe of
      PRef2ConceptDef str -> str
-     PRef2Declaration (PNamedRel _ nm mSgn) -> nm++maybe "" show mSgn
+     PRef2Relation (PNamedRel _ nm mSgn) -> nm++maybe "" show mSgn
      PRef2Rule str -> str
      PRef2IdentityDef str -> str
      PRef2ViewDef str -> str
@@ -760,7 +760,7 @@ data P_Concept
    = PCpt{ p_cptnm :: String }  -- ^The name of this Concept
    | P_Singleton
       deriving (Eq,Ord)
--- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Declaration must be Eq on name and signature.
+-- (Stef June 17th, 2016)   P_Concept is defined Eq, because P_Relation must be Eq on name and signature.
 -- (Sebastiaan 16 jul 2016) P_Concept has been defined Ord, only because we want to maintain sets of concepts in the type checker for quicker lookups.
 
 instance Named P_Concept where
@@ -771,7 +771,7 @@ instance Show P_Concept where
  showsPrec _ c = showString (name c)
 
 data P_Sign = P_Sign {pSrc :: P_Concept, pTgt :: P_Concept } deriving (Ord,Eq)
--- (Stef June 17th, 2016)   P_Sign is defined Ord,Eq, because P_Declaration must be Ord,Eq on name and signature.
+-- (Stef June 17th, 2016)   P_Sign is defined Ord,Eq, because P_Relation must be Ord,Eq on name and signature.
 
 instance Show P_Sign where
   showsPrec _ sgn =

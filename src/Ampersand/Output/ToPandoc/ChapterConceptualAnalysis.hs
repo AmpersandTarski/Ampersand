@@ -100,7 +100,7 @@ chpConceptualAnalysis lev fSpec = (
                    (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
                   -- Then the declaration of the relation with its properties and its intended meaning
-               <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisDeclaration d) (showMathWithSign d)
+               <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisRelation d) (showMathWithSign d)
                <> case meaning2Blocks (fsLang fSpec) d of
                     [] -> case fsLang fSpec of
                            Dutch   -> case commaNL  "en"  [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
@@ -160,7 +160,7 @@ chpConceptualAnalysis lev fSpec = (
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
                     <> mconcat (intersperse  (str ", ")
-                                [   xRef (XRefConceptualAnalysisDeclaration d)
+                                [   xRef (XRefConceptualAnalysisRelation d)
                                  <> text (" ("++name d++")")
                                 | d<-relsMentionedIn r])
                     <> str (l (NL " - geformaliseerd als "

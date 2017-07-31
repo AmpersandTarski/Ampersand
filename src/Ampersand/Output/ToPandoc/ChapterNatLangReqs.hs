@@ -189,7 +189,7 @@ chpNatLangReqs lev fSpec =
         <> case (cDclMeaning . theLoad) nDcl of
               Just m -> definitionList 
                     [(   str (l (NL "Afspraak ", EN "Agreement "))
-                      <> xDefInln fSpec (XRefSharedLangDeclaration dcl)
+                      <> xDefInln fSpec (XRefSharedLangRelation dcl)
                      , [printMeaning m]
                      )
                     ]

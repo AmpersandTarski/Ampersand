@@ -75,12 +75,12 @@ chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
 
 
 data XRefSection
-             = XRefSharedLangDeclaration Relation
+             = XRefSharedLangRelation Relation
              | XRefDataAnalysisRule Rule
              | XRefSharedLangRule Rule
              | XRefProcessAnalysis Pattern
              | XRefConceptualAnalysisPattern Pattern
-             | XRefConceptualAnalysisDeclaration Relation
+             | XRefConceptualAnalysisRelation Relation
              | XRefConceptualAnalysisRule Rule
              | XRefConceptualAnalysisExpression Rule
              | XRefInterfacesInterface Interface
@@ -107,9 +107,9 @@ xDef fSpec a =
                                           Nothing  -> (text.l) (NL "Losse eindjes...",EN "Loose ends...")
                                           Just pat -> text (name pat)
                                        )
-      XRefSharedLangDeclaration d     -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ d)
+      XRefSharedLangRelation d     -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ d)
       XRefSharedLangRule r            -> Right $ spanWith (xrefPrefix (refStuff a) <> xLabel a,[],[]) (str . showMaybe . numberOf fSpec $ r)
-      XRefConceptualAnalysisDeclaration d 
+      XRefConceptualAnalysisRelation d 
             -> Right $ case numberOf fSpec d of
                          Nothing -> (text.l) ( NL "een ongedocumenteerde relatie"
                                              , EN "an undocumented relation")
@@ -200,7 +200,7 @@ data RefStuff =
 refStuff :: XRefSection -> RefStuff
 refStuff x  = 
    case x of
-     XRefSharedLangDeclaration d 
+     XRefSharedLangRelation d 
        -> RefStuff { typeOfSection    = "declaration"
                    , chapterOfSection = SharedLang
                    , nameOfThing      = fullName d
@@ -230,7 +230,7 @@ refStuff x  =
                    , nameOfThing      = name p
                    , xrefPrefix       = "sec:"
                    }
-     XRefConceptualAnalysisDeclaration d
+     XRefConceptualAnalysisRelation d
        -> RefStuff { typeOfSection    = "declaration"
                    , chapterOfSection = ConceptualAnalysis
                    , nameOfThing      = fullName d
@@ -462,8 +462,8 @@ dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Relation]
 dpRule' fSpec = dpR
  where
    l lstr = text $ localize (fsLang fSpec) lstr
-   dpR [] n seenConcs seenDeclarations = ([], n, seenConcs, seenDeclarations)
-   dpR (r:rs) n seenConcs seenDeclarations
+   dpR [] n seenConcs seenRelations = ([], n, seenConcs, seenRelations)
+   dpR (r:rs) n seenConcs seenRelations
      = ( ( l (NL "Regel: ",EN "Rule: ") <> (text.latexEscShw.name) r
          , [theBlocks]
           ): dpNext
@@ -526,14 +526,14 @@ dpRule' fSpec = dpR
                         )
             )
         showRef :: Relation -> Inlines
-        showRef dcl = xRef (XRefConceptualAnalysisDeclaration dcl) <> "(" <> (str.showDcl False) dcl <> ")"
+        showRef dcl = xRef (XRefConceptualAnalysisRelation dcl) <> "(" <> (str.showDcl False) dcl <> ")"
         
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r
-        nds = ds >- seenDeclarations     -- newly seen relations
-        rds = ds `isc` seenDeclarations  -- previously seen relations
-        ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenDeclarations)
+        nds = ds >- seenRelations     -- newly seen relations
+        rds = ds `isc` seenRelations  -- previously seen relations
+        ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenRelations)
 
 relsInThemes :: FSpec -> [Relation]
 relsInThemes fSpec

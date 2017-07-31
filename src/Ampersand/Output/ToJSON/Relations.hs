@@ -67,7 +67,7 @@ instance JSON Relation RelTableInfo where
   , rtiJSONtgtCol  = fromAmpersand multi trgAtt
   }
    where fSpec = userFSpec multi
-         (plug,srcAtt,trgAtt) = getDeclarationTableInfo fSpec dcl
+         (plug,srcAtt,trgAtt) = getRelationTableInfo fSpec dcl
          (plugSrc,_)          = getConceptTableInfo fSpec (source dcl)
          (plugTrg,_)          = getConceptTableInfo fSpec (target dcl)
          srcOrtgt

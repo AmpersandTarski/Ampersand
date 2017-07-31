@@ -85,7 +85,7 @@ data ContextElement = CMeta Meta
                     | CPat P_Pattern
                     | CRul (P_Rule TermPrim)
                     | CCfy P_Gen
-                    | CRel P_Declaration
+                    | CRel P_Relation
                     | CCon (String -> ConceptDef)
                     | CRep Representation
                     | Cm P_RoleRule
@@ -179,7 +179,7 @@ pPatElem = Pr <$> pRuleDef          <|>
 
 data PatElem = Pr (P_Rule TermPrim)
              | Py P_Gen
-             | Pd P_Declaration
+             | Pd P_Relation
              | Pm P_RoleRule
              | Pl P_RoleRelation
              | Pc (String -> ConceptDef)
@@ -232,7 +232,7 @@ pRuleDef =  P_Ru <$> currPos
                                 <|> PairViewText <$> posOf (pKey "TXT") <*> pString
 
 --- RelationDef ::= (RelationNew | RelationOld) 'BYPLUG'? Props? 'BYPLUG'? ('PRAGMA' String+)? Meaning* ('=' Content)? '.'?
-pRelationDef :: AmpParser P_Declaration
+pRelationDef :: AmpParser P_Relation
 pRelationDef = reorder <$> currPos
                        <*> (pRelationNew <|> pRelationOld)
                        <*> pIsThere (pKey "BYPLUG")
@@ -507,7 +507,7 @@ pPurpose = rebuild <$> currPos
        --- Ref2Obj ::= 'CONCEPT' ConceptName | 'RELATION' NamedRel | 'RULE' ADLid | 'IDENT' ADLid | 'VIEW' ADLid | 'PATTERN' ADLid | 'PROCESS' ADLid | 'INTERFACE' ADLid | 'CONTEXT' ADLid
        pRef2Obj :: AmpParser PRef2Obj
        pRef2Obj = PRef2ConceptDef  <$ pKey "CONCEPT"   <*> pConceptName <|>
-                  PRef2Declaration <$ pKey "RELATION"  <*> pNamedRel    <|>
+                  PRef2Relation <$ pKey "RELATION"  <*> pNamedRel    <|>
                   PRef2Rule        <$ pKey "RULE"      <*> pADLid       <|>
                   PRef2IdentityDef <$ pKey "IDENT"     <*> pADLid       <|>
                   PRef2ViewDef     <$ pKey "VIEW"      <*> pADLid       <|>

@@ -1,13 +1,13 @@
 module Ampersand.FSpec.FSpecAux 
-  (getDeclarationTableInfo,getConceptTableInfo)
+  (getRelationTableInfo,getConceptTableInfo)
 where
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
 
 -- return table name and source and target column names for relation dcl
-getDeclarationTableInfo :: FSpec -> Relation -> (PlugSQL,SqlAttribute,SqlAttribute) 
-getDeclarationTableInfo fSpec dcl 
+getRelationTableInfo :: FSpec -> Relation -> (PlugSQL,SqlAttribute,SqlAttribute) 
+getRelationTableInfo fSpec dcl 
      = case filter thisDcl . concatMap getRelInfos $ [p | InternalPlug p<-plugInfos fSpec ] of
                 [(p,store)] -> (p,rsSrcAtt store,rsTrgAtt store)
                 []          -> fatal ("Relation not found: "++name dcl)

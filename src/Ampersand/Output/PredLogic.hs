@@ -231,11 +231,11 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
                                          (Funs l [] , Funs r [])  -> wrap i 5 (apply dec l r)
 {-
                                             (Funs l [f], Funs r [])  -> wrap i 5 (if isIdent rel
-                                                                                  then apply (makeDeclaration f) l r
-                                                                                  else apply (makeDeclaration rel) (funP f l) r)
+                                                                                  then apply (makeRelation f) l r
+                                                                                  else apply (makeRelation rel) (funP f l) r)
                                             (Funs l [] , Funs r [f]) -> wrap i 5 (if isIdent rel
-                                                                                  then apply (makeDeclaration f) l r
-                                                                                  else apply (makeDeclaration rel) l (funP f r))
+                                                                                  then apply (makeRelation f) l r
+                                                                                  else apply (makeRelation rel) l (funP f r))
 -}
                                          (lhs,rhs)                -> wrap i 5 (relP dec (charshow 5 lhs) (charshow 5 rhs))
                Atom atom           -> "'"++atom++"'"
@@ -262,7 +262,7 @@ predLshow (forallP, existsP, impliesP, equivP, orP, andP, k0P, k1P, notP, relP, 
 
 --objOrShow :: Lang -> PredLogic -> String
 --objOrShow l = predLshow ("For all", "Exists", implies, " = ", " = ", "<>", "OR", "AND", "*", "+", "NOT", rel, fun, langVars l, "\n", " ")
---               where rel r lhs rhs = applyM (makeDeclaration r) lhs rhs
+--               where rel r lhs rhs = applyM (makeRelation r) lhs rhs
 --                     fun r x = x++"."++name r
 --                     implies antc cons = "IF "++antc++" THEN "++cons
 

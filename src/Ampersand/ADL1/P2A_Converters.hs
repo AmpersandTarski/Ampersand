@@ -446,7 +446,7 @@ pCtx2aCtx opts
       -> ContextInfo
       -> Lang           -- The default language
       -> PandocFormat   -- The default pandocFormat
-      -> P_Declaration -> Guarded (Relation,Population)
+      -> P_Relation -> Guarded (Relation,Population)
     pDecl2aDecl patNm contextInfo defLanguage defFormat pd
      = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
            dcl = Relation
@@ -969,7 +969,7 @@ pCtx2aCtx opts
        <$> pRefObj2aRefObj declMap objref
     pRefObj2aRefObj :: DeclMap -> PRef2Obj -> Guarded ExplObj
     pRefObj2aRefObj _       (PRef2ConceptDef  s ) = pure$ ExplConceptDef (lookupConceptDef s)
-    pRefObj2aRefObj declMap (PRef2Declaration tm) = ExplRelation <$> namedRel2Decl declMap tm
+    pRefObj2aRefObj declMap (PRef2Relation tm) = ExplRelation <$> namedRel2Decl declMap tm
     pRefObj2aRefObj _       (PRef2Rule        s ) = pure$ ExplRule s
     pRefObj2aRefObj _       (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
     pRefObj2aRefObj _       (PRef2ViewDef     s ) = pure$ ExplViewDef s

@@ -111,7 +111,7 @@ class SQLAble a where
 instance SQLAble Expression where  
   getBinQueryExpr fSpec = setDistinct . selectExpr fSpec
 instance SQLAble Relation where
-  getBinQueryExpr = selectDeclaration
+  getBinQueryExpr = selectRelation
      
 sourceAlias, targetAlias :: Name
 sourceAlias = Name "src" 
@@ -214,7 +214,7 @@ maybeSpecialCase fSpec expr =
       (expr2Src,expr2trg,leftTable) =
          case expr2 of
            EDcD rel -> 
-               let (plug,s,t) = getDeclarationTableInfo fSpec rel
+               let (plug,s,t) = getRelationTableInfo fSpec rel
                    lt = TRSimple [QName (name plug)] `as` table2
                in if isFlipped 
                   then (QName (name t), QName (name s), lt)
@@ -613,7 +613,7 @@ nonSpecialSelectExpr fSpec expr=
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Just (notNull cAtt)
                                            }
-    (EDcD d)             -> selectDeclaration fSpec d
+    (EDcD d)             -> selectRelation fSpec d
 
     (EBrk e)             -> selectExpr fSpec e
 
@@ -788,9 +788,9 @@ toTableRef :: BinQueryExpr -> TableRef
 toTableRef = TRQueryExpr . toSQL
      
 
-selectDeclaration :: FSpec -> Relation -> BinQueryExpr
-selectDeclaration fSpec dcl =
-  leafCode (getDeclarationTableInfo fSpec dcl)
+selectRelation :: FSpec -> Relation -> BinQueryExpr
+selectRelation fSpec dcl =
+  leafCode (getRelationTableInfo fSpec dcl)
    where
      leafCode :: (PlugSQL,SqlAttribute,SqlAttribute) -> BinQueryExpr
      leafCode (plug,s,t) 
@@ -1166,9 +1166,9 @@ broadQuery fSpec obj =
             (plug, _ ) = getConceptTableInfo fSpec cpt
             theDcl :: Maybe (PlugSQL, SqlAttribute)
             theDcl = case objctx od of
-                       EFlp (EDcD d) -> let (p, s, _) = getDeclarationTableInfo fSpec d
+                       EFlp (EDcD d) -> let (p, s, _) = getRelationTableInfo fSpec d
                                         in Just (p, s)
-                       EDcD d        -> let (p, _, t) = getDeclarationTableInfo fSpec d
+                       EDcD d        -> let (p, _, t) = getRelationTableInfo fSpec d
                                         in Just (p, t)
                        EDcI c        -> Just $ getConceptTableInfo fSpec c
                        _             -> Nothing

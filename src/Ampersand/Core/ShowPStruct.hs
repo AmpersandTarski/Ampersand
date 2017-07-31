@@ -63,7 +63,7 @@ instance PStruct P_Gen where
 instance PStruct PRef2Obj where
  showP e = case e of
       PRef2ConceptDef str  -> "CONCEPT "++doubleQuote str
-      PRef2Declaration rel -> "RELATION "++doubleQuote (name rel)
+      PRef2Relation rel -> "RELATION "++doubleQuote (name rel)
       PRef2Rule str        -> "RULE "++doubleQuote str
       PRef2IdentityDef str -> "IDENT "++doubleQuote str
       PRef2ViewDef str     -> "VIEW "++doubleQuote str
@@ -203,7 +203,7 @@ instance PStruct P_RoleRule where
   = "ROLE "++intercalate ", " (map show (mRoles r))++" MAINTAINS "++intercalate ", " (map show (mRules r))
 
 
-instance PStruct P_Declaration where
+instance PStruct P_Relation where
  showP decl =
   case decl of
     P_Sgn{} -> name decl++" :: "++(name . pSrc . dec_sign) decl

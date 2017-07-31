@@ -36,7 +36,7 @@ grind formalAmpersand userFspec =
 
 
 
-extractFromPop :: MetaFSpec -> Pop -> Maybe P_Declaration
+extractFromPop :: MetaFSpec -> Pop -> Maybe P_Relation
 extractFromPop formalAmpersand pop =
   case pop of 
     Comment{}                -> Nothing

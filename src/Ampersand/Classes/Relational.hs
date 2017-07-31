@@ -54,7 +54,7 @@ class Association r => Relational r where
 --           Rel{}               -> null ([Asy,Sym]>-properties (reldcl rel))
 --           V{}                 -> isEndo rel && isSingleton (source rel)
 --           I{}                 -> True
---    isImin rel  = isImin (makeDeclaration rel)   -- > tells whether the argument is equivalent to I-
+--    isImin rel  = isImin (makeRelation rel)   -- > tells whether the argument is equivalent to I-
 --    isTrue rel = case rel of
 --           Rel{}               -> False
 --           V{}                 -> True
