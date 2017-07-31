@@ -497,7 +497,7 @@ transformers fSpec = map toTransformer [
      ,("right"                 , "Pair"                  , "Atom"    
       , []  --TODO
       )
-     ,("formalExpression"                 , "Rule"                  , "Expression"
+     ,("formalExpression"      , "Rule"                  , "Expression"
       , []  --TODO
       )
      ,("second"                , "BinaryTerm"            , "Expression"
@@ -612,13 +612,22 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("userCpt"               , "I"                     , "Concept" 
-      , []  --TODO
+      , [(dirtyId expr, dirtyId x)
+        | expr::Expression <- instances fSpec
+        , Just x <- [userCpt expr]
+        ]
       )
      ,("userSrc"               , "V"                     , "Concept" 
-      , []  --TODO
+      , [(dirtyId expr, dirtyId x)
+        | expr::Expression <- instances fSpec
+        , Just x <- [userSrc expr]
+        ]
       )
      ,("userTrg"               , "V"                     , "Concept" 
-      , []  --TODO
+      , [(dirtyId expr, dirtyId x)
+        | expr::Expression <- instances fSpec
+        , Just x <- [userTrg expr]
+        ]
       )
      ,("uses"                  , "Context"               , "Pattern" 
       , []  --TODO
@@ -761,6 +770,9 @@ data ExprInfo = ExprInfo
    , first' :: Maybe Expression
    , second' :: Maybe Expression
    , arg' :: Maybe Expression
+   , userCpt' :: Maybe A_Concept -- the concept of an I expression
+   , userSrc' :: Maybe A_Concept -- the source concept of a V expression
+   , userTrg' :: Maybe A_Concept -- the target concept of a V expression
    }  
 binOp :: Expression -> Maybe BinOp
 binOp = binOp' . exprInfo
@@ -774,6 +786,12 @@ second :: Expression -> Maybe Expression
 second = second' . exprInfo
 arg :: Expression -> Maybe Expression
 arg = arg' . exprInfo
+userCpt :: Expression -> Maybe A_Concept
+userCpt = userCpt' . exprInfo 
+userSrc :: Expression -> Maybe A_Concept
+userSrc = userSrc' . exprInfo 
+userTrg :: Expression -> Maybe A_Concept
+userTrg = userTrg' . exprInfo 
 exprInfo :: Expression -> ExprInfo
 exprInfo expr =
   case expr of
@@ -784,6 +802,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EInc (l,r)) -> ExprInfo
         { binOp'     = Just Inclusion
@@ -792,6 +813,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EIsc (l,r)) -> ExprInfo
         { binOp'     = Just Equivalence
@@ -800,6 +824,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EUni (l,r)) -> ExprInfo
         { binOp'     = Just Union
@@ -808,6 +835,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EDif (l,r)) -> ExprInfo
         { binOp'     = Just Difference
@@ -816,6 +846,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (ELrs (l,r)) -> ExprInfo
         { binOp'     = Just LeftResidu
@@ -824,6 +857,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (ERrs (l,r)) -> ExprInfo
         { binOp'     = Just RightResidu
@@ -832,6 +868,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EDia (l,r)) -> ExprInfo
         { binOp'     = Just Diamond
@@ -840,6 +879,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (ECps (l,r)) -> ExprInfo
         { binOp'     = Just Composition
@@ -848,6 +890,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (ERad (l,r)) -> ExprInfo
         { binOp'     = Just RelativeAddition
@@ -856,6 +901,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EPrd (l,r)) -> ExprInfo
         { binOp'     = Just CartesianProduct
@@ -864,6 +912,9 @@ exprInfo expr =
         , first'     = Just l
         , second'    = Just r
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EKl0 e)     -> ExprInfo
         { binOp'     = Nothing
@@ -872,6 +923,9 @@ exprInfo expr =
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Just e
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EKl1 e)     -> ExprInfo
         { binOp'     = Nothing
@@ -880,6 +934,9 @@ exprInfo expr =
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Just e
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EFlp e)     -> ExprInfo
         { binOp'     = Nothing
@@ -888,6 +945,9 @@ exprInfo expr =
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Just e
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (ECpl e)     -> ExprInfo
         { binOp'     = Nothing
@@ -896,6 +956,9 @@ exprInfo expr =
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Just e
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EBrk e)     -> ExprInfo
         { binOp'     = Nothing
@@ -904,6 +967,9 @@ exprInfo expr =
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Just e
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     (EDcD r)     -> ExprInfo
         { binOp'     = Nothing
@@ -912,14 +978,20 @@ exprInfo expr =
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
-    EDcI{}       -> ExprInfo -- TODO!!
+    (EDcI cpt)       -> ExprInfo
         { binOp'     = Nothing
         , unaryOp'   = Nothing
         , bindedRel' = Nothing
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Nothing
+        , userCpt'   = Just cpt
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
     EEps{}       -> ExprInfo -- TODO!!
         { binOp'     = Nothing
@@ -928,14 +1000,20 @@ exprInfo expr =
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
-    EDcV{}       -> ExprInfo -- TODO!!
+    (EDcV sgn)      -> ExprInfo
         { binOp'     = Nothing
         , unaryOp'   = Nothing
         , bindedRel' = Nothing
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Just (source sgn)
+        , userTrg'   = Just (target sgn)
         }
     EMp1{}       -> ExprInfo -- TODO!!
         { binOp'     = Nothing
@@ -944,6 +1022,9 @@ exprInfo expr =
         , first'     = Nothing
         , second'    = Nothing
         , arg'       = Nothing
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
         }
 
 data UnaryOp = 
