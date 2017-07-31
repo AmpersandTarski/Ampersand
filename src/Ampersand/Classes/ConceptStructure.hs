@@ -157,9 +157,9 @@ instance ConceptStructure Declaration where
   expressionsIn d = fatal ("expressionsIn not allowed on Declaration of "++show d)
 
 instance ConceptStructure Rule where
-  concs r   = concs (rrexp r) `uni` concs (rrviol r)
+  concs r   = concs (formalExpression r) `uni` concs (rrviol r)
   expressionsIn r = foldr uni []
-                   [ (expressionsIn.rrexp ) r
+                   [ (expressionsIn.formalExpression ) r
                    , (expressionsIn.rrviol) r
                    ]
 

@@ -149,7 +149,7 @@ data RuleOrigin = UserDefined     -- This rule was specified explicitly as a rul
                 deriving (Show, Eq)
 data Rule =
      Ru { rrnm ::     String                      -- ^ Name of this rule
-        , rrexp ::    Expression                  -- ^ The rule expression
+        , formalExpression :: Expression          -- ^ The expression that should be True
         , rrfps ::    Origin                      -- ^ Position in the Ampersand file
         , rrmean ::   AMeaning                    -- ^ Ampersand generated meaning (for all known languages)
         , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
@@ -168,7 +168,7 @@ instance Prelude.Ord Rule where
   compare = Prelude.compare `on` rrnm
 instance Show Rule where
   showsPrec _ x
-   = showString $ "RULE "++ (if null (name x) then "" else name x++": ")++ show (rrexp x)
+   = showString $ "RULE "++ (if null (name x) then "" else name x++": ")++ show (formalExpression x)
 instance Traced Rule where
   origin = rrfps
 instance Named Rule where

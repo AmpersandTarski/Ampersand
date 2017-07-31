@@ -486,8 +486,8 @@ chpDiagnosis fSpec
                         -- Alignment:
                         (replicate 2 (AlignLeft,1/2))
                         -- Headers:
-                        [(para.strong.text.name.source.rrexp) r
-                        ,(para.strong.text.name.target.rrexp) r
+                        [(para.strong.text.name.source.formalExpression) r
+                        ,(para.strong.text.name.target.formalExpression) r
                         ]
                         -- Rows:
                         [ [(para.text.showValADL.apLeft) p

@@ -127,7 +127,7 @@ makeFSpec opts context
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
-     ruleviolations r = case rrexp r of
+     ruleviolations r = case formalExpression r of
           EEqu{} -> (cra >- crc) ++ (crc >- cra)
           EInc{} -> cra >- crc
           _      -> pairsinexpr (EDcV (sign (consequent r))) >- crc  --everything not in con

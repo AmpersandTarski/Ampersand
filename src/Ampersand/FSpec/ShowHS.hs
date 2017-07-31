@@ -421,7 +421,7 @@ instance ShowHS Rule where
  showHS opts indent r@(Ru _ _ _ _ _ _ _ _ _ _ _)  -- This pattern matching occurs so Haskell will detect any change in the definition of Ru.
    = intercalate indent
      ["Ru{ rrnm   = " ++ show (rrnm   r)
-     ,"  , rrexp  = -- " ++ showA (rrexp  r) ++ indent++"             " ++ showHS opts (indent++"             ") (rrexp  r)
+     ,"  , formalExpression  = -- " ++ showA (formalExpression  r) ++ indent++"             " ++ showHS opts (indent++"             ") (formalExpression  r)
      ,"  , rrfps  = " ++ showHS opts "" (rrfps  r)
      ,"  , rrmean = " ++ showHS opts (indent++"             ") (rrmean r)
      ,"  , rrmsg  = " ++ showHS opts "" (rrmsg  r)

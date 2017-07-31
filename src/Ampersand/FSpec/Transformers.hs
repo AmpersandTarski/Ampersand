@@ -72,9 +72,9 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
-      , [(dirtyId expr, dirtyId (arg expr))
+      , [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
-        , isUnaryTerm expr
+        , Just x <- [arg expr]
         ]
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
@@ -84,7 +84,10 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("bind"                  , "BindedRelation"        , "Relation"
-      , []  --TODO
+      , [(dirtyId expr, dirtyId x)
+        | expr::Expression <- instances fSpec
+        , Just x <- [bindedRel expr]
+        ]
       )
      ,("changes"               , "Act"                   , "Relation"
       , []  --TODO
@@ -186,13 +189,15 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("first"                 , "BinaryTerm"            , "Expression"
-      , [(dirtyId expr, dirtyId (first expr))
+      , [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
-        , isBinaryTerm expr
+        , Just x <- [first expr]
         ]
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , []  --TODO
+      , [(dirtyId rul, dirtyId (formalExpression rul))
+        | rul::Rule <- instances fSpec
+        ]
       )
      ,("gengen"                , "IsE"                   , "Concept" 
       , []  --TODO
@@ -387,7 +392,9 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("objctx"                , "ObjectDef"             , "Expression"
-      , []  --TODO
+      , [(dirtyId obj, dirtyId (objctx obj))
+        | obj::ObjectDef <- instances fSpec
+        ]
       )
      ,("objmView"              , "ObjectDef"             , "View"    
       , []  --TODO
@@ -399,15 +406,15 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
-      , [(dirtyId expr, dirtyId (operator expr)) 
+      , [(dirtyId expr, dirtyId op) 
         | expr::Expression   <- instances fSpec
-        , isBinaryTerm expr
+        , Just op <- [binOp expr]
         ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
-      , [(dirtyId expr, dirtyId (operator expr)) 
+      , [(dirtyId expr, dirtyId op) 
         | expr::Expression   <- instances fSpec
-        , isUnaryTerm expr
+        , Just op <- [unaryOp expr]
         ]
       )
      ,("origin"                , "Rule"                  , "Origin"  
@@ -490,13 +497,13 @@ transformers fSpec = map toTransformer [
      ,("right"                 , "Pair"                  , "Atom"    
       , []  --TODO
       )
-     ,("rrexp"                 , "Rule"                  , "Expression"
+     ,("formalExpression"                 , "Rule"                  , "Expression"
       , []  --TODO
       )
      ,("second"                , "BinaryTerm"            , "Expression"
-      , [(dirtyId expr, dirtyId (second expr)) 
-        | expr::Expression   <- instances fSpec
-        , isBinaryTerm expr
+      , [(dirtyId expr, dirtyId x)
+        | expr::Expression <- instances fSpec
+        , Just x <- [second expr]
         ]
       )
      ,("segment"               , "PairView"              , "PairViewSegment" 
@@ -747,96 +754,197 @@ instance HasPurpose ViewDef where
         ExplViewDef x    -> name vw == x
         _                -> False
 
-isBinaryTerm :: Expression -> Bool 
-isBinaryTerm expr = 
-  case exprInfo expr of
-    (Just _ , _ , _ ,_ ,_ ) -> True
-    _                       -> False
-first :: Expression -> Expression
-first expr = x
-  where 
-    (_,_,x,_,_) = exprInfo expr
-second :: Expression -> Expression
-second expr = x
-  where 
-    (_,_,_,x,_) = exprInfo expr
-  
-isUnaryTerm :: Expression -> Bool 
-isUnaryTerm expr = 
-  case exprInfo expr of
-    ( _ ,Just _ , _ , _ ,_ ) -> True
-    _                        -> False
-arg :: Expression -> Expression
-arg expr = x
-  where 
-    (_,_,_,_,x) = exprInfo expr
-operator :: Expression -> Either BinOp UnaryOp
-operator expr = 
-  case (b,u) of
-    (Just t, Nothing) -> Left t
-    (Nothing, Just t) -> Right t
-    (Nothing,Nothing) -> fatal $ "There is no operator for the expression: "++showA expr
-    (Just _, Just _ ) -> fatal $ "An expression cannot have both a BinaryTerm and a UnaryTerm"
-  where 
-    (b,u,_,_,_) = exprInfo expr
-  
-  
-exprInfo :: Expression
-                  -> (Maybe BinOp, Maybe UnaryOp, Expression, Expression, Expression)
+data ExprInfo = ExprInfo
+   { binOp' :: Maybe BinOp
+   , unaryOp' :: Maybe UnaryOp
+   , bindedRel' :: Maybe Declaration
+   , first' :: Maybe Expression
+   , second' :: Maybe Expression
+   , arg' :: Maybe Expression
+   }  
+binOp :: Expression -> Maybe BinOp
+binOp = binOp' . exprInfo
+unaryOp :: Expression -> Maybe UnaryOp
+unaryOp = unaryOp' . exprInfo
+bindedRel :: Expression -> Maybe Declaration
+bindedRel = bindedRel' . exprInfo
+first :: Expression -> Maybe Expression
+first = first' . exprInfo
+second :: Expression -> Maybe Expression
+second = second' . exprInfo
+arg :: Expression -> Maybe Expression
+arg = arg' . exprInfo
+exprInfo :: Expression -> ExprInfo
 exprInfo expr =
--- Auxiliary function that gives answers for an expression to the
--- functions isBinaryTerm, isUnaryTerm, first, second, arg
   case expr of
-    (EEqu (l,r)) -> 
-      (Just Equivalence     , Nothing, l      , r      , undef 3)
-    (EInc (l,r)) -> 
-      (Just Inclusion       , Nothing, l      , r      , undef 3)
-    (EIsc (l,r)) -> 
-      (Just Intersection    , Nothing, l      , r      , undef 3)
-    (EUni (l,r)) -> 
-      (Just Union           , Nothing, l      , r      , undef 3)
-    (EDif (l,r)) -> 
-      (Just Difference      , Nothing, l      , r      , undef 3)
-    (ELrs (l,r)) -> 
-      (Just LeftResidu      , Nothing, l      , r      , undef 3)
-    (ERrs (l,r)) -> 
-      (Just RightResidu     , Nothing, l      , r      , undef 3)
-    (EDia (l,r)) -> 
-      (Just Diamond         , Nothing, l      , r      , undef 3)
-    (ECps (l,r)) -> 
-      (Just Composition     , Nothing, l      , r      , undef 3)
-    (ERad (l,r)) -> 
-      (Just RelativeAddition, Nothing, l      , r      , undef 3)
-    (EPrd (l,r)) -> 
-      (Just CartesianProduct, Nothing, l      , r      , undef 3)
-    (EKl0 e)     -> 
-      (Nothing              , Just KleeneStar , undef 1, undef 2, e      )
-    (EKl1 e)     -> 
-      (Nothing              , Just KleenePlus , undef 1, undef 2, e      )
-    (EFlp e)     -> 
-      (Nothing              , Just Converse   , undef 1, undef 2, e      )
-    (ECpl e)     -> 
-      (Nothing              , Just UnaryMinus , undef 1, undef 2, e      )
-    (EBrk e)     ->
-      (Nothing              , Just Bracket    , undef 1, undef 2, e      )
-    EDcD{}       -> 
-      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
-    EDcI{}       ->  
-      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
-    EEps{}       ->  
-      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
-    EDcV{}       ->  
-      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
-    EMp1{}       ->  
-      (Nothing              , Nothing         , undef 1, undef 2, undef 3)
-  where
-    undef :: Int -> Expression
-    undef i =
-      case i of
-        1 -> fatal $ "`first` is not defined for " ++showA expr
-        2 -> fatal $ "`second` is not defined for " ++showA expr
-        3 -> fatal $ "`arg` is not defined for " ++showA expr
-        _ -> fatal $ "unknown fatal"
+    (EEqu (l,r)) -> ExprInfo
+        { binOp'     = Just Equivalence
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (EInc (l,r)) -> ExprInfo
+        { binOp'     = Just Inclusion
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (EIsc (l,r)) -> ExprInfo
+        { binOp'     = Just Equivalence
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (EUni (l,r)) -> ExprInfo
+        { binOp'     = Just Union
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (EDif (l,r)) -> ExprInfo
+        { binOp'     = Just Difference
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (ELrs (l,r)) -> ExprInfo
+        { binOp'     = Just LeftResidu
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (ERrs (l,r)) -> ExprInfo
+        { binOp'     = Just RightResidu
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (EDia (l,r)) -> ExprInfo
+        { binOp'     = Just Diamond
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (ECps (l,r)) -> ExprInfo
+        { binOp'     = Just Composition
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (ERad (l,r)) -> ExprInfo
+        { binOp'     = Just RelativeAddition
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (EPrd (l,r)) -> ExprInfo
+        { binOp'     = Just CartesianProduct
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Just l
+        , second'    = Just r
+        , arg'       = Nothing
+        }
+    (EKl0 e)     -> ExprInfo
+        { binOp'     = Nothing
+        , unaryOp'   = Just KleeneStar
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Just e
+        }
+    (EKl1 e)     -> ExprInfo
+        { binOp'     = Nothing
+        , unaryOp'   = Just KleenePlus
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Just e
+        }
+    (EFlp e)     -> ExprInfo
+        { binOp'     = Nothing
+        , unaryOp'   = Just Converse
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Just e
+        }
+    (ECpl e)     -> ExprInfo
+        { binOp'     = Nothing
+        , unaryOp'   = Just UnaryMinus
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Just e
+        }
+    (EBrk e)     -> ExprInfo
+        { binOp'     = Nothing
+        , unaryOp'   = Just Bracket
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Just e
+        }
+    (EDcD r)     -> ExprInfo
+        { binOp'     = Nothing
+        , unaryOp'   = Nothing
+        , bindedRel' = Just r
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Nothing
+        }
+    EDcI{}       -> ExprInfo -- TODO!!
+        { binOp'     = Nothing
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Nothing
+        }
+    EEps{}       -> ExprInfo -- TODO!!
+        { binOp'     = Nothing
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Nothing
+        }
+    EDcV{}       -> ExprInfo -- TODO!!
+        { binOp'     = Nothing
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Nothing
+        }
+    EMp1{}       -> ExprInfo -- TODO!!
+        { binOp'     = Nothing
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Nothing
+        }
 
 data UnaryOp = 
              KleeneStar

@@ -7,20 +7,20 @@ import Ampersand.Basics
 
 hasantecedent :: Rule -> Bool
 hasantecedent r
- = case rrexp r of
+ = case formalExpression r of
      EEqu{} -> True
      EInc{} -> True
      _      -> False
 antecedent :: Rule -> Expression
 antecedent r
- = case rrexp r of
+ = case formalExpression r of
      EEqu (le,_) -> le
      EInc (le,_) -> le
      _           -> fatal ("erroneous reference to antecedent of rule "++show r)
 
 consequent :: Rule -> Expression
 consequent r
- = case rrexp r of
+ = case formalExpression r of
      EEqu (_,re) -> re
      EInc (_,re) -> re
      x           -> x
@@ -31,7 +31,7 @@ rulefromProp :: Prop -> Declaration -> Maybe Rule
 rulefromProp prp d@Sgn{} =
   Just
      Ru { rrnm  = show prp++" "++showDcl'
-        , rrexp = rExpr
+        , formalExpression = rExpr
         , rrfps = origin d
         , rrmean = AMeaning $ explain prp
         , rrmsg =  violMsg prp

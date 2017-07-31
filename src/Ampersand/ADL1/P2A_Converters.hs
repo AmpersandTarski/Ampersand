@@ -911,7 +911,7 @@ pCtx2aCtx opts
      = do (exp',_) <- typecheckTerm expr
           vls <- maybeOverGuarded (typeCheckPairView orig exp') viols
           return Ru { rrnm = nm
-                    , rrexp = exp'
+                    , formalExpression = exp'
                     , rrfps = orig
                     , rrmean = pMean2aMean deflangCtxt deffrmtCtxt meanings
                     , rrmsg = map (pMess2aMess deflangCtxt deffrmtCtxt) msgs

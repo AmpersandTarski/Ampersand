@@ -59,7 +59,7 @@ getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp $ vrules fSpec ++ grules fSpec
- where getRuleExp rule = (notCpl (rrexp rule), "rule "++show (name rule))
+ where getRuleExp rule = (notCpl (formalExpression rule), "rule "++show (name rule))
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fSpec

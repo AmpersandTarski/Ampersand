@@ -43,7 +43,7 @@ class PredLogicShow a where
   toPredLogic :: a -> PredLogic
 
 instance PredLogicShow Rule where
-  toPredLogic ru = assemble (rrexp ru)
+  toPredLogic ru = assemble (formalExpression ru)
 
 instance PredLogicShow Expression where
   toPredLogic = assemble

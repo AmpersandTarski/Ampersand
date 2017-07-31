@@ -327,7 +327,7 @@ class ShowMath a where
  showMath :: a -> Inlines
 
 instance ShowMath Rule where
- showMath = showMath . rrexp
+ showMath = showMath . formalExpression
 
 instance ShowMath Expression where
  showMath = math . showExpr . insParentheses

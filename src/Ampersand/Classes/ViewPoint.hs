@@ -46,7 +46,7 @@ rulesFromIdentity identity
        meaningNL = "Identiteitsregel" ++ ", volgend uit identiteit "++name identity
        mkKeyRule expression =
          Ru { rrnm   = ruleName
-            , rrexp  = expression
+            , formalExpression  = expression
             , rrfps  = origin identity     -- position in source file
             , rrmean = AMeaning
                          [ Markup English (string2Blocks ReST meaningEN)

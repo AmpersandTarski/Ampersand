@@ -66,7 +66,7 @@ aRule2pRule :: Rule -> P_Rule TermPrim
 aRule2pRule rul =
  P_Ru { pos  = rrfps rul
       , rr_nm   = rrnm rul
-      , rr_exp  = aExpression2pTermPrim (rrexp rul)
+      , rr_exp  = aExpression2pTermPrim (formalExpression rul)
       , rr_mean = aMeaning2pMeaning (rrmean rul)
       , rr_msg  = map aMarkup2pMessage (rrmsg rul)
       , rr_viol = fmap aPairView2pPairView (rrviol rul)
