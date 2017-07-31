@@ -66,7 +66,7 @@ extractFromPop formalAmpersand pop =
                               "ERROR in tupels that are generated in the meatgrinder for relation\n"
                             ++"  "++rel++"["++src++"*"++tgt++"]"
                             ++intercalate (replicate 30 '=') (map showErr err)
-      checkAtomValues :: Declaration -> [PAtomPair] -> Guarded [AAtomPair]
+      checkAtomValues :: Relation -> [PAtomPair] -> Guarded [AAtomPair]
       checkAtomValues dcl pps = sequence $ map fun pps
             where
               fun pp = mkAtomPair 
@@ -152,7 +152,7 @@ dumpGrindFile formalAmpersand userFspec
        . concatMap (grindedPops formalAmpersand userFspec)
        . sortOn (showDcl True)
        . instances $ formalAmpersand
-grindedPops :: FSpec -> FSpec -> Declaration -> [Pop]
+grindedPops :: FSpec -> FSpec -> Relation -> [Pop]
 grindedPops formalAmpersand userFspec dcl = headerComment ++ pops
   where
     headerComment :: [Pop]
@@ -172,11 +172,11 @@ grindedPops formalAmpersand userFspec dcl = headerComment ++ pops
                       viols = map (showDcl True) 
                             . filter hasNoTransformer 
                             . instances $ formalAmpersand
-                      hasNoTransformer :: Declaration -> Bool
+                      hasNoTransformer :: Relation -> Bool
                       hasNoTransformer d = null (filter (isForDcl d) (transformers userFspec))
             ts  -> map transformer2Pop ts 
     transformer2Pop (Transformer n s t ps) = Pop n s t ps      
-isForDcl :: Declaration -> Transformer -> Bool
+isForDcl :: Relation -> Transformer -> Bool
 isForDcl dcl (Transformer n s t _ ) =
     and [ name dcl == n
         , name (source dcl) == s

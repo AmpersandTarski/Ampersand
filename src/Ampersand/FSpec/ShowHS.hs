@@ -382,7 +382,7 @@ instance ShowHS Purpose where
 instance ShowHS ExplObj where
  showHS opts i peObj = case peObj of
           ExplConceptDef cd  -> "ExplConceptDef " ++showHS opts i cd
-          ExplDeclaration d  -> "ExplDeclaration "++showHSName d
+          ExplRelation d  -> "ExplRelation "++showHSName d
           ExplRule str       -> "ExplRule "       ++show str
           ExplIdentityDef str-> "ExplIdentityDef "++show str
           ExplViewDef str    -> "ExplViewDef "    ++show str
@@ -560,33 +560,28 @@ instance ShowHS A_Gen where
      Isa{} -> "Isa "++showHSName (genspc gen)++" "++showHSName (gengen gen)++" "
      IsE{} -> "IsE "++showHSName (genspc gen)++" ["++intercalate ", " (map showHSName (genrhs gen))++"] "
 
-instance ShowHSName Declaration where
- showHSName d@Isn{}       = haskellIdentifier ("rel_"++name d++"_"++name (source d)) -- identity relation
- showHSName d@Vs{}        = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- full relation
+instance ShowHSName Relation where
  showHSName d | decusr d  = haskellIdentifier ("rel_"++name d++"_"++name (source d)++"_"++name (target d)) -- user defined relations
               | otherwise = haskellIdentifier ("vio_"++name d++"_"++name (source d)++"_"++name (target d)) -- relations generated per rule
 
-instance ShowHS Declaration where
+instance ShowHS Relation where
  showHS opts indent d
-    = case d of
-       Sgn{}     -> intercalate indent
-                     ["Sgn{ decnm   = " ++ show (decnm d)
-                     ,"   , decsgn  = " ++ showHS opts "" (sign d)
-                     ,"   , decprps = " ++ showL(map (showHS opts "") (decprps d))
-                     ,"   , decprps_calc = " ++ case decprps_calc d of
+    = intercalate indent
+                     ["Relation { decnm   = " ++ show (decnm d)
+                     ,"         , decsgn  = " ++ showHS opts "" (sign d)
+                     ,"         , decprps = " ++ showL(map (showHS opts "") (decprps d))
+                     ,"         , decprps_calc = " ++ case decprps_calc d of
                                                  Nothing -> "Nothing"
                                                  Just ps -> "Just "++showL(map (showHS opts "") ps)
-                     ,"   , decprL  = " ++ show (decprL d)
-                     ,"   , decprM  = " ++ show (decprM d)
-                     ,"   , decprR  = " ++ show (decprR d)
-                     ,"   , decMean = " ++ show (decMean d)
-                     ,"   , decfpos = " ++ showHS opts "" (decfpos d)
-                     ,"   , decusr  = " ++ show (decusr d)
-                     ,"   , decpat  = " ++ show (decpat d)
-                     ,"   , decplug = " ++ show (decplug d)
+                     ,"         , decprL  = " ++ show (decprL d)
+                     ,"         , decprM  = " ++ show (decprM d)
+                     ,"         , decprR  = " ++ show (decprR d)
+                     ,"         , decMean = " ++ show (decMean d)
+                     ,"         , decfpos = " ++ showHS opts "" (decfpos d)
+                     ,"         , decusr  = " ++ show (decusr d)
+                     ,"         , decpat  = " ++ show (decpat d)
+                     ,"         , decplug = " ++ show (decplug d)
                      ]++"}"
-       Isn{}     -> "Isn{ detyp   = " ++ showHSName (detyp d)++"}"
-       Vs{}      -> "Vs { decsgn  = " ++ showHS opts "" (sign d)++"}"
 
 --   instance ShowHSName ConceptDef where
 --    showHSName cd = haskellIdentifier ("cDef_"++cdcpt cd)

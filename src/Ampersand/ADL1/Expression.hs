@@ -13,7 +13,7 @@ import Ampersand.Core.AbstractSyntaxTree
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an
 --   expression of the form Erel rel.
-subst :: (Declaration,Expression) -> Expression -> Expression
+subst :: (Relation,Expression) -> Expression -> Expression
 subst (decl,expr) = subs
      where
        subs (EEqu (l,r)) = EEqu (subs l,subs r)

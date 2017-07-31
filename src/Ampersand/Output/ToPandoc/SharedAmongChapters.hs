@@ -75,12 +75,12 @@ chaptersInDoc opts = [chp | chp<-chapters, chp `notElem` disabled]
 
 
 data XRefSection
-             = XRefSharedLangDeclaration Declaration
+             = XRefSharedLangDeclaration Relation
              | XRefDataAnalysisRule Rule
              | XRefSharedLangRule Rule
              | XRefProcessAnalysis Pattern
              | XRefConceptualAnalysisPattern Pattern
-             | XRefConceptualAnalysisDeclaration Declaration
+             | XRefConceptualAnalysisDeclaration Relation
              | XRefConceptualAnalysisRule Rule
              | XRefConceptualAnalysisExpression Rule
              | XRefInterfacesInterface Interface
@@ -277,11 +277,11 @@ instance NumberedThing Rule where
     where ns = concatMap rulesOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered RuleCont -> Bool
           isTheOne = (r ==) . cRul . theLoad
-instance NumberedThing Declaration where
+instance NumberedThing Relation where
   numberOf fSpec d = case filter isTheOne ns of
-                      [] -> Nothing -- fatal ("Declaration has not been numbered: "++showDcl d)
+                      [] -> Nothing -- fatal ("Relation has not been numbered: "++showDcl d)
                       [nr] -> Just $ theNr nr 
-                      _ -> fatal ("Declaration has been numbered multiple times: "++showDcl True d)
+                      _ -> fatal ("Relation has been numbered multiple times: "++showDcl True d)
     where ns = concatMap dclsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered DeclCont -> Bool
           isTheOne = (d ==) . cDcl . theLoad
@@ -316,7 +316,7 @@ data RuleCont = CRul { cRul ::  Rule
                      , cRulPurps :: [Purpose]
                      , cRulMeaning :: Maybe Markup
                      }
-data DeclCont = CDcl { cDcl ::  Declaration
+data DeclCont = CDcl { cDcl ::  Relation
                      , cDclPurps :: [Purpose]
                      , cDclMeaning :: Maybe Markup
                      , cDclPairs :: [AAtomPair]
@@ -367,18 +367,15 @@ orderingByTheme fSpec
         cd :_ -> Just (origin cd)
   rulMustBeShown :: Rule -> Bool
   rulMustBeShown r = hasMeaning r || hasPurpose r
-  relMustBeShown :: Declaration -> Bool
+  relMustBeShown :: Relation -> Bool
   relMustBeShown d 
     | isIdent d || name d == "V" = False  --Identity relation has no meaning defined
-    | otherwise = (hasMeaning d || hasPurpose d) && (isUserDefined d || forNonUserDefdRule d)  
-  isUserDefined d = case d of
-                       Sgn{} -> decusr d
-                       _     -> False
+    | otherwise = (hasMeaning d || hasPurpose d) && (decusr d || forNonUserDefdRule d)  
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning :: Meaning a => a -> Bool
   hasMeaning = isJust . meaning (fsLang fSpec)
-  forNonUserDefdRule :: Declaration -> Bool
+  forNonUserDefdRule :: Relation -> Bool
   forNonUserDefdRule d = any isPropRuleForDcl . fallRules $ fSpec 
     where
       isPropRuleForDcl :: Rule -> Bool
@@ -387,7 +384,7 @@ orderingByTheme fSpec
            Nothing -> False
            Just (_,x) -> x == d
   cptMustBeShown = not . null . concDefs fSpec
-  f :: (Counters, [Rule], [Declaration], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
+  f :: (Counters, [Rule], [Relation], [A_Concept]) -> [Maybe Pattern] -> [ThemeContent]
   f stuff pats
    = case pats of
        pat:pats' -> let ( thm, rest) = partitionByTheme pat stuff
@@ -402,7 +399,7 @@ orderingByTheme fSpec
            , cRulPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) rul
            , cRulMeaning = meaning (fsLang fSpec) rul
            }
-  dcl2dclCont :: Declaration -> DeclCont
+  dcl2dclCont :: Relation -> DeclCont
   dcl2dclCont dcl
     = CDcl { cDcl      = dcl
            , cDclPurps = fromMaybe [] $ purposeOf fSpec (fsLang fSpec) dcl
@@ -432,8 +429,8 @@ orderingByTheme fSpec
   --   lists in a pair of lists of elements which do and do not belong
   --   to the theme, respectively
   partitionByTheme :: Maybe Pattern  -- Just pat if this theme is from a pattern, otherwise this stuff comes from outside a pattern (but inside a context).
-                   -> ( Counters, [Rule], [Declaration], [A_Concept])
-                   -> ( ThemeContent , ( Counters ,[Rule], [Declaration], [A_Concept])
+                   -> ( Counters, [Rule], [Relation], [A_Concept])
+                   -> ( ThemeContent , ( Counters ,[Rule], [Relation], [A_Concept])
                       )
   partitionByTheme mPat (cnt, ruls, rels, cpts)
       = ( Thm { themeNr      = pNr cnt
@@ -460,8 +457,8 @@ orderingByTheme fSpec
              Just pat -> x `elem` allElemsOf pat
 
 --GMI: What's the meaning of the Int? HJO: This has to do with the numbering of rules
-dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Declaration]
-          -> ([(Inlines, [Blocks])], Int, [A_Concept], [Declaration])
+dpRule' :: FSpec -> [Rule] -> Int -> [A_Concept] -> [Relation]
+          -> ([(Inlines, [Blocks])], Int, [A_Concept], [Relation])
 dpRule' fSpec = dpR
  where
    l lstr = text $ localize (fsLang fSpec) lstr
@@ -528,17 +525,17 @@ dpRule' fSpec = dpR
 
                         )
             )
-        showRef :: Declaration -> Inlines
+        showRef :: Relation -> Inlines
         showRef dcl = xRef (XRefConceptualAnalysisDeclaration dcl) <> "(" <> (str.showDcl False) dcl <> ")"
         
         ncs = concs r >- seenConcs            -- newly seen concepts
         cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r
-        nds = [d | d@Sgn{}<-ds >- seenDeclarations]     -- newly seen relations
-        rds = [d | d@Sgn{}<-ds `isc` seenDeclarations]  -- previously seen relations
+        nds = ds >- seenDeclarations     -- newly seen relations
+        rds = ds `isc` seenDeclarations  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenDeclarations)
 
-relsInThemes :: FSpec -> [Declaration]
+relsInThemes :: FSpec -> [Relation]
 relsInThemes fSpec
         -- a relation is considered relevant iff it is declared or mentioned in one of the relevant themes.
  = [d | d<-vrels fSpec

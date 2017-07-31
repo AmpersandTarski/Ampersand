@@ -24,7 +24,7 @@ instance AStruct A_Gen where
 instance AStruct Rule where
  showA = showP . aRule2pRule
 
-instance AStruct Declaration where
+instance AStruct Relation where
  showA = showP . aDeclaration2pDeclaration
 
 instance AStruct AAtomPair where

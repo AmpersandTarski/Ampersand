@@ -10,7 +10,7 @@ import Ampersand.ADL1.Expression(primitives)
 import Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 
-{- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
+{- TODO: Interface parameters (of type Relation) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
    (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but
    define relsMentionedIn directly.
    
@@ -20,22 +20,21 @@ import Prelude hiding (Ordering(..))
 
 class ConceptStructure a where
   concs ::      a -> [A_Concept]               -- ^ the set of all concepts used in data structure a
-  relsUsedIn :: a -> [Declaration]             -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-  relsUsedIn a = [ d | d@Sgn{}<-relsMentionedIn a]++[Isn c | c<-concs a]
-  relsMentionedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-  relsMentionedIn = nub . map prim2rel . primsMentionedIn
+  relsUsedIn :: a -> [Relation]             -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
+  relsUsedIn a = relsMentionedIn a
+  relsMentionedIn :: a -> [Relation]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
+  relsMentionedIn = nub . mapMaybe prim2rel . primsMentionedIn
   primsMentionedIn :: a -> [Expression]
   primsMentionedIn = nub . concatMap primitives . expressionsIn
   expressionsIn :: a -> [Expression] -- ^ The set of all expressions within data structure a
   
-prim2rel :: Expression -> Declaration
+prim2rel :: Expression -> Maybe Relation
 prim2rel e
  = case e of
-    EDcD d@Sgn{} -> d
-    EDcD{}       -> fatal "invalid declaration in EDcD{}"
-    EDcI c       -> Isn c
-    EDcV sgn     -> Vs sgn
-    EMp1 _ c     -> Isn c
+    EDcD d       -> Just d
+    EDcI _       -> Nothing
+    EDcV _       -> Nothing
+    EMp1 _ _     -> Nothing
     _            -> fatal ("only primitive expressions should be found here.\nHere we see: " ++ show e)
 
 instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
@@ -152,9 +151,9 @@ instance ConceptStructure Interface where
                      [ (expressionsIn.ifcObj) ifc
                      ]
 
-instance ConceptStructure Declaration where
+instance ConceptStructure Relation where
   concs         d = concs (sign d)
-  expressionsIn d = fatal ("expressionsIn not allowed on Declaration of "++show d)
+  expressionsIn d = fatal ("expressionsIn not allowed on Relation of "++show d)
 
 instance ConceptStructure Rule where
   concs r   = concs (formalExpression r) `uni` concs (rrviol r)
@@ -178,7 +177,7 @@ instance ConceptStructure Purpose where
 
 instance ConceptStructure ExplObj where
   concs (ExplConceptDef cd) = concs cd
-  concs (ExplDeclaration d) = concs d
+  concs (ExplRelation d) = concs d
   concs (ExplRule _)        = [{-beware of loops...-}]
   concs (ExplIdentityDef _) = [{-beware of loops...-}]
   concs (ExplViewDef _)     = [{-beware of loops...-}]

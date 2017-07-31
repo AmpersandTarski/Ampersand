@@ -15,7 +15,7 @@ import Data.List(nub)
 -- These data structures are accessed by means of a common set of functions (e.g. rules, relations, etc.)
 
 class Language a where
-  relsDefdIn :: a -> [Declaration]   -- ^ all relations that are declared in the scope of this viewpoint.
+  relsDefdIn :: a -> [Relation]   -- ^ all relations that are declared in the scope of this viewpoint.
                                      --   These are user defined relations and all generated relarations,
                                      --   i.e. one relation for each GEN and one for each signal rule.
                                      --   Don't confuse relsDefdIn with relsUsedIn, which gives the relations that are
@@ -75,7 +75,7 @@ instance Language A_Context where
      where
       -- relations with the same name, but different properties (decprps,pragma,decpopu,etc.) may exist and need to be united
       -- decpopu, decprps and decprps_calc are united, all others are taken from the head.
-      uniteRels :: [Declaration] -> [Declaration]
+      uniteRels :: [Relation] -> [Relation]
       uniteRels [] = []
       uniteRels ds = [ d | cl<-eqClass (==) ds
                          , let d=(head cl){ decprps      = (foldr1 uni.map decprps) cl

@@ -57,7 +57,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
                      , pattsInScope :: [Pattern]
                      , rulesInScope :: [Rule]
-                     , declsInScope :: [Declaration]
+                     , declsInScope :: [Relation]
                      , concsInScope :: [A_Concept]
                      , cDefsInScope :: [ConceptDef]
                      , gensInScope ::  [A_Gen]
@@ -68,7 +68,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
-                   , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
+                   , fRoleRels ::    [(Role,Relation)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
                    , fMaintains ::   Role -> [Rule]
                    , fRoles ::       [(Role,Int)]             -- ^ All roles mentioned in this context, numbered.
@@ -77,8 +77,8 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                    , invariants ::   [Rule]                   -- ^ All invariant rules
                    , signals ::      [Rule]                   -- ^ All signal rules
-                   , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
-                   , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
+                   , allUsedDecls :: [Relation]            -- ^ All relations that are used in the fSpec
+                   , vrels ::        [Relation]            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
                                                               --   one declaration for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
@@ -91,7 +91,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
                    , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
-                   , allConjsPerDecl :: [(Declaration, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
+                   , allConjsPerDecl :: [(Relation, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
@@ -145,7 +145,7 @@ instance Unique Atom where
              [x] -> uniqueShow True x
              xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
 
-data A_Pair = Pair { lnkDcl :: Declaration
+data A_Pair = Pair { lnkDcl :: Relation
                    , lnkLeft :: Atom
                    , lnkRight :: Atom
                    } deriving (Typeable,Eq)
@@ -196,7 +196,7 @@ instance Named FSid where
 
 
 
-data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affected, triggers a restore action.
+data Quad = Quad { qDcl ::       Relation   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
                  , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
                  } deriving Show
@@ -273,7 +273,7 @@ plugAttributes plug = case plug of
     TblSQL{}    -> attributes plug
     BinSQL{}    -> let store = case dLkpTbl plug of
                          [x] -> x
-                         _   -> fatal $ "Declaration lookup table of a binary table should contain exactly one element:\n" ++
+                         _   -> fatal $ "Relation lookup table of a binary table should contain exactly one element:\n" ++
                                             show (dLkpTbl plug)
                    in [rsSrcAtt store,rsTrgAtt store]
 
@@ -292,7 +292,7 @@ getConceptTableFor fSpec c = case lookupCpt fSpec c of
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
 data RelStore 
   = RelStore
-     { rsDcl       :: Declaration
+     { rsDcl       :: Relation
      , rsSrcAtt    :: SqlAttribute
      , rsTrgAtt    :: SqlAttribute
      } deriving (Show, Typeable)

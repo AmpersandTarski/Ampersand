@@ -38,7 +38,7 @@ getCrudObjectsForInterface crudInfo ifc =
   fromMaybe (fatal $ "NO CRUD objects for interface " ++ show (name ifc))
             (lookup ifc $ crudObjsPerInterface crudInfo) 
   
-mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
+mkCrudInfo :: [A_Concept] -> [Relation] -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where allConcs = [ c | c <- allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
@@ -58,7 +58,7 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
         crudObjs = [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap) -- TODO: should [] be a fatal? 
                    | crudCncpt <- crudCncpts ]
         
-        getCrudUpdateConcpts :: Declaration -> [A_Concept]
+        getCrudUpdateConcpts :: Relation -> [A_Concept]
         getCrudUpdateConcpts decl = 
           if  isSur decl || isTot decl  -- TODO: no isUni?  -- TODO: no isInj?
           then [ cObj | (cObj, cCncpts) <- crudObjs, source decl `elem` cCncpts && target decl `elem` cCncpts ]    
@@ -83,7 +83,7 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
                 (editableDecls, editableTgts) = unzip $ getEditableDeclsAndTargets allIfcs ifc
                                              
 -- NOTE: editable target is not necessarily the target of decl, as it may have been flipped (in which case it's the source)
-getEditableDeclsAndTargets :: [Interface] -> Interface -> [(Declaration, A_Concept)]
+getEditableDeclsAndTargets :: [Interface] -> Interface -> [(Relation, A_Concept)]
 getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterfaceExprs allIfcs ifc
   where editableTarget expr = 
           case getExpressionRelation expr of

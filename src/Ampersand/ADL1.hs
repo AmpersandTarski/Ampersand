@@ -43,7 +43,7 @@ import Ampersand.Core.AbstractSyntaxTree as X (
          ,ObjectDef(..)
          , Default(..)
          ,SubInterface(..)
-         ,Declaration(..),decusr
+         ,Relation(..),decusr
          ,Interface(..)
          ,Pattern(..)
          ,Rule(..)

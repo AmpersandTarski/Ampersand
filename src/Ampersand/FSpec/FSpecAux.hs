@@ -6,7 +6,7 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
 
 -- return table name and source and target column names for relation dcl
-getDeclarationTableInfo :: FSpec -> Declaration -> (PlugSQL,SqlAttribute,SqlAttribute) 
+getDeclarationTableInfo :: FSpec -> Relation -> (PlugSQL,SqlAttribute,SqlAttribute) 
 getDeclarationTableInfo fSpec dcl 
      = case filter thisDcl . concatMap getRelInfos $ [p | InternalPlug p<-plugInfos fSpec ] of
                 [(p,store)] -> (p,rsSrcAtt store,rsTrgAtt store)

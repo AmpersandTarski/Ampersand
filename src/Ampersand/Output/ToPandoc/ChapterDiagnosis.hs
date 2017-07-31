@@ -79,7 +79,7 @@ chpDiagnosis fSpec
       f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
                 | otherwise                      = mempty
           where timesSymbol = toEnum 215      
-      mayedit :: Role -> Declaration -> Bool
+      mayedit :: Role -> Relation -> Bool
       mayedit role' decl = decl `elem` (snd . unzip) (filter (\x -> role' == fst x) (fRoleRels fSpec))
       dead -- (r,rul) `elem` dead means that r cannot maintain rul without restrictions.
        = [ (role',rul)
@@ -196,7 +196,7 @@ chpDiagnosis fSpec
                                     ,EN " is not documented.")
                         )
           )
-     where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Declaration]
+     where bothMissing, purposeOnlyMissing, meaningOnlyMissing :: [Relation]
            bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) $ decls
            purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  $ decls
            meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) $ decls
@@ -249,7 +249,7 @@ chpDiagnosis fSpec
      )
      where notUsed :: [Inlines]
            notUsed = [ showMath (EDcD d)
-                     | d@Sgn{} <- nub (relsInThemes fSpec) -- only signal relations that are used or defined in the selected themes
+                     | d <- nub (relsInThemes fSpec) -- only relations that are used or defined in the selected themes
                      , decusr d
                      , d `notElem` (relsMentionedIn . vrules) fSpec
                      ]
@@ -316,7 +316,7 @@ chpDiagnosis fSpec
              )
       
     where mkTableRow :: String  -- The name of the pattern / fSpec 
-                     -> [Declaration] --The user-defined relations of the pattern / fSpec
+                     -> [Relation] --The user-defined relations of the pattern / fSpec
                      -> [Rule]  -- The user-defined rules of the pattern / fSpec
                      -> [Blocks]
           mkTableRowPat p = mkTableRow (name p) (relsDefdIn p) (udefrules p)

@@ -34,7 +34,7 @@ data Type = UserConcept String
           | RepresentSeparator
           deriving (Eq,Ord,Show)
 
-type DeclMap = Map.Map String (Map.Map SignOrd Declaration)
+type DeclMap = Map.Map String (Map.Map SignOrd Relation)
 
 instance Named Type where
   name v = case typeOrConcept v of
@@ -95,7 +95,7 @@ isDanglingPurpose :: A_Context -> Purpose -> Bool
 isDanglingPurpose ctx purp = 
   case explObj purp of
     ExplConceptDef concDef -> let nm = name concDef in nm `notElem` map name (concs ctx )
-    ExplDeclaration decl -> let nm = name decl in nm `notElem` map name (relsDefdIn ctx) -- is already covered by type checker
+    ExplRelation decl -> let nm = name decl in nm `notElem` map name (relsDefdIn ctx) -- is already covered by type checker
     ExplRule nm -> nm `notElem` map name (udefrules ctx) 
     ExplIdentityDef nm -> nm `notElem` map name (identities ctx)
     ExplViewDef nm ->  nm `notElem` map name (viewDefs ctx)
@@ -160,14 +160,14 @@ checkOtherAtomsInSessionConcept ctx = case [mkOtherAtomInSessionError atom
 
 pSign2aSign :: P_Sign -> Signature
 pSign2aSign (P_Sign src tgt) = Sign (pCpt2aCpt src) (pCpt2aCpt tgt)
-findDecls :: DeclMap -> String -> Map.Map SignOrd Declaration
+findDecls :: DeclMap -> String -> Map.Map SignOrd Relation
 findDecls declMap x = Map.findWithDefault Map.empty x declMap  -- get all declarations with the same name as x
-namedRel2Decl :: DeclMap -> P_NamedRel -> Guarded Declaration
+namedRel2Decl :: DeclMap -> P_NamedRel -> Guarded Relation
 namedRel2Decl declMap o@(PNamedRel _ r Nothing)  = getOneExactly o (findDecls' declMap r)
 namedRel2Decl declMap o@(PNamedRel _ r (Just s)) = getOneExactly o (findDeclsTyped declMap r (pSign2aSign s))
-findDecls' :: DeclMap -> String -> [Declaration]
+findDecls' :: DeclMap -> String -> [Relation]
 findDecls' declMap x = Map.elems (findDecls declMap  x)
-findDeclsLooselyTyped :: DeclMap -> String -> Maybe A_Concept -> Maybe A_Concept -> [Declaration]
+findDeclsLooselyTyped :: DeclMap -> String -> Maybe A_Concept -> Maybe A_Concept -> [Relation]
 findDeclsLooselyTyped declMap x (Just src) (Just tgt)
  = findDeclsTyped declMap x (Sign src tgt)
    `orWhenEmpty` (findDeclsLooselyTyped declMap x (Just src) Nothing `isct` findDeclsLooselyTyped declMap x Nothing (Just tgt))
@@ -187,9 +187,9 @@ findDeclLooselyTyped :: DeclMap
                      -> String
                      -> Maybe A_Concept
                      -> Maybe A_Concept
-                     -> Guarded Declaration
+                     -> Guarded Relation
 findDeclLooselyTyped declMap o x src tgt = getOneExactly o (findDeclsLooselyTyped declMap x src tgt)
-findDeclsTyped :: DeclMap -> String -> Signature -> [Declaration]
+findDeclsTyped :: DeclMap -> String -> Signature -> [Relation]
 findDeclsTyped declMap x tp = Map.findWithDefault [] (SignOrd tp) (Map.map (:[]) (findDecls declMap x))
 
 onlyUserConcepts :: [[Type]] -> [[A_Concept]]
@@ -438,7 +438,7 @@ pCtx2aCtx opts
     -- meanings, for instance, two should get combined into a list of meanings, et cetera
     -- positions are combined
     -- TODO
-    accumDecl :: Declaration -> Declaration -> Declaration
+    accumDecl :: Relation -> Relation -> Relation
     accumDecl a _ = a
 
     pDecl2aDecl ::
@@ -446,10 +446,11 @@ pCtx2aCtx opts
       -> ContextInfo
       -> Lang           -- The default language
       -> PandocFormat   -- The default pandocFormat
-      -> P_Declaration -> Guarded (Declaration,Population)
+      -> P_Declaration -> Guarded (Relation,Population)
     pDecl2aDecl patNm contextInfo defLanguage defFormat pd
      = let (prL:prM:prR:_) = dec_pragma pd ++ ["", "", ""]
-           dcl = Sgn { decnm   = pack (dec_nm pd)
+           dcl = Relation
+                     { decnm   = pack (dec_nm pd)
                      , decsgn  = decSign
                      , decprps = dec_prps pd
                      , decprps_calc = Nothing  --decprps_calc in an A_Context are still the user-defined only. prps are calculated in adl2fspec.
@@ -531,14 +532,14 @@ pCtx2aCtx opts
                           , popas  = vals
                           }
               ) <$> traverse (pAtomValue2aAtomValue contextInfo cpt) (p_popas pop)
-    isMoreGeneric :: Origin -> Declaration -> SrcOrTgt -> Type -> Guarded Type
+    isMoreGeneric :: Origin -> Relation -> SrcOrTgt -> Type -> Guarded Type
     isMoreGeneric o dcl sourceOrTarget givenType
      = if givenType `elem` findExact genLattice (Atom (getConcept sourceOrTarget dcl) `Meet` Atom givenType)
        then pure givenType
        else mkTypeMismatchError o dcl sourceOrTarget givenType
          
     
-    pAtomPair2aAtomPair :: ContextInfo -> Declaration -> PAtomPair -> Guarded AAtomPair
+    pAtomPair2aAtomPair :: ContextInfo -> Relation -> PAtomPair -> Guarded AAtomPair
     pAtomPair2aAtomPair contextInfo dcl pp = 
      mkAtomPair 
        <$> pAtomValue2aAtomValue contextInfo (source dcl) (ppLeft  pp)
@@ -968,7 +969,7 @@ pCtx2aCtx opts
        <$> pRefObj2aRefObj declMap objref
     pRefObj2aRefObj :: DeclMap -> PRef2Obj -> Guarded ExplObj
     pRefObj2aRefObj _       (PRef2ConceptDef  s ) = pure$ ExplConceptDef (lookupConceptDef s)
-    pRefObj2aRefObj declMap (PRef2Declaration tm) = ExplDeclaration <$> namedRel2Decl declMap tm
+    pRefObj2aRefObj declMap (PRef2Declaration tm) = ExplRelation <$> namedRel2Decl declMap tm
     pRefObj2aRefObj _       (PRef2Rule        s ) = pure$ ExplRule s
     pRefObj2aRefObj _       (PRef2IdentityDef s ) = pure$ ExplIdentityDef s
     pRefObj2aRefObj _       (PRef2ViewDef     s ) = pure$ ExplViewDef s

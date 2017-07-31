@@ -87,14 +87,14 @@ cdAnalysis fSpec =
       isOfCpt (e:_) = source e == cpt
       attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
 
-   dclIsInScope :: Declaration -> Bool
+   dclIsInScope :: Relation -> Bool
    dclIsInScope dcl =
       dcl `elem` (topLevelDcls `uni` pattInScopeDcls)
      where   
        topLevelDcls = vrels fSpec \\ (concatMap relsDefdIn . vpatterns $ fSpec)
        pattInScopeDcls = nub . concatMap dclsInPat . pattsInScope $ fSpec
           where 
-            dclsInPat :: Pattern -> [Declaration]
+            dclsInPat :: Pattern -> [Relation]
             dclsInPat p = relsDefdIn p `uni` relsMentionedIn p
    ooAttr :: Expression -> CdAttribute
    ooAttr r = OOAttr { attNm = (name . head . relsMentionedIn) r
@@ -105,7 +105,7 @@ cdAnalysis fSpec =
    assocsAndAggrs = map decl2assocOrAggr 
                   . filter dclIsShown $ allDcls
      where
-       dclIsShown :: Declaration -> Bool
+       dclIsShown :: Relation -> Bool
        dclIsShown d = 
              (not . isProp) d
           && (   (d `notElem` attribDcls)
@@ -120,7 +120,7 @@ cdAnalysis fSpec =
                             
 
    -- Aggregates are disabled for now, as the conditions we use to regard a relation as an aggregate still seem to be too weak
---   decl2assocOrAggr :: Declaration -> Either Association Aggregation
+--   decl2assocOrAggr :: Relation -> Either Association Aggregation
 --   decl2assocOrAggr d | isUni d && isTot d = Right $ OOAggr {aggDel = Close, aggChild = source d, aggParent = target d}
 --   decl2assocOrAggr d | isInj d && isSur d = Right $ OOAggr {aggDel = Close, aggChild = target d, aggParent = source d}
    decl2assocOrAggr d = Left
@@ -219,7 +219,7 @@ tdAnalysis fSpec =
                     , asslhr = attName f
                     , assTgt = name . getConceptTableFor fSpec . target $ expr
                     , assrhm = mults expr
-                    , assrhr = case [name d | d@Sgn{}<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
+                    , assrhr = case [name d | d<-relsMentionedIn expr] of h:_ -> h ; _ -> fatal "no relations used in expr"
                     , assmdcl = Nothing
                     }
 

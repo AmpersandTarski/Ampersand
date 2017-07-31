@@ -10,7 +10,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , RuleOrigin(..)
- , Declaration(..), showDcl
+ , Relation(..), showDcl
  , IdentityDef(..)
  , IdentitySegment(..)
  , ViewDef(..)
@@ -82,7 +82,7 @@ data A_Context
          , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
-         , ctxds :: [Declaration]    -- ^ The relations that are declared in this context, outside the scope of patterns
+         , ctxds :: [Relation]    -- ^ The relations that are declared in this context, outside the scope of patterns
          , ctxpopus :: [Population]  -- ^ The user defined populations of relations defined in this context, including those from patterns and processes
          , ctxcds :: [ConceptDef]    -- ^ The concept definitions defined in this context, including those from patterns and processes
          , ctxks :: [IdentityDef]    -- ^ The identity definitions defined in this context, outside the scope of patterns
@@ -110,7 +110,7 @@ instance Named A_Context where
 
 data A_RoleRelation
    = RR { rrRoles :: [Role]     -- ^ name of a role
-        , rrRels :: [Declaration]   -- ^ name of a Relation
+        , rrRels :: [Relation]   -- ^ name of a Relation
         , rrPos :: Origin       -- ^ position in the Ampersand script
         } deriving Show
 instance Traced A_RoleRelation where
@@ -122,7 +122,7 @@ data Pattern
            , ptend :: Origin        -- ^ the end position in the file, elements with a position between pos and end are elements of this pattern.
            , ptrls :: [Rule]        -- ^ The user defined rules in this pattern
            , ptgns :: [A_Gen]       -- ^ The generalizations defined in this pattern
-           , ptdcs :: [Declaration] -- ^ The relations that are declared in this pattern
+           , ptdcs :: [Relation] -- ^ The relations that are declared in this pattern
            , ptups :: [Population]  -- ^ The user defined populations in this pattern
            , ptids :: [IdentityDef] -- ^ The identity definitions defined in this pattern
            , ptvds :: [ViewDef]     -- ^ The view definitions defined in this pattern
@@ -155,7 +155,7 @@ data Rule =
         , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
         , rrtyp ::    Signature                   -- ^ Allocated signature
-        , rrdcl ::    Maybe (Prop,Declaration)    -- ^ The property, if this rule originates from a property on a Declaration
+        , rrdcl ::    Maybe (Prop,Relation)    -- ^ The property, if this rule originates from a property on a Relation
         , r_env ::    String                      -- ^ Name of pattern in which it was defined.
         , r_usr ::    RuleOrigin                  -- ^ Where does this rule come from?
         , isSignal :: Bool                        -- ^ True if this is a signal; False if it is an invariant
@@ -198,8 +198,8 @@ instance Unique Conjunct where
 instance Prelude.Ord Conjunct where
   compare = Prelude.compare `on` rc_id
 
-data Declaration =
-  Sgn { decnm :: Text              -- ^ the name of the declaration
+data Relation = Relation
+      { decnm :: Text              -- ^ the name of the declaration
       , decsgn :: Signature          -- ^ the source and target concepts of the declaration
        --properties returns decprps_calc, when it has been calculated. So if you only need the user defined properties do not use 'properties' but 'decprps'.
       , decprps :: [Prop]            -- ^ the user defined multiplicity properties (Uni, Tot, Sur, Inj) and algebraic properties (Sym, Asy, Trn, Rfx)
@@ -213,56 +213,26 @@ data Declaration =
       , decpat ::  String            -- ^ the pattern where this declaration has been declared.
       , decplug :: Bool              -- ^ if true, this relation may not be stored in or retrieved from the standard database (it should be gotten from a Plug of some sort instead)
       , dech :: Int
-      } |
-  Isn
-      { detyp :: A_Concept       -- ^ The type
-      } |
-  Vs
-      { decsgn :: Signature
       } deriving (Typeable, Data)
 
-instance Eq Declaration where
-  d@Sgn{}     == d'@Sgn{}     = dech d == dech d' && decnm d == decnm d' && decsgn d==decsgn d'
-  d@Isn{}     == d'@Isn{}     = detyp d==detyp d'
-  d@Vs{}      == d'@Vs{}      = decsgn d==decsgn d'
-  _           == _            = False
-instance Ord Declaration where
-  compare a b =
-    case a of
-      Sgn{} -> case b of
-                Sgn{} -> if name a == name b
-                         then Prelude.compare (sign a) (sign b)
-                         else Prelude.compare (name a) (name b)
-                Isn{} -> GT
-                Vs{}  -> GT
-      Isn{} -> case b of
-                Sgn{} -> LT
-                Isn{} -> Prelude.compare (sign a) (sign b)
-                Vs{}  -> GT
-      Vs{}  -> case b of
-                Sgn{} -> LT
-                Isn{} -> LT
-                Vs{}  -> Prelude.compare (sign a) (sign b)
-instance Unique Declaration where
-  showUnique d =
-    case d of
-      Sgn{} -> name d++uniqueShow False (decsgn d)
-      Isn{} -> "I["++uniqueShow False (detyp d)++"]"
-      Vs{}  -> "V"++uniqueShow False (decsgn d)
-instance Hashable Declaration where
-   hashWithSalt s Sgn{dech = v} = s `hashWithSalt` v
-   hashWithSalt s Isn{detyp = v} = hashWithSalt s v
-   hashWithSalt s Vs{decsgn = v}  = hashWithSalt s v
-instance Show Declaration where  -- For debugging purposes only (and fatal messages)
-  showsPrec _ decl@Sgn{}
-   = showString (case decl of
-                  Sgn{} -> name decl++showSign (sign decl)
-                  Isn{} -> "I["++show (detyp decl)++"]" -- Isn{} is of type Declaration and it is implicitly defined
-                  Vs{}  -> "V"++show (decsgn decl) )
+instance Eq Relation where
+  d == d' = dech d == dech d' && decnm d == decnm d' && decsgn d==decsgn d'
 
-  showsPrec _ d@Isn{}     = showString $ "Isn{detyp="++show(detyp d)++"}"
-  showsPrec _ d@Vs{}      = showString $ "V"++showSign(decsgn d)
-showDcl :: Bool -> Declaration -> String
+instance Ord Relation where
+  compare a b =
+    if name a == name b
+    then Prelude.compare (sign a) (sign b)
+    else Prelude.compare (name a) (name b)
+instance Unique Relation where
+  showUnique d =
+    name d++uniqueShow False (decsgn d)
+instance Hashable Relation where
+   hashWithSalt s Relation{dech = v} = s `hashWithSalt` v
+instance Show Relation where  -- For debugging purposes only (and fatal messages)
+  showsPrec _ decl
+   = showString (name decl++showSign (sign decl))
+
+showDcl :: Bool -> Relation -> String
 showDcl forceBoth dcl = name dcl++"["++cpts++"]"
   where 
     cpts
@@ -271,19 +241,12 @@ showDcl forceBoth dcl = name dcl++"["++cpts++"]"
 
 data AMeaning = AMeaning { ameaMrk ::[Markup]} deriving (Show, Eq, Prelude.Ord, Typeable, Data)
 
-instance Named Declaration where
-  name d@Sgn{}   = unpack (decnm d)
-  name Isn{}     = "I"
-  name Vs{}      = "V"
-instance Association Declaration where
-  sign d = case d of
-              Sgn {}    -> decsgn d
-              Isn {}    -> Sign (detyp d) (detyp d)
-              Vs {}     -> decsgn d
-instance Traced Declaration where
-  origin d = case d of
-              Sgn{}     -> decfpos d
-              _         -> OriginUnknown
+instance Named Relation where
+  name d = unpack (decnm d)
+instance Association Relation where
+  sign = decsgn
+instance Traced Relation where
+  origin = decfpos
 
 data IdentityDef = Id { idPos :: Origin        -- ^ position of this definition in the text of the Ampersand source file (filename, line number and column number).
                       , idLbl :: String        -- ^ the name (or label) of this Identity. The label has no meaning in the Compliant Service Layer, but is used in the generated user interface. It is not an empty string.
@@ -442,9 +405,9 @@ instance Traced Purpose where
   origin = explPos
 
 data Population -- The user defined populations
-  = ARelPopu { popdcl :: Declaration
+  = ARelPopu { popdcl :: Relation
              , popps ::  [AAtomPair]     -- The user-defined pairs that populate the relation
-             , popsrc :: A_Concept -- potentially more specific types than the type of Declaration
+             , popsrc :: A_Concept -- potentially more specific types than the type of Relation
              , poptgt :: A_Concept
              }
   | ACptPopu { popcpt :: A_Concept
@@ -539,7 +502,7 @@ showValADL val =
    AtomValueOfONE{} -> "1"
 
 data ExplObj = ExplConceptDef ConceptDef
-             | ExplDeclaration Declaration
+             | ExplRelation Relation
              | ExplRule String
              | ExplIdentityDef String
              | ExplViewDef String
@@ -551,7 +514,7 @@ instance Unique ExplObj where
   showUnique e = "Explanation of "++
     case e of
      (ExplConceptDef cd) -> uniqueShow True cd
-     (ExplDeclaration d) -> uniqueShow True d
+     (ExplRelation d)    -> uniqueShow True d
      (ExplRule s)        -> "a Rule named "++s
      (ExplIdentityDef s) -> "an Ident named "++s
      (ExplViewDef s)     -> "a View named "++s
@@ -576,7 +539,7 @@ data Expression
       | EFlp Expression                -- ^ conversion (flip, wok)  ~
       | ECpl Expression                -- ^ Complement
       | EBrk Expression                -- ^ bracketed expression ( ... )
-      | EDcD Declaration               -- ^ simple declaration
+      | EDcD Relation                  -- ^ simple declaration
       | EDcI A_Concept                 -- ^ Identity relation
       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Signature                 -- ^ Cartesian product relation
@@ -712,14 +675,14 @@ showSign x = let Sign s t = sign x in "["++name s++"*"++name t++"]"
 -- Basically, we have a relation that may have several epsilons to its left and its right, and the source/target concepts
 -- we use are the concepts in the innermost epsilon, or the source/target concept of the relation, in absence of epsilons.
 -- This is used to determine the type of the atoms provided by the outside world through interfaces.
-getExpressionRelation :: Expression -> Maybe (A_Concept, Declaration, A_Concept, Bool)
+getExpressionRelation :: Expression -> Maybe (A_Concept, Relation, A_Concept, Bool)
 getExpressionRelation expr = case getRelation expr of
    Just (s,Just d,t,isFlipped)  -> Just (s,d,t,isFlipped)
    _                            -> Nothing
  where
     -- If the expression represents an editable relation, the relation is returned together with the narrowest possible source and target
     -- concepts, as well as a boolean that states whether the relation is flipped.
-    getRelation :: Expression -> Maybe (A_Concept, Maybe Declaration, A_Concept, Bool)
+    getRelation :: Expression -> Maybe (A_Concept, Maybe Relation, A_Concept, Bool)
     getRelation (ECps (e, EDcI{})) = getRelation e
     getRelation (ECps (EDcI{}, e)) = getRelation e
     getRelation (ECps (e1, e2))
@@ -808,7 +771,7 @@ instance Flippable Signature where
  flp (Sign s t) = Sign t s
 
 class Association rel where
-  source, target :: rel -> A_Concept      -- e.g. Declaration -> Concept
+  source, target :: rel -> A_Concept      -- e.g. Relation -> Concept
   source x        = source (sign x)
   target x        = target (sign x)
   sign :: rel -> Signature

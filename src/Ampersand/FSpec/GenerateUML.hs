@@ -1,7 +1,7 @@
 module Ampersand.FSpec.GenerateUML (generateUML) where
 
 import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Declaration)
+import Ampersand.Core.AbstractSyntaxTree (explMarkup,Rule,Purpose(..),Relation)
 import Ampersand.Graphic.ClassDiagram
 import Ampersand.Graphic.Fspec2ClassDiagrams 
 import Ampersand.FSpec
@@ -201,7 +201,7 @@ genCustomReqElements fSpec parentPackageId =
 
 data Req = Req { reqId :: String
             --   , reqRef :: String
-               , reqOrig :: Either Rule Declaration
+               , reqOrig :: Either Rule Relation
                , reqPurposes :: [Purpose]
                }
 

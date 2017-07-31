@@ -27,8 +27,8 @@ consequent r
 
 -- rulefromProp specifies a rule that defines property prp of declaration d.
 -- The table of all relations is provided, in order to generate shorter names if possible.
-rulefromProp :: Prop -> Declaration -> Maybe Rule
-rulefromProp prp d@Sgn{} =
+rulefromProp :: Prop -> Relation -> Maybe Rule
+rulefromProp prp d =
   Just
      Ru { rrnm  = show prp++" "++showDcl'
         , formalExpression = rExpr

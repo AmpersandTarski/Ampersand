@@ -13,7 +13,7 @@ import Data.Maybe
 import Data.Char
 
 makeGeneratedSqlPlugs :: Options -> A_Context 
-              -> (Declaration -> Declaration) -- Function to add calculated properties to a declaration
+              -> (Relation -> Relation) -- Function to add calculated properties to a declaration
               -> [PlugSQL]
 -- | Sql plugs database tables. A database table contains the administration of a set of concepts and relations.
 --   if the set conains no concepts, a linktable is created.
@@ -24,7 +24,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
     linkTables    = map makeLinkTable    linkTableParts
     calculatedDecls = (map calcProps .filter (not . decplug) . relsDefdIn) context 
     (conceptTableParts, linkTableParts) = dist calculatedDecls (typologies context)
-    makeConceptTable :: (Typology, [Declaration]) -> PlugSQL
+    makeConceptTable :: (Typology, [Relation]) -> PlugSQL
     makeConceptTable (typ , dcls) = 
       TblSQL
              { sqlname    = unquote . name $ tableKey
@@ -36,18 +36,18 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
           cpts = reverse $ sortSpecific2Generic (gens context) (tyCpts typ)
           -- | Make sure each attribute in the table has a unique name. Take into account that sql 
           --   is not case sensitive about names of coloums. 
-          colNameMap :: [ (Either A_Concept Declaration, String) ]
+          colNameMap :: [ (Either A_Concept Relation, String) ]
           colNameMap = f [] (cpts, dcls)
-            where f :: [ (Either A_Concept Declaration, String) ] -> ([A_Concept],[Declaration]) -> [ (Either A_Concept Declaration, String) ]
+            where f :: [ (Either A_Concept Relation, String) ] -> ([A_Concept],[Relation]) -> [ (Either A_Concept Relation, String) ]
                   f names (cs,ds) =
                      case (cs,ds) of
                        ([],[]) -> names
                        ([], _) -> f (insert (Right . head $ ds) names) ([],tail ds)
                        _       -> f (insert (Left  . head $ cs) names) (tail cs,ds)
-                  insert :: Either A_Concept Declaration -> [(Either A_Concept Declaration, String)] -> [(Either A_Concept Declaration, String)]
+                  insert :: Either A_Concept Relation -> [(Either A_Concept Relation, String)] -> [(Either A_Concept Relation, String)]
                   insert item = tryInsert item 0
                     where 
-                      tryInsert :: Either A_Concept Declaration -> Int -> [(Either A_Concept Declaration,String)] -> [(Either A_Concept Declaration,String)]
+                      tryInsert :: Either A_Concept Relation -> Int -> [(Either A_Concept Relation,String)] -> [(Either A_Concept Relation,String)]
                       tryInsert x n names =
                         let nm = either name name x ++ (if n == 0 then "" else "_"++show n)
                         in if map toLower nm `elem` map (map toLower . snd) names -- case insencitive compare, because SQL needs that.
@@ -56,7 +56,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 
 
           tableKey = tyroot typ
-          isStoredFlipped :: Declaration -> Bool
+          isStoredFlipped :: Relation -> Bool
           isStoredFlipped d
             = snd . fromMaybe ftl . wayToStore $ d
               where ftl = fatal ("relation `"++name d++"` cannot be stored in this table. "++show (properties d)++"\n\n"++show d)
@@ -99,7 +99,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
                 where expr = if cpt == tableKey
                              then EDcI cpt
                              else EEps cpt (Sign tableKey cpt)
-          dclAttrib :: Declaration -> SqlAttribute
+          dclAttrib :: Relation -> SqlAttribute
           dclAttrib dcl = Att { attName = fromMaybe (fatal ("No name found for `"++name dcl++"`. "))
                                                     (lookup (Right dcl) colNameMap)
                               , attExpr = dclAttExpression
@@ -130,7 +130,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 -- a relation r (or r~) is stored in the target attribute of this plug
 
     -- | Make a binary sqlplug for a relation that is neither inj nor uni
-    makeLinkTable :: Declaration -> PlugSQL
+    makeLinkTable :: Relation -> PlugSQL
     makeLinkTable dcl 
          = BinSQL
              { sqlname = unquote . name $ dcl
@@ -187,11 +187,11 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
     -- | dist will distribute the declarations amongst the sets of concepts. 
     --   Preconditions: The sets of concepts are supposed to be sets of 
     --                  concepts that are to be represented in a single table. 
-    dist :: [Declaration]   -- all declarations that are to be distributed
+    dist :: [Relation]   -- all declarations that are to be distributed
          -> [Typology]   -- the sets of concepts, each one contains all concepts that will go into a single table.
-         -> ( [(Typology, [Declaration])]  -- tuples of a set of concepts and all declarations that can be
+         -> ( [(Typology, [Relation])]  -- tuples of a set of concepts and all declarations that can be
                                               -- stored into that table. The order of concepts is not modified.
-            , [Declaration]  -- The declarations that cannot be stored into one of the concept tables.
+            , [Relation]  -- The declarations that cannot be stored into one of the concept tables.
             ) 
     dist dcls cptLists = 
        ( [ (t, declsInTable t) | t <- cptLists]
@@ -201,7 +201,7 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
         declsInTable typ = [ dcl | dcl <- dcls
                             , not . null $ maybeToList (conceptTableOf dcl) `isc` tyCpts typ ]
         
-        conceptTableOf :: Declaration -> Maybe A_Concept
+        conceptTableOf :: Relation -> Maybe A_Concept
         conceptTableOf d = if sqlBinTables opts
                            then Nothing
                            else fst <$> wayToStore d
@@ -209,12 +209,8 @@ makeGeneratedSqlPlugs opts context calcProps = conceptTables ++ linkTables
 -- | this function tells in what concepttable a given declaration is to be stored. If stored
 --   in a concept table, it returns the concept and a boolean, telling wether or not the relation
 --   is stored flipped.
-wayToStore :: Declaration -> Maybe (A_Concept,Bool)
+wayToStore :: Relation -> Maybe (A_Concept,Bool)
 wayToStore d =
-  case d of 
-  Isn{} -> fatal "I is not expected here." -- These relations are already in the kernel
-  Vs{}  -> fatal "V is not expected here" -- Vs are not implemented at all
-  Sgn{} ->
        case (isInj d, isUni d) of
             (False  , False  ) -> Nothing --Will become a link-table
             (True   , False  ) -> Just flipped

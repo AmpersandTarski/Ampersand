@@ -13,7 +13,7 @@ import Ampersand.FSpec.SQL
 import Data.Monoid
 import qualified Data.Text as Text
 import Ampersand.Core.AbstractSyntaxTree
-     ( Declaration )
+     ( Relation )
 
 dumpSQLqueries :: MultiFSpecs -> Text.Text
 dumpSQLqueries multi
@@ -61,7 +61,7 @@ dumpSQLqueries multi
         where
           showRule r 
             = Text.pack ("  - "<>name r<>": "<>showA r)
-     showDecl :: Declaration -> [Text.Text]
+     showDecl :: Relation -> [Text.Text]
      showDecl decl 
         = header (Text.pack$ showA decl)
         <>[Text.pack . prettySQLQuery 2 fSpec $ decl,""]

@@ -93,7 +93,7 @@ chpInterfacesBlocks fSpec =
                   case expressionRelM of
                     Nothing -> []
                     Just (_, d, _, isFlipped) -> 
-                      [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
+                      [ plainText $ "DEBUG: Relation "++ name d ++ (if isFlipped then "~" else "")
                       , plainText $ "DEBUG: showA: " ++ showA d
                       ] 
               where (fieldDescr,fieldRef) 

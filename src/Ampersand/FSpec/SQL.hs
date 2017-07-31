@@ -110,7 +110,7 @@ class SQLAble a where
           placeHolder = BinOp (col2ValueExpr (bseSrc bqe)) [Name "="] (StringLit placeHolderSQL) 
 instance SQLAble Expression where  
   getBinQueryExpr fSpec = setDistinct . selectExpr fSpec
-instance SQLAble Declaration where
+instance SQLAble Relation where
   getBinQueryExpr = selectDeclaration
      
 sourceAlias, targetAlias :: Name
@@ -177,8 +177,8 @@ maybeSpecialCase fSpec expr =
              [ "Optimized case for: <expr1> intersect with the "
                    ++(if isFlipped then "flipped " else "")
                    ++"complement of "++(case expr2 of 
-                                           EDcD (dcl@Sgn{}) -> "`"++name dcl++"`"
-                                           _                -> "<expr2>"
+                                           (EDcD dcl) -> "`"++name dcl++"`"
+                                           _          -> "<expr2>"
                                         )++"."
              , "where "
              , "  <expr1> = "++showA expr1++" ("++show (sign expr1)++")"
@@ -213,8 +213,8 @@ maybeSpecialCase fSpec expr =
       fun = if isFlipped then flp else id
       (expr2Src,expr2trg,leftTable) =
          case expr2 of
-           EDcD (dcl@Sgn{}) -> 
-               let (plug,s,t) = getDeclarationTableInfo fSpec dcl
+           EDcD rel -> 
+               let (plug,s,t) = getDeclarationTableInfo fSpec rel
                    lt = TRSimple [QName (name plug)] `as` table2
                in if isFlipped 
                   then (QName (name t), QName (name s), lt)
@@ -788,31 +788,9 @@ toTableRef :: BinQueryExpr -> TableRef
 toTableRef = TRQueryExpr . toSQL
      
 
-selectDeclaration :: FSpec -> Declaration -> BinQueryExpr
+selectDeclaration :: FSpec -> Relation -> BinQueryExpr
 selectDeclaration fSpec dcl =
-  case dcl of
-    Sgn{}  -> leafCode (getDeclarationTableInfo fSpec dcl)
-    Isn{}  -> let (plug, c) = getConceptTableInfo fSpec (detyp dcl)
-              in leafCode (plug, c, c)
-    Vs sgn
-     | source sgn == ONE -> fatal "ONE is not expected at this place"
-     | target sgn == ONE -> fatal "ONE is not expected at this place"
-     | otherwise
-           -> BSE { bseSetQuantifier = SQDefault
-                  , bseSrc = Col { cTable = [Name "vfst"]
-                                 , cCol   = [sqlAttConcept fSpec (source sgn)]
-                                 , cAlias = []
-                                 , cSpecial = Nothing}
-                  , bseTrg = Col { cTable = [Name "vsnd"]
-                                 , cCol   = [sqlAttConcept fSpec (target sgn)]
-                                 , cAlias = []
-                                 , cSpecial = Nothing}
-                  , bseTbl = [sqlConceptTable fSpec (source sgn) `as` Name "vfst"
-                             ,sqlConceptTable fSpec (target sgn) `as` Name "vsnd"]
-                  , bseWhr = Just . conjunctSQL . map notNull $
-                               [ Iden [Name "vfst", sqlAttConcept fSpec (source sgn)]
-                               , Iden [Name "vsnd", sqlAttConcept fSpec (target sgn)]]
-                  }
+  leafCode (getDeclarationTableInfo fSpec dcl)
    where
      leafCode :: (PlugSQL,SqlAttribute,SqlAttribute) -> BinQueryExpr
      leafCode (plug,s,t) 

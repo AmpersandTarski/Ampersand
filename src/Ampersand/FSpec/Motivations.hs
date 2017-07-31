@@ -61,16 +61,16 @@ instance Motivated A_Concept where
   explForObj _ _ = False
   explanations _ = []
 
-instance Motivated Declaration where
+instance Motivated Relation where
 --  meaning l decl = if null (decMean decl)
 --                   then concat [explCont expl | expl<-autoMeaning l decl, Just l == explLang expl || Nothing == explLang expl]
 --                   else decMean decl
-  explForObj d1 (ExplDeclaration d2) = d1 == d2
+  explForObj d1 (ExplRelation d2) = d1 == d2
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning lang d
 --   = [Expl { explPos   = decfpos d
---           , explObj   = ExplDeclaration d
+--           , explObj   = ExplRelation d
 --           , explLang  = Just lang
 --           , explRefIds = []
 --           , explCont  = [Para langInlines]
@@ -284,20 +284,17 @@ instance Motivated Declaration where
 --                                                              ++[(Math InlineMath . var [source d].target) d]
 --                                                              ++[Str "."]
 --
---      applyM :: Declaration -> [Inline] -> [Inline] -> [Inline]
---      applyM decl a b =
---               case decl of
---                 Sgn{} | null (prL++prM++prR)
---                            -> a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(name decl)]
---                       | null prL
---                            -> a++[Space,Str prM,Space]++b++[Space,Str prR]
---                       | otherwise
---                            -> [Str (upCap prL),Space]++a++[Space,Str prM,Space]++b++if null prR then [] else [Space,Str prR]
---                              where prL = decprL decl
---                                    prM = decprM decl
---                                    prR = decprR decl
---                 Isn{}     -> a++[Space,Str "equals",Space]++b
---                 Vs{}      -> [Str (show True)]
+--      applyM :: Relation -> [Inline] -> [Inline] -> [Inline]
+--      applyM decl a b
+--              | null (prL++prM++prR)
+--                   = a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(name decl)]
+--              | null prL
+--                   = a++[Space,Str prM,Space]++b++[Space,Str prR]
+--              | otherwise
+--                   = [Str (upCap prL),Space]++a++[Space,Str prM,Space]++b++if null prR then [] else [Space,Str prR]
+--          where prL = decprL decl
+--                prM = decprM decl
+--                prR = decprR decl
 --
 --      var :: Named a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs
 --      var seen c = low c ++ ['\'' | c'<-seen, low c == low c']
@@ -345,16 +342,13 @@ instance Meaning Rule where
                   _    -> fatal ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
                   where isLang m = l == amLang m
 
-instance Meaning Declaration where
+instance Meaning Relation where
   meaning l d =
-    case d of
-      Sgn{} -> let isLang m = l == amLang m
-               in case filter isLang (ameaMrk (decMean d)) of
-                    []   -> Nothing
-                    [m]  -> Just m
-                    _    -> fatal ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
-      Isn{} -> fatal "meaning is undefined for Isn"
-      Vs{}  -> fatal "meaning is undefined for Vs"
+    let isLang m = l == amLang m
+    in case filter isLang (ameaMrk (decMean d)) of
+         []   -> Nothing
+         [m]  -> Just m
+         _    -> fatal ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
 
 instance Motivated FSpec where
 --  meaning _ fSpec = fatal ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")

@@ -56,18 +56,15 @@ atomValuesOf ci pt c
             nub$ [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- popps pop]
                ++[apRight p | pop@ARelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- popps pop]
                ++[a         | pop@ACptPopu{} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
-pairsOf :: ContextInfo -> [Population] -> Declaration -> Map AAtomValue (Set.Set AAtomValue)
+pairsOf :: ContextInfo -> [Population] -> Relation -> Map AAtomValue (Set.Set AAtomValue)
 pairsOf ci ps dcl
- = case dcl of
-     Isn c  -> fromList [ (a,Set.singleton a )   | a  <-atomValuesOf ci ps c]
-     Vs sgn -> fromList [ (sa, Set.fromList (atomValuesOf ci ps (target sgn))) | sa <-atomValuesOf ci ps (source sgn)]
-     Sgn{}  -> unionsWith Set.union
-                      [ fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-popps pop]
-                      | pop@ARelPopu{} <- ps
-                      , name dcl==name (popdcl pop)
-                      , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts (ctxiGens ci) (source dcl)
-                      , let t=target (popdcl pop) in t `elem` target dcl:smallerConcepts (ctxiGens ci) (target dcl)
-                      ]
+ = unionsWith Set.union
+     [ fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-popps pop]
+     | pop@ARelPopu{} <- ps
+     , name dcl==name (popdcl pop)
+     , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts (ctxiGens ci) (source dcl)
+     , let t=target (popdcl pop) in t `elem` target dcl:smallerConcepts (ctxiGens ci) (target dcl)
+     ]
 
 fullContents :: ContextInfo -> [Population] -> Expression -> [AAtomPair]
 fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.toList pairMap, b<-Set.toList bs ]

@@ -123,7 +123,7 @@ chpProcessAnalysis fSpec
    where
     declaredRelations = (concatMap relsDefdIn.vpatterns) fSpec
     declaredConcepts  = (concs.vpatterns) fSpec
-    iterat :: [Pattern] -> Int -> [A_Concept] -> [Declaration] -> [Blocks]
+    iterat :: [Pattern] -> Int -> [A_Concept] -> [Relation] -> [Blocks]
     iterat [] _ _ _ = mempty
     iterat (fproc:fps) i seenConcepts seenDeclarations
      = (

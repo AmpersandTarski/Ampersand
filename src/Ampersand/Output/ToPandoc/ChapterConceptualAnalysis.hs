@@ -48,7 +48,7 @@ chpConceptualAnalysis lev fSpec = (
                    <> header (lev+3) "Declared relations"
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
-      <> definitionList (map caRelation [d | d@Sgn{}<-vrels fSpec])
+      <> definitionList (map caRelation (vrels fSpec))
      
   pictures = map pictOfPat (vpatterns fSpec)
           ++ map pictOfConcept (concs fSpec)
@@ -88,7 +88,7 @@ chpConceptualAnalysis lev fSpec = (
                    )
                    <> definitionList blocks
     )
-  caRelation :: Declaration -> (Inlines, [Blocks])
+  caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d
         = let purp =  purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) d)
           in (mempty
@@ -162,7 +162,7 @@ chpConceptualAnalysis lev fSpec = (
                     <> mconcat (intersperse  (str ", ")
                                 [   xRef (XRefConceptualAnalysisDeclaration d)
                                  <> text (" ("++name d++")")
-                                | d@Sgn{}<-relsMentionedIn r])
+                                | d<-relsMentionedIn r])
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )

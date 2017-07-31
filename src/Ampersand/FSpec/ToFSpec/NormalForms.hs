@@ -586,7 +586,8 @@ rTerm2expr term
      RConst e   -> e
    where
      makeDecl nm sgn
-      = Sgn { decnm   = pack nm
+      = Relation
+            { decnm   = pack nm
             , decsgn  = sgn
             , decprps = fatal "Illegal RTerm in rTerm2expr"
             , decprps_calc = Nothing
@@ -1051,7 +1052,8 @@ head (a:_) = a
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
 delta :: Signature -> Expression
 delta sgn
- = EDcD   Sgn { decnm   = pack "Delta"
+ = EDcD Relation
+              { decnm   = pack "Delta"
               , decsgn  = sgn
               , decprps = []
               , decprps_calc = Nothing

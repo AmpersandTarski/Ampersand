@@ -125,13 +125,13 @@ transformers fSpec = map toTransformer [
      ,("context"               , "Relation"              , "Context" 
       , [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context   <- instances fSpec
-        , rel::Declaration <- instances fSpec
+        , rel::Relation <- instances fSpec
         ]
       )
      ,("ctxds"                 , "Relation"              , "Context" 
       , [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context   <- instances fSpec
-        , rel::Declaration <- ctxds ctx
+        , rel::Relation <- ctxds ctx
         ]
       )
      ,("ctxrs"                 , "Rule"                  , "Context" 
@@ -146,7 +146,7 @@ transformers fSpec = map toTransformer [
      ,("declaredIn"            , "Relation"              , "Context" 
       , [(dirtyId rel, dirtyId ctx) 
         | ctx::A_Context   <- instances fSpec
-        , rel::Declaration <- relsDefdIn ctx
+        , rel::Relation <- relsDefdIn ctx
         ]
       )
      ,("declaredIn"            , "Relation"              , "Pattern" 
@@ -163,17 +163,17 @@ transformers fSpec = map toTransformer [
       )
      ,("decprL"                , "Relation"              , "String"  
       , [(dirtyId rel, (PopAlphaNumeric . decprL) rel) 
-        | rel::Declaration   <- instances fSpec
+        | rel::Relation   <- instances fSpec
         ]
       )
      ,("decprM"                , "Relation"              , "String"  
       , [(dirtyId rel, (PopAlphaNumeric . decprM) rel) 
-        | rel::Declaration   <- instances fSpec
+        | rel::Relation   <- instances fSpec
         ]
       )
      ,("decprR"                , "Relation"              , "String"  
       , [(dirtyId rel, (PopAlphaNumeric . decprR) rel) 
-        | rel::Declaration   <- instances fSpec
+        | rel::Relation   <- instances fSpec
         ]
       )
      ,("default"               , "View"                  , "Concept" 
@@ -378,7 +378,7 @@ transformers fSpec = map toTransformer [
       )
      ,("name"                  , "Relation"              , "RelationName"
       , [(dirtyId rel,(PopAlphaNumeric . name) rel)
-        | rel::Declaration <- instances fSpec
+        | rel::Relation <- instances fSpec
         ]
       )
      ,("name"                  , "Role"                  , "RoleName"
@@ -433,7 +433,7 @@ transformers fSpec = map toTransformer [
       )
      ,("prop"                  , "Relation"              , "Property"
       , [(dirtyId rel, dirtyId prop) 
-        | rel::Declaration   <- instances fSpec
+        | rel::Relation   <- instances fSpec
         , prop <- decprps rel
         ]
       )
@@ -475,7 +475,7 @@ transformers fSpec = map toTransformer [
       )
      ,("purpose"               , "Relation"              , "Purpose" 
       , [(dirtyId rel, dirtyId purp) 
-        | rel::Declaration <- instances fSpec
+        | rel::Relation <- instances fSpec
         , purp             <- purposes fSpec rel
         ]
       )
@@ -536,7 +536,7 @@ transformers fSpec = map toTransformer [
       )
      ,("sign"                  , "Relation"              , "Signature"
       , [(dirtyId rel, dirtyId (sign rel)) 
-        | rel::Declaration   <- instances fSpec
+        | rel::Relation   <- instances fSpec
         ]
       )
      ,("sign"                  , "Rule"                  , "Signature"
@@ -549,7 +549,7 @@ transformers fSpec = map toTransformer [
       )
      ,("source"                , "Relation"              , "Concept" 
       , [(dirtyId rel, dirtyId (source rel)) 
-        | rel::Declaration   <- instances fSpec
+        | rel::Relation   <- instances fSpec
         ]
       )
      ,("src"                   , "Signature"             , "Concept" 
@@ -562,7 +562,7 @@ transformers fSpec = map toTransformer [
       )
      ,("target"                , "Relation"              , "Concept" 
       , [(dirtyId rel, dirtyId (target rel)) 
-        | rel::Declaration   <- instances fSpec
+        | rel::Relation   <- instances fSpec
         ]
       )
      ,("text"                  , "PairViewSegment"       , "String"  
@@ -659,7 +659,7 @@ instance Instances A_Gen where
   instances fSpec = gens (originalContext fSpec)
 instance Instances A_Concept where
   instances fSpec = concs (originalContext fSpec)
-instance Instances Declaration where
+instance Instances Relation where
   instances fSpec = relsDefdIn (originalContext fSpec)
 instance Instances Expression where
   instances fSpec = allExprs fSpec
@@ -691,7 +691,7 @@ instance Instances Rule where
   instances fSpec = allRules (originalContext fSpec)  
 instance Instances Signature where
   instances fSpec = nub $
-       [sign dcl  | dcl::Declaration <- instances fSpec]
+       [sign dcl  | dcl::Relation <- instances fSpec]
     ++ [sign rul  | rul::Rule        <- instances fSpec]
     ++ [sign expr | expr::Expression <- instances fSpec]
 instance Instances ViewDef where
@@ -723,10 +723,10 @@ instance HasPurpose A_Context where
     case explObj purp of
         ExplContext x     -> name ctx == x
         _                 -> False
-instance HasPurpose Declaration where
+instance HasPurpose Relation where
   isFor rel purp =
     case explObj purp of
-        ExplDeclaration x -> rel == x
+        ExplRelation x -> rel == x
         _                 -> False
 instance HasPurpose IdentityDef where
   isFor idf purp =
@@ -757,7 +757,7 @@ instance HasPurpose ViewDef where
 data ExprInfo = ExprInfo
    { binOp' :: Maybe BinOp
    , unaryOp' :: Maybe UnaryOp
-   , bindedRel' :: Maybe Declaration
+   , bindedRel' :: Maybe Relation
    , first' :: Maybe Expression
    , second' :: Maybe Expression
    , arg' :: Maybe Expression
@@ -766,7 +766,7 @@ binOp :: Expression -> Maybe BinOp
 binOp = binOp' . exprInfo
 unaryOp :: Expression -> Maybe UnaryOp
 unaryOp = unaryOp' . exprInfo
-bindedRel :: Expression -> Maybe Declaration
+bindedRel :: Expression -> Maybe Relation
 bindedRel = bindedRel' . exprInfo
 first :: Expression -> Maybe Expression
 first = first' . exprInfo

@@ -72,7 +72,7 @@ aRule2pRule rul =
       , rr_viol = fmap aPairView2pPairView (rrviol rul)
       }
 
-aDeclaration2pDeclaration :: Declaration -> P_Declaration
+aDeclaration2pDeclaration :: Relation -> P_Declaration
 aDeclaration2pDeclaration dcl = 
  P_Sgn { dec_nm     = T.unpack $ decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
@@ -84,7 +84,7 @@ aDeclaration2pDeclaration dcl =
        , dec_plug   = decplug dcl
        }
 
-aDeclaration2pNamedRel :: Declaration -> P_NamedRel
+aDeclaration2pNamedRel :: Relation -> P_NamedRel
 aDeclaration2pNamedRel dcl =
  PNamedRel (decfpos dcl) (T.unpack $ decnm dcl) (Just (aSign2pSign (decsgn dcl)))
  
@@ -273,7 +273,7 @@ aExplObj2PRef2Obj :: ExplObj -> PRef2Obj
 aExplObj2PRef2Obj obj =
  case obj of
   ExplConceptDef cd   -> PRef2ConceptDef (name cd)
-  ExplDeclaration d   -> PRef2Declaration (aDeclaration2pNamedRel d)
+  ExplRelation d   -> PRef2Declaration (aDeclaration2pNamedRel d)
   ExplRule str        -> PRef2Rule str
   ExplIdentityDef str -> PRef2IdentityDef str
   ExplViewDef str     -> PRef2ViewDef str
