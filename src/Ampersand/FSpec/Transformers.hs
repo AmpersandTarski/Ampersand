@@ -96,7 +96,10 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("concepts"              , "Pattern"               , "Concept" 
-      , []  --TODO
+      , [(dirtyId pat, dirtyId cpt)
+        | pat::Pattern <- instances fSpec
+        , cpt <- concs pat
+        ]
       )
      ,("conjunct"              , "Conjunct"              , "Expression"
       , [(dirtyId conj, dirtyId (rc_conjunct conj))
@@ -155,7 +158,10 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("declaredIn"            , "Relation"              , "Pattern" 
-      , []  --TODO
+      , [(dirtyId rel, dirtyId pat) 
+        | pat::Pattern <- instances fSpec
+        , rel::Relation <- relsDefdIn pat
+        ]
       )
      ,("declaredthrough"       , "PropertyRule"          , "Property"
       , [(dirtyId rul, PopAlphaNumeric . show $ prop) 
@@ -205,10 +211,14 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("gengen"                , "IsE"                   , "Concept" 
-      , []  --TODO
+      , [ ( dirtyId ise, dirtyId (gengen ise)) 
+        | ise@IsE{} <- instances fSpec
+        ]
       )
      ,("gengen"                , "Isa"                   , "Concept" 
-      , []  --TODO
+      , [ ( dirtyId isa, dirtyId (gengen isa)) 
+        | isa@Isa{} <- instances fSpec
+        ]
       )
      ,("gens"                  , "Context"               , "IsE"     
       , [ ( dirtyId ctx, dirtyId ise) 
@@ -223,10 +233,14 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("genspc"                , "IsE"                   , "Concept" 
-      , []  --TODO
+      , [ ( dirtyId ise, dirtyId (genspc ise)) 
+        | ise@IsE{} <- instances fSpec
+        ]
       )
      ,("genspc"                , "Isa"                   , "Concept" 
-      , []  --TODO
+      , [ ( dirtyId isa, dirtyId (genspc isa)) 
+        | isa@Isa{} <- instances fSpec
+        ]
       )
      ,("getExpressionRelation" , "Expression"            , "Relation"
       , []  --TODO
