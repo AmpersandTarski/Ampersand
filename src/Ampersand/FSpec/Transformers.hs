@@ -676,7 +676,7 @@ transformers fSpec = map toTransformer [
      ]
 
 -- | Within a specific context there are all kinds of things.
---   These 'things' are instences (elements / atoms) of some
+--   These 'things' are instances (elements / atoms) of some
 --   Concept. They are the atoms of the concepts, as looked
 --   upon from the Formal Ampersand viewpoint.
 class Typeable a => Instances a where

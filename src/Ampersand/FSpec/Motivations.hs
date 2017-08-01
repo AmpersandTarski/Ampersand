@@ -12,7 +12,7 @@ import Text.Pandoc
 
 -- The general idea is that an Ampersand relation such as:
 --     PURPOSE RELATION r[A*B] IN ENGLISH
---     {+This text explains why r[A*B] exists-}
+--     {+This text explains why r[A*B] exists+}
 -- produces the exact right text in the functional design document.
 
 -- The class Motivated exists so that we can write the Haskell expression 'purposeOf fSpec l x'
