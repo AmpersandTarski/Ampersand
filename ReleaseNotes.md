@@ -1,5 +1,5 @@
 # Release notes of Ampersand
-## Unreleased changes
+## v3.8.7 (4 august 2017)
   * Upgraded to LTS-8.22
   * Made the meatgrinder do better static analisys, inspired by issue #684
 

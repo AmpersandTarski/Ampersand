@@ -1,5 +1,5 @@
 name:           ampersand
-version:        3.8.6
+version:        3.8.7
 author:         Stef Joosten
 maintainer:     stef.joosten@ou.nl
 synopsis:       Toolsuite for automated design of business processes.
@@ -8,7 +8,7 @@ homepage:       http://wiki.tarski.nl
 category:       Database Design
 stability:      alpha
 cabal-version:  >= 1.24
-tested-with:    GHC == 8.0.1
+tested-with:    GHC == 8.0.2
 build-type:     Custom
 license:        GPL
 license-file:   LICENSE
