@@ -207,7 +207,7 @@ getOptions' envOpts =
                Options {environment      = envOpts
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
-                      , outputfile       = fatal 83 "No monadic options available."
+                      , outputfile       = fatal "No monadic options available."
                       , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
                       , dirInclude       = "include"
                       , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
@@ -227,7 +227,7 @@ getOptions' envOpts =
               --        , customCssFile    = Nothing
                       , genFSpec         = False
                       , diag             = False
-                      , fspecFormat      = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFSpecFormats++"."
+                      , fspecFormat      = fatal ("Unknown fspec format. Currently supported formats are "++allFSpecFormats++".")
                       , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
@@ -367,7 +367,7 @@ options = [ (Option ['v']   ["version"]
                ("write a sample configuration file ("++sampleConfigFileName++")")
             , Public)
           , (Option []      ["config"]
-               (ReqArg (\nm _ -> fatal 194 $ "config file ("++nm++")should not be treated as a regular option."
+               (ReqArg (\nm _ -> fatal ("config file ("++nm++")should not be treated as a regular option.")
                        ) "config.yaml")
                "config file (*.yaml)"
             , Public)

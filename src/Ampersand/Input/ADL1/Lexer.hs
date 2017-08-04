@@ -342,11 +342,11 @@ getNumber str =
   case readDec str of
     [(_,'.':_)] -> case readFloat str of
                            [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
-                           _            -> fatal 342 "Unexpected: can read decimal, but not float???"
+                           _            -> fatal "Unexpected: can read decimal, but not float???"
     [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
-    _  -> fatal 343 $ "No number to read!\n  " ++ take 40 str                    
+    _  -> fatal ("No number to read!\n  " ++ take 40 str)
 --getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
---getNumber [] = fatal 294 "getNumber"
+--getNumber [] = fatal "getNumber"
 --getNumber cs@(c:s)
 --  | c /= '0'         = num10
 --  | null s           = const0
@@ -424,7 +424,7 @@ getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
                                       | val >= 0 && val <= ord (maximum [chr 1 ..]) -> (Just (chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
-                                    _  -> fatal 432 $ "Impossible! first char is a digit.. "++take 40 s
+                                    _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)

@@ -33,7 +33,7 @@ aCtx2pCtx ctx =
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
       , ctx_rrules = map aRoleRule2pRoleRule  .ctxrrules $ ctx
       , ctx_rrels  = map aRoleRelation2pRoleRelation . ctxRRels $ ctx
-      , ctx_reprs  = fatal 1 "Todo" -- ctxreprs ctx
+      , ctx_reprs  = fatal "Todo" -- ctxreprs ctx
       , ctx_vs     = map aViewDef2pViewDef . ctxvs $ ctx
       , ctx_gs     = map aGen2pGen . ctxgs $ ctx
       , ctx_ifcs   = map aInterface2pInterface . ctxifcs $ ctx
@@ -123,11 +123,11 @@ aViewDef2pViewDef vDef =
 aGen2pGen :: A_Gen -> P_Gen
 aGen2pGen gen =
  case gen of
-  Isa{} -> PGen { pos  = fatal 115 "Origin is not present in A_Gen"
+  Isa{} -> PGen { pos  = fatal "Origin is not present in A_Gen"
                 , gen_spc = aConcept2pConcept (genspc gen)
                 , gen_gen = aConcept2pConcept (gengen gen)
                 }
-  IsE{} -> P_Cy { pos  = fatal 119 "Origin is not present in A_Gen"
+  IsE{} -> P_Cy { pos  = fatal "Origin is not present in A_Gen"
                 , gen_spc = aConcept2pConcept (genspc gen)
                 , gen_rhs = map aConcept2pConcept (genrhs gen)
                 }
@@ -220,7 +220,7 @@ aExpression2pTermPrim expr =
     EDcV sgn     -> Prim . Pfull o (aConcept2pConcept . source $ sgn) . aConcept2pConcept . target $ sgn
     EMp1 val cpt -> Prim . Patm o val . Just . aConcept2pConcept $ cpt
   where 
-   o = fatal 199 "Origin is not present in Expression"
+   o = fatal "Origin is not present in Expression"
 
 
 aMeaning2pMeaning :: AMeaning -> [PMeaning]
@@ -283,64 +283,64 @@ aExplObj2PRef2Obj obj =
 
 aAtomPair2pAtomPair :: AAtomPair -> PAtomPair
 aAtomPair2pAtomPair pr =
- PPair { pos   = fatal 280 "Origin is not present in AAtomPair"
+ PPair { pos   = fatal "Origin is not present in AAtomPair"
        , ppLeft  = aAtomValue2pAtomValue (apLeft pr)
        , ppRight = aAtomValue2pAtomValue (apRight pr)
        }
 
 aAtomValue2pAtomValue :: AAtomValue -> PAtomValue
-aAtomValue2pAtomValue AtomValueOfONE = fatal 286 "Unexpected AtomValueOfONE in convertion to P-structure"
+aAtomValue2pAtomValue AtomValueOfONE = fatal "Unexpected AtomValueOfONE in convertion to P-structure"
 aAtomValue2pAtomValue val =
   case aavtyp val of
     Alphanumeric     -> case val of 
                           AAVString{} -> ScriptString o (aavstr val)
-                          _         -> fatal 291 "Unexpected combination of value types"
+                          _         -> fatal "Unexpected combination of value types"
     BigAlphanumeric  -> case val of 
                           AAVString{} -> ScriptString o (aavstr val)
-                          _         -> fatal 294 "Unexpected combination of value types"
+                          _         -> fatal "Unexpected combination of value types"
     HugeAlphanumeric -> case val of 
                           AAVString{} -> ScriptString o (aavstr val)
-                          _         -> fatal 297 "Unexpected combination of value types"
+                          _         -> fatal "Unexpected combination of value types"
     Password         -> case val of 
                           AAVString{} -> ScriptString o (aavstr val)
-                          _         -> fatal 300 "Unexpected combination of value types"
-    Binary           -> fatal 293 $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
-    BigBinary        -> fatal 294 $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
-    HugeBinary       -> fatal 295 $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
+                          _         -> fatal  "Unexpected combination of value types"
+    Binary           -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
+    BigBinary        -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
+    HugeBinary       -> fatal $ show (aavtyp val) ++ " cannot be represented in P-structure currently."
     Date             -> case val of
                           AAVDate{} -> --TODO: Needs rethinking. A string or a double?
                                        ScriptString o (showValADL val)
-                          _         -> fatal 307 "Unexpected combination of value types"
+                          _         -> fatal "Unexpected combination of value types"
     DateTime         -> case val of
                           AAVDateTime{} -> --TODO: Needs rethinking. A string or a double?
                                        ScriptString o (showValADL val)
-                          _         -> fatal 311 "Unexpected combination of value types"
+                          _         -> fatal "Unexpected combination of value types"
     Integer          -> case val of
                           AAVInteger{} -> XlsxDouble o (fromInteger (aavint val))
-                          _            -> fatal 314 "Unexpected combination of value types"
+                          _            -> fatal "Unexpected combination of value types"
     Float            -> case val of
                           AAVFloat{}   -> XlsxDouble o (aavflt val)
-                          _            -> fatal 317 "Unexpected combination of value types"
+                          _            -> fatal "Unexpected combination of value types"
     Boolean          -> case val of 
                           AAVBoolean{} -> ComnBool o (aavbool val)
-                          _            -> fatal 320 "Unexpected combination of value types"
+                          _            -> fatal "Unexpected combination of value types"
     Object           -> case val of 
                           AAVString{} -> ScriptString o (aavstr val)
-                          _         -> fatal 323 "Unexpected combination of value types"
-    TypeOfOne        -> fatal 324 "Unexpected combination of value types"
+                          _         -> fatal "Unexpected combination of value types"
+    TypeOfOne        -> fatal "Unexpected combination of value types"
   where
-   o = fatal 289 "Origin is not present in AAtomValue"
+   o = fatal "Origin is not present in AAtomValue"
 
 aSubIfc2pSubIfc :: SubInterface -> P_SubIfc TermPrim
 aSubIfc2pSubIfc sub =
  case sub of
   Box _ mStr objs  
-    -> P_Box          { pos   = fatal 295 "Origin is not present in SubInterface"
+    -> P_Box          { pos   = fatal "Origin is not present in SubInterface"
                       , si_class = mStr
                       , si_box   = map aObjectDef2pObjectDef objs
                       }
   InterfaceRef isLinkto str cruds
-    -> P_InterfaceRef { pos    = fatal 295 "Origin is not present in SubInterface"
+    -> P_InterfaceRef { pos    = fatal "Origin is not present in SubInterface"
                       , si_isLink = isLinkto
                       , si_str    = str
                       , si_crud   = aCruds2pCruds cruds

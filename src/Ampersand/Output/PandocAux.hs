@@ -170,7 +170,7 @@ writepandoc fSpec thePandoc =
       when (fspecFormat (getOpts fSpec) == Fdocx)
            writeReferenceFileDocx
       case getWriter fSpecFormatString of
-        Left msg -> fatal 162 . unlines $
+        Left msg -> fatal . unlines $
                         ("Something wrong with format "++show(fspecFormat (getOpts fSpec))++":")
                         : map ("  "++) (lines msg)
         Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
@@ -236,7 +236,7 @@ writepandoc fSpec thePandoc =
     docxStyleContent = 
       case getStaticFileContent PandocTemplates "defaultStyle.docx" of
          Just cont -> BC.pack cont
-         Nothing -> fatal 0 "Cannot find the statically included default defaultStyle.docx."
+         Nothing -> fatal "Cannot find the statically included default defaultStyle.docx."
     docxStyleUserPath = dirOutput (getOpts fSpec) </> "reference.docx" -- this is the place where the file is written if it doesn't exist.
     writeReferenceFileDocx :: IO()
     writeReferenceFileDocx = do
@@ -353,7 +353,7 @@ instance ShowMath Expression where
           showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (EDcD d)     = inMathText (name d)
           showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
-          showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
+          showExpr  EEps{}      = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
           showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
           showExpr (EMp1 val _) = inMathText $ showP val
 
@@ -515,7 +515,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
   f 'Ú' = "\\'{U}"         --  acute accent
   f 'ý' = "\\'{y}"         --  acute accent
   f 'Ý' = "\\'{Y}"         --  acute accent
-  f _   = [c] -- let us think if this should be:    fatal 661 ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
+  f _   = [c] -- let us think if this should be:    fatal ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
 
 --posixFilePath :: FilePath -> String
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
@@ -628,7 +628,7 @@ makePDF writer wOpts pandoc fSpec =
     runTeXProgram runNumber numRuns tmpDir = do
         let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
         exists <- doesFileExist file
-        unless exists $ fatal 766 $ "File should be written by now:\n  "++file 
+        unless exists $ fatal ("File should be written by now:\n  "++file)
 #ifdef _WINDOWS
         -- note:  we want / even on Windows, for TexLive
         let tmpDir' = changePathSeparators tmpDir

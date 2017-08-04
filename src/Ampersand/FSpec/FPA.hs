@@ -67,7 +67,7 @@ fpaInterface :: Interface -> FP
 fpaInterface ifc = 
    let nm = name ifc
        cmplxty = depth2Cmplxty $ getDepth $ ifcObj ifc
-       tp = fatal 78 "TODO: fix to see if the interface contains editalbe fields"
+       tp = fatal "TODO: fix to see if the interface contains editalbe fields"
     in FP tp nm cmplxty
   where depth2Cmplxty :: Int -> Complexity
         depth2Cmplxty d | d <= 1    = Eenvoudig

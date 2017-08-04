@@ -26,7 +26,7 @@ parseXlsxFile opts useAllStaticFiles file =
   do bytestr <- if useAllStaticFiles
                 then case getStaticFileContent FormalAmpersand file of
                       Just cont -> return $ fromString cont
-                      Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++file++"`.")
+                      Nothing -> fatal ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++file++"`.")
                 else L.readFile file
      return . xlsx2pContext . toXlsx $ bytestr
  where
@@ -88,16 +88,16 @@ toPops opts file x = map popForColumn (colNrs x)
        (sourceConceptName, mSourceConceptDelimiter)
           = case value (conceptNamesRow,sourceCol) of
                 Just (CellText t) -> 
-                   fromMaybe (fatal 94 "No valid source conceptname found. This should have been checked before")
+                   fromMaybe (fatal "No valid source conceptname found. This should have been checked before")
                              (conceptNameWithOptionalDelimiter . trim $ t)
-                _ -> fatal 96 "No valid source conceptname found. This should have been checked before"
+                _ -> fatal "No valid source conceptname found. This should have been checked before"
        mTargetConceptName :: Maybe String
        mTargetConceptDelimiter :: Maybe Char
        (mTargetConceptName, mTargetConceptDelimiter)
           = case value (conceptNamesRow,targetCol) of
                 Just (CellText t) -> let (nm,mDel) 
                                            = fromMaybe
-                                                (fatal 94 "No valid source conceptname found. This should have been checked before")
+                                                (fatal "No valid source conceptname found. This should have been checked before")
                                                 (conceptNameWithOptionalDelimiter . trim $ t)
                                      in (Just nm, mDel)
                 _ -> (Nothing, Nothing)
@@ -110,7 +110,7 @@ toPops opts file x = map popForColumn (colNrs x)
                     in if last str == '~'
                        then (init str, True )
                        else (     str, False)
-                _ -> fatal 87 $ "No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol)
+                _ -> fatal ("No valid relation name found. This should have been checked before" ++show (relNamesRow,targetCol))
        thePairs :: [PAtomPair]
        thePairs =  concat . mapMaybe pairsAtRow . popRowNrs $ x
        pairsAtRow :: Int -> Maybe [PAtomPair]

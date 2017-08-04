@@ -93,8 +93,8 @@ xRefRawLabel x'
 instance Xreferenceble XRefSection where
   xLabel = xRefRawLabel
   xRef a = citeGen (xrefPrefix (refStuff a)) a
-  xDefBlck fSpec a = either id (fatal 397 $ "You should use xDefInln for:\n  "++show (refStuff a)) (xDef fSpec a)
-  xDefInln fSpec a = either (fatal 398 $ "You should use xDefBlck for:\n  "++show (refStuff a)) id (xDef fSpec a)
+  xDefBlck fSpec a = either id (fatal ("You should use xDefInln for:\n  "++show (refStuff a))) (xDef fSpec a)
+  xDefInln fSpec a = either (fatal ("You should use xDefBlck for:\n  "++show (refStuff a))) id (xDef fSpec a)
 
 xDef :: FSpec -> XRefSection -> Either Blocks Inlines 
 xDef fSpec a =
@@ -133,7 +133,7 @@ xDef fSpec a =
                                               (    (text.l) (NL "Regel ",EN "Rule ")
                                                 <> str (show i) <> ": "
                                               ) 
-      _ ->  fatal 389 $ "xDef not yet defined for "++show (refStuff a)
+      _ ->  fatal ("xDef not yet defined for "++show (refStuff a))
    where
     showMaybe Nothing = "???"
     showMaybe (Just i)= show i
@@ -147,9 +147,9 @@ class Typeable a => Xreferenceble a where
   xLabel :: a  -> String
   xRef :: a -> Inlines
   xDefBlck :: FSpec -> a -> Blocks
-  xDefBlck _ a = fatal 310 $ "A "++show (typeOf a)++" cannot be labeld in <Blocks>." --you should use xDefInln instead.
+  xDefBlck _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in <Blocks>.") --you should use xDefInln instead.
   xDefInln :: FSpec -> a -> Inlines
-  xDefInln _ a = fatal 312 $ "A "++show (typeOf a)++" cannot be labeld in an <Inlines>." --you should use xDefBlck instead.
+  xDefInln _ a = fatal ("A "++show (typeOf a)++" cannot be labeld in an <Inlines>.") --you should use xDefBlck instead.
   {-# MINIMAL xLabel, xRef, (xDefBlck | xDefInln) #-}
 
 instance Xreferenceble Chapter where
@@ -271,25 +271,25 @@ class NumberedThing a where
 
 instance NumberedThing Rule where
   numberOf fSpec r = case filter isTheOne ns of
-                      [] -> Nothing -- fatal 88 $ "Rule has not been numbered: "++name r
+                      [] -> Nothing -- fatal ("Rule has not been numbered: "++name r)
                       [nr] -> Just $ theNr nr 
-                      _ -> fatal 90 $ "Rule has been numbered multiple times: "++name r
+                      _ -> fatal ("Rule has been numbered multiple times: "++name r)
     where ns = concatMap rulesOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered RuleCont -> Bool
           isTheOne = (r ==) . cRul . theLoad
 instance NumberedThing Declaration where
   numberOf fSpec d = case filter isTheOne ns of
-                      [] -> Nothing -- fatal 88 $ "Declaration has not been numbered: "++showDcl d
+                      [] -> Nothing -- fatal ("Declaration has not been numbered: "++showDcl d)
                       [nr] -> Just $ theNr nr 
-                      _ -> fatal 90 $ "Declaration has been numbered multiple times: "++showDcl True d
+                      _ -> fatal ("Declaration has been numbered multiple times: "++showDcl True d)
     where ns = concatMap dclsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered DeclCont -> Bool
           isTheOne = (d ==) . cDcl . theLoad
 instance NumberedThing A_Concept where
   numberOf fSpec c = case filter isTheOne ns of
-                      [] -> Nothing -- fatal 88 $ "Concept has not been numbered: "++name c
+                      [] -> Nothing -- fatal ("Concept has not been numbered: "++name c)
                       [nr] -> Just $ theNr nr 
-                      _ -> fatal 90 $ "Concept has been numbered multiple times: "++name c
+                      _ -> fatal ("Concept has been numbered multiple times: "++name c)
     where ns = concatMap cptsOfTheme (orderingByTheme fSpec)
           isTheOne :: Numbered CptCont -> Bool
           isTheOne = (c ==) . cCpt . theLoad
@@ -394,7 +394,7 @@ orderingByTheme fSpec
                     in thm : f rest pats'
        []        -> case stuff of
                       (_,[],[],[]) -> []
-                      _ -> fatal 247 "No stuff should be left over."
+                      _ -> fatal "No stuff should be left over."
 
   rul2rulCont :: Rule -> RuleCont
   rul2rulCont rul
@@ -569,8 +569,8 @@ concatMarkup es
     [cl] -> Just Markup { amLang   = amLang (head cl)
                           , amPandoc = concatMap amPandoc es
                           }
-    cls  -> fatal 136 ("don't call concatMarkup with different languages and formats\n   "++
-                      intercalate "\n   " [(show.amLang.head) cl | cl<-cls])
+    cls  -> fatal ("don't call concatMarkup with different languages and formats\n   "++
+                   intercalate "\n   " [(show.amLang.head) cl | cl<-cls])
 
 -- Insert an inline after the first inline in the list of blocks, if possible.
 insertAfterFirstInline :: [Inline] -> [Block] -> [Block]

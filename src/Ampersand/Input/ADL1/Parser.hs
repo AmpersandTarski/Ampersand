@@ -3,6 +3,7 @@ module Ampersand.Input.ADL1.Parser
     ( AmpParser
     , Include(..)
     , pContext
+    , pContent
     , pPopulations
     , pTerm
     , pRule
@@ -47,7 +48,7 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_rrels  = [x | Cl x <-ces]        -- The EDITS statements in the context
             , ctx_reprs  = [r | CRep r<-ces]
             , ctx_vs     = [v | CView v<-ces]      -- The view definitions defined in this context, outside the scope of patterns
-            , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal 78 ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
+            , ctx_ifcs   = [s | Cifc s<-ces]       -- The interfaces defined in this context, outside the scope of patterns -- fatal ("Diagnostic: "++concat ["\n\n   "++show ifc | Cifc ifc<-ces])
             , ctx_sql    = [p | CSqlPlug p<-ces]   -- user defined sqlplugs, taken from the Ampersand scriptplug<-ces]
             , ctx_php    = [p | CPhpPlug p<-ces]   -- user defined phpplugs, taken from the Ampersand script
             , ctx_ps     = [e | CPrp e<-ces]       -- The purposes defined in this context, outside the scope of patterns
@@ -213,7 +214,7 @@ pRuleDef =  P_Ru <$> currPos
                  <*> many pMessage
                  <*> pMaybe pViolation
            where rulid (FileLoc pos' _) = show("rule@" ++show pos')
-                 rulid _ = fatal 226 "pRuleDef is expecting a file location."
+                 rulid _ = fatal "pRuleDef is expecting a file location."
 
                  --- Violation ::= 'VIOLATION' PairView
                  pViolation :: AmpParser (PairView (Term TermPrim))

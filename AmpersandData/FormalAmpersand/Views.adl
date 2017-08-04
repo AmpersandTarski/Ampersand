@@ -1,4 +1,4 @@
-﻿CONTEXT AST IN ENGLISH
+CONTEXT AST IN ENGLISH
 INCLUDE "Concepts.adl"
 
 PATTERN Views
@@ -31,6 +31,9 @@ PATTERN Views
     MEANING "TODO: MEANING ONTBREEKT"
     VIOLATION (SRC viewBy[Concept*Concept]~, TXT " has both ", SRC default[View*Concept]~, TXT " and ", TGT default[View*Concept]~, TXT " as view.")
 ENDPATTERN
+
+
+-- TODO: add PairView to this script.
 
 ENDCONTEXT
 

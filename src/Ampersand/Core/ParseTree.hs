@@ -115,7 +115,7 @@ instance Named Role where
  name (Role nm) = nm
  name (Service nm) = nm
 instance Unique Role where
- showUnique = name
+ showUnique = optionalQuote . name
 instance Traced P_RoleRule where
  origin = pos
 
@@ -255,7 +255,7 @@ makePSingleton :: String -> PSingleton
 makePSingleton s = PSingleton (Origin "ParseTree.hs") s Nothing
 --   PSingleton { psOrig =Origin "ParseTree.hs"
 --              , psRaw = s
---              , psInterprets = fatal 241 "Probably no need to make something up..."
+--              , psInterprets = fatal "Probably no need to make something up..."
 --              }
 data PAtomValue
   = PSingleton Origin String (Maybe PAtomValue)
@@ -276,7 +276,7 @@ instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
     XlsxString     _ s -> singleQuote s
     ScriptInt      _ i -> singleQuote (show i)
     ScriptFloat    _ d -> singleQuote (show d)
-    XlsxDouble     _ _ -> fatal 267 "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+    XlsxDouble     _ _ -> fatal "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
     ComnBool       _ b -> singleQuote (show b)
     ScriptDate     _ x -> singleQuote (show x)
     ScriptDateTime _ x -> singleQuote (show x)
@@ -482,7 +482,7 @@ instance Hashable a => Hashable (PairView a)
 instance Traced a => Traced (PairView a) where
   origin pv =
     case ppv_segs pv of
-       [] -> fatal 342 "An empty PairView must not occur"
+       [] -> fatal "An empty PairView must not occur"
        xs -> origin (head xs)
 data PairViewSegment a =
     PairViewText{ pos :: Origin
@@ -868,7 +868,7 @@ mkContextOfPopsOnly :: [P_Population] -> P_Context
 mkContextOfPopsOnly pops =
   PCtx{ ctx_nm     = ""
       , ctx_pos    = []
-      , ctx_lang   = fatal 686 "No language because of excel import hack. Please report this as a bug"
+      , ctx_lang   = Nothing
       , ctx_markup = Nothing
       , ctx_thms   = []
       , ctx_pats   = []

@@ -122,7 +122,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
 instance Eq FSpec where
  f == f' = name f == name f'
 instance Unique FSpec where
- showUnique = name
+ showUnique = showUnique . originalContext
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
@@ -141,7 +141,7 @@ data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
 instance Unique Atom where
   showUnique a = showValADL (atmVal a)++" in "
          ++case atmRoots a of
-             []  -> fatal 110 "an atom must have at least one root concept"
+             []  -> fatal "an atom must have at least one root concept"
              [x] -> uniqueShow True x
              xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
 
@@ -209,7 +209,7 @@ instance Eq Quad where q == q' = compare q q' == EQ
 dnf2expr :: DnfClause -> Expression
 dnf2expr dnf
  = case (antcs dnf, conss dnf) of
-    ([],[]) -> fatal 327 "empty dnf clause"
+    ([],[]) -> fatal ("empty dnf clause in "++show dnf)
     ([],cs ) -> foldr1 (.\/.) cs
     (as,[]) -> notCpl (foldr1 (./\.) as)
     (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
@@ -264,7 +264,7 @@ instance Named PlugSQL where
 instance Eq PlugSQL where
   x==y = name x==name y
 instance Unique PlugSQL where
-  showUnique = name
+  showUnique = optionalQuote . name
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
@@ -273,7 +273,7 @@ plugAttributes plug = case plug of
     TblSQL{}    -> attributes plug
     BinSQL{}    -> let store = case dLkpTbl plug of
                          [x] -> x
-                         _   -> fatal 292 $ "Declaration lookup table of a binary table should contain exactly one element:\n" ++
+                         _   -> fatal $ "Declaration lookup table of a binary table should contain exactly one element:\n" ++
                                             show (dLkpTbl plug)
                    in [rsSrcAtt store,rsTrgAtt store]
 
@@ -286,7 +286,7 @@ lookupCpt fSpec cpt = [(plug,att) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
 getConceptTableFor :: FSpec -> A_Concept -> PlugSQL
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
-                               []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
+                               []      -> fatal $ "tableFor: No concept table for " ++ name c
                                (t,_):_ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
@@ -345,5 +345,5 @@ showSQL tt =
      Integer          -> "BIGINT"
      Float            -> "FLOAT"
      Object           -> "VARCHAR(255)"
-     TypeOfOne        -> fatal 461 "ONE is not represented in SQL" 
+     TypeOfOne        -> fatal "ONE is not represented in SQL" 
 

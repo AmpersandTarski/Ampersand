@@ -35,7 +35,7 @@ showCrudInfo (CrudInfo crudObjs ifcCrudObjs _) =
 
 getCrudObjectsForInterface :: CrudInfo -> Interface -> [(A_Concept,Bool,Bool,Bool,Bool)]
 getCrudObjectsForInterface crudInfo ifc = 
-  fromMaybe (fatal 33 $ "NO CRUD objects for interface " ++ show (name ifc))
+  fromMaybe (fatal $ "NO CRUD objects for interface " ++ show (name ifc))
             (lookup ifc $ crudObjsPerInterface crudInfo) 
   
 mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
@@ -100,8 +100,8 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
                                InterfaceRef{siIsLink = True} -> []
                                InterfaceRef{siIsLink = False} ->
                                   case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                                    []      -> fatal 65 $ "Referenced interface " ++ siIfcId si ++ " missing"
-                                    (_:_:_) -> fatal 66 $ "Multiple declarations of referenced interface " ++ siIfcId si
+                                    []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
+                                    (_:_:_) -> fatal ("Multiple declarations of referenced interface " ++ siIfcId si)
                                     [i]     -> getAllInterfaceExprs allIfcs i
                                Box{} -> concatMap getExprs (siObjs si)
 

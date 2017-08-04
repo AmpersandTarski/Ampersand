@@ -73,7 +73,7 @@ doGenBericht fSpec =
                   objsForInterfaceNamed nm =
                     case objmsub $ ifcObj $ getInterfaceByName interfaces' nm of
                       Just (Box _ _ objs) -> objs
-                      _                   -> fatal 81 "Bericht interfaces have wrong format"
+                      _                   -> fatal "Bericht interfaces have wrong format"
                   -- NOTE: We ignore the interface relation for interfaces refs
 
 allEntitiesToCSV :: [Entity] -> CSV

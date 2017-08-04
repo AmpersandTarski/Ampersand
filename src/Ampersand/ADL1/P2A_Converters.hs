@@ -66,7 +66,7 @@ userList = lefts . fmap typeOrConcept
 mustBeConceptBecauseMath :: (?loc :: CallStack) => Type -> A_Concept
 mustBeConceptBecauseMath tp
  = let fatalV :: (?loc :: CallStack) => a
-       fatalV = fatal 54 "A concept turned out to be a built-in type."
+       fatalV = fatal "A concept turned out to be a built-in type."
    in case getAsConcept fatalV tp of
         Checked v -> v
         _ -> fatalV
@@ -119,7 +119,7 @@ checkInterfaceCycles ctx = unless (null interfaceCycles) $
                                                Box{}          -> concatMap getDeepIfcRefs (siObjs si)
             lookupInterface nm = case [ ifc | ifc <- ctxifcs ctx, name ifc == nm ] of
                                    [ifc] -> ifc
-                                   _     -> fatal 124 "Interface lookup returned zero or more than one result"
+                                   _     -> fatal "Interface lookup returned zero or more than one result"
 
 -- Check whether each concept has at most one default view
 checkMultipleDefaultViews :: A_Context -> Guarded ()
@@ -332,7 +332,7 @@ pCtx2aCtx opts
                 = case filter ofCpt reprTrios of
                    [] -> pure Nothing
                    rs -> case nub (map getTType rs) of
-                           []  -> fatal 325 "Impossible empty list."
+                           []  -> fatal "Impossible empty list."
                            [t] -> pure ( Just (cpt,t, map getOrigin rs))
                            _   -> mkMultipleRepresentTypesError cpt lst
                                      where lst = [(t,o) | (_,t,o) <- rs]
@@ -369,7 +369,7 @@ pCtx2aCtx opts
           mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 
             case filter (not . isSpecific) cs of
-               []  -> fatal 297 $ "empty typology for "++show cs++"." 
+               []  -> fatal ("empty typology for "++show cs++".")
                [r] -> pure  
                           Typology { tyroot = r
                                    , tyCpts = reverse . sortSpecific2Generic gns $ cs
@@ -387,9 +387,9 @@ pCtx2aCtx opts
     findType h
      = case (map toList)$ toList$ findUpperbounds genLattice (lJoin (aConcToType h) RepresentSeparator) of
            [] -> pure$ Nothing -- use default
-           o@[[r]] -> representAs <$> getAsType (fatal 293 (show o++", A custom type found for "++show h++" turned out to be above the RepresentSeparator, which is wrong")) r
+           o@[[r]] -> representAs <$> getAsType (fatal (show o++", A custom type found for "++show h++" turned out to be above the RepresentSeparator, which is wrong")) r
            lst' -> multipleRepresentTypes OriginUnknown h (concatMap (take 1 . lefts . map typeOrConcept) lst')
-     where representAs Nothing = fatal 304 "Something turned out to be representable as the RepresentSeparator, which should never happen" -- []
+     where representAs Nothing = fatal "Something turned out to be representable as the RepresentSeparator, which should never happen" -- []
            representAs (Just v) = Just (h,v)
 -}  
     p_interfaceAndDisambObjs :: DeclMap -> [(P_Interface, P_ObjDef (TermPrim, DisambPrim))]
@@ -500,7 +500,7 @@ pCtx2aCtx opts
      = case (aConcToType c `elem` leastConcepts, aConcToType str `elem` leastConcepts) of
          (True, _) -> c
          (_, True) -> str
-         (_, _)    -> fatal 178 ("Either "++name c++" or "++show str++" should be a subset of the other." )
+         (_, _)    -> fatal ("Either "++name c++" or "++show str++" should be a subset of the other." )
        where
          leastConcepts = findExact genLattice (Atom (aConcToType c) `Meet` Atom (aConcToType str))
 
@@ -845,13 +845,15 @@ pCtx2aCtx opts
 
     pIfc2aIfc :: DeclMap -> (P_Interface, P_ObjDef (TermPrim, DisambPrim)) -> Guarded Interface
     pIfc2aIfc declMap
-             (P_Ifc { ifc_Roles = rols
+             (P_Ifc { ifc_Name = nm
+                    , ifc_Roles = rols
                     , ifc_Obj = _
                     , pos = orig
                     , ifc_Prp = prp
                     }, objDisamb)
         = (\ obj'
-             -> Ifc { ifcRoles = rols
+             -> Ifc { ifcname = nm 
+                    , ifcRoles = rols
                     , ifcObj = obj'
                     , ifcControls = []  -- to be enriched in Adl2fSpec with rules to be checked
                     , ifcPos = orig

@@ -83,7 +83,7 @@ getSqlConceptTable :: FSpec -> A_Concept -> IO (A_Concept, [String])
 getSqlConceptTable fSpec c =
  do { -- to prevent needing a unary query function, we add a dummy NULL column and use `src` and `tgt` as column names (in line with what performQuery expects)
       let query = case lookupCpt fSpec c of
-                    []                      -> fatal 58  "No concept table for concept \"" ++ name c ++ "\""
+                    []                         -> fatal ("No concept table for concept \"" ++ name c ++ "\"")
                     (table,conceptAttribute):_ -> "SELECT DISTINCT `" ++ attName conceptAttribute ++ "` as `src`, NULL as `tgt`"++
                                                   " FROM `" ++ name table ++ "`" ++
                                                   " WHERE `" ++ attName conceptAttribute ++ "` IS NOT NULL"

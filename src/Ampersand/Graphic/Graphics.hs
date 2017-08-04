@@ -185,7 +185,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                              ]
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
-        _  -> fatal 276 "No conceptual graph defined for this type."
+        _  -> fatal "No conceptual graph defined for this type."
 
 writePicture :: Options -> Picture -> IO()
 writePicture opts pict
@@ -198,11 +198,6 @@ writePicture opts pict
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
-     dumpShow :: IO()
-     dumpShow = -- This has been hacked in in order to diagnose the issue at: https://github.com/ivan-m/graphviz/issues/13
-       do let path = imagePath opts pict -<.> "txt"
-          writeFile path (show . dotSource $ pict)
-          verboseLn opts $ "Dumpfile written: "++path 
      writeDot :: GraphvizOutput -> IO ()
      writeDot = writeDotPostProcess Nothing
      writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor
@@ -228,8 +223,9 @@ writePicture opts pict
                    
      writePdf :: GraphvizOutput
               -> IO ()
-     writePdf = writeDotPostProcess (Just makePdf) 
-
+     writePdf x = (writeDotPostProcess (Just makePdf) x)
+       `catch` (\ e -> verboseLn opts ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+                                       "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 class ReferableFromPandoc a where
@@ -295,7 +291,7 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
         baseNodeId c
             = case lookup c (zip cpts [(1::Int)..]) of
                 Just i -> "cpt_"++show i
-                _      -> fatal 169 $ "element "++name c++" not found by nodeLabel."
+                _      -> fatal ("element "++name c++" not found by nodeLabel.")
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         relationNodesAndEdges ::

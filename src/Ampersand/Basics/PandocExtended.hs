@@ -28,9 +28,9 @@ aMarkup2String fmt a = blocks2String fmt False (amPandoc a)
 string2Blocks :: PandocFormat -> String -> [Block]
 string2Blocks defaultformat str
  = case theParser (removeCRs str) of
-    Left err ->  fatal 18 $ "Proper error handling of Pandoc is still TODO."
+    Left err ->  fatal ("Proper error handling of Pandoc is still TODO."
                         ++"\n  This particular error is cause by some "++show defaultformat++" in your script:"
-                        ++"\n"++show err
+                        ++"\n"++show err)
     Right (Pandoc _ blocks) -> blocks
    where
      theParser =

@@ -16,7 +16,7 @@ antecedent r
  = case rrexp r of
      EEqu (le,_) -> le
      EInc (le,_) -> le
-     _           -> fatal 134 $ "erroneous reference to antecedent of rule "++show r
+     _           -> fatal ("erroneous reference to antecedent of rule "++show r)
 
 consequent :: Rule -> Expression
 consequent r
@@ -40,14 +40,14 @@ rulefromProp prp d@Sgn{} =
         , rrdcl = Just (prp,d)         -- For traceability: The original property and declaration.
         , r_env = decpat d             -- For traceability: The name of the pattern. Unknown at this position but it may be changed by the environment.
         , r_usr = Multiplicity
-        , isSignal = fatal 63 "It is determined later (when all MAINTAIN statements are available), what this value is." 
+        , isSignal = fatal "It is determined later (when all MAINTAIN statements are available), what this value is." 
         }
        where
         showDcl' = showDcl True d
         r:: Expression
         r = EDcD d
         rExpr = if not (isEndo r) && prp `elem` [Sym, Asy, Trn, Rfx, Irf]
-                then fatal 70 ("Illegal property of an endo relation "++show (name d)) else
+                then fatal ("Illegal property of an endo relation "++show (name d)) else
                 case prp of
                      Uni-> r .:. ECpl (EDcI (target r)) .:. flp r .|-. ECpl (EDcI (source r))
                      Tot-> EDcI (source r)  .|-. r .:. flp r
@@ -58,7 +58,7 @@ rulefromProp prp d@Sgn{} =
                      Trn-> r .:. r .|-. r
                      Rfx-> EDcI (source r) .|-. r
                      Irf-> r .|-. ECpl (EDcI (source r))
-                     Prop -> fatal 78 "Prop should have been converted by the parser"
+                     Prop -> fatal "Prop should have been converted by the parser"
         explain prop = [ explang lang | lang <-[English,Dutch]]
           where 
             explang lang = Markup lang (string2Blocks ReST $ f lang)
@@ -73,7 +73,7 @@ rulefromProp prp d@Sgn{} =
                     Sur-> "surjective"
                     Inj-> "injective"
                     Tot-> "total"
-                    Prop -> fatal 90 "Prop should have been converted by the parser"
+                    Prop -> fatal "Prop should have been converted by the parser"
             f Dutch = showDcl'++" is "++
                   case prop of
                     Sym-> "symmetrisch"
@@ -85,7 +85,7 @@ rulefromProp prp d@Sgn{} =
                     Sur-> "surjectief"
                     Inj-> "injectief"
                     Tot-> "totaal"
-                    Prop -> fatal 103 "Prop should have been converted by the parser"
+                    Prop -> fatal "Prop should have been converted by the parser"
          
         violMsg prop = [ msg lang | lang <-[English,Dutch]]
           where
@@ -103,7 +103,7 @@ rulefromProp prp d@Sgn{} =
                     Inj-> "Each " ++t++" may only have one "++s++"" ++" in the relation "++name d
                     Tot ->"Every "++s++" must have a "      ++t++"" ++" in the relation "++name d
                     Sur ->"Every "++t++" must have a "      ++s++"" ++" in the relation "++name d
-                    Prop -> fatal 90 "Prop should have been converted by the parser"
+                    Prop -> fatal "Prop should have been converted by the parser"
             f Dutch =
                   case prop of
                     Sym-> showDcl'++" is "++"symmetrisch"
@@ -115,6 +115,6 @@ rulefromProp prp d@Sgn{} =
                     Inj-> "Elke "++t++" mag slechts één "++s++   " hebben" ++" in de relatie "++name d
                     Tot-> "Elke "++s++" dient één "      ++t++" te hebben" ++" in de relatie "++name d
                     Sur-> "Elke "++t++" dient een "      ++s++" te hebben" ++" in de relatie "++name d
-                    Prop -> fatal 103 "Prop should have been converted by pattern the parser"
+                    Prop -> fatal "Prop should have been converted by pattern the parser"
 
-rulefromProp _ _ = fatal 252 "Properties can only be set on user-defined relations."
+rulefromProp _ _ = fatal "Properties can only be set on user-defined relations."

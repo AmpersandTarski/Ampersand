@@ -310,8 +310,8 @@ class InterfaceObject {
      * @return void
 	 */
 	public function setSrcAtom($atom){
-	    // Check if atom can be used as source for this interface
-	    if(!in_array($atom->concept, $this->srcConcept->getSpecializationsIncl())) throw new Exception ("Atom '{$atom}' does not match source concept '{$this->srcConcept}' or any of its specializations. Interface path: '{$this->path}'", 500);
+	    // Check if atom can be used as source for this interface (generated SQL query takes care of epsilon)
+	    if(!$atom->concept->inSameClassificationTree($this->srcConcept)) throw new Exception ("Atom '{$atom}' is not in same classification tree as source concept '{$this->srcConcept}'. Interface path: '{$this->path}'", 500);
 	    
 	    $this->srcAtom = $atom;
 	    $this->path = $this->srcAtom->path . '/' . $this->id;

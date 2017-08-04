@@ -104,7 +104,7 @@ instance Show A_Context where
 instance Eq A_Context where
   c1 == c2  =  name c1 == name c2
 instance Unique A_Context where
-  showUnique = name
+  showUnique = optionalQuote . name
 instance Named A_Context where
   name  = ctxnm
 
@@ -131,7 +131,7 @@ data Pattern
 instance Eq Pattern where
   p==p' = ptnm p==ptnm p'
 instance Unique Pattern where
-  showUnique = name
+  showUnique = optionalQuote . name
 
 instance Named Pattern where
  name = ptnm
@@ -152,7 +152,7 @@ data Rule =
         , rrexp ::    Expression                  -- ^ The rule expression
         , rrfps ::    Origin                      -- ^ Position in the Ampersand file
         , rrmean ::   AMeaning                    -- ^ Ampersand generated meaning (for all known languages)
-        , rrmsg ::    [Markup]                  -- ^ User-specified violation messages, possibly more than one, for multiple languages.
+        , rrmsg ::    [Markup]                    -- ^ User-specified violation messages, possibly more than one, for multiple languages.
         , rrviol ::   Maybe (PairView Expression) -- ^ Custom presentation for violations, currently only in a single language
         , rrtyp ::    Signature                   -- ^ Allocated signature
         , rrdcl ::    Maybe (Prop,Declaration)    -- ^ The property, if this rule originates from a property on a Declaration
@@ -355,7 +355,8 @@ instance Show A_Gen where
      Isa{} -> showString ("CLASSIFY "++show (genspc g)++" ISA "++show (gengen g))
      IsE{} -> showString ("CLASSIFY "++show (genspc g)++" IS "++intercalate " /\\ " (map show (genrhs g)))
 
-data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
+data Interface = Ifc { ifcname ::     String        -- all roles for which an interface is available (empty means: available for all roles)
+                     , ifcRoles ::    [Role]        -- all roles for which an interface is available (empty means: available for all roles)
                      , ifcObj ::      ObjectDef     -- NOTE: this top-level ObjectDef is contains the interface itself (ie. name and expression)
                      , ifcControls :: [Conjunct]    -- All conjuncts that must be evaluated after a transaction
                      , ifcPos ::      Origin        -- The position in the file (filename, line- and column number)
@@ -365,17 +366,17 @@ data Interface = Ifc { ifcRoles ::    [Role]        -- all roles for which an in
 instance Eq Interface where
   s==s' = name s==name s'
 instance Named Interface where
-  name = name . ifcObj
+  name = ifcname
 instance Traced Interface where
   origin = ifcPos
 instance Unique Interface where
-  showUnique = name
+  showUnique = optionalQuote . name
 -- Utility function for looking up interface refs
 getInterfaceByName :: [Interface] -> String -> Interface
 getInterfaceByName interfaces' nm = case [ ifc | ifc <- interfaces', name ifc == nm ] of
-                                []    -> fatal 327 $ "getInterface by name: no interfaces named "++show nm
+                                []    -> fatal $ "getInterface by name: no interfaces named "++show nm
                                 [ifc] -> ifc
-                                _     -> fatal 330 $ "getInterface by name: multiple interfaces named "++show nm
+                                _     -> fatal $ "getInterface by name: multiple interfaces named "++show nm
 
 
 class Object a where
@@ -402,6 +403,8 @@ instance Named ObjectDef where
   name   = objnm
 instance Traced ObjectDef where
   origin = objpos
+instance Unique ObjectDef where
+  showUnique = showUnique . origin
 data Cruds = Cruds { crudOrig :: Origin
                    , crudC :: Bool
                    , crudR :: Bool
@@ -484,7 +487,7 @@ data AAtomValue
                 }
   | AtomValueOfONE deriving (Eq,Prelude.Ord, Show)
 
-instance Unique AAtomValue where   -- TODO:  this in incorrect!
+instance Unique AAtomValue where   -- TODO:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique pop@AAVString{}   = (show.aavhash) pop
   showUnique pop@AAVInteger{}  = (show.aavint) pop
   showUnique pop@AAVFloat{}    = (show.aavflt) pop
@@ -627,25 +630,25 @@ infixl 8 .!.    -- relative addition
 infixl 8 .*.    -- cartesian product
 
 -- SJ 20130118: The fatals are superfluous, but only if the type checker works correctly. For that reason, they are not being removed. Not even for performance reasons.
-l .==. r = if source l/=source r ||  target l/=target r then fatal 424 ("Cannot equate (with operator \"==\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .==. r = if source l/=source r ||  target l/=target r then fatal ("Cannot equate (with operator \"==\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EEqu (l,r)
-l .|-. r = if source l/=source r ||  target l/=target r then fatal 426 ("Cannot include (with operator \"|-\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .|-. r = if source l/=source r ||  target l/=target r then fatal ("Cannot include (with operator \"|-\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EInc (l,r)
-l ./\. r = if source l/=source r ||  target l/=target r then fatal 428 ("Cannot intersect (with operator \"/\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l ./\. r = if source l/=source r ||  target l/=target r then fatal ("Cannot intersect (with operator \"/\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EIsc (l,r)
-l .\/. r = if source l/=source r ||  target l/=target r then fatal 430 ("Cannot unite (with operator \"\\/\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .\/. r = if source l/=source r ||  target l/=target r then fatal ("Cannot unite (with operator \"\\/\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EUni (l,r)
-l .-. r  = if source l/=source r ||  target l/=target r then fatal 432 ("Cannot subtract (with operator \"-\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .-. r  = if source l/=source r ||  target l/=target r then fatal ("Cannot subtract (with operator \"-\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EDif (l,r)
-l ./. r  = if target l/=target r then fatal 434 ("Cannot residuate (with operator \"/\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l ./. r  = if target l/=target r then fatal ("Cannot residuate (with operator \"/\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            ELrs (l,r)
-l .\. r  = if source l/=source r then fatal 436 ("Cannot residuate (with operator \"\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .\. r  = if source l/=source r then fatal ("Cannot residuate (with operator \"\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            ERrs (l,r)
-l .<>. r = if source l/=target r then fatal 438 ("Cannot use diamond operator \"<>\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .<>. r = if source l/=target r then fatal ("Cannot use diamond operator \"<>\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EDia (l,r)
-l .:. r  = if source r/=target l then fatal 440 ("Cannot compose (with operator \";\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .:. r  = if source r/=target l then fatal ("Cannot compose (with operator \";\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            ECps (l,r)
-l .!. r  = if source r/=target l then fatal 442 ("Cannot add (with operator \"!\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .!. r  = if source r/=target l then fatal ("Cannot add (with operator \"!\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            ERad (l,r)
 l .*. r  = -- SJC: always fits! No fatal here..
            EPrd (l,r)
@@ -772,7 +775,7 @@ makeConcept "ONE" = ONE
 makeConcept v = PlainConcept (hash v) (pack v)
 
 instance Unique A_Concept where
-  showUnique = name
+  showUnique = optionalQuote . name
 instance Hashable A_Concept where
   hashWithSalt s cpt =
      s `hashWithSalt` (case cpt of
@@ -831,8 +834,7 @@ data ContextInfo =
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
 safePSingleton2AAtomVal ci c val =
    case unsafePAtomVal2AtomValue typ (Just c) val of
-     Left _ -> fatal 855 $ "This should be impossible: after checking everything an unhandled singleton value found!\n  "
-                     ++ show val
+     Left _ -> fatal ("This should be impossible: after checking everything an unhandled singleton value found!\n  "++show val)
      Right x -> x
   where typ = representationOf ci c
 
@@ -1014,7 +1016,7 @@ unsafePAtomVal2AtomValue' typ mCpt pav
                  , "defined as "++show expected++". The found value does not match that type."
                  ]
         where
-          c = fromMaybe (fatal 1004 "Representation mismatch without concept known should not happen.") mCpt
+          c = fromMaybe (fatal "Representation mismatch without concept known should not happen.") mCpt
           expected = if typ == Object then Alphanumeric else typ
           implicitly = if typ == Object then "(implicitly) " else ""
      dayZeroExcel = addDays (-2) (fromGregorian 1900 1 1) -- Excel documentation tells that counting starts a jan 1st, however, that isn't totally true.
@@ -1029,3 +1031,4 @@ unsafePAtomVal2AtomValue' typ mCpt pav
 data Typology = Typology { tyroot :: A_Concept -- the most generic concept in the typology 
                          , tyCpts :: [A_Concept] -- all concepts, from generic to specific
                          } deriving Show
+

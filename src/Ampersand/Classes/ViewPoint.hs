@@ -36,7 +36,7 @@ class Language a where
  
 rulesFromIdentity :: IdentityDef -> [Rule]
 rulesFromIdentity identity
- = [ if null (identityAts identity) then fatal 81 "Moving into foldr1 with empty list (identityAts identity)." else
+ = [ if null (identityAts identity) then fatal "Moving into foldr1 with empty list (identityAts identity)." else
      mkKeyRule
       ( foldr1 (./\.) [  expr .:. flp expr | IdentityExp att <- identityAts identity, let expr=objctx att ]
         .|-. EDcI (idCpt identity)) ]

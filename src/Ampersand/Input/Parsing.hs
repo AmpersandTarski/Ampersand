@@ -91,7 +91,7 @@ parseSingleADL opts singleFile
                     <- if useAllStaticFiles singleFile
                        then case getStaticFileContent FormalAmpersand filePath of
                              Just cont -> return (Right $ stripBom cont)
-                             Nothing -> fatal 0 ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++filePath++"`.")
+                             Nothing -> fatal ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++filePath++"`.")
                        else readUTF8File filePath
                 ; case mFileContents of
                     Left err -> return $ mkErrorReadingINCLUDE (pcOrigin singleFile) filePath err
@@ -118,14 +118,14 @@ parseSingleADL opts singleFile
                  where
                    (drive,path) = splitDrive (normalise fp)
                    (dirs,file)  = case splitPath path of
-                                   [] -> fatal 130 $ "Illegal filePath: "++show fp  
+                                   [] -> fatal ("Illegal filePath: "++show fp)
                                    xs -> (init xs,last xs)
                    
                    f :: [FilePath] -> [FilePath] -> [FilePath]
                    f ds [] = ds
                    f ds (x:xs) | is "."  x = f ds xs   -- reduce /a/b/./c to /a/b/c/ 
                                | is ".." x = case ds of
-                                              [] -> fatal 137 $ "Illegal filePath: "++show fp 
+                                              [] -> fatal ("Illegal filePath: "++show fp)
                                               _  -> f (init ds) xs --reduce a/b/c/../d/ to a/b/d/
                                | otherwise = f (ds++[x]) xs
                is :: String -> FilePath -> Bool
@@ -139,7 +139,7 @@ parseSingleADL opts singleFile
                catchInvalidXlsx :: IO a -> IO a
                catchInvalidXlsx m = catch m f
                  where f :: SomeException -> IO a
-                       f exception = fatal 34 $ "The file does not seem to have a valid .xlsx structure:\n  "++show exception
+                       f exception = fatal ("The file does not seem to have a valid .xlsx structure:\n  "++show exception)
 
 parseErrors :: Lang -> ParseError -> [CtxError]
 parseErrors lang err = [PE (Message msg)]
@@ -189,7 +189,7 @@ parseRule :: String         -- ^ The string to be parsed
 parseRule str
    = case  runParser pRule "inside Haskell code" str of
        Checked result -> result
-       Errors  msg    -> fatal 274 ("Parse errors in "++str++":\n   "++show msg)
+       Errors  msg    -> fatal ("Parse errors in "++str++":\n   "++show msg)
 
 -- | Parses an Ampersand context
 parseCtx :: FilePath -- ^ The file name (used for error messages)

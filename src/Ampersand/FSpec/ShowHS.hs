@@ -301,7 +301,7 @@ instance ShowHS Meta where
 
 instance ShowHSName PlugInfo where
  showHSName (InternalPlug p) = haskellIdentifier ("ipl_"++name p)-- TODO
- showHSName (ExternalPlug _) = fatal 336 "a PlugInfo is anonymous with respect to showHS opts"
+ showHSName (ExternalPlug _) = fatal "a PlugInfo is anonymous with respect to showHS opts"
 
 instance ShowHS PlugInfo where
  showHS _ _ (InternalPlug p)
@@ -516,7 +516,8 @@ instance ShowHSName Interface where
 instance ShowHS Interface where
  showHS opts indent ifc
   = intercalate indent
-        [ "Ifc { ifcRoles  = " ++ show(ifcRoles ifc)
+        [ "Ifc { ifcname   = " ++ show(ifcname ifc)
+        , "    , ifcRoles  = " ++ show(ifcRoles ifc)
         , "    , ifcObj"++indent++"       = " ++ showHS opts (indent++"         ") (ifcObj ifc)
         , wrap "    , ifcControls = " (indent++"                  ") (const showHSName) (ifcControls ifc)
         , "    , ifcPos    = " ++ showHS opts "" (ifcPos ifc)

@@ -93,7 +93,7 @@ BOX [ up : first~ \/ second~ \/ arg~ cRud LINKTO INTERFACE Expression
     , second : second[BinaryTerm*Expression] cRud LINKTO INTERFACE Expression
     , arg : arg[UnaryTerm*Expression] cRud LINKTO INTERFACE Expression
     , unaryOperator : operator[UnaryTerm*Operator] cRud
-    , "formalExpression~" : formalExpression[Rule*Expression]~ cRud
+    , "defines rule" : formalExpression[Rule*Expression]~ cRud
     , bind  : bind[BindedRelation*Relation] cRud LINKTO INTERFACE Relation
     , singleton : singleton[Singleton*AtomValue] cRud 
 --    , "user defined src" : userSrc["V"*Concept]cRud

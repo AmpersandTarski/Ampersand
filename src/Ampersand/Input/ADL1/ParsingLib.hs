@@ -155,7 +155,7 @@ pAtomInExpression = check (\lx -> case lx of
                           ) <?> "Singleton value"
    where
     mval s =
-      case lexer [] (fatal 141 $ "Reparse without fileName of `"++s ++"`") s of
+      case lexer [] (fatal ("Reparse without fileName of `"++s ++"`")) s of
         Left _  -> Nothing
         Right (toks,_)
            -> case runParser pAtomValInPopulation
