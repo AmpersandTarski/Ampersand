@@ -211,9 +211,9 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("gengen"                , "IsE"                   , "Concept" 
-      , [ ( dirtyId ise, dirtyId (gengen ise)) 
+      , [ ( dirtyId ise, dirtyId cpt) 
         | ise@IsE{} <- instances fSpec
-        ]
+        , cpt <- genrhs ise]
       )
      ,("gengen"                , "Isa"                   , "Concept" 
       , [ ( dirtyId isa, dirtyId (gengen isa)) 
