@@ -72,6 +72,7 @@ RULE "accessible relations" : V[Context*Interface];ifcObj;objExpression;getExpre
 MEANING "For every relation that is potentially editable, there exists an interface through which it can be accessed."
 ENDPATTERN
 
+{-
 PATTERN InterfaceSession
 RELATION sessAtom[SESSION*Atom] [UNI,TOT]
 MEANING "Each session has a root atom, from which all data in the current interface is accessible."
@@ -84,6 +85,7 @@ MEANING "Each session has a current interface, which is linked to one of the rol
 RULE "Current atom" : sessIfc |- sessAtom;right~;in;(ifcObj;objExpression)~
 MEANING "Each session has a current interface, which is linked to one of the roles allowed for that interface, or to any interface if no roles are specified."
 ENDPATTERN
+-}
 
 PATTERN InterfaceSemantics
 CONCEPT Transaction "A transaction is an instance of an interface, which is being used (by a user or a program) to interact with the system."   -- Transactions reside in the front end.
