@@ -20,7 +20,6 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Input
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.ADL1.Parser
-import Ampersand.Input.Parsing
 
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.

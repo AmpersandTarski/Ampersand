@@ -220,8 +220,10 @@ instance Eq P_Relation where
  decl==decl' = compare decl decl' == EQ
 instance Prelude.Ord P_Relation where
  compare p1 p2 
-   | origin p1==OriginUnknown && origin p2==OriginUnknown = compare (name p1,dec_sign p1) (name p2,dec_sign p2)
-   | otherwise                                            = compare (origin p1) (origin p2)
+   = case compare (origin p1) (origin p2) of
+      LT -> LT
+      GT -> GT
+      EQ -> compare (name p1,dec_sign p1) (name p2,dec_sign p2)
 instance Named P_Relation where
  name = dec_nm
 instance Traced P_Relation where
