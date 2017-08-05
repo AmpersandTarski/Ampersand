@@ -599,7 +599,7 @@ rTerm2expr term
             , decusr  = fatal "Illegal RTerm in rTerm2expr"
             , decpat  = fatal "Illegal RTerm in rTerm2expr"
             , decplug = fatal "Illegal RTerm in rTerm2expr"
-            , dech    = hash nm `hashWithSalt` sgn
+            , dechash = hash nm `hashWithSalt` sgn
             }
 class ShowIT a where  --class ment for stuff not belonging to A-struct and/or P-struct
   showIT :: a -> String
@@ -1067,7 +1067,7 @@ delta sgn
               , decusr  = False
               , decpat  = ""
               , decplug = True
-              , dech = hash sgn
+              , dechash = hash sgn
               }
 
 {- Normalization of process algebra clauses -}

@@ -437,9 +437,30 @@ pCtx2aCtx opts
     -- accumDecl is the function that combines two relations into one
     -- meanings, for instance, two should get combined into a list of meanings, et cetera
     -- positions are combined
-    -- TODO
+    -- TODO. This combining should be done better. (now some things of r2 are ignored.)
     accumDecl :: Relation -> Relation -> Relation
-    accumDecl a _ = a
+    accumDecl r1 r2 = Relation 
+       { decnm = if decnm r1 == decnm r2 
+                 then decnm r1 
+                 else fatal $ "Accumulated relations must have the same name!"
+       , decsgn = if decsgn r1 == decsgn r2 
+                 then decsgn r1 
+                 else fatal $ "Accumulated relations must have the same signature!"
+      , decprps = decprps r1 `uni` decprps r2
+      , decprps_calc = case (decprps_calc r1,decprps_calc r2) of
+                         (x, Nothing)         -> x
+                         (Nothing, x)         -> x
+                         (Just ps1, Just ps2) -> Just (ps1 `uni` ps2)
+      , decprL = decprL r1  --ignored for r2
+      , decprM = decprM r1  --ignored for r2
+      , decprR = decprR r1  --ignored for r2
+      , decMean = decMean r1  --ignored for r2
+      , decfpos = decfpos r1  --ignored for r2
+      , decusr = or [decusr r1, decusr r2]
+      , decpat = decpat r1 ++ decpat r2   --not very nice!
+      , decplug = or [decplug r1, decplug r2]
+      , dechash = dechash r1  --ignored for r2
+      } 
 
     pDecl2aDecl ::
          String         -- The name of the pattern
@@ -462,7 +483,7 @@ pCtx2aCtx opts
                      , decusr  = True
                      , decpat  = patNm
                      , decplug = dec_plug pd
-                     , dech    = hash (dec_nm pd) `hashWithSalt` decSign
+                     , dechash = hash (dec_nm pd) `hashWithSalt` decSign
                      }
        in checkEndoProps >> 
           (\aps -> (dcl,ARelPopu { popdcl = dcl
