@@ -216,7 +216,12 @@ instance PStruct P_Relation where
                   "  "   -> ""
                   pragma -> " PRAGMA "++pragma
                )++
-               (unwords . map showP . dec_Mean $ decl)
+               (unwords . map showP . dec_Mean $ decl
+               )++
+               case dec_popu decl of
+                []   -> " = []"
+                p:ps -> "\n = [ "++showP p++concatMap (\x -> "\n   , "++showP x) ps++"\n   ]"
+
 
 instance PStruct PMeaning where
  showP (PMeaning pmkup) = "\n   MEANING "++showP pmkup
