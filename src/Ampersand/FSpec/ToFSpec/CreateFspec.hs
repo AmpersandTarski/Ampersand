@@ -58,7 +58,8 @@ createMulti opts =
                                 metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
                                 metaPopFSpec :: Guarded FSpec
                                 metaPopFSpec = pCtx2Fspec metaPopPCtx
-                            return $ MultiFSpecs <$> userGFSpec <*> (Just <$> metaPopFSpec)
+                            return $ MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_Ctx <*> pure grinded)
+                                                 <*> (Just <$> metaPopFSpec)
      else return $ MultiFSpecs <$> userGFSpec <*> pure Nothing
    where
     dumpMetaFile :: FSpec -> Guarded FSpec -> IO()

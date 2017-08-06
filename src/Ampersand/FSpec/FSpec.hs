@@ -47,7 +47,7 @@ import Ampersand.Misc
 import Text.Pandoc.Builder (Blocks)
 
 data MultiFSpecs = MultiFSpecs
-                   { userFSpec :: FSpec        -- ^ The FSpec based on the user's script only.
+                   { userFSpec :: FSpec        -- ^ The FSpec based on the user's script, potentionally extended with metadata.
                    , metaFSpec :: Maybe FSpec  -- ^ The FormalAmpersand metamodel, populated with the items from the user's script 
                    }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
