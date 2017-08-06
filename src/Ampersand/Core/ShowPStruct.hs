@@ -206,17 +206,20 @@ instance PStruct P_RoleRule where
 instance PStruct P_Relation where
  showP decl =
   case decl of
-    P_Sgn{} -> name decl++" :: "++(name . pSrc . dec_sign) decl
+    P_Sgn{} -> name decl++" :: "++(show . name . pSrc . dec_sign) decl
                                 ++(if null ([Uni,Tot]>-dec_prps decl) then " -> " else " * ")
-                                ++(name . pTgt . dec_sign) decl++
+                                ++(show . name . pTgt . dec_sign) decl++
                (let mults=if null ([Uni,Tot]>-dec_prps decl) then dec_prps decl>-[Uni,Tot] else dec_prps decl in
-                if null mults then "" else "["++intercalate "," (map showP mults)++"]")++
-               (if null(unwords (dec_pragma decl)) then "" else
-                " PRAGMA "++unwords (dec_pragma decl))
-                ++ unwords (map showP (dec_Mean decl))
+                if null mults then "" else "["++intercalate "," (map showP mults)++"]"
+               )++
+               (case unwords (dec_pragma decl) of
+                  "  "   -> ""
+                  pragma -> " PRAGMA "++pragma
+               )++
+               (unwords . map showP . dec_Mean $ decl)
 
 instance PStruct PMeaning where
- showP (PMeaning pmkup) = " MEANING "++showP pmkup
+ showP (PMeaning pmkup) = "\n   MEANING "++showP pmkup
 
 instance PStruct PMessage where
  showP (PMessage pmkup) = " MESSAGE "++showP pmkup
