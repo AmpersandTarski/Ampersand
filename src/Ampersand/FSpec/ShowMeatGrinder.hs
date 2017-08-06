@@ -142,7 +142,7 @@ dumpGrindFile formalAmpersand userFspec
         , "model named '"++name userFspec++"'."
         , ""
         , "-}"
-        , "CONTEXT grinded_"++name userFspec
+        , "CONTEXT Grinded_"++name userFspec
         , "" ]
         ++ body  ++
         [ ""
