@@ -281,7 +281,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("ifcPos"                , "Interface"             , "Origin"  
-      , []  --TODO
+      , [(dirtyId ifc, PopAlphaNumeric . show . ifcPos $ ifc) 
+        | ifc::Interface <- instances fSpec
+        ]
       )
      ,("ifcPrp"                , "Interface"             , "String"  
       , []  --TODO
