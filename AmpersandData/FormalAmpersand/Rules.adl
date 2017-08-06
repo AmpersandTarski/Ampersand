@@ -24,7 +24,7 @@ PATTERN Rules
 --    RELATION tgtConcept[Rule*Concept][UNI,TOT] -- e.g. 'BusinessFunction'
     RELATION formalExpression[Rule*Expression] [UNI,TOT]
     MEANING "The rule expressed in relation algebra."
-    RELATION meaning[Rule*Meaning][UNI,TOT] -- e.g. 'BusinessFunction'
+    RELATION meaning[Rule*Meaning] -- e.g. 'BusinessFunction' 
     RELATION sign[Rule*Signature] [UNI,TOT]
     RELATION declaredthrough[PropertyRule*Property] [TOT]
     MEANING "A property is defined as part of the declaration of relation."
