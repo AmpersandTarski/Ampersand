@@ -45,22 +45,21 @@ createMulti opts =
                        Checked f -> f
                        Errors err-> fatal ("The FormalAmpersand ADL scripts are not type correct:\n" ++
                                            intercalate (replicate 30 '=') (map showErr err))
-     let userGFSpec :: Guarded FSpec
+         userGFSpec :: Guarded FSpec
          userGFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
      when (genMetaFile opts) (dumpMetaFile fAmpFSpec userGFSpec)
      if genMetaTables opts || genRapPopulationOnly opts
-     then do let usrFSpec :: FSpec
-                 usrFSpec = case userGFSpec of
-                               Checked x -> x
-                               Errors _ -> fatal $ "usrFSpec should be correct here!"
-                 grinded :: P_Context
-                 grinded = grind fAmpFSpec usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
-                 metaPopPCtx :: Guarded P_Context
-                 metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
-                 metaPopFSpec :: Guarded FSpec
-                 metaPopFSpec = pCtx2Fspec metaPopPCtx
-             return $ MultiFSpecs <$> userGFSpec <*> (Just <$> metaPopFSpec)
-     else    return $ MultiFSpecs <$> userGFSpec <*> pure Nothing
+     then case userGFSpec of 
+            Errors err -> return $ Errors err  
+            Checked usrFSpec
+                      -> do let grinded :: P_Context
+                                grinded = grind fAmpFSpec usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                                metaPopPCtx :: Guarded P_Context
+                                metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
+                                metaPopFSpec :: Guarded FSpec
+                                metaPopFSpec = pCtx2Fspec metaPopPCtx
+                            return $ MultiFSpecs <$> userGFSpec <*> (Just <$> metaPopFSpec)
+     else return $ MultiFSpecs <$> userGFSpec <*> pure Nothing
    where
     dumpMetaFile :: FSpec -> Guarded FSpec -> IO()
     dumpMetaFile faSpec a = case a of
