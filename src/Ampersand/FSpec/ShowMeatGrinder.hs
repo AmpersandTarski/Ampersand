@@ -27,7 +27,7 @@ import Data.Maybe
 --   an FSpec.
 grind :: FSpec -> FSpec -> P_Context
 grind formalAmpersand userFspec =
-  PCtx{ ctx_nm     = "grinded_"++name userFspec
+  PCtx{ ctx_nm     = "Grinded_"++name userFspec
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing

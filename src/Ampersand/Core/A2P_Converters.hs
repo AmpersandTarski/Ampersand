@@ -123,11 +123,11 @@ aViewDef2pViewDef vDef =
 aGen2pGen :: A_Gen -> P_Gen
 aGen2pGen gen =
  case gen of
-  Isa{} -> PGen { pos  = fatal "Origin is not present in A_Gen"
+  Isa{} -> PGen { pos  = Origin $ "Origin is not present in A_Gen"
                 , gen_spc = aConcept2pConcept (genspc gen)
                 , gen_gen = aConcept2pConcept (gengen gen)
                 }
-  IsE{} -> P_Cy { pos  = fatal "Origin is not present in A_Gen"
+  IsE{} -> P_Cy { pos  = Origin $ "Origin is not present in A_Gen"
                 , gen_spc = aConcept2pConcept (genspc gen)
                 , gen_rhs = map aConcept2pConcept (genrhs gen)
                 }

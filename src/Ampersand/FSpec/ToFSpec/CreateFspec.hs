@@ -35,17 +35,11 @@ createMulti opts =
   do fAmpP_Ctx :: Guarded P_Context <-
         if genMetaFile opts ||
            genMetaTables opts ||
-           genRapPopulationOnly opts ||
-           addSemanticMetaModel opts 
+           genRapPopulationOnly opts 
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
-     rawUserP_Ctx:: Guarded P_Context <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     let userP_Ctx :: Guarded P_Context
-         userP_Ctx =
-           if addSemanticMetaModel opts
-           then addSemanticModelOf <$> fAmpP_Ctx <*> rawUserP_Ctx     
-           else rawUserP_Ctx
+     userP_Ctx:: Guarded P_Context <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
      let fAmpFSpec :: FSpec
          fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
                        Checked f -> f
@@ -55,9 +49,16 @@ createMulti opts =
          userGFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
      when (genMetaFile opts) (dumpMetaFile fAmpFSpec userGFSpec)
      if genMetaTables opts || genRapPopulationOnly opts
-     then do let gGrinded :: Guarded P_Context
-                 gGrinded = addGens <$> fAmpP_Ctx <*> (grind fAmpFSpec <$> userGFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
-             let metaPopFSpec = pCtx2Fspec gGrinded
+     then do let userFSpec :: FSpec
+                 userFSpec = case userGFSpec of
+                               Checked x -> x
+                               Errors err -> fatal $ "userFSpec should be correct here!"
+                 grinded :: P_Context
+                 grinded = grind fAmpFSpec userFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
+                 metaPopPCtx :: Guarded P_Context
+                 metaPopPCtx = mergeContexts grinded <$> fAmpP_Ctx
+                 metaPopFSpec :: Guarded FSpec
+                 metaPopFSpec = pCtx2Fspec metaPopPCtx
              return $ mkMulti <$> userGFSpec <*> (Just <$> metaPopFSpec)
      else    return $ mkMulti <$> userGFSpec <*> pure Nothing
    where
