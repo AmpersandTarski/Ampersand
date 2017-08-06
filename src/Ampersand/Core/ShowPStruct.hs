@@ -210,7 +210,7 @@ instance PStruct P_Relation where
                                 ++(if null ([Uni,Tot]>-dec_prps decl) then " -> " else " * ")
                                 ++(show . name . pTgt . dec_sign) decl++
                (let mults=if null ([Uni,Tot]>-dec_prps decl) then dec_prps decl>-[Uni,Tot] else dec_prps decl in
-                if null mults then "" else "["++intercalate "," (map showP mults)++"]"
+                if null mults then "" else " ["++intercalate "," (map showP mults)++"]"
                )++
                (case unwords (dec_pragma decl) of
                   "  "   -> ""
