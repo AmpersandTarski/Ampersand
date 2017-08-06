@@ -97,7 +97,7 @@ makeFSpec opts context
               , allViolations  = [ (r,vs)
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
-              , allExprs     = expressionsIn context
+              , allExprs     = expressionsIn context `uni` expressionsIn (map rc_conjunct allConjs)
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
