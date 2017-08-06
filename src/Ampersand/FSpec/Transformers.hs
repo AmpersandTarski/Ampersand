@@ -429,7 +429,9 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("objpos"                , "ObjectDef"             , "Origin"  
-      , []  --TODO
+      , [(dirtyId obj, PopAlphaNumeric . show . objpos $ obj) 
+        | obj::ObjectDef <- instances fSpec
+        ]
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
       , [(dirtyId expr, PopAlphaNumeric . show $ op) 
