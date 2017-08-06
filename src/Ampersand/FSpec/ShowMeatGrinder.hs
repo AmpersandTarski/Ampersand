@@ -9,68 +9,78 @@ module Ampersand.FSpec.ShowMeatGrinder
   )
 where
 
-import Data.List
-import Data.Maybe
+import Ampersand.Basics
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Transformers
-import Ampersand.Basics
 import Ampersand.Misc
-import Ampersand.Core.ParseTree
+import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ParseTree
 import Ampersand.Input
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.ADL1.Parser
+import Data.List
+import Data.Maybe
 
 -- ^ Create a P_Context that contains meta-information from 
 --   an FSpec.
 grind :: FSpec -> FSpec -> P_Context
 grind formalAmpersand userFspec =
-  (mkContextOfPopsOnly []) {ctx_ds = mapMaybe (extractFromPop formalAmpersand) metaPops2 }
+  PCtx{ ctx_nm     = "grinded_"++name userFspec
+      , ctx_pos    = []
+      , ctx_lang   = Nothing
+      , ctx_markup = Nothing
+      , ctx_thms   = []
+      , ctx_pats   = []
+      , ctx_rs     = []
+      , ctx_ds     = mapMaybe (extractFromPop formalAmpersand) metaPops2
+      , ctx_cs     = []
+      , ctx_ks     = []
+      , ctx_rrules = []
+      , ctx_rrels  = []
+      , ctx_reprs  = []
+      , ctx_vs     = []
+      , ctx_gs     = map aGen2pGen (instances formalAmpersand) 
+      , ctx_ifcs   = []
+      , ctx_ps     = []
+      , ctx_pops   = []
+      , ctx_sql    = []
+      , ctx_php    = []
+      , ctx_metas  = []
+      }
   where
     metaPops2 :: [Pop]
     metaPops2 = concatMap (grindedPops formalAmpersand userFspec)
               . instances $ formalAmpersand
 
 
-
-
-
 extractFromPop :: MetaFSpec -> Pop -> Maybe P_Relation
 extractFromPop formalAmpersand pop =
   case pop of 
-    Comment{}                -> Nothing
-    (Pop rel src tgt tuples) -> 
-      Just P_Sgn { dec_nm = popName pop
-                 , dec_sign = P_Sign { pSrc = PCpt src
-                                     , pTgt = PCpt tgt
-                                     }
-                 , dec_prps   = []
-                 , dec_pragma = []
-                 , dec_Mean   = []
-                 , dec_popu   = dclLookup
-                 , pos        = Origin "Extracted by the meatgrinder of Ampersand"
-                 , dec_plug   = False
-                 }
+    Comment{} -> Nothing
+    Pop{}     -> 
+      Just (aRelation2pRelation (popRelation pop)) {dec_popu = tuples}
+      
      where
-      dclLookup :: [PAtomPair]
-      dclLookup =
-         case string2AValue . unwords . words . show $ tuples of
-            Checked x -> case checkAtomValues aRel x of
+      tuples :: [PAtomPair]
+      tuples =
+         case string2AValue . unwords . words . show . popPairs $ pop of
+            Checked x -> case checkAtomValues (popRelation pop) x of
                           Checked _ -> x
                           Errors err -> fatal $
                               "ERROR in tupels that are generated in the meatgrinder for relation\n"
-                            ++"  "++rel++"["++src++"*"++tgt++"]"
+                            ++"  "++showDcl True (popRelation pop)
                             ++intercalate (replicate 30 '=') (map showErr err)
             Errors err -> fatal $ 
                               "ERROR in tupels that are generated in the meatgrinder for relation\n"
-                            ++"  "++rel++"["++src++"*"++tgt++"]"
+                            ++"  "++showDcl True (popRelation pop)
                             ++intercalate (replicate 30 '=') (map showErr err)
       checkAtomValues :: Relation -> [PAtomPair] -> Guarded [AAtomPair]
-      checkAtomValues dcl pps = sequence $ map fun pps
+      checkAtomValues rel pps = sequence $ map fun pps
             where
               fun pp = mkAtomPair 
-                <$> pAtomValue2aAtomValue (source dcl) (ppLeft  pp)
-                <*> pAtomValue2aAtomValue (target dcl) (ppRight pp)
+                <$> pAtomValue2aAtomValue (source rel) (ppLeft  pp)
+                <*> pAtomValue2aAtomValue (target rel) (ppRight pp)
             
               pAtomValue2aAtomValue :: A_Concept -> PAtomValue -> Guarded AAtomValue
               pAtomValue2aAtomValue cpt pav =
@@ -79,22 +89,10 @@ extractFromPop formalAmpersand pop =
                   Right av -> pure av
                 where typ = cptTType formalAmpersand cpt
             
-      aRel = case [r | r <- vrels formalAmpersand
-                     , name r == rel
-                     , name (source r) == src
-                     , name (target r) == tgt
-                  ] of
-         []  -> fatal $ "A relation populated by the meatgrinder must be defined in Formalampersand adl files.\n"
-                      ++"   Violation: `"++rel++"["++src++"*"++tgt++"]`"
-         [r] -> r
-         rs  -> fatal $ "Multiple relations that match?? Impossible!"++
-                           concatMap (\r -> "\n  "++show r) rs
       string2AValue :: String -> Guarded [PAtomPair]
       string2AValue = runParser pContent "Somewhere in formalAmpersand files"
  
-data Pop = Pop { popName   :: String
-               , popSource :: String
-               , popTarget :: String
+data Pop = Pop { popRelation :: Relation
                , popPairs  :: [(PopAtom,PopAtom)]
                }
          | Comment { comment :: String  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
@@ -102,7 +100,7 @@ data Pop = Pop { popName   :: String
 showPop :: Pop -> String
 showPop pop =
   case pop of
-      Pop{} -> "POPULATION "++ popNameSignature pop++" CONTAINS"
+      Pop{} -> "RELATION "++ showDcl True (popRelation pop)++" ="
               ++
               if null (popPairs pop)
               then "[]"
@@ -113,11 +111,6 @@ showPop pop =
           showPaire :: Show a => (a,a) -> String
           showPaire (s,t) = "( "++show s++" , "++show t++" )"
 
-popNameSignature :: Pop -> String
-popNameSignature pop =
-   case pop of
-     Pop{}     -> popName pop++" ["++popSource pop++" * "++popTarget pop++"]"
-     Comment{} -> fatal "Must not call popName on a Comment-combinator."
 
 type MetaFSpec = FSpec
 
@@ -152,17 +145,17 @@ dumpGrindFile formalAmpersand userFspec
        . sortOn (showDcl True)
        . instances $ formalAmpersand
 grindedPops :: FSpec -> FSpec -> Relation -> [Pop]
-grindedPops formalAmpersand userFspec dcl = headerComment ++ pops
+grindedPops formalAmpersand userFspec rel = headerComment ++ pops
   where
     headerComment :: [Pop]
     headerComment = 
       [Comment . unlines $
-        [ "  "++(name) dcl++"["
-                          ++(name . source) dcl++" * "
-                          ++(name . target) dcl++"]"
+        [ "  "++(name) rel++"["
+                          ++(name . source) rel++" * "
+                          ++(name . target) rel++"]"
         ]
       ]
-    pops = case filter (isForDcl dcl) (transformers userFspec) of
+    pops = case filter (isForRel rel) (transformers userFspec) of
             []  -> fatal . unlines $ 
                       ["Every relation in FormalAmpersand.adl must have a transformer in Transformers.hs"
                       ,"   Violations:"
@@ -172,27 +165,29 @@ grindedPops formalAmpersand userFspec dcl = headerComment ++ pops
                             . filter hasNoTransformer 
                             . instances $ formalAmpersand
                       hasNoTransformer :: Relation -> Bool
-                      hasNoTransformer d = null (filter (isForDcl d) (transformers userFspec))
+                      hasNoTransformer d = null (filter (isForRel d) (transformers userFspec))
             ts  -> map transformer2Pop ts 
     transformer2Pop :: Transformer -> Pop
     transformer2Pop (Transformer n s t ps) 
-      | not ( all (ttypeOf (source dcl)) (map fst ps) ) =
+      | not ( all (ttypeOf (source rel)) (map fst ps) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in formalampersand.adl."
                  , "   The population of the relation `"++n++"["++s++" * "++t++"]` "
                  , "   violates this rule for concept `"++s++"`. In formalAmpersand.adl "
-                 , "   the TType of this concept is "++(show . cptTType formalAmpersand $ source dcl)++"."
+                 , "   the TType of this concept is "++(show . cptTType formalAmpersand $ source rel)++"."
                  ]
-      | not ( all (ttypeOf (target dcl)) (map snd ps) ) =
+      | not ( all (ttypeOf (target rel)) (map snd ps) ) =
              fatal . unlines $
                  [ "The TType of the population produced by the meatgrinder must"
                  , "   match the TType of the concept as specified in formalampersand.adl."
                  , "   The population of the relation `"++n++"["++s++" * "++t++"]` "
                  , "   violates this rule for concept `"++t++"`. In formalAmpersand.adl "
-                 , "   the TType of this concept is "++(show . cptTType formalAmpersand $ target dcl)++"." 
+                 , "   the TType of this concept is "++(show . cptTType formalAmpersand $ target rel)++"." 
                  ]
-      | otherwise = Pop n s t ps
+      | otherwise = Pop { popRelation = rel
+                        , popPairs    = ps
+                        }
       where ttypeOf :: A_Concept -> (PopAtom -> Bool)
             ttypeOf cpt =
               case (cptTType formalAmpersand) cpt of
@@ -209,9 +204,9 @@ grindedPops formalAmpersand userFspec dcl = headerComment ++ pops
                                         
                             
                                 
-isForDcl :: Relation -> Transformer -> Bool
-isForDcl dcl (Transformer n s t _ ) =
-    and [ name dcl == n
-        , name (source dcl) == s
-        , name (target dcl) == t]
+isForRel :: Relation -> Transformer -> Bool
+isForRel rel (Transformer n s t _ ) =
+    and [ name rel == n
+        , name (source rel) == s
+        , name (target rel) == t]
                         
