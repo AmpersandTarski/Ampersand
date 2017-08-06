@@ -54,7 +54,7 @@ createMulti opts =
      let userGFSpec :: Guarded FSpec
          userGFSpec = pCtx2Fspec userP_Ctx              -- the FSpec resuting from the user's souceFile
      when (genMetaFile opts) (dumpMetaFile fAmpFSpec userGFSpec)
-     if genMetaTables opts || genRap
+     if genMetaTables opts || genRapPopulationOnly opts
      then do let gGrinded :: Guarded P_Context
                  gGrinded = addGens <$> fAmpP_Ctx <*> (grind fAmpFSpec <$> userGFSpec) -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
              let metaPopFSpec = pCtx2Fspec gGrinded
@@ -66,7 +66,6 @@ createMulti opts =
     addGens fa grinded = grinded{ctx_gs=gs fa++gs grinded}
      where
       gs pCtx = ctx_gs pCtx ++ concatMap pt_gns (ctx_pats pCtx)
-    genRap = genRapPopulationOnly opts
     mkMulti :: FSpec -> Maybe FSpec -> MultiFSpecs
     mkMulti u m = MultiFSpecs
                { userFSpec = u
