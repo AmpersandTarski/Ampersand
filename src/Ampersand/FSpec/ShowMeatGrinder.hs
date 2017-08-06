@@ -16,6 +16,7 @@ import Ampersand.Misc
 import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
+import Ampersand.Core.ShowPStruct
 import Ampersand.Input
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.ADL1.Parser
@@ -95,21 +96,31 @@ extractFromPop formalAmpersand pop =
 data Pop = Pop { popRelation :: Relation
                , popPairs  :: [(PopAtom,PopAtom)]
                }
-         | Comment { comment :: String  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
+         | Comment { comment :: [String]  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
                    }
 showPop :: Pop -> String
 showPop pop =
   case pop of
-      Pop{} -> "RELATION "++ showDcl True (popRelation pop)++" ="
-              ++
-              if null (popPairs pop)
-              then "[]"
-              else "\n"++indentA++"[ "++intercalate ("\n"++indentA++"; ") showContent++indentA++"]"
-      Comment{} -> intercalate "\n" . map ("-- " ++) . lines . comment $ pop
-    where indentA = "   "
-          showContent = map showPaire (popPairs pop)
-          showPaire :: Show a => (a,a) -> String
-          showPaire (s,t) = "( "++show s++" , "++show t++" )"
+      Pop{} -> showP ((aRelation2pRelation (popRelation pop)) {dec_popu = map foo $ popPairs pop} )
+           --   "RELATION "++ showDcl True (popRelation pop)++" ="
+           --   ++
+           --   if null (popPairs pop)
+           --   then "[]"
+           --   else "\n"++indentA++"[ "++intercalate ("\n"++indentA++"; ") showContent++indentA++"]"
+      Comment{} -> intercalate "\n" . map ("-- " ++) . comment $ pop
+    where foo :: (PopAtom,PopAtom) -> PAtomPair
+          foo (a,b) = PPair { pos = o
+                            , ppLeft  = pAtom2AtomValue a
+                            , ppRight = pAtom2AtomValue b
+                            }
+            where
+              pAtom2AtomValue :: PopAtom -> PAtomValue
+              pAtom2AtomValue atm = 
+                case atm of 
+                  DirtyId str         -> ScriptString o str
+                  PopAlphaNumeric str -> ScriptString o str
+                  PopInt i            -> ScriptInt o i
+              o = Origin "meatgrinder"
 
 
 type MetaFSpec = FSpec
@@ -131,7 +142,7 @@ dumpGrindFile formalAmpersand userFspec
         , "model named '"++name userFspec++"'."
         , ""
         , "-}"
-        , "CONTEXT "++name userFspec
+        , "CONTEXT grinded_"++name userFspec
         , "" ]
         ++ body  ++
         [ ""
@@ -139,34 +150,26 @@ dumpGrindFile formalAmpersand userFspec
         ])
     body :: [String]
     body =
-         intercalate []
+         intercalate [""]
        . map (lines . showPop )
        . concatMap (grindedPops formalAmpersand userFspec)
        . sortOn (showDcl True)
        . instances $ formalAmpersand
 grindedPops :: FSpec -> FSpec -> Relation -> [Pop]
-grindedPops formalAmpersand userFspec rel = headerComment ++ pops
+grindedPops formalAmpersand userFspec rel = 
+  case filter (isForRel rel) (transformers userFspec) of
+    []  -> fatal . unlines $ 
+              ["Every relation in FormalAmpersand.adl must have a transformer in Transformers.hs"
+              ,"   Violations:"
+              ] ++ map ("      "++) viols
+            where 
+              viols = map (showDcl True) 
+                    . filter hasNoTransformer 
+                    . instances $ formalAmpersand
+              hasNoTransformer :: Relation -> Bool
+              hasNoTransformer d = null (filter (isForRel d) (transformers userFspec))
+    ts  -> map transformer2Pop $ ts 
   where
-    headerComment :: [Pop]
-    headerComment = 
-      [Comment . unlines $
-        [ "  "++(name) rel++"["
-                          ++(name . source) rel++" * "
-                          ++(name . target) rel++"]"
-        ]
-      ]
-    pops = case filter (isForRel rel) (transformers userFspec) of
-            []  -> fatal . unlines $ 
-                      ["Every relation in FormalAmpersand.adl must have a transformer in Transformers.hs"
-                      ,"   Violations:"
-                      ] ++ map ("      "++) viols
-                    where 
-                      viols = map (showDcl True) 
-                            . filter hasNoTransformer 
-                            . instances $ formalAmpersand
-                      hasNoTransformer :: Relation -> Bool
-                      hasNoTransformer d = null (filter (isForRel d) (transformers userFspec))
-            ts  -> map transformer2Pop ts 
     transformer2Pop :: Transformer -> Pop
     transformer2Pop (Transformer n s t ps) 
       | not ( all (ttypeOf (source rel)) (map fst ps) ) =
