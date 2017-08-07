@@ -545,8 +545,6 @@ data Expression
       | EDcV Signature                 -- ^ Cartesian product relation
       | EMp1 PSingleton A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
       deriving (Eq, Prelude.Ord, Show, Typeable, Generic, Data)
-instance Unique Expression where
-  showUnique = show
 instance Hashable Expression where
    hashWithSalt s expr =
      s `hashWithSalt`

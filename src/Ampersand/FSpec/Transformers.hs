@@ -757,7 +757,8 @@ class HasDirtyId a where
  
 instance Unique a => HasDirtyId a where
   rawId = uniqueShow True
-
+instance Unique Expression where
+  showUnique = showA
 class Instances a => HasPurpose a where 
   purposes :: FSpec -> a -> [Purpose]
   purposes fSpec a = 
