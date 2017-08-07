@@ -6,7 +6,7 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
 import Data.List
 import Data.Maybe
-import Ampersand.ADL1.Expression(primitives)
+import Ampersand.ADL1.Expression(primitives,subExpressions)
 import Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 
@@ -100,7 +100,7 @@ instance ConceptStructure Expression where
   concs (EDcV   sgn) = concs sgn
   concs (EMp1 _ c  ) = [c]
   concs e            = concs (primitives e)
-  expressionsIn e = [e]
+  expressionsIn = subExpressions
 
 instance ConceptStructure A_Concept where
   concs         c = [c]
@@ -199,3 +199,7 @@ instance ConceptStructure A_Gen where
   concs g@Isa{}  = nub [gengen g,genspc g]
   concs g@IsE{}  = nub (genspc g: genrhs g)
   expressionsIn g = fatal ("expressionsIn not allowed on A_Gen:\n"++show g)
+
+instance ConceptStructure Conjunct where
+  concs         = concs . rc_conjunct
+  expressionsIn = expressionsIn . rc_conjunct

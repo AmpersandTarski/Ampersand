@@ -1,7 +1,7 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Ampersand.ADL1.Expression (
                        subst
-                      ,primitives,isMp1, isEEps, isEDcD
+                      ,primitives, subExpressions, isMp1, isEEps, isEDcD
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
@@ -64,6 +64,30 @@ primitives expr =
     EEps{}       -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
+subExpressions :: Expression -> [Expression]
+subExpressions expr = [expr] `uni`
+  case expr of
+    (EEqu (l,r)) -> subExpressions l `uni` subExpressions r
+    (EInc (l,r)) -> subExpressions l `uni` subExpressions r
+    (EIsc (l,r)) -> subExpressions l `uni` subExpressions r
+    (EUni (l,r)) -> subExpressions l `uni` subExpressions r
+    (EDif (l,r)) -> subExpressions l `uni` subExpressions r
+    (ELrs (l,r)) -> subExpressions l `uni` subExpressions r
+    (ERrs (l,r)) -> subExpressions l `uni` subExpressions r
+    (EDia (l,r)) -> subExpressions l `uni` subExpressions r
+    (ECps (l,r)) -> subExpressions l `uni` subExpressions r
+    (ERad (l,r)) -> subExpressions l `uni` subExpressions r
+    (EPrd (l,r)) -> subExpressions l `uni` subExpressions r
+    (EKl0 e)     -> subExpressions e
+    (EKl1 e)     -> subExpressions e
+    (EFlp e)     -> subExpressions e
+    (ECpl e)     -> subExpressions e
+    (EBrk e)     -> subExpressions e
+    EDcD{}       -> []
+    EDcI{}       -> []
+    EEps{}       -> []
+    EDcV{}       -> []
+    EMp1{}       -> []
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
