@@ -937,6 +937,30 @@ exprInfo expr =
         , userTrg'   = Nothing
         , singleton' = Nothing
         }
+    (ECps (EEps{},e)) -> ExprInfo
+        { binOp'     = binOp e
+        , unaryOp'   = unaryOp e
+        , bindedRel' = bindedRel e
+        , first'     = first e
+        , second'    = second e
+        , arg'       = arg e
+        , userCpt'   = userCpt e
+        , userSrc'   = userSrc e
+        , userTrg'   = userTrg e
+        , singleton' = singleton e
+        }
+    (ECps (e,EEps{})) -> ExprInfo
+        { binOp'     = binOp e
+        , unaryOp'   = unaryOp e
+        , bindedRel' = bindedRel e
+        , first'     = first e
+        , second'    = second e
+        , arg'       = arg e
+        , userCpt'   = userCpt e
+        , userSrc'   = userSrc e
+        , userTrg'   = userTrg e
+        , singleton' = singleton e
+        }
     (ECps (l,r)) -> ExprInfo
         { binOp'     = Just Composition
         , unaryOp'   = Nothing
@@ -1057,18 +1081,7 @@ exprInfo expr =
         , userTrg'   = Nothing
         , singleton' = Nothing
         }
-    EEps{}       -> ExprInfo -- TODO!!
-        { binOp'     = Nothing
-        , unaryOp'   = Nothing
-        , bindedRel' = Nothing
-        , first'     = Nothing
-        , second'    = Nothing
-        , arg'       = Nothing
-        , userCpt'   = Nothing
-        , userSrc'   = Nothing
-        , userTrg'   = Nothing
-        , singleton' = Nothing
-        }
+    EEps{}       -> fatal "exprInfo should not be called on EEps{}"
     (EDcV sgn)      -> ExprInfo
         { binOp'     = Nothing
         , unaryOp'   = Nothing

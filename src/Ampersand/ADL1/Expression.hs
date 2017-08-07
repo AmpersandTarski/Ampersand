@@ -65,29 +65,29 @@ primitives expr =
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
 subExpressions :: Expression -> [Expression]
-subExpressions expr = [expr] `uni`
+subExpressions expr = 
   case expr of
-    (EEqu (l,r)) -> subExpressions l `uni` subExpressions r
-    (EInc (l,r)) -> subExpressions l `uni` subExpressions r
-    (EIsc (l,r)) -> subExpressions l `uni` subExpressions r
-    (EUni (l,r)) -> subExpressions l `uni` subExpressions r
-    (EDif (l,r)) -> subExpressions l `uni` subExpressions r
-    (ELrs (l,r)) -> subExpressions l `uni` subExpressions r
-    (ERrs (l,r)) -> subExpressions l `uni` subExpressions r
-    (EDia (l,r)) -> subExpressions l `uni` subExpressions r
-    (ECps (l,r)) -> subExpressions l `uni` subExpressions r
-    (ERad (l,r)) -> subExpressions l `uni` subExpressions r
-    (EPrd (l,r)) -> subExpressions l `uni` subExpressions r
-    (EKl0 e)     -> subExpressions e
-    (EKl1 e)     -> subExpressions e
-    (EFlp e)     -> subExpressions e
-    (ECpl e)     -> subExpressions e
-    (EBrk e)     -> subExpressions e
-    EDcD{}       -> []
-    EDcI{}       -> []
+    (EEqu (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EInc (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EIsc (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EUni (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EDif (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ELrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ERrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EDia (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ECps (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ERad (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EPrd (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EKl0 e)     -> [expr] `uni` subExpressions e
+    (EKl1 e)     -> [expr] `uni` subExpressions e
+    (EFlp e)     -> [expr] `uni` subExpressions e
+    (ECpl e)     -> [expr] `uni` subExpressions e
+    (EBrk e)     ->              subExpressions e
+    EDcD{}       -> [expr]
+    EDcI{}       -> [expr]
     EEps{}       -> []
-    EDcV{}       -> []
-    EMp1{}       -> []
+    EDcV{}       -> [expr]
+    EMp1{}       -> [expr]
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
