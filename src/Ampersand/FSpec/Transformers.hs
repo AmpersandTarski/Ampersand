@@ -77,7 +77,7 @@ transformers fSpec = map toTransformer [
      ,("arg"                   , "UnaryTerm"             , "Expression"
       , [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
-        , Just x <- [arg expr]
+        , Just x <- [argx (trace ("Bepaal arg van: "++show expr) $ expr)]
         ]
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
@@ -818,28 +818,28 @@ data ExprInfo = ExprInfo
    , singleton' :: Maybe PAtomValue -- the value of a singleton expression
    }  
 binOp :: Expression -> Maybe BinOp
-binOp = binOp' . exprInfo
+binOp = binOp' . exprInfo . trace ("binop")
 unaryOp :: Expression -> Maybe UnaryOp
-unaryOp = unaryOp' . exprInfo
+unaryOp = unaryOp' . exprInfo . trace ("unaryOp")
 bindedRel :: Expression -> Maybe Relation
-bindedRel = bindedRel' . exprInfo
+bindedRel = bindedRel' . exprInfo . trace ("bindedRel")
 first :: Expression -> Maybe Expression
-first = first' . exprInfo
+first = first' . exprInfo . trace ("first")
 second :: Expression -> Maybe Expression
-second = second' . exprInfo
-arg :: Expression -> Maybe Expression
-arg = arg' . exprInfo
+second = second' . exprInfo . trace ("second")
+argx :: Expression -> Maybe Expression
+argx e = arg' . exprInfo . trace ("arg "++show e) $ e
 userCpt :: Expression -> Maybe A_Concept
-userCpt = userCpt' . exprInfo 
+userCpt = userCpt' . exprInfo  . trace ("userCpt")
 userSrc :: Expression -> Maybe A_Concept
-userSrc = userSrc' . exprInfo 
+userSrc = userSrc' . exprInfo  . trace ("userSrc")
 userTrg :: Expression -> Maybe A_Concept
-userTrg = userTrg' . exprInfo 
+userTrg = userTrg' . exprInfo  . trace ("userTrg")
 singleton :: Expression -> Maybe PAtomValue
-singleton = singleton' . exprInfo 
+singleton = singleton' . exprInfo  . trace ("singleton")
 
 exprInfo :: Expression -> ExprInfo
-exprInfo expr =
+exprInfo expr = --trace (show expr) $ 
   case expr of
     (EEqu (l,r)) -> ExprInfo
         { binOp'     = Just Equivalence
@@ -943,7 +943,7 @@ exprInfo expr =
         , bindedRel' = bindedRel e
         , first'     = first e
         , second'    = second e
-        , arg'       = arg e
+        , arg'       = argx e
         , userCpt'   = userCpt e
         , userSrc'   = userSrc e
         , userTrg'   = userTrg e
@@ -955,7 +955,7 @@ exprInfo expr =
         , bindedRel' = bindedRel e
         , first'     = first e
         , second'    = second e
-        , arg'       = arg e
+        , arg'       = argx e
         , userCpt'   = userCpt e
         , userSrc'   = userSrc e
         , userTrg'   = userTrg e
@@ -1051,7 +1051,7 @@ exprInfo expr =
         , bindedRel' = bindedRel e
         , first'     = first e
         , second'    = second e
-        , arg'       = arg e
+        , arg'       = argx e
         , userCpt'   = userCpt e
         , userSrc'   = userSrc e
         , userTrg'   = userTrg e

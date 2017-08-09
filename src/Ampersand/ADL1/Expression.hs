@@ -6,7 +6,7 @@ module Ampersand.ADL1.Expression (
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
 where
-import Ampersand.Basics (uni)
+import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
 --import Debug.Trace
 
@@ -65,7 +65,7 @@ primitives expr =
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
 subExpressions :: Expression -> [Expression]
-subExpressions expr = 
+subExpressions expr = trace ("Bepaal subExpressions van: "++show expr) $
   case expr of
     (EEqu (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (EInc (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
@@ -75,6 +75,8 @@ subExpressions expr =
     (ELrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (ERrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (EDia (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ECps (EEps{},r)) ->                                subExpressions r
+    (ECps (l,EEps{})) ->         subExpressions l
     (ECps (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (ERad (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (EPrd (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
@@ -85,7 +87,7 @@ subExpressions expr =
     (EBrk e)     ->              subExpressions e
     EDcD{}       -> [expr]
     EDcI{}       -> [expr]
-    EEps{}       -> []
+    EEps{}       -> fatal "subExpressions should not be called on EEps{}"
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
 

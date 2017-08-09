@@ -1439,7 +1439,11 @@ isEIsc EIsc{}  = True
 isEIsc _       = False
 
 conjuncts :: Options -> Rule -> [Expression]
-conjuncts opts = exprIsc2list.conjNF opts.formalExpression
+conjuncts opts r = exprIsc2list
+                 . (\e -> trace ("conjNF of that expression: "++show e) e)
+                 . conjNF opts
+                 . (\e -> trace ("FormalExpression: "++show e) e)
+                 . formalExpression $ r
 
 allShifts :: Options -> DnfClause -> [DnfClause]
 allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...
