@@ -1046,16 +1046,16 @@ exprInfo expr =
         , singleton' = Nothing
         }
     (EBrk e)     -> ExprInfo
-        { binOp'     = Nothing
-        , unaryOp'   = Just Bracket
-        , bindedRel' = Nothing
-        , first'     = Nothing
-        , second'    = Nothing
-        , arg'       = Just e
-        , userCpt'   = Nothing
-        , userSrc'   = Nothing
-        , userTrg'   = Nothing
-        , singleton' = Nothing
+        { binOp'     = binOp e
+        , unaryOp'   = unaryOp e
+        , bindedRel' = bindedRel e
+        , first'     = first e
+        , second'    = second e
+        , arg'       = arg e
+        , userCpt'   = userCpt e
+        , userSrc'   = userSrc e
+        , userTrg'   = userTrg e
+        , singleton' = singleton e
         }
     (EDcD r)     -> ExprInfo
         { binOp'     = Nothing
@@ -1106,7 +1106,6 @@ exprInfo expr =
         , userTrg'   = Nothing
         , singleton' = Just val
         }
-
 data UnaryOp = 
              KleeneStar
            | KleenePlus
