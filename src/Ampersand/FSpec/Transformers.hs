@@ -77,7 +77,7 @@ transformers fSpec = map toTransformer [
      ,("arg"                   , "UnaryTerm"             , "Expression"
       , [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
-        , Just x <- [argx (trace ("Bepaal arg van: "++show expr) $ expr)]
+        , Just x <- [argx expr]
         ]
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
@@ -818,28 +818,28 @@ data ExprInfo = ExprInfo
    , singleton' :: Maybe PAtomValue -- the value of a singleton expression
    }  
 binOp :: Expression -> Maybe BinOp
-binOp = binOp' . exprInfo . trace ("binop")
+binOp = binOp' . exprInfo
 unaryOp :: Expression -> Maybe UnaryOp
-unaryOp = unaryOp' . exprInfo . trace ("unaryOp")
+unaryOp = unaryOp' . exprInfo
 bindedRel :: Expression -> Maybe Relation
-bindedRel = bindedRel' . exprInfo . trace ("bindedRel")
+bindedRel = bindedRel' . exprInfo
 first :: Expression -> Maybe Expression
-first = first' . exprInfo . trace ("first")
+first = first' . exprInfo
 second :: Expression -> Maybe Expression
-second = second' . exprInfo . trace ("second")
+second = second' . exprInfo
 argx :: Expression -> Maybe Expression
-argx e = arg' . exprInfo . trace ("arg "++show e) $ e
+argx = arg' . exprInfo
 userCpt :: Expression -> Maybe A_Concept
-userCpt = userCpt' . exprInfo  . trace ("userCpt")
+userCpt = userCpt' . exprInfo
 userSrc :: Expression -> Maybe A_Concept
-userSrc = userSrc' . exprInfo  . trace ("userSrc")
+userSrc = userSrc' . exprInfo
 userTrg :: Expression -> Maybe A_Concept
-userTrg = userTrg' . exprInfo  . trace ("userTrg")
+userTrg = userTrg' . exprInfo
 singleton :: Expression -> Maybe PAtomValue
-singleton = singleton' . exprInfo  . trace ("singleton")
+singleton = singleton' . exprInfo
 
 exprInfo :: Expression -> ExprInfo
-exprInfo expr = --trace (show expr) $ 
+exprInfo expr =
   case expr of
     (EEqu (l,r)) -> ExprInfo
         { binOp'     = Just Equivalence

@@ -65,7 +65,7 @@ primitives expr =
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
 subExpressions :: Expression -> [Expression]
-subExpressions expr = trace ("Bepaal subExpressions van: "++show expr) $
+subExpressions expr = 
   case expr of
     (EEqu (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (EInc (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r

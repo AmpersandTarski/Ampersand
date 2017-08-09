@@ -100,7 +100,7 @@ instance ConceptStructure Expression where
   concs (EDcV   sgn) = concs sgn
   concs (EMp1 _ c  ) = [c]
   concs e            = concs (primitives e)
-  expressionsIn e = trace ("Bepaal expressionsIn van: "++show e) $ subExpressions e
+  expressionsIn = subExpressions
 
 instance ConceptStructure A_Concept where
   concs         c = [c]
@@ -202,4 +202,4 @@ instance ConceptStructure A_Gen where
 
 instance ConceptStructure Conjunct where
   concs         = concs . rc_conjunct
-  expressionsIn = expressionsIn . (\e-> trace ("conjunctExpr: "++show e) e) . rc_conjunct
+  expressionsIn = expressionsIn . rc_conjunct
