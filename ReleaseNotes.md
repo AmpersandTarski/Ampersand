@@ -1,7 +1,8 @@
 # Release notes of Ampersand
 ## Unreleased changes 
   * Somewhat more verbose test output
-  
+  * [Issue #692](https://github.com/AmpersandTarski/Ampersand/issues/692) Better allignment between Formal Ampersand and meatgrinder 
+
 ## v3.8.7 (4 august 2017)
   * Upgraded to LTS-8.22
   * Made the meatgrinder do better static analisys, inspired by issue #684

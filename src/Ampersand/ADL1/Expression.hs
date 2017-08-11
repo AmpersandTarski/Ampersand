@@ -87,7 +87,7 @@ subExpressions expr =
     (EBrk e)     ->              subExpressions e
     EDcD{}       -> [expr]
     EDcI{}       -> [expr]
-    EEps{}       -> fatal "subExpressions should not be called on EEps{}"
+    EEps{}       -> [expr]
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
 
