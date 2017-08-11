@@ -284,8 +284,7 @@ pCtx2aCtx opts
       uniqueNames (ctxifcs   actx)   --                          and interfaces.
       return actx
   where
-    concGroups = (\x -> trace (show x) x) $
-                 getGroups genLatticeIncomplete :: [[Type]]
+    concGroups = getGroups genLatticeIncomplete :: [[Type]]
     deflangCtxt = fromMaybe English $ ctxmLang `orElse` language opts
     deffrmtCtxt = fromMaybe ReST pandocf
     

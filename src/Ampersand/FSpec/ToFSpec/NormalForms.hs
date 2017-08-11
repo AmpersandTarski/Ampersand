@@ -1440,9 +1440,9 @@ isEIsc _       = False
 
 conjuncts :: Options -> Rule -> [Expression]
 conjuncts opts r = exprIsc2list
-                 . (\e -> trace ("conjNF of that expression: "++show e) e)
+               --  . (\e -> trace ("conjNF of that expression: "++show e) e)
                  . conjNF opts
-                 . (\e -> trace ("FormalExpression: "++show e) e)
+               --  . (\e -> trace ("FormalExpression: "++show e) e)
                  . formalExpression $ r
 
 allShifts :: Options -> DnfClause -> [DnfClause]
