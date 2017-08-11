@@ -53,9 +53,11 @@ PATTERN "Expression definitions"
     RELATION userSrc["V"*Concept] [UNI]
     RELATION userTrg["V"*Concept] [UNI]
     
+    CONCEPT Epsilon "An expression between two concepts that have an generalisation relation between them" 
+    CLASSIFY Epsilon ISA Expression
+    RELATION userCpt[Epsilon*Concept] [UNI]
     CONCEPT "I" "The identity expression on a concept."
-    CLASSIFY "I" ISA Expression
-    RELATION userCpt["I"*Concept] [UNI]
+    CLASSIFY "I" ISA Epsilon
     
     CLASSIFY Equivalence ISA BinaryTerm
     CLASSIFY Inclusion   ISA BinaryTerm

@@ -650,7 +650,7 @@ transformers fSpec = map toTransformer [
         , rel::Relation <- relsUsedIn expr
         ]
       )
-     ,("userCpt"               , "I"                     , "Concept" 
+     ,("userCpt"               , "Epsilon"                     , "Concept" 
       , [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just (x::A_Concept) <- [userCpt expr]
@@ -812,7 +812,7 @@ data ExprInfo = ExprInfo
    , first' :: Maybe Expression
    , second' :: Maybe Expression
    , arg' :: Maybe Expression
-   , userCpt' :: Maybe A_Concept -- the concept of an I expression
+   , userCpt' :: Maybe A_Concept -- the concept of an Epsilon (and thus I too) expression
    , userSrc' :: Maybe A_Concept -- the source concept of a V expression
    , userTrg' :: Maybe A_Concept -- the target concept of a V expression
    , singleton' :: Maybe PAtomValue -- the value of a singleton expression
@@ -937,30 +937,6 @@ exprInfo expr =
         , userTrg'   = Nothing
         , singleton' = Nothing
         }
-    (ECps (EEps{},e)) -> ExprInfo
-        { binOp'     = binOp e
-        , unaryOp'   = unaryOp e
-        , bindedRel' = bindedRel e
-        , first'     = first e
-        , second'    = second e
-        , arg'       = argx e
-        , userCpt'   = userCpt e
-        , userSrc'   = userSrc e
-        , userTrg'   = userTrg e
-        , singleton' = singleton e
-        }
-    (ECps (e,EEps{})) -> ExprInfo
-        { binOp'     = binOp e
-        , unaryOp'   = unaryOp e
-        , bindedRel' = bindedRel e
-        , first'     = first e
-        , second'    = second e
-        , arg'       = argx e
-        , userCpt'   = userCpt e
-        , userSrc'   = userSrc e
-        , userTrg'   = userTrg e
-        , singleton' = singleton e
-        }
     (ECps (l,r)) -> ExprInfo
         { binOp'     = Just Composition
         , unaryOp'   = Nothing
@@ -1081,7 +1057,18 @@ exprInfo expr =
         , userTrg'   = Nothing
         , singleton' = Nothing
         }
-    EEps{}       -> fatal "exprInfo should not be called on EEps{}"
+    (EEps cpt _)      -> ExprInfo
+        { binOp'     = Nothing
+        , unaryOp'   = Nothing
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Nothing
+        , userCpt'   = Just cpt
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
+        , singleton' = Nothing
+        }
     (EDcV sgn)      -> ExprInfo
         { binOp'     = Nothing
         , unaryOp'   = Nothing
