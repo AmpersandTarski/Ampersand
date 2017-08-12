@@ -667,8 +667,8 @@ nonSpecialSelectExpr fSpec expr=
                     closedWorldName = QName $ "cartesian product of "++ name (source e) ++ " and " ++ name (target e) 
                     theClosedWorldExpression = EDcV (sign e) 
                         
-    EKl0 _               -> fatal "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
-    EKl1 _               -> fatal "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
+    EKl0 _               -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
+    EKl1 _               -> fatal "Sorry, there currently is no database support for + (Kleene plus).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
     (EDif (EDcV _,x)) -> BQEComment [BlockComment $ "case: EDif V x"++"EDif V ( \""++showA x++"\" ) \""++show (sign expr)++"\""]
                                     (selectExpr fSpec (notCpl x))
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
