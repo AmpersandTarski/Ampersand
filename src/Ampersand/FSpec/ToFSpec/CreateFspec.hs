@@ -35,7 +35,8 @@ createMulti opts =
   do fAmpP_Ctx :: Guarded P_Context <-
         if genMetaFile opts ||
            genMetaTables opts ||
-           genRapPopulationOnly opts 
+           genRapPopulationOnly opts ||
+           genRapRelationsOnly opts
         then parseMeta opts  -- the P_Context of the formalAmpersand metamodel
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
