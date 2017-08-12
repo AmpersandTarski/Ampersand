@@ -15,6 +15,7 @@ import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Motivations
+import Data.Hashable
 import Data.List
 import Data.Typeable
 
@@ -752,9 +753,22 @@ instance Instances ViewDef where
 -- must be an instance of HasDirtyId:
 class HasDirtyId a where
   dirtyId :: a -> PopAtom
-  dirtyId = DirtyId . rawId
+  dirtyId = DirtyId . uniqueButNotTooLong . rawId
+   where
+    uniqueButNotTooLong :: String -> String
+    uniqueButNotTooLong str =
+      case splitAt safeLength str of
+        (_ , []) -> str
+        (prfx,_) -> prfx++"#"++show (hash str)++"#"
+      where safeLength = 220 -- HJO, 20170812: Subjective value. This is based on the 
+                             -- limitation that DirtyId's are stored in an sql database
+                             -- in a field that is normally 255 long. We store the
+                             -- prefix of the string but make sure we still have space
+                             -- left over for the hash. While theoretically this is a 
+                             -- crappy solution, in practice this will prove to be well 
+                             -- enough. 
   rawId :: a -> String
- 
+            
 instance Unique a => HasDirtyId a where
   rawId = uniqueShow True
 instance Unique Expression where
