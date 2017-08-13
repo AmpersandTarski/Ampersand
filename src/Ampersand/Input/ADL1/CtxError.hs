@@ -44,8 +44,6 @@ import Text.Parsec.Error (Message(..), messageString)
 import Ampersand.Input.ADL1.FilePos()
 import Data.Monoid
 
-_notUsed :: a
-_notUsed = undefined fatal
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message

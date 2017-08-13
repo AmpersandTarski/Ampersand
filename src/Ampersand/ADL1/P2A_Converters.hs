@@ -722,7 +722,7 @@ pCtx2aCtx opts
                          )
          P_Box{}
            -> case si_box x of
-                []  -> const undefined <$> (hasNone x :: Guarded SubInterface) -- error
+                []  -> const (fatal "this fatal used to be `undefined`.") <$> (hasNone x :: Guarded SubInterface) -- error
                 l   -> (\lst -> (objExpr,Box { siConcept = target objExpr
                                              , siMClass  = si_class x
                                              , siObjs    = lst

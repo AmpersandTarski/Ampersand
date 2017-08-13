@@ -68,10 +68,10 @@ createMulti opts =
          
          result :: Guarded MultiFSpecs
          result = 
-          if genMetaTables opts || genRapPopulationOnly opts
-          then case userGFSpec of 
-                 Errors err -> Errors err  
-                 Checked usrFSpec
+           if genMetaTables opts || genRapPopulationOnly opts
+           then case userGFSpec of 
+                  Errors err -> Errors err  
+                  Checked usrFSpec
                            -> let grinded :: P_Context
                                   grinded = grind fAmpFSpec usrFSpec -- the user's sourcefile grinded, i.e. a P_Context containing population in terms of formalAmpersand.
                                   metaPopPCtx :: Guarded P_Context
@@ -80,7 +80,7 @@ createMulti opts =
                                   metaPopFSpec = pCtx2Fspec metaPopPCtx
                               in MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_Ctx <*> pure grinded)
                                              <*> (Just <$> metaPopFSpec)
-          else MultiFSpecs <$> userGFSpec <*> pure Nothing
+           else MultiFSpecs <$> userGFSpec <*> pure Nothing
      res <- if genMetaFile opts
             then writeMetaFile fAmpFSpec userGFSpec
             else return $ pure ()
