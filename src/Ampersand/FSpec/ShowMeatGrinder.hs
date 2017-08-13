@@ -94,22 +94,22 @@ extractFromPop formalAmpersand pop =
       string2AValue :: String -> Guarded [PAtomPair]
       string2AValue = runParser pContent "Somewhere in formalAmpersand files"
  
-data Pop = Pop { popRelation :: Relation
-               , popPairs  :: [(PopAtom,PopAtom)]
+data Pop = Pop { popPairs  :: [(PopAtom,PopAtom)]
+               , popRelation :: Relation
                }
          | Comment { comment :: [String]  -- Not-so-nice way to get comments in a list of populations. Since it is local to this module, it is not so bad, I guess...
-                   }
+                   } deriving (Eq,Ord)
+
 showPop :: Pop -> String
 showPop pop =
   case pop of
-      Pop{} -> showP ((aRelation2pRelation (popRelation pop)) {dec_popu = map foo $ popPairs pop} )
-           --   "RELATION "++ showDcl True (popRelation pop)++" ="
-           --   ++
-           --   if null (popPairs pop)
-           --   then "[]"
-           --   else "\n"++indentA++"[ "++intercalate ("\n"++indentA++"; ") showContent++indentA++"]"
+      Pop{} -> showP ((aRelation2pRelation (popRelation pop)) {dec_popu = map foo . sortShow $ popPairs pop} )
       Comment{} -> intercalate "\n" . map ("-- " ++) . comment $ pop
-    where foo :: (PopAtom,PopAtom) -> PAtomPair
+    where sortShow :: [(PopAtom,PopAtom)] -> [(PopAtom,PopAtom)]
+          sortShow = sortOn x
+            where x :: (PopAtom,PopAtom) -> String
+                  x (a,b) = show a++show b
+          foo :: (PopAtom,PopAtom) -> PAtomPair
           foo (a,b) = PPair { pos = o
                             , ppLeft  = pAtom2AtomValue a
                             , ppRight = pAtom2AtomValue b
@@ -155,6 +155,7 @@ makeMetaFile formalAmpersand userFspec
     body :: [String]
     body =
          intercalate [""]
+       . sort
        . map (lines . showPop )
        . concatMap popsOfRelation
        . sortOn (showDcl True)
@@ -167,11 +168,11 @@ makeMetaFile formalAmpersand userFspec
                                     . sort 
                                     . map show
                                     $ pAtomsOfConcept cpt
-                                )
-        cpts::[A_Concept] = sort . instances $ formalAmpersand 
+                                    )
+        cpts::[A_Concept] = sortOn name . instances $ formalAmpersand 
         
     popsOfRelation :: Relation -> [Pop]
-    popsOfRelation = grindedPops formalAmpersand userFspec
+    popsOfRelation = sort . grindedPops formalAmpersand userFspec
     pAtomsOfConcept :: A_Concept -> [PopAtom]
     pAtomsOfConcept cpt = 
       nub $
