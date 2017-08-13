@@ -81,7 +81,9 @@ createMulti opts =
                               in MultiFSpecs <$> (pCtx2Fspec $ mergeContexts <$> userP_Ctx <*> pure grinded)
                                              <*> (Just <$> metaPopFSpec)
           else MultiFSpecs <$> userGFSpec <*> pure Nothing
-     res <- writeMetaFile fAmpFSpec userGFSpec
+     res <- if genMetaFile opts
+            then writeMetaFile fAmpFSpec userGFSpec
+            else return $ pure ()
      return (res >> result)
   where
     writeMetaFile :: FSpec -> Guarded FSpec -> IO (Guarded ())
