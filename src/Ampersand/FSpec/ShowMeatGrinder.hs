@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveDataTypeable #-}
 {-# LANGUAGE DuplicateRecordFields#-}
 {-# LANGUAGE OverloadedLabels #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.FSpec.ShowMeatGrinder
   ( makeMetaFile
   , grind 
@@ -144,7 +145,10 @@ makeMetaFile formalAmpersand userFspec
         , "-}"
         , "CONTEXT Grinded_"++name userFspec
         , "" ]
-        ++ body  ++
+        ++ listOfConcepts
+        ++ [""]
+        ++ body
+        ++
         [ ""
         , "ENDCONTEXT"
         ])
@@ -152,9 +156,33 @@ makeMetaFile formalAmpersand userFspec
     body =
          intercalate [""]
        . map (lines . showPop )
-       . concatMap (grindedPops formalAmpersand userFspec)
+       . concatMap popsOfRelation
        . sortOn (showDcl True)
        . instances $ formalAmpersand
+    listOfConcepts :: [String]
+    listOfConcepts = map ("-- "++) (intercalate [""] (map showCpt cpts))
+       where
+        showCpt :: A_Concept -> [String]
+        showCpt cpt = [name cpt] ++ ( map ("  "++)
+                                    . sort 
+                                    . map show
+                                    $ pAtomsOfConcept cpt
+                                )
+        cpts::[A_Concept] = sort . instances $ formalAmpersand 
+        
+    popsOfRelation :: Relation -> [Pop]
+    popsOfRelation = grindedPops formalAmpersand userFspec
+    pAtomsOfConcept :: A_Concept -> [PopAtom]
+    pAtomsOfConcept cpt = 
+      nub $
+         (nub . map fst . concatMap popPairs . concatMap popsOfRelation . filter isForSource . instances $ formalAmpersand)
+         ++
+         (nub . map snd . concatMap popPairs . concatMap popsOfRelation . filter isForTarget . instances $ formalAmpersand)               
+      where isForSource :: Relation -> Bool
+            isForSource rel = source rel == cpt
+            isForTarget :: Relation -> Bool
+            isForTarget rel = target rel == cpt
+
 grindedPops :: FSpec -> FSpec -> Relation -> [Pop]
 grindedPops formalAmpersand userFspec rel = 
   case filter (isForRel rel) (transformers userFspec) of

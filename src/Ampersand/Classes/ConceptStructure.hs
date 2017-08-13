@@ -51,29 +51,29 @@ instance ConceptStructure a => ConceptStructure [a] where
 
 instance ConceptStructure A_Context where
   concs ctx = foldr uni [ONE, makeConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
-              [ (concs.ctxpats) ctx
-              , (concs.ctxrs) ctx
-              , (concs.ctxds) ctx
-              , (concs.ctxpopus) ctx
-              , (concs.ctxcds) ctx
-              , (concs.ctxks) ctx
-              , (concs.ctxvs) ctx
-              , (concs.ctxgs) ctx
-              , (concs.ctxifcs) ctx
-              , (concs.ctxps) ctx
-              , (concs.ctxsql) ctx
-              , (concs.ctxphp) ctx
+              [ (concs . ctxcds) ctx
+              , (concs . ctxds) ctx
+              , (concs . ctxgs) ctx
+              , (concs . ctxifcs) ctx
+              , (concs . ctxks) ctx
+              , (concs . ctxpats) ctx
+              , (concs . ctxphp) ctx
+              , (concs . ctxpopus) ctx
+              , (concs . ctxps) ctx
+              , (concs . ctxrs) ctx
+              , (concs . ctxsql) ctx
+              , (concs . ctxvs) ctx
               ]
   expressionsIn ctx = foldr uni []
-                      [ (expressionsIn.ctxpats) ctx
-                      , (expressionsIn.ctxifcs) ctx
-                      , (expressionsIn.ctxrs) ctx
-                      , (expressionsIn.ctxks) ctx
-                      , (expressionsIn.ctxvs) ctx
-                      , (expressionsIn.ctxsql) ctx
-                      , (expressionsIn.ctxphp) ctx
-                      , (expressionsIn.multrules) ctx
-                      , (expressionsIn.identityRules) ctx
+                      [ (expressionsIn . ctxifcs) ctx
+                      , (expressionsIn . ctxks) ctx
+                      , (expressionsIn . ctxpats) ctx
+                      , (expressionsIn . ctxphp) ctx
+                      , (expressionsIn . ctxrs) ctx
+                      , (expressionsIn . ctxsql) ctx
+                      , (expressionsIn . ctxvs) ctx
+                      , (expressionsIn . identityRules) ctx
+                      , (expressionsIn . multrules) ctx
                       ]
 
 instance ConceptStructure IdentityDef where
@@ -89,10 +89,10 @@ instance ConceptStructure ViewSegment where
   expressionsIn = expressionsIn . vsmLoad
 
 instance ConceptStructure ViewSegmentPayLoad where
-  concs  (ViewExp e) = concs e
-  concs  _           = []
+  concs  (ViewExp e)  = concs e
+  concs  ViewText{} = []
   expressionsIn (ViewExp e) = [e]
-  expressionsIn _           = []
+  expressionsIn ViewText{}  = []
 instance ConceptStructure Expression where
   concs (EDcD d    ) = concs d
   concs (EDcI c    ) = [c]
@@ -117,8 +117,8 @@ instance ConceptStructure Signature where
 instance ConceptStructure ObjectDef where
   concs     obj = [target (objExpression obj)] `uni` concs (objmsub obj)
   expressionsIn obj = foldr uni []
-                     [ (expressionsIn.objExpression) obj
-                     , (expressionsIn.objmsub) obj
+                     [ (expressionsIn . objExpression) obj
+                     , (expressionsIn . objmsub) obj
                      ]
 
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
@@ -132,23 +132,23 @@ instance ConceptStructure SubInterface where
 
 instance ConceptStructure Pattern where
   concs pat = foldr uni []
-              [ (concs.ptrls) pat
-              , (concs.ptgns) pat
-              , (concs.ptdcs) pat
-              , (concs.ptups) pat
-              , (concs.ptids) pat
-              , (concs.ptxps) pat
+              [ (concs . ptrls) pat
+              , (concs . ptgns) pat
+              , (concs . ptdcs) pat
+              , (concs . ptups) pat
+              , (concs . ptids) pat
+              , (concs . ptxps) pat
               ]
   expressionsIn p = foldr uni []
-                     [ (expressionsIn.ptrls) p
-                     , (expressionsIn.ptids) p
-                     , (expressionsIn.ptvds) p
+                     [ (expressionsIn . ptrls) p
+                     , (expressionsIn . ptids) p
+                     , (expressionsIn . ptvds) p
                      ]
 
 instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
   expressionsIn ifc = foldr uni []
-                     [ (expressionsIn.ifcObj) ifc
+                     [ (expressionsIn . ifcObj) ifc
                      ]
 
 instance ConceptStructure Relation where
@@ -158,8 +158,8 @@ instance ConceptStructure Relation where
 instance ConceptStructure Rule where
   concs r   = concs (formalExpression r) `uni` concs (rrviol r)
   expressionsIn r = foldr uni []
-                   [ (expressionsIn.formalExpression ) r
-                   , (expressionsIn.rrviol) r
+                   [ (expressionsIn . formalExpression ) r
+                   , (expressionsIn . rrviol) r
                    ]
 
 instance ConceptStructure (PairView Expression) where

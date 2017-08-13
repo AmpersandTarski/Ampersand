@@ -36,6 +36,7 @@ data PopAtom =
     DirtyId String  -- ^ Any String. must be unique of course. (TType = Object)
   | PopAlphaNumeric String -- ^ Intended to be observable by users. Not a 'dirty id'.
   | PopInt Integer 
+  deriving (Eq,Ord)
 instance Show PopAtom where
  showsPrec _ x
    = showString $ 
@@ -78,7 +79,7 @@ transformers fSpec = map toTransformer [
      ,("arg"                   , "UnaryTerm"             , "Expression"
       , [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
-        , Just x <- [argx expr]
+        , Just x <- [arg expr]
         ]
       )
      ,("attIn"                 , "Attribute"             , "ObjectDef"
@@ -841,8 +842,8 @@ first :: Expression -> Maybe Expression
 first = first' . exprInfo
 second :: Expression -> Maybe Expression
 second = second' . exprInfo
-argx :: Expression -> Maybe Expression
-argx = arg' . exprInfo
+arg :: Expression -> Maybe Expression
+arg = arg' . exprInfo
 userCpt :: Expression -> Maybe A_Concept
 userCpt = userCpt' . exprInfo
 userSrc :: Expression -> Maybe A_Concept
@@ -1041,7 +1042,7 @@ exprInfo expr =
         , bindedRel' = bindedRel e
         , first'     = first e
         , second'    = second e
-        , arg'       = argx e
+        , arg'       = arg e
         , userCpt'   = userCpt e
         , userSrc'   = userSrc e
         , userTrg'   = userTrg e
