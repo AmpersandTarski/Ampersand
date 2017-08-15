@@ -85,7 +85,8 @@ fSpec2Solidity multi =
           [""
           ,"// Concept " <> (Text.pack$ showA cpt)
           ,"Concept " <> uniqueId fSpec cpt <> " = Concept({"
-          ,"  name: "<> Text.pack (name cpt)
+          --,"  name: "<> Text.pack (name cpt)
+          ,"  name: " <> (Text.pack . show . name $ cpt) <> ","
           ,"  ids: new bytes32[](0)"
           ,"});"
           ]
