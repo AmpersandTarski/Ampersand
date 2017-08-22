@@ -9,8 +9,10 @@ rieks.joosten@tno.nl
 TRUE
 
 
-1
-Comments
+3
+Ampersand is a tool for generating prototypes from relation algebra rules
+
+This file contains syntax coloring for exec engine log rules produced by such prototypes.
 3
 Please enter some text here that
 can be displayed as an example in
