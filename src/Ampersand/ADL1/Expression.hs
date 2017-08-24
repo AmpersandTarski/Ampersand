@@ -82,7 +82,7 @@ subExpressions expr =
     (EKl1 e)     -> [expr] `uni` subExpressions e
     (EFlp e)     -> [expr] `uni` subExpressions e
     (ECpl e)     -> [expr] `uni` subExpressions e
-    (EBrk e)     ->              subExpressions e
+    (EBrk e)     -> [expr] `uni` subExpressions e
     EDcD{}       -> [expr]
     EDcI{}       -> [expr]
     EEps{}       -> [expr]
