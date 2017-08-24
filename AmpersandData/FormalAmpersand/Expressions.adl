@@ -70,6 +70,7 @@ PATTERN "Expression definitions"
     CLASSIFY KleeneStar         ISA UnaryTerm
     CLASSIFY KleenePlus         ISA UnaryTerm
     CLASSIFY UnaryMinus         ISA UnaryTerm
+    CLASSIFY Bracket            ISA UnaryTerm
     CLASSIFY Intersection       ISA BinaryTerm
     CLASSIFY Union              ISA BinaryTerm
     CLASSIFY BinaryMinus        ISA BinaryTerm
