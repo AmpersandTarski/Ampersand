@@ -91,7 +91,7 @@ instance ConceptStructure ViewSegment where
 instance ConceptStructure ViewSegmentPayLoad where
   concs  (ViewExp e)  = concs e
   concs  ViewText{} = []
-  expressionsIn (ViewExp e) = [e]
+  expressionsIn (ViewExp e) = expressionsIn e
   expressionsIn ViewText{}  = []
 instance ConceptStructure Expression where
   concs (EDcD d    ) = concs d

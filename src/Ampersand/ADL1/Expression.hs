@@ -75,8 +75,6 @@ subExpressions expr =
     (ELrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (ERrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (EDia (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
-    (ECps (EEps{},r)) ->                                subExpressions r
-    (ECps (l,EEps{})) ->         subExpressions l
     (ECps (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (ERad (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
     (EPrd (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
