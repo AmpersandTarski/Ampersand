@@ -9,6 +9,7 @@ import Ampersand.FSpec
 import Data.List as List
 import Data.Monoid
 import Data.Text as Text
+-- import Data.List.Utils (replace)
 
 fSpec2Solidity :: MultiFSpecs -> Text.Text
 fSpec2Solidity multi =
@@ -76,8 +77,10 @@ fSpec2Solidity multi =
        <>[""
          ,"// RELATIONS:"]
        <>(mconcat . fmap showDecl . vrels $ fSpec)
-       
-   where
+       <>[""
+         ,"// RULES:"]
+       <>(mconcat (fmap showRule (List.zip (vrules fSpec) (List.take (List.length $ vrules fSpec) [1,2..]))))
+  where
      fSpec = userFSpec multi
      showConcept :: A_Concept -> [Text.Text]
      showConcept cpt 
@@ -111,7 +114,15 @@ fSpec2Solidity multi =
           ,"});"
           ] 
        where showProp :: (Declaration -> Bool) -> Text.Text
-             showProp p = Text.toLower . Text.pack . show . p $ decl   
+             showProp p = Text.toLower . Text.pack . show . p $ decl
+     showRule :: (Rule, Int) -> [Text.Text]
+     showRule (rule, idx)
+        = [""
+          ,"//" <> replace "\n" "\n//" (Text.pack$ showA rule)
+          ,"function rule" <> (Text.pack $ show idx) <> "() {"
+          ,"}"
+          ]
+
 
 class UniqueId a where
   uniqueId :: FSpec -> a -> Text
