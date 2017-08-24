@@ -11,6 +11,7 @@ module Ampersand.Input.ADL1.CtxError
   , mkErrorReadingINCLUDE
   , mkDanglingPurposeError
   , mkUndeclaredError, mkMultipleInterfaceError, mkInterfaceRefCycleError, mkIncompatibleInterfaceError
+  , mkCyclesInGensError
   , mkMultipleDefaultError, mkDanglingRefError
   , mkIncompatibleViewError, mkOtherAtomInSessionError, mkOtherTupleInSessionError
   , mkInvalidCRUDError
@@ -126,6 +127,19 @@ mkMultipleTypesInTypologyError tripls
              , "of them have the same TYPE:"
              ]++
              [ "  - REPRESENT "++name c++" TYPE "++show t++" at "++showFullOrig orig | (c,t,origs) <- tripls, orig <- origs]
+mkCyclesInGensError :: [[A_Gen]] -> Guarded a
+mkCyclesInGensError cycles = Errors (map mkErr cycles)
+ where 
+  mkErr :: [A_Gen] -> CtxError
+  mkErr gs = CTXE o msg
+    where
+      o = origin (head gs)
+      msg = intercalate "\n" $
+             [ "Classifications must not contain cycles."
+             , "The following CLASSIFY statements are cyclic:"
+             ]++
+             [ "  - "++showA gn++" at "++showFullOrig (origin gn) | gn <- gs]
+
 mkMultipleRootsError :: [A_Concept] -> [A_Gen] -> Guarded a
 mkMultipleRootsError roots gs
  = Errors [CTXE o msg]
