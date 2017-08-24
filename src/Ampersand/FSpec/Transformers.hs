@@ -1035,16 +1035,16 @@ exprInfo expr =
         , singleton' = Nothing
         }
     (EBrk e)     -> ExprInfo
-        { binOp'     = binOp e
-        , unaryOp'   = unaryOp e
-        , bindedRel' = bindedRel e
-        , first'     = first e
-        , second'    = second e
-        , arg'       = arg e
-        , userCpt'   = userCpt e
-        , userSrc'   = userSrc e
-        , userTrg'   = userTrg e
-        , singleton' = singleton e
+        { binOp'     = Nothing
+        , unaryOp'   = Just Bracket
+        , bindedRel' = Nothing
+        , first'     = Nothing
+        , second'    = Nothing
+        , arg'       = Just e
+        , userCpt'   = Nothing
+        , userSrc'   = Nothing
+        , userTrg'   = Nothing
+        , singleton' = Nothing
         }
     (EDcD r)     -> ExprInfo
         { binOp'     = Nothing
