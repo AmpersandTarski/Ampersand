@@ -571,6 +571,10 @@ instance Hashable Expression where
         EDcV sgn   -> (19::Int) `hashWithSalt` sgn
         EMp1 val c -> (21::Int) `hashWithSalt` show val `hashWithSalt` c
 
+instance Unique Expression where
+  showUnique = show -- showA is not good enough: epsilons are disguised, so there can be several different
+                    -- expressions with the same showA. 
+
 instance Unique (PairView Expression) where
   showUnique = show
 instance Unique (PairViewSegment Expression) where

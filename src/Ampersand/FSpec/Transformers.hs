@@ -772,9 +772,6 @@ class HasDirtyId a where
             
 instance Unique a => HasDirtyId a where
   rawId = uniqueShow True
-instance Unique Expression where
-  showUnique = show -- showA is not good enough: epsilons are disguised, so there can be several different
-                    -- expressions with the same showA. 
 class Instances a => HasPurpose a where 
   purposes :: FSpec -> a -> [Purpose]
   purposes fSpec a = 
