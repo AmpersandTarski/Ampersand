@@ -1,5 +1,6 @@
 # Release notes of Ampersand
 ## Unreleased changes 
+  * [Issue #693](https://github.com/AmpersandTarski/Ampersand/issues/693) Fixed a bug about cyclic defined CLASSIFY statements
 
 ## v3.8.7 (4 august 2017)
   * Upgraded to LTS-8.22

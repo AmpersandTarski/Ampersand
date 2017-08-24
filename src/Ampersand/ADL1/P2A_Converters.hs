@@ -369,7 +369,17 @@ pCtx2aCtx opts
           mkTypology :: [A_Concept] -> Guarded Typology
           mkTypology cs = 
             case filter (not . isSpecific) cs of
-               []  -> fatal ("empty typology for "++show cs++".")
+               []  -> -- there must be at least one cycle in the CLASSIFY statements.
+                      mkCyclesInGensError (nub cycles)
+                        where cycles = filter hasMultipleSpecifics $ getCycles [(g, f g) | g <- gns]
+                                where
+                                  f :: A_Gen -> [A_Gen]
+                                  f g = [gn | gn <- gns
+                                            , gn /= g
+                                            , genspc g `elem` concs gn
+                                        ]
+                                  hasMultipleSpecifics :: [A_Gen]-> Bool
+                                  hasMultipleSpecifics gs = length (nub (map genspc gs)) > 1
                [r] -> pure  
                           Typology { tyroot = r
                                    , tyCpts = reverse . sortSpecific2Generic gns $ cs
