@@ -64,12 +64,15 @@ RULE checkExpressionRelation : getExpressionRelation |- (usedIn~;-I;usedIn/\I);g
 -- How is that different from: usedIn~;getExpressionRelation |- I
 MEANING "An editable expression contains one relation only."
 
+{- HJO, 20170825 Disabled this rule, for kleenePlus is currently not supported by the database 
 RULE "possible inputs" : ifcInputs |- ifcObj;(attIn~;attObj)+;objExpression;getExpressionRelation
 MEANING "Allow only those input relations that have an editable field inside the interface."
 MESSAGE "Unusable input relation in interface:"
 VIOLATION (TXT "Relation ", TGT I, TXT " has no editable field in interface ", SRC I)
+-}
 RULE "accessible relations" : V[Context*Interface];ifcObj;objExpression;getExpressionRelation
 MEANING "For every relation that is potentially editable, there exists an interface through which it can be accessed."
+ROLE "FormalAmpersand" MAINTAINS "accessible relations"
 ENDPATTERN
 
 {-
