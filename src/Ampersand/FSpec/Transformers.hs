@@ -519,7 +519,10 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("purpose"               , "View"                  , "Purpose" 
-      , []  --TODO
+      , [(dirtyId vw, dirtyId purp) 
+        | vw::ViewDef  <- instances fSpec
+        , purp         <- purposes fSpec vw
+        ]
       )
      ,("relsDefdIn"            , "Pattern"               , "Relation"
       , [(dirtyId pat, dirtyId rel) 
