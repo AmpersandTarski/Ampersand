@@ -12,7 +12,7 @@ PATTERN "Expression definitions"
     RULE bindUsedIn : bind |- usedIn~
     VIOLATION (TXT "{EX} InsPair;usedIn;Relation;", TGT I, TXT ";Expression;", SRC I[Expression])
 
-    RELATION sign[Expression*Signature]
+    RELATION sign[Expression*Signature][UNI,TOT]
     RELATION in[Pair*Expression]
 
     VIEW Equivalence        : Equivalence(TXT "RULE ", first[BinaryTerm*Expression], TXT " = ", second[BinaryTerm*Expression])
