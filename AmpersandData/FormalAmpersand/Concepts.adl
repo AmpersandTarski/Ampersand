@@ -1,6 +1,7 @@
 CONTEXT AST IN ENGLISH 
 
 PATTERN Concepts
+    VIEW Concept: Concept(name)
     RELATION name[Concept*ConceptName] [UNI,TOT,SUR]
       ROLE ExecEngine MAINTAINS "del unused ConceptName"
       RULE "del unused ConceptName" : I[ConceptName] |- name~;name
