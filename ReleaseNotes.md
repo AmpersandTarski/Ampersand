@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 ## Unreleased changes 
+  * Somewhat more verbose test output
+  * [Issue #692](https://github.com/AmpersandTarski/Ampersand/issues/692) Better allignment between Formal Ampersand and meatgrinder 
   * [Issue #693](https://github.com/AmpersandTarski/Ampersand/issues/693) Fixed a bug about cyclic defined CLASSIFY statements
 
 ## v3.8.7 (4 august 2017)

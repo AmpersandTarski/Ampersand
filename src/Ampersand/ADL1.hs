@@ -26,7 +26,7 @@ import Ampersand.Core.ParseTree as X (
          , Term(..)
          , TermPrim(..), P_NamedRel(..)
          , P_Gen(..)
-         , P_Declaration(..)
+         , P_Relation(..)
          , ConceptDef(..)
          )
 import Ampersand.Core.AbstractSyntaxTree as X (
@@ -43,7 +43,7 @@ import Ampersand.Core.AbstractSyntaxTree as X (
          ,ObjectDef(..)
          , Default(..)
          ,SubInterface(..)
-         ,Declaration(..),decusr
+         ,Relation(..),decusr
          ,Interface(..)
          ,Pattern(..)
          ,Rule(..)

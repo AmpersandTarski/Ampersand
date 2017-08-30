@@ -135,9 +135,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               rs    = [r | r<-vrules fSpec, c `elem` concs r]
           in
           CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
-                  , csRels = [r | r@Sgn{} <- relsMentionedIn rs   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
-                             , not (isProp r)
-                             ]
+                  , csRels = filter (not . isProp) (relsMentionedIn rs)   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
         --  PTCDPattern makes a picture of at least the relations within pat;
@@ -145,7 +143,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTCDPattern pat ->
           let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
-              xrels = nub [r | c<-orphans, r@Sgn{}<-vrels fSpec
+              xrels = nub [r | c<-orphans, r<-vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
@@ -153,9 +151,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               gs   = fsisa fSpec
               cpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
               cpts' = concs pat `uni` concs rels
-              rels = [r | r@Sgn{}<-relsMentionedIn pat
-                             , not (isProp r)    -- r is not a property
-                             ]
+              rels = filter (not . isProp) (relsMentionedIn pat)
           in
           CStruct { csCpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
                   , csRels = rels `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
@@ -169,7 +165,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               decs = relsDefdIn pat `uni` relsMentionedIn (udefrules pat)
           in
           CStruct { csCpts = cpts
-                  , csRels = [r | r@Sgn{}<-decs
+                  , csRels = [r | r <- decs
                              , not (isProp r), decusr r    -- r is not a property
                              ]
                   , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
@@ -180,7 +176,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
           CStruct { csCpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
-                  , csRels = [d | d@Sgn{}<-relsMentionedIn r, decusr d
+                  , csRels = [d | d<-relsMentionedIn r, decusr d
                              , not (isProp d)    -- d is not a property
                              ]
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
@@ -256,7 +252,7 @@ instance Navigatable A_Concept where
    interfacename _ = "Concept" --see Atlas.adl
    itemstring = name  --copied from atlas.hs
 
-instance Navigatable Declaration where
+instance Navigatable Relation where
    interfacename _ = "Relatiedetails"
    itemstring x = name x ++ "["
                   ++ (if source x==target x then name(source x) else name(source x)++"*"++name(target x))
@@ -264,7 +260,7 @@ instance Navigatable Declaration where
 -}
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
-                                   , csRels :: [Declaration]   -- ^ The relations, (the edges in the graph)
+                                   , csRels :: [Relation]   -- ^ The relations, (the edges in the graph)
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
                                    }
 
@@ -295,7 +291,7 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         relationNodesAndEdges ::
-             (Declaration,Int)           -- ^ tuple contains the declaration and its rank
+             (Relation,Int)           -- ^ tuple contains the relation and its rank
           -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         relationNodesAndEdges (r,n)
           | doubleEdges opts
@@ -348,10 +344,10 @@ data PictureObject = CptOnlyOneNode A_Concept    -- ^ Node of a concept that ser
                    | CptConnectorNode A_Concept  -- ^ Node of a concept that serves as connector of relations to that concept
                    | CptNameNode A_Concept       -- ^ Node of a concept that shows the name
                    | CptEdge                     -- ^ Edge of a concept to connect its nodes
-                   | RelOnlyOneEdge Declaration  -- ^ Edge of a relation that connects to the source and the target
-                   | RelSrcEdge     Declaration  -- ^ Edge of a relation that connects to the source
-                   | RelTgtEdge     Declaration  -- ^ Edge of a relation that connects to the target
-                   | RelIntermediateNode    Declaration  -- ^ Intermediate node, as a hindge for the relation edges
+                   | RelOnlyOneEdge Relation  -- ^ Edge of a relation that connects to the source and the target
+                   | RelSrcEdge     Relation  -- ^ Edge of a relation that connects to the source
+                   | RelTgtEdge     Relation  -- ^ Edge of a relation that connects to the target
+                   | RelIntermediateNode    Relation  -- ^ Intermediate node, as a hindge for the relation edges
                    | IsaOnlyOneEdge              -- ^ Edge of an ISA relation without a hinge node
                    | TotalPicture                -- ^ Graph attributes
 
@@ -432,10 +428,10 @@ handleFlags po opts =
                       , Landscape False
                       ]
 
-isInvFunction :: Declaration -> Bool
+isInvFunction :: Relation -> Bool
 isInvFunction d = isInj d && isSur d
 
-crowfootArrowType :: Bool -> Declaration -> ArrowType
+crowfootArrowType :: Bool -> Relation -> ArrowType
 crowfootArrowType isHead r
    = AType (if isHead 
             then getCrowfootShape (isUni r) (isTot r)

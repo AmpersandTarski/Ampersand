@@ -1,7 +1,7 @@
 CONTEXT RAP IN ENGLISH
 --! It is allowed to change texts and/or the order of texts IF AND ONLY IF this is also done in the corresponding Haskell files !--
 INCLUDE "Concepts.adl"
---INCLUDE "AST.ifc"
+INCLUDE "AST.ifc"
 --INCLUDE "MinimalAST.xlsx" -- Contains minimal population. Anything discarded from it must violate an invariant
 INCLUDE "Contexts.adl"
 INCLUDE "Relations.adl"
@@ -20,12 +20,14 @@ INCLUDE "Interfaces.adl"
 -}
 RELATION interfaces[Context*Interface]
 RELATION name[Role*RoleName]
+REPRESENT RoleName TYPE ALPHANUMERIC
 RELATION markupText[Purpose*MarkupText]
 RELATION urlEncodedName[Concept*EncodedName]
+REPRESENT EncodedName TYPE ALPHANUMERIC
 RELATION context[Relation*Context]
-RELATION ttype[Concept*TType]
+RELATION ttype[Concept*TType][UNI]
+REPRESENT TType TYPE ALPHANUMERIC
 RELATION allRoles[Context*Role]
-RELATION sign[Expression*Signature]
 RELATION relsDefdIn[Pattern*Relation]
 RELATION maintains[Role*Rule]
 RELATION context[Population*Context]
@@ -34,12 +36,15 @@ RELATION urlEncodedName[Pattern*EncodedName]
 RELATION interfaces[Role*Interface]
 RELATION context[Population*Context]
 RELATION language[Context*Language]
+REPRESENT Language TYPE ALPHANUMERIC
 RELATION message[Rule*Message]
 RELATION origin[Rule*Origin]
+REPRESENT Origin TYPE ALPHANUMERIC
 RELATION versionInfo[Context*AmpersandVersion]
+REPRESENT AmpersandVersion TYPE ALPHANUMERIC
 RELATION urlEncodedName[Rule*EncodedName]
 RELATION context[IdentityDef*Context]
-RELATION ifcname[Interface*String]
+
 {- ******************************************** 
    *** Einde elders neer te zetten relaties *** 
    ******************************************** 

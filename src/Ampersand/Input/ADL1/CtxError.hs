@@ -45,8 +45,6 @@ import Text.Parsec.Error (Message(..), messageString)
 import Ampersand.Input.ADL1.FilePos()
 import Data.Monoid
 
-_notUsed :: a
-_notUsed = undefined fatal
 
 data CtxError = CTXE Origin String -- SJC: I consider it ill practice to export CTXE, see remark at top
               | PE Message
@@ -175,12 +173,12 @@ instance GetOneGuarded (P_SubIfc a) where
 instance GetOneGuarded SubInterface where
   hasNone o = Errors [CTXE (origin o)$ "Required: one A-subinterface in "++showP o]
 
-instance GetOneGuarded Declaration where
+instance GetOneGuarded Relation where
   getOneExactly _ [d] = Checked d
-  getOneExactly o []  = Errors [CTXE (origin o)$ "No declaration for "++showP o]
-  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many declarations match "++showP o++".\n  Be more specific. These are the matching declarations:"++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]]
+  getOneExactly o []  = Errors [CTXE (origin o)$ "No relation for "++showP o]
+  getOneExactly o lst = Errors [CTXE (origin o)$ "Too many relations match "++showP o++".\n  Be more specific. These are the matching relations:"++concat ["\n  - "++showA l++" at "++showFullOrig (origin l) | l<-lst]]
 
-mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Declaration -> SrcOrTgt -> a -> Guarded a1
+mkTypeMismatchError :: (Traced a2, Named a) => a2 -> Relation -> SrcOrTgt -> a -> Guarded a1
 mkTypeMismatchError o decl sot conc
  = Errors [CTXE (origin o) message]
  where
@@ -194,7 +192,7 @@ cannotDisambRel o exprs
   where
    message =
     case exprs of
-     [] -> "No declarations match the relation: "++showP o
+     [] -> "No relations match the relation: "++showP o
      _  -> case o of
              (PNamedR(PNamedRel _ _ Nothing))
                 -> intercalate "\n" $
@@ -295,7 +293,7 @@ mkOtherAtomInSessionError :: AAtomValue -> CtxError
 mkOtherAtomInSessionError atomValue =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showA atomValue++"`."
 
-mkOtherTupleInSessionError :: Declaration -> AAtomPair -> CtxError
+mkOtherTupleInSessionError :: Relation -> AAtomPair -> CtxError
 mkOtherTupleInSessionError r pr =
   CTXE OriginUnknown $ "The special concept `SESSION` cannot contain an initial population. However it is populated with `"++showA pr++"` by populating the relation `"++showA r++"`."
 

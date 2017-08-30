@@ -15,7 +15,7 @@ import Data.Maybe
 -- NOTE: The definitions of the various CRUD aspects are still a bit quirky and will most-likely need refinement. 
 --      (see notes/todo's here and in ampersand-models/Tests/NoSentinel/Crud.adl)
 
-data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[A_Concept])] -- crud concept together with its target concept in the surjective/total transitive closure of declarations 
+data CrudInfo = CrudInfo { allCrudObjects :: [(A_Concept,[A_Concept])] -- crud concept together with its target concept in the surjective/total transitive closure of relations 
                          , crudObjsPerInterface :: [ (Interface, [(A_Concept,Bool,Bool,Bool,Bool)]) ]
                          , crudObjsPerConcept :: [(A_Concept, ([Interface], [Interface], [Interface], [Interface]))]
                          -- TODO: think about representation of these matrices
@@ -38,7 +38,7 @@ getCrudObjectsForInterface crudInfo ifc =
   fromMaybe (fatal $ "NO CRUD objects for interface " ++ show (name ifc))
             (lookup ifc $ crudObjsPerInterface crudInfo) 
   
-mkCrudInfo :: [A_Concept] -> [Declaration] -> [Interface] -> CrudInfo
+mkCrudInfo :: [A_Concept] -> [Relation] -> [Interface] -> CrudInfo
 mkCrudInfo  allConceptsPrim decls allIfcs =
   CrudInfo crudObjs crudObjsPerIfc (getCrudObjsPerConcept crudObjsPerIfc)
   where allConcs = [ c | c <- allConceptsPrim, not $ c == ONE || name c == "SESSION" ]
@@ -53,12 +53,12 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
           -- TODO: use transClosureMap instead of transClosureMap', it's faster, and this is transClosureMap's last occurrence
         
         
-        -- crud concept together with its target concept in the surjective/total transitive closure of declarations
+        -- crud concept together with its target concept in the surjective/total transitive closure of relations
         crudObjs :: [(A_Concept, [A_Concept])]
         crudObjs = [ (crudCncpt, Map.findWithDefault [] crudCncpt transSurjClosureMap) -- TODO: should [] be a fatal? 
                    | crudCncpt <- crudCncpts ]
         
-        getCrudUpdateConcpts :: Declaration -> [A_Concept]
+        getCrudUpdateConcpts :: Relation -> [A_Concept]
         getCrudUpdateConcpts decl = 
           if  isSur decl || isTot decl  -- TODO: no isUni?  -- TODO: no isInj?
           then [ cObj | (cObj, cCncpts) <- crudObjs, source decl `elem` cCncpts && target decl `elem` cCncpts ]    
@@ -83,7 +83,7 @@ mkCrudInfo  allConceptsPrim decls allIfcs =
                 (editableDecls, editableTgts) = unzip $ getEditableDeclsAndTargets allIfcs ifc
                                              
 -- NOTE: editable target is not necessarily the target of decl, as it may have been flipped (in which case it's the source)
-getEditableDeclsAndTargets :: [Interface] -> Interface -> [(Declaration, A_Concept)]
+getEditableDeclsAndTargets :: [Interface] -> Interface -> [(Relation, A_Concept)]
 getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterfaceExprs allIfcs ifc
   where editableTarget expr = 
           case getExpressionRelation expr of
@@ -93,7 +93,7 @@ getEditableDeclsAndTargets allIfcs ifc = concatMap editableTarget $ getAllInterf
 
 getAllInterfaceExprs :: [Interface] -> Interface -> [Expression]
 getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
-  where getExprs Obj{objctx=expr, objmsub=subObj} = 
+  where getExprs Obj{objExpression=expr, objmsub=subObj} = 
           expr : case subObj of 
                    Nothing                -> []
                    Just si -> case si of
@@ -101,7 +101,7 @@ getAllInterfaceExprs allIfcs ifc = getExprs $ ifcObj ifc
                                InterfaceRef{siIsLink = False} ->
                                   case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
                                     []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
-                                    (_:_:_) -> fatal ("Multiple declarations of referenced interface " ++ siIfcId si)
+                                    (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                                     [i]     -> getAllInterfaceExprs allIfcs i
                                Box{} -> concatMap getExprs (siObjs si)
 

@@ -110,8 +110,8 @@ class SQLAble a where
           placeHolder = BinOp (col2ValueExpr (bseSrc bqe)) [Name "="] (StringLit placeHolderSQL) 
 instance SQLAble Expression where  
   getBinQueryExpr fSpec = setDistinct . selectExpr fSpec
-instance SQLAble Declaration where
-  getBinQueryExpr = selectDeclaration
+instance SQLAble Relation where
+  getBinQueryExpr = selectRelation
      
 sourceAlias, targetAlias :: Name
 sourceAlias = Name "src" 
@@ -177,8 +177,8 @@ maybeSpecialCase fSpec expr =
              [ "Optimized case for: <expr1> intersect with the "
                    ++(if isFlipped then "flipped " else "")
                    ++"complement of "++(case expr2 of 
-                                           EDcD (dcl@Sgn{}) -> "`"++name dcl++"`"
-                                           _                -> "<expr2>"
+                                           (EDcD dcl) -> "`"++name dcl++"`"
+                                           _          -> "<expr2>"
                                         )++"."
              , "where "
              , "  <expr1> = "++showA expr1++" ("++show (sign expr1)++")"
@@ -213,8 +213,8 @@ maybeSpecialCase fSpec expr =
       fun = if isFlipped then flp else id
       (expr2Src,expr2trg,leftTable) =
          case expr2 of
-           EDcD (dcl@Sgn{}) -> 
-               let (plug,s,t) = getDeclarationTableInfo fSpec dcl
+           EDcD rel -> 
+               let (plug,s,t) = getRelationTableInfo fSpec rel
                    lt = TRSimple [QName (name plug)] `as` table2
                in if isFlipped 
                   then (QName (name t), QName (name s), lt)
@@ -613,7 +613,7 @@ nonSpecialSelectExpr fSpec expr=
                                            , bseTbl = [sqlConceptTable fSpec c]
                                            , bseWhr = Just (notNull cAtt)
                                            }
-    (EDcD d)             -> selectDeclaration fSpec d
+    (EDcD d)             -> selectRelation fSpec d
 
     (EBrk e)             -> selectExpr fSpec e
 
@@ -667,8 +667,8 @@ nonSpecialSelectExpr fSpec expr=
                     closedWorldName = QName $ "cartesian product of "++ name (source e) ++ " and " ++ name (target e) 
                     theClosedWorldExpression = EDcV (sign e) 
                         
-    EKl0 _               -> fatal "SQL cannot create closures EKl0 (`SELECT * FROM NotExistingKl0`)"
-    EKl1 _               -> fatal "SQL cannot create closures EKl1 (`SELECT * FROM NotExistingKl1`)"
+    EKl0 _               -> fatal "Sorry, there currently is no database support for * (Kleene star).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
+    EKl1 _               -> fatal "Sorry, there currently is no database support for + (Kleene plus).\n It is used in your ampersand script, but it currently cannot be used in a prototype."
     (EDif (EDcV _,x)) -> BQEComment [BlockComment $ "case: EDif V x"++"EDif V ( \""++showA x++"\" ) \""++show (sign expr)++"\""]
                                     (selectExpr fSpec (notCpl x))
 -- The following definitions express code generation of the remaining cases in terms of the previously defined generators.
@@ -788,31 +788,9 @@ toTableRef :: BinQueryExpr -> TableRef
 toTableRef = TRQueryExpr . toSQL
      
 
-selectDeclaration :: FSpec -> Declaration -> BinQueryExpr
-selectDeclaration fSpec dcl =
-  case dcl of
-    Sgn{}  -> leafCode (getDeclarationTableInfo fSpec dcl)
-    Isn{}  -> let (plug, c) = getConceptTableInfo fSpec (detyp dcl)
-              in leafCode (plug, c, c)
-    Vs sgn
-     | source sgn == ONE -> fatal "ONE is not expected at this place"
-     | target sgn == ONE -> fatal "ONE is not expected at this place"
-     | otherwise
-           -> BSE { bseSetQuantifier = SQDefault
-                  , bseSrc = Col { cTable = [Name "vfst"]
-                                 , cCol   = [sqlAttConcept fSpec (source sgn)]
-                                 , cAlias = []
-                                 , cSpecial = Nothing}
-                  , bseTrg = Col { cTable = [Name "vsnd"]
-                                 , cCol   = [sqlAttConcept fSpec (target sgn)]
-                                 , cAlias = []
-                                 , cSpecial = Nothing}
-                  , bseTbl = [sqlConceptTable fSpec (source sgn) `as` Name "vfst"
-                             ,sqlConceptTable fSpec (target sgn) `as` Name "vsnd"]
-                  , bseWhr = Just . conjunctSQL . map notNull $
-                               [ Iden [Name "vfst", sqlAttConcept fSpec (source sgn)]
-                               , Iden [Name "vsnd", sqlAttConcept fSpec (target sgn)]]
-                  }
+selectRelation :: FSpec -> Relation -> BinQueryExpr
+selectRelation fSpec dcl =
+  leafCode (getRelationTableInfo fSpec dcl)
    where
      leafCode :: (PlugSQL,SqlAttribute,SqlAttribute) -> BinQueryExpr
      leafCode (plug,s,t) 
@@ -1096,12 +1074,12 @@ broadQuery fSpec obj =
    Nothing                -> toSQL baseBinExpr
    Just InterfaceRef{}    -> toSQL baseBinExpr
    Just Box{siObjs=sObjs} -> 
-                    case filter (isInBroadQuery (objctx obj)) sObjs of
+                    case filter (isInBroadQuery (objExpression obj)) sObjs of
                        [] -> toSQL baseBinExpr
                        xs -> extendWithCols xs baseBinExpr
        
  where  
-  baseBinExpr = getBinQueryExprPlaceholder fSpec . objctx $ obj
+  baseBinExpr = getBinQueryExprPlaceholder fSpec . objExpression $ obj
 
   extendWithCols :: [ObjectDef] -> BinQueryExpr -> QueryExpr
   extendWithCols objs bqe 
@@ -1137,7 +1115,7 @@ broadQuery fSpec obj =
      plainQE = toSQL bqe
      makeCol :: Maybe Name -> ObjectDef -> (ValueExpr, Maybe Name)
      makeCol tableName col =
-       case attThatisInTableOf (target . objctx $ obj) col of
+       case attThatisInTableOf (target . objExpression $ obj) col of
             Nothing  -> fatal ("this is unexpected behaviour. "++show col)
             Just att -> ( Iden ( case tableName of
                                    Nothing -> [QName (name att)]
@@ -1169,12 +1147,12 @@ broadQuery fSpec obj =
        where 
          org = Name "org"
          ct  = Name "cptTbl"
-     tableCpt = source . objctx . head $ objs
+     tableCpt = source . objExpression . head $ objs
 
   isInBroadQuery :: Expression -> ObjectDef -> Bool
   isInBroadQuery ctxExpr sObj = 
-     (isUni . objctx $ sObj) && 
-     (isJust . attThatisInTableOf (target . objctx $ obj) $ sObj) &&
+     (isUni . objExpression $ sObj) && 
+     (isJust . attThatisInTableOf (target . objExpression $ obj) $ sObj) &&
      (source ctxExpr /= target ctxExpr || null (primitives ctxExpr)) --this is required to prevent conflicts in rows of the same broad table. See explanation in issue #627
 
   attThatisInTableOf :: A_Concept -> ObjectDef -> Maybe SqlAttribute
@@ -1187,10 +1165,10 @@ broadQuery fSpec obj =
          where
             (plug, _ ) = getConceptTableInfo fSpec cpt
             theDcl :: Maybe (PlugSQL, SqlAttribute)
-            theDcl = case objctx od of
-                       EFlp (EDcD d) -> let (p, s, _) = getDeclarationTableInfo fSpec d
+            theDcl = case objExpression od of
+                       EFlp (EDcD d) -> let (p, s, _) = getRelationTableInfo fSpec d
                                         in Just (p, s)
-                       EDcD d        -> let (p, _, t) = getDeclarationTableInfo fSpec d
+                       EDcD d        -> let (p, _, t) = getRelationTableInfo fSpec d
                                         in Just (p, t)
                        EDcI c        -> Just $ getConceptTableInfo fSpec c
                        _             -> Nothing

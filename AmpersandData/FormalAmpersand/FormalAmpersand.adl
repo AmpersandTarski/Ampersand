@@ -5,6 +5,6 @@ THEMES Plugs, Context, Specialization
 {-
 PURPOSE CONTEXT FormalAmpersand
 {+Formal Ampersand is the specification of Ampersand in Ampersand. It's main purpose is to act as a reference to the language. 
--}
++}
 
 ENDCONTEXT

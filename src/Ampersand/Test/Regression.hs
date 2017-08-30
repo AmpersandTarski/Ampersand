@@ -45,7 +45,8 @@ doTestSet indent dir fs
               Left err -> do putStrLni $ dir </> yaml ++" could not be parsed."
                              putStrLni $ prettyPrintParseException err
                              return 1
-              Right ti -> runTests ti $$ getResults
+              Right ti -> do putStrLni $ "Command: "++command ti++if shouldSucceed ti then " (should succeed)." else " (should fail)."
+                             runTests ti $$ getResults
   | otherwise =
        do putStrLni $ "Nothing to do. ("++yaml++" not present)"
           return 0

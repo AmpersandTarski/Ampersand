@@ -6,7 +6,7 @@ module Ampersand.Graphic.ClassDiagram
 import Data.List
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
-     ( A_Concept, Declaration, A_Gen
+     ( A_Concept, Relation, A_Gen
      )
 
 data ClassDiag = OOclassdiagram {cdName :: String
@@ -45,7 +45,7 @@ data Association    = OOAssoc  { assSrc ::     String           -- ^ source: the
                                , assTgt ::     String           -- ^ target: the name of the target class
                                , assrhm ::     Multiplicities   -- ^ right hand side multiplicities
                                , assrhr ::     String           -- ^ right hand side role
-                               , assmdcl ::    Maybe Declaration -- ^ the declarations that caused this association , if any.
+                               , assmdcl ::    Maybe Relation -- ^ the relations that caused this association , if any.
                                } deriving Show
 data Aggregation    = OOAggr   { aggDel :: Deleting             --
                                , aggChild ::  A_Concept         --

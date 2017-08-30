@@ -41,9 +41,9 @@ makeFSpec opts context
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
               , roleInterfaces = fSpecRoleInterfaces
-              , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
+              , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objExpression (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
-                                      || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
+                                      || ctxrel `notElem` map (objExpression.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fDeriveProofs = deriveProofs opts context 
               , fRoleRels    = nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
@@ -97,7 +97,7 @@ makeFSpec opts context
               , allViolations  = [ (r,vs)
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
-              , allExprs     = expressionsIn context
+              , allExprs     = expressionsIn context `uni` expressionsIn allConjs
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
@@ -127,7 +127,7 @@ makeFSpec opts context
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
-     ruleviolations r = case rrexp r of
+     ruleviolations r = case formalExpression r of
           EEqu{} -> (cra >- crc) ++ (crc >- cra)
           EInc{} -> cra >- crc
           _      -> pairsinexpr (EDcV (sign (consequent r))) >- crc  --everything not in con
@@ -197,7 +197,7 @@ makeFSpec opts context
          UserDefined  -> True
          Multiplicity -> False
          Identity     -> False
-     calcProps :: Declaration -> Declaration
+     calcProps :: Relation -> Relation
      calcProps d = d{decprps_calc = Just calculated}
          where calculated = decprps d `uni` [Tot | d `elem` totals]
                                       `uni` [Sur | d `elem` surjectives]
@@ -310,13 +310,13 @@ makeFSpec opts context
 --  A script without any mention of interfaces is supplemented
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
---          to ensure insertability of entities (signal declarations are excluded)
-     cRels = [     EDcD d  | d@Sgn{}<-calculatedDecls, isTot d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-calculatedDecls, not (isTot d) && isSur d, not$decplug d]
+--          to ensure insertability of entities (signal relations are excluded)
+     cRels = [     EDcD d  | d<-calculatedDecls, isTot d, not$decplug d]++
+             [flp (EDcD d) | d<-calculatedDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
---          to ensure deletability of entities (signal declarations are excluded)
-     dRels = [     EDcD d  | d@Sgn{}<-calculatedDecls, isInj d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-calculatedDecls, not (isInj d) && isUni d, not$decplug d]
+--          to ensure deletability of entities (signal relations are excluded)
+     dRels = [     EDcD d  | d<-calculatedDecls, isInj d, not$decplug d]++
+             [flp (EDcD d) | d<-calculatedDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
@@ -339,7 +339,7 @@ makeFSpec opts context
       = let recur es
              = [ Obj { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
-                     , objctx  = t
+                     , objExpression  = t
                      , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
@@ -357,7 +357,7 @@ makeFSpec opts context
         [Ifc { ifcname     = name c
              , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
-                                 , objctx  = EDcI c
+                                 , objExpression  = EDcI c
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
@@ -371,11 +371,10 @@ makeFSpec opts context
         , let objattributes = recur cl
         , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
         , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
-          not (length objattributes==1 && isIdent(objctx(head objattributes)))
+          not (length objattributes==1 && isIdent(objExpression(head objattributes)))
         , let e0=head cl, not (null e0) || fatal "null e0"
         , let c=source (head e0)
-        , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]++
-                       [ Isn cpt |  EDcI cpt <- concatMap primsMentionedIn (expressionsIn objattributes)]
+        , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]
         ]
      --end otherwise: default theme
      --end stap4a
@@ -383,7 +382,7 @@ makeFSpec opts context
       = [Ifc { ifcname     = nm
              , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
-                                 , objctx  = EDcI ONE
+                                 , objExpression  = EDcI ONE
                                  , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
@@ -394,7 +393,7 @@ makeFSpec opts context
              , ifcRoles    = []
              }
         | ifcc<-step4a
-        , let c   = source(objctx (ifcObj ifcc))
+        , let c   = source(objExpression (ifcObj ifcc))
               nm'::Int->String
               nm' 0  = plural printingLanguage (name c)
               nm' i  = plural printingLanguage (name c) ++ show i
@@ -404,7 +403,7 @@ makeFSpec opts context
                 | otherwise = head nms
               att = Obj { objnm    = name c
                         , objpos   = Origin "generated attribute object: step 4b"
-                        , objctx   = EDcV (Sign ONE c)
+                        , objExpression   = EDcV (Sign ONE c)
                         , objcrud  = fatal "No default crud in generated interface."
                         , objmView = Nothing
                         , objmsub  = Nothing
@@ -415,7 +414,7 @@ makeFSpec opts context
      ----------------------
      printingLanguage = fromMaybe (ctxlang context) (language opts)  -- The language for printing this specification is taken from the command line options (language opts). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
 
-makeIfcControls :: [Declaration] -> [Conjunct] -> [Conjunct]
+makeIfcControls :: [Relation] -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs
  = [ conj 
    | conj<-allConjs

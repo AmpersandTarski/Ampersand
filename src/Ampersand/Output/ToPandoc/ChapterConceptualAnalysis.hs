@@ -48,7 +48,7 @@ chpConceptualAnalysis lev fSpec = (
                    <> header (lev+3) "Declared relations"
                    <> para "This section itemizes the declared relations with properties and purpose."
         )
-      <> definitionList (map caRelation [d | d@Sgn{}<-vrels fSpec])
+      <> definitionList (map caRelation (vrels fSpec))
      
   pictures = map pictOfPat (vpatterns fSpec)
           ++ map pictOfConcept (concs fSpec)
@@ -88,7 +88,7 @@ chpConceptualAnalysis lev fSpec = (
                    )
                    <> definitionList blocks
     )
-  caRelation :: Declaration -> (Inlines, [Blocks])
+  caRelation :: Relation -> (Inlines, [Blocks])
   caRelation d
         = let purp =  purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) d)
           in (mempty
@@ -99,8 +99,8 @@ chpConceptualAnalysis lev fSpec = (
                    (False, Dutch)   -> purp <> plain ("Voor dat doel is de volgende " <> str(nladjs d) <> " gedefinieerd ")
                    (False, English) -> purp <> plain ("For this purpose, the following " <> str(ukadjs d) <> " has been defined ")
                 )
-                  -- Then the declaration of the relation with its properties and its intended meaning
-               <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisDeclaration d) (showMathWithSign d)
+                  -- Then the relation of the relation with its properties and its intended meaning
+               <> pandocEquationWithLabel fSpec (XRefConceptualAnalysisRelation d) (showMathWithSign d)
                <> case meaning2Blocks (fsLang fSpec) d of
                     [] -> case fsLang fSpec of
                            Dutch   -> case commaNL  "en"  [ show (amLang markup) | markup<-ameaMrk (decMean d), amLang markup/=fsLang fSpec] of
@@ -160,9 +160,9 @@ chpConceptualAnalysis lev fSpec = (
                    (  str (l (NL "Dit is - gebruikmakend van relaties "
                              ,EN "Using relations "  ))
                     <> mconcat (intersperse  (str ", ")
-                                [   xRef (XRefConceptualAnalysisDeclaration d)
+                                [   xRef (XRefConceptualAnalysisRelation d)
                                  <> text (" ("++name d++")")
-                                | d@Sgn{}<-relsMentionedIn r])
+                                | d<-relsMentionedIn r])
                     <> str (l (NL " - geformaliseerd als "
                               ,EN ", this is formalized as "))
                    )

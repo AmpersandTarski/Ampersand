@@ -327,7 +327,7 @@ class ShowMath a where
  showMath :: a -> Inlines
 
 instance ShowMath Rule where
- showMath = showMath . rrexp
+ showMath = showMath . formalExpression
 
 instance ShowMath Expression where
  showMath = math . showExpr . insParentheses
@@ -365,16 +365,12 @@ addParensToSuper e@EKl1{} = EBrk e
 addParensToSuper e@EFlp{} = EBrk e
 addParensToSuper e        = e
 
-instance ShowMath Declaration where
- showMath decl@Sgn{}  = math $ 
+instance ShowMath Relation where
+ showMath decl = math $ 
         inMathText (name decl)++":\\ "
      ++(inMathText . name . source $ decl)++(if isFunction decl then "\\mapsto" else "*")
      ++(inMathText . name . target $ decl)++"]"
- showMath Isn{}
-  = math "\\mathbb{I}"
- showMath Vs{}
-  = math "\\mathbb{V}"
-showMathWithSign :: Declaration -> Inlines
+showMathWithSign :: Relation -> Inlines
 showMathWithSign decl = math $ 
         inMathText (name decl)++"["
      ++(inMathText . name . source $ decl)++"*"
