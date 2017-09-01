@@ -1,19 +1,19 @@
 {-# LANGUAGE TypeSynonymInstances #-}
 module Ampersand.ADL1.Expression (
                        subst
-                      ,primitives,isMp1, isEEps
+                      ,primitives, subExpressions, isMp1, isEEps, isEDcD
                       ,isPos,isNeg, deMorganERad, deMorganECps, deMorganEUni, deMorganEIsc, notCpl, isCpl
                       ,exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list
                       ,insParentheses)
 where
-import Ampersand.Basics (uni)
+import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
 --import Debug.Trace
 
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an
 --   expression of the form Erel rel.
-subst :: (Declaration,Expression) -> Expression -> Expression
+subst :: (Relation,Expression) -> Expression -> Expression
 subst (decl,expr) = subs
      where
        subs (EEqu (l,r)) = EEqu (subs l,subs r)
@@ -64,6 +64,30 @@ primitives expr =
     EEps{}       -> []  -- Since EEps is inserted for typing reasons only, we do not consider it a primitive..
     EDcV{}       -> [expr]
     EMp1{}       -> [expr]
+subExpressions :: Expression -> [Expression]
+subExpressions expr = 
+  case expr of
+    (EEqu (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EInc (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EIsc (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EUni (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EDif (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ELrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ERrs (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EDia (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ECps (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (ERad (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EPrd (l,r)) -> [expr] `uni` subExpressions l `uni` subExpressions r
+    (EKl0 e)     -> [expr] `uni` subExpressions e
+    (EKl1 e)     -> [expr] `uni` subExpressions e
+    (EFlp e)     -> [expr] `uni` subExpressions e
+    (ECpl e)     -> [expr] `uni` subExpressions e
+    (EBrk e)     -> [expr] `uni` subExpressions e
+    EDcD{}       -> [expr]
+    EDcI{}       -> [expr]
+    EEps{}       -> [expr]
+    EDcV{}       -> [expr]
+    EMp1{}       -> [expr]
 
 -- | The rule of De Morgan requires care with respect to the complement.
 --   The following function provides a function to manipulate with De Morgan correctly.
@@ -112,6 +136,10 @@ isMp1 _ = False
 isEEps :: Expression -> Bool
 isEEps EEps{} = True
 isEEps _ = False
+
+isEDcD :: Expression -> Bool
+isEDcD EDcD{} = True
+isEDcD _ = False
 
 exprIsc2list, exprUni2list, exprCps2list, exprRad2list, exprPrd2list :: Expression -> [Expression]
 exprIsc2list (EIsc (l,r)) = exprIsc2list l++exprIsc2list r

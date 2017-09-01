@@ -189,7 +189,7 @@ chpNatLangReqs lev fSpec =
         <> case (cDclMeaning . theLoad) nDcl of
               Just m -> definitionList 
                     [(   str (l (NL "Afspraak ", EN "Agreement "))
-                      <> xDefInln fSpec (XRefSharedLangDeclaration dcl)
+                      <> xDefInln fSpec (XRefSharedLangRelation dcl)
                      , [printMeaning m]
                      )
                     ]
@@ -227,11 +227,10 @@ chpNatLangReqs lev fSpec =
                ]
     <> someWhiteSpace      
 
-  mkPhrase :: Declaration -> AAtomPair -> Inlines
+  mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
-   = case decl of
-       Sgn{} | null (prL++prM++prR)
-                  ->    (atomShow . upCap) srcAtom
+   | null (prL++prM++prR)
+                   =    (atomShow . upCap) srcAtom
                      <> devShow (source decl) 
                      <> (pragmaShow.l) (NL " correspondeert met ", EN " corresponds to ")
                      <> atomShow tgtAtom
@@ -239,8 +238,8 @@ chpNatLangReqs lev fSpec =
                      <> (pragmaShow.l) (NL " in de relatie ",EN " in relation ")
                      <> atomShow (name decl)
                      <> "."
-             | otherwise
-                  ->    (if null prL then mempty
+   | otherwise
+                  =    (if null prL then mempty
                          else pragmaShow (upCap prL) <> " ")
                      <> devShow (source decl)
                      <> atomShow srcAtom <> " "
@@ -251,9 +250,6 @@ chpNatLangReqs lev fSpec =
                      <> (if null prR then mempty
                          else " " <> pragmaShow prR)
                      <> "."
-
-       Isn{}     -> fatal "Isn  is not supposed to be here expected here."
-       Vs{}      -> fatal "Vs  is not supposed to be here expected here."
    where srcAtom = showValADL (apLeft pair)
          tgtAtom = showValADL (apRight pair)
          prL = decprL decl

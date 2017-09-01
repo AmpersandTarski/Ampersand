@@ -93,7 +93,7 @@ chpInterfacesBlocks fSpec =
                   case expressionRelM of
                     Nothing -> []
                     Just (_, d, _, isFlipped) -> 
-                      [ plainText $ "DEBUG: Declaration "++ name d ++ (if isFlipped then "~" else "")
+                      [ plainText $ "DEBUG: Relation "++ name d ++ (if isFlipped then "~" else "")
                       , plainText $ "DEBUG: showA: " ++ showA d
                       ] 
               where (fieldDescr,fieldRef) 
@@ -107,12 +107,12 @@ chpInterfacesBlocks fSpec =
                     
                     navigationDocs = [ plainText $ quoteName navIfc ++ " (voor " ++ showRoles sharedRoles ++ ")" 
                                      | navIfc <- regularInterfaces
-                                     , source (objctx . ifcObj $ navIfc) == target iExp
+                                     , source (objExpression . ifcObj $ navIfc) == target iExp
                                      , let sharedRoles = ifcRoles navIfc `intersect` roles
                                      , not . null $ sharedRoles
                                      ]
 
-            iExp = conjNF (getOpts fSpec) $ objctx object
+            iExp = conjNF (getOpts fSpec) $ objExpression object
                     
             subInterfaceDocs = docMSubInterface roles hierarchy (objmsub object)
 

@@ -29,7 +29,7 @@ class (Typeable e, Eq e) => Unique e where
               String
   uniqueShow includeType x = typePrefix ++ (showUnique . theThing . self) x
     where
-      typePrefix = if includeType then show $ typeOf x else ""
+      typePrefix = if includeType then show (typeOf x) ++"_" else ""
   -- | A function to show a unique instance. It is the responsability
   --   of the instance definition to make sure that for every a, b of 
   --   an individual type:

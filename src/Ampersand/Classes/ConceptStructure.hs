@@ -6,11 +6,11 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Basics
 import Data.List
 import Data.Maybe
-import Ampersand.ADL1.Expression(primitives)
+import Ampersand.ADL1.Expression(primitives,subExpressions)
 import Ampersand.Classes.ViewPoint
 import Prelude hiding (Ordering(..))
 
-{- TODO: Interface parameters (of type Declaration) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
+{- TODO: Interface parameters (of type Relation) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
    (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but
    define relsMentionedIn directly.
    
@@ -20,22 +20,21 @@ import Prelude hiding (Ordering(..))
 
 class ConceptStructure a where
   concs ::      a -> [A_Concept]               -- ^ the set of all concepts used in data structure a
-  relsUsedIn :: a -> [Declaration]             -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-  relsUsedIn a = [ d | d@Sgn{}<-relsMentionedIn a]++[Isn c | c<-concs a]
-  relsMentionedIn :: a -> [Declaration]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that declaration.
-  relsMentionedIn = nub . map prim2rel . primsMentionedIn
+  relsUsedIn :: a -> [Relation]             -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
+  relsUsedIn a = relsMentionedIn a
+  relsMentionedIn :: a -> [Relation]        -- ^ the set of all declaratons used within data structure a. `used within` means that there is a relation that refers to that relation.
+  relsMentionedIn = nub . mapMaybe prim2rel . primsMentionedIn
   primsMentionedIn :: a -> [Expression]
   primsMentionedIn = nub . concatMap primitives . expressionsIn
   expressionsIn :: a -> [Expression] -- ^ The set of all expressions within data structure a
   
-prim2rel :: Expression -> Declaration
+prim2rel :: Expression -> Maybe Relation
 prim2rel e
  = case e of
-    EDcD d@Sgn{} -> d
-    EDcD{}       -> fatal "invalid declaration in EDcD{}"
-    EDcI c       -> Isn c
-    EDcV sgn     -> Vs sgn
-    EMp1 _ c     -> Isn c
+    EDcD d       -> Just d
+    EDcI _       -> Nothing
+    EDcV _       -> Nothing
+    EMp1 _ _     -> Nothing
     _            -> fatal ("only primitive expressions should be found here.\nHere we see: " ++ show e)
 
 instance (ConceptStructure a,ConceptStructure b) => ConceptStructure (a, b)  where
@@ -52,29 +51,29 @@ instance ConceptStructure a => ConceptStructure [a] where
 
 instance ConceptStructure A_Context where
   concs ctx = foldr uni [ONE, makeConcept "SESSION"]  -- ONE and [SESSION] are allways in any context. (see https://github.com/AmpersandTarski/ampersand/issues/70)
-              [ (concs.ctxpats) ctx
-              , (concs.ctxrs) ctx
-              , (concs.ctxds) ctx
-              , (concs.ctxpopus) ctx
-              , (concs.ctxcds) ctx
-              , (concs.ctxks) ctx
-              , (concs.ctxvs) ctx
-              , (concs.ctxgs) ctx
-              , (concs.ctxifcs) ctx
-              , (concs.ctxps) ctx
-              , (concs.ctxsql) ctx
-              , (concs.ctxphp) ctx
+              [ (concs . ctxcds) ctx
+              , (concs . ctxds) ctx
+              , (concs . ctxgs) ctx
+              , (concs . ctxifcs) ctx
+              , (concs . ctxks) ctx
+              , (concs . ctxpats) ctx
+              , (concs . ctxphp) ctx
+              , (concs . ctxpopus) ctx
+              , (concs . ctxps) ctx
+              , (concs . ctxrs) ctx
+              , (concs . ctxsql) ctx
+              , (concs . ctxvs) ctx
               ]
   expressionsIn ctx = foldr uni []
-                      [ (expressionsIn.ctxpats) ctx
-                      , (expressionsIn.ctxifcs) ctx
-                      , (expressionsIn.ctxrs) ctx
-                      , (expressionsIn.ctxks) ctx
-                      , (expressionsIn.ctxvs) ctx
-                      , (expressionsIn.ctxsql) ctx
-                      , (expressionsIn.ctxphp) ctx
-                      , (expressionsIn.multrules) ctx
-                      , (expressionsIn.identityRules) ctx
+                      [ (expressionsIn . ctxifcs) ctx
+                      , (expressionsIn . ctxks) ctx
+                      , (expressionsIn . ctxpats) ctx
+                      , (expressionsIn . ctxphp) ctx
+                      , (expressionsIn . ctxrs) ctx
+                      , (expressionsIn . ctxsql) ctx
+                      , (expressionsIn . ctxvs) ctx
+                      , (expressionsIn . identityRules) ctx
+                      , (expressionsIn . multrules) ctx
                       ]
 
 instance ConceptStructure IdentityDef where
@@ -90,10 +89,10 @@ instance ConceptStructure ViewSegment where
   expressionsIn = expressionsIn . vsmLoad
 
 instance ConceptStructure ViewSegmentPayLoad where
-  concs  (ViewExp e) = concs e
-  concs  _           = []
-  expressionsIn (ViewExp e) = [e]
-  expressionsIn _           = []
+  concs  (ViewExp e)  = concs e
+  concs  ViewText{} = []
+  expressionsIn (ViewExp e) = expressionsIn e
+  expressionsIn ViewText{}  = []
 instance ConceptStructure Expression where
   concs (EDcD d    ) = concs d
   concs (EDcI c    ) = [c]
@@ -101,7 +100,7 @@ instance ConceptStructure Expression where
   concs (EDcV   sgn) = concs sgn
   concs (EMp1 _ c  ) = [c]
   concs e            = concs (primitives e)
-  expressionsIn e = [e]
+  expressionsIn = subExpressions
 
 instance ConceptStructure A_Concept where
   concs         c = [c]
@@ -116,10 +115,10 @@ instance ConceptStructure Signature where
   expressionsIn _  = []
 
 instance ConceptStructure ObjectDef where
-  concs     obj = [target (objctx obj)] `uni` concs (objmsub obj)
+  concs     obj = [target (objExpression obj)] `uni` concs (objmsub obj)
   expressionsIn obj = foldr uni []
-                     [ (expressionsIn.objctx) obj
-                     , (expressionsIn.objmsub) obj
+                     [ (expressionsIn . objExpression) obj
+                     , (expressionsIn . objmsub) obj
                      ]
 
 -- Note that these functions are not recursive in the case of InterfaceRefs (which is of course obvious from their types)
@@ -133,34 +132,34 @@ instance ConceptStructure SubInterface where
 
 instance ConceptStructure Pattern where
   concs pat = foldr uni []
-              [ (concs.ptrls) pat
-              , (concs.ptgns) pat
-              , (concs.ptdcs) pat
-              , (concs.ptups) pat
-              , (concs.ptids) pat
-              , (concs.ptxps) pat
+              [ (concs . ptrls) pat
+              , (concs . ptgns) pat
+              , (concs . ptdcs) pat
+              , (concs . ptups) pat
+              , (concs . ptids) pat
+              , (concs . ptxps) pat
               ]
   expressionsIn p = foldr uni []
-                     [ (expressionsIn.ptrls) p
-                     , (expressionsIn.ptids) p
-                     , (expressionsIn.ptvds) p
+                     [ (expressionsIn . ptrls) p
+                     , (expressionsIn . ptids) p
+                     , (expressionsIn . ptvds) p
                      ]
 
 instance ConceptStructure Interface where
   concs         ifc = concs (ifcObj ifc)
   expressionsIn ifc = foldr uni []
-                     [ (expressionsIn.ifcObj) ifc
+                     [ (expressionsIn . ifcObj) ifc
                      ]
 
-instance ConceptStructure Declaration where
+instance ConceptStructure Relation where
   concs         d = concs (sign d)
-  expressionsIn d = fatal ("expressionsIn not allowed on Declaration of "++show d)
+  expressionsIn d = fatal ("expressionsIn not allowed on Relation of "++show d)
 
 instance ConceptStructure Rule where
-  concs r   = concs (rrexp r) `uni` concs (rrviol r)
+  concs r   = concs (formalExpression r) `uni` concs (rrviol r)
   expressionsIn r = foldr uni []
-                   [ (expressionsIn.rrexp ) r
-                   , (expressionsIn.rrviol) r
+                   [ (expressionsIn . formalExpression ) r
+                   , (expressionsIn . rrviol) r
                    ]
 
 instance ConceptStructure (PairView Expression) where
@@ -178,7 +177,7 @@ instance ConceptStructure Purpose where
 
 instance ConceptStructure ExplObj where
   concs (ExplConceptDef cd) = concs cd
-  concs (ExplDeclaration d) = concs d
+  concs (ExplRelation d) = concs d
   concs (ExplRule _)        = [{-beware of loops...-}]
   concs (ExplIdentityDef _) = [{-beware of loops...-}]
   concs (ExplViewDef _)     = [{-beware of loops...-}]
@@ -200,3 +199,7 @@ instance ConceptStructure A_Gen where
   concs g@Isa{}  = nub [gengen g,genspc g]
   concs g@IsE{}  = nub (genspc g: genrhs g)
   expressionsIn g = fatal ("expressionsIn not allowed on A_Gen:\n"++show g)
+
+instance ConceptStructure Conjunct where
+  concs         = concs . rc_conjunct
+  expressionsIn = expressionsIn . rc_conjunct

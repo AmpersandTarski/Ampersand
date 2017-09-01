@@ -92,7 +92,7 @@ getSqlConceptTable fSpec c =
     ; return (c, map fst atomsDummies)
     }
 
-getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [(String,String)])
+getSqlRelationTable :: FSpec -> Relation -> IO (Relation, [(String,String)])
 getSqlRelationTable fSpec d =
  do { let query = prettySQLQuery False fSpec 0 d
  

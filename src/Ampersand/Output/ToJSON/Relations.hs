@@ -8,8 +8,8 @@ import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpecAux
 import Data.Maybe
 
-data Relations = Relations [Relation]deriving (Generic, Show)
-data Relation = Relation
+data Relations = Relations [RelationJson]deriving (Generic, Show)
+data RelationJson = RelationJson
   { relJSONname         :: String
   , relJSONsignature    :: String
   , relJSONsrcConceptId :: String
@@ -35,7 +35,7 @@ data TableCol = TableCol
   } deriving (Generic, Show)
 instance ToJSON Relations where
   toJSON = amp2Jason
-instance ToJSON Relation where
+instance ToJSON RelationJson where
   toJSON = amp2Jason
 instance ToJSON RelTableInfo where
   toJSON = amp2Jason
@@ -43,8 +43,8 @@ instance ToJSON TableCol where
   toJSON = amp2Jason
 instance JSON MultiFSpecs Relations where
  fromAmpersand multi _ = Relations (map (fromAmpersand multi) (vrels (userFSpec multi)))
-instance JSON Declaration Relation where
- fromAmpersand multi dcl = Relation 
+instance JSON Relation RelationJson where
+ fromAmpersand multi dcl = RelationJson 
          { relJSONname       = name dcl
          , relJSONsignature  = name dcl ++ (show . sign) dcl
          , relJSONsrcConceptId  = escapeIdentifier . name . source $ dcl 
@@ -59,7 +59,7 @@ instance JSON Declaration Relation where
          }
       where fSpec = userFSpec multi
          
-instance JSON Declaration RelTableInfo where
+instance JSON Relation RelTableInfo where
  fromAmpersand multi dcl = RelTableInfo
   { rtiJSONname    = name plug
   , rtiJSONtableOf = srcOrtgt
@@ -67,7 +67,7 @@ instance JSON Declaration RelTableInfo where
   , rtiJSONtgtCol  = fromAmpersand multi trgAtt
   }
    where fSpec = userFSpec multi
-         (plug,srcAtt,trgAtt) = getDeclarationTableInfo fSpec dcl
+         (plug,srcAtt,trgAtt) = getRelationTableInfo fSpec dcl
          (plugSrc,_)          = getConceptTableInfo fSpec (source dcl)
          (plugTrg,_)          = getConceptTableInfo fSpec (target dcl)
          srcOrtgt

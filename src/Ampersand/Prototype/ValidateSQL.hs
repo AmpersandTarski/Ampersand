@@ -53,13 +53,13 @@ stringify (rule,pairs) = (name rule, map f pairs )
 getAllInterfaceExps :: FSpec -> [ValidationExp]
 getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc
                                    | ifc <- interfaceS fSpec ++ interfaceG fSpec ]
- where getObjExps iName objDef = (objctx objDef, "interface " ++ show iName) :
+ where getObjExps iName objDef = (objExpression objDef, "interface " ++ show iName) :
                                  concatMap (getObjExps iName) (fields objDef)
 
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp $ vrules fSpec ++ grules fSpec
- where getRuleExp rule = (notCpl (rrexp rule), "rule "++show (name rule))
+ where getRuleExp rule = (notCpl (formalExpression rule), "rule "++show (name rule))
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fSpec
@@ -69,7 +69,7 @@ getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fS
 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
- where getIdExps identity = [ (objctx objDef, "identity "++show (name identity))
+ where getIdExps identity = [ (objExpression objDef, "identity "++show (name identity))
                             | IdentityExp objDef <- identityAts identity ]
 
 getAllViewExps :: FSpec -> [ValidationExp]

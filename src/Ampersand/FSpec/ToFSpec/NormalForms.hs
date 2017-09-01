@@ -586,7 +586,8 @@ rTerm2expr term
      RConst e   -> e
    where
      makeDecl nm sgn
-      = Sgn { decnm   = pack nm
+      = Relation
+            { decnm   = pack nm
             , decsgn  = sgn
             , decprps = fatal "Illegal RTerm in rTerm2expr"
             , decprps_calc = Nothing
@@ -598,7 +599,7 @@ rTerm2expr term
             , decusr  = fatal "Illegal RTerm in rTerm2expr"
             , decpat  = fatal "Illegal RTerm in rTerm2expr"
             , decplug = fatal "Illegal RTerm in rTerm2expr"
-            , dech    = hash nm `hashWithSalt` sgn
+            , dechash = hash nm `hashWithSalt` sgn
             }
 class ShowIT a where  --class ment for stuff not belonging to A-struct and/or P-struct
   showIT :: a -> String
@@ -1051,7 +1052,8 @@ head (a:_) = a
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
 delta :: Signature -> Expression
 delta sgn
- = EDcD   Sgn { decnm   = pack "Delta"
+ = EDcD Relation
+              { decnm   = pack "Delta"
               , decsgn  = sgn
               , decprps = []
               , decprps_calc = Nothing
@@ -1065,7 +1067,7 @@ delta sgn
               , decusr  = False
               , decpat  = ""
               , decplug = True
-              , dech = hash sgn
+              , dechash = hash sgn
               }
 
 {- Normalization of process algebra clauses -}
@@ -1437,7 +1439,11 @@ isEIsc EIsc{}  = True
 isEIsc _       = False
 
 conjuncts :: Options -> Rule -> [Expression]
-conjuncts opts = exprIsc2list.conjNF opts.rrexp
+conjuncts opts r = exprIsc2list
+               --  . (\e -> trace ("conjNF of that expression: "++show e) e)
+                 . conjNF opts
+               --  . (\e -> trace ("FormalExpression: "++show e) e)
+                 . formalExpression $ r
 
 allShifts :: Options -> DnfClause -> [DnfClause]
 allShifts opts conjunct =  (map head.eqClass (==).filter pnEq.map normDNF) (shiftL conjunct++shiftR conjunct)  -- we want to nub all dnf-clauses, but nub itself does not do the trick...

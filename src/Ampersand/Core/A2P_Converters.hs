@@ -1,7 +1,7 @@
 {-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
 module Ampersand.Core.A2P_Converters (
     aCtx2pCtx
-  , aDeclaration2pDeclaration
+  , aRelation2pRelation
   , aAtomValue2pAtomValue
   , aConcept2pConcept
   , aExpression2pTermPrim
@@ -28,7 +28,7 @@ aCtx2pCtx ctx =
       , ctx_thms   = ctxthms ctx 
       , ctx_pats   = map aPattern2pPattern . ctxpats $ ctx
       , ctx_rs     = map aRule2pRule . ctxrs $ ctx
-      , ctx_ds     = map aDeclaration2pDeclaration . ctxds $ ctx
+      , ctx_ds     = map aRelation2pRelation . ctxds $ ctx
       , ctx_cs     = ctxcds ctx
       , ctx_ks     = map aIdentityDef2pIdentityDef . ctxks $ ctx
       , ctx_rrules = map aRoleRule2pRoleRule  .ctxrrules $ ctx
@@ -50,7 +50,7 @@ aPattern2pPattern pat =
        , pt_nm    = ptnm pat
        , pt_rls   = map aRule2pRule (ptrls pat)
        , pt_gns   = map aGen2pGen (ptgns pat)
-       , pt_dcs   = map aDeclaration2pDeclaration (ptdcs pat)
+       , pt_dcs   = map aRelation2pRelation (ptdcs pat)
        , pt_RRuls = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_RRels = [] --TODO: should this be empty? There is nothing in the A-structure
        , pt_cds   = [] --TODO: should this be empty? There is nothing in the A-structure
@@ -66,14 +66,14 @@ aRule2pRule :: Rule -> P_Rule TermPrim
 aRule2pRule rul =
  P_Ru { pos  = rrfps rul
       , rr_nm   = rrnm rul
-      , rr_exp  = aExpression2pTermPrim (rrexp rul)
+      , rr_exp  = aExpression2pTermPrim (formalExpression rul)
       , rr_mean = aMeaning2pMeaning (rrmean rul)
       , rr_msg  = map aMarkup2pMessage (rrmsg rul)
       , rr_viol = fmap aPairView2pPairView (rrviol rul)
       }
 
-aDeclaration2pDeclaration :: Declaration -> P_Declaration
-aDeclaration2pDeclaration dcl = 
+aRelation2pRelation :: Relation -> P_Relation
+aRelation2pRelation dcl = 
  P_Sgn { dec_nm     = T.unpack $ decnm dcl
        , dec_sign   = aSign2pSign (decsgn dcl)
        , dec_prps   = decprps dcl
@@ -84,8 +84,8 @@ aDeclaration2pDeclaration dcl =
        , dec_plug   = decplug dcl
        }
 
-aDeclaration2pNamedRel :: Declaration -> P_NamedRel
-aDeclaration2pNamedRel dcl =
+aRelation2pNamedRel :: Relation -> P_NamedRel
+aRelation2pNamedRel dcl =
  PNamedRel (decfpos dcl) (T.unpack $ decnm dcl) (Just (aSign2pSign (decsgn dcl)))
  
 aIdentityDef2pIdentityDef :: IdentityDef -> P_IdentDf TermPrim -- P_IdentDef
@@ -107,7 +107,7 @@ aRoleRelation2pRoleRelation :: A_RoleRelation -> P_RoleRelation
 aRoleRelation2pRoleRelation rr =
  P_RR { pos      = rrPos rr
       , rr_Roles = rrRoles rr
-      , rr_Rels  = map aDeclaration2pNamedRel (rrRels rr)
+      , rr_Rels  = map aRelation2pNamedRel (rrRels rr)
       }
 
 aViewDef2pViewDef :: ViewDef -> P_ViewDef
@@ -123,11 +123,11 @@ aViewDef2pViewDef vDef =
 aGen2pGen :: A_Gen -> P_Gen
 aGen2pGen gen =
  case gen of
-  Isa{} -> PGen { pos  = fatal "Origin is not present in A_Gen"
+  Isa{} -> PGen { pos  = Origin $ "Origin is not present in A_Gen"
                 , gen_spc = aConcept2pConcept (genspc gen)
                 , gen_gen = aConcept2pConcept (gengen gen)
                 }
-  IsE{} -> P_Cy { pos  = fatal "Origin is not present in A_Gen"
+  IsE{} -> P_Cy { pos  = Origin $ "Origin is not present in A_Gen"
                 , gen_spc = aConcept2pConcept (genspc gen)
                 , gen_rhs = map aConcept2pConcept (genrhs gen)
                 }
@@ -175,7 +175,7 @@ aPopulation2pPopulation p =
                           , p_src = Nothing 
                           , p_tgt = Nothing
                           }
-      where pDcl = aDeclaration2pNamedRel (popdcl p)
+      where pDcl = aRelation2pNamedRel (popdcl p)
   ACptPopu{} -> P_CptPopu { pos  = Origin $ "Origin is not present in Population("++name (popcpt p)++") from A-Structure"
                           , p_cnme  = name (popcpt p)
                           , p_popas = map aAtomValue2pAtomValue (popas p)
@@ -186,7 +186,7 @@ aObjectDef2pObjectDef :: ObjectDef -> P_ObjectDef
 aObjectDef2pObjectDef oDef =
  P_Obj { obj_nm    = objnm oDef
        , pos   = objpos oDef
-       , obj_ctx   = aExpression2pTermPrim (objctx oDef)
+       , obj_ctx   = aExpression2pTermPrim (objExpression oDef)
        , obj_crud  = aCruds2pCruds (objcrud oDef)
        , obj_mView = objmView oDef
        , obj_msub  = fmap aSubIfc2pSubIfc (objmsub oDef)
@@ -273,7 +273,7 @@ aExplObj2PRef2Obj :: ExplObj -> PRef2Obj
 aExplObj2PRef2Obj obj =
  case obj of
   ExplConceptDef cd   -> PRef2ConceptDef (name cd)
-  ExplDeclaration d   -> PRef2Declaration (aDeclaration2pNamedRel d)
+  ExplRelation d   -> PRef2Relation (aRelation2pNamedRel d)
   ExplRule str        -> PRef2Rule str
   ExplIdentityDef str -> PRef2IdentityDef str
   ExplViewDef str     -> PRef2ViewDef str

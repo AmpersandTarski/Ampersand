@@ -7,8 +7,10 @@ AmpersandLogs
 Rieks Joosten
 rieks.joosten@tno.nl
 
-1
-Thanks to JGSoft for providing the example.
+3
+Ampersand is a tool for generating prototypes from relation algebra rules
+
+This file contains navigation rules for ExecEngine log files that are produced by such prototypes.
 3
 Ampersand Log file
 1

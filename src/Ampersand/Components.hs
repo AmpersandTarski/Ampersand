@@ -199,11 +199,11 @@ generateAmpersandOutput multi = do
           ruleTest ruleName =
            case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
              [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (rrexp rule)
+             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
                             ; putStrLn $ showContents rule
-                            ; let rExpr = rrexp rule
-                            ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
-                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (rrexp ruleComplement)++"):"
+                            ; let rExpr = formalExpression rule
+                            ; let ruleComplement = rule { formalExpression = notCpl (EBrk rExpr) }
+                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
                             ; putStrLn $ showContents ruleComplement
                             }
            where showContents rule = "[" ++ intercalate ", " pairs ++ "]"

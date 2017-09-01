@@ -65,7 +65,7 @@ instance JSON A_Concept AtomValuesOfConcept where
    grindedFSpec = fromMaybe ftl (metaFSpec multi)
      where ftl = fatal "There is no grinded fSpec."
 
-instance JSON Declaration PairsOfRelation where
+instance JSON Relation PairsOfRelation where
  fromAmpersand multi dcl = PairsOfRelation
    { porJSONrelation = Text.pack $ showDcl False dcl
    , porJSONlinks = map (fromAmpersand multi) . pairsInExpr grindedFSpec $ EDcD dcl

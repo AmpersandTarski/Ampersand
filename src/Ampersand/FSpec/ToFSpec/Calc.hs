@@ -36,8 +36,8 @@ deriveProofs opts context
    para (linebreak<>"--------------"<>linebreak)<>
    para ("Rules and their conjuncts for "<>(str.name) context)<>
    bulletList [ para ("rule r:   "<>str (name r)<>linebreak<>
-                      "rrexp r:  "<>str (showA (rrexp r))<>linebreak<>
-                      "conjNF:   "<>str (showA (conjNF opts (rrexp r)))<>linebreak<>
+                      "formalExpression r:  "<>str (showA (formalExpression r))<>linebreak<>
+                      "conjNF:   "<>str (showA (conjNF opts (formalExpression r)))<>linebreak<>
                       interText linebreak [ "     conj: "<>str (showA conj) | conj<-conjuncts opts r ]
                      )
               | r<-allRules context]

@@ -13,7 +13,7 @@ import Ampersand.FSpec.SQL
 import Data.Monoid
 import qualified Data.Text as Text
 import Ampersand.Core.AbstractSyntaxTree
-     ( Declaration )
+     ( Relation )
 
 dumpSQLqueries :: MultiFSpecs -> Text.Text
 dumpSQLqueries multi
@@ -25,7 +25,7 @@ dumpSQLqueries multi
        <>generateInitialPopQueries fSpec
        <>header "Violations of conjuncts"
        <>concatMap showConjunct (allConjuncts fSpec)
-       <>header "Queries per declaration"
+       <>header "Queries per relation"
        <>concatMap showDecl (vrels fSpec)
        <>header "Queries of interfaces"
        <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)
@@ -39,8 +39,8 @@ dumpSQLqueries multi
         where 
           showObjDef :: ObjectDef -> [Text.Text]
           showObjDef obj
-            = (header . Text.pack . showA . objctx) obj
-            <>[Text.pack$ (prettySQLQueryWithPlaceholder 2 fSpec . objctx) obj]
+            = (header . Text.pack . showA . objExpression) obj
+            <>[Text.pack$ (prettySQLQueryWithPlaceholder 2 fSpec . objExpression) obj]
             <>case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
@@ -61,7 +61,7 @@ dumpSQLqueries multi
         where
           showRule r 
             = Text.pack ("  - "<>name r<>": "<>showA r)
-     showDecl :: Declaration -> [Text.Text]
+     showDecl :: Relation -> [Text.Text]
      showDecl decl 
         = header (Text.pack$ showA decl)
         <>[Text.pack . prettySQLQuery 2 fSpec $ decl,""]

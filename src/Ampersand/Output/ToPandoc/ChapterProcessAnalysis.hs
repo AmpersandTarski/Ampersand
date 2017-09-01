@@ -123,9 +123,9 @@ chpProcessAnalysis fSpec
    where
     declaredRelations = (concatMap relsDefdIn.vpatterns) fSpec
     declaredConcepts  = (concs.vpatterns) fSpec
-    iterat :: [Pattern] -> Int -> [A_Concept] -> [Declaration] -> [Blocks]
+    iterat :: [Pattern] -> Int -> [A_Concept] -> [Relation] -> [Blocks]
     iterat [] _ _ _ = mempty
-    iterat (fproc:fps) i seenConcepts seenDeclarations
+    iterat (fproc:fps) i seenConcepts seenRelations
      = (
            xDefBlck fSpec (XRefProcessAnalysis fproc) 
         <> purposes2Blocks (getOpts fSpec) (purposesDefinedIn fSpec (fsLang fSpec) fproc)
@@ -133,5 +133,5 @@ chpProcessAnalysis fSpec
        ):  iterat fps i' seenCrs seenDrs
        where
          sctRules :: [(Inlines, [Blocks])]
-         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec (udefrules fproc) i seenConcepts seenDeclarations
+         (sctRules,i',seenCrs,seenDrs) = dpRule' fSpec (udefrules fproc) i seenConcepts seenRelations
 

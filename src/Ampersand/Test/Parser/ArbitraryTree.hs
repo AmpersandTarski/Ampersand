@@ -144,7 +144,7 @@ instance Arbitrary P_Pattern where
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-instance Arbitrary P_Declaration where
+instance Arbitrary P_Relation where
     arbitrary = P_Sgn <$> lowerId         -- name
                       <*> arbitrary       -- sign
                       <*> arbitrary       -- props
@@ -306,7 +306,7 @@ instance Arbitrary PRef2Obj where
     arbitrary =
         oneof [
             PRef2ConceptDef <$> safeStr,
-            PRef2Declaration <$> relationRef,
+            PRef2Relation <$> relationRef,
             PRef2Rule <$> upperId,
             PRef2IdentityDef <$> upperId,
             PRef2ViewDef <$> upperId,

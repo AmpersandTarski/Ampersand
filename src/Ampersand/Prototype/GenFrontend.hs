@@ -51,7 +51,7 @@ INTERFACE MyInterface
             ]
       ]
 
-This is considered editable iff the composition rel;relRef yields an editable declaration (e.g. for editableR;I).
+This is considered editable iff the composition rel;relRef yields an editable relation (e.g. for editableR;I).
 
 -}
 
@@ -215,7 +215,7 @@ buildInterface fSpec allIfcs ifc =
   where    
     buildObject :: ObjectDef -> IO FEObject
     buildObject object =
-     do { let iExp = conjNF (getOpts fSpec) $ objctx object
+     do { let iExp = conjNF (getOpts fSpec) $ objExpression object
               
         ; (aOrB, iExp', src, tgt, mDecl) <-
             case objmsub object of
@@ -250,7 +250,7 @@ buildInterface fSpec allIfcs ifc =
                   InterfaceRef{} -> 
                    case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
                      []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
-                     (_:_:_) -> fatal ("Multiple declarations of referenced interface " ++ siIfcId si)
+                     (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                      [i]     -> 
                            if siIsLink si
                            then do { let (src, mDecl, tgt) = getSrcDclTgt iExp
@@ -269,7 +269,7 @@ buildInterface fSpec allIfcs ifc =
                                        , navIfcRoles = ifcRoles nIfc `intersect` ifcRoles ifc -- only consider interfaces that share roles with the one we're building
                                        } 
                         | nIfc <- allIfcs
-                        , (source . objctx . ifcObj $ nIfc) == tgt
+                        , (source . objExpression . ifcObj $ nIfc) == tgt
                         ]
 
         ; return FEObject{ objName = name object

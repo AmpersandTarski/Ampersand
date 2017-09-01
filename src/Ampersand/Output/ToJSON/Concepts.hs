@@ -69,7 +69,7 @@ instance JSON A_Concept Concept where
   where
     fSpec = userFSpec multi
     hasAsSourceCpt :: Interface -> Bool
-    hasAsSourceCpt ifc = (source . objctx . ifcObj) ifc `elem` cpts
+    hasAsSourceCpt ifc = (source . objExpression . ifcObj) ifc `elem` cpts
     cpts = cpt : largerConcepts  (vgens fSpec) cpt
 instance JSON A_Concept TableCols where
  fromAmpersand multi cpt = TableCols
