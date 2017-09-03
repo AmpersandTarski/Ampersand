@@ -4,12 +4,11 @@ module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
  ) where
 
+import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Char hiding (Space)
 import Data.List
-import Data.List.Split
+import Data.List.Split(splitOn)
 import Data.Maybe
---import Ampersand.Basics
-import Ampersand.Output.ToPandoc.SharedAmongChapters
 
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
