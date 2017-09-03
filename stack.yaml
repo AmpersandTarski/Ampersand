@@ -11,7 +11,7 @@ packages:
 # Packages to be pulled from upstream that are not in the resolver (e.g., acme-missiles-0.3)
 extra-deps: 
 - SpreadsheetML-0.1
-- simple-sql-parser-0.4.2
+- simple-sql-parser-0.4.3
 - yaml-config-0.4.0
 - pandoc-crossref-0.2.5.0
 - data-accessor-template-0.2.1.13
