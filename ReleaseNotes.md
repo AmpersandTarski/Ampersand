@@ -1,5 +1,9 @@
 # Release notes of Ampersand
 
+## Unreleased changes
+
+* Upgraded to LTS-9.2
+
 ## v3.8.8 (1 september 2017)
 
 * Somewhat more verbose test output
@@ -119,7 +123,7 @@
 * Minor enhancement of generation of Logical Data Model
 * More consisten use of views in interface definitions: [Issue #416](https://github.com/AmpersandTarski/Ampersand/issues/416)
 * Re-enabled output format for `--fSpec=asciidoc`
-* Added depth parameter in API resources call (?depth=<int>). This provides functionality to specify the depth of subinterfaces for which the content must be returned and is especially usefull for recursive (sub)interfaces using the LINKTO statement.
+* Added depth parameter in API resources call (?depth=\<int\>). This provides functionality to specify the depth of subinterfaces for which the content must be returned and is especially usefull for recursive (sub)interfaces using the LINKTO statement.
 * Added this release notes file.
 * Bug fixes: [Issue #413](https://github.com/AmpersandTarski/Ampersand/issues/413)
 
