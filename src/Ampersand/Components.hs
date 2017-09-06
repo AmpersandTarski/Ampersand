@@ -96,7 +96,7 @@ generateAmpersandOutput multi = do
        ; Text.writeFile outputFile (dumpSQLqueries multi)
        ; verboseLn opts $ "SQL queries dumpfile written into " ++ outputFile ++ "."
        }
-    where outputFile = dirOutput opts </> baseName opts -<.> ".sqlDump"
+    where outputFile = dirOutput opts </> baseName opts ++ "_dump" -<.> ".sql"
 
    doGenUML :: IO()
    doGenUML =
