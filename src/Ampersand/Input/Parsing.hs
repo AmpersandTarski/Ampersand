@@ -23,7 +23,7 @@ import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseEr
 import Text.Parsec.Prim (runP)
 import Ampersand.Input.Xslx.XLSX
 import Control.Exception
-import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand))
+import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,StaticFileKind(FormalAmpersand))
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line

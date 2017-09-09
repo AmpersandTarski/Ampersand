@@ -211,10 +211,10 @@ buildInterface fSpec allIfcs ifc =
     buildObject object =
      do { let iExp = conjNF (getOpts fSpec) $ objExpression object
               
-        ; (aOrB, iExp', src, tgt, mDecl) <-
+        ; (aOrB, iExp') <-
             case objmsub object of
               Nothing                  ->
-               do { let (src, mDecl, tgt) = getSrcDclTgt iExp
+               do { let ( _ , _ , tgt) = getSrcDclTgt iExp
                   ; let mView = case objmView object of
                                   Just nm -> Just $ lookupView fSpec nm
                                   Nothing -> getDefaultViewForConcept fSpec tgt
@@ -229,17 +229,16 @@ buildInterface fSpec allIfcs ifc =
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
-                           , iExp, src, tgt, mDecl)
+                           , iExp)
                   }
               Just si ->
                 case si of
                   Box{} -> 
-                   do { let (src, mDecl, tgt) = getSrcDclTgt iExp
-                      ; subObjs <- mapM buildObject (siObjs si)
+                   do { subObjs <- mapM buildObject (siObjs si)
                       ; return (FEBox { objMClass  = siMClass si
                                       , ifcSubObjs = subObjs
                                       }
-                               , iExp, src, tgt, mDecl)
+                               , iExp)
                       }
                   InterfaceRef{} -> 
                    case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
@@ -247,16 +246,15 @@ buildInterface fSpec allIfcs ifc =
                      (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                      [i]     -> 
                            if siIsLink si
-                           then do { let (src, mDecl, tgt) = getSrcDclTgt iExp
-                                   ; let templatePath = "views" </> "View-LINKTO.html"
+                           then do { let templatePath = "views" </> "View-LINKTO.html"
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
-                                            , iExp, src, tgt, mDecl)
+                                            , iExp)
                                    }
                            else do { refObj <- buildObject  (ifcObj i)
                                    ; let comp = ECps (iExp, objExp refObj) 
                                          -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
-                                         (src, mDecl, tgt) = getSrcDclTgt comp
-                                   ; return (atomicOrBox refObj, comp, src, tgt, mDecl)
+                                         
+                                   ; return (atomicOrBox refObj, comp)
                                    } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
         
 

@@ -144,7 +144,7 @@ instance JSON ObjectDef JSONObjectDef where
     object :: ObjectDef
     object = case substitution of
                Nothing           -> object'
-               Just (expr,cruds) -> object'{ objctx  = expr
+               Just (expr,cruds) -> object'{ objExpression  = expr
                                            , objcrud = cruds
                                            }
     -- In case of reference to an INTERFACE, not used as a LINKTO, the
@@ -156,12 +156,12 @@ instance JSON ObjectDef JSONObjectDef where
          Just InterfaceRef{ siIsLink=False
                           , siIfcId=interfaceId} 
            -> let ifc = ifcObj (lookupInterface interfaceId)
-              in Just (conjNF opts (objctx object' .:. objctx ifc), objcrud ifc)
+              in Just (conjNF opts (objExpression object' .:. objExpression ifc), objcrud ifc)
          _ -> Nothing
     lookupInterface :: String -> Interface
     lookupInterface nm = 
         case [ ifc | ifc <- (interfaceS fSpec ++ interfaceG fSpec), name ifc == nm ] of
           [ifc] -> ifc
-          _     -> fatal 124 "Interface lookup returned zero or more than one result"
+          _     -> fatal "Interface lookup returned zero or more than one result"
 
       
