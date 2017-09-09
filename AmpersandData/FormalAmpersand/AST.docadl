@@ -10,7 +10,7 @@ INCLUDE "Rules.docadl"
 PURPOSE PATTERN Context
 {+The rules that govern contexts are brought together in one pattern,
 in order to formalize contexts and determine their meaning.
--}
++}
 CONCEPT Context "A context is a set of statements in a formal language that are true within that context."
 PURPOSE CONCEPT Context
 {+
@@ -36,12 +36,12 @@ Ampersand uses contexts to organize truth.
 Within one context, there is a single truth and there are no contradictions.
 For this reason, a context defines a language by means of concepts and relations, in which utterances can be made.
 We say that these utterances {\emph make sense} in that context.
--}
++}
 
 PURPOSE PATTERN Rules
 {+The rules that govern rules are brought together in one pattern,
 in order to formalize rules and determine their meaning.
--}
++}
 CONCEPT Rule "A rule is a statement that must be true in each context in which it is valid."
 PURPOSE CONCEPT Rule
 {+
@@ -63,12 +63,12 @@ The people who are affected by this are called stakeholders.
 All contexts in which this rule is valid are called the scope of this rule.
 Outside its scope, a rule has no meaning.
 For example a rule may be valid in downtown St. Catharines, Ontario, but totally meaningless in Smalltown, NY that does not even have a St. Paul street.
--}
++}
 
 PURPOSE PATTERN Patterns
 {+The rules that govern patterns are brought together in one pattern,
 in order to formalize patterns and determine their meaning.
--}
++}
 CONCEPT Pattern "A pattern is a set of rules that describes a theme or a general reusable solution to a commonly occurring problem."
 PURPOSE CONCEPT Pattern
 {+
@@ -86,14 +86,14 @@ Therefore, they are independent from a particular context.
 \subsubsection*{Example}
 The problem of identifying which persons have been using an information system can be solved by making rules
 about log-in, users and sessions.
--}
++}
 
 -- Expression
 PATTERN Expressions
 PURPOSE PATTERN Expressions
 {+The rules that govern expressions are brought together in one pattern,
 in order to formalize expressions and determine their meaning.
--}
++}
 CONCEPT Expression "An expression is a relation algebraic term, denoted in Ampersand syntax"
 REPRESENT Expression TYPE ALPHANUMERIC
 PURPOSE CONCEPT Expression
@@ -109,7 +109,7 @@ In ampersand, you calculate with relations rather than numbers.
 \subsubsection*{Example}
 The problem of identifying which persons have been using an information system can be solved by making rules
 about log-in, users and sessions.
--}
++}
 ENDPATTERN
 
 PURPOSE PATTERN Specialization
@@ -126,14 +126,14 @@ Specialization should be used on intrinsic properties only.
 Ask yourself: once a lime, always a lime? If the answer is yes (which sounds right to me), you can use specialization.
 Now ask yourself: once an employee, always an employee? The answer to this question is more likely to be no.
 Therefore, don't use specialization to say that an employee is a person.
--}
++}
 
 -- Concept
 PATTERN Concepts
 PURPOSE PATTERN Concepts
 {+The rules that govern concepts are brought together in one pattern,
 in order to formalize concepts and determine their meaning.
--}
++}
 --HJO, 20150420: In het documentatie bestand moet je eigenlijk geen definities opnemen. Die moeten elders --CONCEPT A_Concept "A concept is a name for a category of similar objects."
 --HJO, 20150420: In het documentatie bestand moet je eigenlijk geen definities opnemen. Die moeten elders ----CONCEPT ConceptOne "ConceptOne, also known as ONE, is a predefined concept that has the role of universal singleton"
 PURPOSE CONCEPT Concept
@@ -150,7 +150,7 @@ We can discuss cities and persons that live in them
 without referring to the actual instances of those concepts.
 The distinction between an object (Amsterdam) and the corresponding concept (City)
 has been studied for a long time [e.g.\ Frege, 1892] and is highly relevant for Ampersand.
--}
++}
 CONCEPT Concept "A set of things that we can talk about using the name of the concept."
 ENDPATTERN
 
@@ -158,7 +158,7 @@ PATTERN Populations
 PURPOSE PATTERN Populations
 {+The rules that govern atoms, pairs, and populations are brought together in one pattern,
 in order to formalize them and determine their meaning.
--}
++}
 
 CONCEPT Population "The contents of a Concept or Relation"
 PURPOSE CONCEPT Population
@@ -180,7 +180,7 @@ Populations provide the initial content of a database.
 
 The word {\emph population} is used sloppily for contexts as well.
 It refers the the total of all populations in relations and concepts inside that context.
--}
++}
 
 CONCEPT RelPopu "The content of a relation"
 CONCEPT CptPopu "The content of a concept"
@@ -196,7 +196,6 @@ CONCEPT IsE "An IsE, or generalization rule, is the is-relation between one conc
 CONCEPT Signature "A signature is a pair of concepts, which are called source concept and target concept."
 CONCEPT PropertyRule "A property rule is a rule, that is a property of a user-declared relation"
 CONCEPT Property "UNI<|>TOT<|>INJ<|>SUR<|>RFX<|>IRF<|>SYM<|>ASY<|>TRN<|>PROP"
-CONCEPT Declaration "A declaration is a statement saying there exists a relation."
 CONCEPT Relation "A relation is a set of pairs, that is characterized by a name, a source concept and a target concept."
 CONCEPT Pair "A pair is an element of a relation, which has a left atom and a right atom."
 ENDPATTERN
@@ -213,17 +212,17 @@ Ampersand tries to store multiple relations and concepts in one plug, in order t
 The way it works is easily visualized by perceiving each plug as a single worksheet in a spreadsheet.
 The first few colums are used as concept tables, in which concepts are stored that are related through generalization and specializations.
 The other columns are used to store relations.
--}
++}
 
 PURPOSE RULE "rule allocation"
 {+In order to maintain a rule, a plug must have access to the data necessary for detecting violations.
 Consequently, the information contents of a plug limits the number of rules it can maintain on its own.
--}
++}
 
 PURPOSE RULE "All isas in one plug"
 {+If every atom that is Lime is also Citrus, then creating a new limes must ensure that the newly made atom is a citrus too.
 Similarly, deleting the lime must ensure that the atom does not remain existent as a citrus.
 For this purpose, all concepts that are related through specialization or generalization are stored in the same plug.
--}
++}
 
 ENDCONTEXT

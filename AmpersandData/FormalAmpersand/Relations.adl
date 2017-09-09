@@ -29,6 +29,8 @@ MEANING "The source of a signature."
 RELATION tgt[Signature*Concept] [UNI,TOT]
 MEANING "The target of a signature."
 
+RELATION bind[BindedRelation*Relation][UNI,TOT]
+
 RELATION prop[Relation*Property]
 
 

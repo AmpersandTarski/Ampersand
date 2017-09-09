@@ -1,7 +1,7 @@
 ﻿JGCSCS
 5
 Ampersand scripts/source files
-*.adl;*.pop;*.ifc;*.docadl
+*.adl;*.ifc;*.docadl
 Rieks Joosten
 rieks.joosten@tno.nl
 
@@ -9,8 +9,13 @@ rieks.joosten@tno.nl
 TRUE
 --
 
-8
-ADL (ampersand) files.
+13
+Ampersand is a tool for generating prototypes from relation algebra rules
+
+This file contains syntax coloring for Ampersand v3.
+
+Syntax colouring for Ampersand-v3.8.0 (December 2016) and later.
+- some less-used features have been removed in an attempt to speed up syntax coloring
 
 Syntax colouring for Ampersand-v3.8.0 (December 2016) and later.
 Changes include support for: 
@@ -18,22 +23,26 @@ Changes include support for:
 - back-quote coloring (e.g. `text`) in comments.
 - refering to developers (e.g. @RieksJ: links to https://github.com/RieksJ)
 - references to Ampersand issues (e.g. #598 links to https://github.com/AmpersandTarski/Ampersand/issues/598) 
-80
-#define spullenboel
+84
+#define preprocessortext
 CONTEXT Piet  IN DUTCH { }
+INCLUDE "myfile" -- here is some comment -!highlighted text! comment again, and `text between backquotes` is marked. 
 PURPOSE CONTEXT Piet 
-{+dit is een beschrijving van de context 
-dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl +} --Kennen wij geen issues? #392
-PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl merk op dat mai`la`dre`ssen `gelinkt` word`en
-{- dat geldt **OOK** voor URL's. Vo`orbeeld: http://www.tno.nl -} en dan "strings" of zulke "str\"ings" sdf
-'_SESSION' [SESSION] 'ONE' '_ONE' {- Zie Issue#598 -} dec  V[Aap*Noot] I[AAP] V[noot] 
---! Line comment die !-- er @qa colouring #234 uitspringt kan soms handig zijn. 
--- dat geldt **OOK** voor URL's. Voorbeeld: http://www.tno.nl 
+{+ purpose text can use **emphasis** and refer to Github issues, e.g. #392
+Links may be included, e.g.: http://www.tno.nl +}
+PATTERN BPM -- WIJZIGER: rieks.joosten@tno.nl (mail addresses are no longer linked)
+{- URLs are no longer linked in block comments either (for speed) http://www.tno.nl -} 
+-- but they **ARE** in line comments, e.g.: http://www.tno.nl 
+
+Here is an example of "strings" or "str\"ings" (both should work)
+Special phrases are marked, such as '_SESSION' [SESSION] and  'ONE' '_ONE' {- Zie Issue#598 -} 
+dec  V[Aap*Noot] I[AAP] V[noot] 
 --? nog een ?@line comment #234 
 --$ en de laatste @line comment #234 
 --------[[dit is een section header]]--
 --[dit is een subsection header]-- met daarin #1234
-{- tests -}
+-- tests INCLUDE "../Test/EditableFile.adl" -- jeetje...-}
+-- te editen: file:"file (spaties ook)"
 MEANING some text
 {+ 1 {- 2 geldt **OOK** -} 3 
 {- 1 {+ 2 +}
@@ -57,7 +66,7 @@ deelProcVan :: Proces * Proces [ASY] PRAGMA "" " is een deelproces van ".
 deelCdxVan  :: Conditie * Conditie [ASY] PRAGMA "" " is een deelconditie  van ".
 RULE aap: sadfa
 RULE "aap noot": as;ldkfjasl;dkfj
-{+ {- blokcommentaar --!asdfasdfasdf -}
+
 activiteit :: Proces * Activiteit [UNI,INJ,SUR] PRAGMA "" " wordt uitgevoerd middels ".
 
 POPULATION relation CONTAINS  [(',c's)]
@@ -101,93 +110,13 @@ yx--!  asdfas
 {- asdfasdfa
 0
 FALSE
-29
-Preprocessor
-Preprocessor regels hebben het '#' teken op de eerste positie van een regel
-^#.*
-FALSE
-FALSE
-11
-0
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
+26
 Section header
 --[[xxx]]---
 ^--+\[\[.*\]\]--+
 FALSE
 FALSE
 26
-0
-
-
-3
-FALSE
-FALSE
-FALSE
-TRUE
-
-
-
-
-FALSE
-
-Line Comment (emphasized)
-Text after --! on the same line.
-((?<=--)|^---*)(?<cmtchar>!).*?($|\k<cmtchar>)
-FALSE
-FALSE
-33
-0
-
-
-3
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Line Comment (alternate highlight)
-Text after --? on the same line.
-((?<=--)|^---*)(?<cmtchar>\?).*?($|\k<cmtchar>)
-FALSE
-FALSE
-34
-0
-
-
-3
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Line Comment $
-Text after --$ on the same line.
-((?<=--)|^---*)(?<cmtchar>\$).*?($|\k<cmtchar>)
-FALSE
-FALSE
-32
 0
 
 
@@ -385,6 +314,26 @@ FALSE
 
 FALSE
 
+INCLUDE statements
+Allows one to edit files that are INCLUDEd
+\bINCLUDE\b
+FALSE
+FALSE
+12
+0
+
+
+7
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
 Reserved words
 Lijstje staat in 'SourceForge:\src\lib\DatabaseDesign\Ampersand\Input\ADL1\Parser.hs' (d.d. 1 dec 2013)
 9
@@ -416,7 +365,7 @@ FALSE
 
 V, I
 
-(?<!['])\b[VI](?=\s*\[\s*([A-Z][a-zA-Z0-9_-]*)\s*(|\*\s*([A-Z][a-zA-Z0-9_-]*)\s*)\])
+(?<!['])\b[VI]\b
 FALSE
 FALSE
 23
@@ -571,8 +520,8 @@ FALSE
 FALSE
 
 string
-
-\"(?:[^\"\r\n](?!\\"))*\"
+was "(?:[^"\r\n](?!\\"))*"
+"[^"\r\n]*"
 FALSE
 FALSE
 17
@@ -711,7 +660,7 @@ FALSE
 FALSE
 {
 0
-4
+5
 line comments
 1
 9
@@ -719,10 +668,10 @@ FALSE
 0
 
 
-11
+10
 text in `back-quotes`
-
 \`[^\`]*?(\`|(?=(\n|\r)))
+\`[^\`]*?\`
 FALSE
 FALSE
 7
@@ -740,29 +689,9 @@ FALSE
 
 FALSE
 
-mailaddres
-
-\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
-FALSE
-FALSE
-2
-3
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
 URL
 We don't check the URL itself, it is just for coloring 99% of the URLs used...
-((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
+((http|https|ftp|ftps):\/\/[^\]}>\s\)]*)
 FALSE
 FALSE
 2
@@ -780,16 +709,16 @@ FALSE
 
 FALSE
 
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
+INCLUDE- or file-statements
+Allows one to edit files that are INCLUDEd
+\b(INCLUDE|file)\b
 FALSE
 FALSE
-28
-4
-https://github.com/$1
-
+9
 0
+
+
+7
 FALSE
 FALSE
 FALSE
@@ -841,8 +770,8 @@ FALSE
 FALSE
 
 subsection header
-Stuff between [ (or eol) will be highlighed
-(?<=^--+)\[[^\[\]]*\]
+Stuff between [ (or eol) will be highlighed     (?<=^--+)\[.*\](?=--)
+(?<=--)\[.*
 FALSE
 FALSE
 35
@@ -861,8 +790,8 @@ FALSE
 FALSE
 
 Line Comment (emphasized)
-Text after --! on the same line.
-(?<=--)!.*
+Text after -! on the same line (up till another !).
+(?<=-)!.*?($|!)
 FALSE
 FALSE
 33
@@ -947,27 +876,7 @@ FALSE
 0
 
 
-10
-{+ block comment start
-comment between {+ and +}
-(?<=(PURPOSE|MEANING|MESSAGE).*?){\+
-FALSE
-TRUE
-25
-0
-
-
 4
-FALSE
-FALSE
-FALSE
-FALSE
-0
-
-{+ ... +}
-{+ ... +}
-FALSE
-+}
 +} block comment ends
 comment between {+ and +}
 \+}
@@ -988,94 +897,14 @@ FALSE
 {+ ... +}
 FALSE
 {+
-{- (Haskell) block comment start
-Haskell block comment is text between {- and -}
-{-
-FALSE
-FALSE
-24
-0
-
-
-5
-FALSE
-FALSE
-FALSE
-FALSE
-0
-
-{- ... -}
-{- ... -}
-FALSE
--}
--} (Haskell) block comment ends
-Haskell block comment is text between {- and -}
--}
-FALSE
-FALSE
-30
-0
-
-
-2
-FALSE
-FALSE
-TRUE
-FALSE
-
-0
-{- ... -}
-{- ... -}
-FALSE
-{-
 text in `back-quotes`
-
 \`[^\`]*?(\`|(?=\+}))
+\`[^\`]*?\`
 FALSE
 TRUE
 7
 0
 
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-mailaddres
-
-\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
-FALSE
-FALSE
-2
-3
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
-FALSE
-FALSE
-28
-4
-https://github.com/$1
 
 0
 FALSE
@@ -1096,26 +925,6 @@ FALSE
 2
 4
 https://github.com/AmpersandTarski/Ampersand/issues/$1
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-URL
-We don't check the URL itself, it is just for coloring 99% of the URLs used...
-((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
-FALSE
-FALSE
-2
-4
-$1
 
 0
 FALSE
@@ -1155,9 +964,9 @@ FALSE
 0
 
 
-10
+5
 {- (Haskell) block comment start
-Haskell block comment is text between {- and -}
+Haskell block comment is text between {- and -} can be nested
 {-
 FALSE
 FALSE
@@ -1196,94 +1005,14 @@ FALSE
 {- ... -}
 FALSE
 {-
-{+ block comment start
-comment between {+ and +}
-(?<=(PURPOSE|MEANING|MESSAGE).*?){\+
-FALSE
-TRUE
-25
-0
-
-
-4
-FALSE
-FALSE
-FALSE
-FALSE
-0
-
-{+ ... +}
-{+ ... +}
-FALSE
-+}
-{+block comment ends
-comment between {+ and +}
-\+}
-FALSE
-FALSE
-30
-0
-
-
-0
-FALSE
-FALSE
-TRUE
-FALSE
-
-0
-{+ ... +}
-{+ ... +}
-FALSE
-{+
 text in `back-quotes`
-
 \`[^\`]*?(\`|(?=-}))
+\`[^\`]*?\`
 FALSE
 TRUE
 7
 0
 
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-mailaddres
-
-\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
-FALSE
-FALSE
-2
-3
-
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
-FALSE
-FALSE
-28
-4
-https://github.com/$1
 
 0
 FALSE
@@ -1304,26 +1033,6 @@ FALSE
 2
 4
 https://github.com/AmpersandTarski/Ampersand/issues/$1
-
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-URL
-We don't check the URL itself, it is just for coloring 99% of the URLs used...
-((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
-FALSE
-FALSE
-2
-4
-$1
 
 0
 FALSE
@@ -1363,7 +1072,7 @@ FALSE
 0
 
 
-7
+2
 **-return
 Toggle back after another pair of **'s
 \*\*
@@ -1404,33 +1113,21 @@ FALSE
 
 FALSE
 
-text in `back-quotes`
-
-\`[^\`]*?(\`|(?=\*\*))
+edit file
+1
+0
 FALSE
-TRUE
-36
 0
 
 
-0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-mailaddres
-
-\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}\b
-FALSE
-FALSE
-2
 3
+spaces until quote
+skip spaces
+\s*"
+FALSE
+FALSE
+0
+0
 
 
 0
@@ -1444,56 +1141,36 @@ FALSE
 
 FALSE
 
-@GitDeveloper: message to end of line
-Piece of text that should draw the attention of specific developers.
-@([A-Za-z0-9_-]+)
-FALSE
-FALSE
-28
-4
-https://github.com/$1
+fileid
 
-0
+(?<=")[^"\r\n]*(?=")
 FALSE
 FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-Ampersand issues
-
-#([0-9]{1,4})
-FALSE
-FALSE
+1
 2
-4
-https://github.com/AmpersandTarski/Ampersand/issues/$1
 
+
+1
+FALSE
+FALSE
+FALSE
+FALSE
+
+
+
+
+FALSE
+
+no fileid
+
+(?=.)
+FALSE
+FALSE
 0
-FALSE
-FALSE
-FALSE
-FALSE
-
-
-
-
-FALSE
-
-URL
-We don't check the URL itself, it is just for coloring 99% of the URLs used...
-((http|https|ftp|ftps)\:\/\/[^\]}>\s\)]*)
-FALSE
-FALSE
-2
-4
-$1
-
 0
+
+
+1
 FALSE
 FALSE
 FALSE

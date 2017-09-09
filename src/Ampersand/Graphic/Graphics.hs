@@ -7,6 +7,7 @@ import Ampersand.ADL1
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.Graphic.Fspec2ClassDiagrams
 import Ampersand.Graphic.ClassDiag2Dot
 import Data.GraphViz.Attributes.Complete
@@ -23,7 +24,6 @@ data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern
                 | PTDeclaredInPat Pattern
                 | PTCDConcept A_Concept
-                | PTIsaInPattern Pattern  -- Not used at all...
                 | PTCDRule Rule
                 | PTLogicalDM
                 | PTTechnicalDM
@@ -83,15 +83,6 @@ makePicture fSpec pr =
                                       English -> "Concept diagram of relations in " ++ name pat
                                       Dutch   -> "Conceptueel diagram van relaties in " ++ name pat
                                }
-   PTIsaInPattern pat  -> Pict { pType = pr
-                               , scale = scale'
-                               , dotSource = conceptualGraph' fSpec pr
-                               , dotProgName = graphVizCmdForConceptualGraph
-                               , caption =
-                                   case fsLang fSpec of
-                                      English -> "Classifications of " ++ name pat
-                                      Dutch   -> "Classificaties van " ++ name pat
-                               }
    PTCDPattern pat     -> Pict { pType = pr
                                , scale = scale'
                                , dotSource = conceptualGraph' fSpec pr
@@ -116,12 +107,11 @@ makePicture fSpec pr =
             PTClassDiagram -> "1.0"
             PTCDPattern{}-> "0.7"
             PTDeclaredInPat{}-> "0.6"
-            PTIsaInPattern{} -> "0.7"
             PTCDRule{}   -> "0.7"
             PTCDConcept{}      -> "0.7"
             PTLogicalDM    -> "1.2"
             PTTechnicalDM  -> "1.2"
-   graphVizCmdForConceptualGraph = Sfdp
+   graphVizCmdForConceptualGraph = Fdp -- (don't use Sfdp, because it causes a bug in linux. see http://www.graphviz.org/content/sfdp-graphviz-not-built-triangulation-library)
 
 pictureID :: PictureReq -> String
 pictureID pr =
@@ -131,7 +121,6 @@ pictureID pr =
       PTTechnicalDM    -> "TechnicalDataModel"
       PTCDConcept cpt     -> "CDConcept"++name cpt
       PTDeclaredInPat pat -> "RelationsInPattern"++name pat
-      PTIsaInPattern  pat -> "IsasInPattern"++name pat
       PTCDPattern pat     -> "CDPattern"++name pat
       PTCDRule r          -> "CDRule"++name r
 
@@ -146,9 +135,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               rs    = [r | r<-vrules fSpec, c `elem` concs r]
           in
           CStruct { csCpts = nub$cpts' ++ [g |(s,g)<-gs, elem g cpts' || elem s cpts'] ++ [s |(s,g)<-gs, elem g cpts' || elem s cpts']
-                  , csRels = [r | r@Sgn{} <- relsMentionedIn rs   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
-                             , not (isProp r)
-                             ]
+                  , csRels = filter (not . isProp) (relsMentionedIn rs)   -- the use of "relsMentionedIn" restricts relations to those actually used in rs
                   , csIdgs = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
                   }
         --  PTCDPattern makes a picture of at least the relations within pat;
@@ -156,7 +143,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
         --  and rels to prevent disconnected concepts, which can be connected given the entire context.
         PTCDPattern pat ->
           let orphans = [c | c<-cpts, not(c `elem` map fst idgs || c `elem` map snd idgs || c `elem` map source rels  || c `elem` map target rels)]
-              xrels = nub [r | c<-orphans, r@Sgn{}<-vrels fSpec
+              xrels = nub [r | c<-orphans, r<-vrels fSpec
                         , (c == source r && target r `elem` cpts) || (c == target r  && source r `elem` cpts)
                         , source r /= target r, decusr r
                         ]
@@ -164,9 +151,7 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               gs   = fsisa fSpec
               cpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
               cpts' = concs pat `uni` concs rels
-              rels = [r | r@Sgn{}<-relsMentionedIn pat
-                             , not (isProp r)    -- r is not a property
-                             ]
+              rels = filter (not . isProp) (relsMentionedIn pat)
           in
           CStruct { csCpts = cpts' `uni` [g |cl<-eqCl id [g |(s,g)<-gs, s `elem` cpts'], length cl<3, g<-cl] -- up to two more general concepts
                   , csRels = rels `uni` xrels -- extra rels to connect concepts without rels in this picture, but with rels in the fSpec
@@ -180,26 +165,10 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
               decs = relsDefdIn pat `uni` relsMentionedIn (udefrules pat)
           in
           CStruct { csCpts = cpts
-                  , csRels = [r | r@Sgn{}<-decs
+                  , csRels = [r | r <- decs
                              , not (isProp r), decusr r    -- r is not a property
                              ]
                   , csIdgs = [(s,g) |(s,g)<-gs, g `elem` cpts, s `elem` cpts]    --  all isa edges within the concepts
-                  }
-        PTIsaInPattern pat ->
-          let gs    = fsisa fSpec
-              cpts  = concs edges
-              cpts' = concs pat >- concs gs
-              edges = clos gs idgs
-              idgs  = [(s,g) |(s,g)<-gs, elem g cpts' || elem s cpts']  --  all isa edges
-              clos tuples ts = f (tuples>-ts) ts []
-               where f  []  new result = result++new
-                     f  _   []  result = result
-                     f tups new result = f (tups>-new) [ t |t<-tups, (not.null) (concs t `isc` concs result') ] result'
-                                             where result' = result++new
-          in
-          CStruct { csCpts = cpts
-                  , csRels = []
-                  , csIdgs = idgs
                   }
 
         PTCDRule r ->
@@ -207,29 +176,24 @@ conceptualGraph' fSpec pr = conceptual2Dot (getOpts fSpec) cstruct
                      , g `elem` concs r || s `elem` concs r]  --  all isa edges
           in
           CStruct { csCpts = nub $ concs r++[c |(s,g)<-idgs, c<-[g,s]]
-                  , csRels = [d | d@Sgn{}<-relsMentionedIn r, decusr d
+                  , csRels = [d | d<-relsMentionedIn r, decusr d
                              , not (isProp d)    -- d is not a property
                              ]
                   , csIdgs = idgs -- involve all isa links from concepts touched by one of the affected rules
                   }
-        _  -> fatal 276 "No conceptual graph defined for this type."
+        _  -> fatal "No conceptual graph defined for this type."
 
 writePicture :: Options -> Picture -> IO()
 writePicture opts pict
     = sequence_ (
-      [dumpShow ]++
       [createDirectoryIfMissing True  (takeDirectory (imagePath opts pict)) ]++
-      [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
+   --   [dumpShow ]++
+   --   [writeDot Canon  | genFSpec opts ]++  --Pretty-printed Dot output with no layout performed.
       [writeDot Png    | genFSpec opts ] ++  --handy format to include in github comments/issues
       [writeDot Svg    | genFSpec opts ] ++ -- format that is used when docx docs are being generated.
       [writePdf Eps    | genFSpec opts ] -- .eps file that is postprocessed to a .pdf file 
           )
    where
-     dumpShow :: IO()
-     dumpShow = -- This has been hacked in in order to diagnose the issue at: https://github.com/ivan-m/graphviz/issues/13
-       do let path = (imagePath opts) pict -<.> "txt"
-          writeFile path (show . dotSource $ pict)
-          verboseLn opts $ "Dumpfile written: "++path 
      writeDot :: GraphvizOutput -> IO ()
      writeDot = writeDotPostProcess Nothing
      writeDotPostProcess :: Maybe (FilePath -> IO ()) --Optional postprocessor
@@ -255,8 +219,9 @@ writePicture opts pict
                    
      writePdf :: GraphvizOutput
               -> IO ()
-     writePdf = writeDotPostProcess (Just makePdf) 
-
+     writePdf x = (writeDotPostProcess (Just makePdf) x)
+       `catch` (\ e -> verboseLn opts ("Something went wrong while creating your Pdf."++  --see issue at https://github.com/AmpersandTarski/RAP/issues/21
+                                       "\n  Your error message is:\n " ++ show (e :: IOException)))
      ps2pdfCmd path = "epstopdf " ++ path  -- epstopdf is installed in miktex.  (package epspdfconversion ?)
 
 class ReferableFromPandoc a where
@@ -264,7 +229,7 @@ class ReferableFromPandoc a where
 
 instance ReferableFromPandoc Picture where
   imagePath opts p =
-     ( dirOutput opts)
+     dirOutput opts
      </> (escapeNonAlphaNum . pictureID . pType ) p <.> "svg"
 
 {-
@@ -287,7 +252,7 @@ instance Navigatable A_Concept where
    interfacename _ = "Concept" --see Atlas.adl
    itemstring = name  --copied from atlas.hs
 
-instance Navigatable Declaration where
+instance Navigatable Relation where
    interfacename _ = "Relatiedetails"
    itemstring x = name x ++ "["
                   ++ (if source x==target x then name(source x) else name(source x)++"*"++name(target x))
@@ -295,7 +260,7 @@ instance Navigatable Declaration where
 -}
 
 data ConceptualStructure = CStruct { csCpts :: [A_Concept]               -- ^ The concepts to draw in the graph
-                                   , csRels :: [Declaration]   -- ^ The relations, (the edges in the graph)
+                                   , csRels :: [Relation]   -- ^ The relations, (the edges in the graph)
                                    , csIdgs :: [(A_Concept, A_Concept)]  -- ^ list of Isa relations
                                    }
 
@@ -322,11 +287,11 @@ conceptual2Dot opts (CStruct cpts' rels idgs)
         baseNodeId c
             = case lookup c (zip cpts [(1::Int)..]) of
                 Just i -> "cpt_"++show i
-                _      -> fatal 169 $ "element "++name c++" not found by nodeLabel."
+                _      -> fatal ("element "++name c++" not found by nodeLabel.")
 
         -- | This function constructs a list of NodeStatements that must be drawn for a concept.
         relationNodesAndEdges ::
-             (Declaration,Int)           -- ^ tuple contains the declaration and its rank
+             (Relation,Int)           -- ^ tuple contains the relation and its rank
           -> ([DotNode String],[DotEdge String]) -- ^ the resulting tuple contains the NodeStatements and EdgeStatements
         relationNodesAndEdges (r,n)
           | doubleEdges opts
@@ -379,10 +344,10 @@ data PictureObject = CptOnlyOneNode A_Concept    -- ^ Node of a concept that ser
                    | CptConnectorNode A_Concept  -- ^ Node of a concept that serves as connector of relations to that concept
                    | CptNameNode A_Concept       -- ^ Node of a concept that shows the name
                    | CptEdge                     -- ^ Edge of a concept to connect its nodes
-                   | RelOnlyOneEdge Declaration  -- ^ Edge of a relation that connects to the source and the target
-                   | RelSrcEdge     Declaration  -- ^ Edge of a relation that connects to the source
-                   | RelTgtEdge     Declaration  -- ^ Edge of a relation that connects to the target
-                   | RelIntermediateNode    Declaration  -- ^ Intermediate node, as a hindge for the relation edges
+                   | RelOnlyOneEdge Relation  -- ^ Edge of a relation that connects to the source and the target
+                   | RelSrcEdge     Relation  -- ^ Edge of a relation that connects to the source
+                   | RelTgtEdge     Relation  -- ^ Edge of a relation that connects to the target
+                   | RelIntermediateNode    Relation  -- ^ Intermediate node, as a hindge for the relation edges
                    | IsaOnlyOneEdge              -- ^ Edge of an ISA relation without a hinge node
                    | TotalPicture                -- ^ Graph attributes
 
@@ -417,16 +382,15 @@ handleFlags po opts =
                           , Style [filled]
                     --      , URL (theURL opts c)
                           ]
-      RelOnlyOneEdge r -> [ (XLabel . StrLabel .fromString.name) r
+      RelOnlyOneEdge r ->  (XLabel . StrLabel .fromString.name) r
                        --   , URL (theURL opts r)
-                          ]
-                        ++[ ArrowTail noArrow, ArrowHead noArrow
+                          :
+                          [ ArrowTail noArrow, ArrowHead noArrow
                           , Dir Forward  -- Note that the tail arrow is not supported , so no crowfoot notation possible with a single edge.
                           , Style [SItem Tapered []] , PenWidth 5
                           ]
       RelSrcEdge r -> [ ArrowHead ( if crowfoot opts   then normal                    else
                                     if isFunction r    then noArrow                   else
-                                    if isInvFunction r then directionArrow            else
                                     directionArrow
                                   )
                       , ArrowTail ( if crowfoot opts   then crowfootArrowType False r else
@@ -439,18 +403,16 @@ handleFlags po opts =
       RelTgtEdge r -> [ (Label . StrLabel . fromString . name) r
                       , ArrowHead ( if crowfoot opts   then crowfootArrowType True r  else
                                     if isFunction r    then normal                    else
-                                    if isInvFunction r then noArrow                   else
                                     noArrow
                                   )
-                      , ArrowTail ( if crowfoot opts   then noArrow                   else
-                                    if isFunction r    then noArrow                   else
-                                    if isInvFunction r then AType [(noMod ,Inv)]      else
+                      , ArrowTail ( if crowfoot opts   || isFunction r    
+                                                       then noArrow                   else
                                     AType [(noMod ,Inv)]
                                   )
                       ,TailClip False
                       ]
       RelIntermediateNode _ ->
-                       [ Label (StrLabel (fromString("")))
+                       [ Label (StrLabel (fromString "" ))
                        , Shape PlainText
                        , bgColor White
                     --   , URL (theURL opts r)
@@ -466,14 +428,14 @@ handleFlags po opts =
                       , Landscape False
                       ]
 
-isInvFunction :: Declaration -> Bool
+isInvFunction :: Relation -> Bool
 isInvFunction d = isInj d && isSur d
 
-crowfootArrowType :: Bool -> Declaration -> ArrowType
+crowfootArrowType :: Bool -> Relation -> ArrowType
 crowfootArrowType isHead r
-   = AType (case isHead of
-               True  -> getCrowfootShape (isUni r) (isTot r)
-               False -> getCrowfootShape (isInj r) (isSur r)
+   = AType (if isHead 
+            then getCrowfootShape (isUni r) (isTot r)
+            else getCrowfootShape (isInj r) (isSur r)
            )
        where
          getCrowfootShape :: Bool -> Bool -> [( ArrowModifier , ArrowShape )]

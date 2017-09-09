@@ -17,6 +17,11 @@ angular.module('AmpersandApp').controller('Ifc$interfaceName$Controller', functi
     else if (resourceType == 'ONE') resourceId = '1';
     else resourceId = \$routeParams.resourceId;
     
+    \$scope.switchResource = function(resourceId){
+        \$location.url('/$interfaceName$/' + resourceId);
+    }
+	
+    
     \$scope.resource = { '_id_' : resourceId,
                         '_path_' : 'resources/' + resourceType + '/' + resourceId,
                         '_isRoot_' : true,

@@ -2,14 +2,17 @@
 --        In that case it's not a Rendering module and it needs to be replaced
 module Ampersand.FSpec.Motivations (Motivated(purposeOf,purposesDefinedIn,explanations,explForObj), Meaning(..))
 where
+import Ampersand.Core.ParseTree
+        ( ConceptDef
+        )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec(FSpec(..)) 
 import Ampersand.Basics
 import Text.Pandoc
 
--- The general idea is that an Ampersand declaration such as:
+-- The general idea is that an Ampersand relation such as:
 --     PURPOSE RELATION r[A*B] IN ENGLISH
---     {+This text explains why r[A*B] exists-}
+--     {+This text explains why r[A*B] exists+}
 -- produces the exact right text in the functional design document.
 
 -- The class Motivated exists so that we can write the Haskell expression 'purposeOf fSpec l x'
@@ -30,7 +33,7 @@ class  Named a => Motivated a where
                                                     --  * Different purposes from different sources make me want to document them all.
                                                     --  * Combining two overlapping scripts from (i.e. from different authors) may cause multiple purposes.
   purposeOf fSpec l x = case expls of
-                        []  -> Nothing -- fatal 40 "No purpose is generated! (should be automatically generated and available in FSpec.)"
+                        []  -> Nothing -- fatal "No purpose is generated! (should be automatically generated and available in FSpec.)"
                         ps  -> Just ps
 
    where expls = [e | e<-explanations fSpec
@@ -47,27 +50,27 @@ class  Named a => Motivated a where
         , explForObj x (explObj e)                  -- informally: "if x and e are the same"
      ]
 instance Motivated ConceptDef where
---  meaning _ cd = fatal 49 ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
+--  meaning _ cd = fatal ("Concept definitions have no intrinsic meaning, (used with concept definition of '"++cdcpt cd++"')")
   explForObj x (ExplConceptDef x') = x == x'
   explForObj _ _ = False
   explanations _ = []
 
 instance Motivated A_Concept where
---  meaning _ c = fatal 54 ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
+--  meaning _ c = fatal ("Concepts have no intrinsic meaning, (used with concept '"++name c++"')")
   explForObj x (ExplConceptDef cd) = name x == name cd
   explForObj _ _ = False
   explanations _ = []
 
-instance Motivated Declaration where
+instance Motivated Relation where
 --  meaning l decl = if null (decMean decl)
 --                   then concat [explCont expl | expl<-autoMeaning l decl, Just l == explLang expl || Nothing == explLang expl]
 --                   else decMean decl
-  explForObj d1 (ExplDeclaration d2) = d1 == d2
+  explForObj d1 (ExplRelation d2) = d1 == d2
   explForObj _ _ = False
   explanations _ = []
 --  autoMeaning lang d
 --   = [Expl { explPos   = decfpos d
---           , explObj   = ExplDeclaration d
+--           , explObj   = ExplRelation d
 --           , explLang  = Just lang
 --           , explRefIds = []
 --           , explCont  = [Para langInlines]
@@ -281,20 +284,17 @@ instance Motivated Declaration where
 --                                                              ++[(Math InlineMath . var [source d].target) d]
 --                                                              ++[Str "."]
 --
---      applyM :: Declaration -> [Inline] -> [Inline] -> [Inline]
---      applyM decl a b =
---               case decl of
---                 Sgn{} | null (prL++prM++prR)
---                            -> a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(name decl)]
---                       | null prL
---                            -> a++[Space,Str prM,Space]++b++[Space,Str prR]
---                       | otherwise
---                            -> [Str (upCap prL),Space]++a++[Space,Str prM,Space]++b++if null prR then [] else [Space,Str prR]
---                              where prL = decprL decl
---                                    prM = decprM decl
---                                    prR = decprR decl
---                 Isn{}     -> a++[Space,Str "equals",Space]++b
---                 Vs{}      -> [Str (show True)]
+--      applyM :: Relation -> [Inline] -> [Inline] -> [Inline]
+--      applyM decl a b
+--              | null (prL++prM++prR)
+--                   = a++[Space,Str "corresponds",Space,Str "to",Space]++b++[Space,Str "in",Space,Str "relation",Space,Str(name decl)]
+--              | null prL
+--                   = a++[Space,Str prM,Space]++b++[Space,Str prR]
+--              | otherwise
+--                   = [Str (upCap prL),Space]++a++[Space,Str prM,Space]++b++if null prR then [] else [Space,Str prR]
+--          where prL = decprL decl
+--                prM = decprM decl
+--                prR = decprR decl
 --
 --      var :: Named a => [a] -> a -> String     -- TODO Vervangen door mkvar, uit predLogic.hs
 --      var seen c = low c ++ ['\'' | c'<-seen, low c == low c']
@@ -317,19 +317,19 @@ instance Motivated Rule where
 --           } ]
 
 instance Motivated Pattern where
---  meaning _ pat = fatal 324 ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
+--  meaning _ pat = fatal ("Patterns have no intrinsic meaning, (used with pattern '"++name pat++"')")
   explForObj x (ExplPattern str) = name x == str
   explForObj _ _ = False
   explanations = ptxps
 
 instance Motivated Interface where
---  meaning _ obj = fatal 342 ("Interfaces have no intrinsic meaning, (used with interface '"++name obj++"')")
+--  meaning _ obj = fatal ("Interfaces have no intrinsic meaning, (used with interface '"++name obj++"')")
   explForObj x (ExplInterface str) = name x == str
   explForObj _ _ = False
   explanations _ = []
 
 class Meaning a where
-  meaning :: Lang -> a -> Maybe A_Markup
+  meaning :: Lang -> a -> Maybe Markup
   meaning2Blocks :: Lang -> a -> [Block]
   meaning2Blocks l a = case meaning l a of
                          Nothing -> []
@@ -339,22 +339,19 @@ instance Meaning Rule where
   meaning l r = case filter isLang (ameaMrk (rrmean r)) of
                   []   -> Nothing
                   [m]  -> Just m
-                  _    -> fatal 381 ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
+                  _    -> fatal ("In the "++show l++" language, too many meanings given for rule "++name r ++".")
                   where isLang m = l == amLang m
 
-instance Meaning Declaration where
+instance Meaning Relation where
   meaning l d =
-    case d of
-      Sgn{} -> let isLang m = l == amLang m
-               in case filter isLang (ameaMrk (decMean d)) of
-                    []   -> Nothing
-                    [m]  -> Just m
-                    _    -> fatal 388 ("In the "++show l++" language, too many meanings given for declaration "++name d ++".")
-      Isn{} -> fatal 370 "meaning is undefined for Isn"
-      Vs{}  -> fatal 371 "meaning is undefined for Vs"
+    let isLang m = l == amLang m
+    in case filter isLang (ameaMrk (decMean d)) of
+         []   -> Nothing
+         [m]  -> Just m
+         _    -> fatal ("In the "++show l++" language, too many meanings given for relation "++name d ++".")
 
 instance Motivated FSpec where
---  meaning _ fSpec = fatal 329 ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")
+--  meaning _ fSpec = fatal ("No FSpec has an intrinsic meaning, (used with FSpec '"++name fSpec++"')")
   explForObj x (ExplContext str) = name x == str
   explForObj _ _ = False
   explanations fSpec

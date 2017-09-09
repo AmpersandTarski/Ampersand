@@ -38,7 +38,7 @@ largerConcepts gs cpt
 -- | This function returns a list of the same concepts, but in an ordering such that if for any two elements a and b in the 
 --   list, if a is more specific than b, a will be to the left of b in the resulting list.
 sortSpecific2Generic :: [A_Gen] -> [A_Concept] -> [A_Concept]
-sortSpecific2Generic gens cps = go [] cps
+sortSpecific2Generic gens = go []
   where go xs [] = xs
         go xs (y:ys)
           | null (smallerConcepts gens y `isc` ys) = go (xs++[y]) ys
@@ -56,26 +56,23 @@ atomValuesOf ci pt c
             nub$ [apLeft p  | pop@ARelPopu{} <- pt, source (popdcl pop) `elem` smallerconcs, p <- popps pop]
                ++[apRight p | pop@ARelPopu{} <- pt, target (popdcl pop) `elem` smallerconcs, p <- popps pop]
                ++[a         | pop@ACptPopu{} <- pt, popcpt pop `elem` smallerconcs, a <- popas pop]
-pairsOf :: ContextInfo -> [Population] -> Declaration -> Map AAtomValue (Set.Set AAtomValue)
+pairsOf :: ContextInfo -> [Population] -> Relation -> Map AAtomValue (Set.Set AAtomValue)
 pairsOf ci ps dcl
- = case dcl of
-     Isn c  -> fromList [ (a,Set.singleton a )   | a  <-atomValuesOf ci ps c]
-     Vs sgn -> fromList [ (sa, Set.fromList (atomValuesOf ci ps (target sgn))) | sa <-atomValuesOf ci ps (source sgn)]
-     Sgn{}  -> unionsWith Set.union
-                      [ fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-popps pop]
-                      | pop@ARelPopu{} <- ps
-                      , name dcl==name (popdcl pop)
-                      , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts (ctxiGens ci) (source dcl)
-                      , let t=target (popdcl pop) in t `elem` target dcl:smallerConcepts (ctxiGens ci) (target dcl)
-                      ]
+ = unionsWith Set.union
+     [ fromListWith Set.union [ (apLeft p,Set.singleton $ apRight p) | p<-popps pop]
+     | pop@ARelPopu{} <- ps
+     , name dcl==name (popdcl pop)
+     , let s=source (popdcl pop) in s `elem` source dcl:smallerConcepts (ctxiGens ci) (source dcl)
+     , let t=target (popdcl pop) in t `elem` target dcl:smallerConcepts (ctxiGens ci) (target dcl)
+     ]
 
 fullContents :: ContextInfo -> [Population] -> Expression -> [AAtomPair]
 fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.toList pairMap, b<-Set.toList bs ]
   where
-   unions t1 t2 = unionWith Set.union t1 t2
-   inters t1 t2 = mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c t1 t2
+   unions = unionWith Set.union
+   inters = mergeWithKey (\_ l r -> Just (Set.intersection l r)) c c
                   where c=const empty
-   differ t1 t2 = differenceWith (\l r->Just (Set.difference l r)) t1 t2
+   differ = differenceWith (\l r->Just (Set.difference l r))
    contents :: Expression -> Map AAtomValue (Set.Set AAtomValue)
    contents expr
     = let aVals = atomValuesOf ci ps 
@@ -106,7 +103,7 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
                        [(x,Set.singleton y) | x<-aVals (source l), y<-aVals (target r)
                                 , null (aVals (target l) >- (lkp x (contents l) `uni` lkp y (contents (EFlp r))))
                                 ]
-         EPrd (l,r) -> fromList $
+         EPrd (l,r) -> fromList
                        [ (a,Set.fromList cod) | a <- aVals (source l), let cod=aVals (target r), not (null cod) ]
          ECps (l,r) -> fromListWith Set.union
                        [(x,Set.singleton y) | (x,xv)<-Map.toList (contents l), (y,yv)<-Map.toList flipr
@@ -114,10 +111,10 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
                                 ] where flipr = contents (EFlp r)
          EKl0 x     -> if source x == target x --see #166
                        then transClosureMap (unionWith Set.union (contents x) (contents (EDcI (source x))))
-                       else fatal 87 ("source and target of "++show x++show (sign x)++ " are not equal.")
+                       else fatal ("source and target of "++show x++show (sign x)++ " are not equal.")
          EKl1 x     -> if source x == target x --see #166
                        then transClosureMap (contents x)
-                       else fatal 90 ("source and target of "++show x++show (sign x)++ " are not equal.")
+                       else fatal ("source and target of "++show x++show (sign x)++ " are not equal.")
          EFlp x     -> fromListWith Set.union [(b,Set.singleton a) | (a,bs)<-assocs (contents x), b<-Set.toList bs]
          ECpl x     -> contents (EDcV (sign x) .-. x)
          EBrk x     -> contents x
@@ -126,7 +123,7 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
          EEps i _   -> fromList [(a, Set.singleton a) | a <- aVals i]
          EDcV sgn   -> fromList [(s, Set.fromList cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
          EMp1 val c -> if name c == "SESSION" -- prevent populating SESSION with "_SESSION"
-                          && val == PSingleton undefined "_SESSION" undefined
+                          && val == PSingleton (fatal "this fatal used to be `undefined`.") "_SESSION" (fatal "this fatal used to be `undefined`.")
                         then Map.empty
                         else Map.singleton av (Set.singleton av)
                          where 

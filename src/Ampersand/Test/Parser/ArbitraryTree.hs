@@ -7,6 +7,7 @@ import Data.Char
 import Data.List (nub,isInfixOf)
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer (keywords)
+import Ampersand.Basics
 
 -- Useful functions to build on the quick check functions
 
@@ -24,7 +25,7 @@ safeStr1 :: Gen String
 safeStr1 = listOf1 printable `suchThat` noEsc
 
 noEsc :: String -> Bool
-noEsc = all (/= '\\')
+noEsc = notElem '\\'
 
 -- Genrates a valid ADL identifier
 identifier :: Gen String
@@ -143,7 +144,7 @@ instance Arbitrary P_Pattern where
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
                       <*> arbitrary <*> arbitrary <*> arbitrary <*> arbitrary
 
-instance Arbitrary P_Declaration where
+instance Arbitrary P_Relation where
     arbitrary = P_Sgn <$> lowerId         -- name
                       <*> arbitrary       -- sign
                       <*> arbitrary       -- props
@@ -242,7 +243,7 @@ instance Arbitrary PAtomPair where
 instance Arbitrary P_Population where
     arbitrary =
         oneof [
-          (P_RelPopu Nothing Nothing) <$> arbitrary <*> arbitrary <*> arbitrary,
+          P_RelPopu Nothing Nothing <$> arbitrary <*> arbitrary <*> arbitrary,
           P_CptPopu <$> arbitrary <*> lowerId <*> arbitrary
         ]
 
@@ -263,10 +264,8 @@ instance Arbitrary PAtomValue where
      where stringConstraints :: String -> Bool
            stringConstraints str =
              case readLitChar str of
-              [(c,cs)] -> if c `elem` ['\'', '"', '\\'] 
-                          then False
-                          else stringConstraints cs
-              _ -> True  -- end of string
+              [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints cs
+              _        -> True  -- end of string
 
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1
@@ -307,7 +306,7 @@ instance Arbitrary PRef2Obj where
     arbitrary =
         oneof [
             PRef2ConceptDef <$> safeStr,
-            PRef2Declaration <$> relationRef,
+            PRef2Relation <$> relationRef,
             PRef2Rule <$> upperId,
             PRef2IdentityDef <$> upperId,
             PRef2ViewDef <$> upperId,

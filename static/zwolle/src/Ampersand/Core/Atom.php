@@ -93,7 +93,47 @@ class Atom implements JsonSerializable {
         $id = strlen($this->id) > 40 ? substr($this->id, 0, 20) . '...' . substr($this->id, -20) : $this->id;
         return "{$id}[{$this->concept}]";
     }
-    
+
+    /**
+     * 
+	 * @param Atom $equalAtom  -- this atom is deemed equal to $this, so its information must be moved to $this.
+     * @return void
+     */
+    public function unionWithAtom($equalAtom){
+	  if ($equalAtom->id!=$this->id) {
+        if($this->atomExists()){
+ 	       $db               = $this->database;
+ 	       $UpdConcept       = $this->concept;
+	       $conceptTable     = $UpdConcept->getConceptTableInfo();
+
+  		   // Check validity of both atoms. They must be in the same typology.
+		   if(!$UpdConcept->inSameClassificationTree($equalAtom->concept)) throw new Exception("Concepts '[{$UpdConcept}]' and '[{$equalAtom->concept}]' are not in the same classification tree", 500);
+
+           // if $equalAtom is not more generic than $this, we have to update concept columns. TODO: inspect code of atomSetConcept
+		   if (!$this->concept->hasGeneralization($equalAtom->concept)) $db->atomSetConcept($this, $equalAtom->concept);
+
+           // rename every mention of $equalAtom->idEsc to $this->idEsc, in all tables
+		   foreach (Relation::getAllRelations() as $relation){
+		       $tableName = $relation->getMysqlTable()->name;
+		    
+			   $cols = [];
+		       if($relation->srcConcept->inSameClassificationTree($UpdConcept)) $cols[] = $relation->getMysqlTable()->srcCol();
+		       if($relation->tgtConcept->inSameClassificationTree($UpdConcept)) $cols[] = $relation->getMysqlTable()->tgtCol();
+		       // Now $cols contains every column that might possibly contain this atom.
+		       foreach($cols as $col){
+				   if(!($tableName==$conceptTable->name && in_array($col->name, $conceptTable->getColNames())))  {
+		               $db->Exe("UPDATE IGNORE `{$tableName}` SET `{$col->name}` = '{$this->idEsc}' WHERE `{$col->name}` = '{$equalAtom->idEsc}'");
+		               $db->addAffectedRelations($relation);
+				   }
+		       }
+		   }
+
+		   $equalAtom->deleteAtom();
+ 
+        }else $this->logger->debug("Cannot unify atom '{$this}' with '{$equalAtom}', because '{$this}' does not exist.");
+	  } else $this->logger->debug("Cannot unify atom \$this with \$equalAtom, because they are both '{$this}'. This is likely an error in your .adl-script.");
+	}
+
     /**
      * Return label of atom to be displayed in user interfaces
      * for Atoms this is the same as the Atom identifier

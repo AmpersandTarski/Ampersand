@@ -3,6 +3,7 @@ module Ampersand.Classes.Relational
    ) where
 
 import Data.Maybe
+import Ampersand.Core.ParseTree(Prop(..))
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.ADL1.Expression
 import Ampersand.Basics
@@ -53,7 +54,7 @@ class Association r => Relational r where
 --           Rel{}               -> null ([Asy,Sym]>-properties (reldcl rel))
 --           V{}                 -> isEndo rel && isSingleton (source rel)
 --           I{}                 -> True
---    isImin rel  = isImin (makeDeclaration rel)   -- > tells whether the argument is equivalent to I-
+--    isImin rel  = isImin (makeRelation rel)   -- > tells whether the argument is equivalent to I-
 --    isTrue rel = case rel of
 --           Rel{}               -> False
 --           V{}                 -> True
@@ -64,25 +65,13 @@ class Association r => Relational r where
 --                   V{}   -> isEndo rel && isSingleton (source rel)
 --                   I{}   -> True
 
-instance Relational Declaration where
-    properties d = case d of
-           Sgn {}       -> case decprps_calc d of
-                             Nothing -> decprps d
-                             Just ps -> ps
-           Isn{}        -> [Uni,Tot,Inj,Sur,Sym,Asy,Trn,Rfx]
-           Vs{}         -> [Tot,Sur]
-    isProp d = case d of         -- > tells whether the argument is a property.
-           Sgn {}       -> null ([Asy,Sym]>-properties d)
-           Isn{}        -> True
-           Vs{}         -> isEndo (sign d) && isSingleton (source d)
+instance Relational Relation where
+    properties d = fromMaybe (decprps d) (decprps_calc d)
+    isProp d = null ([Asy,Sym]>-properties d)
     isImin _ = False  -- LET OP: Dit kan natuurlijk niet goed zijn, maar is gedetecteerd bij revision 913, toen straffeloos de Iscompl{} kon worden verwijderd.
-    isTrue d = case d of
-           Vs{}         -> True
-           _            -> False
+    isTrue _ = False
     isFalse _ = False
-    isIdent d = case d of
-                 Isn{} -> True   -- > tells whether the argument is equivalent to I
-                 _     -> False
+    isIdent _ = False
     isEpsilon _ = False
 
 isSingleton :: A_Concept -> Bool

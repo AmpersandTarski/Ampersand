@@ -13,7 +13,6 @@ module Ampersand.Misc.Options
         )
 where
 import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
-import Ampersand.Misc.Languages (Lang(..))
 import System.Console.GetOpt
 import System.FilePath
 import System.Directory
@@ -77,7 +76,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , test :: Bool
                        , genMetaTables :: Bool -- When set, generate the meta-tables of AST into the prototype
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
-                       , addSemanticMetaModel :: Bool -- When set, the user can use all relations defined in Formal Ampersand, without the need to specify them explicitly
+                       , genRapRelationsOnly :: Bool -- When set, the user can use all relations defined in Formal Ampersand, without the need to specify them explicitly
                        , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
@@ -108,13 +107,14 @@ dirOutputVarName = "CCdirOutput"
 dbNameVarName :: String
 dbNameVarName = "CCdbName"
 
-getEnvironmentOptions :: IO (EnvironmentOptions)
+getEnvironmentOptions :: IO EnvironmentOptions
 getEnvironmentOptions = 
    do args     <- getArgs
       let (configSwitches,otherArgs) = partition isConfigSwitch args
       argsFromConfigFile <- readConfigFileArgs (mConfigFile configSwitches)
       progName <- getProgName
-      exePath  <- getExecutablePath 
+      execPth  <- getExecutablePath -- on some operating systems, `getExecutablePath` gives a relative path. That may lead to a runtime error.
+      exePath  <- makeAbsolute execPth -- see https://github.com/haskell/cabal/issues/3512 for details
       localTime <-  do utcTime <- getCurrentTime
                        timeZone <- getCurrentTimeZone
                        return (utcToLocalTime timeZone utcTime)
@@ -138,11 +138,11 @@ getEnvironmentOptions =
     configSwitch :: String
     configSwitch = "--config"    
     mConfigFile :: [String] -> Maybe FilePath
-    mConfigFile switches = case catMaybes (map (stripPrefix configSwitch) switches) of
+    mConfigFile switches = case mapMaybe (stripPrefix configSwitch) switches of
                     []  -> Nothing
                     ['=':x] -> Just x
                     [err]   -> exitWith . WrongArgumentsGiven $ ["No file specified in `"++configSwitch++err++"`"]
-                    xs  -> exitWith . WrongArgumentsGiven $ ["Too many config files specified: "] ++ map ("   "++) xs
+                    xs  -> exitWith . WrongArgumentsGiven $ "Too many config files specified: " : map ("   " ++) xs
     readConfigFileArgs :: Maybe FilePath -> IO [String]
     readConfigFileArgs mFp
      = case mFp of
@@ -151,8 +151,9 @@ getEnvironmentOptions =
                        do args     <- getArgs
                           let (_, xs, _) = getOpt Permute (map fst options) args
                           case xs of 
-                            [script] -> do exist <- doesFileExist (script -<.> "yaml")
-                                           if exist then readConfigFile script else return []
+                            [script] -> do let yaml = script -<.> "yaml"
+                                           exist <- doesFileExist yaml
+                                           if exist then readConfigFile yaml else return []
                             _  -> return []
          Just fName -> readConfigFile fName
         where 
@@ -206,8 +207,8 @@ getOptions' envOpts =
                Options {environment      = envOpts
                       , genTime          = envLocalTime envOpts
                       , dirOutput        = fromMaybe "." $ envDirOutput envOpts
-                      , outputfile       = fatal 83 "No monadic options available."
-                      , dirPrototype     = (fromMaybe "." $ envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
+                      , outputfile       = fatal "No monadic options available."
+                      , dirPrototype     = fromMaybe "." (envDirPrototype envOpts) </> takeBaseName fName <.> ".proto"
                       , dirInclude       = "include"
                       , dbName           = fmap toLower . fromMaybe ("ampersand_"++takeBaseName fName) $ envDbName envOpts
                       , dirExec          = takeDirectory (envExePath envOpts)
@@ -226,7 +227,7 @@ getOptions' envOpts =
               --        , customCssFile    = Nothing
                       , genFSpec         = False
                       , diag             = False
-                      , fspecFormat      = fatal 105 $ "Unknown fspec format. Currently supported formats are "++allFSpecFormats++"."
+                      , fspecFormat      = fatal ("Unknown fspec format. Currently supported formats are "++allFSpecFormats++".")
                       , genEcaDoc        = False
                       , proofs           = False
                       , haskell          = False
@@ -253,7 +254,7 @@ getOptions' envOpts =
                       , test             = False
                       , genMetaTables    = False
                       , genMetaFile      = False
-                      , addSemanticMetaModel = False
+                      , genRapRelationsOnly = False
                       , genRapPopulationOnly = False
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
@@ -366,7 +367,7 @@ options = [ (Option ['v']   ["version"]
                ("write a sample configuration file ("++sampleConfigFileName++")")
             , Public)
           , (Option []      ["config"]
-               (ReqArg (\nm _ -> fatal 194 $ "config file ("++nm++")should not be treated as a regular option."
+               (ReqArg (\nm _ -> fatal ("config file ("++nm++")should not be treated as a regular option.")
                        ) "config.yaml")
                "config file (*.yaml)"
             , Public)
@@ -553,11 +554,13 @@ options = [ (Option ['v']   ["version"]
             , Hidden)
           , (Option []        ["meta-file"]
                (NoArg (\opts -> opts{genMetaFile = True}))
-               "Generate the meta-population in AST format and output it to an .adl file"
+               ("Generate an .adl file that contains the relations of formal-ampersand, "++
+                "populated with the the meta-population of your own .adl model.")
             , Hidden)
           , (Option []        ["add-semantic-metamodel"]
-               (NoArg (\opts -> opts{addSemanticMetaModel = True}))
-               "Add all relations, concepts and generalisation relations of formal ampersand into your script"
+               (NoArg (\opts -> opts{genRapRelationsOnly = True}))
+               ("When you use this switch, all relations from formal-ampersand will be available for "++
+                "use in your model. These relations do not have to be declared explicitly in your own model.")
             , Hidden)
           , (Option []        ["gen-as-rap-model"]
                (NoArg (\opts -> opts{genRapPopulationOnly = True}))

@@ -4,7 +4,6 @@
 module Ampersand.Output.ToJSON.Concepts 
   (Concepts,Segment)
 where
-import Ampersand.FSpec(showADL)
 import Ampersand.Output.ToJSON.JSONutils 
 import Ampersand.Core.AbstractSyntaxTree 
 import Data.Maybe
@@ -74,7 +73,7 @@ instance JSON A_Concept Concept where
   where
     fSpec = userFSpec multi
     hasAsSourceCpt :: Interface -> Bool
-    hasAsSourceCpt ifc = (source . objctx . ifcObj) ifc `elem` cpts
+    hasAsSourceCpt ifc = (source . objExpression . ifcObj) ifc `elem` cpts
     cpts = cpt : largerConcepts  (vgens fSpec) cpt
 instance JSON A_Concept TableCols where
  fromAmpersand multi cpt = TableCols
@@ -82,16 +81,16 @@ instance JSON A_Concept TableCols where
   , tclJSONcols    = case nub . map fst $ cols of
                        [t] -> if name t == name cptTable
                               then map (attName . snd) cols
-                              else fatal 78 $ "Table names should match: "++name t++" "++name cptTable++"." 
-                       _   -> fatal 79 "All concepts in a typology should be in exactly one table."
+                              else fatal $ "Table names should match: "++name t++" "++name cptTable++"." 
+                       _   -> fatal "All concepts in a typology should be in exactly one table."
   }
   where
     fSpec = userFSpec multi
     cols = concatMap (lookupCpt fSpec) $ cpt : largerConcepts (vgens fSpec) cpt
     cptTable = case lookupCpt fSpec cpt of
       [(table,_)] -> table
-      []      -> fatal 80 $ "Concept `"++name cpt++"` not found in a table."
-      _       -> fatal 81 $ "Concept `"++name cpt++"` found in multiple tables."
+      []      -> fatal ("Concept `"++name cpt++"` not found in a table.")
+      _       -> fatal ("Concept `"++name cpt++"` found in multiple tables.")
 instance JSON ViewDef View where
  fromAmpersand multi vd = View
   { vwJSONlabel        = name vd
@@ -108,7 +107,7 @@ instance JSON ViewSegment Segment where
                        ViewExp{}  -> "Exp"
                        ViewText{} -> "Text"
   , segJSONexpADL  = case vsmLoad seg of
-                       ViewExp expr -> Just . showADL $ expr
+                       ViewExp expr -> Just . showA $ expr
                        _            -> Nothing
   , segJSONexpSQL  = case vsmLoad seg of
                        ViewExp expr -> Just $ sqlQuery fSpec expr

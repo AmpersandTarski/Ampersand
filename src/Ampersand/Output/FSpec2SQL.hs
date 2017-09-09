@@ -2,14 +2,18 @@
 module Ampersand.Output.FSpec2SQL
   (dumpSQLqueries)
 where
+import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateInitialPopQueries
   )
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec
 import Ampersand.FSpec.SQL
 import Data.Monoid
 import qualified Data.Text as Text
+import Ampersand.Core.AbstractSyntaxTree
+     ( Relation )
 
 dumpSQLqueries :: MultiFSpecs -> Text.Text
 dumpSQLqueries multi
@@ -21,7 +25,7 @@ dumpSQLqueries multi
        <>generateInitialPopQueries fSpec
        <>header "Violations of conjuncts"
        <>concatMap showConjunct (allConjuncts fSpec)
-       <>header "Queries per declaration"
+       <>header "Queries per relation"
        <>concatMap showDecl (vrels fSpec)
        <>header "Queries of interfaces"
        <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)
@@ -31,17 +35,17 @@ dumpSQLqueries multi
      showInterface :: Interface -> [Text.Text]
      showInterface ifc 
         = header ("INTERFACE: "<>Text.pack (name ifc))
-        <>(map ((<>) "  ") . showObjDef . ifcObj) ifc
+        <>(map ("  " <>) . showObjDef . ifcObj) ifc
         where 
           showObjDef :: ObjectDef -> [Text.Text]
           showObjDef obj
-            = (header . Text.pack . showADL . objctx) obj
-            <>[Text.pack$ (prettySQLQueryWithPlaceholder 2 fSpec . objctx) obj]
+            = (header . Text.pack . showA . objExpression) obj
+            <>[Text.pack$ (prettySQLQueryWithPlaceholder 2 fSpec . objExpression) obj]
             <>case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
-            <>header "Broad query of above stuff"     
-            <>[Text.pack$ prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
+            <>header ("Broad query for the object at " <> (Text.pack . show . origin) obj)
+            <>[Text.pack . prettyBroadQueryWithPlaceholder 2 fSpec $ obj]
           showSubInterface :: SubInterface -> [Text.Text]
           showSubInterface sub = 
             case sub of 
@@ -56,11 +60,11 @@ dumpSQLqueries multi
         <>[Text.pack$ prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj,""]
         where
           showRule r 
-            = Text.pack ("  - "<>name r<>": "<>showADL r)
-     showDecl :: Declaration -> [Text.Text]
+            = Text.pack ("  - "<>name r<>": "<>showA r)
+     showDecl :: Relation -> [Text.Text]
      showDecl decl 
-        = header (Text.pack$ showADL decl)
-        <>[Text.pack$ prettySQLQuery 2 fSpec $ decl,""]
+        = header (Text.pack$ showA decl)
+        <>[Text.pack . prettySQLQuery 2 fSpec $ decl,""]
      header :: Text.Text -> [Text.Text]
      header title = 
          [ ""

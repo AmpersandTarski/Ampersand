@@ -55,7 +55,7 @@ instance JSON MultiFSpecs MetaPopulation where
    }
   where 
    grindedFSpec = fromMaybe ftl (metaFSpec multi)
-     where ftl = fatal 71 "There is no grinded fSpec."
+     where ftl = fatal "There is no grinded fSpec."
 instance JSON A_Concept AtomValuesOfConcept where
  fromAmpersand multi cpt = AtomValuesOfConcept
    { avcJSONconcept = Text.pack (name cpt)
@@ -63,16 +63,16 @@ instance JSON A_Concept AtomValuesOfConcept where
    }
   where 
    grindedFSpec = fromMaybe ftl (metaFSpec multi)
-     where ftl = fatal 79 "There is no grinded fSpec."
+     where ftl = fatal "There is no grinded fSpec."
 
-instance JSON Declaration PairsOfRelation where
+instance JSON Relation PairsOfRelation where
  fromAmpersand multi dcl = PairsOfRelation
    { porJSONrelation = Text.pack $ showDcl False dcl
    , porJSONlinks = map (fromAmpersand multi) . pairsInExpr grindedFSpec $ EDcD dcl
    }
   where 
    grindedFSpec = fromMaybe ftl (metaFSpec multi)
-     where ftl = fatal 88 "There is no grinded fSpec."
+     where ftl = fatal "There is no grinded fSpec."
 instance JSON AAtomPair JPair where
   fromAmpersand _ p = JPair
     { prJSONsrc = Text.pack . showValADL . apLeft $ p 

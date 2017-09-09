@@ -18,10 +18,12 @@ import qualified Data.Text as Text
 import System.Directory
 import System.FilePath
 import Ampersand.Basics
-import Ampersand.FSpec
-import Ampersand.Misc.Options
+import Ampersand.Misc
 import qualified System.Exit as SE (ExitCode(..))
 import System.Process
+import Ampersand.Core.AbstractSyntaxTree
+     ( showValPHP
+     )
 
 getGenericsDir :: Options -> String
 getGenericsDir opts = 
@@ -83,8 +85,9 @@ removeAllDirectoryFiles dirPath =
             }
      
 getProperDirectoryContents :: FilePath -> IO [String]
-getProperDirectoryContents pth = fmap (filter (`notElem` [".","..",".svn"])) $
-                                   getDirectoryContents pth
+getProperDirectoryContents pth = 
+    filter (`notElem` [".","..",".svn"]) 
+       <$> getDirectoryContents pth
 
 
 quote :: Text.Text->Text.Text
@@ -149,7 +152,7 @@ addSlashes = Text.pack . addSlashes' . Text.unpack
     addSlashes' "" = ""
 
 addToLast :: [a] -> [[a]] -> [[a]]
-addToLast _ [] = fatal 109 "addToLast: empty list"
+addToLast _ [] = fatal "addToLast: empty list"
 addToLast s as = init as<>[last as<>s]
 
 showPhpStr :: Text.Text -> Text.Text
@@ -209,8 +212,8 @@ installComposerLibs opts =
             , "composerTargetPath: "++composerTargetPath
             , "Exit code of trying to install Composer: "<>show exit_code<>". "
             ] ++ 
-            (if null stdout' then [] else ["stdout:"]++lines stdout') ++
-            (if null stderr' then [] else ["stderr:"]++lines stderr') ++
+            (if null stdout' then [] else "stdout:" : lines stdout') ++
+            (if null stderr' then [] else "stderr:" : lines stderr') ++
             [ "Possible solutions to fix your prototype:"
             , "  1) Make sure you have composer installed. (Details can be found at https://getcomposer.org/download/)"
             , "  2) Make sure you have an active internet connection."

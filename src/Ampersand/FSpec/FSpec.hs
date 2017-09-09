@@ -12,7 +12,6 @@ module Ampersand.FSpec.FSpec
           ( MultiFSpecs(..)
           , FSpec(..), concDefs, Atom(..), A_Pair(..)
           , Quad(..)
-          , A_Concept, Declaration, A_Gen
           , FSid(..)
           , PlugSQL(..),plugAttributes
           , lookupCpt, getConceptTableFor
@@ -27,38 +26,38 @@ module Ampersand.FSpec.FSpec
           , PlugInfo(..)
           , SqlAttributeUsage(..)
           , Conjunct(..),DnfClause(..), dnf2expr, notCpl
-          , Language(..),AAtomValue
-          , showValADL,showValPHP,showValSQL,showSQL
-          , module Ampersand.FSpec.ToFSpec.Populated 
-          , module Ampersand.Classes
+          , Language(..)
+          , showSQL
+      --    , module Ampersand.Classes
           ) where
--- TODO: Export module Ampersand.Core.AbstractSyntaxTree in the same way as is done
---       for module Ampersand.Core.ParseTree in that module. Then build to a better
---       hierarchie to reflect the Architecture. 
 import Data.List
 import Data.Text (Text,unpack)
 import Data.Typeable
 import Ampersand.ADL1.Expression (notCpl)
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.ParseTree
+        ( Traced(..), Origin
+        , Role
+        , ConceptDef
+        )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.Crud
-import Ampersand.Misc.Options (Options)
+import Ampersand.Misc
 import Text.Pandoc.Builder (Blocks)
-import Ampersand.FSpec.ToFSpec.Populated
 
 data MultiFSpecs = MultiFSpecs
-                   { userFSpec :: FSpec        -- ^ The FSpec based on the user's script only.
+                   { userFSpec :: FSpec        -- ^ The FSpec based on the user's script, potentionally extended with metadata.
                    , metaFSpec :: Maybe FSpec  -- ^ The FormalAmpersand metamodel, populated with the items from the user's script 
                    }
 data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the specification, taken from the Ampersand script
-                   , originalContext :: A_Context             -- ^ the original context. (for showADL)  
+                   , originalContext :: A_Context             -- ^ the original context. (for showA)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
                    , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
                      , pattsInScope :: [Pattern]
                      , rulesInScope :: [Rule]
-                     , declsInScope :: [Declaration]
+                     , declsInScope :: [Relation]
                      , concsInScope :: [A_Concept]
                      , cDefsInScope :: [ConceptDef]
                      , gensInScope ::  [A_Gen]
@@ -69,7 +68,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , interfaceG ::   [Interface]              -- ^ All interfaces derived from the basic ontology (the Lonneker interface)
                    , roleInterfaces  :: Role -> [Interface]   -- ^ All interfaces defined in the Ampersand script, for use by a specific Role
                    , fDeriveProofs :: Blocks                  -- ^ The proofs in Pandoc format
-                   , fRoleRels ::    [(Role,Declaration)]     -- ^ the relation saying which roles may change the population of which relation.
+                   , fRoleRels ::    [(Role,Relation)]     -- ^ the relation saying which roles may change the population of which relation.
                    , fRoleRuls ::    [(Role,Rule)]            -- ^ the relation saying which roles maintain which rules.
                    , fMaintains ::   Role -> [Rule]
                    , fRoles ::       [(Role,Int)]             -- ^ All roles mentioned in this context, numbered.
@@ -78,10 +77,10 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , grules ::       [Rule]                   -- ^ All rules that are generated: multiplicity rules and identity rules
                    , invariants ::   [Rule]                   -- ^ All invariant rules
                    , signals ::      [Rule]                   -- ^ All signal rules
-                   , allUsedDecls :: [Declaration]            -- ^ All relations that are used in the fSpec
-                   , vrels ::        [Declaration]            -- ^ All user defined and generated relations plus all defined and computed totals.
+                   , allUsedDecls :: [Relation]            -- ^ All relations that are used in the fSpec
+                   , vrels ::        [Relation]            -- ^ All user defined and generated relations plus all defined and computed totals.
                                                               --   The generated relations are all generalizations and
-                                                              --   one declaration for each signal.
+                                                              --   one relation for each signal.
                    , allConcepts ::  [A_Concept]              -- ^ All concepts in the fSpec
                    , cptTType :: A_Concept -> TType 
                    , vIndices ::     [IdentityDef]            -- ^ All keys that apply in the entire FSpec
@@ -92,7 +91,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , vgens ::        [A_Gen]                  -- ^ All gens that apply in the entire FSpec
                    , allConjuncts :: [Conjunct]               -- ^ All conjuncts generated (by ADL2FSpec)
                    , allConjsPerRule :: [(Rule,[Conjunct])]   -- ^ Maps each rule onto the conjuncts it consists of (note that a single conjunct may be part of several rules) 
-                   , allConjsPerDecl :: [(Declaration, [Conjunct])]   -- ^ Maps each declaration to the conjuncts it appears in   
+                   , allConjsPerDecl :: [(Relation, [Conjunct])]   -- ^ Maps each relation to the conjuncts it appears in   
                    , allConjsPerConcept :: [(A_Concept, [Conjunct])]  -- ^ Maps each concept to the conjuncts it appears in (as source or target of a constituent relation)
                    , vquads ::       [Quad]                   -- ^ All quads generated (by ADL2FSpec)
                    , fsisa ::        [(A_Concept, A_Concept)] -- ^ generated: The data structure containing the generalization structure of concepts
@@ -123,7 +122,7 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
 instance Eq FSpec where
  f == f' = name f == name f'
 instance Unique FSpec where
- showUnique = name
+ showUnique = showUnique . originalContext
 metaValues :: String -> FSpec -> [String]
 metaValues key fSpec = [mtVal m | m <-metas fSpec, mtName m == key]
 
@@ -142,11 +141,11 @@ data Atom = Atom { atmRoots :: [A_Concept] -- The root concept(s) of the atom.
 instance Unique Atom where
   showUnique a = showValADL (atmVal a)++" in "
          ++case atmRoots a of
-             []  -> fatal 110 "an atom must have at least one root concept"
+             []  -> fatal "an atom must have at least one root concept"
              [x] -> uniqueShow True x
              xs  -> "["++intercalate ", " (map (uniqueShow True) xs)++"]"
 
-data A_Pair = Pair { lnkDcl :: Declaration
+data A_Pair = Pair { lnkDcl :: Relation
                    , lnkLeft :: Atom
                    , lnkRight :: Atom
                    } deriving (Typeable,Eq)
@@ -197,7 +196,7 @@ instance Named FSid where
 
 
 
-data Quad = Quad { qDcl ::       Declaration   -- The relation that, when affected, triggers a restore action.
+data Quad = Quad { qDcl ::       Relation   -- The relation that, when affected, triggers a restore action.
                  , qRule ::      Rule          -- The rule from which qConjuncts is derived.
                  , qConjuncts :: [Conjunct]    -- The conjuncts, with clauses included
                  } deriving Show
@@ -210,7 +209,7 @@ instance Eq Quad where q == q' = compare q q' == EQ
 dnf2expr :: DnfClause -> Expression
 dnf2expr dnf
  = case (antcs dnf, conss dnf) of
-    ([],[]) -> fatal 327 "empty dnf clause"
+    ([],[]) -> fatal ("empty dnf clause in "++show dnf)
     ([],cs ) -> foldr1 (.\/.) cs
     (as,[]) -> notCpl (foldr1 (./\.) as)
     (as,cs) -> notCpl (foldr1 (./\.) as) .\/. foldr1 (.\/.) cs
@@ -238,9 +237,9 @@ data PlugSQL
    --   i.e. a list of SqlAttribute given some A -> [target r | r::A*B,isUni r,isTot r, isInj r]
    --                                            ++ [target r | r::A*B,isUni r, not(isTot r), not(isSur r)]
    --     kernel = A closure of concepts A,B for which there exists a r::A->B[INJ]
-   --              (r=attExpr of kernel attribute holding instances of B, in practice r is I or a makeRelation(flipped declaration))
+   --              (r=attExpr of kernel attribute holding instances of B, in practice r is I or a makeRelation(flipped relation))
    --      attribute relations = All concepts B, A in kernel for which there exists a r::A*B[UNI] and r not TOT and SUR
-   --              (r=attExpr of attMor attribute, in practice r is a makeRelation(declaration))
+   --              (r=attExpr of attMor attribute, in practice r is a makeRelation(relation))
  = TblSQL  { sqlname ::    String
            , attributes :: [SqlAttribute]                           -- ^ the first attribute is the concept table of the most general concept (e.g. Person)
                                                                     --   then follow concept tables of specializations. Together with the first attribute this is called the "kernel"
@@ -265,7 +264,7 @@ instance Named PlugSQL where
 instance Eq PlugSQL where
   x==y = name x==name y
 instance Unique PlugSQL where
-  showUnique = name
+  showUnique = optionalQuote . name
 instance Ord PlugSQL where
   compare x y = compare (name x) (name y)
 
@@ -274,7 +273,7 @@ plugAttributes plug = case plug of
     TblSQL{}    -> attributes plug
     BinSQL{}    -> let store = case dLkpTbl plug of
                          [x] -> x
-                         _   -> fatal 292 $ "Declaration lookup table of a binary table should contain exactly one element:\n" ++
+                         _   -> fatal $ "Relation lookup table of a binary table should contain exactly one element:\n" ++
                                             show (dLkpTbl plug)
                    in [rsSrcAtt store,rsTrgAtt store]
 
@@ -287,13 +286,13 @@ lookupCpt fSpec cpt = [(plug,att) |InternalPlug plug@TblSQL{}<-plugInfos fSpec, 
 -- Convenience function that returns the name of the table that contains the concept table (or more accurately concept column) for c
 getConceptTableFor :: FSpec -> A_Concept -> PlugSQL
 getConceptTableFor fSpec c = case lookupCpt fSpec c of
-                               []      -> fatal 297 $ "tableFor: No concept table for " ++ name c
+                               []      -> fatal $ "tableFor: No concept table for " ++ name c
                                (t,_):_ -> t -- in case there are more, we use the first one
 
 -- | Information about the source and target attributes of a relation in an sqlTable. The relation could be stored either flipped or not.  
 data RelStore 
   = RelStore
-     { rsDcl       :: Declaration
+     { rsDcl       :: Relation
      , rsSrcAtt    :: SqlAttribute
      , rsTrgAtt    :: SqlAttribute
      } deriving (Show, Typeable)
@@ -346,5 +345,5 @@ showSQL tt =
      Integer          -> "BIGINT"
      Float            -> "FLOAT"
      Object           -> "VARCHAR(255)"
-     TypeOfOne        -> fatal 461 "ONE is not represented in SQL" 
+     TypeOfOne        -> fatal "ONE is not represented in SQL" 
 

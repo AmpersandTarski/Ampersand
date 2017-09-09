@@ -52,9 +52,9 @@ doGenBericht fSpec =
            genEntity_ObjDef dpth objDef =
                Entity { entName = name objDef
                       , depth = dpth
-                      , cardinality  = card $ objctx objDef
-                      , definition   = defin $ objctx objDef
-                      , refType      = name (target $ objctx objDef)
+                      , cardinality  = card $ objExpression objDef
+                      , definition   = defin $ objExpression objDef
+                      , refType      = name (target $ objExpression objDef)
                       , associations =
                           case objmsub objDef of
                             Nothing -> []
@@ -73,7 +73,7 @@ doGenBericht fSpec =
                   objsForInterfaceNamed nm =
                     case objmsub $ ifcObj $ getInterfaceByName interfaces' nm of
                       Just (Box _ _ objs) -> objs
-                      _                   -> fatal 81 "Bericht interfaces have wrong format"
+                      _                   -> fatal "Bericht interfaces have wrong format"
                   -- NOTE: We ignore the interface relation for interfaces refs
 
 allEntitiesToCSV :: [Entity] -> CSV

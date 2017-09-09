@@ -1,13 +1,15 @@
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE DuplicateRecordFields,OverloadedLabels  #-}
 -- | This module does some string manipulation based on natural languages
-module Ampersand.Misc.Languages
-         ( Lang(English,Dutch)
-         , allLangs
-         , plural
-         ) where
+module Ampersand.Basics.Languages
+         where
               
 import Data.Char (toLower)
 import Data.List (isSuffixOf)
-import Ampersand.Core.ParseTree      (Lang(..))
+import Data.Typeable
+import Data.Data
+
+data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
 
 allLangs :: [Lang]
 allLangs = [Dutch,English] -- All supported natural languages in Ampersand
@@ -50,3 +52,21 @@ plural Dutch str
                      , ("plan", "plannen")
                      , ("kind", "kinderen")
                      ]
+
+-- Utility types and functions for handling multiple-language strings
+
+-- If you declare a local function:   l lstr = localize (fsLang fSpec) lstr
+-- you can use:  l (NL "Nederlandse tekst", EN "English text")
+-- to specify strings in multiple languages.
+
+newtype NLString = NL String
+newtype ENString = EN String
+
+type LocalizedStr = (NLString, ENString)
+
+localize :: Lang -> LocalizedStr -> String
+localize Dutch   (NL s, _) = s
+localize English (_, EN s) = s
+
+
+

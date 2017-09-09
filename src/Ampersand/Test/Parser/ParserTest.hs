@@ -9,8 +9,8 @@ import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import Ampersand.Input.ADL1.Parser
 import Ampersand.Input.Parsing
-import Ampersand.Misc.Options(Options)
-import System.IO (hPutStrLn, stderr)
+import Ampersand.Misc
+import System.IO (stderr, hPrint)
 
 -- Tries to parse all the given files
 parseScripts :: Options -> [FilePath] -> IO Bool
@@ -22,7 +22,7 @@ parseScripts opts (f:fs) =
             Errors  e -> do { putStrLn ("Cannot parse: " ++ f); showErrors e; return False }
 
 printErrLn :: Show a => a -> IO ()
-printErrLn a = hPutStrLn stderr (show a)
+printErrLn = hPrint stderr
 
 showErrors :: [CtxError] -> IO ()
 showErrors [] = return ()

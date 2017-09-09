@@ -41,23 +41,23 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                             <>  "Finally, the logical and technical data model are discussed."
                              )
        )
-    <> (if null (classes $ clAnalysis fSpec) 
-        then mempty
-        else 
-          (   header sectionLevel
-                  (text.l $ (NL "Classificaties", EN "Classifications")
-                  )
-           <> para (case fsLang fSpec of
-                     Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
-                              <> ("Deze is weergegeven in " <> xRef classificationPicture <> "."
-                                 )
-                     English -> "A number of concepts is organized in a classification structure. "
-                              <> ("This is shown in " <> xRef classificationPicture <> "."
-                                 )
+    <> ( if null (classes $ clAnalysis fSpec) 
+         then mempty
+         else 
+           (   header sectionLevel
+                   (text.l $ (NL "Classificaties", EN "Classifications")
                    )
-                <> xDefBlck fSpec classificationPicture
+            <> para (case fsLang fSpec of
+                      Dutch   ->  "Een aantal concepten zit in een classificatiestructuur. "
+                               <> ("Deze is weergegeven in " <> xRef classificationPicture <> "."
+                                  )
+                      English -> "A number of concepts is organized in a classification structure. "
+                               <> ("This is shown in " <> xRef classificationPicture <> "."
+                                  )
+                    )
+            <> xDefBlck fSpec classificationPicture
            )
-       )
+       )    
     <> daRulesSection
     <> logicalDataModelBlocks
     <> technicalDataModelBlocks
@@ -184,7 +184,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                ) 
      {- <>
         if (null.assrhr) assoc
-        then fatal 192 "Shouldn't happen: flip the relation for the right direction!"
+        then fatal "Shouldn't happen: flip the relation for the right direction!"
         else para $ case fsLang fSpec of
            Dutch   ->   case assrhm assoc of
                               Mult MinZero MaxOne  -> "Ieder(e) " <> (emph.text.assSrc) assoc <> " heeft hooguit één "   <> (emph.text.assTgt) assoc <> "."
@@ -275,7 +275,7 @@ chpDataAnalysis fSpec = (theBlocks, thePictures)
                         <> primExpr2pandocMath (fsLang fSpec) 
                                                (case dLkpTbl bin of
                                                   [store] -> EDcD (rsDcl store)
-                                                  ss       -> fatal 540 $ "Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss)
+                                                  ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
                                                )
                         <> (text.l) (NL " implementeert. De tabel bestaat uit de volgende kolommen:"
                                     ,EN ". It contains the following columns:")
@@ -394,7 +394,7 @@ primExpr2pandocMath lang e =
   (EIsc (r1,_)) ->
            let srcTable = case r1 of
                             EDcI c -> c
-                            _      -> fatal 767 ("Unexpected expression: "++show r1)
+                            _      -> fatal ("Unexpected expression: "++show r1)
            in
            case lang of
              Dutch -> text "de identiteitsrelatie van "
@@ -410,4 +410,4 @@ primExpr2pandocMath lang e =
              Dutch -> text "de identiteitsrelatie van "
              English -> text "the identityrelation of "
         <> math (name c)
-  _   -> fatal 223 ("Have a look at the generated Haskell to see what is going on..\n"++show e)
+  _   -> fatal ("Have a look at the generated Haskell to see what is going on..\n"++show e)

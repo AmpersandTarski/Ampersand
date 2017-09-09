@@ -11,7 +11,7 @@ import Data.Monoid
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Classes
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ShowADL (ShowADL(..))
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.Misc (Options(..))
 import Text.Pandoc.Builder
@@ -26,8 +26,8 @@ testConfluence context
    para (linebreak<>"Total number of derived expressions: "<>(str.show) sumt<>linebreak)<>
    para ("Confluence analysis for "<>(str.name) context)<>
    mconcat
-     [ para (linebreak<>"expression:   "<>(str . showADL) expr<>linebreak)<>
-       bulletList [ showProof (para.str.showADL) prf | (_,prf)<-tcs ]
+     [ para (linebreak<>"expression:   "<>(str . showA) expr<>linebreak)<>
+       bulletList [ showProof (para.str.showA) prf | (_,prf)<-tcs ]
      | (expr,tcs)<-tcss]
 
 deriveProofs :: Options -> A_Context -> Blocks
@@ -36,9 +36,9 @@ deriveProofs opts context
    para (linebreak<>"--------------"<>linebreak)<>
    para ("Rules and their conjuncts for "<>(str.name) context)<>
    bulletList [ para ("rule r:   "<>str (name r)<>linebreak<>
-                      "rrexp r:  "<>str (showADL (rrexp r))<>linebreak<>
-                      "conjNF:   "<>str (showADL (conjNF opts (rrexp r)))<>linebreak<>
-                      interText linebreak [ "     conj: "<>str (showADL conj) | conj<-conjuncts opts r ]
+                      "formalExpression r:  "<>str (showA (formalExpression r))<>linebreak<>
+                      "conjNF:   "<>str (showA (conjNF opts (formalExpression r)))<>linebreak<>
+                      interText linebreak [ "     conj: "<>str (showA conj) | conj<-conjuncts opts r ]
                      )
               | r<-allRules context]
    

@@ -25,9 +25,9 @@ import Data.List
 import qualified Data.Text.IO as Text
 import Data.Function (on)
 import Data.Maybe (maybeToList)
-import Ampersand.Output.ToJSON.ToJson  (generateJSONfiles)
 import Ampersand.Prototype.WriteStaticFiles   (writeStaticFiles)
 import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ShowAStruct
 import Ampersand.Prototype.GenBericht  (doGenBericht)
 import Ampersand.Prototype.ValidateSQL (validateRulesSQL)
 import Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs)
@@ -40,9 +40,9 @@ generateAmpersandOutput multi = do
    createDirectoryIfMissing True (dirOutput opts)
    when (genPrototype opts)
         (createDirectoryIfMissing True (dirPrototype opts))
-   sequence_ (map doWhen conditionalActions)
+   mapM_ doWhen conditionalActions
   where 
-   doWhen :: ((Options -> Bool), IO()) -> IO()
+   doWhen :: (Options -> Bool, IO ()) -> IO()
    doWhen (b,x) = when (b opts) x
    conditionalActions :: [(Options -> Bool, IO())]
    conditionalActions = 
@@ -63,7 +63,7 @@ generateAmpersandOutput multi = do
    fSpec = userFSpec multi
    doGenADL :: IO()
    doGenADL =
-    do { writeFile outputFile . showADL . originalContext $ fSpec
+    do { writeFile outputFile . showA . originalContext $ fSpec
        ; verboseLn opts $ ".adl-file written to " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> outputfile opts
@@ -124,10 +124,10 @@ generateAmpersandOutput multi = do
    -- | This function will generate an Excel workbook file, containing an extract from the FSpec
    doGenFPAExcel :: IO()
    doGenFPAExcel =
-    do { verboseLn opts "Generating Excel containing FPA..."
-       ; writeFile outputFile $ fspec2FPA_Excel fSpec
-       }
-      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
+     verboseLn opts "FPA analisys is discontinued. (It needs maintenance). Sorry. " -- See https://github.com/AmpersandTarski/Ampersand/issues/621
+     --  ; writeFile outputFile $ fspec2FPA_Excel fSpec
+    
+--      where outputFile = dirOutput opts </> "FPA_"++baseName opts -<.> ".xml"  -- Do not use .xls here, because that generated document contains xml.
 
    doGenPopsXLSX :: IO()
    doGenPopsXLSX =
@@ -152,20 +152,20 @@ generateAmpersandOutput multi = do
        , reportViolations violationsOfInvariants
        , reportSignals (initialConjunctSignals fSpec)
        ]++
-       if null violationsOfInvariants || development opts
-       then if genRap
-            then [ generateJSONfiles multi]
-            else [ verboseLn opts "Generating prototype..."
-                 , clearTemplateDirs fSpec
-                 , writeStaticFiles opts
-                 , generateJSONfiles multi
-                 , doGenFrontend fSpec
-                 , verboseLn opts "\n"
-                 , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
-                 , installComposerLibs opts
-                 ]
-       else [exitWith NoPrototypeBecauseOfRuleViolations]
-       ++
+       (if null violationsOfInvariants || development opts
+        then if genRap
+             then [ generateJSONfiles multi]
+             else [ verboseLn opts "Generating prototype..."
+                  , clearTemplateDirs fSpec
+                  , writeStaticFiles opts
+                  , generateJSONfiles multi
+                  , doGenFrontend fSpec
+                  , verboseLn opts "\n"
+                  , verboseLn opts $ "Prototype files have been written to " ++ dirPrototype opts
+                  , installComposerLibs opts
+                  ]
+        else [exitWith NoPrototypeBecauseOfRuleViolations]
+       )++
        maybeToList (fmap ruleTest (testRule opts))
 
     where genRap = genRapPopulationOnly (getOpts fSpec)
@@ -185,13 +185,13 @@ generateAmpersandOutput multi = do
                              ]
 
           showprs :: [AAtomPair] -> String
-          showprs aprs = "["++intercalate ", " (map showADL aprs)++"]"
+          showprs aprs = "["++intercalate ", " (map showA aprs)++"]"
    --       showpr :: AAtomPair -> String
    --       showpr apr = "( "++(showVal.apLeft) apr++", "++(showVal.apRight) apr++" )"
           reportSignals []        = verboseLn opts "No signals for the initial population."
           reportSignals conjViols = verboseLn opts $ "Signals for initial population:\n" ++ intercalate "\n"
             [   "Rule(s): "++(show . map name . rc_orgRules) conj
-            ++"\n  Conjunct   : " ++ showADL (rc_conjunct conj)
+            ++"\n  Conjunct   : " ++ showA (rc_conjunct conj)
             ++"\n  Violations : " ++ showprs viols
             | (conj, viols) <- conjViols
             ]
@@ -199,11 +199,11 @@ generateAmpersandOutput multi = do
           ruleTest ruleName =
            case [ rule | rule <- grules fSpec ++ vrules fSpec, name rule == ruleName ] of
              [] -> putStrLn $ "\nRule test error: rule "++show ruleName++" not found."
-             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showADL (rrexp rule)
+             (rule:_) -> do { putStrLn $ "\nContents of rule "++show ruleName++ ": "++showA (formalExpression rule)
                             ; putStrLn $ showContents rule
-                            ; let rExpr = rrexp rule
-                            ; let ruleComplement = rule { rrexp = notCpl (EBrk rExpr) }
-                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showADL (rrexp ruleComplement)++"):"
+                            ; let rExpr = formalExpression rule
+                            ; let ruleComplement = rule { formalExpression = notCpl (EBrk rExpr) }
+                            ; putStrLn $ "\nViolations of "++show ruleName++" (contents of "++showA (formalExpression ruleComplement)++"):"
                             ; putStrLn $ showContents ruleComplement
                             }
            where showContents rule = "[" ++ intercalate ", " pairs ++ "]"

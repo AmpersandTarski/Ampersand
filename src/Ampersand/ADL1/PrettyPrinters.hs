@@ -3,7 +3,7 @@ module Ampersand.ADL1.PrettyPrinters(prettyPrint)
 where
 
 import Text.PrettyPrint.Leijen
-import Ampersand.Basics        (fatal)
+import Ampersand.Basics(fatal,Lang(..),PandocFormat(..))
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.Lexer(keywords)
 import Data.List (intercalate,intersperse)
@@ -153,7 +153,7 @@ instance Pretty P_Pattern where
           <+>  text ("END"++keyword)
         where keyword = if null rruls && null rrels then "PATTERN" else "PROCESS"
 
-instance Pretty P_Declaration where
+instance Pretty P_Relation where
     pretty (P_Sgn nm sign prps pragma mean popu _ plug) =
         text "RELATION" <+> text nm <~> sign <+> props <+> byplug <+\> pragmas <+\> prettyhsep mean <+\> content
         where props   = if prps == [Sym, Asy] then text "[PROP]"
@@ -320,7 +320,7 @@ instance Pretty PPurpose where
 instance Pretty PRef2Obj where
     pretty p = case p of
         PRef2ConceptDef str       -> text "CONCEPT"   <+> quoteConcept str
-        PRef2Declaration namedRel -> text "RELATION"  <~> namedRel
+        PRef2Relation namedRel -> text "RELATION"  <~> namedRel
         PRef2Rule str             -> text "RULE"      <+> maybeQuote str
         PRef2IdentityDef str      -> text "IDENT"     <+> maybeQuote str
         PRef2ViewDef str          -> text "VIEW"      <+> maybeQuote str
@@ -388,13 +388,13 @@ instance Pretty PAtomValue where
     pretty pav =  
       case pav of 
        PSingleton   _ _ mav -> case mav of
-                                Nothing  -> fatal 405 $ "The singleton "++show pav++" has no type, so it cannot be accuratly prettyprinted in a population statement."
+                                Nothing  -> fatal ("The singleton "++show pav++" has no type, so it cannot be accuratly prettyprinted in a population statement.")
                                 Just val -> pretty val
        ScriptString   _ s -> text . show $ s
        XlsxString     _ s -> text . show $ s
        ScriptInt      _ i -> text . show $ i
        ScriptFloat    _ d -> text . show $ d
-       XlsxDouble     _ _ -> fatal 267 $ "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
+       XlsxDouble     _ _ -> fatal "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
        ComnBool       _ b -> text . map toUpper . show $ b
        ScriptDate     _ x -> text . show $ x
        ScriptDateTime _ x -> text . show $ x

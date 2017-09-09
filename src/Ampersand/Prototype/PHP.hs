@@ -28,9 +28,10 @@ import Ampersand.FSpec.SQL
 import Ampersand.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.Misc
 import Ampersand.Core.AbstractSyntaxTree
-
+import Ampersand.Core.ShowAStruct
 
 data TableSpec
   = TableSpec { tsCmnt :: [String]  -- Without leading "// "
@@ -100,7 +101,7 @@ plug2TableSpec plug
                    ,""
                    ,"attributes:"
                    ]<> concat
-                   [ [showADL (attExpr x)
+                   [ [showA (attExpr x)
                      , "  "<>(show.properties.attExpr) x ]
                    | x <- plugAttributes plug
                    ]
@@ -115,7 +116,7 @@ plug2TableSpec plug
                  (TblSQL{}, primFld) ->
                       case attUse primFld of
                          PrimaryKey _ -> "PRIMARY KEY (" <> (show . attName) primFld <> ")"
-                         ForeignKey c -> fatal 195 ("ForeignKey "<>name c<>"not expected here!")
+                         ForeignKey c -> fatal ("ForeignKey "<>name c<>"not expected here!")
                          PlainAttr    -> ""
      }
 fld2AttributeSpec ::SqlAttribute -> AttributeSpec
@@ -177,11 +178,10 @@ sessionTableSpec =
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: FSpec -> Text.Text -> Expression -> IO [(String,String)]
 evaluateExpSQL fSpec dbNm exp =
- do { -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showADL exp)
-    ; -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showADL . cfProof (getOpts fSpec)) exp
-    ; -- verboseLn (getOpts fSpec) "End of proof"
-    ; performQuery fSpec dbNm (Text.pack violationsQuery)
-    }
+  -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA exp)
+  -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) exp
+  -- verboseLn (getOpts fSpec) "End of proof"
+  performQuery fSpec dbNm (Text.pack violationsQuery)
  where violationsExpr = conjNF (getOpts fSpec) exp
        violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 
@@ -190,10 +190,10 @@ performQuery fSpec dbNm queryStr =
  do { queryResult <- (executePHPStr . showPHP) php
     ; if "Error" `isPrefixOf` queryResult -- not the most elegant way, but safe since a correct result will always be a list
       then do verboseLn opts{verboseP=True} (Text.unpack$ "\n******Problematic query:\n"<>queryStr<>"\n******")
-              fatal 141 $ "PHP/SQL problem: "<>queryResult
+              fatal ("PHP/SQL problem: "<>queryResult)
       else case reads queryResult of
              [(pairs,"")] -> return pairs
-             _            -> fatal 143 $ "Parse error on php result: \n"<>(unlines . indent 5 . lines $ queryResult)
+             _            -> fatal ("Parse error on php result: \n"<>(unlines . indent 5 . lines $ queryResult))
     } 
    where
     opts = getOpts fSpec

@@ -7,15 +7,16 @@ Ampersand
 Rieks Joosten
 rieks.joosten@tno.nl
 
-5
+6
+Ampersand is a tool for generating prototypes from relation algebra rules
 This file is for navigation in Ampersand-3.8.0 source code (as of December 2016)
 It supports folding of
 - Haskell-type comments `{- ... -}`
 - Ampersand PURPOSEs, MEANINGs and MESSAGEs
 - INTERFACEs
-4
-Outside any block
 3
+Outside any block
+2
 start {- comment block
 -16777208
 26367
@@ -53,32 +54,6 @@ The '{+' after a keyword should not be more than one newline away.
 2
 0
 2
-0
-1
-0
-
-
-0
-1
-0
-1
-0
-0
-
-3
-
-0
-start [ interface block
--16777208
-52377
-
-(INTERFACE.*?\s(BOX|ROWS|COLS|TABS)\s).*?\[
-0
-1
-0
-2
-0
-3
 0
 1
 0
@@ -252,85 +227,5 @@ start nested {- comment
 0
 
 3
-
-0
-[ interface block
-3
-start nested [ block
-16711680
-39423
-
-(\s(BOX|ROWS|COLS|TABS)\s).*?(\[)
-0
-1
-0
-2
-0
-3
-0
-
-0
-
-
-0
-1
-0
-0
-0
-0
-
-3
-
-0
-end nested ] comment
-13421619
-52479
-
-\]
-0
-0
-0
-5
-0
-0
-0
-
-0
-
-
-0
-0
-0
-0
-0
-0
-
-1
-
-0
-skip other []-blocks
-10092543
-16764057
-Non-interface []-blocks, e.g. as in V[C1*C2], or I[A], should be skipped
-\[.*?\]
-0
-0
-0
-0
-0
-0
-0
-
-0
-
-
-0
-0
-0
-0
-0
-0
-
-1
 
 0

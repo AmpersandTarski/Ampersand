@@ -12,7 +12,7 @@ import Ampersand.FSpec.SQL
 import qualified Ampersand.Misc.Options as Opts
 import Ampersand.Classes.ConceptStructure
 
-validateEditScript :: FSpec -> [Population] -> [Population] -> [Char] -> IO Bool
+validateEditScript :: FSpec -> [Population] -> [Population] -> String -> IO Bool
 validateEditScript fSpec beforePops afterPops editScriptPath =
  do { mFileContents <- readUTF8File editScriptPath
     ; case mFileContents of
@@ -37,8 +37,11 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; let commonConcepts = getCommons expectedConceptTables actualConceptTables
             ; let commonRelations = getCommons expectedRelationTables actualRelationTables
             
-            ; putStrLn $ "\n--- Validation results ---\n" 
-            ; putStrLn $ "Actual concept tables:\n" ++ unlines [ name c ++ ": " ++ show atoms | (c,atoms) <- actualConceptTables ] 
+            ; putStrLn ""
+            ; putStrLn "--- Validation results ---"
+            ; putStrLn "" 
+            ; putStrLn "Actual concept tables:"
+            ; putStrLn $ unlines [ name c ++ ": " ++ show atoms | (c,atoms) <- actualConceptTables ] 
             ; putStrLn $ "Actual relations:\n" ++ unlines [ name d ++ ": " ++ show pairs | (d,pairs) <- actualRelationTables ]
 
             ; putStrLn $ "Expected concept tables:\n" ++ unlines [ name c ++ ": " ++ show atoms | (c,atoms) <- expectedConceptTables ] 
@@ -50,19 +53,21 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; let commonConceptDiffs  = concat [ showDiff (name c) "atoms" expAtoms resAtoms | (c, expAtoms, resAtoms) <- commonConcepts ]
             ; let commonRelationDiffs = concat [ showDiff (name r) "pairs" expPairs resPairs | (r, expPairs, resPairs) <- commonRelations ]
 
-            ; putStrLn $ "\n--- Validation summary ---\n" 
+            ; putStrLn "" 
+            ; putStrLn "--- Validation summary ---" 
+            ; putStrLn "" 
             
             ; if null conceptDiffs 
               then putStrLn "Expected and actual populations contain the same concepts"
-              else putStrLn $ unlines $ conceptDiffs
+              else putStrLn . unlines $ conceptDiffs
             ; putStrLn ""
             ; if null relationDiffs 
               then putStrLn "Expected and actual populations contain the same relations"
-              else putStrLn $ unlines $ relationDiffs
+              else putStrLn . unlines $ relationDiffs
             ; putStrLn ""            
             ; if null commonConceptDiffs 
               then putStrLn "Common concepts are equal"
-              else putStrLn $ unlines $ "Differences for common concepts:"  : commonConceptDiffs 
+              else putStrLn . unlines $ "Differences for common concepts:"  : commonConceptDiffs 
             ; putStrLn ""            
             ; if null commonRelationDiffs
               then putStrLn "Common relations are equal"
@@ -78,7 +83,7 @@ getSqlConceptTable :: FSpec -> A_Concept -> IO (A_Concept, [String])
 getSqlConceptTable fSpec c =
  do { -- to prevent needing a unary query function, we add a dummy NULL column and use `src` and `tgt` as column names (in line with what performQuery expects)
       let query = case lookupCpt fSpec c of
-                    []                      -> fatal 58  "No concept table for concept \"" ++ name c ++ "\""
+                    []                         -> fatal ("No concept table for concept \"" ++ name c ++ "\"")
                     (table,conceptAttribute):_ -> "SELECT DISTINCT `" ++ attName conceptAttribute ++ "` as `src`, NULL as `tgt`"++
                                                   " FROM `" ++ name table ++ "`" ++
                                                   " WHERE `" ++ attName conceptAttribute ++ "` IS NOT NULL"
@@ -87,7 +92,7 @@ getSqlConceptTable fSpec c =
     ; return (c, map fst atomsDummies)
     }
 
-getSqlRelationTable :: FSpec -> Declaration -> IO (Declaration, [(String,String)])
+getSqlRelationTable :: FSpec -> Relation -> IO (Relation, [(String,String)])
 getSqlRelationTable fSpec d =
  do { let query = prettySQLQuery False fSpec 0 d
  

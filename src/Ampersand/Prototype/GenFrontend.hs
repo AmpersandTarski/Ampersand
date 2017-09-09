@@ -12,9 +12,12 @@ import Text.StringTemplate
 import Text.StringTemplate.GenericStandard () -- only import instances
 import Ampersand.Basics
 import Ampersand.Classes.Relational
+import Ampersand.Core.ParseTree
+     ( Role, ViewHtmlTemplate(ViewHtmlTemplateFile)
+     )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
-import Ampersand.FSpec.ShowADL
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.Misc
 import qualified Ampersand.Misc.Options as Opts
@@ -47,7 +50,7 @@ INTERFACE MyInterface
             ]
       ]
 
-This is considered editable iff the composition rel;relRef yields an editable declaration (e.g. for editableR;I).
+This is considered editable iff the composition rel;relRef yields an editable relation (e.g. for editableR;I).
 
 -}
 
@@ -133,11 +136,10 @@ copyIncludes fSpec =
     } 
   where copyInclude :: Include -> IO()
         copyInclude incl =
-          do { case fileOrDir incl of
-                 File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
-                 Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
-             }
-
+          case fileOrDir incl of
+            File -> copyDeepFile (includeSrc incl) (includeTgt incl) (getOpts fSpec)
+            Dir  -> copyDirRecursively (includeSrc incl) (includeTgt incl) (getOpts fSpec)
+          
 copyCustomizations :: FSpec -> IO ()
 copyCustomizations fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
@@ -179,7 +181,7 @@ data FEObject = FEObject { objName :: String
 data FEAtomicOrBox = FEAtomic { objMPrimTemplate :: Maybe ( FilePath -- the absolute path to the template
                                                           , [String] -- the attributes of the template
                                                           ) }
-                   | FEBox    { objClass :: String
+                   | FEBox    { objMClass :: Maybe String
                               , ifcSubObjs :: [FEObject] 
                               } deriving (Show, Data,Typeable)
 
@@ -207,66 +209,66 @@ buildInterface fSpec allIfcs ifc =
   where    
     buildObject :: ObjectDef -> IO FEObject
     buildObject object =
-     do { let iExp = conjNF (getOpts fSpec) $ objctx object
+     do { let iExp = conjNF (getOpts fSpec) $ objExpression object
               
-        ; (aOrB, iExp', cruds) <-
+        ; (aOrB, iExp', src, tgt, mDecl) <-
             case objmsub object of
               Nothing                  ->
-               do { let mView = case objmView object of
+               do { let (src, mDecl, tgt) = getSrcDclTgt iExp
+                  ; let mView = case objmView object of
                                   Just nm -> Just $ lookupView fSpec nm
-                                  Nothing -> getDefaultViewForConcept fSpec (target iExp)
+                                  Nothing -> getDefaultViewForConcept fSpec tgt
                   ; mSpecificTemplatePath <-
                           case mView of
                             Just Vd{vdhtml=Just (ViewHtmlTemplateFile fName), vdats=viewSegs}
                               -> return $ Just ("views" </> fName, mapMaybe vsmlabel viewSegs)
                             _ -> -- no view, or no view with an html template, so we fall back to target-concept template
                                  -- TODO: once we can encode all specific templates with views, we will probably want to remove this fallback
-                             do { let templatePath = "views" </> "Atomic-" ++ (escapeIdentifier . name . target $ iExp) ++ ".html"
+                             do { let templatePath = "views" </> "Atomic-" ++ escapeIdentifier (name tgt) ++ ".html"
                                 ; hasSpecificTemplate <- doesTemplateExist fSpec templatePath
                                 ; return $ if hasSpecificTemplate then Just (templatePath, []) else Nothing
                                 }
                   ; return (FEAtomic { objMPrimTemplate = mSpecificTemplatePath}
-                           , iExp
-                           , objcrud object)
+                           , iExp, src, tgt, mDecl)
                   }
               Just si ->
                 case si of
                   Box{} -> 
-                   do { subObjs <- mapM buildObject (siObjs si)
-                      ; return (FEBox { objClass  = fromMaybe "ROWS" $ siMClass si
+                   do { let (src, mDecl, tgt) = getSrcDclTgt iExp
+                      ; subObjs <- mapM buildObject (siObjs si)
+                      ; return (FEBox { objMClass  = siMClass si
                                       , ifcSubObjs = subObjs
                                       }
-                               , iExp
-                               , objcrud object)
+                               , iExp, src, tgt, mDecl)
                       }
                   InterfaceRef{} -> 
                    case filter (\rIfc -> name rIfc == siIfcId si) allIfcs of -- Follow interface ref
-                     []      -> fatal 44 $ "Referenced interface " ++ siIfcId si ++ " missing"
-                     (_:_:_) -> fatal 45 $ "Multiple declarations of referenced interface " ++ siIfcId si
+                     []      -> fatal ("Referenced interface " ++ siIfcId si ++ " missing")
+                     (_:_:_) -> fatal ("Multiple relations of referenced interface " ++ siIfcId si)
                      [i]     -> 
                            if siIsLink si
-                           then do { let templatePath = "views" </> "View-LINKTO.html"
+                           then do { let (src, mDecl, tgt) = getSrcDclTgt iExp
+                                   ; let templatePath = "views" </> "View-LINKTO.html"
                                    ; return (FEAtomic { objMPrimTemplate = Just (templatePath, [])}
-                                            , iExp
-                                            , objcrud (ifcObj i))
+                                            , iExp, src, tgt, mDecl)
                                    }
                            else do { refObj <- buildObject  (ifcObj i)
-                                   ; let comp = iExp .:. objExp refObj 
+                                   ; let comp = ECps (iExp, objExp refObj) 
                                          -- Dont' normalize, to prevent unexpected effects (if X;Y = I then ((rel;X) ; (Y)) might normalize to rel)
-                                   ; return ( atomicOrBox refObj
-                                            , comp
-                                            , objcrud (ifcObj i))
-                                   } 
+                                         (src, mDecl, tgt) = getSrcDclTgt comp
+                                   ; return (atomicOrBox refObj, comp, src, tgt, mDecl)
+                                   } -- TODO: in Generics.php interface refs create an implicit box, which may cause problems for the new front-end
+        
 
         ; let (src, mDecl, tgt) = getSrcDclTgt iExp'
         ; return FEObject{ objName = name object
                          , objExp = iExp'
                          , objSource = src
                          , objTarget = tgt
-                         , objCrudC = crudC cruds
-                         , objCrudR = crudR cruds
-                         , objCrudU = crudU cruds
-                         , objCrudD = crudD cruds
+                         , objCrudC = crudC . objcrud $ object
+                         , objCrudR = crudR . objcrud $ object
+                         , objCrudU = crudU . objcrud $ object
+                         , objCrudD = crudD . objcrud $ object
                          , exprIsUni = isUni iExp'
                          , exprIsTot = isTot iExp'
                          , relIsProp  = case mDecl of
@@ -314,14 +316,14 @@ genViewInterface fSpec interf =
                      . setAttribute "ampersandVersionStr" ampersandVersionStr
                      . setAttribute "interfaceName"       (ifcName  interf)
                      . setAttribute "interfaceLabel"      (ifcLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"              (showADL . _ifcExp $ interf)
+                     . setAttribute "expAdl"              (showA . _ifcExp $ interf)
                      . setAttribute "source"              (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"              (escapeIdentifier . name . _ifcTarget $ interf)
                      . setAttribute "crudC"               (objCrudC (_ifcObj interf))
                      . setAttribute "crudR"               (objCrudR (_ifcObj interf))
                      . setAttribute "crudU"               (objCrudU (_ifcObj interf))
                      . setAttribute "crudD"               (objCrudD (_ifcObj interf))
-                     . setAttribute "contents"            (intercalate "\n"$ lns) -- intercalate, because unlines introduces a trailing \n
+                     . setAttribute "contents"            (intercalate "\n" lns) -- intercalate, because unlines introduces a trailing \n
                      . setAttribute "verbose"             (verboseP opts)
 
     ; let filename = "ifc" ++ ifcName interf ++ ".view.html" 
@@ -342,7 +344,7 @@ genViewObject fSpec depth obj =
                         . setAttribute "exprIsTot"  (exprIsTot obj)
                         . setAttribute "name"       (escapeIdentifier . objName $ obj)
                         . setAttribute "label"      (objName obj) -- no escaping for labels in templates needed
-                        . setAttribute "expAdl"     (showADL . objExp $ obj) 
+                        . setAttribute "expAdl"     (showA . objExp $ obj) 
                         . setAttribute "source"     (escapeIdentifier . name . objSource $ obj)
                         . setAttribute "target"     (escapeIdentifier . name . objTarget $ obj)
                         . setAttribute "crudC"      (objCrudC obj)
@@ -369,11 +371,12 @@ genViewObject fSpec depth obj =
                      . renderTemplate template $ 
                                  atomicAndBoxAttrs
             }
-        FEBox { objClass  = oClass
+        FEBox { objMClass  = mClass
               , ifcSubObjs = subObjs} ->
          do { subObjAttrs <- mapM genView_SubObject subObjs
                     
-            ; parentTemplate <- readTemplate fSpec $ "views" </> "Box-" ++ oClass ++ ".html"
+            ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
+            ; parentTemplate <- readTemplate fSpec $ "views" </> "Box-" ++ clssStr ++ ".html"
             
             ; return . indentation
                      . lines 
@@ -422,7 +425,7 @@ genControllerInterface fSpec interf =
                      . setAttribute "ampersandVersionStr"      ampersandVersionStr
                      . setAttribute "interfaceName"            (ifcName interf)
                      . setAttribute "interfaceLabel"           (ifcLabel interf) -- no escaping for labels in templates needed
-                     . setAttribute "expAdl"                   (showADL . _ifcExp $ interf)
+                     . setAttribute "expAdl"                   (showA . _ifcExp $ interf)
                      . setAttribute "exprIsUni"                (exprIsUni (_ifcObj interf))
                      . setAttribute "source"                   (escapeIdentifier . name . _ifcSource $ interf)
                      . setAttribute "target"                   (escapeIdentifier . name . _ifcTarget $ interf)

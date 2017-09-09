@@ -8,7 +8,6 @@ import Ampersand.Output.ToJSON.JSONutils
 import Ampersand.Core.AbstractSyntaxTree 
 import Ampersand.FSpec.ToFSpec.NormalForms
 import Ampersand.FSpec.ToFSpec.Calc
-import Ampersand.FSpec.ShowADL
 
 data Interfaces = Interfaces [JSONInterface] deriving (Generic, Show)
 data JSONInterface = JSONInterface
@@ -108,8 +107,8 @@ instance JSON ObjectDef JSONexpr where
   where
     opts = getOpts fSpec
     fSpec = userFSpec multi
-    query = broadQueryWithPlaceholder fSpec object{objctx=normalizedInterfaceExp}
-    normalizedInterfaceExp = conjNF opts $ objctx object
+    query = broadQueryWithPlaceholder fSpec object{objExpression=normalizedInterfaceExp}
+    normalizedInterfaceExp = conjNF opts $ objExpression object
     (srcConcept, tgtConcept) =
       case getExpressionRelation normalizedInterfaceExp of
         Just (src, _ , tgt, _) ->
@@ -121,7 +120,7 @@ instance JSON ObjectDef JSONObjectDef where
   { ifcJSONid                 = escapeIdentifier . name $ object
   , ifcJSONlabel              = name object
   , ifcJSONviewId             = fmap name viewToUse
-  , ifcJSONNormalizationSteps = showPrf showADL.cfProof.objctx $ object 
+  , ifcJSONNormalizationSteps = showPrf showA.cfProof.objExpression $ object 
   , ifcJSONrelation           = fmap (showDcl True . fst) mEditableDecl
   , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
   , ifcJSONcrud               = fromAmpersand multi (objcrud object)
@@ -134,7 +133,7 @@ instance JSON ObjectDef JSONObjectDef where
     viewToUse = case objmView object of
                  Just nm -> Just $ lookupView fSpec nm
                  Nothing -> getDefaultViewForConcept fSpec tgtConcept
-    normalizedInterfaceExp = conjNF opts $ objctx object
+    normalizedInterfaceExp = conjNF opts $ objExpression object
     (tgtConcept, mEditableDecl) =
       case getExpressionRelation normalizedInterfaceExp of
         Just (_ , decl, tgt, isFlipped) ->

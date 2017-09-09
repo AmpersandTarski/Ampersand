@@ -1,6 +1,7 @@
 <?php
 
 use Ampersand\Config;
+use Ampersand\Session;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 
@@ -27,12 +28,33 @@ $app->response->headers->set('Content-Type', 'application/json');
 
 // Error handler
 $app->error(function (Exception $e) use ($app) {
-    $app->response->setStatus($e->getCode());
     try{
         Logger::getLogger("API")->error($e->getMessage());
+        $session = Session::singleton();
+        
+        switch ($e->getCode()) {
+            case 401: // Unauthorized
+            case 403: // Forbidden
+                if(Config::get('loginEnabled') && !$session->sessionUserLoggedIn()){
+                    $code = 401;
+                    $message = "Please login to access this page";
+                }else{
+                    $code = 403;
+                    $message = "You do not have access to this page";
+                }
+                break;
+            default:
+                $code = $e->getCode();
+                $message = $e->getMessage();
+                break;
+        }
+        
         $notifications = Notifications::getAll();
-        print json_encode(array('error' => $e->getCode(), 'msg' => $e->getMessage(), 'notifications' => $notifications));
+        
+        $app->response->setStatus($code);
+        print json_encode(array('error' => $code, 'msg' => $message, 'notifications' => $notifications));
     }catch(Exception $b){
+        $app->response->setStatus(500);
         Logger::getLogger("API")->error($b->getMessage());
         print json_encode(array('error' => $b->getCode(), 'msg' => $b->getMessage(), 'notifications' => array()));
     }
@@ -42,7 +64,7 @@ $app->error(function (Exception $e) use ($app) {
 // Not found handler
 $app->notFound(function () use ($app) {
     $app->response->setStatus(404);
-    print json_encode(array('error' => 404, 'msg' => "API call not found: {$app->request->getMethod()} {$app->request->getUrl()}{$app->request->getPath()}"));
+	print json_encode(array('error' => 404, 'msg' => "Please doublecheck your URL. It is case sensitive! API call not found: {$app->request->getMethod()} {$app->request->getUrl()}{$app->request->getPath()}"));
 });
 
 include (__DIR__ . '/resources.php'); // API calls starting with '/resources/'

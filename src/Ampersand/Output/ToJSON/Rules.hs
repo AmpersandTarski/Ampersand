@@ -55,12 +55,12 @@ instance JSON MultiFSpecs Rules where
 instance JSON Rule JsonRule where
  fromAmpersand multi rule = JsonRule
   { rulJSONname        = rrnm         rule
-  , rulJSONruleAdl     = showADL.rrexp $ rule
+  , rulJSONruleAdl     = showA.formalExpression $ rule
   , rulJSONorigin      = show.rrfps     $ rule
   , rulJSONmeaning     = showMeaning
   , rulJSONmessage     = showMessage
-  , rulJSONsrcConceptId = escapeIdentifier . name . source . rrexp $ rule
-  , rulJSONtgtConceptId = escapeIdentifier . name . target . rrexp $ rule
+  , rulJSONsrcConceptId = escapeIdentifier . name . source . formalExpression $ rule
+  , rulJSONtgtConceptId = escapeIdentifier . name . target . formalExpression $ rule
   , rulJSONconjunctIds = map rc_id  $ fromMaybe [] (lookup rule $ allConjsPerRule fSpec)
   , rulJSONpairView    = fmap (fromAmpersand multi) (rrviol rule)
   } 

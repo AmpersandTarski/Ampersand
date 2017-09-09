@@ -8,6 +8,9 @@ import Data.Text (pack)
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
+import Ampersand.Core.ParseTree
+     ( Role
+     )
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec.FSpec
 import Ampersand.Misc
@@ -15,7 +18,8 @@ import Ampersand.FSpec.Crud
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms 
-import Ampersand.FSpec.ShowADL
+import Ampersand.FSpec.ToFSpec.Populated 
+import Ampersand.Core.ShowAStruct
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
@@ -37,19 +41,19 @@ makeFSpec opts context
               , plugInfos    = allplugs
               , interfaceS   = fSpecAllInterfaces -- interfaces specified in the Ampersand script
               , roleInterfaces = fSpecRoleInterfaces
-              , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objctx (ifcObj ifc)
+              , interfaceG   = [ifc | ifc<-interfaceGen, let ctxrel = objExpression (ifcObj ifc)
                                     , isIdent ctxrel && source ctxrel==ONE
-                                      || ctxrel `notElem` map (objctx.ifcObj) fSpecAllInterfaces
+                                      || ctxrel `notElem` map (objExpression.ifcObj) fSpecAllInterfaces
                                     , allInterfaces opts]  -- generated interfaces
               , fDeriveProofs = deriveProofs opts context 
-              , fRoleRels    = nub [(role,decl) -- fRoleRels says which roles may change the population of which relation.
+              , fRoleRels    = nub [(role',decl) -- fRoleRels says which roles may change the population of which relation.
                                    | rr <- ctxRRels context
                                    , decl <- rrRels rr
-                                   , role <- rrRoles rr
+                                   , role' <- rrRoles rr
                                    ] 
-              , fRoleRuls    = nub [(role,rule)   -- fRoleRuls says which roles maintain which rules.
+              , fRoleRuls    = nub [(role',rule)   -- fRoleRuls says which roles maintain which rules.
                                    | rule <- allrules
-                                   , role <- maintainersOf rule
+                                   , role' <- maintainersOf rule
                                    ]
               , fMaintains   = fMaintains'
               , fRoles       = zip ((sort . nub) (concatMap arRoles (ctxrrules context)++
@@ -70,7 +74,7 @@ makeFSpec opts context
               , allUsedDecls = relsUsedIn context
               , vrels        = calculatedDecls
               , allConcepts  = fSpecAllConcepts
-              , cptTType     = (\cpt -> representationOf contextinfo cpt)
+              , cptTType     = representationOf contextinfo
               , fsisa        = nub . concatMap genericAndSpecifics . gens $ context
               , vpatterns    = patterns context
               , vgens        = gens context
@@ -93,7 +97,7 @@ makeFSpec opts context
               , allViolations  = [ (r,vs)
                                  | r <- allrules -- Removed following, because also violations of invariant rules are violations.. , not (isSignal r)
                                  , let vs = ruleviolations r, not (null vs) ]
-              , allExprs     = expressionsIn context
+              , allExprs     = expressionsIn context `uni` expressionsIn allConjs
               , initialConjunctSignals = [ (conj, viols) | conj <- allConjs 
                                          , let viols = conjunctViolations conj
                                          , not $ null viols
@@ -112,18 +116,18 @@ makeFSpec opts context
      handleType :: A_Concept -> A_Concept -> Expression
      handleType gen spc = EEps gen (Sign gen spc) .:. EDcI spc .:. EEps gen (Sign spc gen)
      fMaintains' :: Role -> [Rule]
-     fMaintains' role = nub [ rule 
+     fMaintains' role' = nub [ rule 
                             | rule <- allrules
-                            , role `elem` maintainersOf rule
+                            , role' `elem` maintainersOf rule
                             ]
      typologyOf' cpt = 
         case [t | t <- typologies context, cpt `elem` tyCpts t] of
            [t] -> t
-           _   -> fatal 121 $ "concept "++name cpt++" should be in exactly one typology!"
+           _   -> fatal ("concept "++name cpt++" should be in exactly one typology!")
      pairsinexpr  :: Expression -> [AAtomPair]
      pairsinexpr = fullContents contextinfo initialpopsDefinedInScript
      ruleviolations :: Rule -> [AAtomPair]
-     ruleviolations r = case rrexp r of
+     ruleviolations r = case formalExpression r of
           EEqu{} -> (cra >- crc) ++ (crc >- cra)
           EInc{} -> cra >- crc
           _      -> pairsinexpr (EDcV (sign (consequent r))) >- crc  --everything not in con
@@ -142,11 +146,11 @@ makeFSpec opts context
            = ifc{ ifcControls = makeIfcControls [] allConjs
                 }
      fSpecRoleInterfaces :: Role -> [Interface]
-     fSpecRoleInterfaces role = filter (forThisRole role) fSpecAllInterfaces
+     fSpecRoleInterfaces role' = filter (forThisRole role') fSpecAllInterfaces
      forThisRole ::Role -> Interface -> Bool
-     forThisRole role interf = case ifcRoles interf of
+     forThisRole role' interf = case ifcRoles interf of
                                      []   -> True -- interface is for all roles
-                                     rs  -> role `elem` rs
+                                     rs  -> role' `elem` rs
      
      themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
                      then map name (patterns context)
@@ -193,7 +197,7 @@ makeFSpec opts context
          UserDefined  -> True
          Multiplicity -> False
          Identity     -> False
-     calcProps :: Declaration -> Declaration
+     calcProps :: Relation -> Relation
      calcProps d = d{decprps_calc = Just calculated}
          where calculated = decprps d `uni` [Tot | d `elem` totals]
                                       `uni` [Sur | d `elem` surjectives]
@@ -216,9 +220,9 @@ makeFSpec opts context
      lookupView' :: String -> ViewDef
      lookupView'  viewId =
        case filter (\v -> name v == viewId) $ viewDefs context of
-         []   -> fatal 174 $ "Undeclared view " ++ show viewId ++ "." -- Will be caught by static analysis
+         []   -> fatal ("Undeclared view " ++ show viewId ++ ".") -- Will be caught by static analysis
          [vd] -> vd
-         vds  -> fatal 176 $ "Multiple views with id " ++ show viewId ++ ": " ++ show (map name vds) -- Will be caught by static analysis
+         vds  -> fatal ("Multiple views with id " ++ show viewId ++ ": " ++ show (map name vds)) -- Will be caught by static analysis
      
    -- get all views for a specific concept and all larger concepts.
      getAllViewsForConcept' :: A_Concept -> [ViewDef]
@@ -248,7 +252,7 @@ makeFSpec opts context
      --------------
      vsqlplugs = case ctxsql context of
                    []  -> []
-                   _   -> fatal 281 "User defined plugs have heavily bitrotted." --REMARK -> no optimization like try2specific, because these plugs are user defined
+                   _   -> fatal "User defined plugs are heavily bitrotted." --REMARK -> no optimization like try2specific, because these plugs are user defined
      definedplugs = map InternalPlug vsqlplugs
                  ++ map ExternalPlug (ctxphp context)
      allplugs = definedplugs ++      -- all plugs defined by the user
@@ -306,13 +310,13 @@ makeFSpec opts context
 --  A script without any mention of interfaces is supplemented
 --  by a number of interface definitions that gives a user full access to all data.
 --  Step 1: select and arrange all relations to obtain a set cRels of total relations
---          to ensure insertability of entities (signal declarations are excluded)
-     cRels = [     EDcD d  | d@Sgn{}<-calculatedDecls, isTot d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-calculatedDecls, not (isTot d) && isSur d, not$decplug d]
+--          to ensure insertability of entities (signal relations are excluded)
+     cRels = [     EDcD d  | d<-calculatedDecls, isTot d, not$decplug d]++
+             [flp (EDcD d) | d<-calculatedDecls, not (isTot d) && isSur d, not$decplug d]
 --  Step 2: select and arrange all relations to obtain a set dRels of injective relations
---          to ensure deletability of entities (signal declarations are excluded)
-     dRels = [     EDcD d  | d@Sgn{}<-calculatedDecls, isInj d, not$decplug d]++
-             [flp (EDcD d) | d@Sgn{}<-calculatedDecls, not (isInj d) && isUni d, not$decplug d]
+--          to ensure deletability of entities (signal relations are excluded)
+     dRels = [     EDcD d  | d<-calculatedDecls, isInj d, not$decplug d]++
+             [flp (EDcD d) | d<-calculatedDecls, not (isInj d) && isUni d, not$decplug d]
 --  Step 3: compute longest sequences of total expressions and longest sequences of injective expressions.
      maxTotPaths = map (:[]) cRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
      maxInjPaths = map (:[]) dRels   -- note: instead of computing the longest sequence, we take sequences of length 1, the function clos1 below is too slow!
@@ -333,10 +337,10 @@ makeFSpec opts context
      interfaceGen = step4a ++ step4b
      step4a
       = let recur es
-             = [ Obj { objnm   = showADL t
+             = [ Obj { objnm   = showA t
                      , objpos  = Origin "generated recur object: step 4a - default theme"
-                     , objctx  = t
-                     , objcrud = fatal 351 "No default crud in generated interface"
+                     , objExpression  = t
+                     , objcrud = fatal "No default crud in generated interface"
                      , objmView = Nothing
                      , objmsub = Just . Box (target t) Nothing $ recur [ pth | (_:pth)<-cl, not (null pth) ]
                      }
@@ -350,10 +354,11 @@ makeFSpec opts context
             -- Each interface gets all attributes that are required to create and delete the object.
             -- All total attributes must be included, because the interface must allow an object to be deleted.
         in
-        [Ifc { ifcObj      = Obj { objnm   = name c
+        [Ifc { ifcname     = name c
+             , ifcObj      = Obj { objnm   = name c
                                  , objpos  = Origin "generated object: step 4a - default theme"
-                                 , objctx  = EDcI c
-                                 , objcrud = fatal 371 "No default crud in generated interface"
+                                 , objExpression  = EDcI c
+                                 , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box c Nothing $ objattributes
                                  }
@@ -366,19 +371,19 @@ makeFSpec opts context
         , let objattributes = recur cl
         , not (null objattributes) --de meeste plugs hebben in ieder geval I als attribuut
         , --exclude concept A without cRels or dRels (i.e. A in Scalar without total associations to other plugs)
-          not (length objattributes==1 && isIdent(objctx(head objattributes)))
-        , let e0=head cl, if null e0 then fatal 284 "null e0" else True
+          not (length objattributes==1 && isIdent(objExpression(head objattributes)))
+        , let e0=head cl, not (null e0) || fatal "null e0"
         , let c=source (head e0)
-        , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]++
-                       [ Isn cpt |  EDcI cpt <- concatMap primsMentionedIn (expressionsIn objattributes)]
+        , let params = [ d | EDcD d <- concatMap primsMentionedIn (expressionsIn objattributes)]
         ]
      --end otherwise: default theme
      --end stap4a
      step4b --generate lists of concept instances for those concepts that have a generated INTERFACE in step4a
-      = [Ifc { ifcObj      = Obj { objnm   = nm
+      = [Ifc { ifcname     = nm
+             , ifcObj      = Obj { objnm   = nm
                                  , objpos  = Origin "generated object: step 4b"
-                                 , objctx  = EDcI ONE
-                                 , objcrud = fatal 400 "No default crud in generated interface"
+                                 , objExpression  = EDcI ONE
+                                 , objcrud = fatal "No default crud in generated interface"
                                  , objmView = Nothing
                                  , objmsub = Just . Box ONE Nothing $ [att]
                                  }
@@ -388,18 +393,18 @@ makeFSpec opts context
              , ifcRoles    = []
              }
         | ifcc<-step4a
-        , let c   = source(objctx (ifcObj ifcc))
+        , let c   = source(objExpression (ifcObj ifcc))
               nm'::Int->String
               nm' 0  = plural printingLanguage (name c)
               nm' i  = plural printingLanguage (name c) ++ show i
               nms = [nm' i |i<-[0..], nm' i `notElem` map name (ctxifcs context)]
               nm
-                | null nms = fatal 355 "impossible"
+                | null nms = fatal "impossible"
                 | otherwise = head nms
               att = Obj { objnm    = name c
                         , objpos   = Origin "generated attribute object: step 4b"
-                        , objctx   = EDcV (Sign ONE c)
-                        , objcrud  = fatal 419 "No default crud in generated interface."
+                        , objExpression   = EDcV (Sign ONE c)
+                        , objcrud  = fatal "No default crud in generated interface."
                         , objmView = Nothing
                         , objmsub  = Nothing
                         }
@@ -409,7 +414,7 @@ makeFSpec opts context
      ----------------------
      printingLanguage = fromMaybe (ctxlang context) (language opts)  -- The language for printing this specification is taken from the command line options (language opts). If none is specified, the specification is printed in the language in which the context was defined (ctxlang context).
 
-makeIfcControls :: [Declaration] -> [Conjunct] -> [Conjunct]
+makeIfcControls :: [Relation] -> [Conjunct] -> [Conjunct]
 makeIfcControls params allConjs
  = [ conj 
    | conj<-allConjs
@@ -440,7 +445,7 @@ tblcontents ci ps plug
    = case plug of
      BinSQL{}    -> let expr = case dLkpTbl plug of
                                  [store] -> EDcD (rsDcl store)
-                                 ss       -> fatal 540 $ "Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss)
+                                 ss       -> fatal ("Exactly one relation sould be stored in BinSQL. However, there are "++show (length ss))
                     in [[(Just . apLeft) p,(Just . apRight) p] |p<-fullContents ci ps expr]
      TblSQL{}    -> 
  --TODO15122010 -> remove the assumptions (see comment data PlugSQL)
@@ -449,7 +454,7 @@ tblcontents ci ps plug
  --and the first attribute is unique and not null
  --(r,s,t)<-mLkpTbl: s is assumed to be in the kernel, attExpr t is expected to hold r or (flp r), s and t are assumed to be different
         case attributes plug of 
-         []   -> fatal 593 "no attributes in plug."
+         []   -> fatal "no attributes in plug."
          f:fs -> (nub.transpose)
                  ( map Just cAtoms
                  : [case fExp of
@@ -465,7 +470,7 @@ tblcontents ci ps plug
                     = case [ p | p<-pairs, a==apLeft p ] of
                        [] -> Nothing
                        [p] -> Just (apRight p)
-                       ps' -> fatal 428 . unlines $ 
+                       ps' -> fatal . unlines $ 
                                 [ "There is an attempt to populate multiple values into "
                                 , "     the row of table `"++name plug++"`, where id = "++show(showValADL a)++":"
                                 , "     Values to be inserted in field `"++name att++"` are: "++show (map (showValADL . apRight) ps')

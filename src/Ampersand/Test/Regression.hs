@@ -28,14 +28,14 @@ process indent (DirData path dirContent) =
   case dirContent of
     DirError err     -> do
         putStrLn $ "I've tried to look in " ++ path ++ "."
-        putStrLn $ "    There was an error: "
+        putStrLn   "    There was an error: "
         putStrLn $ "       " ++ show err
         return 1
     DirList _ files -> do
         putStrLn $ path ++" : "
         doTestSet indent path files
  
-yaml :: [Char]
+yaml :: String
 yaml = "testinfo.yaml"  -- the required name of the file that contains the test info for this directory.
 doTestSet :: Int -> FilePath -> [FilePath] -> IO Int
 doTestSet indent dir fs 
@@ -45,7 +45,8 @@ doTestSet indent dir fs
               Left err -> do putStrLni $ dir </> yaml ++" could not be parsed."
                              putStrLni $ prettyPrintParseException err
                              return 1
-              Right ti -> runTests ti $$ getResults
+              Right ti -> do putStrLni $ "Command: "++command ti++if shouldSucceed ti then " (should succeed)." else " (should fail)."
+                             runTests ti $$ getResults
   | otherwise =
        do putStrLni $ "Nothing to do. ("++yaml++" not present)"
           return 0
@@ -58,7 +59,7 @@ doTestSet indent dir fs
       where 
         isRelevant f = map toUpper (takeExtension f) `elem` [".ADL"]
         testsSource :: Source IO FilePath
-        testsSource = CL.sourceList $ (filter isRelevant fs)
+        testsSource = CL.sourceList $ filter isRelevant fs
         doATest :: Conduit FilePath IO Int
         doATest = awaitForever dotheTest
           where 
@@ -73,8 +74,8 @@ doTestSet indent dir fs
        loop i = 
          await >>= maybe (return i) 
                          (\x -> loop $! (i+x))
-    putStrLni str = putStrLn $ (replicate indent ' ') ++ str
-    putStri   str = putStr   $ (replicate indent ' ') ++ str
+    putStrLni str = putStrLn $ replicate indent ' ' ++ str
+    putStri   str = putStr   $ replicate indent ' ' ++ str
     
 
 -- This data structure is directy available in .yaml files. Be aware that modification will have consequences for the 
@@ -108,7 +109,7 @@ testAdlfile indent path adl tinfo = runMyProc myProc
                             , child_group = Nothing
                             , child_user = Nothing
                             }
-     runMyProc :: CreateProcess -> IO (Bool)
+     runMyProc :: CreateProcess -> IO Bool
      runMyProc x = do 
                      
         (exit_code, stdout, stderr) <- readCreateProcessWithExitCode x ""
@@ -118,7 +119,7 @@ testAdlfile indent path adl tinfo = runMyProc myProc
           (False , ExitSuccess  ) -> failOutput (exit_code, stdout, stderr)
           (False , ExitFailure _) -> passOutput
      passOutput = do -- putStrLni stdout
-                     putStrLn $ "***Pass***"
+                     putStrLn "***Pass***"
                      return True 
      failOutput (exit_code, stdout, stderr) =
                   do putStrLn $ "\n*FAIL*. Exit code: "++show exit_code++". "
@@ -128,4 +129,4 @@ testAdlfile indent path adl tinfo = runMyProc myProc
                                            putStrLni stderr
                      return False
 
-     putStrLni  = mapM_ putStrLn . map ((replicate indent ' ')  ++) . lines 
+     putStrLni  = mapM_ (putStrLn . (replicate indent ' ' ++)) . lines 

@@ -7,6 +7,7 @@ import Ampersand.Basics
 import Ampersand.Misc
 import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
+import Ampersand.Core.ShowAStruct
 import Ampersand.Prototype.PHP
 {-
 Validate the generated SQL for all rules in the fSpec, by comparing the evaluation results
@@ -52,13 +53,13 @@ stringify (rule,pairs) = (name rule, map f pairs )
 getAllInterfaceExps :: FSpec -> [ValidationExp]
 getAllInterfaceExps fSpec = concat [ getObjExps (name ifc) $ ifcObj ifc
                                    | ifc <- interfaceS fSpec ++ interfaceG fSpec ]
- where getObjExps iName objDef = (objctx objDef, "interface " ++ show iName) :
+ where getObjExps iName objDef = (objExpression objDef, "interface " ++ show iName) :
                                  concatMap (getObjExps iName) (fields objDef)
 
 -- we check the complement of the rule, since that is the expression evaluated in the prototype
 getAllRuleExps :: FSpec -> [ValidationExp]
 getAllRuleExps fSpec = map getRuleExp $ vrules fSpec ++ grules fSpec
- where getRuleExp rule = (notCpl (rrexp rule), "rule "++show (name rule))
+ where getRuleExp rule = (notCpl (formalExpression rule), "rule "++show (name rule))
 
 getAllPairViewExps :: FSpec -> [ValidationExp]
 getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fSpec
@@ -68,7 +69,7 @@ getAllPairViewExps fSpec = concatMap getPairViewExps $ vrules fSpec ++ grules fS
 
 getAllIdExps :: FSpec -> [ValidationExp]
 getAllIdExps fSpec = concatMap getIdExps $ vIndices fSpec
- where getIdExps identity = [ (objctx objDef, "identity "++show (name identity))
+ where getIdExps identity = [ (objExpression objDef, "identity "++show (name identity))
                             | IdentityExp objDef <- identityAts identity ]
 
 getAllViewExps :: FSpec -> [ValidationExp]
@@ -79,8 +80,8 @@ getAllViewExps fSpec = concatMap getViewExps $ vviews fSpec
 type ValidationExp = (Expression, String)
 -- a ValidationExp is an expression together with the place in the context where we
 -- obtained it from (e.g. rule/interface/..)
-showVExp :: ShowADL a => (a, String) -> String
-showVExp (exp, orig) = "Origin: "++orig++", expression: "++showADL exp
+showVExp :: (Expression, String) -> String
+showVExp (exp, orig) = "Origin: "++orig++", expression: "++showA exp
 
 -- validate a single expression and report the results
 validateExp :: FSpec -> ValidationExp -> IO (ValidationExp, Bool)
@@ -89,7 +90,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
     ; return (vExp, True)
     }
 validateExp fSpec vExp@(exp, orig) =
- do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) $ exp
+ do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) exp
     ; let violationsAmp = [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- pairsInExpr fSpec exp]
     ; if sort violationsSQL == sort violationsAmp
       then
@@ -97,11 +98,15 @@ validateExp fSpec vExp@(exp, orig) =
           ; return (vExp, True)
           }
       else
-       do { putStrLn $ "\nChecking "++orig ++": expression = "++showADL exp
-          ; putStrLn "\nMismatch between SQL and Ampersand"
+       do { putStrLn ""
+          ; putStrLn $ "Checking "++orig ++": expression = "++showA exp
+          ; putStrLn ""
+          ; putStrLn "Mismatch between SQL and Ampersand"
           ; putStrLn $ showVExp vExp
-          ; putStrLn $ "SQL violations:\n"++show violationsSQL
-          ; putStrLn $ "Ampersand violations:\n" ++ show violationsAmp
+          ; putStrLn "SQL violations:"
+          ; print violationsSQL
+          ; putStrLn "Ampersand violations:"
+          ; print violationsAmp
           ; return (vExp, False)
           }
     }

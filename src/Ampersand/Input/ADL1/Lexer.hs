@@ -266,7 +266,7 @@ getTime :: String -> Maybe (DiffTime, NominalDiffTime, Int, String)
 getTime cs =
   case cs of
    'T':h1:h2:':':m1:m2:rest 
-    -> if (all isDigit [h1,h2,m1,m2])
+    -> if all isDigit [h1,h2,m1,m2]
        then let (_,Left hours,_,_) = getNumber [h1,h2]
                 (_,Left minutes,_,_) = getNumber [m1,m2]
                 (seconds,ls,rs) = getSeconds rest
@@ -337,16 +337,16 @@ getDate cs =
 -- Numbers
 -----------------------------------------------------------
 -- Returns tuple with the parsed lexeme, the integer, the amount of read characters and the rest of the text
-getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
+getNumber :: String -> (Lexeme, Either Int Double, Int, String)
 getNumber str =
   case readDec str of
-    [(_,('.':_))] -> case readFloat str of
+    [(_,'.':_)] -> case readFloat str of
                            [(flt,rest)] -> (LexFloat flt, Right flt, length str - length rest,rest)
-                           _            -> fatal 342 "Unexpected: can read decimal, but not float???"
+                           _            -> fatal "Unexpected: can read decimal, but not float???"
     [(dec,rest)]  -> (LexDecimal dec , Left dec, length str - length rest,rest)
-    _  -> fatal 343 $ "No number to read!\n  " ++ take 40 str                    
+    _  -> fatal ("No number to read!\n  " ++ take 40 str)
 --getNumber :: String -> (Lexeme, (Either Int Double), Int, String)
---getNumber [] = fatal 294 "getNumber"
+--getNumber [] = fatal "getNumber"
 --getNumber cs@(c:s)
 --  | c /= '0'         = num10
 --  | null s           = const0
@@ -389,7 +389,7 @@ scanSingletonInExpression = scanUpto True ['\'']
 
 -- | scan to some given character. The end char is scanned away too
 scanUpto :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
-         -> [Char]  -- non-empty list of ending characters
+         -> String  -- non-empty list of ending characters
          -> String 
          -> (String, Int, String)
 scanUpto isAtomScan echrs s = 
@@ -399,7 +399,7 @@ scanUpto isAtomScan echrs s =
                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
 getchar :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
-        -> [Char]  -- non-empty list of ending characters
+        -> String  -- non-empty list of ending characters
         -> String  -- string to get the character from
         -> (Maybe Char, Int, String)
 getchar isAtomScan echrs s =
@@ -424,7 +424,7 @@ getEscChar s@(x:xs) | isDigit x = case readDec s of
                                     [(val,rest)]
                                       | val >= 0 && val <= ord (maximum [chr 1 ..]) -> (Just (chr val),length s - length rest, rest)
                                       | otherwise -> (Nothing, 1, rest)
-                                    _  -> fatal 432 $ "Impossible! first char is a digit.. "++take 40 s
+                                    _  -> fatal ("Impossible! first char is a digit.. "++take 40 s)
                     | x `elem` ['\"','\''] = (Just x,2,xs)
                     | otherwise = case x `lookup` cntrChars of
                                  Nothing -> (Nothing,0,s)

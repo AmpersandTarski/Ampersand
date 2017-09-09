@@ -1,6 +1,7 @@
-{-# LANGUAGE DeriveDataTypeable, CPP, MultiParamTypeClasses,
-    FlexibleContexts, ScopedTypeVariables, PatternGuards,
-    ViewPatterns #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.PandocAux
       ( writepandoc
@@ -8,10 +9,8 @@ module Ampersand.Output.PandocAux
       , count
       , ShowMath(..),showMathWithSign
       , latexEscShw, escapeNonAlphaNum
-      , texOnly_Id
-      , texOnly_fun
-      , texOnly_rel
-      , texOnly_marginNote
+      , texOnlyId
+      , texOnlyMarginNote
       , newGlossaryEntry
       , NLString(..)
       , ENString(..)
@@ -28,9 +27,10 @@ import Data.List
 import Data.Maybe
 import Ampersand.ADL1
 import Ampersand.Basics hiding (hPutStrLn)
-import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.FSpec
 import Ampersand.Misc
+import Ampersand.Core.ShowPStruct
+import Ampersand.Classes (isFunction)
 import Ampersand.Prototype.StaticFiles_Generated
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import qualified Data.ByteString as BS
@@ -54,21 +54,6 @@ import Data.List (intercalate)
 changePathSeparators :: FilePath -> FilePath
 changePathSeparators = intercalate "/" . splitDirectories
 #endif
-
--- Utility types and functions for handling multiple-language strings
-
--- If you declare a local function:   l lstr = localize (fsLang fSpec) lstr
--- you can use:  l (NL "Nederlandse tekst", EN "English text")
--- to specify strings in multiple languages.
-
-newtype NLString = NL String
-newtype ENString = EN String
-
-type LocalizedStr = (NLString, ENString)
-
-localize :: Lang -> LocalizedStr -> String
-localize Dutch   (NL s, _) = s
-localize English (_, EN s) = s
 
 -- | Default key-value pairs for use with the Pandoc template
 defaultWriterVariables :: FSpec -> [(String , String)]
@@ -172,7 +157,7 @@ writepandoc fSpec thePandoc =
         FLatex  ->
            do result <- makePDF writeLaTeX wOpts thePandoc fSpec
               case result of 
-                Left err -> do putStrLn ("LaTeX Error: ")
+                Left err -> do putStrLn "LaTeX Error: "
                                B.putStr err
                                putStrLn "\n."
                 Right _  -> do let pdfFile = outputFile -<.> "pdf"
@@ -185,9 +170,9 @@ writepandoc fSpec thePandoc =
       when (fspecFormat (getOpts fSpec) == Fdocx)
            writeReferenceFileDocx
       case getWriter fSpecFormatString of
-        Left msg -> fatal 162 . unlines $
-                        ["Something wrong with format "++show(fspecFormat (getOpts fSpec))++":"]
-                        ++ map ("  "++) (lines msg)
+        Left msg -> fatal . unlines $
+                        ("Something wrong with format "++show(fspecFormat (getOpts fSpec))++":")
+                        : map ("  "++) (lines msg)
         Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
                                                 writeFile outputFile content
         Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
@@ -238,10 +223,9 @@ writepandoc fSpec thePandoc =
             Ftextile -> "textile"
     writerOptions :: MediaBag-> WriterOptions
     writerOptions bag = def
-                      { writerStandalone=isJust template
-                      , writerTableOfContents=True
+                      { writerTableOfContents=True
                       , writerNumberSections=True
-                      , writerTemplate=fromMaybe "" template
+                      , writerTemplate=template
                       , writerVariables=defaultWriterVariables fSpec
                       , writerMediaBag=bag
                       , writerReferenceDocx=Just docxStyleUserPath
@@ -252,14 +236,14 @@ writepandoc fSpec thePandoc =
     docxStyleContent = 
       case getStaticFileContent PandocTemplates "defaultStyle.docx" of
          Just cont -> BC.pack cont
-         Nothing -> fatal 0 ("Cannot find the statically included default defaultStyle.docx.")
+         Nothing -> fatal "Cannot find the statically included default defaultStyle.docx."
     docxStyleUserPath = dirOutput (getOpts fSpec) </> "reference.docx" -- this is the place where the file is written if it doesn't exist.
     writeReferenceFileDocx :: IO()
     writeReferenceFileDocx = do
          exists <- doesFileExist docxStyleUserPath
          if exists 
-             then do verboseLn (getOpts fSpec) 
-                           "Existing style file is used for generating .docx file:"
+             then verboseLn (getOpts fSpec) 
+                      "Existing style file is used for generating .docx file:"
              else (do verboseLn (getOpts fSpec)
                            "Default style file is written. this can be changed to fit your own style:"
                       BC.writeFile docxStyleUserPath docxStyleContent
@@ -272,7 +256,7 @@ writepandoc fSpec thePandoc =
        where addToBag :: MediaBag -> FilePath -> IO MediaBag
              addToBag bag fullPath = do
                 verboseLn (getOpts fSpec) $ "Collect: "++fullPath
-                verboseLn (getOpts fSpec) $ "  as: "++(takeFileName fullPath)
+                verboseLn (getOpts fSpec) $ "  as: "++takeFileName fullPath
                 contents <- BC.readFile fullPath
                 return $ insertMedia (takeFileName fullPath) Nothing contents bag 
              isGraphic :: FilePath -> Bool
@@ -315,28 +299,22 @@ data Chapter = Intro
 
 chptTitle :: Lang -> Chapter -> Inlines
 chptTitle lang cpt =
-     (case (cpt,lang) of
-        (Intro                 , Dutch  ) -> text "Inleiding"
-        (Intro                 , English) -> text "Introduction"
-        (SharedLang            , Dutch  ) -> text "Gemeenschappelijke taal"
-        (SharedLang            , English) -> text "Shared Language"
-        (Diagnosis             , Dutch  ) -> text "Diagnose"
-        (Diagnosis             , English) -> text "Diagnosis"
-        (ConceptualAnalysis    , Dutch  ) -> text "Conceptuele Analyse"
-        (ConceptualAnalysis    , English) -> text "Conceptual Analysis"
-        (ProcessAnalysis       , Dutch  ) -> text "Procesanalyse"
-        (ProcessAnalysis       , English) -> text "Process Analysis"
-        (DataAnalysis          , Dutch  ) -> text "Gegevensstructuur"
-        (DataAnalysis          , English) -> text "Data structure"
-        (SoftwareMetrics       , Dutch  ) -> text "Functiepunt Analyse"
-        (SoftwareMetrics       , English) -> text "Function Point Analysis"
-        (Interfaces            , Dutch  ) -> text "Koppelvlakken"
-        (Interfaces            , English) -> text "Interfaces"
-        (FunctionPointAnalysis , Dutch  ) -> text "Functiepuntanalyse"
-        (FunctionPointAnalysis , English) -> text "Function point analysis"
-        (Glossary              , Dutch  ) -> text "Begrippen"
-        (Glossary              , English) -> text "Glossary"
-     )
+  case cpt of
+    Intro                 -> text.l $ (NL "Inleiding", EN "Introduction")
+    SharedLang            -> text.l $ (NL "Gemeenschappelijke taal", EN "Shared Language")
+    Diagnosis             -> text.l $ (NL "Diagnose", EN "Diagnosis")
+    ConceptualAnalysis    -> text.l $ (NL "Conceptuele Analyse", EN "Conceptual Analysis")
+    ProcessAnalysis       -> text.l $ (NL "Procesanalyse", EN "Process Analysis")
+    DataAnalysis          -> text.l $ (NL "Gegevensstructuur", EN "Data structure")
+    SoftwareMetrics       -> text.l $ (NL "Functiepunt Analyse", EN "Function Point Analysis")
+    Interfaces            -> text.l $ (NL "Koppelvlakken", EN "Interfaces")
+    FunctionPointAnalysis -> text.l $ (NL "Functiepuntanalyse", EN "Function point analysis")
+    Glossary              -> text.l $ (NL "Begrippen", EN "Glossary")
+ where 
+     -- shorthand for easy localizing    
+    l :: LocalizedStr -> String
+    l = localize lang
+    
 
 
 
@@ -349,7 +327,7 @@ class ShowMath a where
  showMath :: a -> Inlines
 
 instance ShowMath Rule where
- showMath = showMath . rrexp
+ showMath = showMath . formalExpression
 
 instance ShowMath Expression where
  showMath = math . showExpr . insParentheses
@@ -375,9 +353,9 @@ instance ShowMath Expression where
           showExpr (EBrk e)     = "("++showExpr e++")"
           showExpr (EDcD d)     = inMathText (name d)
           showExpr (EDcI c)     = "I_{["++inMathText (name c)++"]}"
-          showExpr  EEps{}      = "" -- fatal 417 "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
+          showExpr  EEps{}      = "" -- fatal "EEps may occur only in combination with composition (semicolon)."  -- SJ 2014-03-11: Are we sure about this? Let's see if it ever occurs...
           showExpr (EDcV sgn)   = "V_{["++inMathText (name (source sgn))++"*"++inMathText (name (target sgn))++"]}"
-          showExpr (EMp1 val _) = inMathText $ showADL val
+          showExpr (EMp1 val _) = inMathText $ showP val
 
 -- add extra parentheses to consecutive superscripts, since latex cannot handle these
 -- (this is not implemented in insParentheses because it is a latex-specific issue)
@@ -387,16 +365,12 @@ addParensToSuper e@EKl1{} = EBrk e
 addParensToSuper e@EFlp{} = EBrk e
 addParensToSuper e        = e
 
-instance ShowMath Declaration where
- showMath decl@(Sgn{})  = math $ 
+instance ShowMath Relation where
+ showMath decl = math $ 
         inMathText (name decl)++":\\ "
      ++(inMathText . name . source $ decl)++(if isFunction decl then "\\mapsto" else "*")
      ++(inMathText . name . target $ decl)++"]"
- showMath Isn{}
-  = math $ "\\mathbb{I}"
- showMath Vs{}
-  = math $ "\\mathbb{V}"
-showMathWithSign :: Declaration -> Inlines
+showMathWithSign :: Relation -> Inlines
 showMathWithSign decl = math $ 
         inMathText (name decl)++"["
      ++(inMathText . name . source $ decl)++"*"
@@ -537,7 +511,7 @@ latexEscShw (c:cs)      | isAlphaNum c && isAscii c = c:latexEscShw cs
   f 'Ú' = "\\'{U}"         --  acute accent
   f 'ý' = "\\'{y}"         --  acute accent
   f 'Ý' = "\\'{Y}"         --  acute accent
-  f _   = [c] -- let us think if this should be:    fatal 661 ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
+  f _   = [c] -- let us think if this should be:    fatal ("Symbol "++show x++" (character "++show (ord c)++") is not supported")
 
 --posixFilePath :: FilePath -> String
 -- tex uses posix file notation, however when on a windows machine, we have windows conventions for file paths...
@@ -555,14 +529,9 @@ inMathText s = "\\text{"++latexEscShw s++"} "
 inMathCartesianProduct :: String
 inMathCartesianProduct = "\\times "
 
-texOnly_Id :: String -> String
-texOnly_Id s = "\\mbox{"++latexEscShw s++"} "
+texOnlyId :: String -> String
+texOnlyId s = "\\mbox{"++latexEscShw s++"} "
 -- \\def\\id#1{\\mbox{\\em #1\\/}}"
-texOnly_fun :: String
-texOnly_fun = "\\rightarrow "
-
-texOnly_rel :: String
-texOnly_rel = "\\times "
 
 inMathCompose :: String
 inMathCompose = ";"
@@ -608,10 +577,10 @@ newGlossaryEntry nm cnt =
   rawInline "latex"
     ("\\newglossaryentry{"++escapeNonAlphaNum nm ++"}\n"++
      "     { name={"++latexEscShw nm ++"}\n"++
-     "     , description={"++latexEscShw (cnt)++"}}\n")
+     "     , description={"++latexEscShw cnt++"}}\n")
 
-texOnly_marginNote :: String -> String
-texOnly_marginNote mgn = 
+texOnlyMarginNote :: String -> String
+texOnlyMarginNote mgn = 
    "\\marginpar{\\begin{minipage}[t]{3cm}{\\noindent\\small\\em "++mgn++"}\\end{minipage}}"
 
 -------------------------------------------------
@@ -623,7 +592,7 @@ makePDF :: (WriterOptions -> Pandoc -> String)  -- ^ writer
         -> Pandoc              -- ^ document
         -> FSpec
         -> IO (Either B.ByteString B.ByteString)
-makePDF writer wOpts pandoc fSpec = do
+makePDF writer wOpts pandoc fSpec = 
   tex2pdf' (dirOutput (getOpts fSpec))
   
   where 
@@ -655,7 +624,7 @@ makePDF writer wOpts pandoc fSpec = do
     runTeXProgram runNumber numRuns tmpDir = do
         let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
         exists <- doesFileExist file
-        unless exists $ fatal 766 $ "File should be written by now:\n  "++file 
+        unless exists $ fatal ("File should be written by now:\n  "++file)
 #ifdef _WINDOWS
         -- note:  we want / even on Windows, for TexLive
         let tmpDir' = changePathSeparators tmpDir

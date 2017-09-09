@@ -29,6 +29,10 @@ before_build:
 # in this script we end up making a new tag when we push a release)
 skip_tags: true
 
+# need curl in the path (used to be in there automatically, see http://help.appveyor.com/discussions/problems/6312-curl-command-not-found
+install:
+- set PATH=C:\Program Files\Git\mingw64\bin;%PATH%
+
 # perform the typical stack build, and also install the 
 # ampersand.exe file that we will mark as an artifact
 build_script:

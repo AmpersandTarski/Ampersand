@@ -38,6 +38,7 @@ angular.module('AmpersandApp', ['ngResource', 'ngRoute', 'ngSanitize', 'restangu
     
     Restangular.addResponseInterceptor(function(data, operation, what, url, response, deferred){
         if(operation != 'get' && operation != 'getList' && data.sessionRefreshAdvice) $rootScope.refreshNavBar();
+		if(data.navTo != null) $location.url(data.navTo);
         
         return data;
     });

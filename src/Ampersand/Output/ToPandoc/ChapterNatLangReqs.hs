@@ -4,12 +4,11 @@ module Ampersand.Output.ToPandoc.ChapterNatLangReqs (
       chpNatLangReqs
  ) where
 
+import Ampersand.Output.ToPandoc.SharedAmongChapters
 import Data.Char hiding (Space)
 import Data.List
-import Data.List.Split
+import Data.List.Split(splitOn)
 import Data.Maybe
---import Ampersand.Basics
-import Ampersand.Output.ToPandoc.SharedAmongChapters
 
 chpNatLangReqs :: Int -> FSpec -> Blocks
 chpNatLangReqs lev fSpec =
@@ -41,9 +40,9 @@ chpNatLangReqs lev fSpec =
   where
   -- shorthand for easy localizing    
   l :: LocalizedStr -> String
-  l lstr = localize (fsLang fSpec) lstr
+  l = localize (fsLang fSpec)
   legalRefs :: Blocks
-  legalRefs = (header (lev+2) sectionTitle)
+  legalRefs =  header (lev+2) sectionTitle
             <> table caption'
                      [(AlignLeft,1/4),(AlignLeft,3/4)]
                      [plain lawHeader, plain articleHeader]  --headers
@@ -55,7 +54,7 @@ chpNatLangReqs lev fSpec =
                    Dutch   -> ("Referentietabel", "Wet", "Artikel", "Referentietabel van de wetsartikelen")
                    English -> ("Reference table", "Law", "Article", "Reference table of articles of law")
                getRefs ::FSpec ->  [LawRef]
-               getRefs f = concatMap catMaybes ((map (map toLawRef).map explRefIds.explanations) f)
+               getRefs f = concatMap (mapMaybe toLawRef . explRefIds) (explanations f)
 
 
   -- | printOneTheme tells the story in natural language of a single theme.
@@ -92,14 +91,14 @@ chpNatLangReqs lev fSpec =
          = case patOfTheme tc of
              Nothing  -> mempty
              Just pat -> 
-               ((para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
+                 para ((str.l) (NL "In het volgende wordt de taal geïntroduceerd ten behoeve van "
                                  ,EN "The sequel introduces the language of ")
                               <> (str.name) pat <> ".")
-                )<>
+              <>
 {-
                 ( case nCpts of
                    [] 
-                     -> fatal 136 "Unexpected. There should be at least one concept to introduce."
+                     -> fatal "Unexpected. There should be at least one concept to introduce."
                    [x]
                      -> para(   (str.l) (NL "Nu volgt de definitie van het begrip "
                                         ,EN "At this point, the definition of ")
@@ -132,7 +131,6 @@ chpNatLangReqs lev fSpec =
                                          ,EN " are multiple defined.")
                               )
                )
-              )                                    
          where
            showCpt :: Numbered CptCont -> Inlines
            showCpt = emph.text.name.cCpt.theLoad
@@ -146,7 +144,7 @@ chpNatLangReqs lev fSpec =
   printConcept nCpt 
         = -- Purposes:
            (printPurposes . cCptPurps . theLoad) nCpt
-         <> case (cCptDefs.theLoad) nCpt of
+         <> case (nubByText.cCptDefs.theLoad) nCpt of
              []    -> mempty  -- There is no definition of the concept
              [cd] -> printCDef cd Nothing
              cds  -> mconcat
@@ -155,6 +153,7 @@ chpNatLangReqs lev fSpec =
                     ]
          <> someWhiteSpace 
         where
+         nubByText = nubBy (\x y -> cddef x ==cddef y && cdref x == cdref y) -- fixes https://github.com/AmpersandTarski/Ampersand/issues/617
          printCDef :: ConceptDef -- the definition to print
                 -> Maybe String -- when multiple definitions exist of a single concept, this is to distinguish
                 -> Blocks
@@ -168,7 +167,7 @@ chpNatLangReqs lev fSpec =
                , [para (   newGlossaryEntry (name cDef++fromMaybe "" suffx) (cddef cDef)
                         <> (case fspecFormat (getOpts fSpec) of
                                     FLatex -> rawInline "latex"
-                                                ("~"++texOnly_marginNote 
+                                                ("~"++texOnlyMarginNote 
                                                         ("\\gls{"++escapeNonAlphaNum 
                                                                    (name cDef++fromMaybe "" suffx)
                                                             ++"}"
@@ -189,7 +188,7 @@ chpNatLangReqs lev fSpec =
         <> case (cDclMeaning . theLoad) nDcl of
               Just m -> definitionList 
                     [(   str (l (NL "Afspraak ", EN "Agreement "))
-                      <> xDefInln fSpec (XRefSharedLangDeclaration dcl)
+                      <> xDefInln fSpec (XRefSharedLangRelation dcl)
                      , [printMeaning m]
                      )
                     ]
@@ -227,11 +226,10 @@ chpNatLangReqs lev fSpec =
                ]
     <> someWhiteSpace      
 
-  mkPhrase :: Declaration -> AAtomPair -> Inlines
+  mkPhrase :: Relation -> AAtomPair -> Inlines
   mkPhrase decl pair -- srcAtom tgtAtom
-   = case decl of
-       Sgn{} | null (prL++prM++prR)
-                  ->    (atomShow . upCap) srcAtom
+   | null (prL++prM++prR)
+                   =    (atomShow . upCap) srcAtom
                      <> devShow (source decl) 
                      <> (pragmaShow.l) (NL " correspondeert met ", EN " corresponds to ")
                      <> atomShow tgtAtom
@@ -239,8 +237,8 @@ chpNatLangReqs lev fSpec =
                      <> (pragmaShow.l) (NL " in de relatie ",EN " in relation ")
                      <> atomShow (name decl)
                      <> "."
-             | otherwise
-                  ->    (if null prL then mempty
+   | otherwise
+                  =    (if null prL then mempty
                          else pragmaShow (upCap prL) <> " ")
                      <> devShow (source decl)
                      <> atomShow srcAtom <> " "
@@ -251,9 +249,6 @@ chpNatLangReqs lev fSpec =
                      <> (if null prR then mempty
                          else " " <> pragmaShow prR)
                      <> "."
-
-       Isn{}     -> fatal 299 "Isn  is not supposed to be here expected here."
-       Vs{}      -> fatal 300 "Vs  is not supposed to be here expected here."
    where srcAtom = showValADL (apLeft pair)
          tgtAtom = showValADL (apRight pair)
          prL = decprL decl
@@ -261,7 +256,7 @@ chpNatLangReqs lev fSpec =
          prR = decprR decl
          atomShow = str
          pragmaShow = emph . str
-         devShow c = if (development (getOpts fSpec)) then "("<> (str.name) c <> ")" else mempty
+         devShow c = if development (getOpts fSpec) then "("<> (str.name) c <> ")" else mempty
                    
 someWhiteSpace :: Blocks  --TODO: This doesn't seem to have any effect. (At least not in the LaTeX output)
 someWhiteSpace = para (linebreak <> linebreak <> linebreak <> linebreak)
@@ -291,7 +286,7 @@ getArticlesOfLaw ref = map buildLA  ((splitOn ", ".unwords.init.words.lawRef) re
                            in  Left txt : scanRefInt rest
 
          scanRefInt "" = []
-         scanRefInt str' = let (digits, rest) = break (not . isDigit) str'
+         scanRefInt str' = let (digits, rest) = span isDigit str'
                            in  Right (read digits) : scanRefTxt rest
 
 instance Ord ArticleOfLaw where
@@ -301,11 +296,11 @@ instance Ord ArticleOfLaw where
      ord' -> ord'
 
 unscanRef :: [Either String Int] -> String
-unscanRef scannedRef = concat $ map (either id show) scannedRef
+unscanRef = concatMap (either id show)
              
              
 printPurposes :: [Purpose] -> Blocks
-printPurposes  = fromList . concat . map (amPandoc . explMarkup) 
+printPurposes  = fromList . concatMap (amPandoc . explMarkup) 
 
-printMeaning :: A_Markup -> Blocks
+printMeaning :: Markup -> Blocks
 printMeaning = fromList . amPandoc
