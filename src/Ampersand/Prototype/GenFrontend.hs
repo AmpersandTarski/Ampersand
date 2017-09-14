@@ -373,8 +373,8 @@ genViewObject fSpec depth obj =
               , ifcSubObjs = subObjs} ->
          do { subObjAttrs <- mapM genView_SubObject subObjs
                     
-            ; let clssStr = maybe "" (\cl -> "-" ++ cl) mClass
-            ; parentTemplate <- readTemplate fSpec $ "views" </> "Box-" ++ clssStr ++ ".html"
+            ; let clssStr = maybe "Box-ROWS.html" (\cl -> "Box-" ++ cl ++ ".html") mClass
+            ; parentTemplate <- readTemplate fSpec $ "views" </> clssStr
             
             ; return . indentation
                      . lines 
