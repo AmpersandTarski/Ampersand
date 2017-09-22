@@ -179,7 +179,7 @@ readStaticFiles fkind base fileOrDirPth =
   where utcToEpochTime :: UTCTime -> String
         utcToEpochTime utcTime = DTF.formatTime DTF.defaultTimeLocale "%s" utcTime
 
-data StaticFileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)
+data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)
 
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
@@ -190,13 +190,17 @@ mkStaticFileModule sfDeclStrs =
 staticFileModuleHeader :: [String]
 staticFileModuleHeader =
   [ "{-# LANGUAGE OverloadedStrings #-}"
-  , "module "++staticFileModuleName++" where"
+  , "module "++staticFileModuleName
+  , "   ( StaticFile(..),FileKind(..)"
+  , "   , allStaticFiles, getStaticFileContent"
+  , "   )"
+  , "where"
   , "import qualified Data.ByteString.Lazy.Char8 as BS"
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"
   , ""
-  , "data StaticFileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
-  , "data StaticFile = SF { fileKind      :: StaticFileKind"
+  , "data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
+  , "data StaticFile = SF { fileKind      :: FileKind"
   , "                     , filePath      :: FilePath -- relative path, including extension"
   , "                     , timeStamp     :: Integer  -- unix epoch time"
   , "                     , contentString :: String"

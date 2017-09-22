@@ -31,7 +31,7 @@ import Ampersand.FSpec
 import Ampersand.Misc
 import Ampersand.Core.ShowPStruct
 import Ampersand.Classes (isFunction)
-import Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
 import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as B

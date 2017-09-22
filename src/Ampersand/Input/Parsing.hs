@@ -3,12 +3,18 @@
 -- return an FSpec, as tuned by the command line options.
 -- This might include that RAP is included in the returned FSpec.
 module Ampersand.Input.Parsing (
-    parseADL,parseMeta, parseRule, parseCtx, runParser
+      parseADL
+    , parseMeta
+    , parseSystemContext
+    , parseRule
+    , parseCtx
+    , runParser
 ) where
 
 import Control.Applicative
 import Data.List
 import Data.Char(toLower)
+import Data.Maybe
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Input.ADL1.CtxError
@@ -23,7 +29,7 @@ import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseEr
 import Text.Parsec.Prim (runP)
 import Ampersand.Input.Xslx.XLSX
 import Control.Exception
-import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,StaticFileKind(FormalAmpersand))
+import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line
@@ -31,10 +37,13 @@ parseADL :: Options                    -- ^ The options given through the comman
          -> IO (Guarded P_Context)     -- ^ The resulting context
 parseADL opts fp = do curDir <- getCurrentDirectory 
                       canonical <- canonicalizePath fp
-                      parseThing opts (ParseCandidate (Just curDir) Nothing fp False canonical)
+                      parseThing opts (ParseCandidate (Just curDir) Nothing fp Nothing canonical)
 
 parseMeta :: Options -> IO (Guarded P_Context)
-parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" True "AST.adl")
+parseMeta opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Formal Ampersand specification") "AST.adl" (Just FormalAmpersand) "AST.adl")
+
+parseSystemContext :: Options -> IO (Guarded P_Context)
+parseSystemContext opts = parseThing opts (ParseCandidate Nothing (Just $ Origin "Ampersand specific system context") "SystemContext.adl" (Just SystemContext) "SystemContext.adl")
 
 parseThing :: Options -> ParseCandidate -> IO (Guarded P_Context) 
 parseThing opts pc =
@@ -61,40 +70,45 @@ data ParseCandidate = ParseCandidate
        { pcBasePath :: Maybe FilePath -- The absolute path to prepend in case of relative filePaths 
        , pcOrigin   :: Maybe Origin
        , pcFilePath :: FilePath -- The absolute or relative filename as found in the INCLUDE statement
-       , useAllStaticFiles :: Bool -- In case of FormalAmpersand stuff, the files are included in ampersand.exe
+       , pcFileKind :: Maybe FileKind -- In case the file is included into ampersand.exe, its FileKind.
        , pcCanonical :: FilePath -- The canonicalized path of the candicate
        }
 instance Eq ParseCandidate where
- a == b = useAllStaticFiles a == useAllStaticFiles b && pcCanonical a `equalFilePath` pcCanonical b
+ a == b = pcFileKind a == pcFileKind b && pcCanonical a `equalFilePath` pcCanonical b
 
 
 -- | Parse an Ampersand file, but not its includes (which are simply returned as a list)
 parseSingleADL ::
     Options
  -> ParseCandidate -> IO (Guarded (P_Context, [ParseCandidate]))
-parseSingleADL opts singleFile
- = do verboseLn opts $ "Reading file " ++ filePath ++ if useAllStaticFiles singleFile then " (from within ampersand.exe)" else ""
+parseSingleADL opts pc
+ = do verboseLn opts $ "Reading file " ++ filePath 
+                         ++ (case pcFileKind pc of
+                              Just _ -> " (from within ampersand.exe)"
+                              Nothing -> mempty)
       exists <- doesFileExist filePath
-      if useAllStaticFiles singleFile|| exists
+      if isJust (pcFileKind pc) || exists
       then parseSingleADL'
-      else return $ mkErrorReadingINCLUDE (pcOrigin singleFile) filePath "File does not exist."
+      else return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath "File does not exist."
     where
-     filePath = pcCanonical singleFile
+     filePath = pcCanonical pc
      parseSingleADL' :: IO(Guarded (P_Context, [ParseCandidate]))
      parseSingleADL'
          | extension == ".xlsx" =
-             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts (useAllStaticFiles singleFile) filePath
+             do { popFromExcel <- catchInvalidXlsx $ parseXlsxFile opts (pcFileKind pc) filePath
                 ; return ((\pops -> (mkContextOfPopsOnly pops,[])) <$> popFromExcel)  -- Excel file cannot contain include files
                 }
          | otherwise =
              do { mFileContents
-                    <- if useAllStaticFiles singleFile
-                       then case getStaticFileContent FormalAmpersand filePath of
-                             Just cont -> return (Right $ stripBom cont)
-                             Nothing -> fatal ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++filePath++"`.")
-                       else readUTF8File filePath
+                    <- case pcFileKind pc of
+                       Just fileKind
+                         -> case getStaticFileContent fileKind filePath of
+                              Just cont -> return (Right $ stripBom cont)
+                              Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++filePath++"`.")
+                       Nothing
+                         -> readUTF8File filePath
                 ; case mFileContents of
-                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin singleFile) filePath err
+                    Left err -> return $ mkErrorReadingINCLUDE (pcOrigin pc) filePath err
                     Right fileContents ->
                          whenCheckedIO (return $ parseCtx filePath fileContents) $ \(ctxts, includes) ->
                                do parseCandidates <- mapM include2ParseCandidate includes
@@ -107,7 +121,7 @@ parseSingleADL opts singleFile
                   return ParseCandidate { pcBasePath = Just filePath
                                         , pcOrigin   = Just org
                                         , pcFilePath = str
-                                        , useAllStaticFiles = useAllStaticFiles singleFile
+                                        , pcFileKind = pcFileKind pc
                                         , pcCanonical = canonical
                                         }
                myNormalise :: FilePath -> FilePath 

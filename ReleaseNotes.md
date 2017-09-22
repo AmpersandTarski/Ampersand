@@ -2,6 +2,7 @@
 
 ## Unreleased changes
 
+* Introduction of SystemContext.adl, which will be required for new interface generation, which will become available in some future release
 * Upgraded to LTS-9.2
 
 ## v3.8.8 (1 september 2017)
