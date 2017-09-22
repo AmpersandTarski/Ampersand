@@ -20,14 +20,17 @@ import Data.Tuple
 import Ampersand.Prototype.StaticFiles_Generated
 
 parseXlsxFile :: Options 
-              -> Bool   -- True iff the file is from FormalAmpersand files in `allStaticFiles` 
+              -> Maybe FileKind
               -> FilePath -> IO (Guarded [P_Population])
-parseXlsxFile opts useAllStaticFiles file =
-  do bytestr <- if useAllStaticFiles
-                then case getStaticFileContent FormalAmpersand file of
+parseXlsxFile opts mFk file =
+  do bytestr <- 
+        case mFk of
+          Just fileKind 
+             -> case getStaticFileContent fileKind file of
                       Just cont -> return $ fromString cont
-                      Nothing -> fatal ("Statically included "++ show FormalAmpersand++ " files. \n  Cannot find `"++file++"`.")
-                else L.readFile file
+                      Nothing -> fatal ("Statically included "++ show fileKind++ " files. \n  Cannot find `"++file++"`.")
+          Nothing
+             -> L.readFile file
      return . xlsx2pContext . toXlsx $ bytestr
  where
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
