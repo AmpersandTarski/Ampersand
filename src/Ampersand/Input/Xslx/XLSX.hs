@@ -17,7 +17,7 @@ import Data.Maybe
 import Data.Char
 import Data.String
 import Data.Tuple
-import Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
 
 parseXlsxFile :: Options 
               -> Maybe FileKind

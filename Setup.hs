@@ -190,12 +190,16 @@ mkStaticFileModule sfDeclStrs =
 staticFileModuleHeader :: [String]
 staticFileModuleHeader =
   [ "{-# LANGUAGE OverloadedStrings #-}"
-  , "module "++staticFileModuleName++" where"
+  , "module "++staticFileModuleName
+  , "   ( StaticFile(..),FileKind(..)"
+  , "   , allStaticFiles, getStaticFileContent"
+  , "   )"
+  , "where"
   , "import qualified Data.ByteString.Lazy.Char8 as BS"
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"
   , ""
-  , "data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
+  , "data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
   , "data StaticFile = SF { fileKind      :: FileKind"
   , "                     , filePath      :: FilePath -- relative path, including extension"
   , "                     , timeStamp     :: Integer  -- unix epoch time"
