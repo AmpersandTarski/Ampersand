@@ -160,7 +160,7 @@ readAllStaticFiles =
      ; return $ mkStaticFileModule $ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles ++ systemContextFiles
      }
 
-readStaticFiles :: StaticFileKind -> FilePath -> FilePath -> IO [String]
+readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [String]
 readStaticFiles fkind base fileOrDirPth =
   do { let path = combine base fileOrDirPth
      ; isDir <- doesDirectoryExist path
@@ -206,7 +206,7 @@ staticFileModuleHeader =
   , "                     , contentString :: String"
   , "                     }"
   , ""
-  , "getStaticFileContent :: StaticFileKind -> FilePath -> Maybe String"
+  , "getStaticFileContent :: FileKind -> FilePath -> Maybe String"
   , "getStaticFileContent fk fp ="
   , "     case filter isRightFile allStaticFiles of"
   , "        [x] -> Just (contentString x)"
