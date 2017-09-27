@@ -15,7 +15,7 @@ fSpec2Solidity :: MultiFSpecs -> Text.Text
 fSpec2Solidity multi =
   Text.intercalate "\n" $
          ["/*"
-         ,"This file is generated using Ampersand-v3.8.6 [Solidity:f646532*], build time: 08-Sep-17 04:25:40 PDT"
+         ,"This file is generated using " <> (Text.pack ampersandVersionStr)
          ,"*/"
          ,""
          ,"pragma solidity ^0.4.13;"
