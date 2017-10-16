@@ -482,7 +482,7 @@ showValPHP val = pack$
 showValSQL :: AAtomValue -> String
 showValSQL val =
   case val of
-   AAVString{}  -> aavstr val
+   AAVString{}  -> show (aavstr val)
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)

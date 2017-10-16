@@ -6,58 +6,58 @@ where
 
 import Ampersand.Core.AbstractSyntaxTree 
 import Prelude hiding (writeFile,readFile,getContents,exp)
+import Data.Maybe
 import Data.Monoid
 import Data.String (IsString)
 import qualified Data.Text as Text
 import Ampersand.FSpec
-import Ampersand.Prototype.PHP
+import Ampersand.Prototype.TableSpec
+import Ampersand.FSpec.SQL
 
 doubleQuote :: (Data.String.IsString m, Monoid m) => m -> m
 doubleQuote s = "\"" <> s <> "\""
 
-generateDBstructQueries :: FSpec -> Bool -> [Text.Text]
-generateDBstructQueries fSpec withComment = 
-   map (sqlQuery2Text withComment) $ generateDBstructQueries' fSpec withComment
-
-generateDBstructQueries' :: FSpec -> Bool -> [SqlQuery]
-generateDBstructQueries' fSpec withComment 
+generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
+generateDBstructQueries fSpec withComment 
   =    concatMap (tableSpec2Queries withComment)
-                 ( sessionTableSpec
-                 : signalTableSpec
-                 : [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
-                 )
+           (   [ sessionTableSpec, signalTableSpec]
+            ++ [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
+           )
     <> additionalDatabaseSettings 
-generateInitialPopQueries :: FSpec -> [Text.Text]
+generateInitialPopQueries :: FSpec -> [SqlQuery]
 generateInitialPopQueries fSpec 
   = fillSignalTable (initialConjunctSignals fSpec) <>
     populateTablesWithPops False fSpec
   where
-    fillSignalTable :: [(Conjunct, [AAtomPair])] -> [Text.Text]
-    fillSignalTable [] = []
-    fillSignalTable conjSignals 
-     = [Text.unlines
+    fillSignalTable :: [(Conjunct, [AAtomPair])] -> [SqlQuery]
+    fillSignalTable = catMaybes . map fillWithSignal
+    fillWithSignal :: (Conjunct, [AAtomPair]) -> Maybe SqlQuery
+    fillWithSignal (conj, violations) 
+     = case violations of
+        [] -> Nothing
+        viols -> 
+          Just . SqlQuery $
             [ "INSERT INTO "<>Text.pack (show (getTableName signalTableSpec))
             , "   ("<>Text.intercalate ", " (map (Text.pack . doubleQuote) ["conjId","src","tgt"])<>")"
             , "VALUES " <> Text.intercalate " , " 
                   [ "(" <>Text.intercalate ", " [showAsValue (rc_id conj), showValPHP (apLeft p), showValPHP (apRight p)]<> ")" 
-                  | (conj, viols) <- conjSignals
-                  , p <- viols
+                  | p <- viols
                   ]
             ]
-       ]
-generateMetaPopQueries :: FSpec -> [Text.Text]
+       
+generateMetaPopQueries :: FSpec -> [SqlQuery]
 generateMetaPopQueries = populateTablesWithPops True
 
-populateTablesWithPops :: Bool -> FSpec -> [Text.Text]
+populateTablesWithPops :: Bool -> FSpec -> [SqlQuery]
 populateTablesWithPops ignoreDoubles fSpec =
       concatMap populatePlug [p | InternalPlug p <- plugInfos fSpec]
       where
-        populatePlug :: PlugSQL -> [Text.Text]
+        populatePlug :: PlugSQL -> [SqlQuery]
         populatePlug plug 
           = case tableContents fSpec plug of
              []  -> []
              tblRecords 
-                 -> [Text.unlines
+                 -> [SqlQuery
                        [ "INSERT "<> (if ignoreDoubles then "IGNORE " else "") <>"INTO "
                              <>Text.pack (show (name plug))
                        , "   ("<>Text.intercalate ", " (map (Text.pack . show . attName) (plugAttributes plug))<>") "
@@ -70,7 +70,7 @@ populateTablesWithPops ignoreDoubles fSpec =
              = Text.intercalate ", " 
                  [case att of 
                     Nothing -> "NULL"
-                    Just val -> showValPHP val
+                    Just val -> Text.pack . showValSQL $ val
                  | att <- record ]
 
 showAsValue :: String -> Text.Text
