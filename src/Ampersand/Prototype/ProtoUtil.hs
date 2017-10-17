@@ -6,8 +6,8 @@ module Ampersand.Prototype.ProtoUtil
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
-         , indentBlockBetween,quote
-         , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
+         , indentBlockBetween
+         , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
          , installComposerLibs
          ) where
  
@@ -21,9 +21,7 @@ import Ampersand.Basics
 import Ampersand.Misc
 import qualified System.Exit as SE (ExitCode(..))
 import System.Process
-import Ampersand.Core.AbstractSyntaxTree
-     ( showValPHP
-     )
+
 
 getGenericsDir :: Options -> String
 getGenericsDir opts = 

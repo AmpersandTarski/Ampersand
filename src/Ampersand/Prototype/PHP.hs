@@ -206,12 +206,12 @@ createTempDatabase fSpec =
     ]<> 
     [ "$DB_name='"<>tempDbName (getOpts fSpec)<>"';"
     , "// Drop the database if it exists"
-    , "$sql='DROP DATABASE "<>(quote . tempDbName . getOpts $ fSpec)<>"';"
+    , "$sql='DROP DATABASE "<>(doubleQuote . tempDbName . getOpts $ fSpec)<>"';"
     , "mysqli_query($DB_link,$sql);"
     , "// Don't bother about the error if the database didn't exist..."
     , ""
     , "// Create the database"
-    , "$sql='CREATE DATABASE "<>(quote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin';"
+    , "$sql='CREATE DATABASE "<>(doubleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin';"
     , "if (!mysqli_query($DB_link,$sql)) {"
     , "  die('Error creating the database: ' . mysqli_error($DB_link));"
     , "  }"
@@ -236,15 +236,12 @@ createTempDatabase fSpec =
         case tableContents fSpec plug of
           [] -> []
           tblRecords 
-             -> ( "mysqli_query($DB_link, "<>showPhpStr ( "INSERT INTO "<>quote (Text.pack (name plug))
-                                                        <>" ("<>Text.intercalate "," [quote (Text.pack$ attName f) |f<-plugAttributes plug]<>")"
-                                                        <>phpIndent 17<>"VALUES " <> Text.intercalate (phpIndent 22<>", ") [ "(" <>valuechain md<> ")" | md<-tblRecords]
-                                                        <>phpIndent 16
-                                                        )
-                                           <>");"
+             -> ( "mysqli_query($DB_link, "<> queryAsPHP query <>");"
                 ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
-       where
-        valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> Text.pack . showValSQL $ val | att<-record]
+               where query = insertQuery tableName attrNames tblRecords
+                     tableName = Text.pack . name $ plug
+                     attrNames = map (Text.pack . attName) . plugAttributes $ plug
+           
 
 
 -- *** MySQL stuff below:

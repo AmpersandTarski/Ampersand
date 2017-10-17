@@ -1,18 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Prototype.TableSpec
     ( TableSpec(tsCmnt)
     , getTableName
     , sessionTableSpec, signalTableSpec
     , plug2TableSpec, tableSpec2Queries
     , dropTableSql, showColumsSql, createTableSql
+    , insertQuery
     , additionalDatabaseSettings
     , queryAsPHP, queryAsSQL
-    )
+    , doubleQuote)
 where
 
 import Prelude hiding (exp,putStrLn,readFile,writeFile)
 import Data.Monoid
 import Data.List
+import Data.String (IsString)
 import qualified Data.Text as Text
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.FSpec.SQL
@@ -154,7 +158,29 @@ fld2AttributeSpec att
                   }
 
 
-                         
+insertQuery :: SomeValue val =>
+       Text.Text        -- The name of the table
+    -> [Text.Text]   -- The names of the attributes
+    -> [[Maybe val]]  -- The rows to insert
+    -> SqlQuery
+insertQuery tableName attNames tblRecords = 
+  SqlQuery $
+     [ "INSERT INTO "<>doubleQuote tableName
+     , "   ("<>Text.intercalate "," (map doubleQuote attNames) <>")"
+     , "VALUES " 
+     ]
+   <> (Text.lines . ("   "<>) .Text.intercalate ("\n , ") $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+   <> [""]
+  where
+    valuechain :: SomeValue val => [Maybe val] -> Text.Text
+    valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
+
+class SomeValue a where
+  repr :: a -> Text.Text
+instance SomeValue AAtomValue where
+  repr = Text.pack . showValSQL
+instance SomeValue String where
+  repr = Text.pack
 
 tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec = 
@@ -172,10 +198,16 @@ tableSpec2Queries withComment tSpec =
 additionalDatabaseSettings :: [SqlQuery]
 additionalDatabaseSettings = [ SqlQuery ["SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]]
 
-doubleQuote :: Text.Text -> Text.Text
+doubleQuote :: (Data.String.IsString m, Monoid m) => m -> m
 doubleQuote s = "\"" <> s <> "\""
 
 queryAsPHP :: SqlQuery -> Text.Text
-queryAsPHP (SqlQuery xs) = "'"<> showPhpStr (Text.unlines xs) <> "'"
+queryAsPHP (SqlQuery xs) = showPhpStr (Text.unlines xs)
 queryAsSQL :: SqlQuery -> Text.Text
 queryAsSQL (SqlQuery xs) = Text.unlines xs
+
+myUnlines :: [Text.Text] -> Text.Text
+myUnlines xs =
+  case xs of
+    [] -> mempty
+    _  -> Text.init . Text.unlines $ xs
