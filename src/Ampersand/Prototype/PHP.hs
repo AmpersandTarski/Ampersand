@@ -206,12 +206,12 @@ createTempDatabase fSpec =
     ]<> 
     [ "$DB_name='"<>tempDbName (getOpts fSpec)<>"';"
     , "// Drop the database if it exists"
-    , "$sql='DROP DATABASE "<>(doubleQuote . tempDbName . getOpts $ fSpec)<>"';"
+    , "$sql="<>queryAsPHP dropDB<>";"
     , "mysqli_query($DB_link,$sql);"
     , "// Don't bother about the error if the database didn't exist..."
     , ""
     , "// Create the database"
-    , "$sql='CREATE DATABASE "<>(doubleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin';"
+    , "$sql="<>queryAsPHP createDB<>";"
     , "if (!mysqli_query($DB_link,$sql)) {"
     , "  die('Error creating the database: ' . mysqli_error($DB_link));"
     , "  }"
@@ -232,6 +232,12 @@ createTempDatabase fSpec =
     <> concatMap populatePlugPHP [p | InternalPlug p <- plugInfos fSpec]
   
     where
+      dropDB :: SqlQuery 
+      dropDB = SqlQuery $
+           ["DROP DATABASE "<>(doubleQuote . tempDbName . getOpts $ fSpec)]
+      createDB :: SqlQuery
+      createDB = SqlQuery $
+           ["CREATE DATABASE "<>(doubleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"]
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []
