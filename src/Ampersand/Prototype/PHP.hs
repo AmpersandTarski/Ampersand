@@ -213,6 +213,11 @@ createTempDatabase fSpec =
     , "// Create the database"
     , "$sql="<>queryAsPHP createDB<>";"
     , "if (!mysqli_query($DB_link,$sql)) {"
+    , "  // For diagnosis, dump the current file, so we can see what is going on."
+    , "  $trace = debug_backtrace();"
+    , "  $file = $trace[1]['file'];"
+    , "  $thisFile = file_get_contents($file);"
+    , "  fwrite(STDERR, $thisFile . \"\\n\");"
     , "  die('Error creating the database: ' . mysqli_error($DB_link));"
     , "  }"
     , ""
@@ -234,10 +239,10 @@ createTempDatabase fSpec =
     where
       dropDB :: SqlQuery 
       dropDB = SqlQuery $
-           ["DROP DATABASE "<>(doubleQuote . tempDbName . getOpts $ fSpec)]
+           ["DROP DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)]
       createDB :: SqlQuery
       createDB = SqlQuery $
-           ["CREATE DATABASE "<>(doubleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"]
+           ["CREATE DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"]
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []

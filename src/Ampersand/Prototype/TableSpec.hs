@@ -10,13 +10,13 @@ module Ampersand.Prototype.TableSpec
     , insertQuery
     , additionalDatabaseSettings
     , queryAsPHP, queryAsSQL
-    , doubleQuote)
+    , doubleQuote, singleQuote)
 where
 
 import Prelude hiding (exp,putStrLn,readFile,writeFile)
 import Data.Monoid
 import Data.List
-import Data.String (IsString)
+import Data.String (IsString(fromString))
 import qualified Data.Text as Text
 import Ampersand.Prototype.ProtoUtil
 import Ampersand.FSpec.SQL
@@ -199,15 +199,14 @@ additionalDatabaseSettings :: [SqlQuery]
 additionalDatabaseSettings = [ SqlQuery ["SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]]
 
 doubleQuote :: (Data.String.IsString m, Monoid m) => m -> m
-doubleQuote s = "\"" <> s <> "\""
+doubleQuote = enclose '\"'
+singleQuote :: (Data.String.IsString m, Monoid m) => m -> m
+singleQuote = enclose '`'
+enclose :: (Data.String.IsString m, Monoid m) => Char -> m -> m
+enclose c s = fromString [c] <> s <> fromString [c]
 
 queryAsPHP :: SqlQuery -> Text.Text
 queryAsPHP (SqlQuery xs) = showPhpStr (Text.unlines xs)
 queryAsSQL :: SqlQuery -> Text.Text
 queryAsSQL (SqlQuery xs) = Text.unlines xs
 
-myUnlines :: [Text.Text] -> Text.Text
-myUnlines xs =
-  case xs of
-    [] -> mempty
-    _  -> Text.init . Text.unlines $ xs
