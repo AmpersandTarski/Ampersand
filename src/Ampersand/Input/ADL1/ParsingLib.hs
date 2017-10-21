@@ -25,7 +25,6 @@ module Ampersand.Input.ADL1.ParsingLib(
 import Control.Monad.Identity (Identity)
 import Ampersand.Input.ADL1.FilePos (Origin(..))
 import Ampersand.Input.ADL1.LexerToken
-import Ampersand.Input.ADL1.Lexer (lexer)
 import qualified Control.Applicative as CA
 import qualified Data.Functor as DF
 import qualified Text.Parsec.Prim as P
@@ -33,7 +32,6 @@ import Text.Parsec as P hiding(satisfy)
 import Text.Parsec.Pos (newPos)
 import Data.Time.Calendar
 import Data.Time.Clock
-import Ampersand.Basics (fatal)
 import Data.Maybe
 import Data.Char(toLower)
 import Prelude hiding ((<$))
