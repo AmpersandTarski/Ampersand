@@ -4,6 +4,7 @@
 
 * Introduction of SystemContext.adl, which will be required for new interface generation, which will become available in some future release
 * Upgraded to LTS-9.2
+* [Issue #713](https://github.com/AmpersandTarski/Ampersand/issues/713) New syntax for singleton expressions
 
 ## v3.8.8 (1 september 2017)
 
