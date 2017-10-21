@@ -53,12 +53,5 @@ populateTablesWithPops fSpec =
                where query = insertQuery tableName attrNames tblRecords
                      tableName = Text.pack . name $ plug
                      attrNames = map (Text.pack . attName) . plugAttributes $ plug
-showAsValue :: String -> Text.Text
-showAsValue str = Text.pack ("'"<>f str<>"'")
-  where f :: String -> String
-        f str'= 
-          case str' of
-            []        -> []
-            ('\'':cs) -> "\\\'"<> f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
-            (c:cs)    -> c : f cs
+
 

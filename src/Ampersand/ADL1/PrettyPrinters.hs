@@ -390,7 +390,7 @@ instance Pretty PAtomValue where
       case pav of 
        PSingleton   _ _ mav -> case mav of
                                 Nothing  -> fatal ("The singleton "++show pav++" has no type, so it cannot be accuratly prettyprinted in a population statement.")
-                                Just val -> pretty val
+                                Just val -> text "{" <+> pretty val <+> text "}"
        ScriptString   _ s -> text . show $ s
        XlsxString     _ s -> text . show $ s
        ScriptInt      _ i -> text . show $ i
