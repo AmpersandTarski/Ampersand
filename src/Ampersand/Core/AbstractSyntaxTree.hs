@@ -609,7 +609,7 @@ l ./. r  = if target l/=target r then fatal ("Cannot residuate (with operator \"
            ELrs (l,r)
 l .\. r  = if source l/=source r then fatal ("Cannot residuate (with operator \"\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            ERrs (l,r)
-l .<>. r = if source l/=target r then fatal ("Cannot use diamond operator \"<>\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .<>. r = if source r/=target l then fatal ("Cannot use diamond operator \"<>\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EDia (l,r)
 l .:. r  = if source r/=target l then fatal ("Cannot compose (with operator \";\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            ECps (l,r)
