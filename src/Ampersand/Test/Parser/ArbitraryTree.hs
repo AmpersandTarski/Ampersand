@@ -256,7 +256,7 @@ instance Arbitrary PAtomValue where
     arbitrary = oneof
        [ScriptString <$> arbitrary <*> safeStr `suchThat`  stringConstraints,
         ScriptInt <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
-        ScriptFloat <$> arbitrary <*> arbitrary,
+        ScriptFloat <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
 --        ScriptDate <$> arbitrary <*> arbitrary,
 --        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
