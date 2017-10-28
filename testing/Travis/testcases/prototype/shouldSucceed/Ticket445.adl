@@ -3,7 +3,7 @@
 
 sessionAccount :: SESSION * Account [UNI]
 
-INTERFACE "Mijn Account" : V[ONE*SESSION];'_SESSION';sessionAccount 
+INTERFACE "Mijn Account" : V[ONE*SESSION];"_SESSION";sessionAccount 
 BOX[ "Account"  : I
    ]
 

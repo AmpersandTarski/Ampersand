@@ -21,7 +21,7 @@ BOX [ SqlAttribute : I
 
 REPRESENT Atom TYPE ALPHANUMERIC
 
-INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
+INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
 TABS[ relations : V[SESSION*Relation] CRUD
       BOX<SCOLS>
            [ relation   : I[Relation]

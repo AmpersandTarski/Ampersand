@@ -1,7 +1,7 @@
 ﻿CONTEXT AST IN ENGLISH 
 INCLUDE "Atoms.xlsx"
 
-INTERFACE Overview : '_SESSION'[SESSION]
+INTERFACE Overview : "_SESSION"[SESSION]
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]
