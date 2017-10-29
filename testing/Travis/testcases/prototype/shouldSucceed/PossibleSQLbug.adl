@@ -11,7 +11,7 @@ bfcIsEffective     :: BFControl * BFControl [PROP] =[                           
 
 bfcAstatus :: BFControl -> TEXT =[ ("BFC1","NotApplicable"); ("BFC2","Applicable"); ("BFC3","Applicable"); ("BFC4","Applicable"); ("BFC5","Applicable") ]
 RULE Arule: bfcAstatus = bfcIsNotApplicable;V;"NotApplicable"[TEXT]
-                          \/ (I /\ -bfcIsNotApplicable);V;'Applicable'[TEXT]
+                          \/ (I /\ -bfcIsNotApplicable);V;"Applicable"[TEXT]
 
 bfcBstatus :: BFControl -> TEXT =[ ("BFC1","NotApplicable"); ("BFC2","Specified"); ("BFC3","Specified"); ("BFC4","Specified"); ("BFC5","Unspecified") ]
 RULE Brule: bfcBstatus = bfcIsNotApplicable;V;"NotApplicable"[TEXT]
