@@ -465,7 +465,12 @@ aavstr = unpack.aavtxt
 showValSQL :: AAtomValue -> String
 showValSQL val =
   case val of
-   AAVString{}  -> "'"++ (aavstr val)++"'"
+   AAVString{}  -> "'"++ f (aavstr val)++"'"
+     where 
+       f [] = []
+       f (c:cs) = case c of 
+                   '\'' -> "''"++ f cs
+                   _    -> c:f cs
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)

@@ -32,7 +32,7 @@ clientCity :: Client -> City
 
 vendorName :: Vendor -> Name
   = [ ("Vendor_1", "Rubber inc.")
-    ; ("Vendor_2", "Mario\'s pizzas")
+    ; ("Vendor_2", "Mario's pizzas")
     ]
 
 sells :: Vendor * Product

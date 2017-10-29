@@ -128,14 +128,6 @@ mainLexer p ('"':ss) =
                               then lexerError (NonTerminatedString s) p
                               else returnToken (LexString s) p mainLexer (addPos (swidth+2) p) (tail rest)
 
-{- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
-   single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
-mainLexer p ('\'':ss)
-     = let (s,swidth,rest) = scanSingletonInExpression ss
-       in if null rest || head rest /= '\''
-             then lexerError UnterminatedAtom p
-             else returnToken (LexSingleton s) p mainLexer (addPos (swidth+2) p) (tail rest)
-
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
@@ -383,9 +375,6 @@ getNumber str =
 -----------------------------------------------------------
 scanString :: String -> (String, Int, String)
 scanString = scanUpto False ['"']
-
-scanSingletonInExpression :: String -> (String, Int, String)
-scanSingletonInExpression = scanUpto True ['\'']
 
 -- | scan to some given character. The end char is scanned away too
 scanUpto :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
