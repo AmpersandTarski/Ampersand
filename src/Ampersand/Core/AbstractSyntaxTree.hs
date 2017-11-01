@@ -468,9 +468,10 @@ showValSQL val =
    AAVString{}  -> "'"++ f (aavstr val)++"'"
      where 
        f [] = []
-       f (c:cs) = case c of 
-                   '\'' -> "''"++ f cs
-                   _    -> c:f cs
+       f (c:cs) 
+         | c `elem` ['\'','\\'] 
+                     = c : c : f cs
+         | otherwise = c     : f cs
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)
