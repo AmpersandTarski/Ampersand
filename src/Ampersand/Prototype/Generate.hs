@@ -38,7 +38,7 @@ generateInitialPopQueries fSpec
                 tblRecords = map mkRecord viols
                   where
                     mkRecord p = 
-                       map Just [rc_id conj, showValSQL (apLeft p), showValSQL (apRight p)]
+                       map Just ["'"++rc_id conj++"'", showValSQL (apLeft p), showValSQL (apRight p)]
 
 populateTablesWithPops :: FSpec -> [SqlQuery]
 populateTablesWithPops fSpec =
