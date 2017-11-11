@@ -60,10 +60,11 @@ createMulti opts =
             where
               f pCtx = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (instances fAmpFSpec)
                             ,ctx_gs = ctx_gs pCtx ++ map aGen2pGen (instances fAmpFSpec)
+                            ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
                             }
               noPopulation :: P_Relation -> P_Relation
               noPopulation rel = rel{dec_popu =[]}
-  
+
          userGFSpec :: Guarded FSpec
          userGFSpec = pCtx2Fspec . (if genRapRelationsOnly opts then addSemanticModel else id) $ 
                          mergeContexts <$> userP_Ctx   -- the FSpec resuting from the user's souceFile

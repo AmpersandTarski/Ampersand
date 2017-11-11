@@ -141,6 +141,10 @@ createTableSql withComment tSpec = SqlQuery $
          <> (Text.pack . showSQL . fstype) att 
          <> (if fsIsPrimKey att then " UNIQUE" else "")
          <> (if fsDbNull att then " DEFAULT NULL" else " NOT NULL")
+         <> " /* "
+         <> (Text.pack . show . fstype) att
+         <> " */"
+         
 showColumsSql :: TableSpec -> SqlQuery
 showColumsSql tSpec = SqlQuery $
        ["SHOW COLUMNS FROM "<>(doubleQuote . Text.pack . tsName $ tSpec)]

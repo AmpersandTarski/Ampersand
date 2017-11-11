@@ -764,7 +764,7 @@ class HasDirtyId a where
       case splitAt safeLength str of
         (_ , []) -> str
         (prfx,_) -> prfx++"#"++show (hash str)++"#"
-      where safeLength = 220 -- HJO, 20170812: Subjective value. This is based on the 
+      where safeLength = 50 -- HJO, 20170812: Subjective value. This is based on the 
                              -- limitation that DirtyId's are stored in an sql database
                              -- in a field that is normally 255 long. We store the
                              -- prefix of the string but make sure we still have space

@@ -776,6 +776,7 @@ data ContextInfo =
   CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
+     , reprList         :: [Representation] -- a list of all Representation, so 
      }
                        
    
