@@ -66,7 +66,7 @@ createMulti opts =
               noPopulation rel = rel{dec_popu =[]}
 
          userGFSpec :: Guarded FSpec
-         userGFSpec = pCtx2Fspec . (if genRapRelationsOnly opts then addSemanticModel else id) $ 
+         userGFSpec = pCtx2Fspec . (if genMetaTables opts || genRapRelationsOnly opts then addSemanticModel else id) $ 
                          mergeContexts <$> userP_Ctx   -- the FSpec resuting from the user's souceFile
                                        <*> systemP_Ctx -- the system artifacts required for all ampersand prototypes
          
