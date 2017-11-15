@@ -172,7 +172,16 @@ generateAmpersandOutput multi = do
           violationsOfInvariants
             = [(r,vs) |(r,vs) <- allViolations fSpec
                       , not (isSignal r)
+                      , not (elemOfTemporarilyBlocked r)
               ]
+            where
+              elemOfTemporarilyBlocked rul =
+                if atlasWithoutExpressions opts 
+                then name rul `elem` 
+                        [ "TOT formalExpression[Rule*Expression]"
+                        , "TOT objExpression[ObjectDef*Expression]"
+                        ]
+                else False
           reportViolations :: [(Rule,[AAtomPair])] -> IO()
           reportViolations []    = verboseLn opts "No violations found."
           reportViolations viols =
