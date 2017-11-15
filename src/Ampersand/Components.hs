@@ -153,7 +153,7 @@ generateAmpersandOutput multi = do
        , reportSignals (initialConjunctSignals fSpec)
        ]++
        (if null violationsOfInvariants || development opts
-        then if genRap
+        then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."
                   , clearTemplateDirs fSpec
@@ -168,8 +168,7 @@ generateAmpersandOutput multi = do
        )++
        maybeToList (fmap ruleTest (testRule opts))
 
-    where genRap = genRapPopulationOnly (getOpts fSpec)
-          violationsOfInvariants :: [(Rule,[AAtomPair])]
+    where violationsOfInvariants :: [(Rule,[AAtomPair])]
           violationsOfInvariants
             = [(r,vs) |(r,vs) <- allViolations fSpec
                       , not (isSignal r)
