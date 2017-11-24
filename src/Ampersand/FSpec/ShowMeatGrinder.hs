@@ -226,6 +226,7 @@ grindedPops formalAmpersand userFspec rel =
                 Object          -> isDirtyId
                 Alphanumeric    -> isTextual
                 BigAlphanumeric -> isTextual
+                HugeAlphanumeric -> isTextual
                 tt              -> fatal $ "No test available yet. "++show tt++" encountered for the first time in FormalAmpersand.adl"
             isDirtyId pa = case pa of
                             DirtyId{}         -> True

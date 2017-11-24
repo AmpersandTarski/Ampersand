@@ -661,10 +661,12 @@ pRelationRef      = PNamedR <$> pNamedRel
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
 pSingleton :: AmpParser PSingleton
-pSingleton = value2PAtomValue <$> currPos <*> pAtomInExpression
-
+pSingleton = value2PAtomValue <$> currPos <*> 
+                 (             pAtomValInPopulation True
+                  <|> pBraces (pAtomValInPopulation False)
+                 ) 
 pAtomValue :: AmpParser PAtomValue
-pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation
+pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation False
 
 value2PAtomValue :: Origin -> Value -> PAtomValue
 value2PAtomValue o v = case v of

@@ -255,8 +255,8 @@ instance Arbitrary PAtomValue where
   -- otherwise it is likely that Quickcheck will fail because of it.
     arbitrary = oneof
        [ScriptString <$> arbitrary <*> safeStr `suchThat`  stringConstraints,
-        ScriptInt <$> arbitrary <*> arbitrary,
-        ScriptFloat <$> arbitrary <*> arbitrary,
+        ScriptInt <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
+        ScriptFloat <$> arbitrary <*> arbitrary `suchThat` (0 <= ) ,
 --        ScriptDate <$> arbitrary <*> arbitrary,
 --        ScriptDateTime <$> arbitrary <*> arbitrary,
         ComnBool <$> arbitrary <*> arbitrary
@@ -266,7 +266,6 @@ instance Arbitrary PAtomValue where
              case readLitChar str of
               [(c,cs)] -> notElem c ['\'', '"', '\\'] && stringConstraints cs
               _        -> True  -- end of string
-
 instance Arbitrary P_Interface where
     arbitrary = P_Ifc <$> safeStr1
                       <*> listOf arbitrary

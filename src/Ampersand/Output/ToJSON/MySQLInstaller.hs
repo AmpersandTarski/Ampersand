@@ -6,7 +6,8 @@ module Ampersand.Output.ToJSON.MySQLInstaller
 where
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Output.ToJSON.JSONutils 
-import Ampersand.Prototype.Generate 
+import Ampersand.Prototype.Generate
+import Ampersand.Prototype.TableSpec
 import qualified Data.Text as Text
 import Data.Maybe
 
@@ -18,8 +19,8 @@ instance ToJSON MySQLInstaller where
   toJSON = amp2Jason
 instance JSON MultiFSpecs MySQLInstaller where
  fromAmpersand _ multi = MySQLInstaller
-        { msiJSONallDBstructQueries = generateDBstructQueries fSpec False
-        , msiJSONallDefPopQueries = generateInitialPopQueries fSpec
+        { msiJSONallDBstructQueries = map queryAsSQL $ generateDBstructQueries fSpec False
+        , msiJSONallDefPopQueries = map queryAsSQL $ generateInitialPopQueries fSpec
         }
   where
     fSpec = userFSpec multi

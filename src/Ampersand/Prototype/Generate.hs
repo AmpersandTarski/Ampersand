@@ -1,84 +1,57 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Prototype.Generate 
-  (generateDBstructQueries, generateInitialPopQueries, generateMetaPopQueries
+  (generateDBstructQueries, generateInitialPopQueries
   )
 where
 
 import Ampersand.Core.AbstractSyntaxTree 
 import Prelude hiding (writeFile,readFile,getContents,exp)
+import Data.Maybe
 import Data.Monoid
-import Data.String (IsString)
 import qualified Data.Text as Text
 import Ampersand.FSpec
-import Ampersand.Prototype.PHP
+import Ampersand.Prototype.TableSpec
+import Ampersand.FSpec.SQL
 
-doubleQuote :: (Data.String.IsString m, Monoid m) => m -> m
-doubleQuote s = "\"" <> s <> "\""
-
-generateDBstructQueries :: FSpec -> Bool -> [Text.Text]
-generateDBstructQueries fSpec withComment = 
-   map (sqlQuery2Text withComment) $ generateDBstructQueries' fSpec withComment
-
-generateDBstructQueries' :: FSpec -> Bool -> [SqlQuery]
-generateDBstructQueries' fSpec withComment 
+generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
+generateDBstructQueries fSpec withComment 
   =    concatMap (tableSpec2Queries withComment)
-                 ( sessionTableSpec
-                 : signalTableSpec
-                 : [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
-                 )
+           (   [ sessionTableSpec, signalTableSpec]
+            ++ [plug2TableSpec p | InternalPlug p <- plugInfos fSpec]
+           )
     <> additionalDatabaseSettings 
-generateInitialPopQueries :: FSpec -> [Text.Text]
+generateInitialPopQueries :: FSpec -> [SqlQuery]
 generateInitialPopQueries fSpec 
   = fillSignalTable (initialConjunctSignals fSpec) <>
-    populateTablesWithPops False fSpec
+    populateTablesWithPops fSpec
   where
-    fillSignalTable :: [(Conjunct, [AAtomPair])] -> [Text.Text]
-    fillSignalTable [] = []
-    fillSignalTable conjSignals 
-     = [Text.unlines
-            [ "INSERT INTO "<>Text.pack (show (getTableName signalTableSpec))
-            , "   ("<>Text.intercalate ", " (map (Text.pack . doubleQuote) ["conjId","src","tgt"])<>")"
-            , "VALUES " <> Text.intercalate " , " 
-                  [ "(" <>Text.intercalate ", " [showAsValue (rc_id conj), showValPHP (apLeft p), showValPHP (apRight p)]<> ")" 
-                  | (conj, viols) <- conjSignals
-                  , p <- viols
-                  ]
-            ]
-       ]
-generateMetaPopQueries :: FSpec -> [Text.Text]
-generateMetaPopQueries = populateTablesWithPops True
+    fillSignalTable :: [(Conjunct, [AAtomPair])] -> [SqlQuery]
+    fillSignalTable = catMaybes . map fillWithSignal
+    fillWithSignal :: (Conjunct, [AAtomPair]) -> Maybe SqlQuery
+    fillWithSignal (conj, violations) 
+     = case violations of
+        []    -> Nothing
+        viols -> Just query
+          where query = insertQuery tableName attrNames tblRecords
+                tableName = getTableName signalTableSpec
+                attrNames = ["conjId","src","tgt"]
+                tblRecords = map mkRecord viols
+                  where
+                    mkRecord p = 
+                       map Just ["'"++rc_id conj++"'", showValSQL (apLeft p), showValSQL (apRight p)]
 
-populateTablesWithPops :: Bool -> FSpec -> [Text.Text]
-populateTablesWithPops ignoreDoubles fSpec =
-      concatMap populatePlug [p | InternalPlug p <- plugInfos fSpec]
+populateTablesWithPops :: FSpec -> [SqlQuery]
+populateTablesWithPops fSpec =
+      catMaybes . map populatePlug $ [p | InternalPlug p <- plugInfos fSpec]
       where
-        populatePlug :: PlugSQL -> [Text.Text]
+        populatePlug :: PlugSQL -> Maybe SqlQuery
         populatePlug plug 
           = case tableContents fSpec plug of
-             []  -> []
+             []  -> Nothing
              tblRecords 
-                 -> [Text.unlines
-                       [ "INSERT "<> (if ignoreDoubles then "IGNORE " else "") <>"INTO "
-                             <>Text.pack (show (name plug))
-                       , "   ("<>Text.intercalate ", " (map (Text.pack . show . attName) (plugAttributes plug))<>") "
-                       , "VALUES " <> Text.intercalate " , " 
-                          [ "(" <>valuechain md<> ")" | md<-tblRecords]
-                       ]
-                    ]
-         where
-           valuechain record 
-             = Text.intercalate ", " 
-                 [case att of 
-                    Nothing -> "NULL"
-                    Just val -> showValPHP val
-                 | att <- record ]
+                 -> Just query
+               where query = insertQuery tableName attrNames tblRecords
+                     tableName = Text.pack . name $ plug
+                     attrNames = map (Text.pack . attName) . plugAttributes $ plug
 
-showAsValue :: String -> Text.Text
-showAsValue str = Text.pack ("'"<>f str<>"'")
-  where f :: String -> String
-        f str'= 
-          case str' of
-            []        -> []
-            ('\'':cs) -> "\\\'"<> f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
-            (c:cs)    -> c : f cs
 

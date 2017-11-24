@@ -273,21 +273,16 @@ data PAtomValue
 instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
  show pav =
   case pav of
-    PSingleton   _ s _ -> singleQuote s
-    ScriptString   _ s -> singleQuote s
-    XlsxString     _ s -> singleQuote s
-    ScriptInt      _ i -> singleQuote (show i)
-    ScriptFloat    _ d -> singleQuote (show d)
+    PSingleton   _ s _ -> show s
+    ScriptString   _ s -> show s
+    XlsxString     _ s -> show s
+    ScriptInt      _ i -> show i
+    ScriptFloat    _ d -> show d
     XlsxDouble     _ _ -> fatal "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
-    ComnBool       _ b -> singleQuote (show b)
-    ScriptDate     _ x -> singleQuote (show x)
-    ScriptDateTime _ x -> singleQuote (show x)
-   where
-     singleQuote :: String -> String
-     singleQuote str = "\'" ++concatMap f str++"\'"
-     f :: Char -> String
-     f '\'' = "\\'"
-     f c    = [c]
+    ComnBool       _ b -> show b
+    ScriptDate     _ x -> show x
+    ScriptDateTime _ x -> show x
+  
 instance Eq PAtomValue where
   a == b = compare a b == EQ
 

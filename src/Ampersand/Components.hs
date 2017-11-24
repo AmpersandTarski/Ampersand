@@ -96,7 +96,7 @@ generateAmpersandOutput multi = do
        ; Text.writeFile outputFile (dumpSQLqueries multi)
        ; verboseLn opts $ "SQL queries dumpfile written into " ++ outputFile ++ "."
        }
-    where outputFile = dirOutput opts </> baseName opts -<.> ".sqlDump"
+    where outputFile = dirOutput opts </> baseName opts ++ "_dump" -<.> ".sql"
 
    doGenUML :: IO()
    doGenUML =
@@ -153,7 +153,7 @@ generateAmpersandOutput multi = do
        , reportSignals (initialConjunctSignals fSpec)
        ]++
        (if null violationsOfInvariants || development opts
-        then if genRap
+        then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."
                   , clearTemplateDirs fSpec
@@ -168,12 +168,20 @@ generateAmpersandOutput multi = do
        )++
        maybeToList (fmap ruleTest (testRule opts))
 
-    where genRap = genRapPopulationOnly (getOpts fSpec)
-          violationsOfInvariants :: [(Rule,[AAtomPair])]
+    where violationsOfInvariants :: [(Rule,[AAtomPair])]
           violationsOfInvariants
             = [(r,vs) |(r,vs) <- allViolations fSpec
                       , not (isSignal r)
+                      , not (elemOfTemporarilyBlocked r)
               ]
+            where
+              elemOfTemporarilyBlocked rul =
+                if atlasWithoutExpressions opts 
+                then name rul `elem` 
+                        [ "TOT formalExpression[Rule*Expression]"
+                        , "TOT objExpression[ObjectDef*Expression]"
+                        ]
+                else False
           reportViolations :: [(Rule,[AAtomPair])] -> IO()
           reportViolations []    = verboseLn opts "No violations found."
           reportViolations viols =

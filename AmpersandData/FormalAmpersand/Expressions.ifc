@@ -3,7 +3,7 @@ INCLUDE "Expressions.adl"
 INCLUDE "Views.adl"
 INCLUDE "Atoms.adl"
 
-INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
+INTERFACE Atoms (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]

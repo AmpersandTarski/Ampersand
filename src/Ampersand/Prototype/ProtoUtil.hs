@@ -6,8 +6,8 @@ module Ampersand.Prototype.ProtoUtil
          , escapeIdentifier,commentBlock,strReplace
          , addSlashes
          , indentBlock,addToLast
-         , indentBlockBetween,quote
-         , showValPHP,phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
+         , indentBlockBetween
+         , phpIndent,showPhpStr,escapePhpStr,showPhpBool, showPhpMaybeBool
          , installComposerLibs
          ) where
  
@@ -21,9 +21,7 @@ import Ampersand.Basics
 import Ampersand.Misc
 import qualified System.Exit as SE (ExitCode(..))
 import System.Process
-import Ampersand.Core.AbstractSyntaxTree
-     ( showValPHP
-     )
+
 
 getGenericsDir :: Options -> String
 getGenericsDir opts = 
@@ -88,20 +86,6 @@ getProperDirectoryContents :: FilePath -> IO [String]
 getProperDirectoryContents pth = 
     filter (`notElem` [".","..",".svn"]) 
        <$> getDirectoryContents pth
-
-
-quote :: Text.Text->Text.Text
-quote = Text.pack . quote' . Text.unpack
-  where
-    quote' [] = []
-    quote' ('`':s) = '`':s  -- do nothing if already quoted
-    quote' s = "`"<>s<>"`"
---   quote s = "`"<>quo s<>"`"
---    where quo ('`':s')  = "\\`" <> quo s'
---          quo ('\\':s') = "\\\\" <> quo s'
---          quo (c:s')    = c: quo s'
---          quo []       = []
--- See http://stackoverflow.com/questions/11321491/when-to-use-single-quotes-double-quotes-and-backticks
 
 commentBlock :: [String]->[String]
 commentBlock ls = ["/*"<>replicate lnth '*'<>"*\\"]

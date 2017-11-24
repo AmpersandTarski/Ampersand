@@ -302,6 +302,7 @@ pCtx2aCtx opts
           return CI { ctxiGens = gns
                     , representationOf = findR
                     , multiKernels = multitypologies
+                    , reprList = allReprs
                     }
         where 
           gns = map pGen2aGen allGens

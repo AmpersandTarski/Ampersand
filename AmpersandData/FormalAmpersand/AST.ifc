@@ -2,7 +2,7 @@ CONTEXT "AST Interface" IN ENGLISH
 
 
 
-INTERFACE Ampersand FOR Ampersand : '_SESSION';V[SESSION*Context]
+INTERFACE Ampersand FOR Ampersand : "_SESSION";V[SESSION*Context]
 BOX <SHCOLS>
     [ "Context" : I
     , "name" : name[Context*ContextName]
@@ -107,7 +107,7 @@ BOX [ Signature: I[Signature]
     , "sign~ (Relation)" : sign[Relation*Signature]~ LINKTO INTERFACE "Relation"
     , "sign~ (Rule)" : sign[Rule*Signature]~ LINKTO INTERFACE "Rule"
     ] 
-INTERFACE Atoms FOR Ampersand : I[SESSION];'_SESSION'
+INTERFACE Atoms FOR Ampersand : I[SESSION];"_SESSION"
 TABS[ Atoms : V[SESSION*Atom]
     COLS [ "Atom" : I
          ]
