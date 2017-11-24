@@ -1,6 +1,8 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.9.0 (24 november 2017)
+
+It has taken some time since the last release. This release has some major work in it, and also a change of syntax of scripts. Unfortunately this is not downward compatible.
 
 * Introduction of SystemContext.adl, which will be required for new interface generation, which will become available in some future release
 * Upgraded to LTS-9.2
