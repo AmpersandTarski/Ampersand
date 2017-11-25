@@ -5,7 +5,7 @@ INCLUDE "Atoms.adl"
 
 REPRESENT Atom TYPE ALPHANUMERIC
 
-INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : '_SESSION'
+INTERFACE Overview (name[Concept*Identifier], name[Relation*Identifier]) : "_SESSION"
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]

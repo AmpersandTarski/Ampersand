@@ -128,14 +128,6 @@ mainLexer p ('"':ss) =
                               then lexerError (NonTerminatedString s) p
                               else returnToken (LexString s) p mainLexer (addPos (swidth+2) p) (tail rest)
 
-{- In Ampersand, atoms may be promoted to singleton relations by single-quoting them. For this purpose, we treat
-   single quotes exactly as the double quote for strings. That substitutes the scanner code for character literals. -}
-mainLexer p ('\'':ss)
-     = let (s,swidth,rest) = scanSingletonInExpression ss
-       in if null rest || head rest /= '\''
-             then lexerError UnterminatedAtom p
-             else returnToken (LexSingleton s) p mainLexer (addPos (swidth+2) p) (tail rest)
-
 -----------------------------------------------------------
 -- looking for keywords - operators - special chars
 -----------------------------------------------------------
@@ -382,42 +374,34 @@ getNumber str =
 -- characters / strings
 -----------------------------------------------------------
 scanString :: String -> (String, Int, String)
-scanString = scanUpto False ['"']
-
-scanSingletonInExpression :: String -> (String, Int, String)
-scanSingletonInExpression = scanUpto True ['\'']
+scanString = scanUpto ['"']
 
 -- | scan to some given character. The end char is scanned away too
-scanUpto :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
-         -> String  -- non-empty list of ending characters
+scanUpto :: String  -- non-empty list of ending characters
          -> String 
          -> (String, Int, String)
-scanUpto isAtomScan echrs s = 
+scanUpto echrs s = 
  case s of
-   xs       -> let (ch,cw,cr) = getchar isAtomScan echrs xs
-                   (str,w,r)  = scanUpto isAtomScan echrs cr
+   xs       -> let (ch,cw,cr) = getchar echrs xs
+                   (str,w,r)  = scanUpto echrs cr
                in maybe ("",0,xs) (\c -> (c:str,cw+w,r)) ch
 
-getchar :: Bool    -- Special case for Ampersand Atomvalues? (if so, both singlequote and doublequote must be escaped)
-        -> String  -- non-empty list of ending characters
+getchar :: String  -- non-empty list of ending characters
         -> String  -- string to get the character from
         -> (Maybe Char, Int, String)
-getchar isAtomScan echrs s =
+getchar echrs s =
   case s of
    []          -> (Nothing,0,[])
    ('\n':_ )   -> (Nothing,0,s)
    ('\t':_ )   -> (Nothing,0,s)
-   ('\\':'&':xs) -> let (str,w,r) = getchar isAtomScan echrs xs -- Special case is required because an escaped & is equal to empty string in Haskell
+   ('\\':'&':xs) -> let (str,w,r) = getchar echrs xs -- Special case is required because an escaped & is equal to empty string in Haskell
                     in (str,w+2,r)
    ('\\':xs)   -> let (c,l,r) = getEscChar xs
                   in (c,l+1,r)
    (x:xs)      
     | x `elem` echrs   -> (Nothing,0,s)
-    | isAtomScan && x `elem`[doubleQuote, singleQuote]  -> (Nothing,0,s) 
-   --- | isAtomScan && ec == singleQuote && x == doubleQuote -> (Nothing,0,s) 
     | otherwise -> (Just x,1,xs)
-  where
-    (doubleQuote,singleQuote) = ('\"','\'')
+
 getEscChar :: String -> (Maybe Char, Int, String)
 getEscChar [] = (Nothing,0,[])
 getEscChar s@(x:xs) | isDigit x = case readDec s of

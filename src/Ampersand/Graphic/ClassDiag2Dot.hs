@@ -154,12 +154,16 @@ classdiagram2dot opts cd
 -------------------------------
        generalization2edges :: Generalization -> [DotEdge String]
        generalization2edges ooGen = sub2edges (genAgen ooGen)
+-- SJ 2017-09-22. Drawing generalization arrows from right to left seems to give better pictures.
+-- This is probably because it is more in line with the totality constraint, which governs the drawing
+-- direction of associations. For this purpose we draw a backward facing arrow from generic to specific.
         where
           sub2edges gen
-           = [DotEdge { fromNode = name spec
-                      , toNode   = name gener
+           = [DotEdge { fromNode = name gener
+                      , toNode   = name spec
                       , edgeAttributes
-                                 = [ ArrowHead (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
+                                 = [ Dir Back
+                                   , ArrowTail (AType [(ArrMod OpenArrow BothSides, Normal)])   -- Open normal arrowHead
                                    , ArrowSize  2.0
                                    ] ++
                                    ( if blackWhite opts

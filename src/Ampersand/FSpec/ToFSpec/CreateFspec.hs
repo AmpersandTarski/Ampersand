@@ -43,7 +43,8 @@ createMulti opts =
         else return --Not very nice way to do this, but effective. Don't try to remove the return, otherwise the fatal could be evaluated... 
                $ fatal "With the given switches, the formal ampersand model is not supposed to play any part."
      userP_Ctx:: Guarded P_Context <- parseADL opts (fileName opts) -- the P_Context of the user's sourceFile
-     
+     systemP_Ctx:: Guarded P_Context <- parseSystemContext opts
+
      let fAmpFSpec :: FSpec
          fAmpFSpec = case pCtx2Fspec fAmpP_Ctx of
                        Checked f  -> f
@@ -59,12 +60,15 @@ createMulti opts =
             where
               f pCtx = pCtx {ctx_ds = ctx_ds pCtx ++ map (noPopulation . aRelation2pRelation) (instances fAmpFSpec)
                             ,ctx_gs = ctx_gs pCtx ++ map aGen2pGen (instances fAmpFSpec)
+                            ,ctx_reprs = ctx_reprs pCtx ++ (reprList . fcontextInfo $ fAmpFSpec)
                             }
               noPopulation :: P_Relation -> P_Relation
               noPopulation rel = rel{dec_popu =[]}
-  
+
          userGFSpec :: Guarded FSpec
-         userGFSpec = pCtx2Fspec . (if genRapRelationsOnly opts then addSemanticModel else id) $ userP_Ctx  -- the FSpec resuting from the user's souceFile
+         userGFSpec = pCtx2Fspec . (if genMetaTables opts || genRapRelationsOnly opts then addSemanticModel else id) $ 
+                         mergeContexts <$> userP_Ctx   -- the FSpec resuting from the user's souceFile
+                                       <*> systemP_Ctx -- the system artifacts required for all ampersand prototypes
          
          result :: Guarded MultiFSpecs
          result = 

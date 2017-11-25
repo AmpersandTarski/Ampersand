@@ -46,8 +46,8 @@ try{
     Config::set('checkDefaultPopulation', 'transactions', true); // For debugging set to false (commits the initial population, regardless if it has invariant violations)
     Config::set('ignoreInvariantViolations', 'transactions', false); // for debugging can be set to true (transactions will be committed regardless off invariant violations)
     Config::set('skipUniInjConjuncts', 'transactions', false); // TODO: remove after fix for issue #535
-    Config::set('interfaceAutoCommitChanges', 'transactions', false); // specifies whether changes in an interface are automatically commited when allowed (all invariants hold)
-    Config::set('interfaceAutoSaveChanges', 'transactions', false); // specifies whether changes in interface are directly communicated (saved) to server
+    Config::set('interfaceAutoCommitChanges', 'transactions', true); // specifies whether changes in an interface are automatically commited when allowed (all invariants hold)
+    Config::set('interfaceAutoSaveChanges', 'transactions', true); // specifies whether changes in interface are directly communicated (saved) to server
     Config::set('interfaceCacheGetCalls', 'transactions', false); // specifies whether GET calls should be cached by the frontend (e.g. angular) application
 
     // Default CRUD rights for interfaces

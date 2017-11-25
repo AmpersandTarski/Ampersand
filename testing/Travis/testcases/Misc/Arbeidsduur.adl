@@ -211,8 +211,8 @@ PURPOSE PROCESS "Rekenen met datums"
 {+De wet spreekt over tijdsverschillen van minstens vier maanden, of minstens een jaar. Dat vereist het kunnen rekenen met tijden. Omdat Ampersand dat nog niet goed kan, is een proces gedefinieerd dat deze berekeningen uitvoert. Dit proces is hier verder niet gedocumenteerd.+}
 
 PURPOSE RULE "Vandaag is 1 (enkele) dag" 
-{+ Om handelingen op een zekere datum uit te kunnen voeren, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een Concept ``Vandaag'' in (bestaande uit 1 atoom 'VANDAAG').+}
-RULE "Vandaag is 1 (enkele) dag": I[Vandaag] = 'VANDAAG'
+{+ Om handelingen op een zekere datum uit te kunnen voeren, en omdat we dat in Ampersand moeten kunnen berekenen, voeren we een Concept ``Vandaag'' in (bestaande uit 1 atoom "vandaag").+}
+RULE "Vandaag is 1 (enkele) dag": I[Vandaag] = "VANDAAG"
 vandaag :: Vandaag * Datum [UNI]
 PRAGMA "" "is de datum"
 POPULATION Vandaag CONTAINS ["VANDAAG"]

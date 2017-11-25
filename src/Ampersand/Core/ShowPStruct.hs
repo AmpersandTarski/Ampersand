@@ -83,15 +83,10 @@ instance PStruct TermPrim where
  showP (PI _)              = "I"
  showP (Pid _ c)           = "I["++showP c++"]"
  showP (Patm _ val mSign)  = 
-     "'"++
      (case val of
-       PSingleton   _ x _ -> x 
-       ScriptString   _ x -> x
-       XlsxString     _ x -> concatMap escapeSingleQuote x
-                               where escapeSingleQuote c=
-                                       case c of
-                                         '\'' -> ['\\','\'']
-                                         _    -> [c]
+       PSingleton   _ x _ -> show x 
+       ScriptString   _ x -> show x
+       XlsxString     _ x -> show x
        ScriptInt      _ x -> show x
        ScriptFloat    _ x -> show x
        XlsxDouble     _ x -> show x
@@ -99,7 +94,6 @@ instance PStruct TermPrim where
        ScriptDate     _ x -> show x
        ScriptDateTime _ x -> show x
      ) ++
-     "'" ++
      (case mSign of
        Nothing -> ""
        Just c  -> "["++show c++"]"

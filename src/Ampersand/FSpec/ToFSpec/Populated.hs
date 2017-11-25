@@ -123,7 +123,7 @@ fullContents ci ps e = [ mkAtomPair a b | let pairMap=contents e, (a,bs)<-Map.to
          EEps i _   -> fromList [(a, Set.singleton a) | a <- aVals i]
          EDcV sgn   -> fromList [(s, Set.fromList cod) | s <- aVals (source sgn), let cod=aVals (target sgn), not (null cod) ]
          EMp1 val c -> if name c == "SESSION" -- prevent populating SESSION with "_SESSION"
-                          && val == PSingleton (fatal "this fatal used to be `undefined`.") "_SESSION" (fatal "this fatal used to be `undefined`.")
+                          && show val == show "_SESSION"
                         then Map.empty
                         else Map.singleton av (Set.singleton av)
                          where 

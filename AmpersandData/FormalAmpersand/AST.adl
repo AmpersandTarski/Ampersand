@@ -14,7 +14,7 @@ INCLUDE "Interfaces.adl"
 -- INCLUDE "Tables.adl"
 
 {- *** De volgende relaties zijn hier tijdelijk opgenomen
-   *** om Travis gaat piepen. Deze relaties ontbreken elders
+   *** om te voorkomen dat Travis gaat piepen. Deze relaties ontbreken elders
    *** in de FormalAmpersand scripts, maar worden door de 
    *** meatgrinder wél gevuld. 
 -}

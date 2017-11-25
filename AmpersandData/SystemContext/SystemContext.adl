@@ -1,0 +1,45 @@
+CONTEXT SystemContext IN ENGLISH
+  
+PATTERN SystemSpecific
+  CONCEPT SESSION "een semi-permanente interactieve informatie-uitwisseling, ook bekend als een dialoog, een gesprek of een vergadering, tussen twee of meer communicerende apparaten, of tussen een computer en gebruiker"
+  PURPOSE CONCEPT SESSION IN DUTCH
+  {+Sessies zijn nodig om de dialoog aan te kunnen duiden tussen de gebruiker en de computer+}
+  PURPOSE CONCEPT SESSION IN ENGLISH
+  {+Sessions are required to allow for associating information with individual visitors+}
+  CONCEPT Role "een functie of onderdeel die speciaal in een bepaalde bewerking of proces wordt uitgevoerd"
+  PURPOSE CONCEPT Role IN DUTCH
+  {+We need roles to implement a basic form of security based on permissions. +}
+  PURPOSE CONCEPT Role IN ENGLISH
+  {+We need roles to implement a basic form of security based on permissions. +}
+  CONCEPT DateTime "een specifiek moment, tijdstip"
+  PURPOSE CONCEPT DateTime IN DUTCH
+  {+om bewerkingen te kunnen plaatsen in de tijd is het nodig om het over specifieke momenten te kunnen hebben+}
+  PURPOSE CONCEPT DateTime IN ENGLISH
+  {+Telling the time enables some ordering of events in time.+}
+  
+  REPRESENT DateTime TYPE DATETIME
+  
+  RELATION lastAccess[SESSION*DateTime] [UNI]
+  MEANING IN DUTCH "het moment waarop de sessie voor het laatst actief was"
+  MEANING IN ENGLISH "the last timestamp that a session was active"
+  PURPOSE RELATION lastAccess IN DUTCH
+  {+Een sessie kan op een bepaald moment actief zijn. Deze relatie bevat de informatie wanneer dat voor de laatste keer was.+}
+  PURPOSE RELATION lastAccess IN ENGLISH
+  {+A session can be active at some moment in time. This relation holds the information when that was for the last time.+}
+  RELATION sessionAllowedRoles[SESSION*Role]
+  MEANING IN DUTCH "een rol kan zijn toegestaan gedurende een sessie"
+  MEANING IN ENGLISH "a role can be allowed during a session"
+  PURPOSE RELATION sessionAllowedRoles IN DUTCH
+  {+Aan een gebruiker kunnen specifieke rollen zijn toegekend.+}
+  PURPOSE RELATION sessionAllowedRoles IN ENGLISH
+  {+A user can be granted specific roles.+}
+  RELATION sessionActiveRoles[SESSION*Role]
+  MEANING IN DUTCH "een rol kan in gebruik zijn gedurende een sessie"
+  MEANING IN ENGLISH "a role can be active during a session"
+  PURPOSE RELATION sessionActiveRoles IN DUTCH
+  {+Gedurende een sessie kan een gebruiker over de permissies van specifieke rollen beschikken.+}
+  PURPOSE RELATION sessionActiveRoles IN ENGLISH
+  {+During a session the user can have roles, that grants permission for specific events.+}
+ENDPATTERN
+  
+ENDCONTEXT

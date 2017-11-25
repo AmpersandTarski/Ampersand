@@ -6,7 +6,7 @@ import System.Directory
 import qualified Data.ByteString.Char8 as BS
 import Ampersand.Misc (Options(..),verboseLn)
 import Prelude hiding (writeFile,readFile,getContents)
-import Ampersand.Prototype.StaticFiles_Generated
+import Ampersand.Prototype.StaticFiles_Generated (StaticFile(..),FileKind(ZwolleFrontEnd),allStaticFiles)
 import qualified Data.Conduit.List as CL
 import Conduit
 

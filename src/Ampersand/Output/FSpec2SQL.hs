@@ -4,6 +4,7 @@ module Ampersand.Output.FSpec2SQL
 where
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Prototype.TableSpec (queryAsSQL)
 import Ampersand.Prototype.Generate 
   (generateDBstructQueries, generateInitialPopQueries
   )
@@ -20,9 +21,9 @@ dumpSQLqueries multi
    = Text.intercalate "\n" $ 
          header (Text.pack ampersandVersionStr)
        <>header "Database structure queries"
-       <>generateDBstructQueries fSpec True
+       <>(map separator . map queryAsSQL $ generateDBstructQueries fSpec True) 
        <>header "Initial population queries"
-       <>generateInitialPopQueries fSpec
+       <>(map separator . map queryAsSQL $ generateInitialPopQueries fSpec) 
        <>header "Violations of conjuncts"
        <>concatMap showConjunct (allConjuncts fSpec)
        <>header "Queries per relation"
@@ -31,6 +32,8 @@ dumpSQLqueries multi
        <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)
     
    where
+     separator :: Text.Text -> Text.Text
+     separator t = Text.init t <> ";"
      fSpec = userFSpec multi
      showInterface :: Interface -> [Text.Text]
      showInterface ifc 
@@ -40,7 +43,7 @@ dumpSQLqueries multi
           showObjDef :: ObjectDef -> [Text.Text]
           showObjDef obj
             = (header . Text.pack . showA . objExpression) obj
-            <>[Text.pack$ (prettySQLQueryWithPlaceholder 2 fSpec . objExpression) obj]
+            <>[queryAsSQL . prettySQLQueryWithPlaceholder 2 fSpec . objExpression $ obj]
             <>case objmsub obj of
                  Nothing  -> []
                  Just sub -> showSubInterface sub
@@ -55,23 +58,26 @@ dumpSQLqueries multi
      showConjunct :: Conjunct -> [Text.Text]
      showConjunct conj 
         = header (Text.pack$ rc_id conj)
-        <>["Rules for this conjunct:"]
+        <>["/*"
+          ,"Rules for this conjunct:"]
         <>map showRule (rc_orgRules conj)
-        <>[Text.pack$ prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj,""]
+        <>["*/"
+          ,(queryAsSQL . prettySQLQuery 2 fSpec . conjNF (getOpts fSpec) . notCpl . rc_conjunct $ conj) <> ";"
+          ,""]
         where
           showRule r 
             = Text.pack ("  - "<>name r<>": "<>showA r)
      showDecl :: Relation -> [Text.Text]
      showDecl decl 
         = header (Text.pack$ showA decl)
-        <>[Text.pack . prettySQLQuery 2 fSpec $ decl,""]
+        <>[(queryAsSQL . prettySQLQuery 2 fSpec $ decl)<>";",""]
      header :: Text.Text -> [Text.Text]
      header title = 
-         [ ""
+         [ "/*"
          , Text.replicate width "*"
          , "***"<>spaces firstspaces<>title<>spaces (width-6-firstspaces-l)<>"***"
          , Text.replicate width "*"
-         , ""
+         , "*/"
          ]
        where width = maximum [80 , l + 8]
              l = Text.length title

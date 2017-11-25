@@ -156,7 +156,8 @@ readAllStaticFiles =
   do { zwolleFrontEndFiles  <- readStaticFiles ZwolleFrontEnd   "static/zwolle" "."  -- files that define the Zwolle Frontend
      ; pandocTemplatesFiles <- readStaticFiles PandocTemplates  "outputTemplates" "." -- templates for several PANDOC output types
      ; formalAmpersandFiles <- readStaticFiles FormalAmpersand  "AmpersandData/FormalAmpersand" "."  --meta information about Ampersand
-     ; return $ mkStaticFileModule $ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles
+     ; systemContextFiles   <- readStaticFiles SystemContext    "AmpersandData/SystemContext" "."  --Special system context for Ampersand
+     ; return $ mkStaticFileModule $ zwolleFrontEndFiles ++ pandocTemplatesFiles ++ formalAmpersandFiles ++ systemContextFiles
      }
 
 readStaticFiles :: FileKind -> FilePath -> FilePath -> IO [String]
@@ -178,7 +179,7 @@ readStaticFiles fkind base fileOrDirPth =
   where utcToEpochTime :: UTCTime -> String
         utcToEpochTime utcTime = DTF.formatTime DTF.defaultTimeLocale "%s" utcTime
 
-data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand deriving (Show, Eq)
+data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)
 
 mkStaticFileModule :: [String] -> String
 mkStaticFileModule sfDeclStrs =
@@ -189,12 +190,16 @@ mkStaticFileModule sfDeclStrs =
 staticFileModuleHeader :: [String]
 staticFileModuleHeader =
   [ "{-# LANGUAGE OverloadedStrings #-}"
-  , "module "++staticFileModuleName++" where"
+  , "module "++staticFileModuleName
+  , "   ( StaticFile(..),FileKind(..)"
+  , "   , allStaticFiles, getStaticFileContent"
+  , "   )"
+  , "where"
   , "import qualified Data.ByteString.Lazy.Char8 as BS"
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"
   , ""
-  , "data FileKind = ZwolleFrontEnd | OldFrontend | PandocTemplates | FormalAmpersand deriving (Show, Eq)"
+  , "data FileKind = ZwolleFrontEnd | PandocTemplates | FormalAmpersand | SystemContext deriving (Show, Eq)"
   , "data StaticFile = SF { fileKind      :: FileKind"
   , "                     , filePath      :: FilePath -- relative path, including extension"
   , "                     , timeStamp     :: Integer  -- unix epoch time"
