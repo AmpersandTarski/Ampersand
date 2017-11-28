@@ -251,7 +251,7 @@ class Database {
 	}
 	
 	/**
-	 * Execute query on database. Function replaces reserved words by their corresponding value (e.g. _SESSION)
+	 * Execute query on database.
 	 * @param string $query
 	 * @return boolean|array
 	 * 
@@ -261,8 +261,6 @@ class Database {
 	 * This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
 	 */
 	public function Exe($query){
-		$query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
-		
 		$result = $this->doQuery($query);
 		$this->logger->debug($query);
 
