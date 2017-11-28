@@ -1,5 +1,7 @@
 # Release notes of Ampersand
 
+* [Issue #707](https://github.com/AmpersandTarski/Ampersand/issues/707) Bugfix issue where user input '_SESSION' was also replaced by the session id
+
 ## v3.9.0 (24 november 2017)
 
 It has taken some time since the last release. This release has some major work in it, and also a change of syntax of scripts. Unfortunately this is not downward compatible.
