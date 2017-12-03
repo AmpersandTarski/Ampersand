@@ -62,9 +62,6 @@ chpNatLangReqs lev fSpec =
   -- Each explanation should state the purpose (and nothing else).
   printOneTheme :: ThemeContent -> Blocks
   printOneTheme tc 
-    | (not . null . themes) fSpec && (isNothing . patOfTheme) tc 
-        = mempty   -- The document is partial (because themes have been defined), so we don't print loose ends.
-    | otherwise 
         =   --  *** Header of the theme: ***
             xDefBlck fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***

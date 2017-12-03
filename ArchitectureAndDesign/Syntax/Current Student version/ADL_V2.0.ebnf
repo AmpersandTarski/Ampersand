@@ -86,7 +86,6 @@ Expl            ::= '{+' String '-}'
 Population      ::= 'POPULATION' RelSign 'CONTAINS' Content
 RoleRelation    ::= 'ROLE' Id (',' Id)* 'EDITS'     RelSign (',' RelSign)*
 RoleRule        ::= 'ROLE' Id (',' Id)* 'MAINTAINS' Id (',' Id)*
-Themes          ::= 'THEMES' Id (',' Id)*
 Meaning         ::= 'MEANING' LanguageRef? TextMarkup? Expl
 
 Expr            ::= Exp1 (( '=' | '|-') Exp1)?

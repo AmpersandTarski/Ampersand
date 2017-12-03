@@ -54,7 +54,6 @@ data P_Context
          , ctx_pos ::    [Origin]         -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctx_lang ::   Maybe Lang       -- ^ The language specified on the top-level context. If omitted, English will be the default.
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-         , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
          , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Relation]  -- ^ The relations defined in this context, outside the scope of patterns
@@ -835,7 +834,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_pos    = nubSortConcatMap ctx_pos contexts
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
-      , ctx_thms   = nubSortConcatMap ctx_thms contexts
       , ctx_pats   = nubSortConcatMap ctx_pats contexts
       , ctx_rs     = nubSortConcatMap ctx_rs contexts
       , ctx_ds     = nubSortConcatMap ctx_ds contexts
@@ -868,7 +866,6 @@ mkContextOfPopsOnly pops =
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
-      , ctx_thms   = []
       , ctx_pats   = []
       , ctx_rs     = []
       , ctx_ds     = []
