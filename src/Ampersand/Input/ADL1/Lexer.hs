@@ -38,7 +38,7 @@ keywords :: [String] -- ^ The keywords
 keywords  = nub [ "CONTEXT", "ENDCONTEXT"
                 , "IN", "ENGLISH", "DUTCH"
                 , "INCLUDE"
-                , "META", "THEMES"
+                , "META"
                 , "PATTERN", "ENDPATTERN"
                 , "CONCEPT"
                 -- Keywords for Relation-statements

@@ -3,6 +3,7 @@
 ## Unreleased changes
 
 * [Issue #707](https://github.com/AmpersandTarski/Ampersand/issues/707) Bugfix issue where user input '_SESSION' was also replaced by the session id
+* [Issue #723](https://github.com/AmpersandTarski/Ampersand/issues/723) THEMES have been removed from the syntax.
 
 ## v3.9.0 (24 november 2017)
 

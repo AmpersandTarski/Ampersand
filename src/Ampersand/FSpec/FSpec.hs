@@ -54,13 +54,6 @@ data FSpec = FSpec { fsName ::       Text                   -- ^ The name of the
                    , originalContext :: A_Context             -- ^ the original context. (for showA)  
                    , getOpts ::      Options                  -- ^ The command line options that were used when this FSpec was compiled  by Ampersand.
                    , fspos ::        [Origin]                 -- ^ The origin of the FSpec. An FSpec can be a merge of a file including other files c.q. a list of Origin.
-                   , themes ::       [String]                 -- ^ The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
-                     , pattsInScope :: [Pattern]
-                     , rulesInScope :: [Rule]
-                     , declsInScope :: [Relation]
-                     , concsInScope :: [A_Concept]
-                     , cDefsInScope :: [ConceptDef]
-                     , gensInScope ::  [A_Gen]
                    , fsLang ::       Lang                     -- ^ The default language for this specification (always specified, so no Maybe here!).
                    , vplugInfos ::   [PlugInfo]               -- ^ All plugs defined in the Ampersand script
                    , plugInfos ::    [PlugInfo]               -- ^ All plugs (defined and derived)

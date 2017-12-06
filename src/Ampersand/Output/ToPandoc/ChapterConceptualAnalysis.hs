@@ -11,7 +11,7 @@ chpConceptualAnalysis lev fSpec = (
    xDefBlck fSpec ConceptualAnalysis
    <> --  *** Intro  ***
    caIntro
-   <> --  *** For all themes, a section containing the conceptual analysis for that theme  ***
+   <> --  *** For all patterns, a section containing the conceptual analysis for that pattern  ***
    caBlocks, pictures)
   where
   -- shorthand for easy localizing

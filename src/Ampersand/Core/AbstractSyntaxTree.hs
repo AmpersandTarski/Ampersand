@@ -79,7 +79,6 @@ data A_Context
          , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctxlang :: Lang           -- ^ The default language used in this context.
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
-         , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Relation]    -- ^ The relations that are declared in this context, outside the scope of patterns

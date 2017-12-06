@@ -29,13 +29,6 @@ makeFSpec opts context
               , originalContext = context 
               , getOpts      = opts
               , fspos        = ctxpos context
-              , themes       = themesInScope
-              , pattsInScope = pattsInThemesInScope
-              , rulesInScope = rulesInThemesInScope
-              , declsInScope = declsInThemesInScope 
-              , concsInScope = concsInThemesInScope
-              , cDefsInScope = cDefsInThemesInScope
-              , gensInScope  = gensInThemesInScope
               , fsLang       = printingLanguage
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
@@ -152,16 +145,6 @@ makeFSpec opts context
                                      []   -> True -- interface is for all roles
                                      rs  -> role' `elem` rs
      
-     themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
-                     then map name (patterns context)
-                     else ctxthms context
-     pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)
-     cDefsInThemesInScope = filter (\cd -> cdfrom cd `elem` themesInScope) (ctxcds context)
-     rulesInThemesInScope = ctxrs context `uni` nub (concatMap ptrls pattsInThemesInScope)
-     declsInThemesInScope = ctxds context `uni` nub (concatMap ptdcs pattsInThemesInScope)
-     concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
-     gensInThemesInScope  = nub (ctxgs context ++ concatMap ptgns pattsInThemesInScope)
-
      initialpopsDefinedInScript = 
                    [ let dcl = popdcl (head eqclass)
                      in ARelPopu{ popsrc = source dcl

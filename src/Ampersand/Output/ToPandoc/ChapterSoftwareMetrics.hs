@@ -10,7 +10,7 @@ import Ampersand.Output.ToPandoc.SharedAmongChapters
 -- TODO: Andere formaten dan LaTeX ondersteunen.
 
 fpAnalysis :: FSpec -> Blocks
-fpAnalysis _ = mempty -- if null (themes fSpec) then header ++ caIntro ++ fpa2Blocks else []
+fpAnalysis _ = mempty -- header ++ caIntro ++ fpa2Blocks
 -- where
 --  header :: Blocks
 --  header = xDefBlck fSpec SoftwareMetrics
