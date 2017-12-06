@@ -2,14 +2,13 @@ module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
 ) 
 where
-import Data.List
 import Ampersand.ADL1
-import Ampersand.Classes
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.FSpec
+import Ampersand.Graphic.ClassDiagram
 import Data.Maybe
 import Data.Either
-import Ampersand.Graphic.ClassDiagram
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
