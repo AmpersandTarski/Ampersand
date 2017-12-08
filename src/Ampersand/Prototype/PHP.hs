@@ -170,16 +170,22 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: FSpec -> IO ()
+createTempDatabase :: FSpec -> IO Bool
 createTempDatabase fSpec =
  do { result <- executePHPStr .
            showPHP $ phpStr
     ; verboseLn (getOpts fSpec) 
          (if null result 
           then "Temp database created succesfully."
-          else "Temp database creation failed! :"<>result  )
+          else "Temp database creation failed! :\n"<>lineNumbers phpStr<>"\nThe result:\n"<>result  )
+    ; return (null result)
     }
  where 
+  lineNumbers :: [Text.Text] -> String
+  lineNumbers = intercalate "  \n" . map withNumber . zip [1..] . map Text.unpack
+    where
+      withNumber :: (Int,String) -> String
+      withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t
   phpStr :: [Text.Text]
   phpStr = 
     connectToMySqlServerPHP (getOpts fSpec) Nothing <>
@@ -238,10 +244,10 @@ createTempDatabase fSpec =
   
     where
       dropDB :: SqlQuery 
-      dropDB = SqlQuery $
+      dropDB = SqlQuery
            ["DROP DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)]
       createDB :: SqlQuery
-      createDB = SqlQuery $
+      createDB = SqlQuery
            ["CREATE DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"]
       populatePlugPHP plug =
         case tableContents fSpec plug of
