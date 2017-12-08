@@ -23,9 +23,16 @@ validateRulesSQL fSpec =
     ; hSetBuffering stdout NoBuffering
 
     ; verboseLn (getOpts fSpec)  "Initializing temporary database (this could take a while)"
-    ; createTempDatabase fSpec
-
-    ; let allExps = getAllInterfaceExps fSpec ++
+    ; succes <- createTempDatabase fSpec
+    ; if succes 
+      then actualValidation 
+      else do { putStrLn "Error: Database creation failed. No validation could be done."
+              ; return []
+              }
+    } 
+  where
+   actualValidation = do
+    { let allExps = getAllInterfaceExps fSpec ++
                     getAllRuleExps fSpec ++
                     getAllPairViewExps fSpec ++
                     getAllIdExps fSpec ++

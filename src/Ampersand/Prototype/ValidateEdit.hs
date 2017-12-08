@@ -22,7 +22,7 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; --putStrLn $ "Expected population after edit operations:\n" ++ show afterPops
             ; putStrLn $ "Edit script:\n" ++ editScript
             
-            ; createTempDatabase fSpec beforePops
+            ; result <- createTempDatabase fSpec beforePops
             ; let phpDir = Opts.dirPrototype (getOpts fSpec) </> "php"
             ; let phpScript = "ValidateEdit.php"
             ; putStrLn $ "Executing php script "++ phpDir </> phpScript

@@ -788,7 +788,22 @@ data ContextInfo =
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
 safePSingleton2AAtomVal ci c val =
    case unsafePAtomVal2AtomValue typ (Just c) val of
-     Left _ -> fatal ("This should be impossible: after checking everything an unhandled singleton value found!\n  "++show val)
+     Left _ -> fatal . intercalate "\n  " $
+                  [ "This should be impossible: after checking everything an unhandled singleton value found!"
+                  , "Concept: "++show c
+                  , "TType: "++show typ
+                  , "Origin: "++show (origin val)
+                  , "PAtomValue: "++case val of
+                                      (PSingleton _ _ v) -> "PSingleton ("++show v++")"
+                                      (ScriptString _ v) -> "ScriptString ("++show v++")"
+                                      (XlsxString _ v)   -> "XlsxString ("++show v++")"
+                                      (ScriptInt _ v)    -> "ScriptInt ("++show v++")"
+                                      (ScriptFloat _ v)  -> "ScriptFloat ("++show v++")"
+                                      (XlsxDouble _ v)   -> "XlsxDouble ("++show v++")"
+                                      (ComnBool _ v)     -> "ComnBool ("++show v++")"
+                                      (ScriptDate _ v)   -> "ScriptDate ("++show v++")"
+                                      (ScriptDateTime _ v) -> "ScriptDateTime ("++show v++")"
+                  ]
      Right x -> x
   where typ = representationOf ci c
 
