@@ -1,4 +1,7 @@
 <!-- Thanks for contributing to Ampersand! Please pick a clear title and proceed. -->
+<!-- Please note: If your issue is about RAP3, please report it over there: 
+     https://github.com/AmpersandTarski/RAP/issues
+-->
 
 #### Version of ampersand that was used 
 
