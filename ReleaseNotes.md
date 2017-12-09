@@ -1,7 +1,7 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-
+* Security fix: use PHP session strict mode. This prevents a user defined session ID that is never generated
 * [Issue #707](https://github.com/AmpersandTarski/Ampersand/issues/707) Bugfix issue where user input '_SESSION' was also replaced by the session id
 * [Issue #723](https://github.com/AmpersandTarski/Ampersand/issues/723) THEMES have been removed from the syntax.
 
