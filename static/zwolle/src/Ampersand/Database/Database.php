@@ -493,7 +493,7 @@ class Database {
 	    
 	    switch ($relTable->tableOf){
 	        case null : // Relation is administrated in n-n table
-	            $this->Exe("INSERT INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtom->idEsc}', '{$tgtAtom->idEsc}')");
+	            $this->Exe("REPLACE INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtom->idEsc}', '{$tgtAtom->idEsc}')");
 	            break;
 	        case 'src' : // Relation is administrated in concept table (wide) of source of relation
 	            $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtom->idEsc}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtom->idEsc}'");
