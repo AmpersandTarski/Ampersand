@@ -152,7 +152,7 @@ generateAmpersandOutput multi = do
        , reportViolations violationsOfInvariants
        , reportSignals (initialConjunctSignals fSpec)
        ]++
-       (if null violationsOfInvariants || development opts
+       (if null violationsOfInvariants
         then if genRapPopulationOnly (getOpts fSpec)
              then [ generateJSONfiles multi]
              else [ verboseLn opts "Generating prototype..."

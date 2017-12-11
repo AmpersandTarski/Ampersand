@@ -34,7 +34,6 @@ data Options = Options { environment :: EnvironmentOptions
                        , postVersion :: String  --built in to aid DOS scripting... 8-(( Bummer.
                        , showHelp :: Bool
                        , verboseP :: Bool
-                       , development :: Bool
                        , validateSQL :: Bool
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
@@ -187,9 +186,7 @@ getOptions =
 getOptions' :: EnvironmentOptions -> Options
 getOptions' envOpts =  
    case errors of
-     []  | development opts && validateSQL opts 
-                     -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
-         | otherwise -> opts
+     [] -> opts
      _  -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
          
  where
@@ -218,7 +215,6 @@ getOptions' envOpts =
                       , showVersion      = False
                       , showHelp         = False
                       , verboseP         = False
-                      , development      = False
                       , validateSQL      = False
                       , genSampleConfigFile = False
                       , genPrototype     = False
@@ -373,10 +369,6 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml)"
             , Public)
-          , (Option []      ["dev"]
-               (NoArg (\opts -> opts{development = True}))
-               "Report and generate extra development information (for Martijn)"
-            , Hidden)
           , (Option []      ["validate"]
                (NoArg (\opts -> opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"

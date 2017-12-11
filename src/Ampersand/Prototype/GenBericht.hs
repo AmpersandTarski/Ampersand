@@ -32,7 +32,6 @@ doGenBericht fSpec =
     ; createDirectoryIfMissing True $ combine (dirPrototype (getOpts fSpec)) "Berichten"
     ; let entities = genEntity_Interfaces $ interfaceS fSpec
     ; let berichtenCSV = allEntitiesToCSV entities
-    ; when (development (getOpts fSpec)) $ verboseLn (getOpts fSpec) $ layout berichtenCSV
     ; genFile "Berichten/Berichten.csv" $ printSemicolonSeparated berichtenCSV
     ; genFile "Berichten/Gegevenswoordenboek.html" $ genGegevensWB entities
     ; genFile "Berichten/Berichtdefinitie.html" $ genBerichtDef entities
