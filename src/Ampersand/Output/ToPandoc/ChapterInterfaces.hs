@@ -87,7 +87,7 @@ chpInterfacesBlocks fSpec =
                 ++
                 [ plainText "De bijbehorende Ampersand expressie is: ", plain . code $ showA iExp ] ++
                 [ plainText $ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
-                | let len = length subInterfaceDocs, len > 0 ] 
+                | let len = length subInterfaceDocs, len > 0 ]
               where (fieldDescr,fieldRef) 
                       | isSur iExp && isUni iExp = ("Een verplicht veld van type ", "Dit veld")
                       | isSur iExp               = ("Een lijst van 1 of meer velden van type ", "Elk veld")

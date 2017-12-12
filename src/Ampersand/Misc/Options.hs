@@ -34,6 +34,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , postVersion :: String  --built in to aid DOS scripting... 8-(( Bummer.
                        , showHelp :: Bool
                        , verboseP :: Bool
+                       , allowInvariantViolations :: Bool
                        , validateSQL :: Bool
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
@@ -186,7 +187,9 @@ getOptions =
 getOptions' :: EnvironmentOptions -> Options
 getOptions' envOpts =  
    case errors of
-     [] -> opts
+     []  | allowInvariantViolations opts && validateSQL opts 
+                     -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
+         | otherwise -> opts
      _  -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
          
  where
@@ -215,6 +218,7 @@ getOptions' envOpts =
                       , showVersion      = False
                       , showHelp         = False
                       , verboseP         = False
+                      , allowInvariantViolations = False
                       , validateSQL      = False
                       , genSampleConfigFile = False
                       , genPrototype     = False
@@ -369,6 +373,10 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml)"
             , Public)
+          , (Option []      ["dev","ignore-invariant-violations"]
+               (NoArg (\opts -> opts{allowInvariantViolations = True}))
+               "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
+            , Hidden)
           , (Option []      ["validate"]
                (NoArg (\opts -> opts{validateSQL = True}))
                "Compare results of rule evaluation in Haskell and SQL (requires command line php with MySQL support)"

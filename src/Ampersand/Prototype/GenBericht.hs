@@ -6,7 +6,6 @@ import Data.List
 import Text.CSV
 import System.FilePath
 import System.Directory
-import Control.Monad
 import Ampersand.Basics
 import Ampersand.Classes
 import Ampersand.FSpec
