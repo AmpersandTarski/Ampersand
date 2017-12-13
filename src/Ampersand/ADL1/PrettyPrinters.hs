@@ -90,13 +90,12 @@ prettyLabel :: String -> Doc
 prettyLabel = maybeQuote
 
 instance Pretty P_Context where
-    pretty (PCtx nm _ lang markup thms pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops sql php metas) =
+    pretty (PCtx nm _ lang markup pats rs ds cs ks rrules rrels reprs vs gs ifcs ps pops sql php metas) =
                text "CONTEXT"
                <+> quoteConcept nm
                <~> lang
                <~> markup
                <+\> perline metas
-               <+\> themes
                <+\> perline ps
                <+\> perline pats
                <+\> perline rs
@@ -113,9 +112,7 @@ instance Pretty P_Context where
                <+\> perlinePrefix "SQLPLUG" sql
                <+\> perlinePrefix "PHPPLUG" php
                <+\> text "ENDCONTEXT"
-             where themes | null thms = empty
-                          | otherwise = text "THEMES" <+> commas (map quoteConcept thms)
-
+             
 instance Pretty Meta where
     pretty (Meta _ obj name val) =
         text "META" <~> obj <+> quote name <+> quote val
@@ -200,8 +197,9 @@ instance Pretty TermPrim where
     pretty p = case p of
         PI _ -> text "I"
         Pid _ concept -> text "I[" <> pretty concept <> text "]"
-        Patm _ val (Just concept) -> text (show val) <> text "[" <> pretty concept <> text "]"
-        Patm _ val Nothing        -> text (show val) 
+        Patm _ val mCpt ->  pretty val <> case mCpt of
+                                            Nothing -> empty
+                                            Just concept -> text "[" <> pretty concept <> text "]"
         PVee _ -> text "V"
         Pfull _ s1 s2 -> text "V" <~> P_Sign s1 s2
         PNamedR rel -> pretty rel
@@ -389,7 +387,7 @@ instance Pretty PAtomValue where
       case pav of 
        PSingleton   _ _ mav -> case mav of
                                 Nothing  -> fatal ("The singleton "++show pav++" has no type, so it cannot be accuratly prettyprinted in a population statement.")
-                                Just val -> pretty val
+                                Just val -> text "{" <+> pretty val <+> text "}"
        ScriptString   _ s -> text . show $ s
        XlsxString     _ s -> text . show $ s
        ScriptInt      _ i -> text . show $ i

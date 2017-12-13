@@ -41,7 +41,7 @@ class Conjunct {
      * 
      * @var string
      */
-    public $query;
+    private $query;
     
     /**
      * 
@@ -100,6 +100,14 @@ class Conjunct {
     public function isInvConj(){
         return !empty($this->invRuleNames);
     }
+
+    /**
+     * Returns query to evaluate conjunct violations
+     * @return string
+     */
+    public function getQuery(){
+        return str_replace('_SESSION', session_id(), $this->query); // Replace _SESSION var with current session id.
+    }
     
     /**
      * Temporary function to be able to skip uni and inj conj in Conjunct::evaluateConjunct()
@@ -140,7 +148,7 @@ class Conjunct {
                 $violations = array();
     
                 // Execute conjunct query
-                $violations = (array)$db->Exe($this->query);
+                $violations = (array)$db->Exe($this->getQuery());
                 
                 // Cache violations in php Conjunct object
                 if($cacheConjuncts) $this->conjunctViolations = $violations;

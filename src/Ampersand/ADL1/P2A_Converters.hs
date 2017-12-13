@@ -213,7 +213,6 @@ pCtx2aCtx opts
       , ctx_pos    = n2
       , ctx_lang   = ctxmLang
       , ctx_markup = pandocf
-      , ctx_thms   = p_themes 
       , ctx_pats   = p_patterns
       , ctx_rs     = p_rules    
       , ctx_ds     = p_relations
@@ -253,7 +252,6 @@ pCtx2aCtx opts
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
                      , ctxmarkup = deffrmtCtxt
-                     , ctxthms = p_themes
                      , ctxpats = pats
                      , ctxrs = rules
                      , ctxds = map fst declsAndPops
@@ -302,6 +300,7 @@ pCtx2aCtx opts
           return CI { ctxiGens = gns
                     , representationOf = findR
                     , multiKernels = multitypologies
+                    , reprList = allReprs
                     }
         where 
           gns = map pGen2aGen allGens

@@ -20,6 +20,7 @@ if (version_compare(PHP_VERSION, '5.6.0', '<')) {
 }
 
 // PHP SESSION : Start a new, or resume the existing, PHP session
+ini_set("session.use_strict_mode", true); // prevents a session ID that is never generated
 session_start();
 
 // Composer Autoloader

@@ -274,8 +274,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * This is needed to prevent Extensions or ExecEngine functions to go around the functions in this class that keep track of the affectedConjuncts.
      */
     public function Exe($query){
-        $query = str_replace('_SESSION', session_id(), $query); // Replace _SESSION var with current session id.
-        
         $result = $this->doQuery($query);
         $this->logger->debug($query);
 
@@ -591,7 +589,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         
         switch ($relTable->tableOf){
             case null : // Relation is administrated in n-n table
-                $this->Exe("INSERT INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtomId}', '{$tgtAtomId}')");
+                $this->Exe("REPLACE INTO `{$relTable->name}` (`{$relTable->srcCol()->name}`, `{$relTable->tgtCol()->name}`) VALUES ('{$srcAtomId}', '{$tgtAtomId}')");
                 break;
             case 'src' : // Relation is administrated in concept table (wide) of source of relation
                 $this->Exe("UPDATE `{$relTable->name}` SET `{$relTable->tgtCol()->name}` = '{$tgtAtomId}' WHERE `{$relTable->srcCol()->name}` = '{$srcAtomId}'");

@@ -140,7 +140,7 @@ class InterfaceObject {
      * 
      * @var string
      */
-    public $query;
+    private $query;
     
     /**
      * 

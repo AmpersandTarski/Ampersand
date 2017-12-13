@@ -54,7 +54,6 @@ data P_Context
          , ctx_pos ::    [Origin]         -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctx_lang ::   Maybe Lang       -- ^ The language specified on the top-level context. If omitted, English will be the default.
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-         , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
          , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Relation]  -- ^ The relations defined in this context, outside the scope of patterns
@@ -273,21 +272,16 @@ data PAtomValue
 instance Show PAtomValue where -- Used for showing in Expressions as PSingleton
  show pav =
   case pav of
-    PSingleton   _ s _ -> singleQuote s
-    ScriptString   _ s -> singleQuote s
-    XlsxString     _ s -> singleQuote s
-    ScriptInt      _ i -> singleQuote (show i)
-    ScriptFloat    _ d -> singleQuote (show d)
+    PSingleton   _ s _ -> show s
+    ScriptString   _ s -> show s
+    XlsxString     _ s -> show s
+    ScriptInt      _ i -> show i
+    ScriptFloat    _ d -> show d
     XlsxDouble     _ _ -> fatal "We got a value from an .xlsx file, which has to be shown in an expression, however the technicaltype is not known"
-    ComnBool       _ b -> singleQuote (show b)
-    ScriptDate     _ x -> singleQuote (show x)
-    ScriptDateTime _ x -> singleQuote (show x)
-   where
-     singleQuote :: String -> String
-     singleQuote str = "\'" ++concatMap f str++"\'"
-     f :: Char -> String
-     f '\'' = "\\'"
-     f c    = [c]
+    ComnBool       _ b -> show b
+    ScriptDate     _ x -> show x
+    ScriptDateTime _ x -> show x
+  
 instance Eq PAtomValue where
   a == b = compare a b == EQ
 
@@ -839,7 +833,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_pos    = nubSortConcatMap ctx_pos contexts
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
-      , ctx_thms   = nubSortConcatMap ctx_thms contexts
       , ctx_pats   = nubSortConcatMap ctx_pats contexts
       , ctx_rs     = nubSortConcatMap ctx_rs contexts
       , ctx_ds     = nubSortConcatMap ctx_ds contexts
@@ -872,7 +865,6 @@ mkContextOfPopsOnly pops =
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
-      , ctx_thms   = []
       , ctx_pats   = []
       , ctx_rs     = []
       , ctx_ds     = []

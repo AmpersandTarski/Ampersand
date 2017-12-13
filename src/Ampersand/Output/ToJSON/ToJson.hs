@@ -14,7 +14,7 @@ import Ampersand.Output.ToJSON.Roles
 generateJSONfiles :: MultiFSpecs -> IO ()
 generateJSONfiles multi =
  sequence_ $
-  if genRap
+  if genRapPopulationOnly opts
   then [ writeJSON "metaPopulation" 
                                 (fromAmpersand multi multi :: MetaPopulation)
        ]
@@ -31,14 +31,10 @@ generateJSONfiles multi =
        ]
 
   where 
-    genRap = genRapPopulationOnly opts
-    opts = getOpts fSpec
-    fSpec = userFSpec multi
+    opts = getOpts . userFSpec $ multi
     writeJSON :: ToJSON  a => String -> a -> IO()
     writeJSON = writeJSONFile opts 
-{- Note on data structure convention
-   The data definitions in this module are not ment to be exported. The idea on naming is that all names
-   contain a substring `JSON`. The part following that substring will be the name of the JSON attribute  -}
+
 
  
 

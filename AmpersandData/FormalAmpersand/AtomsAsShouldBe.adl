@@ -61,7 +61,7 @@ PROCESS "Compute Closures"
     VIOLATION (TXT "{EX} DelPair;isaStar;Concept;", SRC I, TXT ";Concept;", TGT I)
 ENDPROCESS
 
-INTERFACE Overview : '_SESSION'[SESSION]
+INTERFACE Overview : "_SESSION"[SESSION]
 TABS[ relations : V[SESSION*Relation]
       BOX<SCOLS>
            [ relation   : I[Relation]

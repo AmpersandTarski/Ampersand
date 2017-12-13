@@ -87,24 +87,12 @@ chpInterfacesBlocks fSpec =
                 ++
                 [ plainText "De bijbehorende Ampersand expressie is: ", plain . code $ showA iExp ] ++
                 [ plainText $ fieldRef ++ " bestaat uit " ++ show (length subInterfaceDocs) ++ " deelveld"++ (if len>1 then "en" else "") ++":"
-                | let len = length subInterfaceDocs, len > 0 ] ++
-                if not $ development (getOpts fSpec) then [] else -- some debug info shown on --dev
-                  [ plainText $ "DEBUG: Props: ["++props++"]" | development (getOpts fSpec) ] ++
-                  case expressionRelM of
-                    Nothing -> []
-                    Just (_, d, _, isFlipped) -> 
-                      [ plainText $ "DEBUG: Relation "++ name d ++ (if isFlipped then "~" else "")
-                      , plainText $ "DEBUG: showA: " ++ showA d
-                      ] 
+                | let len = length subInterfaceDocs, len > 0 ]
               where (fieldDescr,fieldRef) 
                       | isSur iExp && isUni iExp = ("Een verplicht veld van type ", "Dit veld")
                       | isSur iExp               = ("Een lijst van 1 of meer velden van type ", "Elk veld")
                       |               isUni iExp = ("Een optioneel veld van type ", "Dit veld")
                       | otherwise                = ("Een lijst van 0 of meer velden van type ", "Elk veld")
-                    props = intercalate "," $ [ "INJ" | isInj iExp] ++ [ "SUR" | isSur iExp] ++ [ "TOT" | isTot iExp] ++ [ "UNI" | isUni iExp]
-                    
-                    expressionRelM = getExpressionRelation iExp
-                    
                     navigationDocs = [ plainText $ quoteName navIfc ++ " (voor " ++ showRoles sharedRoles ++ ")" 
                                      | navIfc <- regularInterfaces
                                      , source (objExpression . ifcObj $ navIfc) == target iExp

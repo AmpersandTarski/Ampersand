@@ -62,9 +62,6 @@ chpNatLangReqs lev fSpec =
   -- Each explanation should state the purpose (and nothing else).
   printOneTheme :: ThemeContent -> Blocks
   printOneTheme tc 
-    | (not . null . themes) fSpec && (isNothing . patOfTheme) tc 
-        = mempty   -- The document is partial (because themes have been defined), so we don't print loose ends.
-    | otherwise 
         =   --  *** Header of the theme: ***
             xDefBlck fSpec (XRefNaturalLanguageTheme (patOfTheme tc))
           <> --  *** Purpose of the theme: ***
@@ -230,21 +227,17 @@ chpNatLangReqs lev fSpec =
   mkPhrase decl pair -- srcAtom tgtAtom
    | null (prL++prM++prR)
                    =    (atomShow . upCap) srcAtom
-                     <> devShow (source decl) 
                      <> (pragmaShow.l) (NL " correspondeert met ", EN " corresponds to ")
                      <> atomShow tgtAtom
-                     <> devShow (target decl)
                      <> (pragmaShow.l) (NL " in de relatie ",EN " in relation ")
                      <> atomShow (name decl)
                      <> "."
    | otherwise
                   =    (if null prL then mempty
                          else pragmaShow (upCap prL) <> " ")
-                     <> devShow (source decl)
                      <> atomShow srcAtom <> " "
                      <> (if null prM then mempty
                          else pragmaShow prM <> " ")
-                     <> devShow (target decl)
                      <> atomShow tgtAtom
                      <> (if null prR then mempty
                          else " " <> pragmaShow prR)
@@ -256,7 +249,6 @@ chpNatLangReqs lev fSpec =
          prR = decprR decl
          atomShow = str
          pragmaShow = emph . str
-         devShow c = if development (getOpts fSpec) then "("<> (str.name) c <> ")" else mempty
                    
 someWhiteSpace :: Blocks  --TODO: This doesn't seem to have any effect. (At least not in the LaTeX output)
 someWhiteSpace = para (linebreak <> linebreak <> linebreak <> linebreak)

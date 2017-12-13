@@ -40,7 +40,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , Conjunct(..), DnfClause(..)
  , AAtomPair(..), AAtomValue(..), mkAtomPair, PAtomValue(..)
  , ContextInfo(..)
- , showValADL,showValPHP,showValSQL
+ , showValADL,showValSQL
  , showSign
 -- , module Ampersand.Core.ParseTree  -- export all used constructors of the parsetree, because they have actually become part of the Abstract Syntax Tree.
  , (.==.), (.|-.), (./\.), (.\/.), (.-.), (./.), (.\.), (.<>.), (.:.), (.!.), (.*.)
@@ -79,7 +79,6 @@ data A_Context
          , ctxpos :: [Origin]        -- ^ The origin of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctxlang :: Lang           -- ^ The default language used in this context.
          , ctxmarkup :: PandocFormat -- ^ The default markup format for free text in this context (currently: LaTeX, ...)
-         , ctxthms :: [String]       -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctxpats :: [Pattern]      -- ^ The patterns defined in this context
          , ctxrs :: [Rule]           -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctxds :: [Relation]    -- ^ The relations that are declared in this context, outside the scope of patterns
@@ -460,28 +459,17 @@ instance Unique AAtomValue where   -- TODO:  this in incorrect! (AAtomValue shou
 
 aavstr :: AAtomValue -> String
 aavstr = unpack.aavtxt
-showValPHP :: AAtomValue -> Text
-showValPHP val = pack$
-  case val of
-   AAVString{}  -> "'"++f (aavstr val)++"'"
-     where
-        f str'=
-          case str' of
-            []        -> []
-            ('\'':cs) -> "\\\'"++ f cs  --This is required to ensure that the result of showValue will be a proper singlequoted string.
-            ('\\':s') -> "\\\\" ++ f s'
-            (c:cs)    -> c : f cs
-   AAVInteger{} -> show (aavint val)
-   AAVBoolean{} -> show (aavbool val)
-   AAVDate{}    -> "'"++showGregorian (aadateDay val)++"'"
-   AAVDateTime {} -> "'"++DTF.formatTime DTF.defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
-     --formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
-   AAVFloat{}   -> show (aavflt val)
-   AtomValueOfONE{} -> "1"
+
 showValSQL :: AAtomValue -> String
 showValSQL val =
   case val of
-   AAVString{}  -> aavstr val
+   AAVString{}  -> "'"++ f (aavstr val)++"'"
+     where 
+       f [] = []
+       f (c:cs) 
+         | c `elem` ['\'','\\'] 
+                     = c : c : f cs
+         | otherwise = c     : f cs
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
    AAVDate{}    -> showGregorian (aadateDay val)
@@ -608,7 +596,7 @@ l ./. r  = if target l/=target r then fatal ("Cannot residuate (with operator \"
            ELrs (l,r)
 l .\. r  = if source l/=source r then fatal ("Cannot residuate (with operator \"\\\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            ERrs (l,r)
-l .<>. r = if source l/=target r then fatal ("Cannot use diamond operator \"<>\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
+l .<>. r = if source r/=target l then fatal ("Cannot use diamond operator \"<>\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            EDia (l,r)
 l .:. r  = if source r/=target l then fatal ("Cannot compose (with operator \";\") expression l of type "++show (sign l)++"\n   "++show l++"\n   with expression r of type "++show (sign r)++"\n   "++show r++".") else
            ECps (l,r)
@@ -786,6 +774,7 @@ data ContextInfo =
   CI { ctxiGens         :: [A_Gen]      -- The generalisation relations in the context
      , representationOf :: A_Concept -> TType -- a list containing all user defined Representations in the context
      , multiKernels     :: [Typology] -- a list of typologies, based only on the CLASSIFY statements. Single-concept typologies are not included
+     , reprList         :: [Representation] -- a list of all Representation, so 
      }
                        
    
@@ -798,7 +787,22 @@ data ContextInfo =
 safePSingleton2AAtomVal :: ContextInfo -> A_Concept -> PSingleton -> AAtomValue
 safePSingleton2AAtomVal ci c val =
    case unsafePAtomVal2AtomValue typ (Just c) val of
-     Left _ -> fatal ("This should be impossible: after checking everything an unhandled singleton value found!\n  "++show val)
+     Left _ -> fatal . intercalate "\n  " $
+                  [ "This should be impossible: after checking everything an unhandled singleton value found!"
+                  , "Concept: "++show c
+                  , "TType: "++show typ
+                  , "Origin: "++show (origin val)
+                  , "PAtomValue: "++case val of
+                                      (PSingleton _ _ v) -> "PSingleton ("++show v++")"
+                                      (ScriptString _ v) -> "ScriptString ("++show v++")"
+                                      (XlsxString _ v)   -> "XlsxString ("++show v++")"
+                                      (ScriptInt _ v)    -> "ScriptInt ("++show v++")"
+                                      (ScriptFloat _ v)  -> "ScriptFloat ("++show v++")"
+                                      (XlsxDouble _ v)   -> "XlsxDouble ("++show v++")"
+                                      (ComnBool _ v)     -> "ComnBool ("++show v++")"
+                                      (ScriptDate _ v)   -> "ScriptDate ("++show v++")"
+                                      (ScriptDateTime _ v) -> "ScriptDateTime ("++show v++")"
+                  ]
      Right x -> x
   where typ = representationOf ci c
 

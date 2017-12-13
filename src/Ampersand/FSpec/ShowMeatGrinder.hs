@@ -32,7 +32,6 @@ grind formalAmpersand userFspec =
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
-      , ctx_thms   = []
       , ctx_pats   = []
       , ctx_rs     = []
       , ctx_ds     = mapMaybe (extractFromPop formalAmpersand) metaPops2
@@ -226,6 +225,7 @@ grindedPops formalAmpersand userFspec rel =
                 Object          -> isDirtyId
                 Alphanumeric    -> isTextual
                 BigAlphanumeric -> isTextual
+                HugeAlphanumeric -> isTextual
                 tt              -> fatal $ "No test available yet. "++show tt++" encountered for the first time in FormalAmpersand.adl"
             isDirtyId pa = case pa of
                             DirtyId{}         -> True

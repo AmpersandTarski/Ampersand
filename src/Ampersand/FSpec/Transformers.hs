@@ -15,6 +15,7 @@ import Ampersand.Core.ParseTree
 import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.Motivations
+import Ampersand.Misc
 import Data.Hashable
 import Data.List
 import Data.Typeable
@@ -53,7 +54,8 @@ toTransformer (rel, sCpt, tCpt, fun) = Transformer rel sCpt tCpt fun
 transformers :: FSpec -> [Transformer]
 transformers fSpec = map toTransformer [
       ("allConjuncts"          , "Context"               , "Conjunct"
-      , [(dirtyId ctx, dirtyId conj ) 
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId ctx, dirtyId conj ) 
         | ctx::A_Context <- instances fSpec
         , conj::Conjunct <- instances fSpec
         ]
@@ -77,7 +79,8 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("arg"                   , "UnaryTerm"             , "Expression"
-      , [(dirtyId expr, dirtyId x)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just x <- [arg expr]
         ]
@@ -89,7 +92,8 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("bind"                  , "BindedRelation"        , "Relation"
-      , [(dirtyId expr, dirtyId x)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just x <- [bindedRel expr]
         ]
@@ -104,7 +108,8 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("conjunct"              , "Conjunct"              , "Expression"
-      , [(dirtyId conj, dirtyId (rc_conjunct conj))
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId conj, dirtyId (rc_conjunct conj))
         | conj::Conjunct <- instances fSpec
         ]
       )
@@ -202,13 +207,15 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("first"                 , "BinaryTerm"            , "Expression"
-      , [(dirtyId expr, dirtyId x)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just x <- [first expr]
         ]
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , [(dirtyId rul, dirtyId (formalExpression rul))
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId rul, dirtyId (formalExpression rul))
         | rul::Rule <- instances fSpec
         ]
       )
@@ -266,7 +273,8 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("ifcControls"           , "Interface"             , "Conjunct"
-      , [(dirtyId ifc, dirtyId conj) 
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId ifc, dirtyId conj) 
         | ifc::Interface <- instances fSpec
         , conj <- ifcControls ifc
         ]
@@ -423,7 +431,8 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("objExpression"         , "ObjectDef"             , "Expression"
-      , [(dirtyId obj, dirtyId (objExpression obj))
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId obj, dirtyId (objExpression obj))
         | obj::ObjectDef <- instances fSpec
         ]
       )
@@ -436,13 +445,15 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("operator"              , "BinaryTerm"            , "Operator"
-      , [(dirtyId expr, PopAlphaNumeric . show $ op) 
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, PopAlphaNumeric . show $ op) 
         | expr::Expression <- instances fSpec
         , Just op <- [binOp expr]
         ]
       )
      ,("operator"              , "UnaryTerm"             , "Operator"
-      , [(dirtyId expr, PopAlphaNumeric . show $ op) 
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, PopAlphaNumeric . show $ op) 
         | expr::Expression <- instances fSpec
         , Just op <- [unaryOp expr]
         ]
@@ -453,7 +464,8 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("originatesFrom"        , "Conjunct"              , "Rule"    
-      , [(dirtyId conj, dirtyId rul)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId conj, dirtyId rul)
         | conj::Conjunct <- instances fSpec
         , rul <- rc_orgRules conj
         ]
@@ -534,12 +546,14 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("formalExpression"      , "Rule"                  , "Expression"
-      , [(dirtyId rul, dirtyId (formalExpression rul))
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId rul, dirtyId (formalExpression rul))
         | rul::Rule <- instances fSpec
         ]
       )
      ,("second"                , "BinaryTerm"            , "Expression"
-      , [(dirtyId expr, dirtyId x)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just x <- [second expr]
         ]
@@ -563,12 +577,14 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ,("showADL"               , "Expression"            , "ShowADL" 
-      , [(dirtyId expr, PopAlphaNumeric (showA expr)) 
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, PopAlphaNumeric (showA expr)) 
         | expr::Expression <- instances fSpec
         ]
       )
      ,("sign"                  , "Expression"            , "Signature"
-      , [(dirtyId expr, dirtyId (sign expr)) 
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId (sign expr)) 
         | expr::Expression <- instances fSpec
         ]
       )
@@ -583,7 +599,8 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("singleton"             , "Singleton"             , "AtomValue"
-      , [(dirtyId expr, dirtyId x)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just x <- [singleton expr]
         ]
@@ -650,25 +667,29 @@ transformers fSpec = map toTransformer [
         ]
       )
      ,("usedIn"                , "Relation"              , "Expression"
-      , [(dirtyId rel, dirtyId expr)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId rel, dirtyId expr)
         | expr::Expression <- instances fSpec
         , rel::Relation <- relsUsedIn expr
         ]
       )
      ,("userCpt"               , "Epsilon"                     , "Concept" 
-      , [(dirtyId expr, dirtyId x)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just (x::A_Concept) <- [userCpt expr]
         ]
       )
      ,("userSrc"               , "V"                     , "Concept" 
-      , [(dirtyId expr, dirtyId x)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just x <- [userSrc expr]
         ]
       )
      ,("userTrg"               , "V"                     , "Concept" 
-      , [(dirtyId expr, dirtyId x)
+      , if atlasWithoutExpressions opts then [] else
+        [(dirtyId expr, dirtyId x)
         | expr::Expression <- instances fSpec
         , Just x <- [userTrg expr]
         ]
@@ -697,7 +718,8 @@ transformers fSpec = map toTransformer [
       , []  --TODO
       )
      ]
-
+   where
+     opts = getOpts fSpec
 -- | Within a specific context there are all kinds of things.
 --   These 'things' are instances (elements / atoms) of some
 --   Concept. They are the atoms of the concepts, as looked
@@ -764,7 +786,7 @@ class HasDirtyId a where
       case splitAt safeLength str of
         (_ , []) -> str
         (prfx,_) -> prfx++"#"++show (hash str)++"#"
-      where safeLength = 220 -- HJO, 20170812: Subjective value. This is based on the 
+      where safeLength = 50 -- HJO, 20170812: Subjective value. This is based on the 
                              -- limitation that DirtyId's are stored in an sql database
                              -- in a field that is normally 255 long. We store the
                              -- prefix of the string but make sure we still have space

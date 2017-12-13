@@ -1,5 +1,6 @@
 module Ampersand.FSpec.SQL
-  ( placeHolderSQL
+  ( SqlQuery(..)
+  , placeHolderSQL
   , prettySQLQuery               , sqlQuery
   , prettySQLQueryWithPlaceholder, sqlQueryWithPlaceholder 
   , prettyBroadQueryWithPlaceholder,broadQueryWithPlaceholder
@@ -21,8 +22,11 @@ import Ampersand.Core.ShowAStruct
 import Data.List
 import Data.Maybe
 import Data.Monoid
+import qualified Data.Text as Text
 import Ampersand.Classes
      (isUni)
+
+data SqlQuery = SqlQuery [Text.Text]
 
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"
@@ -63,14 +67,17 @@ class SQLAble a where
           :: Int    -- Amount of indentation
           -> FSpec  -- The context
           -> a      
-          -> String 
+          -> SqlQuery 
   prettySQLQueryWithPlaceholder = doPretty getBinQueryExprPlaceholder
   prettySQLQuery                = doPretty getBinQueryExpr
-  doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> String
-  doPretty fun i fSpec 
-    =  intercalate ("\n"++replicate i ' ') 
+  doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> SqlQuery
+  doPretty fun i fSpec
+    =  SqlQuery 
+     . Text.lines
+     . Text.pack
+     . intercalate ("\n"++replicate i ' ') 
      . lines
-     . prettyQueryExpr theDialect 
+     . prettyQueryExpr theDialect
      . toSQL
      . fun fSpec
   
@@ -1187,4 +1194,3 @@ commentBlockSQL xs =
   where 
     hbar = replicate (maximum . map length $ xs) '-'
     addSpaces str = str <> replicate (length hbar - length str) ' '
-    

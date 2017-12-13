@@ -25,7 +25,6 @@ aCtx2pCtx ctx =
       , ctx_pos    = ctxpos ctx
       , ctx_lang   = Just $ ctxlang ctx
       , ctx_markup = Just $ ctxmarkup ctx
-      , ctx_thms   = ctxthms ctx 
       , ctx_pats   = map aPattern2pPattern . ctxpats $ ctx
       , ctx_rs     = map aRule2pRule . ctxrs $ ctx
       , ctx_ds     = map aRelation2pRelation . ctxds $ ctx

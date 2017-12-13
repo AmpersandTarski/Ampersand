@@ -17,8 +17,6 @@ module Ampersand.Output.ToPandoc.SharedAmongChapters
     , isMissing
     , lclForLang
     , dpRule'
-    , relsInThemes
- --   , Counter(..),newCounter,incEis
     , inlineIntercalate
     , ThemeContent(..), orderingByTheme
     , Numbered(..), RuleCont(..),DeclCont(..),CptCont(..)
@@ -337,7 +335,7 @@ data Counters
             , agreementNr ::  Int --For relations andrules
             }
 
--- orderingByTheme organizes the content of a specification in themes according to a define-before-use policy.
+-- orderingByTheme organizes the content of a specification in patterns according to a define-before-use policy.
 -- It must ensure that all rules, relations and concepts from the context are included in the specification.
 orderingByTheme :: FSpec -> [ThemeContent]
 orderingByTheme fSpec
@@ -347,8 +345,6 @@ orderingByTheme fSpec
      , (sortBy conceptOrder . filter cptMustBeShown . concs)  fSpec
      ) $
      [Just pat | pat <- vpatterns fSpec -- The patterns that should be taken into account for this ordering
-               , null (themes fSpec)        -- all patterns if no specific themes are requested
-                 || name pat  `elem` themes fSpec  -- otherwise the requested ones only
      ]++[Nothing] --Make sure the last is Nothing, to take all res stuff.
  where
   conceptOrder :: A_Concept -> A_Concept -> Ordering
@@ -529,21 +525,11 @@ dpRule' fSpec = dpR
         showRef dcl = xRef (XRefConceptualAnalysisRelation dcl) <> "(" <> (str.showDcl False) dcl <> ")"
         
         ncs = concs r >- seenConcs            -- newly seen concepts
-        cds = [(c,cd) | c<-ncs, cd<-cDefsInScope fSpec, cdcpt cd==name c]    -- ... and their definitions
+        cds = [(c,cd) | c<-ncs, cd<-conceptDefs fSpec, cdcpt cd==name c]    -- ... and their definitions
         ds  = relsUsedIn r
         nds = ds >- seenRelations     -- newly seen relations
         rds = ds `isc` seenRelations  -- previously seen relations
         ( dpNext, n', seenCs,  seenDs ) = dpR rs (n+length cds+length nds+1) (ncs++seenConcs) (nds++seenRelations)
-
-relsInThemes :: FSpec -> [Relation]
-relsInThemes fSpec
-        -- a relation is considered relevant iff it is declared or mentioned in one of the relevant themes.
- = [d | d<-vrels fSpec
-   , decusr d
-   , decpat d `elem` themes fSpec
-         || d `elem` relsMentionedIn [p | p<-  vpatterns fSpec   , name p `elem` themes fSpec]
-     
-   ]
 
 purposes2Blocks :: Options -> [Purpose] -> Blocks
 purposes2Blocks opts ps

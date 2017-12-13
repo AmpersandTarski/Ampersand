@@ -37,7 +37,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
             , ctx_pos    = [pos']
             , ctx_lang   = lang
             , ctx_markup = fmt
-            , ctx_thms   = (nub.concat) [xs | CThm xs<-ces] -- Names of patterns to be printed in the functional design document. (For partial documents.)
             , ctx_pats   = [p | CPat p<-ces]       -- The patterns defined in this context
             , ctx_rs     = [p | CRul p<-ces]       -- All user defined rules in this context, but outside patterns
             , ctx_ds     = [p | CRel p<-ces]       -- The relations defined in this context, outside the scope of patterns
@@ -78,7 +77,6 @@ pContext  = rebuild <$> posOf (pKey "CONTEXT")
                       CPhpPlug <$> pPhpplug      <|>
                       CPrp     <$> pPurpose      <|>
                       CPop     <$> pPopulation   <|>
-                      CThm     <$> pPrintThemes  <|>
                       CIncl    <$> pIncludeStatement
 
 data ContextElement = CMeta Meta
@@ -98,7 +96,6 @@ data ContextElement = CMeta Meta
                     | CPhpPlug P_ObjectDef
                     | CPrp PPurpose
                     | CPop P_Population
-                    | CThm [String]    -- a list of themes to be printed in the functional design document. These themes must be PATTERN or PROCESS names.
                     | CIncl Include    -- an INCLUDE statement
 
 data Include = Include Origin FilePath
@@ -552,11 +549,6 @@ pServiceRule = try (Maintain <$> currPos
 pRole :: Bool -> AmpParser Role
 pRole isService =  (if isService then Service else Role) <$> pADLid
 
---- PrintThemes ::= 'THEMES' ConceptNameList
-pPrintThemes :: AmpParser [String]
-pPrintThemes = pKey "THEMES"
-            *> pConceptName `sepBy1` pComma -- Patterns, processes and concepts share the same name space, so these names must be checked whether the processes and patterns exist.
-
 --- Meaning ::= 'MEANING' LanguageRef? TextMarkup? (String | Expl)
 pMeaning :: AmpParser PMeaning
 pMeaning = PMeaning <$> (
@@ -660,10 +652,12 @@ pRelationRef      = PNamedR <$> pNamedRel
                           pfull orig (Just (P_Sign src trg)) = Pfull orig src trg
 
 pSingleton :: AmpParser PSingleton
-pSingleton = value2PAtomValue <$> currPos <*> pAtomInExpression
-
+pSingleton = value2PAtomValue <$> currPos <*> 
+                 (             pAtomValInPopulation True
+                  <|> pBraces (pAtomValInPopulation False)
+                 ) 
 pAtomValue :: AmpParser PAtomValue
-pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation
+pAtomValue = value2PAtomValue <$> currPos <*> pAtomValInPopulation False
 
 value2PAtomValue :: Origin -> Value -> PAtomValue
 value2PAtomValue o v = case v of

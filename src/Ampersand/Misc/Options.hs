@@ -34,7 +34,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , postVersion :: String  --built in to aid DOS scripting... 8-(( Bummer.
                        , showHelp :: Bool
                        , verboseP :: Bool
-                       , development :: Bool
+                       , allowInvariantViolations :: Bool
                        , validateSQL :: Bool
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
@@ -78,6 +78,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , genMetaFile :: Bool  -- When set, output the meta-population as a file
                        , genRapRelationsOnly :: Bool -- When set, the user can use all relations defined in Formal Ampersand, without the need to specify them explicitly
                        , genRapPopulationOnly :: Bool -- This switch is to tell Ampersand that the model is being used in RAP3 as student's model
+                       , atlasWithoutExpressions :: Bool -- Temporary switch to leave out expressions in meatgrinder output.
                        , sqlHost ::  String  -- do database queries to the specified host
                        , sqlLogin :: String  -- pass login name to the database server
                        , sqlPwd :: String  -- pass password on to the database server
@@ -186,7 +187,7 @@ getOptions =
 getOptions' :: EnvironmentOptions -> Options
 getOptions' envOpts =  
    case errors of
-     []  | development opts && validateSQL opts 
+     []  | allowInvariantViolations opts && validateSQL opts 
                      -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
          | otherwise -> opts
      _  -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
@@ -217,7 +218,7 @@ getOptions' envOpts =
                       , showVersion      = False
                       , showHelp         = False
                       , verboseP         = False
-                      , development      = False
+                      , allowInvariantViolations = False
                       , validateSQL      = False
                       , genSampleConfigFile = False
                       , genPrototype     = False
@@ -256,6 +257,7 @@ getOptions' envOpts =
                       , genMetaFile      = False
                       , genRapRelationsOnly = False
                       , genRapPopulationOnly = False
+                      , atlasWithoutExpressions = False
                       , sqlHost          = "localhost"
                       , sqlLogin         = "ampersand"
                       , sqlPwd           = "ampersand"
@@ -371,9 +373,9 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml)"
             , Public)
-          , (Option []      ["dev"]
-               (NoArg (\opts -> opts{development = True}))
-               "Report and generate extra development information (for Martijn)"
+          , (Option []      ["dev","ignore-invariant-violations"]
+               (NoArg (\opts -> opts{allowInvariantViolations = True}))
+               "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
             , Hidden)
           , (Option []      ["validate"]
                (NoArg (\opts -> opts{validateSQL = True}))
@@ -565,6 +567,10 @@ options = [ (Option ['v']   ["version"]
           , (Option []        ["gen-as-rap-model"]
                (NoArg (\opts -> opts{genRapPopulationOnly = True}))
                "Generate populations for use in RAP3."
+            , Hidden)
+          , (Option []        ["atlas-without-expressions"]
+               (NoArg (\opts -> opts{atlasWithoutExpressions = True}))
+               "Temporary switch to create Atlas without expressions. (for RAP3)"
             , Hidden)
           , (Option []        ["no-static-files"]
                (NoArg  (\opts -> opts{genStaticFiles = False}))

@@ -54,7 +54,7 @@ class ViewSegment {
      *
      * @var string
      */
-    public $expSQL;
+    private $expSQL;
 
     /**
      * Constructor of view segments
@@ -99,6 +99,14 @@ class ViewSegment {
                 throw new Exception("Unsupported segmentType '{$this->segType}' in VIEW segment <{$this}>", 501); // 501: Not implemented
                 break;
         }
+    }
+
+    /**
+     * Returns query of view segment
+     * @return string
+     */
+    public function getQuery(){
+        return str_replace('_SESSION', session_id(), $this->expSQL); // Replace _SESSION var with current session id.
     }
 }
 

@@ -91,7 +91,8 @@ class Violation {
 
                 // quering the expression
                 $atomId = $database->getDBRepresentation($atom);
-                $query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '{$atomId}'"; // SRC of TGT kunnen door een expressie gevolgd worden
+                $expSQL = str_replace('_SESSION', session_id(), $segment['expSQL']);
+                $query = "SELECT DISTINCT `tgt` FROM ($expSQL) AS `results` WHERE `src` = '{$atomId}'"; // SRC of TGT kunnen door een expressie gevolgd worden
                 $rows = $database->Exe($query);
 
                 // returning the result

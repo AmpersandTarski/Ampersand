@@ -23,9 +23,16 @@ validateRulesSQL fSpec =
     ; hSetBuffering stdout NoBuffering
 
     ; verboseLn (getOpts fSpec)  "Initializing temporary database (this could take a while)"
-    ; createTempDatabase fSpec
-
-    ; let allExps = getAllInterfaceExps fSpec ++
+    ; succes <- createTempDatabase fSpec
+    ; if succes 
+      then actualValidation 
+      else do { putStrLn "Error: Database creation failed. No validation could be done."
+              ; return []
+              }
+    } 
+  where
+   actualValidation = do
+    { let allExps = getAllInterfaceExps fSpec ++
                     getAllRuleExps fSpec ++
                     getAllPairViewExps fSpec ++
                     getAllIdExps fSpec ++
@@ -91,7 +98,7 @@ validateExp _  vExp@(EDcD{}, _)   = -- skip all simple relations
     }
 validateExp fSpec vExp@(exp, orig) =
  do { violationsSQL <- evaluateExpSQL fSpec (tempDbName (getOpts fSpec)) exp
-    ; let violationsAmp = [(showValSQL (apLeft p), showValSQL (apRight p)) | p <- pairsInExpr fSpec exp]
+    ; let violationsAmp = [(showValADL (apLeft p), showValADL (apRight p)) | p <- pairsInExpr fSpec exp]
     ; if sort violationsSQL == sort violationsAmp
       then
        do { putStr "."

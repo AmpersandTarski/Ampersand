@@ -102,7 +102,7 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
                      Dutch   -> [text "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\""]
                      English -> [text "Specify authors in Ampersand with: META \"authors\" \"<author names>\""]
              xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
-           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (getOpts fSpec) ]
+           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" ]
 
         )
       . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec))))

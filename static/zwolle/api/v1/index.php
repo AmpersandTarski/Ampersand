@@ -64,7 +64,7 @@ $app->error(function (Exception $e) use ($app) {
 // Not found handler
 $app->notFound(function () use ($app) {
     $app->response->setStatus(404);
-	print json_encode(array('error' => 404, 'msg' => "Please doublecheck your URL. It is case sensitive! API call not found: {$app->request->getMethod()} {$app->request->getUrl()}{$app->request->getPath()}"));
+    print json_encode(array('error' => 404, 'msg' => "API endpoint not found: {$app->request->getMethod()} {$app->request->getPathInfo()}. Note! virtual path is case sensitive"));
 });
 
 include (__DIR__ . '/resources.php'); // API calls starting with '/resources/'
@@ -76,5 +76,5 @@ foreach((array)$GLOBALS['api']['files'] as $apiFile) include_once ($apiFile); //
 
 // Run app
 $app->run();
-    
+
 ?>

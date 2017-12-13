@@ -166,12 +166,6 @@ instance ShowHS FSpec where
         [ "FSpec{ fsName        = " ++ show (name fSpec)
         , wrap ", fspos         = " indentA (showHS opts) (fspos fSpec)
         ,      ", fsLang        = " ++ show (fsLang fSpec) ++ "  -- the default language for this specification"
-        ,      ", themes        = " ++ show (themes fSpec) ++ "  -- the names of themes to be printed in the documentation, meant for partial documentation.  Print all if empty..."
-        , wrap ", pattsInScope  = " indentA (const showHSName) (pattsInScope fSpec)
-        , wrap ", rulesInScope  = " indentA (const showHSName) (rulesInScope fSpec)
-        , wrap ", declsInScope  = " indentA (const showHSName) (declsInScope fSpec)
-        , wrap ", cDefsInScope  = " indentA (\_->showHS opts (indentA++"  ")) (cDefsInScope fSpec)
-        , wrap ", gensInScope   = " indentA (showHS opts)   (gensInScope fSpec)
         , wrap ", vplugInfos    = " indentA (\_->showHS opts (indentA++"  ")) (vplugInfos fSpec)
         , wrap ", plugInfos     = " indentA (\_->showHS opts (indentA++"  ")) (plugInfos  fSpec)
         ,      ", interfaceS    = interfaceS'"

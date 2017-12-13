@@ -74,7 +74,7 @@ chpDiagnosis fSpec
                   
      where
                   
-      ruls = filter inScopeRule . filter isSignal . vrules $ fSpec                  
+      ruls = filter isSignal . vrules $ fSpec                  
       f :: Role -> Rule -> Blocks
       f rol rul | (rol,rul) `elem` dead = (plain.str) [timesSymbol] 
                 | otherwise                      = mempty
@@ -89,7 +89,7 @@ chpDiagnosis fSpec
 
   roleomissions :: Blocks
   roleomissions
-   = if (not . any inScopePat . vpatterns) fSpec
+   = if null (vpatterns fSpec)
      then mempty
      else (if (null.fRoleRuls) fSpec && (not.null.vrules) fSpec
            then plain (   (emph.str.upCap.name) fSpec
@@ -132,11 +132,11 @@ chpDiagnosis fSpec
                       , null (purposesDefinedIn fSpec (fsLang fSpec) cd)
                    ]++
                    [c | c <-ccs, null (concDefs fSpec c)]
-         ccs = concs [ d | d<-vrels fSpec, null (themes fSpec)||decpat d `elem` themes fSpec]  -- restrict if the documentation is partial.
+         ccs = concs (vrels fSpec)
   unusedConceptDefs :: Blocks
   unusedConceptDefs
-   = case [cd | cd <-cDefsInScope fSpec, name cd `notElem` map name (concs fSpec)] of
-      []  -> if (null.cDefsInScope) fSpec
+   = case [cd | cd <-conceptDefs fSpec, name cd `notElem` map name (concs fSpec)] of
+      []  -> if (null.conceptDefs) fSpec
              then mempty
              else para.str.l $
                      (NL "Alle concepten, die in dit document zijn voorzien van een definitie, worden gebruikt in relaties."
@@ -200,9 +200,7 @@ chpDiagnosis fSpec
            bothMissing        = filter (not . hasPurpose) . filter (not . hasMeaning) $ decls
            purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  $ decls
            meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) $ decls
-           decls = vrels fSpec  -- A restriction on only themes that the user wants the document for is not supported, 
-                                   -- because it is possible that relations from other themes are required in the
-                                   -- generated document. 
+           decls = vrels fSpec
            showDclMath = math . showDcl False
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
@@ -249,20 +247,17 @@ chpDiagnosis fSpec
      )
      where notUsed :: [Inlines]
            notUsed = [ showMath (EDcD d)
-                     | d <- nub (relsInThemes fSpec) -- only relations that are used or defined in the selected themes
+                     | d <- nub (vrels fSpec) -- only relations that are used or defined in the selected themes
                      , decusr d
                      , d `notElem` (relsMentionedIn . vrules) fSpec
                      ]
            pats  = [ pat | pat<-vpatterns fSpec
-                         , null (themes fSpec) || name pat `elem` themes fSpec  -- restrict if the documentation is partial.
                          , (not.null) (relsDefdIn pat>-relsUsedIn pat) ]
            pictsWithUnusedRels = [makePicture fSpec (PTDeclaredInPat pat) | pat<-pats ]
 
   missingRules :: Blocks
   missingRules
-   = case if null (themes fSpec)
-          then vrules fSpec
-          else concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec] of
+   = case vrules fSpec of
       []   -> mempty
       ruls ->
          if all hasMeaning ruls && all hasPurpose ruls
@@ -288,10 +283,10 @@ chpDiagnosis fSpec
 
   ruleRelationRefTable :: Blocks
   ruleRelationRefTable =
-       (para.str.l) (NL $ "Onderstaande tabel bevat per thema (dwz. proces of patroon) tellingen van het aantal relaties en regels, " ++
+       (para.str.l) (NL $ "Onderstaande tabel bevat per thema (dwz. patroon) tellingen van het aantal relaties en regels, " ++
                           "gevolgd door het aantal en het percentage daarvan dat een referentie bevat. Relaties die in meerdere thema's " ++
                           "gedeclareerd worden, worden ook meerdere keren geteld."
-                    ,EN $ "The table below shows for each theme (i.e. process or pattern) the number of relations and rules, followed " ++
+                    ,EN $ "The table below shows for each theme (i.e. pattern) the number of relations and rules, followed " ++
                           " by the number and percentage that have a reference. Relations declared in multiple themes are counted multiple " ++
                           " times."
                     )
@@ -362,8 +357,7 @@ chpDiagnosis fSpec
                      ]
                   | (rol,rul)<-fRoleRuls fSpec]
           
-     where multProcs = length procsInScope>1
-           procsInScope = filter inScopePat (vpatterns fSpec)
+     where multProcs = length (vpatterns fSpec)>1
 
   wipReport :: Blocks
   wipReport
@@ -443,7 +437,7 @@ chpDiagnosis fSpec
               <> ", " <> (str.name.target) r <> (str.showValADL.apRight) p
               <> ")"
       popwork :: [(Rule,[AAtomPair])]
-      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r, inScopeRule r]
+      popwork = [(r,ps) | (r,ps) <- allViolations fSpec, isSignal r]
 
   violationReport :: Blocks
   violationReport =
@@ -520,12 +514,3 @@ chpDiagnosis fSpec
                    [ [(plain.str.showValADL.apLeft) p,(plain.str.showValADL.apRight) p]
                    | p <-take 10 ps --max 10 rows
                    ]
-
-  inScopePat :: Pattern -> Bool
-  inScopePat x = null (themes fSpec) || name x `elem` themes fSpec  -- restrict if this is partial documentation.
-
-  inScopeRule :: Rule -> Bool
-  inScopeRule r =
-        null (themes fSpec) ||
-        (r `elem` concat [udefrules pat | pat<-vpatterns fSpec, name pat `elem` themes fSpec])
-
