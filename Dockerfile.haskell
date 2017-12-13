@@ -1,5 +1,4 @@
 FROM ampersandtarski/utils:latest
 
 # clone git ampersand compiler repository
-RUN curl -sSL https://get.haskellstack.org/ | /bin/sh \
- && stack upgrade
+RUN stack upgrade
