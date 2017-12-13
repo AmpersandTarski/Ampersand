@@ -3,6 +3,7 @@
 # install required packages and composer
 RUN apt-get update \
  && apt-get install -y --no-install-recommends git graphviz wget vim less \
+ && curl -sSL https://get.haskellstack.org/ | /bin/sh \
  && docker-php-ext-install mysqli \
 # enable ZipArchive for importing .xlsx files on runtime
  && docker-php-ext-install zip \
