@@ -1,4 +1,4 @@
-FROM ampersandtarski/haskell:latest
+FROM ampersandtarski/utils:latest
 
 # clone git ampersand compiler repository
 RUN mkdir ~/git \
