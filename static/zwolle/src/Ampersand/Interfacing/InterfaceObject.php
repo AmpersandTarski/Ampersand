@@ -406,6 +406,14 @@ class InterfaceObject {
         
         return $this->crudD;
     }
+
+    /**
+     * Returns generated query for this interface expression
+     * @return string
+     */
+    public function getQuery(){
+        return str_replace('_SESSION', session_id(), $this->query); // Replace _SESSION var with current session id.
+    }
     
     /**
      * @param string $ifcId

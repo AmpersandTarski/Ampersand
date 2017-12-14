@@ -735,10 +735,12 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      */
     public function executeIfcExpression(InterfaceObject $ifc, Atom $srcAtom = null){
         $srcAtomId = $this->getDBRepresentation($srcAtom);
-        if(strpos($ifc->query, '_SRCATOM') !== false){
-            $query = str_replace('_SRCATOM', $srcAtomId, $ifc->query);
+        $query = $ifc->getQuery();
+
+        if(strpos($query, '_SRCATOM') !== false){
+            $query = str_replace('_SRCATOM', $srcAtomId, $query);
         }else{
-            $query = "SELECT DISTINCT * FROM ({$ifc->query}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
+            $query = "SELECT DISTINCT * FROM ({$query}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
         }
         return $this->Exe($query);
     }
@@ -750,7 +752,9 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      */
     public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null){
         $srcAtomId = $this->getDBRepresentation($srcAtom);
-        $query = "SELECT DISTINCT `tgt` FROM ({$view->expSQL}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
+        $viewSQL = $view->getQuery();
+        
+        $query = "SELECT DISTINCT `tgt` FROM ({$viewSQL}) AS `results` WHERE `src` = '{$srcAtomId}' AND `tgt` IS NOT NULL";
         return array_column((array) $this->Exe($query), 'tgt');
     }
     
