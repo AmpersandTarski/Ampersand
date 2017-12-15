@@ -242,8 +242,8 @@ class Relation {
         Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
         
         // Ensure that atoms exists in their concept tables
-        $link->src()->add();
-        $link->tgt()->add();
+        $link->src()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
+        $link->tgt()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
         
         foreach($this->plugs as $plug) $plug->addLink($link);
     }
