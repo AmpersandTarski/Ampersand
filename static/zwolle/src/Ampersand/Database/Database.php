@@ -482,7 +482,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         $colNames[] = $conceptCol->name;
         foreach($concept->getSpecializations() as $specConcept){
             $conceptTableInfo = $specConcept->getConceptTableInfo();
-            $colNames[] = reset($conceptTableInfo->getColNames);
+            $colNames[] = reset($conceptTableInfo->getColNames());
         }
         
         // Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
