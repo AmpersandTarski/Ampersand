@@ -567,6 +567,37 @@ class Concept {
             $this->logger->debug("Cannot delete atom {$atom}, because it does not exists");
         }
     }
+
+    /**
+     * Function to merge two atoms
+     * All link from/to the $rightAtom are merged into the $leftAtom
+     * The $rightAtom itself is deleted afterwards
+     *
+     * @param Atom $leftAtom
+     * @param Atom $rightAtom
+     * @return void
+     */
+    static function mergeAtoms(Atom $leftAtom, Atom $rightAtom){        
+        // Check that left and right atoms are in the same typology.
+        if(!$leftAtom->concept->inSameClassificationTree($rightAtom->concept)) throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because they not in the same classification tree", 500);
+
+        // Skip when left and right atoms are the same
+        if($leftAtom->id === $rightAtom->id){
+            Logger::getLogger('CORE')->warning("Cannot merge leftAtom and rightAtom, because they are both '{$leftAtom}'");
+            return;
+        }
+
+        // Check if left and right atoms exist
+        if(!$leftAtom->exists()) throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$leftAtom}' does not exists", 500);
+        if(!$rightAtom->exists()) throw new Exception("Cannot merge '{$rightAtom}' into '{$leftAtom}', because '{$rightAtom}' does not exists", 500);
+
+        // Merge step 1: rename right atom by left atom
+        $rightAtom->concept->renameAtom($rightAtom, $leftAtom->id);
+
+        // Merge step 2: if right atom is more specific, make left atom also more specific
+        if ($leftAtom->concept->hasSpecialization($rightAtom->concept)) $rightAtom->concept->addAtom($leftAtom);
+        
+    }
     
     /**********************************************************************************************
      * 
