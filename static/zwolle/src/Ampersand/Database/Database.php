@@ -515,6 +515,37 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         // Check if query resulted in an affected row
         $this->checkForAffectedRows();
     }
+
+    /**
+     * Rename an atom in the concept set (incl all specializations and generalizations)
+     *
+     * @param Atom $atom
+     * @param string $newAtom
+     * @return void
+     */
+    public function renameAtom(Atom $atom, $newAtomId){
+        $this->logger->debug("renameAtom({$atom}, {$newAtomId})");
+
+        // This function is under control of transaction check!
+        if (!$this->dbTransactionActive) $this->startTransaction();
+
+        $atomId = $this->getDBRepresentation($atom);
+
+        // Get table properties
+        $table = $atom->concept->getConceptTableInfo()->name;
+        $colNames = [];
+        foreach($atom->concept->getGeneralizationsIncl() as $concept){
+            $cols = $concept->getConceptTableInfo()->getColNames();
+            $colNames[] = reset($cols);
+        }
+        $firstCol = reset($colNames);
+
+        // Create query string: "<col1>" = '<atom>', "<col2>" = '<atom>', etc
+        $queryString = "\"" . implode("\" = '{$newAtomId}', \"", $colNames) . "\" = '{$newAtomId}'";
+
+        $this->Exe("UPDATE \"$table\" SET $queryString WHERE \"{$firstCol}\" = '{$atomId}'");
+
+    }
     
 /**************************************************************************************************
  *

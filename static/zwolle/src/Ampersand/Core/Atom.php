@@ -142,6 +142,22 @@ class Atom implements JsonSerializable {
     public function getLabel(){
         return $this->id;
     }
+
+    public function setId($newAtomId){
+        // Skip if no change
+        if($this->id === $newAtomId) return;
+
+        $newAtom = new Atom($newAtomId, $this);
+        if($newAtom->exists()){
+            throw new Exception ("Cannot change atom identifier, because id is already used by another atom of the same concept", 500);
+        }else{
+            $this->concept->renameAtom($this, $newAtomId);
+        }
+        
+        $this->id = $newAtomId;
+
+        return $this;
+    }
     
     /**
      * Returns json representation of Atom (identifier) according to Ampersand technical types (TTypes)

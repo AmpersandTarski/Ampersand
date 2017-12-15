@@ -450,6 +450,47 @@ class Concept {
     }
     
     /**
+     * Rename atom
+     *
+     * @param Atom $atom
+     * @param string $newAtomId
+     * @return void
+     */
+    public function renameAtom(Atom $atom, $newAtomId){
+        if($atom->concept != $this) throw new Exception("Cannot rename atom '{$atom}', because it does not match concept '{$this}'", 500);
+
+        // Rename atom in concept set
+        foreach($this->plugs as $plug) $plug->renameAtom($atom, $newAtomId);
+
+        // Rename atom in relation sets
+        $newAtom = new Atom($newAtomId, $this);
+        foreach (Relation::getAllRelations() as $relation){
+            // Source
+            if($this->inSameClassificationTree($relation->srcConcept)){
+                // Delete and add links where atom is the source
+                foreach($relation->getAllLinks($atom, null) as $link){
+                    $relation->deleteLink($link); // Delete old link
+                    $relation->addLink(new Link($relation, $newAtom, $link->tgt())); // Add new link
+                }
+            }
+            
+            // Target
+            if($this->inSameClassificationTree($relation->tgtConcept)){
+                // Delete and add links where atom is the source
+                foreach($relation->getAllLinks($atom, null) as $link){
+                    $relation->deleteLink($link); // Delete old link
+                    $relation->addLink(new Link($relation, $newAtom, $link->tgt())); // Add new link
+                }
+            }
+        }
+        
+        // Update cache
+        if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
+        $this->atomCache[] = $newAtomId; // Add to cache
+
+    }
+    
+    /**
      * Creating and adding a new atom to the plug 
      * ór adding an existing atom to another concept set (making it a specialization)
      * @param Atom $atom
