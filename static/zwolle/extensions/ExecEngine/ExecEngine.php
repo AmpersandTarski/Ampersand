@@ -153,7 +153,18 @@ class ExecEngine {
                 
                 $params = explode($delimiter, $functionToBeCalled); // Split off variables
                 //$params = array_map('trim', $params); // Trim all params // Commented out, because atoms can have spaces in them
-                $params = array_map('phpArgumentInterpreter', $params); // Evaluate phpArguments, using phpArgumentInterpreter function
+                
+                // Evaluate php statement if provided as param
+                $params = array_map(function($param){
+                    // If php function is provided, evaluate this. Note! security hazard.
+                    // Only 1 php statement can be executed, due to semicolon issue: PHP statements must be properly terminated using a semicolon, but the semicolon is already used to seperate the parameters
+                    // e.g. {php}date(DATE_ISO8601) returns the current datetime in ISO 8601 date format
+                    if(substr($param, 0, 5) == '{php}') {
+                        $code = 'return('.substr($param, 5).');';
+                        $param = eval($code);
+                    }
+                    return $param;
+                }, $params);
                 
                 $function = trim(array_shift($params)); // First parameter is function name
                 $classMethod = (array)explode('::', $function);
