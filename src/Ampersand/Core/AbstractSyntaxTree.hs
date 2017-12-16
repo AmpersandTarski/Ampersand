@@ -463,7 +463,7 @@ aavstr = unpack.aavtxt
 showValSQL :: AAtomValue -> String
 showValSQL val =
   case val of
-   AAVString{}  -> "'"++ f (aavstr val)++"'"
+   AAVString{}  -> singleQuote . f . aavstr $ val
      where 
        f [] = []
        f (c:cs) 
@@ -472,11 +472,14 @@ showValSQL val =
          | otherwise = c     : f cs
    AAVInteger{} -> show (aavint val)
    AAVBoolean{} -> show (aavbool val)
-   AAVDate{}    -> showGregorian (aadateDay val)
-   AAVDateTime {} -> "'"++DTF.formatTime DTF.defaultTimeLocale "%F %T" (aadatetime val)++"'" --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
+   AAVDate{}    -> singleQuote $ showGregorian (aadateDay val)
+   AAVDateTime {} -> singleQuote $ DTF.formatTime DTF.defaultTimeLocale "%F %T" (aadatetime val) --NOTE: MySQL 5.5 does not comply to ISO standard. This format is MySQL specific
      --formatTime SL.defaultTimeLocale "%FT%T%QZ" (aadatetime val)
    AAVFloat{}   -> show (aavflt val)
    AtomValueOfONE{} -> "1"
+singleQuote :: String -> String
+singleQuote str = "'"++str++"'"
+
 showValADL :: AAtomValue -> String
 showValADL val =
   case val of

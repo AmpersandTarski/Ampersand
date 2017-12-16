@@ -21,9 +21,9 @@ dumpSQLqueries multi
    = Text.intercalate "\n" $ 
          header (Text.pack ampersandVersionStr)
        <>header "Database structure queries"
-       <>(map separator . map queryAsSQL $ generateDBstructQueries fSpec True) 
+       <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
        <>header "Initial population queries"
-       <>(map separator . map queryAsSQL $ generateInitialPopQueries fSpec) 
+       <>map (addSeparator . queryAsSQL) (generateInitialPopQueries fSpec True) 
        <>header "Violations of conjuncts"
        <>concatMap showConjunct (allConjuncts fSpec)
        <>header "Queries per relation"
@@ -32,8 +32,6 @@ dumpSQLqueries multi
        <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)
     
    where
-     separator :: Text.Text -> Text.Text
-     separator t = Text.init t <> ";"
      fSpec = userFSpec multi
      showInterface :: Interface -> [Text.Text]
      showInterface ifc 
@@ -85,3 +83,6 @@ dumpSQLqueries multi
              spaces i = Text.replicate i " "
              firstspaces :: Int
              firstspaces = (width - 6 - l) `quot` 2 
+
+addSeparator :: Text.Text -> Text.Text
+addSeparator t = t <> ";"
