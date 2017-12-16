@@ -29,7 +29,7 @@ use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
-use Ampersand\Session;
+use Ampersand\AngularApp;
 use Ampersand\Extension\ExecEngine\ExecEngine;
 
 /*
@@ -366,8 +366,7 @@ function SetNavToOnCommit($navTo){
 		Logger::getLogger('EXECENGINE')->debug("replaced navTo string with '{$navTo}'");
 	}
 	
-	$session = Session::singleton();
-	$session->navToOnCommit = $navTo;
+	AngularApp::setNavToResponse($navTo, 'COMMIT');
 }
     
 function SetNavToOnRollback($navTo){
@@ -378,7 +377,6 @@ function SetNavToOnRollback($navTo){
 		Logger::getLogger('EXECENGINE')->debug("replaced navTo string with '{$navTo}'");
 	}
 	
-	$session = Session::singleton();
-	$session->navToOnRollback = $navTo;
+	AngularApp::setNavToResponse($navTo, 'ROLLBACK');
 }
 ?>

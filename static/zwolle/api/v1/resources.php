@@ -3,6 +3,7 @@
 use Ampersand\Config;
 use Ampersand\Core\Concept;
 use Ampersand\Session;
+use Ampersand\AngularApp;
 use Ampersand\Core\Atom;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
@@ -120,6 +121,7 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
                 , 'notifications'       => Notifications::getAll()
                 , 'invariantRulesHold'  => $transaction->invariantRulesHold()
                 , 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
+                , 'navTo'				=> AngularApp::getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                 ];
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
@@ -154,7 +156,7 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
                     , 'notifications'         => Notifications::getAll()
                     , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                     , 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
-					, 'navTo'				=> $session->getNavToResponse()
+					, 'navTo'				=> AngularApp::getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                     );
     
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -190,7 +192,7 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
                     , 'notifications'         => Notifications::getAll()
                     , 'invariantRulesHold'    => $transaction->invariantRulesHold()
                     , 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
-					, 'navTo'				=> $session->getNavToResponse()
+					, 'navTo'				=> AngularApp::getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                     );
 
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -215,8 +217,8 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     // Return result
     $result = array ( 'notifications'         => Notifications::getAll()
                     , 'invariantRulesHold'    => $transaction->invariantRulesHold()
-                    , 'sessionRefreshAdvice' => $transaction->getSessionRefreshAdvice()
-					, 'navTo'				=> $session->getNavToResponse()
+                    , 'sessionRefreshAdvice'  => $transaction->getSessionRefreshAdvice()
+					, 'navTo'				  => AngularApp::getNavToResponse($transaction->invariantRulesHold() ? 'COMMIT' : 'ROLLBACK')
                     );
 
     print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

@@ -46,6 +46,12 @@ class AngularApp {
      */
     private static $roleMenu = array();
 
+    /**
+     * Contains information for the front-end to navigate the user in a certain case (e.g. after COMMIT)
+     * @var array $navToResponse
+     */
+    private static $navToResponse = [];
+
     public function __construct(){
         $this->logger = Logger::getLogger('APP');
         $this->logger->debug("## BUILD ANGULAR APP ##################################################");
@@ -153,6 +159,29 @@ class AngularApp {
         }, $interfaces);
         
         return array_values($result); // reindex array
+    }
+
+    public static function getNavToResponse($case){
+        switch ($case) {
+            case 'COMMIT':
+            case 'ROLLBACK':
+                if(array_key_exists($case, self::$navToResponse)) return self::$navToResponse[$case];
+                else return null;
+                break;
+            default:
+                throw new Exception("Unsupported case '{$case}' to getNavToResponse", 500);
+        }
+    }
+    
+    public static function setNavToResponse($navTo, $case = 'COMMIT'){
+        switch ($case) {
+            case 'COMMIT':
+            case 'ROLLBACK':
+                self::$navToResponse[$case] = $navTo;
+                break;
+            default:
+                throw new Exception("Unsupported case '{$case}' to setNavToResponse", 500);
+        }
     }
 
     public function buildHtml(){
