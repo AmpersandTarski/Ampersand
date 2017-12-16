@@ -125,8 +125,7 @@ createTableSql withComment tSpec
       [header] <>
       wrap cols <>
       wrap (maybeToList mKey) <>
-      wrap endings <>
-      [ "" ]
+      wrap endings 
   | otherwise = SqlQueryPlain $
       header <>
       " " <> Text.intercalate " " cols <>
