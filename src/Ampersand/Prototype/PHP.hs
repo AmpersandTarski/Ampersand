@@ -244,22 +244,18 @@ createTempDatabase fSpec =
   
     where
       dropDB :: SqlQuery 
-      dropDB = SqlQuery
-           ["DROP DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)]
+      dropDB = SqlQuerySimple $
+           "DROP DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)
       createDB :: SqlQuery
-      createDB = SqlQuery
-           ["CREATE DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"]
+      createDB = SqlQuerySimple $
+           "CREATE DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []
           tblRecords 
              -> ( "mysqli_query($DB_link, "<> queryAsPHP query <>");"
                 ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
-               where query = insertQuery tableName attrNames tblRecords
+               where query = insertQuery True tableName attrNames tblRecords
                      tableName = Text.pack . name $ plug
                      attrNames = map (Text.pack . attName) . plugAttributes $ plug
            
-
-
--- *** MySQL stuff below:
-
