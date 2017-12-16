@@ -6,6 +6,8 @@ The date and time formats that can be used are pretty much arbitrary. A precise 
    http://www.php.net/manual/en/datetime.formats.time.php
 */
 
+namespace Ampersand\Extension\ExecEngine;
+
 use Ampersand\Log\Logger; 
 
 /* sessionToday :: SESSION * Date -- or whatever the DateTime concept is called

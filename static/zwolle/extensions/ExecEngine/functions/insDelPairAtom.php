@@ -23,6 +23,8 @@
        }
 */
 
+namespace Ampersand\Extension\ExecEngine;
+
 use Ampersand\Log\Logger;
 use Ampersand\Database\Database;
 use Ampersand\Core\Relation;

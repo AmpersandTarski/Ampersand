@@ -28,6 +28,8 @@
    4) Rather than defining/computing rStar (for r*), you may use the expression (I \/ rPlus)
 */
 
+namespace Ampersand\Extension\ExecEngine;
+
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
 use Ampersand\Extension\ExecEngine\ExecEngine;
