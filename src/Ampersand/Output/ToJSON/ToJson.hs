@@ -16,7 +16,7 @@ generateJSONfiles multi =
  sequence_ $
   if genRapPopulationOnly opts
   then [ writeJSON "metaPopulation" 
-                                (fromAmpersand multi multi :: MetaPopulation)
+                                (fromAmpersand multi (multi,True) :: Populations)
        ]
   else [ writeJSON "settings"   (fromAmpersand multi multi :: Settings)
        , writeJSON "mysql-installer"
@@ -28,6 +28,7 @@ generateJSONfiles multi =
        , writeJSON "interfaces" (fromAmpersand multi multi :: Interfaces)
        , writeJSON "views"      (fromAmpersand multi multi :: Views)
        , writeJSON "roles"      (fromAmpersand multi multi :: Roles)
+       , writeJSON "populations"(fromAmpersand multi (multi,False) :: Populations)
        ]
 
   where 
