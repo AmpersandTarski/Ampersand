@@ -20,7 +20,7 @@ instance ToJSON MySQLInstaller where
 instance JSON MultiFSpecs MySQLInstaller where
  fromAmpersand _ multi = MySQLInstaller
         { msiJSONallDBstructQueries = map queryAsSQL $ generateDBstructQueries fSpec False
-        , msiJSONallDefPopQueries = map queryAsSQL $ generateInitialPopQueries fSpec
+        , msiJSONallDefPopQueries = map queryAsSQL $ generateInitialPopQueries fSpec False
         }
   where
     fSpec = userFSpec multi
