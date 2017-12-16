@@ -1,7 +1,6 @@
 <?php 
 
-/* Please forward any comments to the author: michiel.stornebrink@tno.nl
-
+/*
    This file defines the functions:
    - 'InsPair', 'DelPair': insert and delete links in relations
    - 'NewStruct': create a new atom and populate relations
