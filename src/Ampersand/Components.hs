@@ -97,7 +97,7 @@ generateAmpersandOutput multi = do
        ; verboseLn opts $ "SQL queries dumpfile written into " ++ outputFile ++ "."
        }
     where outputFile = dirOutput opts </> baseName opts ++ "_dump" -<.> ".sql"
-
+   
    doGenUML :: IO()
    doGenUML =
     do { verboseLn opts "Generating UML..."
@@ -158,6 +158,7 @@ generateAmpersandOutput multi = do
              else [ verboseLn opts "Generating prototype..."
                   , clearTemplateDirs fSpec
                   , writeStaticFiles opts
+                  , generateDatabaseFile multi
                   , generateJSONfiles multi
                   , doGenFrontend fSpec
                   , verboseLn opts "\n"
