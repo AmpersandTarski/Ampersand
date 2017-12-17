@@ -1,24 +1,24 @@
 {-# OPTIONS_GHC -Wall #-}
-import Distribution.Simple
-import Distribution.Simple.LocalBuildInfo
-import Distribution.Simple.Setup
-import Distribution.PackageDescription
-import System.Process
-import System.Exit
-import Control.Exception
-import Data.List
-import Data.Either
-import Data.Char
-import Data.Time.Clock
-import qualified Data.Time.Format as DTF
-import Data.Time.LocalTime
-import System.Directory
-import System.FilePath
-import System.IO
---import System.Locale as SL
-import qualified Data.ByteString.Lazy.Char8 as BS
+module Main 
+where
 import qualified Codec.Compression.GZip as GZip
-
+import           Control.Exception
+import qualified Data.ByteString.Lazy.Char8 as BS
+import           Data.Char
+import           Data.Either
+import           Data.List
+import           Data.Time.Clock
+import qualified Data.Time.Format as DTF
+import           Data.Time.LocalTime
+import           Distribution.Simple
+import           Distribution.Simple.LocalBuildInfo
+import           Distribution.Simple.Setup
+import           Distribution.PackageDescription
+import           System.Directory
+import           System.Exit
+import           System.FilePath
+import           System.IO(withFile,IOMode(ReadMode),hGetContents)
+import           System.Process
 
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )

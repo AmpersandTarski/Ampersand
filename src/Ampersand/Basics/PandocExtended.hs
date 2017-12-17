@@ -11,7 +11,6 @@ import Ampersand.Basics.Languages
 import Ampersand.Basics.Prelude
 import Ampersand.Basics.Version
 import Data.Data
-import Data.Typeable
 import Text.Pandoc hiding (Meta)
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)

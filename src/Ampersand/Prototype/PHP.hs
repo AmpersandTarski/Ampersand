@@ -5,23 +5,23 @@ module Ampersand.Prototype.PHP
           , tempDbName
          ) where
 
-import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec
-import Ampersand.FSpec.SQL
-import Ampersand.Misc
-import Ampersand.Prototype.ProtoUtil
-import Ampersand.Prototype.TableSpec
-import Control.Exception
-import Data.List
-import Data.Monoid
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
+import           Ampersand.Misc
+import           Ampersand.Prototype.ProtoUtil
+import           Ampersand.Prototype.TableSpec
+import           Control.Exception
+import           Data.List
+import           Data.Monoid
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
-import Prelude hiding (exp,putStrLn,readFile,writeFile)
-import System.Directory
-import System.FilePath
-import System.IO hiding (hPutStr,hGetContents,putStrLn,readFile,writeFile)
-import System.Process
+--import Prelude hiding (exp,putStrLn,readFile,writeFile)
+import           System.Directory
+import           System.FilePath
+--import System.IO hiding (hPutStr,hGetContents,putStrLn,readFile,writeFile)
+import           System.Process
 
 
 createTablePHP :: TableSpec -> [Text.Text]

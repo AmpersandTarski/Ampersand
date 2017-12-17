@@ -5,7 +5,7 @@ module Ampersand.ADL1.Disambiguate
    , DisambPrim(..)
    , pCpt2aCpt
    ) where
-import           Ampersand.Basics
+import           Ampersand.Basics hiding (uni,isc)
 import           Ampersand.Core.ParseTree
 import           Ampersand.Core.AbstractSyntaxTree
 import qualified Data.Set as Set

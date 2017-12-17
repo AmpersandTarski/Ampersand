@@ -8,7 +8,6 @@ import Ampersand.Basics.Prelude
 import Data.Char (toLower)
 import Data.Data
 import Data.List (isSuffixOf)
-import Data.Typeable
 
 data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
 

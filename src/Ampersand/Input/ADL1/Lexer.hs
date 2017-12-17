@@ -210,8 +210,8 @@ getOp cs = findOper operators cs ""
 
 -- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the resting contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)
-scanIdent p s = let (name,rest) = span isIdChar s
-                in (name,addPos (length name) p,rest)
+scanIdent p s = let (nm,rest) = span isIdChar s
+                in (nm,addPos (length nm) p,rest)
 
 
 -----------------------------------------------------------

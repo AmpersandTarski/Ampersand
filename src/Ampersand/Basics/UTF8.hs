@@ -38,22 +38,31 @@ module Ampersand.Basics.UTF8
            , hPutStr
            , hPutStrLn
            , stdout
+           , stderr
+           , hPrint
+           , hClose
            , BufferMode(..)
            , hSetBuffering 
+           , openTempFile
            )
 
 where
-import Codec.Binary.UTF8.String (encodeString)
+import           Ampersand.Basics.Prelude
+import           Codec.Binary.UTF8.String (encodeString)
+import           Control.Exception
+import           Data.Bits
 import qualified Data.ByteString as B hiding (putStrLn)
 import qualified Data.ByteString.Char8 as C (putStrLn)
-import Data.ByteString.UTF8 (toString, fromString)
-import Prelude hiding (readFile, writeFile, getContents, putStr, putStrLn)
-import System.IO (Handle,stdout, BufferMode(..),hSetBuffering )
-import Data.Text (unpack)
-import Data.Text.Encoding (decodeUtf8)
-import Data.Word
-import Data.Bits
-import Control.Exception
+import           Data.ByteString.UTF8 (toString, fromString)
+import           Data.Text (unpack)
+import           Data.Text.Encoding (decodeUtf8)
+import           Data.Word
+import           System.IO ( Handle
+                           , stderr, stdout
+                           , BufferMode(..)
+                           , hSetBuffering, hPrint, hClose
+                           , openTempFile
+                           )
 
 bom :: B.ByteString
 bom = B.pack [0xEF, 0xBB, 0xBF]

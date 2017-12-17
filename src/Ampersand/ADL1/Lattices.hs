@@ -214,9 +214,9 @@ addEquality (set1, set2) eqSys0
 -- Only adds forward arcs in the lattice-graph. Computing backward arcs is slow, so we do that in a single step.
 addEquality' :: EqualitySystem a -> IntSet.IntSet -> IntSet.IntSet -> EqualitySystem a
 addEquality' ~(ES nms imap) set1 set2
- = ES nms (addRule (addRule imap set1 set1 uni) set2 (IntSet.difference set2 set1) uni)
+ = ES nms (addRule (addRule imap set1 set1 uni') set2 (IntSet.difference set2 set1) uni')
  where
-   uni = IntSet.union set1 set2
+   uni' = IntSet.union set1 set2
    addRule :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> IntSet.IntSet -> IntSet.IntSet -> IntSet.IntSet -> IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)]
    addRule oldimap origSet triggers newSet
     = foldl updateMapForTrigger oldimap (IntSet.toList triggers)

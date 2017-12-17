@@ -41,7 +41,6 @@ import System.Directory
 import System.Environment
 import qualified System.Exit as SE (ExitCode(..)) -- These are not considered Ampersand exit codes, but from Pandoc
 import System.FilePath  -- (combine,addExtension,replaceExtension)
-import System.IO (stderr, stdout)
 import Text.Pandoc
 import Text.Pandoc.Builder
 import Text.Pandoc.Process (pipeProcess)
