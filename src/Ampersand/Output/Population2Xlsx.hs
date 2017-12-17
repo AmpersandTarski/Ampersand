@@ -2,15 +2,17 @@
 module Ampersand.Output.Population2Xlsx
   (fSpec2PopulationXlsx)
 where
-import Ampersand.FSpec
-import Ampersand.Core.AbstractSyntaxTree
-import Codec.Xlsx
+
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.FSpec
+import           Codec.Xlsx
 import qualified Data.ByteString.Lazy as L
+import           Data.List
+import           Data.Maybe
 import qualified Data.Text as T
-import Data.Maybe
-import Data.List
-import Data.Time.Calendar
-import Data.Time.Clock.POSIX
+import           Data.Time.Calendar
+import           Data.Time.Clock.POSIX
 
 fSpec2PopulationXlsx :: POSIXTime -> FSpec -> L.ByteString 
 fSpec2PopulationXlsx ct fSpec = 
@@ -28,7 +30,7 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
        sheet :: Maybe Worksheet
        sheet = case matrix of
                  Nothing -> Nothing
-                 Just m -> Just def{_wsCells = fromRows . numberList . Prelude.map numberList $ m }
+                 Just m -> Just def{_wsCells = fromRows . numberList . map numberList $ m }
             where 
               numberList :: [c] -> [(Int, c)]
               numberList = zip [1..] 
@@ -44,7 +46,7 @@ plugs2Sheets fSpec = mapMaybe plug2sheet $ plugInfos fSpec
            headers :: [[Cell]]
            headers = transpose (zipWith (curry f) (True : repeat False) (plugAttributes plug)) 
              where f :: (Bool,SqlAttribute) -> [Cell]
-                   f (isFirstField,att) = Prelude.map toCell 
+                   f (isFirstField,att) = map toCell 
                          [ if isFirstField  -- In case of the first field of the table, we put the fieldname inbetween brackets,
                                             -- to be able to find the population again by the reader of the .xlsx file
                            then Just $ "["++name att++"]" 

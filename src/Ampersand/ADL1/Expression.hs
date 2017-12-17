@@ -8,7 +8,6 @@ module Ampersand.ADL1.Expression (
 where
 import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
---import Debug.Trace
 
 -- | subst is used to replace each occurrence of a relation
 --   with an expression. The parameter expr will therefore be applied to an

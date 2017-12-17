@@ -1,9 +1,9 @@
 module Ampersand.Output.Statistics (Statistics(..)) where
 
+import Ampersand.Basics
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.FPA
-import Ampersand.Basics (fatal)
+import Ampersand.FSpec.FSpec
 
 -- TODO Deze module moet nog verder worden ingekleurd...
 

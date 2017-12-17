@@ -49,11 +49,17 @@ buildInfoModuleName = "Ampersand.Basics.BuildInfo_Generated"
 
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion gitInfo time = unlines
-  [ "module "++buildInfoModuleName++"(cabalVersionStr, gitInfoStr, buildTimeStr) where"
+  [ "module "++buildInfoModuleName++"("
+  -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
-  -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
+  , "      cabalVersionStr"
+  , "    , gitInfoStr"
+  , "    , buildTimeStr"
+  , "    ) where"
+  , "import Ampersand.Basics.Prelude"
+  , ""
   , "{-"++"# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
   , "cabalVersionStr :: String"
   , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
@@ -195,6 +201,7 @@ staticFileModuleHeader =
   , "   , allStaticFiles, getStaticFileContent"
   , "   )"
   , "where"
+  , "import Ampersand.Basics"
   , "import qualified Data.ByteString.Lazy.Char8 as BS"
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"

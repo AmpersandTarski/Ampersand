@@ -1045,10 +1045,6 @@ taeDerivRules = concatMap (dRule.parseRule)
  ]
 -}
 
-head :: [a] -> a
-head [] = fatal "head must not be used on an empty list!"
-head (a:_) = a
-
 -- | This delta is meant to be used as a placeholder for inserting or removing links from expressions.
 delta :: Signature -> Expression
 delta sgn

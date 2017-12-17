@@ -35,18 +35,16 @@ module Ampersand.Core.ParseTree (
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
-import Ampersand.Input.ADL1.FilePos
-import Ampersand.Basics
-import Data.Traversable
-import Data.Foldable hiding (concat)
-import Prelude hiding (foldr, sequence, foldl, concatMap)
-import Data.Typeable
-import Data.Data
-import GHC.Generics (Generic)
-import Data.Hashable
-import Data.Time.Calendar
-import Data.Time.Clock
-import Data.Time.LocalTime() -- for instance Show UTCTime
+import           Ampersand.Basics hiding (foldr, sequence, foldl, concatMap)
+import           Ampersand.Input.ADL1.FilePos
+import           Data.Data
+import           Data.Foldable hiding (concat)
+import           Data.Hashable
+import           Data.Traversable
+import           Data.Time.Calendar
+import           Data.Time.Clock
+import           Data.Time.LocalTime() -- for instance Show UTCTime
+import           GHC.Generics (Generic)
 import qualified Data.Set as Set
 
 data P_Context
@@ -217,7 +215,7 @@ data P_Relation =
 --   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Relations.
 instance Eq P_Relation where
  decl==decl' = compare decl decl' == EQ
-instance Prelude.Ord P_Relation where
+instance Ord P_Relation where
  compare p1 p2 
    = case compare (origin p1) (origin p2) of
       LT -> LT
@@ -620,7 +618,7 @@ data P_ObjDef a =
            , obj_mView :: Maybe String -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
            }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
-instance Prelude.Ord (P_ObjDef a) where
+instance Ord (P_ObjDef a) where
   compare a b = compare (origin a) (origin b)
 instance Eq (P_ObjDef a) where od==od' = origin od==origin od'
 instance Named (P_ObjDef a) where

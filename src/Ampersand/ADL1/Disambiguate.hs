@@ -1,11 +1,15 @@
 {-# OPTIONS_GHC -Wall #-}{-# LANGUAGE DuplicateRecordFields,OverloadedLabels #-}
-module Ampersand.ADL1.Disambiguate(disambiguate, orWhenEmpty, DisambPrim(..),pCpt2aCpt) where
-import Ampersand.Core.ParseTree
-import Ampersand.Core.AbstractSyntaxTree
---import Ampersand.Basics (fatal)
---import Control.Applicative
+module Ampersand.ADL1.Disambiguate
+   ( disambiguate
+   , orWhenEmpty
+   , DisambPrim(..)
+   , pCpt2aCpt
+   ) where
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.AbstractSyntaxTree
 import qualified Data.Set as Set
-import Control.Arrow
+import           Control.Arrow
 
 -- this is *only* used internally!
 data D_Concept

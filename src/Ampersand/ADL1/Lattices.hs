@@ -9,12 +9,19 @@ This module allows you to build a finite semi-Lattice using equalities over inte
 After changing the data type, see @optimize1@, the structure allows you to perform several queries, such as finding (sets of) least/greatests bounds.
 -}
 {-# LANGUAGE DeriveFunctor, ApplicativeDo #-}
-module Ampersand.ADL1.Lattices (findExact,findUpperbounds,optimize1,Op1EqualitySystem,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem,SetLike(..)) where
+module Ampersand.ADL1.Lattices 
+    ( findExact,findUpperbounds,optimize1
+    , Op1EqualitySystem,addEquality,emptySystem
+    , FreeLattice(..),getGroups,isInSystem
+    , SetLike(..)
+    ) where
+
+import           Ampersand.Basics
 import qualified Data.IntMap as IntMap
-import qualified Data.Map as Map
-import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
-import Data.List (sort, partition)
+import           Data.List    (sort, partition)
+import qualified Data.Map    as Map
+import qualified Data.Set    as Set
 
 -- optimisations possible for the EqualitySystem(s):
 -- (1) apply optimize1 inline, that is: don't use EqualitySystem but use ES1 instead

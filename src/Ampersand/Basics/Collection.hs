@@ -6,6 +6,7 @@ module Ampersand.Basics.Collection
                 ,empty
                 ,elems)
   )where
+import           Ampersand.Basics.Prelude
 import qualified Data.Set as Set
 ----------------------------------------------
 ---- Collection of type a --------------------

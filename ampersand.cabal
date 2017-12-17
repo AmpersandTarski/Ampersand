@@ -35,6 +35,7 @@ source-repository head
 library
   hs-source-dirs:    src
   ghc-options:       -Wall
+  default-extensions:NoImplicitPrelude
   default-language:  Haskell2010
   build-depends:     aeson == 1.1.2.*,
                      aeson-pretty == 0.8.*,
@@ -87,6 +88,7 @@ library
                      Ampersand.Basics.Exit,
                      Ampersand.Basics.Languages,
                      Ampersand.Basics.PandocExtended,
+                     Ampersand.Basics.Prelude,
                      Ampersand.Basics.String,
                      Ampersand.Basics.Unique,
                      Ampersand.Basics.UTF8,
@@ -189,6 +191,7 @@ executable ampersand
   main-is:           Main.hs
   default-language:  Haskell2010
   ghc-options:       -Wall
+  default-extensions:NoImplicitPrelude
   build-depends:     base == 4.9.*,
                      ampersand
 
@@ -198,6 +201,7 @@ Test-Suite regression-test
   hs-source-dirs:    app
   default-language:  Haskell2010
   ghc-options:       -Wall
+  extensions:        NoImplicitPrelude
   build-depends:     ampersand,
                      base == 4.9.*,
                      conduit == 1.2.*,
@@ -213,6 +217,7 @@ Test-Suite ampersand-test
   hs-source-dirs:    app
   default-language:  Haskell2010
   ghc-options:       -Wall
+  default-extensions:NoImplicitPrelude
   build-depends:     ampersand,
                      base == 4.9.*,
                      aeson == 1.1.*,

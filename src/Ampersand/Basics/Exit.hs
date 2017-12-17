@@ -4,9 +4,11 @@ module Ampersand.Basics.Exit
          , AmpersandExit(..)
          ) where
 
+import           Ampersand.Basics.Prelude
+import           Ampersand.Basics.UTF8
+import           Data.List
 import qualified System.Exit as SE
-import System.IO.Unsafe
-import Data.List
+import           System.IO.Unsafe
 
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a

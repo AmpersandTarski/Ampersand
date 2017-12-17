@@ -5,6 +5,7 @@ module Ampersand.Test.Regression
   , process
   )
 where 
+import Ampersand.Basics
 import Conduit
 import qualified Data.Conduit.List as CL
 import Data.Char

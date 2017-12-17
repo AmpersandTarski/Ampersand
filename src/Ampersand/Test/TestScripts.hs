@@ -13,6 +13,7 @@ module Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 --import Ampersand.Test.RunAmpersand (ampersand)
 --import Ampersand.Input.ADL1.CtxError
 
+import Ampersand.Basics
 --endswith :: String -> String -> Bool
 --endswith a b = drop (length a - length b) a == b
 

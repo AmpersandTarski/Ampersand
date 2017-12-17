@@ -44,12 +44,12 @@ createTablePHP tSpec =
 
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: FSpec -> Text.Text -> Expression -> IO [(String,String)]
-evaluateExpSQL fSpec dbNm exp =
-  -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA exp)
-  -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) exp
+evaluateExpSQL fSpec dbNm expr =
+  -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA expr)
+  -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) expr
   -- verboseLn (getOpts fSpec) "End of proof"
   performQuery fSpec dbNm violationsQuery
- where violationsExpr = conjNF (getOpts fSpec) exp
+ where violationsExpr = conjNF (getOpts fSpec) expr
        violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 
 performQuery :: FSpec -> Text.Text -> SqlQuery -> IO [(String,String)]
