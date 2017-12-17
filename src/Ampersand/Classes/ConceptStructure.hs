@@ -1,14 +1,13 @@
 {-# LANGUAGE FlexibleInstances #-}
 module Ampersand.Classes.ConceptStructure (ConceptStructure(..)) where      
 
-import Ampersand.Core.ParseTree(ConceptDef)
+import Ampersand.ADL1.Expression(primitives,subExpressions)
+import Ampersand.Basics hiding (Ordering(..))
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Basics
+import Ampersand.Core.ParseTree(ConceptDef)
+import Ampersand.Classes.ViewPoint
 import Data.List
 import Data.Maybe
-import Ampersand.ADL1.Expression(primitives,subExpressions)
-import Ampersand.Classes.ViewPoint
-import Prelude hiding (Ordering(..))
 
 {- TODO: Interface parameters (of type Relation) are returned as Expressions by expressionsIn, to preserve the meaning of relsMentionedIn
    (implemented using primsMentionedIn, which calls expressionsIn). A more correct way to do this would be to not use expressionsIn, but

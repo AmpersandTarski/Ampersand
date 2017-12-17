@@ -714,13 +714,13 @@ data A_Concept
     deriving (Typeable,Data,Ord,Eq)
 
 {- -- this is faster, so if you think Eq on concepts is taking a long time, try this..
-instance Prelude.Ord A_Concept where
+instance Ord A_Concept where
   compare (PlainConcept{cpthash=v1}) (PlainConcept{cpthash=v2}) = compare v1 v2
   compare ONE ONE = EQ
   compare ONE (PlainConcept{}) = LT
   compare (PlainConcept{}) ONE = GT
 
-instance Prelude.Eq A_Concept where
+instance Eq A_Concept where
   (==) a b = compare a b == EQ
 
 -- SJC TODO: put "makeConcept" in a monad or something, and number them consecutively to avoid hash collisions

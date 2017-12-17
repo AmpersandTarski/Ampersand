@@ -1,17 +1,16 @@
 {-# LANGUAGE NamedFieldPuns #-}
 module Ampersand.Prototype.GenBericht (doGenBericht) where
 
-import Prelude hiding (writeFile)
-import Data.List
-import Text.CSV
-import System.FilePath
-import System.Directory
 import Ampersand.Basics
 import Ampersand.Classes
-import Ampersand.FSpec
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ParseTree
+import Ampersand.FSpec
 import Ampersand.Misc
+import Data.List
+import System.FilePath
+import System.Directory
+import Text.CSV
 
 -- TODO: only show Rel and Flp Rel? give error otherwise?
 --       what about Typ, Brk etc.?

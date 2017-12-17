@@ -12,18 +12,16 @@ module Ampersand.Misc.Options
         , writeConfigFile
         )
 where
-import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
-import System.Console.GetOpt
-import System.FilePath
-import System.Directory
+import Ampersand.Basics
+import Data.Char
+import Data.List as DL
+import Data.Maybe
 import Data.Time.Clock
 import Data.Time.LocalTime
-import Control.Monad
-import Data.Maybe
-import Ampersand.Basics
-import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
-import Data.List as DL
-import Data.Char
+import System.Console.GetOpt
+import System.Directory
+import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
+import System.FilePath
 import "yaml-config" Data.Yaml.Config as YC 
 
 -- | This data constructor is able to hold all kind of information that is useful to

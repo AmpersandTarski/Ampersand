@@ -21,33 +21,27 @@ module Ampersand.Output.PandocAux
       , Inlines
       )
 where
-import Control.Monad
-import Data.Char hiding    (Space)
-import Data.List
-import Data.Maybe
-import Ampersand.ADL1
-import Ampersand.Basics hiding (hPutStrLn)
-import Ampersand.FSpec
-import Ampersand.Misc
-import Ampersand.Core.ShowPStruct
-import Ampersand.Classes (isFunction)
-import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
-import Prelude hiding      (writeFile,readFile,getContents,putStr,putStrLn)
+import           Ampersand.ADL1
+import           Ampersand.Basics hiding (hPutStrLn)
+import           Ampersand.Classes (isFunction)
+import           Ampersand.Core.ShowPStruct
+import           Ampersand.FSpec
+import           Ampersand.Misc
+import           Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent, FileKind(PandocTemplates))
+import           Control.Monad
+import           Data.Char hiding    (Space)
 import qualified Data.ByteString as BS
-import qualified Data.ByteString.Lazy as B
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.Char8 as BC
-import System.Directory
-import System.Environment
+import           Data.List
+import           System.Directory
+import           System.Environment
 import qualified System.Exit as SE (ExitCode(..)) -- These are not considered Ampersand exit codes, but from Pandoc
-import System.FilePath  -- (combine,addExtension,replaceExtension)
-import Text.Pandoc
-import Text.Pandoc.Builder
-import Text.Pandoc.Process (pipeProcess)
-import Text.Pandoc.MediaBag
-#ifdef _WINDOWS
-import Data.List (intercalate)
-#endif
+import           System.FilePath  -- (combine,addExtension,replaceExtension)
+import           Text.Pandoc
+import           Text.Pandoc.Builder
+import           Text.Pandoc.MediaBag
+import           Text.Pandoc.Process (pipeProcess)
 
 #ifdef _WINDOWS
 changePathSeparators :: FilePath -> FilePath
@@ -157,7 +151,7 @@ writepandoc fSpec thePandoc =
            do result <- makePDF writeLaTeX wOpts thePandoc fSpec
               case result of 
                 Left err -> do putStrLn "LaTeX Error: "
-                               B.putStr err
+                               BL.putStr err
                                putStrLn "\n."
                 Right _  -> do let pdfFile = outputFile -<.> "pdf"
                                verboseLn (getOpts fSpec) $ pdfFile ++" created."
@@ -590,7 +584,7 @@ makePDF :: (WriterOptions -> Pandoc -> String)  -- ^ writer
         -> WriterOptions       -- ^ options
         -> Pandoc              -- ^ document
         -> FSpec
-        -> IO (Either B.ByteString B.ByteString)
+        -> IO (Either BL.ByteString BL.ByteString)
 makePDF writer wOpts pandoc fSpec = 
   tex2pdf' (dirOutput (getOpts fSpec))
   
@@ -600,7 +594,7 @@ makePDF writer wOpts pandoc fSpec =
     args     = writerLaTeXArgs wOpts
     wSource  = writer wOpts pandoc
     tex2pdf' :: FilePath                        -- ^ temp directory for output
-             -> IO (Either B.ByteString B.ByteString)
+             -> IO (Either BL.ByteString BL.ByteString)
     tex2pdf' tmpDir = do
       let numruns = if "\\tableofcontents" `isInfixOf` wSource
                        then 3  -- to get page numbers
@@ -619,7 +613,7 @@ makePDF writer wOpts pandoc fSpec =
 -- contents of stdout, contents of produced PDF if any).  Rerun
 -- a fixed number of times to resolve references.
     runTeXProgram :: Int -> Int -> FilePath
-                  -> IO (SE.ExitCode, B.ByteString, Maybe B.ByteString)
+                  -> IO (SE.ExitCode, BL.ByteString, Maybe BL.ByteString)
     runTeXProgram runNumber numRuns tmpDir = do
         let file = dirOutput (getOpts fSpec) </> baseName (getOpts fSpec) -<.> ".ltx"
         exists <- doesFileExist file
@@ -651,8 +645,8 @@ makePDF writer wOpts pandoc fSpec =
         (exit, out, err) <- pipeProcess (Just env'') program programArgs BL.empty
         when wVerbose $ do
           putStrLn $ "[makePDF] Run #" ++ show runNumber
-          B.hPutStr stdout out
-          B.hPutStr stderr err
+          BL.hPutStr stdout out
+          BL.hPutStr stderr err
           putStr "\n"
         if runNumber <= numRuns
            then runTeXProgram (runNumber + 1) numRuns tmpDir
@@ -663,13 +657,13 @@ makePDF writer wOpts pandoc fSpec =
                        -- We read PDF as a strict bytestring to make sure that the
                        -- temp directory is removed on Windows.
                        -- See https://github.com/jgm/pandoc/issues/1192.
-                       then (Just . B.fromChunks . (:[])) `fmap` BS.readFile pdfFile
+                       then (Just . BL.fromChunks . (:[])) `fmap` BS.readFile pdfFile
                        else return Nothing
              return (exit, out <> err, pdf)
 
 -- parsing output
 
-extractMsg :: B.ByteString -> B.ByteString
+extractMsg :: BL.ByteString -> BL.ByteString
 extractMsg log' = do
   let msg'  = dropWhile (not . ("!" `BC.isPrefixOf`)) $ BC.lines log'
   let (msg'',rest) = break ("l." `BC.isPrefixOf`) msg'

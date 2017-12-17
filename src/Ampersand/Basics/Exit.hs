@@ -8,7 +8,7 @@ import           Ampersand.Basics.Prelude
 import           Ampersand.Basics.UTF8
 import           Data.List
 import qualified System.Exit as SE
-import           System.IO.Unsafe
+import           System.IO.Unsafe(unsafePerformIO)
 
 {-# NOINLINE exitWith #-}
 exitWith :: AmpersandExit -> a

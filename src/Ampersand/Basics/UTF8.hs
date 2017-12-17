@@ -57,9 +57,8 @@ import           Data.ByteString.UTF8 (toString, fromString)
 import           Data.Text (unpack)
 import           Data.Text.Encoding (decodeUtf8)
 import           Data.Word
-import           System.IO ( Handle
+import           System.IO ( Handle, BufferMode(..)
                            , stderr, stdout
-                           , BufferMode(..)
                            , hSetBuffering, hPrint, hClose
                            , openTempFile
                            )

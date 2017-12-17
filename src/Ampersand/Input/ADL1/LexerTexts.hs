@@ -18,7 +18,7 @@ module Ampersand.Input.ADL1.LexerTexts
 import Ampersand.Basics
 import Data.IORef
 import Data.Maybe (fromMaybe)
-import System.IO.Unsafe
+import System.IO.Unsafe(unsafePerformIO)
 
 type Language = Lang
 
