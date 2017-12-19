@@ -187,17 +187,15 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     public function reinstallDB($installDefaultPop = true){
+        $structure = file_get_contents(Config::get('pathToGeneratedFiles') . 'database.sql');
         $queries = file_get_contents(Config::get('pathToGeneratedFiles') . 'mysql-installer.json');
         $queries = json_decode($queries, true);
         
         $this->logger->info("Start database reinstall");
         
         $this->logger->info("Execute database structure queries");
-        foreach($queries['allDBstructQueries'] as $query){
-            $this->Exe($query);
-                
-            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of create table / index queries.
-        }
+        
+        $this->doQuery($structure, true);
         
         if($installDefaultPop){
             $this->logger->info("Install default population");
@@ -291,12 +289,21 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     /**
      * Execute query on database.
      * @param string $query
+     * @param boolean $multiQuery specifies if query is a single command or multiple commands concatenated by a semicolon 
      * @return mixed
      * @throws Exception
      */
-    private function doQuery($query){
+    private function doQuery($query, $multiQuery = false){
         try{
-            return $this->db_link->query($query);
+            if($multiQuery){
+                $this->db_link->multi_query($query);
+                do { // to flush results, otherwise a connection stays open
+                    if ($res = $this->db_link->store_result()) $res->free();
+                } while ($this->db_link->more_results() && $this->db_link->next_result());
+                return true;
+            }else{
+                return $this->db_link->query($query);
+            }
         }catch (Exception $e){
             $this->logger->error($e->getMessage());
             if(!Config::get('productionEnv')){
