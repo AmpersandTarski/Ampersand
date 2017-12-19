@@ -1,15 +1,13 @@
 module Ampersand.Classes.ViewPoint 
    (Language(..)) 
 where
-import Ampersand.Core.ParseTree 
-   (origin)
-import Ampersand.Core.AbstractSyntaxTree
-import Prelude hiding (Ord(..))
 import Ampersand.ADL1.Rule
+import Ampersand.Basics hiding (Ord(..))
 import Ampersand.Classes.Relational  (Relational(properties))
-import Ampersand.Basics
-import Data.Maybe
+import Ampersand.Core.ParseTree (origin)
+import Ampersand.Core.AbstractSyntaxTree
 import Data.List(nub)
+import Data.Maybe
 
 -- Language exists because there are many data structures that behave like an ontology, such as Pattern, P_Context, and Rule.
 -- These data structures are accessed by means of a common set of functions (e.g. rules, relations, etc.)

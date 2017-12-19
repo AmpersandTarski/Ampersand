@@ -13,18 +13,15 @@ module Ampersand.Basics.Auxiliaries
           showTraceTag,
           blockParenthesize,
           addToLastLine,
-          indent,
-          module Debug.Trace
+          indent
         ) where
 
-import Data.List
-import Data.Graph (stronglyConnComp, SCC(CyclicSCC))
-import Data.Maybe (fromMaybe)
-import Data.Map (Map) 
+import           Ampersand.Basics.Prelude
+import           Data.Graph (stronglyConnComp, SCC(CyclicSCC))
+import           Data.List
+import           Data.Maybe (fromMaybe)
 import qualified Data.Map as Map 
-import Data.Set (Set)
 import qualified Data.Set as Set 
-import Debug.Trace
 
 -- | The 'eqClass' function takes an equality test function and a list and returns a list of lists such
 -- that each sublist in the result contains only equal elements, and all equal elements are in
@@ -56,18 +53,18 @@ getCycles edges =
 
 
 -- |  Warshall's transitive closure algorithm
-transClosureMap' :: Ord a => Map a [a] -> Map a [a]
+transClosureMap' :: Ord a => Map.Map a [a] -> Map.Map a [a]
 transClosureMap' xs
   = foldl f xs (Map.keys xs `intersect` nub (concat (Map.elems xs)))
     where
-     f :: Ord a => Map a [a] -> a -> Map a [a]   -- The type is given for documentation purposes only
+     f :: Ord a => Map.Map a [a] -> a -> Map.Map a [a]   -- The type is given for documentation purposes only
      f q x = Map.unionWith union q (Map.fromListWith union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
 -- |  Warshall's transitive closure algorithm
-transClosureMap :: Ord a => Map a (Set a) -> Map a (Set a)
+transClosureMap :: Ord a => Map.Map a (Set.Set a) -> Map.Map a (Set.Set a)
 transClosureMap xs
   = foldl f xs (Map.keysSet xs `Set.intersection` mconcat (Map.elems xs))
     where
-     f :: Ord a => Map a (Set a) -> a -> Map a (Set a)
+     f :: Ord a => Map.Map a (Set.Set a) -> a -> Map.Map a (Set.Set a)
      f q x = Map.unionWith Set.union q (Map.fromListWith Set.union [(a, q Map.! x) | (a, bs) <- Map.assocs q, x `elem` bs])
 
 -- The following function can be used to determine how much of a set of alternative expression is already determined
@@ -83,7 +80,7 @@ combinations (es:ess) = [ x:xs | x<-es, xs<-combinations ess]
 -- Each b in the result is unique, and so is each a per b, eg.: 
 -- converse [("foo",[2,2,3]),("foo",[3,4]),("bar",[4,5])]  == [(2,["foo"]),(3,["foo"]),(4,["foo","bar"]),(5,["bar"])]
 converse :: forall a b . (Ord a, Ord b) => [(a, [b])] -> [(b, [a])]
-converse aBss = let asPerB :: Map b (Set a)
+converse aBss = let asPerB :: Map.Map b (Set.Set a)
                     asPerB = foldl (.) id [ Map.insertWith Set.union b (Set.singleton a)  | (a,bs) <- aBss, b <- bs ] Map.empty
                 in Map.toList $ fmap Set.toList asPerB -- first convert each Set to a list, and then the whole Map to a list of tuples
 

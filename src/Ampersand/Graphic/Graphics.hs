@@ -2,23 +2,22 @@ module Ampersand.Graphic.Graphics
           (makePicture, writePicture, Picture(..), PictureReq(..),imagePath
     )where
 
-import Data.GraphViz
 import Ampersand.ADL1
-import Ampersand.FSpec.FSpec
-import Ampersand.Misc
 import Ampersand.Basics
 import Ampersand.Classes
-import Ampersand.Graphic.Fspec2ClassDiagrams
+import Ampersand.FSpec.FSpec
 import Ampersand.Graphic.ClassDiag2Dot
+import Ampersand.Graphic.Fspec2ClassDiagrams
+import Ampersand.Misc
+import Data.GraphViz
 import Data.GraphViz.Attributes.Complete
 import Data.List
-import Data.String
+import Data.String(fromString)
 
 import System.FilePath hiding (addExtension)
 import System.Directory
 import System.Process (callCommand)
 import Control.Exception (catch, IOException)
-import Prelude hiding (writeFile)
 
 data PictureReq = PTClassDiagram
                 | PTCDPattern Pattern

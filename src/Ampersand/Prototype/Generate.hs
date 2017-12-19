@@ -4,14 +4,14 @@ module Ampersand.Prototype.Generate
   )
 where
 
-import Ampersand.Core.AbstractSyntaxTree 
-import Prelude hiding (writeFile,readFile,getContents,exp)
-import Data.Maybe
-import Data.Monoid
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree 
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
+import           Ampersand.Prototype.TableSpec
+import           Data.Maybe
+import           Data.Monoid
 import qualified Data.Text as Text
-import Ampersand.FSpec
-import Ampersand.Prototype.TableSpec
-import Ampersand.FSpec.SQL
 
 generateDBstructQueries :: FSpec -> Bool -> [SqlQuery]
 generateDBstructQueries fSpec withComment 

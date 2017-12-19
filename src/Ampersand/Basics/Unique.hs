@@ -8,9 +8,10 @@ instance Unique Pattern where
 module Ampersand.Basics.Unique 
   (Unique(..),Named(..))
 where
-import Data.Typeable
-import Data.List
+import Ampersand.Basics.Prelude
 import Data.Char
+import Data.List
+import Data.Typeable
 
 -- | anything could have some label, can't it?
 class Named a where

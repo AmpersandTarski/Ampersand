@@ -1,8 +1,11 @@
-module Ampersand.Test.RunAmpersand (ampersand) where
+module Ampersand.Test.RunAmpersand
+   ( ampersand
+    ) where
 
-import Ampersand.Misc
+import Ampersand.Basics
 import Ampersand.FSpec.ToFSpec.CreateFspec(createMulti)
 import Ampersand.Input.ADL1.CtxError
+import Ampersand.Misc
 
 ampersand :: [FilePath] -> IO [[CtxError]]
 ampersand files = 

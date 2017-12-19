@@ -9,12 +9,19 @@ This module allows you to build a finite semi-Lattice using equalities over inte
 After changing the data type, see @optimize1@, the structure allows you to perform several queries, such as finding (sets of) least/greatests bounds.
 -}
 {-# LANGUAGE DeriveFunctor, ApplicativeDo #-}
-module Ampersand.ADL1.Lattices (findExact,findUpperbounds,optimize1,Op1EqualitySystem,addEquality,emptySystem,FreeLattice(..),getGroups,isInSystem,SetLike(..)) where
+module Ampersand.ADL1.Lattices 
+    ( findExact,findUpperbounds,optimize1
+    , Op1EqualitySystem,addEquality,emptySystem
+    , FreeLattice(..),getGroups,isInSystem
+    , SetLike(..)
+    ) where
+
+import           Ampersand.Basics
 import qualified Data.IntMap as IntMap
-import qualified Data.Map as Map
-import qualified Data.Set as Set
 import qualified Data.IntSet as IntSet
-import Data.List (sort, partition)
+import           Data.List    (sort, partition)
+import qualified Data.Map    as Map
+import qualified Data.Set    as Set
 
 -- optimisations possible for the EqualitySystem(s):
 -- (1) apply optimize1 inline, that is: don't use EqualitySystem but use ES1 instead
@@ -207,9 +214,9 @@ addEquality (set1, set2) eqSys0
 -- Only adds forward arcs in the lattice-graph. Computing backward arcs is slow, so we do that in a single step.
 addEquality' :: EqualitySystem a -> IntSet.IntSet -> IntSet.IntSet -> EqualitySystem a
 addEquality' ~(ES nms imap) set1 set2
- = ES nms (addRule (addRule imap set1 set1 uni) set2 (IntSet.difference set2 set1) uni)
+ = ES nms (addRule (addRule imap set1 set1 uni') set2 (IntSet.difference set2 set1) uni')
  where
-   uni = IntSet.union set1 set2
+   uni' = IntSet.union set1 set2
    addRule :: IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)] -> IntSet.IntSet -> IntSet.IntSet -> IntSet.IntSet -> IntMap.IntMap [(IntSet.IntSet, IntSet.IntSet)]
    addRule oldimap origSet triggers newSet
     = foldl updateMapForTrigger oldimap (IntSet.toList triggers)

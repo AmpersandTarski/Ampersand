@@ -10,7 +10,8 @@ module Ampersand.Input.ADL1.LexerMessage
     , showLexerWarningInfo
     ) where
 
-import Ampersand.Input.ADL1.FilePos(FilePos)
+import           Ampersand.Basics
+import           Ampersand.Input.ADL1.FilePos(FilePos)
 import qualified Ampersand.Input.ADL1.LexerTexts as Texts
 
 -- | Defines a lexer error

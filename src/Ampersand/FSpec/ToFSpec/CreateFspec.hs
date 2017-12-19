@@ -3,7 +3,6 @@ module Ampersand.FSpec.ToFSpec.CreateFspec
   (createMulti)
 
 where
-import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
 import Ampersand.Basics
 import Ampersand.Misc
 import Ampersand.ADL1

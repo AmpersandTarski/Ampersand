@@ -14,7 +14,6 @@ import           Ampersand.Prototype.Generate  (generateDBstructQueries, generat
 import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
 import           Data.Monoid
 import qualified Data.Text as Text
-import           Prelude hiding (putStrLn, readFile, writeFile)
 import           System.Directory
 import           System.FilePath
 

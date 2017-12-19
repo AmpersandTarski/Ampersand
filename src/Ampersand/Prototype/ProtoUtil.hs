@@ -11,16 +11,15 @@ module Ampersand.Prototype.ProtoUtil
          , installComposerLibs
          ) where
  
-import Prelude hiding (putStrLn, readFile, writeFile)
-import Data.Monoid
-import Data.List
+import           Ampersand.Basics
+import           Ampersand.Misc
+import           Data.List
+import           Data.Monoid
 import qualified Data.Text as Text
-import System.Directory
-import System.FilePath
-import Ampersand.Basics
-import Ampersand.Misc
+import           System.Directory
 import qualified System.Exit as SE (ExitCode(..))
-import System.Process
+import           System.FilePath
+import           System.Process
 
 
 getGenericsDir :: Options -> String

@@ -1,14 +1,14 @@
 {-# LANGUAGE CPP #-}
 module Ampersand.Prototype.WriteStaticFiles (writeStaticFiles) where
 
-import System.FilePath
-import System.Directory
-import qualified Data.ByteString.Char8 as BS
-import Ampersand.Misc (Options(..),verboseLn)
-import Prelude hiding (writeFile,readFile,getContents)
-import Ampersand.Prototype.StaticFiles_Generated (StaticFile(..),FileKind(ZwolleFrontEnd),allStaticFiles)
+import           Ampersand.Basics
+import           Ampersand.Misc
+import           Ampersand.Prototype.StaticFiles_Generated (StaticFile(..),FileKind(ZwolleFrontEnd),allStaticFiles)
+import           Conduit
+import qualified Data.ByteString.Char8 as BS (writeFile,pack)
 import qualified Data.Conduit.List as CL
-import Conduit
+import           System.Directory
+import           System.FilePath
 
 writeStaticFiles :: Options -> IO()
 writeStaticFiles opts =

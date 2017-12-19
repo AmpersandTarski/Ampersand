@@ -13,19 +13,19 @@ module Ampersand.Prototype.TableSpec
     , doubleQuote, singleQuote)
 where
 
-import Prelude hiding (exp,putStrLn,readFile,writeFile)
-import Data.Maybe
-import Data.Monoid
-import Data.List
-import Data.String (IsString(fromString))
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
+import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
+import           Ampersand.Prototype.ProtoUtil
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid
+import           Data.String (IsString(fromString))
 import qualified Data.Text as Text
-import Ampersand.Prototype.ProtoUtil
-import Ampersand.FSpec.SQL
-import Ampersand.FSpec
-import Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
-import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ShowAStruct
 
 data TableSpec
   = TableSpec { tsCmnt :: [String]  -- Without leading "// "

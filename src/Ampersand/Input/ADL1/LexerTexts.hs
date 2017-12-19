@@ -15,11 +15,12 @@ module Ampersand.Input.ADL1.LexerTexts
     , lexerUtfChar
     ) where
 
+import Ampersand.Basics
 import Data.IORef
-import System.IO.Unsafe
 import Data.Maybe (fromMaybe)
+import System.IO.Unsafe(unsafePerformIO)
 
-data Language = English | Dutch deriving Eq
+type Language = Lang
 
 {-# NOINLINE language #-}
 language :: IORef Language
