@@ -178,25 +178,25 @@ fld2AttributeSpec att
 
 
 insertQuery :: SomeValue val =>
-       Bool          -- prettypri nted?
-    -> Text.Text        -- The name of the table
+       Bool          -- prettyprinted?
+    -> Text.Text     -- The name of the table
     -> [Text.Text]   -- The names of the attributes
-    -> [[Maybe val]]  -- The rows to insert
+    -> [[Maybe val]] -- The rows to insert
     -> SqlQuery
 insertQuery withComments tableName attNames tblRecords
   | withComments = SqlQueryPretty $
      [ "INSERT INTO "<>doubleQuote tableName
-     , "   ("<>Text.intercalate "," (map doubleQuote attNames) <>")"
+     , "   ("<>Text.intercalate ", " (map doubleQuote attNames) <>")"
      , "VALUES " 
      ]
-   <> (Text.lines . ("   "<>) .Text.intercalate ("\n , ") $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+   <> (Text.lines . ("   "<>) .Text.intercalate "\n , " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
    <> [""]
   | otherwise = SqlQueryPlain $
         "INSERT INTO "<>doubleQuote tableName
-     <> " ("<>Text.intercalate "," (map doubleQuote attNames) <>")"
+     <> " ("<>Text.intercalate ", " (map doubleQuote attNames) <>")"
      <> " VALUES "
- where
-    
+     <> (Text.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+  where
     valuechain :: SomeValue val => [Maybe val] -> Text.Text
     valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
 
