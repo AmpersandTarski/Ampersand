@@ -1,25 +1,23 @@
 module Ampersand.FSpec.ToFSpec.ADL2FSpec
-         (makeFSpec) where
-import Prelude
-import Data.Char
-import Data.List
-import Data.Maybe
-import Data.Text (pack)
+   ( makeFSpec
+   ) where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
-import Ampersand.Core.ParseTree
-     ( Role
-     )
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec.FSpec
-import Ampersand.Misc
+import Ampersand.Core.ParseTree ( Role)
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.Crud
+import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms 
 import Ampersand.FSpec.ToFSpec.Populated 
-import Ampersand.Core.ShowAStruct
+import Ampersand.Misc
+import Data.Char
+import Data.List
+import Data.Maybe
+import Data.Text (pack)
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}

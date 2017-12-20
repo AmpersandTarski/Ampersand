@@ -4,6 +4,7 @@ import Ampersand.Basics.Collection as X
 import Ampersand.Basics.Exit as X
 import Ampersand.Basics.Languages as X
 import Ampersand.Basics.PandocExtended as X
+import Ampersand.Basics.Prelude as X
 import Ampersand.Basics.String as X
 import Ampersand.Basics.Unique as X
 import Ampersand.Basics.UTF8 as X

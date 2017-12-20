@@ -9,12 +9,12 @@ module Ampersand.Input.ADL1.Parser
     , pRule
     ) where
 
-import Ampersand.Basics
+import Ampersand.Basics hiding ((<$))
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.ParsingLib
 import Data.List
 import Data.Maybe
-import Prelude hiding ((<$))
+
 
 --- Populations ::= Population+
 -- | Parses a list of populations

@@ -22,19 +22,18 @@ module Ampersand.Input.ADL1.ParsingLib(
     pZero, pOne
 ) where
 
-import Control.Monad.Identity (Identity)
-import Ampersand.Input.ADL1.FilePos (Origin(..))
-import Ampersand.Input.ADL1.LexerToken
+import           Ampersand.Basics hiding ((<$))
+import           Ampersand.Input.ADL1.FilePos (Origin(..))
+import           Ampersand.Input.ADL1.LexerToken
+import           Control.Monad.Identity (Identity)
 import qualified Control.Applicative as CA
+import           Data.Char(toLower)
 import qualified Data.Functor as DF
-import qualified Text.Parsec.Prim as P
-import Text.Parsec as P hiding(satisfy)
-import Text.Parsec.Pos (newPos)
-import Data.Time.Calendar
-import Data.Time.Clock
-import Data.Maybe
-import Data.Char(toLower)
-import Prelude hiding ((<$))
+import           Data.Time.Calendar
+import           Data.Time.Clock
+import           Data.Maybe
+import           Text.Parsec as P hiding(satisfy)
+import           Text.Parsec.Pos (newPos)
 
 -- | The Ampersand parser type
 type AmpParser a = P.ParsecT [Token] FilePos Identity a -- ^ The Parsec parser for a list of tokens with a file position.

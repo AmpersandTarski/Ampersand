@@ -2,7 +2,6 @@ module Main (main) where
 
 import System.Exit (ExitCode, exitFailure, exitSuccess)
 import Ampersand
-import Prelude hiding (putStrLn)
 
 testFunctions :: Options -> IO [([String], IO Bool)]
 testFunctions opts =

@@ -13,19 +13,19 @@ module Ampersand.Prototype.TableSpec
     , doubleQuote, singleQuote)
 where
 
-import Prelude hiding (exp,putStrLn,readFile,writeFile)
-import Data.Maybe
-import Data.Monoid
-import Data.List
-import Data.String (IsString(fromString))
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
+import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
+import           Ampersand.Prototype.ProtoUtil
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid
+import           Data.String (IsString(fromString))
 import qualified Data.Text as Text
-import Ampersand.Prototype.ProtoUtil
-import Ampersand.FSpec.SQL
-import Ampersand.FSpec
-import Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
-import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ShowAStruct
 
 data TableSpec
   = TableSpec { tsCmnt :: [String]  -- Without leading "// "
@@ -178,25 +178,25 @@ fld2AttributeSpec att
 
 
 insertQuery :: SomeValue val =>
-       Bool          -- prettypri nted?
-    -> Text.Text        -- The name of the table
+       Bool          -- prettyprinted?
+    -> Text.Text     -- The name of the table
     -> [Text.Text]   -- The names of the attributes
-    -> [[Maybe val]]  -- The rows to insert
+    -> [[Maybe val]] -- The rows to insert
     -> SqlQuery
 insertQuery withComments tableName attNames tblRecords
   | withComments = SqlQueryPretty $
      [ "INSERT INTO "<>doubleQuote tableName
-     , "   ("<>Text.intercalate "," (map doubleQuote attNames) <>")"
+     , "   ("<>Text.intercalate ", " (map doubleQuote attNames) <>")"
      , "VALUES " 
      ]
-   <> (Text.lines . ("   "<>) .Text.intercalate ("\n , ") $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+   <> (Text.lines . ("   "<>) .Text.intercalate "\n , " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
    <> [""]
   | otherwise = SqlQueryPlain $
         "INSERT INTO "<>doubleQuote tableName
-     <> " ("<>Text.intercalate "," (map doubleQuote attNames) <>")"
+     <> " ("<>Text.intercalate ", " (map doubleQuote attNames) <>")"
      <> " VALUES "
- where
-    
+     <> (Text.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+  where
     valuechain :: SomeValue val => [Maybe val] -> Text.Text
     valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
 

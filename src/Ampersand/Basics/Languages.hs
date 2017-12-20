@@ -4,10 +4,10 @@
 module Ampersand.Basics.Languages
          where
               
+import Ampersand.Basics.Prelude
 import Data.Char (toLower)
-import Data.List (isSuffixOf)
-import Data.Typeable
 import Data.Data
+import Data.List (isSuffixOf)
 
 data Lang = Dutch | English deriving (Show, Eq, Ord,Typeable, Data)
 

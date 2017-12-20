@@ -1,12 +1,13 @@
 module Main (main) where
 
+import Ampersand.Basics
+import Ampersand.Test.Regression(DirContent(..),DirData(..),process)
 import Conduit
-import System.FilePath ((</>))
 import Control.Monad --(filterM, forM_, foldM,when)
-import System.IO.Error (tryIOError)
 import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
 import System.Exit --(ExitCode, exitFailure, exitSuccess)
-import Ampersand.Test.Regression(DirContent(..),DirData(..),process)
+import System.FilePath ((</>))
+import System.IO.Error (tryIOError)
 
 main :: IO ExitCode
 main = do 

@@ -20,7 +20,6 @@ fSpec2Haskell fSpec
           ++"\nmodule Main where\n"
           ++"\nimport Ampersand"
           ++"\nimport Text.Pandoc hiding (Meta)"
-          ++"\nimport Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)"
           ++"\n"
           ++"\nmain :: IO ()"
           ++"\nmain = do (getOpts fSpec) <- getOptions"

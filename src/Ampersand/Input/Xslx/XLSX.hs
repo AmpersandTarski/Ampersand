@@ -2,22 +2,21 @@
 module Ampersand.Input.Xslx.XLSX 
   (parseXlsxFile)
 where
-import Ampersand.Basics
-import Ampersand.Misc
-import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
-import Ampersand.Input.ADL1.CtxError
-import Ampersand.ADL1
-import Ampersand.Core.ParseTree
-import Codec.Xlsx
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Core.ParseTree
+import           Ampersand.Input.ADL1.CtxError
+import           Ampersand.Misc
+import           Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
+import           Codec.Xlsx
+import           Control.Lens
 import qualified Data.ByteString.Lazy as L
-import Control.Lens
-import qualified Data.Text as T
+import           Data.Char
 import qualified Data.Map as M 
-import Data.Maybe
-import Data.Char
-import Data.String
-import Data.Tuple
-import Ampersand.Prototype.StaticFiles_Generated (getStaticFileContent, FileKind)
+import           Data.Maybe
+import           Data.String
+import qualified Data.Text as T
+import           Data.Tuple
 
 parseXlsxFile :: Options 
               -> Maybe FileKind
@@ -36,7 +35,7 @@ parseXlsxFile opts mFk file =
   xlsx2pContext :: Xlsx -> Guarded [P_Population]
   xlsx2pContext xlsx 
     = Checked $ concatMap (toPops opts file) $
-         Prelude.concatMap theSheetCellsForTable (xlsx ^. xlSheets)
+         concatMap theSheetCellsForTable (xlsx ^. xlSheets)
 
 data SheetCellsForTable 
        = Mapping{ theSheetName :: String
@@ -153,10 +152,10 @@ toPops opts file x = map popForColumn (colNrs x)
 
 theSheetCellsForTable :: (T.Text,Worksheet) -> [SheetCellsForTable]
 theSheetCellsForTable (sheetName,ws) 
-  =  catMaybes [theMapping i | i <- [0..Prelude.length tableStarters - 1]]
+  =  catMaybes [theMapping i | i <- [0..length tableStarters - 1]]
   where
     tableStarters :: [(Int,Int)]
-    tableStarters = Prelude.filter isStartOfTable $ M.keys (ws  ^. wsCells)  
+    tableStarters = filter isStartOfTable $ M.keys (ws  ^. wsCells)  
       where isStartOfTable :: (Int,Int) -> Bool
             isStartOfTable (rowNr,colNr)
               | colNr /= 1 = False
@@ -199,8 +198,8 @@ theSheetCellsForTable (sheetName,ws)
        relationNameRowNr = firstHeaderRowNr
        conceptNameRowNr  = firstHeaderRowNr+1
        nrOfHeaderRows = 2
-       maxRowOfWorksheet = Prelude.maximum (Prelude.map fst (M.keys (ws  ^. wsCells)))
-       maxColOfWorksheet = Prelude.maximum (Prelude.map snd (M.keys (ws  ^. wsCells)))
+       maxRowOfWorksheet = maximum (map fst (M.keys (ws  ^. wsCells)))
+       maxColOfWorksheet = maximum (map snd (M.keys (ws  ^. wsCells)))
        firstPopRowNr = firstHeaderRowNr + nrOfHeaderRows
        lastPopRowNr = ((map fst tableStarters++[maxRowOfWorksheet+1])!!(indexInTableStarters+1))-1
        okHeaderRows = filter isProperRow [firstHeaderRowNr,firstHeaderRowNr+nrOfHeaderRows-1]

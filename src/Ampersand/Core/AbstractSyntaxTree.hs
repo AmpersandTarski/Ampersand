@@ -60,19 +60,19 @@ import Ampersand.Core.ParseTree
     , Prop(..)
     , Representation(..), TType(..), PAtomValue(..), PSingleton
     )
-import Data.Function      (on)
-import GHC.Generics       (Generic)
-import Data.Data          (Typeable,Data)
-import Data.Char          (toUpper,toLower)
-import Data.List          (nub,intercalate)
-import Data.Maybe         (fromMaybe,listToMaybe)
-import Data.Time.Calendar (showGregorian,Day, fromGregorian, addDays)
-import Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
-import Data.Default       (Default(..))
-import Data.Hashable      (Hashable(..),hashWithSalt)
-import Data.Text          (Text,unpack,pack)
+import           Data.Char          (toUpper,toLower)
+import           Data.Data          (Typeable,Data)
+import           Data.Default       (Default(..))
+import           Data.Function      (on)
+import           Data.Hashable      (Hashable(..),hashWithSalt)
+import           Data.List          (nub,intercalate)
+import           Data.Maybe         (fromMaybe,listToMaybe)
+import           Data.Text          (Text,unpack,pack)
+import           Data.Time.Calendar (showGregorian,Day, fromGregorian, addDays)
+import           Data.Time.Clock    (UTCTime(UTCTime),picosecondsToDiffTime)
 import qualified Data.Time.Format as DTF 
                           (formatTime,parseTimeOrError,defaultTimeLocale,iso8601DateFormat)
+import           GHC.Generics       (Generic)
 
 data A_Context
    = ACtx{ ctxnm :: String           -- ^ The name of this context
@@ -163,8 +163,8 @@ instance Eq Rule where
   r==r' = rrnm r==rrnm r'
 instance Unique Rule where
   showUnique = rrnm
-instance Prelude.Ord Rule where
-  compare = Prelude.compare `on` rrnm
+instance Ord Rule where
+  compare = compare `on` rrnm
 instance Show Rule where
   showsPrec _ x
    = showString $ "RULE "++ (if null (name x) then "" else name x++": ")++ show (formalExpression x)
@@ -194,8 +194,8 @@ instance Eq Conjunct where
   rc==rc' = rc_id rc==rc_id rc'
 instance Unique Conjunct where
   showUnique = rc_id
-instance Prelude.Ord Conjunct where
-  compare = Prelude.compare `on` rc_id
+instance Ord Conjunct where
+  compare = compare `on` rc_id
 
 data Relation = Relation
       { decnm :: Text              -- ^ the name of the relation
@@ -220,8 +220,8 @@ instance Eq Relation where
 instance Ord Relation where
   compare a b =
     if name a == name b
-    then Prelude.compare (sign a) (sign b)
-    else Prelude.compare (name a) (name b)
+    then compare (sign a) (sign b)
+    else compare (name a) (name b)
 instance Unique Relation where
   showUnique d =
     name d++uniqueShow False (decsgn d)
@@ -238,7 +238,7 @@ showDcl forceBoth dcl = name dcl++"["++cpts++"]"
      | forceBoth || source dcl /= target dcl = show (source dcl) ++ "*"++ show (target dcl)
      | otherwise                             = show (source dcl)
 
-data AMeaning = AMeaning { ameaMrk ::[Markup]} deriving (Show, Eq, Prelude.Ord, Typeable, Data)
+data AMeaning = AMeaning { ameaMrk ::[Markup]} deriving (Show, Eq, Ord, Typeable, Data)
 
 instance Named Relation where
   name d = unpack (decnm d)
@@ -419,7 +419,7 @@ instance Unique Population where
 data AAtomPair
   = APair { apLeft  :: AAtomValue
           , apRight :: AAtomValue
-          } deriving(Eq,Prelude.Ord)
+          } deriving(Eq,Ord)
 mkAtomPair :: AAtomValue -> AAtomValue -> AAtomPair
 mkAtomPair = APair
 
@@ -446,7 +446,7 @@ data AAtomValue
   | AAVDateTime { aavtyp :: TType
                 , aadatetime ::  UTCTime
                 }
-  | AtomValueOfONE deriving (Eq,Prelude.Ord, Show)
+  | AtomValueOfONE deriving (Eq,Ord, Show)
 
 instance Unique AAtomValue where   -- TODO:  this in incorrect! (AAtomValue should probably not be in Unique at all. We need to look into where this is used for.)
   showUnique pop@AAVString{}   = (show.aavhash) pop
@@ -534,7 +534,7 @@ data Expression
       | EEps A_Concept Signature       -- ^ Epsilon relation (introduced by the system to ensure we compare concepts by equality only.
       | EDcV Signature                 -- ^ Cartesian product relation
       | EMp1 PSingleton A_Concept      -- ^ constant PAtomValue, because when building the Expression, the TType of the concept isn't known yet.
-      deriving (Eq, Prelude.Ord, Show, Typeable, Generic, Data)
+      deriving (Eq, Ord, Show, Typeable, Generic, Data)
 instance Hashable Expression where
    hashWithSalt s expr =
      s `hashWithSalt`
@@ -710,16 +710,16 @@ data A_Concept
                   , cptnm :: Text  -- ^PlainConcept nm represents the set of instances cs by name nm.
                   }
    | ONE  -- ^The universal Singleton: 'I'['Anything'] = 'V'['Anything'*'Anything']
-    deriving (Typeable,Data,Prelude.Ord,Eq)
+    deriving (Typeable,Data,Ord,Eq)
 
 {- -- this is faster, so if you think Eq on concepts is taking a long time, try this..
-instance Prelude.Ord A_Concept where
+instance Ord A_Concept where
   compare (PlainConcept{cpthash=v1}) (PlainConcept{cpthash=v2}) = compare v1 v2
   compare ONE ONE = EQ
   compare ONE (PlainConcept{}) = LT
   compare (PlainConcept{}) ONE = GT
 
-instance Prelude.Eq A_Concept where
+instance Eq A_Concept where
   (==) a b = compare a b == EQ
 
 -- SJC TODO: put "makeConcept" in a monad or something, and number them consecutively to avoid hash collisions
@@ -747,7 +747,7 @@ instance Show A_Concept where
 instance Unique (A_Concept, PSingleton) where
   showUnique (c,val) = show val++"["++showUnique c++"]"
 
-data Signature = Sign A_Concept A_Concept deriving (Eq, Prelude.Ord, Typeable, Generic, Data)
+data Signature = Sign A_Concept A_Concept deriving (Eq, Ord, Typeable, Generic, Data)
 instance Hashable Signature
 instance Show Signature where
   showsPrec _ (Sign s t) =

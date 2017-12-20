@@ -20,18 +20,18 @@ module Ampersand.Input.ADL1.Lexer
     , FilePos(..)
 ) where
 
-import Ampersand.Input.ADL1.FilePos(updatePos)
-import Ampersand.Input.ADL1.LexerToken
-import Ampersand.Input.ADL1.LexerMonad
-import Ampersand.Input.ADL1.LexerMessage
-import Data.Char hiding(isSymbol)
-import Data.Set (member, fromList)
-import Data.List (nub)
-import Ampersand.Basics (fatal)
-import Ampersand.Misc
-import Data.Time.Calendar
-import Data.Time.Clock
-import Numeric
+import           Ampersand.Basics
+import           Ampersand.Input.ADL1.FilePos(updatePos)
+import           Ampersand.Input.ADL1.LexerMessage
+import           Ampersand.Input.ADL1.LexerMonad
+import           Ampersand.Input.ADL1.LexerToken
+import           Ampersand.Misc
+import           Data.Char hiding(isSymbol)
+import           Data.List (nub)
+import qualified Data.Set as Set -- (member, fromList)
+import           Data.Time.Calendar
+import           Data.Time.Clock
+import           Numeric
 
 -- | Retrieves a list of keywords accepted by the ampersand language
 keywords :: [String] -- ^ The keywords
@@ -140,15 +140,15 @@ mainLexer p ('<':d:s) = if isOperator ['<',d]
 mainLexer p cs@(c:s)
      | isIdStart c || isUpper c
          = let (name', p', s')    = scanIdent (addPos 1 p) s
-               name               = c:name'
-               tokt   | iskw name = LexKeyword name
+               name''               = c:name'
+               tokt   | iskw name'' = LexKeyword name''
                       | otherwise = if isIdStart c
-                                    then LexVarId name
-                                    else LexConId name
+                                    then LexVarId name''
+                                    else LexConId name''
            in returnToken tokt p mainLexer p' s'
      | isOperatorBegin c
-         = let (name, s') = getOp cs
-           in returnToken (LexOperator name) p mainLexer (foldl updatePos p name) s'
+         = let (name', s') = getOp cs
+           in returnToken (LexOperator name') p mainLexer (foldl updatePos p name') s'
      | isSymbol c = returnToken (LexSymbol c) p mainLexer (addPos 1 p) s
      | isDigit c
          = case  getDateTime cs of
@@ -177,7 +177,7 @@ mainLexer p cs@(c:s)
 -----------------------------------------------------------
 
 locatein :: Ord a => [a] -> a -> Bool
-locatein es e = member e (fromList es)
+locatein es e = Set.member e (Set.fromList es)
 
 iskw :: String -> Bool
 iskw = locatein keywords
@@ -210,8 +210,8 @@ getOp cs = findOper operators cs ""
 
 -- scan ident receives a file position and the resting contents, returning the scanned identifier, the file location and the resting contents.
 scanIdent :: FilePos -> String -> (String, FilePos, String)
-scanIdent p s = let (name,rest) = span isIdChar s
-                in (name,addPos (length name) p,rest)
+scanIdent p s = let (nm,rest) = span isIdChar s
+                in (nm,addPos (length nm) p,rest)
 
 
 -----------------------------------------------------------

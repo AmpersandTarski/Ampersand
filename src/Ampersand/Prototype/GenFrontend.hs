@@ -1,27 +1,25 @@
 {-# LANGUAGE DeriveDataTypeable,OverloadedStrings #-}
 module Ampersand.Prototype.GenFrontend (doGenFrontend, clearTemplateDirs) where
 
-import Prelude hiding (putStr,putStrLn,readFile)
-import Control.Monad
-import Data.Data
-import Data.List
-import Data.Maybe
-import System.Directory
-import System.FilePath
-import Text.StringTemplate
-import Text.StringTemplate.GenericStandard () -- only import instances
-import Ampersand.Basics
-import Ampersand.Classes.Relational
-import Ampersand.Core.ParseTree
+import           Ampersand.Basics
+import           Ampersand.Classes.Relational
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ParseTree
      ( Role, ViewHtmlTemplate(ViewHtmlTemplateFile)
      )
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec.FSpec
-import Ampersand.Core.ShowAStruct
-import Ampersand.FSpec.ToFSpec.NormalForms
-import Ampersand.Misc
-import qualified Ampersand.Misc.Options as Opts
-import Ampersand.Prototype.ProtoUtil
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec.FSpec
+import           Ampersand.FSpec.ToFSpec.NormalForms
+import           Ampersand.Misc
+import           Ampersand.Prototype.ProtoUtil
+import           Control.Monad
+import           Data.Data
+import           Data.List
+import           Data.Maybe
+import           System.Directory
+import           System.FilePath
+import           Text.StringTemplate
+import           Text.StringTemplate.GenericStandard () -- only import instances
 
 {- TODO
 - Be more consistent with record selectors/pattern matching
@@ -72,7 +70,7 @@ allowedIncludeSubDirs = [ Include Dir  "templates"         "templates"
                         ]
 
 getTemplateDir :: FSpec -> String
-getTemplateDir fSpec = Opts.dirPrototype (getOpts fSpec) </> "templates"
+getTemplateDir fSpec = dirPrototype (getOpts fSpec) </> "templates"
 
 -- Clear template dirs so the generator won't use lingering template files. 
 -- (Needs to be called before statics are generated, otherwise the templates from statics/ZwolleFrontend/templates will get deleted)
@@ -108,7 +106,7 @@ copyIncludes :: FSpec -> IO ()
 copyIncludes fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
           includeDir = adlSourceDir </> dirInclude (getOpts fSpec)
-          protoDir = Opts.dirPrototype (getOpts fSpec)
+          protoDir = dirPrototype (getOpts fSpec)
     ; includeDirExists <- doesDirectoryExist includeDir
     ; if includeDirExists then
        do { verboseLn (getOpts fSpec) $ "Copying user includes from " ++ includeDir 
@@ -144,7 +142,7 @@ copyCustomizations :: FSpec -> IO ()
 copyCustomizations fSpec =
  do { let adlSourceDir = takeDirectory $ fileName (getOpts fSpec)
           custDir = adlSourceDir </> "customizations"
-          protoDir = Opts.dirPrototype (getOpts fSpec)
+          protoDir = dirPrototype (getOpts fSpec)
     ; custDirExists <- doesDirectoryExist custDir
     ; if custDirExists then
         do { verboseLn (getOpts fSpec) $ "Copying customizations from " ++ custDir ++ " -> " ++ protoDir
