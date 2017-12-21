@@ -129,6 +129,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
                         self::$_instance = new Database();
                         self::$_instance->logger->info("Automatically installing database for the first time");
                         self::$_instance->reinstallDB();
+                        Session::singleton(); // Initiate new session
                         break;
                     default : 
                         throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
@@ -208,10 +209,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         }else{
             $this->logger->info("Skip default population");
         }
-        
-        // Ininiate new session
-        Session::singleton();
-        
         $this->logger->info("Database reinstalled");
         
         // Initial conjunct evaluation

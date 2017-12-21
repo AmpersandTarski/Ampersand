@@ -27,6 +27,7 @@ $app->get('/admin/installer', function () use ($app){
     $db = Database::singleton();
     $db->reinstallDB($defaultPop);
 
+    // Initiate new session
     $session = Session::singleton();
 
     $roleIds = $app->request->params('roleIds');
