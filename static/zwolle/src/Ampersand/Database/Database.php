@@ -209,14 +209,15 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         }else{
             $this->logger->info("Skip default population");
         }
-        $this->logger->info("Database reinstalled");
-        
-        // Initial conjunct evaluation
-        Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
-        
+
+        // Close transaction
         $transaction = Transaction::getCurrentTransaction()->close(true);
+        $this->logger->info("End database reinstall");
         if($transaction->isCommitted()) Logger::getUserLogger()->notice("Database successfully reinstalled");
-        
+
+        // Initial conjunct evaluation
+        $this->logger->info("Initial evaluation of all conjuncts after database reinstallation");
+        Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
     }
     
     /**
