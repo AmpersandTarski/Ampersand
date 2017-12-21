@@ -31,9 +31,7 @@ $app->get('/admin/installer', function () use ($app){
     ]);
     $ampersandApp->reinstall($defaultPop);
 
-    // Initiate new session
     $session = Session::singleton();
-
     $roleIds = $app->request->params('roleIds');
     $session->activateRoles($roleIds);
     

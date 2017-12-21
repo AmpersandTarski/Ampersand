@@ -8,6 +8,7 @@ use Ampersand\Interfacing\Transaction;
 use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
+use Ampersand\Session;
 
 class AmpersandApp
 {
@@ -35,6 +36,9 @@ class AmpersandApp
 
         // Register storages
         if(isset($options['storages'])) foreach($options['storages'] as $storage) $this->registerStorage($storage);
+
+        // Initiate session
+        Session::singleton();
     }
 
     public function registerStorage(StorageInterface $storage){
@@ -74,5 +78,7 @@ class AmpersandApp
         // Initial conjunct evaluation
         $this->logger->info("Initial evaluation of all conjuncts after application reinstallation");
         Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
+
+        Session::singleton(); // Initiate new session
     }
 }

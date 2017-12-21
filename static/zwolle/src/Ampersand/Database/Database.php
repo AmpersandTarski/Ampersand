@@ -124,12 +124,9 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
             if(!Config::get('productionEnv')){
                 switch ($e->getCode()){
                     case 1049 : // Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR)
-                        // throw new Exception("Please <a href=\"#/admin/installer\" class=\"alert-link\">install database</a>",500);
+                        Logger::getLogger('DATABASE')->info("Automatically creating new database, because it does not exist");
                         self::createDB();
                         self::$_instance = new Database();
-                        self::$_instance->logger->info("Automatically installing database for the first time");
-                        self::$_instance->reinstallDB();
-                        Session::singleton(); // Initiate new session
                         break;
                     default : 
                         throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
