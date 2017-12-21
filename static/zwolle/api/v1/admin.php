@@ -11,7 +11,7 @@ use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
-use Ampersand\Output\OutputCSV;
+use Ampersand\IO\CSVWriter;
 use Ampersand\Interfacing\Transaction;
 
 global $app;
@@ -219,7 +219,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
     });
     
     // Output
-    $output = new OutputCSV();
+    $output = new CSVWriter();
     $output->addColumns(array_keys($content[0]));
     foreach ($content as $row) $output->addRow($row);
     $output->render('conj-performance-report.csv');
@@ -300,7 +300,7 @@ $app->get('/admin/report/interfaces', function () use ($app){
     }, $arr);
     
     // Output
-    $output = new OutputCSV();
+    $output = new CSVWriter();
     $output->addColumns(array_keys($content[0]));
     foreach ($content as $row) $output->addRow($row);
     $output->render('ifc-report.csv');

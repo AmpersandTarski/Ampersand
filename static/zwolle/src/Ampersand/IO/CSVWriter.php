@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand\Output;
+namespace Ampersand\IO;
 use Exception;
 
 /**
@@ -13,7 +13,7 @@ use Exception;
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
  *
  */
-class OutputCSV {
+class CSVWriter {
     
     /**
      * @var array $headers Contains http response headers.
