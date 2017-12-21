@@ -10,6 +10,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Interfacing\Transaction;
+use Ampersand\Rule\RuleEngine;
 
 global $app;
 
@@ -116,6 +117,8 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
     $transaction->close();
     if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " updated");
     
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+
     // Return result
     $result =   [ 'content'             => $resource
                 , 'notifications'       => Notifications::getAll()
@@ -150,6 +153,8 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
     $transaction->close();
     if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " updated");
     
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+
     // Return result
     $result = array ( 'patches'                => $app->request->getBody()
                     , 'content'             => $resource
@@ -187,6 +192,8 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
     $transaction->close();
     if($transaction->isCommitted()) Logger::getUserLogger()->notice($resource->getLabel() . " created");
     
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+
     // Return result
     $result = array ( 'content'             => $resource
                     , 'notifications'         => Notifications::getAll()
@@ -213,6 +220,8 @@ $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resour
     // Close transaction
     $transaction->close();
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Resource deleted");
+    
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
     
     // Return result
     $result = array ( 'notifications'         => Notifications::getAll()

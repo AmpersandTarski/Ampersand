@@ -6,6 +6,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Session;
 use Ampersand\Interfacing\Transaction;
+use Ampersand\Rule\RuleEngine;
 
 global $app;
 
@@ -24,6 +25,8 @@ $app->get('/execengine/run', function () use ($app){
     $transaction = Transaction::getCurrentTransaction()->close(true);
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Run completed");
     else Logger::getUserLogger()->warning("Run completed but transaction not committed");
+
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
         
     $result = array('notifications' => Notifications::getAll());
     

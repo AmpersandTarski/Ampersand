@@ -6,6 +6,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
 use Ampersand\Interfacing\Transaction;
+use Ampersand\Rule\RuleEngine;
 
 global $app;
 
@@ -49,6 +50,8 @@ $app->get('/oauthlogin/logout', function () use ($app){
         
     $transaction = Transaction::getCurrentTransaction()->close(true);
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Logout successfull");
+
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
         
     $result = array('notifications' => Notifications::getAll());
     

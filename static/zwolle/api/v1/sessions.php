@@ -71,6 +71,8 @@ $app->delete('/sessions/:sessionId', function ($sessionId) use ($app) {
     $session->destroySession();
     
     Transaction::getCurrentTransaction()->close(true);
+
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
     
     // Return result
     $content = array('notifications' => Notifications::getAll());

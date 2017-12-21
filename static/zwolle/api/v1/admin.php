@@ -13,6 +13,7 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\IO\CSVWriter;
 use Ampersand\Interfacing\Transaction;
+use Ampersand\Rule\RuleEngine;
 
 global $app;
 
@@ -55,6 +56,8 @@ $app->get('/admin/installer', function () use ($app){
             }
         }
     }
+
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
     $content = Notifications::getAll(); // Return all notifications
 
@@ -138,6 +141,8 @@ $app->get('/admin/import', function () use ($app){
     $transaction = Transaction::getCurrentTransaction()->close(true);
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported successfully");
     
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+
     $content = Notifications::getAll(); // Return all notifications
     
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);

@@ -102,9 +102,6 @@ class Transaction {
         // Check invariant rules (we only have to check the affected invariant rules) 
         $this->invariantRulesHold = RuleEngine::checkInvariantRules($this->affectedConcepts, $this->affectedRelations, true);
         
-        // Check all process rules that are relevant for the activate roles
-        RuleEngine::checkProcessRules();
-        
         if($this->invariantRulesHold && $commit){
             $this->logger->debug("Commit transaction");
             foreach($this->storages as $storage) $storage->commitTransaction(); // Commit transaction for each registered storage
