@@ -14,19 +14,22 @@ use Ampersand\Core\Concept;
 use Ampersand\IO\CSVWriter;
 use Ampersand\Interfacing\Transaction;
 use Ampersand\Rule\RuleEngine;
+use Ampersand\AmpersandApp;
 
 global $app;
 
 $app->get('/admin/installer', function () use ($app){
-    if(Config::get('productionEnv')) throw new Exception ("Database reinstall not allowed in production environment", 403);
+    if(Config::get('productionEnv')) throw new Exception ("Reinstallation of application not allowed in production environment", 403);
     
     $defaultPop = filter_var($app->request->params('defaultPop'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE); 
     if(is_null($defaultPop)) $defaultPop = true;
 
     Database::createDB();
 
-    $db = Database::singleton();
-    $db->reinstallDB($defaultPop);
+    $ampersandApp = new AmpersandApp([
+        'storages' => [Database::singleton()]
+    ]);
+    $ampersandApp->reinstall($defaultPop);
 
     // Initiate new session
     $session = Session::singleton();

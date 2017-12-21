@@ -20,6 +20,8 @@ interface StorageInterface {
     public function commitTransaction();
     
     public function rollbackTransaction();
+
+    public function reinstallStorage();
 }
 
 ?>

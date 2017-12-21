@@ -181,43 +181,11 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
             throw new Exception($e->getMessage(), 500);
         }
     }
-    
-    /**
-     * Function to reinstall database structure and load default population
-     * @param boolean $installDefaultPop specifies whether or not to install the default population
-     * @return void
-     */
-    public function reinstallDB($installDefaultPop = true){
+
+    public function reinstallStorage(){
         $structure = file_get_contents(Config::get('pathToGeneratedFiles') . 'database.sql');
-        
-        $this->logger->info("Start database reinstall");
-        
         $this->logger->info("Execute database structure queries");
-        
         $this->doQuery($structure, true);
-        
-        if($installDefaultPop){
-            $this->logger->info("Install default population");
-            
-            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
-
-            $importer = new \Ampersand\Import\JSONPopulationImporter();
-            $importer->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
-            $importer->importPopulation();
-
-            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
-        }else{
-            $this->logger->info("Skip default population");
-        }
-
-        // Close transaction
-        $transaction = Transaction::getCurrentTransaction()->close(true);
-        $this->logger->info("End database reinstall");
-        if($transaction->isCommitted()) Logger::getUserLogger()->notice("Database successfully reinstalled");
-
-        // Initial conjunct evaluation
-        $this->logger->info("Initial evaluation of all conjuncts after database reinstallation");
-        Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
     }
     
     /**
