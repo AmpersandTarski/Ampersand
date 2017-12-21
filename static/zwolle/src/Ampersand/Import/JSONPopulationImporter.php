@@ -43,9 +43,9 @@ class JSONPopulationImporter extends \Ampersand\IO\JSONReader {
 
         // Before importing, check if all provided concepts and relations are defined
         $this->logger->debug("Checking if all concepts for which population is provided are defined");
-        foreach($$this->content->atoms as $pop) if(!empty($pop->atoms)) Concept::getConcept($pop->concept);
+        foreach($this->content->atoms as $pop) if(!empty($pop->atoms)) Concept::getConcept($pop->concept);
         $this->logger->debug("Checking if all relations for which population is provided are defined");
-        foreach($$this->content->links as $pop) if(!empty($pop->links)) Concept::getConcept($pop->relation);
+        foreach($this->content->links as $pop) if(!empty($pop->links)) Relation::getRelation($pop->relation);
 
         $this->importAtoms();
         $this->importLinks();

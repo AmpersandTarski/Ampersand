@@ -38,5 +38,6 @@ class JSONReader {
         $content = file_get_contents($filePath);
         $this->loadFileContent($content);
     }
+}
 
 ?>
