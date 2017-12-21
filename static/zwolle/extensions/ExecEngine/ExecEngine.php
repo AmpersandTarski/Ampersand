@@ -10,8 +10,6 @@ use Ampersand\Role;
 // Define hooks
 $hook1 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());
 Hooks::addHook('preCloseTransaction', $hook1);
-$hook2 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array(true));
-Hooks::addHook('postDatabaseReinstallDB', $hook2);
 
 // UI
 AngularApp::addMenuItem('ext', 'extensions/ExecEngine/ui/views/MenuItem.html',

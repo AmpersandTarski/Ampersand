@@ -212,8 +212,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         // Ininiate new session
         Session::singleton();
         
-        Hooks::callHooks('postDatabaseReinstallDB', get_defined_vars());
-        
         $this->logger->info("Database reinstalled");
         
         // Initial conjunct evaluation
