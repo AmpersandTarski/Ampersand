@@ -199,7 +199,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         
         if($installDefaultPop){
             $this->logger->info("Install default population");
-            if(Config::get('checkDefaultPopulation', 'transactions')) $this->startTransaction();
             
             foreach($queries['allDefPopQueries'] as $query){
                 $this->Exe($query);
