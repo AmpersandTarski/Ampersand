@@ -1,6 +1,6 @@
 <?php
 
-use Ampersand\Ampersand;
+use Ampersand\AmpersandApp;
 use Ampersand\Session;
 
 register_shutdown_function(function (){
