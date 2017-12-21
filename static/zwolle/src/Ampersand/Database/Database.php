@@ -184,7 +184,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Function to reinstall database structure and load default population
-     * @param boolean $loadDefaultPop specifies whether or not to install the default population
+     * @param boolean $installDefaultPop specifies whether or not to install the default population
      * @return void
      */
     public function reinstallDB($installDefaultPop = true){
