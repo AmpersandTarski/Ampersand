@@ -189,8 +189,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      */
     public function reinstallDB($installDefaultPop = true){
         $structure = file_get_contents(Config::get('pathToGeneratedFiles') . 'database.sql');
-        $queries = file_get_contents(Config::get('pathToGeneratedFiles') . 'mysql-installer.json');
-        $queries = json_decode($queries, true);
         
         $this->logger->info("Start database reinstall");
         
@@ -201,11 +199,13 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         if($installDefaultPop){
             $this->logger->info("Install default population");
             
-            foreach($queries['allDefPopQueries'] as $query){
-                $this->Exe($query);
-                
-                set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
-            }
+            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
+
+            $importer = new \Ampersand\Import\JSONPopulationImporter();
+            $importer->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
+            $importer->importPopulation();
+
+            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
         }else{
             $this->logger->info("Skip default population");
         }
