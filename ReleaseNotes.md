@@ -1,6 +1,6 @@
 # Release notes of Ampersand
 
-## Unreleased changes
+## v3.9.1 (22 december 2017)
 
 * Security fix: use PHP session strict mode. This prevents a user defined session ID that is never generated
 * [Issue #707](https://github.com/AmpersandTarski/Ampersand/issues/707) Bugfix issue where user input '_SESSION' was also replaced by the session id
