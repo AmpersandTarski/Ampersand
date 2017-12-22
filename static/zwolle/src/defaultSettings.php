@@ -66,12 +66,12 @@ try{
     
     // Navigation menu settings
     AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
-        function($session){
+        function($app){
             return !Config::get('productionEnv');
         });
     
     AngularApp::addMenuItem('refresh', 'app/views/menu/checkAllRules.html',
-        function($session){
+        function($app){
             return !Config::get('productionEnv');
         });
 

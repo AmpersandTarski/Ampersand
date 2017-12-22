@@ -9,9 +9,9 @@ namespace Ampersand;
 
 use Exception;
 use Ampersand\Core\Concept;
-use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Log\Logger;
 use function Ampersand\Helper\getDirectoryList;
+use Ampersand\AmpersandApp;
 
 /**
  *
@@ -77,18 +77,18 @@ class AngularApp {
     /**
      * @param string $menu specifies to which part of the menu (navbar) this item belongs to
      * @param string $itemUrl location of html template to use as menu item
-     * @param function function which returns true/false determining to add the menu item or not
+     * @param callable function which returns true/false determining to add the menu item or not
      */
-    public static function addMenuItem($menu, $itemUrl, $function){
+    public static function addMenuItem(string $menu, string $itemUrl, callable $function){
         switch ($menu) {
             case 'ext':
-                self::$extMenu[] = array('url' => $itemUrl, 'addItem' => $function);
+                self::$extMenu[] = ['url' => $itemUrl, 'function' => $function];
                 break;
             case 'refresh':
-                self::$refreshMenu[] = array('url' => $itemUrl, 'addItem' => $function);
+                self::$refreshMenu[] = ['url' => $itemUrl, 'function' => $function];
                 break;
             case 'role':
-                self::$roleMenu[] = array('url' => $itemUrl, 'addItem' => $function);
+                self::$roleMenu[] = ['url' => $itemUrl, 'function' => $function];
                 break;
             default:
                 throw new Exception("Cannot add item to menu. Unknown menu: '{$menu}'", 500);
@@ -97,7 +97,6 @@ class AngularApp {
     }
     
     public static function getMenuItems($menu){
-        $session = Session::singleton();
         switch ($menu) {
             case 'ext':
                 $arr = self::$extMenu;
@@ -114,9 +113,10 @@ class AngularApp {
         }
         
         // Filter menu items
-        $result = array_filter($arr, function($item) use ($session){
+        $ampersandApp = AmpersandApp::singleton();
+        $result = array_filter($arr, function($item) use ($ampersandApp){
             // Execute function which determines if item must be added or not
-            return $item['addItem']($session);
+            return call_user_func_array($item['function'], [$ampersandApp]);
         });
         
         return array_values($result); // reindex array

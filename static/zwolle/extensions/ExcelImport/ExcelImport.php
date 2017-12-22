@@ -19,9 +19,9 @@ require_once (__DIR__ . '/lib/Classes/PHPExcel.php');
 
 // UI
 AngularApp::addMenuItem('ext', 'extensions/ExcelImport/ui/views/MenuItem.html', 
-    function($session){
+    function($app){
         $roles = Config::get('allowedRolesForExcelImport','excelImport');
-        return (!empty(array_intersect($session->getActiveRoles(), (array)$roles)) || is_null($roles));
+        return (!empty(array_intersect($app->getActiveRoles(), (array)$roles)) || is_null($roles));
     });
 AngularApp::addCSS('extensions/ExcelImport/ui/css/style.css');
 AngularApp::addJS('extensions/ExcelImport/ui/js/ExcelImport.js');

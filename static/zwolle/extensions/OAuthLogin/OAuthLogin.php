@@ -11,7 +11,10 @@ use Ampersand\Interfacing\Transaction;
 use Ampersand\AmpersandApp;
 
 // UI
-AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function($session){ return true;});
+AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', 
+    function($app){ 
+        return true;
+    });
 AngularApp::addJS('extensions/OAuthLogin/ui/js/LoginModule.js');
 
 // API

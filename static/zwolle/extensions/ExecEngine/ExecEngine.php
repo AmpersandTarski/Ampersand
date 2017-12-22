@@ -13,9 +13,9 @@ Hooks::addHook('preCloseTransaction', $hook1);
 
 // UI
 AngularApp::addMenuItem('ext', 'extensions/ExecEngine/ui/views/MenuItem.html',
-    function($session){
+    function($app){
         $roles = Config::get('allowedRolesForRunFunction','execEngine');
-        return (!empty(array_intersect($session->getActiveRoles(), (array)$roles)) || is_null($roles));
+        return (!empty(array_intersect($app->getActiveRoles(), (array)$roles)) || is_null($roles));
     });
 AngularApp::addJS('extensions/ExecEngine/ui/js/ExecEngine.js');
 
