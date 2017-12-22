@@ -6,13 +6,13 @@ module Ampersand.Test.TestScripts (getTestScripts,testAmpersandScripts) where
 --import System.FilePath ((</>),takeExtension)
 --import Control.Monad --(filterM, forM_, foldM,when)
 --import Control.Exception.Base
---import System.IO.Error (tryIOError)
 --import System.Directory (getDirectoryContents, doesFileExist, doesDirectoryExist)
 --import Control.Monad.Trans.Class (lift)
 --import Data.Conduit
 --import Ampersand.Test.RunAmpersand (ampersand)
 --import Ampersand.Input.ADL1.CtxError
 
+import Ampersand.Basics
 --endswith :: String -> String -> Bool
 --endswith a b = drop (length a - length b) a == b
 

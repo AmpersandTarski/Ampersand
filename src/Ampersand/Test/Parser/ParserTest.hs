@@ -3,14 +3,13 @@ module Ampersand.Test.Parser.ParserTest (
     parseReparse, parseScripts, showErrors
 ) where
 
-import Prelude hiding (readFile)
 import Ampersand.ADL1.PrettyPrinters(prettyPrint)
+import Ampersand.Basics
 import Ampersand.Core.ParseTree
 import Ampersand.Input.ADL1.CtxError (Guarded(..),whenChecked,CtxError)
 import Ampersand.Input.ADL1.Parser
 import Ampersand.Input.Parsing
 import Ampersand.Misc
-import System.IO (stderr, hPrint)
 
 -- Tries to parse all the given files
 parseScripts :: Options -> [FilePath] -> IO Bool

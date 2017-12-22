@@ -136,7 +136,7 @@ class InterfaceObject {
 	 * 
 	 * @var string
 	 */
-	public $query;
+	private $query;
 	
 	/**
 	 * 
@@ -400,12 +400,13 @@ class InterfaceObject {
      * @return string
      */
     private function getQuery($srcAtom){
-        if(strpos($this->query, '_SRCATOM') !== false){
-            $query = str_replace('_SRCATOM', $srcAtom->idEsc, $this->query);
+		$query = str_replace('_SESSION', session_id(), $this->query); // Replace _SESSION var with current session id.
+        if(strpos($query, '_SRCATOM') !== false){
+            $query = str_replace('_SRCATOM', $srcAtom->idEsc, $query);
             // $this->logger->debug("#426 Faster query because subquery saved by _SRCATOM placeholder");
         }else{
-            $query = "SELECT DISTINCT * FROM ({$this->query}) AS `results` WHERE `src` = '{$srcAtom->idEsc}' AND `tgt` IS NOT NULL";
-        }
+            $query = "SELECT DISTINCT * FROM ({$query}) AS `results` WHERE `src` = '{$srcAtom->idEsc}' AND `tgt` IS NOT NULL";
+		}
         return $query;
     }
     

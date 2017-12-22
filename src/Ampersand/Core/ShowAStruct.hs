@@ -2,9 +2,10 @@ module Ampersand.Core.ShowAStruct
   (AStruct(..))
 where
 
+import Ampersand.Basics
+import Ampersand.Core.A2P_Converters
 import Ampersand.Core.AbstractSyntaxTree
 import Ampersand.Core.ShowPStruct
-import Ampersand.Core.A2P_Converters
 
 class AStruct a where
  showA :: a -> String

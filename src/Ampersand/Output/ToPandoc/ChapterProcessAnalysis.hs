@@ -14,17 +14,14 @@ noProcesses fSpec = null (fRoles fSpec)
 
 chpProcessAnalysis :: FSpec -> Blocks
 chpProcessAnalysis fSpec
- = if null procs
-   then mempty
-   else headerBlocks <> roleRuleBlocks <> fromList roleRelationBlocks <> processSections
+ = case vpatterns fSpec of
+     [] -> mempty
+     ps ->    headerBlocks 
+           <> roleRuleBlocks
+           <> fromList roleRelationBlocks 
+           <> mconcat (procSections ps)
    
  where
-  procs = if null (themes fSpec)
-          then vpatterns fSpec
-          else [ p | p<-vpatterns fSpec, name p `elem` themes fSpec ]
-  processSections :: Blocks
-  processSections = mconcat (procSections procs)
-
   headerBlocks :: Blocks
   headerBlocks
    = xDefBlck fSpec ProcessAnalysis <>

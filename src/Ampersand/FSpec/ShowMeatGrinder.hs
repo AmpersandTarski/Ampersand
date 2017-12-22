@@ -32,7 +32,6 @@ grind formalAmpersand userFspec =
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
-      , ctx_thms   = []
       , ctx_pats   = []
       , ctx_rs     = []
       , ctx_ds     = mapMaybe (extractFromPop formalAmpersand) metaPops2

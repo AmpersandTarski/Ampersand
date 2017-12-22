@@ -12,18 +12,16 @@ module Ampersand.Misc.Options
         , writeConfigFile
         )
 where
-import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
-import System.Console.GetOpt
-import System.FilePath
-import System.Directory
+import Ampersand.Basics
+import Data.Char
+import Data.List as DL
+import Data.Maybe
 import Data.Time.Clock
 import Data.Time.LocalTime
-import Control.Monad
-import Data.Maybe
-import Ampersand.Basics
-import Prelude hiding (writeFile,readFile,getContents,putStr,putStrLn)
-import Data.List as DL
-import Data.Char
+import System.Console.GetOpt
+import System.Directory
+import System.Environment    (getArgs, getProgName,getEnvironment,getExecutablePath )
+import System.FilePath
 import "yaml-config" Data.Yaml.Config as YC 
 
 -- | This data constructor is able to hold all kind of information that is useful to
@@ -34,7 +32,7 @@ data Options = Options { environment :: EnvironmentOptions
                        , postVersion :: String  --built in to aid DOS scripting... 8-(( Bummer.
                        , showHelp :: Bool
                        , verboseP :: Bool
-                       , development :: Bool
+                       , allowInvariantViolations :: Bool
                        , validateSQL :: Bool
                        , genSampleConfigFile :: Bool -- generate a sample configuration file (yaml)
                        , genPrototype :: Bool
@@ -187,7 +185,7 @@ getOptions =
 getOptions' :: EnvironmentOptions -> Options
 getOptions' envOpts =  
    case errors of
-     []  | development opts && validateSQL opts 
+     []  | allowInvariantViolations opts && validateSQL opts 
                      -> exitWith . WrongArgumentsGiven $ ["--dev and --validate must not be used at the same time."] --(Reason: see ticket #378))
          | otherwise -> opts
      _  -> exitWith . WrongArgumentsGiven $ errors ++ [usage]
@@ -218,7 +216,7 @@ getOptions' envOpts =
                       , showVersion      = False
                       , showHelp         = False
                       , verboseP         = False
-                      , development      = False
+                      , allowInvariantViolations = False
                       , validateSQL      = False
                       , genSampleConfigFile = False
                       , genPrototype     = False
@@ -373,9 +371,9 @@ options = [ (Option ['v']   ["version"]
                        ) "config.yaml")
                "config file (*.yaml)"
             , Public)
-          , (Option []      ["dev"]
-               (NoArg (\opts -> opts{development = True}))
-               "Report and generate extra development information (for Martijn)"
+          , (Option []      ["dev","ignore-invariant-violations"]
+               (NoArg (\opts -> opts{allowInvariantViolations = True}))
+               "Allow to build a prototype, even if there are invariants that are being violated. (See https://github.com/AmpersandTarski/Ampersand/issues/728)"
             , Hidden)
           , (Option []      ["validate"]
                (NoArg (\opts -> opts{validateSQL = True}))

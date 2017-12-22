@@ -1,16 +1,15 @@
 module Ampersand.Prototype.ValidateEdit where
 
-import Prelude hiding (putStr, putStrLn)
-import Data.List
-import Data.Maybe
-import System.FilePath hiding (isValid)
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec
-import Ampersand.Basics
-import Ampersand.Prototype.PHP
-import Ampersand.FSpec.SQL
+import           Ampersand.Basics
+import           Ampersand.Classes.ConceptStructure
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
 import qualified Ampersand.Misc.Options as Opts
-import Ampersand.Classes.ConceptStructure
+import           Ampersand.Prototype.PHP
+import           Data.List
+import           Data.Maybe
+import           System.FilePath hiding (isValid)
 
 validateEditScript :: FSpec -> [Population] -> [Population] -> String -> IO Bool
 validateEditScript fSpec beforePops afterPops editScriptPath =
@@ -22,7 +21,7 @@ validateEditScript fSpec beforePops afterPops editScriptPath =
             ; --putStrLn $ "Expected population after edit operations:\n" ++ show afterPops
             ; putStrLn $ "Edit script:\n" ++ editScript
             
-            ; createTempDatabase fSpec beforePops
+            ; result <- createTempDatabase fSpec beforePops
             ; let phpDir = Opts.dirPrototype (getOpts fSpec) </> "php"
             ; let phpScript = "ValidateEdit.php"
             ; putStrLn $ "Executing php script "++ phpDir </> phpScript

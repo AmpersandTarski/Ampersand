@@ -35,18 +35,16 @@ module Ampersand.Core.ParseTree (
    -- Inherited stuff:
    , module Ampersand.Input.ADL1.FilePos
   ) where
-import Ampersand.Input.ADL1.FilePos
-import Ampersand.Basics
-import Data.Traversable
-import Data.Foldable hiding (concat)
-import Prelude hiding (foldr, sequence, foldl, concatMap)
-import Data.Typeable
-import Data.Data
-import GHC.Generics (Generic)
-import Data.Hashable
-import Data.Time.Calendar
-import Data.Time.Clock
-import Data.Time.LocalTime() -- for instance Show UTCTime
+import           Ampersand.Basics hiding (foldr, sequence, foldl, concatMap)
+import           Ampersand.Input.ADL1.FilePos
+import           Data.Data
+import           Data.Foldable hiding (concat)
+import           Data.Hashable
+import           Data.Traversable
+import           Data.Time.Calendar
+import           Data.Time.Clock
+import           Data.Time.LocalTime() -- for instance Show UTCTime
+import           GHC.Generics (Generic)
 import qualified Data.Set as Set
 
 data P_Context
@@ -54,7 +52,6 @@ data P_Context
          , ctx_pos ::    [Origin]         -- ^ The origins of the context. A context can be a merge of a file including other files c.q. a list of Origin.
          , ctx_lang ::   Maybe Lang       -- ^ The language specified on the top-level context. If omitted, English will be the default.
          , ctx_markup :: Maybe PandocFormat  -- ^ The default markup format for free text in this context
-         , ctx_thms ::   [String]         -- ^ Names of patterns/processes to be printed in the functional design document. (For partial documents.)
          , ctx_pats ::   [P_Pattern]      -- ^ The patterns defined in this context
          , ctx_rs ::     [P_Rule TermPrim] -- ^ All user defined rules in this context, but outside patterns and outside processes
          , ctx_ds ::     [P_Relation]  -- ^ The relations defined in this context, outside the scope of patterns
@@ -218,7 +215,7 @@ data P_Relation =
 --   As a consequence, name and signature are always sufficient knowledge to determine the equality of P_Relations.
 instance Eq P_Relation where
  decl==decl' = compare decl decl' == EQ
-instance Prelude.Ord P_Relation where
+instance Ord P_Relation where
  compare p1 p2 
    = case compare (origin p1) (origin p2) of
       LT -> LT
@@ -621,7 +618,7 @@ data P_ObjDef a =
            , obj_mView :: Maybe String -- ^ The view that should be used for this object
            , obj_msub :: Maybe (P_SubIfc a)  -- ^ the attributes, which are object definitions themselves.
            }  deriving (Show)       -- just for debugging (zie ook instance Show ObjectDef)
-instance Prelude.Ord (P_ObjDef a) where
+instance Ord (P_ObjDef a) where
   compare a b = compare (origin a) (origin b)
 instance Eq (P_ObjDef a) where od==od' = origin od==origin od'
 instance Named (P_ObjDef a) where
@@ -835,7 +832,6 @@ mergeContexts ctx1 ctx2 =
       , ctx_pos    = nubSortConcatMap ctx_pos contexts
       , ctx_lang   = ctx_lang ctx1 -- By taking the first, we end up with the language of the top-level context
       , ctx_markup = foldl orElse Nothing $ map ctx_markup contexts
-      , ctx_thms   = nubSortConcatMap ctx_thms contexts
       , ctx_pats   = nubSortConcatMap ctx_pats contexts
       , ctx_rs     = nubSortConcatMap ctx_rs contexts
       , ctx_ds     = nubSortConcatMap ctx_ds contexts
@@ -868,7 +864,6 @@ mkContextOfPopsOnly pops =
       , ctx_pos    = []
       , ctx_lang   = Nothing
       , ctx_markup = Nothing
-      , ctx_thms   = []
       , ctx_pats   = []
       , ctx_rs     = []
       , ctx_ds     = []

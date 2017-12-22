@@ -86,7 +86,8 @@ class Violation {
                 $atom = $segment['srcOrTgt'] == 'Src' ? $this->src : $this->tgt;
 
                 // quering the expression
-                $query = "SELECT DISTINCT `tgt` FROM ($segment[expSQL]) AS `results` WHERE `src` = '{$atom->idEsc}'"; // SRC of TGT kunnen door een expressie gevolgd worden
+                $expSQL = str_replace('_SESSION', session_id(), $segment['expSQL']);
+                $query = "SELECT DISTINCT `tgt` FROM ($expSQL) AS `results` WHERE `src` = '{$atom->idEsc}'"; // SRC of TGT kunnen door een expressie gevolgd worden
                 $rows = $database->Exe($query);
 
                 // returning the result

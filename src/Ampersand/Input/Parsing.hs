@@ -11,25 +11,23 @@ module Ampersand.Input.Parsing (
     , runParser
 ) where
 
-import Control.Applicative
-import Data.List
-import Data.Char(toLower)
-import Data.Maybe
 import Ampersand.ADL1
 import Ampersand.Basics
+import Ampersand.Core.ParseTree (mkContextOfPopsOnly)
 import Ampersand.Input.ADL1.CtxError
 import Ampersand.Input.ADL1.Lexer
 import Ampersand.Input.ADL1.Parser
-import Ampersand.Core.ParseTree (mkContextOfPopsOnly)
+import Ampersand.Input.Xslx.XLSX
+import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
 import Ampersand.Misc
-import Prelude hiding (putStrLn, writeFile) -- make sure everything is UTF8
+import Control.Exception
+import Data.Char(toLower)
+import Data.List
+import Data.Maybe
 import System.Directory
 import System.FilePath
 import Text.Parsec.Error (Message(..), showErrorMessages, errorMessages, ParseError, errorPos)
 import Text.Parsec.Prim (runP)
-import Ampersand.Input.Xslx.XLSX
-import Control.Exception
-import Ampersand.Prototype.StaticFiles_Generated(getStaticFileContent,FileKind(FormalAmpersand,SystemContext))
 
 -- | Parse an Ampersand file and all transitive includes
 parseADL :: Options                    -- ^ The options given through the command line

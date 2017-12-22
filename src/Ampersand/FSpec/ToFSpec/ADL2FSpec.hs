@@ -1,25 +1,23 @@
 module Ampersand.FSpec.ToFSpec.ADL2FSpec
-         (makeFSpec) where
-import Prelude
-import Data.Char
-import Data.List
-import Data.Maybe
-import Data.Text (pack)
+   ( makeFSpec
+   ) where
 import Ampersand.ADL1
 import Ampersand.Basics
 import Ampersand.Classes
-import Ampersand.Core.ParseTree
-     ( Role
-     )
 import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec.FSpec
-import Ampersand.Misc
+import Ampersand.Core.ParseTree ( Role)
+import Ampersand.Core.ShowAStruct
 import Ampersand.FSpec.Crud
+import Ampersand.FSpec.FSpec
 import Ampersand.FSpec.ToFSpec.ADL2Plug
 import Ampersand.FSpec.ToFSpec.Calc
 import Ampersand.FSpec.ToFSpec.NormalForms 
 import Ampersand.FSpec.ToFSpec.Populated 
-import Ampersand.Core.ShowAStruct
+import Ampersand.Misc
+import Data.Char
+import Data.List
+import Data.Maybe
+import Data.Text (pack)
 
 {- The FSpec-datastructure should contain all "difficult" computations. This data structure is used by all sorts of rendering-engines,
 such as the code generator, the functional-specification generator, and future extentions. -}
@@ -29,13 +27,6 @@ makeFSpec opts context
               , originalContext = context 
               , getOpts      = opts
               , fspos        = ctxpos context
-              , themes       = themesInScope
-              , pattsInScope = pattsInThemesInScope
-              , rulesInScope = rulesInThemesInScope
-              , declsInScope = declsInThemesInScope 
-              , concsInScope = concsInThemesInScope
-              , cDefsInScope = cDefsInThemesInScope
-              , gensInScope  = gensInThemesInScope
               , fsLang       = printingLanguage
               , vplugInfos   = definedplugs
               , plugInfos    = allplugs
@@ -152,16 +143,6 @@ makeFSpec opts context
                                      []   -> True -- interface is for all roles
                                      rs  -> role' `elem` rs
      
-     themesInScope = if null (ctxthms context)   -- The names of patterns/processes to be printed in the functional design document. (for making partial documentation)
-                     then map name (patterns context)
-                     else ctxthms context
-     pattsInThemesInScope = filter (\p -> name p `elem` themesInScope) (patterns context)
-     cDefsInThemesInScope = filter (\cd -> cdfrom cd `elem` themesInScope) (ctxcds context)
-     rulesInThemesInScope = ctxrs context `uni` nub (concatMap ptrls pattsInThemesInScope)
-     declsInThemesInScope = ctxds context `uni` nub (concatMap ptdcs pattsInThemesInScope)
-     concsInThemesInScope = concs (ctxrs context) `uni`  concs pattsInThemesInScope
-     gensInThemesInScope  = nub (ctxgs context ++ concatMap ptgns pattsInThemesInScope)
-
      initialpopsDefinedInScript = 
                    [ let dcl = popdcl (head eqclass)
                      in ARelPopu{ popsrc = source dcl

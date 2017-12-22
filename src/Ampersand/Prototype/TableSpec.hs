@@ -13,18 +13,19 @@ module Ampersand.Prototype.TableSpec
     , doubleQuote, singleQuote)
 where
 
-import Prelude hiding (exp,putStrLn,readFile,writeFile)
-import Data.Monoid
-import Data.List
-import Data.String (IsString(fromString))
+import           Ampersand.Basics
+import           Ampersand.Classes
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
+import           Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
+import           Ampersand.Prototype.ProtoUtil
+import           Data.List
+import           Data.Maybe
+import           Data.Monoid
+import           Data.String (IsString(fromString))
 import qualified Data.Text as Text
-import Ampersand.Prototype.ProtoUtil
-import Ampersand.FSpec.SQL
-import Ampersand.FSpec
-import Ampersand.FSpec.ToFSpec.ADL2Plug(suitableAsKey)
-import Ampersand.Classes
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Core.ShowAStruct
 
 data TableSpec
   = TableSpec { tsCmnt :: [String]  -- Without leading "// "
@@ -117,23 +118,37 @@ plug2TableSpec plug
      }
 
 createTableSql :: Bool -> TableSpec -> SqlQuery
-createTableSql withComment tSpec = SqlQuery $
-      ( if withComment 
-        then map Text.pack . commentBlockSQL . tsCmnt $ tSpec
-        else []
+createTableSql withComment tSpec
+  | withComment = SqlQueryPretty $
+      ( map Text.pack . commentBlockSQL . tsCmnt $ tSpec
       ) <>
-      [ "CREATE TABLE "<>(doubleQuote . Text.pack . tsName $ tSpec)] <>
-      [ Text.replicate indnt " " <> Text.pack [pref] <> " " <> addColumn att 
-      | (pref, att) <- zip ('(' : repeat ',') (tsflds tSpec)] <>
-      ( if null (tsKey tSpec) 
-        then []
-        else [ Text.replicate indnt " " <> ", " <> Text.pack (tsKey tSpec) ]
-      ) <>
-      [ Text.replicate indnt " " <> ", " <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
-      [ Text.replicate indnt " " <> ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN" ]<>
-      [ Text.replicate indnt " " <> ", ROW_FORMAT = DYNAMIC"]<>
-      [ "" ]
+      [header] <>
+      wrap cols <>
+      wrap (maybeToList mKey) <>
+      wrap endings 
+  | otherwise = SqlQueryPlain $
+      header <>
+      " " <> Text.intercalate " " cols <>
+      " " <> fromMaybe mempty mKey <>
+      " " <> Text.unwords endings
   where
+    header :: Text.Text
+    header = "CREATE TABLE "<>(doubleQuote . Text.pack . tsName $ tSpec)
+    cols :: [Text.Text]
+    cols = [ Text.pack [pref] <> " " <> addColumn att 
+           | (pref, att) <- zip ('(' : repeat ',') (tsflds tSpec)]
+    mKey :: Maybe Text.Text
+    mKey =
+      case tsKey tSpec of
+        "" -> Nothing
+        x  -> Just . Text.pack $ ", "<> x
+    endings :: [Text.Text]
+    endings =   
+      [ ", " <> doubleQuote "ts_insertupdate"<>" TIMESTAMP ON UPDATE CURRENT_TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP"]<>
+      [ ") ENGINE     = InnoDB DEFAULT CHARACTER SET UTF8 COLLATE UTF8_BIN" ]<>
+      [ ", ROW_FORMAT = DYNAMIC"]
+    wrap :: [Text.Text] -> [Text.Text]
+    wrap = map (\col -> Text.replicate indnt " " <> col)
     indnt = 5
     addColumn :: AttributeSpec -> Text.Text
     addColumn att 
@@ -146,12 +161,12 @@ createTableSql withComment tSpec = SqlQuery $
          <> " */"
          
 showColumsSql :: TableSpec -> SqlQuery
-showColumsSql tSpec = SqlQuery $
-       ["SHOW COLUMNS FROM "<>(doubleQuote . Text.pack . tsName $ tSpec)]
+showColumsSql tSpec = SqlQuerySimple $
+       "SHOW COLUMNS FROM "<>(doubleQuote . Text.pack . tsName $ tSpec)
 
 dropTableSql :: TableSpec -> SqlQuery
-dropTableSql tSpec = SqlQuery $
-       ["DROP TABLE "<>(doubleQuote . Text.pack . tsName $ tSpec)]
+dropTableSql tSpec = SqlQuerySimple $
+       "DROP TABLE "<>(doubleQuote . Text.pack . tsName $ tSpec)
 
 fld2AttributeSpec ::SqlAttribute -> AttributeSpec
 fld2AttributeSpec att 
@@ -163,18 +178,24 @@ fld2AttributeSpec att
 
 
 insertQuery :: SomeValue val =>
-       Text.Text        -- The name of the table
+       Bool          -- prettyprinted?
+    -> Text.Text     -- The name of the table
     -> [Text.Text]   -- The names of the attributes
-    -> [[Maybe val]]  -- The rows to insert
+    -> [[Maybe val]] -- The rows to insert
     -> SqlQuery
-insertQuery tableName attNames tblRecords = 
-  SqlQuery $
+insertQuery withComments tableName attNames tblRecords
+  | withComments = SqlQueryPretty $
      [ "INSERT INTO "<>doubleQuote tableName
-     , "   ("<>Text.intercalate "," (map doubleQuote attNames) <>")"
+     , "   ("<>Text.intercalate ", " (map doubleQuote attNames) <>")"
      , "VALUES " 
      ]
-   <> (Text.lines . ("   "<>) .Text.intercalate ("\n , ") $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
+   <> (Text.lines . ("   "<>) .Text.intercalate "\n , " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
    <> [""]
+  | otherwise = SqlQueryPlain $
+        "INSERT INTO "<>doubleQuote tableName
+     <> " ("<>Text.intercalate ", " (map doubleQuote attNames) <>")"
+     <> " VALUES "
+     <> (Text.intercalate ", " $ [ "(" <>valuechain md<> ")" | md<-tblRecords])
   where
     valuechain :: SomeValue val => [Maybe val] -> Text.Text
     valuechain record = Text.intercalate ", " [case att of Nothing -> "NULL" ; Just val -> repr val | att<-record]
@@ -188,19 +209,19 @@ instance SomeValue String where
 
 tableSpec2Queries :: Bool -> TableSpec -> [SqlQuery]
 tableSpec2Queries withComment tSpec = 
- (createTableSql withComment tSpec 
- ):
- [SqlQuery [ Text.pack $ "CREATE INDEX "<> show (tsName tSpec<>"_"<>(Text.unpack . fsname) fld)
-                             <>" ON "<>show (tsName tSpec)
-                             <>" ("<>(show . Text.unpack . fsname) fld<>")"
-           ]
+ createTableSql withComment tSpec :
+ [SqlQuerySimple . Text.pack $ 
+    ( "CREATE INDEX "<> show (tsName tSpec<>"_"<>(Text.unpack . fsname) fld)
+    <>" ON "<>show (tsName tSpec) <> " ("
+    <> (show . Text.unpack . fsname $ fld)<>")"
+    )
  | fld <- tsflds tSpec
  , not (fsIsPrimKey fld)
  , suitableAsKey (fstype  fld)
  ]
 
 additionalDatabaseSettings :: [SqlQuery]
-additionalDatabaseSettings = [ SqlQuery ["SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]]
+additionalDatabaseSettings = [ SqlQuerySimple "SET TRANSACTION ISOLATION LEVEL SERIALIZABLE"]
 
 doubleQuote :: (Data.String.IsString m, Monoid m) => m -> m
 doubleQuote = enclose '\"'
@@ -210,7 +231,10 @@ enclose :: (Data.String.IsString m, Monoid m) => Char -> m -> m
 enclose c s = fromString [c] <> s <> fromString [c]
 
 queryAsPHP :: SqlQuery -> Text.Text
-queryAsPHP (SqlQuery xs) = showPhpStr (Text.unlines xs)
+queryAsPHP = showPhpStr . queryAsSQL
 queryAsSQL :: SqlQuery -> Text.Text
-queryAsSQL (SqlQuery xs) = Text.unlines xs
-
+queryAsSQL sql = 
+  case sql of 
+    SqlQuerySimple x  -> x
+    SqlQueryPlain  x  -> x
+    SqlQueryPretty xs -> Text.unlines xs

@@ -93,7 +93,6 @@ instance Arbitrary P_Context where
        <*> listOf arbitrary  -- pos
        <*> arbitrary  -- lang
        <*> arbitrary  -- markup
-       <*> listOf upperId -- themes
        <*> listOf arbitrary -- patterns
        <*> listOf arbitrary -- rules
        <*> listOf arbitrary -- relations

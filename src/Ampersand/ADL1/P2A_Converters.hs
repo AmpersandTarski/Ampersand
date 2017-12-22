@@ -1,33 +1,35 @@
 {-# OPTIONS_GHC -Wall -Werror #-}
 {-# LANGUAGE LambdaCase, ImplicitParams #-}
 {-# LANGUAGE ApplicativeDo, DuplicateRecordFields,OverloadedLabels #-}
-module Ampersand.ADL1.P2A_Converters (pCtx2aCtx,pCpt2aCpt)
+module Ampersand.ADL1.P2A_Converters
+    ( pCtx2aCtx
+    , pCpt2aCpt
+    )
 where
-import Ampersand.ADL1.Disambiguate
-import Ampersand.Core.ParseTree -- (P_Context(..), A_Context(..))
-import Ampersand.Input.ADL1.CtxError
-import Ampersand.Core.A2P_Converters
-import Ampersand.ADL1.Lattices -- used for type-checking
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.Classes.ViewPoint
-import Ampersand.Classes.ConceptStructure
-import Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
-import Ampersand.Basics
-import Ampersand.Misc
-import Control.Monad (join,unless)
-import Prelude hiding (sequence, mapM)
-import qualified Data.Set as Set
+import           Ampersand.ADL1.Disambiguate
+import           Ampersand.ADL1.Lattices -- used for type-checking
+import           Ampersand.Basics
+import           Ampersand.Classes.ConceptStructure
+import           Ampersand.Classes.ViewPoint
+import           Ampersand.Core.ParseTree
+import           Ampersand.Core.A2P_Converters
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.FSpec.ToFSpec.Populated(sortSpecific2Generic)
+import           Ampersand.Input.ADL1.CtxError
+import           Ampersand.Misc
+import           Control.Arrow(first)
+import           Control.Monad (join,unless)
+import           Data.Char(toUpper,toLower)
+import           Data.Either
+import           Data.Foldable (toList)
+import           Data.Function
+import           Data.Hashable
+import           Data.List as Lst
 import qualified Data.Map as Map
-import Data.Foldable (toList)
-import Data.Function
-import Data.Maybe
-import Data.List as Lst
-import Data.Char(toUpper,toLower)
-import Data.Either
-import GHC.Stack
-import Data.Hashable
-import Data.Text (pack)
-import Control.Arrow(first)
+import           Data.Maybe
+import qualified Data.Set as Set
+import           Data.Text (pack)
+import           GHC.Stack
 
 data Type = UserConcept String
           | BuiltIn TType
@@ -213,7 +215,6 @@ pCtx2aCtx opts
       , ctx_pos    = n2
       , ctx_lang   = ctxmLang
       , ctx_markup = pandocf
-      , ctx_thms   = p_themes 
       , ctx_pats   = p_patterns
       , ctx_rs     = p_rules    
       , ctx_ds     = p_relations
@@ -253,7 +254,6 @@ pCtx2aCtx opts
                      , ctxpos = n2
                      , ctxlang = deflangCtxt
                      , ctxmarkup = deffrmtCtxt
-                     , ctxthms = p_themes
                      , ctxpats = pats
                      , ctxrs = rules
                      , ctxds = map fst declsAndPops

@@ -2,24 +2,23 @@ module Ampersand.Graphic.Fspec2ClassDiagrams (
   clAnalysis, cdAnalysis, tdAnalysis
 ) 
 where
-import Data.List
 import Ampersand.ADL1
-import Ampersand.Classes
 import Ampersand.Basics
+import Ampersand.Classes
 import Ampersand.FSpec
+import Ampersand.Graphic.ClassDiagram
 import Data.Maybe
 import Data.Either
-import Ampersand.Graphic.ClassDiagram
 
 -- | This function makes the classification diagram.
 -- It focuses on generalizations and specializations.
 clAnalysis :: FSpec -> ClassDiag
 clAnalysis fSpec =
     OOclassdiagram { cdName  = "classification_"++name fSpec
-                   , classes = map classOf . concs . gensInScope $ fSpec
+                   , classes = map classOf . concs . vgens $ fSpec
                    , assocs  = []
                    , aggrs   = []
-                   , geners  = map OOGener . gensInScope $ fSpec
+                   , geners  = map OOGener . vgens $ fSpec
                    , ooCpts  = concs fSpec
                    }
 
@@ -54,7 +53,7 @@ cdAnalysis fSpec =
                            . allConcepts $ fSpec
                  , assocs  = lefts assocsAndAggrs
                  , aggrs   = rights assocsAndAggrs
-                 , geners  = map OOGener (gensInScope fSpec)
+                 , geners  = map OOGener (vgens fSpec)
                  , ooCpts  = filter cptIsShown
                            . allConcepts $ fSpec
                  }
@@ -87,21 +86,12 @@ cdAnalysis fSpec =
       isOfCpt (e:_) = source e == cpt
       attribs = [ if isInj d && (not . isUni) d then flp (EDcD d) else EDcD d | d<-attribDcls ]
 
-   dclIsInScope :: Relation -> Bool
-   dclIsInScope dcl =
-      dcl `elem` (topLevelDcls `uni` pattInScopeDcls)
-     where   
-       topLevelDcls = vrels fSpec \\ (concatMap relsDefdIn . vpatterns $ fSpec)
-       pattInScopeDcls = nub . concatMap dclsInPat . pattsInScope $ fSpec
-          where 
-            dclsInPat :: Pattern -> [Relation]
-            dclsInPat p = relsDefdIn p `uni` relsMentionedIn p
    ooAttr :: Expression -> CdAttribute
    ooAttr r = OOAttr { attNm = (name . head . relsMentionedIn) r
                      , attTyp = if isProp r then "Prop" else (name.target) r
                      , attOptional = (not.isTot) r
                      }
-   allDcls = filter dclIsInScope . vrels $ fSpec
+   allDcls = vrels $ fSpec
    assocsAndAggrs = map decl2assocOrAggr 
                   . filter dclIsShown $ allDcls
      where

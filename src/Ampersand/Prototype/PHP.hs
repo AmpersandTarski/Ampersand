@@ -5,23 +5,21 @@ module Ampersand.Prototype.PHP
           , tempDbName
          ) where
 
-import Ampersand.Basics
-import Ampersand.Core.AbstractSyntaxTree
-import Ampersand.FSpec
-import Ampersand.FSpec.SQL
-import Ampersand.Misc
-import Ampersand.Prototype.ProtoUtil
-import Ampersand.Prototype.TableSpec
-import Control.Exception
-import Data.List
-import Data.Monoid
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
+import           Ampersand.Misc
+import           Ampersand.Prototype.ProtoUtil
+import           Ampersand.Prototype.TableSpec
+import           Control.Exception
+import           Data.List
+import           Data.Monoid
 import qualified Data.Text as Text
 import qualified Data.Text.IO as Text
-import Prelude hiding (exp,putStrLn,readFile,writeFile)
-import System.Directory
-import System.FilePath
-import System.IO hiding (hPutStr,hGetContents,putStrLn,readFile,writeFile)
-import System.Process
+import           System.Directory
+import           System.FilePath
+import           System.Process
 
 
 createTablePHP :: TableSpec -> [Text.Text]
@@ -44,12 +42,12 @@ createTablePHP tSpec =
 
 -- evaluate normalized exp in SQL
 evaluateExpSQL :: FSpec -> Text.Text -> Expression -> IO [(String,String)]
-evaluateExpSQL fSpec dbNm exp =
-  -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA exp)
-  -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) exp
+evaluateExpSQL fSpec dbNm expr =
+  -- verboseLn (getOpts fSpec) ("evaluateExpSQL fSpec "++showA expr)
+  -- verboseLn (getOpts fSpec) (intercalate "\n" . showPrf showA . cfProof (getOpts fSpec)) expr
   -- verboseLn (getOpts fSpec) "End of proof"
   performQuery fSpec dbNm violationsQuery
- where violationsExpr = conjNF (getOpts fSpec) exp
+ where violationsExpr = conjNF (getOpts fSpec) expr
        violationsQuery = prettySQLQuery 26 fSpec violationsExpr
 
 performQuery :: FSpec -> Text.Text -> SqlQuery -> IO [(String,String)]
@@ -170,16 +168,22 @@ connectToTheDatabasePHP =
     , ""
     ]
 
-createTempDatabase :: FSpec -> IO ()
+createTempDatabase :: FSpec -> IO Bool
 createTempDatabase fSpec =
  do { result <- executePHPStr .
            showPHP $ phpStr
     ; verboseLn (getOpts fSpec) 
          (if null result 
           then "Temp database created succesfully."
-          else "Temp database creation failed! :"<>result  )
+          else "Temp database creation failed! :\n"<>lineNumbers phpStr<>"\nThe result:\n"<>result  )
+    ; return (null result)
     }
  where 
+  lineNumbers :: [Text.Text] -> String
+  lineNumbers = intercalate "  \n" . map withNumber . zip [1..] . map Text.unpack
+    where
+      withNumber :: (Int,String) -> String
+      withNumber (n,t) = "/*"<>take (5-length(show n)) "00000"<>show n<>"*/ "<>t
   phpStr :: [Text.Text]
   phpStr = 
     connectToMySqlServerPHP (getOpts fSpec) Nothing <>
@@ -238,22 +242,18 @@ createTempDatabase fSpec =
   
     where
       dropDB :: SqlQuery 
-      dropDB = SqlQuery $
-           ["DROP DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)]
+      dropDB = SqlQuerySimple $
+           "DROP DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)
       createDB :: SqlQuery
-      createDB = SqlQuery $
-           ["CREATE DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"]
+      createDB = SqlQuerySimple $
+           "CREATE DATABASE "<>(singleQuote . tempDbName . getOpts $ fSpec)<>" DEFAULT CHARACTER SET UTF8 COLLATE utf8_bin"
       populatePlugPHP plug =
         case tableContents fSpec plug of
           [] -> []
           tblRecords 
              -> ( "mysqli_query($DB_link, "<> queryAsPHP query <>");"
                 ):["if($err=mysqli_error($DB_link)) { $error=true; echo $err.'<br />'; }"]
-               where query = insertQuery tableName attrNames tblRecords
+               where query = insertQuery True tableName attrNames tblRecords
                      tableName = Text.pack . name $ plug
                      attrNames = map (Text.pack . attName) . plugAttributes $ plug
            
-
-
--- *** MySQL stuff below:
-

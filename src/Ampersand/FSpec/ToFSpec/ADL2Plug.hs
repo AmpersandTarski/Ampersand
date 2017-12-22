@@ -227,7 +227,7 @@ wayToStore d =
 
 unquote :: String -> String
 unquote str 
-  | length str Prelude.< 2 = str
+  | length str < 2 = str
   | head str == '"' && last str == '"' = init . tail $ str 
   | otherwise = str
       

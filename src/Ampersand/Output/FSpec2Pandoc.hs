@@ -1,22 +1,21 @@
 {-# LANGUAGE ScopedTypeVariables #-}
 module Ampersand.Output.FSpec2Pandoc (fSpec2Pandoc)
 where
-import Ampersand.Output.ToPandoc.SharedAmongChapters
+import Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    (chpConceptualAnalysis)
+import Ampersand.Output.ToPandoc.ChapterDataAnalysis          (chpDataAnalysis)
+import Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
+import Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointAnalysis)
+import Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)
 import Ampersand.Output.ToPandoc.ChapterInterfaces            (chpInterfacesBlocks)
 import Ampersand.Output.ToPandoc.ChapterIntroduction          (chpIntroduction)
 import Ampersand.Output.ToPandoc.ChapterNatLangReqs           (chpNatLangReqs)
-import Ampersand.Output.ToPandoc.ChapterDiagnosis             (chpDiagnosis)
-import Ampersand.Output.ToPandoc.ChapterConceptualAnalysis    (chpConceptualAnalysis)
 import Ampersand.Output.ToPandoc.ChapterProcessAnalysis       (chpProcessAnalysis)
-import Ampersand.Output.ToPandoc.ChapterDataAnalysis          (chpDataAnalysis)
 import Ampersand.Output.ToPandoc.ChapterSoftwareMetrics       (fpAnalysis)
-import Ampersand.Output.ToPandoc.ChapterFunctionPointAnalysis (chpFunctionPointAnalysis)
-import Ampersand.Output.ToPandoc.ChapterGlossary              (chpGlossary)
-import Data.Time.Format (formatTime)
-import Data.List (nub)
+import Ampersand.Output.ToPandoc.SharedAmongChapters
+import Data.Time.Format                                       (formatTime)
+import Data.List                                              (nub)
 import Text.Pandoc.CrossRef
 
---import Debug.Trace
 --DESCR ->
 --The functional design document starts with an introduction
 --The second chapter defines the functionality of the system for stakeholders.
@@ -102,7 +101,7 @@ fSpec2Pandoc fSpec = (thePandoc,thePictures)
                      Dutch   -> [text "Specificeer auteurs in Ampersand met: META \"authors\" \"<auteursnamen>\""]
                      English -> [text "Specify authors in Ampersand with: META \"authors\" \"<author names>\""]
              xs -> map text $ nub xs  --reduce doubles, for when multiple script files are included, this could cause authors to be mentioned several times.
-           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" | development (getOpts fSpec) ]
+           ++  [ subscript . text $ "(Generated with "++ampersandVersionStr++")" ]
 
         )
       . setDate (text (formatTime (lclForLang (fsLang fSpec)) "%-d %B %Y" (genTime (getOpts fSpec))))

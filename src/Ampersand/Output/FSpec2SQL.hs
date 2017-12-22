@@ -1,39 +1,56 @@
 {-# LANGUAGE OverloadedStrings #-}
 module Ampersand.Output.FSpec2SQL
-  (dumpSQLqueries)
+  (dumpSQLqueries,generateDatabaseFile)
 where
-import Ampersand.ADL1
-import Ampersand.Basics
-import Ampersand.Prototype.TableSpec (queryAsSQL)
-import Ampersand.Prototype.Generate 
-  (generateDBstructQueries, generateInitialPopQueries
-  )
-import Ampersand.Core.ShowAStruct
-import Ampersand.FSpec
-import Ampersand.FSpec.SQL
-import Data.Monoid
+import           Ampersand.ADL1
+import           Ampersand.Basics
+import           Ampersand.Core.AbstractSyntaxTree ( Relation )
+import           Ampersand.Core.ShowAStruct
+import           Ampersand.FSpec
+import           Ampersand.FSpec.SQL
+import           Ampersand.Misc
+import           Ampersand.Prototype.TableSpec (queryAsSQL)
+import           Ampersand.Prototype.Generate  (generateDBstructQueries, generateInitialPopQueries)
+import           Ampersand.Prototype.ProtoUtil(getGenericsDir)
+import           Data.Monoid
 import qualified Data.Text as Text
-import Ampersand.Core.AbstractSyntaxTree
-     ( Relation )
+import           System.Directory
+import           System.FilePath
 
+generateDatabaseFile :: MultiFSpecs -> IO()
+generateDatabaseFile multi = 
+   do verboseLn opts ("  Generating "++file)
+      createDirectoryIfMissing True (takeDirectory fullFile)
+      writeFile fullFile content
+  where 
+   opts = getOpts (userFSpec multi)
+   content = Text.unpack (databaseStructureSql multi)
+   file = "database" <.> "sql"
+   fullFile = getGenericsDir opts </> file
+
+databaseStructureSql :: MultiFSpecs -> Text.Text
+databaseStructureSql multi
+   = Text.intercalate "\n" $ 
+         header (Text.pack ampersandVersionStr)
+       <>header "Database structure queries"
+       <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
+   where
+     fSpec = userFSpec multi
 dumpSQLqueries :: MultiFSpecs -> Text.Text
 dumpSQLqueries multi
    = Text.intercalate "\n" $ 
          header (Text.pack ampersandVersionStr)
        <>header "Database structure queries"
-       <>(map separator . map queryAsSQL $ generateDBstructQueries fSpec True) 
+       <>map (addSeparator . queryAsSQL) (generateDBstructQueries fSpec True) 
        <>header "Initial population queries"
-       <>(map separator . map queryAsSQL $ generateInitialPopQueries fSpec) 
+       <>map (addSeparator . queryAsSQL) (generateInitialPopQueries fSpec True) 
        <>header "Violations of conjuncts"
        <>concatMap showConjunct (allConjuncts fSpec)
        <>header "Queries per relation"
        <>concatMap showDecl (vrels fSpec)
        <>header "Queries of interfaces"
        <>concatMap showInterface (interfaceS fSpec <> interfaceG fSpec)
-    
    where
-     separator :: Text.Text -> Text.Text
-     separator t = Text.init t <> ";"
      fSpec = userFSpec multi
      showInterface :: Interface -> [Text.Text]
      showInterface ifc 
@@ -71,17 +88,21 @@ dumpSQLqueries multi
      showDecl decl 
         = header (Text.pack$ showA decl)
         <>[(queryAsSQL . prettySQLQuery 2 fSpec $ decl)<>";",""]
-     header :: Text.Text -> [Text.Text]
-     header title = 
-         [ "/*"
-         , Text.replicate width "*"
-         , "***"<>spaces firstspaces<>title<>spaces (width-6-firstspaces-l)<>"***"
-         , Text.replicate width "*"
-         , "*/"
-         ]
-       where width = maximum [80 , l + 8]
-             l = Text.length title
-             spaces :: Int -> Text.Text
-             spaces i = Text.replicate i " "
-             firstspaces :: Int
-             firstspaces = (width - 6 - l) `quot` 2 
+
+header :: Text.Text -> [Text.Text]
+header title = 
+    [ "/*"
+    , Text.replicate width "*"
+    , "***"<>spaces firstspaces<>title<>spaces (width-6-firstspaces-l)<>"***"
+    , Text.replicate width "*"
+    , "*/"
+    ]
+  where 
+    width = maximum [80 , l + 8]
+    l = Text.length title
+    spaces :: Int -> Text.Text
+    spaces i = Text.replicate i " "
+    firstspaces :: Int
+    firstspaces = (width - 6 - l) `quot` 2 
+addSeparator :: Text.Text -> Text.Text
+addSeparator t = t <> ";"

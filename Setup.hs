@@ -1,24 +1,24 @@
 {-# OPTIONS_GHC -Wall #-}
-import Distribution.Simple
-import Distribution.Simple.LocalBuildInfo
-import Distribution.Simple.Setup
-import Distribution.PackageDescription
-import System.Process
-import System.Exit
-import Control.Exception
-import Data.List
-import Data.Either
-import Data.Char
-import Data.Time.Clock
-import qualified Data.Time.Format as DTF
-import Data.Time.LocalTime
-import System.Directory
-import System.FilePath
-import System.IO
---import System.Locale as SL
-import qualified Data.ByteString.Lazy.Char8 as BS
+module Main 
+where
 import qualified Codec.Compression.GZip as GZip
-
+import           Control.Exception
+import qualified Data.ByteString.Lazy.Char8 as BS
+import           Data.Char
+import           Data.Either
+import           Data.List
+import           Data.Time.Clock
+import qualified Data.Time.Format as DTF
+import           Data.Time.LocalTime
+import           Distribution.Simple
+import           Distribution.Simple.LocalBuildInfo
+import           Distribution.Simple.Setup
+import           Distribution.PackageDescription
+import           System.Directory
+import           System.Exit
+import           System.FilePath
+import           System.IO(withFile,IOMode(ReadMode),hGetContents)
+import           System.Process
 
 main :: IO ()
 main = defaultMainWithHooks (simpleUserHooks { buildHook = generateBuildInfoHook } )
@@ -49,11 +49,17 @@ buildInfoModuleName = "Ampersand.Basics.BuildInfo_Generated"
 
 buildInfoModule :: String -> String -> String -> String
 buildInfoModule cabalVersion gitInfo time = unlines
-  [ "module "++buildInfoModuleName++"(cabalVersionStr, gitInfoStr, buildTimeStr) where"
+  [ "module "++buildInfoModuleName++"("
+  -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
   , ""
   , "-- This module is generated automatically by Setup.hs before building. Do not edit!"
   , ""
-  -- Workaround: break pragma start { - #, since it upsets Eclipse :-(
+  , "      cabalVersionStr"
+  , "    , gitInfoStr"
+  , "    , buildTimeStr"
+  , "    ) where"
+  , "import Ampersand.Basics.Prelude"
+  , ""
   , "{-"++"# NOINLINE cabalVersionStr #-}" -- disable inlining to prevent recompilation of dependent modules on each build
   , "cabalVersionStr :: String"
   , "cabalVersionStr = \"" ++ cabalVersion ++ "\""
@@ -195,6 +201,7 @@ staticFileModuleHeader =
   , "   , allStaticFiles, getStaticFileContent"
   , "   )"
   , "where"
+  , "import Ampersand.Basics"
   , "import qualified Data.ByteString.Lazy.Char8 as BS"
   , "import qualified Codec.Compression.GZip as GZip"
   , "import System.FilePath"

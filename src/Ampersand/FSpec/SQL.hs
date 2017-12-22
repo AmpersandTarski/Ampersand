@@ -26,8 +26,9 @@ import qualified Data.Text as Text
 import Ampersand.Classes
      (isUni)
 
-data SqlQuery = SqlQuery [Text.Text]
-
+data SqlQuery = SqlQueryPlain  Text.Text -- Hardly any newlines (only within values newlines are possible), no comments and no prettyprinting
+              | SqlQueryPretty [Text.Text] -- Human readable, neatly prettyprinted
+              | SqlQuerySimple Text.Text -- Simple sql statement, could be both plain and pretty.
 placeHolderSQL :: String
 placeHolderSQL = "_SRCATOM"
 
@@ -72,7 +73,7 @@ class SQLAble a where
   prettySQLQuery                = doPretty getBinQueryExpr
   doPretty :: (FSpec -> a -> BinQueryExpr) -> Int -> FSpec -> a -> SqlQuery
   doPretty fun i fSpec
-    =  SqlQuery 
+    =  SqlQueryPretty 
      . Text.lines
      . Text.pack
      . intercalate ("\n"++replicate i ' ') 
