@@ -66,7 +66,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * Database name
      * @var string
      */
-    private $db_name;
+    private $dbName;
     
     /**
      * Specifies if database transaction is active
@@ -91,7 +91,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         $this->db_host = Config::get('dbHost', 'mysqlDatabase');
         $this->db_user = Config::get('dbUser', 'mysqlDatabase');
         $this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
-        $this->db_name = Config::get('dbName', 'mysqlDatabase');
+        $this->dbName = Config::get('dbName', 'mysqlDatabase');
         
         // Enable mysqli errors to be thrown as Exceptions
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
@@ -293,7 +293,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return string
      */
     public function getLabel(){
-        return "MySQL database {$this->db_host} - {$this->db_name}";
+        return "MySQL database {$this->db_host} - {$this->dbName}";
     }
     
     /**
