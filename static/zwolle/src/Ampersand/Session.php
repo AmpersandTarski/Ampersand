@@ -64,30 +64,26 @@ class Session {
     private $sessionAccount;
     
     /**
-     * @var Session $_instance needed for singleton() pattern of Session class
-     */
-    private static $_instance = null;
-    
-    /**
      * Constructor of Session class
      * private to prevent any outside instantiation of this object
      */
-    private function __construct(){
+    public function __construct(){
         $this->logger = Logger::getLogger('SESSION');
+       
+        $this->setId();
+    }
+
+    private function setId(){
         $this->id = session_id();
         $this->logger->debug("Session id set to: {$this->id}");
-        
-        /* Don't put anymore logic here, to prevent multiple Session objects
-         * Instead use initSession(), called by singleton() right after initiation
-         * E.g. within initSession, a Transaction close is requested, 
-         * which kicks in the RuleEngine, which instantiatates a 
-         * Session with Session::singleton(). If this code is placed
-         * in this constructor, the constructor is not yet finished
-         * and singleton() creates another Session object
-         */
+    }
+
+    private function resetId(){
+        session_regenerate_id(); // Create new php session identifier
+        $this->setId();
     }
     
-    private function initSession(){
+    public function initSessionAtom(){
         $this->sessionAtom = new Atom($this->id, Concept::getSessionConcept());
         $this->sessionResource = new Resource($this->id, Concept::getSessionConcept()->name);
         
@@ -101,12 +97,12 @@ class Session {
             // strtotime() returns Unix timestamp of lastAccessTime (in UTC). time() does also. Those can be compared
             if(count($lastAccessTime) && strtotime(current($lastAccessTime)->tgt()->getLabel()) < $experationTimeStamp){
                 $this->logger->debug("Session expired");
-                $this->destroySession();
+                $this->sessionAtom->delete(); // Delete Ampersand representation of session
                 
                 if(Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again");
                 
-                self::$_instance = new Session();
-                self::$_instance->initSession();
+                $this->resetId();
+                $this->initSessionAtom();
                 return;
             }
         }
@@ -118,32 +114,6 @@ class Session {
         
         // Add public interfaces
         $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
-    }
-    
-    /**
-     * private method to prevent any copy of this object
-     */
-    private function __clone(){}
-    
-    /**
-     * @return Session
-     */
-    public static function singleton(){
-        if(is_null(self::$_instance)){
-            self::$_instance = new Session();
-            self::$_instance->initSession();
-        }
-        return self::$_instance;
-    }
-    
-    /**
-     * Delete Ampersand session atom (transaction is not automatically closed), destroy php session
-     * @return void
-     */
-    public function destroySession(){
-        $this->sessionAtom->delete(); // Delete Ampersand representation of session
-        
-        session_regenerate_id(); // Create new php session identifier
     }
     
     /**

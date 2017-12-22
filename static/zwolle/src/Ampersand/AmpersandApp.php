@@ -30,6 +30,13 @@ class AmpersandApp
      */
     protected $storages = [];
 
+    /**
+     * The session between AmpersandApp and user
+     * 
+     * @var Session
+     */
+    protected $session = null;
+
     
     public function __construct(array $options = []){
         $this->logger = Logger::getLogger('APPLICATION');
@@ -38,12 +45,26 @@ class AmpersandApp
         if(isset($options['storages'])) foreach($options['storages'] as $storage) $this->registerStorage($storage);
 
         // Initiate session
-        Session::singleton();
+        $this->setSession();
     }
 
     public function registerStorage(StorageInterface $storage){
         $this->logger->debug("Add storage: " . $storage->getLabel());
         $this->storages[] = $storage;
+    }
+
+    private function setSession(){
+        $this->session = new Session();
+        $this->session->initSessionAtom();
+    }
+
+    /**
+     * Get the session object for this instance of the ampersand application
+     *
+     * @return Session
+     */
+    public function getSession(){
+        return $this->session;
     }
 
     /**
