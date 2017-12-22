@@ -1,18 +1,17 @@
 <?php
 
-use Ampersand\Session;
 use Ampersand\Config;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
 use Ampersand\Interfacing\Transaction;
 use Ampersand\Rule\RuleEngine;
+use Ampersand\AmpersandApp;
 
 global $app;
 
 // Path to API is 'api/v1/oauthlogin/login'
 $app->get('/oauthlogin/login', function () use ($app){
-    Session::singleton();
     
     $idps = array();
     $identityProviders = Config::get('identityProviders', 'OAuthLogin');
@@ -44,12 +43,8 @@ $app->get('/oauthlogin/login', function () use ($app){
 
 // Path to API is 'api/v1/oauthlogin/logout'
 $app->get('/oauthlogin/logout', function () use ($app){
-    $session = Session::singleton();
-    
-    $session->sessionAtom->delete();
-        
-    $transaction = Transaction::getCurrentTransaction()->close(true);
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Logout successfull");
+    $ampersandApp = AmpersandApp::singleton();
+    $ampersandApp->logout();
 
     RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
         

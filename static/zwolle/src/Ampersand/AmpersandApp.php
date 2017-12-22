@@ -9,6 +9,7 @@ use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
 use Ampersand\Session;
+use Ampersand\Core\Atom;
 
 class AmpersandApp
 {
@@ -70,7 +71,6 @@ class AmpersandApp
         return self::$_instance;
     }
     
-
     public function registerStorage(StorageInterface $storage){
         $this->logger->debug("Add storage: " . $storage->getLabel());
         $this->storages[] = $storage;
@@ -88,6 +88,32 @@ class AmpersandApp
      */
     public function getSession(){
         return $this->session;
+    }
+
+    /**
+     * Login user and commit transaction
+     *
+     * @return void
+     */
+    public function login(Atom $account){
+        // Set sessionAccount
+        $this->session->sessionAtom->link($account, 'sessionAccount[SESSION*Account]')->add();
+        
+        // Login timestamps
+        $ts = date(DATE_ISO8601);
+        $account->link($ts, 'accMostRecentLogin[Account*DateTime]')->add();
+        $account->link($ts, 'accLoginTimestamps[Account*DateTime]')->add();
+
+        Transaction::getCurrentTransaction()->close(true);
+    }
+
+    /**
+     * Logout user, destroy and reset session
+     *
+     * @return void
+     */
+    public function logout(){
+        $this->session->reset();
     }
 
     /**
@@ -124,6 +150,6 @@ class AmpersandApp
         $this->logger->info("Initial evaluation of all conjuncts after application reinstallation");
         Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
 
-        Session::singleton(); // Initiate new session
+        $this->setSession(); // Initiate session again
     }
 }

@@ -4,15 +4,16 @@ use Ampersand\Config;
 use Ampersand\Extension\ExecEngine\ExecEngine;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
-use Ampersand\Session;
 use Ampersand\Interfacing\Transaction;
 use Ampersand\Rule\RuleEngine;
+use Ampersand\AmpersandApp;
 
 global $app;
 
 // Path to API is 'api/v1/execengine/import'
 $app->get('/execengine/run', function () use ($app){
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
+    $session = $ampersandApp->getSession();
     
     $roleIds = $app->request->params('roleIds');
     $session->activateRoles($roleIds);

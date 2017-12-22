@@ -2,7 +2,6 @@
 
 use Ampersand\Config;
 use Ampersand\Database\Database;
-use Ampersand\Session;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
@@ -27,9 +26,8 @@ $app->get('/admin/installer', function () use ($app){
     $ampersandApp = AmpersandApp::singleton();
     $ampersandApp->reinstall($defaultPop);
 
-    $session = Session::singleton();
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
     
     // Checks
     $logger = Logger::getUserLogger();

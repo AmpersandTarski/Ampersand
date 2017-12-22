@@ -2,8 +2,8 @@
 
 use Ampersand\Config;
 use Ampersand\Core\Concept;
-use Ampersand\Session;
 use Ampersand\AngularApp;
+use Ampersand\AmpersandApp;
 use Ampersand\Core\Atom;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
@@ -11,6 +11,7 @@ use Ampersand\Log\Notifications;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Interfacing\Transaction;
 use Ampersand\Rule\RuleEngine;
+
 
 global $app;
 
@@ -34,16 +35,16 @@ $app->get('/resources', function() use ($app) {
 });
 
 $app->get('/resources/:resourceType', function ($resourceType) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
     
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
     
     $concept = Concept::getConcept($resourceType);
     
     // Checks
     if(!$concept->isObject()) throw new Exception ("Resource type not found", 404);
-    if(!$session->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
+    if(!$ampersandApp->getSession()->isEditableConcept($concept)) throw new Exception ("You do not have access for this call", 403);
     
     $resources = Resource::getAllResources($resourceType);
     
@@ -52,15 +53,15 @@ $app->get('/resources/:resourceType', function ($resourceType) use ($app) {
 
 
 $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $resourceId) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
 
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
     
     $resource = new Resource($resourceId, $resourceType);
     
     // Checks
-    if(!$session->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
+    if(!$ampersandApp->getSession()->isEditableConcept($resource->concept)) throw new Exception ("You do not have access for this call", 403);
     if(!$resource->exists()) throw new Exception("Resource '{$resource}' not found", 404);
 
     print json_encode($resource, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
@@ -74,10 +75,10 @@ $app->get('/resources/:resourceType/:resourceId', function ($resourceType, $reso
  *************************************************************************************************/
 
 $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
 
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
     
     // Options
     $rcOptions = $ifcOptions = 0;
@@ -94,13 +95,13 @@ $app->get('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 });
 
 $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
     $transaction = Transaction::getCurrentTransaction();
     
     $roleIds = $app->request->params('roleIds');
     $options = $app->request->params();
     
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
     
     // Options
     $rcOptions = $ifcOptions = 0;
@@ -130,13 +131,13 @@ $app->put('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceT
 });
 
 $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resourceType, $resourceId, $ifcPath = array()) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
     $transaction = Transaction::getCurrentTransaction();
     
     $roleIds = $app->request->params('roleIds');
     $options = $app->request->params();
     
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
     
     // Options
     $rcOptions = $ifcOptions = 0;
@@ -169,11 +170,11 @@ $app->patch('/resources/:resourceType/:resourceId(/:ifcPath+)', function ($resou
 });
 
 $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
     $transaction = Transaction::getCurrentTransaction();
 
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
 
     $options = $app->request->params();
     
@@ -206,11 +207,11 @@ $app->post('/resources/:resourceType/:resourceId/:ifcPath+', function ($resource
 });
 
 $app->delete('/resources/:resourceType/:resourceId/:ifcPath+', function ($resourceType, $resourceId, $ifcPath) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
     $transaction = Transaction::getCurrentTransaction();
 
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
 
     $options = $app->request->params();
     

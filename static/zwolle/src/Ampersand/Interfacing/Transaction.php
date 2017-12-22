@@ -217,6 +217,11 @@ class Transaction {
  * 
  *********************************************************************************************/
     
+    /**
+     * Get current/latest transaction
+     *
+     * @return Transaction
+     */
     public static function getCurrentTransaction(){
         if(!isset(self::$_currentTransaction)) self::$_currentTransaction = new Transaction();
         return self::$_currentTransaction;

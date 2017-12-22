@@ -5,10 +5,10 @@ namespace Ampersand\Extension\OAuthLogin;
 use Exception;
 use Ampersand\AngularApp;
 use Ampersand\Config;
-use Ampersand\Session;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Interfacing\Transaction;
+use Ampersand\AmpersandApp;
 
 // UI
 AngularApp::addMenuItem('role', 'extensions/OAuthLogin/ui/views/MenuItem.html', function($session){ return true;});
@@ -176,8 +176,6 @@ class OAuthLoginController {
     private function login($email){
         if(empty($email)) throw new Exception("No emailaddress provided to login", 500);
         
-        $session = Session::singleton();
-        
         $accounts = (new Resource($email, 'UserID'))->all('AccountForUserid');
         
         // Create new account
@@ -198,16 +196,10 @@ class OAuthLoginController {
             throw new Exception("Multiple users registered with email $email", 401);
         }
         
-        // Set sessionAccount
-        $session->sessionAtom->link($account, 'sessionAccount[SESSION*Account]')->add();
-            
-        // Login timestamps
-        $ts = date(DATE_ISO8601);
-        $account->link($ts, 'accMostRecentLogin[Account*DateTime]')->add();
-        $account->link($ts, 'accLoginTimestamps[Account*DateTime]')->add();
+        // Login account
+        AmpersandApp::singleton()->login($account); // Automatically closes transaction
 
-        $transaction = Transaction::getCurrentTransaction()->close(true);
-        if($transaction->isCommitted()) Logger::getUserLogger()->notice("Login successfull");
+        if(Transaction::getCurrentTransaction()->isCommitted()) Logger::getUserLogger()->notice("Login successfull");
     }
 }
 ?>

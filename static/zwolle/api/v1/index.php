@@ -1,9 +1,9 @@
 <?php
 
 use Ampersand\Config;
-use Ampersand\Session;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
+use Ampersand\AmpersandApp;
 
 require_once (__DIR__ . '/../../src/bootstrap.php');
 
@@ -30,12 +30,11 @@ $app->response->headers->set('Content-Type', 'application/json');
 $app->error(function (Exception $e) use ($app) {
     try{
         Logger::getLogger("API")->error($e->getMessage());
-        $session = Session::singleton();
         
         switch ($e->getCode()) {
             case 401: // Unauthorized
             case 403: // Forbidden
-                if(Config::get('loginEnabled') && !$session->sessionUserLoggedIn()){
+                if(Config::get('loginEnabled') && !AmpersandApp::singleton()->getSession()->sessionUserLoggedIn()){
                     $code = 401;
                     $message = "Please login to access this page";
                 }else{

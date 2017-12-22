@@ -31,7 +31,7 @@ class Session {
     /**
      * @var string $id session identifier
      */
-    public $id;
+    private $id;
     
     /**
      * @var Atom $sessionAtom reference to corresponding session object (Atom) in &-domain
@@ -73,6 +73,15 @@ class Session {
         $this->setId();
     }
 
+    /**
+     * Get session identifier
+     *
+     * @return string
+     */
+    public function getId(){
+        return $this->id;
+    }
+
     private function setId(){
         $this->id = session_id();
         $this->logger->debug("Session id set to: {$this->id}");
@@ -81,6 +90,12 @@ class Session {
     private function resetId(){
         session_regenerate_id(); // Create new php session identifier
         $this->setId();
+    }
+
+    public function reset(){
+        $this->sessionAtom->delete(); // Delete Ampersand representation of session
+        $this->resetId();
+        $this->initSessionAtom();
     }
     
     public function initSessionAtom(){
@@ -97,12 +112,8 @@ class Session {
             // strtotime() returns Unix timestamp of lastAccessTime (in UTC). time() does also. Those can be compared
             if(count($lastAccessTime) && strtotime(current($lastAccessTime)->tgt()->getLabel()) < $experationTimeStamp){
                 $this->logger->debug("Session expired");
-                $this->sessionAtom->delete(); // Delete Ampersand representation of session
-                
                 if(Config::get('loginEnabled')) Logger::getUserLogger()->warning("Your session has expired, please login again");
-                
-                $this->resetId();
-                $this->initSessionAtom();
+                $this->reset();
                 return;
             }
         }
@@ -298,6 +309,11 @@ class Session {
      */
     public function isAccessibleIfc($ifc){
         return in_array($ifc, $this->accessibleInterfaces, true);
+    }
+
+    // TODO: occurs still at some other places. Refactoring required
+    public function hasAccess(){
+
     }
     
 /**********************************************************************************************

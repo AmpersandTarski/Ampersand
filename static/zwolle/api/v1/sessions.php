@@ -2,6 +2,7 @@
 
 use Ampersand\Session;
 use Ampersand\AngularApp;
+use Ampersand\AmpersandApp;
 use Ampersand\Log\Notifications;
 use Ampersand\Config;
 use Ampersand\Rule\RuleEngine;
@@ -20,7 +21,8 @@ $app->get('/admin/sessions/delete/expired', function () use ($app) {
 });
 
 $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
+    $session = $ampersandApp->getSession();
     
     $roleIds = $app->request->params('roleIds');
     $session->activateRoles($roleIds);
@@ -37,7 +39,7 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
                                                  ,'switchAutoSave' => Config::get('interfaceAutoSaveChanges', 'transactions')
                                                  )
                      ,'notifications' => Notifications::getAll()
-                     ,'session' => array ('id' => $session->id
+                     ,'session' => array ('id' => $session->getId()
                                          ,'loggedIn' => $session->sessionUserLoggedIn()
                                          )
                      ,'sessionRoles' => array_values($session->getSessionRoles()) // return numeric array
@@ -49,10 +51,10 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 
 
 $app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app) {
-    $session = Session::singleton();
+    $ampersandApp = AmpersandApp::singleton();
     
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->getSession()->activateRoles($roleIds);
     
     foreach(RuleEngine::getSignalViolationsFromDB() as $violation) Notifications::addSignal($violation);
     
