@@ -123,22 +123,11 @@ class AngularApp {
     }
     
     public static function getNavBarIfcs($menu){
-        $session = Session::singleton();
-        
-        // Add public interfaces
-        $interfaces = InterfaceObject::getPublicInterfaces();
-        
-        // Add interfaces for active roles
-        foreach($session->getActiveRoles() as $role){
-            $interfaces = array_merge($interfaces, $role->interfaces());
-        }
-        
-        // Filter duplicate interfaces
-        $interfaces = array_unique($interfaces); 
+        $ampersandApp = AmpersandApp::singleton();
         
         // Filter interfaces for requested part of navbar
         $sessionCpt = Concept::getSessionConcept();
-        $interfaces = array_filter($interfaces, function($ifc) use ($menu, $sessionCpt){
+        $interfaces = array_filter($ampersandApp->getAccessibleInterfaces(), function($ifc) use ($menu, $sessionCpt){
             switch ($menu) {
                 case 'top':
                     if(($ifc->srcConcept == $sessionCpt || $ifc->srcConcept->name == 'ONE') && $ifc->crudR()) return true;

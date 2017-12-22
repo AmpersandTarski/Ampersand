@@ -10,8 +10,8 @@ namespace Ampersand\Rule;
 use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
-use Ampersand\Session;
 use Ampersand\Config;
+use Ampersand\AmpersandApp;
 
 /**
  *
@@ -56,11 +56,11 @@ class RuleEngine {
      */
     public static function checkProcessRules($cacheConjuncts = true){
         $logger = Logger::getLogger('RULE');
-        $session = Session::singleton();
+        $ampersandApp = AmpersandApp::singleton();
         
-        $logger->debug("Checking process rules for active roles: " . implode(', ', array_column($session->getActiveRoles(), 'label')));
+        $logger->debug("Checking process rules for active roles: " . implode(', ', array_column($ampersandApp->getActiveRoles(), 'label')));
         
-        foreach ($session->rulesToMaintain as $rule){
+        foreach ($ampersandApp->getRulesToMaintain() as $rule){
             $violations = $rule->getViolations($cacheConjuncts);
             foreach ($violations as $violation) Notifications::addSignal($violation);
         }    
@@ -102,13 +102,13 @@ class RuleEngine {
      */
     public static function getSignalViolationsFromDB(){
         $logger = Logger::getLogger('RULE');
-        $session = Session::singleton();
+        $ampersandApp = AmpersandApp::singleton();
         $database = Database::singleton();
         $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
         
         $conjuncts = array();
         $conjunctRuleMap = array();
-        foreach ($session->rulesToMaintain as $rule){
+        foreach ($ampersandApp->getRulesToMaintain() as $rule){
             foreach($rule->conjuncts as $conjunct) $conjunctRuleMap[$conjunct->id][] = $rule;
             $conjuncts = array_merge($conjuncts, $rule->conjuncts);
         }

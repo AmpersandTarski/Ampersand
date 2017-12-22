@@ -27,7 +27,7 @@ $app->get('/admin/installer', function () use ($app){
     $ampersandApp->reinstall($defaultPop);
 
     $roleIds = $app->request->params('roleIds');
-    $ampersandApp->getSession()->activateRoles($roleIds);
+    $ampersandApp->activateRoles($roleIds);
     
     // Checks
     $logger = Logger::getUserLogger();

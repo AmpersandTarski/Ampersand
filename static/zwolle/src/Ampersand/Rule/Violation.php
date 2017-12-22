@@ -10,7 +10,7 @@ namespace Ampersand\Rule;
 use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Core\Atom;
-use Ampersand\Session;
+use Ampersand\AmpersandApp;
 
 /**
  *
@@ -118,17 +118,17 @@ class Violation {
      * @return array
      */
     public function getInterfaces($srcOrTgt = null){
-        $session = Session::singleton();
+        $ampersandApp = AmpersandApp::singleton();
         
         switch ($srcOrTgt) {
             case 'src':
-                return $session->getInterfacesToReadConcepts([$this->src->concept]);
+                return $ampersandApp->getInterfacesToReadConcepts([$this->src->concept]);
                 break;
             case 'tgt':
-                return $session->getInterfacesToReadConcepts([$this->tgt->concept]);
+                return $ampersandApp->getInterfacesToReadConcepts([$this->tgt->concept]);
                 break;
             default:
-                return $session->getInterfacesToReadConcepts([$this->src->concept, $this->tgt->concept]);
+                return $ampersandApp->getInterfacesToReadConcepts([$this->src->concept, $this->tgt->concept]);
                 break;
         }
     }

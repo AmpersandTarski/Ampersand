@@ -7,7 +7,6 @@
 
 namespace Ampersand\Interfacing;
 
-use Ampersand\Session;
 use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
@@ -17,6 +16,7 @@ use Ampersand\Interfacing\View;
 use Ampersand\Core\Atom;
 use Ampersand\Config;
 use Ampersand\Plugs\IfcPlugInterface;
+use Ampersand\AmpersandApp;
 
 /**
  *
@@ -474,11 +474,9 @@ class InterfaceObject {
      * @return InterfaceObject[]
      */
     public function getNavInterfacesForTgt(){
-        $session = Session::singleton();
         $ifcs = array();
-        
-        if($this->isLinkTo() && $session->isAccessibleIfc($refIfc = self::getInterface($this->refInterfaceId))) $ifcs[] = $refIfc;
-        else $ifcs = $session->getInterfacesToReadConcepts([$this->tgtConcept]);
+        if($this->isLinkTo() && AmpersandApp::singleton()->isAccessibleIfc($refIfc = self::getInterface($this->refInterfaceId))) $ifcs[] = $refIfc;
+        else $ifcs = AmpersandApp::singleton()->getInterfacesToReadConcepts([$this->tgtConcept]);
         
         return $ifcs;
     }

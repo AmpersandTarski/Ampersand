@@ -22,13 +22,13 @@ $app->get('/admin/sessions/delete/expired', function () use ($app) {
 
 $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
     $ampersandApp = AmpersandApp::singleton();
-    $session = $ampersandApp->getSession();
     
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->activateRoles($roleIds);
     
     foreach(RuleEngine::getSignalViolationsFromDB() as $violation) Notifications::addSignal($violation);
     
+    $session = $ampersandApp->getSession();
     $content = array ('top' => AngularApp::getNavBarIfcs('top')
                      ,'new' => AngularApp::getNavBarIfcs('new')
                      ,'refreshMenu' => AngularApp::getMenuItems('refresh')
@@ -42,7 +42,7 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
                      ,'session' => array ('id' => $session->getId()
                                          ,'loggedIn' => $session->sessionUserLoggedIn()
                                          )
-                     ,'sessionRoles' => array_values($session->getSessionRoles()) // return numeric array
+                     ,'sessionRoles' => array_values($ampersandApp->getAllowedRoles()) // return numeric array
                      ,'sessionVars' => $session->getSessionVars()
                      );
     
@@ -54,7 +54,7 @@ $app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app)
     $ampersandApp = AmpersandApp::singleton();
     
     $roleIds = $app->request->params('roleIds');
-    $ampersandApp->getSession()->activateRoles($roleIds);
+    $ampersandApp->activateRoles($roleIds);
     
     foreach(RuleEngine::getSignalViolationsFromDB() as $violation) Notifications::addSignal($violation);
     

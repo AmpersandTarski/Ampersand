@@ -10,6 +10,11 @@ use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
+use Ampersand\Rule\Rule;
+use Exception;
+use Ampersand\Interfacing\InterfaceObject;
+use Ampersand\Core\Concept;
+use Ampersand\Role;
 
 class AmpersandApp
 {
@@ -39,6 +44,27 @@ class AmpersandApp
     protected $session = null;
 
     /**
+     * List of accessible interfaces for the user of this Ampersand application
+     * 
+     * @var \Ampersand\Interfacing\InterfaceObject[] $accessibleInterfaces
+     */
+    protected $accessibleInterfaces = [];
+    
+    /**
+     * List with rules that are maintained by the activated roles in this Ampersand application
+     * 
+     * @var \Ampersand\Rule\Rule[] $rulesToMaintain
+     */
+    protected $rulesToMaintain = []; // rules that are maintained by active roles
+
+    /**
+     * List of allowed roles for the user of this Ampersand application
+     *
+     * @var \Ampersand\Role[]
+     */
+    protected $allowedRoles = [];
+
+    /**
      * @var AmpersandApp $_instance needed for singleton() pattern of this class
      */
     private static $_instance = null;
@@ -55,6 +81,9 @@ class AmpersandApp
 
         // Initiate session
         $this->setSession();
+
+        // Add public interfaces
+        $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
     }
 
     /**
@@ -76,9 +105,20 @@ class AmpersandApp
         $this->storages[] = $storage;
     }
 
-    private function setSession(){
+    protected function setSession(){
         $this->session = new Session();
         $this->session->initSessionAtom();
+
+        if(Config::get('loginEnabled')){
+            $sessionRoleLabels = $this->session->getSessionRoleLabels();
+
+            $sessionRoles = [];
+            foreach(Role::getAllRoles() as $role){
+                if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
+            }
+            $this->allowedRoles = $sessionRoles;
+        } 
+        else $this->allowedRoles = Role::getAllRoles();
     }
 
     /**
@@ -88,6 +128,24 @@ class AmpersandApp
      */
     public function getSession(){
         return $this->session;
+    }
+
+    /**
+     * Get list of accessible interfaces for the user of this Ampersand application
+     *
+     * @return \Ampersand\Interfacing\InterfaceObject[]
+     */
+    public function getAccessibleInterfaces(){
+        return $this->accessibleInterfaces;
+    }
+
+    /**
+     * Get the rules that are maintained by the active roles of this Ampersand application
+     *
+     * @return \Ampersand\Rule\Rule[]
+     */
+    public function getRulesToMaintain(){
+        return $this->rulesToMaintain;
     }
 
     /**
@@ -105,6 +163,8 @@ class AmpersandApp
         $account->link($ts, 'accLoginTimestamps[Account*DateTime]')->add();
 
         Transaction::getCurrentTransaction()->close(true);
+
+        $this->setSession();
     }
 
     /**
@@ -151,5 +211,121 @@ class AmpersandApp
         Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
 
         $this->setSession(); // Initiate session again
+    }
+
+    /**
+     * Activatie provided roles (if allowed)
+     * @param array $roleIds list of role ids that must be activated
+     * @return void
+     */
+    public function activateRoles($roleIds = null){
+        if(empty($this->allowedRoles)){
+            $this->logger->debug("No roles available to activate");    
+        }elseif(is_null($roleIds)){
+            $this->logger->debug("Activate default roles");
+            foreach($this->allowedRoles as &$role) $this->activateRole($role);
+        }elseif(empty($roleIds)){
+            $this->logger->debug("No roles provided to activate");
+        }else{
+            if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
+            foreach($this->allowedRoles as &$role){
+                if(in_array($role->id, $roleIds)) $this->activateRole($role);
+            }
+        }
+        
+        // If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
+        if(Config::get('loginEnabled')){
+            foreach($roles as $role){
+                $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+            }
+        }
+        
+        // Filter duplicate values
+        $this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
+        $this->rulesToMaintain = array_unique($this->rulesToMaintain);
+    }
+    
+    /**
+     * Activate provided role
+     * @param \Ampersand\Role $role
+     * @return void
+     */
+    protected function activateRole(Role &$role){
+        $role->active = true;
+        $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
+        
+        foreach($role->maintains() as $ruleName){
+            $this->rulesToMaintain[] = Rule::getRule($ruleName);
+        }
+        
+        $this->logger->info("Role '{$role->id}' is activated");
+    }
+
+    /**
+     * Get allowed roles
+     * 
+     * @return \Ampersand\Role[]
+     */
+    public function getAllowedRoles(){
+        return $this->allowedRoles;
+    }
+
+    /**
+     * Get active roles
+     * @return \Ampersand\Role[]
+     */
+    public function getActiveRoles(){
+        $activeRoles = [];
+        foreach ($this->allowedRoles as $role){
+            if($role->active) $activeRoles[] = $role; 
+        }
+        return $activeRoles;
+    }
+
+    public function hasRole(array $roles = null){
+        return (!empty(array_intersect($this->getAllowedRoles(), (array)$roles)) || is_null($roles))
+    }
+
+    public function hasActiveRole(array $roles = null){
+        return (!empty(array_intersect($this->getActiveRoles(), (array)$roles)) || is_null($roles))
+    }
+
+    /**
+     * Get interfaces that are accessible in the current session to 'Read' a certain concept
+     * @param \Ampersand\Core\Concept[] $concepts
+     * @return \Ampersand\Interfacing\InterfaceObject[]
+     */
+    public function getInterfacesToReadConcepts($concepts){
+        return array_values(
+            array_filter($this->accessibleInterfaces, function($ifc) use ($concepts) {
+                foreach($concepts as $cpt){
+                    if($ifc->srcConcept->hasSpecialization($cpt, true)
+                        && $ifc->crudR()
+                        && (!$ifc->crudC() or ($ifc->crudU() or $ifc->crudD()))
+                        ) return true;
+                }
+                return false;
+            })
+        );
+    }
+
+    /**
+     * Determine if provided concept is editable concept in one of the accessible interfaces in the current session
+     * @param \Ampersand\Core\Concept $concept
+     * @return boolean
+     */
+    public function isEditableConcept(Concept $concept){
+        return array_reduce($this->accessibleInterfaces, function($carry, $ifc) use ($concept){
+            return ($carry || in_array($concept, $ifc->getEditableConcepts()));
+        }, false);
+    }
+    
+    /**
+     * Determine if provided interface is accessible in the current session
+     * @param \Ampersand\Interfacing\InterfaceObject $ifc
+     * @return boolean
+     */
+    public function isAccessibleIfc(InterfaceObject $ifc){
+        return in_array($ifc, $this->accessibleInterfaces, true);
     }
 }

@@ -13,13 +13,12 @@ global $app;
 // Path to API is 'api/v1/execengine/import'
 $app->get('/execengine/run', function () use ($app){
     $ampersandApp = AmpersandApp::singleton();
-    $session = $ampersandApp->getSession();
     
     $roleIds = $app->request->params('roleIds');
-    $session->activateRoles($roleIds);
+    $ampersandApp->activateRoles($roleIds);
     
-    // Check sessionRoles if allowedRolesForRunFunction is specified
-    if(!$session->hasAccess(Config::get('allowedRolesForRunFunction','execEngine'))) throw new Exception("You do not have access to run the exec engine", 401);
+    // Check for required role
+    if(!$ampersandApp->hasRole(Config::get('allowedRolesForRunFunction','execEngine'))) throw new Exception("You do not have access to run the exec engine", 401);
         
     ExecEngine::run(true);
     

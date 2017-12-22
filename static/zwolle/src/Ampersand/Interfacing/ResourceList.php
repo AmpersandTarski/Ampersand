@@ -10,10 +10,10 @@ use stdClass;
 use Exception;
 use ArrayIterator;
 use IteratorAggregate;
-use Ampersand\Session;
 use Ampersand\Config;
 use Ampersand\Core\Atom;
 use Ampersand\Log\Logger;
+use Ampersand\AmpersandApp;
 
 /**
  *
@@ -45,10 +45,9 @@ class ResourceList implements IteratorAggregate {
     
     
     public function __construct(Resource $src, InterfaceObject $parentIfc){
-        $session = Session::singleton();
         $this->logger = Logger::getLogger('INTERFACING');
         
-        if($parentIfc->isRoot() && !$session->isAccessibleIfc($parentIfc)) throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
+        if($parentIfc->isRoot() && !$AmpersandApp::singleton()->isAccessibleIfc($parentIfc)) throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
         
         $this->src = $src;
         $this->ifc = $parentIfc;

@@ -12,7 +12,6 @@ use Ampersand\Interfacing\Resource;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
-use Ampersand\Rule\Rule;
 use Ampersand\Log\Logger;
 use Ampersand\Interfacing\Transaction;
 
@@ -42,21 +41,6 @@ class Session {
      * @var Resource $sessionResource reference to corresponding session object which can be used with interfaces
      */
     public $sessionResource;
-    
-    /**
-     * @var Role[] $sessionRoles contains roles for loggedin user when login is enabled, otherwise all roles
-     */
-    private $sessionRoles; 
-    
-    /**
-     * @var InterfaceObject[] $accessibleInterfaces contains interfaces for sessionRoles when login is enabled, otherwise interfaces for active roles
-     */
-    private $accessibleInterfaces = array();
-    
-    /**
-     * @var array $rulesToMaintain
-     */
-    public $rulesToMaintain = array(); // rules that are maintained by active roles 
     
     /**
      * @var Atom|false $sessionAccount
@@ -122,96 +106,19 @@ class Session {
         $this->sessionAtom->link(date(DATE_ATOM), 'lastAccess[SESSION*DateTime]', false)->add(); 
         
         Transaction::getCurrentTransaction()->close(true);
-        
-        // Add public interfaces
-        $this->accessibleInterfaces = InterfaceObject::getPublicInterfaces();
     }
     
     /**
-     * Activatie provided roles (if allowed)
-     * @param array $roleIds list of role ids that must be activated
-     * @return void
+     * Get session roles
+     * 
+     * @return string[]
      */
-    public function activateRoles($roleIds = null){
-        $roles = $this->getSessionRoles();
-        if(empty($roles)){
-            $this->logger->debug("No roles available to activate");    
-        }elseif(is_null($roleIds)){
-            $this->logger->debug("Activate default roles");
-            foreach($this->sessionRoles as &$role) $this->activateRole($role);
-        }elseif(empty($roleIds)){
-            $this->logger->debug("No roles provided to activate");
-        }else{
-            if(!is_array($roleIds)) throw new Exception ('$roleIds must be an array', 500);
-            foreach($this->sessionRoles as &$role){
-                if(in_array($role->id, $roleIds)) $this->activateRole($role);
-            }
-        }
-        
-        // If login enabled, add also the other interfaces of the sessionRoles (incl. not activated roles) to the accesible interfaces
-        if(Config::get('loginEnabled')){
-            foreach($roles as $role){
-                $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-            }
-        }
-        
-        // Filter duplicate values
-        $this->accessibleInterfaces = array_unique($this->accessibleInterfaces);
-        $this->rulesToMaintain = array_unique($this->rulesToMaintain);
-    }
-    
-    /**
-     * Activate provided role
-     * @param Role $role
-     * @return void
-     */
-    private function activateRole(&$role){
-        $role->active = true;
-        $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-        
-        foreach($role->maintains() as $ruleName){
-            $this->rulesToMaintain[] = Rule::getRule($ruleName);
-        }
-        
-        $this->logger->info("Role '{$role->id}' is activated");
-    }
-    
-    /**
-     * Get session roles (i.e. allowed roles for the current loggedin user (if login is enabled) or all roles otherwise)
-     * @return Role[]
-     */
-    public function getSessionRoles(){
-        if(!isset($this->sessionRoles)){
-            $sessionRoles = array();
-            if(Config::get('loginEnabled')){
-                $this->logger->debug("Getting interface 'SessionRoles' for {$this->sessionResource}");
-                $sessionRoleLabels = array_map(
-                    function($role){
-                        return $role->id;
-                    }, $this->sessionResource->all('SessionRoles')->get()
-                );
-                foreach(Role::getAllRoles() as $role){
-                    if(in_array($role->label, $sessionRoleLabels)) $sessionRoles[] = $role;
-                }
-            }else{
-                $sessionRoles = Role::getAllRoles();
-            }
-            
-            $this->sessionRoles = $sessionRoles;
-        }
-        return $this->sessionRoles;
-    }
-    
-    /**
-     * Get active roles
-     * @return Role[]
-     */
-    public function getActiveRoles(){
-        $activeRoles = array();
-        foreach ($this->getSessionRoles() as $role){
-            if($role->active) $activeRoles[] = $role; 
-        }
-        return $activeRoles;
+    public function getSessionRoleLabels(){
+        return array_map(
+            function($role){
+                return $role->id;
+            }, $this->sessionResource->all('SessionRoles')->get()
+        );
     }
     
     /**
@@ -270,50 +177,6 @@ class Session {
         }else{
             return false;
         }
-    }    
-    
-    /**
-     * Get interfaces that are accessible in the current session to 'Read' a certain concept
-     * @param Concept[] $concepts
-     * @return InterfaceObject[]
-     */
-    public function getInterfacesToReadConcepts($concepts){
-        return array_values(
-            array_filter($this->accessibleInterfaces, function($ifc) use ($concepts) {
-                foreach($concepts as $cpt){
-                    if($ifc->srcConcept->hasSpecialization($cpt, true)
-                        && $ifc->crudR()
-                        && (!$ifc->crudC() or ($ifc->crudU() or $ifc->crudD()))
-                        ) return true;
-                }
-                return false;
-            })
-        );
-    }
-    
-    /**
-     * Determine if provided concept is editable concept in one of the accessible interfaces in the current session
-     * @param Concept $concept
-     * @return boolean
-     */
-    public function isEditableConcept($concept){
-        return array_reduce($this->accessibleInterfaces, function($carry, $ifc) use ($concept){
-            return ($carry || in_array($concept, $ifc->getEditableConcepts()));
-        }, false);
-    }
-    
-    /**
-     * Determine if provided interface is accessible in the current session
-     * @param InterfaceObject $ifc
-     * @return boolean
-     */
-    public function isAccessibleIfc($ifc){
-        return in_array($ifc, $this->accessibleInterfaces, true);
-    }
-
-    // TODO: occurs still at some other places. Refactoring required
-    public function hasAccess(){
-
     }
     
 /**********************************************************************************************
