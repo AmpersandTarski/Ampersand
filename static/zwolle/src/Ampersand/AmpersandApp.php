@@ -37,16 +37,39 @@ class AmpersandApp
      */
     protected $session = null;
 
+    /**
+     * @var AmpersandApp $_instance needed for singleton() pattern of this class
+     */
+    private static $_instance = null;
     
-    public function __construct(array $options = []){
+    /**
+     * 
+     * @param array $depInj dependency injection for Ampersand application
+     */
+    private function __construct(array $depInj = []){
         $this->logger = Logger::getLogger('APPLICATION');
 
         // Register storages
-        if(isset($options['storages'])) foreach($options['storages'] as $storage) $this->registerStorage($storage);
+        if(isset($depInj['storages'])) foreach($depInj['storages'] as $storage) $this->registerStorage($storage);
 
         // Initiate session
         $this->setSession();
     }
+
+    /**
+     * private method to prevent any copy of this object
+     */
+    private function __clone(){}
+        
+    /**
+     * @param array $depInj dependency injection for Ampersand application
+     * @return AmpersandApp
+     */
+    public static function singleton(array $depInj = []){
+        if(is_null(self::$_instance)) self::$_instance = new AmpersandApp($depInj);
+        return self::$_instance;
+    }
+    
 
     public function registerStorage(StorageInterface $storage){
         $this->logger->debug("Add storage: " . $storage->getLabel());

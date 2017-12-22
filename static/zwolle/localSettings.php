@@ -3,6 +3,7 @@
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
+use Ampersand\AmpersandApp;
 
 define ('LOCALSETTINGS_VERSION', 1.5);
 
@@ -76,5 +77,9 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
 
+// First initiation of Ampersand application
+AmpersandApp::singleton([
+    'storages' => [Database::singleton()]
+]);
 
 ?>
