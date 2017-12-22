@@ -24,8 +24,6 @@ $app->get('/admin/installer', function () use ($app){
     $defaultPop = filter_var($app->request->params('defaultPop'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE); 
     if(is_null($defaultPop)) $defaultPop = true;
 
-    Database::createDB();
-
     $ampersandApp = new AmpersandApp([
         'storages' => [Database::singleton()]
     ]);

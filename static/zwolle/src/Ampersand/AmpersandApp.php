@@ -42,6 +42,7 @@ class AmpersandApp
     }
 
     public function registerStorage(StorageInterface $storage){
+        $this->logger->debug("Add storage: " . $storage->getLabel());
         $this->storages[] = $storage;
     }
 

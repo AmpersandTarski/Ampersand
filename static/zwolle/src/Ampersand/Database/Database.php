@@ -98,11 +98,13 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         
         // Connect to MYSQL database
         $this->db_link = mysqli_init();
-        $this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, $this->db_name, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+        $this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
         $this->db_link->set_charset("utf8");
         
         // Set sql_mode to ANSI
         $this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+
+        $this->selectDB();
     }
     
     /**
@@ -121,65 +123,49 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
             if(!is_object (self::$_instance)) self::$_instance = new Database();
         }catch (Exception $e){
             // Convert mysqli_sql_exceptions into 500 errors
-            if(!Config::get('productionEnv')){
-                switch ($e->getCode()){
-                    case 1049 : // Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR)
-                        Logger::getLogger('DATABASE')->info("Automatically creating new database, because it does not exist");
-                        self::createDB();
-                        self::$_instance = new Database();
-                        break;
-                    default : 
-                        throw new Exception("{$e->getCode()}: {$e->getMessage()}", 500);
-                }
-            }else{
-                throw new Exception("Cannot connect to database", 500);
-            }
+            throw new Exception("Cannot connect to database", 500);
         }
         return self::$_instance;
+    }
+
+    private function selectDB(){
+        try {
+            $this->db_link->select_db($this->dbName);
+        }catch (Exception $e){
+            if(!Config::get('productionEnv')){
+                switch ($e->getCode()){
+                    case 1049 : // Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR) --> Database ($this->dbName) does not (yet) exist
+                        Logger::getLogger('DATABASE')->info("Automatically creating new database, because it does not exist");
+                        $this->createDB();
+                        break;
+                    default : 
+                        throw $e;
+                }
+            }else{
+                throw $e;
+            }
+        }
     }
     
     /**
      * Function to create new database. Drops database (and loose all data) if already exists
-     * @throws Exception
+     *
      * @return void
      */
-    public static function createDB(){
-        try{
-            $logger = Logger::getLogger('DATABASE');
-            
-            $DB_host = Config::get('dbHost', 'mysqlDatabase');
-            $DB_user = Config::get('dbUser', 'mysqlDatabase');
-            $DB_pass = Config::get('dbPassword', 'mysqlDatabase');
-            $DB_name = Config::get('dbName', 'mysqlDatabase');
-            
-            // Enable mysqli errors to be thrown as Exceptions
-            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
-            
-            $db_link = mysqli_init();
-            
-            // Connect to MYSQL database
-            $logger->info("Connecting to host: '{$DB_host}'");
-            $db_link->real_connect($DB_host, $DB_user, $DB_pass);
-            
-            // Set sql_mode to ANSI
-            $logger->info("Setting session sql_mode to 'ANSI,TRADITIONAL'");
-            $db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
-            
-            // Drop database
-            $logger->info("Drop database if exists: '{$DB_name}'");
-            $db_link->query("DROP DATABASE IF EXISTS $DB_name");
-            
-            // Create new database
-            $logger->info("Create new database: '{$DB_name}'");
-            $db_link->query("CREATE DATABASE $DB_name DEFAULT CHARACTER SET UTF8");
+    private function createDB(){
+        // Drop database
+        $this->logger->info("Drop database if exists: '{$this->dbName}'");
+        $this->db_link->query("DROP DATABASE IF EXISTS {$this->dbName}");
         
-        }catch (Exception $e){
-            // Convert mysqli_sql_exceptions into 500 errors
-            throw new Exception($e->getMessage(), 500);
-        }
+        // Create new database
+        $this->logger->info("Create new database: '{$this->dbName}'");
+        $this->db_link->query("CREATE DATABASE {$this->dbName} DEFAULT CHARACTER SET UTF8");
+
+        $this->db_link->select_db($this->dbName);
     }
 
     public function reinstallStorage(){
+        $this->createDB();
         $structure = file_get_contents(Config::get('pathToGeneratedFiles') . 'database.sql');
         $this->logger->info("Execute database structure queries");
         $this->doQuery($structure, true);
