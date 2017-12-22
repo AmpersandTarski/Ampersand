@@ -136,7 +136,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
                 switch ($e->getCode()){
                     case 1049 : // Error: 1049 SQLSTATE: 42000 (ER_BAD_DB_ERROR) --> Database ($this->dbName) does not (yet) exist
                         Logger::getLogger('DATABASE')->info("Automatically creating new database, because it does not exist");
-                        $this->createDB();
+                        $this->reinstallStorage();
                         break;
                     default : 
                         throw $e;
