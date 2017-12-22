@@ -42,25 +42,25 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     /**
      * Contains a connection to the mysql database
      */
-    private $db_link;
+    private $dbLink;
     
     /**
      * Host/server of mysql database
      * @var string
      */
-    private $db_host;
+    private $dbHost;
     
     /**
      * Username for mysql database
      * @var string
      */
-    private $db_user;
+    private $dbUser;
     
     /**
      * Password for mysql database
      * @var string
      */
-    private $db_pass;
+    private $dbPass;
     
     /**
      * Database name
@@ -88,21 +88,21 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     private function __construct(){
         $this->logger = Logger::getLogger('DATABASE');
         
-        $this->db_host = Config::get('dbHost', 'mysqlDatabase');
-        $this->db_user = Config::get('dbUser', 'mysqlDatabase');
-        $this->db_pass = Config::get('dbPassword', 'mysqlDatabase');
+        $this->dbHost = Config::get('dbHost', 'mysqlDatabase');
+        $this->dbUser = Config::get('dbUser', 'mysqlDatabase');
+        $this->dbPass = Config::get('dbPassword', 'mysqlDatabase');
         $this->dbName = Config::get('dbName', 'mysqlDatabase');
         
         // Enable mysqli errors to be thrown as Exceptions
         mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         
         // Connect to MYSQL database
-        $this->db_link = mysqli_init();
-        $this->db_link->real_connect($this->db_host, $this->db_user, $this->db_pass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
-        $this->db_link->set_charset("utf8");
+        $this->dbLink = mysqli_init();
+        $this->dbLink->real_connect($this->dbHost, $this->dbUser, $this->dbPass, null, null, null, MYSQLI_CLIENT_FOUND_ROWS);
+        $this->dbLink->set_charset("utf8");
         
         // Set sql_mode to ANSI
-        $this->db_link->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
+        $this->dbLink->query("SET SESSION sql_mode = 'ANSI,TRADITIONAL'");
 
         $this->selectDB();
     }
@@ -130,7 +130,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
 
     private function selectDB(){
         try {
-            $this->db_link->select_db($this->dbName);
+            $this->dbLink->select_db($this->dbName);
         }catch (Exception $e){
             if(!Config::get('productionEnv')){
                 switch ($e->getCode()){
@@ -155,13 +155,13 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     private function createDB(){
         // Drop database
         $this->logger->info("Drop database if exists: '{$this->dbName}'");
-        $this->db_link->query("DROP DATABASE IF EXISTS {$this->dbName}");
+        $this->dbLink->query("DROP DATABASE IF EXISTS {$this->dbName}");
         
         // Create new database
         $this->logger->info("Create new database: '{$this->dbName}'");
-        $this->db_link->query("CREATE DATABASE {$this->dbName} DEFAULT CHARACTER SET UTF8");
+        $this->dbLink->query("CREATE DATABASE {$this->dbName} DEFAULT CHARACTER SET UTF8");
 
-        $this->db_link->select_db($this->dbName);
+        $this->dbLink->select_db($this->dbName);
     }
 
     public function reinstallStorage(){
@@ -242,13 +242,13 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     private function doQuery($query, $multiQuery = false){
         try{
             if($multiQuery){
-                $this->db_link->multi_query($query);
+                $this->dbLink->multi_query($query);
                 do { // to flush results, otherwise a connection stays open
-                    if ($res = $this->db_link->store_result()) $res->free();
-                } while ($this->db_link->more_results() && $this->db_link->next_result());
+                    if ($res = $this->dbLink->store_result()) $res->free();
+                } while ($this->dbLink->more_results() && $this->dbLink->next_result());
                 return true;
             }else{
-                return $this->db_link->query($query);
+                return $this->dbLink->query($query);
             }
         }catch (Exception $e){
             $this->logger->error($e->getMessage());
@@ -279,7 +279,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      */
     public function escape($escapestr){
         if(is_null($escapestr)) return null;
-        else return $this->db_link->real_escape_string($escapestr);
+        else return $this->dbLink->real_escape_string($escapestr);
     }
 
 /**************************************************************************************************
@@ -293,7 +293,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return string
      */
     public function getLabel(){
-        return "MySQL database {$this->db_host} - {$this->dbName}";
+        return "MySQL database {$this->dbHost} - {$this->dbName}";
     }
     
     /**
@@ -754,7 +754,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     private function checkForAffectedRows(){
-        if($this->db_link->affected_rows == 0){
+        if($this->dbLink->affected_rows == 0){
             if(Config::get('productionEnv')){
                 $this->logger->warning("Oops.. something went wrong: No recors affected in database");
             }else{
