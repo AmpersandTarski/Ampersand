@@ -42,19 +42,6 @@ angular.module('AmpersandApp').controller('NavigationBarController', function ($
         );
     };
     
-    $scope.destroySession = function(){
-        session = Restangular.one('sessions', $scope.$sessionStorage.session.id);
-        session.remove().then(function(data){
-            data = data.plain();
-            NotificationService.updateNotifications(data.notifications);
-            
-            // deactivate roles
-            RoleService.deactivateAllRoles();
-            $rootScope.refreshNavBar();
-            
-        });
-    };
-    
     $scope.reload = function(){
         $scope.refreshNavBar();
         $route.reload();

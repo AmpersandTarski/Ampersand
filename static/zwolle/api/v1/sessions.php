@@ -61,23 +61,4 @@ $app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app)
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-$app->delete('/sessions/:sessionId', function ($sessionId) use ($app) {
-    $session = Session::singleton();
-    
-    // Checks
-    if($sessionId != $session->id) throw new Exception ("You can only destroy your own session", 403);
-    
-    // Destroy session
-    $session->destroySession();
-    
-    Transaction::getCurrentTransaction()->close(true);
-
-    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
-    
-    // Return result
-    $content = array('notifications' => Notifications::getAll());
-    
-    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);    
-});
-
 ?>
