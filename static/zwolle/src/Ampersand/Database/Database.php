@@ -301,7 +301,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     private function startTransaction(){
-        Transaction::registerStorageTransaction($this);
         
         $this->Exe("START TRANSACTION"); // start database transaction
         $this->dbTransactionActive = true; // set flag dbTransactionActive

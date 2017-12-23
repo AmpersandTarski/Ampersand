@@ -234,18 +234,6 @@ class Transaction {
         if(!isset(self::$_currentTransaction)) self::$_currentTransaction = new Transaction();
         return self::$_currentTransaction;
     }
-    
-    /**
-     * Register storage implementation in current transaction
-     * Used to close all open storage transactions lateron
-     * @param \Ampersand\Plugs\StorageInterface $storage
-     * @return Transaction
-     */
-    public static function registerStorageTransaction(StorageInterface $storage){
-        $transaction = self::getCurrentTransaction();
-        $transaction->addStorage($storage);
-        return $transaction;
-    }
 }
 
 ?>
