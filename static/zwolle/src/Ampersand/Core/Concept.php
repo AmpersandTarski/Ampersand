@@ -41,6 +41,7 @@ class Concept {
     /**
      * Dependency injection of ConceptPlug implementation
      * There must at least be one plug for every concept
+     * 
      * @var \Ampersand\Plugs\ConceptPlugInterface[]
      */
     protected $plugs;
@@ -469,6 +470,7 @@ class Concept {
         if($atom->concept != $this) throw new Exception("Cannot rename atom '{$atom}', because it does not match concept '{$this}'", 500);
 
         // Rename atom in concept set
+        Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
         foreach($this->plugs as $plug) $plug->renameAtom($atom, $newAtomId);
 
         // Rename atom in relation sets
@@ -512,7 +514,7 @@ class Concept {
                 $this->logger->debug("Atom {$atom} already exists in concept");
             }else{
                 $this->logger->debug("Add atom {$atom} to plug");
-                Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
+                Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
                 
                 foreach($this->plugs as $plug) $plug->addAtom($atom); // Add to plug
                 $this->atomCache[] = $atom->id; // Add to cache
@@ -545,7 +547,7 @@ class Concept {
         // Check if atom exists
         if($atom->exists()){
             $this->logger->debug("Remove atom {$atom} from {$this} in plug");
-            Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
+            Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
             
             foreach($this->plugs as $plug) $plug->removeAtom($atom); // Remove from concept in plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache
@@ -565,7 +567,7 @@ class Concept {
     public function deleteAtom(Atom $atom){
         if($atom->exists()){
             $this->logger->debug("Delete atom {$atom} from plug");
-            Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation.
+            Transaction::getCurrentTransaction()->addAffectedConcept($this); // Add concept to affected concepts. Needed for conjunct evaluation and transaction management
             
             foreach($this->plugs as $plug) $plug->deleteAtom($atom); // Delete from plug
             if(($key = array_search($atom->id, $this->atomCache)) !== false) unset($this->atomCache[$key]); // Delete from cache

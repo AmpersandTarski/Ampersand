@@ -250,7 +250,7 @@ class Relation {
      */
     public function addLink(Link $link){
         $this->logger->debug("Add link {$link} to plug");
-        Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
+        Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation and transaction management
         
         // Ensure that atoms exists in their concept tables
         $link->src()->add(); // TODO: remove when we know for sure that this is guaranteed by calling functions
@@ -266,7 +266,7 @@ class Relation {
      */
     public function deleteLink(Link $link){
         $this->logger->debug("Delete link {$link} from plug");
-        Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation.
+        Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation and transaction management
         
         foreach($this->plugs as $plug) $plug->deleteLink($link);
     }
@@ -277,6 +277,7 @@ class Relation {
      * @return void
      */
     public function deleteAllLinks(Atom $atom, $srcOrTgt = null){
+        Transaction::getCurrentTransaction()->addAffectedRelations($this); // Add relation to affected relations. Needed for conjunct evaluation and transaction management
         switch ($srcOrTgt) {
             case 'src':
                 $this->logger->debug("Deleting all links in relation {$this} with {$atom} set as src");
