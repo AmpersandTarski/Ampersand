@@ -283,11 +283,11 @@ class AmpersandApp
     }
 
     public function hasRole(array $roles = null){
-        return (!empty(array_intersect($this->getAllowedRoles(), (array)$roles)) || is_null($roles))
+        return (!empty(array_intersect($this->getAllowedRoles(), (array)$roles)) || is_null($roles));
     }
 
     public function hasActiveRole(array $roles = null){
-        return (!empty(array_intersect($this->getActiveRoles(), (array)$roles)) || is_null($roles))
+        return (!empty(array_intersect($this->getActiveRoles(), (array)$roles)) || is_null($roles));
     }
 
     /**
