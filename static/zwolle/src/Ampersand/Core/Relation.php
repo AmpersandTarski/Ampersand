@@ -38,9 +38,11 @@ class Relation {
     
     /**
      * Dependency injection of plug implementation
-     * @var \Ampersand\Plug\RelationPlugInterface
+     * There must at least be one plug for every relation
+     * 
+     * @var \Ampersand\Plug\RelationPlugInterface[]
      */
-    protected $plug;
+    protected $plugs;
     
     /**
      *
@@ -209,6 +211,15 @@ class Relation {
      */
     public function getMysqlTable(){
         return $this->mysqlTable;
+    }
+
+    /**
+     * Get registered plugs for this relation
+     *
+     * @return \Ampersand\Plugs\RelationPlugInterface[]
+     */
+    public function getPlugs(){
+        return $this->plugs;
     }
     
     /**

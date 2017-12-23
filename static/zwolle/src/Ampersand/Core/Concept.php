@@ -373,6 +373,15 @@ class Concept {
         }
         return $interfaces;
     }
+
+    /**
+     * Get registered plugs for this concept
+     *
+     * @return \Ampersand\Plugs\ConceptPlugInterface[]
+     */
+    public function getPlugs(){
+        return $this->plugs;
+    }
     
     /**
      * Generate a new atom identifier for this concept
