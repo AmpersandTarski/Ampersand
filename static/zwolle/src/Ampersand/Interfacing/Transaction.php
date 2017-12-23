@@ -165,6 +165,12 @@ class Transaction {
     public function addAffectedConcept(Concept $concept){
         if(!in_array($concept, $this->affectedConcepts)){
             $this->logger->debug("Mark concept '{$concept}' as affected concept");
+            
+            foreach($concept->getPlugs() as $plug){
+                $plug->startTransaction(); // Start transaction for this storage
+                $this->addStorage($plug); // Register storage in this transaction
+            }
+
             $this->affectedConcepts[] = $concept;
         }
     }
@@ -179,6 +185,12 @@ class Transaction {
         
         if(!in_array($relation, $this->affectedRelations)){
             $this->logger->debug("Mark relation '{$relation}' as affected relation");
+
+            foreach($relation->getPlugs() as $plug){
+                $plug->startTransaction(); // Start transaction for this storage
+                $this->addStorage($plug); // Register storage in this transaction
+            }
+
             $this->affectedRelations[] = $relation;
         }
         

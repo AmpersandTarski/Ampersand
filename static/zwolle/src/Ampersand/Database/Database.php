@@ -389,9 +389,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     public function addAtom(Atom $atom){
         $this->logger->debug("addAtom({$atom})");
         
-        // This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
-        
         $atomId = $this->getDBRepresentation($atom);
                         
         // Get table properties
@@ -426,9 +423,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     public function removeAtom(Atom $atom){
         $this->logger->debug("removeAtom({$atom})");
         
-        // This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
-        
         $atomId = $this->getDBRepresentation($atom);
         
         // Get col information for concept and its specializations
@@ -460,9 +454,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     public function deleteAtom(Atom $atom){
         $this->logger->debug("deleteAtom({$atom})");
         
-        // This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
-        
         $atomId = $this->getDBRepresentation($atom);
         
         // Delete atom from concept table
@@ -483,9 +474,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      */
     public function renameAtom(Atom $atom, $newAtomId){
         $this->logger->debug("renameAtom({$atom}, {$newAtomId})");
-
-        // This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
 
         $atomId = $this->getDBRepresentation($atom);
 
@@ -567,9 +555,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     public function addLink(Link $link){
         $this->logger->debug("addLink({$link})");
         
-        // This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
-        
         $relation = $link->relation();
         $srcAtomId = $this->getDBRepresentation($link->src());
         $tgtAtomId = $this->getDBRepresentation($link->tgt());
@@ -601,9 +586,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      */
     public function deleteLink(Link $link){
         $this->logger->debug("deleteLink({$link})");
-        
-        // This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
         
         $relation = $link->relation();
         $srcAtomId = $this->getDBRepresentation($link->src());
@@ -650,9 +632,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     public function deleteAllLinks(Relation $relation, Atom $atom = null, $srcOrTgt = null){
-        // This function is under control of transaction check!
-        if (!$this->dbTransactionActive) $this->startTransaction();
-        
         $relationTable = $relation->getMysqlTable();
         
         // Delete links for given atom
