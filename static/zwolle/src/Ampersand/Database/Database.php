@@ -298,12 +298,16 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Function to start/open a database transaction to track of all changes and be able to rollback
+     * 
+     * @param Transaction $transaction
      * @return void
      */
-    private function startTransaction(){
-        
-        $this->Exe("START TRANSACTION"); // start database transaction
-        $this->dbTransactionActive = true; // set flag dbTransactionActive
+    public function startTransaction(Transaction $transaction){
+        if (!$this->dbTransactionActive){
+            $this->logger->info("Start mysql database transaction for {$transaction}");
+            $this->Exe("START TRANSACTION");
+            return $this->dbTransactionActive = true; // set flag dbTransactionActive
+        }
     }
     
     /**

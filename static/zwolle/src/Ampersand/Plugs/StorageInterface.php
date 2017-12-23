@@ -18,6 +18,8 @@ use Ampersand\Interfacing\Transaction;
 interface StorageInterface {
     
     public function getLabel();
+
+    public function startTransaction(Transaction $transaction);
     
     public function commitTransaction(Transaction $transaction);
     
