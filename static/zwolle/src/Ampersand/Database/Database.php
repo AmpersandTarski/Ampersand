@@ -309,23 +309,25 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     
     /**
      * Function to commit the open database transaction
+     * 
+     * @param Transaction $transaction
      * @return void
      */
-    public function commitTransaction(){
-        $this->logger->info("Commit database transaction");
-        
-        $this->Exe("COMMIT"); // commit database transaction
+    public function commitTransaction(Transaction $transaction){
+        $this->logger->info("Commit mysql database transaction for {$transaction}");
+        $this->Exe("COMMIT");
         $this->dbTransactionActive = false;
     }
     
     /**
      * Function to rollback changes made in the open database transaction
+     * 
+     * @param Transaction $transaction
      * @return void
      */
-    public function rollbackTransaction(){
-        $this->logger->info("Rollback database transaction");
-        
-        $this->Exe("ROLLBACK"); // rollback database transaction
+    public function rollbackTransaction(Transaction $transaction){
+        $this->logger->info("Rollback mysql database transaction for {$transaction}");
+        $this->Exe("ROLLBACK");
         $this->dbTransactionActive = false;
     }
     

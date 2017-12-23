@@ -7,6 +7,8 @@
 
 namespace Ampersand\Plugs;
 
+use Ampersand\Interfacing\Transaction;
+
 /**
  * Interface for storage implementations
  * 
@@ -17,9 +19,9 @@ interface StorageInterface {
     
     public function getLabel();
     
-    public function commitTransaction();
+    public function commitTransaction(Transaction $transaction);
     
-    public function rollbackTransaction();
+    public function rollbackTransaction(Transaction $transaction);
 
     public function reinstallStorage();
 }

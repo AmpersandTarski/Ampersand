@@ -84,6 +84,14 @@ class Transaction {
         $this->id = rand();
         $this->logger->info("Opening transaction: {$this->id}");
     }
+
+    /**
+     * Function is called when object is treated as a string
+     * @return string
+     */
+    public function __toString(){
+        return 'Transaction ' . $this->id;
+    }
     
     /**
      * Close transaction
