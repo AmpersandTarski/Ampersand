@@ -29,7 +29,6 @@ Config::set('maxRunCount', 'execEngine', 10);
 
 // ExecEngine code
 require_once (__DIR__ . '/src/ExecEngine.php');
-require_once (__DIR__ . '/src/ExecEngineViolation.php');
 
 // Load the ExecEngine functions
 $files = \Ampersand\Helper\getDirectoryList(__DIR__ . '/functions');

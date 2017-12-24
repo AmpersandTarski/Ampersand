@@ -90,6 +90,27 @@ class Violation {
         return $this->message = empty($strArr) ? "{$this->src},{$this->tgt}" : implode($strArr);
     }
 
+    /**
+     * Undocumented function
+     *
+     * @return string
+     */
+    public function getExecEngineViolationMessage(){
+        $strArr = [];
+        foreach ($this->rule->getViolationSegments() as $segment){
+            $tgtAtomIds = $segment->getData($this->src, $this->tgt);
+
+            if(count($tgtAtomIds) == 0){
+                $strArr[] = '_NULL'; // use reserved keyword '_NULL' to specify in the return string that segment is empty (i.e. no target atom for expr)
+            }else{ // >= 1
+                $str = implode('_AND', $tgtAtomIds); // use reserved keyword '_AND' as separator between multiple atom ids
+
+                // Prevent certain user input that has special meaning in ExecEngine. Only allow when segment type is 'Text' (i.e. segment is specified in &-script)
+                if($segment->getType() != 'Text') $strArr[] = str_replace(['{EX}','{php}'], '', $str);
+                else $strArr[] = $str;
+            }
+        }
+        return $this->message = implode($strArr); // glue as one string
     }
 
     /**

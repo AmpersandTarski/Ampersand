@@ -97,9 +97,8 @@ class ExecEngine {
         foreach ($violations as $key => $violation){
             $num = $key + 1;
             $logger->info("Fixing violation {$num}/{$total}: ({$violation->src},{$violation->tgt})");
-            $violation = new ExecEngineViolation($violation->rule, $violation->src->id, $violation->tgt->id);
             
-            $theMessage = $violation->getViolationMessage();
+            $theMessage = $violation->getExecEngineViolationMessage();
             
             // Determine actions/functions to be taken
             $functionsToBeCalled = explode('{EX}', $theMessage);
