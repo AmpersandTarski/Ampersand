@@ -24,10 +24,10 @@ ini_set("session.use_strict_mode", true); // prevents a session ID that is never
 session_start();
 
 // Composer Autoloader
-require_once (__DIR__ . '/../lib/autoload.php');
+require_once(__DIR__ . '/../lib/autoload.php');
 
 // Include/set default settings
-require_once (__DIR__ . '/defaultSettings.php');
+require_once(__DIR__ . '/defaultSettings.php');
 
 // Other bootstrapping files
 $files = \Ampersand\Helper\getDirectoryList(__DIR__ . '/bootstrap');
