@@ -31,7 +31,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
 use Ampersand\AngularApp;
-use Ampersand\Extension\ExecEngine\ExecEngine;
+use Ampersand\Rule\ExecEngine;
 
 /*
    Example of rule that automatically inserts pairs into a relation (analogous stuff holds for DelPair):

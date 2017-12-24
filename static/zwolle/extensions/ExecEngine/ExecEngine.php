@@ -8,11 +8,8 @@ use Ampersand\Config;
 use Ampersand\Role;
 
 // Define hooks
-$hook1 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());
+$hook1 = array('class' => '\Ampersand\Rule\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'src/Ampersand/Rule', 'params' => array());
 Hooks::addHook('preCloseTransaction', $hook1);
-
-// ExecEngine code
-require_once (__DIR__ . '/src/ExecEngine.php');
 
 // Load the ExecEngine functions
 $files = \Ampersand\Helper\getDirectoryList(__DIR__ . '/functions');

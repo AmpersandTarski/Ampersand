@@ -69,7 +69,7 @@ $app->get('/admin/execengine/run', function () use ($app){
     // Check for required role
     if(!$ampersandApp->hasRole(Config::get('allowedRolesForRunFunction','execEngine'))) throw new Exception("You do not have access to run the exec engine", 401);
         
-    \Ampersand\Extension\ExecEngine\ExecEngine::run(true);
+    \Ampersand\Rule\ExecEngine::run(true);
     
     $transaction = Transaction::getCurrentTransaction()->close(true);
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Run completed");

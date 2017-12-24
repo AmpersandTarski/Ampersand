@@ -1,6 +1,11 @@
 <?php
 
-namespace Ampersand\Extension\ExecEngine;
+/*
+ * This file is part of the Ampersand backend framework.
+ *
+ */
+
+namespace Ampersand\Rule;
 
 use Exception;
 use Ampersand\Config;
