@@ -147,7 +147,7 @@ class Concept {
      * @var string[] $atomCache array with atomids that exist in the concept
      * used to prevent unnecessary checks if atom exists in plug
      */
-    private $atomCache = array();
+    private $atomCache = [];
     
     /**
      * Concept constructor
@@ -382,6 +382,15 @@ class Concept {
      */
     public function getPlugs(){
         return $this->plugs;
+    }
+
+    /**
+     * Clear atom cache
+     * 
+     * @return void
+     */
+    public function clearAtomCache(){
+        $this->atomCache = [];
     }
     
     /**

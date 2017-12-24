@@ -187,6 +187,9 @@ class AmpersandApp
 
         foreach($this->storages as $storage) $storage->reinstallStorage();
 
+        // Clear atom cache
+        foreach(Concept::getAllConcepts() as $cpt) $cpt->clearAtomCache();
+
         if($installDefaultPop){
             $this->logger->info("Install default population");
             
