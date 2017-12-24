@@ -74,7 +74,7 @@ class Transaction {
     private $isCommitted = null;
     
     /**
-     * List with storages that are registered in this transaction
+     * List with storages that are affected in this transaction
      * @var \Ampersand\Plugs\StorageInterface[] $storages
      */
     private $storages = [];
@@ -142,7 +142,7 @@ class Transaction {
      * @param \Ampersand\Plugs\StorageInterface $storage
      * @return void
      */
-    public function addStorage(StorageInterface $storage){
+    private function addAffectedStorage(StorageInterface $storage){
         if(!in_array($storage, $this->storages)){
             $this->logger->debug("Add storage: " . $storage->getLabel());
             $this->storages[] = $storage;
@@ -167,8 +167,8 @@ class Transaction {
             $this->logger->debug("Mark concept '{$concept}' as affected concept");
             
             foreach($concept->getPlugs() as $plug){
-                $plug->startTransaction(); // Start transaction for this storage
-                $this->addStorage($plug); // Register storage in this transaction
+                $this->addAffectedStorage($plug); // Register storage in this transaction
+                $plug->startTransaction($this); // Start transaction for this storage
             }
 
             $this->affectedConcepts[] = $concept;
@@ -187,8 +187,8 @@ class Transaction {
             $this->logger->debug("Mark relation '{$relation}' as affected relation");
 
             foreach($relation->getPlugs() as $plug){
-                $plug->startTransaction(); // Start transaction for this storage
-                $this->addStorage($plug); // Register storage in this transaction
+                $this->addAffectedStorage($plug); // Register storage in this transaction
+                $plug->startTransaction($this); // Start transaction for this storage
             }
 
             $this->affectedRelations[] = $relation;
