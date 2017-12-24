@@ -86,7 +86,7 @@ class View {
      */
     public function getViewData(Atom $srcAtom){
         $viewData = [];
-        foreach ($this->segments as $viewSegment) $viewData[$viewSegment->label] = $viewSegment->getData($srcAtom);
+        foreach ($this->segments as $viewSegment) $viewData[$viewSegment->getLabel()] = $viewSegment->getData($srcAtom);
         return $viewData;
     }
     

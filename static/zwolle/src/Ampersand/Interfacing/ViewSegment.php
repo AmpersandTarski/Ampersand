@@ -24,37 +24,37 @@ class ViewSegment {
      *
      * @var int
      */
-    public $seqNr;
+    protected $seqNr;
 
     /**
      *
      * @var string
      */
-    public $label;
+    protected $label;
 
     /**
      *
      * @var string
      */
-    public $segType;
+    protected $segType;
 
     /**
      *
      * @var string
      */
-    public $text;
+    protected $text;
 
     /**
      *
      * @var string
      */
-    public $expADL;
+    protected $expADL;
 
     /**
      *
      * @var string
      */
-    private $expSQL;
+    protected $expSQL;
 
     /**
      * Constructor of view segments
@@ -74,6 +74,10 @@ class ViewSegment {
     
     public function __toString(){
         return $this->view->getLabel() . ":{$this->label}";
+    }
+
+    public function getLabel(){
+        return $this->label;
     }
     
     /**
