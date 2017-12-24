@@ -88,9 +88,9 @@ class Rule {
     
     /**
      * Array with segments to build violation messages
-     * @var array
+     * @var ViolationSegment[]
      */
-    public $violationSegments;
+    protected $violationSegments;
     
     /**
      * 
@@ -138,7 +138,10 @@ class Rule {
             $this->conjuncts[] = Conjunct::getConjunct($conjId);
         }
         
-        $this->violationSegments = (array)$ruleDef['pairView'];
+        // Violation segments
+        foreach((array)$ruleDef['pairView'] as $segment){
+            $this->violationSegments[] = new ViolationSegment($segment, $this);
+        }
         
         switch($type){
             case 'sig' :
@@ -167,6 +170,15 @@ class Rule {
      */
     public function getViolationMessage(){
         return $this->message ? $this->message : "Violation of rule '{$this->id}'";
+    }
+
+    /**
+     * Undocumented function
+     *
+     * @return \Ampersand\Rule\ViolationSegment[]
+     */
+    public function getViolationSegments(){
+        return $this->violationSegments;
     }
     
     /**
