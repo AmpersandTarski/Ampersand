@@ -79,7 +79,7 @@ class Transaction {
      */
     private $storages = [];
     
-    public function __construct(){
+    private function __construct(){
         $this->logger = Logger::getLogger('TRANSACTION');
         $this->id = rand();
         $this->logger->info("Opening transaction: {$this->id}");
