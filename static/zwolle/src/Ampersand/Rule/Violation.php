@@ -11,6 +11,7 @@ use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Core\Atom;
 use Ampersand\AmpersandApp;
+use Ampersand\Rule\Rule;
 
 /**
  *
@@ -21,19 +22,19 @@ class Violation {
 
     /**
      * Rule to which this violation belongs to
-     * @var Rule\Rule
+     * @var \Ampersand\Rule\Rule
      */
     public $rule;
 
     /**
      *
-     * @var Atom
+     * @var \Ampersand\Core\Atom
      */
     public $src;
 
     /**
      *
-     * @var Atom
+     * @var \Ampersand\Core\Atom
      */
     public $tgt;
 
@@ -51,11 +52,12 @@ class Violation {
 
     /**
      * Constructor of violation
-     * @param Rule\Rule $rule
+     * 
+     * @param \Ampersand\Rule\Rule $rule
      * @param string $srcAtomId
      * @param string $tgtAtomId
      */
-    public function __construct($rule, $srcAtomId, $tgtAtomId){
+    public function __construct(Rule $rule, $srcAtomId, $tgtAtomId){
         $this->rule = $rule;
         $this->src = new Atom($srcAtomId, $rule->srcConcept);
         $this->tgt = new Atom($tgtAtomId, $rule->tgtConcept);
@@ -63,6 +65,7 @@ class Violation {
     
     /**
      * Function is called when object is treated as a string
+     * 
      * @return string role label
      */
     public function __toString(){
