@@ -387,8 +387,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     public function addAtom(Atom $atom){
-        $this->logger->debug("addAtom({$atom})");
-        
         $atomId = $this->getDBRepresentation($atom);
                         
         // Get table properties
@@ -421,8 +419,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     public function removeAtom(Atom $atom){
-        $this->logger->debug("removeAtom({$atom})");
-        
         $atomId = $this->getDBRepresentation($atom);
         
         // Get col information for concept and its specializations
@@ -452,8 +448,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     public function deleteAtom(Atom $atom){
-        $this->logger->debug("deleteAtom({$atom})");
-        
         $atomId = $this->getDBRepresentation($atom);
         
         // Delete atom from concept table
@@ -473,8 +467,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     public function renameAtom(Atom $atom, $newAtomId){
-        $this->logger->debug("renameAtom({$atom}, {$newAtomId})");
-
         $atomId = $this->getDBRepresentation($atom);
 
         // Get table properties
@@ -553,8 +545,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     public function addLink(Link $link){
-        $this->logger->debug("addLink({$link})");
-        
         $relation = $link->relation();
         $srcAtomId = $this->getDBRepresentation($link->src());
         $tgtAtomId = $this->getDBRepresentation($link->tgt());
@@ -585,8 +575,6 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
      * @return void
      */
     public function deleteLink(Link $link){
-        $this->logger->debug("deleteLink({$link})");
-        
         $relation = $link->relation();
         $srcAtomId = $this->getDBRepresentation($link->src());
         $tgtAtomId = $this->getDBRepresentation($link->tgt());
