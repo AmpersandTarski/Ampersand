@@ -4,6 +4,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
 use Ampersand\Config;
 use Ampersand\AmpersandApp;
+use Ampersand\Database\Database;
 
 define ('LOCALSETTINGS_VERSION', 1.5);
 

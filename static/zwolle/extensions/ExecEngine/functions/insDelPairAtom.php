@@ -198,7 +198,7 @@ function InsAtom($conceptName){
     try{
         $concept = Concept::getConceptByLabel($conceptName);
         $atom = $concept->createNewAtom();
-        $atom->add(); // insert new atom in database
+        $atom->add();
         
 		// Make newly created atom available within scope of violation for use of other functions
 		ExecEngine::$_NEW = $atom;

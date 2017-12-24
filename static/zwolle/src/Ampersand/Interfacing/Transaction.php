@@ -105,29 +105,28 @@ class Transaction {
         
         Hooks::callHooks('preCloseTransaction', get_defined_vars());
         
-        $this->logger->debug("Checking all affected conjuncts");
-        
         // Check invariant rules (we only have to check the affected invariant rules) 
+        $this->logger->debug("Checking all affected conjuncts");
         $this->invariantRulesHold = RuleEngine::checkInvariantRules($this->affectedConcepts, $this->affectedRelations, true);
         
         if($this->invariantRulesHold && $commit){
-            $this->logger->debug("Commit transaction");
-            foreach($this->storages as $storage) $storage->commitTransaction(); // Commit transaction for each registered storage
+            $this->logger->info("Commit transaction");
+            foreach($this->storages as $storage) $storage->commitTransaction($this); // Commit transaction for each registered storage
             $this->isCommitted = true;
             
         }elseif(Config::get('ignoreInvariantViolations', 'transactions') && $commit){
             $this->logger->warning("Commit transaction with invariant violations");
-            foreach($this->storages as $storage) $storage->commitTransaction(); // Commit transaction for each registered storage
+            foreach($this->storages as $storage) $storage->commitTransaction($this); // Commit transaction for each registered storage
             $this->isCommitted = true;
             
         }elseif($this->invariantRulesHold){
             $this->logger->info("Rollback transaction, invariant rules do hold, but no commit requested");
-            foreach($this->storages as $storage) $storage->rollbackTransaction(); // Rollback transaction for each registered storage
+            foreach($this->storages as $storage) $storage->rollbackTransaction($this); // Rollback transaction for each registered storage
             $this->isCommitted = false;
             
         }else{
             $this->logger->info("Rollback transaction, invariant rules do not hold");
-            foreach($this->storages as $storage) $storage->rollbackTransaction(); // Rollback transaction for each registered storage
+            foreach($this->storages as $storage) $storage->rollbackTransaction($this); // Rollback transaction for each registered storage
             $this->isCommitted = false;
         }
         

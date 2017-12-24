@@ -47,7 +47,7 @@ class ResourceList implements IteratorAggregate {
     public function __construct(Resource $src, InterfaceObject $parentIfc){
         $this->logger = Logger::getLogger('INTERFACING');
         
-        if($parentIfc->isRoot() && !$AmpersandApp::singleton()->isAccessibleIfc($parentIfc)) throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
+        if($parentIfc->isRoot() && !AmpersandApp::singleton()->isAccessibleIfc($parentIfc)) throw new Exception("Unauthorized to access interface {$parentIfc->label}", 401); // 401: Unauthorized
         
         $this->src = $src;
         $this->ifc = $parentIfc;
