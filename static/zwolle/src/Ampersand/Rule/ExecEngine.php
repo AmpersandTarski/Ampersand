@@ -156,7 +156,7 @@ class ExecEngine {
     }
 
     public static function registerFunction(string $name, callable $callable){
-        if(empty($name)) throw new Exception("ExecEngine function must be given a name. Empty string/0/null provided")
+        if(empty($name)) throw new Exception("ExecEngine function must be given a name. Empty string/0/null provided");
         if(array_key_exists($name, self::$callables)) throw new Exception("ExecEngine function '{$name}' already exists", 500);
         self::$callables[$name] = $callable;
         Logger::getLogger('EXECENGINE')->debug("ExecEngine function '{$name}' registered");
