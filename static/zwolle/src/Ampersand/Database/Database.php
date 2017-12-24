@@ -704,9 +704,9 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     /**
      * @param ViewSegment $view
      * @param Atom $srcAtom
-     * @return mixed
+     * @return array
      */
-    public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null){
+    public function executeViewExpression(ViewSegment $view, Atom $srcAtom = null): array {
         $srcAtomId = $this->getDBRepresentation($srcAtom);
         $viewSQL = $view->getQuery();
         
