@@ -8,7 +8,6 @@
 namespace Ampersand\Rule;
 
 use Exception;
-use Ampersand\Database\Database;
 use Ampersand\Core\Atom;
 use Ampersand\AmpersandApp;
 use Ampersand\Rule\Rule;
@@ -73,46 +72,24 @@ class Violation {
     }
     
     /**
-     *
-     * @throws Exception when segment type is unknown
+     * Undocumented function
+     * 
      * @throws Exception when segment expression return more that 1 tgt atom
      * @return string
      */
     public function getViolationMessage(){
-        $database = Database::singleton();
+        $strArr = [];
+        foreach ($this->rule->getViolationSegments() as $segment){
+            $tgtAtomIds = $segment->getData($this->src, $this->tgt);
 
-        $strArr = array();
-        foreach ($this->rule->violationSegments as $segment){
-            // text segment
-            if ($segment['segmentType'] == 'Text'){
-                $strArr[] = $segment['Text'];
-                 
-            // expressie segment
-            }elseif($segment['segmentType'] == 'Exp'){
-                // select starting atom depending on whether the segment uses the src of tgt atom.
-                $atom = $segment['srcOrTgt'] == 'Src' ? $this->src : $this->tgt;
-
-                // quering the expression
-                $atomId = $database->getDBRepresentation($atom);
-                $expSQL = str_replace('_SESSION', session_id(), $segment['expSQL']);
-                $query = "SELECT DISTINCT `tgt` FROM ($expSQL) AS `results` WHERE `src` = '{$atomId}'"; // SRC of TGT kunnen door een expressie gevolgd worden
-                $rows = $database->Exe($query);
-
-                // returning the result
-                if(count($rows) > 1) throw new Exception("Expression of pairview results in more than one tgt atom", 501); // 501: Not implemented
-                $strArr[] = $rows[0]['tgt'];
-
-            // unknown segment
-            }else{
-                $errorMessage = "Unknown segmentType '{$segment['segmentType']}' in violationSegments of rule '{$this->rule->id}'";
-                throw new Exception($errorMessage, 501); // 501: Not implemented
-            }
+            if(count($tgtAtomIds) > 1) throw new Exception("Expression of RULE segment '{$segment}' results in more than one tgt atom", 501); // 501: Not implemented
+            $strArr[] = count($tgtAtomIds) ? $tgtAtomIds[0] : null;
         }
 
         // If empty array of strings (i.e. no violation segments defined), use default violation representation: '<src>,<tgt>'
-        $this->message = empty($strArr) ? "{$this->src},{$this->tgt}" : implode($strArr);
+        return $this->message = empty($strArr) ? "{$this->src},{$this->tgt}" : implode($strArr);
+    }
 
-        return $this->message;
     }
 
     /**
