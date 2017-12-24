@@ -74,6 +74,12 @@ try{
         function($app){
             return !Config::get('productionEnv');
         });
+    
+    AngularApp::addMenuItem('refresh', 'app/views/menu/execEngine.html',
+        function(\Ampersand\AmpersandApp $app){
+            $roles = Config::get('allowedRolesForRunFunction','execEngine');
+            return $app->hasActiveRole($roles);
+        });
 
 }catch(Exception $e){
     throw $e;

@@ -11,14 +11,6 @@ use Ampersand\Role;
 $hook1 = array('class' => '\Ampersand\Extension\ExecEngine\ExecEngine', 'function' => 'run', 'filename' => 'ExecEngine.php', 'filepath' => 'extensions/ExecEngine', 'params' => array());
 Hooks::addHook('preCloseTransaction', $hook1);
 
-// UI
-AngularApp::addMenuItem('ext', 'extensions/ExecEngine/ui/views/MenuItem.html',
-    function(\Ampersand\AmpersandApp $app){
-        $roles = Config::get('allowedRolesForRunFunction','execEngine');
-        return $app->hasActiveRole($roles);
-    });
-AngularApp::addJS('extensions/ExecEngine/ui/js/ExecEngine.js');
-
 // Config (can be overwritten in localSettings.php)
 Config::set('execEngineRoleName', 'execEngine', 'ExecEngine');
 Config::set('autoRerun', 'execEngine', true);
