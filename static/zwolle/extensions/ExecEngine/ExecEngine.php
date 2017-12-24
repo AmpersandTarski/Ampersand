@@ -19,9 +19,6 @@ AngularApp::addMenuItem('ext', 'extensions/ExecEngine/ui/views/MenuItem.html',
     });
 AngularApp::addJS('extensions/ExecEngine/ui/js/ExecEngine.js');
 
-// API
-$GLOBALS['api']['files'][] = __DIR__ . DIRECTORY_SEPARATOR . 'api' . DIRECTORY_SEPARATOR . 'run.php';
-
 // Config (can be overwritten in localSettings.php)
 Config::set('execEngineRoleName', 'execEngine', 'ExecEngine');
 Config::set('autoRerun', 'execEngine', true);

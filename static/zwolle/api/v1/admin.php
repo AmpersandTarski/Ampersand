@@ -60,6 +60,28 @@ $app->get('/admin/installer', function () use ($app){
 
 });
 
+$app->get('/admin/execengine/run', function () use ($app){
+    $ampersandApp = AmpersandApp::singleton();
+    
+    $roleIds = $app->request->params('roleIds');
+    $ampersandApp->activateRoles($roleIds);
+    
+    // Check for required role
+    if(!$ampersandApp->hasRole(Config::get('allowedRolesForRunFunction','execEngine'))) throw new Exception("You do not have access to run the exec engine", 401);
+        
+    \Ampersand\Extension\ExecEngine\ExecEngine::run(true);
+    
+    $transaction = Transaction::getCurrentTransaction()->close(true);
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Run completed");
+    else Logger::getUserLogger()->warning("Run completed but transaction not committed");
+
+    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+        
+    $result = array('notifications' => Notifications::getAll());
+    
+    print json_encode($result, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+});
+
 $app->get('/admin/checks/rules/evaluate/all', function() use ($app){
     if(Config::get('productionEnv')) throw new Exception ("Evaluation of all rules not allowed in production environment", 403);
     
