@@ -28,8 +28,8 @@ data JsonPairView = JsonPairView [JsonPairViewSegment]
     deriving (Generic, Show)
 data JsonPairViewSegment = JsonPairViewSegment
   { pvsJSONseqNr   :: Int
-  , pvsJSONsegmentType :: String
-  , pvsJSONText        :: Maybe String
+  , pvsJSONsegType :: String
+  , pvsJSONtext        :: Maybe String
   , pvsJSONsrcOrTgt    :: Maybe String
   , pvsJSONexpTgt      :: Maybe String
   , pvsJSONexpSQL      :: Maybe String
@@ -75,10 +75,10 @@ instance JSON (PairView Expression) JsonPairView where
 instance JSON (Int,PairViewSegment Expression)  JsonPairViewSegment where
  fromAmpersand multi (nr,pvs) = JsonPairViewSegment
   { pvsJSONseqNr   = nr
-  , pvsJSONsegmentType = case pvs of
+  , pvsJSONsegType = case pvs of
                            PairViewText{} -> "Text"
                            PairViewExp{}  -> "Exp"
-  , pvsJSONText        = case pvs of
+  , pvsJSONtext        = case pvs of
                            PairViewText _ str -> Just str
                            PairViewExp{}  -> Nothing
   , pvsJSONsrcOrTgt    = case pvs of
