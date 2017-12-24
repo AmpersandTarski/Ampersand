@@ -11,6 +11,7 @@ use Exception;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
+use Ampersand\Database\Database;
 
 /**
  *
@@ -30,6 +31,12 @@ class Rule {
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
+
+    /**
+     * Dependency injection of an ViewPlug implementation
+     * @var \Ampersand\Plugs\ViewPlugInterface
+     */
+    public $plug;
 
     /**
      * 
@@ -110,8 +117,10 @@ class Rule {
      * @param array $ruleDef
      * @param boolean $type
     */
-    private function __construct($ruleDef, $type = null){
+    private function __construct($ruleDef, $plug, $type = null){
         $this->logger = Logger::getLogger('RULE');
+
+        $this->plug = $plug;
         
         $this->id = $ruleDef['name'];
         
@@ -262,16 +271,18 @@ class Rule {
         // import json file
         $file = file_get_contents(Config::get('pathToGeneratedFiles') . 'rules.json');
         $allRuleDefs = (array)json_decode($file, true);
+
+        $plug = Database::singleton();
         
         // Signal rules
         foreach ($allRuleDefs['signals'] as $ruleDef){
-            $rule = new Rule($ruleDef, 'sig');
+            $rule = new Rule($ruleDef, $plug, 'sig');
             self::$allRules[$rule->id] = $rule;
         }
         
         // Invariant rules
         foreach ($allRuleDefs['invariants'] as $ruleDef){
-            $rule = new Rule($ruleDef, 'inv');
+            $rule = new Rule($ruleDef, $plug, 'inv');
             self::$allRules[$rule->id] = $rule;
         }
     }
