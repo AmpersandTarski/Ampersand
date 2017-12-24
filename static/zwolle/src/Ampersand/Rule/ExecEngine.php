@@ -21,6 +21,13 @@ class ExecEngine {
     public static $doRun = true;
     public static $autoRerun;
     public static $runCount;
+
+    /**
+     * List of callables (functions) that can used by the ExecEngine
+     *
+     * @var array
+     */
+    private static $callables = [];
     
 	/**
 	 * @var \Ampersand\Core\Atom $_NEW specifies latest atom created by a newstruct function call. Can be (re)used within the scope of one violation statement. 
@@ -136,17 +143,23 @@ class ExecEngine {
                 }, $params);
                 
                 $function = trim(array_shift($params)); // First parameter is function name
-                $classMethod = (array)explode('::', $function);
                 
-                if (function_exists($function) || method_exists($classMethod[0], $classMethod[1])){
-                    call_user_func_array($function,$params);                    
+                if(array_key_exists($function, self::$callables)){
+                    call_user_func_array(self::$callables[$function], $params);                    
                 }else{
-                    throw new Exception("Function '{$function}' does not exists. Create function with {count($params)} parameters", 500);
+                    throw new Exception("Function '{$function}' does not exists. Register ExecEngine function.", 500);
                 }
             }
 			
 			self::$_NEW = null; // The newly created atom cannot be (re)used outside the scope of the violation in which it was created.
         }        
+    }
+
+    public static function registerFunction(string $name, callable $callable){
+        if(empty($name)) throw new Exception("ExecEngine function must be given a name. Empty string/0/null provided")
+        if(array_key_exists($name, self::$callables)) throw new Exception("ExecEngine function '{$name}' already exists", 500);
+        self::$callables[$name] = $callable;
+        Logger::getLogger('EXECENGINE')->debug("ExecEngine function '{$name}' registered");
     }
 }
 
