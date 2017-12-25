@@ -9,6 +9,7 @@ namespace Ampersand\Rule;
 
 use Ampersand\Interfacing\ViewSegment;
 use Exception;
+use Ampersand\Core\Atom;
 
 
 /**
@@ -53,10 +54,6 @@ class ViolationSegment extends ViewSegment {
     public function __toString(){
         return $this->rule . ":{$this->label}";
     }
-
-    public function getType(){
-        return $this->segType;
-    }
     
     /**
      * Undocumented function
@@ -65,7 +62,7 @@ class ViolationSegment extends ViewSegment {
      * @param Atom $tgtAtom
      * @return mixed
      */
-    public function getData(Atom $srcAtom, Atom $tgtAtom){
+    public function getData(Atom $srcAtom, Atom $tgtAtom = null){ // Second param is declared optional, because the method must be compatible with the parent method it overwrites (i.e. ViewSegment::getData())
         switch ($this->segType){
             case "Text":
                 return $this->text;

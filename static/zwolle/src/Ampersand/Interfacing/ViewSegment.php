@@ -7,6 +7,8 @@
 
 namespace Ampersand\Interfacing;
 
+use Ampersand\Core\Atom;
+
 /**
  *
  * @author Michiel Stornebrink (https://github.com/Michiel-s)
@@ -79,12 +81,16 @@ class ViewSegment {
     public function getLabel(){
         return $this->label;
     }
+
+    public function getType(){
+        return $this->segType;
+    }
     
     /**
      * @param Atom $srcAtom
      * @return mixed
      */
-    public function getData($srcAtom){
+    public function getData(Atom $srcAtom){
         switch ($this->segType){
             case "Text":
                 return $this->text;
