@@ -23,8 +23,6 @@
        }
 */
 
-namespace Ampersand\Extension\ExecEngine;
-
 use Ampersand\Log\Logger;
 use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
@@ -41,7 +39,7 @@ use Ampersand\Rule\ExecEngine;
    VIOLATION (TXT "InsPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use:  VIOLATION (TXT "InsPair;<relation>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
+ExecEngine::registerFunction('InsPair', $InsPair = function($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
     Logger::getLogger('EXECENGINE')->info("InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
     if(func_num_args() != 5) throw new Exception("InsPair() expects 5 arguments, but you have provided ".func_num_args(), 500);
     try{        
@@ -74,7 +72,7 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
     }catch(Exception $e){
         Logger::getUserLogger()->error('InsPair: ' . $e->getMessage());
     }
-}
+});
 
 /*
     Example of a rule that automatically deletes pairs from a relation:
@@ -84,7 +82,7 @@ function InsPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
     VIOLATION (TXT "DelPair;customerOf;Person;", SRC I, TXT";Company;", TGT I)
 */
 // Use: VIOLATION (TXT "DelPair;<rel>;<srcConcept>;<srcAtom>;<tgtConcept>;<tgtAtom>")
-function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
+ExecEngine::registerFunction('DelPair', function($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom){
     Logger::getLogger('EXECENGINE')->info("DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom)");
     if(func_num_args() != 5) throw new Exception("DelPair() expects 5 arguments, but you have provided ".func_num_args(), 500);
     try{        
@@ -119,7 +117,7 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
     }catch(Exception $e){
         Logger::getUserLogger()->error('DelPair: ' . $e->getMessage());
     }
-}
+});
 
 /* The function 'NewStruct' creates a new atom in some concept and uses this
    atom to create links (in relations in which the concept is SRC or TGT).
@@ -140,7 +138,7 @@ function DelPair($relationName,$srcConceptName,$srcAtom,$tgtConceptName,$tgtAtom
               )
 
 */
-function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
+ExecEngine::registerFunction('NewStruct', function() use ($InsPair){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$srcAtom,$tgtConcept,$tgtAtom]+)
     try{        
         // We start with parsing the first one or two arguments
         $c = Concept::getConceptByLabel(func_get_arg(0)); // Concept for which atom is to be created
@@ -182,17 +180,17 @@ function NewStruct(){ // arglist: ($ConceptC[,$newAtom][,$relation,$srcConcept,$
             if(in_array($tgtConcept, $c->getGeneralizationsIncl()) && $tgtAtomId == '_NEW') $tgtAtomId = $atom->id;
             
             // Any logging is done by InsPair
-            InsPair($relation,$srcConcept->name,$srcAtomId,$tgtConcept->name,$tgtAtomId);
+            $InsPair($relation,$srcConcept->name,$srcAtomId,$tgtConcept->name,$tgtAtomId);
         }
         Logger::getLogger('EXECENGINE')->debug("Newstruct: atom '{$atom}' created");
     
     }catch(Exception $e){
         Logger::getUserLogger()->error("NewStruct: {$e->getMessage()}");
     }
-}
+});
 
 // Use: VIOLATION (TXT "InsAtom;<concept>") -- this may not be of any use in Ampersand, though.
-function InsAtom($conceptName){
+ExecEngine::registerFunction('InsAtom', function($conceptName){
     Logger::getLogger('EXECENGINE')->info("InsAtom($conceptName)");
     if(func_num_args() != 1) throw new Exception("InsAtom() expects 1 argument, but you have provided ".func_num_args(), 500);
     try{
@@ -206,9 +204,8 @@ function InsAtom($conceptName){
         
     }catch(Exception $e){
         Logger::getUserLogger()->error('InsAtom: ' . $e->getMessage());
-    }
-    
-}
+    } 
+});
 
 /* 
     ROLE ExecEngine MAINTAINS "delEquivalence" -- Deletion of the atom
@@ -216,7 +213,7 @@ function InsAtom($conceptName){
     VIOLATION (TXT "DelAtom;ConceptC;" SRC I) -- all links in other relations in which the atom occurs are deleted as well.
 */
 // Use: VIOLATION (TXT "DelAtom;<concept>;<atom>")
-function DelAtom($concept, $atomId){
+ExecEngine::registerFunction('DelAtom', function($concept, $atomId){
     Logger::getLogger('EXECENGINE')->info("DelAtom($concept,$atomId)");
     if(func_num_args() != 2) throw new Exception("DelAtom() expects 2 arguments, but you have provided ".func_num_args(), 500);
     try{
@@ -229,9 +226,8 @@ function DelAtom($concept, $atomId){
     
     }catch(Exception $e){
         Logger::getUserLogger()->error('DelAtom: ' . $e->getMessage());
-    }
-    
-}
+    } 
+});
 
 /* 
 	ROLE ExecEngine MAINTAINS "Person" -- unify two atoms
@@ -245,7 +241,7 @@ function DelAtom($concept, $atomId){
 	 * @return void
 */
 // Use: VIOLATION (TXT "{EX} MrgAtoms;<conceptA>;", SRC I, TXT ";<conceptB>;", TGT I )
-function MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId){
+ExecEngine::registerFunction('MrgAtoms', function($conceptA, $srcAtomId, $conceptB, $tgtAtomId){
 	Logger::getLogger('EXECENGINE')->info("MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId)");
     if(func_num_args() != 4) throw new Exception("MrgAtoms() expects 4 arguments, but you have provided ".func_num_args(), 500);
 	try{		
@@ -262,8 +258,7 @@ function MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId){
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('MrgAtoms: ' . $e->getMessage());
 	}
-	
-}
+});
 
 /*
  ROLE ExecEngine MAINTAINS "SetConcept" -- Adding an atomId[ConceptA] as member to ConceptB set. This can only be done when ConceptA and ConceptB are in the same classification tree.
@@ -271,7 +266,7 @@ function MrgAtoms($conceptA, $srcAtomId, $conceptB, $tgtAtomId){
  VIOLATION (TXT "SetConcept;ConceptA;ConceptB;" SRC I)
  */
 // Use: VIOLATION (TXT "SetConcept;<ConceptA>;<ConceptB>;<atomId>")
-function SetConcept($conceptA, $conceptB, $atomId){
+ExecEngine::registerFunction('SetConcept', function($conceptA, $conceptB, $atomId){
 	Logger::getLogger('EXECENGINE')->info("SetConcept($conceptA,$conceptB,$atomId)");
     if(func_num_args() != 3) throw new Exception("SetConcept() expects 3 arguments, but you have provided ".func_num_args(), 500);
     try{
@@ -286,7 +281,7 @@ function SetConcept($conceptA, $conceptB, $atomId){
     }catch(Exception $e){
         Logger::getUserLogger()->error('SetConcept: ' . $e->getMessage());
     }
-}
+});
 
 /*
  ROLE ExecEngine MAINTAINS "ClearConcept" -- Removing an atom as member from a Concept set. This can only be done when the concept is a specialization of another concept.
@@ -294,7 +289,7 @@ function SetConcept($conceptA, $conceptB, $atomId){
  VIOLATION (TXT "ClearConcept;Concept;" SRC I)
  */
 // Use: VIOLATION (TXT "ClearConcept;<Concept>;<atom>")
-function ClearConcept($concept, $atomId){
+ExecEngine::registerFunction('ClearConcept', function($concept, $atomId){
 	Logger::getLogger('EXECENGINE')->info("ClearConcept($concept,$atomId)");
     if(func_num_args() != 2) throw new Exception("ClearConcept() expects 2 arguments, but you have provided ".func_num_args(), 500);
     try{
@@ -310,7 +305,7 @@ function ClearConcept($concept, $atomId){
     }catch(Exception $e){
         Logger::getUserLogger()->error('ClearConcept: ' . $e->getMessage());
     }
-}
+});
 
 
 /**************************************************************
@@ -318,7 +313,7 @@ function ClearConcept($concept, $atomId){
  *************************************************************/
  
 // InsPairCond is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
-function InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool){
+ExecEngine::registerFunction('InsPairCond', function($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool) use ($InsPair){
 	Logger::getLogger('EXECENGINE')->info("InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom, $bool)");
     
 	try{
@@ -331,15 +326,15 @@ function InsPairCond($relationName, $srcConceptName, $srcAtom, $tgtConceptName, 
             return;
         }
         
-        InsPair($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom);
+        $InsPair($relationName, $srcConceptName, $srcAtom, $tgtConceptName, $tgtAtom);
 	
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('InsPairCond: ' . $e->getMessage());
 	}
-}
+});
 
 // SetConcept is skipped when $bool string value equals: "0", "false", "off", "no", "" or "_NULL"
-function SetConceptCond($conceptA, $conceptB, $atom, $bool){
+ExecEngine::registerFunction('SetConceptCond', function($conceptA, $conceptB, $atom, $bool){
 	Logger::getLogger('EXECENGINE')->info("SetConceptCond($conceptA, $conceptB, $atom, $bool)");
     
 	try{
@@ -357,9 +352,9 @@ function SetConceptCond($conceptA, $conceptB, $atom, $bool){
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('SetConceptCond: ' . $e->getMessage());
 	}
-}
+});
 
-function SetNavToOnCommit($navTo){
+ExecEngine::registerFunction('SetNavToOnCommit', function($navTo){
 	Logger::getLogger('EXECENGINE')->info("setNavToOnCommit($navTo)");
 	
 	if(strpos($navTo, '_NEW') !== false){
@@ -368,9 +363,9 @@ function SetNavToOnCommit($navTo){
 	}
 	
 	AngularApp::setNavToResponse($navTo, 'COMMIT');
-}
+});
     
-function SetNavToOnRollback($navTo){
+ExecEngine::registerFunction('SetNavToOnRollback', function($navTo){
 	Logger::getLogger('EXECENGINE')->info("setNavToOnRollback($navTo)");
 	
 	if(strpos($navTo, '_NEW') !== false){
@@ -379,5 +374,5 @@ function SetNavToOnRollback($navTo){
 	}
 	
 	AngularApp::setNavToResponse($navTo, 'ROLLBACK');
-}
+});
 ?>
