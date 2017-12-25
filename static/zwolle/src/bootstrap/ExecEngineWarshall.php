@@ -28,60 +28,13 @@
    4) Rather than defining/computing rStar (for r*), you may use the expression (I \/ rPlus)
 */
 
-namespace Ampersand\Extension\ExecEngine;
-
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
-use Ampersand\Extension\ExecEngine\ExecEngine;
 use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
+use Ampersand\Rule\ExecEngine;
 
-function TransitiveClosure($r,$C,$rCopy,$rPlus){
-    if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
-    Logger::getLogger('EXECENGINE')->debug("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)");
-    
-    $warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
-    $execEngineRunCount = ExecEngine::$runCount;
-
-    if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
-        if($warshallRunCount == $execEngineRunCount){
-            Logger::getLogger('EXECENGINE')->debug("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)");
-            return;  // this is the case if we have executed this function already in this transaction
-        }        
-    }
-        
-    $GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
-    $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'] = ExecEngine::$runCount;
-    
-    // Compute transitive closure following Warshall's algorithm
-    $closure = RetrievePopulation($r, $C); // get adjacency matrix
-    
-    OverwritePopulation($closure, $rCopy, $C); // store it in the 'rCopy' relation
-    
-    // Get all unique atoms from this population
-    $atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure
-    
-    foreach ($closure as $tgtAtomsList){ // Loop to add 'Tgt' atoms that not yet exist
-        $tgtAtoms = array_keys($tgtAtomsList);
-        foreach ($tgtAtoms as $tgtAtom){
-            if (!in_array($tgtAtom, $atoms)) $atoms[] = $tgtAtom;
-        }
-    }
-    
-    foreach ($atoms as $k){
-        foreach ($atoms as $i){
-            if ($closure[$i][$k]){
-                foreach ($atoms as $j){
-                    $closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
-                }
-            }
-        }
-    }
-    
-    OverwritePopulation($closure, $rPlus, $C);
-}
-
-function RetrievePopulation($relationName, $conceptName){
+ExecEngine::registerFunction('RetrievePopulation', $RetrievePopulation = function($relationName, $conceptName){
     try{
         $database = Database::singleton();
         
@@ -104,10 +57,10 @@ function RetrievePopulation($relationName, $conceptName){
     }catch(Exception $e){
         throw new Exception('RetrievePopulation: ' . $e->getMessage(), 500);
     }
-}
+});
 
 // Overwrite contents of &-relation $r with contents of php array $rArray
-function OverwritePopulation($rArray, $relationName, $conceptName){
+ExecEngine::registerFunction('OverwritePopulation', $OverwritePopulation = function($rArray, $relationName, $conceptName){
     try{
         $database = Database::singleton();
         
@@ -132,5 +85,51 @@ function OverwritePopulation($rArray, $relationName, $conceptName){
     }catch(Exception $e){
         throw new Exception('OverwritePopulation: ' . $e->getMessage(), 500);
     }
-}
+});
+
+ExecEngine::registerFunction('TransitiveClosure', function($r,$C,$rCopy,$rPlus) use ($RetrievePopulation, $OverwritePopulation){
+    if(func_num_args() != 4) throw new Exception("Wrong number of arguments supplied for function TransitiveClosure(): ".func_num_args()." arguments", 500);
+    Logger::getLogger('EXECENGINE')->debug("Exeucte TransitiveClosure($r,$C,$rCopy,$rPlus)");
+    
+    $warshallRunCount = $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'];
+    $execEngineRunCount = ExecEngine::$runCount;
+
+    if($GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r]){
+        if($warshallRunCount == $execEngineRunCount){
+            Logger::getLogger('EXECENGINE')->debug("Skipping TransitiveClosure($r,$C,$rCopy,$rPlus)");
+            return;  // this is the case if we have executed this function already in this transaction
+        }        
+    }
+        
+    $GLOBALS['ext']['ExecEngine']['functions']['warshall']['warshallRuleChecked'][$r] = true;
+    $GLOBALS['ext']['ExecEngine']['functions']['warshall']['runCount'] = ExecEngine::$runCount;
+    
+    // Compute transitive closure following Warshall's algorithm
+    $closure = $RetrievePopulation($r, $C); // get adjacency matrix
+    
+    $OverwritePopulation($closure, $rCopy, $C); // store it in the 'rCopy' relation
+    
+    // Get all unique atoms from this population
+    $atoms = array_keys($closure); // 'Src' (left) atoms of pairs in $closure
+    
+    foreach ($closure as $tgtAtomsList){ // Loop to add 'Tgt' atoms that not yet exist
+        $tgtAtoms = array_keys($tgtAtomsList);
+        foreach ($tgtAtoms as $tgtAtom){
+            if (!in_array($tgtAtom, $atoms)) $atoms[] = $tgtAtom;
+        }
+    }
+    
+    foreach ($atoms as $k){
+        foreach ($atoms as $i){
+            if ($closure[$i][$k]){
+                foreach ($atoms as $j){
+                    $closure[$i][$j] = $closure[$i][$j] || $closure[$k][$j];
+                }
+            }
+        }
+    }
+    
+    $OverwritePopulation($closure, $rPlus, $C);
+});
+
 ?>

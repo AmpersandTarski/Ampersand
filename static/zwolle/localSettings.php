@@ -6,7 +6,7 @@ use Ampersand\Config;
 use Ampersand\AmpersandApp;
 use Ampersand\Database\Database;
 
-define ('LOCALSETTINGS_VERSION', 1.5);
+define ('LOCALSETTINGS_VERSION', 1.6);
 
 date_default_timezone_set('Europe/Amsterdam');
 
@@ -75,7 +75,6 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
 /**************************************************************************************************
  * EXTENSIONS
  *************************************************************************************************/
-require_once(__DIR__ . '/extensions/ExecEngine/ExecEngine.php'); // Enable ExecEngine
 require_once(__DIR__ . '/extensions/ExcelImport/ExcelImport.php'); // Enable ExcelImport
 
 // First initiation of Ampersand application

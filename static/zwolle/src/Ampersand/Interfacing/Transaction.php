@@ -15,6 +15,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Log\Logger;
 use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\RuleEngine;
+use Ampersand\Rule\ExecEngine;
 
 /**
  *
@@ -104,6 +105,9 @@ class Transaction {
         if($this->isClosed()) throw new Exception("Cannot close transaction, because transaction is already closed", 500);
         
         Hooks::callHooks('preCloseTransaction', get_defined_vars());
+
+        // Run ExecEngine
+        ExecEngine::run();
         
         // Check invariant rules (we only have to check the affected invariant rules) 
         $this->logger->debug("Checking all affected conjuncts");

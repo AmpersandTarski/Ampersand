@@ -63,6 +63,11 @@ try{
     Config::set('defaultAutoHideSuccesses', 'notifications', true);
     Config::set('defaultShowErrors', 'notifications', true);
     Config::set('defaultShowInvariants', 'notifications', true);
+
+    // ExecEngine settings
+    Config::set('execEngineRoleName', 'execEngine', 'ExecEngine');
+    Config::set('autoRerun', 'execEngine', true);
+    Config::set('maxRunCount', 'execEngine', 10);
     
     // Navigation menu settings
     AngularApp::addMenuItem('refresh', 'app/views/menu/installer.html', 
@@ -73,6 +78,12 @@ try{
     AngularApp::addMenuItem('refresh', 'app/views/menu/checkAllRules.html',
         function($app){
             return !Config::get('productionEnv');
+        });
+    
+    AngularApp::addMenuItem('refresh', 'app/views/menu/execEngine.html',
+        function(\Ampersand\AmpersandApp $app){
+            $roles = Config::get('allowedRolesForRunFunction','execEngine');
+            return $app->hasActiveRole($roles);
         });
 
 }catch(Exception $e){
