@@ -2,6 +2,7 @@
 
 ## Unreleased changes
 * PHP Backend: integrate ExecEngine (not an extension anymore)
+* PHP Backend: requires PHP 7.x (5.6 is not supported anymore)
 
 * Security fix: use PHP session strict mode. This prevents a user defined session ID that is never generated
 * [Issue #707](https://github.com/AmpersandTarski/Ampersand/issues/707) Bugfix issue where user input '_SESSION' was also replaced by the session id
