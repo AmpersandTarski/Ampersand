@@ -29,15 +29,15 @@ require_once(__DIR__ . '/../lib/autoload.php');
 // Include/set default settings
 require_once(__DIR__ . '/defaultSettings.php');
 
+// Include project specific settings (i.e. localSettings.php file)
+require_once (__DIR__ . '/../localSettings.php');
+if(!defined('LOCALSETTINGS_VERSION') || AmpersandApp::REQ_LOCALSETTINGS_VERSION > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to format of v" . number_format (AmpersandApp::REQ_LOCALSETTINGS_VERSION, 1), 500);
+
 // Other bootstrapping files
 $files = \Ampersand\Helper\getDirectoryList(__DIR__ . '/bootstrap');
 foreach ($files as $file){
     if (substr($file,-3) !== 'php') continue;
     require_once(__DIR__ . '/bootstrap/' . $file);
 }
-
-// Include project specific settings (i.e. localSettings.php file)
-require_once (__DIR__ . '/../localSettings.php');
-if(!defined('LOCALSETTINGS_VERSION') || AmpersandApp::REQ_LOCALSETTINGS_VERSION > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to format of v" . number_format (AmpersandApp::REQ_LOCALSETTINGS_VERSION, 1), 500);
 
 ?>
