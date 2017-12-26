@@ -10,7 +10,6 @@ use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
-use Ampersand\Rule\Rule;
 use Exception;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
@@ -256,10 +255,7 @@ class AmpersandApp
     protected function activateRole(Role &$role){
         $role->active = true;
         $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-        
-        foreach($role->maintains() as $ruleName){
-            $this->rulesToMaintain[] = Rule::getRule($ruleName);
-        }
+        $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
         
         $this->logger->info("Role '{$role->id}' is activated");
     }
