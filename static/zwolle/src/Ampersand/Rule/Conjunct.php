@@ -224,16 +224,4 @@ class Conjunct {
     
         foreach ($allConjDefs as $conjDef) self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
     }
-    
-    /**
-     * 
-     * @param Conjunct[] $conjuncts
-     * @return void
-     */
-    public static function evaluateConjuncts($conjuncts = null, $cacheConjuncts = true){
-        if(is_null($conjuncts)) $conjuncts = self::getAllConjuncts();
-        
-        foreach($conjuncts as $conjunct) $conjunct->evaluateConjunct($cacheConjuncts);
-    }
-    
 }
