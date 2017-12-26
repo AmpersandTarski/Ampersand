@@ -111,7 +111,7 @@ class Transaction {
         
         // Check invariant rules (we only have to check the affected invariant rules) 
         $this->logger->debug("Checking all affected conjuncts");
-        $this->invariantRulesHold = RuleEngine::checkInvariantRules($this->affectedConcepts, $this->affectedRelations, true);
+        $this->invariantRulesHold = RuleEngine::checkInvariantRules($this, true);
         
         if($this->invariantRulesHold && $commit){
             $this->logger->info("Commit transaction");

@@ -23,15 +23,15 @@ use Ampersand\Interfacing\Transaction;
 class RuleEngine {
     
     /**
-     * Evaluate invariant rules for the provided affected concepts and relations
-     * @param Concept[] $affectedConcepts
-     * @param Relation[] $affectedRelations
+     * Evaluate invariant rules for the provided transaction
+     * 
+     * @param \Ampersand\Interfacing\Transaction[] $transaction
      * @param boolean $cacheConjuncts
      * @return boolean if invariant rules hold
      */
-    public static function checkInvariantRules($affectedConcepts = [], $affectedRelations = [], $cacheConjuncts = true){
         $logger = Logger::getLogger('RULE');
-        $conjuncts = self::getAffectedConjuncts($affectedConcepts, $affectedRelations, 'inv'); // Get affected invariant conjuncts
+    public static function checkInvariantRules(Transaction $transaction, $cacheConjuncts = true){
+        $conjuncts = self::getAffectedConjuncts($transaction->getAffectedConcepts(), $transaction->getAffectedRelations(), 'inv'); // Get affected invariant conjuncts
     
         // check invariant rules
         $logger->debug("Checking invariant rules for provided conjuncts: " . implode(', ', array_column($conjuncts, 'id')));
