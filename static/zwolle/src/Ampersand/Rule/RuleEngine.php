@@ -14,6 +14,7 @@ use Ampersand\Config;
 use Ampersand\AmpersandApp;
 use Ampersand\Role;
 use Ampersand\Interfacing\Transaction;
+use Ampersand\Rule\Rule;
 
 /**
  *
@@ -23,32 +24,26 @@ use Ampersand\Interfacing\Transaction;
 class RuleEngine {
     
     /**
-     * Evaluate invariant rules for the provided transaction
+     * Evaluate invariant rules for the provided transaction and return list of violations
      * 
      * @param \Ampersand\Interfacing\Transaction[] $transaction
-     * @param boolean $cacheConjuncts
-     * @return boolean if invariant rules hold
+     * @return \Ampersand\Rule\Violation[]
      */
-    public static function checkInvariantRules(Transaction $transaction, $cacheConjuncts = true){
+    public static function checkInvariantRules(Transaction $transaction): array {
         $logger = Logger::getLogger('RULEENGINE');
-        $conjuncts = self::getAffectedConjuncts($transaction->getAffectedConcepts(), $transaction->getAffectedRelations(), 'inv'); // Get affected invariant conjuncts
-    
-        // check invariant rules
-        $logger->debug("Checking invariant rules with conjuncts: " . implode(', ', array_column($conjuncts, 'id')));
+        $affectedConjuncts = self::getAffectedConjuncts($transaction->getAffectedConcepts(), $transaction->getAffectedRelations(), 'inv'); // Get affected invariant conjuncts
         
-        $invariantRulesHold = true;
-        foreach ($conjuncts as $conjunct){
-            if($conjunct->isInvConj()){
-                foreach ($conjunct->evaluateConjunct($cacheConjuncts) as $violation){
-                    // If a conjunct is broken (i.e. returns 1 or more violation pairs) mark that invariant rules do not hold
-                    $invariantRulesHold = false;
-                    foreach ($conjunct->invRuleNames as $ruleName) Notifications::addInvariant(new Violation(Rule::getRule($ruleName), $violation['src'], $violation['tgt']));
-                }
+        $violations = [];
+        foreach(Rule::getAllInvRules() as $rule){
+            if(array_intersect($rule->conjuncts, $affectedConjuncts)){
+                $logger->debug("Checking invariant rule '{$rule}'");
+                $violations = array_merge($violations, $rule->getViolations(true)); // cache conjunct = true, because multiple rules can share the same conjunct
             }else{
-                $logger->error("Conjunct '{$conjunct->id}' provided to be checked for invariant violations, but this is not an invariant conjunct");
+                $logger->debug("Skipping invariant rule '{$rule}', because it is NOT affected in {$transaction}");
             }
         }
-        return $invariantRulesHold;
+        
+        return $violations;
     }
 
     /**

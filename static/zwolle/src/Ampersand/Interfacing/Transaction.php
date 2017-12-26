@@ -16,6 +16,7 @@ use Ampersand\Log\Logger;
 use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Rule\ExecEngine;
+use Ampersand\Log\Notifications;
 
 /**
  *
@@ -109,10 +110,13 @@ class Transaction {
         // Run ExecEngine
         ExecEngine::run();
         
-        // Check invariant rules (we only have to check the affected invariant rules) 
-        $this->logger->debug("Checking all affected conjuncts");
-        $this->invariantRulesHold = RuleEngine::checkInvariantRules($this, true);
+        // Check invariant rules
+        $this->logger->info("Checking invariant rules");
+        $violations = RuleEngine::checkInvariantRules($this); // provide this transaction, because we only have to check the affected rules
+        $this->invariantRulesHold = empty($violations) ? true : false;
+        foreach($violations as $violation) Notifications::addInvariant($violation); // notify user of broken invariant rules
         
+        // Decide action (commit or rollback)
         if($this->invariantRulesHold && $commit){
             $this->logger->info("Commit transaction");
             foreach($this->storages as $storage) $storage->commitTransaction($this); // Commit transaction for each registered storage
