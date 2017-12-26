@@ -184,7 +184,7 @@ class Rule {
     /**
      *
      * @param boolean $cacheConjuncts
-     * @return Violation[]
+     * @return \Ampersand\Rule\Violation[]
      */
     private function checkRule($cacheConjuncts = true){
         $this->logger->debug("Checking rule '{$this->id}'");
@@ -213,7 +213,7 @@ class Rule {
     /**
      * 
      * @param string $cacheConjuncts
-     * @return Violation[]
+     * @return \Ampersand\Rule\Violation[]
      */
     public function getViolations($cacheConjuncts = true){
         if(isset($this->violations) && $cacheConjuncts) return $this->violations;

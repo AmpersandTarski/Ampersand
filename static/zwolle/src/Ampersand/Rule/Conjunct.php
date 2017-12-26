@@ -139,12 +139,13 @@ class Conjunct {
             }
             
             // If conjunct is already evaluated and conjunctCach may be used -> return violations
-            if(isset($this->conjunctViolations) && $cacheConjuncts){
+            elseif(isset($this->conjunctViolations) && $cacheConjuncts){
                 $this->logger->debug("Conjunct is already evaluated, getting violations from cache");
                 return $this->conjunctViolations;
-                    
-                // Otherwise evaluate conjunct, cache and return violations
-            }else{
+            }
+
+            // Otherwise evaluate conjunct, cache and return violations
+            else{
                 $db = Database::singleton();
                 $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
                 $violations = array();
