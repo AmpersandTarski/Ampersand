@@ -5,7 +5,6 @@ use Ampersand\Log\Logger;
 use Ampersand\Extension\ExcelImport\ExcelImport;
 use Ampersand\Log\Notifications;
 use Ampersand\Interfacing\Transaction;
-use Ampersand\Rule\RuleEngine;
 use Ampersand\AmpersandApp;
 
 global $app;
@@ -28,7 +27,7 @@ $app->post('/excelimport/import', function () use ($app){
         $transaction = Transaction::getCurrentTransaction()->close(true);
         if($transaction->isCommitted()) Logger::getUserLogger()->notice("File {$_FILES['file']['tmp_name']} imported successfully");
         
-        RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+        $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
         unlink($_FILES['file']['tmp_name']);
     }else{

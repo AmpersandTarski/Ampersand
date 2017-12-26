@@ -12,7 +12,6 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\IO\CSVWriter;
 use Ampersand\Interfacing\Transaction;
-use Ampersand\Rule\RuleEngine;
 use Ampersand\AmpersandApp;
 
 global $app;
@@ -52,7 +51,7 @@ $app->get('/admin/installer', function () use ($app){
         }
     }
 
-    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
     $content = Notifications::getAll(); // Return all notifications
 
@@ -75,7 +74,7 @@ $app->get('/admin/execengine/run', function () use ($app){
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Run completed");
     else Logger::getUserLogger()->warning("Run completed but transaction not committed");
 
-    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
         
     $result = array('notifications' => Notifications::getAll());
     
@@ -126,6 +125,8 @@ $app->get('/admin/import', function () use ($app){
 
     $file = $app->request->params('file'); if(is_null($file)) throw new Exception("Import file not specified",500);
     
+    $ampersandApp = AmpersandApp::singleton();
+
     include_once (Config::get('absolutePath') . Config::get('logPath') . "{$file}");
     
     // check if all concepts and relations are defined
@@ -158,7 +159,7 @@ $app->get('/admin/import', function () use ($app){
     $transaction = Transaction::getCurrentTransaction()->close(true);
     if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported successfully");
     
-    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
 
     $content = Notifications::getAll(); // Return all notifications
     

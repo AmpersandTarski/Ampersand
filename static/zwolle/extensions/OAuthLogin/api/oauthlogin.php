@@ -5,7 +5,6 @@ use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
 use Ampersand\Interfacing\Transaction;
-use Ampersand\Rule\RuleEngine;
 use Ampersand\AmpersandApp;
 
 global $app;
@@ -46,7 +45,7 @@ $app->get('/oauthlogin/logout', function () use ($app){
     $ampersandApp = AmpersandApp::singleton();
     $ampersandApp->logout();
 
-    RuleEngine::checkProcessRules(); // Check all process rules that are relevant for the activate roles
+    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
         
     $result = array('notifications' => Notifications::getAll());
     

@@ -327,4 +327,23 @@ class AmpersandApp
     public function isAccessibleIfc(InterfaceObject $ifc){
         return in_array($ifc, $this->accessibleInterfaces, true);
     }
+
+    /**
+     * Evaluate all rules that are maintained by the activated roles and return violations
+     * 
+     * @return \Ampersand\Rule\Violation[]
+     */
+    public function checkProcessRules(){
+        $logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'label')));
+        
+        $violations = [];
+        foreach ($this->getRulesToMaintain() as $rule){
+            $violations = array_merge($violations, $rule->getViolations());
+        }
+        
+        // Create signal notifications for all violations
+        foreach ($violations as $violation) Notifications::addSignal($violation);
+
+        return $violations;
+    }
 }

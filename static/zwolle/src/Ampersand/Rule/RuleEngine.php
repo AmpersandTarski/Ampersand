@@ -72,23 +72,6 @@ class RuleEngine {
     
     /**
      * 
-     * @param boolean $cacheConjuncts
-     * @return void
-     */
-    public static function checkProcessRules($cacheConjuncts = true){
-        $logger = Logger::getLogger('RULEENGINE');
-        $ampersandApp = AmpersandApp::singleton();
-        
-        $logger->debug("Checking process rules for active roles: " . implode(', ', array_column($ampersandApp->getActiveRoles(), 'label')));
-        
-        foreach ($ampersandApp->getRulesToMaintain() as $rule){
-            $violations = $rule->getViolations($cacheConjuncts);
-            foreach ($violations as $violation) Notifications::addSignal($violation);
-        }    
-    }
-    
-    /**
-     * 
      * @return \Ampersand\Rule\Violation[]
      */
     public static function getSignalViolationsFromDB(){
