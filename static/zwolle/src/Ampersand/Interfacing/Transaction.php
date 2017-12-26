@@ -205,6 +205,34 @@ class Transaction {
         if(($relation->srcConcept->isSession() || $relation->tgtConcept->isSession())
             && !in_array($relation->getSignature(), $skipRels)) $this->sessionVarAffected = true;
     }
+
+    /**
+     * Return list of affected conjuncts in this transaction
+     * 
+     * @param string $ruleType
+     * @return \Ampersand\Rule\Conjunct[]
+     */
+    public function getAffectedConjuncts($ruleType = 'both'){
+        $affectedConjuncts = [];
+        
+        // Get conjuncts for Concepts
+        foreach($this->affectedConcepts as $concept){
+            // Invariant conjuncts
+            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedInvConjuncts());
+            // Signal conjuncts
+            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedSigConjuncts());
+        }
+        
+        // Get conjuncts for Relations
+        foreach($this->affectedRelations as $relation){
+            // Invariant conjuncts
+            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedInvConjuncts());
+            // Signal conjuncts
+            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedSigConjuncts());
+        }
+        
+        return array_unique($affectedConjuncts); // remove duplicate entries.
+    }
     
     public function invariantRulesHold(){
         return $this->invariantRulesHold;

@@ -31,7 +31,7 @@ class RuleEngine {
      */
     public static function checkInvariantRules(Transaction $transaction): array {
         $logger = Logger::getLogger('RULEENGINE');
-        $affectedConjuncts = self::getAffectedConjuncts($transaction->getAffectedConcepts(), $transaction->getAffectedRelations(), 'inv'); // Get affected invariant conjuncts
+        $affectedConjuncts = $transaction->getAffectedConjuncts('inv'); // Get affected invariant conjuncts
         
         $violations = [];
         foreach(Rule::getAllInvRules() as $rule){
@@ -58,7 +58,7 @@ class RuleEngine {
         // Determine which rules to check/fix
         if(isset($transaction)){
             // Determine affected rules that must be checked by the exec engine
-            $affectedConjuncts = self::getAffectedConjuncts($transaction->getAffectedConcepts(), $transaction->getAffectedRelations(), 'sig');
+            $affectedConjuncts = $transaction->getAffectedConjuncts('sig');
             $ruleNames = [];
             foreach($affectedConjuncts as $conjunct) $ruleNames = array_merge($ruleNames, $conjunct->sigRuleNames);
             
@@ -85,36 +85,6 @@ class RuleEngine {
             $violations = $rule->getViolations($cacheConjuncts);
             foreach ($violations as $violation) Notifications::addSignal($violation);
         }    
-    }
-    
-    /**
-     * 
-     * @param \Ampersand\Core\Concept[] $affectedConcepts
-     * @param \Ampersand\Core\Relation[] $affectedRelations
-     * @param string $ruleType
-     * @return \Ampersand\Rule\Conjunct[]
-     */
-    public static function getAffectedConjuncts($affectedConcepts, $affectedRelations, $ruleType = 'both'){
-        
-        $affectedConjuncts = array();
-        
-        // Get conjuncts for Concepts
-        foreach($affectedConcepts as $concept){
-            // Invariant conjuncts
-            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedInvConjuncts());
-            // Signal conjuncts
-            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedSigConjuncts());
-        }
-        
-        // Get conjuncts for Relations
-        foreach($affectedRelations as $relation){
-            // Invariant conjuncts
-            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedInvConjuncts());
-            // Signal conjuncts
-            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedSigConjuncts());
-        }
-        
-        return array_unique($affectedConjuncts); // remove duplicate entries.
     }
     
     /**
