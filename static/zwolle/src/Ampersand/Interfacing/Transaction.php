@@ -45,14 +45,14 @@ class Transaction {
     
     /**
      * Contains all affected Concepts during a transaction
-     * @var Concept[]
+     * @var \Ampersand\Core\Concept[]
      */
     private $affectedConcepts = [];
     
     /**
      * Contains all affected relations during a transaction
      * Relations are specified with their 'fullRelationSignature' (i.e. 'rel_<relationName>_<srcConcept>_<tgtConcept>')
-     * @var array
+     * @var \Ampersand\Core\Relation[]
      */
     private $affectedRelations = [];
     
@@ -218,17 +218,17 @@ class Transaction {
         // Get conjuncts for Concepts
         foreach($this->affectedConcepts as $concept){
             // Invariant conjuncts
-            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedInvConjuncts());
+            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getRelatedInvConjuncts());
             // Signal conjuncts
-            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getAffectedSigConjuncts());
+            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $concept->getRelatedSigConjuncts());
         }
         
         // Get conjuncts for Relations
         foreach($this->affectedRelations as $relation){
             // Invariant conjuncts
-            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedInvConjuncts());
+            if($ruleType == 'inv' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getRelatedInvConjuncts());
             // Signal conjuncts
-            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getAffectedSigConjuncts());
+            if($ruleType == 'sig' || $ruleType == 'both') $affectedConjuncts = array_merge($affectedConjuncts, $relation->getRelatedSigConjuncts());
         }
         
         return array_unique($affectedConjuncts); // remove duplicate entries.

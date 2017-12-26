@@ -104,22 +104,25 @@ class Relation {
     public $isProp;
     
     /**
+     * List of conjuncts that are affected by adding or removing a link in this relation
      * 
-     * @var Conjunct[]
+     * @var \Ampersand\Rule\Conjunct[]
      */
-    public $affectedConjuncts = array();
+    public $relatedConjuncts = [];
     
     /**
+     * List of signal conjuncts that are affected by adding or removing a link in this relation
      * 
-     * @var Conjunct[]
+     * @var \Ampersand\Rule\Conjunct[]
      */
-    private $affectedSigConjuncts = array();
+    private $relatedSigConjuncts = [];
     
     /**
+     * List of invariant conjuncts that are affected by adding or removing a link in this relation
      * 
-     * @var Conjunct[]
+     * @var \Ampersand\Rule\Conjunct[]
      */
-    private $affectedInvConjuncts = array();
+    private $relatedInvConjuncts = [];
     
     /**
      * 
@@ -155,11 +158,9 @@ class Relation {
         
         foreach((array)$relationDef['affectedConjuncts'] as $conjId){
             $conj = Conjunct::getConjunct($conjId);
-            
-            $this->affectedConjuncts[] = $conj;
-        
-            if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
-            if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
+            $this->relatedConjuncts[] = $conj;
+            if ($conj->isSigConj()) $this->relatedSigConjuncts[] = $conj;
+            if ($conj->isInvConj()) $this->relatedInvConjuncts[] = $conj;
             // if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for relation '{$this}') is not part of an invariant or signal rule");
         }
         
@@ -193,16 +194,16 @@ class Relation {
      * Returns array with signal conjuncts that are affected by updating this Relation
      * @return Conjunct[]
      */
-    public function getAffectedSigConjuncts(){
-        return $this->affectedSigConjuncts;
+    public function getRelatedSigConjuncts(){
+        return $this->relatedSigConjuncts;
     }
     
     /**
      * Returns array with invariant conjuncts that are affected by by updating this Relation
      * @return Conjunct[]
      */
-    public function getAffectedInvConjuncts(){
-        return $this->affectedInvConjuncts;
+    public function getRelatedInvConjuncts(){
+        return $this->relatedInvConjuncts;
     }
     
     /**
