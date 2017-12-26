@@ -211,11 +211,12 @@ class Rule {
     }
     
     /**
+     * Undocumented function
      * 
-     * @param string $cacheConjuncts
+     * @param bool $cacheConjuncts
      * @return \Ampersand\Rule\Violation[]
      */
-    public function getViolations($cacheConjuncts = true){
+    public function getViolations(bool $cacheConjuncts = true): array {
         if(isset($this->violations) && $cacheConjuncts) return $this->violations;
         else return $this->checkRule($cacheConjuncts);
         
