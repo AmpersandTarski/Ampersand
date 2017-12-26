@@ -29,12 +29,12 @@ class RuleEngine {
      * @param boolean $cacheConjuncts
      * @return boolean if invariant rules hold
      */
-        $logger = Logger::getLogger('RULE');
     public static function checkInvariantRules(Transaction $transaction, $cacheConjuncts = true){
+        $logger = Logger::getLogger('RULEENGINE');
         $conjuncts = self::getAffectedConjuncts($transaction->getAffectedConcepts(), $transaction->getAffectedRelations(), 'inv'); // Get affected invariant conjuncts
     
         // check invariant rules
-        $logger->debug("Checking invariant rules for provided conjuncts: " . implode(', ', array_column($conjuncts, 'id')));
+        $logger->debug("Checking invariant rules with conjuncts: " . implode(', ', array_column($conjuncts, 'id')));
         
         $invariantRulesHold = true;
         foreach ($conjuncts as $conjunct){
@@ -81,7 +81,7 @@ class RuleEngine {
      * @return void
      */
     public static function checkProcessRules($cacheConjuncts = true){
-        $logger = Logger::getLogger('RULE');
+        $logger = Logger::getLogger('RULEENGINE');
         $ampersandApp = AmpersandApp::singleton();
         
         $logger->debug("Checking process rules for active roles: " . implode(', ', array_column($ampersandApp->getActiveRoles(), 'label')));
@@ -94,10 +94,10 @@ class RuleEngine {
     
     /**
      * 
-     * @param Concept[] $affectedConcepts
-     * @param Relation[] $affectedRelations
+     * @param \Ampersand\Core\Concept[] $affectedConcepts
+     * @param \Ampersand\Core\Relation[] $affectedRelations
      * @param string $ruleType
-     * @return Conjunct[]
+     * @return \Ampersand\Rule\Conjunct[]
      */
     public static function getAffectedConjuncts($affectedConcepts, $affectedRelations, $ruleType = 'both'){
         
@@ -124,10 +124,10 @@ class RuleEngine {
     
     /**
      * 
-     * @return Violation[]
+     * @return \Ampersand\Rule\Violation[]
      */
     public static function getSignalViolationsFromDB(){
-        $logger = Logger::getLogger('RULE');
+        $logger = Logger::getLogger('RULEENGINE');
         $ampersandApp = AmpersandApp::singleton();
         $database = Database::singleton();
         $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
