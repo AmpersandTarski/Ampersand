@@ -112,20 +112,9 @@ class ExecEngine {
                 break;
             }
             
-            // Determine which rules to check/fix
-            if($allRules){
-                $ruleNames = $role->maintains();
-            }else{
-                // Determine affected rules that must be checked by the exec engine
-                $affectedConjuncts = RuleEngine::getAffectedConjuncts(Transaction::getCurrentTransaction()->getAffectedConcepts(), Transaction::getCurrentTransaction()->getAffectedRelations(), 'sig');
-                $ruleNames = [];
-                foreach($affectedConjuncts as $conjunct) $ruleNames = array_merge($ruleNames, $conjunct->sigRuleNames);
-            }
-            
             // Check rules
             $rulesThatHaveViolations = [];
-            foreach ($ruleNames as $ruleName){
-                $rule = Rule::getRule($ruleName);
+            foreach (RuleEngine::getRulesToCheck($role, ($allRules ? null : Transaction::getCurrentTransaction())) as $rule){
                 $violations = $rule->getViolations(false); // param false to force (re)evaluation of conjuncts
                 
                 if(empty($violations)) continue; // continue to next rule when no violation
