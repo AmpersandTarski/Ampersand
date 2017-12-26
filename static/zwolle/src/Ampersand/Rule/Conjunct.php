@@ -110,11 +110,13 @@ class Conjunct {
     }
     
     /**
-     * Temporary function to be able to skip uni and inj conj in Conjunct::evaluateConjunct()
-     * @return boolean specifies if this conjunct is part of an UNI or INJ rule
+     * Specificies if conjunct is part of UNI or INJ rule
+     * Temporary fuction to be able to skip uni and inj conj
      * TODO: remove after fix for issue #535
+     * 
+     * @return bool
      */
-    public function isUniOrInjConj(){
+    protected function isUniOrInjConj(): bool {
         $rules = array_map(function($name){
             return substr($name, 0, 3);
         }, array_merge($this->sigRuleNames, $this->invRuleNames));
