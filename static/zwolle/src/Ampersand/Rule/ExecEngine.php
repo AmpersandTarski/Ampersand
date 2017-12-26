@@ -73,6 +73,7 @@ class ExecEngine {
         self::$maxRunCount = Config::get('maxRunCount', 'execEngine');
         self::$autoRerun = Config::get('autoRerun', 'execEngine');
         
+        // TODO: now exec engine roles are checked one-by-one without stepping back if needed
         foreach((array) Config::get('execEngineRoleNames', 'execEngine') as $roleName){
             self::$runCount = 0;
             self::$doRun = true;
