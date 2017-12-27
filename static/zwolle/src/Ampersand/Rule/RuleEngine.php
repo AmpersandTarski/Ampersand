@@ -8,12 +8,7 @@
 namespace Ampersand\Rule;
 
 use Ampersand\Database\Database;
-use Ampersand\Log\Logger;
 use Ampersand\Config;
-use Ampersand\AmpersandApp;
-use Ampersand\Role;
-use Ampersand\Interfacing\Transaction;
-use Ampersand\Rule\Rule;
 
 /**
  *
