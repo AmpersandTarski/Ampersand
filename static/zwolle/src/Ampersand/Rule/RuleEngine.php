@@ -9,7 +9,6 @@ namespace Ampersand\Rule;
 
 use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
-use Ampersand\Log\Notifications;
 use Ampersand\Config;
 use Ampersand\AmpersandApp;
 use Ampersand\Role;
@@ -59,7 +58,7 @@ class RuleEngine {
         if($forceEvaluate){
             $violations = [];
             foreach ($rules as $rule){
-                $violations = array_merge($violations, $rule->checkRule());
+                $violations = array_merge($violations, $rule->checkRule(true));
             }
             return $violations;
         }
