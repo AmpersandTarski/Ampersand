@@ -126,11 +126,9 @@ class Conjunct {
      * @return bool
      */
     protected function isUniOrInjConj(): bool {
-        $rules = array_map(function($name){
-            return substr($name, 0, 3);
-        }, array_merge($this->sigRuleNames, $this->invRuleNames));
-        
-        return (in_array('UNI', $rules) || in_array('INJ', $rules));
+        return array_reduce($this->getRuleNames(), function(bool $carry, string $ruleName){
+            return ($carry || in_array(substr($ruleName, 0, 3), ['UNI', 'INJ']));
+        }, false);
     }
     
     /**
