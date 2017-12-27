@@ -85,18 +85,6 @@ class Concept {
     public $relatedConjuncts = [];
     
     /**
-     * List of signal conjuncts that are affected by creating or deleting an atom of this concept
-     * @var Conjunct[]
-     */
-    private $relatedSigConjuncts = [];
-    
-    /**
-     * List of invariant conjuncts that are affected by creating or deleting an atom of this concept
-     * @var Conjunct[]
-     */
-    private $relatedInvConjuncts = [];
-    
-    /**
      * Array of concepts (name) that are specializations of this concept
      * @var string[]
      */
@@ -172,9 +160,6 @@ class Concept {
         foreach((array)$conceptDef['affectedConjuncts'] as $conjId){
             $conj = Conjunct::getConjunct($conjId);
             $this->relatedConjuncts[] = $conj;
-            if ($conj->isSigConj()) $this->relatedSigConjuncts[] = $conj;
-            if ($conj->isInvConj()) $this->relatedInvConjuncts[] = $conj;
-            // if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule");
         }
         
         $this->specializations = (array)$conceptDef['specializations'];
@@ -341,16 +326,8 @@ class Concept {
      * Returns array with signal conjuncts that are affected by creating or deleting an atom of this concept
      * @return Conjunct[]
      */
-    public function getRelatedSigConjuncts(){
-        return $this->relatedSigConjuncts;
-    }
-    
-    /**
-     * Returns array with invariant conjuncts that are affected by creating or deleting an atom of this concept
-     * @return Conjunct[]
-     */
-    public function getRelatedInvConjuncts(){
-        return $this->relatedInvConjuncts;
+    public function getRelatedConjuncts(){
+        return $this->relatedConjuncts;
     }
     
     /**

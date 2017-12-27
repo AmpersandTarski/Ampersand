@@ -111,20 +111,6 @@ class Relation {
     public $relatedConjuncts = [];
     
     /**
-     * List of signal conjuncts that are affected by adding or removing a link in this relation
-     * 
-     * @var \Ampersand\Rule\Conjunct[]
-     */
-    private $relatedSigConjuncts = [];
-    
-    /**
-     * List of invariant conjuncts that are affected by adding or removing a link in this relation
-     * 
-     * @var \Ampersand\Rule\Conjunct[]
-     */
-    private $relatedInvConjuncts = [];
-    
-    /**
      * 
      * @var RelationTable
      */
@@ -159,9 +145,6 @@ class Relation {
         foreach((array)$relationDef['affectedConjuncts'] as $conjId){
             $conj = Conjunct::getConjunct($conjId);
             $this->relatedConjuncts[] = $conj;
-            if ($conj->isSigConj()) $this->relatedSigConjuncts[] = $conj;
-            if ($conj->isInvConj()) $this->relatedInvConjuncts[] = $conj;
-            // if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for relation '{$this}') is not part of an invariant or signal rule");
         }
         
         // Specify mysql table information
@@ -194,16 +177,8 @@ class Relation {
      * Returns array with signal conjuncts that are affected by updating this Relation
      * @return Conjunct[]
      */
-    public function getRelatedSigConjuncts(){
-        return $this->relatedSigConjuncts;
-    }
-    
-    /**
-     * Returns array with invariant conjuncts that are affected by by updating this Relation
-     * @return Conjunct[]
-     */
-    public function getRelatedInvConjuncts(){
-        return $this->relatedInvConjuncts;
+    public function getRelatedConjuncts(){
+        return $this->relatedConjuncts;
     }
     
     /**
