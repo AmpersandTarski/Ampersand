@@ -26,7 +26,7 @@ class RuleEngine {
      * Undocumented function
      *
      * @param \Ampersand\Rule\Rule[] $rules
-     * @param bool $fromDB
+     * @param bool $forceEvaluate
      * @return \Ampersand\Rule\Violation[]
      */
     public static function checkRules(array $rules, bool $forceEvaluate = false): array {
