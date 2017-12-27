@@ -33,11 +33,9 @@ require_once(__DIR__ . '/defaultSettings.php');
 require_once (__DIR__ . '/../localSettings.php');
 if(!defined('LOCALSETTINGS_VERSION') || AmpersandApp::REQ_LOCALSETTINGS_VERSION > LOCALSETTINGS_VERSION) throw new Exception("New version of localSettings.php required. Please update to format of v" . number_format (AmpersandApp::REQ_LOCALSETTINGS_VERSION, 1), 500);
 
-// Other bootstrapping files
-$files = \Ampersand\Helper\getDirectoryList(__DIR__ . '/bootstrap');
-foreach ($files as $file){
-    if (substr($file,-3) !== 'php') continue;
-    require_once(__DIR__ . '/bootstrap/' . $file);
-}
+// Include built-in ExecEngine function
+require_once(__DIR__ . '/bootstrap/ExecEngineFunctions.php');
+// require_once(__DIR__ . '/bootstrap/ExecEngineDateTime.php');
+// require_once(__DIR__ . '/bootstrap/ExecEngineWarshall.php');
 
 ?>

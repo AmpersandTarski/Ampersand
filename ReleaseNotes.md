@@ -1,7 +1,7 @@
 # Release notes of Ampersand
 
 ## Unreleased changes
-* PHP Backend: integrate ExecEngine (not an extension anymore)
+* PHP Backend: integrate and refactor ExecEngine (not an extension anymore)
 * PHP Backend: requires PHP 7.x (5.6 is not supported anymore)
 
 * Security fix: use PHP session strict mode. This prevents a user defined session ID that is never generated

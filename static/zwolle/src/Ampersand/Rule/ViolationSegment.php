@@ -22,22 +22,24 @@ class ViolationSegment extends ViewSegment {
     /**
      * The view to which this segment belongs to
      * 
-     * @var Rule $rule
+     * @var \Ampersand\Rule\Rule $rule
      */
     protected $rule;
 
     /**
      * Specifies if expression is the ident relation (in case of an Expr segment type)
      * 
-     * @var boolean|null $expIsIdent
+     * @var bool|null $expIsIdent
      */
     protected $expIsIdent = null;
 
     /**
      * Constructor of violation segments
+     * 
      * @param array $segmentDef
+     * @param \Ampersand\Rule\Rule $rule rule of which this segment is part of
      */
-    public function __construct($segmentDef, Rule $rule){
+    public function __construct(array $segmentDef, Rule $rule){
         $this->rule = $rule;
         $this->expIsIdent = $segmentDef['expIsIdent'];
 

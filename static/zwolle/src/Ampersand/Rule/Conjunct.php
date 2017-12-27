@@ -20,43 +20,51 @@ use Ampersand\Config;
 class Conjunct {
     
     /**
-     * Contains all conjunct definitions
+     * List of all conjuncts
+     * 
      * @var Conjunct[]
      */
     private static $allConjuncts;
     
     /**
-     *
+     * Logger
+     * 
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
     
     /**
+     * Conjunct identifier
      * 
      * @var string
      */
     public $id;
     
     /**
+     * Query to evaluate conjunct (i.e. get violations)
      * 
      * @var string
      */
     private $query;
     
     /**
+     * List invariant rules that use this conjunct
      * 
-     * @var array
+     * @var string[]
      */
     public $invRuleNames;
     
     /**
+     * List signal rules that use this conjunct
      * 
-     * @var array
+     * @var string[]
      */
     public $sigRuleNames;
     
     /**
-     * Array of arrays with violation pairs array(array('src' => $srcAtom, 'tgt' => $tgtAtom))
+     * List of violation pairs 
+     * array(array('src' => $srcAtom, 'tgt' => $tgtAtom))
+     * 
      * @var array $conjunctViolations
      */
     private $conjunctViolations;
@@ -67,7 +75,7 @@ class Conjunct {
      *
      * @param array $conjDef
      */
-    private function __construct($conjDef){
+    private function __construct(array $conjDef){
         $this->logger = Logger::getLogger('RULE');
         
         $this->id = $conjDef['id'];
@@ -78,56 +86,67 @@ class Conjunct {
     
     /**
      * Function is called when object is treated as a string
-     * This method is required for array_unique() to work elsewhere in the code
+     * 
      * @return string identifier of conjunct
      */
-    public function __toString(){
+    public function __toString(): string {
         return $this->id;
     }
     
     /**
      * Check is conjunct is used by/part of a signal rule
-     * @return boolean
+     * @return bool
      */
-    public function isSigConj(){
+    public function isSigConj(): bool {
         return !empty($this->sigRuleNames);
     }
     
     /**
      * Check is conjunct is used by/part of a invariant rule
-     * @return boolean
+     * @return bool
      */
-    public function isInvConj(){
+    public function isInvConj(): bool {
         return !empty($this->invRuleNames);
     }
 
     /**
-     * Returns query to evaluate conjunct violations
+     * Get list of rule names that use this conjunct
+     *
+     * @return string[]
+     */
+    public function getRuleNames(): array {
+        return array_merge($this->sigRuleNames, $this->invRuleNames);
+    }
+
+    /**
+     * Get query to evaluate conjunct violations
+     * 
      * @return string
      */
-    public function getQuery(){
+    public function getQuery(): string {
         return str_replace('_SESSION', session_id(), $this->query); // Replace _SESSION var with current session id.
     }
     
     /**
-     * Temporary function to be able to skip uni and inj conj in Conjunct::evaluateConjunct()
-     * @return boolean specifies if this conjunct is part of an UNI or INJ rule
+     * Specificies if conjunct is part of UNI or INJ rule
+     * Temporary fuction to be able to skip uni and inj conj
      * TODO: remove after fix for issue #535
+     * 
+     * @return bool
      */
-    public function isUniOrInjConj(){
-        $rules = array_map(function($name){
-            return substr($name, 0, 3);
-        }, array_merge($this->sigRuleNames, $this->invRuleNames));
-        
-        return (in_array('UNI', $rules) || in_array('INJ', $rules));
+    protected function isUniOrInjConj(): bool {
+        return array_reduce($this->getRuleNames(), function(bool $carry, string $ruleName){
+            return ($carry || in_array(substr($ruleName, 0, 3), ['UNI', 'INJ']));
+        }, false);
     }
     
     /**
-     * Function to evaluate conjunct
-     * @param boolean $cacheConjuncts
+     * Evaluate conjunct and return array with violation pairs
+     * 
+     * @param bool $cacheConjuncts
      * @return array[] array(array('src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
      */
-    public function evaluateConjunct($cacheConjuncts = true){
+    public function evaluateConjunct(bool $cacheConjuncts = true): array {
         $this->logger->debug("Checking conjunct '{$this->id}' cache:" . var_export($cacheConjuncts, true));
         try{
             // Skipping evaluation of UNI and INJ conjuncts. TODO: remove after fix for issue #535
@@ -137,12 +156,13 @@ class Conjunct {
             }
             
             // If conjunct is already evaluated and conjunctCach may be used -> return violations
-            if(isset($this->conjunctViolations) && $cacheConjuncts){
+            elseif(isset($this->conjunctViolations) && $cacheConjuncts){
                 $this->logger->debug("Conjunct is already evaluated, getting violations from cache");
                 return $this->conjunctViolations;
-                    
-                // Otherwise evaluate conjunct, cache and return violations
-            }else{
+            }
+
+            // Otherwise evaluate conjunct, cache and return violations
+            else{
                 $db = Database::singleton();
                 $dbsignalTableName = Config::get('dbsignalTableName', 'mysqlDatabase');
                 $violations = array();
@@ -188,11 +208,12 @@ class Conjunct {
     
     /**
      * Return conjunct object
+     * 
      * @param string $conjId
      * @throws Exception if conjunct is not defined
-     * @return Conjunct
+     * @return \Ampersand\Rule\Conjunct
      */
-    public static function getConjunct($conjId){
+    public static function getConjunct($conjId): Conjunct {
         if(!array_key_exists($conjId, $conjuncts = self::getAllConjuncts())) throw new Exception("Conjunct '{$conjId}' is not defined", 500);
     
         return $conjuncts[$conjId];
@@ -200,9 +221,10 @@ class Conjunct {
     
     /**
      * Returns array with all conjunct objects
-     * @return Conjunct[]
+     * 
+     * @return \Ampersand\Rule\Conjunct[]
      */
-    public static function getAllConjuncts(){
+    public static function getAllConjuncts(): array {
         if(!isset(self::$allConjuncts)) self::setAllConjuncts();
          
         return self::$allConjuncts;
@@ -210,6 +232,7 @@ class Conjunct {
     
     /**
      * Import all conjunct definitions from json file and create and save Conjunct objects
+     * 
      * @return void
      */
     private static function setAllConjuncts(){
@@ -221,16 +244,4 @@ class Conjunct {
     
         foreach ($allConjDefs as $conjDef) self::$allConjuncts[$conjDef['id']] = new Conjunct($conjDef);
     }
-    
-    /**
-     * 
-     * @param Conjunct[] $conjuncts
-     * @return void
-     */
-    public static function evaluateConjuncts($conjuncts = null, $cacheConjuncts = true){
-        if(is_null($conjuncts)) $conjuncts = self::getAllConjuncts();
-        
-        foreach($conjuncts as $conjunct) $conjunct->evaluateConjunct($cacheConjuncts);
-    }
-    
 }

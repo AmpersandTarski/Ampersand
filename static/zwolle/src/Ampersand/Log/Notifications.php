@@ -10,6 +10,7 @@ namespace Ampersand\Log;
 use Exception;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
+use Ampersand\Rule\Violation;
 
 /**
  *
@@ -110,10 +111,12 @@ class Notifications {
  * 
  *************************************************************************************************/
     /**
+     * Undocumented function
      * 
-     * @param Rule\Violation $violation
+     * @param \Ampersand\Rule\Violation $violation
+     * @return void
      */
-    public static function addInvariant($violation){
+    public static function addInvariant(Violation $violation){
         $hash = hash('md5', $violation->rule->id);
             
         self::$invariants[$hash]['ruleMessage'] = $violation->rule->getViolationMessage();
@@ -123,10 +126,12 @@ class Notifications {
     }
     
     /**
+     * Undocumented function
      * 
-     * @param Rule\Violation $violation
+     * @param \Ampersand\Rule\Violation $violation
+     * @return void
      */
-    public static function addSignal($violation){
+    public static function addSignal(Violation $violation){
         $ruleHash = hash('md5', $violation->rule->id);
         
         if(!isset(self::$signals[$ruleHash])){

@@ -78,22 +78,11 @@ class Concept {
     public $type;
     
     /**
-     * Array with conjunctIds (both from signal and invariant rules) that are affected by creating or deleting an atom of this concept
-     * @var string[]
+     * List of conjuncts that are affected by creating or deleting an atom of this concept
+     * 
+     * @var \Ampersand\Rule\Conjunct[]
      */
-    private $affectedConjunctIds = array();
-    
-    /**
-     * Array with signal conjuncts that are affected by creating or deleting an atom of this concept
-     * @var Conjunct[]
-     */
-    private $affectedSigConjuncts = array();
-    
-    /**
-     * Array with invariant conjuncts that are affected by creating or deleting an atom of this concept
-     * @var Conjunct[]
-     */
-    private $affectedInvConjuncts = array();
+    public $relatedConjuncts = [];
     
     /**
      * Array of concepts (name) that are specializations of this concept
@@ -168,13 +157,9 @@ class Concept {
         $this->label = $conceptDef['label'];
         $this->type = $conceptDef['type'];
         
-        $this->affectedConjunctIds = (array)$conceptDef['affectedConjuncts'];
-        foreach($this->affectedConjunctIds as $conjId){
+        foreach((array)$conceptDef['affectedConjuncts'] as $conjId){
             $conj = Conjunct::getConjunct($conjId);
-            
-            if ($conj->isSigConj()) $this->affectedSigConjuncts[] = $conj;
-            if ($conj->isInvConj()) $this->affectedInvConjuncts[] = $conj;
-            // if (!$conj->isSigConj() && !$conj->isInvConj()) $this->logger->warning("Affected conjunct '{$conj->id}' (specified for concept '[{$this->name}]') is not part of an invariant or signal rule");
+            $this->relatedConjuncts[] = $conj;
         }
         
         $this->specializations = (array)$conceptDef['specializations'];
@@ -341,16 +326,8 @@ class Concept {
      * Returns array with signal conjuncts that are affected by creating or deleting an atom of this concept
      * @return Conjunct[]
      */
-    public function getAffectedSigConjuncts(){
-        return $this->affectedSigConjuncts;
-    }
-    
-    /**
-     * Returns array with invariant conjuncts that are affected by creating or deleting an atom of this concept
-     * @return Conjunct[]
-     */
-    public function getAffectedInvConjuncts(){
-        return $this->affectedInvConjuncts;
+    public function getRelatedConjuncts(){
+        return $this->relatedConjuncts;
     }
     
     /**

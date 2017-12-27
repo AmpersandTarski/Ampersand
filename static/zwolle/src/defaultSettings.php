@@ -65,7 +65,7 @@ try{
     Config::set('defaultShowInvariants', 'notifications', true);
 
     // ExecEngine settings
-    Config::set('execEngineRoleName', 'execEngine', 'ExecEngine');
+    Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
     Config::set('autoRerun', 'execEngine', true);
     Config::set('maxRunCount', 'execEngine', 10);
     

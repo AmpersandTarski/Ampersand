@@ -71,6 +71,12 @@ Logger::registerHandlerForChannel('USERLOG', new NotificationHandler(\Monolog\Lo
  *************************************************************************************************/
 // Config::set('loginEnabled', 'global', true);
 
+/**************************************************************************************************
+ * EXEC ENGINE 
+ *************************************************************************************************/
+// Config::set('execEngineRoleNames', 'execEngine', ['ExecEngine']);
+// Config::set('autoRerun', 'execEngine', true);
+// Config::set('maxRunCount', 'execEngine', 10);
 
 /**************************************************************************************************
  * EXTENSIONS

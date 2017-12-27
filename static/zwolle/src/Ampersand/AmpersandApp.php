@@ -10,11 +10,12 @@ use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
-use Ampersand\Rule\Rule;
 use Exception;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
 use Ampersand\Role;
+use Ampersand\Rule\RuleEngine;
+use Ampersand\Log\Notifications;
 
 class AmpersandApp
 {
@@ -211,7 +212,7 @@ class AmpersandApp
 
         // Initial conjunct evaluation
         $this->logger->info("Initial evaluation of all conjuncts after application reinstallation");
-        Conjunct::evaluateConjuncts(null, true); // Evaluate, cache and store all conjuncts
+        foreach(Conjunct::getAllConjuncts() as $conjunct) $conjunct->evaluateConjunct(true); // Evaluate, cache and store all conjuncts
 
         $this->setSession(); // Initiate session again
     }
@@ -256,10 +257,7 @@ class AmpersandApp
     protected function activateRole(Role &$role){
         $role->active = true;
         $this->accessibleInterfaces = array_merge($this->accessibleInterfaces, $role->interfaces());
-        
-        foreach($role->maintains() as $ruleName){
-            $this->rulesToMaintain[] = Rule::getRule($ruleName);
-        }
+        $this->rulesToMaintain = array_merge($this->rulesToMaintain, $role->maintains());
         
         $this->logger->info("Role '{$role->id}' is activated");
     }
@@ -330,5 +328,17 @@ class AmpersandApp
      */
     public function isAccessibleIfc(InterfaceObject $ifc){
         return in_array($ifc, $this->accessibleInterfaces, true);
+    }
+
+    /**
+     * Evaluate and signal violations for all rules that are maintained by the activated roles
+     * 
+     * @return void
+     */
+    public function checkProcessRules(){
+        $logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'label')));
+        
+        // Check rules and signal notifications for all violations
+        foreach (RuleEngine::checkRules($this->getRulesToMaintain(), false) as $violation) Notifications::addSignal($violation);
     }
 }

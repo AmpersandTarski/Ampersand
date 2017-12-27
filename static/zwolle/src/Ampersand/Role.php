@@ -9,6 +9,7 @@ namespace Ampersand;
 
 use Exception;
 use Ampersand\Interfacing\InterfaceObject;
+use Ampersand\Rule\Rule;
 
 /**
  *
@@ -41,16 +42,16 @@ class Role {
     public $active = false;
     
     /**
-     * Specifies all rules that are maintained by this role
-     * @var array
+     * List of all rules that are maintained by this role
+     * @var \Ampersand\Rule\Rule[]
      */
-    private $maintains = array();
+    protected $maintains = [];
     
     /**
-     * Specifies all interfaces that are accessible by this role
+     * List of all interfaces that are accessible by this role
      * @var unknown
      */
-    private $interfaces = array();
+    protected $interfaces = [];
     
     /**
      * Constructor of role
@@ -61,7 +62,10 @@ class Role {
     private function __construct($roleDef){
         $this->id = $roleDef['id'];
         $this->label = $roleDef['name'];
-        $this->maintains = $roleDef['maintains'];
+        
+        foreach((array)$roleDef['maintains'] as $ruleName){
+            $this->maintains[] = Rule::getRule($ruleName);
+        }
         
         foreach ($roleDef['interfaces'] as $ifcId){
             $this->interfaces[] = InterfaceObject::getInterface($ifcId);
@@ -70,25 +74,28 @@ class Role {
     
     /**
      * Function is called when object is treated as a string
-     * @return string role label
+     * 
+     * @return string
      */
-    public function __toString(){
+    public function __toString(): string {
         return $this->label;
     }
     
     /**
-     * Get array of rules names that are maintained by this role
-     * @return string[]
+     * Get list of rules that are maintained by this role
+     * 
+     * @return \Ampersand\Rule\Rule[]
      */
-    public function maintains(){
+    public function maintains(): array {
         return $this->maintains;
     }
     
     /**
-     * Get interfaces that are accessible for this role
-     * @return InterfaceObject[]
+     * Get list of interfaces that are accessible for this role
+     * 
+     * @return \Ampersand\Interfacing\InterfaceObject[]
      */
-    public function interfaces(){
+    public function interfaces(): array {
         return $this->interfaces;
     }
     

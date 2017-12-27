@@ -21,33 +21,31 @@ class Violation {
 
     /**
      * Rule to which this violation belongs to
+     * 
      * @var \Ampersand\Rule\Rule
      */
     public $rule;
 
     /**
-     *
+     * The source atom of the violation
+     * 
      * @var \Ampersand\Core\Atom
      */
     public $src;
 
     /**
-     *
+     * The target atom of the violation
+     * 
      * @var \Ampersand\Core\Atom
      */
     public $tgt;
 
     /**
-     *
+     * The violation message
+     * 
      * @var string
      */
     private $message;
-
-    /**
-     * Array with urls that could be used to solve the violation
-     * @var string[]
-     */
-    public $urls;
 
     /**
      * Constructor of violation
@@ -72,12 +70,12 @@ class Violation {
     }
     
     /**
-     * Undocumented function
+     * Get violation message
      * 
      * @throws Exception when segment expression return more that 1 tgt atom
      * @return string
      */
-    public function getViolationMessage(){
+    public function getViolationMessage(): string {
         $strArr = [];
         foreach ($this->rule->getViolationSegments() as $segment){
             $tgtAtomIds = $segment->getData($this->src, $this->tgt);
@@ -91,11 +89,11 @@ class Violation {
     }
 
     /**
-     * Undocumented function
+     * Get violation message prepared for ExecEngine
      *
      * @return string
      */
-    public function getExecEngineViolationMessage(){
+    public function getExecEngineViolationMessage(): string {
         $strArr = [];
         foreach ($this->rule->getViolationSegments() as $segment){
             $tgtAtomIds = $segment->getData($this->src, $this->tgt);
@@ -114,11 +112,12 @@ class Violation {
     }
 
     /**
-     * Get interfaces to solve the violation
+     * Get list of interfaces to solve the violation
+     * 
      * @param string $srcOrTgt specifies to get interfaces for source concept (src), target concept (tgt) or both (null)
-     * @return array
+     * @return \Ampersand\Interfacing\InterfaceObject[]
      */
-    public function getInterfaces($srcOrTgt = null){
+    public function getInterfaces($srcOrTgt = null): array {
         $ampersandApp = AmpersandApp::singleton();
         
         switch ($srcOrTgt) {
