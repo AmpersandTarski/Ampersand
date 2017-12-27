@@ -94,6 +94,7 @@ $app->get('/admin/checks/rules/evaluate/all', function() use ($app){
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
+//TODO: refactor function using new JSON import/export format and functionality
 $app->get('/admin/export/all', function () use ($app){
     if(Config::get('productionEnv')) throw new Exception ("Export not allowed in production environment", 403);
     
@@ -117,6 +118,7 @@ $app->get('/admin/export/all', function () use ($app){
     file_put_contents(Config::get('absolutePath') . Config::get('logPath') . "export-" . date('Y-m-d_H-i-s') . ".php", $strFileContent);
 });
 
+//TODO: refactor function using new JSON import/export format and functionality
 $app->get('/admin/import', function () use ($app){
     if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
     $logger = Logger::getLogger('ADMIN');
