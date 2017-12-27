@@ -114,7 +114,8 @@ class ExecEngine {
             
             // Check rules
             $rulesThatHaveViolations = [];
-            foreach (self::getRulesToCheck($role, ($allRules ? null : Transaction::getCurrentTransaction())) as $rule){
+            $rulesToCheck = $allRules ? $role->maintains() : Transaction::getCurrentTransaction()->getAffectedRules($role->maintains());
+            foreach ($rulesToCheck as $rule){
                 $violations = $rule->checkRule(false); // param false to force (re)evaluation of conjuncts
                 
                 if(empty($violations)) continue; // continue to next rule when no violation
@@ -190,30 +191,6 @@ class ExecEngine {
             }else{
                 throw new Exception("Function '{$functionName}' does not exists. Register ExecEngine function.", 500);
             }
-        }
-    }
-
-    /**
-     * Get rules that are maintained by $role
-     * If $transaction is provided then only affected rules in the transaction are checked
-     *
-     * @param \Ampersand\Role $role
-     * @param \Ampersand\Interfacing\Transaction $transaction
-     * @return \Ampersand\Rule\Rule[]
-     */
-    protected static function getRulesToCheck(Role $role, Transaction $transaction = null): array {
-        // Determine which rules to check/fix
-        if(isset($transaction)){
-            // Determine affected rules that must be checked by the exec engine
-            $affectedConjuncts = $transaction->getAffectedConjuncts('sig');
-            $ruleNames = [];
-            foreach($affectedConjuncts as $conjunct) $ruleNames = array_merge($ruleNames, $conjunct->sigRuleNames);
-            
-            return array_map(function($ruleName){
-                return Rule::getRule($ruleName);
-            }, $ruleNames);
-        }else{
-            return $role->maintains();
         }
     }
 
