@@ -35,7 +35,7 @@ class RuleEngine {
         if($forceEvaluate){
             $violations = [];
             foreach ($rules as $rule){
-                $violations = array_merge($violations, $rule->checkRule(true));
+                $violations = array_merge($violations, $rule->checkRule(true)); // cache conjunct = true, because multiple rules can share the same conjunct
             }
             return $violations;
         }
