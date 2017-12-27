@@ -20,43 +20,51 @@ use Ampersand\Config;
 class Conjunct {
     
     /**
-     * Contains all conjunct definitions
+     * List of all conjuncts
+     * 
      * @var Conjunct[]
      */
     private static $allConjuncts;
     
     /**
-     *
+     * Logger
+     * 
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
     
     /**
+     * Conjunct identifier
      * 
      * @var string
      */
     public $id;
     
     /**
+     * Query to evaluate conjunct (i.e. get violations)
      * 
      * @var string
      */
     private $query;
     
     /**
+     * List invariant rules that use this conjunct
      * 
-     * @var array
+     * @var string[]
      */
     public $invRuleNames;
     
     /**
+     * List signal rules that use this conjunct
      * 
-     * @var array
+     * @var string[]
      */
     public $sigRuleNames;
     
     /**
-     * Array of arrays with violation pairs array(array('src' => $srcAtom, 'tgt' => $tgtAtom))
+     * List of violation pairs 
+     * array(array('src' => $srcAtom, 'tgt' => $tgtAtom))
+     * 
      * @var array $conjunctViolations
      */
     private $conjunctViolations;
@@ -67,7 +75,7 @@ class Conjunct {
      *
      * @param array $conjDef
      */
-    private function __construct($conjDef){
+    private function __construct(array $conjDef){
         $this->logger = Logger::getLogger('RULE');
         
         $this->id = $conjDef['id'];
@@ -78,26 +86,26 @@ class Conjunct {
     
     /**
      * Function is called when object is treated as a string
-     * This method is required for array_unique() to work elsewhere in the code
+     * 
      * @return string identifier of conjunct
      */
-    public function __toString(){
+    public function __toString(): string {
         return $this->id;
     }
     
     /**
      * Check is conjunct is used by/part of a signal rule
-     * @return boolean
+     * @return bool
      */
-    public function isSigConj(){
+    public function isSigConj(): bool {
         return !empty($this->sigRuleNames);
     }
     
     /**
      * Check is conjunct is used by/part of a invariant rule
-     * @return boolean
+     * @return bool
      */
-    public function isInvConj(){
+    public function isInvConj(): bool {
         return !empty($this->invRuleNames);
     }
 
@@ -111,10 +119,11 @@ class Conjunct {
     }
 
     /**
-     * Returns query to evaluate conjunct violations
+     * Get query to evaluate conjunct violations
+     * 
      * @return string
      */
-    public function getQuery(){
+    public function getQuery(): string {
         return str_replace('_SESSION', session_id(), $this->query); // Replace _SESSION var with current session id.
     }
     
@@ -132,11 +141,12 @@ class Conjunct {
     }
     
     /**
-     * Function to evaluate conjunct
-     * @param boolean $cacheConjuncts
+     * Evaluate conjunct and return array with violation pairs
+     * 
+     * @param bool $cacheConjuncts
      * @return array[] array(array('src' => '<srcAtomId>', 'tgt' => '<tgtAtomId>'))
      */
-    public function evaluateConjunct($cacheConjuncts = true){
+    public function evaluateConjunct(bool $cacheConjuncts = true): array {
         $this->logger->debug("Checking conjunct '{$this->id}' cache:" . var_export($cacheConjuncts, true));
         try{
             // Skipping evaluation of UNI and INJ conjuncts. TODO: remove after fix for issue #535
@@ -198,11 +208,12 @@ class Conjunct {
     
     /**
      * Return conjunct object
+     * 
      * @param string $conjId
      * @throws Exception if conjunct is not defined
-     * @return Conjunct
+     * @return \Ampersand\Rule\Conjunct
      */
-    public static function getConjunct($conjId){
+    public static function getConjunct($conjId): Conjunct {
         if(!array_key_exists($conjId, $conjuncts = self::getAllConjuncts())) throw new Exception("Conjunct '{$conjId}' is not defined", 500);
     
         return $conjuncts[$conjId];
@@ -210,9 +221,10 @@ class Conjunct {
     
     /**
      * Returns array with all conjunct objects
-     * @return Conjunct[]
+     * 
+     * @return \Ampersand\Rule\Conjunct[]
      */
-    public static function getAllConjuncts(){
+    public static function getAllConjuncts(): array {
         if(!isset(self::$allConjuncts)) self::setAllConjuncts();
          
         return self::$allConjuncts;
@@ -220,6 +232,7 @@ class Conjunct {
     
     /**
      * Import all conjunct definitions from json file and create and save Conjunct objects
+     * 
      * @return void
      */
     private static function setAllConjuncts(){

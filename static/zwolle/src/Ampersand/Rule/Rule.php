@@ -12,6 +12,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
 use Ampersand\Config;
 use Ampersand\Database\Database;
+use Ampersand\Plugs\ViewPlugInterface;
 
 /**
  *
@@ -21,97 +22,110 @@ use Ampersand\Database\Database;
 class Rule {
 
     /**
-     * Contains all rule definitions
-     * @var Rule[]
+     * List of all rules
+     * 
+     * @var \Ampersand\Rule\Rule[]
      */
     private static $allRules;
     
     /**
-     *
+     * Logger
+     * 
      * @var \Psr\Log\LoggerInterface
      */
     private $logger;
 
     /**
      * Dependency injection of an ViewPlug implementation
+     * 
      * @var \Ampersand\Plugs\ViewPlugInterface
      */
     public $plug;
 
     /**
+     * Rule identifier
      * 
      * @var string
      */
     public $id;
     
     /**
-     * Specifies the file and line number of the Ampersand script where this rule is defined
+     * The file and line number of the Ampersand script where this rule is defined
+     * 
      * @var string
      */
-    public $origin;
+    protected $origin;
     
     /**
-     * Specifies the formalized rule in adl
+     * The formalized rule in adl
+     * 
      * @var string
      */
-    public $ruleAdl;
+    protected $ruleAdl;
     
     /**
-     * Specifies the source concept of this rule
-     * @var Concept
+     * The source concept of this rule
+     * 
+     * @var \Ampersand\Core\Concept
      */
     public $srcConcept;
     
     /**
-     * Specifies the target concept of this rule
-     * @var Concept
+     * The target concept of this rule
+     * 
+     * @var \Ampersand\Core\Concept
      */
     public $tgtConcept;
     
     /**
-     * Specifies the meaning of this rule (provided in natural language by the Ampersand engineer)
+     * The meaning of this rule (provided in natural language by the Ampersand engineer)
+     * 
      * @var string
      */
-    public $meaning;
+    protected $meaning;
     
     /**
-     * Specifies the violation message to display (provided in natural language by the Ampersand engineer)
+     * The violation message to display (provided in natural language by the Ampersand engineer)
+     * 
      * @var string
      */
-    public $message;
+    protected $message;
     
     /**
-     * Array of conjuncts of which this rule is made of
-     * @var Conjunct[]
+     * List of conjuncts of which this rule is made of
+     * 
+     * @var \Ampersand\Rule\Conjunct[]
      */
     public $conjuncts;
     
     /**
-     * Array with segments to build violation messages
-     * @var ViolationSegment[]
+     * List with segments to build violation messages
+     * 
+     * @var \Ampersand\Rule\ViolationSegment[]
      */
-    protected $violationSegments;
+    protected $violationSegments = [];
     
     /**
      * 
-     * @var boolean
+     * @var bool
      */
-    public $isSignal = null;
+    protected $isSignal = null;
     
     /**
      * 
-     * @var boolean
+     * @var bool
      */
-    public $isInvariant = null;
+    protected $isInvariant = null;
     
     /**
      * Rule constructor
      * Private function to prevent outside instantiation. Use Rule::getRule($ruleName)
      *
      * @param array $ruleDef
-     * @param boolean $type
+     * @param \Ampersand\Plugs\ViewPlugInterface $plug
+     * @param string $type specifies if it is a signal (sig) or invariant (inv) rule
     */
-    private function __construct($ruleDef, $plug, $type = null){
+    private function __construct(array $ruleDef, ViewPlugInterface $plug, string $type = null){
         $this->logger = Logger::getLogger('RULE');
 
         $this->plug = $plug;
@@ -152,31 +166,33 @@ class Rule {
     
     /**
      * Function is called when object is treated as a string
-     * @return string role label
+     * 
+     * @return string
      */
-    public function __toString(){
+    public function __toString(): string {
         return $this->id;
     }
     
     /**
+     * Get message to tell that a rule is broken
      * 
      * @return string
      */
-    public function getViolationMessage(){
+    public function getViolationMessage(): string {
         return $this->message ? $this->message : "Violation of rule '{$this->id}'";
     }
 
     /**
-     * Undocumented function
+     * Get list of all violation segment definitions for this rule
      *
      * @return \Ampersand\Rule\ViolationSegment[]
      */
-    public function getViolationSegments(){
+    public function getViolationSegments(): array {
         return $this->violationSegments;
     }
     
     /**
-     * Undocumented function
+     * Check rule and return violations
      * 
      * @param bool $cacheConjuncts
      * @return \Ampersand\Rule\Violation[]
@@ -209,22 +225,24 @@ class Rule {
      *********************************************************************************************/
 
     /**
-     * Return rule object
+     * Get rule with a given rule name
+     * 
      * @param string $ruleName
      * @throws Exception if rule is not defined
      * @return Rule
      */
-    public static function getRule($ruleName){
+    public static function getRule($ruleName): Rule {
         if(!array_key_exists($ruleName, $rules = self::getAllRules())) throw new Exception("Rule '{$ruleName}' is not defined", 500);
 
         return $rules[$ruleName];
     }
     
     /**
-     * Returns array with all invariant rule objects
+     * Get list with all invariant rules
+     * 
      * @return Rule[]
      */
-    public static function getAllInvRules(){
+    public static function getAllInvRules(): array {
         $invRules = array();
         foreach (self::getAllRules() as $rule){
             if($rule->isInvariant) $invRules[] = $rule;            
@@ -233,10 +251,10 @@ class Rule {
     }
     
     /**
-     * Returns array with all signal rule objects
+     * Get list with all signal rules
      * @return Rule[]
      */
-    public static function getAllSigRules(){
+    public static function getAllSigRules(): array {
         $sigRules = array();
         foreach (self::getAllRules() as $rule){
             if($rule->isSignal) $sigRules[] = $rule;
@@ -245,17 +263,19 @@ class Rule {
     }
 
     /**
-     * Returns array with all rule objects
+     * Get list with all rules
+     * 
      * @return Rule[]
      */
-    public static function getAllRules(){
+    public static function getAllRules(): array {
         if(!isset(self::$allRules)) self::setAllRules();
          
         return self::$allRules;
     }
 
     /**
-     * Import all rule definitions from json file and create and save Rule objects
+     * Import all rule definitions from json file and instantiate Rule objects
+     * 
      * @return void
      */
     private static function setAllRules(){
