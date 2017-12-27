@@ -201,7 +201,7 @@ chpDiagnosis fSpec
            purposeOnlyMissing = filter (not . hasPurpose) . filter        hasMeaning  $ decls
            meaningOnlyMissing = filter        hasPurpose  . filter (not . hasMeaning) $ decls
            decls = vrels fSpec
-           showDclMath = math . showDcl False
+           showDclMath = math . showRel
   hasPurpose :: Motivated a => a -> Bool
   hasPurpose = not . null . purposesDefinedIn fSpec (fsLang fSpec)
   hasMeaning :: Meaning a => a -> Bool
