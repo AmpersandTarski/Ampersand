@@ -9,6 +9,7 @@ namespace Ampersand\Rule;
 
 use Ampersand\Database\Database;
 use Ampersand\Config;
+use Ampersand\Rule\Violation;
 
 /**
  *
@@ -18,10 +19,11 @@ use Ampersand\Config;
 class RuleEngine {
 
     /**
-     * Undocumented function
+     * Function to check and/or get violations for a set of rules
+     * By default, violations are queries from cache in the database
      *
-     * @param \Ampersand\Rule\Rule[] $rules
-     * @param bool $forceEvaluate
+     * @param \Ampersand\Rule\Rule[] $rules set of rules to check
+     * @param bool $forceEvaluate force (re)evaluation of rule
      * @return \Ampersand\Rule\Violation[]
      */
     public static function checkRules(array $rules, bool $forceEvaluate = false): array {
@@ -42,9 +44,9 @@ class RuleEngine {
     }
     
     /**
-     * Undocumented function
+     * Get violations for set of rules from database cache
      * 
-     * @param \Ampersand\Rule\Rule[] $rules
+     * @param \Ampersand\Rule\Rule[] $rules set of rules for which to query the violations
      * @return \Ampersand\Rule\Violation[]
      */
     protected static function getViolationsFromDB(array $rules): array{

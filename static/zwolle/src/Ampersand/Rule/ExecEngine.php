@@ -21,14 +21,14 @@ class ExecEngine {
     /**
      * Specifies if ExecEngine should run or not. Can be used to halt the ExecEngine at some point
      *
-     * @var boolean
+     * @var bool
      */
     public static $doRun;
 
     /**
      * Specifies if ExecEngine should automatically run a second time (to check for new violations)
      *
-     * @var boolean
+     * @var bool
      */
     public static $autoRerun;
 
@@ -62,7 +62,8 @@ class ExecEngine {
 	public static $_NEW = null;
     
     /**
-     * Undocumented function
+     * Run all ExecEngine roles
+     * Default/standard role used in Ampersand scripts is 'ExecEngine', but other roles can be configured
      *
      * @param bool $allRules
      * @return void
@@ -88,7 +89,7 @@ class ExecEngine {
     }
 
     /**
-     * Undocumented function
+     * Run a given ExecEngine role
      *
      * @param \Ampersand\Role $role
      * @param bool $allRules
@@ -141,7 +142,7 @@ class ExecEngine {
     }
     
     /**
-     * Fix violation
+     * Fix violations
      * 
      * @param \Ampersand\Rule\Violation $violation
      * @return void
@@ -194,6 +195,13 @@ class ExecEngine {
         }
     }
 
+    /**
+     * Register functions that can be used by the ExecEngine to fix violations
+     *
+     * @param string $name
+     * @param callable $callable
+     * @return void
+     */
     public static function registerFunction(string $name, callable $callable){
         if(empty($name)) throw new Exception("ExecEngine function must be given a name. Empty string/0/null provided");
         if(array_key_exists($name, self::$callables)) throw new Exception("ExecEngine function '{$name}' already exists", 500);
