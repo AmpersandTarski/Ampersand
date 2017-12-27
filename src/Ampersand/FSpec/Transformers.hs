@@ -329,7 +329,13 @@ transformers fSpec = map toTransformer [
         ]      
       )
      ,("isa"                   , "Concept"               , "Concept" 
-      , []  --TODO
+      , [ ( dirtyId gCpt, dirtyId (genspc ise)) 
+        | ise@IsE{} <- instances fSpec
+        , gCpt <- genrhs ise
+        ]++
+        [ ( dirtyId (genspc isa), dirtyId (genspc isa)) 
+        | isa@Isa{} <- instances fSpec
+        ]
       )
      ,("isaCopy"               , "Concept"               , "Concept" 
       , []  --TODO
