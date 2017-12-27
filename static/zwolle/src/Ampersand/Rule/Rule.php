@@ -103,12 +103,6 @@ class Rule {
      * @var boolean
      */
     public $isInvariant = null;
-
-    /**
-     * 
-     * @var array
-     */
-    private $violations;
     
     /**
      * Rule constructor
@@ -182,15 +176,16 @@ class Rule {
     }
     
     /**
-     *
-     * @param boolean $cacheConjuncts
+     * Undocumented function
+     * 
+     * @param bool $cacheConjuncts
      * @return \Ampersand\Rule\Violation[]
      */
-    private function checkRule($cacheConjuncts = true){
+    public function checkRule(bool $cacheConjuncts = true): array {
         $this->logger->debug("Checking rule '{$this->id}'");
          
         try{
-            $violations = array();
+            $violations = [];
     
             // Evaluate conjuncts of this rule
             foreach($this->conjuncts as $conjunct) 
@@ -198,28 +193,13 @@ class Rule {
                     $violations[] = new Violation($this, $violation['src'], $violation['tgt']);
                 
             // If no violations => rule holds
-            if(empty($violations)) $this->logger->debug("Rule '{$this->id}' holds");
-            
-            // Cache violations when requested
-            if($cacheConjuncts) $this->violations = $violations;
+            if(empty($violations)) $this->logger->debug("Rule '{$this}' holds");
     
             return $violations;
             
         }catch (Exception $e){
-            Logger::getUserLogger()->error("While evaluating rule '{$this->id}': {$e->getMessage()}");
+            Logger::getUserLogger()->error("While evaluating rule '{$this}': {$e->getMessage()}");
         }
-    }
-    
-    /**
-     * Undocumented function
-     * 
-     * @param bool $cacheConjuncts
-     * @return \Ampersand\Rule\Violation[]
-     */
-    public function getViolations(bool $cacheConjuncts = true): array {
-        if(isset($this->violations) && $cacheConjuncts) return $this->violations;
-        else return $this->checkRule($cacheConjuncts);
-        
     }
     
     /**********************************************************************************************

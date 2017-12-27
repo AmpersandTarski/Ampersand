@@ -37,7 +37,7 @@ class RuleEngine {
         foreach(Rule::getAllInvRules() as $rule){
             if(array_intersect($rule->conjuncts, $affectedConjuncts)){
                 $logger->debug("Checking invariant rule '{$rule}'");
-                $violations = array_merge($violations, $rule->getViolations(true)); // cache conjunct = true, because multiple rules can share the same conjunct
+                $violations = array_merge($violations, $rule->checkRule(true)); // cache conjunct = true, because multiple rules can share the same conjunct
             }else{
                 $logger->debug("Skipping invariant rule '{$rule}', because it is NOT affected in {$transaction}");
             }
