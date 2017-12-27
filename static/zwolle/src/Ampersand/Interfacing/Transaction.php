@@ -17,6 +17,7 @@ use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Rule\ExecEngine;
 use Ampersand\Log\Notifications;
+use Ampersand\Rule\Rule;
 
 /**
  *
@@ -111,8 +112,7 @@ class Transaction {
         ExecEngine::run();
         
         // Check invariant rules
-        $this->logger->info("Checking invariant rules");
-        $violations = RuleEngine::checkInvariantRules($this); // provide this transaction, because we only have to check the affected rules
+        $violations = $this->getInvariantViolations();
         $this->invariantRulesHold = empty($violations) ? true : false;
         foreach($violations as $violation) Notifications::addInvariant($violation); // notify user of broken invariant rules
         
@@ -259,6 +259,19 @@ class Transaction {
                 return in_array($rule->id, $ruleNames);
             });
         }
+    }
+
+    /**
+     * Get violations of invariant rules that are affected in this transaction
+     * 
+     * @return \Ampersand\Rule\Violation[]
+     */
+    public function getInvariantViolations(): array {
+        $this->logger->info("Checking invariant rules");
+        
+        $affectedInvRules = $this->getAffectedRules(Rule::getAllInvRules());
+
+        return RuleEngine::checkRules($affectedInvRules, true);
     }
     
     public function invariantRulesHold(){

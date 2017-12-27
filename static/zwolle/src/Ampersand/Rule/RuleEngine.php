@@ -21,29 +21,6 @@ use Ampersand\Rule\Rule;
  *
  */
 class RuleEngine {
-    
-    /**
-     * Evaluate invariant rules for the provided transaction and return list of violations
-     * 
-     * @param \Ampersand\Interfacing\Transaction[] $transaction
-     * @return \Ampersand\Rule\Violation[]
-     */
-    public static function checkInvariantRules(Transaction $transaction): array {
-        $logger = Logger::getLogger('RULEENGINE');
-        $affectedConjuncts = $transaction->getAffectedConjuncts('inv'); // Get affected invariant conjuncts
-        
-        $violations = [];
-        foreach(Rule::getAllInvRules() as $rule){
-            if(array_intersect($rule->conjuncts, $affectedConjuncts)){
-                $logger->debug("Checking invariant rule '{$rule}'");
-                $violations = array_merge($violations, $rule->checkRule(true)); // cache conjunct = true, because multiple rules can share the same conjunct
-            }else{
-                $logger->debug("Skipping invariant rule '{$rule}', because it is NOT affected in {$transaction}");
-            }
-        }
-        
-        return $violations;
-    }
 
     /**
      * Undocumented function
