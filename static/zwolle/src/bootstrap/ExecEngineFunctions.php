@@ -11,20 +11,9 @@
    There are no guarantees with respect to their 100% functioning. Have fun...
    
    This file has been modified to produce Exceptions rather than that it dies...
-   Such exceptions may be caught. The syntax for doing this is as follows:
-   
-   try { <insert code here>;
-         throw new Exception("identification string of the exception", httpStatusCode);
-         <insert other code if needed>; 
-       }
-  catch (Exception $e)
-       { <insert exception handling code here>;
-         <the exception identifier is in variable $e>;
-       }
 */
 
 use Ampersand\Log\Logger;
-use Ampersand\Database\Database;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
@@ -252,8 +241,8 @@ ExecEngine::registerFunction('MrgAtoms', function($conceptA, $srcAtomId, $concep
 	    if($srcAtomId == "_NEW") $srcAtom = ExecEngine::$_NEW;
 		if($tgtAtomId == "_NEW") $tgtAtom = ExecEngine::$_NEW;
 		
-		$srcAtom->unionWithAtom($tgtAtom); // union of two records plus substitution in all occurences in binary relations.
-		Logger::getLogger('EXECENGINE')->debug("Atom '{$tgtAtom}' unified with '{$srcAtom}' and then deleted");
+		$srcAtom->merge($tgtAtom); // union of two records plus substitution in all occurences in binary relations.
+		Logger::getLogger('EXECENGINE')->debug("Atom '{$tgtAtom}' merged into '{$srcAtom}' and then deleted");
 	
 	}catch(Exception $e){
 		Logger::getUserLogger()->error('MrgAtoms: ' . $e->getMessage());
