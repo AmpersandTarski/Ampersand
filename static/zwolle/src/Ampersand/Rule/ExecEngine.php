@@ -11,19 +11,18 @@ use Exception;
 use Ampersand\Config;
 use Ampersand\Role;
 use Ampersand\Log\Logger;
-use Ampersand\Rule\Rule;
-use Ampersand\Rule\RuleEngine;
 use Ampersand\Interfacing\Transaction;
 use Ampersand\Rule\Violation;
 
-class ExecEngine {
+class ExecEngine extends RuleEngine {
     
     /**
      * Specifies if ExecEngine should run or not. Can be used to halt the ExecEngine at some point
+     * Public variable, because it can also be set to false by an ExecEngine function using 'ExecEngine::$doRun = false;'
      *
      * @var bool
      */
-    public static $doRun;
+    public static $doRun = true;
 
     /**
      * Specifies if ExecEngine should automatically run a second time (to check for new violations)
@@ -44,14 +43,14 @@ class ExecEngine {
      *
      * @var int
      */
-    public static $runCount;
+    public static $runCount = 0;
 
     /**
      * List of callables (functions) that can used by the ExecEngine
      *
      * @var array
      */
-    private static $callables = [];
+    protected static $callables = [];
     
 	/**
      * Specifies latest atom created by a newstruct function call. 
@@ -73,72 +72,73 @@ class ExecEngine {
 
         self::$maxRunCount = Config::get('maxRunCount', 'execEngine');
         self::$autoRerun = Config::get('autoRerun', 'execEngine');
+
+        $logger->notice("ExecEngine started");
         
-        // TODO: now exec engine roles are checked one-by-one without stepping back if needed
         foreach((array) Config::get('execEngineRoleNames', 'execEngine') as $roleName){
-            self::$runCount = 0;
-            self::$doRun = true;
             try{
-                $role = Role::getRoleByName($roleName);
+                $roles[] = Role::getRoleByName($roleName);
             }catch (Exception $e){
                 $logger->warning("ExecEngine role '{$roleName}' configured, but role is not used/defined in &-script.");
-                continue;
             }
-            self::runForRole($role, $allRules);
         }
+
+        $rulesFixed = [];
+        do {
+            foreach($roles as $role){
+                self::$runCount++;
+
+                // Prevent infinite loop in ExecEngine reruns                 
+                if(self::$runCount > self::$maxRunCount){
+                    $logger->error("Maximum reruns exceeded (hint! rules fixed in last run:" . implode(', ', $rulesFixed) . ")");
+                    Logger::getUserLogger()->error("Maximum reruns exceeded for ExecEngine");
+                    break 2; // break foreach and do-while loop
+                }
+
+                $logger->info("Run #" . self::$runCount . " using role '{$role}' (auto rerun: " . var_export(self::$autoRerun, true) . ")");
+                
+                $rulesFixed = array_merge($rulesFixed, self::runForRole($role, $allRules));
+            }
+
+            // If no rules fixed (i.e. no violations) in this loop: stop ExecEngine
+            if(empty($rulesFixed)) self::$doRun = false;
+
+        } while (self::$doRun && self::$autoRerun); // self::$doRun can also be set to false by some ExecEngine function
+
+        $logger->notice("ExecEngine finished");
+        
     }
 
     /**
-     * Run a given ExecEngine role
+     * Single run for a given ExecEngine role
      *
      * @param \Ampersand\Role $role
      * @param bool $allRules
-     * @return void
+     * @return string[]
      */
-    public static function runForRole(Role $role, bool $allRules){
+    protected static function runForRole(Role $role, bool $allRules): array {
         $logger = Logger::getLogger('EXECENGINE');
-        $logger->notice("ExecEngine '{$role}' started");
-
-        // Get all rules that are maintained by the ExecEngine role
-        $rulesThatHaveViolations = [];
-        while(self::$doRun){
-            self::$doRun = false;
-            self::$runCount++;
-
-            $logger->info("ExecEngine '{$role}' run #" . self::$runCount . " (auto rerun: " . var_export(self::$autoRerun, true) . ")");
-
-            // Prevent infinite loop in ExecEngine reruns                 
-            if(self::$runCount > self::$maxRunCount){
-                Logger::getUserLogger()->error('Maximum reruns exceeded for ExecEngine (rules with violations:' . implode(', ', $rulesThatHaveViolations). ')');
-                break;
-            }
-            
-            // Check rules
-            $rulesThatHaveViolations = [];
-            $rulesToCheck = $allRules ? $role->maintains() : Transaction::getCurrentTransaction()->getAffectedRules($role->maintains());
-            foreach ($rulesToCheck as $rule){
-                $violations = $rule->checkRule(false); // param false to force (re)evaluation of conjuncts
-                
-                if(empty($violations)) continue; // continue to next rule when no violation
-                
-                $rulesThatHaveViolations[] = $rule->id;
-                
-                // Fix violations
-                $total = count($violations);
-                $logger->debug("ExecEngine fixing {$total} violations for rule '{$rule}'");
-                foreach($violations as $key => $violation){
-                    $num = $key + 1;
-                    $logger->debug("Fixing violation {$num}/{$total}: ({$violation->src},{$violation->tgt})");
-                    self::fixViolation($violation);
-                }
-                $logger->info("ExecEngine fixed {$total} violations for rule '{$rule}'");
-                
-                // If $autoRerun, then set $doRun to true because violations that are fixed may fire other ExecEngine rules
-                if(self::$autoRerun) self::$doRun = true;
-            }    
-        }
         
-        $logger->notice("ExecEngine '{$role}' completed");
+        $rulesFixed = [];
+        $rulesToCheck = $allRules ? $role->maintains() : Transaction::getCurrentTransaction()->getAffectedRules($role->maintains());
+        foreach ($rulesToCheck as $rule){
+            $violations = $rule->checkRule(false); // param false to force (re)evaluation of conjuncts
+            
+            if(empty($violations)) continue; // continue to next rule when no violation
+            
+            // Fix violations
+            $total = count($violations);
+            $logger->debug("ExecEngine fixing {$total} violations for rule '{$rule}'");
+            foreach($violations as $key => $violation){
+                $num = $key + 1;
+                $logger->debug("Fixing violation {$num}/{$total}: ({$violation->src},{$violation->tgt})");
+                self::fixViolation($violation);
+            }
+            $rulesFixed[] = $rule->id;
+            $logger->info("ExecEngine fixed {$total} violations for rule '{$rule}'");
+        }
+
+        return $rulesFixed;
     }
     
     /**
@@ -147,7 +147,7 @@ class ExecEngine {
      * @param \Ampersand\Rule\Violation $violation
      * @return void
      */
-    public static function fixViolation(Violation $violation){
+    protected static function fixViolation(Violation $violation){
         $logger = Logger::getLogger('EXECENGINE');
         
         // Newly created atom (e.g. by NewStruct function) can be (re)used inside the scope of the violation in which it was created.     
