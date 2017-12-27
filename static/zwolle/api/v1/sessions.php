@@ -5,7 +5,6 @@ use Ampersand\AngularApp;
 use Ampersand\AmpersandApp;
 use Ampersand\Log\Notifications;
 use Ampersand\Config;
-use Ampersand\Rule\RuleEngine;
 use Ampersand\Interfacing\Transaction;
 
 global $app;
@@ -26,7 +25,7 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
     
-    foreach(RuleEngine::getSignalViolationsFromDB() as $violation) Notifications::addSignal($violation);
+    $ampersandApp->checkProcessRules();
     
     $session = $ampersandApp->getSession();
     $content = array ('top' => AngularApp::getNavBarIfcs('top')
@@ -56,7 +55,7 @@ $app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app)
     $roleIds = $app->request->params('roleIds');
     $ampersandApp->activateRoles($roleIds);
     
-    foreach(RuleEngine::getSignalViolationsFromDB() as $violation) Notifications::addSignal($violation);
+    $ampersandApp->checkProcessRules();
     
     $content = Notifications::getAll();
     

@@ -14,6 +14,7 @@ use Exception;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
 use Ampersand\Role;
+use Ampersand\Rule\RuleEngine;
 
 class AmpersandApp
 {
@@ -336,10 +337,8 @@ class AmpersandApp
     public function checkProcessRules(){
         $logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'label')));
         
-        $violations = [];
-        foreach ($this->getRulesToMaintain() as $rule){
-            $violations = array_merge($violations, $rule->getViolations());
-        }
+        // Check rules and get violation
+        $violations = RuleEngine::checkRules($this->getRulesToMaintain(), false);
         
         // Create signal notifications for all violations
         foreach ($violations as $violation) Notifications::addSignal($violation);
