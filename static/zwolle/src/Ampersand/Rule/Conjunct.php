@@ -102,6 +102,15 @@ class Conjunct {
     }
 
     /**
+     * Get list of rule names that use this conjunct
+     *
+     * @return string[]
+     */
+    public function getRuleNames(): array {
+        return array_merge($this->sigRuleNames, $this->invRuleNames);
+    }
+
+    /**
      * Returns query to evaluate conjunct violations
      * @return string
      */

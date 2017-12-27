@@ -233,6 +233,33 @@ class Transaction {
         
         return array_unique($affectedConjuncts); // remove duplicate entries.
     }
+
+    /**
+     * Get list of rules that are affected in this transaction
+     * If set of rules is provided, function will return affected subset
+     *
+     * @param \Ampersand\Rule\Rule[] $rules
+     * @return \Ampersand\Rule\Rule[]
+     */
+    public function getAffectedRules(array $rules = null): array {
+        $ruleNames = [];
+        foreach($this->getAffectedConjuncts() as $conjunct) $ruleNames = array_merge($ruleNames, $conjunct->getRuleNames());
+        $ruleNames = array_unique($ruleNames);
+        
+        // Return all affected rules
+        if(is_null($rules)){
+            return array_map(function($ruleName){
+                return Rule::getRule($ruleName);
+            }, $ruleNames);
+        }
+
+        // Return filtered affected rules
+        else{ 
+            return array_filter($rules, function($rule) use ($ruleNames){
+                return in_array($rule->id, $ruleNames);
+            });
+        }
+    }
     
     public function invariantRulesHold(){
         return $this->invariantRulesHold;
