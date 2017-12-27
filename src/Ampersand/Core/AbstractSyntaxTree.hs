@@ -10,7 +10,7 @@ module Ampersand.Core.AbstractSyntaxTree (
  , PairViewSegment(..)
  , Rule(..)
  , RuleOrigin(..)
- , Relation(..), showDcl
+ , Relation(..), showRel
  , IdentityDef(..)
  , IdentitySegment(..)
  , ViewDef(..)
@@ -231,12 +231,8 @@ instance Show Relation where  -- For debugging purposes only (and fatal messages
   showsPrec _ decl
    = showString (name decl++showSign (sign decl))
 
-showDcl :: Bool -> Relation -> String
-showDcl forceBoth dcl = name dcl++"["++cpts++"]"
-  where 
-    cpts
-     | forceBoth || source dcl /= target dcl = show (source dcl) ++ "*"++ show (target dcl)
-     | otherwise                             = show (source dcl)
+showRel :: Relation -> String
+showRel rel = name rel++"["++show (source rel) ++ "*"++ show (target rel)++"]"
 
 data AMeaning = AMeaning { ameaMrk ::[Markup]} deriving (Show, Eq, Ord, Typeable, Data)
 
