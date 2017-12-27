@@ -124,7 +124,7 @@ instance JSON ObjectDef JSONObjectDef where
   , ifcJSONlabel              = name object
   , ifcJSONviewId             = fmap name viewToUse
   , ifcJSONNormalizationSteps = showPrf showA.cfProof.objExpression $ object 
-  , ifcJSONrelation           = fmap (showDcl True . fst) mEditableDecl
+  , ifcJSONrelation           = fmap (showRel . fst) mEditableDecl
   , ifcJSONrelationIsFlipped  = fmap            snd  mEditableDecl
   , ifcJSONcrud               = fromAmpersand multi (objcrud object)
   , ifcJSONexpr               = fromAmpersand multi object
