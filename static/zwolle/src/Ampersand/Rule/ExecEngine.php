@@ -115,7 +115,7 @@ class ExecEngine {
             // Check rules
             $rulesThatHaveViolations = [];
             foreach (self::getRulesToCheck($role, ($allRules ? null : Transaction::getCurrentTransaction())) as $rule){
-                $violations = $rule->getViolations(false); // param false to force (re)evaluation of conjuncts
+                $violations = $rule->checkRule(false); // param false to force (re)evaluation of conjuncts
                 
                 if(empty($violations)) continue; // continue to next rule when no violation
                 
