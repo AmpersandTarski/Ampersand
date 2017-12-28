@@ -8,7 +8,7 @@
 namespace Ampersand;
 
 use Exception;
-use Ampersand\Misc\Hooks;
+use Ampersand\Misc\Hook;
 use Ampersand\Config;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
@@ -132,7 +132,7 @@ class Transaction {
         
         if($this->isClosed()) throw new Exception("Cannot close transaction, because transaction is already closed", 500);
         
-        Hooks::callHooks('preCloseTransaction', get_defined_vars());
+        Hook::callHooks('preCloseTransaction', get_defined_vars());
 
         // Run ExecEngine
         ExecEngine::run();
@@ -164,7 +164,7 @@ class Transaction {
             $this->isCommitted = false;
         }
         
-        Hooks::callHooks('postCloseTransaction', get_defined_vars());
+        Hook::callHooks('postCloseTransaction', get_defined_vars());
         
         self::$_currentTransaction = null; // unset currentTransaction
         return $this;
