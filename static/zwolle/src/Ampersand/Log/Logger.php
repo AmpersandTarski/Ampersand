@@ -18,19 +18,19 @@ class Logger {
      * Contains all instantiated loggers
      * @var \Monolog\Logger[]
      */
-    private static $loggers = array();
+    private static $loggers = [];
     
     /**
      * Contains list of handlers that are added to a logger when it is instantiated
      * @var \Monolog\Handler\AbstractHandler[]
      */
-    private static $genericHandlers = array();
+    private static $genericHandlers = [];
     
     /**
      * Associative array containing array with handlers for specific channels
      * @var array
      */
-    private static $channelHandlers = array();
+    private static $channelHandlers = [];
     
     /**
      * 
@@ -47,7 +47,9 @@ class Logger {
             foreach(self::$genericHandlers as $handler) $logger->pushHandler($handler); 
             
             // Add handlers for specific channels
-            foreach((array)self::$channelHandlers[$channel] as $handler) $logger->pushHandler($handler);
+            if(array_key_exists($channel, self::$channelHandlers)){
+                foreach(self::$channelHandlers[$channel] as $handler) $logger->pushHandler($handler);
+            }
             
             self::$loggers[$channel] = $logger;
             

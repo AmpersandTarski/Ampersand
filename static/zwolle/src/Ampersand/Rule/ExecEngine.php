@@ -75,6 +75,7 @@ class ExecEngine extends RuleEngine {
 
         $logger->notice("ExecEngine started");
         
+        $roles = [];
         foreach((array) Config::get('execEngineRoleNames', 'execEngine') as $roleName){
             try{
                 $roles[] = Role::getRoleByName($roleName);

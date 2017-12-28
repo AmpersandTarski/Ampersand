@@ -336,7 +336,7 @@ class AmpersandApp
      * @return void
      */
     public function checkProcessRules(){
-        $logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'label')));
+        $this->logger->debug("Checking process rules for active roles: " . implode(', ', array_column($this->getActiveRoles(), 'label')));
         
         // Check rules and signal notifications for all violations
         foreach (RuleEngine::checkRules($this->getRulesToMaintain(), false) as $violation) Notifications::addSignal($violation);

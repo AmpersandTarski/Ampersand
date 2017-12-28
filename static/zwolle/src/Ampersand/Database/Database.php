@@ -401,6 +401,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
         $atomIdsArray = array_fill(0, count($conceptCols), $atomId);
         $allValues = "'".implode("', '", $atomIdsArray)."'";
         
+        $str = '';
         foreach($conceptCols as $col) $str .= ", `$col->name` = '{$atomId}'";
         $duplicateStatement = substr($str, 1);
         

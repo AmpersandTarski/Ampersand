@@ -155,7 +155,8 @@ class Hook {
      * @return \Ampersand\Misc\Hook[]
      */
     public static function getHooks(string $hookpoint){
-        return (array) self::$hooks[$hookpoint]; // return empty array if $hookpoint is not defined
+        if(array_key_exists($hookpoint, self::$hooks)) return (array) self::$hooks[$hookpoint];
+        else return []; // return empty array if $hookpoint is not defined
     }
 
 
