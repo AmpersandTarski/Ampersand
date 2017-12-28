@@ -10,7 +10,7 @@ namespace Ampersand\Rule;
 use Exception;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Database\Database;
 use Ampersand\Plugs\ViewPlugInterface;
 

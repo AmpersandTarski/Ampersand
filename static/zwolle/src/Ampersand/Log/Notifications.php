@@ -9,7 +9,7 @@ namespace Ampersand\Log;
 
 use Exception;
 use Ampersand\Log\Logger;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Rule\Violation;
 
 /**

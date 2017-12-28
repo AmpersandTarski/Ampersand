@@ -8,7 +8,7 @@
 namespace Ampersand\Rule;
 
 use Ampersand\Database\Database;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Rule\Violation;
 
 /**

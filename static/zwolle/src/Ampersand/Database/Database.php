@@ -10,7 +10,7 @@ use mysqli;
 use DateTime;
 use Exception;
 use DateTimeZone;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Session;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Link;

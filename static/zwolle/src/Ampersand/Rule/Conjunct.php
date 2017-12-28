@@ -10,7 +10,7 @@ namespace Ampersand\Rule;
 use Exception;
 use Ampersand\Database\Database;
 use Ampersand\Log\Logger;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 
 /**
  *

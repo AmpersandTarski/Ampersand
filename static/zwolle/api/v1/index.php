@@ -1,6 +1,6 @@
 <?php
 
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\AmpersandApp;

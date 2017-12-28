@@ -4,7 +4,7 @@ namespace Ampersand\Extension\OAuthLogin;
 
 use Exception;
 use Ampersand\AngularApp;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Transaction;

@@ -12,6 +12,7 @@ use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
 use function Ampersand\Misc\isSequential;
+use Ampersand\Misc\Config;
 
 /**
  *

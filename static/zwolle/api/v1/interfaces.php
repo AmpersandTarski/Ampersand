@@ -1,6 +1,6 @@
 <?php
 
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Interfacing\InterfaceObject;
 
 global $app;

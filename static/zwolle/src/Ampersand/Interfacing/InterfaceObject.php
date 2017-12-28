@@ -14,7 +14,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Concept;
 use Ampersand\Interfacing\View;
 use Ampersand\Core\Atom;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Plugs\IfcPlugInterface;
 use Ampersand\AmpersandApp;
 

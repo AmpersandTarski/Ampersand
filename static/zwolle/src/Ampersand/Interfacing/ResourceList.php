@@ -10,7 +10,7 @@ use stdClass;
 use Exception;
 use ArrayIterator;
 use IteratorAggregate;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Core\Atom;
 use Ampersand\Log\Logger;
 use Ampersand\AmpersandApp;

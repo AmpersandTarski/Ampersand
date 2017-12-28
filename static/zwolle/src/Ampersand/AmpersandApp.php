@@ -2,7 +2,7 @@
 
 namespace Ampersand;
 
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Import\JSONPopulationImporter;
 use Ampersand\Transaction;
 use Ampersand\Plugs\StorageInterface;

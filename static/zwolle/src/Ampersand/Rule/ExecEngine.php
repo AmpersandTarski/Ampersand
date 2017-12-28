@@ -8,7 +8,7 @@
 namespace Ampersand\Rule;
 
 use Exception;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Role;
 use Ampersand\Log\Logger;
 use Ampersand\Transaction;

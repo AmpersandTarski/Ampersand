@@ -14,7 +14,7 @@ use Ampersand\Database\RelationTable;
 use Ampersand\Core\Concept;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Transaction;
 
 /**

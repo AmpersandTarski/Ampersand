@@ -4,7 +4,7 @@ use Ampersand\Session;
 use Ampersand\AngularApp;
 use Ampersand\AmpersandApp;
 use Ampersand\Log\Notifications;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 
 global $app;
 

@@ -2,7 +2,7 @@
 
 use Ampersand\Log\Logger;
 use Ampersand\Log\NotificationHandler;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\AmpersandApp;
 use Ampersand\Database\Database;
 

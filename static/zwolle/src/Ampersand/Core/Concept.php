@@ -17,7 +17,7 @@ use Ampersand\Interfacing\View;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Core\Atom;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Transaction;
 
 /**

@@ -9,7 +9,7 @@ namespace Ampersand;
 
 use Exception;
 use Ampersand\Misc\Hook;
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
 use Ampersand\Log\Logger;

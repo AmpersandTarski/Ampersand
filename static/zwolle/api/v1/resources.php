@@ -1,6 +1,6 @@
 <?php
 
-use Ampersand\Config;
+use Ampersand\Misc\Config;
 use Ampersand\Core\Concept;
 use Ampersand\AngularApp;
 use Ampersand\AmpersandApp;
