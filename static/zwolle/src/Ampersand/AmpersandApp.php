@@ -4,7 +4,7 @@ namespace Ampersand;
 
 use Ampersand\Config;
 use Ampersand\Import\JSONPopulationImporter;
-use Ampersand\Interfacing\Transaction;
+use Ampersand\Transaction;
 use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\Conjunct;
 use Ampersand\Log\Logger;

@@ -11,7 +11,7 @@ use Exception;
 use Ampersand\Config;
 use Ampersand\Role;
 use Ampersand\Log\Logger;
-use Ampersand\Interfacing\Transaction;
+use Ampersand\Transaction;
 use Ampersand\Rule\Violation;
 
 class ExecEngine extends RuleEngine {

@@ -11,7 +11,7 @@ use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\IO\CSVWriter;
-use Ampersand\Interfacing\Transaction;
+use Ampersand\Transaction;
 use Ampersand\AmpersandApp;
 use Ampersand\Rule\RuleEngine;
 

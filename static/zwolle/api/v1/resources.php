@@ -9,7 +9,7 @@ use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
 use Ampersand\Log\Notifications;
 use Ampersand\Interfacing\InterfaceObject;
-use Ampersand\Interfacing\Transaction;
+use Ampersand\Transaction;
 
 global $app;
 

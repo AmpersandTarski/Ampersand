@@ -7,7 +7,7 @@ use Ampersand\AngularApp;
 use Ampersand\Config;
 use Ampersand\Interfacing\Resource;
 use Ampersand\Log\Logger;
-use Ampersand\Interfacing\Transaction;
+use Ampersand\Transaction;
 use Ampersand\AmpersandApp;
 
 // UI

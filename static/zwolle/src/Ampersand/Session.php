@@ -13,7 +13,7 @@ use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Atom;
 use Ampersand\Log\Logger;
-use Ampersand\Interfacing\Transaction;
+use Ampersand\Transaction;
 
 /**
  * Class of session objects
@@ -194,6 +194,7 @@ class Session {
                 $link->src()->delete();
             }
         }
+        Transaction::getCurrentTransaction()->close(true);
     }
 }
 ?>

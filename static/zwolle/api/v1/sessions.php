@@ -5,7 +5,6 @@ use Ampersand\AngularApp;
 use Ampersand\AmpersandApp;
 use Ampersand\Log\Notifications;
 use Ampersand\Config;
-use Ampersand\Interfacing\Transaction;
 
 global $app;
 
@@ -16,7 +15,6 @@ $app->get('/admin/sessions/delete/all', function () use ($app) {
 
 $app->get('/admin/sessions/delete/expired', function () use ($app) {
     Session::deleteExpiredSessions();
-    Transaction::getCurrentTransaction()->close(true);
 });
 
 $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {

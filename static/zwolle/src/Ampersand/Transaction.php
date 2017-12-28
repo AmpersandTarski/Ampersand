@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand\Interfacing;
+namespace Ampersand;
 
 use Exception;
 use Ampersand\Hooks;
@@ -29,7 +29,7 @@ class Transaction {
     /**
      * Points to the current/active transaction
      * 
-     * @var \Ampersand\Interfacing\Transaction
+     * @var \Ampersand\Transaction
      */
     private static $_currentTransaction = null;
     
@@ -105,7 +105,7 @@ class Transaction {
     /**
      * Get current or new transaction
      *
-     * @return Transaction
+     * @return \Ampersand\Transaction
      */
     public static function getCurrentTransaction(){
         if(!isset(self::$_currentTransaction)) self::$_currentTransaction = new Transaction();
@@ -125,7 +125,7 @@ class Transaction {
      * Close transaction
      * 
      * @param boolean $commit specifies to commit (true) or rollback (false) when all invariants hold
-     * @return Transaction $this
+     * @return \Ampersand\Transaction $this
      */
     public function close($commit = true): Transaction{
         $this->logger->info("Request to close transaction: {$this->id}");

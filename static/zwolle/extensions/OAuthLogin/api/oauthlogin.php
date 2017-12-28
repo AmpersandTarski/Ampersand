@@ -2,9 +2,7 @@
 
 use Ampersand\Config;
 use Ampersand\Log\Logger;
-use Ampersand\Log\Notifications;
 use Ampersand\Extension\OAuthLogin\OAuthLoginController;
-use Ampersand\Interfacing\Transaction;
 use Ampersand\AmpersandApp;
 
 global $app;

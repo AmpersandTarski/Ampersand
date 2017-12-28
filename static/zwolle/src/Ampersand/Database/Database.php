@@ -23,7 +23,7 @@ use Ampersand\Plugs\ConceptPlugInterface;
 use Ampersand\Plugs\IfcPlugInterface;
 use Ampersand\Plugs\RelationPlugInterface;
 use Ampersand\Plugs\ViewPlugInterface;
-use Ampersand\Interfacing\Transaction;
+use Ampersand\Transaction;
 use Ampersand\Log\Logger;
 use Ampersand\Rule\Conjunct;
 
@@ -299,7 +299,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     /**
      * Function to start/open a database transaction to track of all changes and be able to rollback
      * 
-     * @param Transaction $transaction
+     * @param \Ampersand\Transaction $transaction
      * @return void
      */
     public function startTransaction(Transaction $transaction){
@@ -313,7 +313,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     /**
      * Function to commit the open database transaction
      * 
-     * @param Transaction $transaction
+     * @param \Ampersand\Transaction $transaction
      * @return void
      */
     public function commitTransaction(Transaction $transaction){
@@ -325,7 +325,7 @@ class Database implements ConceptPlugInterface, RelationPlugInterface, IfcPlugIn
     /**
      * Function to rollback changes made in the open database transaction
      * 
-     * @param Transaction $transaction
+     * @param \Ampersand\Transaction $transaction
      * @return void
      */
     public function rollbackTransaction(Transaction $transaction){

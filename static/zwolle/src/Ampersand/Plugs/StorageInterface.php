@@ -7,7 +7,7 @@
 
 namespace Ampersand\Plugs;
 
-use Ampersand\Interfacing\Transaction;
+use Ampersand\Transaction;
 
 /**
  * Interface for storage implementations
