@@ -10,7 +10,7 @@ namespace Ampersand;
 use Exception;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
-use function Ampersand\Helper\getDirectoryList;
+use function Ampersand\Misc\getDirectoryList;
 use Ampersand\AmpersandApp;
 
 /**

@@ -1,6 +1,6 @@
 <?php
 
-namespace Ampersand\Helper;
+namespace Ampersand\Misc;
 
 /**
  * Get the filesnames from a folder

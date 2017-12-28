@@ -4,7 +4,6 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "60a58acbf97139e1a5a9c57711e4d8b0",
     "content-hash": "7d906b795cf1bbe0d87cc63468bba208",
     "packages": [
         {
@@ -83,7 +82,7 @@
                 "logging",
                 "psr-3"
             ],
-            "time": "2016-04-12 18:29:35"
+            "time": "2016-04-12T18:29:35+00:00"
         },
         {
             "name": "psr/log",
@@ -121,7 +120,7 @@
                 "psr",
                 "psr-3"
             ],
-            "time": "2012-12-21 11:40:51"
+            "time": "2012-12-21T11:40:51+00:00"
         },
         {
             "name": "slim/slim",
@@ -167,7 +166,7 @@
                 "rest",
                 "router"
             ],
-            "time": "2015-03-08 18:41:17"
+            "time": "2015-03-08T18:41:17+00:00"
         },
         {
             "name": "wikimedia/composer-merge-plugin",
@@ -216,7 +215,7 @@
                 }
             ],
             "description": "Composer plugin to merge multiple composer.json files",
-            "time": "2016-03-08 17:11:37"
+            "time": "2016-03-08T17:11:37+00:00"
         }
     ],
     "packages-dev": [],

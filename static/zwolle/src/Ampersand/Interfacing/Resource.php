@@ -11,7 +11,7 @@ use Exception;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
 use Ampersand\Log\Logger;
-use function Ampersand\Helper\isSequential;
+use function Ampersand\Misc\isSequential;
 
 /**
  *

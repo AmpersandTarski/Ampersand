@@ -9,7 +9,7 @@
     },
     "autoload": {
         "psr-4": {"Ampersand\\": "src/Ampersand"},
-        "files": ["src/Ampersand/Helper/functions.php"]
+        "files": ["src/Ampersand/Misc/functions.php"]
     },
     "extra": {
         "merge-plugin": {
