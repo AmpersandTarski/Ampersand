@@ -5,7 +5,7 @@
  *
  */
 
-namespace Ampersand;
+namespace Ampersand\Misc;
 
 use Ampersand\Log\Logger;
 

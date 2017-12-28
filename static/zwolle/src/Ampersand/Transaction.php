@@ -8,7 +8,7 @@
 namespace Ampersand;
 
 use Exception;
-use Ampersand\Hooks;
+use Ampersand\Misc\Hooks;
 use Ampersand\Config;
 use Ampersand\Core\Concept;
 use Ampersand\Core\Relation;
