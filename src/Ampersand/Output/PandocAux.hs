@@ -34,6 +34,7 @@ import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BL
 import qualified Data.ByteString.Lazy.Char8 as BC
 import           Data.List
+import qualified Data.Text as Text
 import           System.Directory
 import           System.Environment
 import qualified System.Exit as SE (ExitCode(..)) -- These are not considered Ampersand exit codes, but from Pandoc
@@ -141,9 +142,7 @@ defaultWriterVariables fSpec
 writepandoc :: FSpec -> Pandoc -> IO()
 writepandoc fSpec thePandoc = 
   do verboseLn (getOpts fSpec) ("Generating "++fSpecFormatString++" to : "++outputFile)
-     media <- collectMedia
-     verboseLn (getOpts fSpec) "Media collected"
-     let wOpts = writerOptions media
+     let wOpts = writerOptions
      writeToFile wOpts
      -- In case of Latex, we need to postprocess the .ltx file to pdf:
      case fspecFormat (getOpts fSpec) of
@@ -160,18 +159,21 @@ writepandoc fSpec thePandoc =
  where
     writeToFile :: WriterOptions -> IO()
     writeToFile wOpts = do
-      when (fspecFormat (getOpts fSpec) == Fdocx)
-           writeReferenceFileDocx
+      -- when (fspecFormat (getOpts fSpec) == Fdocx)
+      --      writeReferenceFileDocx
       case getWriter fSpecFormatString of
         Left msg -> fatal . unlines $
                         ("Something wrong with format "++show(fspecFormat (getOpts fSpec))++":")
                         : map ("  "++) (lines msg)
-        Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
-                                                writeFile outputFile content
-        Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
-                                                writeFile outputFile content
-        Right (IOByteStringWriter worker) -> do content <- worker wOpts thePandoc
-                                                BC.writeFile outputFile content
+        Right (writer, extentions) 
+                 -> do let content = writer wOpts thePandoc
+                       writeFile outputFile content
+--        Right (PureStringWriter worker)   -> do let content = worker wOpts thePandoc
+--                                                writeFile outputFile content
+--        Right (IOStringWriter worker)     -> do content <- worker wOpts thePandoc
+--                                                writeFile outputFile content
+--        Right (IOByteStringWriter worker) -> do content <- worker wOpts thePandoc
+--                                                BC.writeFile outputFile content
 
     outputFile = 
       addExtension (dirOutput (getOpts fSpec) </> baseName (getOpts fSpec))
@@ -214,46 +216,46 @@ writepandoc fSpec thePandoc =
             Frtf -> "rtf"
             Ftexinfo -> "texinfo"
             Ftextile -> "textile"
-    writerOptions :: MediaBag-> WriterOptions
-    writerOptions bag = def
+    writerOptions :: WriterOptions
+    writerOptions = def
                       { writerTableOfContents=True
                       , writerNumberSections=True
                       , writerTemplate=template
                       , writerVariables=defaultWriterVariables fSpec
-                      , writerMediaBag=bag
-                      , writerReferenceDocx=Just docxStyleUserPath
-                      , writerVerbose=verboseP (getOpts fSpec)
+                    --  , writerMediaBag=bag
+                    --  , writerReferenceDocx=Just docxStyleUserPath
+                    --  , writerVerbose=verboseP (getOpts fSpec)
                       }
      where template  = getStaticFileContent PandocTemplates ("default."++fSpecFormatString)
-    docxStyleContent :: BC.ByteString 
-    docxStyleContent = 
-      case getStaticFileContent PandocTemplates "defaultStyle.docx" of
-         Just cont -> BC.pack cont
-         Nothing -> fatal "Cannot find the statically included default defaultStyle.docx."
-    docxStyleUserPath = dirOutput (getOpts fSpec) </> "reference.docx" -- this is the place where the file is written if it doesn't exist.
-    writeReferenceFileDocx :: IO()
-    writeReferenceFileDocx = do
-         exists <- doesFileExist docxStyleUserPath
-         if exists 
-             then verboseLn (getOpts fSpec) 
-                      "Existing style file is used for generating .docx file:"
-             else (do verboseLn (getOpts fSpec)
-                           "Default style file is written. this can be changed to fit your own style:"
-                      BC.writeFile docxStyleUserPath docxStyleContent
-                  )
-         verboseLn (getOpts fSpec) docxStyleUserPath
-    collectMedia :: IO MediaBag
-    collectMedia = do files <- listDirectory . dirOutput . getOpts $ fSpec
-                      let graphicsForDotx = map (dirOutput (getOpts fSpec) </>) . filter isGraphic $ files 
-                      foldM addToBag mempty graphicsForDotx                                  
-       where addToBag :: MediaBag -> FilePath -> IO MediaBag
-             addToBag bag fullPath = do
-                verboseLn (getOpts fSpec) $ "Collect: "++fullPath
-                verboseLn (getOpts fSpec) $ "  as: "++takeFileName fullPath
-                contents <- BC.readFile fullPath
-                return $ insertMedia (takeFileName fullPath) Nothing contents bag 
-             isGraphic :: FilePath -> Bool
-             isGraphic f = takeExtension f `elem` [".svg"]
+--    docxStyleContent :: BC.ByteString 
+--    docxStyleContent = 
+--      case getStaticFileContent PandocTemplates "defaultStyle.docx" of
+--         Just cont -> BC.pack cont
+--         Nothing -> fatal "Cannot find the statically included default defaultStyle.docx."
+--    docxStyleUserPath = dirOutput (getOpts fSpec) </> "reference.docx" -- this is the place where the file is written if it doesn't exist.
+--    writeReferenceFileDocx :: IO()
+--    writeReferenceFileDocx = do
+--         exists <- doesFileExist docxStyleUserPath
+--         if exists 
+--             then verboseLn (getOpts fSpec) 
+--                      "Existing style file is used for generating .docx file:"
+--             else (do verboseLn (getOpts fSpec)
+--                           "Default style file is written. this can be changed to fit your own style:"
+--                      BC.writeFile docxStyleUserPath docxStyleContent
+--                  )
+--         verboseLn (getOpts fSpec) docxStyleUserPath
+--    collectMedia :: IO MediaBag
+--    collectMedia = do files <- listDirectory . dirOutput . getOpts $ fSpec
+--                      let graphicsForDotx = map (dirOutput (getOpts fSpec) </>) . filter isGraphic $ files 
+--                      foldM addToBag mempty graphicsForDotx                                  
+--       where addToBag :: MediaBag -> FilePath -> IO MediaBag
+--             addToBag bag fullPath = do
+--                verboseLn (getOpts fSpec) $ "Collect: "++fullPath
+--                verboseLn (getOpts fSpec) $ "  as: "++takeFileName fullPath
+--                contents <- BC.readFile fullPath
+--                return $ insertMedia (takeFileName fullPath) Nothing contents bag 
+--             isGraphic :: FilePath -> Bool
+--             isGraphic f = takeExtension f `elem` [".svg"]
 
 -----Linguistic goodies--------------------------------------
 
@@ -580,7 +582,7 @@ texOnlyMarginNote mgn =
 ---temporary from Pandoc:
 ------------------------------------------
 
-makePDF :: (WriterOptions -> Pandoc -> String)  -- ^ writer
+makePDF :: (WriterOptions -> Pandoc -> Text.Text)  -- ^ writer
         -> WriterOptions       -- ^ options
         -> Pandoc              -- ^ document
         -> FSpec
@@ -642,11 +644,10 @@ makePDF writer wOpts pandoc fSpec =
           putStr "\n"
           putStrLn $ "[makePDF] Processing: " ++ file'
           putStr "\n"
-        (exit, out, err) <- pipeProcess (Just env'') program programArgs BL.empty
+        (exit, out) <- pipeProcess (Just env'') program programArgs BL.empty
         when wVerbose $ do
           putStrLn $ "[makePDF] Run #" ++ show runNumber
           BL.hPutStr stdout out
-          BL.hPutStr stderr err
           putStr "\n"
         if runNumber <= numRuns
            then runTeXProgram (runNumber + 1) numRuns tmpDir
@@ -659,7 +660,14 @@ makePDF writer wOpts pandoc fSpec =
                        -- See https://github.com/jgm/pandoc/issues/1192.
                        then (Just . BL.fromChunks . (:[])) `fmap` BS.readFile pdfFile
                        else return Nothing
-             return (exit, out <> err, pdf)
+             -- Note that some things like Missing character warnings
+             -- appear in the log but not on stderr, so we prefer the log:
+             let logFile = replaceExtension file ".log"
+             logExists <- doesFileExist logFile
+             log' <- if logExists
+                        then BL.readFile logFile
+                        else return out
+             return (exit, log', pdf)
 
 -- parsing output
 

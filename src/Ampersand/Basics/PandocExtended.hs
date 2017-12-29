@@ -7,11 +7,12 @@ module Ampersand.Basics.PandocExtended
    )
 where 
 
-import Ampersand.Basics.Languages
-import Ampersand.Basics.Prelude
-import Ampersand.Basics.Version
-import Data.Data
-import Text.Pandoc hiding (Meta)
+import           Ampersand.Basics.Languages
+import           Ampersand.Basics.Prelude
+import           Ampersand.Basics.Version
+import           Data.Data
+import qualified Data.Text as Text
+import           Text.Pandoc hiding (Meta)
 
 data PandocFormat = HTML | ReST | LaTeX | Markdown deriving (Eq, Show, Ord)
 
@@ -27,7 +28,7 @@ aMarkup2String fmt a = blocks2String fmt False (amPandoc a)
 -- | defaultPandocReader getOpts should be used on user-defined strings.
 string2Blocks :: PandocFormat -> String -> [Block]
 string2Blocks defaultformat str
- = case theParser (removeCRs str) of
+ = case runPure $ theParser (Text.pack (removeCRs str)) of
     Left err ->  fatal ("Proper error handling of Pandoc is still TODO."
                         ++"\n  This particular error is cause by some "++show defaultformat++" in your script:"
                         ++"\n"++show err)
@@ -55,9 +56,11 @@ makePrefix format = ":"++show format++":"
 blocks2String :: PandocFormat -> Bool -> [Block] -> String
 blocks2String format writeprefix ec
  = [c | c<-makePrefix format,writeprefix]
-   ++ writer def (Pandoc nullMeta ec)
+   ++ case runPure $ writer def (Pandoc nullMeta ec) of
+        Left pandocError -> fatal $ "Pandoc error: "++show pandocError
+        Right txt -> Text.unpack txt
    where writer = case format of
             Markdown  -> writeMarkdown
             ReST      -> writeRST
-            HTML      -> writeHtmlString
+            HTML      -> writeHtml5String
             LaTeX     -> writeLaTeX
