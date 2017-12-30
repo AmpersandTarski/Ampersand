@@ -14,6 +14,8 @@ use Ampersand\IO\CSVWriter;
 use Ampersand\Transaction;
 use Ampersand\AmpersandApp;
 use Ampersand\Rule\RuleEngine;
+use Ampersand\IO\Exporter;
+use Ampersand\IO\JSONWriter;
 
 global $app;
 
@@ -97,29 +99,18 @@ $app->get('/admin/checks/rules/evaluate/all', function() use ($app){
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 });
 
-//TODO: refactor function using new JSON import/export format and functionality
 $app->get('/admin/export/all', function () use ($app){
     /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Export not allowed in production environment", 403);
     
-    $allAtoms = array();
-    foreach (Concept::getAllConcepts() as $concept){
-        $allAtoms[$concept->name] = array_map(function($atom){
-            return $atom->id;
-        }, $concept->getAllAtomObjects());
-    }
-    
-    $allLinks = array();
-    foreach (Relation::getAllRelations() as $rel){
-        $allLinks[$rel->signature] = $rel->getAllLinks();
-    }
-    
-    $strFileContent = '<?php' . PHP_EOL
-                     .'$allAtoms = ' . var_export($allAtoms, true) . ';' . PHP_EOL
-                     .'$allLinks = ' . var_export($allLinks, true) . ';' .PHP_EOL
-                     .'?>';
-    
-    file_put_contents(Config::get('absolutePath') . Config::get('logPath') . "export-" . date('Y-m-d_H-i-s') . ".php", $strFileContent);
+    $filename = Config::get('contextName') . "-population-" . date('Y-m-d\TH-i-s') . ".json";
+
+    header("Content-Disposition: attachment; filename={$filename}");
+    header("Content-Type: application/json; charset=utf-8");
+
+    $output = fopen('php://output', 'w');
+    $exporter = new Exporter(new JSONWriter($output));
+    $exporter->exportAllPopulation();
 });
 
 //TODO: refactor function using new JSON import/export format and functionality
