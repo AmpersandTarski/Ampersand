@@ -144,6 +144,7 @@ install:
 before_script: composer install
 
 script:
+- curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 - |
   case "$BUILD" in
     stack)
