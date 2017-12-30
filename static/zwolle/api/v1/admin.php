@@ -18,6 +18,7 @@ use Ampersand\Rule\RuleEngine;
 global $app;
 
 $app->get('/admin/installer', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reinstallation of application not allowed in production environment", 403);
     
     $defaultPop = filter_var($app->request->params('defaultPop'), FILTER_VALIDATE_BOOLEAN, FILTER_NULL_ON_FAILURE); 
@@ -61,6 +62,7 @@ $app->get('/admin/installer', function () use ($app){
 });
 
 $app->get('/admin/execengine/run', function () use ($app){
+    /** @var \Slim\Slim $app */
     $ampersandApp = AmpersandApp::singleton();
     
     $roleIds = $app->request->params('roleIds');
@@ -83,6 +85,7 @@ $app->get('/admin/execengine/run', function () use ($app){
 });
 
 $app->get('/admin/checks/rules/evaluate/all', function() use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Evaluation of all rules not allowed in production environment", 403);
     
     foreach (RuleEngine::checkRules(Rule::getAllInvRules(), true) as $violation) Notifications::addInvariant($violation);
@@ -96,6 +99,7 @@ $app->get('/admin/checks/rules/evaluate/all', function() use ($app){
 
 //TODO: refactor function using new JSON import/export format and functionality
 $app->get('/admin/export/all', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Export not allowed in production environment", 403);
     
     $allAtoms = array();
@@ -120,6 +124,7 @@ $app->get('/admin/export/all', function () use ($app){
 
 //TODO: refactor function using new JSON import/export format and functionality
 $app->get('/admin/import', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
     $logger = Logger::getLogger('ADMIN');
 
@@ -169,6 +174,7 @@ $app->get('/admin/import', function () use ($app){
 
 
 $app->get('/admin/performance/conjuncts', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Performance tests are not allowed in production environment", 403);
     
     // Defaults
@@ -253,6 +259,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 });
 
 $app->get('/admin/report/relations', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
     $content = array();
@@ -283,6 +290,7 @@ $app->get('/admin/report/relations', function () use ($app){
 
 
 $app->get('/admin/report/conjuncts', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
     $content = array();
@@ -296,6 +304,7 @@ $app->get('/admin/report/conjuncts', function () use ($app){
 });
 
 $app->get('/admin/report/interfaces', function () use ($app){
+    /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
     $arr = array();

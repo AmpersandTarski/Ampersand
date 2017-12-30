@@ -9,15 +9,18 @@ use Ampersand\Misc\Config;
 global $app;
 
 $app->get('/admin/sessions/delete/all', function () use ($app) {
+    /** @var \Slim\Slim $app */
     throw new Exception("Not implemented", 501);
     if(Config::get('productionEnv')) throw new Exception ("Deleting all sessions is not allowed in production environment", 403);
 });
 
 $app->get('/admin/sessions/delete/expired', function () use ($app) {
+    /** @var \Slim\Slim $app */
     Session::deleteExpiredSessions();
 });
 
 $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
+    /** @var \Slim\Slim $app */
     $ampersandApp = AmpersandApp::singleton();
     
     $roleIds = $app->request->params('roleIds');
@@ -48,6 +51,7 @@ $app->get('/sessions/:sessionId/navbar', function ($sessionId) use ($app) {
 
 
 $app->get('/sessions/:sessionId/notifications', function ($sessionId) use ($app) {
+    /** @var \Slim\Slim $app */
     $ampersandApp = AmpersandApp::singleton();
     
     $roleIds = $app->request->params('roleIds');
