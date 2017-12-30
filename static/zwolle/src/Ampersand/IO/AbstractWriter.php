@@ -1,31 +1,39 @@
 <?php
 
-
 namespace Ampersand\IO;
 
 abstract class AbstractWriter {
     /**
-     * The resource used to output/serialize
+     * The stream used to output
      *
-     * @var resource
+     * @var stream
      */
-    protected $resource = null;
+    protected $stream = null;
     
     /**
-     * 
-     * @param resource $resource (e.g. stream, file, etc)
+     *
+     * @param stream $stream (e.g. stream)
      * @param array $options Configuration options
      */
-    public function __construct($resource, $options = []){
-        $this->resource = $resource;
+    public function __construct($stream = null, $options = []){
+        if(is_null($stream)) $this->stream = fopen('php://temp', 'w+');
+        $this->stream = $stream;
     }
 
-    public function serialize($data){
-        fwrite($this->resource, $data);
+    public function load($data){
+        fwrite($this->stream, $data);
+    }
+
+    public function getContent(){
+        return stream_get_contents($this->stream, -1, 0);
+    }
+
+    public function print(){
+        print $this->getContent();
     }
 
     public function close(){
-        fclose($this->resource);
+        fclose($this->stream);
     }
 }
 

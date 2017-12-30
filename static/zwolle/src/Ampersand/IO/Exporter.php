@@ -25,7 +25,7 @@ class Exporter {
     /**
      * Undocumented variable
      *
-     * @var \Ampersand\IO\WriterInterface
+     * @var \Ampersand\IO\AbstractWriter
      */
     protected $writer;
     
@@ -38,7 +38,6 @@ class Exporter {
     public function __construct(AbstractWriter $writer, $options = []){
         $this->logger = Logger::getLogger('IO');
         $this->writer = $writer;
-
     }
 
     public function exportAllPopulation(){
@@ -54,7 +53,9 @@ class Exporter {
             $allLinks[$rel->signature] = $rel->getAllLinks();
         }
 
-        $this->writer->serialize(['atoms' => $allAtoms, 'links' => $allLinks]);
+        $this->writer->load(['atoms' => $allAtoms, 'links' => $allLinks]);
+
+        $this->writer->print();
 
         $this->writer->close();
     }

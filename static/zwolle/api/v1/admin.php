@@ -103,17 +103,16 @@ $app->get('/admin/export/all', function () use ($app){
     /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Export not allowed in production environment", 403);
     
-    $filename = Config::get('contextName') . "-population-" . date('Y-m-d\TH-i-s') . ".json";
+    // Response header
+    $filename = Config::get('contextName') . "_Population_" . date('Y-m-d\TH-i-s') . ".json";
+    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
+    $app->response->headers->set('Content-Type', 'application/json; charset=utf-8');
 
-    header("Content-Disposition: attachment; filename={$filename}");
-    header("Content-Type: application/json; charset=utf-8");
-
-    $output = fopen('php://output', 'w');
-    $exporter = new Exporter(new JSONWriter($output));
+    // Output response
+    $exporter = new Exporter(new JSONWriter(fopen('php://output', 'w')));
     $exporter->exportAllPopulation();
 });
 
-//TODO: refactor function using new JSON import/export format and functionality
 $app->get('/admin/import', function () use ($app){
     /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
@@ -239,14 +238,16 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
         elseif($b['duration'] > $a['duration']) return 1;
     });
     
-    // Output
+    // Response headers
+    $filename = Config::get('contextName') . "_Conjunct performance_" . date('Y-m-d\TH-i-s') . ".json";
+    $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
+
+    // Output response
     $output = new CSVWriter();
-    $output->addColumns(array_keys($content[0]));
-    foreach ($content as $row) $output->addRow($row);
-    $output->render('conj-performance-report.csv');
-    
-    // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    
+    $output->load($content);
+    $output->print();
+    $output->close();
 });
 
 $app->get('/admin/report/relations', function () use ($app){
@@ -323,13 +324,16 @@ $app->get('/admin/report/interfaces', function () use ($app){
         
     }, $arr);
     
-    // Output
+    // Response headers
+    $filename = Config::get('contextName') . "_Interface definitions_" . date('Y-m-d\TH-i-s') . ".json";
+    $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
+    $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
+
+    // Output response
     $output = new CSVWriter();
-    $output->addColumns(array_keys($content[0]));
-    foreach ($content as $row) $output->addRow($row);
-    $output->render('ifc-report.csv');
-    
-    // print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    $output->load($content);
+    $output->print();
+    $output->close();
 });
 
 ?>

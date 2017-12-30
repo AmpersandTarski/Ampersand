@@ -16,8 +16,8 @@ use Ampersand\IO\AbstractWriter;
  */
 class JSONWriter extends AbstractWriter {
     
-    public function serialize($data){
+    public function load($data){
         // Output
-        fwrite($this->resource, json_encode($data, JSON_PRETTY_PRINT));
+        fwrite($this->stream, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }
 }
