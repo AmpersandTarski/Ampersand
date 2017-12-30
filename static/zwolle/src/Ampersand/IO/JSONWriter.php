@@ -16,7 +16,7 @@ use Ampersand\IO\AbstractWriter;
  */
 class JSONWriter extends AbstractWriter {
     
-    public function load($data){
+    public function write($data){
         // Output
         fwrite($this->stream, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES));
     }

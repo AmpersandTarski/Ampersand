@@ -3,6 +3,7 @@
 namespace Ampersand\IO;
 
 abstract class AbstractWriter {
+    
     /**
      * The stream used to output
      *
@@ -20,7 +21,7 @@ abstract class AbstractWriter {
         $this->stream = $stream;
     }
 
-    public function load($data){
+    public function write($data){
         fwrite($this->stream, $data);
     }
 
@@ -36,5 +37,3 @@ abstract class AbstractWriter {
         fclose($this->stream);
     }
 }
-
-?>

@@ -16,7 +16,7 @@ use Ampersand\IO\AbstractWriter;
  */
 class CSVWriter extends AbstractWriter {
 
-    public function load($data){
+    public function write($data){
         $delimiter = ';';
 
         // Output the column headings (use first row to get column heading)

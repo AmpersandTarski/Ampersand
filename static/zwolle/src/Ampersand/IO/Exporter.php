@@ -35,7 +35,7 @@ class Exporter {
      * @param \Ampersand\IO\AbstractWriter $writer
      * @param array $options
      */
-    public function __construct(AbstractWriter $writer, $options = []){
+    public function __construct(AbstractWriter $writer, array $options = []){
         $this->logger = Logger::getLogger('IO');
         $this->writer = $writer;
     }
@@ -53,7 +53,7 @@ class Exporter {
             $allLinks[$rel->signature] = $rel->getAllLinks();
         }
 
-        $this->writer->load(['atoms' => $allAtoms, 'links' => $allLinks]);
+        $this->writer->write(['atoms' => $allAtoms, 'links' => $allLinks]);
 
         $this->writer->print();
 

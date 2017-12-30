@@ -245,7 +245,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
 
     // Output response
     $output = new CSVWriter();
-    $output->load($content);
+    $output->write($content);
     $output->print();
     $output->close();
 });
@@ -331,7 +331,7 @@ $app->get('/admin/report/interfaces', function () use ($app){
 
     // Output response
     $output = new CSVWriter();
-    $output->load($content);
+    $output->write($content);
     $output->print();
     $output->close();
 });
