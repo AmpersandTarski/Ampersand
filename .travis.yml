@@ -152,7 +152,7 @@ script:
       ;;
   esac
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
-- curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
+# - curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
 deploy:
   provider: releases
