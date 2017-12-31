@@ -42,9 +42,9 @@ build_script:
 - stack --local-bin-path . install ampersand
 
 # Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
-- stack install weeder --resolver=nightly
-- weeder --version
-- weeder . --build
+# - stack install weeder --resolver=nightly
+# - weeder --version
+# - weeder . --build
 - ps: Invoke-Command ([Scriptblock]::Create((Invoke-WebRequest 'https://raw.githubusercontent.com/ndmitchell/weeder/master/misc/appveyor.ps1').Content)) -ArgumentList @('.')
 
 # Set a magical environment variable
