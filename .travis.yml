@@ -142,15 +142,6 @@ install:
 before_script: composer install
 
 script:
-- pwd
-- ls /home/travis/build
-- ls /home/travis/build/AmpersandTarski/
-- ls /home/travis/build/AmpersandTarski/Ampersand/
-- ls /home/travis/build/AmpersandTarski/Ampersand/.stack-work/
-- ls /home/travis/build/AmpersandTarski/Ampersand/.stack-work/dist/
-- ls /home/travis/build/AmpersandTarski/Ampersand/.stack-work/dist/x86_64-linux/
-- ls /home/travis/build/AmpersandTarski/Ampersand/.stack-work/dist/x86_64-linux/Cabal-1.24.2.0
-- curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 - |
   case "$BUILD" in
     stack)
@@ -160,6 +151,8 @@ script:
     ./travis_long cabal test
       ;;
   esac
+# Run weeder, to check that there are no weeds (see https://github.com/ndmitchell/weeder )
+- curl -sL https://raw.github.com/ndmitchell/weeder/master/misc/travis.sh | sh -s .
 
 deploy:
   provider: releases
