@@ -17,8 +17,11 @@ abstract class AbstractWriter {
      * @param array $options Configuration options
      */
     public function __construct($stream = null, $options = []){
-        if(is_null($stream)) $this->stream = fopen('php://temp', 'w+');
-        $this->stream = $stream;
+        if (is_null($stream)) {
+            $this->stream = fopen('php://temp', 'w+');
+        } else {
+            $this->stream = $stream;
+        }
     }
 
     public function write($data){

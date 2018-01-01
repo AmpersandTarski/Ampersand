@@ -110,7 +110,7 @@ $app->get('/admin/export/all', function () use ($app){
     $app->response->headers->set('Content-Type', 'application/json; charset=utf-8');
 
     // Output response
-    $exporter = new Exporter(new JSONWriter(fopen('php://output', 'w')));
+    $exporter = new Exporter(new JSONWriter());
     $exporter->exportAllPopulation();
 });
 
@@ -216,7 +216,7 @@ $app->get('/admin/performance/conjuncts', function () use ($app){
     });
     
     // Response headers
-    $filename = Config::get('contextName') . "_Conjunct performance_" . date('Y-m-d\TH-i-s') . ".json";
+    $filename = Config::get('contextName') . "_Conjunct performance_" . date('Y-m-d\TH-i-s') . ".csv";
     $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
     $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
 
@@ -302,7 +302,7 @@ $app->get('/admin/report/interfaces', function () use ($app){
     }, $arr);
     
     // Response headers
-    $filename = Config::get('contextName') . "_Interface definitions_" . date('Y-m-d\TH-i-s') . ".json";
+    $filename = Config::get('contextName') . "_Interface definitions_" . date('Y-m-d\TH-i-s') . ".csv";
     $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
     $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
 
