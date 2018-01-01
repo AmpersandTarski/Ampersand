@@ -3,7 +3,7 @@
 namespace Ampersand;
 
 use Ampersand\Misc\Config;
-use Ampersand\Import\JSONPopulationImporter;
+use Ampersand\IO\Importer;
 use Ampersand\Transaction;
 use Ampersand\Plugs\StorageInterface;
 use Ampersand\Rule\Conjunct;
@@ -16,6 +16,7 @@ use Ampersand\Core\Concept;
 use Ampersand\Role;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\Log\Notifications;
+use Ampersand\IO\JSONReader;
 
 class AmpersandApp
 {
@@ -193,14 +194,11 @@ class AmpersandApp
 
         if($installDefaultPop){
             $this->logger->info("Install default population");
-            
-            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
 
-            $importer = new JSONPopulationImporter();
-            $importer->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
+            $reader = new JSONReader();
+            $reader->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
+            $importer = new Importer($reader);
             $importer->importPopulation();
-
-            set_time_limit ((int) ini_get('max_execution_time')); // reset time limit counter to handle large amounts of default population queries.
         }else{
             $this->logger->info("Skip default population");
         }

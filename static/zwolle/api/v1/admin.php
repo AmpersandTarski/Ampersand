@@ -10,12 +10,14 @@ use Ampersand\Rule\Rule;
 use Ampersand\Core\Relation;
 use Ampersand\Core\Atom;
 use Ampersand\Core\Concept;
-use Ampersand\IO\CSVWriter;
 use Ampersand\Transaction;
 use Ampersand\AmpersandApp;
 use Ampersand\Rule\RuleEngine;
 use Ampersand\IO\Exporter;
 use Ampersand\IO\JSONWriter;
+use Ampersand\IO\CSVWriter;
+use Ampersand\IO\Importer;
+use Ampersand\IO\JSONReader;
 
 global $app;
 
@@ -91,7 +93,6 @@ $app->get('/admin/checks/rules/evaluate/all', function() use ($app){
     if(Config::get('productionEnv')) throw new Exception ("Evaluation of all rules not allowed in production environment", 403);
     
     foreach (RuleEngine::checkRules(Rule::getAllInvRules(), true) as $violation) Notifications::addInvariant($violation);
-    
     foreach (RuleEngine::checkRules(Rule::getAllSigRules(), true) as $violation) Notifications::addSignal($violation);
     
     $content = Notifications::getAll(); // Return all notifications
@@ -116,50 +117,26 @@ $app->get('/admin/export/all', function () use ($app){
 $app->get('/admin/import', function () use ($app){
     /** @var \Slim\Slim $app */
     if(Config::get('productionEnv')) throw new Exception ("Import not allowed in production environment", 403);
-    $logger = Logger::getLogger('ADMIN');
 
-    $file = $app->request->params('file'); if(is_null($file)) throw new Exception("Import file not specified",500);
-    
-    $ampersandApp = AmpersandApp::singleton();
-
-    include_once (Config::get('absolutePath') . Config::get('logPath') . "{$file}");
-    
-    // check if all concepts and relations are defined
-    foreach((array)$allAtoms as $cpt => $atoms) if(!empty($atoms)) Concept::getConcept($cpt);
-    foreach((array)$allLinks as $rel => $links) if(!empty($links)) Relation::getRelation($rel);
-    
-    foreach((array)$allAtoms as $cpt => $atoms){
-        $logger->info("Importing atoms for concept {$cpt}");
-        if(empty($atoms)) continue;
+    if (is_uploaded_file($_FILES['file']['tmp_name'])) {
+        $reader = new JSONReader();
+        $reader->loadFile(Config::get('pathToGeneratedFiles') . 'populations.json');
+        $importer = new Importer($reader);
+        $importer->importPopulation();
         
-        $concept = Concept::getConcept($cpt);
-        $total = count($atoms); 
-        $i = 1;
-        foreach($atoms as $atomId){
-            $logger->debug("Importing {$cpt}: atom {$i}/{$total}");
-            $i++;
-            
-            $atom = new Atom($atomId, $concept);
-            $atom->add();
-        }
+        unlink($_FILES['file']['tmp_name']);
+    } else {
+        throw new Exception("Import file not specified", 500);
     }
     
-    foreach ((array)$allLinks as $rel => $links){
-        $logger->info("Importing links for relation {$rel}");
-        if(empty($links)) continue;
-        
-        foreach($links as $link) $link->add();
-    }
-    
+    // Commit transaction
     $transaction = Transaction::getCurrentTransaction()->close(true);
-    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported successfully");
+    if($transaction->isCommitted()) Logger::getUserLogger()->notice("Imported {$_FILES['file']['name']} successfully");
     
-    $ampersandApp->checkProcessRules(); // Check all process rules that are relevant for the activate roles
-
+    // Check all process rules that are relevant for the activate roles
+    AmpersandApp::singleton()->checkProcessRules(); 
     $content = Notifications::getAll(); // Return all notifications
-    
     print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
-    
 });
 
 
