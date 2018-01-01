@@ -261,29 +261,30 @@ $app->get('/admin/report/relations', function () use ($app){
 
 $app->get('/admin/report/conjuncts', function () use ($app){
     /** @var \Slim\Slim $app */
-    if(Config::get('productionEnv')) throw new Exception ("Reports are not allowed in production environment", 403);
     
-    $content = array();
-    foreach(Conjunct::getAllConjuncts() as $conj){        
-        if($conj->isInvConj()) $content['invConjuncts'][] = $conj->__toString();
-        if($conj->isSigConj()) $content['sigConjuncts'][] = $conj->__toString();
-        if(!$conj->isInvConj() && !$conj->isSigConj()) $content['unused'][] = $conj->__toString();
-    }
+    // Get report
+    $reporter = new Reporter(new JSONWriter());
+    $reporter->reportConjunctUsage();
+
+    // Set response headers
+    $app->response->headers->set('Content-Type', 'application/json');
     
-    print json_encode($content, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    // Output
+    print $reporter;
 });
 
 $app->get('/admin/report/interfaces', function () use ($app){
+    /** @var \Slim\Slim $app */
 
-    // Get interface report
+    // Get report
     $reporter = new Reporter(new CSVWriter());
     $reporter->reportInterfaceDefinitions();
     
-    // Response headers
+    // Set response headers
     $filename = Config::get('contextName') . "_Interface definitions_" . date('Y-m-d\TH-i-s') . ".csv";
     $app->response->headers->set('Content-Type', 'text/csv; charset=utf-8');
     $app->response->headers->set('Content-Disposition', "attachment; filename={$filename}");
 
-    // Output response
+    // Output
     print $reporter;
 });

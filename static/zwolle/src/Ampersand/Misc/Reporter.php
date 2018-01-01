@@ -11,6 +11,7 @@ use Exception;
 use Ampersand\Interfacing\InterfaceObject;
 use Ampersand\Misc\Config;
 use Ampersand\IO\AbstractWriter;
+use Ampersand\Rule\Conjunct;
 
 class Reporter {
 
@@ -34,7 +35,7 @@ class Reporter {
     /**
      * Write and return interface report
      * 
-     * @return void
+     * @return array
      */
     public function reportInterfaceDefinitions(){
         $content = [];
@@ -61,6 +62,26 @@ class Reporter {
                     );
             
         }, $content);
+
+        $this->writer->write($content);
+
+        return $content;
+    }
+
+    /**
+     * Write and return conjunct usage report
+     * 
+     * Specifies which conjuncts are used by which rules, grouped by invariants, signals, and unused conjuncts
+     *
+     * @return array
+     */
+    public function reportConjunctUsage(){
+        $content = [];
+        foreach(Conjunct::getAllConjuncts() as $conj){        
+            if($conj->isInvConj()) $content['invConjuncts'][] = $conj->__toString();
+            if($conj->isSigConj()) $content['sigConjuncts'][] = $conj->__toString();
+            if(!$conj->isInvConj() && !$conj->isSigConj()) $content['unused'][] = $conj->__toString();
+        }
 
         $this->writer->write($content);
 
